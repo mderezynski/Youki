@@ -21,11 +21,7 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
-
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif //HAVE_CONFIG_H
-
+#include "config.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

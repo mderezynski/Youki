@@ -57,8 +57,8 @@ namespace MPX
 
         if( mTaskList.size() == 1 )
         {
-            Glib::signal_idle().connect( sigc::mem_fun( *this, &TaskKernel::tasksRun ) );
             mTaskListIter = mTaskList.begin();
+            Glib::signal_idle().connect( sigc::mem_fun( *this, &TaskKernel::tasksRun ) );
         }
 
         return tid;
@@ -87,8 +87,8 @@ namespace MPX
         Glib::Mutex::Lock L (mTaskListLock);
 
         TaskControlDataP control( mTaskListIter->second );
-        bool end = control->mTaskRunFunc(); 
-        if( end )
+        bool run = control->mTaskRunFunc();
+        if( !run )
         {
             control->mTaskEndLock.lock();
             control->mTaskEndFunc(); 
@@ -98,6 +98,10 @@ namespace MPX
         }
 
         ++mTaskListIter;
+        if(mTaskListIter == mTaskList.end())
+        {
+            mTaskListIter = mTaskList.begin(); // cycle
+        }
 
         return !mTaskList.empty();
     }

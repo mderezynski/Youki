@@ -98,18 +98,20 @@ namespace MPX
     typedef boost::variant<gint64, gdouble, std::string> Variant;
     typedef boost::optional<Variant> OVariant;
 
-    struct Track
+    class Track
     {
-        typedef std::vector<OVariant> DataT;
-        
-        DataT data;
+          typedef std::vector<OVariant> DataT;
+          
+          DataT data;
+    
+        public:
 
-        OVariant & operator[](DataT::size_type index)
-        {
-            return data[index];
-        }
+          OVariant & operator[](DataT::size_type index)
+          {
+              return data[index];
+          }
 
-        Track () { data.resize( N_ATTRIBUTES_INT ); }
+          Track () { data.resize( N_ATTRIBUTES_INT ); }
     };
 
     typedef boost::optional<std::string> ostring;

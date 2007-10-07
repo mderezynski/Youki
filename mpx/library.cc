@@ -23,6 +23,7 @@
 #include "config.h"
 #include <boost/format.hpp>
 #include <glibmm.h>
+#include <glibmm/i18n.h>
 #include "audio.hh"
 #include "hal.hh"
 #include "library.hh"
@@ -146,125 +147,126 @@ namespace
 
 namespace MPX
 {
-    Library::Library (HAL *hal)
-    : m_HAL (hal)
+    Library::Library (HAL *hal, TaskKernel *kernel)
+    : m_HAL (*hal)
+    , m_TaskKernel (*kernel)
     {
-      const int MLIB_VERSION_CUR = 1;
-      const int MLIB_VERSION_REV = 0;
-      const int MLIB_VERSION_AGE = 0;
+        const int MLIB_VERSION_CUR = 1;
+        const int MLIB_VERSION_REV = 0;
+        const int MLIB_VERSION_AGE = 0;
 
-      try{
-        m_SQL = new SQL::SQLDB ((boost::format ("mpxdb-%d-%d-%d") % MLIB_VERSION_CUR 
-                                   % MLIB_VERSION_REV
-                                   % MLIB_VERSION_AGE).str(), build_filename(g_get_user_data_dir(),"mpx"), SQLDB_TRUNCATE);
-        }
-      catch (DbInitError & cxe)
-        {
-          // FIXME: ?
-        }
-
-      static boost::format
-        artist_table_f ("CREATE TABLE IF NOT EXISTS artist "
-                          "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, '%s' TEXT, "
-                          "UNIQUE ('%s', '%s', '%s'));");
-
-      m_SQL->exec_sql ((artist_table_f  % attrs[ATTRIBUTE_ARTIST].id
-                                            % attrs[ATTRIBUTE_MB_ARTIST_ID].id
-                                            % attrs[ATTRIBUTE_ARTIST_SORTNAME].id
-                                            % attrs[ATTRIBUTE_ARTIST].id
-                                            % attrs[ATTRIBUTE_MB_ARTIST_ID].id
-                                            % attrs[ATTRIBUTE_ARTIST_SORTNAME].id).str());
-
-      static boost::format
-        album_artist_table_f ("CREATE TABLE IF NOT EXISTS album_artist "
-                                "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
-                                "'%s' TEXT, '%s' INTEGER, UNIQUE ('%s', '%s', '%s', '%s'));");
-
-      m_SQL->exec_sql ((album_artist_table_f  % attrs[ATTRIBUTE_ALBUM_ARTIST].id
-                                                  % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id
-                                                  % attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id
-                                                  % attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id
-                                                  % attrs[ATTRIBUTE_ALBUM_ARTIST].id
-                                                  % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id
-                                                  % attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id
-                                                  % attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id).str());
-
-      static boost::format
-        album_table_f ("CREATE TABLE IF NOT EXISTS album "
-                        "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
-                        "'%s' TEXT, '%s' TEXT, '%s' INTEGER, UNIQUE "
-                        "('%s', '%s', '%s', '%s', '%s'));");
-
-      m_SQL->exec_sql ((album_table_f % attrs[ATTRIBUTE_ALBUM].id
-                                        % attrs[ATTRIBUTE_MB_ALBUM_ID].id
-                                        % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
-                                        % attrs[ATTRIBUTE_ASIN].id
-                                        % "album_artist_j"
-                                        % attrs[ATTRIBUTE_ALBUM].id
-                                        % attrs[ATTRIBUTE_MB_ALBUM_ID].id
-                                        % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
-                                        % attrs[ATTRIBUTE_ASIN].id
-                                        % "album_artist_j").str());
-
-      StrV columns;
-      for (unsigned int n = 0; n < G_N_ELEMENTS(attrs); ++n)
-      {
-        if (attrs)
-        {
-          std::string column (attrs[n].id);
-          switch (attrs[n].type)
-          {
-            case VALUE_TYPE_STRING:
-              column += (" TEXT DEFAULT NULL ");
-              break;
-
-            case VALUE_TYPE_INT:
-              column += (" INTEGER DEFAULT NULL ");
-              break;
-
-            case VALUE_TYPE_REAL:
-              column += (" REAL DEFAULT NULL ");
-              break;
+        try{
+          m_SQL = new SQL::SQLDB ((boost::format ("mpxdb-%d-%d-%d") % MLIB_VERSION_CUR 
+                                     % MLIB_VERSION_REV
+                                     % MLIB_VERSION_AGE).str(), build_filename(g_get_user_data_dir(),"mpx"), SQLDB_TRUNCATE);
           }
-          columns.push_back (column);
+        catch (DbInitError & cxe)
+          {
+            // FIXME: ?
+          }
+
+        static boost::format
+          artist_table_f ("CREATE TABLE IF NOT EXISTS artist "
+                            "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, '%s' TEXT, "
+                            "UNIQUE ('%s', '%s', '%s'));");
+
+        m_SQL->exec_sql ((artist_table_f  % attrs[ATTRIBUTE_ARTIST].id
+                                              % attrs[ATTRIBUTE_MB_ARTIST_ID].id
+                                              % attrs[ATTRIBUTE_ARTIST_SORTNAME].id
+                                              % attrs[ATTRIBUTE_ARTIST].id
+                                              % attrs[ATTRIBUTE_MB_ARTIST_ID].id
+                                              % attrs[ATTRIBUTE_ARTIST_SORTNAME].id).str());
+
+        static boost::format
+          album_artist_table_f ("CREATE TABLE IF NOT EXISTS album_artist "
+                                  "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
+                                  "'%s' TEXT, '%s' INTEGER, UNIQUE ('%s', '%s', '%s', '%s'));");
+
+        m_SQL->exec_sql ((album_artist_table_f  % attrs[ATTRIBUTE_ALBUM_ARTIST].id
+                                                    % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id
+                                                    % attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id
+                                                    % attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id
+                                                    % attrs[ATTRIBUTE_ALBUM_ARTIST].id
+                                                    % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id
+                                                    % attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id
+                                                    % attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id).str());
+
+        static boost::format
+          album_table_f ("CREATE TABLE IF NOT EXISTS album "
+                          "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
+                          "'%s' TEXT, '%s' TEXT, '%s' INTEGER, UNIQUE "
+                          "('%s', '%s', '%s', '%s', '%s'));");
+
+        m_SQL->exec_sql ((album_table_f % attrs[ATTRIBUTE_ALBUM].id
+                                          % attrs[ATTRIBUTE_MB_ALBUM_ID].id
+                                          % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
+                                          % attrs[ATTRIBUTE_ASIN].id
+                                          % "album_artist_j"
+                                          % attrs[ATTRIBUTE_ALBUM].id
+                                          % attrs[ATTRIBUTE_MB_ALBUM_ID].id
+                                          % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
+                                          % attrs[ATTRIBUTE_ASIN].id
+                                          % "album_artist_j").str());
+
+        StrV columns;
+        for (unsigned int n = 0; n < G_N_ELEMENTS(attrs); ++n)
+        {
+          if (attrs)
+          {
+            std::string column (attrs[n].id);
+            switch (attrs[n].type)
+            {
+              case VALUE_TYPE_STRING:
+                column += (" TEXT DEFAULT NULL ");
+                break;
+
+              case VALUE_TYPE_INT:
+                column += (" INTEGER DEFAULT NULL ");
+                break;
+
+              case VALUE_TYPE_REAL:
+                column += (" REAL DEFAULT NULL ");
+                break;
+            }
+            columns.push_back (column);
+          }
         }
-      }
 
-      std::string column_names (Util::stdstrjoin (columns, ", "));
+        std::string column_names (Util::stdstrjoin (columns, ", "));
 
-      static boost::format
-        track_table_f ("CREATE TABLE IF NOT EXISTS track (id INTEGER PRIMARY KEY AUTOINCREMENT, %s, %s, %s, "
-                       "UNIQUE (%s, %s, %s));");
+        static boost::format
+          track_table_f ("CREATE TABLE IF NOT EXISTS track (id INTEGER PRIMARY KEY AUTOINCREMENT, %s, %s, %s, "
+                         "UNIQUE (%s, %s, %s));");
 
-      m_SQL->exec_sql ((track_table_f
-                                    % column_names
-                                    % "artist_j INTEGER NOT NULL"   // track artist information 
-                                    % "album_j INTEGER NOT NULL"    // album + album artist
-                                    % attrs[ATTRIBUTE_HAL_VOLUME_UDI].id
-                                    % attrs[ATTRIBUTE_HAL_DEVICE_UDI].id
-                                    % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id).str());
+        m_SQL->exec_sql ((track_table_f
+                                      % column_names
+                                      % "artist_j INTEGER NOT NULL"   // track artist information 
+                                      % "album_j INTEGER NOT NULL"    // album + album artist
+                                      % attrs[ATTRIBUTE_HAL_VOLUME_UDI].id
+                                      % attrs[ATTRIBUTE_HAL_DEVICE_UDI].id
+                                      % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id).str());
 
-      m_SQL->exec_sql ("CREATE VIEW IF NOT EXISTS track_view AS " 
-                       "SELECT"
-                       "  track.* "
-                       ", album.id AS bmpx_album_id"
-                       ", artist.id AS bmpx_artist_id "
-                       ", album_artist.id AS bmpx_album_artist_id "
-                       " FROM track "
-                       "JOIN album ON album.id = track.album_j JOIN artist "
-                       "ON artist.id = track.artist_j JOIN album_artist ON album.album_artist_j = album_artist.id;");
+        m_SQL->exec_sql ("CREATE VIEW IF NOT EXISTS track_view AS " 
+                         "SELECT"
+                         "  track.* "
+                         ", album.id AS bmpx_album_id"
+                         ", artist.id AS bmpx_artist_id "
+                         ", album_artist.id AS bmpx_album_artist_id "
+                         " FROM track "
+                         "JOIN album ON album.id = track.album_j JOIN artist "
+                         "ON artist.id = track.artist_j JOIN album_artist ON album.album_artist_j = album_artist.id;");
 
-      static boost::format
-        tag_table_f ("CREATE TABLE IF NOT EXISTS tag "
-                     "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT NOT NULL)");
+        static boost::format
+          tag_table_f ("CREATE TABLE IF NOT EXISTS tag "
+                       "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT NOT NULL)");
 
-      static boost::format
-        tag_datum_table_f ("CREATE TABLE IF NOT EXISTS %s "
-                           "(id INTEGER PRIMARY KEY AUTOINCREMENT, tag_id INTEGER NOT NULL, fki INTEGER NOT NULL)");
+        static boost::format
+          tag_datum_table_f ("CREATE TABLE IF NOT EXISTS %s "
+                             "(id INTEGER PRIMARY KEY AUTOINCREMENT, tag_id INTEGER NOT NULL, fki INTEGER NOT NULL)");
 
-      m_SQL->exec_sql ((tag_table_f  % "tag").str()); 
-      m_SQL->exec_sql ((tag_datum_table_f  % "artist_tag").str()); 
-      m_SQL->exec_sql ((tag_datum_table_f  % "title_tag").str()); 
+        m_SQL->exec_sql ((tag_table_f  % "tag").str()); 
+        m_SQL->exec_sql ((tag_datum_table_f  % "artist_tag").str()); 
+        m_SQL->exec_sql ((tag_datum_table_f  % "title_tag").str()); 
     }
 
     Library::~Library ()
@@ -309,7 +311,7 @@ namespace MPX
       else
       if (!only_if_exists)
       {
-        char const* set_artist_f ("INSERT INTO artist (%s, %s, %s) VALUES (%s, %s, %s);");
+        char const* set_artist_f ("INSERT INTO artist (%s, %s, %s) VALUES (%Q, %Q, %Q);");
 
         m_SQL->exec_sql (mprintf (set_artist_f,
 
@@ -318,16 +320,16 @@ namespace MPX
              attrs[ATTRIBUTE_MB_ARTIST_ID].id,
 
             (track[ATTRIBUTE_ARTIST]
-                ? mprintf ("'%q'", get<std::string>(track[ATTRIBUTE_ARTIST].get()).c_str()).c_str()
-                : "NULL"),
+                ? get<std::string>(track[ATTRIBUTE_ARTIST].get()).c_str()
+                : NULL) ,
 
             (track[ATTRIBUTE_ARTIST_SORTNAME]
-                ? mprintf ("'%q'", get<std::string>(track[ATTRIBUTE_ARTIST_SORTNAME].get()).c_str()).c_str()
-                : "NULL")));
+                ? get<std::string>(track[ATTRIBUTE_ARTIST_SORTNAME].get()).c_str()
+                : NULL) ,
 
             (track[ATTRIBUTE_MB_ARTIST_ID]
-                ? mprintf ("'%q'", get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get()).c_str()).c_str()
-                : "NULL"),
+                ? get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get()).c_str()
+                : NULL))) ;
 
         artist_j = m_SQL->last_insert_rowid ();
       }
@@ -382,7 +384,7 @@ namespace MPX
       }
       else if (!only_if_exists)
       {
-        char const* set_artist_f ("INSERT INTO album_artist (%s, %s, %s, %s) VALUES (%s, %s, %s, %s);");
+        char const* set_artist_f ("INSERT INTO album_artist (%s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q);");
 
         m_SQL->exec_sql (mprintf (set_artist_f,
 
@@ -392,20 +394,20 @@ namespace MPX
           attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id,
 
         (track[ATTRIBUTE_ALBUM_ARTIST]
-            ? mprintf ("'%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str()).c_str()
-            : "NULL"), 
+            ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str() 
+            : NULL) , 
 
         (track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] 
-            ? mprintf ("'%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()).c_str()).c_str()
-            : "NULL"), 
+            ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()).c_str()
+            : NULL) , 
 
         (track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]
-            ? mprintf ("'%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()).c_str()
-            : "NULL"), 
+            ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()
+            : NULL) ,
 
         (get<gint64>(track[ATTRIBUTE_IS_MB_ALBUM_ARTIST].get())
-            ? "'1'"
-            : "NULL")));
+            ? "1"
+            : "NULL"))) ;
 
         artist_j = m_SQL->last_insert_rowid ();
       }
@@ -453,7 +455,7 @@ namespace MPX
       }
       else if (!only_if_exists)
       {
-        char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s) VALUES (%s, %s, %s, %s, %lld);");
+        char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q, %lld);");
 
         std::string sql = mprintf (set_album_f,
 
@@ -464,20 +466,20 @@ namespace MPX
             "album_artist_j",
 
             (track[ATTRIBUTE_ALBUM]
-                ? mprintf ("'%q'", get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()).c_str()
-                : "NULL"), 
+                ? get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()
+                : NULL) , 
 
             (track[ATTRIBUTE_MB_ALBUM_ID]
-                ? mprintf ("'%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()).c_str()).c_str()
-                : "NULL"), 
+                ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()).c_str()
+                : NULL) , 
 
             (track[ATTRIBUTE_MB_RELEASE_DATE]
-                ? mprintf ("'%q'", get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()).c_str()
-                : "NULL"), 
+                ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()
+                : NULL) , 
 
             (track[ATTRIBUTE_ASIN]
-                ? mprintf ("'%q'", get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()).c_str()
-                : "NULL"), 
+                ? get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()
+                : NULL) , 
 
             album_artist_id);
 
@@ -491,7 +493,7 @@ namespace MPX
     Library::get_track_mtime (Track& track) const
     {
       RowV rows;
-      if (0) // (m_SQL_flags & DB_FLAG_USING_HAL)
+      if (1) // (m_SQL_flags & DB_FLAG_USING_HAL)
       {
         static boost::format
           select_f ("SELECT %s FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
@@ -526,7 +528,7 @@ namespace MPX
     Library::get_track_id (Track& track) const
     {
       RowV rows;
-      if (0) // (m_SQL_flags & DB_FLAG_USING_HAL)
+      if (1) // (m_SQL_flags & DB_FLAG_USING_HAL)
       {
         static boost::format
           select_f ("SELECT id FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
@@ -579,10 +581,10 @@ namespace MPX
 
       std::string insert_path_value ; 
 
-      if (0)
+      if (1)
       {
           try{
-              HAL::Volume const& volume (m_HAL->get_volume_for_uri (uri));
+              HAL::Volume const& volume (m_HAL.get_volume_for_uri (uri));
 
               track[ATTRIBUTE_HAL_VOLUME_UDI] =
                             volume.volume_udi ;
@@ -597,11 +599,13 @@ namespace MPX
           }
           catch (HAL::Exception & cxe)
           {
-              return false;
+            g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+            return false;
           }
         catch (Glib::ConvertError & cxe)
           {
-              return false;
+            g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+            return false;
           }
       }
       else
@@ -699,4 +703,54 @@ namespace MPX
       return true; 
     }
 
+    void
+    Library::scanURI (const std::string& uri)
+    {
+        //TODO: Support SMB, etc
+
+        ScanDataP p (new ScanData);
+        
+        try{
+            p->insert_path = filename_from_uri( uri );
+            Util::collect_audio_paths( p->insert_path, p->collection );
+        }
+        catch( Glib::ConvertError & cxe )
+        {
+            g_warning("%s: %s", G_STRLOC, cxe.what().c_str());
+            return;
+        }
+
+        p->position = p->collection.begin();
+        m_ScanTID = m_TaskKernel.newTask( _("Library Rescan"),
+            sigc::bind( sigc::mem_fun (*this, &Library::scanInit), p ),
+            sigc::bind( sigc::mem_fun (*this, &Library::scanRun), p ),
+            sigc::bind( sigc::mem_fun (*this, &Library::scanEnd), p ));
+    }
+
+    void
+    Library::scanInit (ScanDataP p)
+    {
+    }
+
+    bool
+    Library::scanRun (ScanDataP p)
+    {
+        try{
+            insert( filename_to_uri( *(p->position) ), p->insert_path );
+        }
+        catch( Glib::ConvertError & cxe )
+        {
+            g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+        }
+
+        ++(p->position);
+        return (p->position != p->collection.end());
+    }
+
+    void
+    Library::scanEnd (ScanDataP p)
+    {
+        p.reset();
+    }
+    
 } // namespace MPX

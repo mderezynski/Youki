@@ -24,18 +24,41 @@
 #define MPX_LIBRARY_CLASS_HH
 
 #include "metadatareader-taglib.hh"
-#include "mpx/types.hh"
 #include "sql.hh"
+#include "tasks.hh"
+#include "util-file.hh"
+#include "mpx/types.hh"
 
 namespace MPX
 {
   class HAL;
   class Library
   {
-            HAL * m_HAL;
+            struct ScanData
+            {
+                Util::FileList collection;
+                Util::FileList::iterator position;
+                std::string insert_path;
+            };
+
+            typedef boost::shared_ptr<ScanData> ScanDataP;
+
+            void
+            scanInit (ScanDataP);
+
+            bool
+            scanRun (ScanDataP);
+
+            void
+            scanEnd (ScanDataP);
+
+            TID m_ScanTID;
+            
+            HAL &m_HAL;
+            TaskKernel &m_TaskKernel;
 
         public:
-            Library (HAL *) ;
+            Library (HAL*, TaskKernel*) ;
             ~Library () ;
 
             void
@@ -44,6 +67,9 @@ namespace MPX
             bool
             insert (const std::string& uri, const std::string& insert_path);
 
+            void
+            scanURI (const std::string& uri);
+            
         private:
 
             SQL::SQLDB * m_SQL;
