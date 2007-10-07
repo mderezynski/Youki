@@ -800,9 +800,7 @@ namespace MPX
     {
         if( aborted )
         {  
-            //g_message("%s: scanURI ROLLBACK", G_STRLOC);
-            //m_SQL->exec_sql("ROLLBACK;");
-            m_SQL->exec_sql("COMMIT;");
+            m_SQL->exec_sql("ROLLBACK;");
         }
         else
             m_SQL->exec_sql("COMMIT;");
