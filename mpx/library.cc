@@ -579,6 +579,9 @@ namespace MPX
       if( !mReaderTagLib.get( uri, track ) )
         return false ; // no play for us
 
+      if( !(track[ATTRIBUTE_ALBUM] && track[ATTRIBUTE_ARTIST] && track[ATTRIBUTE_TITLE]) )
+        return false;
+
       std::string insert_path_value ; 
 
       if (1)
@@ -730,6 +733,7 @@ namespace MPX
     void
     Library::scanInit (ScanDataP p)
     {
+        m_SQL->exec_sql("BEGIN;");
     }
 
     bool
@@ -748,8 +752,13 @@ namespace MPX
     }
 
     void
-    Library::scanEnd (ScanDataP p)
+    Library::scanEnd (bool aborted, ScanDataP p)
     {
+        if( aborted )
+            m_SQL->exec_sql("ROLLBACK;");
+        else
+            m_SQL->exec_sql("COMMIT;");
+
         p.reset();
     }
     

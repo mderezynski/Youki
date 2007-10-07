@@ -45,12 +45,10 @@ namespace MPX
 
             void
             scanInit (ScanDataP);
-
             bool
             scanRun (ScanDataP);
-
             void
-            scanEnd (ScanDataP);
+            scanEnd (bool, ScanDataP);
 
             TID m_ScanTID;
             

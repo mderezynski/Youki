@@ -42,13 +42,14 @@ namespace MPX
 
     typedef sigc::slot<void> TaskFunc ;
     typedef sigc::slot<bool> TaskRunFunc ;
+    typedef sigc::slot<void, bool> TaskEndFunc ;
     
     struct TaskControlData
     {
-        Glib::Mutex       mTaskEndLock ;
-        TaskFunc          mTaskInitFunc ;
-        TaskFunc          mTaskEndFunc ;
-        TaskRunFunc       mTaskRunFunc ;
+        Glib::Mutex mTaskEndLock ;
+        TaskFunc    mTaskInitFunc ;
+        TaskEndFunc mTaskEndFunc ;
+        TaskRunFunc mTaskRunFunc ;
     };
 
     typedef boost::shared_ptr<TaskControlData> TaskControlDataP;
@@ -66,7 +67,7 @@ namespace MPX
             newTask (const std::string& name /* informal */,
                         const sigc::slot<void>& task_start,
                         const sigc::slot<bool>& task_run,
-                        const sigc::slot<void>& task_end);
+                        const sigc::slot<void, bool>& task_end);
 
             void
             stopTask (TID) ;

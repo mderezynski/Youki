@@ -35,13 +35,25 @@ namespace MPX
 
     TaskKernel::~TaskKernel ()
     {
+        Glib::Mutex::Lock L (mTaskListLock);
+
+        TaskListIter taskListIter = mTaskList.begin();
+        for( ; taskListIter != mTaskList.end(); )
+        {
+          TaskControlDataP control( taskListIter->second );
+          control->mTaskEndLock.lock();
+          control->mTaskEndFunc(true); // aborted 
+          control->mTaskEndLock.unlock();
+          mTaskList.erase( taskListIter ); 
+          taskListIter = mTaskList.begin();
+        }
     }
 
     TID
     TaskKernel::newTask (const std::string& name,
                 const sigc::slot<void>& task_start,
                 const sigc::slot<bool>& task_run,
-                const sigc::slot<void>& task_end)
+                const sigc::slot<void, bool>& task_end)
     { 
         TaskControlDataP control (new TaskControlData);
         control->mTaskInitFunc = task_start; 
@@ -75,7 +87,7 @@ namespace MPX
 
         TaskControlDataP control( taskListIter->second );
         control->mTaskEndLock.lock();
-        control->mTaskEndFunc(); 
+        control->mTaskEndFunc(true); // aborted 
         control->mTaskEndLock.unlock();
         mTaskList.erase( mTaskListIter );
         mTaskListIter = mTaskList.begin();
@@ -91,7 +103,7 @@ namespace MPX
         if( !run )
         {
             control->mTaskEndLock.lock();
-            control->mTaskEndFunc(); 
+            control->mTaskEndFunc(false); // !aborted
             control->mTaskEndLock.unlock();
             mTaskList.erase( mTaskListIter );
             mTaskListIter = mTaskList.begin();
