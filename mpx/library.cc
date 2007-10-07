@@ -792,7 +792,8 @@ namespace MPX
         }
 
         ++(p->position);
-        return (p->position != p->collection.end());
+
+        return p->position != p->collection.end();
     }
 
     void

@@ -46,10 +46,10 @@ namespace MPX
     
     struct TaskControlData
     {
-        Glib::Mutex mTaskEndLock ;
-        TaskFunc    mTaskInitFunc ;
-        TaskEndFunc mTaskEndFunc ;
-        TaskRunFunc mTaskRunFunc ;
+        Glib::Mutex m_TaskEndLock ;
+        TaskFunc    m_TaskInitFunc ;
+        TaskEndFunc m_TaskEndFunc ;
+        TaskRunFunc m_TaskRunFunc ;
     };
 
     typedef boost::shared_ptr<TaskControlData> TaskControlDataP;
@@ -75,9 +75,9 @@ namespace MPX
         private:
 
             TID             mNextTID ;
-            TaskList        mTaskList ;
-            TaskListIter    mTaskListIter ;
-            Glib::Mutex     mTaskListLock ;
+            TaskList        m_TaskList ;
+            TaskListIter    m_TaskListIter ;
+            Glib::Mutex     m_TaskListLock ;
 
             bool
             tasksRun ();

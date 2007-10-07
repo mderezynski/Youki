@@ -35,17 +35,17 @@ namespace MPX
 
     TaskKernel::~TaskKernel ()
     {
-        Glib::Mutex::Lock L (mTaskListLock);
+        Glib::Mutex::Lock L (m_TaskListLock);
 
-        TaskListIter taskListIter = mTaskList.begin();
-        for( ; taskListIter != mTaskList.end(); )
+        TaskListIter taskListIter = m_TaskList.begin();
+        for( ; taskListIter != m_TaskList.end(); )
         {
           TaskControlDataP control( taskListIter->second );
-          control->mTaskEndLock.lock();
-          control->mTaskEndFunc(true); // aborted 
-          control->mTaskEndLock.unlock();
-          mTaskList.erase( taskListIter ); 
-          taskListIter = mTaskList.begin();
+          control->m_TaskEndLock.lock();
+          control->m_TaskEndFunc(true); // aborted 
+          control->m_TaskEndLock.unlock();
+          m_TaskList.erase( taskListIter ); 
+          taskListIter = m_TaskList.begin();
         }
     }
 
@@ -56,20 +56,20 @@ namespace MPX
                 const sigc::slot<void, bool>& task_end)
     { 
         TaskControlDataP control (new TaskControlData);
-        control->mTaskInitFunc = task_start; 
-        control->mTaskRunFunc = task_run;
-        control->mTaskEndFunc = task_end;
+        control->m_TaskInitFunc = task_start; 
+        control->m_TaskRunFunc = task_run;
+        control->m_TaskEndFunc = task_end;
 
-        Glib::Mutex::Lock L (mTaskListLock);
+        Glib::Mutex::Lock L (m_TaskListLock);
 
         TID tid = ++mNextTID;
-        mTaskList.insert(std::make_pair(tid, control));
+        m_TaskList.insert(std::make_pair(tid, control));
 
-        control->mTaskInitFunc();
+        control->m_TaskInitFunc();
 
-        if( mTaskList.size() == 1 )
+        if( m_TaskList.size() == 1 )
         {
-            mTaskListIter = mTaskList.begin();
+            m_TaskListIter = m_TaskList.begin();
             Glib::signal_idle().connect( sigc::mem_fun( *this, &TaskKernel::tasksRun ) );
         }
 
@@ -79,43 +79,46 @@ namespace MPX
     void
     TaskKernel::stopTask (TID tid) 
     {
-        Glib::Mutex::Lock L (mTaskListLock);
+        Glib::Mutex::Lock L (m_TaskListLock);
 
-        TaskListIter taskListIter = mTaskList.find( tid );
+        TaskListIter taskListIter = m_TaskList.find( tid );
 
-        g_return_if_fail( taskListIter != mTaskList.end() );
+        g_return_if_fail( taskListIter != m_TaskList.end() );
 
         TaskControlDataP control( taskListIter->second );
-        control->mTaskEndLock.lock();
-        control->mTaskEndFunc(true); // aborted 
-        control->mTaskEndLock.unlock();
-        mTaskList.erase( mTaskListIter );
-        mTaskListIter = mTaskList.begin();
+        control->m_TaskEndLock.lock();
+        control->m_TaskEndFunc(true); // aborted 
+        control->m_TaskEndLock.unlock();
+        m_TaskList.erase( m_TaskListIter );
+        m_TaskListIter = m_TaskList.begin();
     }
 
     bool
     TaskKernel::tasksRun ()
     {
-        Glib::Mutex::Lock L (mTaskListLock);
+        Glib::Mutex::Lock L (m_TaskListLock);
 
-        TaskControlDataP control( mTaskListIter->second );
-        bool run = control->mTaskRunFunc();
+        TaskControlDataP control( m_TaskListIter->second );
+        bool run = control->m_TaskRunFunc();
         if( !run )
         {
-            control->mTaskEndLock.lock();
-            control->mTaskEndFunc(false); // !aborted
-            control->mTaskEndLock.unlock();
-            mTaskList.erase( mTaskListIter );
-            mTaskListIter = mTaskList.begin();
+            control->m_TaskEndLock.lock();
+            control->m_TaskEndFunc(false); // !aborted
+            control->m_TaskEndLock.unlock();
+            m_TaskList.erase( m_TaskListIter );
+            m_TaskListIter = m_TaskList.begin();
+           
+            if( m_TaskList.empty() ) 
+                return false;
         }
 
-        ++mTaskListIter;
-        if(mTaskListIter == mTaskList.end())
+        ++m_TaskListIter;
+        if(m_TaskListIter == m_TaskList.end())
         {
-            mTaskListIter = mTaskList.begin(); // cycle
+            m_TaskListIter = m_TaskList.begin(); // cycle
         }
 
-        return !mTaskList.empty();
+        return !m_TaskList.empty();
     }
 
 }; // namespace MPX
