@@ -87,7 +87,7 @@ AC_DEFUN([AX_BOOST_REGEX],
                 if test "x$ax_lib" = "x"; then
                     ax_lib=${BN_BOOST_REGEX}
 				    AC_CHECK_LIB($ax_lib, exit,
-                                 [BOOST_REGEX_LIB="-l$ax_lib"; AC_SUBST(BOOST_REGEX_LIB) link_regex="yes"; break],
+                                 [BOOST_REGEX_LIB="-l$ax_lib"; AC_SUBST(BOOST_REGEX_LIB) link_regex="yes"],
                                  [link_regex="no"])
                 fi
             else

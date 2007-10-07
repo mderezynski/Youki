@@ -91,7 +91,7 @@ AC_DEFUN([AX_BOOST_IOSTREAMS],
                 if test "x$ax_lib" = "x"; then
                     ax_lib=${BN_BOOST_IOSTREAMS_LIB}
 				    AC_CHECK_LIB($ax_lib, exit,
-                                 [BOOST_IOSTREAMS_LIB="-l$ax_lib"; AC_SUBST(BOOST_IOSTREAMS_LIB) link_iostreams="yes"; break],
+                                 [BOOST_IOSTREAMS_LIB="-l$ax_lib"; AC_SUBST(BOOST_IOSTREAMS_LIB) link_iostreams="yes"],
                                  [link_iostreams="no"])
                 fi
             else

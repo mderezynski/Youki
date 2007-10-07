@@ -88,7 +88,7 @@ AC_DEFUN([AX_BOOST_FILESYSTEM],
                 if test "x$ax_lib" = "x"; then
                     ax_lib=${BN_BOOSTFILESYSTEM_LIB}
 				    AC_CHECK_LIB($ax_lib, exit,
-                                 [BOOST_FILESYSTEM_LIB="-l$ax_lib"; AC_SUBST(BOOST_FILESYSTEM_LIB) link_filesystem="yes"; break],
+                                 [BOOST_FILESYSTEM_LIB="-l$ax_lib"; AC_SUBST(BOOST_FILESYSTEM_LIB) link_filesystem="yes"],
                                  [link_filesystem="no"])
                 fi
             else
