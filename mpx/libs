@@ -1,0 +1,16 @@
+		$(ALSA_LIBS)				\
+		$(BOOST_LDFLAGS)			\
+		$(CDIO_LIBS)				\
+		$(CDPARANOIA_LIBS)			\
+		$(DBUS_LIBS)				\
+		$(GLIBMM_LIBS)				\
+		$(GST_LIBS)					\
+		$(HAL_LIBS)					\
+		$(NM_LIBS)					\
+		$(TAGLIB_LIBS)				\
+		$(RSVG_LIBS)				\
+		$(SEXYMM_LIBS)				\
+		$(SOUP_LIBS)				\
+		$(SQLITE_LIBS)				\
+		$(XML_LIBS)					
+
