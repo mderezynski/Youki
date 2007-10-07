@@ -339,154 +339,198 @@ namespace MPX
     gint64
     Library::get_album_artist_id (Track& track, bool only_if_exists)
     {
-      if (track[ATTRIBUTE_ALBUM_ARTIST] && track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]) 
-      {
-        track[ATTRIBUTE_IS_MB_ALBUM_ARTIST] = gint64(1); 
-      }
-      else
-      {
-        track[ATTRIBUTE_IS_MB_ALBUM_ARTIST] = gint64(0); 
-        track[ATTRIBUTE_ALBUM_ARTIST] = track[ATTRIBUTE_ARTIST];
-      }
+        if (track[ATTRIBUTE_ALBUM_ARTIST] && track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]) 
+        {
+          track[ATTRIBUTE_IS_MB_ALBUM_ARTIST] = gint64(1); 
+        }
+        else
+        {
+          track[ATTRIBUTE_IS_MB_ALBUM_ARTIST] = gint64(0); 
+          track[ATTRIBUTE_ALBUM_ARTIST] = track[ATTRIBUTE_ARTIST];
+        }
 
-      RowV rows;
+        RowV rows;
 
-      char const* select_artist_f ("SELECT id FROM album_artist WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s %s);"); 
+        if( track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] )   
+        {
+          char const* select_artist_f ("SELECT id FROM album_artist WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s %s);"); 
+          m_SQL->get (rows, (mprintf (select_artist_f, 
 
-      m_SQL->get (rows, (mprintf (select_artist_f, 
+             attrs[ATTRIBUTE_ALBUM_ARTIST].id,
+            (track[ATTRIBUTE_ALBUM_ARTIST]
+                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str()).c_str()
+                : "IS NULL"), 
 
-         attrs[ATTRIBUTE_ALBUM_ARTIST].id,
-        (track[ATTRIBUTE_ALBUM_ARTIST]
-            ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str()).c_str()
-            : "IS NULL"), 
+             attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
+            (track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]
+                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()).c_str()
+                : "IS NULL"), 
 
-         attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
-        (track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]
-            ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()).c_str()
-            : "IS NULL"), 
+             attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id,
+            (track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME]
+                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()).c_str()).c_str()
+                : "IS NULL"), 
 
-         attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id,
-        (track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME]
-            ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()).c_str()).c_str()
-            : "IS NULL"), 
+             attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id,
+            (get<gint64>(track[ATTRIBUTE_IS_MB_ALBUM_ARTIST].get())
+                ? "= '1'"
+                : "IS NULL")))
+          );
+        }
+        else // TODO: MB lookup to fix sortname, etc, for a given ID (and possibly even retag files on the fly?)
+        {
+          char const* select_artist_f ("SELECT id FROM album_artist WHERE (%s %s) AND (%s %s);"); 
+          m_SQL->get (rows, (mprintf (select_artist_f, 
 
-         attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id,
-        (get<gint64>(track[ATTRIBUTE_IS_MB_ALBUM_ARTIST].get())
-            ? "= '1'"
-            : "IS NULL")))
-      );
+             attrs[ATTRIBUTE_ALBUM_ARTIST].id,
+            (track[ATTRIBUTE_ALBUM_ARTIST]
+                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str()).c_str()
+                : "IS NULL"), 
 
-      gint64 artist_j = 0;
+             attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
+            (track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]
+                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()).c_str()
+                : "IS NULL")))) ; 
+        }
 
-      if (!rows.empty())
-      {
-        artist_j = get <gint64> (rows[0].find ("id")->second);
-      }
-      else if (!only_if_exists)
-      {
-        char const* set_artist_f ("INSERT INTO album_artist (%s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q);");
+        gint64 artist_j = 0;
 
-        m_SQL->exec_sql (mprintf (set_artist_f,
+        if (!rows.empty())
+        {
+          artist_j = get <gint64> (rows[0].find ("id")->second);
+        }
+        else if (!only_if_exists)
+        {
+          char const* set_artist_f ("INSERT INTO album_artist (%s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q);");
 
-          attrs[ATTRIBUTE_ALBUM_ARTIST].id,
-          attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id,
-          attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
-          attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id,
+          m_SQL->exec_sql (mprintf (set_artist_f,
 
-        (track[ATTRIBUTE_ALBUM_ARTIST]
-            ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str() 
-            : NULL) , 
+            attrs[ATTRIBUTE_ALBUM_ARTIST].id,
+            attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id,
+            attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
+            attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id,
 
-        (track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] 
-            ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()).c_str()
-            : NULL) , 
+          (track[ATTRIBUTE_ALBUM_ARTIST]
+              ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str() 
+              : NULL) , 
 
-        (track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]
-            ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()
-            : NULL) ,
+          (track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] 
+              ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()).c_str()
+              : NULL) , 
 
-        (get<gint64>(track[ATTRIBUTE_IS_MB_ALBUM_ARTIST].get())
-            ? "1"
-            : "NULL"))) ;
+          (track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]
+              ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()
+              : NULL) ,
 
-        artist_j = m_SQL->last_insert_rowid ();
-      }
-      return artist_j;
+          (get<gint64>(track[ATTRIBUTE_IS_MB_ALBUM_ARTIST].get())
+              ? "1"
+              : NULL))) ;
+
+          artist_j = m_SQL->last_insert_rowid ();
+        }
+        return artist_j;
     }
 
     gint64
     Library::get_album_id (Track& track, gint64 album_artist_id, bool only_if_exists)
     {
-      gint64 album_j = 0;
+        gint64 album_j = 0;
+        RowV rows;
+        std::string sql;
 
-      RowV rows;
-      char const* select_album_f ("SELECT album, id FROM album WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
+        if( track[ATTRIBUTE_MB_ALBUM_ID] )
+        {
+          char const* select_album_f ("SELECT album, id FROM album WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
 
-      std::string sql = mprintf (select_album_f,
+          sql = mprintf (select_album_f,
 
-             attrs[ATTRIBUTE_ALBUM].id,
-            (track[ATTRIBUTE_ALBUM]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()).c_str()
-                : "IS NULL"), 
+                 attrs[ATTRIBUTE_ALBUM].id,
+                (track[ATTRIBUTE_ALBUM]
+                    ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()).c_str()
+                    : "IS NULL"), 
 
-             attrs[ATTRIBUTE_MB_ALBUM_ID].id,
-            (track[ATTRIBUTE_MB_ALBUM_ID]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()).c_str()).c_str()
-                : "IS NULL"), 
+                 attrs[ATTRIBUTE_MB_ALBUM_ID].id,
+                (track[ATTRIBUTE_MB_ALBUM_ID]
+                    ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()).c_str()).c_str()
+                    : "IS NULL"), 
 
-             attrs[ATTRIBUTE_MB_RELEASE_DATE].id,
-            (track[ATTRIBUTE_MB_RELEASE_DATE]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()).c_str()
-                : "IS NULL"), 
+                 attrs[ATTRIBUTE_MB_RELEASE_DATE].id,
+                (track[ATTRIBUTE_MB_RELEASE_DATE]
+                    ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()).c_str()
+                    : "IS NULL"), 
 
-            attrs[ATTRIBUTE_ASIN].id,
-            (track[ATTRIBUTE_ASIN]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()).c_str()
-                : "IS NULL"), 
+                attrs[ATTRIBUTE_ASIN].id,
+                (track[ATTRIBUTE_ASIN]
+                    ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()).c_str()
+                    : "IS NULL"), 
 
-            "album_artist_j",
-            album_artist_id
-      );
-      m_SQL->get (rows, sql); 
+                "album_artist_j",
+                album_artist_id
+          );
+        }
+        else
+        {
+          char const* select_album_f ("SELECT album, id FROM album WHERE (%s %s) AND (%s %s) AND (%s = %lld);"); 
 
-      if (!rows.empty())
-      {
-          album_j = get <gint64> (rows[0].find ("id")->second);
-      }
-      else if (!only_if_exists)
-      {
-        char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q, %lld);");
+          sql = mprintf (select_album_f,
 
-        std::string sql = mprintf (set_album_f,
+                 attrs[ATTRIBUTE_ALBUM].id,
+                (track[ATTRIBUTE_ALBUM]
+                    ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()).c_str()
+                    : "IS NULL"), 
 
-            attrs[ATTRIBUTE_ALBUM].id,
-            attrs[ATTRIBUTE_MB_ALBUM_ID].id,
-            attrs[ATTRIBUTE_MB_RELEASE_DATE].id,
-            attrs[ATTRIBUTE_ASIN].id,
-            "album_artist_j",
+                attrs[ATTRIBUTE_ASIN].id,
+                (track[ATTRIBUTE_ASIN]
+                    ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()).c_str()
+                    : "IS NULL"), 
 
-            (track[ATTRIBUTE_ALBUM]
-                ? get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()
-                : NULL) , 
+                "album_artist_j",
+                album_artist_id
+          );
+        }
 
-            (track[ATTRIBUTE_MB_ALBUM_ID]
-                ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()).c_str()
-                : NULL) , 
+        m_SQL->get (rows, sql); 
 
-            (track[ATTRIBUTE_MB_RELEASE_DATE]
-                ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()
-                : NULL) , 
+        if (!rows.empty())
+        {
+            album_j = get <gint64> (rows[0].find ("id")->second);
+        }
+        else if (!only_if_exists)
+        {
+          char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q, %lld);");
 
-            (track[ATTRIBUTE_ASIN]
-                ? get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()
-                : NULL) , 
+          std::string sql = mprintf (set_album_f,
 
-            album_artist_id);
+              attrs[ATTRIBUTE_ALBUM].id,
+              attrs[ATTRIBUTE_MB_ALBUM_ID].id,
+              attrs[ATTRIBUTE_MB_RELEASE_DATE].id,
+              attrs[ATTRIBUTE_ASIN].id,
+              "album_artist_j",
 
-        m_SQL->exec_sql (sql);
-        album_j = m_SQL->last_insert_rowid ();
-      }
-      return album_j;
+              (track[ATTRIBUTE_ALBUM]
+                  ? get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()
+                  : NULL) , 
+
+              (track[ATTRIBUTE_MB_ALBUM_ID]
+                  ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()).c_str()
+                  : NULL) , 
+
+              (track[ATTRIBUTE_MB_RELEASE_DATE]
+                  ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()
+                  : NULL) , 
+
+              (track[ATTRIBUTE_ASIN]
+                  ? get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()
+                  : NULL) , 
+
+              album_artist_id);
+
+          m_SQL->exec_sql (sql);
+          album_j = m_SQL->last_insert_rowid ();
+
+          g_message("%s: New Album: %s", G_STRLOC, get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str());
+        }
+        return album_j;
     }
 
     gint64
@@ -755,7 +799,11 @@ namespace MPX
     Library::scanEnd (bool aborted, ScanDataP p)
     {
         if( aborted )
-            m_SQL->exec_sql("ROLLBACK;");
+        {  
+            //g_message("%s: scanURI ROLLBACK", G_STRLOC);
+            //m_SQL->exec_sql("ROLLBACK;");
+            m_SQL->exec_sql("COMMIT;");
+        }
         else
             m_SQL->exec_sql("COMMIT;");
 

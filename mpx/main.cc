@@ -152,6 +152,8 @@ main (int argc, char ** argv)
 
     Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
 
+    obj_library->scanURI(filename_to_uri( argv[1] ));
+
     gtkLock.lock();
     gtk = new Gtk::Main (argc, argv);
     gtk->run ();
