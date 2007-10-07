@@ -33,7 +33,7 @@ namespace
 
       typedef void (*SignalHandler) (int);
 
-      bool terminate = false;
+      int terminate = 0;
 
       SignalHandler
       install_handler_full (int           signal_number,
@@ -94,15 +94,15 @@ namespace
       void
       sigterm_handler (int signal_number)
       {
-          terminate = true;
+          g_atomic_int_set( &terminate, 1 );
       }
 
       bool
       process_signals ()
       {
-          if (terminate)
+          if( g_atomic_int_get(&terminate) )
           {
-              g_warning(_("%s: SIGTERM received, quitting."), G_STRLOC);
+              g_message (_("Got SIGTERM: Exiting"));
 
               gtkLock.lock ();
               bool gtk_running = Gtk::Main::level();
@@ -128,7 +128,7 @@ namespace
         install_handler (SIGINT, sigterm_handler);
         install_handler (SIGTERM, sigterm_handler);
 
-        Glib::signal_timeout ().connect (sigc::ptr_fun (&process_signals), SIGNAL_CHECK_INTERVAL);
+        Glib::signal_timeout ().connect( sigc::ptr_fun (&process_signals), SIGNAL_CHECK_INTERVAL );
     }
 
 } // anonymous namespace
@@ -147,12 +147,12 @@ main (int argc, char ** argv)
     gst_init(&argc, &argv);
 
     MPX::TaskKernel * obj_task_kernel = new MPX::TaskKernel;
-    MPX::HAL * obj_hal = new MPX::HAL();
+    MPX::HAL * obj_hal = new MPX::HAL;
     MPX::Library * obj_library = new MPX::Library(obj_hal, obj_task_kernel);
 
     Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
 
-    obj_library->scanURI(filename_to_uri( argv[1] ));
+    obj_library->scanURI (filename_to_uri( argv[1] ) );
 
     gtkLock.lock();
     gtk = new Gtk::Main (argc, argv);
