@@ -22,6 +22,7 @@ CLEANFILES =  $(service_DATA) \
 DISTCLEANFILES = $(CLEANFILES) intltool-extract intltool-merge intltool-update
 
 SUBDIRS =		\
+	glade		\
 	include		\
 	po			\
 	taglib		\

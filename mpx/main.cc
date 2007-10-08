@@ -17,6 +17,7 @@
 #include "amazon.hh"
 #include "library.hh"
 #include "hal.hh"
+#include "mpx.hh"
 #include "network.hh"
 #include "tasks.hh"
 #include "util-file.hh"
@@ -140,6 +141,8 @@ main (int argc, char ** argv)
 {
     using namespace Glib;
 
+    Glib::thread_init(0);
+
     signal_handlers_install ();
 
     g_mkdir(build_filename(g_get_user_data_dir(), "mpx").c_str(), 0700);
@@ -147,20 +150,22 @@ main (int argc, char ** argv)
     g_mkdir(build_filename(g_get_user_config_dir(), "mpx").c_str(), 0700);
 
     gst_init(&argc, &argv);
+    gtk = new Gtk::Main (argc, argv);
 
     MPX::NM * obj_netman = new MPX::NM;
     MPX::TaskKernel * obj_task_kernel = new MPX::TaskKernel;
     MPX::HAL * obj_hal = new MPX::HAL;
     MPX::Amazon::Covers * obj_amzn = new MPX::Amazon::Covers(*obj_netman);
     MPX::Library * obj_library = new MPX::Library(*obj_hal, *obj_task_kernel);
-
+    MPX::Player * obj_mpx = MPX::Player::create();
+    
     Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
 
     gtkLock.lock();
-    gtk = new Gtk::Main (argc, argv);
-    gtk->run ();
+    gtk->run (*obj_mpx);
 
     delete gtk;
+    delete obj_mpx;
     delete obj_library;
     delete obj_amzn;
     delete obj_hal;

@@ -102,8 +102,14 @@ mpx_bin_SOURCES =				\
 	minisoup.hh					\
 	minisoup.cc					\
 								\
+	mpx.hh						\
+	mpx.cc						\
+								\
 	network.hh					\
 	network.cc					\
+								\
+	playbacksource.hh			\
+	playbacksource.cc			\
 								\
 	sql.hh						\
 	sql.cc						\

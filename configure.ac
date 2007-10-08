@@ -688,6 +688,7 @@ AC_OUTPUT([
   Makefile
 
   scripts/Makefile
+  glade/Makefile
   include/Makefile
   include/mpx/Makefile
   widgets/Makefile
