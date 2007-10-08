@@ -427,6 +427,9 @@ namespace MPX
               : NULL))) ;
 
           artist_j = m_SQL->last_insert_rowid ();
+
+          Signals.NewArtist.emit(  (track[ATTRIBUTE_MB_ARTIST_ID] ? get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get()) : std::string())
+                                ,   artist_j );
         }
         return artist_j;
     }
@@ -528,7 +531,9 @@ namespace MPX
           m_SQL->exec_sql (sql);
           album_j = m_SQL->last_insert_rowid ();
 
-          g_message("%s: New Album: %s", G_STRLOC, get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str());
+          Signals.NewAlbum.emit(    (track[ATTRIBUTE_MB_ALBUM_ID] ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()) : std::string())
+                                ,   (track[ATTRIBUTE_ASIN] ? get<std::string>(track[ATTRIBUTE_ASIN].get()) : std::string())
+                                ,   album_j );
         }
         return album_j;
     }
@@ -721,6 +726,8 @@ namespace MPX
         column_names += "artist_j, album_j";
         column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
         m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
+        track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->last_insert_rowid ();
+        Signals.NewTrack.emit( track ); 
       }
       catch (SqlConstraintError & cxe)
       {

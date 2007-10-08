@@ -67,7 +67,32 @@ namespace MPX
 
             void
             scanURI (const std::string& uri);
+
+            typedef sigc::signal<void, const std::string& /*mbid*/, const std::string& /*asin*/, gint64/*albumid*/> SignalNewAlbum;
+            typedef sigc::signal<void, const std::string& /*mbid*/, gint64/*artistid*/> SignalNewArtist;
+            typedef sigc::signal<void, const Track&> SignalNewTrack;
+
+            struct SignalsT
+            {
+                SignalNewAlbum  NewAlbum;
+                SignalNewArtist NewArtist;
+                SignalNewTrack  NewTrack;
+            };
+
+            SignalsT Signals;
+
+            SignalNewAlbum&
+            signal_new_album()
+            { return Signals.NewAlbum ; }
             
+            SignalNewArtist&
+            signal_new_artist()
+            { return Signals.NewArtist ; }
+            
+            SignalNewTrack&
+            signal_new_track()
+            { return Signals.NewTrack ; }
+
         private:
 
             SQL::SQLDB * m_SQL;
