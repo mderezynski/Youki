@@ -81,12 +81,11 @@ mpx_bin_SOURCES =				\
 								\
 	exception.hh				\
 	exception-db.hh				\
-								\
 	main.cc						\
 	types.cc					\
 								\
-	tasks.hh					\
-	tasks.cc					\
+	amazon.hh					\
+	amazon.cc					\
 								\
 	audio.hh					\
 	audio.cc					\
@@ -94,11 +93,23 @@ mpx_bin_SOURCES =				\
 	hal.hh						\
 	hal.cc						\
 								\
+	library.hh					\
+	library.cc					\
+								\
+	metadatareader-taglib.hh	\
+	metadatareader-taglib.cc	\
+								\
+	minisoup.hh					\
+	minisoup.cc					\
+								\
+	network.hh					\
+	network.cc					\
+								\
 	sql.hh						\
 	sql.cc						\
 								\
-	library.hh					\
-	library.cc					\
+	tasks.hh					\
+	tasks.cc					\
 								\
 	uri.hh						\
 	uri.cc						\
@@ -106,8 +117,10 @@ mpx_bin_SOURCES =				\
 	util-file.hh				\
 	util-file.cc				\
 								\
-	util-string.hh				\
-	util-string.cc				\
+	util-graphics.hh			\
+	util-graphics.cc			\
 								\
-	metadatareader-taglib.hh	\
-	metadatareader-taglib.cc
+	util-string.hh				\
+	util-string.cc			
+								
+

@@ -147,9 +147,9 @@ namespace
 
 namespace MPX
 {
-    Library::Library (HAL *hal, TaskKernel *kernel)
-    : m_HAL (*hal)
-    , m_TaskKernel (*kernel)
+    Library::Library (HAL & hal, TaskKernel & kernel)
+    : m_HAL (hal)
+    , m_TaskKernel (kernel)
     {
         const int MLIB_VERSION_CUR = 1;
         const int MLIB_VERSION_REV = 0;

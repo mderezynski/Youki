@@ -56,7 +56,7 @@ namespace MPX
             TaskKernel &m_TaskKernel;
 
         public:
-            Library (HAL*, TaskKernel*) ;
+            Library (HAL&, TaskKernel&) ;
             ~Library () ;
 
             void

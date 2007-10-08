@@ -14,8 +14,10 @@
 #include <gst/gst.h>
 #include <gtkmm/main.h>
 
+#include "amazon.hh"
 #include "library.hh"
 #include "hal.hh"
+#include "network.hh"
 #include "tasks.hh"
 #include "util-file.hh"
 #include "mpx/types.hh"
@@ -146,13 +148,13 @@ main (int argc, char ** argv)
 
     gst_init(&argc, &argv);
 
+    MPX::NM * obj_netman = new MPX::NM;
     MPX::TaskKernel * obj_task_kernel = new MPX::TaskKernel;
     MPX::HAL * obj_hal = new MPX::HAL;
-    MPX::Library * obj_library = new MPX::Library(obj_hal, obj_task_kernel);
+    MPX::Amazon::Covers * obj_amzn = new MPX::Amazon::Covers(*obj_netman);
+    MPX::Library * obj_library = new MPX::Library(*obj_hal, *obj_task_kernel);
 
     Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
-
-    obj_library->scanURI (filename_to_uri( argv[1] ) );
 
     gtkLock.lock();
     gtk = new Gtk::Main (argc, argv);
@@ -160,8 +162,10 @@ main (int argc, char ** argv)
 
     delete gtk;
     delete obj_library;
+    delete obj_amzn;
     delete obj_hal;
     delete obj_task_kernel;
+    delete obj_netman;
 
     return EXIT_SUCCESS;
 }
