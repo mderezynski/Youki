@@ -117,10 +117,9 @@ namespace MPX
     {
       std::string type;
       try{
-          std::string filename = filename_from_uri (uri);
-          MPX::Audio::typefind(filename, type);
+          MPX::Audio::typefind(uri, type);
           TaglibPluginsMap::const_iterator i = m_taglib_plugins.find (type);
-          if (i != m_taglib_plugins.end() && i->second->get && i->second->get (filename, track))
+          if (i != m_taglib_plugins.end() && i->second->get && i->second->get (uri, track))
           {
             track[ATTRIBUTE_LOCATION] = uri;
             return true;

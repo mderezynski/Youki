@@ -251,11 +251,11 @@ PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.10.0 gobject-2.0 gthread-2.0 gmodule-2.
 PKG_CHECK_MODULES([GLIBMM], [glibmm-2.4 >= 2.8.3])
 PKG_CHECK_MODULES([SIGC], [sigc++-2.0 >= 2.0.0])
 
+# GIO
+PKG_CHECK_MODULES([GIO], [gio-2.0])
+
 # Gtk+
 PKG_CHECK_MODULES([GTK], [gtk+-2.0 >= 2.10.0])
-
-# RSVG
-PKG_CHECK_MODULES([RSVG], [librsvg-2.0 >= 2.14.0])
 
 # GTKmm
 PKG_CHECK_MODULES([GTKMM], [gtkmm-2.4 >= 2.10.0])
@@ -393,7 +393,7 @@ AM_CONDITIONAL([HAVE_HAL], [test "$enable_hal" = "yes"])
 AM_CONDITIONAL([HAVE_HAL_058], [test "$have_hal_058" = "1"])
 
 # Taglib
-PKG_CHECK_MODULES([TAGLIB], [taglib >= 1.4])
+PKG_CHECK_MODULES([TAGLIB], [taglib-gio >= 1.4])
 
 # libsidplay (v1.x)
 AC_ARG_ENABLE([sid],
@@ -683,50 +683,54 @@ CXXFLAGS="$CXXFLAGS $C_COMMON_FLAGS"
 
 AC_OUTPUT([
 
-  po/Makefile.in
+    po/Makefile.in
 
-  Makefile
+    Makefile
 
-  scripts/Makefile
-  glade/Makefile
-  include/Makefile
-  include/mpx/Makefile
-  widgets/Makefile
-  libhal++/Makefile
-  jnetlib/Makefile
-  mpx/Makefile
+    scripts/Makefile
+    glade/Makefile
+    icons/Makefile
+    icons/hicolor/Makefile
+    icons/hicolor/64x64/Makefile
+    icons/hicolor/64x64/places/Makefile
+    include/Makefile
+    include/mpx/Makefile
+    widgets/Makefile
+    libhal++/Makefile
+    jnetlib/Makefile
+    mpx/Makefile
 
-  taglib/Makefile
-  taglib/id3v2/Makefile
-  taglib/xiph/Makefile
-  taglib/common/Makefile
-  taglib/mp4/Makefile
-  taglib/asf/Makefile
-  taglib/sid/Makefile
-  taglib/mod/Makefile
-  taglib/ogg/Makefile
-  taglib/flac/Makefile
-  taglib/mp3/Makefile
-  taglib/mpc/Makefile
+    taglib/Makefile
+    taglib/id3v2/Makefile
+    taglib/xiph/Makefile
+    taglib/common/Makefile
+    taglib/mp4/Makefile
+    taglib/asf/Makefile
+    taglib/sid/Makefile
+    taglib/mod/Makefile
+    taglib/ogg/Makefile
+    taglib/flac/Makefile
+    taglib/mp3/Makefile
+    taglib/mpc/Makefile
 
-  xsd/Makefile
-  xsd/cxx/Makefile
-  xsd/cxx/xml/Makefile
-  xsd/cxx/xml/bits/Makefile
-  xsd/cxx/xml/sax/Makefile
-  xsd/cxx/xml/sax/bits/Makefile
-  xsd/cxx/xml/dom/Makefile
-  xsd/cxx/xml/dom/bits/Makefile
-  xsd/cxx/tree/Makefile
-  xsd/cxx/tree/bits/Makefile
-  xsd/cxx/parser/Makefile
-  xsd/cxx/parser/xerces/Makefile
-  xsd/cxx/parser/validating/Makefile
-  xsd/cxx/parser/non-validating/Makefile
-  xsd/cxx/parser/expat/Makefile
+    xsd/Makefile
+    xsd/cxx/Makefile
+    xsd/cxx/xml/Makefile
+    xsd/cxx/xml/bits/Makefile
+    xsd/cxx/xml/sax/Makefile
+    xsd/cxx/xml/sax/bits/Makefile
+    xsd/cxx/xml/dom/Makefile
+    xsd/cxx/xml/dom/bits/Makefile
+    xsd/cxx/tree/Makefile
+    xsd/cxx/tree/bits/Makefile
+    xsd/cxx/parser/Makefile
+    xsd/cxx/parser/xerces/Makefile
+    xsd/cxx/parser/validating/Makefile
+    xsd/cxx/parser/non-validating/Makefile
+    xsd/cxx/parser/expat/Makefile
 
-  mpx.pc
-  mpx.1
+    mpx.pc
+    mpx.1
 ])
 
 

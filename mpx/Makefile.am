@@ -8,6 +8,7 @@ mpx_bin_LDADD =						\
 		$(CDIO_LIBS)				\
 		$(CDPARANOIA_LIBS)			\
 		$(DBUS_LIBS)				\
+		$(GIO_LIBS)					\
 		$(GLIBMM_LIBS)				\
 		$(GST_LIBS)					\
 		$(GTKMM_LIBS)				\
@@ -36,6 +37,7 @@ mpx_bin_CXXFLAGS = 				\
     $(CDIO_CFLAGS)				\
     $(CDPARANOIA_INCLUDES) 		\
 	$(DBUS_CFLAGS)				\
+	$(GIO_CFLAGS)				\
 	$(GLADEMM_CFLAGS)			\
 	$(GLIBMM_CFLAGS)			\
 	$(GST_CFLAGS)				\
@@ -79,8 +81,11 @@ endif
   
 mpx_bin_SOURCES =				\
 								\
+	widgetloader.h				\
+								\
 	exception.hh				\
 	exception-db.hh				\
+								\
 	main.cc						\
 	types.cc					\
 								\
@@ -104,6 +109,9 @@ mpx_bin_SOURCES =				\
 								\
 	mpx.hh						\
 	mpx.cc						\
+								\
+	mpx-sources.hh				\
+	mpx-sources.cc				\
 								\
 	network.hh					\
 	network.cc					\

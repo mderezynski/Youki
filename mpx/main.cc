@@ -105,7 +105,7 @@ namespace
       {
           if( g_atomic_int_get(&terminate) )
           {
-              g_message (_("Got SIGTERM: Exiting"));
+              g_message (_("Got SIGTERM: Exiting (It's all right!)"));
 
               gtkLock.lock ();
               bool gtk_running = Gtk::Main::level();
@@ -136,12 +136,20 @@ namespace
 
 } // anonymous namespace
 
+void async_ready_callback (GObject *source_object,
+                     GAsyncResult *res,
+                     gpointer user_data)
+{
+    g_message("Ready!");
+}
+
 int 
 main (int argc, char ** argv)
 {
     using namespace Glib;
 
     Glib::thread_init(0);
+    Glib::init();
 
     signal_handlers_install ();
 
@@ -157,20 +165,20 @@ main (int argc, char ** argv)
     MPX::HAL * obj_hal = new MPX::HAL;
     MPX::Amazon::Covers * obj_amzn = new MPX::Amazon::Covers(*obj_netman);
     MPX::Library * obj_library = new MPX::Library(*obj_hal, *obj_task_kernel);
-    MPX::Player * obj_mpx = MPX::Player::create();
+    MPX::Player * obj_mpx = MPX::Player::create(*obj_library);
     
     Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
 
     gtkLock.lock();
     gtk->run (*obj_mpx);
 
-    delete gtk;
     delete obj_mpx;
     delete obj_library;
     delete obj_amzn;
     delete obj_hal;
     delete obj_task_kernel;
     delete obj_netman;
+    delete gtk;
 
     return EXIT_SUCCESS;
 }

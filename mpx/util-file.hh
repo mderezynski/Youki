@@ -41,15 +41,6 @@ namespace MPX
     dir_for_each_entry (const std::string &path,
                         FilePred           slot);
 
-    bool
-    find_file (const std::string &dir_path,
-               const std::string &filename,
-               std::string       &found_path,
-               int                max_depth = -1);
-
-    void
-    del_directory (const std::string &dir_path);
-
     void
     collect_paths (std::string const& dir_path,
                    FileList&          collection,

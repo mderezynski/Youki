@@ -316,7 +316,7 @@ namespace MPX
     }
 
     bool
-    typefind (std::string const& filename,
+    typefind (std::string const& uri,
               std::string&       type)
     {
       GstStateChangeReturn state_change;
@@ -328,7 +328,7 @@ namespace MPX
       GstState    state;
 
       pipeline  = gst_pipeline_new ("pipeline");
-      source    = gst_element_factory_make ("filesrc", "source");
+      source    = gst_element_factory_make ("giosrc", "source");
       typefind  = gst_element_factory_make ("typefind", "typefind");
       fakesink  = gst_element_factory_make ("fakesink", "fakesink");
 
@@ -337,7 +337,7 @@ namespace MPX
 
       g_signal_connect (G_OBJECT (typefind), "have-type", G_CALLBACK (have_type_handler), &caps);
 
-      g_object_set (source, "location", filename.c_str (), NULL);
+      g_object_set (source, "location", uri.c_str (), NULL);
       gst_element_set_state (GST_ELEMENT (pipeline), GST_STATE_PAUSED);
 
       state_change = gst_element_get_state (GST_ELEMENT (pipeline), &state, NULL, 5 * GST_SECOND);

@@ -72,11 +72,19 @@ namespace MPX
             typedef sigc::signal<void, const std::string& /*mbid*/, gint64/*artistid*/> SignalNewArtist;
             typedef sigc::signal<void, const Track&> SignalNewTrack;
 
+            typedef sigc::signal<void>          SignalScanStart;
+            typedef sigc::signal<void, gint64>  SignalScanRun;
+            typedef sigc::signal<void, gint64>  SignalScanEnd;
+
             struct SignalsT
             {
-                SignalNewAlbum  NewAlbum;
-                SignalNewArtist NewArtist;
-                SignalNewTrack  NewTrack;
+                SignalNewAlbum      NewAlbum;
+                SignalNewArtist     NewArtist;
+                SignalNewTrack      NewTrack;
+
+                SignalScanStart     ScanStart;  
+                SignalScanRun       ScanRun;
+                SignalScanEnd       ScanEnd;
             };
 
             SignalsT Signals;
@@ -92,6 +100,18 @@ namespace MPX
             SignalNewTrack&
             signal_new_track()
             { return Signals.NewTrack ; }
+
+            SignalScanStart&
+            signal_scan_start()
+            { return Signals.ScanStart ; }
+            
+            SignalScanRun&
+            signal_scan_run()
+            { return Signals.ScanRun ; }
+            
+            SignalScanEnd&
+            signal_scan_end()
+            { return Signals.ScanEnd ; }
 
         private:
 

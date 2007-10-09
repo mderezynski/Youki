@@ -24,34 +24,57 @@
 #ifndef MPX_HH
 #define MPX_HH
 #include "config.h"
-
 #include <gtkmm.h>
 #include <libglademm/xml.h>
+#include "library.hh"
+#include "widgetloader.h"
+
+using namespace Gnome::Glade;
+
+namespace Gtk
+{
+    class Statusbar;
+}
 
 namespace MPX
 {
-  class Player
-    : public Gtk::Window
-  {
-    protected:
+    class Sources;
+    class InfoArea;
+    class Player
+      : public WidgetLoader<Gtk::Window>
+    {
+      protected:
 
-      virtual bool on_delete_event (GdkEventAny *event);
-      virtual bool on_key_press_event (GdkEventKey*);
+        virtual bool on_key_press_event (GdkEventKey*);
 
-    private:
+      private:
 
-      Glib::RefPtr<Gnome::Glade::Xml>   m_ref_xml;
-      Glib::RefPtr<Gtk::ActionGroup>    m_actions;
-      Glib::RefPtr<Gtk::UIManager>      m_ui_manager;
+        Glib::RefPtr<Gnome::Glade::Xml>   m_ref_xml;
+        Glib::RefPtr<Gtk::ActionGroup>    m_actions;
+        Glib::RefPtr<Gtk::UIManager>      m_ui_manager;
 
-    public:
+        Sources *m_Sources;
+        InfoArea *m_InfoArea;
+        Gtk::Statusbar *m_Statusbar;
 
-      Player (BaseObjectType                       * obj,
-              Glib::RefPtr<Gnome::Glade::Xml> const& xml);
-      virtual ~Player ();
+        Library & m_Library;
+    
+        void
+        on_library_scan_start();
 
-      static Player*
-      create ();
-  };
+        void
+        on_library_scan_run(gint64);
+
+        void
+        on_library_scan_end(gint64);
+
+      public:
+
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library &);
+        virtual ~Player ();
+
+        static Player*
+        create (MPX::Library&);
+    };
 }
 #endif

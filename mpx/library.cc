@@ -24,6 +24,7 @@
 #include <boost/format.hpp>
 #include <glibmm.h>
 #include <glibmm/i18n.h>
+#include <gio/gvfs.h>
 #include "audio.hh"
 #include "hal.hh"
 #include "library.hh"
@@ -542,7 +543,7 @@ namespace MPX
     Library::get_track_mtime (Track& track) const
     {
       RowV rows;
-      if (1) // (m_SQL_flags & DB_FLAG_USING_HAL)
+      if (0) // (m_SQL_flags & DB_FLAG_USING_HAL)
       {
         static boost::format
           select_f ("SELECT %s FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
@@ -577,7 +578,7 @@ namespace MPX
     Library::get_track_id (Track& track) const
     {
       RowV rows;
-      if (1) // (m_SQL_flags & DB_FLAG_USING_HAL)
+      if (0) // (m_SQL_flags & DB_FLAG_USING_HAL)
       {
         static boost::format
           select_f ("SELECT id FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
@@ -612,7 +613,7 @@ namespace MPX
       std::string type;        
    
       try{ 
-          if (!Audio::typefind (filename_from_uri (uri), type))
+          if (!Audio::typefind (uri, type))
             return false; 
         }
       catch (Glib::ConvertError & cxe)
@@ -633,7 +634,7 @@ namespace MPX
 
       std::string insert_path_value ; 
 
-      if (1)
+      if (0)
       {
           try{
               HAL::Volume const& volume (m_HAL.get_volume_for_uri (uri));
@@ -668,19 +669,18 @@ namespace MPX
       track[ATTRIBUTE_INSERT_PATH] = insert_path_value;
       track[ATTRIBUTE_NEW_ITEM] = gint64(1); 
 
-      struct stat fstat;
-      if (!stat (filename_from_uri (uri).c_str(), &fstat))
-      {
-        track[ATTRIBUTE_MTIME] = gint64 (fstat.st_mtime);
-      }
-      else
-      {
-        int errsv = errno;
-        g_warning ("%s: Couldn't stat file: '%s'", G_STRLOC, g_strerror (errsv));
-      }
+      GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str()); 
+      GFileInfo * info = g_file_query_info(file,
+                                        G_FILE_ATTRIBUTE_TIME_MODIFIED,
+                                        GFileQueryInfoFlags(0),
+                                        NULL,
+                                        NULL);
+      track[ATTRIBUTE_MTIME] = gint64 (g_file_info_get_attribute_uint64(info,G_FILE_ATTRIBUTE_TIME_MODIFIED));
+      g_object_unref(file);
+      g_object_unref(info);
 
       time_t mtime = get_track_mtime (track);
-      if ((mtime != 0) && (mtime == fstat.st_mtime))
+      if ((mtime != 0) && (mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) ) )
       {
         return true;
       }
@@ -760,12 +760,10 @@ namespace MPX
     void
     Library::scanURI (const std::string& uri)
     {
-        //TODO: Support SMB, etc
-
         ScanDataP p (new ScanData);
         
         try{
-            p->insert_path = filename_from_uri( uri );
+            p->insert_path = uri; 
             Util::collect_audio_paths( p->insert_path, p->collection );
         }
         catch( Glib::ConvertError & cxe )
@@ -785,13 +783,14 @@ namespace MPX
     Library::scanInit (ScanDataP p)
     {
         m_SQL->exec_sql("BEGIN;");
+        Signals.ScanStart.emit();
     }
 
     bool
     Library::scanRun (ScanDataP p)
     {
         try{
-            insert( filename_to_uri( *(p->position) ), p->insert_path );
+            insert( *(p->position) , p->insert_path );
         }
         catch( Glib::ConvertError & cxe )
         {
@@ -799,6 +798,7 @@ namespace MPX
         }
 
         ++(p->position);
+        Signals.ScanRun.emit(std::distance(p->collection.begin(), p->position));
 
         return p->position != p->collection.end();
     }
@@ -813,6 +813,7 @@ namespace MPX
         else
             m_SQL->exec_sql("COMMIT;");
 
+        Signals.ScanEnd.emit(p->collection.size());
         p.reset();
     }
     

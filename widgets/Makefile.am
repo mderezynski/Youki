@@ -10,22 +10,25 @@ libmpxwidgets_la_LIBADD =	\
 	$(GLIBMM_LIBS)			\
 	$(GTKMM_LIBS)					
 
-libmpxwidgets_la_SOURCES = 		\
-								\
-	    widget-marshalers.c   	\
-								\
-		cairoextensions.cc		\
-		cairoextensions.hh		\
-								\
-		bmp_status_icon.c     	\
-		bmp_status_icon.h	    \
-								\
-    	bmp_tray_icon.c       	\
-	    bmp_tray_icon.h	      	\
-								\
-		taskdialog.hh			\
-		taskdialog.cc			\
-								\
+libmpxwidgets_la_SOURCES = 				\
+										\
+	    widget-marshalers.c   			\
+										\
+		cairoextensions.cc				\
+		cairoextensions.hh				\
+										\
+		gossip-cell-renderer-expander.h	\
+		gossip-cell-renderer-expander.c	\
+										\
+		bmp_status_icon.c     			\
+		bmp_status_icon.h	    		\
+										\
+    	bmp_tray_icon.c       			\
+	    bmp_tray_icon.h	      			\
+										\
+		taskdialog.hh					\
+		taskdialog.cc					\
+										\
 		cell-renderer-cairo-surface.hh	\
 		cell-renderer-cairo-surface.cc	
 

@@ -37,6 +37,7 @@
 
 #include <glib/gstdio.h>
 #include <glibmm.h>
+#include <gio/gvfs.h>
 
 #include "audio.hh"
 #include "uri.hh"
@@ -57,70 +58,6 @@ namespace MPX
       {
         return true;
       }
-
-      bool
-      find_file_actual (const std::string &dir_path,
-                        const std::string &filename,
-                        std::string       &found_path,
-                        int                max_depth,
-                        int                depth)
-      {
-          if (max_depth != -1 && depth > max_depth)
-          {
-              return false;
-          }
-
-          Glib::Dir dir (dir_path);
-          DirEntries entries (dir.begin (), dir.end ());
-
-          for (DirEntries::const_iterator iter = entries.begin (), end = entries.end ();
-               iter != end;
-               ++iter)
-          {
-              std::string path = Glib::build_filename (dir_path, *iter);
-              if (path.length () > FILENAME_MAX)
-              {
-                  g_warning (G_STRLOC ": ignoring path: name too long (%s)",
-                             (path).c_str ());
-                  continue;
-              }
-
-              if (Glib::file_test (path, Glib::FILE_TEST_IS_REGULAR))
-              {
-                  try
-                    {
-                      // NOTE: We do a straight comparison first so that should G_FILENAME_ENCODING
-                      // be wrongly set, we at least can match filenames character for character.
-                      // - descender
-
-                      if (*iter == filename)
-                        {
-                          found_path = path;
-                          return true;
-                        }
-
-                     Glib::ustring filename_utf8 = Glib::filename_to_utf8 (filename).casefold ();
-                      if (Glib::filename_to_utf8 (*iter).casefold () == filename_utf8)
-                      {
-                          found_path = path;
-                          return true;
-                      }
-                    }
-                  catch (Glib::ConvertError &error)
-                    {
-                      g_message("%s: Cannot convert filename %s to UTF-8. G_FILENAME_ENCODING may not be properly set", G_STRLOC, (*iter).c_str());
-                    }
-              }
-              else if (Glib::file_test (path, Glib::FILE_TEST_IS_DIR))
-                {
-                  if (find_file_actual (path, filename, found_path, max_depth, depth + 1))
-                      return true;
-                }
-          }
-
-          return false;
-      }
-
     } // <anonymous> namespace
 
     std::string
@@ -136,40 +73,8 @@ namespace MPX
         return result;
     }
 
-    bool
-    find_file (const std::string &dir_path,
-               const std::string &filename,
-               std::string       &found_path,
-               int                max_depth)
-    {
-        found_path = "";
-        return find_file_actual (dir_path, filename, found_path, max_depth, 0);
-    }
-
-    // Deletes a directory recursively
     void
-    del_directory (const std::string &dir_path)
-    {
-        Glib::Dir dir (dir_path);
-        DirEntries entries (dir.begin(), dir.end());
-
-        for (DirEntries::const_iterator iter = entries.begin (), end = entries.end ();
-             iter != end;
-             ++iter)
-        {
-            std::string full_path = Glib::build_filename (dir_path, *iter);
-
-            if (Glib::file_test (full_path, Glib::FILE_TEST_IS_DIR))
-                del_directory (full_path);
-            else
-                unlink (full_path.c_str ());
-        }
-
-        rmdir (dir_path.c_str ());
-    }
-
-    void
-    collect_paths (std::string const& dir_path,
+    collect_paths (std::string const& uri,
                    FileList&          collection,
                    FilePred           pred,
                    bool               clear)
@@ -177,31 +82,34 @@ namespace MPX
       if (clear)
         collection.clear ();
 
-      try
+      GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str());
+      GFileEnumerator * enm = g_file_enumerate_children(file, G_FILE_ATTRIBUTE_STD_NAME "," G_FILE_ATTRIBUTE_STD_TYPE, GFileQueryInfoFlags(0), NULL, NULL);
+
+      gboolean iterate = TRUE;
+      while(iterate)
+      {
+        GFileInfo * f = g_file_enumerator_next_file(enm, NULL, NULL);
+        if(f)
         {
-          Glib::Dir dir (dir_path);
-          DirEntries entries (dir.begin(), dir.end ());
-
-          for (DirEntries::const_iterator iter = entries.begin (), end = entries.end ();
-               iter != entries.end ();
-               ++iter)
+            std::string full_path (uri + G_DIR_SEPARATOR_S + g_file_info_get_name(f));
+            GFileType t = g_file_info_get_file_type(f);
+            g_object_unref(f);
+            if (t == G_FILE_TYPE_REGULAR)
             {
-              std::string full_path (Glib::build_filename (dir_path, *iter));
-
-              if (Glib::file_test (full_path, Glib::FILE_TEST_IS_REGULAR))
-                {
-                  if (pred (full_path))
-                    collection.push_back (full_path);
-                }
-              else if (Glib::file_test (full_path, Glib::FILE_TEST_IS_DIR))
-                {
-                  // pred is getting repeatedly copied for no good reason!
-                  collect_paths (full_path, collection, pred, false);
-                }
+                if (pred (full_path))
+                  collection.push_back (full_path);
+            }
+            else if (t == G_FILE_TYPE_DIRECTORY)
+            {
+                // pred is getting repeatedly copied for no good reason!
+                collect_paths (full_path, collection, pred, false);
             }
         }
-      catch (Glib::FileError& error)
-        {}
+        else
+            iterate = FALSE;
+      }
+      g_object_unref(enm);
+      g_object_unref(file);
     }
 
     void

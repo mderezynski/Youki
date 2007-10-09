@@ -22,6 +22,8 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 #include "config.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/format.hpp>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
@@ -30,10 +32,12 @@
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
 #include "mpx.hh"
+#include "mpx-sources.hh"
+#include "util-graphics.hh"
 using namespace Glib;
 using namespace Gtk;
+using namespace std;
 
-#if 0
 namespace MPX
 {
   enum LayoutID
@@ -63,8 +67,10 @@ namespace MPX
   {
     private:
 
+#if 0
       Spectrum        m_spectrum_data;
       Spectrum        m_spectrum_peak;
+#endif
 
       struct Text
       {
@@ -101,21 +107,18 @@ namespace MPX
       RefPtr<Pango::Layout> m_layout_message;
 
       Cairo::RefPtr<Cairo::ImageSurface>  m_surface;
-      Cairo::RefPtr<Cairo::ImageSurface>  m_surface_frame;
-      RefPixbuf                           m_source_icon;
-
+      Glib::RefPtr<Gdk::Pixbuf>           m_source_icon;
       sigc::connection                    m_surface_conn;
       sigc::connection                    m_conn_decay;
 
       double    m_surface_alpha;
-      bool      m_frame;
-      bool      m_compact;
       Mutex     m_surface_lock;
   
     public:
 
       bool      m_showing_message; // FIXME: Make private
 
+#if 0
       typedef sigc::signal<void, VUri const&> SignalUris;
       typedef sigc::signal<void> SignalCoverClicked;
 
@@ -130,14 +133,18 @@ namespace MPX
       {
         return signal_cover_clicked_;
       }
+#endif
 
     private:
 
+#if 0
       SignalUris signal_uris_dropped_;
       SignalCoverClicked signal_cover_clicked_;
+#endif
 
     protected:
 
+#if 0
       bool
       on_button_press_event (GdkEventButton * event) 
       {
@@ -238,15 +245,14 @@ namespace MPX
       {
         drag_dest_unset ();  
       }
+#endif
 
     public:
 
       InfoArea (BaseObjectType                 * obj,
                 RefPtr<Gnome::Glade::Xml> const& xml)
       : EventBox          (obj)
-      , m_source_icon     (RefPixbuf(0))
-      , m_frame           (false)
-      , m_compact         (false)
+      , m_source_icon     (Glib::RefPtr<Gdk::Pixbuf>(0))
       , m_showing_message (false)
       {
         gtk_widget_add_events (GTK_WIDGET (gobj()), GDK_BUTTON_PRESS_MASK);
@@ -254,6 +260,7 @@ namespace MPX
         modify_bg (Gtk::STATE_NORMAL, Gdk::Color ("#000000"));
         modify_base (Gtk::STATE_NORMAL, Gdk::Color ("#000000"));
 
+#if 0
         for (int n = 0; n < SPECT_BANDS; ++n)
         {
           m_spectrum_data.push_back (0);
@@ -262,14 +269,15 @@ namespace MPX
 
         Play::Obj()->signal_spectrum().connect (sigc::mem_fun (*this, &MPX::InfoArea::play_update_spectrum));
         Play::Obj()->property_status().signal_changed().connect (sigc::mem_fun (*this, &MPX::InfoArea::play_status_changed));
+#endif
 
         m_locks.insert (make_pair (L_TITLE, MutexP (new Mutex())));
         m_locks.insert (make_pair (L_ARTIST, MutexP (new Mutex())));
         m_locks.insert (make_pair (L_ALBUM, MutexP (new Mutex())));
 
-        m_surface_frame = Util::cairo_image_surface_from_pixbuf (Gdk::Pixbuf::create_from_file (build_filename (MPX_IMAGE_DIR, "cover-frame.png")));
-  
+#if 0
         enable_drag_dest ();
+#endif
       }
 
       ~InfoArea ()
@@ -283,20 +291,15 @@ namespace MPX
       }
 
       void
-      set_compact (bool compact)
-      {
-        m_compact = compact;
-        queue_draw ();
-      }
-
-      void
       reset ()
       {
         Mutex::Lock L1 (m_layouts_lock);
         Mutex::Lock L2 (m_surface_lock);
 
+#if 0
         for (int n = 0; n < SPECT_BANDS; m_spectrum_data[n++] = 0); 
         for (int n = 0; n < SPECT_BANDS; m_spectrum_peak[n++] = 0); 
+#endif
 
         remove_layout_if_exists (L_ARTIST);
         remove_layout_if_exists (L_ALBUM);
@@ -313,7 +316,7 @@ namespace MPX
         m_showing_message = false;
         m_layout_message = RefPtr<Pango::Layout>(0);
 
-        set_source (RefPixbuf(0));
+        set_source (Glib::RefPtr<Gdk::Pixbuf>(0));
         queue_draw ();
       }
 
@@ -351,18 +354,9 @@ namespace MPX
       }
 
       void
-      set_frame (bool frame)
+      set_image (RefPtr<Gdk::Pixbuf> pixbuf)
       {
         Mutex::Lock L (m_surface_lock); 
-        m_frame = frame;
-        queue_draw ();
-      }
-
-      void
-      set_image (RefPtr<Gdk::Pixbuf> pixbuf, bool draw_frame)
-      {
-        Mutex::Lock L (m_surface_lock); 
-        m_frame = draw_frame;
         m_surface = Util::cairo_image_surface_from_pixbuf (pixbuf);
         m_surface_alpha = -0.5;
         m_surface_conn.disconnect ();
@@ -370,10 +364,9 @@ namespace MPX
       }
 
       void
-      set_image (Cairo::RefPtr<Cairo::ImageSurface> surface, bool draw_frame)
+      set_image (Cairo::RefPtr<Cairo::ImageSurface> surface)
       {
         Mutex::Lock L (m_surface_lock); 
-        m_frame = draw_frame;
         m_surface = surface; 
         m_surface_alpha = -0.5;
         m_surface_conn.disconnect ();
@@ -427,18 +420,21 @@ namespace MPX
       bool
       decay_spectrum ()
       {
+#if 0
         for (int n = 0; n < SPECT_BANDS; ++n) 
         {
           m_spectrum_data[n] = (((m_spectrum_data[n] - 6) < 0) ? 0 : (m_spectrum_data[n] - 6));
           m_spectrum_peak[n] = (((m_spectrum_peak[n] - 4) < 0) ? 0 : (m_spectrum_peak[n] - 4));
         }
         queue_draw ();
+#endif
         return true;
       }
 
       void
       play_status_changed ()
       {
+#if 0
         MPXPlaystatus status = MPXPlaystatus (Play::Obj()->property_status().get_value());
         if( status == PLAYSTATUS_PAUSED )
         {
@@ -448,8 +444,10 @@ namespace MPX
         {
           m_conn_decay.disconnect();
         }
+#endif
       }
 
+#if 0
       void
       play_update_spectrum (Spectrum const& spectrum)
       {
@@ -468,6 +466,7 @@ namespace MPX
         } 
         queue_draw ();
       }
+#endif
 
     protected:
 
@@ -500,26 +499,13 @@ namespace MPX
           m_surface_lock.lock ();
           if( m_surface && (m_surface_alpha >= 0) )
           {
-            int offset = (m_frame ? 0 : 4);
-    
             cr->set_operator (Cairo::OPERATOR_SOURCE);
-            cr->set_source (m_surface, 38 - offset, 12 - offset); 
-            cr->rectangle (38 - offset, 12 - offset, 64 + (offset*2), 64 + (offset*2)); 
+            cr->set_source (m_surface, 0, 0); 
+            cr->rectangle (0, 0, 64, 64);
             cr->save (); 
             cr->clip ();
             cr->paint_with_alpha (m_surface_alpha);
             cr->restore ();
-
-            if( m_frame )
-            {
-              cr->set_operator (Cairo::OPERATOR_ATOP);
-              cr->set_source (m_surface_frame, 34, 8);
-              cr->rectangle (34, 8, 72, 72); 
-              cr->save (); 
-              cr->clip ();
-              cr->paint_with_alpha (m_surface_alpha);
-              cr->restore ();
-            }
           }
           m_surface_lock.unlock ();
         }
@@ -534,6 +520,7 @@ namespace MPX
           m_layouts_lock.unlock ();  
         }
 
+#if 0
         for (int n = 0; n < SPECT_BANDS; ++n)
         {
           int x = 0, y = 0, w = 0, h = 0;
@@ -558,8 +545,9 @@ namespace MPX
             cr->fill ();
           }
         }
+#endif
 
-        if( m_source_icon && m_compact )
+        if( m_source_icon )
         {
           cr->set_operator (Cairo::OPERATOR_ATOP);
           Gdk::Cairo::set_source_pixbuf (cr, m_source_icon, get_allocation().get_width() - 28, 12); 
@@ -571,157 +559,174 @@ namespace MPX
       }
   };
 }
-#endif
 
 namespace MPX
 {
-    Player::Player(BaseObjectType                 *  obj,
-                   RefPtr<Gnome::Glade::Xml> const&  xml)
-    : Window      (obj)
-    , m_ref_xml   (xml)
-    {
-  #if 0
-      // Infoarea
-      {
-        m_ref_xml->get_widget_derived ("infoarea", m_infoarea);
-    
-        m_infoarea->signal_uris_dropped().connect
-          ( sigc::mem_fun( *this, &MPX::Player::on_uris_dropped ) );
+    Player::Player(Glib::RefPtr<Gnome::Glade::Xml> const& xml,
+                         MPX::Library & obj_library)
+    : WidgetLoader<Gtk::Window>(xml, "mpx")
+    , m_ref_xml(xml)
+    , m_Library (obj_library)
+   {
+        m_Library.signal_scan_start().connect( sigc::mem_fun( *this, &Player::on_library_scan_start ) );
+        m_Library.signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
+        m_Library.signal_scan_end().connect( sigc::mem_fun( *this, &Player::on_library_scan_end ) );
 
-        m_infoarea->signal_cover_clicked().connect
-          ( sigc::mem_fun( *this, &MPX::Player::on_shell_display_track_details) );
-      }
-  #endif
+        m_ref_xml->get_widget_derived("infoarea", m_InfoArea);
+        m_ref_xml->get_widget_derived("sources", m_Sources);
+        m_ref_xml->get_widget("statusbar", m_Statusbar);
 
-  #if 0
-      // Playback Engine Signals
-      {
-        Play::Obj()->property_status().signal_changed().connect
-              (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_status_changed));
-        Play::Obj()->signal_position().connect
-              (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_position));
-        Play::Obj()->signal_buffering().connect
-              (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_buffering));
-        Play::Obj()->signal_error().connect
-              (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_error));
-        Play::Obj()->signal_eos().connect
-              (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_eos));
-        Play::Obj()->signal_metadata().connect
-              (sigc::mem_fun (*this, &MPX::PlayerShell::on_gst_metadata));
-      }
-  #endif
+        IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 
-      // UIManager + Menus + Proxy Widgets
-      {
-        m_ui_manager = UIManager::create ();
-        m_actions = ActionGroup::create ("Actions_Player");
-      }
+        Glib::RefPtr<Gdk::Pixbuf> icon = IconTheme::get_default()->load_icon("audio-x-generic", 20, ICON_LOOKUP_NO_SVG);
+        m_Sources->addSource( _("Music"), icon );
 
-  #if 0
-      // Playback Proxies
-      {
-        m_actions->get_action (PLAYER_SHELL_ACTION_PLAY)->connect_proxy
-              (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_play"))));
-        m_actions->get_action (PLAYER_SHELL_ACTION_PAUSE)->connect_proxy
-              (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_pause"))));
-        m_actions->get_action (PLAYER_SHELL_ACTION_PREV)->connect_proxy
-              (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_prev"))));
-        m_actions->get_action (PLAYER_SHELL_ACTION_NEXT)->connect_proxy
-              (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_next"))));
-        m_actions->get_action (PLAYER_SHELL_ACTION_STOP)->connect_proxy
-              (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_stop"))));
+        icon = IconTheme::get_default()->load_icon("source-video", 20, ICON_LOOKUP_NO_SVG);
+        m_Sources->addSource( _("Videos"), icon );
 
-        dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-repeat"))
-          ->set (render_icon (Gtk::StockID (MPX_STOCK_REPEAT), Gtk::ICON_SIZE_BUTTON));
-        dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-shuffle"))
-          ->set (render_icon (Gtk::StockID (MPX_STOCK_SHUFFLE), Gtk::ICON_SIZE_BUTTON));
+        icon = IconTheme::get_default()->load_icon("source-radio", 20, ICON_LOOKUP_NO_SVG);
+        m_Sources->addSource( _("Radio"), icon );
 
-        m_actions->get_action (PLAYER_SHELL_ACTION_REPEAT)->connect_proxy
-              (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-repeat"))));
-        m_actions->get_action (PLAYER_SHELL_ACTION_SHUFFLE)->connect_proxy
-              (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-shuffle"))));
+        icon = IconTheme::get_default()->load_icon("source-lastfm", 20, ICON_LOOKUP_NO_SVG);
+        m_Sources->addSource( _("Last.fm"), icon );
 
-        mcs_bind->bind_toggle_action
-          (RefPtr<ToggleAction>::cast_static (m_actions->get_action (PLAYER_SHELL_ACTION_SHUFFLE)), "bmp", "shuffle");
-        mcs_bind->bind_toggle_action
-          (RefPtr<ToggleAction>::cast_static (m_actions->get_action (PLAYER_SHELL_ACTION_REPEAT)), "bmp", "repeat");
+        icon = IconTheme::get_default()->load_icon("source-podcasts", 20, ICON_LOOKUP_NO_SVG);
+        m_Sources->addSource( _("Podcasts"), icon );
 
-        m_actions->get_action (PLAYER_SHELL_ACTION_PLAY)->set_sensitive( 0 );
-        m_actions->get_action (PLAYER_SHELL_ACTION_PAUSE)->set_sensitive( 0 );
-        m_actions->get_action (PLAYER_SHELL_ACTION_PREV)->set_sensitive( 0 );
-        m_actions->get_action (PLAYER_SHELL_ACTION_NEXT)->set_sensitive( 0 );
-        m_actions->get_action (PLAYER_SHELL_ACTION_STOP)->set_sensitive( 0 );
-      }
-  #endif
+#if 0
+        // Infoarea
+        {
+          m_ref_xml->get_widget_derived ("infoarea", m_infoarea);
+      
+          m_infoarea->signal_uris_dropped().connect
+            ( sigc::mem_fun( *this, &MPX::Player::on_uris_dropped ) );
 
-      add_accel_group (m_ui_manager->get_accel_group());
+          m_infoarea->signal_cover_clicked().connect
+            ( sigc::mem_fun( *this, &MPX::Player::on_shell_display_track_details) );
+        }
+#endif
 
-  #if 0
-      // Tray icon
-      {
-        m_status_icon_image_default =
-          Gdk::Pixbuf::create_from_file (MPX_TRAY_ICON_DIR G_DIR_SEPARATOR_S "tray-icon-default.png");
-        m_status_icon_image_paused =
-          Gdk::Pixbuf::create_from_file (MPX_TRAY_ICON_DIR G_DIR_SEPARATOR_S "tray-icon-paused.png");
-        m_status_icon_image_playing =
-          Gdk::Pixbuf::create_from_file (MPX_TRAY_ICON_DIR G_DIR_SEPARATOR_S "tray-icon-playing.png");
+#if 0
+        // Playback Engine Signals
+        {
+          Play::Obj()->property_status().signal_changed().connect
+                (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_status_changed));
+          Play::Obj()->signal_position().connect
+                (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_position));
+          Play::Obj()->signal_buffering().connect
+                (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_buffering));
+          Play::Obj()->signal_error().connect
+                (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_error));
+          Play::Obj()->signal_eos().connect
+                (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_eos));
+          Play::Obj()->signal_metadata().connect
+                (sigc::mem_fun (*this, &MPX::PlayerShell::on_gst_metadata));
+        }
+#endif
 
-        m_status_icon = bmp_status_icon_new_from_pixbuf (m_status_icon_image_default->gobj());
-        bmp_status_icon_set_visible (m_status_icon, TRUE);
+        // UIManager + Menus + Proxy Widgets
+        {
+          m_ui_manager = UIManager::create ();
+          m_actions = ActionGroup::create ("Actions_Player");
+        }
 
-        g_object_connect (G_OBJECT (m_status_icon),
-                          "signal::click",
-                          G_CALLBACK(PlayerShell::status_icon_click),
-                          this,
-                          "signal::popup-menu",
-                          G_CALLBACK(PlayerShell::status_icon_popup_menu),
-                          this,
-                          "signal::scroll-up",
-                          G_CALLBACK(PlayerShell::status_icon_scroll_up),
-                          this,
-                          "signal::scroll-down",
-                          G_CALLBACK(PlayerShell::status_icon_scroll_down),
-                          this,
-                          NULL);
+#if 0
+        // Playback Proxies
+        {
+          m_actions->get_action (PLAYER_SHELL_ACTION_PLAY)->connect_proxy
+                (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_play"))));
+          m_actions->get_action (PLAYER_SHELL_ACTION_PAUSE)->connect_proxy
+                (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_pause"))));
+          m_actions->get_action (PLAYER_SHELL_ACTION_PREV)->connect_proxy
+                (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_prev"))));
+          m_actions->get_action (PLAYER_SHELL_ACTION_NEXT)->connect_proxy
+                (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_next"))));
+          m_actions->get_action (PLAYER_SHELL_ACTION_STOP)->connect_proxy
+                (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_stop"))));
 
-        GtkWidget *tray_icon = bmp_status_icon_get_tray_icon (m_status_icon);
-        gtk_widget_realize (GTK_WIDGET (tray_icon));
-        g_object_connect (G_OBJECT (tray_icon),
-                          "signal::embedded",
-                          G_CALLBACK (MPX::PlayerShell::on_tray_embedded),
-                          this,
-                          NULL);
-        g_object_connect (G_OBJECT (tray_icon),
-                          "signal::destroyed",
-                          G_CALLBACK (MPX::PlayerShell::on_tray_destroyed),
-                          this,
-                          NULL);
-      }
-  #endif
+          dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-repeat"))
+            ->set (render_icon (Gtk::StockID (MPX_STOCK_REPEAT), Gtk::ICON_SIZE_BUTTON));
+          dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-shuffle"))
+            ->set (render_icon (Gtk::StockID (MPX_STOCK_SHUFFLE), Gtk::ICON_SIZE_BUTTON));
+
+          m_actions->get_action (PLAYER_SHELL_ACTION_REPEAT)->connect_proxy
+                (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-repeat"))));
+          m_actions->get_action (PLAYER_SHELL_ACTION_SHUFFLE)->connect_proxy
+                (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-shuffle"))));
+
+          mcs_bind->bind_toggle_action
+            (RefPtr<ToggleAction>::cast_static (m_actions->get_action (PLAYER_SHELL_ACTION_SHUFFLE)), "bmp", "shuffle");
+          mcs_bind->bind_toggle_action
+            (RefPtr<ToggleAction>::cast_static (m_actions->get_action (PLAYER_SHELL_ACTION_REPEAT)), "bmp", "repeat");
+
+          m_actions->get_action (PLAYER_SHELL_ACTION_PLAY)->set_sensitive( 0 );
+          m_actions->get_action (PLAYER_SHELL_ACTION_PAUSE)->set_sensitive( 0 );
+          m_actions->get_action (PLAYER_SHELL_ACTION_PREV)->set_sensitive( 0 );
+          m_actions->get_action (PLAYER_SHELL_ACTION_NEXT)->set_sensitive( 0 );
+          m_actions->get_action (PLAYER_SHELL_ACTION_STOP)->set_sensitive( 0 );
+        }
+#endif
+
+        add_accel_group (m_ui_manager->get_accel_group());
+
+#if 0
+        // Tray icon
+        {
+          m_status_icon_image_default =
+            Gdk::Pixbuf::create_from_file (MPX_TRAY_ICON_DIR G_DIR_SEPARATOR_S "tray-icon-default.png");
+          m_status_icon_image_paused =
+            Gdk::Pixbuf::create_from_file (MPX_TRAY_ICON_DIR G_DIR_SEPARATOR_S "tray-icon-paused.png");
+          m_status_icon_image_playing =
+            Gdk::Pixbuf::create_from_file (MPX_TRAY_ICON_DIR G_DIR_SEPARATOR_S "tray-icon-playing.png");
+
+          m_status_icon = bmp_status_icon_new_from_pixbuf (m_status_icon_image_default->gobj());
+          bmp_status_icon_set_visible (m_status_icon, TRUE);
+
+          g_object_connect (G_OBJECT (m_status_icon),
+                            "signal::click",
+                            G_CALLBACK(PlayerShell::status_icon_click),
+                            this,
+                            "signal::popup-menu",
+                            G_CALLBACK(PlayerShell::status_icon_popup_menu),
+                            this,
+                            "signal::scroll-up",
+                            G_CALLBACK(PlayerShell::status_icon_scroll_up),
+                            this,
+                            "signal::scroll-down",
+                            G_CALLBACK(PlayerShell::status_icon_scroll_down),
+                            this,
+                            NULL);
+
+          GtkWidget *tray_icon = bmp_status_icon_get_tray_icon (m_status_icon);
+          gtk_widget_realize (GTK_WIDGET (tray_icon));
+          g_object_connect (G_OBJECT (tray_icon),
+                            "signal::embedded",
+                            G_CALLBACK (MPX::PlayerShell::on_tray_embedded),
+                            this,
+                            NULL);
+          g_object_connect (G_OBJECT (tray_icon),
+                            "signal::destroyed",
+                            G_CALLBACK (MPX::PlayerShell::on_tray_destroyed),
+                            this,
+                            NULL);
+        }
+#endif
     }
 
     Player*
-    Player::create ()
+    Player::create (MPX::Library & obj_library)
     {
       const std::string path (build_filename(DATA_DIR, build_filename("glade","mpx.glade")));
-      RefPtr<Gnome::Glade::Xml> glade_xml = Gnome::Glade::Xml::create (path);
-      Player * p = 0;
-      glade_xml->get_widget_derived ("mpx", p);
+      Player * p = new Player(Gnome::Glade::Xml::create (path), obj_library); 
       return p;
     }
 
     Player::~Player()
     {
-  #if 0
+#if 0
       mmkeys_deactivate ();
       g_object_unref (m_status_icon);
-  #endif
-    }
-
-    bool
-    Player::on_delete_event (GdkEventAny* G_GNUC_UNUSED)
-    {
-      Gtk::Main::quit();
+#endif
     }
 
     bool
@@ -734,4 +739,26 @@ namespace MPX
       }
       return Widget::on_key_press_event (event);
     }
+
+    void
+    Player::on_library_scan_start()
+    {
+        m_Statusbar->pop();        
+        m_Statusbar->push(_("Library Scan Started"));
+    }
+
+    void
+    Player::on_library_scan_run(gint64 n)
+    {
+        m_Statusbar->pop();
+        m_Statusbar->push((boost::format(_("Library Scan: %1%")) % n).str());
+    }
+
+    void
+    Player::on_library_scan_end(gint64 n)
+    {
+        m_Statusbar->pop();        
+        m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Files)")) % n).str());
+    }
+
 }

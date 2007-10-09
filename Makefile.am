@@ -23,6 +23,7 @@ DISTCLEANFILES = $(CLEANFILES) intltool-extract intltool-merge intltool-update
 
 SUBDIRS =		\
 	glade		\
+	icons		\
 	include		\
 	po			\
 	taglib		\
