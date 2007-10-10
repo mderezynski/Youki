@@ -29,13 +29,13 @@ namespace Hal
     HALCC_EXCEPTION(VolumeIsNotDiscError)   
 
         static Hal::RefPtr<Volume> create_from_udi    (Hal::RefPtr<Context>  context,
-                                                       std::string const&    udi)
+                                                       std::string const&)
 
                                         throw (Hal::Device::DeviceDoesNotExistError);
 
 
         static Hal::RefPtr<Volume> create_from_dev    (Hal::RefPtr<Context>  context,
-                                                       std::string const&    udi)
+                                                       std::string const&)
 
                                         throw (Hal::Device::DeviceDoesNotExistError);
       

@@ -3,15 +3,15 @@
 #endif //HAVE_CONFIG_H
 
 #include <glibmm.h>
-#include <taglib/fileref.h>
-#include <taglib/taglib.h>
-#include <taglib/fileref.h>
-#include <taglib/tfile.h>
-#include <taglib/tag.h>
-#include <taglib/oggfile.h>
-#include <taglib/vorbisfile.h>
-#include <taglib/vorbisproperties.h>
-#include <taglib/xiphcomment.h>
+#include <taglib-gio/fileref.h>
+#include <taglib-gio/taglib.h>
+#include <taglib-gio/fileref.h>
+#include <taglib-gio/tfile.h>
+#include <taglib-gio/tag.h>
+#include <taglib-gio/oggfile.h>
+#include <taglib-gio/vorbisfile.h>
+#include <taglib-gio/vorbisproperties.h>
+#include <taglib-gio/xiphcomment.h>
 
 #include "common/common.hh"
 #include "xiph/reader.hh"

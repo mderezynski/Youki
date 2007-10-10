@@ -56,7 +56,7 @@ namespace MPX
             TaskKernel &m_TaskKernel;
 
         public:
-            Library (HAL&, TaskKernel&) ;
+            Library (HAL&, TaskKernel&, bool /*use hal?*/) ;
             ~Library () ;
 
             void
@@ -117,6 +117,15 @@ namespace MPX
 
             SQL::SQLDB * m_SQL;
             MetadataReaderTagLib mReaderTagLib ; 
+
+            enum Flags
+            {
+                F_USING_HAL     = (1<<0),
+            };
+
+            gint64 m_Flags;
+
+            const std::string column_names;
 
             gint64
             get_track_artist_id (Track& row, bool only_if_exists = false);

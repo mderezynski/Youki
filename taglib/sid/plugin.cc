@@ -2,7 +2,7 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
-#include <taglib/fileref.h>
+#include <taglib-gio/fileref.h>
 // Plugin-specific include
 #include "resolver.h"
 

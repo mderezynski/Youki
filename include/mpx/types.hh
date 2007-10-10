@@ -72,6 +72,7 @@ namespace MPX
         
       // SQL
       ATTRIBUTE_INSERT_PATH,
+      ATTRIBUTE_LOCATION_NAME,
 
       N_ATTRIBUTES_STRING
     };

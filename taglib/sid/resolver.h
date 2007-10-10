@@ -3,8 +3,8 @@
 #ifndef TAGLIB_SIDFILETYPERESOLVER_H
 #define TAGLIB_SIDFILETYPERESOLVER_H
 
-#include <taglib/tfile.h>
-#include <taglib/fileref.h>
+#include <taglib-gio/tfile.h>
+#include <taglib-gio/fileref.h>
 
 class SIDFileTypeResolver : public TagLib::FileRef::FileTypeResolver
 {

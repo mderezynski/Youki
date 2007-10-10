@@ -7,15 +7,15 @@
 #include <sys/types.h>
 
 #include <glibmm.h>
-#include <taglib/fileref.h>
-#include <taglib/taglib.h>
-#include <taglib/fileref.h>
-#include <taglib/tfile.h>
-#include <taglib/tag.h>
-#include <taglib/mpcfile.h>
-#include <taglib/apetag.h>
-#include <taglib/apeitem.h>
-#include <taglib/apefooter.h>
+#include <taglib-gio/fileref.h>
+#include <taglib-gio/taglib.h>
+#include <taglib-gio/fileref.h>
+#include <taglib-gio/tfile.h>
+#include <taglib-gio/tag.h>
+#include <taglib-gio/mpcfile.h>
+#include <taglib-gio/apetag.h>
+#include <taglib-gio/apeitem.h>
+#include <taglib-gio/apefooter.h>
 
 #include "common/common.hh"
 #include "mpx/types.hh"

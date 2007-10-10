@@ -19,7 +19,7 @@
  *   USA                                                                   *
  ***************************************************************************/
 
-#include <taglib/tstring.h>
+#include <taglib-gio/tstring.h>
 #include "asfproperties.h"
 
 using namespace TagLib;

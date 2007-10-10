@@ -23,8 +23,8 @@
 #ifndef _TAGLIB_REALMEDIAFILETYPERESOLVER_H_
 #define _TAGLIB_REALMEDIAFILETYPERESOLVER_H_
 
-#include <taglib/tfile.h>
-#include <taglib/fileref.h>
+#include <taglib-gio/tfile.h>
+#include <taglib-gio/fileref.h>
 
 
 class RealMediaFileTypeResolver : public TagLib::FileRef::FileTypeResolver

@@ -30,6 +30,7 @@
 #include "library.hh"
 #include "sql.hh"
 #include "util-string.hh"
+#include "uri.hh"
 using namespace Glib;
 using boost::get;
 
@@ -111,6 +112,9 @@ namespace
         {   "insert_path",
             VALUE_TYPE_STRING   }, 
 
+        {   "location_name",
+            VALUE_TYPE_STRING   }, 
+
         {   "track",
             VALUE_TYPE_INT      },
 
@@ -148,9 +152,10 @@ namespace
 
 namespace MPX
 {
-    Library::Library (HAL & hal, TaskKernel & kernel)
+    Library::Library (HAL & hal, TaskKernel & kernel, bool use_hal)
     : m_HAL (hal)
     , m_TaskKernel (kernel)
+    , m_Flags (0)
     {
         const int MLIB_VERSION_CUR = 1;
         const int MLIB_VERSION_REV = 0;
@@ -165,6 +170,18 @@ namespace MPX
           {
             // FIXME: ?
           }
+
+        if(!m_SQL->table_exists("meta"))
+        {
+            m_SQL->exec_sql ("CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0);");
+            m_Flags |= (use_hal ? F_USING_HAL : 0); 
+        }
+        else
+        {
+            RowV rows;
+            m_SQL->get (rows, "SELECT flags FROM meta;"); 
+            m_Flags |= get<gint64>(rows[0].find("flags")->second); 
+        }
 
         static boost::format
           artist_table_f ("CREATE TABLE IF NOT EXISTS artist "
@@ -543,7 +560,7 @@ namespace MPX
     Library::get_track_mtime (Track& track) const
     {
       RowV rows;
-      if (0) // (m_SQL_flags & DB_FLAG_USING_HAL)
+      if ((m_Flags & F_USING_HAL) == F_USING_HAL)
       {
         static boost::format
           select_f ("SELECT %s FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
@@ -578,7 +595,7 @@ namespace MPX
     Library::get_track_id (Track& track) const
     {
       RowV rows;
-      if (0) // (m_SQL_flags & DB_FLAG_USING_HAL)
+      if ((m_Flags & F_USING_HAL) == F_USING_HAL)
       {
         static boost::format
           select_f ("SELECT id FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
@@ -634,21 +651,31 @@ namespace MPX
 
       std::string insert_path_value ; 
 
-      if (0)
+      if ((m_Flags & F_USING_HAL) == F_USING_HAL)
       {
           try{
-              HAL::Volume const& volume (m_HAL.get_volume_for_uri (uri));
 
-              track[ATTRIBUTE_HAL_VOLUME_UDI] =
-                            volume.volume_udi ;
+              URI u (uri);
 
-              track[ATTRIBUTE_HAL_DEVICE_UDI] =
-                            volume.device_udi ;
+              if(u.get_protocol() == URI::PROTOCOL_FILE)
+              {
+                HAL::Volume const& volume (m_HAL.get_volume_for_uri (uri));
 
-              track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
-                            filename_from_uri (uri).substr (volume.mount_point.length()) ;
+                track[ATTRIBUTE_HAL_VOLUME_UDI] =
+                              volume.volume_udi ;
 
-              insert_path_value = insert_path.substr (volume.mount_point.length()) ;
+                track[ATTRIBUTE_HAL_DEVICE_UDI] =
+                              volume.device_udi ;
+
+                track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
+                              filename_from_uri (uri).substr (volume.mount_point.length()) ;
+
+                insert_path_value = insert_path.substr (volume.mount_point.length()) ;
+              }
+              else
+              {
+                insert_path_value = insert_path;
+              }
           }
           catch (HAL::Exception & cxe)
           {
@@ -695,63 +722,62 @@ namespace MPX
       column_values.reserve (0x400);
 
       try{
+          gint64 artist_j = get_track_artist_id (track);
+          gint64 album_j = get_album_id (track, get_album_artist_id (track));
 
-        gint64 artist_j = get_track_artist_id (track);
-        gint64 album_j = get_album_id (track, get_album_artist_id (track));
-
-        for (unsigned int n = 0; n < N_ATTRIBUTES_INT; ++n)
-        {
-            if(track[n])
-            {
-              switch (attrs[n].type)
+          for (unsigned int n = 0; n < N_ATTRIBUTES_INT; ++n)
+          {
+              if(track[n])
               {
-                case VALUE_TYPE_STRING:
-                  column_values += mprintf ("'%q'", get <std::string> (track[n].get()).c_str());
-                  break;
+                  switch (attrs[n].type)
+                  {
+                    case VALUE_TYPE_STRING:
+                      column_values += mprintf ("'%q'", get <std::string> (track[n].get()).c_str());
+                      break;
 
-                case VALUE_TYPE_INT:
-                  column_values += mprintf ("'%lld'", get <gint64> (track[n].get()));
-                  break;
+                    case VALUE_TYPE_INT:
+                      column_values += mprintf ("'%lld'", get <gint64> (track[n].get()));
+                      break;
 
-                case VALUE_TYPE_REAL:
-                  column_values += mprintf ("'%f'", get <double> (track[n].get()));
-                  break;
+                    case VALUE_TYPE_REAL:
+                      column_values += mprintf ("'%f'", get <double> (track[n].get()));
+                      break;
+                  }
+
+                  column_names += std::string (attrs[n].id) + ",";
+                  column_values += ",";
               }
+          }
 
-              column_names += std::string (attrs[n].id) + ",";
-              column_values += ",";
-            }
-        }
-
-        column_names += "artist_j, album_j";
-        column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
-        m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
-        track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->last_insert_rowid ();
-        Signals.NewTrack.emit( track ); 
+          column_names += "artist_j, album_j";
+          column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
+          m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
+          track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->last_insert_rowid ();
+          Signals.NewTrack.emit( track ); 
       }
       catch (SqlConstraintError & cxe)
       {
-        gint64 id = get_track_id (track);
-        if( id != 0 )
-        {
-            static boost::format delete_track_f ("DELETE FROM track WHERE id='%lld';");
-            m_SQL->exec_sql ((delete_track_f % id).str()); 
+          gint64 id = get_track_id (track);
+          if( id != 0 )
+          {
+              static boost::format delete_track_f ("DELETE FROM track WHERE id='%lld';");
+              m_SQL->exec_sql ((delete_track_f % id).str()); 
 
-            m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
-            gint64 new_id = m_SQL->last_insert_rowid ();
-            m_SQL->exec_sql (mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));
-            return true;
-        }
-        else
-        {
-            g_warning("%s: Got track ID 0 for internal track! Highly supicious! Please report!", G_STRLOC);
-            return false;
-        }
+              m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
+              gint64 new_id = m_SQL->last_insert_rowid ();
+              m_SQL->exec_sql (mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));
+              return true;
+          }
+          else
+          {
+              g_warning("%s: Got track ID 0 for internal track! Highly supicious! Please report!", G_STRLOC);
+              return false;
+          }
       }
       catch (SqlExceptionC & cxe)
       {
-        g_message("%s: SQL Error: %s", G_STRFUNC, cxe.what());
-        return false;
+          g_message("%s: SQL Error: %s", G_STRFUNC, cxe.what());
+          return false;
       }
 
       return true; 

@@ -136,13 +136,6 @@ namespace
 
 } // anonymous namespace
 
-void async_ready_callback (GObject *source_object,
-                     GAsyncResult *res,
-                     gpointer user_data)
-{
-    g_message("Ready!");
-}
-
 int 
 main (int argc, char ** argv)
 {
@@ -164,10 +157,12 @@ main (int argc, char ** argv)
     MPX::TaskKernel * obj_task_kernel = new MPX::TaskKernel;
     MPX::HAL * obj_hal = new MPX::HAL;
     MPX::Amazon::Covers * obj_amzn = new MPX::Amazon::Covers(*obj_netman);
-    MPX::Library * obj_library = new MPX::Library(*obj_hal, *obj_task_kernel);
+    MPX::Library * obj_library = new MPX::Library(*obj_hal, *obj_task_kernel, true); // use HAL
     MPX::Player * obj_mpx = MPX::Player::create(*obj_library);
     
     Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
+
+    obj_library->scanURI( argv[1] );
 
     gtkLock.lock();
     gtk->run (*obj_mpx);

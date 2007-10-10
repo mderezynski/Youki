@@ -9,7 +9,7 @@
 
 #include <config.h>
 
-#include <taglib/tag.h>
+#include <taglib-gio/tag.h>
 #include "taglib_audiblefile.h"
 
 namespace TagLib {

@@ -28,7 +28,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <netinet/in.h>
-#include <taglib.h>
+#include <taglib-gio.h>
 #include <id3v1tag.h>
 #include <id3v2tag.h>
 #include <tfile.h>

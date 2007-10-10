@@ -38,13 +38,13 @@ namespace Hal
     HALCC_EXCEPTION(PropertyDoesNotExistError)
     HALCC_EXCEPTION(UnableToProbeDeviceError)
 
-      typedef sigc::signal<void, std::string const&, std::string const&>
+      typedef sigc::signal<void, const std::string&, const std::string&>
           SignalUDI_Capability;
 
-      typedef sigc::signal<void, std::string const&, std::string const&, bool, bool>
+      typedef sigc::signal<void, const std::string&, const std::string&, bool, bool>
           SignalUDI_Property_Modified;
 
-      typedef sigc::signal<void, std::string const&, std::string const&, std::string const&>
+      typedef sigc::signal<void, const std::string&, const std::string&, const std::string&>
           SignalUDI_Device_Condition;
 
       class PropertySet
@@ -126,7 +126,7 @@ namespace Hal
           friend class Hal::Device;
 
           explicit PropertySet () {}
-          explicit PropertySet (Hal::RefPtr<Context> context, std::string const& udi);
+          explicit PropertySet (Hal::RefPtr<Context> context, const std::string&);
 
           LibHalPropertySet * m_set;
           iterator            m_begin;
@@ -134,21 +134,21 @@ namespace Hal
       };
 
       static Hal::RefPtr<Device> create (Hal::RefPtr<Context> context,
-                                         std::string const&   udi) throw (DeviceDoesNotExistError);
+                                         const std::string&   udi) throw (DeviceDoesNotExistError);
 
       template<typename T>
       struct fail {};
 
       template <typename T>
       T get_property
-          (std::string const& property)
+          (const std::string& property)
       {
         fail<T>::get_property_called_with_an_inappropriate_type;
       }   
 
       bool
       property_exists
-        (std::string const& property);
+        (const std::string& property);
 
       PropertySet
       get_all_properties
@@ -156,9 +156,9 @@ namespace Hal
 
       PropertyType
       get_property_type
-        (std::string const& property);
+        (const std::string& property);
     
-      virtual std::string const&
+      virtual const std::string&
       get_udi () const
       {
         return m_udi;
@@ -178,7 +178,7 @@ namespace Hal
 
     protected:    
 
-      explicit Device (Hal::RefPtr<Context> context, std::string const& udi);
+      explicit Device (Hal::RefPtr<Context> context, const std::string& udi);
    
       Hal::RefPtr<Context>  m_context; 
       std::string           m_udi;
@@ -195,22 +195,22 @@ namespace Hal
 
   // Device value specializations 
   template<> 
-  std::string   Device::get_property  (std::string const& property);
+  std::string   Device::get_property  (const std::string& property);
 
   template<> 
-  dbus_int32_t  Device::get_property  (std::string const& property);
+  dbus_int32_t  Device::get_property  (const std::string& property);
 
   template<> 
-  dbus_uint64_t Device::get_property  (std::string const& property);
+  dbus_uint64_t Device::get_property  (const std::string& property);
 
   template<> 
-  double        Device::get_property  (std::string const& property);
+  double        Device::get_property  (const std::string& property);
 
   template<>
-  bool          Device::get_property  (std::string const& property);
+  bool          Device::get_property  (const std::string& property);
 
   template<>
-  StrV          Device::get_property  (std::string const& property);
+  StrV          Device::get_property  (const std::string& property);
 
   // PropertySet specializations
   template<>

@@ -19,7 +19,7 @@
  *   USA                                                                   *
  ***************************************************************************/
 
-#include <taglib.h>
+#include <taglib-gio.h>
 #include "asfattribute.h"
 #include "asffile.h"
 

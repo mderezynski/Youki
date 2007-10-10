@@ -7,8 +7,8 @@
 #include "taglib_audiblefile.h"
 
 #include "audibletag.h"
-#include <taglib/tfile.h>
-#include <taglib/audioproperties.h>
+#include <taglib-gio/tfile.h>
+#include <taglib-gio/audioproperties.h>
 
 namespace TagLib {
 ////////////////////////////////////////////////////////////////////////////////

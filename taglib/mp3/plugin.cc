@@ -6,20 +6,20 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <taglib/fileref.h>
+#include <taglib-gio/fileref.h>
 #include <glibmm.h>
 
 // Plugin-specific include
-#include <taglib/taglib.h>
-#include <taglib/fileref.h>
-#include <taglib/tfile.h>
-#include <taglib/tag.h>
+#include <taglib-gio/taglib.h>
+#include <taglib-gio/fileref.h>
+#include <taglib-gio/tfile.h>
+#include <taglib-gio/tag.h>
 
-#include <taglib/id3v2tag.h>
-#include <taglib/mpegfile.h>
-#include <taglib/id3v2framefactory.h>
-#include <taglib/textidentificationframe.h>
-#include <taglib/uniquefileidentifierframe.h>
+#include <taglib-gio/id3v2tag.h>
+#include <taglib-gio/mpegfile.h>
+#include <taglib-gio/id3v2framefactory.h>
+#include <taglib-gio/textidentificationframe.h>
+#include <taglib-gio/uniquefileidentifierframe.h>
 
 #include "id3v2/reader.hh"
 #include "common/common.hh"

@@ -3,7 +3,7 @@
 #endif //HAVE_CONFIG_H
 
 #include <glibmm.h>
-#include <taglib/fileref.h>
+#include <taglib-gio/fileref.h>
 
 // Plugin-specific include
 #include "resolver.h"

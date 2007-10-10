@@ -19,7 +19,7 @@
  *   USA                                                                   *
  ***************************************************************************/
 
-#include <taglib/tbytevectorlist.h>
+#include <taglib-gio/tbytevectorlist.h>
 #include <tstring.h>
 #include "asffile.h"
 #include "asftag.h"

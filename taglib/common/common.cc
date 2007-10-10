@@ -8,10 +8,10 @@
 
 #include <glibmm.h>
 
-#include <taglib/taglib.h>
-#include <taglib/fileref.h>
-#include <taglib/tfile.h>
-#include <taglib/tag.h>
+#include <taglib-gio/taglib.h>
+#include <taglib-gio/fileref.h>
+#include <taglib-gio/tfile.h>
+#include <taglib-gio/tag.h>
 
 using namespace TagLib;
 using namespace std;

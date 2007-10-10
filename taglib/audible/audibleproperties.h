@@ -9,8 +9,8 @@
 
 #include <config.h>
 
-#include <taglib/audioproperties.h>
-#include <taglib/tstring.h>
+#include <taglib-gio/audioproperties.h>
+#include <taglib-gio/tstring.h>
 
 namespace TagLib {
 

@@ -4,8 +4,8 @@
 #ifndef TAGLIB_ASFFILETYPERESOLVER_H
 #define TAGLIB_ASFFILETYPERESOLVER_H
 
-#include <taglib/tfile.h>
-#include <taglib/fileref.h>
+#include <taglib-gio/tfile.h>
+#include <taglib-gio/fileref.h>
 
 class ASFFileTypeResolver : public TagLib::FileRef::FileTypeResolver
 {
