@@ -34,15 +34,31 @@ namespace MPX
   class HAL;
   class Library
   {
+            enum ScanResult
+            {
+                SCAN_RESULT_OK,
+                SCAN_RESULT_ERROR,
+                SCAN_RESULT_UPDATE,
+                SCAN_RESULT_UPTODATE
+            };
+
             struct ScanData
             {
-                Util::FileList collection;
-                Util::FileList::iterator position;
-                std::string insert_path;
-                std::string name;
-                gint64 added;
+                Util::FileList collection ;
+                Util::FileList::iterator position ;
+                std::string insert_path ;
+                std::string name ;
+                gint64 added ;
+                gint64 erroneous ;
+                gint64 uptodate ;
+                gint64 updated ;
 
-                ScanData () : added(0) {}
+                ScanData ()
+                : added(0)
+                , erroneous(0)
+                , uptodate(0)
+                , updated(0)
+                {}
             };
 
             typedef boost::shared_ptr<ScanData> ScanDataP;
@@ -66,7 +82,7 @@ namespace MPX
             void
             getMetadata (std::string const& uri, Track & track) ;
 
-            bool
+            ScanResult
             insert (const std::string& uri, const std::string& insert_path, const std::string& name = std::string());
 
             void
@@ -76,9 +92,9 @@ namespace MPX
             typedef sigc::signal<void, const std::string& /*mbid*/, gint64/*artistid*/> SignalNewArtist;
             typedef sigc::signal<void, const Track&> SignalNewTrack;
 
-            typedef sigc::signal<void>                  SignalScanStart;
-            typedef sigc::signal<void, gint64, gint64>  SignalScanRun;
-            typedef sigc::signal<void, gint64, gint64>  SignalScanEnd;
+            typedef sigc::signal<void>                                      SignalScanStart;
+            typedef sigc::signal<void, gint64,gint64>                       SignalScanRun;
+            typedef sigc::signal<void, gint64,gint64,gint64,gint64,gint64>  SignalScanEnd;
 
             struct SignalsT
             {

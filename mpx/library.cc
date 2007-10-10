@@ -256,7 +256,7 @@ namespace MPX
 
         static boost::format
           track_table_f ("CREATE TABLE IF NOT EXISTS track (id INTEGER PRIMARY KEY AUTOINCREMENT, %s, %s, %s, "
-                         "UNIQUE (%s, %s, %s));");
+                         "UNIQUE (%s, %s, %s, %s));");
 
         m_SQL->exec_sql ((track_table_f
                                       % column_names
@@ -264,7 +264,8 @@ namespace MPX
                                       % "album_j INTEGER NOT NULL"    // album + album artist
                                       % attrs[ATTRIBUTE_HAL_VOLUME_UDI].id
                                       % attrs[ATTRIBUTE_HAL_DEVICE_UDI].id
-                                      % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id).str());
+                                      % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id
+                                      % attrs[ATTRIBUTE_LOCATION].id).str());
 
         m_SQL->exec_sql ("CREATE VIEW IF NOT EXISTS track_view AS " 
                          "SELECT"
@@ -626,18 +627,18 @@ namespace MPX
       return 0;
     }
 
-    bool
+    Library::ScanResult
     Library::insert (const std::string& uri, const std::string& insert_path, const std::string& name)
     {
       std::string type;        
    
       try{ 
           if (!Audio::typefind (uri, type))
-            return false; 
-        }
+            return SCAN_RESULT_ERROR ;
+        }  
       catch (Glib::ConvertError & cxe)
         {
-            return false; 
+            return SCAN_RESULT_ERROR ;
         }
 
       Track track;
@@ -647,10 +648,10 @@ namespace MPX
       track[ATTRIBUTE_LOCATION_NAME] = name; 
 
       if( !mReaderTagLib.get( uri, track ) )
-        return false ; // no play for us
+        return SCAN_RESULT_ERROR ; // no play for us
 
       if( !(track[ATTRIBUTE_ALBUM] && track[ATTRIBUTE_ARTIST] && track[ATTRIBUTE_TITLE]) )
-        return false;
+        return SCAN_RESULT_ERROR ;
 
       std::string insert_path_value ; 
 
@@ -689,7 +690,7 @@ namespace MPX
 
                 time_t mtime = get_track_mtime (track);
                 if ((mtime != 0) && (mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) ) )
-                  return false;
+                  return SCAN_RESULT_UPTODATE ;
               }
               else
               {
@@ -699,12 +700,12 @@ namespace MPX
           catch (HAL::Exception & cxe)
           {
             g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
-            return false;
+            return SCAN_RESULT_ERROR ;
           }
         catch (Glib::ConvertError & cxe)
           {
             g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-            return false;
+            return SCAN_RESULT_ERROR ;
           }
       }
       else
@@ -769,21 +770,21 @@ namespace MPX
               m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
               gint64 new_id = m_SQL->last_insert_rowid ();
               m_SQL->exec_sql (mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));
-              return true;
+              return SCAN_RESULT_UPDATE ;
           }
           else
           {
               g_warning("%s: Got track ID 0 for internal track! Highly supicious! Please report!", G_STRLOC);
-              return false;
+              return SCAN_RESULT_ERROR ;
           }
       }
       catch (SqlExceptionC & cxe)
       {
           g_message("%s: SQL Error: %s", G_STRFUNC, cxe.what());
-          return false;
+          return SCAN_RESULT_ERROR ;
       }
 
-      return true; 
+      return SCAN_RESULT_OK ; 
     }
 
     void
@@ -820,7 +821,24 @@ namespace MPX
     Library::scanRun (ScanDataP p)
     {
         try{
-            p->added += (insert( *(p->position) , p->insert_path, p->name ))?1:0;
+            switch(insert( *(p->position) , p->insert_path, p->name ))
+            {
+                case SCAN_RESULT_UPTODATE:
+                    ++(p->uptodate) ;
+                    break;
+
+                case SCAN_RESULT_OK:
+                    ++(p->added) ;
+                    break;
+
+                case SCAN_RESULT_ERROR:
+                    ++(p->erroneous) ;
+                    break;
+
+                case SCAN_RESULT_UPDATE:
+                    ++(p->updated) ;
+                    break;
+            }
               
         }
         catch( Glib::ConvertError & cxe )
@@ -844,7 +862,7 @@ namespace MPX
         else
             m_SQL->exec_sql("COMMIT;");
 
-        Signals.ScanEnd.emit(p->added, p->collection.size());
+        Signals.ScanEnd.emit(p->added, p->uptodate, p->updated, p->erroneous, p->collection.size());
         p.reset();
     }
     

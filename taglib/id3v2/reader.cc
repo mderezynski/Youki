@@ -66,7 +66,7 @@ namespace MPX
 
         struct {
             int         datum;
-            char const* id;
+            std::string id;
         } mb_metadata_id3v2[] = {
           { ATTRIBUTE_MB_ALBUM_ARTIST_ID,             "MusicBrainz Album Artist Id"   },
           { ATTRIBUTE_MB_ALBUM_ID,                    "MusicBrainz Album Id"          },
@@ -80,14 +80,14 @@ namespace MPX
         for (unsigned int n = 0; n < G_N_ELEMENTS (mb_metadata_id3v2); ++n)
         {
             frame = find_utif (tag, String (mb_metadata_id3v2[n].id, String::UTF8));
-            if (frame)
+            if(frame)
             {
-                std::string str = frame->toString().toCString (true);
-                iterator_range <std::string::iterator> match = find_nth (str, "] ", 0);
-                if (!match.empty())
+                std::string s = frame->toString().toCString (true);
+                iterator_range <std::string::iterator> match = find_nth (s, mb_metadata_id3v2[n].id + std::string(" "), 0);
+                if(!match.empty())
                 {
-                    ustring substr (match.end(), str.end());
-                    if (!substr.empty())
+                    ustring substr (match.end(), s.end());
+                    if(!substr.empty())
                     {
                         track[mb_metadata_id3v2[n].datum] = substr;
                     }

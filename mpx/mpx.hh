@@ -60,7 +60,7 @@ namespace MPX
         Gtk::Statusbar *m_Statusbar;
 
         Library & m_Library;
-    
+
         void
         on_library_scan_start();
 
@@ -68,7 +68,7 @@ namespace MPX
         on_library_scan_run(gint64,gint64);
 
         void
-        on_library_scan_end(gint64,gint64);
+        on_library_scan_end(gint64,gint64,gint64,gint64,gint64);
 
 
 

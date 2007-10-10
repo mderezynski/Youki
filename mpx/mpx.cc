@@ -897,9 +897,9 @@ namespace MPX
     }
 
     void
-    Player::on_library_scan_end(gint64 x, gint64 y)
+    Player::on_library_scan_end(gint64 x, gint64 y, gint64 a, gint64 b, gint64 s)
     {
         m_Statusbar->pop();        
-        m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Files of %2% Added)")) % x % y).str());
+        m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Files, %2% added, %3% up to date, %4% updated, %5% erroneous)")) % s % x % y % a % b).str());
     }
 }
