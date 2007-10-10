@@ -195,7 +195,7 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkFileChooserButton" id="filechooserbutton1">
+		    <widget class="GtkFileChooserButton" id="fcbutton">
 		      <property name="visible">True</property>
 		      <property name="title" translatable="yes">Select Folder to Import</property>
 		      <property name="action">GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER</property>

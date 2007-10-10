@@ -101,6 +101,9 @@ mpx_bin_SOURCES =				\
 	import-share.hh				\
 	import-share.cc				\
 								\
+	import-folder.hh			\
+	import-folder.cc			\
+								\
 	library.hh					\
 	library.cc					\
 								\

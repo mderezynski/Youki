@@ -40,6 +40,9 @@ namespace MPX
                 Util::FileList::iterator position;
                 std::string insert_path;
                 std::string name;
+                gint64 added;
+
+                ScanData () : added(0) {}
             };
 
             typedef boost::shared_ptr<ScanData> ScanDataP;
@@ -73,16 +76,15 @@ namespace MPX
             typedef sigc::signal<void, const std::string& /*mbid*/, gint64/*artistid*/> SignalNewArtist;
             typedef sigc::signal<void, const Track&> SignalNewTrack;
 
-            typedef sigc::signal<void>          SignalScanStart;
-            typedef sigc::signal<void, gint64>  SignalScanRun;
-            typedef sigc::signal<void, gint64>  SignalScanEnd;
+            typedef sigc::signal<void>                  SignalScanStart;
+            typedef sigc::signal<void, gint64, gint64>  SignalScanRun;
+            typedef sigc::signal<void, gint64, gint64>  SignalScanEnd;
 
             struct SignalsT
             {
                 SignalNewAlbum      NewAlbum;
                 SignalNewArtist     NewArtist;
                 SignalNewTrack      NewTrack;
-
                 SignalScanStart     ScanStart;  
                 SignalScanRun       ScanRun;
                 SignalScanEnd       ScanEnd;

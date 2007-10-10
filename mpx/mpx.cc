@@ -33,6 +33,7 @@
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include "import-share.hh"
+#include "import-folder.hh"
 #include "mpx.hh"
 #include "mpx-sources.hh"
 #include "util-graphics.hh"
@@ -598,19 +599,19 @@ namespace MPX
 
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 
-        Glib::RefPtr<Gdk::Pixbuf> icon = IconTheme::get_default()->load_icon("audio-x-generic", 20, ICON_LOOKUP_NO_SVG);
+        Glib::RefPtr<Gdk::Pixbuf> icon = IconTheme::get_default()->load_icon("audio-x-generic", 16, ICON_LOOKUP_NO_SVG);
         m_Sources->addSource( _("Music"), icon );
 
-        icon = IconTheme::get_default()->load_icon("source-video", 20, ICON_LOOKUP_NO_SVG);
+        icon = IconTheme::get_default()->load_icon("source-video", 16, ICON_LOOKUP_NO_SVG);
         m_Sources->addSource( _("Videos"), icon );
 
-        icon = IconTheme::get_default()->load_icon("source-radio", 20, ICON_LOOKUP_NO_SVG);
+        icon = IconTheme::get_default()->load_icon("source-radio", 16, ICON_LOOKUP_NO_SVG);
         m_Sources->addSource( _("Radio"), icon );
 
-        icon = IconTheme::get_default()->load_icon("source-lastfm", 20, ICON_LOOKUP_NO_SVG);
+        icon = IconTheme::get_default()->load_icon("source-lastfm", 16, ICON_LOOKUP_NO_SVG);
         m_Sources->addSource( _("Last.fm"), icon );
 
-        icon = IconTheme::get_default()->load_icon("source-podcasts", 20, ICON_LOOKUP_NO_SVG);
+        icon = IconTheme::get_default()->load_icon("source-podcasts", 16, ICON_LOOKUP_NO_SVG);
         m_Sources->addSource( _("Podcasts"), icon );
 
 #if 0
@@ -788,6 +789,15 @@ namespace MPX
     void
     Player::on_import_folder()
     {
+        DialogImportFolder *d = DialogImportFolder::create();
+        
+        if(d->run() == 0) // 'Import' button
+        {
+            Glib::ustring uri; 
+            d->get_folder_infos(uri);
+            delete d;
+            m_Library.scanUri(uri);
+        }
     }
 
     void
@@ -880,16 +890,16 @@ namespace MPX
     }
 
     void
-    Player::on_library_scan_run(gint64 n)
+    Player::on_library_scan_run(gint64 x, gint64 y)
     {
         m_Statusbar->pop();
-        m_Statusbar->push((boost::format(_("Library Scan: %1%")) % n).str());
+        m_Statusbar->push((boost::format(_("Library Scan: %1% / %2%")) % x % y).str());
     }
 
     void
-    Player::on_library_scan_end(gint64 n)
+    Player::on_library_scan_end(gint64 x, gint64 y)
     {
         m_Statusbar->pop();        
-        m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Files)")) % n).str());
+        m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Files of %2% Added)")) % x % y).str());
     }
 }

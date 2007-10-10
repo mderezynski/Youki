@@ -164,7 +164,7 @@ namespace MPX
         try{
           m_SQL = new SQL::SQLDB ((boost::format ("mpxdb-%d-%d-%d") % MLIB_VERSION_CUR 
                                      % MLIB_VERSION_REV
-                                     % MLIB_VERSION_AGE).str(), build_filename(g_get_user_data_dir(),"mpx"), SQLDB_TRUNCATE);
+                                     % MLIB_VERSION_AGE).str(), build_filename(g_get_user_data_dir(),"mpx"), SQLDB_OPEN);
           }
         catch (DbInitError & cxe)
           {
@@ -687,7 +687,7 @@ namespace MPX
 
                 time_t mtime = get_track_mtime (track);
                 if ((mtime != 0) && (mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) ) )
-                  return true;
+                  return false;
               }
               else
               {
@@ -818,7 +818,8 @@ namespace MPX
     Library::scanRun (ScanDataP p)
     {
         try{
-            insert( *(p->position) , p->insert_path, p->name );
+            p->added += (insert( *(p->position) , p->insert_path, p->name ))?1:0;
+              
         }
         catch( Glib::ConvertError & cxe )
         {
@@ -826,7 +827,7 @@ namespace MPX
         }
 
         ++(p->position);
-        Signals.ScanRun.emit(std::distance(p->collection.begin(), p->position));
+        Signals.ScanRun.emit(std::distance(p->collection.begin(), p->position), p->collection.size());
 
         return p->position != p->collection.end();
     }
@@ -841,7 +842,7 @@ namespace MPX
         else
             m_SQL->exec_sql("COMMIT;");
 
-        Signals.ScanEnd.emit(p->collection.size());
+        Signals.ScanEnd.emit(p->added, p->collection.size());
         p.reset();
     }
     

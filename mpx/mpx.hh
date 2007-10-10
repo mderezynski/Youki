@@ -65,10 +65,10 @@ namespace MPX
         on_library_scan_start();
 
         void
-        on_library_scan_run(gint64);
+        on_library_scan_run(gint64,gint64);
 
         void
-        on_library_scan_end(gint64);
+        on_library_scan_end(gint64,gint64);
 
 
 
