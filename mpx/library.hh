@@ -39,6 +39,7 @@ namespace MPX
                 Util::FileList collection;
                 Util::FileList::iterator position;
                 std::string insert_path;
+                std::string name;
             };
 
             typedef boost::shared_ptr<ScanData> ScanDataP;
@@ -60,13 +61,13 @@ namespace MPX
             ~Library () ;
 
             void
-            get_metadata (std::string const& uri, Track & track) ;
+            getMetadata (std::string const& uri, Track & track) ;
 
             bool
-            insert (const std::string& uri, const std::string& insert_path);
+            insert (const std::string& uri, const std::string& insert_path, const std::string& name = std::string());
 
             void
-            scanURI (const std::string& uri);
+            scanUri (const std::string& uri, const std::string& name = std::string());
 
             typedef sigc::signal<void, const std::string& /*mbid*/, const std::string& /*asin*/, gint64/*albumid*/> SignalNewAlbum;
             typedef sigc::signal<void, const std::string& /*mbid*/, gint64/*artistid*/> SignalNewArtist;

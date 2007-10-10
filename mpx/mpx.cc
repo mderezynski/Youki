@@ -22,15 +22,17 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 #include "config.h"
-#include <boost/shared_ptr.hpp>
 #include <boost/format.hpp>
+#include <boost/shared_ptr.hpp>
+#include <cairomm/cairomm.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
-#include <glibmm/i18n.h>
+#include <gio/gvfs.h>
 #include <glib/gstdio.h>
+#include <glibmm/i18n.h>
 #include <gtkmm.h>
-#include <cairomm/cairomm.h>
+#include "import-share.hh"
 #include "mpx.hh"
 #include "mpx-sources.hh"
 #include "util-graphics.hh"
@@ -560,6 +562,24 @@ namespace MPX
   };
 }
 
+namespace
+{
+  char const * MenubarMain =
+  "<ui>"
+  ""
+  "<menubar name='MenubarMain'>"
+  "   <menu action='MenuMusic'>"
+  "         <menuitem action='action-import-folder'/>"
+  "         <menuitem action='action-import-share'/>"
+  "         <separator name='sep00'/>"
+  "         <menuitem action='action-quit'/>"
+  "   </menu>"
+  "</menubar>"
+  ""
+  "</ui>"
+  "";
+}
+
 namespace MPX
 {
     Player::Player(Glib::RefPtr<Gnome::Glade::Xml> const& xml,
@@ -626,8 +646,37 @@ namespace MPX
 
         // UIManager + Menus + Proxy Widgets
         {
-          m_ui_manager = UIManager::create ();
           m_actions = ActionGroup::create ("Actions_Player");
+
+          m_actions->add(Action::create("MenuMusic", _("_Music")));
+
+          m_actions->add (Action::create ("action-import-folder",
+                                          Gtk::Stock::HARDDISK,
+                                          _("Import _Folder")),
+                                          sigc::mem_fun (*this, &Player::on_import_folder));
+
+          m_actions->add (Action::create ("action-import-share",
+                                          Gtk::Stock::NETWORK,
+                                          _("Import _Share")),
+                                          sigc::mem_fun (*this, &Player::on_import_share));
+
+          m_actions->add (Action::create ("action-quit",
+                                          Gtk::Stock::QUIT,
+                                          _("_Quit")),
+                                          AccelKey("<ctrl>Q"),
+                                          sigc::ptr_fun ( &Gtk::Main::quit ));
+
+          m_ui_manager = UIManager::create ();
+          m_ui_manager->insert_action_group (m_actions);
+          try{
+            m_ui_manager->add_ui_from_string(MenubarMain);
+            dynamic_cast<Alignment*>(m_ref_xml->get_widget("alignment-menu"))->add (*(m_ui_manager->get_widget ("/MenubarMain")));
+            }
+          catch (Glib::MarkupError & cxe)
+            {
+                MessageDialog dialog (*this, _("An Error occured parsing the Menu markup."));
+                dialog.run ();
+            }
         }
 
 #if 0
@@ -723,10 +772,6 @@ namespace MPX
 
     Player::~Player()
     {
-#if 0
-      mmkeys_deactivate ();
-      g_object_unref (m_status_icon);
-#endif
     }
 
     bool
@@ -738,6 +783,93 @@ namespace MPX
           return true;
       }
       return Widget::on_key_press_event (event);
+    }
+
+    void
+    Player::on_import_folder()
+    {
+    }
+
+    void
+    Player::on_import_share()
+    {
+        DialogImportShare *d = DialogImportShare::create();
+        
+        rerun_import_share_dialog:
+
+            if(d->run() == 0) // 'Import' button
+            {
+                Glib::ustring login, password;
+                d->get_share_infos(m_Share, m_ShareName, login, password);
+                d->hide ();
+
+                if(m_ShareName.empty())
+                {
+                    MessageDialog dialog (*this, (_("The Share's name can not be empty")));
+                    dialog.run();
+                    goto rerun_import_share_dialog;
+                }
+
+                m_MountFile = g_vfs_get_file_for_uri(g_vfs_get_default(), m_Share.c_str());
+                if(!G_IS_FILE(m_MountFile))
+                {
+                    MessageDialog dialog (*this, (boost::format (_("An Error occcured getting a handle for the share '%s'\n"
+                        "Please veryify the share URI and credentials")) % m_Share.c_str()).str());
+                    dialog.run();
+                    goto rerun_import_share_dialog;
+                }
+
+                GMountOperation * m_MountOperation = g_mount_operation_new();
+                if(!G_IS_MOUNT_OPERATION(m_MountOperation))
+                {
+                    MessageDialog dialog (*this, (boost::format (_("An Error occcured trying to mount the share '%s'")) % m_Share.c_str()).str());
+                    dialog.run();
+                    goto exit_import_share_dialog;
+                }
+
+                g_mount_operation_set_username(m_MountOperation, login.c_str());
+                g_mount_operation_set_password(m_MountOperation, password.c_str()); 
+                g_mount_for_location(m_MountFile, m_MountOperation, NULL, mount_ready_callback, this);
+            }
+
+        exit_import_share_dialog:
+
+            delete d;
+    }
+
+    void
+    Player::mount_ready_callback (GObject *source_object,
+                     GAsyncResult *res,
+                     gpointer data)
+    {
+        Player & player = *(reinterpret_cast<Player*>(data));
+        GError *error = 0;
+        g_mount_for_location_finish(player.m_MountFile, res, &error);
+
+        if(error)
+        {
+            if(error->code != G_IO_ERROR_ALREADY_MOUNTED)
+            {
+                MessageDialog dialog (player, (boost::format ("An Error occcured while mounting the share: %s") % error->message).str());
+                dialog.run();
+            }
+            else
+                g_warning("%s: Location '%s' is already mounted", G_STRLOC, player.m_Share.c_str());
+
+            g_error_free(error);
+        }
+
+        //g_object_unref(player.m_MountOperation);
+        //g_object_unref(player.m_MountFile);
+     
+        player.m_Library.scanUri( player.m_Share, player.m_ShareName );  
+    }
+
+    void
+    Player::unmount_ready_callback (GObject *source_object,
+                                    GAsyncResult *res,
+                                    gpointer data)
+    {
     }
 
     void
@@ -760,5 +892,4 @@ namespace MPX
         m_Statusbar->pop();        
         m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Files)")) % n).str());
     }
-
 }

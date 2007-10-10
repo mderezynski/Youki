@@ -98,6 +98,9 @@ mpx_bin_SOURCES =				\
 	hal.hh						\
 	hal.cc						\
 								\
+	import-share.hh				\
+	import-share.cc				\
+								\
 	library.hh					\
 	library.cc					\
 								\

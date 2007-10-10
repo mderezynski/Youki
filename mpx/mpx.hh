@@ -24,6 +24,8 @@
 #ifndef MPX_HH
 #define MPX_HH
 #include "config.h"
+#include <gio/gasyncresult.h>
+#include <gio/gfile.h>
 #include <gtkmm.h>
 #include <libglademm/xml.h>
 #include "library.hh"
@@ -67,6 +69,28 @@ namespace MPX
 
         void
         on_library_scan_end(gint64);
+
+
+
+        GFile *m_MountFile;
+        GMountOperation *m_MountOperation;
+        Glib::ustring m_Share, m_ShareName;
+
+        static void
+        mount_ready_callback (GObject*,
+                              GAsyncResult*,
+                              gpointer);
+
+        static void
+        unmount_ready_callback (GObject*,
+                              GAsyncResult*,
+                              gpointer);
+
+        void
+        on_import_folder();
+
+        void
+        on_import_share();
 
       public:
 

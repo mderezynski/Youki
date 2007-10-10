@@ -9,7 +9,7 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
-#include <taglib/id3v2tag.h>
+#include <taglib-gio/id3v2tag.h>
 #include "mpx/types.hh"
 
 namespace MPX

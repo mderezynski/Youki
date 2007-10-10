@@ -292,7 +292,7 @@ namespace MPX
     }
 
     void
-    Library::get_metadata (std::string const& uri, Track & track)
+    Library::getMetadata (const std::string& uri, Track & track)
     {
         mReaderTagLib.get(uri, track);
     }
@@ -625,7 +625,7 @@ namespace MPX
     }
 
     bool
-    Library::insert (std::string const& uri, std::string const& insert_path)
+    Library::insert (const std::string& uri, const std::string& insert_path, const std::string& name)
     {
       std::string type;        
    
@@ -642,6 +642,7 @@ namespace MPX
 
       track[ATTRIBUTE_TYPE] = type ;
       track[ATTRIBUTE_LOCATION] = uri ;
+      track[ATTRIBUTE_LOCATION_NAME] = name; 
 
       if( !mReaderTagLib.get( uri, track ) )
         return false ; // no play for us
@@ -671,6 +672,22 @@ namespace MPX
                               filename_from_uri (uri).substr (volume.mount_point.length()) ;
 
                 insert_path_value = insert_path.substr (volume.mount_point.length()) ;
+
+                GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str()); 
+                GFileInfo * info = g_file_query_info(file,
+                                                  G_FILE_ATTRIBUTE_TIME_MODIFIED,
+                                                  GFileQueryInfoFlags(0),
+                                                  NULL,
+                                                  NULL);
+
+                track[ATTRIBUTE_MTIME] = gint64 (g_file_info_get_attribute_uint64(info,G_FILE_ATTRIBUTE_TIME_MODIFIED));
+
+                g_object_unref(file);
+                g_object_unref(info);
+
+                time_t mtime = get_track_mtime (track);
+                if ((mtime != 0) && (mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) ) )
+                  return true;
               }
               else
               {
@@ -695,22 +712,6 @@ namespace MPX
 
       track[ATTRIBUTE_INSERT_PATH] = insert_path_value;
       track[ATTRIBUTE_NEW_ITEM] = gint64(1); 
-
-      GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str()); 
-      GFileInfo * info = g_file_query_info(file,
-                                        G_FILE_ATTRIBUTE_TIME_MODIFIED,
-                                        GFileQueryInfoFlags(0),
-                                        NULL,
-                                        NULL);
-      track[ATTRIBUTE_MTIME] = gint64 (g_file_info_get_attribute_uint64(info,G_FILE_ATTRIBUTE_TIME_MODIFIED));
-      g_object_unref(file);
-      g_object_unref(info);
-
-      time_t mtime = get_track_mtime (track);
-      if ((mtime != 0) && (mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) ) )
-      {
-        return true;
-      }
 
       char const* track_set_f ("INSERT INTO track (%s) VALUES (%s);");
 
@@ -784,12 +785,13 @@ namespace MPX
     }
 
     void
-    Library::scanURI (const std::string& uri)
+    Library::scanUri (const std::string& uri, const std::string& name)
     {
         ScanDataP p (new ScanData);
         
         try{
             p->insert_path = uri; 
+            p->name = name;
             Util::collect_audio_paths( p->insert_path, p->collection );
         }
         catch( Glib::ConvertError & cxe )
@@ -816,7 +818,7 @@ namespace MPX
     Library::scanRun (ScanDataP p)
     {
         try{
-            insert( *(p->position) , p->insert_path );
+            insert( *(p->position) , p->insert_path, p->name );
         }
         catch( Glib::ConvertError & cxe )
         {
