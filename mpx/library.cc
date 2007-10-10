@@ -168,6 +168,7 @@ namespace MPX
           }
         catch (DbInitError & cxe)
           {
+            g_message("%s: Error Opening the DB", G_STRLOC);
             // FIXME: ?
           }
 
@@ -175,6 +176,7 @@ namespace MPX
         {
             m_SQL->exec_sql ("CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0);");
             m_Flags |= (use_hal ? F_USING_HAL : 0); 
+            m_SQL->exec_sql ((boost::format ("INSERT INTO meta (flags) VALUES(%lld);") % m_Flags).str());
         }
         else
         {
