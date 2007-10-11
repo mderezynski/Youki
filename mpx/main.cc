@@ -179,7 +179,9 @@ main (int argc, char ** argv)
         delete obj_amzn;
         delete obj_netman;
         delete obj_task_kernel;
+#ifdef HAVE_HAL
         delete obj_hal;
+#endif
       }
     catch (HAL::NotInitializedError)
       {
