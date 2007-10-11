@@ -155,8 +155,8 @@ main (int argc, char ** argv)
     gst_init(&argc, &argv);
     gtk = new Gtk::Main (argc, argv);
 
-    try{
 #ifdef HAVE_HAL
+    try{
         MPX::HAL * obj_hal = new MPX::HAL;
 #endif
         MPX::TaskKernel * obj_task_kernel = new MPX::TaskKernel;
@@ -181,11 +181,11 @@ main (int argc, char ** argv)
         delete obj_task_kernel;
 #ifdef HAVE_HAL
         delete obj_hal;
-#endif
       }
     catch (HAL::NotInitializedError)
       {
       }
+#endif
 
     delete gtk;
 
