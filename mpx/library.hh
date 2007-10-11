@@ -72,11 +72,17 @@ namespace MPX
 
             TID m_ScanTID;
             
+#ifdef HAVE_HAL
             HAL &m_HAL;
+#endif
             TaskKernel &m_TaskKernel;
 
         public:
-            Library (HAL&, TaskKernel&, bool /*use hal?*/) ;
+#ifdef HAVE_HAL
+            Library (HAL&, TaskKernel&, bool use_hal) ;
+#else
+            Library (TaskKernel&) ;
+#endif
             ~Library () ;
 
             void

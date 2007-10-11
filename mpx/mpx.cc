@@ -37,6 +37,7 @@
 #include "mpx.hh"
 #include "mpx-sources.hh"
 #include "util-graphics.hh"
+#include "util-ui.hh"
 using namespace Glib;
 using namespace Gtk;
 using namespace std;
@@ -647,36 +648,32 @@ namespace MPX
 
         // UIManager + Menus + Proxy Widgets
         {
-          m_actions = ActionGroup::create ("Actions_Player");
+            m_actions = ActionGroup::create ("Actions_Player");
 
-          m_actions->add(Action::create("MenuMusic", _("_Music")));
+            m_actions->add(Action::create("MenuMusic", _("_Music")));
 
-          m_actions->add (Action::create ("action-import-folder",
-                                          Gtk::Stock::HARDDISK,
-                                          _("Import _Folder")),
-                                          sigc::mem_fun (*this, &Player::on_import_folder));
+            m_actions->add (Action::create ("action-import-folder",
+                                            Gtk::Stock::HARDDISK,
+                                            _("Import _Folder")),
+                                            sigc::mem_fun (*this, &Player::on_import_folder));
 
-          m_actions->add (Action::create ("action-import-share",
-                                          Gtk::Stock::NETWORK,
-                                          _("Import _Share")),
-                                          sigc::mem_fun (*this, &Player::on_import_share));
+            m_actions->add (Action::create ("action-import-share",
+                                            Gtk::Stock::NETWORK,
+                                            _("Import _Share")),
+                                            sigc::mem_fun (*this, &Player::on_import_share));
 
-          m_actions->add (Action::create ("action-quit",
-                                          Gtk::Stock::QUIT,
-                                          _("_Quit")),
-                                          AccelKey("<ctrl>Q"),
-                                          sigc::ptr_fun ( &Gtk::Main::quit ));
+            m_actions->add (Action::create ("action-quit",
+                                            Gtk::Stock::QUIT,
+                                            _("_Quit")),
+                                            AccelKey("<ctrl>Q"),
+                                            sigc::ptr_fun ( &Gtk::Main::quit ));
 
-          m_ui_manager = UIManager::create ();
-          m_ui_manager->insert_action_group (m_actions);
-          try{
-            m_ui_manager->add_ui_from_string(MenubarMain);
-            dynamic_cast<Alignment*>(m_ref_xml->get_widget("alignment-menu"))->add (*(m_ui_manager->get_widget ("/MenubarMain")));
-            }
-          catch (Glib::MarkupError & cxe)
+            m_ui_manager = UIManager::create ();
+            m_ui_manager->insert_action_group (m_actions);
+
+            if(Util::ui_manager_add_ui(m_ui_manager, MenubarMain, *this, _("Main Menubar")))
             {
-                MessageDialog dialog (*this, _("An Error occured parsing the Menu markup."));
-                dialog.run ();
+                dynamic_cast<Alignment*>(m_ref_xml->get_widget("alignment-menu"))->add (*(m_ui_manager->get_widget ("/MenubarMain")));
             }
         }
 

@@ -152,9 +152,14 @@ namespace
 
 namespace MPX
 {
+#ifdef HAVE_HAL
     Library::Library (HAL & hal, TaskKernel & kernel, bool use_hal)
     : m_HAL (hal)
     , m_TaskKernel (kernel)
+#else
+    Library::Library (TaskKernel & kernel)
+    : m_TaskKernel (kernel)
+#endif
     , m_Flags (0)
     {
         const int MLIB_VERSION_CUR = 1;
@@ -175,7 +180,11 @@ namespace MPX
         if(!m_SQL->table_exists("meta"))
         {
             m_SQL->exec_sql ("CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0);");
+#ifdef HAVE_HAL
             m_Flags |= (use_hal ? F_USING_HAL : 0); 
+#else
+            m_Flags = 0;
+#endif
             m_SQL->exec_sql ((boost::format ("INSERT INTO meta (flags) VALUES(%lld);") % m_Flags).str());
         }
         else
@@ -654,14 +663,29 @@ namespace MPX
         return SCAN_RESULT_ERROR ;
 
       std::string insert_path_value ; 
+      URI u (uri);
 
-      if ((m_Flags & F_USING_HAL) == F_USING_HAL)
+      if(u.get_protocol() == URI::PROTOCOL_FILE)
       {
+          GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str()); 
+          GFileInfo * info = g_file_query_info(file,
+                                            G_FILE_ATTRIBUTE_TIME_MODIFIED,
+                                            GFileQueryInfoFlags(0),
+                                            NULL,
+                                            NULL);
+
+          track[ATTRIBUTE_MTIME] = gint64 (g_file_info_get_attribute_uint64(info,G_FILE_ATTRIBUTE_TIME_MODIFIED));
+
+          g_object_unref(file);
+          g_object_unref(info);
+
+          time_t mtime = get_track_mtime (track);
+          if ((mtime != 0) && (mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) ) )
+            return SCAN_RESULT_UPTODATE ;
+
           try{
-
-              URI u (uri);
-
-              if(u.get_protocol() == URI::PROTOCOL_FILE)
+#ifdef HAVE_HAL
+              if ((m_Flags & F_USING_HAL) == F_USING_HAL)
               {
                 HAL::Volume const& volume (m_HAL.get_volume_for_uri (uri));
 
@@ -675,28 +699,14 @@ namespace MPX
                               filename_from_uri (uri).substr (volume.mount_point.length()) ;
 
                 insert_path_value = insert_path.substr (volume.mount_point.length()) ;
-
-                GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str()); 
-                GFileInfo * info = g_file_query_info(file,
-                                                  G_FILE_ATTRIBUTE_TIME_MODIFIED,
-                                                  GFileQueryInfoFlags(0),
-                                                  NULL,
-                                                  NULL);
-
-                track[ATTRIBUTE_MTIME] = gint64 (g_file_info_get_attribute_uint64(info,G_FILE_ATTRIBUTE_TIME_MODIFIED));
-
-                g_object_unref(file);
-                g_object_unref(info);
-
-                time_t mtime = get_track_mtime (track);
-                if ((mtime != 0) && (mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) ) )
-                  return SCAN_RESULT_UPTODATE ;
               }
               else
+#endif
               {
                 insert_path_value = insert_path;
               }
           }
+#ifdef HAVE_HAL
           catch (HAL::Exception & cxe)
           {
             g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
@@ -707,6 +717,7 @@ namespace MPX
             g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
             return SCAN_RESULT_ERROR ;
           }
+#endif
       }
       else
       {

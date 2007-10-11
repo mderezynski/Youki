@@ -16,7 +16,9 @@
 
 #include "amazon.hh"
 #include "library.hh"
+#ifdef HAVE_HAL
 #include "hal.hh"
+#endif
 #include "mpx.hh"
 #include "network.hh"
 #include "tasks.hh"
@@ -153,28 +155,36 @@ main (int argc, char ** argv)
     gst_init(&argc, &argv);
     gtk = new Gtk::Main (argc, argv);
 
-    MPX::NM * obj_netman = new MPX::NM;
-    MPX::TaskKernel * obj_task_kernel = new MPX::TaskKernel;
-    MPX::HAL * obj_hal = new MPX::HAL;
-    MPX::Amazon::Covers * obj_amzn = new MPX::Amazon::Covers(*obj_netman);
+    try{
 #ifdef HAVE_HAL
-    MPX::Library * obj_library = new MPX::Library(*obj_hal, *obj_task_kernel, true); // use HAL
-#else
-    MPX::Library * obj_library = new MPX::Library(*obj_hal, *obj_task_kernel, false); // don't use HAL
+        MPX::HAL * obj_hal = new MPX::HAL;
 #endif
-    MPX::Player * obj_mpx = MPX::Player::create(*obj_library);
-    
-    Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
+        MPX::TaskKernel * obj_task_kernel = new MPX::TaskKernel;
+        MPX::NM * obj_netman = new MPX::NM;
+        MPX::Amazon::Covers * obj_amzn = new MPX::Amazon::Covers(*obj_netman);
+#ifdef HAVE_HAL
+        MPX::Library * obj_library = new MPX::Library(*obj_hal, *obj_task_kernel); // use HAL
+#else
+        MPX::Library * obj_library = new MPX::Library(*obj_task_kernel); // don't use HAL
+#endif
+        MPX::Player * obj_mpx = MPX::Player::create(*obj_library);
+        
+        Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
 
-    gtkLock.lock();
-    gtk->run (*obj_mpx);
+        gtkLock.lock();
+        gtk->run (*obj_mpx);
 
-    delete obj_mpx;
-    delete obj_library;
-    delete obj_amzn;
-    delete obj_hal;
-    delete obj_task_kernel;
-    delete obj_netman;
+        delete obj_mpx;
+        delete obj_library;
+        delete obj_amzn;
+        delete obj_netman;
+        delete obj_task_kernel;
+        delete obj_hal;
+      }
+    catch (HAL::NotInitializedError)
+      {
+      }
+
     delete gtk;
 
     return EXIT_SUCCESS;

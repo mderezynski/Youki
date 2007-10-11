@@ -95,9 +95,6 @@ mpx_bin_SOURCES =				\
 	audio.hh					\
 	audio.cc					\
 								\
-	hal.hh						\
-	hal.cc						\
-								\
 	import-share.hh				\
 	import-share.cc				\
 								\
@@ -141,6 +138,11 @@ mpx_bin_SOURCES =				\
 	util-graphics.cc			\
 								\
 	util-string.hh				\
-	util-string.cc			
-								
+	util-string.cc				\
+								\
+	util-ui.hh					\
+	util-ui.cc
 
+if HAVE_HAL								
+mpx_bin_SOURCES += hal.hh hal.cc
+endif

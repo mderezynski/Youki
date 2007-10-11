@@ -290,8 +290,8 @@ namespace MPX
         m_initialized = hal_init ();
         if (!m_initialized)
         {
-          MessageDialog dialog (_("HAL could not be accessed from MPX. This is a fatal error. MPX can not continue "
-                                  "to run without HAL accessible."), false, MESSAGE_ERROR, BUTTONS_OK, true);
+          MessageDialog dialog (_("HAL could not be accessed from MPX. This is a fatal error: MPX can not run "
+                                  "without HAL accessible; exiting now."), false, MESSAGE_ERROR, BUTTONS_OK, true);
           dialog.run();
           dialog.hide();
           throw NotInitializedError();
@@ -586,29 +586,20 @@ namespace MPX
           process_udi (*n);
         }
 
-        // Get all optical devices
-      
         try{
-          list = m_context->find_device_by_capability ("storage.cdrom");
-          }
-        catch (...)
-          {
-            return false;
-          }
-
-        for (Hal::StrV::const_iterator n = list.begin(); n != list.end(); ++n) 
-        {
-            std::string product, dev; 
-            try{
-                Hal::RefPtr<Hal::Device> device = Hal::Device::create(m_context, *n);
-                product = device->get_property<std::string>("info.product");
-                dev = device->get_property<std::string>("block.device");
-            } 
-            catch (...)
+            list = m_context->find_device_by_capability ("portable_audio_player");
+            for (Hal::StrV::const_iterator n = list.begin(); n != list.end(); ++n) 
             {
-                return false;
+                if(m_context->device_query_capability(*n, "block"))
+                try{
+                    Hal::RefPtr<Hal::Drive> drive = Hal::Drive::create_from_udi(m_context, *n);
+                    std::string vendor, product;
+                    vendor = drive->get_property<std::string>("info.vendor"); 
+                    product = drive->get_property<std::string>("info.product"); 
+                    g_print("[%s] %s: %s", n->c_str(), vendor.c_str(), product.c_str());
+                } catch (...) {}
             }
-        }
+        } catch (...) {}
 
         return true;
       }
