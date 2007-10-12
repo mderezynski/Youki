@@ -639,6 +639,8 @@ namespace MPX
     Library::insert (const std::string& uri, const std::string& insert_path, const std::string& name)
     {
       std::string type;        
+
+      g_return_val_if_fail(!uri.empty(), SCAN_RESULT_ERROR);
    
       try{ 
           if (!Audio::typefind (uri, type))

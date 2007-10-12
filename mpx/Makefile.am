@@ -122,6 +122,9 @@ mpx_bin_SOURCES =				\
 	playbacksource.hh			\
 	playbacksource.cc			\
 								\
+	request-value.hh			\
+	request-value.cc			\
+								\
 	sql.hh						\
 	sql.cc						\
 								\

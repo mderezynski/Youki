@@ -86,6 +86,14 @@ namespace MPX
                               GAsyncResult*,
                               gpointer);
 
+
+        static gboolean
+        ask_password_cb (GMountOperation *op,
+                 const char      *message,
+                 const char      *default_user,
+                 const char      *default_domain,
+                 GPasswordFlags   flags);
+
         void
         on_import_folder();
 

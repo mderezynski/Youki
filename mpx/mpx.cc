@@ -36,6 +36,7 @@
 #include "import-folder.hh"
 #include "mpx.hh"
 #include "mpx-sources.hh"
+#include "request-value.hh"
 #include "util-graphics.hh"
 #include "util-ui.hh"
 using namespace Glib;
@@ -836,12 +837,73 @@ namespace MPX
 
                 g_mount_operation_set_username(m_MountOperation, login.c_str());
                 g_mount_operation_set_password(m_MountOperation, password.c_str()); 
+                g_signal_connect(m_MountOperation, "ask_password", G_CALLBACK(Player::ask_password_cb), NULL);
                 g_mount_for_location(m_MountFile, m_MountOperation, NULL, mount_ready_callback, this);
             }
 
         exit_import_share_dialog:
 
             delete d;
+    }
+
+    gboolean
+    Player::ask_password_cb (GMountOperation *op,
+             const char      *message,
+             const char      *default_user,
+             const char      *default_domain,
+             GPasswordFlags   flags)
+    {
+      Glib::ustring value;
+      if (flags & G_PASSWORD_FLAGS_NEED_USERNAME)
+      {
+        RequestValue * p = RequestValue::create();
+        p->set_question(_("Please Enter the Username:"));
+        int reply = p->run();
+        if(reply == GTK_RESPONSE_CANCEL)
+        {
+            g_mount_operation_reply (op, TRUE /*abort*/);
+            return TRUE;
+        }
+        p->get_request_infos(value);
+        g_mount_operation_set_username (op, value.c_str());
+        delete p;
+        value.clear();
+      }
+
+      if (flags & G_PASSWORD_FLAGS_NEED_DOMAIN)
+      {
+        RequestValue * p = RequestValue::create();
+        p->set_question(_("Please Enter the Domain:"));
+        int reply = p->run();
+        if(reply == GTK_RESPONSE_CANCEL)
+        {
+            g_mount_operation_reply (op, TRUE /*abort*/);
+            return TRUE;
+        }
+        p->get_request_infos(value);
+        g_mount_operation_set_domain (op, value.c_str());
+        delete p;
+        value.clear();
+      }
+
+      if (flags & G_PASSWORD_FLAGS_NEED_PASSWORD)
+      {
+        RequestValue * p = RequestValue::create();
+        p->set_question(_("Please Enter the Password:"));
+        int reply = p->run();
+        if(reply == GTK_RESPONSE_CANCEL)
+        {
+            g_mount_operation_reply (op, TRUE /*abort*/);
+            return TRUE;
+        }
+        p->get_request_infos(value);
+        g_mount_operation_set_password (op, value.c_str());
+        delete p;
+        value.clear();
+      }
+
+      g_mount_operation_reply (op, FALSE);
+      return TRUE;
     }
 
     void
