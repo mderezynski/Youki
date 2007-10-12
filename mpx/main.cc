@@ -18,7 +18,7 @@
 #include "library.hh"
 #ifdef HAVE_HAL
 #include "hal.hh"
-#endif
+#endif // HAVE_HAL
 #include "mpx.hh"
 #include "network.hh"
 #include "tasks.hh"

@@ -26,7 +26,9 @@
 #include <glibmm/i18n.h>
 #include <gio/gvfs.h>
 #include "audio.hh"
+#ifdef HAVE_HAL
 #include "hal.hh"
+#endif // HAVE_HAL
 #include "library.hh"
 #include "sql.hh"
 #include "util-string.hh"
