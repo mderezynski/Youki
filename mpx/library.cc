@@ -638,8 +638,6 @@ namespace MPX
     Library::ScanResult
     Library::insert (const std::string& uri, const std::string& insert_path, const std::string& name)
     {
-      return;
-
       std::string type;        
 
       g_return_val_if_fail(!uri.empty(), SCAN_RESULT_ERROR);
@@ -814,6 +812,12 @@ namespace MPX
         catch( Glib::ConvertError & cxe )
         {
             g_warning("%s: %s", G_STRLOC, cxe.what().c_str());
+            return;
+        }
+
+        if(p->collection.empty())
+        {
+            g_message("%s: Nothing to scan for '%s'", G_STRLOC, uri.c_str());
             return;
         }
 
