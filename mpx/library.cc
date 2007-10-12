@@ -704,8 +704,8 @@ namespace MPX
               {
                 insert_path_value = insert_path;
               }
-          }
 #ifdef HAVE_HAL
+          }
         catch (HAL::Exception & cxe)
           {
             g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
