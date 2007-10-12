@@ -921,6 +921,7 @@ namespace MPX
             {
                 MessageDialog dialog (player, (boost::format ("An Error occcured while mounting the share: %s") % error->message).str());
                 dialog.run();
+                return;
             }
             else
                 g_warning("%s: Location '%s' is already mounted", G_STRLOC, player.m_Share.c_str());
