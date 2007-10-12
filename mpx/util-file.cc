@@ -97,7 +97,10 @@ namespace MPX
             if (t == G_FILE_TYPE_REGULAR)
             {
                 if (pred (full_path))
+                {
+                  g_message("%s: Path: '%s'", G_STRLOC, full_path.c_str());
                   collection.push_back (full_path);
+                }
             }
             else if (t == G_FILE_TYPE_DIRECTORY)
             {
