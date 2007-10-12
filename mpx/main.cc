@@ -163,7 +163,7 @@ main (int argc, char ** argv)
         MPX::NM * obj_netman = new MPX::NM;
         MPX::Amazon::Covers * obj_amzn = new MPX::Amazon::Covers(*obj_netman);
 #ifdef HAVE_HAL
-        MPX::Library * obj_library = new MPX::Library(*obj_hal, *obj_task_kernel); // use HAL
+        MPX::Library * obj_library = new MPX::Library(*obj_hal, *obj_task_kernel, true); // use HAL
 #else
         MPX::Library * obj_library = new MPX::Library(*obj_task_kernel); // don't use HAL
 #endif

@@ -242,8 +242,6 @@ namespace MPX
         StrV columns;
         for (unsigned int n = 0; n < G_N_ELEMENTS(attrs); ++n)
         {
-          if (attrs)
-          {
             std::string column (attrs[n].id);
             switch (attrs[n].type)
             {
@@ -260,7 +258,6 @@ namespace MPX
                 break;
             }
             columns.push_back (column);
-          }
         }
 
         std::string column_names (Util::stdstrjoin (columns, ", "));
@@ -685,8 +682,8 @@ namespace MPX
           if ((mtime != 0) && (mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) ) )
             return SCAN_RESULT_UPTODATE ;
 
-          try{
 #ifdef HAVE_HAL
+          try{
               if ((m_Flags & F_USING_HAL) == F_USING_HAL)
               {
                 HAL::Volume const& volume (m_HAL.get_volume_for_uri (uri));
@@ -709,7 +706,7 @@ namespace MPX
               }
           }
 #ifdef HAVE_HAL
-          catch (HAL::Exception & cxe)
+        catch (HAL::Exception & cxe)
           {
             g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
             return SCAN_RESULT_ERROR ;
