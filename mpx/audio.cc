@@ -327,6 +327,9 @@ namespace MPX
       GstCaps*    caps      = 0;
       GstState    state;
 
+      if(uri.empty())
+        return false;
+
       pipeline  = gst_pipeline_new ("pipeline");
       source    = gst_element_factory_make ("giosrc", "source");
       typefind  = gst_element_factory_make ("typefind", "typefind");
