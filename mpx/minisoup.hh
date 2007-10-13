@@ -142,6 +142,12 @@ namespace MPX
         guint status();
         guint message_status();
 
+        char const*
+        get_data_raw ();
+      
+        guint
+        get_data_size ();
+
         SigRequestCallback & request_callback() { return Signals.Callback; }
 
       private:

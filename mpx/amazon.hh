@@ -31,6 +31,7 @@
 #include <gdkmm/pixbuf.h> // bleh!
 #include <cairomm/cairomm.h>
 #include "network.hh"
+#include "minisoup.hh"
 
 namespace MPX
 {
@@ -53,17 +54,28 @@ namespace MPX
     {
       public:
 
+        typedef sigc::signal<void, Glib::ustring> SignalGotCover;
+
+        struct SignalsT
+        {
+            SignalGotCover GotCover;
+        };
+
+        SignalsT Signals;
+
+        SignalGotCover&
+        signal_got_cover(){ return Signals.GotCover ; }
+
         Covers (NM&);
 
-        // in deprecation
-        void
-        fetch (Glib::ustring const& asin, Glib::RefPtr<Gdk::Pixbuf> & cover, bool only_cached = false);
+        bool
+        fetch (Glib::ustring const& asin, Glib::RefPtr<Gdk::Pixbuf>&);
 
-        Cairo::RefPtr<Cairo::ImageSurface> 
-        fetch (Glib::ustring const& asin, CoverSize size, bool only_cached = false);
+        bool
+        fetch (Glib::ustring const& asin, Cairo::RefPtr<Cairo::ImageSurface>&, CoverSize size);
 
         void
-        cache (Glib::ustring const& asin);
+        cache (Glib::ustring const& asin); // this operation is asynchronous
 
       private:
 
@@ -78,14 +90,23 @@ namespace MPX
         std::string
         get_thumb_path (Glib::ustring const& asin);
 
-        Glib::RefPtr<Gdk::Pixbuf>
-        site_fetch_and_save_cover (Glib::ustring const& asin, std::string const& thumb_path);
+        struct AmazonFetchData
+        {
+            Soup::RequestRefP request;
+            Glib::ustring asin;
+            int n;
 
-        Cairo::RefPtr<Cairo::ImageSurface>
-        site_fetch_and_save_cover_cairo (Glib::ustring const& asin, std::string const& thumb_path, CoverSize size);
+            AmazonFetchData (const Glib::ustring& asin_arg)
+            : asin(asin_arg)
+            , n (0)
+            {}
+        };
 
-        bool
-        try_fetching (std::string const& site, Glib::RefPtr<Gdk::Pixbuf>& cover);
+        void 
+        site_fetch_and_save_cover (AmazonFetchData*);
+
+        void
+        reply_cb (char const* data, guint size, guint status_code, AmazonFetchData*);
     };
   }
 }

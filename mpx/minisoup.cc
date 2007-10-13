@@ -92,7 +92,6 @@ namespace MPX
       return m_message->response.length;
     }
 
-
     void
     RequestSync::add_header (std::string const& name,
                              std::string const& value) 
@@ -179,6 +178,18 @@ namespace MPX
     Request::message_status ()
     {
       return m_message->status;
+    }
+
+    char const*
+    Request::get_data_raw ()
+    {
+      return m_message->response.body;
+    }
+
+    guint
+    Request::get_data_size ()
+    {
+      return m_message->response.length;
     }
 
     void

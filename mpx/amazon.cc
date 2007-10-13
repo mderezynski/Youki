@@ -51,15 +51,15 @@ using namespace Glib;
 
 namespace
 {
-  const char* amazon_hosts[] =
+  static boost::format amazon_f[] =
   {
-    "images.amazon.com",  
-    "images-eu.amazon.com",
-    "ec1.images-amazon.com",
+    boost::format("http://images.amazon.com/images/P/%s.01.LZZZZZZZ.jpg"),
+    boost::format("http://images-eu.amazon.com/images/P/%s.01.LZZZZZZZ.jpg"),
+    boost::format("http://ec1.images-amazon.com/images/P/%s.01.LZZZZZZZ.jpg"),
+    boost::format("http://images.amazon.com/images/P/%s.01.MZZZZZZZ.jpg"),
+    boost::format("http://images-eu.amazon.com/images/P/%s.01.MZZZZZZZ.jpg"),
+    boost::format("http://ec1.images-amazon.com/images/P/%s.01.MZZZZZZZ.jpg"),
   };
-
-  static boost::format amazon_f ("http://%s/images/P/%s.01.LZZZZZZZ.jpg");
-  static boost::format amazon_f_small ("http://%s/images/P/%s.01.MZZZZZZZ.jpg");
 
   int
   pixel_size (MPX::CoverSize size)
@@ -94,151 +94,106 @@ namespace MPX
     : m_NM (nm)
     {}
 
-    bool
-    Covers::try_fetching (std::string const& site, RefPtr<Gdk::Pixbuf>& cover)
+    void
+    Covers::site_fetch_and_save_cover (AmazonFetchData * amzn_data)
     {
-      Soup::RequestSyncRefP request = Soup::RequestSync::create (site);
-      guint code = request->run (); 
-  
-      try{
-          if (code == 200)
-          {
+        amzn_data->request = Soup::Request::create ((amazon_f[amzn_data->n] % amzn_data->asin).str());
+        amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb ), amzn_data ));
+        amzn_data->request->run();
+    }
+
+    void
+    Covers::reply_cb (char const* data, guint size, guint code, AmazonFetchData* amzn_data)
+    {
+        if (code == 200)
+        {
             RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
-            loader->write (reinterpret_cast<const guint8*>(request->get_data_raw()), request->get_data_size());
+            loader->write (reinterpret_cast<const guint8*>(amzn_data->request->get_data_raw()), amzn_data->request->get_data_size());
             loader->close ();
 
-            if (loader->get_pixbuf()->get_width() == 1 && loader->get_pixbuf()->get_height() == 1)
+            RefPtr<Gdk::Pixbuf> cover = loader->get_pixbuf();
+
+            if (cover->get_width() == 1 && cover->get_height() == 1)
             {
               /*DO NOTHING*/
             }
             else
             { 
-              cover = loader->get_pixbuf ();
+                cover->save (get_thumb_path(amzn_data->asin), "png");
+                m_pixbuf_cache.insert (std::make_pair (amzn_data->asin, cover));
+                Signals.GotCover.emit(amzn_data->asin);
             }
-          }
-      }
-      catch (Gdk::PixbufError & cxe)
-      {
-        cover = RefPtr<Gdk::Pixbuf> (0);
-      }
-      return cover;
-    }
-    
-    RefPtr<Gdk::Pixbuf>
-    Covers::site_fetch_and_save_cover (ustring const& asin, std::string const& thumb_path)
-    {
-      RefPtr<Gdk::Pixbuf> cover;
-      for (unsigned int n = 0; n < G_N_ELEMENTS(amazon_hosts); ++n)
-      {
-          try {
-              if (!try_fetching((amazon_f % amazon_hosts[n] % asin).str(), cover))
-                try_fetching((amazon_f_small % amazon_hosts[n] % asin).str(), cover);
-              
-              if (cover)
-                {
-                  cover->save (thumb_path, "png");
-                  m_pixbuf_cache.insert (std::make_pair (asin, cover));
-                  return cover;
-                }
-            }
-          catch (Gdk::PixbufError & cxe)
+            delete amzn_data;
+            return;
+        }
+        else
+        {
+            ++(amzn_data->n);
+            if(amzn_data->n > 5)
             {
+                delete amzn_data;
+                return; // no more hosts to try
             }
-      }
-      throw NoCoverError("No cover on Amazon found!");
+            site_fetch_and_save_cover(amzn_data);
+        }
     }
     
-    Cairo::RefPtr<Cairo::ImageSurface>
-    Covers::site_fetch_and_save_cover_cairo (ustring const& asin, std::string const& thumb_path, CoverSize size)
-    {
-      RefPtr<Gdk::Pixbuf> cover;
-      for (unsigned int n = 0; n < G_N_ELEMENTS(amazon_hosts); ++n)
-      {
-          try {
-              if (!try_fetching((amazon_f % amazon_hosts[n] % asin).str(), cover))
-                try_fetching((amazon_f_small % amazon_hosts[n] % asin).str(), cover);
-              
-              if (cover)
-                {
-                  cover->save (thumb_path, "png");
-                  int px = pixel_size (size);
-                  Cairo::RefPtr<Cairo::ImageSurface> surface =
-                    Util::cairo_image_surface_from_pixbuf (cover->scale_simple (px, px, Gdk::INTERP_BILINEAR));
-                  m_surface_cache[size].insert (std::make_pair (asin, surface));
-                  return surface;
-                }
-            }
-          catch (Gdk::PixbufError & cxe)
-            {}
-      }
-      throw NoCoverError("No cover on Amazon found!");
-    }
-
     std::string
     Covers::get_thumb_path (ustring const& asin)
     {
-      std::string basename = (boost::format ("%s.png") % asin).str ();
-      Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", basename.c_str(), NULL));
-      return std::string(path.get());
+        std::string basename = (boost::format ("%s.png") % asin).str ();
+        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", basename.c_str(), NULL));
+        return std::string(path.get());
     }
 
     void 
     Covers::cache (ustring const& asin)
     {
-      std::string thumb_path = get_thumb_path (asin);
-      if (file_test (thumb_path, FILE_TEST_EXISTS))
-        return;
-
-      site_fetch_and_save_cover (asin, thumb_path);
+        AmazonFetchData * data = new AmazonFetchData(asin);
+        site_fetch_and_save_cover(data);
     }
 
-    void 
-    Covers::fetch (ustring const& asin, RefPtr<Gdk::Pixbuf>& cover, bool only_cached)
+    bool
+    Covers::fetch (ustring const& asin, RefPtr<Gdk::Pixbuf>& cover)
     {
-      MPixbufCache::const_iterator i = m_pixbuf_cache.find (asin);
-      if (i != m_pixbuf_cache.end())
-      {
-        cover = i->second; 
-        return;
-      }
+        MPixbufCache::const_iterator i = m_pixbuf_cache.find (asin);
+        if (i != m_pixbuf_cache.end())
+        {
+          cover = i->second; 
+          return true;
+        }
 
-      std::string thumb_path = get_thumb_path (asin);
-      if (file_test (thumb_path, FILE_TEST_EXISTS))
-      {
-        cover = Gdk::Pixbuf::create_from_file (thumb_path); 
-        m_pixbuf_cache.insert (std::make_pair (asin, cover));
-        return;
-      }
+        std::string thumb_path = get_thumb_path (asin);
+        if (file_test (thumb_path, FILE_TEST_EXISTS))
+        {
+          cover = Gdk::Pixbuf::create_from_file (thumb_path); 
+          m_pixbuf_cache.insert (std::make_pair (asin, cover));
+          return true;
+        }
 
-      if (only_cached || m_NM.Check_Status())
-        throw NoCoverError("No cached cover present");
-
-      cover = site_fetch_and_save_cover (asin, thumb_path);
+        return false;
     }
 
-    Cairo::RefPtr<Cairo::ImageSurface>
-    Covers::fetch (ustring const& asin, CoverSize size, bool only_cached)
+    bool
+    Covers::fetch (ustring const& asin, Cairo::RefPtr<Cairo::ImageSurface>& surface, CoverSize size)
     {
-      MSurfaceCache::const_iterator i = m_surface_cache[size].find (asin);
-      if (i != m_surface_cache[size].end())
-      {
-        return i->second; 
-      }
+        MSurfaceCache::const_iterator i = m_surface_cache[size].find (asin);
+        if (i != m_surface_cache[size].end())
+        {
+          surface = i->second; 
+          return true;
+        }
 
-      std::string thumb_path = get_thumb_path (asin);
-      if (file_test (thumb_path, FILE_TEST_EXISTS))
-      {
-        int px = pixel_size (size);
-        Cairo::RefPtr<Cairo::ImageSurface> surface =
-          Util::cairo_image_surface_from_pixbuf (Gdk::Pixbuf::create_from_file (thumb_path)->scale_simple (px, px, Gdk::INTERP_BILINEAR));
-        m_surface_cache[size].insert (std::make_pair (asin, surface));
-        return surface;
-      }
+        std::string thumb_path = get_thumb_path (asin);
+        if (file_test (thumb_path, FILE_TEST_EXISTS))
+        {
+          int px = pixel_size (size);
+          surface = Util::cairo_image_surface_from_pixbuf (Gdk::Pixbuf::create_from_file (thumb_path)->scale_simple (px, px, Gdk::INTERP_BILINEAR));
+          m_surface_cache[size].insert (std::make_pair (asin, surface));
+          return true;
+        }
 
-      if (only_cached || m_NM.Check_Status())
-        throw NoCoverError("No cached cover present");
-
-      return site_fetch_and_save_cover_cairo (asin, thumb_path, size);
+        return false;
     }
   }
 }
