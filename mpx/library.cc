@@ -155,13 +155,14 @@ namespace
 namespace MPX
 {
 #ifdef HAVE_HAL
-    Library::Library (HAL & hal, TaskKernel & kernel, bool use_hal)
+    Library::Library (Amazon::Covers &covers, HAL &hal, TaskKernel &kernel, bool use_hal)
     : m_HAL (hal)
     , m_TaskKernel (kernel)
 #else
     Library::Library (TaskKernel & kernel)
     : m_TaskKernel (kernel)
 #endif
+    , m_Covers (covers)
     , m_Flags (0)
     {
         const int MLIB_VERSION_CUR = 1;
@@ -563,6 +564,11 @@ namespace MPX
           Signals.NewAlbum.emit(    (track[ATTRIBUTE_MB_ALBUM_ID] ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()) : std::string())
                                 ,   (track[ATTRIBUTE_ASIN] ? get<std::string>(track[ATTRIBUTE_ASIN].get()) : std::string())
                                 ,   album_j );
+
+          if(track[ATTRIBUTE_ASIN])
+          {
+            m_Covers.cache(get<std::string>(track[ATTRIBUTE_ASIN].get()));
+          }
         }
         return album_j;
     }
@@ -668,22 +674,6 @@ namespace MPX
 
       if(u.get_protocol() == URI::PROTOCOL_FILE)
       {
-          GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str()); 
-          GFileInfo * info = g_file_query_info(file,
-                                            G_FILE_ATTRIBUTE_TIME_MODIFIED,
-                                            GFileQueryInfoFlags(0),
-                                            NULL,
-                                            NULL);
-
-          track[ATTRIBUTE_MTIME] = gint64 (g_file_info_get_attribute_uint64(info,G_FILE_ATTRIBUTE_TIME_MODIFIED));
-
-          g_object_unref(file);
-          g_object_unref(info);
-
-          time_t mtime = get_track_mtime (track);
-          if ((mtime != 0) && (mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) ) )
-            return SCAN_RESULT_UPTODATE ;
-
 #ifdef HAVE_HAL
           try{
               if ((m_Flags & F_USING_HAL) == F_USING_HAL)
@@ -719,6 +709,22 @@ namespace MPX
             return SCAN_RESULT_ERROR ;
           }
 #endif
+
+          GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str()); 
+          GFileInfo * info = g_file_query_info(file,
+                                            G_FILE_ATTRIBUTE_TIME_MODIFIED,
+                                            GFileQueryInfoFlags(0),
+                                            NULL,
+                                            NULL);
+
+          track[ATTRIBUTE_MTIME] = gint64 (g_file_info_get_attribute_uint64(info,G_FILE_ATTRIBUTE_TIME_MODIFIED));
+
+          g_object_unref(file);
+          g_object_unref(info);
+
+          time_t mtime = get_track_mtime (track);
+          if ((mtime != 0) && (mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) ) )
+            return SCAN_RESULT_UPTODATE ;
       }
       else
       {

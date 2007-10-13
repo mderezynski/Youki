@@ -163,11 +163,11 @@ main (int argc, char ** argv)
         MPX::NM * obj_netman = new MPX::NM;
         MPX::Amazon::Covers * obj_amzn = new MPX::Amazon::Covers(*obj_netman);
 #ifdef HAVE_HAL
-        MPX::Library * obj_library = new MPX::Library(*obj_hal, *obj_task_kernel, true); // use HAL
+        MPX::Library * obj_library = new MPX::Library(*obj_amzn, *obj_hal, *obj_task_kernel, true); // use HAL
 #else
-        MPX::Library * obj_library = new MPX::Library(*obj_task_kernel); // don't use HAL
+        MPX::Library * obj_library = new MPX::Library(*obj_amzn, *obj_task_kernel); // don't use HAL
 #endif
-        MPX::Player * obj_mpx = MPX::Player::create(*obj_library);
+        MPX::Player * obj_mpx = MPX::Player::create(*obj_library, *obj_amzn);
         
         Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
 

@@ -92,7 +92,10 @@ namespace MPX
   {
     Covers::Covers (NM & nm)
     : m_NM (nm)
-    {}
+    {
+        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", NULL));
+        g_mkdir(path.get(), 0700);
+    }
 
     void
     Covers::site_fetch_and_save_cover (AmazonFetchData * amzn_data)
@@ -119,9 +122,11 @@ namespace MPX
             }
             else
             { 
+                Glib::Mutex::Lock L (RequestKeeperLock);
                 cover->save (get_thumb_path(amzn_data->asin), "png");
                 m_pixbuf_cache.insert (std::make_pair (amzn_data->asin, cover));
                 Signals.GotCover.emit(amzn_data->asin);
+                RequestKeeper.erase(amzn_data->asin);
             }
             delete amzn_data;
             return;
@@ -149,7 +154,21 @@ namespace MPX
     void 
     Covers::cache (ustring const& asin)
     {
+        Glib::Mutex::Lock L (RequestKeeperLock);
+        if(RequestKeeper.count(asin))
+        {
+            return;
+        }
+
+        std::string thumb_path = get_thumb_path (asin);
+        if (file_test (thumb_path, FILE_TEST_EXISTS))
+        {
+            Signals.GotCover.emit(asin);
+            return; 
+        }
+
         AmazonFetchData * data = new AmazonFetchData(asin);
+        RequestKeeper.insert(asin);
         site_fetch_and_save_cover(data);
     }
 

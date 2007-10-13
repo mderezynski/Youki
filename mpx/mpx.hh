@@ -28,6 +28,7 @@
 #include <gio/gfile.h>
 #include <gtkmm.h>
 #include <libglademm/xml.h>
+#include "amazon.hh"
 #include "library.hh"
 #include "widgetloader.h"
 
@@ -60,6 +61,7 @@ namespace MPX
         Gtk::Statusbar *m_Statusbar;
 
         Library & m_Library;
+        Amazon::Covers & m_Covers;
 
         void
         on_library_scan_start();
@@ -100,13 +102,16 @@ namespace MPX
         void
         on_import_share();
 
+        void
+        on_got_cover (Glib::ustring);
+
       public:
 
-        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library &);
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Amazon::Covers&);
         virtual ~Player ();
 
         static Player*
-        create (MPX::Library&);
+        create (MPX::Library&, MPX::Amazon::Covers&);
     };
 }
 #endif

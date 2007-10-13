@@ -27,6 +27,7 @@
 
 #include <string>
 #include <map>
+#include <set>
 #include <glibmm/ustring.h>
 #include <gdkmm/pixbuf.h> // bleh!
 #include <cairomm/cairomm.h>
@@ -101,6 +102,9 @@ namespace MPX
             , n (0)
             {}
         };
+    
+        std::set<Glib::ustring> RequestKeeper;
+        Glib::Mutex RequestKeeperLock;
 
         void 
         site_fetch_and_save_cover (AmazonFetchData*);

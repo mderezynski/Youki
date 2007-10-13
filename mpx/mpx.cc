@@ -586,11 +586,15 @@ namespace
 namespace MPX
 {
     Player::Player(Glib::RefPtr<Gnome::Glade::Xml> const& xml,
-                         MPX::Library & obj_library)
+                   MPX::Library & obj_library,
+                   MPX::Amazon::Covers & obj_amazon)
     : WidgetLoader<Gtk::Window>(xml, "mpx")
     , m_ref_xml(xml)
     , m_Library (obj_library)
+    , m_Covers (obj_amazon)
    {
+        m_Covers.signal_got_cover().connect( sigc::mem_fun( *this, &Player::on_got_cover ));
+
         m_Library.signal_scan_start().connect( sigc::mem_fun( *this, &Player::on_library_scan_start ) );
         m_Library.signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
         m_Library.signal_scan_end().connect( sigc::mem_fun( *this, &Player::on_library_scan_end ) );
@@ -762,10 +766,10 @@ namespace MPX
     }
 
     Player*
-    Player::create (MPX::Library & obj_library)
+    Player::create (MPX::Library & obj_library, MPX::Amazon::Covers & obj_amazn)
     {
       const std::string path (build_filename(DATA_DIR, build_filename("glade","mpx.glade")));
-      Player * p = new Player(Gnome::Glade::Xml::create (path), obj_library); 
+      Player * p = new Player(Gnome::Glade::Xml::create (path), obj_library, obj_amazn); 
       return p;
     }
 
@@ -961,5 +965,11 @@ namespace MPX
     {
         m_Statusbar->pop();        
         m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Files, %2% added, %3% up to date, %4% updated, %5% erroneous)")) % s % x % y % a % b).str());
+    }
+
+    void
+    Player::on_got_cover (Glib::ustring asin)
+    {
+        g_message("%s: Got cover for %s", G_STRLOC, asin.c_str());
     }
 }

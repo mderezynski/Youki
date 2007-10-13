@@ -23,6 +23,7 @@
 #ifndef MPX_LIBRARY_CLASS_HH
 #define MPX_LIBRARY_CLASS_HH
 
+#include "amazon.hh"
 #include "metadatareader-taglib.hh"
 #include "sql.hh"
 #include "tasks.hh"
@@ -76,12 +77,13 @@ namespace MPX
             HAL &m_HAL;
 #endif
             TaskKernel &m_TaskKernel;
+            Amazon::Covers &m_Covers;
 
         public:
 #ifdef HAVE_HAL
-            Library (HAL&, TaskKernel&, bool use_hal) ;
+            Library (Amazon::Covers&, HAL&, TaskKernel&, bool use_hal) ;
 #else
-            Library (TaskKernel&) ;
+            Library (Amazon::Covers&, TaskKernel&) ;
 #endif
             ~Library () ;
 
