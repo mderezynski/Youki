@@ -159,7 +159,7 @@ namespace MPX
     : m_HAL (hal)
     , m_TaskKernel (kernel)
 #else
-    Library::Library (TaskKernel & kernel)
+    Library::Library (Amazon::Covers &covers, TaskKernel & kernel)
     : m_TaskKernel (kernel)
 #endif
     , m_Covers (covers)
