@@ -1,0 +1,2 @@
+#!/bin/sh
+beep-media-player-2 --files "$@"
