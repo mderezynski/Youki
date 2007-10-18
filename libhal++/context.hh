@@ -17,12 +17,6 @@
 
 namespace Hal
 {
-  class Device;
-  class Context 
-  {
-    public:
-
-      typedef sigc::signal<void, std::string const&> SignalUDI;
 
 #include "exception.hh"
 
@@ -34,6 +28,13 @@ namespace Hal
       HALCC_EXCEPTION(CallbackSetupError)
       HALCC_EXCEPTION(WatchSetupError)
       HALCC_EXCEPTION(HALGenericError)
+
+  class Device;
+  class Context 
+  {
+    public:
+
+      typedef sigc::signal<void, std::string const&> SignalUDI;
 
       /** Creates a RefPtr holding a Hal::Context
         *

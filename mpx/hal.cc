@@ -55,20 +55,12 @@ namespace
 {
   const char* HALBus[] =
   {
-    "<Unknown>",
+    _("<Unknown>"),
     "IDE",
     "SCSI",
     "USB",
     "IEEE1394",
     "CCW"
-  };
-
-  struct HALDriveType
-  {
-    const char  * name;
-    const char  * icon_default;
-    const char  * icon_usb;
-    const char  * icon_1394;
   };
 }
 
@@ -79,7 +71,6 @@ namespace MPX
         char const* name;
         char const* id;
         int         type;
-        bool        use;
       };
 
       AttributeInfo
@@ -89,67 +80,56 @@ namespace MPX
           N_("Volume UDI"),
           "volume_udi",
           SQL::VALUE_TYPE_STRING,
-          true	
         },
         {
           N_("Device UDI"),
           "device_udi",
           SQL::VALUE_TYPE_STRING,
-      	  true	
         },
         {
           N_("Mount Path"),
           "mount_point",
           SQL::VALUE_TYPE_STRING,
-      	  true	
         },
         {
           N_("Device Serial"),
           "drive_serial",
           SQL::VALUE_TYPE_STRING,
-      	  true	
         },
         {
           N_("Volume Name"),
           "label",
           SQL::VALUE_TYPE_STRING,
-      	  true	
         },
         {
           N_("Device File"),
           "device_node",
           SQL::VALUE_TYPE_STRING,
-      	  true	
         },
         {
           N_("Drive Bus"),
           "drive_bus",
           SQL::VALUE_TYPE_INT,
-      	  true	
         },
         {
           N_("Drive Type"),
           "drive_type",
           SQL::VALUE_TYPE_INT,
-      	  true	
         },
         {
           N_("Volume Size"),
           "size",
           SQL::VALUE_TYPE_INT,
-       	  true	
         },
         {
           N_("Drive Size"),
           "drive_size",
           SQL::VALUE_TYPE_INT,
-      	  true	
         },
         {
           N_("Drive Size"),
           "mount_time",
           SQL::VALUE_TYPE_INT,
-      	  true	
         },
       };
 
@@ -303,66 +283,49 @@ namespace MPX
       {
         Hal::RefPtr<Hal::Drive> drive = Hal::Drive::create_from_udi (m_context, volume->get_storage_device_udi ());
 
-        if (drive->property_exists  ("info.locked") &&
-            drive->get_property <bool> ("info.locked"))
-        {
-          return;
-        }
-
-        Hal::DriveType drive_type; 
-
+        if (drive->get_type() == Hal::DRIVE_TYPE_CDROM &&
+            drive->property_exists ("info.locked") &&
+            !drive->get_property <bool> ("info.locked"))
         try{
-          drive_type = drive->get_type ();
-          }
-        catch (...)
-          {
-            return;
-          }
-
-        if (drive_type == Hal::DRIVE_TYPE_CDROM)
-        {
-            Hal::DiscProperties props; 
-
-            try{
-                props = volume->get_disc_properties();
-              }
-            catch (...)
+              Hal::DiscProperties props = volume->get_disc_properties();
+              if (props & Hal::DISC_HAS_AUDIO)
               {
-                return;
+                signal_cdda_inserted_.emit( volume->get_udi(), volume->get_device_file() );
               }
-
-            std::string device_udi (volume->get_storage_device_udi());
-
-            if (props & Hal::DISC_HAS_AUDIO)
-            {
-              signal_cdda_inserted_.emit (volume->get_udi(), volume->get_device_file());
-            }
-            else
-            if (props & Hal::DISC_HAS_DATA)
-            {
-            }
-            else
-            if (props & Hal::DISC_IS_BLANK)
-            {
-            }
-        }
+              else
+              if (props & Hal::DISC_HAS_DATA)
+              {
+              }
+              else
+              if (props & Hal::DISC_IS_BLANK)
+              {
+              }
+          }
+        catch (Hal::UnableToProbeDeviceError)
+          {
+          }
       }
 
       void
       HAL::process_volume (std::string const &udi)
       {
-        Hal::RefPtr<Hal::Volume> volume = Hal::Volume::create_from_udi (m_context, udi);
-
-        if (volume->get_device_file().empty())
-        {
-          return;
+        try{
+          Hal::RefPtr<Hal::Volume> volume = Hal::Volume::create_from_udi (m_context, udi);
+          if (volume->is_disc())
+          {
+            cdrom_policy (volume);
+          }
+          else
+          if (volume->is_pmp())
+          {
+            /* pmp_policy (volume); */
+            g_message("%s: Got a media player: %s", G_STRLOC, udi.c_str());
+          }
         }
-
-        if (volume->is_disc())
-        {
-          cdrom_policy (volume);
-          return;
-        }
+        catch (DeviceDoesNotExistError)
+        {}
+        catch (UnableToProbeDeviceError)
+        {}
       }
 
       Glib::ustring
@@ -438,11 +401,11 @@ namespace MPX
 
         try{
           volume_hal_instance = Hal::Volume::create_from_udi (m_context, udi);
-          }
+        }
         catch (...)
-          {
-            return;
-          }
+        {
+          return;
+        }
 
         if (!(volume_hal_instance->get_fsusage() == Hal::VOLUME_USAGE_MOUNTABLE_FILESYSTEM))
           return;
@@ -586,21 +549,6 @@ namespace MPX
           process_udi (*n);
         }
 
-        try{
-            list = m_context->find_device_by_capability ("portable_audio_player");
-            for (Hal::StrV::const_iterator n = list.begin(); n != list.end(); ++n) 
-            {
-                if(m_context->device_query_capability(*n, "block"))
-                try{
-                    Hal::RefPtr<Hal::Drive> drive = Hal::Drive::create_from_udi(m_context, *n);
-                    std::string vendor, product;
-                    vendor = drive->get_property<std::string>("info.vendor"); 
-                    product = drive->get_property<std::string>("info.product"); 
-                    g_print("[%s] %s: %s", n->c_str(), vendor.c_str(), product.c_str());
-                } catch (...) {}
-            }
-        } catch (...) {}
-
         return true;
       }
 
@@ -626,12 +574,11 @@ namespace MPX
         try{
             if (m_context->device_query_capability (udi, "volume"))
             {
+              g_message("%s: Got new Device: '%s'", G_STRLOC, udi.c_str());
               process_volume (udi);       
             }
-          }
-        catch (...)
-          {
-          }
+        }
+        catch (...) {}
       }
 
       void
@@ -652,8 +599,10 @@ namespace MPX
           return;
         }
 
-        Hal::RefPtr<Hal::Volume> volume = Hal::Volume::create_from_udi (m_context, udi);
-        process_udi (udi);
+        try{
+          Hal::RefPtr<Hal::Volume> volume = Hal::Volume::create_from_udi (m_context, udi);
+          process_udi (udi);
+        } catch (...) {}
       }
 
       HAL::SignalVolume&

@@ -31,13 +31,13 @@ namespace Hal
         static Hal::RefPtr<Volume> create_from_udi    (Hal::RefPtr<Context>  context,
                                                        std::string const&)
 
-                                        throw (Hal::Device::DeviceDoesNotExistError);
+                                        throw (DeviceDoesNotExistError);
 
 
         static Hal::RefPtr<Volume> create_from_dev    (Hal::RefPtr<Context>  context,
                                                        std::string const&)
 
-                                        throw (Hal::Device::DeviceDoesNotExistError);
+                                        throw (DeviceDoesNotExistError);
       
         dbus_uint64_t       get_size (); 
 
@@ -54,6 +54,9 @@ namespace Hal
         bool                is_mounted (); 
         bool                is_partition (); 
         bool                is_disc (); 
+
+        // Additions from BMPx
+        bool                is_pmp ();
 
 #ifdef HAVE_HAL_058
         bool                is_mounted_read_only (); 
@@ -93,9 +96,9 @@ namespace Hal
     private:    
 
         friend class Hal::RefPtr<Volume>;
-    
+
         explicit Volume (Hal::RefPtr<Context>   context,
-                         std::string const&     udi) throw (Hal::Device::DeviceDoesNotExistError);
+                         std::string const&     udi) throw (DeviceDoesNotExistError);
 
         explicit Volume (Hal::RefPtr<Context>   context,
                          LibHalVolume         * volume); 

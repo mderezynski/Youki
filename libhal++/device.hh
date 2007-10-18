@@ -22,6 +22,11 @@
 
 namespace Hal
 {
+#include "exception.hh"
+
+    HALCC_EXCEPTION(DeviceDoesNotExistError)
+    HALCC_EXCEPTION(PropertyDoesNotExistError)
+
   class Volume;
   class Drive;
   class Device : public sigc::trackable
@@ -31,12 +36,6 @@ namespace Hal
     friend class Hal::Context;
 
     public:
-
-#include "exception.hh"
-
-    HALCC_EXCEPTION(DeviceDoesNotExistError)
-    HALCC_EXCEPTION(PropertyDoesNotExistError)
-    HALCC_EXCEPTION(UnableToProbeDeviceError)
 
       typedef sigc::signal<void, const std::string&, const std::string&>
           SignalUDI_Capability;
@@ -140,23 +139,19 @@ namespace Hal
       struct fail {};
 
       template <typename T>
-      T get_property
-          (const std::string& property)
+      T get_property (const std::string& property)
       {
         fail<T>::get_property_called_with_an_inappropriate_type;
       }   
 
       bool
-      property_exists
-        (const std::string& property);
+      property_exists (const std::string& property);
 
       PropertySet
-      get_all_properties
-        ();
-
+      get_all_properties ();
+       
       PropertyType
-      get_property_type
-        (const std::string& property);
+      get_property_type (const std::string& property);
     
       virtual const std::string&
       get_udi () const

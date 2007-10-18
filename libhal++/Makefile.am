@@ -8,12 +8,12 @@ libhalcc_la_LDFLAGS = -export-dynamic -fPIC -version-info $(LIBVERSION) -release
 lib_LTLIBRARIES = libhalcc.la
 endif
 
-INCLUDES = $(SIGC_CFLAGS) $(DBUS_CFLAGS) $(HAL_CFLAGS)
+INCLUDES = $(SIGC_CFLAGS) $(DBUS_CFLAGS) $(HAL_CFLAGS) $(GLIB_CFLAGS)
 
 LIBVERSION=3:0:0
 RELEASE=1.0
 
-libhalcc_la_LIBADD = $(SIGC_LIBS) $(DBUS_LIBS) $(HAL_LIBS)
+libhalcc_la_LIBADD = $(SIGC_LIBS) $(DBUS_LIBS) $(HAL_LIBS) $(GLIB_LIBS)
 
 libhalcc_la_SOURCES = \
     context.cc        \
