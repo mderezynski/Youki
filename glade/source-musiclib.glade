@@ -19,7 +19,7 @@
   <property name="urgency_hint">False</property>
 
   <child>
-    <widget class="GtkHPaned" id="source-music">
+    <widget class="GtkHPaned" id="source-musiclib">
       <property name="border_width">4</property>
       <property name="visible">True</property>
       <property name="can_focus">True</property>

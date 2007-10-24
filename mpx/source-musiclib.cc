@@ -21,31 +21,43 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 #include "source-musiclib.hh"
-#include <gtkmm/gtkmm.h>
+#include <glibmm/i18n.h>
+#include <gtkmm.h>
+#include <libglademm.h>
 
 namespace MPX
 {
     using namespace Glib;
-    class MusicLibPrivate
+    struct MusicLibPrivate
     {
-        typedef Gtk::TreeModelColumn Col;
+        Glib::RefPtr<Gnome::Glade::Xml> m_RefXml;
+        Gtk::Widget * m_UI;
+
         struct PlaylistColumnsT : public Gtk::TreeModel::ColumnRecord 
         {
-              Col<ustring> Artist;
-              Col<ustring> Album;
-              Col<guint64> Track;
-              Col<ustring> Title;
-              Col<guint64> Length;
+              Gtk::TreeModelColumn<ustring> Artist;
+              Gtk::TreeModelColumn<ustring> Album;
+              Gtk::TreeModelColumn<guint64> Track;
+              Gtk::TreeModelColumn<ustring> Title;
+              Gtk::TreeModelColumn<guint64> Length;
         };
 
         PlaylistColumnsT PlaylistColumns;
         Glib::RefPtr<Gtk::ListStore> ListStore;
+
+        MusicLibPrivate ()
+        {
+            const std::string path (build_filename(DATA_DIR, build_filename("glade","source-musiclib.glade")));
+            m_RefXml = Gnome::Glade::Xml::create (path);
+            m_UI = m_RefXml->get_widget("source-musiclib");
+            ListStore = Gtk::ListStore::create(PlaylistColumns);
+        }
     };
 }
 
 namespace MPX
 {
-    PlaybackSourceMusicLib ()
+    PlaybackSourceMusicLib::PlaybackSourceMusicLib ()
     : PlaybackSource(_("Music"))
     {
       m_Private = new MusicLibPrivate;
@@ -113,6 +125,8 @@ namespace MPX
 
     Gtk::Widget*
     PlaybackSourceMusicLib::get_ui ()
-    {}
+    {
+        return m_Private->m_UI;
+    }
 
 } // end namespace MPX 

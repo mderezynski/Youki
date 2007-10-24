@@ -44,6 +44,9 @@ namespace MPX
 
         public:
 
+            PlaybackSourceMusicLib ();
+            
+
             virtual Glib::ustring
             get_uri (); 
         

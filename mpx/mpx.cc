@@ -39,6 +39,7 @@
 #include "request-value.hh"
 #include "util-graphics.hh"
 #include "util-ui.hh"
+#include "source-musiclib.hh"
 using namespace Glib;
 using namespace Gtk;
 using namespace std;
@@ -756,12 +757,12 @@ namespace MPX
         m_ref_xml->get_widget_derived("sources", m_Sources);
         m_ref_xml->get_widget("statusbar", m_Statusbar);
 
-#if 0
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 
         Glib::RefPtr<Gdk::Pixbuf> icon = IconTheme::get_default()->load_icon("audio-x-generic", 16, ICON_LOOKUP_NO_SVG);
         m_Sources->addSource( _("Music"), icon );
 
+#if 0
         icon = IconTheme::get_default()->load_icon("source-video", 16, ICON_LOOKUP_NO_SVG);
         m_Sources->addSource( _("Videos"), icon );
 
@@ -775,16 +776,13 @@ namespace MPX
         m_Sources->addSource( _("Podcasts"), icon );
 #endif
 
-#if 0
-        RefPtr<Xml> sourcexml = Xml::create(build_filename(DATA_DIR, build_filename("glade","source-music.glade")));
-        Gtk::Widget * w = sourcexml->get_widget("source-music");
-        Gtk::Notebook * nb;
+        PlaybackSourceMusicLib * p = new PlaybackSourceMusicLib;
+        Gtk::Notebook * n;
         Gtk::Alignment * a = new Gtk::Alignment;
-        w->reparent(*a);
+        p->get_ui()->reparent(*a);
         a->show();
-        m_ref_xml->get_widget("sourcepages", nb);
-        nb->append_page(*a);
-#endif
+        m_ref_xml->get_widget("sourcepages", n);
+        n->append_page(*a);
 
 #if 0
         // Infoarea
