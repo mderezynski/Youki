@@ -21,73 +21,98 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 #include "source-musiclib.hh"
+#include <gtkmm/gtkmm.h>
 
 namespace MPX
 {
-      virtual Glib::ustring
-      PlaybackSourceMusicLib::get_uri () 
-      {}
-  
-      virtual Glib::ustring
-      PlaybackSourceMusicLib::get_type ()
-      {}
+    using namespace Glib;
+    class MusicLibPrivate
+    {
+        typedef Gtk::TreeModelColumn Col;
+        struct PlaylistColumnsT : public Gtk::TreeModel::ColumnRecord 
+        {
+              Col<ustring> Artist;
+              Col<ustring> Album;
+              Col<guint64> Track;
+              Col<ustring> Title;
+              Col<guint64> Length;
+        };
 
-      virtual GHashTable *
-      PlaybackSourceMusicLib::get_metadata ()
-      {}
+        PlaylistColumnsT PlaylistColumns;
+        Glib::RefPtr<Gtk::ListStore> ListStore;
+    };
+}
 
-      virtual bool
-      PlaybackSourceMusicLib::play ()
-      {}
+namespace MPX
+{
+    PlaybackSourceMusicLib ()
+    : PlaybackSource(_("Music"))
+    {
+      m_Private = new MusicLibPrivate;
+    }
 
-      virtual bool
-      PlaybackSourceMusicLib::go_next ()
-      {}
+    Glib::ustring
+    PlaybackSourceMusicLib::get_uri () 
+    {}
 
-      virtual bool
-      PlaybackSourceMusicLib::go_prev ()
-      {}
+    Glib::ustring
+    PlaybackSourceMusicLib::get_type ()
+    {}
 
-      virtual void
-      PlaybackSourceMusicLib::stop () 
-      {}
+    GHashTable *
+    PlaybackSourceMusicLib::get_metadata ()
+    {}
 
-      virtual void
-      PlaybackSourceMusicLib::play_post () 
-      {}
+    bool
+    PlaybackSourceMusicLib::play ()
+    {}
 
-      virtual void
-      PlaybackSourceMusicLib::next_post () 
-      {}
+    bool
+    PlaybackSourceMusicLib::go_next ()
+    {}
 
-      virtual void
-      PlaybackSourceMusicLib::prev_post ()
-      {}
+    bool
+    PlaybackSourceMusicLib::go_prev ()
+    {}
 
-      virtual void
-      PlaybackSourceMusicLib::restore_context ()
-      {}
+    void
+    PlaybackSourceMusicLib::stop () 
+    {}
 
-      virtual void
-      PlaybackSourceMusicLib::skipped () 
-      {}
+    void
+    PlaybackSourceMusicLib::play_post () 
+    {}
 
-      virtual void
-      PlaybackSourceMusicLib::segment () 
-      {}
+    void
+    PlaybackSourceMusicLib::next_post () 
+    {}
 
-      virtual void
-      PlaybackSourceMusicLib::buffering_done () 
-      {}
+    void
+    PlaybackSourceMusicLib::prev_post ()
+    {}
 
-      virtual Glib::RefPtr<Gdk::Pixbuf>
-      PlaybackSourceMusicLib::get_icon ()
-      {}
+    void
+    PlaybackSourceMusicLib::restore_context ()
+    {}
 
-      virtual Gtk::Widget*
-      PlaybackSourceMusicLib::get_ui ()
-      {}
+    void
+    PlaybackSourceMusicLib::skipped () 
+    {}
+
+    void
+    PlaybackSourceMusicLib::segment () 
+    {}
+
+    void
+    PlaybackSourceMusicLib::buffering_done () 
+    {}
+
+    Glib::RefPtr<Gdk::Pixbuf>
+    PlaybackSourceMusicLib::get_icon ()
+    {}
+
+    Gtk::Widget*
+    PlaybackSourceMusicLib::get_ui ()
+    {}
 
 } // end namespace MPX 
-  
-#endif

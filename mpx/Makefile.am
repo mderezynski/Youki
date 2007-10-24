@@ -125,6 +125,9 @@ mpx_bin_SOURCES =				\
 	request-value.hh			\
 	request-value.cc			\
 								\
+	source-musiclib.hh			\
+	source-musiclib.cc			\
+								\
 	sql.hh						\
 	sql.cc						\
 								\

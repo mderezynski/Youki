@@ -34,73 +34,80 @@
 
 namespace MPX
 {
+    class MusicLibPrivate;
+
     class PlaybackSourceMusicLib
         :   public PlaybackSource
     {
-        virtual Glib::ustring
-        get_uri (); 
     
-        virtual Glib::ustring
-        get_type ();
+            MusicLibPrivate * m_Private;
 
-        virtual GHashTable *
-        get_metadata ();
+        public:
 
-        virtual bool
-        play ();
+            virtual Glib::ustring
+            get_uri (); 
+        
+            virtual Glib::ustring
+            get_type ();
 
-        virtual bool
-        go_next ();
+            virtual GHashTable *
+            get_metadata ();
 
-        virtual bool
-        go_prev ();
+            virtual bool
+            play ();
 
-        virtual void
-        stop (); 
-  
+            virtual bool
+            go_next ();
 
-        virtual void
-        play_async ()
-        {}
+            virtual bool
+            go_prev ();
 
-        virtual void
-        go_next_async ()
-        {}
-  
-        virtual void
-        go_prev_async () 
-        {}
+            virtual void
+            stop (); 
+      
 
+            virtual void
+            play_async ()
+            {}
 
-        virtual void
-        play_post (); 
-
-        virtual void
-        next_post (); 
-
-        virtual void
-        prev_post ();
+            virtual void
+            go_next_async ()
+            {}
+      
+            virtual void
+            go_prev_async () 
+            {}
 
 
-        virtual void
-        restore_context ();
+            virtual void
+            play_post (); 
+
+            virtual void
+            next_post (); 
+
+            virtual void
+            prev_post ();
 
 
-        virtual void
-        skipped (); 
-
-        virtual void
-        segment (); 
-
-        virtual void
-        buffering_done (); 
+            virtual void
+            restore_context ();
 
 
-        virtual Glib::RefPtr<Gdk::Pixbuf>
-        get_icon ();
+            virtual void
+            skipped (); 
 
-        virtual Gtk::Widget*
-        get_ui ();
+            virtual void
+            segment (); 
+
+            virtual void
+            buffering_done (); 
+
+
+            virtual Glib::RefPtr<Gdk::Pixbuf>
+            get_icon ();
+
+            virtual Gtk::Widget*
+            get_ui ();
 
     }; // end class PlaybackSourceMusicLib 
 } // end namespace MPX 
