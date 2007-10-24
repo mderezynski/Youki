@@ -154,18 +154,4 @@ namespace MPX
         PlaybackSource::buffering_done ()
         {};
 
-        std::string
-        PlaybackSource::new_error (std::exception const& cxe)
-        {
-          std::string message = (boost::format (_("%s: %s")) % m_name.c_str() % cxe.what()).str();
-          return message;
-        }
-
-        std::string
-        PlaybackSource::new_message (std::string const& message_in)
-        {
-          std::string message = (boost::format (_("%s: %s")) % m_name.c_str() % message_in).str(); 
-          return message;
-        }
-
 } // end namespace MPX 

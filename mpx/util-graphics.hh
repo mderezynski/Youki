@@ -91,6 +91,12 @@ namespace MPX
     void 
     cairo_image_surface_border (Cairo::RefPtr<Cairo::ImageSurface> & source, double width);
 
+    void
+    draw_cairo_image (Cairo::RefPtr<Cairo::Context> const&      cr,
+                      Cairo::RefPtr<Cairo::ImageSurface> const& image,
+                      double                                    x,
+                      double                                    y,
+                      double                                    alpha);
   } // Util
 } // MPX
 

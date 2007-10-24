@@ -26,6 +26,7 @@
 #include <glib/ghash.h>
 #include <glibmm/ustring.h>
 #include <gdkmm/pixbuf.h>
+#include <gtkmm/widget.h>
 #include <sigc++/signal.h>
 #include <boost/format.hpp>
 #include "mpx/types.hh"
@@ -214,13 +215,8 @@ namespace MPX
         virtual Glib::RefPtr<Gdk::Pixbuf>
         get_icon () = 0;
 
-
-
-        std::string
-        new_error   (std::exception const& cxe);
-
-        std::string
-        new_message (std::string const& message_in);
+        virtual Gtk::Widget*
+        get_ui () = 0;
 
 
       protected:

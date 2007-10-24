@@ -214,5 +214,25 @@ namespace MPX
       cr->stroke ();
     }
 
+    void
+    draw_cairo_image (Cairo::RefPtr<Cairo::Context> const&      cr,
+                      Cairo::RefPtr<Cairo::ImageSurface> const& image,
+                      double                                    x,
+                      double                                    y,
+                      double                                    alpha)
+    {
+        cr->save ();
+
+        cr->translate (x, y);
+
+        cr->set_operator (Cairo::OPERATOR_ATOP);
+        cr->set_source (image, 0.0, 0.0);
+        cr->rectangle (0.0, 0.0, image->get_width (), image->get_height ());
+        cr->clip ();
+        cr->paint_with_alpha (alpha);
+
+        cr->restore ();
+    }
+
   } // namespace Util
 } // namespace MPX

@@ -41,8 +41,27 @@
 #include "util-ui.hh"
 using namespace Glib;
 using namespace Gtk;
-using namespace Gnome::Glade;
 using namespace std;
+using namespace Gnome::Glade;
+using namespace MPX::Util;
+
+namespace
+{
+  char const * MenubarMain =
+  "<ui>"
+  ""
+  "<menubar name='MenubarMain'>"
+  "   <menu action='MenuMusic'>"
+  "         <menuitem action='action-import-folder'/>"
+  "         <menuitem action='action-import-share'/>"
+  "         <separator name='sep00'/>"
+  "         <menuitem action='action-quit'/>"
+  "   </menu>"
+  "</menubar>"
+  ""
+  "</ui>"
+  "";
+}
 
 namespace MPX
 {
@@ -54,75 +73,177 @@ namespace MPX
     N_LAYOUTS
   };
 
-  struct LayoutData 
+  struct LayoutData
   {
-    double  alpha;
-    double  target;
-    int     x;
-    int     y;
+    double alpha;
+    double target;
+    int    x;
+    int    y;
 
-  //FIXME: Encode size here as well
-  } layout_info[] = { 
-    {-0.0, 1.0, 116, 10},
-    {-0.4, 1.0, 116, 42},
-    {-0.4, 0.8, 116, 60}
+    //FIXME: Encode size here as well
   };
 
+  LayoutData const layout_info[] = {
+    {-0.0, 1.0, 86,  8},
+    {-0.4, 1.0, 86, 40},
+    {-0.4, 0.8, 86, 58}
+  };
+
+  // WARNING: If you set the gravity or timescale too high, the cover
+  // animation will never come to a stop. Visually it might well be but it may be
+  // performing miniscule bounces.
+
+  double const cover_anim_area_width       = 72.0;
+  double const cover_anim_area_height      = 72.0;
+  double const cover_anim_area_x0          = 6.0;
+  double const cover_anim_area_y0          = 6.0;
+  double const cover_anim_area_x1          = cover_anim_area_x0 + cover_anim_area_width;
+  double const cover_anim_area_y1          = cover_anim_area_y0 + cover_anim_area_height;
+
+  double const cover_anim_initial_pos      = 6.0 - 72.0;
+  double /*const*/ cover_anim_initial_velocity = 223.3; 
+  double /*const*/ cover_anim_gravity          = 359.1; 
+  double const cover_anim_wall             = cover_anim_area_x1;
+  double /*const*/ cover_anim_wall_elasticity  = 0.074;
+  double const cover_anim_time_scale       = 1.0;
+
+  int    const cover_anim_fps              = 25;
+  int    const cover_anim_interval         = 1000 / cover_anim_fps;
+  double const cover_anim_dt               = cover_anim_time_scale / cover_anim_fps;
+
+#ifdef APP_MAINTENANCE
+  class AnimParams
+    : public WidgetLoader<Gtk::Window>
+  {
+      Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
+      Gtk::Range * m_range_velocity;
+      Gtk::Range * m_range_gravity;
+      Gtk::Range * m_range_elasticity;
+
+      double & m_velocity; 
+      double & m_gravity;
+      double & m_elasticity;
+
+      enum RangeId
+      {
+        RANGE_VELOCITY,
+        RANGE_GRAVITY,
+        RANGE_ELASTICITY
+      };
+
+      void
+      on_range_value_changed (RangeId id)
+      {
+        switch(id)
+        {
+          case RANGE_VELOCITY:
+            m_velocity = m_range_velocity->get_value()/1000.;
+            break;
+
+          case RANGE_GRAVITY:
+            m_gravity = m_range_gravity->get_value()/1000.;
+            break;
+
+          case RANGE_ELASTICITY:
+            m_elasticity = m_range_elasticity->get_value()/1000.;
+            break;
+        } 
+      }
+
+    public:
+
+      static AnimParams*
+      create (double & velocity, double & gravity, double & elasticity)
+      {
+        const std::string path (build_filename(DATA_DIR, build_filename("glade","dialog-bounce-adjust.glade")));
+        AnimParams *p = new AnimParams(Gnome::Glade::Xml::create (path), velocity, gravity, elasticity);
+        return p;
+      }
+
+      AnimParams(const Glib::RefPtr<Gnome::Glade::Xml>& xml,
+              double & velocity,
+              double & gravity,
+              double & elasticity)
+      : WidgetLoader<Gtk::Window>(xml, "anim-params")
+      , m_ref_xml(xml)
+      , m_velocity(velocity)
+      , m_gravity(gravity)
+      , m_elasticity(elasticity)
+      {
+        xml->get_widget("velocity", m_range_velocity);
+        xml->get_widget("gravity", m_range_gravity);
+        xml->get_widget("elasticity", m_range_elasticity);
+
+        m_range_velocity->set_value(velocity*1000.);
+        m_range_gravity->set_value(gravity*1000.);
+        m_range_elasticity->set_value(elasticity*1000.);
+
+        m_range_velocity->signal_value_changed().connect(
+          sigc::bind( sigc::mem_fun( *this, &AnimParams::on_range_value_changed ), RANGE_VELOCITY));
+
+        m_range_gravity->signal_value_changed().connect(
+          sigc::bind( sigc::mem_fun( *this, &AnimParams::on_range_value_changed ), RANGE_GRAVITY));
+
+        m_range_elasticity->signal_value_changed().connect(
+          sigc::bind( sigc::mem_fun( *this, &AnimParams::on_range_value_changed ), RANGE_ELASTICITY));
+      }
+  };
+#endif // APP_MAINTENANCE
+ 
   class InfoArea
     : public EventBox
   {
     private:
 
+#ifdef APP_MAINTENANCE
+      AnimParams * m_ParamControl;
+#endif // APP_MAINTENANCE
+
 #if 0
-      Spectrum        m_spectrum_data;
-      Spectrum        m_spectrum_peak;
+      Spectrum m_spectrum_data;
+      Spectrum m_spectrum_peak;
 #endif
 
       struct Text
       {
-        Text (Gtk::Widget & w, ustring const& text, LayoutID id)
-        : m_alpha   (layout_info[id].alpha)
-        , m_target  (layout_info[id].target)
-        , m_x       (layout_info[id].x)
-        , m_y       (layout_info[id].y)
+        Text (Gtk::Widget &  widget,
+              ustring const& text,
+              LayoutID       id)
+        : alpha   (layout_info[id].alpha)
+        , target  (layout_info[id].target)
+        , x       (layout_info[id].x)
+        , y       (layout_info[id].y)
         {
-          m_layout = w.create_pango_layout ("");
-          m_layout->set_markup (text);
+          layout = widget.create_pango_layout ("");
+          layout->set_markup (text);
         }
 
         ~Text () {}
 
-        RefPtr<Pango::Layout> m_layout;
-        double                m_alpha;
-        double                m_target;
-        int                   m_x, m_y;
-        sigc::connection      m_conn;
+        RefPtr<Pango::Layout> layout;
+        double                alpha;
+        double                target;
+        int                   x, y;
+        sigc::connection      conn;
       };
-  
-      typedef boost::shared_ptr <Text>    TextP;
-      typedef boost::shared_ptr <Mutex>   MutexP;
 
-      typedef std::map <LayoutID, TextP>    Layouts;
-      typedef std::map <LayoutID, MutexP>   LayoutsLocks;
-    
-      Layouts         m_layouts;
-      LayoutsLocks    m_locks;
-      Mutex           m_layouts_lock;
-      ustring         m_text[N_LAYOUTS];
+      typedef boost::shared_ptr<Text>   TextP;
+      typedef std::map<LayoutID, TextP> Layouts;
 
-      RefPtr<Pango::Layout> m_layout_message;
+      Layouts m_layouts;
+      ustring m_text[N_LAYOUTS];
 
-      Cairo::RefPtr<Cairo::ImageSurface>  m_surface;
+      Cairo::RefPtr<Cairo::ImageSurface>  m_cover_surface;
       Glib::RefPtr<Gdk::Pixbuf>           m_source_icon;
-      sigc::connection                    m_surface_conn;
+      double                              m_cover_pos;
+      double                              m_cover_velocity;
+      double                              m_cover_accel;
+      double                              m_cover_alpha;
+      bool                                m_compact;
+      sigc::connection                    m_cover_anim_conn;
       sigc::connection                    m_conn_decay;
 
-      double    m_surface_alpha;
-      Mutex     m_surface_lock;
-  
     public:
-
-      bool      m_showing_message; // FIXME: Make private
 
 #if 0
       typedef sigc::signal<void, VUri const&> SignalUris;
@@ -131,38 +252,36 @@ namespace MPX
       SignalUris &
       signal_uris_dropped()
       {
-        return signal_uris_dropped_;
+        return m_signal_uris_dropped;
       }
 
       SignalCoverClicked&
       signal_cover_clicked()
       {
-        return signal_cover_clicked_;
+        return m_signal_cover_clicked;
       }
-#endif
 
     private:
 
-#if 0
-      SignalUris signal_uris_dropped_;
-      SignalCoverClicked signal_cover_clicked_;
+      SignalUris         m_signal_uris_dropped;
+      SignalCoverClicked m_signal_cover_clicked;
 #endif
 
     protected:
 
 #if 0
       bool
-      on_button_press_event (GdkEventButton * event) 
+      on_button_press_event (GdkEventButton * event)
       {
         int x = int (event->x);
         int y = int (event->y);
 
-        if ((x >= 34) && (x <=98) && (y >= 8) && (y <= 88))
+        if ((x >= 6) && (x <= 78) && (y >= 3) && (y <= 75))
         {
           int status = Play::Obj()->property_status();
           if (status != PLAYSTATUS_STOPPED && status != PLAYSTATUS_WAITING)
           {
-            signal_cover_clicked_.emit ();
+            m_signal_cover_clicked.emit ();
           }
         }
 
@@ -170,7 +289,10 @@ namespace MPX
       }
 
       bool
-      on_drag_drop (RefPtr<Gdk::DragContext> const& context, int x, int y, guint time)
+      on_drag_drop (Glib::RefPtr<Gdk::DragContext> const& context,
+                    int                                   x,
+                    int                                   y,
+                    guint                                 time)
       {
         ustring target (drag_dest_find_target (context));
         if( !target.empty() )
@@ -187,13 +309,17 @@ namespace MPX
       }
 
       void
-      on_drag_data_received (RefPtr<Gdk::DragContext> const& context, int x, int y,
-                             Gtk::SelectionData const& data, guint info, guint time)
+      on_drag_data_received (Glib::RefPtr<Gdk::DragContext> const& context,
+                             int                                   x,
+                             int                                   y,
+                             Gtk::SelectionData const&             data,
+                             guint                                 info,
+                             guint                                 time)
       {
         if( data.get_data_type() == "text/uri-list")
         {
           VUri u = data.get_uris();
-          signal_uris_dropped_.emit (u);
+          m_signal_uris_dropped.emit (u);
         }
         else
         if( data.get_data_type() == "text/plain")
@@ -205,7 +331,7 @@ namespace MPX
           std::string text = data.get_data_as_string ();
           replace_all (text, "\r", "");
 
-          StrV v; 
+          StrV v;
           split (v, text, is_any_of ("\n"));
 
           if( v.empty ()) // we're taking chances here
@@ -229,19 +355,23 @@ namespace MPX
 
           if( !u.empty() )
           {
-            signal_uris_dropped_.emit (u);
+            m_signal_uris_dropped.emit (u);
           }
         }
       }
+#endif
 
     private:
 
+#if 0
       void
       enable_drag_dest ()
       {
         disable_drag_dest ();
+
         DNDEntries target_entries;
         target_entries.push_back (TargetEntry ("text/plain"));
+
         drag_dest_set (target_entries, Gtk::DEST_DEFAULT_MOTION);
         drag_dest_add_uri_targets ();
       }
@@ -249,7 +379,7 @@ namespace MPX
       void
       disable_drag_dest ()
       {
-        drag_dest_unset ();  
+        drag_dest_unset ();
       }
 #endif
 
@@ -258,134 +388,120 @@ namespace MPX
       InfoArea (BaseObjectType                 * obj,
                 RefPtr<Gnome::Glade::Xml> const& xml)
       : EventBox          (obj)
-      , m_source_icon     (Glib::RefPtr<Gdk::Pixbuf>(0))
-      , m_showing_message (false)
-      {
-        gtk_widget_add_events (GTK_WIDGET (gobj()), GDK_BUTTON_PRESS_MASK);
-
-        modify_bg (Gtk::STATE_NORMAL, Gdk::Color ("#000000"));
-        modify_base (Gtk::STATE_NORMAL, Gdk::Color ("#000000"));
-
 #if 0
-        for (int n = 0; n < SPECT_BANDS; ++n)
-        {
-          m_spectrum_data.push_back (0);
-          m_spectrum_peak.push_back (0);
-        }
-
-        Play::Obj()->signal_spectrum().connect (sigc::mem_fun (*this, &MPX::InfoArea::play_update_spectrum));
-        Play::Obj()->property_status().signal_changed().connect (sigc::mem_fun (*this, &MPX::InfoArea::play_status_changed));
+      , m_spectrum_data   (SPECT_BANDS, 0)
+      , m_spectrum_peak   (SPECT_BANDS, 0)
 #endif
+      , m_source_icon     (Glib::RefPtr<Gdk::Pixbuf> (0))
+      , m_cover_alpha     (1.0)
+      , m_compact         (false)
+      {
+        add_events (Gdk::BUTTON_PRESS_MASK);
 
-        m_locks.insert (make_pair (L_TITLE, MutexP (new Mutex())));
-        m_locks.insert (make_pair (L_ARTIST, MutexP (new Mutex())));
-        m_locks.insert (make_pair (L_ALBUM, MutexP (new Mutex())));
+        Gdk::Color const color ("#000000");
+        modify_bg (Gtk::STATE_NORMAL, color);
+        modify_base (Gtk::STATE_NORMAL, color);
 
 #if 0
+        Play::Obj ()->signal_spectrum ().connect (sigc::mem_fun (this, &InfoArea::play_update_spectrum));
+        Play::Obj ()->property_status ().signal_changed ().connect (sigc::mem_fun (this, &InfoArea::play_status_changed));
+
         enable_drag_dest ();
 #endif
+
+#ifdef APP_MAINTENANCE
+        m_ParamControl = AnimParams::create(cover_anim_initial_velocity, cover_anim_gravity, cover_anim_wall_elasticity);
+#endif // APP_MAINTENANCE
       }
 
       ~InfoArea ()
       {}
 
       void
-      set_source (Glib::RefPtr<Gdk::Pixbuf> source_icon)
+      set_source (Glib::RefPtr<Gdk::Pixbuf> const& source_icon)
       {
         m_source_icon = source_icon;
         queue_draw ();
       }
 
       void
+      set_compact (bool compact)
+      {
+        m_compact = compact;
+        queue_draw ();
+      }
+
+      void
       reset ()
       {
-        Mutex::Lock L1 (m_layouts_lock);
-        Mutex::Lock L2 (m_surface_lock);
-
 #if 0
-        for (int n = 0; n < SPECT_BANDS; m_spectrum_data[n++] = 0); 
-        for (int n = 0; n < SPECT_BANDS; m_spectrum_peak[n++] = 0); 
+        std::fill (m_spectrum_data.begin (), m_spectrum_data.end (), 0);
+        std::fill (m_spectrum_peak.begin (), m_spectrum_peak.end (), 0);
 #endif
 
         remove_layout_if_exists (L_ARTIST);
         remove_layout_if_exists (L_ALBUM);
         remove_layout_if_exists (L_TITLE);
 
-        m_surface_conn.disconnect ();
-        m_surface = Cairo::RefPtr<Cairo::ImageSurface>(0);
+        m_cover_anim_conn.disconnect ();
+        m_cover_surface = Cairo::RefPtr<Cairo::ImageSurface> (0);
 
-        m_text[0] = ustring ();
-        m_text[1] = ustring ();
-        m_text[2] = ustring ();
+        m_text[0].clear ();
+        m_text[1].clear ();
+        m_text[2].clear ();
 
-        // Not calling message_clear as it locks
-        m_showing_message = false;
-        m_layout_message = RefPtr<Pango::Layout>(0);
-
-        set_source (Glib::RefPtr<Gdk::Pixbuf>(0));
+        set_source (Glib::RefPtr<Gdk::Pixbuf> (0));
         queue_draw ();
       }
 
       void
-      message_set (ustring const& text)
+      set_text (LayoutID       id,
+                ustring const& text)
       {
-        Mutex::Lock L (m_layouts_lock);
-        m_showing_message = true;
-        m_layout_message = create_pango_layout ("");
-        m_layout_message->set_markup ((boost::format ("%s") % text.c_str()).str());
-        queue_draw ();
-      }
-
-      void
-      message_clear ()
-      {
-        Mutex::Lock L (m_layouts_lock);
-        m_showing_message = false;
-        m_layout_message = RefPtr<Pango::Layout>(0);
-        queue_draw ();
-      }
-
-      void
-      set_text (LayoutID id, ustring const& text)
-      {
-        Mutex::Lock L (m_layouts_lock);
         if( text != m_text[id] )
         {
           m_text[id] = text;
-          TextP p = TextP (new Text (*this, text, id));
+
+          TextP p (new Text (*this, text, id));
 
           remove_layout_if_exists (id);
           insert_layout_and_connect (id, p);
-        } 
+        }
       }
 
       void
-      set_image (RefPtr<Gdk::Pixbuf> pixbuf)
+      set_paused (bool paused)
       {
-        Mutex::Lock L (m_surface_lock); 
-        m_surface = Util::cairo_image_surface_from_pixbuf (pixbuf);
-        m_surface_alpha = -0.5;
-        m_surface_conn.disconnect ();
-        m_surface_conn = signal_timeout().connect (sigc::mem_fun (*this, &MPX::InfoArea::fade_in_surface), 20);
+        m_cover_alpha = (paused ? 0.5 : 1.0);
       }
 
       void
-      set_image (Cairo::RefPtr<Cairo::ImageSurface> surface)
+      set_image (RefPtr<Gdk::Pixbuf> const& pixbuf)
       {
-        Mutex::Lock L (m_surface_lock); 
-        m_surface = surface; 
-        m_surface_alpha = -0.5;
-        m_surface_conn.disconnect ();
-        m_surface_conn = signal_timeout().connect (sigc::mem_fun (*this, &MPX::InfoArea::fade_in_surface), 20);
+        set_image (Util::cairo_image_surface_from_pixbuf (pixbuf));
+      }
+
+      void
+      set_image (Cairo::RefPtr<Cairo::ImageSurface> const& surface)
+      {
+        m_cover_surface  = surface;
+
+        m_cover_pos      = cover_anim_initial_pos;
+        m_cover_velocity = cover_anim_initial_velocity;
+        m_cover_accel    = cover_anim_gravity;
+
+        m_cover_anim_conn.disconnect ();
+        m_cover_anim_conn = signal_timeout ().connect (sigc::mem_fun (this, &InfoArea::slide_in_cover), cover_anim_interval);
       }
 
     private:
 
       void
-      insert_layout_and_connect (LayoutID id, TextP & p)
+      insert_layout_and_connect (LayoutID id,
+                                 TextP &  p)
       {
-        m_layouts.insert (make_pair (id, p)); 
-        p->m_conn = signal_timeout().connect (sigc::bind (sigc::mem_fun (*this, &MPX::InfoArea::fade_in), id), 20);
+        m_layouts[id] = p;
+        p->conn = signal_timeout().connect (sigc::bind (sigc::mem_fun (this, &InfoArea::fade_in), id), 20);
       }
 
       void
@@ -395,69 +511,92 @@ namespace MPX
         if( i != m_layouts.end() )
         {
           TextP & p = i->second;
-          m_locks.find (id)->second->lock ();
-          p->m_conn.disconnect ();
+
+          p->conn.disconnect ();
           m_layouts.erase (i);
-          m_locks.find (id)->second->unlock ();
         }
       }
 
-      bool 
+      bool
       fade_in (LayoutID id)
       {
-        Mutex::Lock L (*(m_locks.find (id)->second.get()));
         TextP & p (m_layouts.find (id)->second);
-        p->m_alpha += 0.1;
-        bool r = p->m_alpha < p->m_target;
-        queue_draw ();
-        return r;
-      }
+        p->alpha += 0.1;
 
-      bool 
-      fade_in_surface ()
-      {
-        Mutex::Lock L (m_surface_lock);
-        m_surface_alpha += 0.1;
-        bool r = m_surface_alpha < 1.;
+        bool r = p->alpha < p->target;
+
         queue_draw ();
+
         return r;
       }
 
       bool
+      slide_in_cover ()
+      {
+        m_cover_pos      += m_cover_velocity * cover_anim_dt;
+        m_cover_velocity += m_cover_accel    * cover_anim_dt;
+        m_cover_accel     = cover_anim_gravity;
+
+        bool r = true;
+
+        if (m_cover_pos + m_cover_surface->get_width () >= cover_anim_wall)
+        {
+            m_cover_pos       = cover_anim_wall - m_cover_surface->get_width ();
+            m_cover_velocity *= -cover_anim_wall_elasticity;
+
+            // FIXME: Need a better test. This runs into stability problems when
+            // dt or acceleration is too high
+
+            double next_velocity = m_cover_velocity + m_cover_accel * cover_anim_dt;
+
+            if (next_velocity >= 0.0)
+            {
+                m_cover_pos      = cover_anim_wall - m_cover_surface->get_width ();
+                m_cover_velocity = 0.0;
+                m_cover_accel    = 0.0;
+
+                r = false;
+            }
+        }
+
+        queue_draw ();
+
+        return r;
+      }
+
+#if 0
+      bool
       decay_spectrum ()
       {
-#if 0
-        for (int n = 0; n < SPECT_BANDS; ++n) 
+        for (int n = 0; n < SPECT_BANDS; ++n)
         {
           m_spectrum_data[n] = (((m_spectrum_data[n] - 6) < 0) ? 0 : (m_spectrum_data[n] - 6));
           m_spectrum_peak[n] = (((m_spectrum_peak[n] - 4) < 0) ? 0 : (m_spectrum_peak[n] - 4));
         }
         queue_draw ();
-#endif
         return true;
       }
+#endif
 
+#if 0
       void
       play_status_changed ()
       {
-#if 0
-        MPXPlaystatus status = MPXPlaystatus (Play::Obj()->property_status().get_value());
+        MPXPlaystatus status = MPXPlaystatus (Play::Obj ()->property_status ().get_value ());
         if( status == PLAYSTATUS_PAUSED )
         {
-          m_conn_decay = Glib::signal_timeout().connect (sigc::mem_fun (*this, &InfoArea::decay_spectrum), 50); 
+          m_conn_decay = Glib::signal_timeout ().connect (sigc::mem_fun (this, &InfoArea::decay_spectrum), 50);
         }
         else
         {
-          m_conn_decay.disconnect();
+          m_conn_decay.disconnect ();
         }
-#endif
       }
 
-#if 0
       void
       play_update_spectrum (Spectrum const& spectrum)
       {
-        for (int n = 0; n < SPECT_BANDS; ++n) 
+        for (int n = 0; n < SPECT_BANDS; ++n)
         {
           if( spectrum[n] < m_spectrum_data[n] )
           {
@@ -466,13 +605,116 @@ namespace MPX
           }
           else
           {
-            m_spectrum_data[n] = spectrum[n]; 
+            m_spectrum_data[n] = spectrum[n];
             m_spectrum_peak[n] = spectrum[n];
           }
-        } 
+        }
+
         queue_draw ();
       }
 #endif
+
+      void
+      draw_background (Cairo::RefPtr<Cairo::Context> const& cr)
+      {
+        Gtk::Allocation allocation = get_allocation ();
+
+        Gdk::Cairo::set_source_color (cr, get_style()->get_bg (Gtk::STATE_SELECTED));
+        cr->rectangle (0, 0, allocation.get_width (), allocation.get_height ());
+        cr->stroke ();
+      }
+
+      void
+      draw_cover (Cairo::RefPtr<Cairo::Context> const& cr)
+      {
+        if( m_cover_surface && (m_cover_pos >= cover_anim_area_x0 - m_cover_surface->get_width ()) )
+        {
+          cr->save ();
+
+          cr->rectangle (cover_anim_area_x0, cover_anim_area_y0, cover_anim_area_width, cover_anim_area_height);
+          cr->clip ();
+
+          double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface->get_height ()) / 2;
+
+          draw_cairo_image (cr, m_cover_surface, m_cover_pos, y, m_cover_alpha);
+
+          cr->restore ();
+        }
+      }
+
+      void
+      draw_text (Cairo::RefPtr<Cairo::Context> const& cr)
+      {
+        Gtk::Allocation allocation = get_allocation ();
+
+        for (Layouts::const_iterator i = m_layouts.begin(); i != m_layouts.end(); ++i)
+        {
+          TextP const& p (i->second);
+          if( p->alpha < 0 )
+            continue;
+
+          cr->set_source_rgba (1.0, 1.0, 1.0, p->alpha);
+          cr->set_operator (Cairo::OPERATOR_ATOP);
+          cr->move_to (p->x, p->y);
+
+          p->layout->set_single_paragraph_mode (true);
+          p->layout->set_ellipsize (Pango::ELLIPSIZE_END);
+          p->layout->set_width ((allocation.get_width() - p->x - 210) * PANGO_SCALE);
+          p->layout->set_wrap (Pango::WRAP_CHAR);
+
+          pango_cairo_show_layout (cr->cobj(), p->layout->gobj());
+        }
+      }
+
+      void
+      draw_spectrum (Cairo::RefPtr<Cairo::Context> const& cr)
+      {
+#if 0
+        Gtk::Allocation allocation = get_allocation ();
+
+        for (int n = 0; n < SPECT_BANDS; ++n)
+        {
+          int x = 0, y = 0, w = 0, h = 0;
+
+          // Bar
+          x = allocation.get_width () - 200 + (n*12);
+          y = 11 + (64 - m_spectrum_data[n]);
+
+          w = 10;
+          h = m_spectrum_data[n];
+
+          cr->set_source_rgba (1.0, 1.0, 1.0, 0.3);
+          cr->rectangle (x,y,w,h);
+          cr->fill ();
+
+          // Peak
+          if( m_spectrum_peak[n] > 0 )
+          {
+            y = 11 + (64 - m_spectrum_peak[n]);
+
+            h = 1;
+
+            cr->set_source_rgba (1.0, 1.0, 1.0, 0.65);
+            cr->rectangle (x, y-1, w, h);
+            cr->fill ();
+          }
+        }
+#endif
+      }
+
+      void
+      draw_source_icon (Cairo::RefPtr<Cairo::Context> const& cr)
+      {
+        if( m_source_icon && m_compact )
+        {
+          Gtk::Allocation allocation = get_allocation ();
+
+          cr->set_operator (Cairo::OPERATOR_ATOP);
+          Gdk::Cairo::set_source_pixbuf (cr, m_source_icon, allocation.get_width () - 28, 12);
+          cr->rectangle (allocation.get_width () - 28, 4, 20, 20);
+          cr->fill ();
+        }
+      }
 
     protected:
 
@@ -480,109 +722,21 @@ namespace MPX
       on_expose_event (GdkEventExpose * event)
       {
         Widget::on_expose_event (event);
+
         Cairo::RefPtr<Cairo::Context> cr = get_window ()->create_cairo_context ();
 
-        if( !m_showing_message )
-        {
-          m_layouts_lock.lock ();  
-          for (Layouts::const_iterator i = m_layouts.begin(); i != m_layouts.end(); ++i)
-          {
-            Mutex::Lock L (*(m_locks.find (i->first)->second.get()));
-            TextP const& p (i->second);
-            if( p->m_alpha < 0 )
-              continue;
-            cr->set_source_rgba (1., 1., 1., p->m_alpha);
-            cr->set_operator (Cairo::OPERATOR_ATOP);
-            cr->move_to (p->m_x, p->m_y);
-            p->m_layout->set_single_paragraph_mode (true);
-            p->m_layout->set_ellipsize (Pango::ELLIPSIZE_END);
-            p->m_layout->set_width ((get_allocation().get_width() - p->m_x - 210) * PANGO_SCALE);
-            p->m_layout->set_wrap (Pango::WRAP_CHAR);
-            pango_cairo_show_layout (cr->cobj(), p->m_layout->gobj());
-          }
-          m_layouts_lock.unlock ();  
-
-          m_surface_lock.lock ();
-          if( m_surface && (m_surface_alpha >= 0) )
-          {
-            cr->set_operator (Cairo::OPERATOR_SOURCE);
-            cr->set_source (m_surface, 0, 0); 
-            cr->rectangle (0, 0, 64, 64);
-            cr->save (); 
-            cr->clip ();
-            cr->paint_with_alpha (m_surface_alpha);
-            cr->restore ();
-          }
-          m_surface_lock.unlock ();
-        }
-        else
-        {
-          m_layouts_lock.lock ();  
-          Pango::Rectangle r = m_layout_message->get_ink_extents();
-          cr->set_source_rgba (1., 1., 1., 1.); 
-          cr->set_operator (Cairo::OPERATOR_ATOP);
-          cr->move_to ( 72, 12 ); 
-          pango_cairo_show_layout (cr->cobj(), m_layout_message->gobj());
-          m_layouts_lock.unlock ();  
-        }
-
-#if 0
-        for (int n = 0; n < SPECT_BANDS; ++n)
-        {
-          int x = 0, y = 0, w = 0, h = 0;
-
-          // Bar
-          x = (get_allocation().get_width ()) - 200 + (n*12);
-          y = 10 + (64 - m_spectrum_data[n]); 
-          w = 10;
-          h = m_spectrum_data[n];
-
-          cr->set_source_rgba (1., 1., 1., 0.3);
-          cr->rectangle (x,y,w,h);
-          cr->fill ();
-
-          // Peak
-          if( m_spectrum_peak[n] > 0 )
-          {
-            y = 10 + (64 - m_spectrum_peak[n]); 
-            h = 1;
-            cr->set_source_rgba (1., 1., 1., 0.65);
-            cr->rectangle (x, y-1, w, h);
-            cr->fill ();
-          }
-        }
-#endif
-
-        if( m_source_icon )
-        {
-          cr->set_operator (Cairo::OPERATOR_ATOP);
-          Gdk::Cairo::set_source_pixbuf (cr, m_source_icon, get_allocation().get_width() - 28, 12); 
-          cr->rectangle (get_allocation().get_width() - 28, 12, 20, 20);
-          cr->fill ();
-        }
+        draw_background (cr);
+        draw_cover (cr);
+        draw_text (cr);
+        draw_source_icon (cr);
+        draw_spectrum (cr);
 
         return true;
       }
   };
 }
 
-namespace
-{
-  char const * MenubarMain =
-  "<ui>"
-  ""
-  "<menubar name='MenubarMain'>"
-  "   <menu action='MenuMusic'>"
-  "         <menuitem action='action-import-folder'/>"
-  "         <menuitem action='action-import-share'/>"
-  "         <separator name='sep00'/>"
-  "         <menuitem action='action-quit'/>"
-  "   </menu>"
-  "</menubar>"
-  ""
-  "</ui>"
-  "";
-}
+
 
 namespace MPX
 {
@@ -594,8 +748,6 @@ namespace MPX
     , m_Library (obj_library)
     , m_Covers (obj_amazon)
    {
-        m_Covers.signal_got_cover().connect( sigc::mem_fun( *this, &Player::on_got_cover ));
-
         m_Library.signal_scan_start().connect( sigc::mem_fun( *this, &Player::on_library_scan_start ) );
         m_Library.signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
         m_Library.signal_scan_end().connect( sigc::mem_fun( *this, &Player::on_library_scan_end ) );
@@ -604,6 +756,7 @@ namespace MPX
         m_ref_xml->get_widget_derived("sources", m_Sources);
         m_ref_xml->get_widget("statusbar", m_Statusbar);
 
+#if 0
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 
         Glib::RefPtr<Gdk::Pixbuf> icon = IconTheme::get_default()->load_icon("audio-x-generic", 16, ICON_LOOKUP_NO_SVG);
@@ -620,7 +773,9 @@ namespace MPX
 
         icon = IconTheme::get_default()->load_icon("source-podcasts", 16, ICON_LOOKUP_NO_SVG);
         m_Sources->addSource( _("Podcasts"), icon );
+#endif
 
+#if 0
         RefPtr<Xml> sourcexml = Xml::create(build_filename(DATA_DIR, build_filename("glade","source-music.glade")));
         Gtk::Widget * w = sourcexml->get_widget("source-music");
         Gtk::Notebook * nb;
@@ -629,6 +784,7 @@ namespace MPX
         a->show();
         m_ref_xml->get_widget("sourcepages", nb);
         nb->append_page(*a);
+#endif
 
 #if 0
         // Infoarea
@@ -801,13 +957,13 @@ namespace MPX
     void
     Player::on_import_folder()
     {
-        DialogImportFolder *d = DialogImportFolder::create();
+        boost::shared_ptr<DialogImportFolder> d = boost::shared_ptr<DialogImportFolder>(DialogImportFolder::create());
         
-        if(d->run() == 0) // 'Import' button
+        if(d->run() == 0) // Import
         {
             Glib::ustring uri; 
             d->get_folder_infos(uri);
-            delete d;
+            d->hide();
             m_Library.scanUri(uri);
         }
     }
@@ -815,11 +971,11 @@ namespace MPX
     void
     Player::on_import_share()
     {
-        DialogImportShare *d = DialogImportShare::create();
+        boost::shared_ptr<DialogImportShare> d = boost::shared_ptr<DialogImportShare>(DialogImportShare::create());
         
         rerun_import_share_dialog:
 
-            if(d->run() == 0) // 'Import' button
+            if(d->run() == 0) // Import
             {
                 Glib::ustring login, password;
                 d->get_share_infos(m_Share, m_ShareName, login, password);
@@ -846,7 +1002,7 @@ namespace MPX
                 {
                     MessageDialog dialog (*this, (boost::format (_("An Error occcured trying to mount the share '%s'")) % m_Share.c_str()).str());
                     dialog.run();
-                    goto exit_import_share_dialog;
+                    return; 
                 }
 
                 g_mount_operation_set_username(m_MountOperation, login.c_str());
@@ -854,10 +1010,6 @@ namespace MPX
                 g_signal_connect(m_MountOperation, "ask_password", G_CALLBACK(Player::ask_password_cb), NULL);
                 g_mount_for_location(m_MountFile, m_MountOperation, NULL, mount_ready_callback, this);
             }
-
-        exit_import_share_dialog:
-
-            delete d;
     }
 
     gboolean
@@ -975,11 +1127,5 @@ namespace MPX
     {
         m_Statusbar->pop();        
         m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Files, %2% added, %3% up to date, %4% updated, %5% erroneous)")) % s % x % y % a % b).str());
-    }
-
-    void
-    Player::on_got_cover (Glib::ustring asin)
-    {
-        g_message("%s: Got cover for %s", G_STRLOC, asin.c_str());
     }
 }
