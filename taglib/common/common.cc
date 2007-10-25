@@ -8,7 +8,7 @@
 
 #include <glibmm.h>
 
-#include <taglib-gio/taglib.h>
+#include <taglib-gio/taglib-gio.h>
 #include <taglib-gio/fileref.h>
 #include <taglib-gio/tfile.h>
 #include <taglib-gio/tag.h>
