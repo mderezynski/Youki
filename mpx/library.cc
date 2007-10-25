@@ -309,6 +309,12 @@ namespace MPX
         mReaderTagLib.get(uri, track);
     }
 
+    void
+    Library::getSQL( RowV & rows, const std::string& sql)
+    {
+      m_SQL->get (rows, sql); 
+    }
+
     gint64
     Library::get_track_artist_id (Track &track, bool only_if_exists)
     {

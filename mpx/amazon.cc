@@ -175,7 +175,7 @@ namespace MPX
     bool
     Covers::fetch (ustring const& asin, RefPtr<Gdk::Pixbuf>& cover)
     {
-        MPixbufCache::const_iterator i = m_pixbuf_cache.find (asin);
+        MPixbufCache::const_iterator i = m_pixbuf_cache.find(asin);
         if (i != m_pixbuf_cache.end())
         {
           cover = i->second; 
@@ -186,7 +186,7 @@ namespace MPX
         if (file_test (thumb_path, FILE_TEST_EXISTS))
         {
           cover = Gdk::Pixbuf::create_from_file (thumb_path); 
-          m_pixbuf_cache.insert (std::make_pair (asin, cover));
+          m_pixbuf_cache.insert (std::make_pair(asin, cover));
           return true;
         }
 

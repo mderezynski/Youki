@@ -30,8 +30,9 @@
 #include <sigc++/signal.h>
 #include <boost/format.hpp>
 #include "mpx/types.hh"
-#include "playbacksource.hh"
+#include "amazon.hh"
 #include "library.hh"
+#include "playbacksource.hh"
 
 namespace MPX
 {
@@ -45,7 +46,7 @@ namespace MPX
 
         public:
 
-            PlaybackSourceMusicLib (MPX::Library&);
+            PlaybackSourceMusicLib (MPX::Library&, MPX::Amazon::Covers&);
 
             virtual Glib::ustring
             get_uri (); 

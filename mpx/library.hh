@@ -88,7 +88,11 @@ namespace MPX
             ~Library () ;
 
             void
-            getMetadata (std::string const& uri, Track & track) ;
+            getMetadata(const std::string& uri, Track & track) ;
+
+            void
+            getSQL(SQL::RowV & rows, const std::string& sql) ;
+
 
             ScanResult
             insert (const std::string& uri, const std::string& insert_path, const std::string& name = std::string());

@@ -55,7 +55,7 @@ namespace MPX
     {
       public:
 
-        typedef sigc::signal<void, Glib::ustring> SignalGotCover;
+        typedef sigc::signal<void, const Glib::ustring&> SignalGotCover;
 
         struct SignalsT
         {

@@ -759,21 +759,7 @@ namespace MPX
 
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 
-#if 0
-        icon = IconTheme::get_default()->load_icon("source-video", 16, ICON_LOOKUP_NO_SVG);
-        m_Sources->addSource( _("Videos"), icon );
-
-        icon = IconTheme::get_default()->load_icon("source-radio", 16, ICON_LOOKUP_NO_SVG);
-        m_Sources->addSource( _("Radio"), icon );
-
-        icon = IconTheme::get_default()->load_icon("source-lastfm", 16, ICON_LOOKUP_NO_SVG);
-        m_Sources->addSource( _("Last.fm"), icon );
-
-        icon = IconTheme::get_default()->load_icon("source-podcasts", 16, ICON_LOOKUP_NO_SVG);
-        m_Sources->addSource( _("Podcasts"), icon );
-#endif
-
-        PlaybackSourceMusicLib * p = new PlaybackSourceMusicLib(obj_library);
+        PlaybackSourceMusicLib * p = new PlaybackSourceMusicLib(obj_library, obj_amazon);
         Gtk::Notebook * n;
         Gtk::Alignment * a = new Gtk::Alignment;
         p->get_ui()->reparent(*a);

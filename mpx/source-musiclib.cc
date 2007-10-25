@@ -214,16 +214,16 @@ namespace MPX
               int
               slotSortByAlbum(const TreeIter& iter_a, const TreeIter& iter_b)
               {
-                ustring alb_a = (*iter_a)[PlaylistColumns.AlbumSort];
-                ustring alb_b = (*iter_b)[PlaylistColumns.AlbumSort];
-                ustring albp_a = (*iter_a)[PlaylistColumns.Album];
-                ustring albp_b = (*iter_b)[PlaylistColumns.Album];
+                ustring albs_a = (*iter_a)[PlaylistColumns.AlbumSort];
+                ustring albs_b = (*iter_b)[PlaylistColumns.AlbumSort];
+                ustring alb_a = (*iter_a)[PlaylistColumns.Album];
+                ustring alb_b = (*iter_b)[PlaylistColumns.Album];
 
                 int cmp = 0;
-                if(!alb_a.empty() && !alb_b.empty())
-                    cmp = alb_a.compare(alb_b); 
+                if(!albs_a.empty() && !albs_b.empty())
+                    cmp = albs_a.compare(albs_b); 
                 else
-                    cmp = albp_a.compare(albp_b); 
+                    cmp = alb_a.compare(alb_b); 
 
                 return cmp;
               }
@@ -231,39 +231,127 @@ namespace MPX
               int
               slotSortByArtist(const TreeIter& iter_a, const TreeIter& iter_b)
               {
-                ustring art_a = (*iter_a)[PlaylistColumns.ArtistSort];
-                ustring art_b = (*iter_b)[PlaylistColumns.ArtistSort];
-                ustring artp_a = (*iter_a)[PlaylistColumns.Artist];
-                ustring artp_b = (*iter_b)[PlaylistColumns.Artist];
+                ustring arts_a = (*iter_a)[PlaylistColumns.ArtistSort];
+                ustring arts_b = (*iter_b)[PlaylistColumns.ArtistSort];
+                ustring art_a = (*iter_a)[PlaylistColumns.Artist];
+                ustring art_b = (*iter_b)[PlaylistColumns.Artist];
 
                 int cmp = 0;
-                if(!art_a.empty() && !art_b.empty())
-                    cmp = art_a.compare(art_b); 
+                if(!arts_a.empty() && !arts_b.empty())
+                    cmp = arts_a.compare(arts_b); 
                 else
-                    cmp = artp_a.compare(artp_b); 
+                    cmp = art_a.compare(art_b); 
 
                 return cmp;
               }
         };
 
-        PlaylistTreeView *m_TreeViewPlaylist;
+        struct AlbumColumnsT : public Gtk::TreeModel::ColumnRecord 
+        {
+            Gtk::TreeModelColumn<RefPtr<Gdk::Pixbuf> > Image;
+            Gtk::TreeModelColumn<Glib::ustring> Text;
+            AlbumColumnsT ()
+            {
+                add (Image);
+                add (Text);
+            };
+        };
 
-        MusicLibPrivate (MPX::Library &lib)
+        class AlbumTreeView
+            :   public WidgetLoader<Gtk::TreeView>
+        {
+              typedef std::set<TreeIter> IterSet;
+              typedef std::map<std::string, IterSet> ASINIterMap;
+
+              AlbumColumnsT AlbumColumns;
+              Glib::RefPtr<Gtk::ListStore> ListStore;
+              MPX::Library &m_Lib;
+              MPX::Amazon::Covers &m_AMZN;
+              ASINIterMap m_ASINIterMap;
+
+              void
+              on_got_cover(const Glib::ustring& asin)
+              {
+                IterSet & set = m_ASINIterMap[asin];
+                for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
+                {
+                    Glib::RefPtr<Gdk::Pixbuf> Cover;
+                    m_AMZN.fetch(asin, Cover);
+                    (*(*i))[AlbumColumns.Image] = Cover->scale_simple(72, 72, Gdk::INTERP_BILINEAR); 
+                }
+              }
+    
+              void
+              on_new_album(const std::string& mbid, const std::string& asin, gint64 id)
+              {
+                TreeIter iter = ListStore->append();
+
+                if(!asin.empty())
+                {
+                  IterSet & s = m_ASINIterMap[asin];
+                  s.insert(iter);
+                  m_AMZN.cache(asin);
+                }
+
+                SQL::RowV v;
+                m_Lib.getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
+
+                g_return_if_fail(!v.empty());
+
+                SQL::Row & r = v[0];
+                (*iter)[AlbumColumns.Text] = (boost::format("<big><b>%s</b>\n%s</big>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(get<std::string>(r["album_artist"])).c_str()).str();
+              }
+
+            public:
+
+              AlbumTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml, MPX::Library &lib, MPX::Amazon::Covers &amzn)
+              : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-albums")
+              , m_Lib(lib)
+              , m_AMZN(amzn)
+              {
+                m_Lib.signal_new_album().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_album ));
+                m_AMZN.signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
+
+                append_column("", AlbumColumns.Image);
+                TreeViewColumn * col = manage (new TreeViewColumn());
+                CellRendererText * celltext = manage (new CellRendererText);
+                col->pack_start(*celltext);
+                col->add_attribute(*celltext, "markup", AlbumColumns.Text);
+                append_column(*col);
+
+                CellRenderer * cell = 0;
+                cell = get_column(0)->get_first_cell_renderer();
+                cell->property_xpad() = 4;
+                cell->property_ypad() = 2;
+                cell = get_column(1)->get_first_cell_renderer();
+                cell->property_yalign() = 0.;
+                cell->property_ypad() = 2;
+
+                ListStore = Gtk::ListStore::create(AlbumColumns);
+                set_model(ListStore);
+              }
+        };
+
+        PlaylistTreeView *m_TreeViewPlaylist;
+        AlbumTreeView *m_TreeViewAlbums;
+
+        MusicLibPrivate (MPX::Library &lib, MPX::Amazon::Covers &amzn)
         {
             const std::string path (build_filename(DATA_DIR, build_filename("glade","source-musiclib.glade")));
             m_RefXml = Gnome::Glade::Xml::create (path);
             m_UI = m_RefXml->get_widget("source-musiclib");
             m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, lib);
+            m_TreeViewAlbums = new AlbumTreeView(m_RefXml, lib, amzn);
         }
     };
 }
 
 namespace MPX
 {
-    PlaybackSourceMusicLib::PlaybackSourceMusicLib (MPX::Library &lib)
+    PlaybackSourceMusicLib::PlaybackSourceMusicLib (MPX::Library &lib, MPX::Amazon::Covers& amzn)
     : PlaybackSource(_("Music"))
     {
-      m_Private = new MusicLibPrivate(lib);
+      m_Private = new MusicLibPrivate(lib,amzn);
     }
 
     Glib::ustring
