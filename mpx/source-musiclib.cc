@@ -24,9 +24,11 @@
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include <libglademm.h>
-#include "widgetloader.h"
 #include "mpx/types.hh"
+#include "widgets/cell-renderer-cairo-surface.hh"
 #include "library.hh"
+#include "util-graphics.hh"
+#include "widgetloader.h"
 using namespace Gtk;
 using boost::get;
 
@@ -248,12 +250,16 @@ namespace MPX
 
         struct AlbumColumnsT : public Gtk::TreeModel::ColumnRecord 
         {
-            Gtk::TreeModelColumn<RefPtr<Gdk::Pixbuf> > Image;
+            Gtk::TreeModelColumn<Cairo::RefPtr<Cairo::ImageSurface> > Image;
             Gtk::TreeModelColumn<Glib::ustring> Text;
+            Gtk::TreeModelColumn<std::string> AlbumSort;
+            Gtk::TreeModelColumn<std::string> ArtistSort;
             AlbumColumnsT ()
             {
                 add (Image);
                 add (Text);
+                add (AlbumSort);
+                add (ArtistSort);
             };
         };
 
@@ -268,16 +274,18 @@ namespace MPX
               MPX::Library &m_Lib;
               MPX::Amazon::Covers &m_AMZN;
               ASINIterMap m_ASINIterMap;
+              Cairo::RefPtr<Cairo::ImageSurface> m_DiscDefault;
 
               void
               on_got_cover(const Glib::ustring& asin)
               {
+                Cairo::RefPtr<Cairo::ImageSurface> Cover;
+                m_AMZN.fetch(asin, Cover, COVER_SIZE_ALBUM_LIST);
+                Util::cairo_image_surface_border(Cover, 1.);
                 IterSet & set = m_ASINIterMap[asin];
                 for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
                 {
-                    Glib::RefPtr<Gdk::Pixbuf> Cover;
-                    m_AMZN.fetch(asin, Cover);
-                    (*(*i))[AlbumColumns.Image] = Cover->scale_simple(72, 72, Gdk::INTERP_BILINEAR); 
+                    (*(*i))[AlbumColumns.Image] = Cover;
                 }
               }
     
@@ -285,6 +293,8 @@ namespace MPX
               on_new_album(const std::string& mbid, const std::string& asin, gint64 id)
               {
                 TreeIter iter = ListStore->append();
+
+                (*iter)[AlbumColumns.Image] = m_DiscDefault; 
 
                 if(!asin.empty())
                 {
@@ -299,7 +309,30 @@ namespace MPX
                 g_return_if_fail(!v.empty());
 
                 SQL::Row & r = v[0];
-                (*iter)[AlbumColumns.Text] = (boost::format("<big><b>%s</b>\n%s</big>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(get<std::string>(r["album_artist"])).c_str()).str();
+
+                std::string ArtistSort;
+                if(r.find("album_artist_sortname") != r.end())
+                    ArtistSort = get<std::string>(r["album_artist_sortname"]);
+                else
+                    ArtistSort = get<std::string>(r["album_artist"]);
+
+                (*iter)[AlbumColumns.Text] = (boost::format("<big><b>%s</b>\n%s</big>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str()).str();
+                (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
+                (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
+              }
+
+              int
+              slotSort(const TreeIter& iter_a, const TreeIter& iter_b)
+              {
+                std::string alb_a = (*iter_a)[AlbumColumns.AlbumSort];
+                std::string alb_b = (*iter_b)[AlbumColumns.AlbumSort];
+                std::string art_a = (*iter_a)[AlbumColumns.ArtistSort];
+                std::string art_b = (*iter_b)[AlbumColumns.ArtistSort];
+
+                if(art_a != art_b)
+                    return art_a.compare(art_b);
+
+                return alb_a.compare(alb_b); 
               }
 
             public:
@@ -312,8 +345,13 @@ namespace MPX
                 m_Lib.signal_new_album().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_album ));
                 m_AMZN.signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
 
-                append_column("", AlbumColumns.Image);
                 TreeViewColumn * col = manage (new TreeViewColumn());
+                CellRendererCairoSurface * cellcairo = manage (new CellRendererCairoSurface);
+                col->pack_start(*cellcairo);
+                col->add_attribute(*cellcairo, "surface", AlbumColumns.Image);
+                append_column(*col);
+
+                col = manage (new TreeViewColumn());
                 CellRendererText * celltext = manage (new CellRendererText);
                 col->pack_start(*celltext);
                 col->add_attribute(*celltext, "markup", AlbumColumns.Text);
@@ -323,12 +361,17 @@ namespace MPX
                 cell = get_column(0)->get_first_cell_renderer();
                 cell->property_xpad() = 4;
                 cell->property_ypad() = 2;
+                cell->property_yalign() = 0.;
                 cell = get_column(1)->get_first_cell_renderer();
                 cell->property_yalign() = 0.;
                 cell->property_ypad() = 2;
 
                 ListStore = Gtk::ListStore::create(AlbumColumns);
                 set_model(ListStore);
+                ListStore->set_default_sort_func(sigc::mem_fun( *this, &AlbumTreeView::slotSort ));
+                ListStore->set_sort_column(GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID, Gtk::SORT_ASCENDING);
+
+                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")))->scale_simple(72, 72, Gdk::INTERP_BILINEAR));
               }
         };
 
