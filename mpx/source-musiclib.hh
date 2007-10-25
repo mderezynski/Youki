@@ -31,6 +31,7 @@
 #include <boost/format.hpp>
 #include "mpx/types.hh"
 #include "playbacksource.hh"
+#include "library.hh"
 
 namespace MPX
 {
@@ -44,8 +45,7 @@ namespace MPX
 
         public:
 
-            PlaybackSourceMusicLib ();
-            
+            PlaybackSourceMusicLib (MPX::Library&);
 
             virtual Glib::ustring
             get_uri (); 

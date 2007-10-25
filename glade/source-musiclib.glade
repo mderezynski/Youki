@@ -29,13 +29,12 @@
 	<widget class="GtkVPaned" id="vpaned2">
 	  <property name="visible">True</property>
 	  <property name="can_focus">True</property>
-	  <property name="position">0</property>
 
 	  <child>
 	    <widget class="GtkVBox" id="vbox2">
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
-	      <property name="spacing">0</property>
+	      <property name="spacing">2</property>
 
 	      <child>
 		<widget class="GtkLabel" id="label1">
@@ -103,7 +102,7 @@
 		      <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
 
 		      <child>
-			<widget class="GtkTreeView" id="source-music-treeview-artists">
+			<widget class="GtkTreeView" id="source-musiclib-treeview-artists">
 			  <property name="visible">True</property>
 			  <property name="can_focus">True</property>
 			  <property name="headers_visible">True</property>
@@ -140,7 +139,7 @@
 	    <widget class="GtkVBox" id="vbox3">
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
-	      <property name="spacing">0</property>
+	      <property name="spacing">2</property>
 
 	      <child>
 		<widget class="GtkLabel" id="label2">
@@ -208,7 +207,7 @@
 		      <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
 
 		      <child>
-			<widget class="GtkTreeView" id="source-music-treeview-albums">
+			<widget class="GtkTreeView" id="source-musiclib-treeview-albums">
 			  <property name="visible">True</property>
 			  <property name="can_focus">True</property>
 			  <property name="headers_visible">True</property>
@@ -251,7 +250,7 @@
 	<widget class="GtkVBox" id="vbox4">
 	  <property name="visible">True</property>
 	  <property name="homogeneous">False</property>
-	  <property name="spacing">0</property>
+	  <property name="spacing">2</property>
 
 	  <child>
 	    <widget class="GtkLabel" id="label5">
@@ -319,7 +318,7 @@
 		  <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
 
 		  <child>
-		    <widget class="GtkTreeView" id="source-music-treeview-playlist">
+		    <widget class="GtkTreeView" id="source-musiclib-treeview-playlist">
 		      <property name="visible">True</property>
 		      <property name="can_focus">True</property>
 		      <property name="headers_visible">True</property>

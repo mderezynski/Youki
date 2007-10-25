@@ -759,9 +759,6 @@ namespace MPX
 
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 
-        Glib::RefPtr<Gdk::Pixbuf> icon = IconTheme::get_default()->load_icon("audio-x-generic", 16, ICON_LOOKUP_NO_SVG);
-        m_Sources->addSource( _("Music"), icon );
-
 #if 0
         icon = IconTheme::get_default()->load_icon("source-video", 16, ICON_LOOKUP_NO_SVG);
         m_Sources->addSource( _("Videos"), icon );
@@ -776,13 +773,14 @@ namespace MPX
         m_Sources->addSource( _("Podcasts"), icon );
 #endif
 
-        PlaybackSourceMusicLib * p = new PlaybackSourceMusicLib;
+        PlaybackSourceMusicLib * p = new PlaybackSourceMusicLib(obj_library);
         Gtk::Notebook * n;
         Gtk::Alignment * a = new Gtk::Alignment;
         p->get_ui()->reparent(*a);
         a->show();
         m_ref_xml->get_widget("sourcepages", n);
         n->append_page(*a);
+        m_Sources->addSource( _("Music"), p->get_icon() );
 
 #if 0
         // Infoarea

@@ -36,7 +36,7 @@ namespace MPX
     class Metadata
     :   public Track
     {
-        Glib::RefPtr<Gdk::Pixbuf>   Image;
+        Glib::RefPtr<Gdk::Pixbuf> Image;
     };
 
     class PlaybackSource
