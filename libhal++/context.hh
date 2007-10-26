@@ -17,6 +17,12 @@
 
 namespace Hal
 {
+  class Device;
+  class Context 
+  {
+    public:
+
+      typedef sigc::signal<void, std::string const&> SignalUDI;
 
 #include "exception.hh"
 
@@ -28,13 +34,6 @@ namespace Hal
       HALCC_EXCEPTION(CallbackSetupError)
       HALCC_EXCEPTION(WatchSetupError)
       HALCC_EXCEPTION(HALGenericError)
-
-  class Device;
-  class Context 
-  {
-    public:
-
-      typedef sigc::signal<void, std::string const&> SignalUDI;
 
       /** Creates a RefPtr holding a Hal::Context
         *
@@ -51,32 +50,36 @@ namespace Hal
       static Hal::RefPtr<Context> wrap (LibHalContext * ctx, bool ownership = false);
 
       StrV
-      get_all_devices () throw (UnableToGetDevicesError);
+      get_all_devices ()
+        throw (UnableToGetDevicesError);
 
-      bool
-      device_exists (std::string const& udi) throw (UnableToProbeDeviceError);
-         
+      bool device_exists
+          (std::string const& udi)
+        throw (UnableToProbeDeviceError);
 
-      bool
-      device_query_capability (std::string const& udi, std::string const& capability) throw (UnableToProbeDeviceError);
-         
-       
+      bool device_query_capability
+          (std::string const& udi, std::string const& capability)
+        throw (UnableToProbeDeviceError);
 
       // Methods for device lookups
 
-      StrV
-      find_device_by_capability (std::string const& capability) throw (HALGenericError);
+      StrV find_device_by_capability
+          (std::string const& capability)
+        throw (HALGenericError);
 
       template<typename T>
       struct fail {};
 
       template <typename T>
-      void filter_device_list (StrV & in, std::string const& property, T value) throw (HALGenericError)
+      void filter_device_list 
+          (StrV & in, std::string const& property, T value)
+        throw (HALGenericError)
       {
         fail<T>::filter_device_list_called_with_an_inappropriate_type;
       }
 
-      void set_use_cache (bool use_cache = true);
+      void set_use_cache
+          (bool use_cache = true);
 
       // Signals
       SignalUDI&

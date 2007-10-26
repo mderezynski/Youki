@@ -299,7 +299,7 @@ namespace Hal
           throw DeviceDoesNotExistError();
         }
       }
-    catch (UnableToProbeDeviceError)
+    catch (Context::UnableToProbeDeviceError)
       {
         throw DeviceDoesNotExistError(); //FIXME: Not _quite_ right
       }

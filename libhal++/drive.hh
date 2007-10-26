@@ -27,13 +27,13 @@ namespace Hal
         static Hal::RefPtr<Drive>
                create_from_udi (Hal::RefPtr<Context>  context,
                                 std::string const&    udi)
-               throw (DeviceDoesNotExistError);
+               throw (Hal::Device::DeviceDoesNotExistError);
 
 
         static Hal::RefPtr<Drive>
                create_from_dev (Hal::RefPtr<Context>  context,
                                 std::string const&    udi)
-               throw (DeviceDoesNotExistError);
+               throw (Hal::Device::DeviceDoesNotExistError);
 
         bool                    is_hotpluggable (); 
         bool                    uses_removable_media ();
@@ -71,7 +71,7 @@ namespace Hal
         explicit Drive (Hal::RefPtr<Context>  context,
                         std::string const&    udi)
 
-                 throw (DeviceDoesNotExistError);
+                 throw (Hal::Device::DeviceDoesNotExistError);
                                            
 
         explicit Drive (Hal::RefPtr<Context>   context,
