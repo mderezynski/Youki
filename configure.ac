@@ -378,6 +378,7 @@ PKG_CHECK_EXISTS([hal >= 0.5.7.1 hal-storage >= 0.5.7.1],
 fi
 
 if test "$enable_hal" = "yes"; then
+  MPX_CHECK_HAL_NEWPSI
   have_hal_058=0
   PKG_CHECK_MODULES([HAL], [hal >= 0.5.7.1 hal-storage >= 0.5.7.1])
   AC_DEFINE([HAVE_HAL], [], [Define if building with HAL support])
