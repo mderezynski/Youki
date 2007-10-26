@@ -254,12 +254,16 @@ namespace MPX
             Gtk::TreeModelColumn<Glib::ustring> Text;
             Gtk::TreeModelColumn<std::string> AlbumSort;
             Gtk::TreeModelColumn<std::string> ArtistSort;
+            Gtk::TreeModelColumn<std::string> ASIN;
+            Gtk::TreeModelColumn<gint64> id;
             AlbumColumnsT ()
             {
                 add (Image);
                 add (Text);
                 add (AlbumSort);
                 add (ArtistSort);
+                add (ASIN);
+                add (id);
             };
         };
 
@@ -270,11 +274,58 @@ namespace MPX
               typedef std::map<std::string, IterSet> ASINIterMap;
 
               AlbumColumnsT AlbumColumns;
-              Glib::RefPtr<Gtk::ListStore> ListStore;
+              Glib::RefPtr<Gtk::TreeStore> TreeStore;
               MPX::Library &m_Lib;
               MPX::Amazon::Covers &m_AMZN;
               ASINIterMap m_ASINIterMap;
               Cairo::RefPtr<Cairo::ImageSurface> m_DiscDefault;
+              sigc::connection conn_timeout_cover;
+
+              virtual bool
+              on_motion_notify_event (GdkEventMotion* event)
+              {
+                conn_timeout_cover.disconnect();
+
+                int x, y;
+                int x_orig, y_orig;
+                GdkModifierType state;
+
+                if (event->is_hint)
+                {
+                  gdk_window_get_pointer (event->window, &x_orig, &y_orig, &state);
+                }
+                else
+                {
+                  x_orig = int (event->x);
+                  y_orig = int (event->y);
+                  state = GdkModifierType (event->state);
+                }
+
+                int tree_x, tree_y, cell_x, cell_y ;
+                TreePath path ;
+                TreeViewColumn *col ;
+
+                //convert_bin_window_to_tree_coords (int (x_orig), int (y_orig), tree_x, tree_y);
+
+                if(get_path_at_pos (x_orig, y_orig, path, col, cell_x, cell_y))
+                {
+                    if(col == get_column(0))
+                    {
+                        TreeIter iter = TreeStore->get_iter(path);
+                        conn_timeout_cover = Glib::signal_timeout().connect( sigc::bind( sigc::mem_fun( *this, &AlbumTreeView::display_large_cover ), iter), 1000);
+                    }
+                }
+                return false;
+              }
+
+              bool
+              display_large_cover (TreeIter iter)
+              {
+                std::string asin = (*iter)[AlbumColumns.ASIN]; 
+                Glib::ustring text = (*iter)[AlbumColumns.Text]; 
+                g_message("Text: %s, ASIN: %s", text.c_str(), asin.c_str());
+                return false;
+              }
 
               void
               on_got_cover(const Glib::ustring& asin)
@@ -292,9 +343,11 @@ namespace MPX
               void
               on_new_album(const std::string& mbid, const std::string& asin, gint64 id)
               {
-                TreeIter iter = ListStore->append();
+                TreeIter iter = TreeStore->append();
 
                 (*iter)[AlbumColumns.Image] = m_DiscDefault; 
+                (*iter)[AlbumColumns.ASIN] = asin; 
+                (*iter)[AlbumColumns.id] = id; 
 
                 if(!asin.empty())
                 {
@@ -316,7 +369,7 @@ namespace MPX
                 else
                     ArtistSort = get<std::string>(r["album_artist"]);
 
-                (*iter)[AlbumColumns.Text] = (boost::format("<big><b>%s</b>\n%s</big>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str()).str();
+                (*iter)[AlbumColumns.Text] = (boost::format("<b>%s</b>\n%s") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str()).str();
                 (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                 (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
               }
@@ -333,6 +386,42 @@ namespace MPX
                     return art_a.compare(art_b);
 
                 return alb_a.compare(alb_b); 
+              }
+
+              void
+              load_album_list ()
+              {
+                SQL::RowV v;
+                m_Lib.getSQL(v, "SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id;");
+                for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                {
+                    SQL::Row & r = *i; 
+
+                    TreeIter iter = TreeStore->append();
+
+                    (*iter)[AlbumColumns.Image] = m_DiscDefault; 
+                    (*iter)[AlbumColumns.ASIN] = ""; 
+                    (*iter)[AlbumColumns.id] = get<gint64>(r["id"]); 
+      
+                    if(r.count("amazon_asin"))
+                    {
+                        std::string asin = get<std::string>(r["amazon_asin"]);
+                        (*iter)[AlbumColumns.ASIN] = asin; 
+                        IterSet & s = m_ASINIterMap[asin];
+                        s.insert(iter);
+                        m_AMZN.cache(asin);
+                    }
+
+                    std::string ArtistSort;
+                    if(r.count("album_artist_sortname"))
+                        ArtistSort = get<std::string>(r["album_artist_sortname"]);
+                    else
+                        ArtistSort = get<std::string>(r["album_artist"]);
+
+                    (*iter)[AlbumColumns.Text] = (boost::format("<b>%s</b>\n%s") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str()).str();
+                    (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
+                    (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
+                }
               }
 
             public:
@@ -366,12 +455,14 @@ namespace MPX
                 cell->property_yalign() = 0.;
                 cell->property_ypad() = 2;
 
-                ListStore = Gtk::ListStore::create(AlbumColumns);
-                set_model(ListStore);
-                ListStore->set_default_sort_func(sigc::mem_fun( *this, &AlbumTreeView::slotSort ));
-                ListStore->set_sort_column(GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID, Gtk::SORT_ASCENDING);
+                TreeStore = Gtk::TreeStore::create(AlbumColumns);
+                set_model(TreeStore);
+                TreeStore->set_default_sort_func(sigc::mem_fun( *this, &AlbumTreeView::slotSort ));
+                TreeStore->set_sort_column(GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID, Gtk::SORT_ASCENDING);
 
-                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")))->scale_simple(72, 72, Gdk::INTERP_BILINEAR));
+                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")))->scale_simple(64, 64, Gdk::INTERP_BILINEAR));
+
+                load_album_list ();
               }
         };
 

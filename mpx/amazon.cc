@@ -68,7 +68,7 @@ namespace
     switch (size)
     {
       case MPX::COVER_SIZE_ALBUM_LIST:
-        pixel_size = 72;
+        pixel_size = 64;
         break;
 
       case MPX::COVER_SIZE_INFO_AREA:
