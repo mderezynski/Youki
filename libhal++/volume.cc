@@ -8,6 +8,7 @@
 
 #include <libhal.h>
 #include <libhal-storage.h>
+#include <glib.h>
 
 #include "refptr.hh"
 #include "util.hh"
@@ -16,6 +17,7 @@
 #include "context.hh"
 
 #include "volume.hh"
+#include "drive.hh"
 
 #include <string>
 
@@ -89,6 +91,32 @@ namespace Hal
   Volume::is_disc () 
   {
     return bool (libhal_volume_is_disc (m_volume));
+  }
+
+  bool
+  Volume::is_pmp () 
+  {
+    bool pmp = false;
+    try{
+        Hal::RefPtr<Hal::Device> drive = Hal::Drive::create_from_udi (m_context,get_storage_device_udi());
+        if(drive->property_exists("info.category"))
+        {
+            std::string category = drive->get_property<std::string>("info.category");
+            pmp = (!std::strcmp(category.c_str(), "portable_audio_player"));
+        }
+    } catch (DeviceDoesNotExistError & cxe)
+        {
+            g_warning("(%s:%d): Error getting parent drive for udi '%s'", __FILE__, __LINE__, get_udi().c_str());
+        }
+      catch (PropertyDoesNotExistError & cxe)
+        {
+            g_warning("(%s:%d): Checked for info.category property but doesn't seem to actually exist", __FILE__, __LINE__);
+        }
+      catch (UnableToProbeDeviceError & cxe)
+        {
+            g_warning("(%s:%d): Fail checking property info.category for '%s'", __FILE__, __LINE__, get_udi().c_str());
+        }
+    return pmp;
   }
 
 #ifdef HAVE_HAL_058
@@ -282,13 +310,13 @@ namespace Hal
   ///// INIT //////////////////////////////////////////////////////////////////////
 
   Volume::Volume (Hal::RefPtr<Context>            context,
-                  std::string           const&    udi) throw (Hal::Device::DeviceDoesNotExistError)
+                  std::string           const&    udi) throw (DeviceDoesNotExistError)
       : Hal::Device (context, udi)
   {
     m_volume = libhal_volume_from_udi (context->cobj(), udi.c_str());
     if (!m_volume)
     {
-      throw Hal::Device::DeviceDoesNotExistError();
+      throw DeviceDoesNotExistError();
     }
   }
 
@@ -308,7 +336,7 @@ namespace Hal
   Volume::create_from_udi (Hal::RefPtr<Context>             context,
                            std::string            const&    udi)
 
-                        throw (Hal::Device::DeviceDoesNotExistError)
+                        throw (DeviceDoesNotExistError)
 
   {
     return Hal::RefPtr<Volume>(new Volume(context, udi));
@@ -319,7 +347,7 @@ namespace Hal
   Volume::create_from_dev (Hal::RefPtr<Context>             context,
                            std::string            const&    dev)
 
-                        throw (Hal::Device::DeviceDoesNotExistError)
+                        throw (DeviceDoesNotExistError)
 
   {
     LibHalVolume * volume = libhal_volume_from_device_file (context->cobj(), dev.c_str());
@@ -327,6 +355,6 @@ namespace Hal
     {
       return Hal::RefPtr<Volume>(new Volume(context, volume));
     }
-    throw Hal::Device::DeviceDoesNotExistError();
+    throw DeviceDoesNotExistError();
   }
 }

@@ -122,6 +122,7 @@ namespace MPX
                 set_model(ListStore);
 
                 std::vector<TargetEntry> Entries;
+                Entries.push_back(TargetEntry("mpx-album"));
                 drag_dest_set(Entries, DEST_DEFAULT_MOTION);
                 drag_dest_add_uri_targets();
               }
@@ -255,6 +256,7 @@ namespace MPX
             Gtk::TreeModelColumn<std::string> AlbumSort;
             Gtk::TreeModelColumn<std::string> ArtistSort;
             Gtk::TreeModelColumn<std::string> ASIN;
+            Gtk::TreeModelColumn<gint64> Date;
             Gtk::TreeModelColumn<gint64> id;
             AlbumColumnsT ()
             {
@@ -263,6 +265,7 @@ namespace MPX
                 add (AlbumSort);
                 add (ArtistSort);
                 add (ASIN);
+                add (Date);
                 add (id);
             };
         };
@@ -279,7 +282,39 @@ namespace MPX
               MPX::Amazon::Covers &m_AMZN;
               ASINIterMap m_ASINIterMap;
               Cairo::RefPtr<Cairo::ImageSurface> m_DiscDefault;
+              Glib::RefPtr<Gdk::Pixbuf> m_DiscDefault_Pixbuf;
               sigc::connection conn_timeout_cover;
+              std::string m_DragASIN;
+
+              virtual void
+              on_drag_begin (const Glib::RefPtr<Gdk::DragContext>& context) 
+              {
+                Glib::RefPtr<Gdk::Pixbuf> Cover;
+                if(!m_DragASIN.empty())
+                {
+                    m_AMZN.fetch(m_DragASIN, Cover);
+                    drag_source_set_icon(Cover->scale_simple(128,128,Gdk::INTERP_BILINEAR));
+                }
+                else
+                    drag_source_set_icon(m_DiscDefault_Pixbuf->scale_simple(128,128,Gdk::INTERP_BILINEAR));
+
+              }
+
+              virtual bool
+              on_button_press_event (GdkEventButton* event)
+              {
+                int tree_x, tree_y, cell_x, cell_y ;
+                TreePath path ;
+                TreeViewColumn *col ;
+
+                if(get_path_at_pos (event->x, event->y, path, col, cell_x, cell_y))
+                {
+                    TreeIter iter = TreeStore->get_iter(path);
+                    m_DragASIN = (*iter)[AlbumColumns.ASIN];
+                }
+                TreeView::on_button_press_event(event);
+                return false;
+              }
 
               virtual bool
               on_motion_notify_event (GdkEventMotion* event)
@@ -305,25 +340,13 @@ namespace MPX
                 TreePath path ;
                 TreeViewColumn *col ;
 
-                //convert_bin_window_to_tree_coords (int (x_orig), int (y_orig), tree_x, tree_y);
-
                 if(get_path_at_pos (x_orig, y_orig, path, col, cell_x, cell_y))
                 {
                     if(col == get_column(0))
                     {
                         TreeIter iter = TreeStore->get_iter(path);
-                        conn_timeout_cover = Glib::signal_timeout().connect( sigc::bind( sigc::mem_fun( *this, &AlbumTreeView::display_large_cover ), iter), 1000);
                     }
                 }
-                return false;
-              }
-
-              bool
-              display_large_cover (TreeIter iter)
-              {
-                std::string asin = (*iter)[AlbumColumns.ASIN]; 
-                Glib::ustring text = (*iter)[AlbumColumns.Text]; 
-                g_message("Text: %s, ASIN: %s", text.c_str(), asin.c_str());
                 return false;
               }
 
@@ -363,13 +386,24 @@ namespace MPX
 
                 SQL::Row & r = v[0];
 
+                std::string date; 
+                if(r.count("mb_release_date"))
+                {
+                    date = get<std::string>(r["mb_release_date"]);
+                    gint64 date_int;
+                    sscanf(date.c_str(), "%04lld", &date_int);
+                    (*iter)[AlbumColumns.Date] = date_int; 
+                }
+                else
+                    (*iter)[AlbumColumns.Date] = 0; 
+
                 std::string ArtistSort;
                 if(r.find("album_artist_sortname") != r.end())
                     ArtistSort = get<std::string>(r["album_artist_sortname"]);
                 else
                     ArtistSort = get<std::string>(r["album_artist"]);
 
-                (*iter)[AlbumColumns.Text] = (boost::format("<b>%s</b>\n%s") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str()).str();
+                (*iter)[AlbumColumns.Text] = (boost::format("<b>%s</b>\n%s\n<small>%s</small>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
                 (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                 (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
               }
@@ -377,15 +411,19 @@ namespace MPX
               int
               slotSort(const TreeIter& iter_a, const TreeIter& iter_b)
               {
+                /*
                 std::string alb_a = (*iter_a)[AlbumColumns.AlbumSort];
                 std::string alb_b = (*iter_b)[AlbumColumns.AlbumSort];
+                */
+                gint64 alb_a = (*iter_a)[AlbumColumns.Date];
+                gint64 alb_b = (*iter_b)[AlbumColumns.Date];
                 std::string art_a = (*iter_a)[AlbumColumns.ArtistSort];
                 std::string art_b = (*iter_b)[AlbumColumns.ArtistSort];
 
                 if(art_a != art_b)
                     return art_a.compare(art_b);
 
-                return alb_a.compare(alb_b); 
+                return alb_a - alb_b;
               }
 
               void
@@ -412,13 +450,24 @@ namespace MPX
                         m_AMZN.cache(asin);
                     }
 
+                    std::string date;
+                    if(r.count("mb_release_date"))
+                    {
+                        date = get<std::string>(r["mb_release_date"]);
+                        gint64 date_int;
+                        sscanf(date.c_str(), "%04lld", &date_int);
+                        (*iter)[AlbumColumns.Date] = date_int; 
+                    }
+                    else
+                        (*iter)[AlbumColumns.Date] = 0; 
+
                     std::string ArtistSort;
                     if(r.count("album_artist_sortname"))
                         ArtistSort = get<std::string>(r["album_artist_sortname"]);
                     else
                         ArtistSort = get<std::string>(r["album_artist"]);
 
-                    (*iter)[AlbumColumns.Text] = (boost::format("<b>%s</b>\n%s") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str()).str();
+                    (*iter)[AlbumColumns.Text] = (boost::format("<b>%s</b>\n%s\n<small>%s</small>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
                     (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                     (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
                 }
@@ -460,9 +509,14 @@ namespace MPX
                 TreeStore->set_default_sort_func(sigc::mem_fun( *this, &AlbumTreeView::slotSort ));
                 TreeStore->set_sort_column(GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID, Gtk::SORT_ASCENDING);
 
-                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")))->scale_simple(64, 64, Gdk::INTERP_BILINEAR));
+                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")));
+                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(64, 64, Gdk::INTERP_BILINEAR));
 
                 load_album_list ();
+
+                std::vector<TargetEntry> Entries;
+                Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
+                drag_source_set(Entries); 
               }
         };
 
