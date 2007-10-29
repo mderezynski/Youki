@@ -168,14 +168,14 @@ namespace Hal
   Drive::Drive (Hal::RefPtr<Context>  context,
                 std::string const&    udi)
 
-                            throw (Hal::Device::DeviceDoesNotExistError)
+                            throw (DeviceDoesNotExistError)
 
       : Hal::Device (context, udi)
         
   {
     m_drive = libhal_drive_from_udi (context->cobj(), udi.c_str());
     if (!m_drive)
-      throw Hal::Device::DeviceDoesNotExistError();
+      throw DeviceDoesNotExistError();
   }
 
   Drive::Drive (Hal::RefPtr<Context>   context,
@@ -194,7 +194,7 @@ namespace Hal
 
   Hal::RefPtr<Drive>
   Drive::create_from_udi (Hal::RefPtr<Context>  context,
-                          std::string const&    udi) throw (Hal::Device::DeviceDoesNotExistError)
+                          std::string const&    udi) throw (DeviceDoesNotExistError)
   {
     return Hal::RefPtr<Drive>(new Drive(context, udi));
   }
@@ -202,12 +202,12 @@ namespace Hal
 
   Hal::RefPtr<Drive>
   Drive::create_from_dev (Hal::RefPtr<Context>  context,
-                          std::string const&    dev) throw (Hal::Device::DeviceDoesNotExistError)
+                          std::string const&    dev) throw (DeviceDoesNotExistError)
    
   {
     LibHalDrive * drive = libhal_drive_from_device_file (context->cobj(), dev.c_str());
     if (drive)
       return Hal::RefPtr<Drive>(new Drive(context, drive));
-    throw Hal::Device::DeviceDoesNotExistError();
+    throw DeviceDoesNotExistError();
   }
 }
