@@ -781,7 +781,7 @@ namespace MPX
           column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
           m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
           track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->last_insert_rowid ();
-          Signals.NewTrack.emit( track ); 
+          Signals.NewTrack.emit( track, album_j ); 
       }
       catch (SqlConstraintError & cxe)
       {

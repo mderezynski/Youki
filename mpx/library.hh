@@ -102,7 +102,7 @@ namespace MPX
 
             typedef sigc::signal<void, const std::string& /*mbid*/, const std::string& /*asin*/, gint64/*albumid*/> SignalNewAlbum;
             typedef sigc::signal<void, const std::string& /*mbid*/, gint64/*artistid*/> SignalNewArtist;
-            typedef sigc::signal<void, const Track&> SignalNewTrack;
+            typedef sigc::signal<void, Track&, gint64/*albumid*/> SignalNewTrack;
 
             typedef sigc::signal<void>                                      SignalScanStart;
             typedef sigc::signal<void, gint64,gint64>                       SignalScanRun;

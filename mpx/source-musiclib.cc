@@ -20,15 +20,20 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
-#include "source-musiclib.hh"
+#include "config.h"
+#ifdef HAVE_TR1
+#include <tr1/unordered_map>
+#endif //HAVE_TR1
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include <libglademm.h>
 #include "mpx/types.hh"
 #include "widgets/cell-renderer-cairo-surface.hh"
+#include "widgets/gossip-cell-renderer-expander.h"
 #include "library.hh"
 #include "util-graphics.hh"
 #include "widgetloader.h"
+#include "source-musiclib.hh"
 using namespace Gtk;
 using boost::get;
 
@@ -295,6 +300,7 @@ namespace MPX
         {
               typedef std::set<TreeIter> IterSet;
               typedef std::map<std::string, IterSet> ASINIterMap;
+              typedef std::map<gint64, TreeIter> IdIterMap; 
 
               AlbumColumnsT AlbumColumns;
               Glib::RefPtr<Gtk::TreeStore> TreeStore;
@@ -305,6 +311,7 @@ namespace MPX
               Glib::RefPtr<Gdk::Pixbuf> m_DiscDefault_Pixbuf;
               sigc::connection conn_timeout_cover;
               std::string m_DragASIN;
+              IdIterMap m_AlbumIterMap;
 
               virtual void
               on_row_expanded (const TreeIter &iter,
@@ -326,6 +333,8 @@ namespace MPX
                         (*child)[AlbumColumns.TrackArtist] = get<std::string>(r["artist"]);
                         (*child)[AlbumColumns.TrackNumber] = get<gint64>(r["track"]);
                         (*child)[AlbumColumns.TrackLength] = get<gint64>(r["time"]);
+
+                        (*child)[AlbumColumns.RowType] = ROW_TRACK; 
                     }
 
                     (*iter)[AlbumColumns.HasTracks] = true;
@@ -421,6 +430,7 @@ namespace MPX
               on_new_album(const std::string& mbid, const std::string& asin, gint64 id)
               {
                 TreeIter iter = TreeStore->append();
+                m_AlbumIterMap[id] = iter;
                 TreeStore->append(iter->children());
 
                 (*iter)[AlbumColumns.RowType] = ROW_ALBUM; 
@@ -465,22 +475,54 @@ namespace MPX
                 (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
               }
 
+              void
+              on_new_track(Track & track, gint64 albumid)
+              {
+                if(m_AlbumIterMap.count(albumid))
+                {
+                    TreeIter iter = m_AlbumIterMap[albumid];
+                    if (((*iter)[AlbumColumns.HasTracks]))
+                    {
+                        TreeIter child = TreeStore->append(iter->children());
+                        if(track[ATTRIBUTE_TITLE])
+                            (*child)[AlbumColumns.TrackTitle] = get<std::string>(track[ATTRIBUTE_TITLE].get());
+                        if(track[ATTRIBUTE_ARTIST])
+                            (*child)[AlbumColumns.TrackArtist] = get<std::string>(track[ATTRIBUTE_ARTIST].get());
+                        if(track[ATTRIBUTE_TRACK])
+                            (*child)[AlbumColumns.TrackNumber] = get<gint64>(track[ATTRIBUTE_TRACK].get());
+                        if(track[ATTRIBUTE_TIME])
+                            (*child)[AlbumColumns.TrackLength] = get<gint64>(track[ATTRIBUTE_TIME].get());
+
+                        (*child)[AlbumColumns.RowType] = ROW_TRACK; 
+                    }
+                }
+              }
+
               int
               slotSort(const TreeIter& iter_a, const TreeIter& iter_b)
               {
-                /*
-                std::string alb_a = (*iter_a)[AlbumColumns.AlbumSort];
-                std::string alb_b = (*iter_b)[AlbumColumns.AlbumSort];
-                */
-                gint64 alb_a = (*iter_a)[AlbumColumns.Date];
-                gint64 alb_b = (*iter_b)[AlbumColumns.Date];
-                std::string art_a = (*iter_a)[AlbumColumns.ArtistSort];
-                std::string art_b = (*iter_b)[AlbumColumns.ArtistSort];
+                AlbumRowType rt_a = (*iter_a)[AlbumColumns.RowType];
+                AlbumRowType rt_b = (*iter_b)[AlbumColumns.RowType];
 
-                if(art_a != art_b)
-                    return art_a.compare(art_b);
+                if((rt_a == ROW_ALBUM) && (rt_b == ROW_ALBUM))
+                {
+                  gint64 alb_a = (*iter_a)[AlbumColumns.Date];
+                  gint64 alb_b = (*iter_b)[AlbumColumns.Date];
+                  std::string art_a = (*iter_a)[AlbumColumns.ArtistSort];
+                  std::string art_b = (*iter_b)[AlbumColumns.ArtistSort];
 
-                return alb_a - alb_b;
+                  if(art_a != art_b)
+                      return art_a.compare(art_b);
+
+                  return alb_a - alb_b;
+                }
+                else if((rt_a == ROW_TRACK) && (rt_b == ROW_TRACK))
+                {
+                  gint64 trk_a = (*iter_a)[AlbumColumns.TrackNumber];
+                  gint64 trk_b = (*iter_b)[AlbumColumns.TrackNumber];
+
+                  return trk_a - trk_b;
+                }
               }
 
               void
@@ -496,7 +538,6 @@ namespace MPX
                 else
                 {
                     cell->property_visible() = false;
-                    cell->property_surface() = Cairo::RefPtr<Cairo::ImageSurface>(0);
                 }
               }
 
@@ -615,6 +656,31 @@ namespace MPX
                 }
               }
 
+              static void
+              rb_sourcelist_expander_cell_data_func (GtkTreeViewColumn *column,
+                                     GtkCellRenderer   *cell,
+                                     GtkTreeModel      *model,
+                                     GtkTreeIter       *iter,
+                                     gpointer           data) 
+              {
+                  if (gtk_tree_model_iter_has_child (model, iter))
+                  {
+                      GtkTreePath *path;
+                      gboolean     row_expanded;
+
+                      path = gtk_tree_model_get_path (model, iter);
+                      row_expanded = gtk_tree_view_row_expanded (GTK_TREE_VIEW (column->tree_view), path);
+                      gtk_tree_path_free (path);
+
+                      g_object_set (cell,
+                                "visible", TRUE,
+                                "expander-style", row_expanded ? GTK_EXPANDER_EXPANDED : GTK_EXPANDER_COLLAPSED,
+                                NULL);
+                  } else {
+                      g_object_set (cell, "visible", FALSE, NULL);
+                  }
+              }
+
             public:
 
               AlbumTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml, MPX::Library &lib, MPX::Amazon::Covers &amzn)
@@ -623,18 +689,28 @@ namespace MPX
               , m_AMZN(amzn)
               {
                 m_Lib.signal_new_album().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_album ));
+                m_Lib.signal_new_track().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_track ));
                 m_AMZN.signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
 
+                set_show_expanders( false );
+                set_level_indentation( 32 );
+
                 TreeViewColumn * col = manage (new TreeViewColumn());
+
+                GtkCellRenderer * renderer = gossip_cell_renderer_expander_new ();
+                gtk_tree_view_column_pack_start (col->gobj(), renderer, FALSE);
+                gtk_tree_view_column_set_cell_data_func (col->gobj(),
+                                     renderer,
+                                     GtkTreeCellDataFunc(rb_sourcelist_expander_cell_data_func),
+                                     this,
+                                     NULL);
+
                 CellRendererCairoSurface * cellcairo = manage (new CellRendererCairoSurface);
-                col->pack_start(*cellcairo);
+                col->pack_start(*cellcairo, false);
                 col->set_cell_data_func(*cellcairo, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncCover ));
                 cellcairo->property_xpad() = 4;
                 cellcairo->property_ypad() = 2;
                 cellcairo->property_yalign() = 0.;
-                append_column(*col);
-
-                col = manage (new TreeViewColumn());
 
                 CellRendererText *celltext = manage (new CellRendererText);
                 col->pack_start(*celltext, false);
