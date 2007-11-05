@@ -139,8 +139,12 @@ namespace MPX
                 ListStore->set_sort_func(PlaylistColumns.Track,
                     sigc::mem_fun( *this, &PlaylistTreeView::slotSortByTrack ));
 
+                /* FIXME: The problem here is it's the order of adding, not the
+                 * order in the view */
+                /*
                 ListStore->set_default_sort_func(
                     sigc::mem_fun( *this, &PlaylistTreeView::slotSortById ));
+                */
 
                 set_headers_clickable();
                 set_model(ListStore);
@@ -470,6 +474,8 @@ namespace MPX
                         g_warning("%s:%d : No placeholder row present, state seems corrupted.", __FILE__, __LINE__);
 
                 }
+
+                scroll_to_row (path, 0.);
               }
 
               virtual void
@@ -827,6 +833,7 @@ namespace MPX
                 cellcairo->property_xpad() = 4;
                 cellcairo->property_ypad() = 4;
                 cellcairo->property_yalign() = 0.;
+                cellcairo->property_xalign() = 0.;
 
                 CellRendererText *celltext = manage (new CellRendererText);
                 col->pack_start(*celltext, false);
