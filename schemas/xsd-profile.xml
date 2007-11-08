@@ -16,6 +16,7 @@ elementFormDefault="qualified">
       </xsd:element>
       <xsd:element name="age" type="xsd:integer" minOccurs="0"/>
       <xsd:element name="gender" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="country" type="xsd:string" minOccurs="0"/>
       <xsd:element name="playcount" type="xsd:integer" minOccurs="0"/>
       <xsd:element name="avatar" type="xsd:string" minOccurs="0"/>
       <xsd:element name="icon" type="xsd:string" minOccurs="0"/>

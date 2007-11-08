@@ -1,16 +1,16 @@
-noinst_LTLIBRARIES = libmpxwidgets.la
+noinst_LTLIBRARIES = libmpx-widgets.la
 
-libmpxwidgets_la_CFLAGS = 	\
+libmpx_widgets_la_CFLAGS = 	\
 	$(GLIB_CFLAGS) $(GTK_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include
 
-libmpxwidgets_la_CXXFLAGS = \
+libmpx_widgets_la_CXXFLAGS = \
 	$(GLIBMM_CFLAGS) $(GTKMM_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include
 
-libmpxwidgets_la_LIBADD =	\
+libmpx_widgets_la_LIBADD =	\
 	$(GLIBMM_LIBS)			\
 	$(GTKMM_LIBS)					
 
-libmpxwidgets_la_SOURCES = 				\
+libmpx_widgets_la_SOURCES = 				\
 										\
 	    widget-marshalers.c   			\
 										\

@@ -201,8 +201,12 @@ namespace xml_schema
 
 // Forward declarations.
 //
-class profile;
-class registered;
+namespace LastFM
+{
+  class profile;
+  class registered;
+}
+
 
 #include <memory>    // std::auto_ptr
 #include <algorithm> // std::binary_search
@@ -214,324 +218,349 @@ class registered;
 
 #include <xsd/cxx/xml/dom/parsing-header.hxx>
 
-class profile: public ::xml_schema::type
+namespace LastFM
 {
-  public:
-  // url
-  // 
-  typedef ::xml_schema::string url_type;
-  typedef ::xsd::cxx::tree::traits< url_type, char > url_traits;
+  class profile: public ::xml_schema::type
+  {
+    public:
+    // url
+    // 
+    typedef ::xml_schema::string url_type;
+    typedef ::xsd::cxx::tree::traits< url_type, char > url_traits;
 
-  const url_type&
-  url () const;
+    const url_type&
+    url () const;
 
-  url_type&
-  url ();
+    url_type&
+    url ();
 
-  void
-  url (const url_type& x);
+    void
+    url (const url_type& x);
 
-  void
-  url (::std::auto_ptr< url_type > p);
+    void
+    url (::std::auto_ptr< url_type > p);
 
-  // realname
-  // 
-  typedef ::xml_schema::string realname_type;
-  typedef ::xsd::cxx::tree::optional< realname_type > realname_optional;
-  typedef ::xsd::cxx::tree::traits< realname_type, char > realname_traits;
+    // realname
+    // 
+    typedef ::xml_schema::string realname_type;
+    typedef ::xsd::cxx::tree::optional< realname_type > realname_optional;
+    typedef ::xsd::cxx::tree::traits< realname_type, char > realname_traits;
 
-  const realname_optional&
-  realname () const;
+    const realname_optional&
+    realname () const;
 
-  realname_optional&
-  realname ();
+    realname_optional&
+    realname ();
 
-  void
-  realname (const realname_type& x);
+    void
+    realname (const realname_type& x);
 
-  void
-  realname (const realname_optional& x);
+    void
+    realname (const realname_optional& x);
 
-  void
-  realname (::std::auto_ptr< realname_type > p);
+    void
+    realname (::std::auto_ptr< realname_type > p);
 
-  // mbox_sha1sum
-  // 
-  typedef ::xml_schema::string mbox_sha1sum_type;
-  typedef ::xsd::cxx::tree::traits< mbox_sha1sum_type, char > mbox_sha1sum_traits;
+    // mbox_sha1sum
+    // 
+    typedef ::xml_schema::string mbox_sha1sum_type;
+    typedef ::xsd::cxx::tree::traits< mbox_sha1sum_type, char > mbox_sha1sum_traits;
 
-  const mbox_sha1sum_type&
-  mbox_sha1sum () const;
+    const mbox_sha1sum_type&
+    mbox_sha1sum () const;
 
-  mbox_sha1sum_type&
-  mbox_sha1sum ();
+    mbox_sha1sum_type&
+    mbox_sha1sum ();
 
-  void
-  mbox_sha1sum (const mbox_sha1sum_type& x);
+    void
+    mbox_sha1sum (const mbox_sha1sum_type& x);
 
-  void
-  mbox_sha1sum (::std::auto_ptr< mbox_sha1sum_type > p);
+    void
+    mbox_sha1sum (::std::auto_ptr< mbox_sha1sum_type > p);
 
-  // registered
-  // 
-  typedef ::registered registered_type;
-  typedef ::xsd::cxx::tree::traits< registered_type, char > registered_traits;
+    // registered
+    // 
+    typedef ::LastFM::registered registered_type;
+    typedef ::xsd::cxx::tree::traits< registered_type, char > registered_traits;
 
-  const registered_type&
-  registered () const;
+    const registered_type&
+    registered () const;
 
-  registered_type&
-  registered ();
+    registered_type&
+    registered ();
 
-  void
-  registered (const registered_type& x);
+    void
+    registered (const registered_type& x);
 
-  void
-  registered (::std::auto_ptr< registered_type > p);
+    void
+    registered (::std::auto_ptr< registered_type > p);
 
-  // age
-  // 
-  typedef ::xml_schema::integer age_type;
-  typedef ::xsd::cxx::tree::optional< age_type > age_optional;
-  typedef ::xsd::cxx::tree::traits< age_type, char > age_traits;
+    // age
+    // 
+    typedef ::xml_schema::integer age_type;
+    typedef ::xsd::cxx::tree::optional< age_type > age_optional;
+    typedef ::xsd::cxx::tree::traits< age_type, char > age_traits;
 
-  const age_optional&
-  age () const;
+    const age_optional&
+    age () const;
 
-  age_optional&
-  age ();
+    age_optional&
+    age ();
 
-  void
-  age (const age_type& x);
+    void
+    age (const age_type& x);
 
-  void
-  age (const age_optional& x);
+    void
+    age (const age_optional& x);
 
-  // gender
-  // 
-  typedef ::xml_schema::string gender_type;
-  typedef ::xsd::cxx::tree::optional< gender_type > gender_optional;
-  typedef ::xsd::cxx::tree::traits< gender_type, char > gender_traits;
+    // gender
+    // 
+    typedef ::xml_schema::string gender_type;
+    typedef ::xsd::cxx::tree::optional< gender_type > gender_optional;
+    typedef ::xsd::cxx::tree::traits< gender_type, char > gender_traits;
 
-  const gender_optional&
-  gender () const;
+    const gender_optional&
+    gender () const;
 
-  gender_optional&
-  gender ();
+    gender_optional&
+    gender ();
 
-  void
-  gender (const gender_type& x);
+    void
+    gender (const gender_type& x);
 
-  void
-  gender (const gender_optional& x);
+    void
+    gender (const gender_optional& x);
 
-  void
-  gender (::std::auto_ptr< gender_type > p);
+    void
+    gender (::std::auto_ptr< gender_type > p);
 
-  // playcount
-  // 
-  typedef ::xml_schema::integer playcount_type;
-  typedef ::xsd::cxx::tree::optional< playcount_type > playcount_optional;
-  typedef ::xsd::cxx::tree::traits< playcount_type, char > playcount_traits;
+    // country
+    // 
+    typedef ::xml_schema::string country_type;
+    typedef ::xsd::cxx::tree::optional< country_type > country_optional;
+    typedef ::xsd::cxx::tree::traits< country_type, char > country_traits;
 
-  const playcount_optional&
-  playcount () const;
+    const country_optional&
+    country () const;
 
-  playcount_optional&
-  playcount ();
+    country_optional&
+    country ();
 
-  void
-  playcount (const playcount_type& x);
+    void
+    country (const country_type& x);
 
-  void
-  playcount (const playcount_optional& x);
+    void
+    country (const country_optional& x);
 
-  // avatar
-  // 
-  typedef ::xml_schema::string avatar_type;
-  typedef ::xsd::cxx::tree::optional< avatar_type > avatar_optional;
-  typedef ::xsd::cxx::tree::traits< avatar_type, char > avatar_traits;
+    void
+    country (::std::auto_ptr< country_type > p);
 
-  const avatar_optional&
-  avatar () const;
+    // playcount
+    // 
+    typedef ::xml_schema::integer playcount_type;
+    typedef ::xsd::cxx::tree::optional< playcount_type > playcount_optional;
+    typedef ::xsd::cxx::tree::traits< playcount_type, char > playcount_traits;
 
-  avatar_optional&
-  avatar ();
+    const playcount_optional&
+    playcount () const;
 
-  void
-  avatar (const avatar_type& x);
+    playcount_optional&
+    playcount ();
 
-  void
-  avatar (const avatar_optional& x);
+    void
+    playcount (const playcount_type& x);
 
-  void
-  avatar (::std::auto_ptr< avatar_type > p);
+    void
+    playcount (const playcount_optional& x);
 
-  // icon
-  // 
-  typedef ::xml_schema::string icon_type;
-  typedef ::xsd::cxx::tree::optional< icon_type > icon_optional;
-  typedef ::xsd::cxx::tree::traits< icon_type, char > icon_traits;
+    // avatar
+    // 
+    typedef ::xml_schema::string avatar_type;
+    typedef ::xsd::cxx::tree::optional< avatar_type > avatar_optional;
+    typedef ::xsd::cxx::tree::traits< avatar_type, char > avatar_traits;
 
-  const icon_optional&
-  icon () const;
+    const avatar_optional&
+    avatar () const;
 
-  icon_optional&
-  icon ();
+    avatar_optional&
+    avatar ();
 
-  void
-  icon (const icon_type& x);
+    void
+    avatar (const avatar_type& x);
 
-  void
-  icon (const icon_optional& x);
+    void
+    avatar (const avatar_optional& x);
 
-  void
-  icon (::std::auto_ptr< icon_type > p);
+    void
+    avatar (::std::auto_ptr< avatar_type > p);
 
-  // id
-  // 
-  typedef ::xml_schema::integer id_type;
-  typedef ::xsd::cxx::tree::optional< id_type > id_optional;
-  typedef ::xsd::cxx::tree::traits< id_type, char > id_traits;
-
-  const id_optional&
-  id () const;
-
-  id_optional&
-  id ();
-
-  void
-  id (const id_type& x);
-
-  void
-  id (const id_optional& x);
-
-  // cluster
-  // 
-  typedef ::xml_schema::integer cluster_type;
-  typedef ::xsd::cxx::tree::optional< cluster_type > cluster_optional;
-  typedef ::xsd::cxx::tree::traits< cluster_type, char > cluster_traits;
+    // icon
+    // 
+    typedef ::xml_schema::string icon_type;
+    typedef ::xsd::cxx::tree::optional< icon_type > icon_optional;
+    typedef ::xsd::cxx::tree::traits< icon_type, char > icon_traits;
 
-  const cluster_optional&
-  cluster () const;
+    const icon_optional&
+    icon () const;
 
-  cluster_optional&
-  cluster ();
-
-  void
-  cluster (const cluster_type& x);
+    icon_optional&
+    icon ();
 
-  void
-  cluster (const cluster_optional& x);
+    void
+    icon (const icon_type& x);
 
-  // username
-  // 
-  typedef ::xml_schema::string username_type;
-  typedef ::xsd::cxx::tree::optional< username_type > username_optional;
-  typedef ::xsd::cxx::tree::traits< username_type, char > username_traits;
-
-  const username_optional&
-  username () const;
-
-  username_optional&
-  username ();
-
-  void
-  username (const username_type& x);
-
-  void
-  username (const username_optional& x);
-
-  void
-  username (::std::auto_ptr< username_type > p);
-
-  // Constructors.
-  //
-  profile (const url_type&,
-           const mbox_sha1sum_type&,
-           const registered_type&);
-
-  profile (const ::xercesc::DOMElement& e,
-           ::xml_schema::flags f = 0,
-           ::xml_schema::type* c = 0);
-
-  profile (const profile& x,
-           ::xml_schema::flags f = 0,
-           ::xml_schema::type* c = 0);
-
-  virtual profile*
-  _clone (::xml_schema::flags f = 0,
-          ::xml_schema::type* c = 0) const;
-
-  // Implementation.
-  //
-  protected:
-  void
-  parse (::xsd::cxx::xml::dom::parser< char >&,
-         ::xml_schema::flags);
-
-  private:
-  ::xsd::cxx::tree::one< url_type > url_;
-  realname_optional realname_;
-  ::xsd::cxx::tree::one< mbox_sha1sum_type > mbox_sha1sum_;
-  ::xsd::cxx::tree::one< registered_type > registered_;
-  age_optional age_;
-  gender_optional gender_;
-  playcount_optional playcount_;
-  avatar_optional avatar_;
-  icon_optional icon_;
-  id_optional id_;
-  cluster_optional cluster_;
-  username_optional username_;
-};
-
-class registered: public ::xml_schema::type
-{
-  public:
-  // unixtime
-  // 
-  typedef ::xml_schema::integer unixtime_type;
-  typedef ::xsd::cxx::tree::optional< unixtime_type > unixtime_optional;
-  typedef ::xsd::cxx::tree::traits< unixtime_type, char > unixtime_traits;
-
-  const unixtime_optional&
-  unixtime () const;
-
-  unixtime_optional&
-  unixtime ();
-
-  void
-  unixtime (const unixtime_type& x);
-
-  void
-  unixtime (const unixtime_optional& x);
-
-  // Constructors.
-  //
-  registered ();
-
-  registered (const ::xercesc::DOMElement& e,
-              ::xml_schema::flags f = 0,
-              ::xml_schema::type* c = 0);
-
-  registered (const registered& x,
-              ::xml_schema::flags f = 0,
-              ::xml_schema::type* c = 0);
-
-  virtual registered*
-  _clone (::xml_schema::flags f = 0,
-          ::xml_schema::type* c = 0) const;
-
-  // Implementation.
-  //
-  protected:
-  void
-  parse (::xsd::cxx::xml::dom::parser< char >&,
-         ::xml_schema::flags);
-
-  private:
-  unixtime_optional unixtime_;
-};
+    void
+    icon (const icon_optional& x);
+
+    void
+    icon (::std::auto_ptr< icon_type > p);
+
+    // id
+    // 
+    typedef ::xml_schema::integer id_type;
+    typedef ::xsd::cxx::tree::optional< id_type > id_optional;
+    typedef ::xsd::cxx::tree::traits< id_type, char > id_traits;
+
+    const id_optional&
+    id () const;
+
+    id_optional&
+    id ();
+
+    void
+    id (const id_type& x);
+
+    void
+    id (const id_optional& x);
+
+    // cluster
+    // 
+    typedef ::xml_schema::integer cluster_type;
+    typedef ::xsd::cxx::tree::optional< cluster_type > cluster_optional;
+    typedef ::xsd::cxx::tree::traits< cluster_type, char > cluster_traits;
+
+    const cluster_optional&
+    cluster () const;
+
+    cluster_optional&
+    cluster ();
+
+    void
+    cluster (const cluster_type& x);
+
+    void
+    cluster (const cluster_optional& x);
+
+    // username
+    // 
+    typedef ::xml_schema::string username_type;
+    typedef ::xsd::cxx::tree::optional< username_type > username_optional;
+    typedef ::xsd::cxx::tree::traits< username_type, char > username_traits;
+
+    const username_optional&
+    username () const;
+
+    username_optional&
+    username ();
+
+    void
+    username (const username_type& x);
+
+    void
+    username (const username_optional& x);
+
+    void
+    username (::std::auto_ptr< username_type > p);
+
+    // Constructors.
+    //
+    profile (const url_type&,
+             const mbox_sha1sum_type&,
+             const registered_type&);
+
+    profile (const ::xercesc::DOMElement& e,
+             ::xml_schema::flags f = 0,
+             ::xml_schema::type* c = 0);
+
+    profile (const profile& x,
+             ::xml_schema::flags f = 0,
+             ::xml_schema::type* c = 0);
+
+    virtual profile*
+    _clone (::xml_schema::flags f = 0,
+            ::xml_schema::type* c = 0) const;
+
+    // Implementation.
+    //
+    protected:
+    void
+    parse (::xsd::cxx::xml::dom::parser< char >&,
+           ::xml_schema::flags);
+
+    private:
+    ::xsd::cxx::tree::one< url_type > url_;
+    realname_optional realname_;
+    ::xsd::cxx::tree::one< mbox_sha1sum_type > mbox_sha1sum_;
+    ::xsd::cxx::tree::one< registered_type > registered_;
+    age_optional age_;
+    gender_optional gender_;
+    country_optional country_;
+    playcount_optional playcount_;
+    avatar_optional avatar_;
+    icon_optional icon_;
+    id_optional id_;
+    cluster_optional cluster_;
+    username_optional username_;
+  };
+
+  class registered: public ::xml_schema::type
+  {
+    public:
+    // unixtime
+    // 
+    typedef ::xml_schema::integer unixtime_type;
+    typedef ::xsd::cxx::tree::optional< unixtime_type > unixtime_optional;
+    typedef ::xsd::cxx::tree::traits< unixtime_type, char > unixtime_traits;
+
+    const unixtime_optional&
+    unixtime () const;
+
+    unixtime_optional&
+    unixtime ();
+
+    void
+    unixtime (const unixtime_type& x);
+
+    void
+    unixtime (const unixtime_optional& x);
+
+    // Constructors.
+    //
+    registered ();
+
+    registered (const ::xercesc::DOMElement& e,
+                ::xml_schema::flags f = 0,
+                ::xml_schema::type* c = 0);
+
+    registered (const registered& x,
+                ::xml_schema::flags f = 0,
+                ::xml_schema::type* c = 0);
+
+    virtual registered*
+    _clone (::xml_schema::flags f = 0,
+            ::xml_schema::type* c = 0) const;
+
+    // Implementation.
+    //
+    protected:
+    void
+    parse (::xsd::cxx::xml::dom::parser< char >&,
+           ::xml_schema::flags);
+
+    private:
+    unixtime_optional unixtime_;
+  };
+}
 
 #include <iosfwd>
 
@@ -539,98 +568,101 @@ class registered: public ::xml_schema::type
 #include <xercesc/dom/DOMInputSource.hpp>
 #include <xercesc/dom/DOMErrorHandler.hpp>
 
-// Parse a URI or a local file.
-//
+namespace LastFM
+{
+  // Parse a URI or a local file.
+  //
 
-::std::auto_ptr< ::profile >
-profile_ (const ::std::string& uri,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (const ::std::string& uri,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-::std::auto_ptr< ::profile >
-profile_ (const ::std::string& uri,
-          ::xml_schema::error_handler& eh,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (const ::std::string& uri,
+            ::xml_schema::error_handler& eh,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-::std::auto_ptr< ::profile >
-profile_ (const ::std::string& uri,
-          ::xercesc::DOMErrorHandler& eh,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (const ::std::string& uri,
+            ::xercesc::DOMErrorHandler& eh,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-// Parse std::istream.
-//
+  // Parse std::istream.
+  //
 
-::std::auto_ptr< ::profile >
-profile_ (::std::istream& is,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (::std::istream& is,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-::std::auto_ptr< ::profile >
-profile_ (::std::istream& is,
-          ::xml_schema::error_handler& eh,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (::std::istream& is,
+            ::xml_schema::error_handler& eh,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-::std::auto_ptr< ::profile >
-profile_ (::std::istream& is,
-          ::xercesc::DOMErrorHandler& eh,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (::std::istream& is,
+            ::xercesc::DOMErrorHandler& eh,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-::std::auto_ptr< ::profile >
-profile_ (::std::istream& is,
-          const ::std::string& id,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (::std::istream& is,
+            const ::std::string& id,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-::std::auto_ptr< ::profile >
-profile_ (::std::istream& is,
-          const ::std::string& id,
-          ::xml_schema::error_handler& eh,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (::std::istream& is,
+            const ::std::string& id,
+            ::xml_schema::error_handler& eh,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-::std::auto_ptr< ::profile >
-profile_ (::std::istream& is,
-          const ::std::string& id,
-          ::xercesc::DOMErrorHandler& eh,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (::std::istream& is,
+            const ::std::string& id,
+            ::xercesc::DOMErrorHandler& eh,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-// Parse xercesc::DOMInputSource.
-//
+  // Parse xercesc::DOMInputSource.
+  //
 
-::std::auto_ptr< ::profile >
-profile_ (const ::xercesc::DOMInputSource& is,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (const ::xercesc::DOMInputSource& is,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-::std::auto_ptr< ::profile >
-profile_ (const ::xercesc::DOMInputSource& is,
-          ::xml_schema::error_handler& eh,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (const ::xercesc::DOMInputSource& is,
+            ::xml_schema::error_handler& eh,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-::std::auto_ptr< ::profile >
-profile_ (const ::xercesc::DOMInputSource& is,
-          ::xercesc::DOMErrorHandler& eh,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (const ::xercesc::DOMInputSource& is,
+            ::xercesc::DOMErrorHandler& eh,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-// Parse xercesc::DOMDocument.
-//
+  // Parse xercesc::DOMDocument.
+  //
 
-::std::auto_ptr< ::profile >
-profile_ (const ::xercesc::DOMDocument& d,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (const ::xercesc::DOMDocument& d,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
 
-::std::auto_ptr< ::profile >
-profile_ (::xercesc::DOMDocument* d,
-          ::xml_schema::flags f = 0,
-          const ::xml_schema::properties& p = ::xml_schema::properties ());
+  ::std::auto_ptr< ::LastFM::profile >
+  profile_ (::xercesc::DOMDocument* d,
+            ::xml_schema::flags f = 0,
+            const ::xml_schema::properties& p = ::xml_schema::properties ());
+}
 
 #include <xsd/cxx/post.hxx>
 

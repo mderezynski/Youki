@@ -24,6 +24,8 @@
 #include "tasks.hh"
 #include "util-file.hh"
 #include "mpx/types.hh"
+#include "xmltoc++.hh"
+#include "xmlcpp/xsd-profile.hxx"
 
 using namespace MPX;
 

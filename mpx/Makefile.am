@@ -25,7 +25,8 @@ mpx_bin_LDADD += -lgstinterfaces-0.10 -lgstvideo-0.10
 
 mpx_bin_LDADD +=                                	\
 		$(top_builddir)/jnetlib/libjnetlib.la		\
-		$(top_builddir)/widgets/libmpxwidgets.la
+		$(top_builddir)/widgets/libmpx-widgets.la	\
+		$(top_builddir)/xmlcpp/libmpx-parsers.la
 
 mpx_bin_CFLAGS =				\
     $(GLIB_CFLAGS) $(GST_CFLAGS)

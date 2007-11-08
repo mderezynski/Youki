@@ -1,18 +1,9 @@
-noinst_LTLIBRARIES = libmpx-parsers.la
+lib_LTLIBRARIES = libmpx-parsers.la
+libmpx_parsers_la_dir = $(libdir)
 
 INCLUDES = -I$(top_srcdir) $(XML_INCLUDES)
 libmpx_parsers_la_LIBADD = -lxerces-c 
 
 libmpx_parsers_la_SOURCES = 	\
-	xsd-artist-similar.cxx	\
-	xsd-artist-similar.hxx	\
-	xsd-artist-toptags.cxx	\
-	xsd-artist-toptags.hxx	\
-	xsd-fans.cxx	\
-	xsd-fans.hxx	\
-	xsd-mostknowntracks.cxx	\
-	xsd-mostknowntracks.hxx	\
 	xsd-profile.cxx	\
-	xsd-profile.hxx	\
-	xsd-topalbums.cxx	\
-	xsd-topalbums.hxx	
+	xsd-profile.hxx	
