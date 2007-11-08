@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+elementFormDefault="qualified">
+
+<xsd:element name="profile">
+
+    <xsd:complexType>
+    <xsd:sequence>
+      <xsd:element name="url" type="xsd:string"/>
+      <xsd:element name="realname" type="xsd:string" minOccurs="0"/>     
+      <xsd:element name="mbox_sha1sum" type="xsd:string"/>
+      <xsd:element name="registered"> <!-- I wish we could use type='date' here but it's not an ISO8601 date -->
+          <xsd:complexType>
+              <xsd:attribute name="unixtime" type="xsd:integer"/>
+          </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="age" type="xsd:integer" minOccurs="0"/>
+      <xsd:element name="gender" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="playcount" type="xsd:integer" minOccurs="0"/>
+      <xsd:element name="avatar" type="xsd:string" minOccurs="0"/>
+      <xsd:element name="icon" type="xsd:string" minOccurs="0"/>
+    </xsd:sequence>
+
+     <xsd:attribute name="id" type="xsd:integer"/>
+     <xsd:attribute name="cluster" type="xsd:integer"/>
+     <xsd:attribute name="username" type="xsd:string"/>
+
+    </xsd:complexType>
+
+</xsd:element>
+
+</xsd:schema>

@@ -29,6 +29,7 @@ SUBDIRS =		\
 	po			\
 	taglib		\
 	widgets		\
+	xmlcpp		\
 	jnetlib		
 
 if HAVE_HAL

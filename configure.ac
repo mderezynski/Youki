@@ -698,9 +698,8 @@ AC_OUTPUT([
     include/Makefile
     include/mpx/Makefile
     widgets/Makefile
-    libhal++/Makefile
     jnetlib/Makefile
-    mpx/Makefile
+    libhal++/Makefile
 
     taglib/Makefile
     taglib/id3v2/Makefile
@@ -730,6 +729,10 @@ AC_OUTPUT([
     xsd/cxx/parser/validating/Makefile
     xsd/cxx/parser/non-validating/Makefile
     xsd/cxx/parser/expat/Makefile
+    
+    xmlcpp/Makefile
+
+    mpx/Makefile
 
     mpx.pc
     mpx.1

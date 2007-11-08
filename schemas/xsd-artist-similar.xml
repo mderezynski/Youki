@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+elementFormDefault="qualified" targetNamespace="LastFM">
+
+<xsd:element name="similarartists">
+<xsd:complexType>
+    
+    <xsd:sequence>
+    <xsd:element name="artist" minOccurs="0" maxOccurs="unbounded">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="name" type="xsd:string"/>
+        <xsd:element name="mbid" type="xsd:string"/>
+        <xsd:element name="match" type="xsd:integer"/>
+        <xsd:element name="url" type="xsd:string"/>
+        <xsd:element name="image_small" type="xsd:string"/>
+        <xsd:element name="image" type="xsd:string"/>
+        <xsd:element name="streamable" type="xsd:boolean"/>
+      </xsd:sequence>
+    </xsd:complexType>
+    </xsd:element>
+    </xsd:sequence>
+
+
+        <xsd:attribute name="streamable" type="xsd:boolean"/>
+        <xsd:attribute name="picture" type="xsd:string"/>
+        <xsd:attribute name="mbid" type="xsd:string"/>
+
+</xsd:complexType>
+</xsd:element>
+</xsd:schema>

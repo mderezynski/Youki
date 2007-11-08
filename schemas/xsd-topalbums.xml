@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+elementFormDefault="qualified" targetNamespace="LastFM">
+
+<xsd:element name="topalbums">
+<xsd:complexType>
+    
+    <xsd:sequence>
+    <xsd:element name="album" minOccurs="0" maxOccurs="unbounded">
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="name" type="xsd:string"/>
+        <xsd:element name="mbid" type="xsd:string"/>
+        <xsd:element name="reach" type="xsd:integer"/>
+        <xsd:element name="url" type="xsd:string"/>
+
+        <xsd:element name="image">
+        <xsd:complexType>
+        <xsd:sequence>
+            <xsd:element name="large" type="xsd:string"/>
+            <xsd:element name="medium" type="xsd:string"/>
+            <xsd:element name="small" type="xsd:string"/>
+        </xsd:sequence>
+        </xsd:complexType>
+        </xsd:element>
+        
+      </xsd:sequence>
+    </xsd:complexType>
+    </xsd:element>
+    </xsd:sequence>
+
+    <xsd:attribute name="artist" type="xsd:string"/>
+
+</xsd:complexType>
+</xsd:element>
+</xsd:schema>
