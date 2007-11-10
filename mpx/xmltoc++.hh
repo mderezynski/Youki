@@ -41,7 +41,7 @@ namespace MPX
             T * m_Xml;
             XercesDOMParser * m_ConfigFileParser;
 
-       public:
+        public:
 
             ~XmlInstance ()
             {

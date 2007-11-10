@@ -286,17 +286,7 @@ namespace MPX
                          "JOIN album ON album.id = track.album_j JOIN artist "
                          "ON artist.id = track.artist_j JOIN album_artist ON album.album_artist_j = album_artist.id;");
 
-        static boost::format
-          tag_table_f ("CREATE TABLE IF NOT EXISTS tag "
-                       "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT NOT NULL)");
-
-        static boost::format
-          tag_datum_table_f ("CREATE TABLE IF NOT EXISTS %s "
-                             "(id INTEGER PRIMARY KEY AUTOINCREMENT, tag_id INTEGER NOT NULL, fki INTEGER NOT NULL)");
-
-        m_SQL->exec_sql ((tag_table_f  % "tag").str()); 
-        m_SQL->exec_sql ((tag_datum_table_f  % "artist_tag").str()); 
-        m_SQL->exec_sql ((tag_datum_table_f  % "title_tag").str()); 
+        m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS devices (id INTEGER PRIMARY KEY AUTOINCREMENT, device_udi TEXT, volume_udi TEXT);");
     }
 
     Library::~Library ()
