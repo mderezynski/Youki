@@ -99,9 +99,9 @@ namespace MPX
               enum Column
               {
                 C_ARTIST,
+                C_TITLE,
                 C_ALBUM,
                 C_TRACK,
-                C_TITLE,
                 C_LENGTH
               };
 
@@ -111,13 +111,13 @@ namespace MPX
               , m_RowId(0)
               {
                 append_column(_("Artist"), PlaylistColumns.Artist);
+                append_column(_("Title"), PlaylistColumns.Title);
                 append_column(_("Album"), PlaylistColumns.Album);
                 append_column(_("Track"), PlaylistColumns.Track);
-                append_column(_("Title"), PlaylistColumns.Title);
                 get_column(C_ARTIST)->set_sort_column_id(PlaylistColumns.Artist);
+                get_column(C_TITLE)->set_sort_column_id(PlaylistColumns.Title);
                 get_column(C_ALBUM)->set_sort_column_id(PlaylistColumns.Album);
                 get_column(C_TRACK)->set_sort_column_id(PlaylistColumns.Track);
-                get_column(C_TITLE)->set_sort_column_id(PlaylistColumns.Title);
 
                 for(int c = C_ARTIST; c < C_LENGTH; get_column(c++)->set_resizable());
 
@@ -591,7 +591,7 @@ namespace MPX
                 else
                     ArtistSort = get<std::string>(r["album_artist"]);
 
-                (*iter)[AlbumColumns.Text] = (boost::format("<b>%s</b>\n%s\n<small>%s</small>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+                (*iter)[AlbumColumns.Text] = (boost::format("<b>%s</b>\n<i>%s</i>\n<small>%s</small>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
                 (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                 (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
               }
@@ -691,7 +691,7 @@ namespace MPX
                 else
                 {
                     cell->property_visible() = true; 
-                    cell->property_markup() = (boost::format("%lld") % (*iter)[AlbumColumns.TrackNumber]).str();
+                    cell->property_markup() = (boost::format("%lld)") % (*iter)[AlbumColumns.TrackNumber]).str();
                 }
               }
 
@@ -772,7 +772,7 @@ namespace MPX
                     else
                         ArtistSort = get<std::string>(r["album_artist"]);
 
-                    (*iter)[AlbumColumns.Text] = (boost::format("<b>%s</b>\n%s\n<small>%s</small>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+                    (*iter)[AlbumColumns.Text] = (boost::format("<b>%s</b>\n<i>%s</i>\n<small>%s</small>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
                     (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                     (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
                 }

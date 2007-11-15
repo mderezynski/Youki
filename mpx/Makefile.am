@@ -5,10 +5,16 @@ mpx_bin_LDFLAGS = -Wl,--export-dynamic
 mpx_bin_LDADD =						\
 		$(ALSA_LIBS)				\
 		$(BOOST_LDFLAGS)			\
+		$(BOOST_REGEX_LIB)			\
+		$(BOOST_FILESYSTEM_LIB)		\
+		$(BOOST_IOSTREAMS_LIB)		\
+		$(CAIROMM_LIBS)				\
+		$(CLUTTER_LIBS)				\
 		$(CDIO_LIBS)				\
 		$(CDPARANOIA_LIBS)			\
 		$(DBUS_LIBS)				\
 		$(GIO_LIBS)					\
+		$(GLADEMM_LIBS)				\
 		$(GLIBMM_LIBS)				\
 		$(GST_LIBS)					\
 		$(GTKMM_LIBS)				\
@@ -16,12 +22,17 @@ mpx_bin_LDADD =						\
 		$(NM_LIBS)					\
 		$(RSVG_LIBS)				\
 		$(SEXYMM_LIBS)				\
+		$(SM_LIBS)					\
 		$(SOUP_LIBS)				\
 		$(SQLITE_LIBS)				\
+		$(STARTUP_NOTIFY_LIBS)		\
 		$(TAGLIB_LIBS)				\
-		$(XML_LIBS)					
+		$(XML_LIBS)					\
+		$(XLIB_LIBS)				
 
-mpx_bin_LDADD += -lgstinterfaces-0.10 -lgstvideo-0.10
+mpx_bin_LDADD += 				\
+		-lgstinterfaces-0.10 	\
+		-lgstvideo-0.10
 
 mpx_bin_LDADD +=                                	\
 		$(top_builddir)/jnetlib/libjnetlib.la		\
@@ -35,6 +46,7 @@ mpx_bin_CXXFLAGS = 				\
     $(ALSA_CFLAGS)				\
     $(BOOST_CPPFLAGS)			\
 	$(CAIROMM_CFLAGS)   		\
+	$(CLUTTER_CFLAGS)			\
     $(CDIO_CFLAGS)				\
     $(CDPARANOIA_INCLUDES) 		\
 	$(DBUS_CFLAGS)				\
@@ -56,16 +68,6 @@ mpx_bin_CXXFLAGS = 				\
 	$(XPROTO_CFLAGS)			\
 	-I$(top_srcdir)				\
   	-I$(top_srcdir)/include	
-
-mpx_bin_LDADD +=				\
-	$(STARTUP_NOTIFY_LIBS)		\
-	$(XLIB_LIBS) $(SM_LIBS)		\
-	$(GTKMM_LIBS)				\
-	$(GLADEMM_LIBS)				\
-	$(CAIROMM_LIBS)				\
-	$(BOOST_REGEX_LIB)			\
-	$(BOOST_FILESYSTEM_LIB)		\
-	$(BOOST_IOSTREAMS_LIB)			
 
 if HAVE_HAL
 mpx_bin_LDADD += $(top_builddir)/libhal++/libhalcc.la
