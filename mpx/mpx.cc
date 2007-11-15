@@ -753,12 +753,12 @@ namespace MPX
         m_Library.signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
         m_Library.signal_scan_end().connect( sigc::mem_fun( *this, &Player::on_library_scan_end ) );
 
-        m_ref_xml->get_widget_derived("infoarea", m_InfoArea);
-        m_ref_xml->get_widget_derived("sources", m_Sources);
+        // m_ref_xml->get_widget_derived("sources", m_Sources); TODO: Remove old-style sources stuff
         m_ref_xml->get_widget("statusbar", m_Statusbar);
 
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 
+        ///// TODO: THIS IS ONLY TEMPORARY
         PlaybackSourceMusicLib * p = new PlaybackSourceMusicLib(obj_library, obj_amazon);
         Gtk::Notebook * n;
         Gtk::Alignment * a = new Gtk::Alignment;
@@ -766,20 +766,21 @@ namespace MPX
         a->show();
         m_ref_xml->get_widget("sourcepages", n);
         n->append_page(*a);
-        m_Sources->addSource( _("Music"), p->get_icon() );
+        //m_Sources->addSource( _("Music"), p->get_icon() );
+        ///// TODO: THIS IS ONLY TEMPORARY
 
-#if 0
         // Infoarea
         {
-          m_ref_xml->get_widget_derived ("infoarea", m_infoarea);
+          m_ref_xml->get_widget_derived("infoarea", m_InfoArea);
       
+#if 0
           m_infoarea->signal_uris_dropped().connect
             ( sigc::mem_fun( *this, &MPX::Player::on_uris_dropped ) );
 
           m_infoarea->signal_cover_clicked().connect
             ( sigc::mem_fun( *this, &MPX::Player::on_shell_display_track_details) );
-        }
 #endif
+        }
 
 #if 0
         // Playback Engine Signals
