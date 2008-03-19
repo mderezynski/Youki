@@ -37,7 +37,8 @@ mpx_bin_LDADD += 				\
 mpx_bin_LDADD +=                                	\
 		$(top_builddir)/jnetlib/libjnetlib.la		\
 		$(top_builddir)/widgets/libmpx-widgets.la	\
-		$(top_builddir)/xmlcpp/libmpx-parsers.la
+		$(top_builddir)/xmlcpp/libmpx-parsers.la	\
+		$(top_builddir)/mcs/libmconfig.la
 
 mpx_bin_CFLAGS =				\
     $(GLIB_CFLAGS) $(GST_CFLAGS)
@@ -122,6 +123,9 @@ mpx_bin_SOURCES =				\
 	network.hh					\
 	network.cc					\
 								\
+	play.hh						\
+	play.cc						\
+								\
 	playbacksource.hh			\
 	playbacksource.cc			\
 								\
@@ -150,7 +154,10 @@ mpx_bin_SOURCES =				\
 	util-string.cc				\
 								\
 	util-ui.hh					\
-	util-ui.cc
+	util-ui.cc					\
+								\
+	video-playback.hh			\
+	video-playback.cc
 
 if HAVE_HAL								
 mpx_bin_SOURCES += hal.hh hal.cc

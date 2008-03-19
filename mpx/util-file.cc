@@ -37,7 +37,7 @@
 
 #include <glib/gstdio.h>
 #include <glibmm.h>
-#include <gio/gvfs.h>
+#include <gio/gio.h>
 
 #include "audio.hh"
 #include "uri.hh"
@@ -83,10 +83,10 @@ namespace MPX
         collection.clear ();
 
       GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str());
-      GFileEnumerator * enm = g_file_enumerate_children(file, G_FILE_ATTRIBUTE_STD_NAME "," G_FILE_ATTRIBUTE_STD_TYPE, GFileQueryInfoFlags(0), NULL, NULL);
+      GFileEnumerator * enm = g_file_enumerate_children(file, G_FILE_ATTRIBUTE_STANDARD_NAME "," G_FILE_ATTRIBUTE_STANDARD_TYPE, GFileQueryInfoFlags(0), NULL, NULL);
 
       gboolean iterate = TRUE;
-      while(iterate)
+      while(iterate && G_IS_FILE_ENUMERATOR(enm))
       {
         GFileInfo * f = g_file_enumerator_next_file(enm, NULL, NULL);
         if(f)

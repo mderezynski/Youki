@@ -31,13 +31,13 @@
 namespace MPX
 {
   class Sources
-    : public Gtk::TreeView
+    : public Gtk::IconView
   {
     private:
 
-        Glib::RefPtr<Gnome::Glade::Xml>   m_ref_xml;
+        Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
 
-        void cell_data_func( Gtk::CellRenderer*, const Gtk::TreeIter&, int );
+		typedef sigc::signal<void, int> SignalSourceChanged;
 
         struct SourceColumns : public Gtk::TreeModel::ColumnRecord
         {
@@ -52,13 +52,19 @@ namespace MPX
         };
 
         SourceColumns m_SourceColumns;
-        Glib::RefPtr<Gtk::TreeStore> m_Store;
+        Glib::RefPtr<Gtk::ListStore> m_Store;
 
+#if 0
         Gtk::TreeIter m_RootDevices;
         Gtk::TreeIter m_RootSources;
+#endif
 
+#if 0
         bool
         slot_select (Glib::RefPtr <Gtk::TreeModel> const& model, Gtk::TreeModel::Path const& path, bool was_selected);
+
+        void
+		cell_data_func( Gtk::CellRenderer*, const Gtk::TreeIter&, int );
 
         static void
         rb_sourcelist_expander_cell_data_func (GtkTreeViewColumn *column,
@@ -66,6 +72,13 @@ namespace MPX
                                GtkTreeModel      *model,
                                GtkTreeIter       *iter,
                                gpointer           data) ;
+#endif
+
+		void
+		on_selection_changed ();
+
+		SignalSourceChanged signal_source_changed_;
+		int m_CurrentSource;
      
     public:
 
@@ -74,6 +87,16 @@ namespace MPX
         virtual ~Sources ();
 
         void addSource (const Glib::ustring& name, const Glib::RefPtr<Gdk::Pixbuf>& icon);
+
+		int getSource ()
+		{
+			return m_CurrentSource;
+		}
+
+		SignalSourceChanged& sourceChanged ()
+		{
+			return signal_source_changed_;
+		}
   };
 }
 #endif

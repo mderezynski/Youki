@@ -33,10 +33,19 @@
 
 namespace MPX
 {
-    class Metadata
+    struct Metadata
     :   public Track
     {
         Glib::RefPtr<Gdk::Pixbuf> Image;
+
+		Metadata ()
+		{
+		}
+
+		Metadata (Track const& track)
+		: Track (track)
+		{
+		}
     };
 
     class PlaybackSource
@@ -207,6 +216,8 @@ namespace MPX
         virtual void
         send_flags ();
 
+		virtual void
+		send_metadata () {};
 
 
         Glib::ustring

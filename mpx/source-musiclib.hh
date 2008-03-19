@@ -44,9 +44,18 @@ namespace MPX
     
             MusicLibPrivate * m_Private;
 
+			void
+			on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
+
         public:
 
+			void
+			check_caps ();
+
             PlaybackSourceMusicLib (MPX::Library&, MPX::Amazon::Covers&);
+
+			virtual void
+			send_metadata ();
 
             virtual Glib::ustring
             get_uri (); 

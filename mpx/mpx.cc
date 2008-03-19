@@ -28,7 +28,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
-#include <gio/gvfs.h>
+#include <gio/gio.h>
 #include <glib/gstdio.h>
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
@@ -45,6 +45,9 @@ using namespace Gtk;
 using namespace std;
 using namespace Gnome::Glade;
 using namespace MPX::Util;
+using boost::get;
+
+#define SOURCE_NONE (-1)
 
 namespace
 {
@@ -62,6 +65,94 @@ namespace
   ""
   "</ui>"
   "";
+
+  char const ACTION_PLAY [] = "action-play";
+  char const ACTION_STOP [] = "action-stop";
+  char const ACTION_NEXT [] = "action-next";
+  char const ACTION_PREV [] = "action-prev";
+  char const ACTION_PAUSE [] = "action-pause";
+
+  std::string
+  gprintf (const char *format, ...)
+  {
+    va_list args;
+    va_start (args, format);
+    char *v = g_strdup_vprintf (format, args);
+    va_end (args);
+    std::string r (v);
+    g_free (v);
+    return r; 
+  }
+
+  void
+  parse_metadata (MPX::Metadata & metadata,
+                  ustring       & artist,
+                  ustring       & album,
+                  ustring       & title)
+  {
+    using namespace MPX;
+
+    static char const *
+      text_b_f ("<b>%s</b>");
+
+    static char const *
+      text_b_f2 ("<b>%s</b> (%s)");
+
+    static char const *
+      text_big_f ("<big>%s</big>");
+
+    static char const *
+      text_album_artist_f ("%s (%s)");
+
+    static char const *
+      text_album_f ("%s");
+
+    static char const *
+      text_artist_f ("(%s)");
+
+    if( (metadata[ATTRIBUTE_MB_ALBUM_ARTIST_ID] != metadata[ATTRIBUTE_MB_ARTIST_ID]) && metadata[ATTRIBUTE_ALBUM_ARTIST] )
+    {
+        if( metadata[ATTRIBUTE_ALBUM] )
+        {
+          album = gprintf (text_album_artist_f,
+                               Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM].get())).c_str(),
+                               Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM_ARTIST].get())).c_str());
+        }
+        else
+        {
+          album = gprintf (text_artist_f,
+                               Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM_ARTIST].get())).c_str());
+        }
+    }
+    else
+    {
+        if( metadata[ATTRIBUTE_ALBUM] )
+        {
+          album = gprintf (text_album_f,
+                               Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM].get())).c_str());
+        }
+    }
+
+    if ((metadata[ATTRIBUTE_ARTIST_SORTNAME] && metadata[ATTRIBUTE_ARTIST]) &&
+        (metadata[ATTRIBUTE_ARTIST_SORTNAME] != metadata[ATTRIBUTE_ARTIST])) /* let's display the artist if it's not identical to the sortname */
+    {
+      std::string a = get<std::string>(metadata[ATTRIBUTE_ARTIST_SORTNAME].get());
+      artist = gprintf (text_b_f2,
+                            Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST_SORTNAME].get())).c_str(),
+                            Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str());
+    }
+    else
+    if( metadata[ATTRIBUTE_ARTIST] )
+    {
+      artist = gprintf (text_b_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str());
+    }
+
+    if( metadata[ATTRIBUTE_TITLE] )
+    {
+      title = gprintf (text_big_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_TITLE].get())).c_str());
+    }
+  }
+
 }
 
 namespace MPX
@@ -279,7 +370,7 @@ namespace MPX
 
         if ((x >= 6) && (x <= 78) && (y >= 3) && (y <= 75))
         {
-          int status = Play::Obj()->property_status();
+          int status = m_Play->property_status();
           if (status != PLAYSTATUS_STOPPED && status != PLAYSTATUS_WAITING)
           {
             m_signal_cover_clicked.emit ();
@@ -404,8 +495,8 @@ namespace MPX
         modify_base (Gtk::STATE_NORMAL, color);
 
 #if 0
-        Play::Obj ()->signal_spectrum ().connect (sigc::mem_fun (this, &InfoArea::play_update_spectrum));
-        Play::Obj ()->property_status ().signal_changed ().connect (sigc::mem_fun (this, &InfoArea::play_status_changed));
+        m_Play ()->signal_spectrum ().connect (sigc::mem_fun (this, &InfoArea::play_update_spectrum));
+        m_Play ()->property_status ().signal_changed ().connect (sigc::mem_fun (this, &InfoArea::play_status_changed));
 
         enable_drag_dest ();
 #endif
@@ -583,7 +674,7 @@ namespace MPX
       void
       play_status_changed ()
       {
-        MPXPlaystatus status = MPXPlaystatus (Play::Obj ()->property_status ().get_value ());
+        MPXPlaystatus status = MPXPlaystatus (m_Play ()->property_status ().get_value ());
         if( status == PLAYSTATUS_PAUSED )
         {
           m_conn_decay = Glib::signal_timeout ().connect (sigc::mem_fun (this, &InfoArea::decay_spectrum), 50);
@@ -753,121 +844,138 @@ namespace MPX
         m_Library.signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
         m_Library.signal_scan_end().connect( sigc::mem_fun( *this, &Player::on_library_scan_end ) );
 
-        // m_ref_xml->get_widget_derived("sources", m_Sources); TODO: Remove old-style sources stuff
+        m_ref_xml->get_widget_derived("sources", m_Sources);
         m_ref_xml->get_widget("statusbar", m_Statusbar);
 
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 
         ///// TODO: THIS IS ONLY TEMPORARY
         PlaybackSourceMusicLib * p = new PlaybackSourceMusicLib(obj_library, obj_amazon);
-        Gtk::Notebook * n;
         Gtk::Alignment * a = new Gtk::Alignment;
         p->get_ui()->reparent(*a);
         a->show();
-        m_ref_xml->get_widget("sourcepages", n);
-        n->append_page(*a);
-        //m_Sources->addSource( _("Music"), p->get_icon() );
+        m_ref_xml->get_widget("sourcepages", m_MainNotebook);
+        m_MainNotebook->append_page(*a);
+        m_Sources->addSource( _("Music"), p->get_icon() );
+		m_SourceV.push_back(p);
+		install_source(0, /* tab # */ 1);
         ///// TODO: THIS IS ONLY TEMPORARY
 
         // Infoarea
-        {
-          m_ref_xml->get_widget_derived("infoarea", m_InfoArea);
-      
+		m_ref_xml->get_widget_derived("infoarea", m_InfoArea);
 #if 0
-          m_infoarea->signal_uris_dropped().connect
-            ( sigc::mem_fun( *this, &MPX::Player::on_uris_dropped ) );
+		m_InfoArea->signal_uris_dropped().connect
+		  ( sigc::mem_fun( *this, &MPX::Player::on_uris_dropped ) );
 
-          m_infoarea->signal_cover_clicked().connect
-            ( sigc::mem_fun( *this, &MPX::Player::on_shell_display_track_details) );
+		m_InfoArea->signal_cover_clicked().connect
+		  ( sigc::mem_fun( *this, &MPX::Player::on_shell_display_track_details) );
 #endif
-        }
 
+        // Playback Engine
+        m_Play = new Play;
+		m_Play->signal_eos().connect
+			  (sigc::mem_fun (*this, &MPX::Player::on_play_eos));
+		m_Play->property_status().signal_changed().connect
+			  (sigc::mem_fun (*this, &MPX::Player::on_play_status_changed));
 #if 0
-        // Playback Engine Signals
-        {
-          Play::Obj()->property_status().signal_changed().connect
-                (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_status_changed));
-          Play::Obj()->signal_position().connect
-                (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_position));
-          Play::Obj()->signal_buffering().connect
-                (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_buffering));
-          Play::Obj()->signal_error().connect
-                (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_error));
-          Play::Obj()->signal_eos().connect
-                (sigc::mem_fun (*this, &MPX::PlayerShell::on_play_eos));
-          Play::Obj()->signal_metadata().connect
-                (sigc::mem_fun (*this, &MPX::PlayerShell::on_gst_metadata));
-        }
+		m_Play->signal_position().connect
+			  (sigc::mem_fun (*this, &MPX::Player::on_play_position));
+		m_Play->signal_buffering().connect
+			  (sigc::mem_fun (*this, &MPX::Player::on_play_buffering));
+		m_Play->signal_error().connect
+			  (sigc::mem_fun (*this, &MPX::Player::on_play_error));
+		m_Play->signal_metadata().connect
+			  (sigc::mem_fun (*this, &MPX::Player::on_gst_metadata));
 #endif
 
         // UIManager + Menus + Proxy Widgets
-        {
-            m_actions = ActionGroup::create ("Actions_Player");
+		m_actions = ActionGroup::create ("Actions_Player");
 
-            m_actions->add(Action::create("MenuMusic", _("_Music")));
+		m_actions->add (Action::create("MenuMusic", _("_Music")));
 
-            m_actions->add (Action::create ("action-import-folder",
-                                            Gtk::Stock::HARDDISK,
-                                            _("Import _Folder")),
-                                            sigc::mem_fun (*this, &Player::on_import_folder));
+		m_actions->add (Action::create ("action-import-folder",
+										Gtk::Stock::HARDDISK,
+										_("Import _Folder")),
+										sigc::mem_fun (*this, &Player::on_import_folder));
 
-            m_actions->add (Action::create ("action-import-share",
-                                            Gtk::Stock::NETWORK,
-                                            _("Import _Share")),
-                                            sigc::mem_fun (*this, &Player::on_import_share));
+		m_actions->add (Action::create ("action-import-share",
+										Gtk::Stock::NETWORK,
+										_("Import _Share")),
+										sigc::mem_fun (*this, &Player::on_import_share));
 
-            m_actions->add (Action::create ("action-quit",
-                                            Gtk::Stock::QUIT,
-                                            _("_Quit")),
-                                            AccelKey("<ctrl>Q"),
-                                            sigc::ptr_fun ( &Gtk::Main::quit ));
+		m_actions->add (Action::create ("action-quit",
+										Gtk::Stock::QUIT,
+										_("_Quit")),
+										AccelKey("<ctrl>Q"),
+										sigc::ptr_fun ( &Gtk::Main::quit ));
 
-            m_ui_manager = UIManager::create ();
-            m_ui_manager->insert_action_group (m_actions);
+		m_actions->add (Action::create (ACTION_PLAY,
+										Gtk::Stock::MEDIA_PLAY,
+										_("Play")),
+										sigc::mem_fun (*this, &Player::on_controls_play ));
 
-            if(Util::ui_manager_add_ui(m_ui_manager, MenubarMain, *this, _("Main Menubar")))
-            {
-                dynamic_cast<Alignment*>(m_ref_xml->get_widget("alignment-menu"))->add (*(m_ui_manager->get_widget ("/MenubarMain")));
-            }
-        }
+		m_actions->add (ToggleAction::create (ACTION_PAUSE,
+										Gtk::Stock::MEDIA_PAUSE,
+										_("Pause")),
+										sigc::mem_fun (*this, &Player::on_controls_pause ));
+
+		m_actions->add (Action::create (ACTION_STOP,
+										Gtk::Stock::MEDIA_STOP,
+										_("Stop")),
+										sigc::mem_fun (*this, &Player::stop ));
+
+		m_actions->add (Action::create (ACTION_NEXT,
+										Gtk::Stock::MEDIA_NEXT,
+										_("Next")),
+										sigc::mem_fun (*this, &Player::on_controls_next ));
+
+		m_actions->add (Action::create (ACTION_PREV,
+										Gtk::Stock::MEDIA_PREVIOUS,
+										_("Prev")),
+										sigc::mem_fun (*this, &Player::on_controls_prev ));
+
+		m_ui_manager = UIManager::create ();
+		m_ui_manager->insert_action_group (m_actions);
+
+		if(Util::ui_manager_add_ui(m_ui_manager, MenubarMain, *this, _("Main Menubar")))
+		{
+			dynamic_cast<Alignment*>(m_ref_xml->get_widget("alignment-menu"))->add (*(m_ui_manager->get_widget ("/MenubarMain")));
+		}
+
+        // Playback Proxies
+		m_actions->get_action (ACTION_PLAY)->connect_proxy
+			  (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-play"))));
+		m_actions->get_action (ACTION_PREV)->connect_proxy
+			  (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-previous"))));
+		m_actions->get_action (ACTION_NEXT)->connect_proxy
+			  (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-next"))));
+		m_actions->get_action (ACTION_PAUSE)->connect_proxy
+			  (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-pause"))));
+		m_actions->get_action (ACTION_STOP)->connect_proxy
+			  (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-stop"))));
 
 #if 0
-        // Playback Proxies
-        {
-          m_actions->get_action (PLAYER_SHELL_ACTION_PLAY)->connect_proxy
-                (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_play"))));
-          m_actions->get_action (PLAYER_SHELL_ACTION_PAUSE)->connect_proxy
-                (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_pause"))));
-          m_actions->get_action (PLAYER_SHELL_ACTION_PREV)->connect_proxy
-                (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_prev"))));
-          m_actions->get_action (PLAYER_SHELL_ACTION_NEXT)->connect_proxy
-                (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_next"))));
-          m_actions->get_action (PLAYER_SHELL_ACTION_STOP)->connect_proxy
-                (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("b_stop"))));
+		dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-repeat"))
+		  ->set (render_icon (Gtk::StockID (MPX_STOCK_REPEAT), Gtk::ICON_SIZE_BUTTON));
+		dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-shuffle"))
+		  ->set (render_icon (Gtk::StockID (MPX_STOCK_SHUFFLE), Gtk::ICON_SIZE_BUTTON));
 
-          dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-repeat"))
-            ->set (render_icon (Gtk::StockID (MPX_STOCK_REPEAT), Gtk::ICON_SIZE_BUTTON));
-          dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-shuffle"))
-            ->set (render_icon (Gtk::StockID (MPX_STOCK_SHUFFLE), Gtk::ICON_SIZE_BUTTON));
+		m_actions->get_action (ACTION_REPEAT)->connect_proxy
+			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-repeat"))));
+		m_actions->get_action (ACTION_SHUFFLE)->connect_proxy
+			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-shuffle"))));
 
-          m_actions->get_action (PLAYER_SHELL_ACTION_REPEAT)->connect_proxy
-                (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-repeat"))));
-          m_actions->get_action (PLAYER_SHELL_ACTION_SHUFFLE)->connect_proxy
-                (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-shuffle"))));
-
-          mcs_bind->bind_toggle_action
-            (RefPtr<ToggleAction>::cast_static (m_actions->get_action (PLAYER_SHELL_ACTION_SHUFFLE)), "bmp", "shuffle");
-          mcs_bind->bind_toggle_action
-            (RefPtr<ToggleAction>::cast_static (m_actions->get_action (PLAYER_SHELL_ACTION_REPEAT)), "bmp", "repeat");
-
-          m_actions->get_action (PLAYER_SHELL_ACTION_PLAY)->set_sensitive( 0 );
-          m_actions->get_action (PLAYER_SHELL_ACTION_PAUSE)->set_sensitive( 0 );
-          m_actions->get_action (PLAYER_SHELL_ACTION_PREV)->set_sensitive( 0 );
-          m_actions->get_action (PLAYER_SHELL_ACTION_NEXT)->set_sensitive( 0 );
-          m_actions->get_action (PLAYER_SHELL_ACTION_STOP)->set_sensitive( 0 );
-        }
+		mcs_bind->bind_toggle_action
+		  (RefPtr<ToggleAction>::cast_static (m_actions->get_action (ACTION_SHUFFLE)), "bmp", "shuffle");
+		mcs_bind->bind_toggle_action
+		  (RefPtr<ToggleAction>::cast_static (m_actions->get_action (ACTION_REPEAT)), "bmp", "repeat");
 #endif
 
+		m_actions->get_action (ACTION_PLAY)->set_sensitive( 0 );
+		m_actions->get_action (ACTION_PAUSE)->set_sensitive( 0 );
+		m_actions->get_action (ACTION_PREV)->set_sensitive( 0 );
+		m_actions->get_action (ACTION_NEXT)->set_sensitive( 0 );
+		m_actions->get_action (ACTION_STOP)->set_sensitive( 0 );
         add_accel_group (m_ui_manager->get_accel_group());
 
 #if 0
@@ -885,16 +993,16 @@ namespace MPX
 
           g_object_connect (G_OBJECT (m_status_icon),
                             "signal::click",
-                            G_CALLBACK(PlayerShell::status_icon_click),
+                            G_CALLBACK(Player::status_icon_click),
                             this,
                             "signal::popup-menu",
-                            G_CALLBACK(PlayerShell::status_icon_popup_menu),
+                            G_CALLBACK(Player::status_icon_popup_menu),
                             this,
                             "signal::scroll-up",
-                            G_CALLBACK(PlayerShell::status_icon_scroll_up),
+                            G_CALLBACK(Player::status_icon_scroll_up),
                             this,
                             "signal::scroll-down",
-                            G_CALLBACK(PlayerShell::status_icon_scroll_down),
+                            G_CALLBACK(Player::status_icon_scroll_down),
                             this,
                             NULL);
 
@@ -902,16 +1010,19 @@ namespace MPX
           gtk_widget_realize (GTK_WIDGET (tray_icon));
           g_object_connect (G_OBJECT (tray_icon),
                             "signal::embedded",
-                            G_CALLBACK (MPX::PlayerShell::on_tray_embedded),
+                            G_CALLBACK (MPX::Player::on_tray_embedded),
                             this,
                             NULL);
           g_object_connect (G_OBJECT (tray_icon),
                             "signal::destroyed",
-                            G_CALLBACK (MPX::PlayerShell::on_tray_destroyed),
+                            G_CALLBACK (MPX::Player::on_tray_destroyed),
                             this,
                             NULL);
         }
 #endif
+
+		m_Sources->sourceChanged().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
+		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
     }
 
     Player*
@@ -925,6 +1036,820 @@ namespace MPX
     Player::~Player()
     {
     }
+
+	void
+	Player::on_source_caps (PlaybackSource::Caps caps, int source)
+	{
+	  //Mutex::Lock L (m_source_cf_lock);
+	  m_source_caps[source] = caps;
+	  //m_player_dbus_obj->emit_caps_change (m_player_dbus_obj, int (caps));
+
+	  if( (source == m_Sources->getSource()) || (m_MainNotebook->get_current_page()-1 == source) )
+	  {
+		m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
+		m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
+		m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
+		//m_actions->get_action (ACTION_CREATE_BOOKMARK)->set_sensitive (caps & PlaybackSource::C_CAN_BOOKMARK);
+	  }
+
+	  if( source == m_Sources->getSource() )
+	  {
+			if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
+			{
+				  m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
+				  //m_seek_progress->set_sensitive( caps & PlaybackSource::C_CAN_SEEK );
+			}
+	  }
+	}
+
+	void
+	Player::on_source_flags (PlaybackSource::Flags flags, int source)
+	{
+	  //Mutex::Lock L (m_source_cf_lock);
+	  m_source_flags[source] = flags;
+	  //m_actions->get_action (ACTION_REPEAT)->set_sensitive (flags & PlaybackSource::F_USES_REPEAT);
+	  //m_actions->get_action (ACTION_SHUFFLE)->set_sensitive (flags & PlaybackSource::F_USES_SHUFFLE);
+	}
+
+	void
+	Player::reparse_metadata (/*MpxMetadataParseFlags parse_flags*/)
+	{
+		if( m_metadata.Image )
+		{
+			m_InfoArea->set_image (m_metadata.Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
+		}
+
+#if 0
+	  struct NoCurrentImage {};
+
+	  try{
+		  if( parse_flags & PARSE_FLAGS_IMAGE )
+		  {
+			if( m_metadata.Image )
+			{
+			  m_InfoArea->set_image (m_metadata.image->scale_simple (72, 72, Gdk::INTERP_HYPER));
+			}
+			else
+			if( m_metadata[ATTRIBUTE_ASIN] )
+			{
+			  if( get<std::string>(m_metadata[ATTRIBUTE_ASIN].get()) != m_asin )
+			  {
+				try{
+					m_InfoArea->set_image (Amazon::Covers::Obj()->fetch (m_metadata.asin.get(), COVER_SIZE_INFO_AREA, true));
+					Amazon::Covers::Obj()->fetch (m_metadata.asin.get(), m_metadata.image, true); //FIXME: Redundancy here ^
+					m_asin = m_metadata.asin;
+				  }
+				catch (MPX::Amazon::NoCoverError & cxe)
+				  {
+					throw NoCurrentImage ();
+				  }
+			  }
+			  else
+			  {
+				// Same ASIN, so same cover, save the reparsing
+				parse_flags = MPXMetadataParseFlags (parse_flags & ~PARSE_FLAGS_IMAGE);
+			  }
+			}
+			else
+			{
+			  throw NoCurrentImage();
+			}
+		  }
+		}
+	  catch (NoCurrentImage & cxe)
+		{
+		  m_asin.reset ();
+		  set_current_source_image ();
+		}
+#endif
+
+#if 0
+	  if( parse_flags & PARSE_FLAGS_TEXT )
+	  {
+#endif
+		ustring artist, album, title;
+		parse_metadata (m_metadata, artist, album, title);
+		m_InfoArea->set_text (L_TITLE, title);
+		m_InfoArea->set_text (L_ARTIST, artist);
+		m_InfoArea->set_text (L_ALBUM, album);
+#if 0
+	  }
+#endif
+
+#if 0
+	  m_actions->get_action (ACTION_LASTFM_LOVE)->set_sensitive( 0 );
+	  m_actions->get_action (ACTION_LASTFM_TAG)->set_sensitive( 0 );
+	  m_actions->get_action (ACTION_LASTFM_RECM)->set_sensitive( 0 );
+	  m_actions->get_action (ACTION_LASTFM_PLAY)->set_sensitive( 0 );
+#endif
+	}
+
+	void
+	Player::on_source_track_metadata (Metadata const& metadata)
+	{
+	  Metadata m = metadata;
+	  if(!m.Image && m[ATTRIBUTE_ASIN] && m[ATTRIBUTE_ASIN] != m_metadata[ATTRIBUTE_ASIN])
+	  {
+		m_Covers.fetch(get<std::string>(m[ATTRIBUTE_ASIN].get()), m.Image);
+	  }
+	  m_metadata = m;
+	  reparse_metadata ();
+	}
+
+	void
+	Player::on_source_play_request (int source_id)
+	{
+	  if( m_Sources->getSource() != SOURCE_NONE )
+	  {
+			if( m_source_flags[m_Sources->getSource()] & PlaybackSource::F_HANDLE_LASTFM )
+			{
+				  // shell_lastfm_scrobble_current (); // scrobble the current item before switching
+			}
+
+			if( m_Sources->getSource() != source_id)
+			{
+				  m_SourceV[m_Sources->getSource()]->stop ();
+				  m_Play->request_status (PLAYSTATUS_STOPPED);
+			}
+	  }
+
+	  PlaybackSource* source = m_SourceV[source_id];
+
+	  if( m_source_flags[source_id] & PlaybackSource::F_ASYNC)
+	  {
+			source->play_async ();
+			m_actions->get_action( ACTION_STOP )->set_sensitive (true);
+	  }
+	  else
+	  {
+			  safe_pause_unset();
+			  if( source->play () )
+			  {
+					  std::string type = source->get_type ();
+					  //enable_video_check(type);
+
+					  ustring uri = source->get_uri();
+					  if((uri.substr(0,7) == "file://") && (!file_test(filename_from_uri(uri), FILE_TEST_EXISTS)))
+					  {
+						//source->bad_track();
+						next();
+						return;
+					  }
+
+					  //safe_pause_unset();
+					  m_Play->switch_stream (uri, type);
+					  //m_Sources->source_select (source_id);
+
+					  source->play_post ();
+					  play_post_internal (source_id);
+			  }
+			  else
+			  {
+				source->stop ();
+				m_Play->request_status (PLAYSTATUS_STOPPED);
+				//m_Sources->source_activate (SOURCE_NONE);
+			  }
+	  }
+	}
+
+	void
+	Player::on_source_message_set (Glib::ustring const& message)
+	{
+	}
+
+	void
+	Player::on_source_message_clear ()
+	{
+	}
+
+	void
+	Player::on_source_segment (int source_id)
+	{
+	  if( source_id == m_Sources->getSource() )
+	  {
+		//m_InfoArea->reset ();
+		m_SourceV[source_id]->segment ();
+	  }
+	  else
+	  {
+		//g_warning (_("%s: Source '%s' requested segment, but is not the active source"), G_STRLOC, sources[source_id].name.c_str());
+	  }
+	}
+
+	void
+	Player::on_source_stop (int source_id)
+	{
+	  if( source_id == m_Sources->getSource() )
+	  {
+		stop ();
+	  }
+	  else
+	  {
+		//g_warning (_("%s: Source '%s' requested stop, but is not the active source"), G_STRLOC, sources[source_id].name.c_str());
+	  }
+	}
+
+	void
+	Player::on_source_next (int source_id)
+	{
+	  if( source_id == m_Sources->getSource() )
+	  {
+		next ();
+	  }
+	  else
+	  {
+		//g_warning (_("%s: Source '%s' requested next, but is not the active source"), G_STRLOC, sources[source_id].name.c_str());
+	  }
+	}
+
+	//////////////////////////////// Internal Playback Control
+
+	void
+	Player::play_async_cb (int source_id)
+	{
+	  PlaybackSource* source = m_SourceV[source_id];
+
+	  std::string type = source->get_type ();
+	  //enable_video_check (type);
+	  ustring uri = source->get_uri();
+
+	  if((uri.substr(0,7) == "file://") && (!file_test(filename_from_uri(uri), FILE_TEST_EXISTS)))
+	  {
+		  //source->bad_track();
+		  source->stop ();
+		  m_Play->request_status (PLAYSTATUS_STOPPED);
+		  //m_Sources->source_activate (SOURCE_NONE);
+		  return;
+	  }
+
+	  m_Play->switch_stream (uri, type);
+	  play_post_internal (source_id);
+	}
+
+	void
+	Player::play_post_internal (int source_id)
+	{
+	  //m_Sources->source_activate (int (source_id));
+
+	  PlaybackSource* source = m_SourceV[source_id];
+
+	  source->send_caps ();
+	  source->send_metadata ();
+
+#if 0
+	  if( m_popup )
+	  {
+			m_popup->set_source_icon (m_source_icons_small[source_id]);
+	  }
+
+	  if( m_source_flags[source_id] & PlaybackSource::F_HANDLE_LASTFM )
+	  {
+			shell_lastfm_now_playing ();
+	  }
+
+	  m_player_dbus_obj->emit_track_change (m_player_dbus_obj);
+
+	  if( m_ui_merge_id_context )
+	  {
+			m_ui_manager->remove_ui (m_ui_merge_id_context);
+			m_ui_merge_id_context = boost::dynamic_pointer_cast <UiPart::Base> (source)->add_context_ui();
+	  }
+
+	  if( m_ui_merge_id_tray )
+	  {
+			m_ui_manager->remove_ui (m_ui_merge_id_tray);
+			m_ui_merge_id_tray = boost::dynamic_pointer_cast <UiPart::Base> (source)->add_tray_ui();
+	  }
+
+	  if( m_ui_merge_id_lastfm )
+	  {
+			m_ui_manager->remove_ui (m_ui_merge_id_lastfm);
+			m_ui_merge_id_lastfm = 0;
+	  }
+
+	  m_InfoArea->set_source (m_source_icons_small[source_id]->scale_simple (20, 20, Gdk::INTERP_BILINEAR));
+
+	  if( (m_ui_merge_id_lastfm == 0) && LastFM::Scrobbler::Obj()->connected() && (m_source_flags[source_id] & PlaybackSource::F_HANDLE_LASTFM_ACTIONS) )
+	  {
+			m_ui_merge_id_lastfm = m_ui_manager->add_ui_from_string (ui_lastfm_actions);
+	  }
+	  else
+	  {
+			if (m_ui_merge_id_lastfm != 0)
+			{
+				  m_ui_manager->remove_ui (m_ui_merge_id_lastfm);
+			}
+	  }
+#endif
+	}
+
+	void
+	Player::play ()
+	{
+	  int source_id = int (m_MainNotebook->get_current_page()-1);
+	  PlaybackSource::Caps c = m_source_caps[source_id];
+
+	  if( c & PlaybackSource::C_CAN_PLAY )
+	  {
+		if( m_Sources->getSource() != SOURCE_NONE )
+		{
+			  m_SourceV[m_Sources->getSource()]->stop ();
+			  if( m_Sources->getSource() != source_id)
+			  {
+					m_Play->request_status (PLAYSTATUS_STOPPED);
+			  }
+		}
+
+		PlaybackSource* source = m_SourceV[source_id];
+		//m_Sources->source_activate (int (source_id));
+		
+		if( m_source_flags[source_id] & PlaybackSource::F_ASYNC)
+		{
+			  source->play_async ();
+			  m_actions->get_action( ACTION_STOP )->set_sensitive (true);
+		}
+		else
+		{
+			  safe_pause_unset();
+			  if( source->play() )
+			  {
+					  std::string type = source->get_type ();
+					  //enable_video_check (type);
+					  ustring uri = source->get_uri();
+
+					  if((uri.substr(0,7) == "file://") && (!file_test(filename_from_uri(uri), FILE_TEST_EXISTS)))
+					  {
+						  //source->bad_track();
+						  next();
+						  return;
+					  }
+
+					  //safe_pause_unset();
+					  m_Play->switch_stream (uri, type);
+					  //m_Sources->source_select (source_id);
+					  source->play_post ();
+					  play_post_internal (source_id);
+			  }
+
+			  source->stop ();
+			  m_Play->request_status (PLAYSTATUS_STOPPED);
+			  //m_Sources->source_activate (SOURCE_NONE);
+		}
+	  }
+	}
+
+	void
+	Player::safe_pause_unset ()
+	{
+	}
+
+	void
+	Player::pause ()
+	{
+#if 0
+	  bool paused = RefPtr<ToggleAction>::cast_static (m_actions->get_action
+		  (ACTION_PAUSE))->get_active();
+
+	  m_InfoArea->set_paused(paused);
+
+	  if(m_IgnorePauseToggled)
+	  {
+		  m_IgnorePauseToggled = false;
+
+		  if(paused)
+		  {
+			  return;
+		  }
+	  }
+
+	  PlaybackSource::Caps c = m_source_caps[m_Sources->getSource()];
+	  if( paused && (c & PlaybackSource::C_CAN_PAUSE ))
+	  {
+		m_Play->request_status (PLAYSTATUS_PAUSED);
+	  }
+	  else
+	  if( !paused && (m_Play->property_status() == PLAYSTATUS_PAUSED))
+	  {
+		m_Play->request_status (PLAYSTATUS_PLAYING);
+	  }
+#endif
+	}
+
+	void
+	Player::prev_async_cb (int source_id)
+	{
+	  PlaybackSource* source = m_SourceV[source_id];
+	  PlaybackSource::Flags f = m_source_flags[source_id];
+
+	  if( (f & PlaybackSource::F_PHONY_NEXT) == 0 )
+	  {
+		  std::string type = source->get_type ();
+		  //enable_video_check (type);
+		  ustring uri = source->get_uri();
+
+		  if((uri.substr(0,7) == "file://") && (!file_test(filename_from_uri(uri), FILE_TEST_EXISTS)))
+		  {
+			  //source->bad_track();
+			  source->stop ();
+			  m_Play->request_status (PLAYSTATUS_STOPPED);
+			  //m_Sources->source_activate (SOURCE_NONE);
+			  return;
+		  }
+
+		  safe_pause_unset();
+		  m_Play->switch_stream (uri, type);
+
+		  source->prev_post ();
+		  play_post_internal (source_id);
+		  //m_player_dbus_obj->emit_track_change (m_player_dbus_obj);
+	  }
+	}
+
+	void
+	Player::prev ()
+	{
+	  int source_id = int (m_Sources->getSource());
+	  PlaybackSource* source = m_SourceV[source_id];
+	  PlaybackSource::Flags f = m_source_flags[source_id];
+	  PlaybackSource::Caps c = m_source_caps[source_id];
+
+	  if( c & PlaybackSource::C_CAN_GO_PREV )
+	  {
+			if( f & PlaybackSource::F_ASYNC )
+			{
+				  m_actions->get_action (ACTION_PREV)->set_sensitive( false );
+				  source->go_prev_async ();
+				  return;
+			}
+			else
+			if( (f & PlaybackSource::F_PHONY_PREV) == 0 )
+			{
+				  if( source->go_prev () )
+				  {
+					std::string type = source->get_type ();
+					//enable_video_check (type);
+					ustring uri = source->get_uri();
+
+					if((uri.substr(0,7) == "file://") && (!file_test(filename_from_uri(uri), FILE_TEST_EXISTS)))
+					{
+					  prev();
+					  return;
+					}
+
+					m_Play->switch_stream (uri, type);
+					prev_async_cb (m_Sources->getSource());
+				  }
+				  else
+				  {
+					//g_warning(_("%s: Source '%s' indicated C_CAN_GO_PREV, but can not"), G_STRLOC, sources[source_id].name.c_str());
+					stop ();
+				  }
+			}
+	  }
+	  else
+	  {
+		source->stop ();
+		m_Play->request_status (PLAYSTATUS_STOPPED);
+		//m_Sources->source_activate (SOURCE_NONE);
+	  }
+	}
+
+	void
+	Player::next_async_cb (int source_id)
+	{
+	  PlaybackSource* source = m_SourceV[source_id];
+	  PlaybackSource::Flags f = m_source_flags[source_id];
+
+	  if( (f & PlaybackSource::F_PHONY_NEXT) == 0 )
+	  {
+			std::string type = source->get_type ();
+			//enable_video_check (type);
+			ustring uri = source->get_uri();
+
+			if((uri.substr(0,7) == "file://") && (!file_test(filename_from_uri(uri), FILE_TEST_EXISTS)))
+			{
+			  next();
+			  return;
+			}
+
+			safe_pause_unset();
+			m_Play->switch_stream (uri, type);
+
+		    source->next_post ();
+		    play_post_internal (source_id);
+		    //m_player_dbus_obj->emit_track_change (m_player_dbus_obj);
+	  }
+	}
+
+	void
+	Player::on_play_eos ()
+	{
+	  int source_id = int (m_Sources->getSource());
+	  PlaybackSource* source = m_SourceV[source_id];
+	  PlaybackSource::Flags f = m_source_flags[source_id];
+	  PlaybackSource::Caps c = m_source_caps[source_id];
+
+	  if( c & PlaybackSource::C_CAN_GO_NEXT )
+	  {
+			if( f & PlaybackSource::F_ASYNC )
+			{
+			  m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
+			  source->go_next_async ();
+			  return;
+			}
+			else
+			{
+			  if( source->go_next () )
+			  {
+				next_async_cb (m_Sources->getSource());
+				return;
+			  }
+			  else
+			  {
+				//g_warning(_("%s: Source %s indicated C_CAN_GO_NEXT, but can not"), G_STRLOC, sources[source_id].name.c_str());
+				stop ();
+			  }
+			}
+	  }
+	  else
+	  {
+		stop ();
+	  }
+	}
+
+	void
+	Player::next ()
+	{
+	  if( m_Sources->getSource() != SOURCE_NONE )
+	  {
+		m_SourceV[m_Sources->getSource()]->skipped();
+	  }
+
+	  on_play_eos ();
+	}
+
+	void
+	Player::stop ()
+	{
+	  if( m_Sources->getSource() != SOURCE_NONE )
+	  {
+		int source_id = int( m_Sources->getSource() );
+		PlaybackSource::Flags f = m_source_flags[source_id];
+		if( f & PlaybackSource::F_ASYNC )
+		{
+		  m_SourceV[source_id]->stop ();
+		}
+		m_Play->request_status( PLAYSTATUS_STOPPED );
+		m_SourceV[source_id]->send_caps();
+	  }
+	  m_actions->get_action (ACTION_STOP)->set_sensitive( false );
+	}
+
+	void
+	Player::install_source (int source, int tab)
+	{
+	  m_SourceTabMapping.resize(source+1);
+	  m_SourceTabMapping[source] = tab;
+
+	  m_source_flags[source] = PlaybackSource::Flags(0);
+	  m_source_caps[source] = PlaybackSource::Caps(0); 
+
+	  m_SourceV[source]->send_caps();
+	  m_SourceV[source]->send_flags();
+
+	  m_SourceV[source]->signal_caps().connect
+		(sigc::bind (sigc::mem_fun (*this, &Player::on_source_caps), source));
+
+	  m_SourceV[source]->signal_flags().connect
+		(sigc::bind (sigc::mem_fun (*this, &Player::on_source_flags), source));
+
+	  m_SourceV[source]->signal_track_metadata().connect
+		(sigc::mem_fun (*this, &Player::on_source_track_metadata));
+
+	  m_SourceV[source]->signal_playback_request().connect
+		(sigc::bind (sigc::mem_fun (*this, &Player::on_source_play_request), source));
+
+	  m_SourceV[source]->signal_segment().connect
+		(sigc::bind (sigc::mem_fun (*this, &Player::on_source_segment), source));
+
+	  m_SourceV[source]->signal_stop_request().connect
+		(sigc::bind (sigc::mem_fun (*this, &Player::on_source_stop), source));
+
+	  m_SourceV[source]->signal_next_request().connect
+		(sigc::bind (sigc::mem_fun (*this, &Player::on_source_next), source));
+
+#if 0
+	  m_SourceV[source]->signal_message().connect
+		(sigc::mem_fun (*this, &Player::on_source_message_set));
+
+	  m_SourceV[source]->signal_message_clear().connect
+		(sigc::mem_fun (*this, &Player::on_source_message_clear));
+#endif
+
+	  m_SourceV[source]->signal_play_async().connect
+		(sigc::bind (sigc::mem_fun (*this, &Player::play_async_cb), source));
+
+	  m_SourceV[source]->signal_next_async().connect
+		(sigc::bind (sigc::mem_fun (*this, &Player::next_async_cb), source));
+
+	  m_SourceV[source]->signal_prev_async().connect
+		(sigc::bind (sigc::mem_fun (*this, &Player::prev_async_cb), source));
+
+#if 0
+	  UriHandler * p = boost::dynamic_pointer_cast <UriHandler> (m_SourceV[source]).get();
+
+	  if( p )
+	  {
+		StrV v = p->get_schemes ();
+		for(StrV::const_iterator i = v.begin(); i != v.end(); ++i)
+		{
+		  m_uri_map.insert (std::make_pair (*i, source));
+		}
+	  }
+#endif
+	}
+
+
+	void
+	Player::on_sources_toggled ()
+	{
+		bool active = dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->get_active();
+		dynamic_cast<Gtk::Notebook*>(m_ref_xml->get_widget("sourcepages"))->set_current_page( active ? 0 : m_SourceTabMapping[m_Sources->getSource()] ); // FIXME: Create a mapping from source id to page
+	}
+
+	void
+	Player::on_source_changed (int source_id)
+	{
+		dynamic_cast<Gtk::Notebook*>(m_ref_xml->get_widget("sourcepages"))->set_current_page( m_SourceTabMapping[source_id] ); // FIXME: Create a mapping from source id to page
+	}
+
+	void
+	Player::on_play_status_changed ()
+	{
+	  MPXPlaystatus status = MPXPlaystatus (m_Play->property_status().get_value());
+	  MPX::URI u;
+
+	  switch (status)
+	  {
+		case PLAYSTATUS_STOPPED:
+		{
+#if 0
+		  m_seeking = false;
+
+		  if( NM::Obj()->Check_Status() )
+		  {
+			m_actions->get_action (ACTION_LASTFM_TAG)->set_sensitive( 0 );
+			m_actions->get_action (ACTION_LASTFM_LOVE)->set_sensitive( 0 );
+			m_actions->get_action (ACTION_LASTFM_RECM)->set_sensitive( 0 );
+			m_actions->get_action (ACTION_LASTFM_PLAY)->set_sensitive( 0 );
+		  }
+
+		  if( m_ui_merge_id_context )
+		  {
+			m_ui_manager->remove_ui (m_ui_merge_id_context);
+			m_ui_merge_id_context = 0;
+		  }
+
+		  if( m_ui_merge_id_tray )
+		  {
+			m_ui_manager->remove_ui (m_ui_merge_id_tray);
+			m_ui_merge_id_tray = 0;
+		  }
+
+		  if( m_ui_merge_id_lastfm )
+		  {
+			m_ui_manager->remove_ui (m_ui_merge_id_lastfm);
+			m_ui_merge_id_lastfm = 0;
+		  }
+#endif
+
+		  break;
+		}
+
+		case PLAYSTATUS_PLAYING:
+		{
+#if 0
+		  m_seeking = false;
+#endif
+		  m_actions->get_action( ACTION_STOP )->set_sensitive (true);
+		  break;
+		}
+
+		default: ;
+	  }
+
+	  switch (status)
+	  {
+		  case PLAYSTATUS_NONE:
+			/* ... */
+			break;
+
+		  case PLAYSTATUS_SEEKING:
+			/* ... */
+			break;
+
+		  case PLAYSTATUS_STOPPED:
+		  {
+#if 0
+			mVideoWidget->property_playing() = false;
+			RefPtr<RadioAction>::cast_static (m_actions->get_action(ACTION_VIDEO_ASPECT_AUTO))->set_current_value( 0 );
+			m_actions->get_action("MenuVideo")->set_sensitive( false );
+			mMainNotebook->set_current_page( 0 );
+#endif
+
+			if( m_Sources->getSource() != SOURCE_NONE )
+			{
+			  m_SourceV[m_Sources->getSource()]->stop ();
+			  m_SourceV[m_Sources->getSource()]->send_caps ();
+			}
+
+			//m_selection->source_activate (SOURCE_NONE);
+			m_InfoArea->reset ();
+			m_metadata = Metadata();
+
+#if 0
+			reset_seek_range ();
+			message_clear ();
+
+			if( m_popup )
+			{
+			  m_popup->hide ();
+			}
+
+			bmp_status_icon_set_from_pixbuf (m_status_icon, m_status_icon_image_default->gobj());
+
+			m_actions->get_action (ACTION_LASTFM_RECM)->set_sensitive( 0 );
+			m_actions->get_action (ACTION_TRACK_DETAILS)->set_sensitive( 0 );
+			m_actions->get_action (ACTION_CREATE_BOOKMARK)->set_sensitive( 0 );
+#endif
+
+			m_actions->get_action (ACTION_STOP)->set_sensitive(false);
+			m_actions->get_action (ACTION_PAUSE)->set_sensitive(false);
+
+			break;
+		  }
+
+		  case PLAYSTATUS_WAITING:
+		  {
+#if 0
+			reset_seek_range ();
+			bmp_status_icon_set_from_pixbuf (m_status_icon, m_status_icon_image_default->gobj());
+#endif
+			break;
+		  }
+
+		  case PLAYSTATUS_PLAYING:
+		  {
+#if 0
+			bmp_status_icon_set_from_pixbuf (m_status_icon, m_status_icon_image_playing->gobj());
+			m_spm_paused = false;
+			m_seek_progress->set_sensitive (true);
+#endif
+			break;
+		  }
+
+		  case PLAYSTATUS_PAUSED:
+		  {
+#if 0
+			bmp_status_icon_set_from_pixbuf (m_status_icon, m_status_icon_image_paused->gobj());
+			m_spm_paused = false;
+#endif
+			break;
+		  }
+	  }
+
+#if 0
+	  if( m_popup )
+	  {
+		m_popup->set_playstatus (status);
+	  }
+
+	  m_player_dbus_obj->emit_status_change (m_player_dbus_obj, int (status));
+#endif
+	}
+
+
+	void
+	Player::on_controls_play ()
+	{
+	}
+
+	void
+	Player::on_controls_pause ()
+	{
+	}
+
+	void
+	Player::on_controls_next ()
+	{
+		next ();
+	}
+
+	void
+	Player::on_controls_prev ()
+	{
+		prev ();
+	}	
 
     bool
     Player::on_key_press_event (GdkEventKey* event)
@@ -991,7 +1916,7 @@ namespace MPX
                 g_mount_operation_set_username(m_MountOperation, login.c_str());
                 g_mount_operation_set_password(m_MountOperation, password.c_str()); 
                 g_signal_connect(m_MountOperation, "ask_password", G_CALLBACK(Player::ask_password_cb), NULL);
-                g_mount_for_location(m_MountFile, m_MountOperation, NULL, mount_ready_callback, this);
+                g_file_mount_mountable(m_MountFile, G_MOUNT_MOUNT_NONE, m_MountOperation, NULL, mount_ready_callback, this);
             }
     }
 
@@ -1000,17 +1925,17 @@ namespace MPX
              const char      *message,
              const char      *default_user,
              const char      *default_domain,
-             GPasswordFlags   flags)
+             GAskPasswordFlags   flags)
     {
       Glib::ustring value;
-      if (flags & G_PASSWORD_FLAGS_NEED_USERNAME)
+      if (flags & G_ASK_PASSWORD_NEED_USERNAME)
       {
         RequestValue * p = RequestValue::create();
         p->set_question(_("Please Enter the Username:"));
         int reply = p->run();
         if(reply == GTK_RESPONSE_CANCEL)
         {
-            g_mount_operation_reply (op, TRUE /*abort*/);
+            g_mount_operation_reply (op, G_MOUNT_OPERATION_ABORTED /*abort*/);
             return TRUE;
         }
         p->get_request_infos(value);
@@ -1019,14 +1944,14 @@ namespace MPX
         value.clear();
       }
 
-      if (flags & G_PASSWORD_FLAGS_NEED_DOMAIN)
+      if (flags & G_ASK_PASSWORD_NEED_DOMAIN)
       {
         RequestValue * p = RequestValue::create();
         p->set_question(_("Please Enter the Domain:"));
         int reply = p->run();
         if(reply == GTK_RESPONSE_CANCEL)
         {
-            g_mount_operation_reply (op, TRUE /*abort*/);
+            g_mount_operation_reply (op, G_MOUNT_OPERATION_ABORTED /*abort*/);
             return TRUE;
         }
         p->get_request_infos(value);
@@ -1035,14 +1960,14 @@ namespace MPX
         value.clear();
       }
 
-      if (flags & G_PASSWORD_FLAGS_NEED_PASSWORD)
+      if (flags & G_ASK_PASSWORD_NEED_PASSWORD)
       {
         RequestValue * p = RequestValue::create();
         p->set_question(_("Please Enter the Password:"));
         int reply = p->run();
         if(reply == GTK_RESPONSE_CANCEL)
         {
-            g_mount_operation_reply (op, TRUE /*abort*/);
+            g_mount_operation_reply (op, G_MOUNT_OPERATION_ABORTED /*abort*/);
             return TRUE;
         }
         p->get_request_infos(value);
@@ -1051,7 +1976,7 @@ namespace MPX
         value.clear();
       }
 
-      g_mount_operation_reply (op, FALSE);
+      g_mount_operation_reply (op, G_MOUNT_OPERATION_HANDLED);
       return TRUE;
     }
 
@@ -1062,7 +1987,7 @@ namespace MPX
     {
         Player & player = *(reinterpret_cast<Player*>(data));
         GError *error = 0;
-        g_mount_for_location_finish(player.m_MountFile, res, &error);
+        g_file_mount_mountable_finish(player.m_MountFile, res, &error);
 
         if(error)
         {

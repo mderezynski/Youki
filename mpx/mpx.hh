@@ -24,13 +24,14 @@
 #ifndef MPX_HH
 #define MPX_HH
 #include "config.h"
-#include <gio/gasyncresult.h>
-#include <gio/gfile.h>
+#include <gio/gio.h>
 #include <gtkmm.h>
 #include <libglademm/xml.h>
 #include "amazon.hh"
 #include "library.hh"
 #include "widgetloader.h"
+#include "play.hh"
+#include "playbacksource.hh"
 
 using namespace Gnome::Glade;
 
@@ -52,6 +53,10 @@ namespace MPX
 
       private:
 
+		Play * m_Play;
+
+		typedef std::vector<PlaybackSource*> VectorSources;
+
         Glib::RefPtr<Gnome::Glade::Xml>   m_ref_xml;
         Glib::RefPtr<Gtk::ActionGroup>    m_actions;
         Glib::RefPtr<Gtk::UIManager>      m_ui_manager;
@@ -59,9 +64,18 @@ namespace MPX
         Sources *m_Sources;
         InfoArea *m_InfoArea;
         Gtk::Statusbar *m_Statusbar;
+		Gtk::Notebook *m_MainNotebook;
 
         Library & m_Library;
         Amazon::Covers & m_Covers;
+
+		VectorSources m_SourceV;
+		std::vector<int> m_SourceTabMapping;
+
+		PlaybackSource::Flags m_source_flags[16];
+		PlaybackSource::Caps m_source_caps[16];
+
+		Metadata m_metadata;
 
         void
         on_library_scan_start();
@@ -72,7 +86,95 @@ namespace MPX
         void
         on_library_scan_end(gint64,gint64,gint64,gint64,gint64);
 
+		
+		void
+		on_play_status_changed ();
 
+
+		void
+		on_controls_play ();
+
+		void
+		on_controls_pause ();
+
+		void
+		on_controls_next ();
+
+		void
+		on_controls_prev ();
+
+		
+		void
+		on_sources_toggled ();
+
+		void
+		on_source_changed (int source_id);
+
+		void
+		install_source (int source_id, int tab);
+
+		void
+		on_source_caps (PlaybackSource::Caps caps, int source);
+
+		void
+		on_source_flags (PlaybackSource::Flags flags, int source);
+
+		void
+		on_source_track_metadata (Metadata const& metadata);
+
+		void
+		on_source_play_request (int source_id);
+
+		void
+		on_source_message_set (Glib::ustring const& message);
+
+		void
+		on_source_message_clear ();
+
+		void
+		on_source_segment (int source_id);
+
+		void
+		on_source_stop (int source_id);
+
+		void
+		on_source_next (int source_id);
+
+		void
+		play_async_cb (int source_id);
+
+		void
+		play_post_internal (int source_id);
+
+		void
+		safe_pause_unset ();
+
+		void
+		on_play_eos ();
+
+		void
+		prev_async_cb (int source_id);
+
+		void
+		next_async_cb (int source_id);
+
+		void
+		play ();
+
+		void
+		pause ();
+
+		void
+		prev ();
+
+		void
+		next ();
+
+		void
+		stop ();
+
+		void
+		reparse_metadata ();
 
         GFile *m_MountFile;
         GMountOperation *m_MountOperation;
@@ -94,7 +196,7 @@ namespace MPX
                  const char      *message,
                  const char      *default_user,
                  const char      *default_domain,
-                 GPasswordFlags   flags);
+                 GAskPasswordFlags   flags);
 
         void
         on_import_folder();

@@ -24,7 +24,7 @@
 #include <boost/format.hpp>
 #include <glibmm.h>
 #include <glibmm/i18n.h>
-#include <gio/gvfs.h>
+#include <gio/gio.h>
 #include "audio.hh"
 #ifdef HAVE_HAL
 #include "hal.hh"

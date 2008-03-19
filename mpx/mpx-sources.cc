@@ -35,9 +35,10 @@ namespace MPX
 {
     Sources::Sources (BaseObjectType                 *  obj,
                       RefPtr<Gnome::Glade::Xml> const&  xml)
-    : TreeView  (obj)
+    : IconView  (obj)
     , m_ref_xml (xml)
     {
+#if 0
         TreeViewColumn * column = manage (new TreeViewColumn);
 
         CellRendererPixbuf * cell1 = manage (new CellRendererPixbuf);
@@ -68,23 +69,31 @@ namespace MPX
 
         append_column( *column );
 
+
         get_selection()->set_select_function( sigc::mem_fun( *this, &Sources::slot_select ));
-        get_selection()->set_mode( SELECTION_BROWSE );
+#endif
 
-        m_Store = TreeStore::create( m_SourceColumns );
+        set_selection_mode( SELECTION_BROWSE );
+
+        m_Store = ListStore::create( m_SourceColumns );
         set_model( m_Store );
+		set_pixbuf_column(m_SourceColumns.icon);
+		set_text_column(m_SourceColumns.name);
 
+#if 0
         m_RootSources = m_Store->append();
         (*m_RootSources)[m_SourceColumns.name] = _("Sources");
 
         m_RootDevices = m_Store->append();
         (*m_RootDevices)[m_SourceColumns.name] = _("Devices");
+#endif
     }
 
     Sources::~Sources()
     {
     }
 
+#if 0
     void
     Sources::cell_data_func( CellRenderer * basecell, const TreeModel::iterator& iter, int cellid )
     {
@@ -120,15 +129,28 @@ namespace MPX
           cell->property_markup() = ustring((*iter)[m_SourceColumns.name]);
         }
     }
+#endif
 
     void
     Sources::addSource (const Glib::ustring& name, const Glib::RefPtr<Gdk::Pixbuf>& icon)
     {
-        TreeIter iter = m_Store->append( m_RootSources->children() );
+        TreeIter iter = m_Store->append();
         (*iter)[m_SourceColumns.name] = name;
         (*iter)[m_SourceColumns.icon] = icon;
     }
 
+	void
+	Sources::on_selection_changed ()
+	{
+		std::vector<Gtk::TreePath> paths = get_selected_items();
+		if(!paths.empty())
+		{
+			m_CurrentSource = paths[0][0];
+			signal_source_changed_.emit( m_CurrentSource );
+		}
+	}
+
+#if 0
     bool
     Sources::slot_select (Glib::RefPtr <Gtk::TreeModel> const& model, Gtk::TreeModel::Path const& path, bool was_selected)
     {
@@ -166,4 +188,6 @@ namespace MPX
         Sources * w = reinterpret_cast<Sources*>(data);
         r->property_cell_background_gdk() = w->get_style()->get_bg(STATE_INSENSITIVE);
     }
+#endif
+
 }
