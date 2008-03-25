@@ -29,10 +29,11 @@
 #include <gtkmm/widget.h>
 #include <sigc++/signal.h>
 #include <boost/format.hpp>
+#include "mpx/playbacksource.hh"
+#include "mpx/mpx-public.hh"
 #include "mpx/types.hh"
-#include "amazon.hh"
-#include "library.hh"
-#include "playbacksource.hh"
+#include "mpx/amazon.hh"
+#include "mpx/library.hh"
 
 namespace MPX
 {
@@ -49,10 +50,16 @@ namespace MPX
 
         public:
 
+            PlaybackSourceMusicLib (MPX::Player&);
+
 			void
 			check_caps ();
 
-            PlaybackSourceMusicLib (MPX::Library&, MPX::Amazon::Covers&);
+			void
+			set_play ();
+
+			void
+			clear_play ();
 
 			virtual void
 			send_metadata ();

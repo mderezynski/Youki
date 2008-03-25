@@ -23,11 +23,12 @@
 #ifndef MPX_LIBRARY_CLASS_HH
 #define MPX_LIBRARY_CLASS_HH
 
-#include "amazon.hh"
 #include "metadatareader-taglib.hh"
 #include "sql.hh"
 #include "tasks.hh"
 #include "util-file.hh"
+
+#include "mpx/amazon.hh"
 #include "mpx/types.hh"
 
 namespace MPX

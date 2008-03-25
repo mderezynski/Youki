@@ -22,114 +22,38 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 #include "config.h"
-#include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include <gtk/gtktreeview.h>
 #include <cairomm/cairomm.h>
-#include "widgets/gossip-cell-renderer-expander.h"
 #include "mpx-sources.hh"
 using namespace Glib;
 using namespace Gtk;
 
 namespace MPX
 {
-    Sources::Sources (BaseObjectType                 *  obj,
-                      RefPtr<Gnome::Glade::Xml> const&  xml)
-    : IconView  (obj)
-    , m_ref_xml (xml)
+    Sources::Sources (RefPtr<Gnome::Glade::Xml> const&  xml)
+    : m_ref_xml (xml)
     {
-#if 0
-        TreeViewColumn * column = manage (new TreeViewColumn);
-
-        CellRendererPixbuf * cell1 = manage (new CellRendererPixbuf);
-        CellRendererText * cell2 = manage (new CellRendererText);
-
-        cell1->property_xalign() = 1.0;
-        cell1->property_width() = 36;
-        cell1->property_ypad() = 1;
-
-        cell2->property_xalign() = 0.0;
-        cell2->property_ypad() = 1;
-
-        column->pack_start( *cell1, false );
-        column->set_cell_data_func( *cell1, sigc::bind( sigc::mem_fun( *this, &Sources::cell_data_func ), 0)); 
-
-        column->pack_start( *cell2, true );
-        column->set_cell_data_func( *cell2, sigc::bind( sigc::mem_fun( *this, &Sources::cell_data_func ), 1));
-
-        set_show_expanders( false );
-
-        GtkCellRenderer * renderer = gossip_cell_renderer_expander_new ();
-        gtk_tree_view_column_pack_end (column->gobj(), renderer, FALSE);
-        gtk_tree_view_column_set_cell_data_func (column->gobj(),
-                             renderer,
-                             GtkTreeCellDataFunc(rb_sourcelist_expander_cell_data_func),
-                             this,
-                             NULL);
-
-        append_column( *column );
-
-
-        get_selection()->set_select_function( sigc::mem_fun( *this, &Sources::slot_select ));
-#endif
-
-        set_selection_mode( SELECTION_BROWSE );
-
+		m_IconView = EXO_ICON_VIEW(exo_icon_view_new ());
+        exo_icon_view_set_selection_mode( m_IconView, GTK_SELECTION_BROWSE );
         m_Store = ListStore::create( m_SourceColumns );
-        set_model( m_Store );
-		set_pixbuf_column(m_SourceColumns.icon);
-		set_text_column(m_SourceColumns.name);
-
-#if 0
-        m_RootSources = m_Store->append();
-        (*m_RootSources)[m_SourceColumns.name] = _("Sources");
-
-        m_RootDevices = m_Store->append();
-        (*m_RootDevices)[m_SourceColumns.name] = _("Devices");
-#endif
+        exo_icon_view_set_model( m_IconView, GTK_TREE_MODEL(m_Store->gobj()) );
+		GtkCellRenderer * cellPixbuf = gtk_cell_renderer_pixbuf_new();
+		GtkCellRenderer * cellText = gtk_cell_renderer_text_new();
+		gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(m_IconView), cellPixbuf, FALSE);
+		gtk_cell_layout_pack_start(GTK_CELL_LAYOUT(m_IconView), cellText, FALSE);
+		gtk_cell_layout_add_attribute(GTK_CELL_LAYOUT(m_IconView), cellPixbuf, "pixbuf", 0);
+		gtk_cell_layout_add_attribute(GTK_CELL_LAYOUT(m_IconView), cellText, "text", 1);
+		g_object_set(G_OBJECT(cellText), "xalign", double(0.5), NULL);
+		GtkContainer * container = GTK_CONTAINER((xml->get_widget("alignment1")->gobj()));
+		gtk_container_add(GTK_CONTAINER(container), GTK_WIDGET(m_IconView));
+		gtk_widget_show_all(GTK_WIDGET(m_IconView));
+		g_signal_connect(G_OBJECT(m_IconView), "selection-changed", G_CALLBACK(on_selection_changed), this);
     }
 
     Sources::~Sources()
     {
     }
-
-#if 0
-    void
-    Sources::cell_data_func( CellRenderer * basecell, const TreeModel::iterator& iter, int cellid )
-    {
-        TreePath path = m_Store->get_path( iter );
-
-        if( cellid == 0 )
-        {
-          CellRendererPixbuf * cell = dynamic_cast<CellRendererPixbuf*>(basecell);
-          if( path.size() == 1 )
-          {
-              cell->property_visible() = false; 
-          }
-          else
-          {
-              cell->property_visible() = true; 
-              cell->property_pixbuf() = (*iter)[m_SourceColumns.icon];
-          }
-        }
-        else if( cellid == 1 )
-        {
-          CellRendererText * cell = dynamic_cast<CellRendererText*>(basecell);
-          if( path.size() == 1)
-          {
-              cell->property_weight() = Pango::WEIGHT_BOLD;
-              cell->property_cell_background_gdk() = get_style()->get_bg(STATE_INSENSITIVE);
-          }
-          else
-          {
-              cell->property_weight() = Pango::WEIGHT_NORMAL;
-              cell->property_cell_background_set() = false; 
-          }
-
-          cell->property_markup() = ustring((*iter)[m_SourceColumns.name]);
-        }
-    }
-#endif
 
     void
     Sources::addSource (const Glib::ustring& name, const Glib::RefPtr<Gdk::Pixbuf>& icon)
@@ -140,54 +64,15 @@ namespace MPX
     }
 
 	void
-	Sources::on_selection_changed ()
+	Sources::on_selection_changed (ExoIconView *view, gpointer data)
 	{
-		std::vector<Gtk::TreePath> paths = get_selected_items();
-		if(!paths.empty())
+		Sources & sources = *(reinterpret_cast<Sources*>(data));
+		GList * list = exo_icon_view_get_selected_items(sources.m_IconView);
+		if(list)
 		{
-			m_CurrentSource = paths[0][0];
-			signal_source_changed_.emit( m_CurrentSource );
+			TreePath path (static_cast<GtkTreePath*>(list->data));
+			sources.m_CurrentSource = path[0];
+			sources.signal_source_changed_.emit( sources.m_CurrentSource );
 		}
 	}
-
-#if 0
-    bool
-    Sources::slot_select (Glib::RefPtr <Gtk::TreeModel> const& model, Gtk::TreeModel::Path const& path, bool was_selected)
-    {
-        if( path.size() == 1 )
-            return false;
-           
-        return true; 
-    }
-
-    void
-    Sources::rb_sourcelist_expander_cell_data_func (GtkTreeViewColumn *column,
-                           GtkCellRenderer   *cell,
-                           GtkTreeModel      *model,
-                           GtkTreeIter       *iter,
-                           gpointer           data) 
-    {
-        if (gtk_tree_model_iter_has_child (model, iter))
-        {
-            GtkTreePath *path;
-            gboolean     row_expanded;
-
-            path = gtk_tree_model_get_path (model, iter);
-            row_expanded = gtk_tree_view_row_expanded (GTK_TREE_VIEW (column->tree_view), path);
-            gtk_tree_path_free (path);
-
-            g_object_set (cell,
-                      "visible", TRUE,
-                      "expander-style", row_expanded ? GTK_EXPANDER_EXPANDED : GTK_EXPANDER_COLLAPSED,
-                      NULL);
-        } else {
-            g_object_set (cell, "visible", FALSE, NULL);
-        }
-
-        Gtk::CellRenderer * r = Glib::wrap(cell,false);
-        Sources * w = reinterpret_cast<Sources*>(data);
-        r->property_cell_background_gdk() = w->get_style()->get_bg(STATE_INSENSITIVE);
-    }
-#endif
-
 }

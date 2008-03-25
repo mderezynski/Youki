@@ -28,7 +28,8 @@
 #include <gtkmm/uimanager.h>
 #include <gtkmm/widget.h>
 #include <gtkmm/messagedialog.h>
-#include "util-ui.hh"
+#include <gtkmm.h>
+#include "mpx/util-ui.hh"
 using namespace Gtk;
 
 namespace MPX
@@ -50,4 +51,13 @@ namespace MPX
             return false;
         }
     }
+
+    Gtk::Widget *
+    Util::get_popup (Glib::RefPtr<Gtk::UIManager> ui_manager, Glib::ustring const& menupath)
+    {
+      Gtk::Widget * menuitem = 0;
+      menuitem = ui_manager->get_widget (menupath);
+      return (menuitem ? dynamic_cast <Gtk::MenuItem *> (menuitem)->get_submenu() : 0);
+    }
+
 } // MPX

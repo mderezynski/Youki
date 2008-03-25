@@ -30,7 +30,8 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "util-string.hh"
+#include "md5.h"
+#include "mpx/util-string.hh"
 
 using namespace Glib;
 
@@ -38,6 +39,39 @@ namespace MPX
 {
   namespace Util
   {
+    std::string
+    hex_string (void const* data,
+                std::size_t len)
+    {
+      static const char hexchars[] = "0123456789abcdef";
+
+      guint8 const* byte_array = static_cast<guint8 const*> (data);
+
+      std::string s;
+      s.reserve (len * 2);
+
+      for(unsigned int i = 0; i < len; i++)
+        {
+          s.push_back (hexchars[byte_array[i] >> 4]);
+          s.push_back (hexchars[byte_array[i] & 0x0f]);
+        }
+
+      return s;
+    }
+
+    std::string
+    md5_hex_string (void const* data,
+                    std::size_t len)
+    {
+        md5_state_t md5state;
+        md5_byte_t  md5pword[16];
+
+        md5_init (&md5state);
+        md5_append (&md5state, static_cast<md5_byte_t const*> (data), static_cast<int> (len));
+        md5_finish (&md5state, md5pword);
+
+        return hex_string (md5pword, sizeof (md5pword));
+    }
 
     bool
     str_has_prefix_nocase (std::string const& str,

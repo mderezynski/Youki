@@ -40,8 +40,8 @@
 #include <gio/gio.h>
 
 #include "audio.hh"
-#include "uri.hh"
-#include "util-file.hh"
+#include "mpx/uri.hh"
+#include "mpx/util-file.hh"
 
 using namespace Glib;
 

@@ -32,7 +32,7 @@
 #include <boost/algorithm/string.hpp>
 #include <sqlite3.h>
 #include "sql.hh"
-#include "util-string.hh"
+#include "mpx/util-string.hh"
 
 using namespace Glib;
 using namespace std;

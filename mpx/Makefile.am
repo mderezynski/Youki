@@ -1,6 +1,36 @@
+SUBDIRS = parser
+
 libexec_PROGRAMS = mpx-bin 
 
 mpx_bin_LDFLAGS = -Wl,--export-dynamic 
+
+mpx_bin_CXXFLAGS = 				\
+    $(ALSA_CFLAGS)				\
+    $(BOOST_CPPFLAGS)			\
+	$(CAIROMM_CFLAGS)   		\
+	$(CLUTTER_CFLAGS)			\
+    $(CDIO_CFLAGS)				\
+    $(CDPARANOIA_INCLUDES) 		\
+	$(DBUS_CFLAGS)				\
+	$(EXO_CFLAGS)				\
+	$(GIO_CFLAGS)				\
+	$(GLADEMM_CFLAGS)			\
+	$(GLIBMM_CFLAGS)			\
+	$(GST_CFLAGS)				\
+	$(GTKMM_CFLAGS)				\
+	$(HAL_CFLAGS)				\
+	$(NM_CFLAGS)				\
+	$(RSVG_CFLAGS)				\
+	$(SEXYMM_CFLAGS)			\
+	$(SOUP_CFLAGS)				\
+	$(SQLITE_CFLAGS)			\
+	$(STARTUP_NOTIFY_CFLAGS)	\
+	$(TAGLIB_CFLAGS)			\
+	$(X_CFLAGS)					\
+	$(XML_CFLAGS)        		\
+	$(XPROTO_CFLAGS)			\
+	-I$(top_srcdir)				\
+  	-I$(top_srcdir)/include	
 
 mpx_bin_LDADD =						\
 		$(ALSA_LIBS)				\
@@ -13,6 +43,7 @@ mpx_bin_LDADD =						\
 		$(CDIO_LIBS)				\
 		$(CDPARANOIA_LIBS)			\
 		$(DBUS_LIBS)				\
+		$(EXO_LIBS)					\
 		$(GIO_LIBS)					\
 		$(GLADEMM_LIBS)				\
 		$(GLIBMM_LIBS)				\
@@ -38,37 +69,11 @@ mpx_bin_LDADD +=                                	\
 		$(top_builddir)/jnetlib/libjnetlib.la		\
 		$(top_builddir)/widgets/libmpx-widgets.la	\
 		$(top_builddir)/xmlcpp/libmpx-parsers.la	\
-		$(top_builddir)/mcs/libmconfig.la
+		$(top_builddir)/mcs/libmconfig.la			\
+		$(top_builddir)/mpx/parser/libmpxparser.la
 
 mpx_bin_CFLAGS =				\
     $(GLIB_CFLAGS) $(GST_CFLAGS)
-
-mpx_bin_CXXFLAGS = 				\
-    $(ALSA_CFLAGS)				\
-    $(BOOST_CPPFLAGS)			\
-	$(CAIROMM_CFLAGS)   		\
-	$(CLUTTER_CFLAGS)			\
-    $(CDIO_CFLAGS)				\
-    $(CDPARANOIA_INCLUDES) 		\
-	$(DBUS_CFLAGS)				\
-	$(GIO_CFLAGS)				\
-	$(GLADEMM_CFLAGS)			\
-	$(GLIBMM_CFLAGS)			\
-	$(GST_CFLAGS)				\
-	$(GTKMM_CFLAGS)				\
-	$(HAL_CFLAGS)				\
-	$(NM_CFLAGS)				\
-	$(RSVG_CFLAGS)				\
-	$(SEXYMM_CFLAGS)			\
-	$(SOUP_CFLAGS)				\
-	$(SQLITE_CFLAGS)			\
-	$(STARTUP_NOTIFY_CFLAGS)	\
-	$(TAGLIB_CFLAGS)			\
-	$(X_CFLAGS)					\
-	$(XML_CFLAGS)        		\
-	$(XPROTO_CFLAGS)			\
-	-I$(top_srcdir)				\
-  	-I$(top_srcdir)/include	
 
 if HAVE_HAL
 mpx_bin_LDADD += $(top_builddir)/libhal++/libhalcc.la
@@ -93,11 +98,13 @@ mpx_bin_SOURCES =				\
 	main.cc						\
 	types.cc					\
 								\
-	amazon.hh					\
 	amazon.cc					\
 								\
 	audio.hh					\
 	audio.cc					\
+								\
+	base64.h					\
+	base64.c					\
 								\
 	import-share.hh				\
 	import-share.cc				\
@@ -105,7 +112,6 @@ mpx_bin_SOURCES =				\
 	import-folder.hh			\
 	import-folder.cc			\
 								\
-	library.hh					\
 	library.cc					\
 								\
 	metadatareader-taglib.hh	\
@@ -113,6 +119,9 @@ mpx_bin_SOURCES =				\
 								\
 	minisoup.hh					\
 	minisoup.cc					\
+								\
+	md5.h						\
+	md5.c						\
 								\
 	mpx.hh						\
 	mpx.cc						\
@@ -157,7 +166,11 @@ mpx_bin_SOURCES =				\
 	util-ui.cc					\
 								\
 	video-playback.hh			\
-	video-playback.cc
+	video-playback.cc			\
+								\
+	xspf.hh						\
+	xspf-libxml2-sax.hh			\
+	xspf-libxml2-sax.cc
 
 if HAVE_HAL								
 mpx_bin_SOURCES += hal.hh hal.cc

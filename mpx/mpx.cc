@@ -37,9 +37,11 @@
 #include "mpx.hh"
 #include "mpx-sources.hh"
 #include "request-value.hh"
-#include "util-graphics.hh"
-#include "util-ui.hh"
+#include "mpx/util-graphics.hh"
+#include "mpx/util-ui.hh"
+
 #include "source-musiclib.hh"
+
 using namespace Glib;
 using namespace Gtk;
 using namespace std;
@@ -99,7 +101,7 @@ namespace
       text_b_f2 ("<b>%s</b> (%s)");
 
     static char const *
-      text_big_f ("<big>%s</big>");
+      text_big_f ("<span size='14000'><b>%s</b></span>");
 
     static char const *
       text_album_artist_f ("%s (%s)");
@@ -176,9 +178,9 @@ namespace MPX
   };
 
   LayoutData const layout_info[] = {
-    {-0.0, 1.0, 86,  8},
-    {-0.4, 1.0, 86, 40},
-    {-0.4, 0.8, 86, 58}
+    {-0.0, 1.0, 86, 52},
+    {-0.4, 1.0, 86,  8},
+    {-0.4, 0.8, 86, 26}
   };
 
   // WARNING: If you set the gravity or timescale too high, the cover
@@ -565,6 +567,7 @@ namespace MPX
       set_paused (bool paused)
       {
         m_cover_alpha = (paused ? 0.5 : 1.0);
+		queue_draw ();
       }
 
       void
@@ -832,6 +835,18 @@ namespace MPX
 
 namespace MPX
 {
+	void
+	Player::get_object (PAccess<MPX::Library> & pa)
+	{
+		pa = PAccess<MPX::Library>(m_Library);
+	}
+
+	void	
+	Player::get_object (PAccess<MPX::Amazon::Covers> & pa)
+	{
+		pa = PAccess<MPX::Amazon::Covers>(m_Covers);
+	}
+
     Player::Player(Glib::RefPtr<Gnome::Glade::Xml> const& xml,
                    MPX::Library & obj_library,
                    MPX::Amazon::Covers & obj_amazon)
@@ -844,20 +859,23 @@ namespace MPX
         m_Library.signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
         m_Library.signal_scan_end().connect( sigc::mem_fun( *this, &Player::on_library_scan_end ) );
 
-        m_ref_xml->get_widget_derived("sources", m_Sources);
+        //m_ref_xml->get_widget_derived("sources", m_Sources);
+        m_Sources = new Sources(xml);
         m_ref_xml->get_widget("statusbar", m_Statusbar);
 
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 
         ///// TODO: THIS IS ONLY TEMPORARY
-        PlaybackSourceMusicLib * p = new PlaybackSourceMusicLib(obj_library, obj_amazon);
+        PlaybackSourceMusicLib * p = new PlaybackSourceMusicLib(*this);
+        m_Sources->addSource( _("Music"), p->get_icon() );
+		m_SourceV.push_back(p);
+
         Gtk::Alignment * a = new Gtk::Alignment;
         p->get_ui()->reparent(*a);
         a->show();
         m_ref_xml->get_widget("sourcepages", m_MainNotebook);
         m_MainNotebook->append_page(*a);
-        m_Sources->addSource( _("Music"), p->get_icon() );
-		m_SourceV.push_back(p);
+
 		install_source(0, /* tab # */ 1);
         ///// TODO: THIS IS ONLY TEMPORARY
 
@@ -1023,6 +1041,8 @@ namespace MPX
 
 		m_Sources->sourceChanged().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
+
+		m_DiscDefault = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")))->scale_simple(64,64,Gdk::INTERP_BILINEAR);
     }
 
     Player*
@@ -1148,9 +1168,12 @@ namespace MPX
 	Player::on_source_track_metadata (Metadata const& metadata)
 	{
 	  Metadata m = metadata;
-	  if(!m.Image && m[ATTRIBUTE_ASIN] && m[ATTRIBUTE_ASIN] != m_metadata[ATTRIBUTE_ASIN])
+	  if(!m.Image)
 	  {
-		m_Covers.fetch(get<std::string>(m[ATTRIBUTE_ASIN].get()), m.Image);
+	    if(m[ATTRIBUTE_ASIN]) 
+			m_Covers.fetch(get<std::string>(m[ATTRIBUTE_ASIN].get()), m.Image);
+		else
+			m.Image = m_DiscDefault;
 	  }
 	  m_metadata = m;
 	  reparse_metadata ();
@@ -1196,7 +1219,7 @@ namespace MPX
 						return;
 					  }
 
-					  //safe_pause_unset();
+					  safe_pause_unset();
 					  m_Play->switch_stream (uri, type);
 					  //m_Sources->source_select (source_id);
 
@@ -1384,11 +1407,12 @@ namespace MPX
 						  return;
 					  }
 
-					  //safe_pause_unset();
+					  safe_pause_unset();
 					  m_Play->switch_stream (uri, type);
 					  //m_Sources->source_select (source_id);
 					  source->play_post ();
 					  play_post_internal (source_id);
+					  return;
 			  }
 
 			  source->stop ();
@@ -1401,26 +1425,15 @@ namespace MPX
 	void
 	Player::safe_pause_unset ()
 	{
+	    RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 	}
 
 	void
 	Player::pause ()
 	{
-#if 0
-	  bool paused = RefPtr<ToggleAction>::cast_static (m_actions->get_action
-		  (ACTION_PAUSE))->get_active();
-
+	  bool paused = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->get_active();
+		  
 	  m_InfoArea->set_paused(paused);
-
-	  if(m_IgnorePauseToggled)
-	  {
-		  m_IgnorePauseToggled = false;
-
-		  if(paused)
-		  {
-			  return;
-		  }
-	  }
 
 	  PlaybackSource::Caps c = m_source_caps[m_Sources->getSource()];
 	  if( paused && (c & PlaybackSource::C_CAN_PAUSE ))
@@ -1432,7 +1445,6 @@ namespace MPX
 	  {
 		m_Play->request_status (PLAYSTATUS_PLAYING);
 	  }
-#endif
 	}
 
 	void
@@ -1599,10 +1611,10 @@ namespace MPX
 		{
 		  m_SourceV[source_id]->stop ();
 		}
+		safe_pause_unset ();
 		m_Play->request_status( PLAYSTATUS_STOPPED );
 		m_SourceV[source_id]->send_caps();
 	  }
-	  m_actions->get_action (ACTION_STOP)->set_sensitive( false );
 	}
 
 	void
@@ -1783,8 +1795,10 @@ namespace MPX
 			m_actions->get_action (ACTION_CREATE_BOOKMARK)->set_sensitive( 0 );
 #endif
 
-			m_actions->get_action (ACTION_STOP)->set_sensitive(false);
-			m_actions->get_action (ACTION_PAUSE)->set_sensitive(false);
+			m_actions->get_action (ACTION_STOP)->set_sensitive( false );
+			m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
+			m_actions->get_action (ACTION_PREV)->set_sensitive( false );
+			m_actions->get_action (ACTION_PAUSE)->set_sensitive( false );
 
 			break;
 		  }
@@ -1832,11 +1846,13 @@ namespace MPX
 	void
 	Player::on_controls_play ()
 	{
+		play ();
 	}
 
 	void
 	Player::on_controls_pause ()
 	{
+		pause ();
 	}
 
 	void

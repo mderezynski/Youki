@@ -39,8 +39,8 @@
 #include <boost/format.hpp>
 
 #include "audio.hh"
-#include "uri.hh"
-#include "util-string.hh"
+#include "mpx/uri.hh"
+#include "mpx/util-string.hh"
 
 namespace MPX
 {

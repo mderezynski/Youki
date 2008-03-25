@@ -1,5 +1,5 @@
 //  MPX
-//  Copyright (C) 2005-2007 MPX development.
+//  Copyright (C) 2005-2007 MPX Project
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License Version 2
@@ -20,37 +20,25 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
-
-#ifndef MPX_UTIL_STRING_HH
-#define MPX_UTIL_STRING_HH
-
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif //HAVE_CONFIG_H
-
+#ifndef MPX_UTIL_UI_HH
+#define MPX_UTIL_UI_HH
+#include "config.h"
 #include <string>
-#include <vector>
 #include <glibmm/ustring.h>
+#include <gtkmm/uimanager.h>
+#include <gtkmm/window.h>
 
 namespace MPX
 {
-  typedef std::vector<std::string> StrV;
-
   namespace Util
   {
-    bool str_has_prefix_nocase    (std::string const& str, std::string const& prefix);
-    bool str_has_suffix_nocase    (std::string const& str, std::string const& suffix);
-    bool str_has_suffixes_nocase  (std::string const& str, char const**       suffixes);
-    bool str_has_suffixes_nocase  (std::string const& str, StrV const&        suffixes);
-
     bool
-    match_keys (Glib::ustring const& haystack,
-                Glib::ustring const& needle);
+    ui_manager_add_ui(Glib::RefPtr<Gtk::UIManager>&, char const*, Gtk::Window&, const Glib::ustring&);
 
-    std::string stdstrjoin (StrV const& strings, std::string const& delimiter);
-    Glib::ustring utf8_string_normalize (Glib::ustring const& in);
+    Gtk::Widget*
+    get_popup (Glib::RefPtr<Gtk::UIManager> ui_manager, Glib::ustring const& menupath);
 
-  } // Util namespace
-} // MPX namespace
+  } // Util
+} // MPX
 
-#endif //!MPX_UTIL_STRING_HH
+#endif // MPX_UTIL_UI_HH

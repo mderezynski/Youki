@@ -31,7 +31,7 @@
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
 #include <X11/Xlib.h>
-#include "util-graphics.hh"
+#include "mpx/util-graphics.hh"
 
 namespace
 {

@@ -27,11 +27,13 @@
 #include <gio/gio.h>
 #include <gtkmm.h>
 #include <libglademm/xml.h>
-#include "amazon.hh"
-#include "library.hh"
 #include "widgetloader.h"
 #include "play.hh"
-#include "playbacksource.hh"
+#include "mpx/playbacksource.hh"
+#include "mpx/paccess.hh"
+#include "mpx/amazon.hh"
+#include "mpx/library.hh"
+
 
 using namespace Gnome::Glade;
 
@@ -47,6 +49,25 @@ namespace MPX
     class Player
       : public WidgetLoader<Gtk::Window>
     {
+      public:
+
+		void
+		get_object (PAccess<MPX::Library> & pa);
+
+		void	
+		get_object (PAccess<MPX::Amazon::Covers> & pa);
+
+        virtual ~Player ();
+
+      protected:
+
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Amazon::Covers&);
+
+	  public:
+
+        static Player*
+        create (MPX::Library&, MPX::Amazon::Covers&);
+
       protected:
 
         virtual bool on_key_press_event (GdkEventKey*);
@@ -65,6 +86,7 @@ namespace MPX
         InfoArea *m_InfoArea;
         Gtk::Statusbar *m_Statusbar;
 		Gtk::Notebook *m_MainNotebook;
+		Glib::RefPtr<Gdk::Pixbuf> m_DiscDefault;
 
         Library & m_Library;
         Amazon::Covers & m_Covers;
@@ -206,14 +228,6 @@ namespace MPX
 
         void
         on_got_cover (Glib::ustring);
-
-      public:
-
-        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Amazon::Covers&);
-        virtual ~Player ();
-
-        static Player*
-        create (MPX::Library&, MPX::Amazon::Covers&);
     };
 }
 #endif

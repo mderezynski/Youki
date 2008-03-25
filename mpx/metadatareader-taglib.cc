@@ -7,8 +7,8 @@
 
 #include "audio.hh"
 
-#include "util-file.hh"
-#include "util-string.hh"
+#include "mpx/util-file.hh"
+#include "mpx/util-string.hh"
 
 #include "metadatareader-taglib.hh"
 

@@ -40,8 +40,8 @@
 #include <glibmm.h>
 #include <iostream>
 
-#include "uri.hh"
-#include "util-string.hh"
+#include "mpx/uri.hh"
+#include "mpx/util-string.hh"
 
 #define USERINFO_ESCAPE_MASK	0x01
 #define PATH_ESCAPE_MASK	0x02

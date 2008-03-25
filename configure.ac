@@ -237,6 +237,12 @@ AC_ARG_WITH([pkgconfig-dir],
 )
 AC_SUBST([pkgconfigdir])
 
+# Libxml
+PKG_CHECK_MODULES([XML], [libxml-2.0 >= 2.6.1])
+
+# libexo
+PKG_CHECK_MODULES([EXO], [exo-0.3 >= 0.3.4])
+
 # libsoup
 PKG_CHECK_MODULES([SOUP], [libsoup-2.2 >= 2.2.100])
 BMP_CHECK_SOUP_EXTERN_C
@@ -736,6 +742,7 @@ AC_OUTPUT([
     xmlcpp/Makefile
 
     mpx/Makefile
+	mpx/parser/Makefile
 
     mpx.pc
     mpx.1

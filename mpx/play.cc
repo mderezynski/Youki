@@ -1,0 +1,1333 @@
+//  BMPx - The Dumb Music Player
+//  Copyright (C) 2005-2007 BMPx development team.
+//
+//  This program is free software; you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License Version 2
+//  as published by the Free Software Foundation.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program; if not, write to the Free Software
+//  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+//
+//  --
+//
+//  The BMPx project hereby grants permission for non-GPL compatible GStreamer
+//  plugins to be used and distributed together with GStreamer and BMPx. This
+//  permission is above and beyond the permissions granted by the GPL license
+//  BMPx is covered by.
+
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif // HAVE_CONFIG_H
+
+#include <iostream>
+#include <cstring>
+#include <glibmm.h>
+#include <glib/gi18n.h>
+
+#include <gst/gst.h>
+#include <gst/gstelement.h>
+
+#include <boost/shared_ptr.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/format.hpp>
+#include <boost/optional.hpp>
+
+#include <mcs/mcs.h>
+
+#include "audio.hh"
+#include "main.hh"
+#include "play.hh"
+#include "uri.hh"
+
+#define MPX_GST_BUFFER_TIME   ((gint64) 50000)
+#define MPX_GST_PLAY_TIMEOUT  ((gint64) 3000000000)
+
+using namespace Glib;
+
+namespace
+{
+  static boost::format band_f ("band%d");
+
+  char const* NAME_DECODER    = N_("Stream Decoder");
+  char const* NAME_CONVERT    = N_("Raw Audio Format Converter");
+  char const* NAME_QUEUE      = N_("Data Buffer (Queue)");
+  char const* NAME_VOLUME     = N_("Volume Adjustment");
+  char const* NAME_RESAMPLE   = N_("Resampler");
+  char const* NAME_EQUALIZER  = N_("Equalizer");
+  char const* NAME_SPECTRUM   = N_("Spectrum");
+  char const* NAME_IDENTITY   = N_("Identity");
+
+  char const* m_pipeline_names[] =
+  {
+    "(none)",
+    "http",
+    "httpmad",
+    "mmsx",
+    "file",
+    "cdda"
+  };
+
+  bool
+  video_type (std::string const& type)
+  {
+    return (type.substr (0, 6) == std::string("video/"));
+  }
+
+  gboolean
+  drop_data (GstPad *        pad,
+             GstMiniObject* mini_obj,
+             gpointer       data)
+  {
+    return FALSE;
+  }
+
+  char const*
+  nullify_string (std::string const& in)
+  {
+    return (in.size() ? in.c_str() : NULL);
+  }
+
+}
+
+namespace MPX
+{
+    Play::Play()
+    : ObjectBase              ("MPXPlaybackEngine")
+    , property_stream_        (*this, "stream", "")
+    , property_volume_        (*this, "volume", 50)
+    , property_status_        (*this, "playstatus", PLAYSTATUS_STOPPED)
+    , property_sane_          (*this, "sane", false)
+    , property_position_      (*this, "position", 0)
+    , property_duration_      (*this, "duration", 0)
+    , m_http_elmt             (0)
+    , m_play_elmt             (0)
+    , m_played_seconds        (0)
+    , m_seeking               (false)
+    {
+	  m_MessageQueue = g_async_queue_new ();
+
+      for (int n = 0; n < SPECT_BANDS; ++n)
+      {
+        m_spectrum.push_back (0);
+        m_zero_spectrum.push_back (0);
+      }
+
+      property_volume().signal_changed().connect
+                (sigc::mem_fun(this, &Play::on_volume_changed));
+
+      property_stream().signal_changed().connect
+                (sigc::mem_fun(this, &Play::on_stream_changed));
+
+      m_bin[BIN_FILE]     = 0;
+      m_bin[BIN_HTTP]     = 0;
+      m_bin[BIN_HTTP_MAD] = 0;
+      m_bin[BIN_MMSX]     = 0;
+      m_bin[BIN_CDDA]     = 0;
+      m_bin[BIN_OUTPUT]   = 0;
+      m_pipeline          = 0;
+      m_video_pipe        = 0;
+      reset ();
+    }
+
+    //dtor
+    Play::~Play ()
+    {
+      request_status (PLAYSTATUS_STOPPED);
+      destroy_bins ();
+      g_async_queue_unref (m_MessageQueue);
+    }
+
+    GstElement*
+    Play::control_pipe () const
+    {
+      GstElement * control_pipe = 0;
+      if (m_pipeline_id == PIPELINE_VIDEO)
+        control_pipe = m_video_pipe->pipe ();
+      else
+        control_pipe = m_pipeline;
+  
+      return control_pipe;
+    }
+
+    void
+    Play::for_each_tag (GstTagList const* list,
+                        gchar const*      tag,
+                        gpointer          data)
+    {
+      Play & play = *(static_cast<Play*> (data));
+
+      int count = gst_tag_list_get_tag_size (list, tag);
+
+      for (int i = 0; i < count; ++i)
+      {
+        if (!std::strcmp (tag, GST_TAG_TITLE))
+        {
+          if (play.m_pipeline_id == PIPELINE_HTTP ||
+              play.m_pipeline_id == PIPELINE_HTTP_MAD ||
+              play.m_pipeline_id == PIPELINE_MMSX)
+          {
+			Glib::ScopedPtr<char> w;
+            if (gst_tag_list_get_string_index (list, tag, i, w.addr()));
+            {
+              std::string title (w.get()); 
+ 
+              if (!play.m_metadata.m_title || (play.m_metadata.m_title && (play.m_metadata.m_title.get() != title)))
+              {
+                play.m_metadata.m_title = title;
+                play.signal_metadata_.emit(FIELD_TITLE);
+              }
+            }
+          }
+        }
+        if (!std::strcmp (tag, GST_TAG_ALBUM))
+        {
+          if (play.m_pipeline_id == PIPELINE_HTTP ||
+              play.m_pipeline_id == PIPELINE_HTTP_MAD ||
+              play.m_pipeline_id == PIPELINE_MMSX)
+          {
+			Glib::ScopedPtr<char> w;
+            if (gst_tag_list_get_string_index (list, tag, i, w.addr()));
+            {
+              std::string album (w.get()); 
+ 
+              if (!play.m_metadata.m_album || (play.m_metadata.m_album && (play.m_metadata.m_album.get() != album)))
+              {
+                play.m_metadata.m_album = album;
+                play.signal_metadata_.emit(FIELD_ALBUM);
+              }
+            }
+          }
+        }
+        else
+        if (!std::strcmp (tag, GST_TAG_IMAGE)) 
+        {
+          GstBuffer* image = gst_value_get_buffer (gst_tag_list_get_value_index (list, tag, i));
+          if (image)
+          {
+            RefPtr<Gdk::PixbufLoader> loader (Gdk::PixbufLoader::create ());
+            try{
+              loader->write (GST_BUFFER_DATA (image), GST_BUFFER_SIZE (image));
+              loader->close ();
+              RefPtr<Gdk::Pixbuf> img (loader->get_pixbuf());
+              if (img)
+              {
+                play.m_metadata.m_image = img->copy();
+                play.signal_metadata_.emit(FIELD_IMAGE);
+              }
+            }
+            catch (...) {} // pixbufloader is a whacky thing
+          }
+        }
+        else
+        if (!std::strcmp (tag, GST_TAG_BITRATE)) 
+        {
+          guint bitrate = 0;
+          if (gst_tag_list_get_uint_index (list, tag, i, &bitrate))
+          {
+            play.m_metadata.m_audio_bitrate = bitrate; 
+            play.signal_metadata_.emit(FIELD_AUDIO_BITRATE);
+          }
+        }
+        if (!std::strcmp (tag, GST_TAG_AUDIO_CODEC)) 
+        {
+          Glib::ScopedPtr<char> w;
+          if (gst_tag_list_get_string_index (list, tag, i, w.addr()));
+          {
+            play.m_metadata.m_audio_codec = std::string (w.get()); 
+            play.signal_metadata_.emit (FIELD_AUDIO_CODEC);
+          }
+        }
+        if (!std::strcmp (tag, GST_TAG_VIDEO_CODEC)) 
+        {
+          Glib::ScopedPtr<char> w;
+          if (gst_tag_list_get_string_index (list, tag, i, w.addr()));
+          {
+            play.m_metadata.m_video_codec = std::string (w.get()); 
+            play.signal_metadata_.emit (FIELD_VIDEO_CODEC);
+          }
+        }
+      }
+    }
+
+    bool
+    Play::tick ()
+    {
+      if (GST_STATE (control_pipe ()) == GST_STATE_PLAYING)
+      {
+        GstFormat format = GST_FORMAT_TIME;
+        gint64 time_nsec;
+        gst_element_query_position (control_pipe (), &format, &time_nsec);
+        int time_sec = time_nsec / GST_SECOND;
+        m_played_seconds += 0.5;
+        signal_position_.emit (time_sec);
+        return true;
+      }
+
+      return false;
+    }
+
+    void
+    Play::stop_stream ()
+    {
+      if (control_pipe())
+      {
+        gst_element_set_state (control_pipe (), GST_STATE_NULL);
+        gst_element_get_state (control_pipe (), NULL, NULL, GST_CLOCK_TIME_NONE); 
+        property_status_ = PLAYSTATUS_STOPPED;
+		g_message("Gone to STOPPED");
+      }
+    }
+
+    void
+    Play::readify_stream ()
+    {
+      if (control_pipe())
+      {
+        gst_element_set_state (control_pipe (), GST_STATE_READY);
+        gst_element_get_state (control_pipe (), NULL, NULL, GST_CLOCK_TIME_NONE); 
+        property_status_ = PLAYSTATUS_WAITING;
+      }
+    }
+
+    void
+    Play::play_stream ()
+    {
+      GstStateChangeReturn statechange;
+      statechange = gst_element_set_state (control_pipe (), GST_STATE_PLAYING);
+
+      if (statechange != GST_STATE_CHANGE_FAILURE)
+      {
+        property_status_ = PLAYSTATUS_PLAYING;
+		g_message("Gone to PLAYING");
+        return;
+      }
+
+      stop_stream ();
+      return;
+    }
+
+    void
+    Play::pause_stream ()
+    {
+      if (GST_STATE (control_pipe ()) == GST_STATE_PAUSED)
+      {
+        property_status_ = PLAYSTATUS_PLAYING;
+        gst_element_set_state (control_pipe (), GST_STATE_PLAYING);
+        return;
+      }
+      else
+      {
+        property_status_ = PLAYSTATUS_PAUSED;
+        gst_element_set_state (control_pipe (), GST_STATE_PAUSED);
+        return;
+      }
+
+      stop_stream ();
+    }
+
+    void
+    Play::on_volume_changed ()
+    {
+      GstElement* e = gst_bin_get_by_name (GST_BIN (m_bin[BIN_OUTPUT]), (NAME_VOLUME));
+      g_object_set (G_OBJECT (e), "volume", property_volume().get_value()/100.0, NULL);
+      gst_object_unref (e);
+    }
+
+    void
+    Play::pipeline_configure (PipelineId id)
+    {
+      if (m_pipeline_id != id)
+      {
+        if (m_play_elmt)
+        {
+          gst_element_set_state (m_play_elmt, GST_STATE_NULL);
+          gst_element_get_state (m_play_elmt, NULL, NULL, GST_CLOCK_TIME_NONE); 
+          gst_element_set_state (m_bin[BIN_OUTPUT], GST_STATE_NULL);
+          gst_element_get_state (m_bin[BIN_OUTPUT], NULL, NULL, GST_CLOCK_TIME_NONE); 
+          gst_element_unlink (m_play_elmt, m_bin[BIN_OUTPUT]);
+          gst_bin_remove_many (GST_BIN (m_pipeline), m_play_elmt, m_bin[BIN_OUTPUT], NULL);
+          m_play_elmt = 0;
+        }
+        else
+        if ((m_pipeline_id == PIPELINE_VIDEO) && m_video_pipe)
+        {
+          m_video_pipe->rem_audio_elmt ();
+        } 
+
+        m_pipeline_id = id;
+        gst_element_set_state (m_pipeline, GST_STATE_NULL);
+        gst_element_get_state (m_pipeline, NULL, NULL, GST_CLOCK_TIME_NONE); 
+        gst_element_set_name (m_pipeline, m_pipeline_names[id]);
+
+        if ((m_pipeline_id == PIPELINE_VIDEO) && m_video_pipe)
+        {
+          m_video_pipe->set_audio_elmt (m_bin[BIN_OUTPUT]);
+          m_play_elmt = 0;
+          return;
+        }
+
+        m_play_elmt = m_bin[BinId (id)];
+        gst_bin_add_many (GST_BIN (m_pipeline), m_bin[BinId (id)], m_bin[BIN_OUTPUT], NULL);
+        gst_element_link_many (m_bin[BinId (id)], m_bin[BIN_OUTPUT], NULL);
+      }
+    }
+
+    void
+    Play::on_stream_changed ()
+    {
+      if (property_sane().get_value() == false)
+        return;
+
+      URI uri;
+      try{
+        uri = URI (property_stream().get_value());
+        }
+      catch (...)
+        {
+          request_status (PLAYSTATUS_STOPPED);
+          return;
+        }
+
+      m_current_protocol = uri.get_protocol();
+      switch (m_current_protocol)
+      {
+          case URI::PROTOCOL_ITPC:
+            /* ITPC doesn't provide streams, it only links to RSS feed files */
+          break;
+
+          case URI::PROTOCOL_FILE:
+          {
+            if (video_type (m_stream_type))
+            {
+              if (m_video_pipe)
+              {
+                g_object_set (m_video_pipe->operator[]("filesrc"), "location", filename_from_uri (property_stream_.get_value()).c_str(), NULL);
+                pipeline_configure (PIPELINE_VIDEO);
+              }
+              else
+              {
+                goto configure_default_file_pipe;
+              }
+            }
+            else
+            {
+              configure_default_file_pipe:
+              try
+                {
+                  GstElement* src = gst_bin_get_by_name (GST_BIN (m_bin[BIN_FILE]), "src");
+                  g_object_set (src, "location", filename_from_uri (property_stream().get_value()).c_str(), NULL);
+                  gst_object_unref (src);
+                  pipeline_configure (PIPELINE_FILE);
+                }
+              catch (ConvertError& cxe)
+                {
+                    // FIXME
+                }
+            }
+            break;
+          }
+
+          case URI::PROTOCOL_MMS:
+          case URI::PROTOCOL_MMSU:
+          case URI::PROTOCOL_MMST:
+          {
+            GstElement* src = gst_bin_get_by_name (GST_BIN (m_bin[BIN_MMSX]), "src");
+            g_object_set (src, "location", property_stream().get_value().c_str(), NULL);
+            gst_object_unref (src);
+            pipeline_configure (PIPELINE_MMSX);
+            break;
+          }
+
+          case URI::PROTOCOL_HTTP:
+          {
+            if (m_stream_type == "audio/mpeg")
+              pipeline_configure (PIPELINE_HTTP_MAD);
+            else
+              pipeline_configure (PIPELINE_HTTP);
+
+            m_http_elmt = m_play_elmt;
+
+            GstElement* src = gst_bin_get_by_name (GST_BIN (m_http_elmt), "src");
+            g_object_set (src, "location", property_stream().get_value().c_str(), NULL);
+            g_object_set (src, "prebuffer", TRUE, NULL);
+            gst_object_unref (src);
+
+            break;
+          }
+
+          case URI::PROTOCOL_CDDA:
+          {
+            unsigned int track = static_cast<unsigned int> (std::atoi (uri.path.c_str ()+1));
+            pipeline_configure (PIPELINE_CDDA);
+            GstElement* src = gst_bin_get_by_name (GST_BIN (m_bin[BIN_CDDA]), "src");
+            g_object_set (src, "track", track, NULL);
+            gst_object_unref (src);
+
+            break;
+          }
+
+          case URI::PROTOCOL_FTP:
+          case URI::PROTOCOL_QUERY:
+          case URI::PROTOCOL_TRACK:
+          case URI::PROTOCOL_LASTFM:
+          case URI::PROTOCOL_UNKNOWN:
+            // Yer all are not getting played here dudes
+            break;
+        }
+
+    }
+
+    bool
+    Play::lastfm_qualifies ()
+    {
+      if (property_status_.get_value() != PLAYSTATUS_PLAYING)
+        return false;
+
+      if (video_type (m_stream_type))
+        return false;
+
+      m_stream_lock.lock ();
+      gint64 duration = property_duration_.get_value();
+      bool qualifies ((m_played_seconds >= 240) || (m_played_seconds >= (duration/2)));
+      m_stream_lock.unlock ();
+      return qualifies;
+    }
+
+    bool
+    Play::lastfm_qualifies_duration (gint64 duration)
+    {
+      m_stream_lock.lock ();
+      bool qualifies = ((m_played_seconds >= 240) || (m_played_seconds >= (duration/2)));
+      m_stream_lock.unlock ();
+      return qualifies;
+    }
+
+    void
+    Play::switch_stream_real (ustring const& stream,
+                         ustring const& type)
+    {
+      m_stream_lock.lock ();
+	  m_metadata.reset();
+	  m_stream_type = ustring();
+      readify_stream (); 
+      m_played_seconds = 0.;
+      m_stream_type = type;
+      property_stream_ = stream;
+	  play_stream ();
+      m_stream_lock.unlock ();
+    }
+
+    void
+    Play::switch_stream (ustring const& stream,
+                         ustring const& type)
+    {
+	  Audio::Message message;
+	  message.stream = stream;
+	  message.type = type;
+      message.id = 1;
+	  push_message (message);
+	}		
+
+    void
+    Play::request_status (MPXPlaystatus status)
+    {
+	Audio::Message message;
+	message.status = status;
+	message.id = 0;
+
+	push_message (message);
+    } 
+
+    void
+    Play::request_status_real (MPXPlaystatus status)
+    {
+      m_state_lock.lock ();
+
+      switch (status)
+      {
+        case PLAYSTATUS_PAUSED:
+          pause_stream ();
+          break;
+
+        case PLAYSTATUS_STOPPED:
+
+          if (BinId (m_pipeline_id) == BIN_HTTP) 
+          {
+            g_object_set (G_OBJECT (gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP]), "src")),
+                          "abort",
+                          TRUE, NULL); 
+          }
+          else
+          if (BinId (m_pipeline_id) == BIN_HTTP_MAD)
+          {
+            g_object_set (G_OBJECT (gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP_MAD]), "src")),
+                          "abort",
+                          TRUE, NULL); 
+          }
+
+          m_metadata.reset();
+          m_stream_type = ustring();
+          stop_stream ();
+          break;
+
+        case PLAYSTATUS_WAITING:
+          m_metadata.reset();
+          m_stream_type = ustring();
+          readify_stream (); 
+          break;
+
+        case PLAYSTATUS_PLAYING:
+          play_stream ();
+          break;
+
+        default:
+        {
+          g_log ( G_LOG_DOMAIN,
+                  G_LOG_LEVEL_WARNING,
+                  "%s: Unhandled Playback status request: %d",
+                  G_STRFUNC,
+                  int (status));
+          break;
+        }
+      }
+
+      signal_playstatus_.emit (MPXPlaystatus (property_status().get_value()));
+      m_state_lock.unlock ();
+    }
+
+    void
+    Play::seek (gint64 position)
+    {
+      m_conn_stream_position.disconnect ();
+      m_seeking = (gst_element_seek_simple (GST_ELEMENT (control_pipe ()), GST_FORMAT_TIME,
+                   GstSeekFlags (GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT), gint64 (position * GST_SECOND)));
+    }
+
+    void
+    Play::destroy_bins ()
+    {
+      for (int n = 0; n < N_BINS; ++n)
+      {
+            if (m_bin[n])
+            {
+                  gst_element_set_state (m_bin[n], GST_STATE_NULL);
+                  gst_element_get_state (m_bin[n], NULL, NULL, GST_CLOCK_TIME_NONE); 
+                  gst_object_unref (m_bin[n]);
+                  m_bin[n] = 0;
+            }
+      }
+
+      if (m_video_pipe)
+      {
+                  delete m_video_pipe;
+                  m_video_pipe = 0;
+      }
+    }
+
+    void
+    Play::link_pad (GstElement* element,
+                    GstPad *     pad,
+                    gboolean    last,
+                    gpointer    data)
+    {
+      GstPad * pad2 = gst_element_get_static_pad (GST_ELEMENT (data), "sink"); 
+      switch (gst_pad_link (pad, pad2))
+      {
+          case GST_PAD_LINK_OK: 
+            break;
+
+          case GST_PAD_LINK_WRONG_HIERARCHY:
+            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Trying to link pads %p and %p with non common ancestry.", G_STRFUNC, pad, pad2); 
+            break;
+
+          case GST_PAD_LINK_WAS_LINKED: 
+            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pad %p was already linked", G_STRFUNC, pad); 
+            break;
+
+          case GST_PAD_LINK_WRONG_DIRECTION:
+            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pad %p is being linked into the wrong direction", G_STRFUNC, pad); 
+            break;
+
+          case GST_PAD_LINK_NOFORMAT: 
+            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pads %p and %p have no common format", G_STRFUNC, pad, pad2); 
+            break;
+
+          case GST_PAD_LINK_NOSCHED: 
+            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pads %p and %p can not cooperate in scheduling", G_STRFUNC, pad, pad2); 
+            break;
+
+          case GST_PAD_LINK_REFUSED:
+            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pad %p refused the link", G_STRFUNC, pad); 
+            break;
+      }
+      gst_object_unref (pad2);
+    }
+
+    void 
+    Play::bus_watch (GstBus*     bus,
+                     GstMessage* message,
+                     gpointer    data)
+    {
+      Play & play = *(static_cast<Play*> (data));
+	  Glib::Mutex::Lock L (play.m_BusLock);
+
+      static GstState old_state = GstState (0), new_state = GstState (0), pending_state = GstState (0);
+
+      switch (GST_MESSAGE_TYPE (message))
+      {
+          case GST_MESSAGE_ELEMENT:
+          {
+            GstStructure const* s = gst_message_get_structure (message);
+            if (std::string (gst_structure_get_name (s)) == "spectrum")
+            {
+              GValue const* list = gst_structure_get_value (s, "spectrum");
+              for (int i = 0; i < SPECT_BANDS; ++i)
+              {
+                play.m_spectrum[i] = g_value_get_uchar (gst_value_list_get_value (list, i));
+              }
+              play.signal_spectrum_.emit (play.m_spectrum);
+            }
+            break;
+          }
+
+         case GST_MESSAGE_TAG:
+          {
+            GstTagList *list = 0;
+            gst_message_parse_tag (message, &list);
+
+            if (list)
+            {
+              gst_tag_list_foreach (list, GstTagForeachFunc (for_each_tag), &play);
+              gst_tag_list_free (list);
+            }
+
+            break;
+          }
+
+          case GST_MESSAGE_STATE_CHANGED:
+          {
+            gst_message_parse_state_changed (message, &old_state, &new_state, &pending_state);
+
+            if (old_state != GST_STATE_PLAYING && new_state == GST_STATE_PLAYING)
+            {
+                if (play.m_pipeline_id == PIPELINE_VIDEO)
+                {
+                  GstCaps *caps; 
+                  if ((caps = gst_pad_get_negotiated_caps (gst_element_get_pad (GST_ELEMENT ((*(play.m_video_pipe))["videosink1"]), "sink"))))
+                  {
+                      GstStructure * structure = gst_caps_get_structure (caps, 0);
+                      int width, height;
+                      if ((gst_structure_get_int (structure, "width", &width) &&
+                           gst_structure_get_int (structure, "height", &height)))
+                      {
+                        const GValue * par = gst_structure_get_value (structure, "pixel-aspect-ratio");
+                        GValue * target = 0; 
+
+                        if (par)
+                        {
+                          target = g_new0 (GValue, 1);
+                          g_value_init (target, G_VALUE_TYPE(par));
+                          g_value_copy (par, target);
+                        }
+
+                        play.signal_video_geom_.emit (width, height, target);
+                      }
+                      gst_caps_unref (caps);
+                  }
+                }
+
+                if (play.m_seeking)
+                {
+                  play.signal_seek_.emit (play.property_position().get_value());
+                  play.m_seeking = false;
+                }
+
+                if (!play.m_conn_stream_position.connected())
+                {
+                  play.m_conn_stream_position = signal_timeout().connect(sigc::mem_fun (play, &Play::tick), 500);
+                    
+                }
+            }
+
+            play.signal_pipeline_state_.emit (new_state);
+            break;
+          }
+
+          case GST_MESSAGE_ERROR:
+          {
+            break;
+          }
+
+          case GST_MESSAGE_EOS:
+          {
+			play.signal_eos_.emit();
+            break;
+          }
+
+          default: break;
+      }
+    }
+
+    void
+    Play::queue_underrun (GstElement* element,
+                          gpointer    data)
+    {
+      unsigned int level;
+      g_object_get (G_OBJECT (element), "current-level-bytes", &level, NULL);
+    }
+
+    void
+    Play::eq_band_changed (MCS_CB_DEFAULT_SIGNATURE, unsigned int band)
+                          
+    {
+      g_object_set (G_OBJECT (m_elmtEqualizer), (band_f % band).str().c_str (), boost::get<double> (value), NULL);
+    }
+
+    void
+    Play::create_bins ()
+    {
+      // Output Bin
+      {
+        std::string sink = mcs->key_get <std::string> ("audio", "sink");
+        GstElement* sink_element = gst_element_factory_make (sink.c_str (), "sink");
+
+        if (sink == "autoaudiosink")
+        {
+          /* nothing to do for it */
+        }
+        else
+        if (sink == "gconfaudiosink")
+        {
+          g_object_set (G_OBJECT (sink_element), "profile", int (1) /* music/video */, NULL);
+        }
+        else
+        if (sink == "osssink")
+        {
+          g_object_set (G_OBJECT (sink_element), "device",
+            nullify_string (mcs->key_get <std::string> ("audio", "device-oss")),
+            NULL);
+          g_object_set (G_OBJECT (sink_element), "buffer-time",
+            guint64(mcs->key_get <int> ("audio", "oss-buffer-time")), NULL);
+        }
+        else
+        if (sink == "esdsink")
+        {
+          g_object_set (G_OBJECT (sink_element), "host",
+            nullify_string (mcs->key_get <std::string> ("audio", "device-esd")),
+            NULL);
+          g_object_set (G_OBJECT (sink_element), "buffer-time",
+            guint64(mcs->key_get <int> ("audio", "esd-buffer-time")),
+            NULL);
+        }
+        else
+        if (sink == "pulsesink")
+        {
+          g_object_set (G_OBJECT (sink_element), "server",
+            nullify_string (mcs->key_get <std::string> ("audio", "pulse-server")),
+            NULL);
+          g_object_set (G_OBJECT (sink_element), "device",
+            nullify_string (mcs->key_get <std::string> ("audio", "pulse-device")),
+            NULL);
+          g_object_set (G_OBJECT (sink_element), "buffer-time",
+            guint64(mcs->key_get <int> ("audio", "pulse-buffer-time")),
+            NULL);
+        }
+        else
+        if (sink == "jackaudiosink")
+        {
+          g_object_set (G_OBJECT (sink_element), "server",
+            nullify_string (mcs->key_get <std::string> ("audio", "jack-server")),
+            NULL);
+          g_object_set (G_OBJECT (sink_element), "buffer-time",
+            guint64(mcs->key_get <int> ("audio", "jack-buffer-time")),
+            NULL);
+        }
+#ifdef HAVE_ALSA
+        else
+        if (sink == "alsasink")
+        {
+          g_object_set (G_OBJECT (sink_element), "device",
+            nullify_string (mcs->key_get <std::string> ("audio", "device-alsa")),
+            NULL);
+          g_object_set (G_OBJECT (sink_element), "buffer-time",
+            guint64(mcs->key_get <int> ("audio", "alsa-buffer-time")),
+            NULL);
+        }
+#endif //HAVE_ALSA
+#ifdef HAVE_SUN
+        else
+        if (sink == "sunaudiosink")
+        {
+          g_object_set (G_OBJECT (sink_element), "device",
+            nullify_string (mcs->key_get <std::string> ("audio", "device-sun")),
+            NULL);
+          g_object_set (G_OBJECT (sink_element), "buffer-time",
+            guint64(mcs->key_get <int> ("audio", "sun-buffer-time")),
+            NULL);
+        }
+#endif //HAVE_SUN
+#ifdef HAVE_HAL
+        else
+        if (sink == "halaudiosink")
+        {
+          g_object_set (G_OBJECT (sink_element), "udi",
+            nullify_string (mcs->key_get <std::string> ("audio", "hal-udi")),
+            NULL);
+        }
+#endif //HAVE_HAL
+
+        m_bin[BIN_OUTPUT]     = gst_bin_new ("output");
+        GstElement* convert   = gst_element_factory_make ("audioconvert", (NAME_CONVERT));
+        GstElement* resample  = gst_element_factory_make ("audioresample", (NAME_RESAMPLE));
+        GstElement* volume    = gst_element_factory_make ("volume", (NAME_VOLUME));
+        GstElement* spectrum  = gst_element_factory_make ("bmpx-spectrum", (NAME_SPECTRUM));
+
+        if (GST_IS_ELEMENT (spectrum))
+        {
+          g_object_set (G_OBJECT (spectrum),
+                        "interval", guint64 (50 * GST_MSECOND),
+                        "bands", SPECT_BANDS,
+                        "threshold", int (-72),
+                        "message", gboolean (TRUE), NULL);
+        }
+
+        if (Audio::test_element ("equalizer-10bands") && mcs->key_get<bool>("audio","enable-eq"))
+        {
+          m_elmtEqualizer = gst_element_factory_make ("equalizer-10bands", (NAME_EQUALIZER));
+
+          if (GST_IS_ELEMENT (spectrum))
+          {
+            GstElement* tee = gst_element_factory_make ("tee", "tee1"); 
+            gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, m_elmtEqualizer, tee, spectrum, volume, sink_element, NULL);
+            gst_element_link_many (convert, resample, m_elmtEqualizer, tee, volume, sink_element, NULL);
+            gst_element_link_many (tee, spectrum, NULL);
+          }
+          else
+          {
+            gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, m_elmtEqualizer, volume, sink_element, NULL);
+            gst_element_link_many (convert, resample, m_elmtEqualizer, volume, sink_element, NULL);
+          }
+
+          // Connect MCS to Equalizer Bands
+          for (unsigned int n = 0; n < 10; ++n)
+          {
+            mcs->subscribe ("PlaybackEngine", "audio",
+                (band_f % n).str(), sigc::bind (sigc::mem_fun (*this, &Play::eq_band_changed), n));
+            g_object_set (G_OBJECT (m_elmtEqualizer),
+                (band_f % n).str().c_str(), mcs->key_get <double> ("audio", (band_f % n).str()), NULL);
+          }
+        }
+        else
+        {
+          if (GST_IS_ELEMENT (spectrum))
+          {
+            GstElement* tee = gst_element_factory_make ("tee", "tee1"); 
+            gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, tee, spectrum, volume, sink_element, NULL);
+            gst_element_link_many (convert, resample, tee, volume, sink_element, NULL);
+            gst_element_link_many (tee, spectrum, NULL);
+          }
+          else
+          {
+            gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, volume, sink_element, NULL);
+            gst_element_link_many (convert, resample, volume, sink_element, NULL);
+          }
+        }
+
+        GstPad * pad = gst_element_get_static_pad (convert, "sink");
+        gst_element_add_pad (m_bin[BIN_OUTPUT], gst_ghost_pad_new ("sink", pad));
+        gst_object_unref (pad);
+
+        gst_object_ref (m_bin[BIN_OUTPUT]);
+
+        property_volume() = mcs->key_get <int> ("bmp", "volume");
+        property_sane_ = true;
+      }
+
+
+      ////////////////// FILE BIN
+      {
+        GstElement  * source    = gst_element_factory_make ("filesrc", "src");
+        GstElement  * decoder   = gst_element_factory_make ("decodebin", (NAME_DECODER));
+        GstElement  * identity  = gst_element_factory_make ("identity", (NAME_IDENTITY));
+
+        if (source && decoder && identity)
+        {
+          m_bin[BIN_FILE] = gst_bin_new ("bin-file");
+          gst_bin_add_many (GST_BIN (m_bin[BIN_FILE]), source, decoder, identity, NULL);
+          gst_element_link_many (source, decoder, NULL);
+
+          g_signal_connect (G_OBJECT (decoder),
+                            "new-decoded-pad",
+                            G_CALLBACK (Play::link_pad),
+                            identity);
+
+          GstPad * pad = gst_element_get_static_pad (identity, "src");
+          gst_element_add_pad (m_bin[BIN_FILE], gst_ghost_pad_new ("src", pad));
+          gst_object_unref (pad);
+
+          gst_object_ref (m_bin[BIN_FILE]);
+        }
+      }
+
+
+      ////////////////// HTTP BIN
+      {
+        GstElement  * source    = gst_element_factory_make ("bmpx-jnethttpsrc", "src");
+        GstElement  * queue     = gst_element_factory_make ("queue", (NAME_QUEUE));
+        GstElement  * decoder   = gst_element_factory_make ("decodebin", (NAME_DECODER));
+        GstElement  * identity  = gst_element_factory_make ("identity", (NAME_IDENTITY));
+
+        if (source && queue && decoder && identity)
+        {
+          m_bin[BIN_HTTP] = gst_bin_new ("bin-http");
+          gst_bin_add_many (GST_BIN (m_bin[BIN_HTTP]), source, decoder, identity, NULL);
+          gst_element_link_many (source, decoder, NULL);
+
+          g_signal_connect (G_OBJECT (decoder),
+                            "new-decoded-pad",
+                            G_CALLBACK (Play::link_pad),
+                            identity);
+          g_object_set (G_OBJECT (queue),
+                        "min-threshold-bytes",
+                        8U * 1024U,
+                        "max-size-bytes",
+                        32U * 1024U,
+                        NULL);
+          g_object_set (G_OBJECT (source),
+                        "iradio-mode", TRUE, 
+                         NULL);
+
+          GstPad * pad = gst_element_get_static_pad (identity, "src");
+          gst_element_add_pad (m_bin[BIN_HTTP], gst_ghost_pad_new ("src", pad));
+          gst_object_unref (pad);
+
+          gst_object_ref (m_bin[BIN_HTTP]);
+        }
+      }
+
+
+      ////////////////// HTTP MAD/FLUMP3 BIN
+      {
+        GstElement *  source    = gst_element_factory_make ("bmpx-jnethttpsrc", "src");
+        GstElement *  decoder   = gst_element_factory_make ("mad", (NAME_DECODER));
+        GstElement  * queue     = gst_element_factory_make ("queue", (NAME_QUEUE));
+        GstElement  * identity  = gst_element_factory_make ("identity", (NAME_IDENTITY));
+
+        if (!decoder)
+        {
+          decoder = gst_element_factory_make ("flump3dec", (NAME_DECODER));
+        }
+
+        if (source && decoder && queue && identity)
+        {
+          m_bin[BIN_HTTP_MAD] = gst_bin_new ("bin-http-mad");
+          gst_bin_add_many (GST_BIN (m_bin[BIN_HTTP_MAD]), source, decoder, identity, NULL);
+          gst_element_link_many (source, decoder, identity, NULL);
+
+          g_object_set (G_OBJECT (queue),
+                        "min-threshold-bytes",
+                        8U * 1024U,
+                        "max-size-bytes",
+                        32U * 1024U,
+                        NULL);
+          g_object_set (G_OBJECT (source),
+                        "iradio-mode", TRUE,
+                        NULL);
+
+          GstPad * pad = gst_element_get_static_pad (identity, "src");
+          gst_element_add_pad (m_bin[BIN_HTTP_MAD], gst_ghost_pad_new ("src", pad));
+          gst_object_unref (pad);
+
+          gst_object_ref (m_bin[BIN_HTTP_MAD]);
+        }
+      }
+
+      ////////////////// MMS* BIN
+      {
+        GstElement * source   = gst_element_factory_make ("mmssrc", "src");
+        GstElement * decoder  = gst_element_factory_make ("decodebin", (NAME_DECODER));
+        GstElement * identity = gst_element_factory_make ("identity", (NAME_IDENTITY));
+
+        if (source && decoder && identity)
+        {
+          m_bin[BIN_MMSX] = gst_bin_new ("bin-mmsx");
+
+          gst_bin_add_many (GST_BIN (m_bin[BIN_MMSX]), source, decoder, identity, NULL);
+          gst_element_link_many (source, decoder, NULL);
+
+          g_signal_connect (G_OBJECT (decoder),
+                            "new-decoded-pad",
+                            G_CALLBACK (Play::link_pad),
+                            identity);
+
+          GstPad * pad = gst_element_get_static_pad (identity, "src");
+          gst_element_add_pad (m_bin[BIN_MMSX], gst_ghost_pad_new ("src", pad));
+          gst_object_unref (pad);
+
+          gst_object_ref (m_bin[BIN_MMSX]);
+        }
+      }
+
+      ////////////////// CDDA BIN
+      {
+#if defined (HAVE_CDPARANOIA)
+        GstElement * source = gst_element_factory_make ("cdparanoiasrc", "src");
+#elif defined (HAVE_CDIO)
+        GstElement * source = gst_element_factory_make ("cdiocddasrc", "src");
+#endif
+
+        if (source)
+        {
+          m_bin[BIN_CDDA] = gst_bin_new ("bin-cdda");
+          gst_bin_add_many (GST_BIN (m_bin[BIN_CDDA]), source, NULL);
+
+          GstPad * pad = gst_element_get_static_pad (source, "src");
+          gst_element_add_pad (m_bin[BIN_CDDA], gst_ghost_pad_new ("src", pad));
+          gst_object_unref (pad);
+
+          gst_object_ref (m_bin[BIN_CDDA]);
+        }
+      }
+
+      // Video Player
+      m_video_pipe = 0; 
+      try{
+          m_video_pipe = new VideoPipe ();
+          m_video_pipe->signal_cascade().connect (sigc::bind (sigc::ptr_fun (&MPX::Play::bus_watch), reinterpret_cast<gpointer>(this)));
+        }
+      catch (UnableToConstructError & cxe)
+        {
+          g_warning ("%s: Couldn't create video player thingie", G_STRLOC);
+        }
+
+      // Main Pipeline
+      m_pipeline = gst_pipeline_new ("BMPx_Pipeline_Main");
+      m_pipeline_id = PIPELINE_NONE;
+      GstBus * bus = gst_pipeline_get_bus (GST_PIPELINE (m_pipeline));
+      gst_bus_add_signal_watch (bus);
+      g_signal_connect (G_OBJECT (bus), "message", GCallback (Play::bus_watch), this);
+      gst_object_unref (bus);
+    }
+
+    void
+    Play::reset ()
+    {
+      stop_stream ();
+
+      if (m_pipeline)
+      {
+        if (m_play_elmt)
+        {
+          gst_element_set_state (m_play_elmt, GST_STATE_NULL);
+          gst_element_get_state (m_play_elmt, NULL, NULL, GST_CLOCK_TIME_NONE); 
+          gst_element_set_state (m_bin[BIN_OUTPUT], GST_STATE_NULL);
+          gst_element_get_state (m_bin[BIN_OUTPUT], NULL, NULL, GST_CLOCK_TIME_NONE); 
+          gst_element_unlink (m_play_elmt, m_bin[BIN_OUTPUT]);
+          gst_bin_remove_many (GST_BIN (m_pipeline), m_play_elmt, m_bin[BIN_OUTPUT], NULL);
+          m_play_elmt = 0;
+        }
+
+        gst_object_unref (m_pipeline);
+        m_pipeline = 0;
+      }
+
+      destroy_bins ();
+      create_bins ();
+    }
+
+    void
+    Play::set_window_id ( ::Window id)
+    {
+      if (m_video_pipe)
+      {
+        m_video_pipe->set_window_id (id);
+      }
+    }
+
+    ///////////////////////////////////////////////
+    /// Object Properties
+    ///////////////////////////////////////////////
+
+    ProxyOf<PropString>::ReadWrite
+    Play::property_stream()
+    {
+      return ProxyOf<PropString>::ReadWrite (this, "stream");
+    }
+
+    ProxyOf<PropInt>::ReadWrite
+    Play::property_volume()
+    {
+      return ProxyOf<PropInt>::ReadWrite (this, "volume");
+    }
+
+    /// RO Proxies
+
+    ProxyOf<PropInt>::ReadOnly
+    Play::property_status() const
+    {
+      return ProxyOf<PropInt>::ReadOnly (this, "playstatus");
+    }
+
+    ProxyOf<PropBool>::ReadOnly
+    Play::property_sane() const
+    {
+      return ProxyOf<PropBool>::ReadOnly (this, "sane");
+    }
+
+    ProxyOf<PropInt>::ReadOnly
+    Play::property_position() const
+    {
+      GstFormat format (GST_FORMAT_TIME);
+      gint64 position = 0;
+      gst_element_query_position (GST_ELEMENT (control_pipe()), &format, &position);
+      g_object_set (G_OBJECT (gobj ()), "position", (position / GST_SECOND), NULL);
+      return ProxyOf<PropInt>::ReadOnly (this, "position");
+    }
+
+    ProxyOf<PropInt>::ReadOnly
+    Play::property_duration() const
+    {
+      GstFormat format (GST_FORMAT_TIME);
+      gint64 duration = 0;
+      gst_element_query_duration (GST_ELEMENT (control_pipe()), &format, &duration);
+      g_object_set (G_OBJECT (gobj ()), "duration", (duration / GST_SECOND), NULL);
+      return ProxyOf<PropInt>::ReadOnly (this, "duration");
+    }
+
+    // Signals
+    Play::SignalSpectrum &
+    Play::signal_spectrum ()
+    {
+      return signal_spectrum_;
+    }
+
+    Play::SignalMPXPlaystatus &
+    Play::signal_playstatus ()
+    {
+      return signal_playstatus_;
+    }
+
+    Play::SignalPipelineState &
+    Play::signal_pipeline_state ()
+    {
+      return signal_pipeline_state_;
+    }
+
+    Play::SignalEos &
+    Play::signal_eos ()
+    {
+      return signal_eos_;
+    }
+
+    Play::SignalSeek &
+    Play::signal_seek ()
+    {
+      return signal_seek_;
+    }
+
+    Play::SignalPosition &
+    Play::signal_position ()
+    {
+      return signal_position_;
+    }
+
+    Play::SignalHttpStatus &
+    Play::signal_http_status ()
+    {
+      return signal_http_status_;
+    }
+
+    Play::SignalBuffering &
+    Play::signal_buffering ()
+    {
+      return signal_buffering_;
+    }
+
+    Play::SignalError &
+    Play::signal_error ()
+    {
+      return signal_error_;
+    }
+
+    Play::SignalVideoGeom &
+    Play::signal_video_geom ()
+    {
+      return signal_video_geom_;
+    }
+
+    bool
+    Play::has_video ()
+    {
+      return bool (m_video_pipe);
+    }
+
+    void
+    Play::video_expose ()
+    {
+      if( has_video() ) 
+      {
+        m_video_pipe->expose ();
+      }
+    }
+
+    GstElement*
+    Play::x_overlay ()
+    {
+      return (*m_video_pipe)["videosink1"];
+    }
+  
+    VideoPipe::SignalRequestWindowId&
+    Play::signal_request_window_id()
+    {
+      return m_video_pipe->signal_request_window_id();
+    }
+
+    Play::SignalMetadata &
+    Play::signal_metadata ()
+    {
+      return signal_metadata_;
+    }
+
+    MPXGstMetadata const&
+    Play::get_metadata ()
+    {
+      return m_metadata;
+    }
+
+    void
+    Play::process_queue ()
+    {
+	    while (g_async_queue_length (m_MessageQueue) > 0)
+	    {
+			gpointer data = g_async_queue_pop (m_MessageQueue);
+		    Audio::Message *message = reinterpret_cast<Audio::Message*>(data);
+
+		    switch (message->id)
+		    {
+			    case 0: /* FIXME: Enums */
+				    request_status_real (message->status);
+				    break;
+
+			    case 1:
+				    switch_stream_real (message->stream, message->type);
+				    break;
+		    }
+
+		    delete message;
+	    }
+    }
+
+    void
+    Play::push_message (Audio::Message const& message)
+    {
+		Glib::Mutex::Lock L (m_QueueLock);
+	    g_async_queue_push (m_MessageQueue, (gpointer)(new Audio::Message (message)));
+	    process_queue ();
+    }
+}

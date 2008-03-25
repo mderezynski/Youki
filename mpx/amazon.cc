@@ -41,12 +41,13 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "amazon.hh"
-#include "minisoup.hh"
-#include "network.hh"
-#include "uri.hh"
-#include "util-file.hh"
-#include "util-graphics.hh"
+#include "mpx/amazon.hh"
+
+#include "mpx/minisoup.hh"
+#include "mpx/network.hh"
+#include "mpx/uri.hh"
+#include "mpx/util-file.hh"
+#include "mpx/util-graphics.hh"
 using namespace Glib;
 
 namespace

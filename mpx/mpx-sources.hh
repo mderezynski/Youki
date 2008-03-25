@@ -27,15 +27,13 @@
 
 #include <gtkmm.h>
 #include <libglademm/xml.h>
+#include <exo/exo.h>
 
 namespace MPX
 {
   class Sources
-    : public Gtk::IconView
   {
     private:
-
-        Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
 
 		typedef sigc::signal<void, int> SignalSourceChanged;
 
@@ -46,44 +44,25 @@ namespace MPX
 
             SourceColumns()
             {
-                add (name);
                 add (icon);
+                add (name);
             };
         };
 
+        Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
         SourceColumns m_SourceColumns;
         Glib::RefPtr<Gtk::ListStore> m_Store;
+		ExoIconView *m_IconView;
 
-#if 0
-        Gtk::TreeIter m_RootDevices;
-        Gtk::TreeIter m_RootSources;
-#endif
-
-#if 0
-        bool
-        slot_select (Glib::RefPtr <Gtk::TreeModel> const& model, Gtk::TreeModel::Path const& path, bool was_selected);
-
-        void
-		cell_data_func( Gtk::CellRenderer*, const Gtk::TreeIter&, int );
-
-        static void
-        rb_sourcelist_expander_cell_data_func (GtkTreeViewColumn *column,
-                               GtkCellRenderer   *cell,
-                               GtkTreeModel      *model,
-                               GtkTreeIter       *iter,
-                               gpointer           data) ;
-#endif
-
-		void
-		on_selection_changed ();
+		static void
+		on_selection_changed (ExoIconView*,gpointer);
 
 		SignalSourceChanged signal_source_changed_;
 		int m_CurrentSource;
      
     public:
 
-        Sources (BaseObjectType                       * obj,
-                 Glib::RefPtr<Gnome::Glade::Xml> const& xml);
+        Sources (Glib::RefPtr<Gnome::Glade::Xml> const& xml);
         virtual ~Sources ();
 
         void addSource (const Glib::ustring& name, const Glib::RefPtr<Gdk::Pixbuf>& icon);

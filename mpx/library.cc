@@ -29,10 +29,12 @@
 #ifdef HAVE_HAL
 #include "hal.hh"
 #endif // HAVE_HAL
-#include "library.hh"
 #include "sql.hh"
-#include "util-string.hh"
-#include "uri.hh"
+
+#include "mpx/util-string.hh"
+#include "mpx/uri.hh"
+#include "mpx/library.hh"
+
 using namespace Glib;
 using boost::get;
 
