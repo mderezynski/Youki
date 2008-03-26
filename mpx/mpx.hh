@@ -26,6 +26,7 @@
 #include "config.h"
 #include <gio/gio.h>
 #include <gtkmm.h>
+#include <gtkmm/volumebutton.h>
 #include <libglademm/xml.h>
 
 #include "mpx/amazon.hh"
