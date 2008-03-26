@@ -14,18 +14,19 @@
 #include <gst/gst.h>
 #include <gtkmm/main.h>
 
-#include "mpx/amazon.hh"
-#include "mpx/library.hh"
-
-#ifdef HAVE_HAL
-#include "hal.hh"
-#endif // HAVE_HAL
-#include "main.hh"
 #include "mpx.hh"
-#include "tasks.hh"
-#include "mpx/util-file.hh"
+
+#include "mpx/amazon.hh"
+#ifdef HAVE_HAL
+#include "mpx/hal.hh"
+#endif // HAVE_HAL
+#include "mpx/library.hh"
+#include "mpx/main.hh"
 #include "mpx/network.hh"
+#include "mpx/tasks.hh"
 #include "mpx/types.hh"
+#include "mpx/util-file.hh"
+
 #include "xmltoc++.hh"
 #include "xmlcpp/xsd-profile.hxx"
 

@@ -25,11 +25,13 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
-#include "main.hh" // for mcs
 
 #include <gst/gst.h>
 #include <gst/interfaces/xoverlay.h>
 #include <boost/format.hpp>
+
+#include "mpx/main.hh" // for mcs
+
 #include "video-playback.hh"
 
 namespace

@@ -25,7 +25,7 @@
 #define MPX_IMPORT_FOLDER_HH
 #include <gtkmm/dialog.h>
 #include <libglademm/xml.h>
-#include "widgetloader.h"
+#include "mpx/widgetloader.h"
 
 using namespace Gnome::Glade;
 

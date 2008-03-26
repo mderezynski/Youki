@@ -27,12 +27,14 @@
 #include <gio/gio.h>
 #include <gtkmm.h>
 #include <libglademm/xml.h>
-#include "widgetloader.h"
-#include "play.hh"
-#include "mpx/playbacksource.hh"
-#include "mpx/paccess.hh"
+
 #include "mpx/amazon.hh"
 #include "mpx/library.hh"
+#include "mpx/paccess.hh"
+#include "mpx/playbacksource.hh"
+#include "mpx/widgetloader.h"
+
+#include "play.hh"
 
 
 using namespace Gnome::Glade;
@@ -76,7 +78,16 @@ namespace MPX
 
 		Play * m_Play;
 
+        struct SourcePlugin
+        {
+			PlaybackSource*	(*get_instance)       (MPX::Player & player);
+			void			(*del_instance)       (MPX::PlaybackSource * source);
+        };
+
+        typedef boost::shared_ptr<SourcePlugin> SourcePluginPtr;
+        typedef std::vector<SourcePluginPtr> SourcePluginsKeeper;
 		typedef std::vector<PlaybackSource*> VectorSources;
+        SourcePluginsKeeper m_SourcePlugins;
 
         Glib::RefPtr<Gnome::Glade::Xml>   m_ref_xml;
         Glib::RefPtr<Gtk::ActionGroup>    m_actions;
@@ -86,7 +97,11 @@ namespace MPX
         InfoArea *m_InfoArea;
         Gtk::Statusbar *m_Statusbar;
 		Gtk::Notebook *m_MainNotebook;
-		Glib::RefPtr<Gdk::Pixbuf> m_DiscDefault;
+		Gtk::VolumeButton *m_Volume;
+	
+		int m_Seeking;
+		Gtk::HScale *m_Seek;
+		Gtk::Label *m_TimeLabel;
 
         Library & m_Library;
         Amazon::Covers & m_Covers;
@@ -98,6 +113,25 @@ namespace MPX
 		PlaybackSource::Caps m_source_caps[16];
 
 		Metadata m_metadata;
+
+		gint m_SourceCtr;
+		gint m_PageCtr;
+
+		Glib::RefPtr<Gdk::Pixbuf> m_DiscDefault;
+
+		bool
+		load_source_plugin (std::string const& path);
+
+
+		bool
+		on_seek_event(GdkEvent*);
+
+		bool
+		on_seek_button_press(GdkEventButton*);
+
+		bool
+		on_seek_button_release(GdkEventButton*);
+
 
         void
         on_library_scan_start();
@@ -111,6 +145,9 @@ namespace MPX
 		
 		void
 		on_play_status_changed ();
+
+		void
+		on_play_position (guint64);
 
 
 		void
@@ -136,37 +173,37 @@ namespace MPX
 		install_source (int source_id, int tab);
 
 		void
-		on_source_caps (PlaybackSource::Caps caps, int source);
+		on_source_caps (PlaybackSource::Caps, int);
 
 		void
-		on_source_flags (PlaybackSource::Flags flags, int source);
+		on_source_flags (PlaybackSource::Flags, int);
 
 		void
-		on_source_track_metadata (Metadata const& metadata);
+		on_source_track_metadata (Metadata const&);
 
 		void
-		on_source_play_request (int source_id);
+		on_source_play_request (int);
 
 		void
-		on_source_message_set (Glib::ustring const& message);
+		on_source_message_set (Glib::ustring const&);
 
 		void
 		on_source_message_clear ();
 
 		void
-		on_source_segment (int source_id);
+		on_source_segment (int);
 
 		void
-		on_source_stop (int source_id);
+		on_source_stop (int);
 
 		void
-		on_source_next (int source_id);
+		on_source_next (int);
 
 		void
-		play_async_cb (int source_id);
+		play_async_cb (int);
 
 		void
-		play_post_internal (int source_id);
+		play_post_internal (int);
 
 		void
 		safe_pause_unset ();
@@ -175,10 +212,10 @@ namespace MPX
 		on_play_eos ();
 
 		void
-		prev_async_cb (int source_id);
+		prev_async_cb (int);
 
 		void
-		next_async_cb (int source_id);
+		next_async_cb (int);
 
 		void
 		play ();

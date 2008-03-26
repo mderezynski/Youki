@@ -25,7 +25,8 @@
 #include <glib/gstdio.h>
 #include <glibmm/i18n.h>
 #include <boost/format.hpp>
-#include "minisoup.hh"
+
+#include "mpx/minisoup.hh"
 using namespace Glib;
 
 namespace MPX

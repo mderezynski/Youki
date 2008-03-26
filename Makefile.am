@@ -28,6 +28,7 @@ SUBDIRS =		\
 	include		\
 	po			\
 	taglib		\
+	sources		\
 	widgets		\
 	xmlcpp		\
 	jnetlib		

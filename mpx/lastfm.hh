@@ -51,7 +51,7 @@ namespace MPX
 
     typedef sigc::signal <void> Signal;
 
-#include "exception.hh"
+#include "mpx/exception.hh"
 
     EXCEPTION(LastFMStreamTuningError)
     EXCEPTION(LastFMNotConnectedError)

@@ -25,15 +25,17 @@
 #include <glibmm.h>
 #include <glibmm/i18n.h>
 #include <gio/gio.h>
-#include "audio.hh"
-#ifdef HAVE_HAL
-#include "hal.hh"
-#endif // HAVE_HAL
-#include "sql.hh"
 
-#include "mpx/util-string.hh"
-#include "mpx/uri.hh"
+#ifdef HAVE_HAL
+#include "mpx/hal.hh"
+#endif // HAVE_HAL
 #include "mpx/library.hh"
+#include "mpx/sql.hh"
+#include "mpx/uri.hh"
+#include "mpx/util-string.hh"
+
+#include "audio.hh"
+#include "metadatareader-taglib.hh"
 
 using namespace Glib;
 using boost::get;
@@ -158,15 +160,17 @@ namespace MPX
 {
 #ifdef HAVE_HAL
     Library::Library (Amazon::Covers &covers, HAL &hal, TaskKernel &kernel, bool use_hal)
-    : m_HAL (hal)
-    , m_TaskKernel (kernel)
+    : m_HAL (&hal)
+    , m_TaskKernel (&kernel)
 #else
     Library::Library (Amazon::Covers &covers, TaskKernel & kernel)
-    : m_TaskKernel (kernel)
+    : m_TaskKernel (&kernel)
 #endif
-    , m_Covers (covers)
+    , m_Covers (&covers)
     , m_Flags (0)
     {
+		mReaderTagLib = new MetadataReaderTagLib();
+
         const int MLIB_VERSION_CUR = 1;
         const int MLIB_VERSION_REV = 0;
         const int MLIB_VERSION_AGE = 0;
@@ -293,12 +297,13 @@ namespace MPX
 
     Library::~Library ()
     {
+		delete mReaderTagLib;
     }
 
     void
     Library::getMetadata (const std::string& uri, Track & track)
     {
-        mReaderTagLib.get(uri, track);
+        mReaderTagLib->get(uri, track);
     }
 
     void
@@ -565,7 +570,7 @@ namespace MPX
 
           if(track[ATTRIBUTE_ASIN])
           {
-            m_Covers.cache(get<std::string>(track[ATTRIBUTE_ASIN].get()));
+            m_Covers->cache(get<std::string>(track[ATTRIBUTE_ASIN].get()));
           }
         }
         return album_j;
@@ -661,7 +666,7 @@ namespace MPX
       track[ATTRIBUTE_LOCATION] = uri ;
       track[ATTRIBUTE_LOCATION_NAME] = name; 
 
-      if( !mReaderTagLib.get( uri, track ) )
+      if( !mReaderTagLib->get( uri, track ) )
         return SCAN_RESULT_ERROR ; // no play for us
 
       if( !(track[ATTRIBUTE_ALBUM] && track[ATTRIBUTE_ARTIST] && track[ATTRIBUTE_TITLE]) )
@@ -676,7 +681,7 @@ namespace MPX
           try{
               if ((m_Flags & F_USING_HAL) == F_USING_HAL)
               {
-                HAL::Volume const& volume (m_HAL.get_volume_for_uri (uri));
+                HAL::Volume const& volume (m_HAL->get_volume_for_uri (uri));
 
                 track[ATTRIBUTE_HAL_VOLUME_UDI] =
                               volume.volume_udi ;
@@ -826,7 +831,7 @@ namespace MPX
         }
 
         p->position = p->collection.begin();
-        m_ScanTID = m_TaskKernel.newTask( _("Library Rescan"),
+        m_ScanTID = m_TaskKernel->newTask( _("Library Rescan"),
             sigc::bind( sigc::mem_fun (*this, &Library::scanInit), p ),
             sigc::bind( sigc::mem_fun (*this, &Library::scanRun), p ),
             sigc::bind( sigc::mem_fun (*this, &Library::scanEnd), p ));

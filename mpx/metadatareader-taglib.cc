@@ -9,8 +9,7 @@
 
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
-
-#include "metadatareader-taglib.hh"
+#include "mpx/metadatareader-taglib.hh"
 
 using namespace Glib;
 using boost::algorithm::is_any_of;
@@ -133,5 +132,7 @@ namespace MPX
 
     bool
     MetadataReaderTagLib::set (std::string const& uri, Track & track)
-    {}
+    {
+		return false;
+	}
 }

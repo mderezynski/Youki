@@ -13,7 +13,7 @@ namespace MPX
     {
       public:
 
-#include "exception.hh"
+#include "mpx/exception.hh"
         EXCEPTION(ParseError)
 
         typedef std::pair <ustring, ustring >   QElement;

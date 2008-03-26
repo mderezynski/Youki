@@ -21,35 +21,45 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
-#ifndef MPX_IMPORT_SHARE_HH
-#define MPX_IMPORT_SHARE_HH
-#include <gtkmm/dialog.h>
-#include <libglademm/xml.h>
-#include "mpx/widgetloader.h"
+#ifndef MPX_HH
+#define MPX_HH
+#include "config.h"
+#include <gtkmm.h>
+#include "widgetloader.h"
+#include "mpx/paccess.hh"
 
 using namespace Gnome::Glade;
 
+namespace Gtk
+{
+    class Statusbar;
+}
+
 namespace MPX
 {
-  class DialogImportShare
-    : public WidgetLoader<Gtk::Dialog>
-  {
+	class Library;
+
+	namespace Amazon
+	{
+		class Covers;
+	}
+
+    class Player
+      : public WidgetLoader<Gtk::Window>
+    {
       public:
-          DialogImportShare (Glib::RefPtr<Gnome::Glade::Xml> const& xml);
-          static DialogImportShare* create ();
-          virtual ~DialogImportShare ();
 
-          void
-          get_share_infos(Glib::ustring& share, Glib::ustring& name, Glib::ustring& login, Glib::ustring& password);
+		void
+		get_object (PAccess<MPX::Library> & pa);
 
-          void
-          on_cb_show_credentials_toggled();
+		void	
+		get_object (PAccess<MPX::Amazon::Covers> & pa);
 
-      private:
+        virtual ~Player ();
 
-        Glib::RefPtr<Gnome::Glade::Xml>	m_ref_xml;
-  };
-} // namespace MPX
+      protected:
 
-#endif // !MPX_PODCAST_ADD_HH
-
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Amazon::Covers&);
+    };
+}
+#endif

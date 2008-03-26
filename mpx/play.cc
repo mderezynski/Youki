@@ -38,12 +38,14 @@
 #include <boost/format.hpp>
 #include <boost/optional.hpp>
 
-#include <mcs/mcs.h>
+#include "mcs/mcs.h"
+
+#include "mpx/main.hh"
+#include "mpx/uri.hh"
 
 #include "audio.hh"
-#include "main.hh"
 #include "play.hh"
-#include "uri.hh"
+
 
 #define MPX_GST_BUFFER_TIME   ((gint64) 50000)
 #define MPX_GST_PLAY_TIMEOUT  ((gint64) 3000000000)

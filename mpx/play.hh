@@ -47,10 +47,10 @@
 #include <gst/interfaces/mixeroptions.h>
 
 #include "mcs/mcs.h"
-#include "mpx/glibaddons.hh"
 
-#include "main.hh"
-#include "uri.hh"
+#include "mpx/glibaddons.hh"
+#include "mpx/main.hh"
+#include "mpx/uri.hh"
 
 #include "video-playback.hh"
 #include "audio-types.hh"

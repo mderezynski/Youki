@@ -23,17 +23,16 @@
 #ifndef MPX_LIBRARY_CLASS_HH
 #define MPX_LIBRARY_CLASS_HH
 
-#include "metadatareader-taglib.hh"
-#include "sql.hh"
-#include "tasks.hh"
-#include "util-file.hh"
-
 #include "mpx/amazon.hh"
+#include "mpx/sql.hh"
+#include "mpx/tasks.hh"
 #include "mpx/types.hh"
+#include "mpx/util-file.hh"
 
 namespace MPX
 {
   class HAL;
+  class MetadataReaderTagLib;
   class Library
   {
             enum ScanResult
@@ -75,10 +74,10 @@ namespace MPX
             TID m_ScanTID;
             
 #ifdef HAVE_HAL
-            HAL &m_HAL;
+            HAL * m_HAL;
 #endif
-            TaskKernel &m_TaskKernel;
-            Amazon::Covers &m_Covers;
+            TaskKernel * m_TaskKernel;
+            Amazon::Covers * m_Covers;
 
         public:
 #ifdef HAVE_HAL
@@ -148,7 +147,7 @@ namespace MPX
         private:
 
             SQL::SQLDB * m_SQL;
-            MetadataReaderTagLib mReaderTagLib ; 
+            MetadataReaderTagLib * mReaderTagLib ; // TODO: Modularize out 
 
             enum Flags
             {

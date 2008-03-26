@@ -31,8 +31,9 @@
 #include <glibmm/ustring.h>
 #include <gdkmm/pixbuf.h> // bleh!
 #include <cairomm/cairomm.h>
-#include "network.hh"
-#include "minisoup.hh"
+
+#include "mpx/network.hh"
+#include "mpx/minisoup.hh"
 
 namespace MPX
 {

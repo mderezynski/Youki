@@ -24,7 +24,8 @@
 #include "config.h"
 #include <glibmm.h>
 #include <string>
-#include "tasks.hh"
+
+#include "mpx/tasks.hh"
 
 namespace MPX
 {

@@ -20,6 +20,7 @@ mpx_bin_CXXFLAGS = 				\
 	$(GTKMM_CFLAGS)				\
 	$(HAL_CFLAGS)				\
 	$(NM_CFLAGS)				\
+	$(PYTHON_CFLAGS)			\
 	$(RSVG_CFLAGS)				\
 	$(SEXYMM_CFLAGS)			\
 	$(SOUP_CFLAGS)				\
@@ -38,6 +39,7 @@ mpx_bin_LDADD =						\
 		$(BOOST_REGEX_LIB)			\
 		$(BOOST_FILESYSTEM_LIB)		\
 		$(BOOST_IOSTREAMS_LIB)		\
+		$(BOOST_PYTHON_LIB)			\
 		$(CAIROMM_LIBS)				\
 		$(CLUTTER_LIBS)				\
 		$(CDIO_LIBS)				\
@@ -51,6 +53,7 @@ mpx_bin_LDADD =						\
 		$(GTKMM_LIBS)				\
 		$(HAL_LIBS)					\
 		$(NM_LIBS)					\
+		$(PYTHON_LIBS)				\
 		$(RSVG_LIBS)				\
 		$(SEXYMM_LIBS)				\
 		$(SM_LIBS)					\
@@ -138,11 +141,11 @@ mpx_bin_SOURCES =				\
 	playbacksource.hh			\
 	playbacksource.cc			\
 								\
+	py-library.hh				\
+	py-library.cc				\
+								\
 	request-value.hh			\
 	request-value.cc			\
-								\
-	source-musiclib.hh			\
-	source-musiclib.cc			\
 								\
 	sql.hh						\
 	sql.cc						\

@@ -50,7 +50,7 @@ namespace MPX
     {
       public:
 
-#include "exception.hh"
+#include "mpx/exception.hh"
 
         EXCEPTION(NotInitializedError)
         EXCEPTION(NoVolumeForUriError)

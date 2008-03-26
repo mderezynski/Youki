@@ -208,6 +208,7 @@ AX_BOOST_BASE([1.33.1])
 AX_BOOST_FILESYSTEM
 AX_BOOST_REGEX
 AX_BOOST_IOSTREAMS
+AX_BOOST_PYTHON
 
 # tr1
 AC_ARG_WITH([tr1],
@@ -236,6 +237,11 @@ AC_ARG_WITH([pkgconfig-dir],
     [pkgconfigdir='$(libdir)/pkgconfig']
 )
 AC_SUBST([pkgconfigdir])
+
+PYTHON_CFLAGS=`python-config --cflags`
+PYTHON_LIBS=`python-config --libs`
+AC_SUBST(PYTHON_CFLAGS)
+AC_SUBST(PYTHON_LIBS)
 
 # Libxml
 PKG_CHECK_MODULES([XML], [libxml-2.0 >= 2.6.1])
@@ -693,22 +699,24 @@ CXXFLAGS="$CXXFLAGS $C_COMMON_FLAGS"
 
 AC_OUTPUT([
 
-    po/Makefile.in
-
-    Makefile
-
-    scripts/Makefile
-    glade/Makefile
     icons/Makefile
     icons/hicolor/Makefile
     icons/hicolor/64x64/Makefile
     icons/hicolor/64x64/places/Makefile
+
+    scripts/Makefile
+    glade/Makefile
     images/Makefile
-    include/Makefile
-    include/mpx/Makefile
     widgets/Makefile
     jnetlib/Makefile
     libhal++/Makefile
+
+    include/Makefile
+    include/mpx/Makefile
+	include/mpx/parser/Makefile
+
+	sources/Makefile
+	sources/musiclib/Makefile
 
     taglib/Makefile
     taglib/id3v2/Makefile
@@ -744,8 +752,12 @@ AC_OUTPUT([
     mpx/Makefile
 	mpx/parser/Makefile
 
+    po/Makefile.in
+
     mpx.pc
     mpx.1
+
+    Makefile
 ])
 
 

@@ -24,6 +24,7 @@
 #include "config.h"
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/algorithm/string.hpp>
 #include <cairomm/cairomm.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -37,7 +38,9 @@
 #include "mpx.hh"
 #include "mpx-sources.hh"
 #include "request-value.hh"
+#include "mpx/util-file.hh"
 #include "mpx/util-graphics.hh"
+#include "mpx/util-string.hh"
 #include "mpx/util-ui.hh"
 
 #include "source-musiclib.hh"
@@ -48,6 +51,7 @@ using namespace std;
 using namespace Gnome::Glade;
 using namespace MPX::Util;
 using boost::get;
+using boost::algorithm::is_any_of;
 
 #define SOURCE_NONE (-1)
 
@@ -154,7 +158,16 @@ namespace
       title = gprintf (text_big_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_TITLE].get())).c_str());
     }
   }
+}
 
+namespace
+{
+  inline bool
+  is_module (std::string const& basename)
+  {
+    return MPX::Util::str_has_suffix_nocase
+      (basename.c_str (), G_MODULE_SUFFIX);
+  } 
 }
 
 namespace MPX
@@ -847,6 +860,158 @@ namespace MPX
 		pa = PAccess<MPX::Amazon::Covers>(m_Covers);
 	}
 
+    bool
+    Player::load_source_plugin (std::string const& path)
+    {
+		enum
+		{
+			LIB_BASENAME,
+			LIB_PLUGNAME,
+			LIB_SUFFIX
+		};
+
+		const std::string type = "mpxsource";
+
+		std::string basename (path_get_basename (path));
+		std::string pathname (path_get_dirname  (path));
+
+		if (!is_module (basename))
+			return false;
+
+		StrV subs; 
+		split (subs, basename, is_any_of ("-."));
+		std::string name  = type + std::string("-") + subs[LIB_PLUGNAME];
+		std::string mpath = Module::build_path (build_filename(PLUGIN_DIR, "sources"), name);
+
+		Module module (mpath, ModuleFlags (0)); 
+		if (!module)
+		{
+			g_message("Source plugin load FAILURE '%s': %s", mpath.c_str (), module.get_last_error().c_str());
+			return false;
+		}
+
+		g_message("LOADING Source plugin: %s", mpath.c_str ());
+
+		module.make_resident();
+
+		SourcePluginPtr plugin = SourcePluginPtr (new SourcePlugin());
+		if (!g_module_symbol (module.gobj(), "get_instance", (gpointer*)(&plugin->get_instance)))
+		{
+          g_message("Source plugin load FAILURE '%s': get_instance hook missing", mpath.c_str ());
+		  return false;
+		}
+
+        if (!g_module_symbol (module.gobj(), "del_instance", (gpointer*)(&plugin->del_instance)))
+		{
+          g_message("Source plugin load FAILURE '%s': del_instance hook missing", mpath.c_str ());
+		  return false;
+		}
+
+		
+        PlaybackSource * p = plugin->get_instance(*this); 
+        Gtk::Alignment * a = new Gtk::Alignment;
+        p->get_ui()->reparent(*a);
+        a->show();
+        m_ref_xml->get_widget("sourcepages", m_MainNotebook);
+        m_MainNotebook->append_page(*a);
+        m_Sources->addSource( p->get_name(), p->get_icon() );
+		m_SourceV.push_back(p);
+		install_source(m_SourceCtr++, /* tab # */ m_PageCtr++);
+
+		return false;
+    }
+
+	bool
+	Player::on_seek_event (GdkEvent *event)
+	{
+	  if( event->type == GDK_KEY_PRESS )
+	  {
+			  GdkEventKey * ev = ((GdkEventKey*)(event));
+			  gint64 status = m_Play->property_status().get_value();
+			  if((status == PLAYSTATUS_PLAYING) || (status == PLAYSTATUS_PAUSED))
+			  {
+					  gint64 pos = m_Play->property_position().get_value();
+
+					  int delta = (ev->state & GDK_SHIFT_MASK) ? 1 : 15;
+
+					  if(ev->keyval == GDK_Left)
+					  {
+						  m_Play->seek( pos - delta );
+						  return true;
+					  }
+					  else if(ev->keyval == GDK_Right)
+					  {
+						  m_Play->seek( pos + delta );
+						  return true;
+					  }
+			  }
+			  return false;
+	  }
+	  else if( event->type == GDK_BUTTON_PRESS )
+	  {
+		g_atomic_int_set(&m_Seeking,1);
+		goto SET_SEEK_POSITION;
+	  }
+	  else if( event->type == GDK_BUTTON_RELEASE && g_atomic_int_get(&m_Seeking))
+	  {
+		g_atomic_int_set(&m_Seeking,0);
+		m_Play->seek (gint64(m_Seek->get_value()));
+	  }
+	  else if( event->type == GDK_MOTION_NOTIFY && g_atomic_int_get(&m_Seeking))
+	  {
+		SET_SEEK_POSITION:
+
+		guint64 duration = m_Play->property_duration().get_value();
+		guint64 position = m_Seek->get_value();
+
+		guint64 m_pos = position / 60;
+		guint64 m_dur = duration / 60;
+		guint64 s_pos = position % 60;
+		guint64 s_dur = duration % 60;
+
+		static boost::format time_f ("%02d:%02d … %02d:%02d");
+
+		m_TimeLabel->set_text ((time_f % m_pos % s_pos % m_dur % s_dur).str());
+	  }
+	  return false;
+	}
+
+	void
+	Player::on_play_position (guint64 position)
+	{
+	  if (g_atomic_int_get(&m_Seeking))
+		return;
+
+	  guint64 duration = m_Play->property_duration().get_value();
+
+	  if( (duration > 0) && (position <= duration) && (position >= 0) )
+	  {
+		if (duration <= 0)
+		  return;
+
+		if (position < 0)
+		  return;
+
+		guint64 m_pos = position / 60;
+		guint64 s_pos = position % 60;
+		guint64 m_dur = duration / 60;
+		guint64 s_dur = duration % 60;
+
+		static boost::format time_f ("%02d:%02d … %02d:%02d");
+
+		m_TimeLabel->set_text((time_f % m_pos % s_pos % m_dur % s_dur).str());
+		m_Seek->set_range(0., duration);
+		m_Seek->set_value(double (position));
+
+#if 0
+		if( m_popup )
+		{
+		  m_popup->set_position (position, duration);
+		}
+#endif
+	  }
+	}
+
     Player::Player(Glib::RefPtr<Gnome::Glade::Xml> const& xml,
                    MPX::Library & obj_library,
                    MPX::Amazon::Covers & obj_amazon)
@@ -854,30 +1019,36 @@ namespace MPX
     , m_ref_xml(xml)
     , m_Library (obj_library)
     , m_Covers (obj_amazon)
+	, m_SourceCtr (0)
+	, m_PageCtr(1)
    {
+        IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
+
         m_Library.signal_scan_start().connect( sigc::mem_fun( *this, &Player::on_library_scan_start ) );
         m_Library.signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
         m_Library.signal_scan_end().connect( sigc::mem_fun( *this, &Player::on_library_scan_end ) );
 
-        //m_ref_xml->get_widget_derived("sources", m_Sources);
+		// Volume
+        m_ref_xml->get_widget("volumebutton", m_Volume);
+		std::vector<Glib::usting> Icons;
+		Icons.push_back("volume-knob");
+		m_Volume->property_size() = Gtk::ICON_SIZE_SMALL_TOOLBAR;
+		m_Volume->set_icons(Icons);
+
+		// Time display
+        m_ref_xml->get_widget("label-time", m_TimeLabel);
+
+		// Seek
+        m_ref_xml->get_widget("scale-seek", m_Seek);
+		m_Seek->set_events (Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK);
+		m_Seek->signal_event().connect( sigc::mem_fun( *this, &Player::on_seek_event ) );
+		m_Seek->set_sensitive(false);
+		g_atomic_int_set(&m_Seeking,0);
+
         m_Sources = new Sources(xml);
         m_ref_xml->get_widget("statusbar", m_Statusbar);
 
-        IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
-
-        ///// TODO: THIS IS ONLY TEMPORARY
-        PlaybackSourceMusicLib * p = new PlaybackSourceMusicLib(*this);
-        m_Sources->addSource( _("Music"), p->get_icon() );
-		m_SourceV.push_back(p);
-
-        Gtk::Alignment * a = new Gtk::Alignment;
-        p->get_ui()->reparent(*a);
-        a->show();
-        m_ref_xml->get_widget("sourcepages", m_MainNotebook);
-        m_MainNotebook->append_page(*a);
-
-		install_source(0, /* tab # */ 1);
-        ///// TODO: THIS IS ONLY TEMPORARY
+		Util::dir_for_each_entry (build_filename(PLUGIN_DIR, "sources"), sigc::mem_fun(*this, &MPX::Player::load_source_plugin));  
 
         // Infoarea
 		m_ref_xml->get_widget_derived("infoarea", m_InfoArea);
@@ -895,9 +1066,9 @@ namespace MPX
 			  (sigc::mem_fun (*this, &MPX::Player::on_play_eos));
 		m_Play->property_status().signal_changed().connect
 			  (sigc::mem_fun (*this, &MPX::Player::on_play_status_changed));
-#if 0
 		m_Play->signal_position().connect
 			  (sigc::mem_fun (*this, &MPX::Player::on_play_position));
+#if 0
 		m_Play->signal_buffering().connect
 			  (sigc::mem_fun (*this, &MPX::Player::on_play_buffering));
 		m_Play->signal_error().connect
@@ -1077,7 +1248,7 @@ namespace MPX
 			if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
 			{
 				  m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
-				  //m_seek_progress->set_sensitive( caps & PlaybackSource::C_CAN_SEEK );
+				  //m_Seek->set_sensitive( caps & PlaybackSource::C_CAN_SEEK );
 			}
 	  }
 	}
@@ -1705,9 +1876,10 @@ namespace MPX
 	  {
 		case PLAYSTATUS_STOPPED:
 		{
-#if 0
-		  m_seeking = false;
+		  m_Seek->set_sensitive(false);
+		  g_atomic_int_set(&m_Seeking, 0);
 
+#if 0
 		  if( NM::Obj()->Check_Status() )
 		  {
 			m_actions->get_action (ACTION_LASTFM_TAG)->set_sensitive( 0 );
@@ -1740,9 +1912,7 @@ namespace MPX
 
 		case PLAYSTATUS_PLAYING:
 		{
-#if 0
-		  m_seeking = false;
-#endif
+		  g_atomic_int_set(&m_Seeking,0);
 		  m_actions->get_action( ACTION_STOP )->set_sensitive (true);
 		  break;
 		}
@@ -1762,6 +1932,7 @@ namespace MPX
 
 		  case PLAYSTATUS_STOPPED:
 		  {
+			m_metadata = Metadata();
 #if 0
 			mVideoWidget->property_playing() = false;
 			RefPtr<RadioAction>::cast_static (m_actions->get_action(ACTION_VIDEO_ASPECT_AUTO))->set_current_value( 0 );
@@ -1777,10 +1948,13 @@ namespace MPX
 
 			//m_selection->source_activate (SOURCE_NONE);
 			m_InfoArea->reset ();
-			m_metadata = Metadata();
+
+			m_TimeLabel->set_text("      …      ");
+			m_Seek->set_range(0., 1.);
+			m_Seek->set_value(0.);
+			m_Seek->set_sensitive(false);
 
 #if 0
-			reset_seek_range ();
 			message_clear ();
 
 			if( m_popup )
@@ -1805,6 +1979,11 @@ namespace MPX
 
 		  case PLAYSTATUS_WAITING:
 		  {
+			m_TimeLabel->set_text("      …      ");
+			m_Seek->set_range(0., 1.);
+			m_Seek->set_value(0.);
+			m_Seek->set_sensitive(false);
+
 #if 0
 			reset_seek_range ();
 			bmp_status_icon_set_from_pixbuf (m_status_icon, m_status_icon_image_default->gobj());
@@ -1817,8 +1996,8 @@ namespace MPX
 #if 0
 			bmp_status_icon_set_from_pixbuf (m_status_icon, m_status_icon_image_playing->gobj());
 			m_spm_paused = false;
-			m_seek_progress->set_sensitive (true);
 #endif
+			m_Seek->set_sensitive(true);
 			break;
 		  }
 

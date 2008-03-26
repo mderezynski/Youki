@@ -32,6 +32,7 @@
 #include <string>
 #include <vector>
 #include <sqlite3.h>
+
 #include "mpx/types.hh"
 
 namespace MPX
@@ -45,7 +46,7 @@ namespace MPX
   namespace SQL
   {
 
-#include "exception-db.hh"
+#include "mpx/exception-db.hh"
 
     EXCEPTION(DbInitError)
 

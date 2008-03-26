@@ -25,7 +25,8 @@
 #define MPX_REQUEST_VALUE_HH
 #include <gtkmm/dialog.h>
 #include <libglademm/xml.h>
-#include "widgetloader.h"
+
+#include "mpx/widgetloader.h"
 
 using namespace Gnome::Glade;
 

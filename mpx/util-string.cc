@@ -188,8 +188,11 @@ namespace MPX
 
         for (StrV::const_iterator i = m.begin (); i != m.end (); ++i)
         {
+			if (i->length() < 1)
+				continue;
+
 	        if (!find_first (h, (*i)))
-	          return false;
+				return false;
         }
         return true;
     }

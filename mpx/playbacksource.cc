@@ -27,7 +27,8 @@
 #include <glibmm/i18n.h>
 #include <sigc++/signal.h>
 #include <boost/format.hpp>
-#include "playbacksource.hh"
+
+#include "mpx/playbacksource.hh"
 
 using namespace Glib;
 

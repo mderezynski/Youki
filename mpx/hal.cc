@@ -41,9 +41,10 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "sql.hh"
-#include "hal.hh"
 #include "hal++.hh"
+
+#include "mpx/sql.hh"
+#include "mpx/hal.hh"
 
 using namespace Glib;
 using namespace Gtk;

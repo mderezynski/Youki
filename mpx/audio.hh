@@ -42,9 +42,9 @@
 #include <gst/interfaces/mixer.h>
 #include <gst/interfaces/mixertrack.h>
 #include <gst/interfaces/mixeroptions.h>
-#include "uri.hh"
 #endif //!MPX_PLUGIN_BUILD
 
+#include "mpx/uri.hh"
 #include "mpx/mpx-api-macros.hh"
 
 namespace MPX
@@ -83,7 +83,7 @@ namespace MPX
       SINK_AUTO,
     };
 
-#include "exception.hh"
+#include "mpx/exception.hh"
 
     EXCEPTION (PipelineError)
     EXCEPTION (InvalidUriError)

@@ -31,7 +31,8 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <sqlite3.h>
-#include "sql.hh"
+
+#include "mpx/sql.hh"
 #include "mpx/util-string.hh"
 
 using namespace Glib;
