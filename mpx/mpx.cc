@@ -25,6 +25,7 @@
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/python.hpp>
 #include <cairomm/cairomm.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -42,8 +43,7 @@
 #include "mpx/util-graphics.hh"
 #include "mpx/util-string.hh"
 #include "mpx/util-ui.hh"
-
-#include "source-musiclib.hh"
+#include "boost.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -52,6 +52,7 @@ using namespace Gnome::Glade;
 using namespace MPX::Util;
 using boost::get;
 using boost::algorithm::is_any_of;
+using namespace boost::python;
 
 #define SOURCE_NONE (-1)
 
@@ -352,9 +353,20 @@ namespace MPX
 
     public:
 
+      typedef sigc::signal<void> SignalCoverClicked;
+
+      SignalCoverClicked&
+      signal_cover_clicked()
+      {
+        return m_SignalCoverClicked;
+      }
+
+	private:
+
+      SignalCoverClicked m_SignalCoverClicked;
+
 #if 0
       typedef sigc::signal<void, VUri const&> SignalUris;
-      typedef sigc::signal<void> SignalCoverClicked;
 
       SignalUris &
       signal_uris_dropped()
@@ -362,21 +374,13 @@ namespace MPX
         return m_signal_uris_dropped;
       }
 
-      SignalCoverClicked&
-      signal_cover_clicked()
-      {
-        return m_signal_cover_clicked;
-      }
-
     private:
 
       SignalUris         m_signal_uris_dropped;
-      SignalCoverClicked m_signal_cover_clicked;
 #endif
 
     protected:
 
-#if 0
       bool
       on_button_press_event (GdkEventButton * event)
       {
@@ -385,16 +389,13 @@ namespace MPX
 
         if ((x >= 6) && (x <= 78) && (y >= 3) && (y <= 75))
         {
-          int status = m_Play->property_status();
-          if (status != PLAYSTATUS_STOPPED && status != PLAYSTATUS_WAITING)
-          {
-            m_signal_cover_clicked.emit ();
-          }
+			m_SignalCoverClicked.emit ();
         }
 
         return false;
       }
 
+#if 0
       bool
       on_drag_drop (Glib::RefPtr<Gdk::DragContext> const& context,
                     int                                   x,
@@ -921,6 +922,13 @@ namespace MPX
 		return false;
     }
 
+	void
+	Player::on_volume_value_changed (double volume)
+	{
+		m_Play->property_volume() = volume*100;	
+		mcs->key_set("mpx","volume", int(volume*100));
+	}
+
 	bool
 	Player::on_seek_event (GdkEvent *event)
 	{
@@ -977,6 +985,34 @@ namespace MPX
 	}
 
 	void
+	Player::on_play_metadata (MPXGstMetadataField field)
+	{
+		MPXGstMetadata const& m = m_Play->get_metadata();
+
+		switch (field)
+		{
+		  case FIELD_IMAGE:
+			m_InfoArea->set_image (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
+			return;
+	
+		  case FIELD_TITLE:
+			return;
+
+		  case FIELD_ALBUM:
+			break;
+
+		  case FIELD_AUDIO_BITRATE:
+			break;
+
+		  case FIELD_AUDIO_CODEC:
+			break;
+
+		  case FIELD_VIDEO_CODEC:
+			break;
+		}
+	}
+
+	void
 	Player::on_play_position (guint64 position)
 	{
 	  if (g_atomic_int_get(&m_Seeking))
@@ -1009,6 +1045,7 @@ namespace MPX
 		  m_popup->set_position (position, duration);
 		}
 #endif
+
 	  }
 	}
 
@@ -1022,6 +1059,25 @@ namespace MPX
 	, m_SourceCtr (0)
 	, m_PageCtr(1)
    {
+		try {
+			Py_Initialize();
+
+			mpx_py_init ();	
+
+			m_TrackInfoMain = object((handle<>(borrowed(PyImport_AddModule("__main__")))));
+			m_TrackInfoDict = m_TrackInfoMain.attr("__dict__");
+
+			std::string script = build_filename(build_filename(DATA_DIR,"scripts"),"trackinfo.py");
+
+			if(file_test(script, FILE_TEST_EXISTS))
+				object ignored = exec_file(script.c_str(),
+                                     m_TrackInfoDict,
+                                     m_TrackInfoDict);
+		} catch( error_already_set ) {
+			g_warning("%s; Python Error:", G_STRFUNC);
+		    PyErr_Print();
+		}
+
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 
         m_Library.signal_scan_start().connect( sigc::mem_fun( *this, &Player::on_library_scan_start ) );
@@ -1030,7 +1086,8 @@ namespace MPX
 
 		// Volume
         m_ref_xml->get_widget("volumebutton", m_Volume);
-		std::vector<Glib::usting> Icons;
+		m_Volume->signal_value_changed().connect( sigc::mem_fun( *this, &Player::on_volume_value_changed ) );
+		std::vector<Glib::ustring> Icons;
 		Icons.push_back("volume-knob");
 		m_Volume->property_size() = Gtk::ICON_SIZE_SMALL_TOOLBAR;
 		m_Volume->set_icons(Icons);
@@ -1052,12 +1109,11 @@ namespace MPX
 
         // Infoarea
 		m_ref_xml->get_widget_derived("infoarea", m_InfoArea);
+		m_InfoArea->signal_cover_clicked().connect
+		  ( sigc::mem_fun( *this, &Player::on_cover_clicked ));
 #if 0
 		m_InfoArea->signal_uris_dropped().connect
 		  ( sigc::mem_fun( *this, &MPX::Player::on_uris_dropped ) );
-
-		m_InfoArea->signal_cover_clicked().connect
-		  ( sigc::mem_fun( *this, &MPX::Player::on_shell_display_track_details) );
 #endif
 
         // Playback Engine
@@ -1068,13 +1124,13 @@ namespace MPX
 			  (sigc::mem_fun (*this, &MPX::Player::on_play_status_changed));
 		m_Play->signal_position().connect
 			  (sigc::mem_fun (*this, &MPX::Player::on_play_position));
+		m_Play->signal_metadata().connect
+			  (sigc::mem_fun (*this, &MPX::Player::on_play_metadata));
 #if 0
 		m_Play->signal_buffering().connect
 			  (sigc::mem_fun (*this, &MPX::Player::on_play_buffering));
 		m_Play->signal_error().connect
 			  (sigc::mem_fun (*this, &MPX::Player::on_play_error));
-		m_Play->signal_metadata().connect
-			  (sigc::mem_fun (*this, &MPX::Player::on_gst_metadata));
 #endif
 
         // UIManager + Menus + Proxy Widgets
@@ -1229,6 +1285,22 @@ namespace MPX
     }
 
 	void
+	Player::on_cover_clicked ()
+	{
+		if(m_TrackInfo.ptr())
+		{
+			using namespace boost::python;
+			try{
+				object info = m_TrackInfoDict["info"];
+				std::string test = "test";
+				info.attr("show")(test);
+			} catch ( error_already_set ) {
+				PyErr_Print();
+			}
+		}
+	}
+
+	void
 	Player::on_source_caps (PlaybackSource::Caps caps, int source)
 	{
 	  //Mutex::Lock L (m_source_cf_lock);
@@ -1265,9 +1337,9 @@ namespace MPX
 	void
 	Player::reparse_metadata (/*MpxMetadataParseFlags parse_flags*/)
 	{
-		if( m_metadata.Image )
+		if( m_Metadata.Image )
 		{
-			m_InfoArea->set_image (m_metadata.Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
+			m_InfoArea->set_image (m_Metadata.Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
 		}
 
 #if 0
@@ -1276,19 +1348,19 @@ namespace MPX
 	  try{
 		  if( parse_flags & PARSE_FLAGS_IMAGE )
 		  {
-			if( m_metadata.Image )
+			if( m_Metadata.Image )
 			{
-			  m_InfoArea->set_image (m_metadata.image->scale_simple (72, 72, Gdk::INTERP_HYPER));
+			  m_InfoArea->set_image (m_Metadata.image->scale_simple (72, 72, Gdk::INTERP_HYPER));
 			}
 			else
-			if( m_metadata[ATTRIBUTE_ASIN] )
+			if( m_Metadata[ATTRIBUTE_ASIN] )
 			{
-			  if( get<std::string>(m_metadata[ATTRIBUTE_ASIN].get()) != m_asin )
+			  if( get<std::string>(m_Metadata[ATTRIBUTE_ASIN].get()) != m_asin )
 			  {
 				try{
-					m_InfoArea->set_image (Amazon::Covers::Obj()->fetch (m_metadata.asin.get(), COVER_SIZE_INFO_AREA, true));
-					Amazon::Covers::Obj()->fetch (m_metadata.asin.get(), m_metadata.image, true); //FIXME: Redundancy here ^
-					m_asin = m_metadata.asin;
+					m_InfoArea->set_image (Amazon::Covers::Obj()->fetch (m_Metadata.asin.get(), COVER_SIZE_INFO_AREA, true));
+					Amazon::Covers::Obj()->fetch (m_Metadata.asin.get(), m_Metadata.image, true); //FIXME: Redundancy here ^
+					m_asin = m_Metadata.asin;
 				  }
 				catch (MPX::Amazon::NoCoverError & cxe)
 				  {
@@ -1319,7 +1391,7 @@ namespace MPX
 	  {
 #endif
 		ustring artist, album, title;
-		parse_metadata (m_metadata, artist, album, title);
+		parse_metadata (m_Metadata, artist, album, title);
 		m_InfoArea->set_text (L_TITLE, title);
 		m_InfoArea->set_text (L_ARTIST, artist);
 		m_InfoArea->set_text (L_ALBUM, album);
@@ -1346,7 +1418,7 @@ namespace MPX
 		else
 			m.Image = m_DiscDefault;
 	  }
-	  m_metadata = m;
+	  m_Metadata = m;
 	  reparse_metadata ();
 	}
 
@@ -1932,7 +2004,7 @@ namespace MPX
 
 		  case PLAYSTATUS_STOPPED:
 		  {
-			m_metadata = Metadata();
+			m_Metadata = Metadata();
 #if 0
 			mVideoWidget->property_playing() = false;
 			RefPtr<RadioAction>::cast_static (m_actions->get_action(ACTION_VIDEO_ASPECT_AUTO))->set_current_value( 0 );
@@ -1947,6 +2019,7 @@ namespace MPX
 			}
 
 			//m_selection->source_activate (SOURCE_NONE);
+
 			m_InfoArea->reset ();
 
 			m_TimeLabel->set_text("      …      ");

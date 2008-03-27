@@ -36,7 +36,9 @@
 #include "mpx/widgetloader.h"
 
 #include "play.hh"
+#include "audio-types.hh"
 
+#include <boost/python.hpp>
 
 using namespace Gnome::Glade;
 
@@ -78,6 +80,9 @@ namespace MPX
       private:
 
 		Play * m_Play;
+		boost::python::object m_TrackInfo;
+		boost::python::object m_TrackInfoMain;
+		boost::python::object m_TrackInfoDict;
 
         struct SourcePlugin
         {
@@ -113,7 +118,7 @@ namespace MPX
 		PlaybackSource::Flags m_source_flags[16];
 		PlaybackSource::Caps m_source_caps[16];
 
-		Metadata m_metadata;
+		Metadata m_Metadata;
 
 		gint m_SourceCtr;
 		gint m_PageCtr;
@@ -122,6 +127,14 @@ namespace MPX
 
 		bool
 		load_source_plugin (std::string const& path);
+
+
+		void
+		on_volume_value_changed(double);
+
+		
+		void
+		on_cover_clicked();
 
 
 		bool
@@ -149,6 +162,9 @@ namespace MPX
 
 		void
 		on_play_position (guint64);
+
+		void
+		on_play_metadata (MPXGstMetadataField);
 
 
 		void
@@ -235,6 +251,8 @@ namespace MPX
 
 		void
 		reparse_metadata ();
+
+
 
         GFile *m_MountFile;
         GMountOperation *m_MountOperation;

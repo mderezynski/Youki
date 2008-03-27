@@ -947,7 +947,7 @@ namespace MPX
 
         gst_object_ref (m_bin[BIN_OUTPUT]);
 
-        property_volume() = mcs->key_get <int> ("bmp", "volume");
+        property_volume() = mcs->key_get <int> ("mpx", "volume");
         property_sane_ = true;
       }
 

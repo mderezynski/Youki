@@ -3,6 +3,7 @@ glade_DATA = 				\
 	import-folder.glade		\
 	import-share.glade		\
 	request-value.glade		\
-	source-musiclib.glade
+	source-musiclib.glade	\
+	trackinfo.glade
 
 gladedir = $(pkgdatadir)/glade

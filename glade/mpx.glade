@@ -242,15 +242,14 @@
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
                             <property name="has_tooltip">True</property>
-                            <property name="label" translatable="yes">button</property>
                             <property name="relief">GTK_RELIEF_NONE</property>
                             <property name="focus_on_click">False</property>
                             <property name="response_id">0</property>
                             <property name="adjustment">0 0 1 0.02 0.20000000000000001 0</property>
-                            <property name="icons">audio-volume-muted
-audio-volume-high
-audio-volume-low
-audio-volume-medium</property>
+                            <property name="icons"></property>
+                            <child>
+                              <placeholder/>
+                            </child>
                           </widget>
                         </child>
                         <child>

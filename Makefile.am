@@ -26,12 +26,13 @@ SUBDIRS =		\
 	icons		\
 	images		\
 	include		\
+	jnetlib		\
 	po			\
-	taglib		\
+	python		\
 	sources		\
+	taglib		\
 	widgets		\
-	xmlcpp		\
-	jnetlib		
+	xmlcpp		
 
 if HAVE_HAL
 SUBDIRS += libhal++

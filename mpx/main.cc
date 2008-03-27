@@ -169,27 +169,26 @@ namespace
 	  mcs->domain_register ("ui");
 	  mcs->key_register ("ui", "show-statusbar", true);
 
-	  mcs->domain_register ("bmp");
-	  mcs->key_register ("bmp", "no-ui", false);
-	  mcs->key_register ("bmp", "ui-esc-trayconify", false);
-	  mcs->key_register ("bmp", "keep-above", false);
-	  mcs->key_register ("bmp", "file-chooser-close-on-open", true);
-	  mcs->key_register ("bmp", "file-chooser-close-on-add", false);
-	  mcs->key_register ("bmp", "file-chooser-path", Glib::get_home_dir ());
-	  mcs->key_register ("bmp", "icon-theme", std::string ("tango"));
-	  mcs->key_register ("bmp", "force-rgba-enable", false);
-	  mcs->key_register ("bmp", "display-notifications", true);
-	  mcs->key_register ("bmp", "no-remote", false);
-	  mcs->key_register ("bmp", "time-remaining", false);
-	  mcs->key_register ("bmp", "volume", 50);
-	  mcs->key_register ("bmp", "follow-current-track", false);
-	  mcs->key_register ("bmp", "shuffle", false);
-	  mcs->key_register ("bmp", "repeat", false);
-	  mcs->key_register ("bmp", "enable-autoplay", false);
-	  mcs->key_register ("bmp", "spm-listen", false);
+	  mcs->domain_register ("mpx");
+	  mcs->key_register ("mpx", "no-ui", false);
+	  mcs->key_register ("mpx", "ui-esc-trayconify", false);
+	  mcs->key_register ("mpx", "keep-above", false);
+	  mcs->key_register ("mpx", "file-chooser-close-on-open", true);
+	  mcs->key_register ("mpx", "file-chooser-close-on-add", false);
+	  mcs->key_register ("mpx", "file-chooser-path", Glib::get_home_dir ());
+	  mcs->key_register ("mpx", "icon-theme", std::string ("tango"));
+	  mcs->key_register ("mpx", "force-rgba-enable", false);
+	  mcs->key_register ("mpx", "display-notifications", true);
+	  mcs->key_register ("mpx", "no-remote", false);
+	  mcs->key_register ("mpx", "time-remaining", false);
+	  mcs->key_register ("mpx", "volume", 50);
+	  mcs->key_register ("mpx", "follow-current-track", false);
+	  mcs->key_register ("mpx", "shuffle", false);
+	  mcs->key_register ("mpx", "repeat", false);
+	  mcs->key_register ("mpx", "enable-autoplay", false);
+	  mcs->key_register ("mpx", "spm-listen", false);
 
 	  mcs->domain_register ("audio");
-
 	  mcs->key_register ("audio", "band0", 0.0);
 	  mcs->key_register ("audio", "band1", 0.0);
 	  mcs->key_register ("audio", "band2", 0.0);
@@ -331,6 +330,7 @@ main (int argc, char ** argv)
 #endif
 
     delete gtk;
+	delete mcs;
 
     return EXIT_SUCCESS;
 }

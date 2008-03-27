@@ -1,37 +1,38 @@
-SUBDIRS = parser
+SUBDIRS = parser musicbrainz
 
 libexec_PROGRAMS = mpx-bin 
 
 mpx_bin_LDFLAGS = -Wl,--export-dynamic 
 
-mpx_bin_CXXFLAGS = 				\
-    $(ALSA_CFLAGS)				\
-    $(BOOST_CPPFLAGS)			\
-	$(CAIROMM_CFLAGS)   		\
-	$(CLUTTER_CFLAGS)			\
-    $(CDIO_CFLAGS)				\
-    $(CDPARANOIA_INCLUDES) 		\
-	$(DBUS_CFLAGS)				\
-	$(EXO_CFLAGS)				\
-	$(GIO_CFLAGS)				\
-	$(GLADEMM_CFLAGS)			\
-	$(GLIBMM_CFLAGS)			\
-	$(GST_CFLAGS)				\
-	$(GTKMM_CFLAGS)				\
-	$(HAL_CFLAGS)				\
-	$(NM_CFLAGS)				\
-	$(PYTHON_CFLAGS)			\
-	$(RSVG_CFLAGS)				\
-	$(SEXYMM_CFLAGS)			\
-	$(SOUP_CFLAGS)				\
-	$(SQLITE_CFLAGS)			\
-	$(STARTUP_NOTIFY_CFLAGS)	\
-	$(TAGLIB_CFLAGS)			\
-	$(X_CFLAGS)					\
-	$(XML_CFLAGS)        		\
-	$(XPROTO_CFLAGS)			\
-	-I$(top_srcdir)				\
-  	-I$(top_srcdir)/include	
+mpx_bin_CXXFLAGS = 					\
+		$(ALSA_CFLAGS)				\
+		$(BOOST_CPPFLAGS)			\
+		$(CAIROMM_CFLAGS)   		\
+		$(CLUTTER_CFLAGS)			\
+		$(CDIO_CFLAGS)				\
+		$(CDPARANOIA_INCLUDES) 		\
+		$(DBUS_CFLAGS)				\
+		$(EXO_CFLAGS)				\
+		$(GIO_CFLAGS)				\
+		$(GLADEMM_CFLAGS)			\
+		$(GLIBMM_CFLAGS)			\
+		$(GST_CFLAGS)				\
+		$(GTKMM_CFLAGS)				\
+		$(HAL_CFLAGS)				\
+		$(NM_CFLAGS)				\
+		$(PYGTK_CFLAGS)				\
+		$(PYTHON_CFLAGS)			\
+		$(RSVG_CFLAGS)				\
+		$(SEXYMM_CFLAGS)			\
+		$(SOUP_CFLAGS)				\
+		$(SQLITE_CFLAGS)			\
+		$(STARTUP_NOTIFY_CFLAGS)	\
+		$(TAGLIB_CFLAGS)			\
+		$(X_CFLAGS)					\
+		$(XML_CFLAGS)        		\
+		$(XPROTO_CFLAGS)			\
+		-I$(top_srcdir)				\
+		-I$(top_srcdir)/include	
 
 mpx_bin_LDADD =						\
 		$(ALSA_LIBS)				\
@@ -53,6 +54,7 @@ mpx_bin_LDADD =						\
 		$(GTKMM_LIBS)				\
 		$(HAL_LIBS)					\
 		$(NM_LIBS)					\
+		$(PYGTK_LIBS)				\
 		$(PYTHON_LIBS)				\
 		$(RSVG_LIBS)				\
 		$(SEXYMM_LIBS)				\
@@ -108,6 +110,9 @@ mpx_bin_SOURCES =				\
 								\
 	base64.h					\
 	base64.c					\
+								\
+	boost.hh					\
+	boost.cc					\
 								\
 	import-share.hh				\
 	import-share.cc				\

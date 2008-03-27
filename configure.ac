@@ -1,4 +1,4 @@
-# (C) 2003-2007 MPX developers, see AUTHORS
+#libxml (C) 2003-2007 MPX developers, see AUTHORS
 
 AC_PREREQ([2.60])
 AC_INIT([mpx], [0.1], [mpx-bugs@beep-media-player.org])
@@ -242,6 +242,9 @@ PYTHON_CFLAGS=`python-config --cflags`
 PYTHON_LIBS=`python-config --libs`
 AC_SUBST(PYTHON_CFLAGS)
 AC_SUBST(PYTHON_LIBS)
+
+# pygtk
+PKG_CHECK_MODULES([PYGTK], [pygtk-2.0 >= 2.12.0])
 
 # Libxml
 PKG_CHECK_MODULES([XML], [libxml-2.0 >= 2.6.1])
@@ -704,12 +707,13 @@ AC_OUTPUT([
     icons/hicolor/64x64/Makefile
     icons/hicolor/64x64/places/Makefile
 
-    scripts/Makefile
     glade/Makefile
     images/Makefile
-    widgets/Makefile
     jnetlib/Makefile
     libhal++/Makefile
+	python/Makefile
+    scripts/Makefile
+    widgets/Makefile
 
     include/Makefile
     include/mpx/Makefile
@@ -751,6 +755,7 @@ AC_OUTPUT([
 
     mpx/Makefile
 	mpx/parser/Makefile
+	mpx/musicbrainz/Makefile
 
     po/Makefile.in
 
