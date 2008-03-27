@@ -145,6 +145,18 @@ namespace bpy
 	{
 		return self[id];
 	}
+
+	int
+	track_len(MPX::Track &self)
+	{
+		return MPX::N_ATTRIBUTES_INT;
+	}
+
+	int
+	metadata_len(MPX::Track &self)
+	{
+		return MPX::N_ATTRIBUTES_INT;
+	}
 }
 
 BOOST_PYTHON_MODULE(mpx_boost)
@@ -168,10 +180,14 @@ BOOST_PYTHON_MODULE(mpx_boost)
 
 	class_<MPX::Track >("track")
 		.def("__getitem__", &bpy::track_getitem, return_value_policy<return_by_value>()) 
+		.def("__len__", &bpy::track_len, return_value_policy<return_by_value>())
+		.def("get", &bpy::track_getitem, return_value_policy<return_by_value>()) 
 	;
 
 	class_<MPX::Metadata >("metadata")
 		.def("__getitem__", &bpy::metadata_getitem, return_value_policy<return_by_value>()) 
+		.def("__len__", &bpy::metadata_len, return_value_policy<return_by_value>())
+		.def("get", &bpy::metadata_getitem, return_value_policy<return_by_value>()) 
 	;
 
 	enum_<MPX::AttributeId>("AttributeId")

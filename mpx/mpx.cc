@@ -34,6 +34,9 @@
 #include <glib/gstdio.h>
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
+#include <Python.h>
+#include <pygobject.h>
+#include <pygtk/pygtk.h>
 #include "import-share.hh"
 #include "import-folder.hh"
 #include "mpx.hh"
@@ -1062,6 +1065,9 @@ namespace MPX
 		try {
 			Py_Initialize();
 
+			init_pygobject();
+			init_pygtk();
+
 			mpx_py_init ();	
 
 			m_TrackInfoMain = object((handle<>(borrowed(PyImport_AddModule("__main__")))));
@@ -1292,8 +1298,16 @@ namespace MPX
 			using namespace boost::python;
 			try{
 				object info = m_TrackInfoDict["info"];
-				std::string test = "test";
-				info.attr("show")(test);
+				// Create a Py Pixbuf
+				PyObject *pypixbuf = NULL; 
+				object pypixbufcc;
+				if(m_Metadata.Image)
+				{
+					g_return_if_fail(GDK_IS_PIXBUF(m_Metadata.Image->gobj()));
+					pypixbuf = pygobject_new((GObject*)(m_Metadata.Image->gobj()));
+					pypixbufcc = object((handle<>(pypixbuf)));
+				}
+				info.attr("show")(m_Metadata, pypixbufcc);
 			} catch ( error_already_set ) {
 				PyErr_Print();
 			}
@@ -1410,15 +1424,14 @@ namespace MPX
 	void
 	Player::on_source_track_metadata (Metadata const& metadata)
 	{
-	  Metadata m = metadata;
-	  if(!m.Image)
+	  m_Metadata = metadata;
+	  if(!m_Metadata.Image)
 	  {
-	    if(m[ATTRIBUTE_ASIN]) 
-			m_Covers.fetch(get<std::string>(m[ATTRIBUTE_ASIN].get()), m.Image);
+	    if(m_Metadata[ATTRIBUTE_ASIN]) 
+			m_Covers.fetch(get<std::string>(m_Metadata[ATTRIBUTE_ASIN].get()), m_Metadata.Image);
 		else
-			m.Image = m_DiscDefault;
+			m_Metadata.Image = m_DiscDefault;
 	  }
-	  m_Metadata = m;
 	  reparse_metadata ();
 	}
 
