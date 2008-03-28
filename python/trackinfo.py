@@ -30,7 +30,10 @@ class TrackInfo:
 
 	def show(self, track, image):
 		self.window.show()
-		self.image.set_from_pixbuf(image.scale_simple(192,192,gtk.gdk.INTERP_BILINEAR))
+
+		if image: 
+			self.image.set_from_pixbuf(image.scale_simple(192,192,gtk.gdk.INTERP_BILINEAR))
+		self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
 
 		if track.get(AttributeId.attr_artist).is_initialized():
 			self.buf.insert_with_tags(self.buf.get_end_iter(), "Artist: ", self.textTagBold)
