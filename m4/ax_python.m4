@@ -26,6 +26,7 @@
 # COPYLEFT
 #
 #   Copyright (c) 2007 Michael Tindal
+#   Copyright (c) 2008 David Le Brun
 #
 #   This program is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU General Public License as
@@ -64,10 +65,15 @@ for python in python2.5 python2.4 python2.3 python2.2 python2.1 python; do
 AC_CHECK_PROGS(PYTHON_BIN, [$python])
 ax_python_bin=$PYTHON_BIN
 if test x$ax_python_bin != x; then
+   PYTHON_VERSION=`$ax_python_bin -V 2>&1 | grep Python | cut -d ' ' -f 2`
+   PYTHON_VERSION_MAJOR=`echo $PYTHON_VERSION | cut -d '.' -f 1`
+   PYTHON_VERSION_MINOR=`echo $PYTHON_VERSION | cut -d '.' -f 2`
+   PYTHON_VERSION_SHORT=$PYTHON_VERSION_MAJOR.$PYTHON_VERSION_MINOR
+   ax_python_prefix=`$ax_python_bin -c "import sys; print sys.prefix"`
+   ax_python_header=$ax_python_prefix/include/python$PYTHON_VERSION_SHORT
+
    AC_CHECK_LIB($ax_python_bin, main, ax_python_lib=$ax_python_bin, ax_python_lib=no)
-   AC_CHECK_HEADER([$ax_python_bin/Python.h],
-   [[ax_python_header=`locate $ax_python_bin/Python.h | sed -e s,/Python.h,,`]],
-   ax_python_header=no)
+   AC_CHECK_HEADER([$ax_python_bin/Python.h],, ax_python_header=no)
    if test $ax_python_lib != no; then
      if test $ax_python_header != no; then
        break;
@@ -84,11 +90,6 @@ fi
 if test x$ax_python_lib = x; then
    ax_python_lib=no
 fi
-
-AC_MSG_RESULT([  results of the Python check:])
-AC_MSG_RESULT([    Binary:      $ax_python_bin])
-AC_MSG_RESULT([    Library:     $ax_python_lib])
-AC_MSG_RESULT([    Include Dir: $ax_python_header])
 
 if test x$ax_python_header != xno; then
   PYTHON_INCLUDE_DIR=$ax_python_header
