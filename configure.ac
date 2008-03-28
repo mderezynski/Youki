@@ -713,16 +713,17 @@ AC_OUTPUT([
     images/Makefile
     jnetlib/Makefile
     libhal++/Makefile
-	python/Makefile
+    mcs/Makefile
+    python/Makefile
     scripts/Makefile
     widgets/Makefile
 
     include/Makefile
     include/mpx/Makefile
-	include/mpx/parser/Makefile
+    include/mpx/parser/Makefile
 
-	sources/Makefile
-	sources/musiclib/Makefile
+    sources/Makefile
+    sources/musiclib/Makefile
 
     taglib/Makefile
     taglib/id3v2/Makefile
@@ -756,8 +757,8 @@ AC_OUTPUT([
     xmlcpp/Makefile
 
     mpx/Makefile
-	mpx/parser/Makefile
-	mpx/musicbrainz/Makefile
+    mpx/parser/Makefile
+    mpx/musicbrainz/Makefile
 
     po/Makefile.in
 

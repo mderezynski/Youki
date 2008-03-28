@@ -27,7 +27,8 @@ SUBDIRS =		\
 	images		\
 	include		\
 	jnetlib		\
-	po			\
+	mcs		\
+	po		\
 	python		\
 	sources		\
 	taglib		\
