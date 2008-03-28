@@ -304,9 +304,9 @@ namespace MPX
 			  {
 				  ListStore->clear ();
 				  m_CurrentIter.reset ();
-				  columns_autosize();
 				  m_MusicLib.check_caps();
 				  m_MusicLib.send_caps ();
+				  columns_autosize();
 			  }
 
 			  virtual void
@@ -1462,7 +1462,12 @@ namespace Source
 	PlaybackSourceMusicLib::check_caps ()
 	{
 		if (!m_Private->m_TreeViewPlaylist->m_CurrentIter)
+		{
+			m_caps = Caps (m_caps &~ PlaybackSource::C_CAN_GO_NEXT);
+			m_caps = Caps (m_caps &~ PlaybackSource::C_CAN_GO_PREV);
+			m_caps = Caps (m_caps &~ PlaybackSource::C_CAN_PLAY);
 			return;
+		}
 
 		TreeIter & iter = m_Private->m_TreeViewPlaylist->m_CurrentIter.get();
 
