@@ -127,6 +127,9 @@ mpx_bin_SOURCES =				\
 	jnethttpsrc.h				\
 	jnethttpsrc.cc				\
 								\
+	last-fm-xmlrpc.hh			\
+	last-fm-xmlrpc.cc			\
+								\
 	library.cc					\
 								\
 	lyrics-v2.hh				\
