@@ -23,10 +23,19 @@ class TrackInfo:
 		self.window.connect("delete-event",self.delete_event)
 
 		self.buf = self.textview.get_buffer()
+
 		self.textTagBold = gtk.TextTag()
 		self.textTagBold.set_property("weight", pango.WEIGHT_BOLD)
 		self.buf.get_tag_table().add(self.textTagBold)
 		
+		self.textTagCenter = gtk.TextTag()
+		self.textTagCenter.set_property("justification", gtk.JUSTIFY_CENTER) 
+		self.buf.get_tag_table().add(self.textTagCenter)
+
+		self.textTagLarge = gtk.TextTag()
+		self.textTagLarge.set_property("size-points", 14) 
+		self.buf.get_tag_table().add(self.textTagLarge)
+
 
 	def show(self, track, image):
 		self.window.show()
@@ -35,31 +44,23 @@ class TrackInfo:
 			self.image.set_from_pixbuf(image.scale_simple(192,192,gtk.gdk.INTERP_BILINEAR))
 		self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
 
-		if track.get(AttributeId.attr_artist).is_initialized():
-			self.buf.insert_with_tags(self.buf.get_end_iter(), "Artist: ", self.textTagBold)
-			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(AttributeId.attr_artist).val().get_string())
-			self.buf.insert(self.buf.get_end_iter(), "\n")
-
-		if track.get(AttributeId.attr_album).is_initialized():
-			self.buf.insert_with_tags(self.buf.get_end_iter(), "Album: ", self.textTagBold)
-			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(AttributeId.attr_album).val().get_string())
+		if track.get(AttributeId.attr_artist).is_initialized() and track.get(AttributeId.attr_album).is_initialized():
+			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(AttributeId.attr_artist).val().get_string() + ": ", self.textTagCenter, self.textTagLarge)
+			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(AttributeId.attr_album).val().get_string(), self.textTagCenter, self.textTagLarge)
 			self.buf.insert(self.buf.get_end_iter(), "\n")
 
 		if track.get(AttributeId.attr_title).is_initialized():
-			self.buf.insert_with_tags(self.buf.get_end_iter(), "Title: ", self.textTagBold)
-			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(AttributeId.attr_title).val().get_string())
+			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(AttributeId.attr_title).val().get_string(), self.textTagCenter, self.textTagLarge)
 			self.buf.insert(self.buf.get_end_iter(), "\n")
 
-		if track.get(AttributeId.attr_bitrate).is_initialized():
-			self.buf.insert_with_tags(self.buf.get_end_iter(), "Bitrate: ", self.textTagBold)
-			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(AttributeId.attr_bitrate).val().get_int())
-			self.buf.insert(self.buf.get_end_iter(), "\n")
+		self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
-		if track.get(AttributeId.attr_mb_release_date).is_initialized():
-			self.buf.insert_with_tags(self.buf.get_end_iter(), "Release Date: ", self.textTagBold)
-			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(AttributeId.attr_mb_release_date).val().get_string())
+		if track.get(AttributeId.attr_artist).is_initialized() and track.get(AttributeId.attr_title).is_initialized():
+			lyricwiki = mpx_boost.LyricWiki(track.get(AttributeId.attr_artist).val().get_string(), track.get(AttributeId.attr_title).val().get_string())
+			lyrics = lyricwiki.run()
 			self.buf.insert(self.buf.get_end_iter(), "\n")
-
+			self.buf.insert(self.buf.get_end_iter(), lyrics)
+		
 
 	def close_clicked(self, button):
 		self.window.hide()

@@ -6,6 +6,8 @@
 ** License: see jnetlib.h
 */
 
+#include <cstring>
+
 #include "netinc.h"
 #include "util.h"
 #include "listen.h"

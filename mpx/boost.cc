@@ -7,7 +7,7 @@
 #include <Python.h>
 #include "boost.hh"
 #include "mpx/playbacksource.hh"
-#include "musicbrainz/mbxml-v2-types.hh"
+#include "lyrics-v2.hh"
 using namespace boost::python;
 
 namespace MPX
@@ -231,6 +231,11 @@ BOOST_PYTHON_MODULE(mpx_boost)
 	;
 
 	// Musicbrainz
+
+	// LyricWiki	
+	class_<MPX::LyricWiki::TextRequest, boost::noncopyable>("LyricWiki", init<std::string, std::string>())	
+		.def("run", &MPX::LyricWiki::TextRequest::run)
+	;
 }
 
 namespace MPX

@@ -222,98 +222,37 @@ namespace MPX
   int    const cover_anim_interval         = 1000 / cover_anim_fps;
   double const cover_anim_dt               = cover_anim_time_scale / cover_anim_fps;
 
-#ifdef APP_MAINTENANCE
-  class AnimParams
-    : public WidgetLoader<Gtk::Window>
+  struct Color
   {
-      Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
-      Gtk::Range * m_range_velocity;
-      Gtk::Range * m_range_gravity;
-      Gtk::Range * m_range_elasticity;
-
-      double & m_velocity; 
-      double & m_gravity;
-      double & m_elasticity;
-
-      enum RangeId
-      {
-        RANGE_VELOCITY,
-        RANGE_GRAVITY,
-        RANGE_ELASTICITY
-      };
-
-      void
-      on_range_value_changed (RangeId id)
-      {
-        switch(id)
-        {
-          case RANGE_VELOCITY:
-            m_velocity = m_range_velocity->get_value()/1000.;
-            break;
-
-          case RANGE_GRAVITY:
-            m_gravity = m_range_gravity->get_value()/1000.;
-            break;
-
-          case RANGE_ELASTICITY:
-            m_elasticity = m_range_elasticity->get_value()/1000.;
-            break;
-        } 
-      }
-
-    public:
-
-      static AnimParams*
-      create (double & velocity, double & gravity, double & elasticity)
-      {
-        const std::string path (build_filename(DATA_DIR, build_filename("glade","dialog-bounce-adjust.glade")));
-        AnimParams *p = new AnimParams(Gnome::Glade::Xml::create (path), velocity, gravity, elasticity);
-        return p;
-      }
-
-      AnimParams(const Glib::RefPtr<Gnome::Glade::Xml>& xml,
-              double & velocity,
-              double & gravity,
-              double & elasticity)
-      : WidgetLoader<Gtk::Window>(xml, "anim-params")
-      , m_ref_xml(xml)
-      , m_velocity(velocity)
-      , m_gravity(gravity)
-      , m_elasticity(elasticity)
-      {
-        xml->get_widget("velocity", m_range_velocity);
-        xml->get_widget("gravity", m_range_gravity);
-        xml->get_widget("elasticity", m_range_elasticity);
-
-        m_range_velocity->set_value(velocity*1000.);
-        m_range_gravity->set_value(gravity*1000.);
-        m_range_elasticity->set_value(elasticity*1000.);
-
-        m_range_velocity->signal_value_changed().connect(
-          sigc::bind( sigc::mem_fun( *this, &AnimParams::on_range_value_changed ), RANGE_VELOCITY));
-
-        m_range_gravity->signal_value_changed().connect(
-          sigc::bind( sigc::mem_fun( *this, &AnimParams::on_range_value_changed ), RANGE_GRAVITY));
-
-        m_range_elasticity->signal_value_changed().connect(
-          sigc::bind( sigc::mem_fun( *this, &AnimParams::on_range_value_changed ), RANGE_ELASTICITY));
-      }
+		guint8 red;
+		guint8 green;
+		guint8 blue;
   };
-#endif // APP_MAINTENANCE
- 
+
+  Color colors[] =
+  {
+	{ 0xff, 0xb1, 0x6f },
+	{ 0xff, 0xc8, 0x7f },
+	{ 0xff, 0xcf, 0x7e },
+	{ 0xf6, 0xe6, 0x99 },
+	{ 0xf1, 0xfc, 0xd4 },
+	{ 0xbd, 0xd8, 0xab },
+	{ 0xcd, 0xe6, 0xd0 },
+	{ 0xce, 0xe0, 0xea },
+	{ 0xd5, 0xdd, 0xea },
+	{ 0xee, 0xc1, 0xc8 },
+	{ 0xee, 0xaa, 0xb7 },
+	{ 0xec, 0xce, 0xb6 },
+  };
+
   class InfoArea
-    : public EventBox
+    : public WidgetLoader<EventBox>
   {
     private:
 
-#ifdef APP_MAINTENANCE
-      AnimParams * m_ParamControl;
-#endif // APP_MAINTENANCE
+	  MPX::Play & m_Play;
 
-#if 0
       Spectrum m_spectrum_data;
-      Spectrum m_spectrum_peak;
-#endif
 
       struct Text
       {
@@ -350,9 +289,8 @@ namespace MPX
       double                              m_cover_velocity;
       double                              m_cover_accel;
       double                              m_cover_alpha;
-      bool                                m_compact;
       sigc::connection                    m_cover_anim_conn;
-      sigc::connection                    m_conn_decay;
+      sigc::connection                    m_decay_conn;
 
     public:
 
@@ -496,16 +434,13 @@ namespace MPX
 
     public:
 
-      InfoArea (BaseObjectType                 * obj,
-                RefPtr<Gnome::Glade::Xml> const& xml)
-      : EventBox          (obj)
-#if 0
-      , m_spectrum_data   (SPECT_BANDS, 0)
-      , m_spectrum_peak   (SPECT_BANDS, 0)
-#endif
-      , m_source_icon     (Glib::RefPtr<Gdk::Pixbuf> (0))
-      , m_cover_alpha     (1.0)
-      , m_compact         (false)
+      InfoArea (MPX::Play & play,
+			    Glib::RefPtr<Gnome::Glade::Xml> const& xml)
+	  : WidgetLoader<Gtk::EventBox>(xml, "infoarea")
+	  , m_Play			(play)
+      , m_spectrum_data (SPECT_BANDS, 0)
+      , m_source_icon   (Glib::RefPtr<Gdk::Pixbuf> (0))
+      , m_cover_alpha   (1.0)
       {
         add_events (Gdk::BUTTON_PRESS_MASK);
 
@@ -513,20 +448,42 @@ namespace MPX
         modify_bg (Gtk::STATE_NORMAL, color);
         modify_base (Gtk::STATE_NORMAL, color);
 
-#if 0
-        m_Play ()->signal_spectrum ().connect (sigc::mem_fun (this, &InfoArea::play_update_spectrum));
-        m_Play ()->property_status ().signal_changed ().connect (sigc::mem_fun (this, &InfoArea::play_status_changed));
+        m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum));
+		m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
 
+
+#if 0
         enable_drag_dest ();
 #endif
-
-#ifdef APP_MAINTENANCE
-        m_ParamControl = AnimParams::create(cover_anim_initial_velocity, cover_anim_gravity, cover_anim_wall_elasticity);
-#endif // APP_MAINTENANCE
       }
 
       ~InfoArea ()
       {}
+
+      bool
+      decay_spectrum ()
+      {
+        for (int n = 0; n < SPECT_BANDS; ++n)
+        {
+          m_spectrum_data[n] = (((m_spectrum_data[n] - 5) < 0) ? 0 : (m_spectrum_data[n] - 5));
+        }
+        queue_draw ();
+        return true;
+      }
+
+      void
+      play_status_changed ()
+      {
+        int status = m_Play.property_status ().get_value ();
+        if( status == PLAYSTATUS_PAUSED )
+        {
+          m_decay_conn = Glib::signal_timeout ().connect (sigc::mem_fun(*this, &InfoArea::decay_spectrum), 50);
+        }
+        else
+        {
+          m_decay_conn.disconnect ();
+        }
+      }
 
       void
       set_source (Glib::RefPtr<Gdk::Pixbuf> const& source_icon)
@@ -536,19 +493,9 @@ namespace MPX
       }
 
       void
-      set_compact (bool compact)
-      {
-        m_compact = compact;
-        queue_draw ();
-      }
-
-      void
       reset ()
       {
-#if 0
-        std::fill (m_spectrum_data.begin (), m_spectrum_data.end (), 0);
-        std::fill (m_spectrum_peak.begin (), m_spectrum_peak.end (), 0);
-#endif
+        std::fill (m_spectrum_data.begin (), m_spectrum_data.end (), 0.);
 
         remove_layout_if_exists (L_ARTIST);
         remove_layout_if_exists (L_ALBUM);
@@ -676,55 +623,20 @@ namespace MPX
         return r;
       }
 
-#if 0
-      bool
-      decay_spectrum ()
-      {
-        for (int n = 0; n < SPECT_BANDS; ++n)
-        {
-          m_spectrum_data[n] = (((m_spectrum_data[n] - 6) < 0) ? 0 : (m_spectrum_data[n] - 6));
-          m_spectrum_peak[n] = (((m_spectrum_peak[n] - 4) < 0) ? 0 : (m_spectrum_peak[n] - 4));
-        }
-        queue_draw ();
-        return true;
-      }
-#endif
-
-#if 0
-      void
-      play_status_changed ()
-      {
-        MPXPlaystatus status = MPXPlaystatus (m_Play ()->property_status ().get_value ());
-        if( status == PLAYSTATUS_PAUSED )
-        {
-          m_conn_decay = Glib::signal_timeout ().connect (sigc::mem_fun (this, &InfoArea::decay_spectrum), 50);
-        }
-        else
-        {
-          m_conn_decay.disconnect ();
-        }
-      }
-
       void
       play_update_spectrum (Spectrum const& spectrum)
       {
         for (int n = 0; n < SPECT_BANDS; ++n)
         {
           if( spectrum[n] < m_spectrum_data[n] )
-          {
             m_spectrum_data[n] = (((m_spectrum_data[n] - 6) < 0) ? 0 : (m_spectrum_data[n] - 6));
-            m_spectrum_peak[n] = (((m_spectrum_peak[n] - 2) < 0) ? 0 : (m_spectrum_peak[n] - 2));
-          }
           else
-          {
             m_spectrum_data[n] = spectrum[n];
-            m_spectrum_peak[n] = spectrum[n];
-          }
         }
 
         queue_draw ();
+
       }
-#endif
 
       void
       draw_background (Cairo::RefPtr<Cairo::Context> const& cr)
@@ -781,7 +693,6 @@ namespace MPX
       void
       draw_spectrum (Cairo::RefPtr<Cairo::Context> const& cr)
       {
-#if 0
         Gtk::Allocation allocation = get_allocation ();
 
         for (int n = 0; n < SPECT_BANDS; ++n)
@@ -789,35 +700,22 @@ namespace MPX
           int x = 0, y = 0, w = 0, h = 0;
 
           // Bar
-          x = allocation.get_width () - 200 + (n*12);
+          x = allocation.get_width () - 112 + (n*8);
           y = 11 + (64 - m_spectrum_data[n]);
 
-          w = 10;
+          w = 6;
           h = m_spectrum_data[n];
 
-          cr->set_source_rgba (1.0, 1.0, 1.0, 0.3);
+          cr->set_source_rgba (double(colors[n].red)/255., double(colors[n].green)/255., double(colors[n].blue)/255., 0.8);
           cr->rectangle (x,y,w,h);
           cr->fill ();
-
-          // Peak
-          if( m_spectrum_peak[n] > 0 )
-          {
-            y = 11 + (64 - m_spectrum_peak[n]);
-
-            h = 1;
-
-            cr->set_source_rgba (1.0, 1.0, 1.0, 0.65);
-            cr->rectangle (x, y-1, w, h);
-            cr->fill ();
-          }
         }
-#endif
       }
 
       void
       draw_source_icon (Cairo::RefPtr<Cairo::Context> const& cr)
       {
-        if( m_source_icon && m_compact )
+        if( m_source_icon )
         {
           Gtk::Allocation allocation = get_allocation ();
 
@@ -845,6 +743,15 @@ namespace MPX
 
         return true;
       }
+
+	public:
+
+	  static InfoArea*
+	  create(MPX::Play & play, Glib::RefPtr<Gnome::Glade::Xml> & xml)
+	  {
+		 return new InfoArea(play,xml);
+	  } 
+
   };
 }
 
@@ -1084,7 +991,28 @@ namespace MPX
 		    PyErr_Print();
 		}
 
+        // Playback Engine
+        m_Play = new Play;
+		m_Play->signal_eos().connect
+			  (sigc::mem_fun (*this, &MPX::Player::on_play_eos));
+		m_Play->property_status().signal_changed().connect
+			  (sigc::mem_fun (*this, &MPX::Player::on_play_status_changed));
+		m_Play->signal_position().connect
+			  (sigc::mem_fun (*this, &MPX::Player::on_play_position));
+		m_Play->signal_metadata().connect
+			  (sigc::mem_fun (*this, &MPX::Player::on_play_metadata));
+#if 0
+		m_Play->signal_buffering().connect
+			  (sigc::mem_fun (*this, &MPX::Player::on_play_buffering));
+		m_Play->signal_error().connect
+			  (sigc::mem_fun (*this, &MPX::Player::on_play_error));
+#endif
+
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
+
+        m_Sources = new Sources(xml);
+        m_ref_xml->get_widget("statusbar", m_Statusbar);
+		Util::dir_for_each_entry (build_filename(PLUGIN_DIR, "sources"), sigc::mem_fun(*this, &MPX::Player::load_source_plugin));  
 
         m_Library.signal_scan_start().connect( sigc::mem_fun( *this, &Player::on_library_scan_start ) );
         m_Library.signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
@@ -1108,35 +1036,14 @@ namespace MPX
 		m_Seek->set_sensitive(false);
 		g_atomic_int_set(&m_Seeking,0);
 
-        m_Sources = new Sources(xml);
-        m_ref_xml->get_widget("statusbar", m_Statusbar);
-
-		Util::dir_for_each_entry (build_filename(PLUGIN_DIR, "sources"), sigc::mem_fun(*this, &MPX::Player::load_source_plugin));  
-
         // Infoarea
-		m_ref_xml->get_widget_derived("infoarea", m_InfoArea);
+        m_InfoArea = InfoArea::create(*m_Play, m_ref_xml);
 		m_InfoArea->signal_cover_clicked().connect
 		  ( sigc::mem_fun( *this, &Player::on_cover_clicked ));
+
 #if 0
 		m_InfoArea->signal_uris_dropped().connect
 		  ( sigc::mem_fun( *this, &MPX::Player::on_uris_dropped ) );
-#endif
-
-        // Playback Engine
-        m_Play = new Play;
-		m_Play->signal_eos().connect
-			  (sigc::mem_fun (*this, &MPX::Player::on_play_eos));
-		m_Play->property_status().signal_changed().connect
-			  (sigc::mem_fun (*this, &MPX::Player::on_play_status_changed));
-		m_Play->signal_position().connect
-			  (sigc::mem_fun (*this, &MPX::Player::on_play_position));
-		m_Play->signal_metadata().connect
-			  (sigc::mem_fun (*this, &MPX::Player::on_play_metadata));
-#if 0
-		m_Play->signal_buffering().connect
-			  (sigc::mem_fun (*this, &MPX::Player::on_play_buffering));
-		m_Play->signal_error().connect
-			  (sigc::mem_fun (*this, &MPX::Player::on_play_error));
 #endif
 
         // UIManager + Menus + Proxy Widgets
@@ -1942,13 +1849,13 @@ namespace MPX
 	Player::on_sources_toggled ()
 	{
 		bool active = dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->get_active();
-		dynamic_cast<Gtk::Notebook*>(m_ref_xml->get_widget("sourcepages"))->set_current_page( active ? 0 : m_SourceTabMapping[m_Sources->getSource()] ); // FIXME: Create a mapping from source id to page
+		dynamic_cast<Gtk::Notebook*>(m_ref_xml->get_widget("sourcepages"))->set_current_page( active ? 0 : m_SourceTabMapping[m_Sources->getSource()] ); 
 	}
 
 	void
 	Player::on_source_changed (int source_id)
 	{
-		dynamic_cast<Gtk::Notebook*>(m_ref_xml->get_widget("sourcepages"))->set_current_page( m_SourceTabMapping[source_id] ); // FIXME: Create a mapping from source id to page
+		dynamic_cast<Gtk::Notebook*>(m_ref_xml->get_widget("sourcepages"))->set_current_page( m_SourceTabMapping[source_id] );
 	}
 
 	void

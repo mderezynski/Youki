@@ -20,6 +20,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <cstring>
 
 const char* 
 JNL_HTTPGet::get_data ()

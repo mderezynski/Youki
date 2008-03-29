@@ -1,9 +1,17 @@
 glade_DATA = 				\
+							\
 	mpx.glade				\
+							\
 	import-folder.glade		\
 	import-share.glade		\
+							\
 	request-value.glade		\
+							\
+	trackinfo.glade			\
+							\
 	source-musiclib.glade	\
-	trackinfo.glade
+	source-radio.glade		\
+							\
+	dialog-simple-entry.glade
 
 gladedir = $(pkgdatadir)/glade

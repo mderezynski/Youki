@@ -13,7 +13,7 @@
 #include "connection.h"
 
 #include <glib.h>
-
+#include <cstring>
 
 JNL_Connection::JNL_Connection(JNL_AsyncDNS *dns, int sendbufsize, int recvbufsize)
 {
@@ -207,6 +207,8 @@ void JNL_Connection::run(int max_send_bytes, int max_recv_bytes, int *bytes_sent
 
         struct timespec ts;
         memset(&ts,0,sizeof(ts));
+
+#if 0
         sigset_t sigs; 
         sigfillset (&sigs);
         sigdelset (&sigs, SIGBUS);
@@ -215,6 +217,7 @@ void JNL_Connection::run(int max_send_bytes, int max_recv_bytes, int *bytes_sent
         sigdelset (&sigs, SIGSEGV);
         sigdelset (&sigs, SIGKILL);
         sigdelset (&sigs, SIGSTOP);
+#endif
 
 #ifdef __DragonFly__
         sigset_t cur_set;
@@ -224,7 +227,7 @@ void JNL_Connection::run(int max_send_bytes, int max_recv_bytes, int *bytes_sent
    
         if (select_retval == -1)
 #else
-        if (pselect(m_socket+1,&f[0],&f[1],&f[2],&ts,&sigs)==-1)
+        if (pselect(m_socket+1,&f[0],&f[1],&f[2],&ts,NULL)==-1)
 #endif
         {
           m_errorstr="connecting to host (calling select())";

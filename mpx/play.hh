@@ -60,7 +60,7 @@ using namespace std;
 
 namespace MPX
 {
-    const int SPECT_BANDS = 16;
+    const int SPECT_BANDS = 12;
 
     /** Playback Engine
      *

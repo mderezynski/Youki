@@ -41,10 +41,10 @@ namespace MPX
 
     struct MusicBrainzReleaseEvent
     {
-      Glib::ustring           releaseEventDate;
-      Glib::ustring           releaseEventCountry;
+      std::string           releaseEventDate;
+      std::string           releaseEventCountry;
 
-      MusicBrainzReleaseEvent (Glib::ustring const& p_releaseEventDate, Glib::ustring const& p_releaseEventCountry)
+      MusicBrainzReleaseEvent (std::string const& p_releaseEventDate, std::string const& p_releaseEventCountry)
       : releaseEventDate (p_releaseEventDate)
       , releaseEventCountry (p_releaseEventCountry)
       {}
@@ -53,10 +53,10 @@ namespace MPX
   
     struct MusicBrainzDisc
     {
-      guint64                discSectors;
-      Glib::ustring           discId;
+      guint64               discSectors;
+      std::string           discId;
 
-      MusicBrainzDisc (guint64 p_discSectors, Glib::ustring const& p_discId)
+      MusicBrainzDisc (guint64 p_discSectors, std::string const& p_discId)
       : discSectors (p_discSectors)
       , discId (p_discId)
       {}
@@ -64,25 +64,25 @@ namespace MPX
 
     struct MusicBrainzTrack
     {
-      Glib::ustring           trackId;
-      Glib::ustring           trackTitle;
-      guint64                trackDuration;
-      guint64                trackTrackNumber; // potentially synthesized
+      std::string           trackId;
+      std::string           trackTitle;
+      guint64               trackDuration;
+      guint64               trackTrackNumber; // potentially synthesized
 
-      Glib::ustring           artistId;
-      Glib::ustring           artistName;
-      Glib::ustring           artistSortName;
+      std::string           artistId;
+      std::string           artistName;
+      std::string           artistSortName;
     };
 
     struct MusicBrainzArtist
     {
-      Glib::ustring           artistId;
-      Glib::ustring           artistType;
-      Glib::ustring           artistName;
-      Glib::ustring           artistSortName;
-      Glib::ustring           artistDisambiguation;
-      Glib::ustring           artistLifeSpanBegin;
-      Glib::ustring           artistLifeSpanEnd;
+      std::string           artistId;
+      std::string           artistType;
+      std::string           artistName;
+      std::string           artistSortName;
+      std::string           artistDisambiguation;
+      std::string           artistLifeSpanBegin;
+      std::string           artistLifeSpanEnd;
     };
 
 
@@ -97,10 +97,10 @@ namespace MPX
 
     struct MusicBrainzRelease
     {
-      Glib::ustring             releaseId;
-      Glib::ustring             releaseTitle;
-      Glib::ustring             releaseType;
-      Glib::ustring             releaseASIN;
+      std::string             releaseId;
+      std::string             releaseTitle;
+      std::string             releaseType;
+      std::string             releaseASIN;
      
       MusicBrainzArtist         mArtist; 
       MusicBrainzDiscV          mDiscV;
@@ -127,15 +127,15 @@ namespace MPX
 
     struct MusicBrainzTracklistTrack
     {
-      Glib::ustring           trackId;
-      Glib::ustring           trackTitle;
-      guint64                trackDuration;
+      std::string           trackId;
+      std::string           trackTitle;
+      guint64               trackDuration;
 
-      Glib::ustring           artistId;
-      Glib::ustring           artistName;
-      Glib::ustring           artistSortName;
+      std::string           artistId;
+      std::string           artistName;
+      std::string           artistSortName;
 
-      MusicBrainzReleaseV     mReleaseV;
+      MusicBrainzReleaseV   mReleaseV;
 
       MusicBrainzTracklistTrack ()
       : trackDuration (0)

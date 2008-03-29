@@ -6,6 +6,7 @@ images_DATA =				\
 		stars2.png			\
 		stars3.png			\
 		stars4.png			\
-		stars5.png			
+		stars5.png			\
+		throbber.gif
 
 imagesdir = $(pkgdatadir)/images

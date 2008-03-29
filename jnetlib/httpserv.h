@@ -12,6 +12,7 @@
 #ifndef _HTTPSERV_H_
 #define _HTTPSERV_H_
 
+#include <cstring>
 #include "connection.h"
 
 class JNL_HTTPServ

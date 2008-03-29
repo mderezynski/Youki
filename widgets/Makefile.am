@@ -4,13 +4,14 @@ libmpx_widgets_la_CFLAGS = 	\
 	$(GLIB_CFLAGS) $(GTK_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include
 
 libmpx_widgets_la_CXXFLAGS = \
-	$(GLIBMM_CFLAGS) $(GTKMM_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include
+	$(GLADEMM_CFLAGS) $(GLIBMM_CFLAGS) $(GTKMM_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include
 
 libmpx_widgets_la_LIBADD =	\
 	$(GLIBMM_LIBS)			\
-	$(GTKMM_LIBS)					
+	$(GTKMM_LIBS)			\
+	$(GLADEMM_LIBS)
 
-libmpx_widgets_la_SOURCES = 				\
+libmpx_widgets_la_SOURCES = 			\
 										\
 	    widget-marshalers.c   			\
 										\
@@ -33,7 +34,10 @@ libmpx_widgets_la_SOURCES = 				\
 		cell-renderer-cairo-surface.cc	\
 										\
 		cell-renderer-vbox.hh			\
-		cell-renderer-vbox.cc	
+		cell-renderer-vbox.cc			\
+										\
+		dialog-simple-entry.hh			\
+		dialog-simple-entry.cc			
 
 widget-marshalers.c: widget-marshalers.list 
 	@echo "* Generating widget-marshalers.c"

@@ -105,10 +105,10 @@
 			  <property name="cursor_visible">False</property>
 			  <property name="pixels_above_lines">0</property>
 			  <property name="pixels_below_lines">0</property>
-			  <property name="pixels_inside_wrap">0</property>
-			  <property name="left_margin">0</property>
-			  <property name="right_margin">0</property>
-			  <property name="indent">0</property>
+			  <property name="pixels_inside_wrap">4</property>
+			  <property name="left_margin">4</property>
+			  <property name="right_margin">4</property>
+			  <property name="indent">4</property>
 			  <property name="text" translatable="yes"></property>
 			</widget>
 		      </child>

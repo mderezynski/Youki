@@ -1387,6 +1387,9 @@ namespace Source
     {
       m_Private = new MusicLibPrivate(player,*this);
 	  m_Private->m_TreeViewPlaylist->signal_row_activated().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_row_activated ) );
+
+	  m_caps = Caps (m_caps | PlaybackSource::C_CAN_SEEK);
+	  send_caps ();
     }
 
 	void

@@ -46,6 +46,7 @@
 
 #include <map>
 #include <string>
+#include <cstring>
 #include <glib.h>
 #include <glibmm.h>
 

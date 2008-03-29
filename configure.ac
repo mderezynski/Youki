@@ -724,6 +724,7 @@ AC_OUTPUT([
 
     sources/Makefile
     sources/musiclib/Makefile
+    sources/radio/Makefile
 
     taglib/Makefile
     taglib/id3v2/Makefile

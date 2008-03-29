@@ -114,13 +114,23 @@ mpx_bin_SOURCES =				\
 	boost.hh					\
 	boost.cc					\
 								\
+	gstspectrum.h				\
+	gstspectrum.cc				\
+	fix_fft.cc					\
+								\
 	import-share.hh				\
 	import-share.cc				\
 								\
 	import-folder.hh			\
 	import-folder.cc			\
 								\
+	jnethttpsrc.h				\
+	jnethttpsrc.cc				\
+								\
 	library.cc					\
+								\
+	lyrics-v2.hh				\
+	lyrics-v2.cc				\
 								\
 	metadatareader-taglib.hh	\
 	metadatareader-taglib.cc	\

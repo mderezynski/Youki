@@ -691,7 +691,7 @@ namespace MPX
               GValue const* list = gst_structure_get_value (s, "spectrum");
               for (int i = 0; i < SPECT_BANDS; ++i)
               {
-                play.m_spectrum[i] = g_value_get_uchar (gst_value_list_get_value (list, i));
+                play.m_spectrum[i] = g_value_get_uchar(gst_value_list_get_value(list, i)); 
               }
               play.signal_spectrum_.emit (play.m_spectrum);
             }
@@ -980,7 +980,7 @@ namespace MPX
 
       ////////////////// HTTP BIN
       {
-        GstElement  * source    = gst_element_factory_make ("bmpx-jnethttpsrc", "src");
+        GstElement  * source    = gst_element_factory_make ("jnethttpsrc", "src");
         GstElement  * queue     = gst_element_factory_make ("queue", (NAME_QUEUE));
         GstElement  * decoder   = gst_element_factory_make ("decodebin", (NAME_DECODER));
         GstElement  * identity  = gst_element_factory_make ("identity", (NAME_IDENTITY));
@@ -1016,7 +1016,7 @@ namespace MPX
 
       ////////////////// HTTP MAD/FLUMP3 BIN
       {
-        GstElement *  source    = gst_element_factory_make ("bmpx-jnethttpsrc", "src");
+        GstElement *  source    = gst_element_factory_make ("jnethttpsrc", "src");
         GstElement *  decoder   = gst_element_factory_make ("mad", (NAME_DECODER));
         GstElement  * queue     = gst_element_factory_make ("queue", (NAME_QUEUE));
         GstElement  * identity  = gst_element_factory_make ("identity", (NAME_IDENTITY));
