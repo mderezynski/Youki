@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <glib.h>
 
-#include "xml.hh"
+#include "mpx/xml.hh"
 
 namespace
 {

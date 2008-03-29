@@ -58,8 +58,19 @@ class TrackInfo:
 				self.buf.insert(self.buf.get_end_iter(), "\n\n")
 				self.buf.insert(self.buf.get_end_iter(), lyrics)
 			except:
-				print "Couldn't get lyrics"
+				print "Couldn't get lyrics for '" + track.get(AttributeId.attr_artist).val().get_string() + " / " +  track.get(AttributeId.attr_title).val().get_string()+ "'"
 		
+		if track.get(AttributeId.attr_artist).is_initialized():
+			try:
+				self.buf.insert(self.buf.get_end_iter(), "\n\n")
+				self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track.get(AttributeId.attr_artist).val().get_string(), self.textTagCenter, self.textTagLarge)
+				self.buf.insert(self.buf.get_end_iter(), "\n\n")
+				lastfmartist = mpx_boost.LastFMArtist(track.get(AttributeId.attr_artist).val().get_string())
+				artist = lastfmartist.run()
+				self.buf.insert(self.buf.get_end_iter(), artist)
+			except:
+				print "Couldn't get Last.fm artist info for '" + track.get(AttributeId.attr_artist).val().get_string() 
+				
 
 	def close_clicked(self, button):
 		self.window.hide()

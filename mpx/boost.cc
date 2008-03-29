@@ -8,6 +8,8 @@
 #include "boost.hh"
 #include "mpx/playbacksource.hh"
 #include "lyrics-v2.hh"
+#include "last-fm-xmlrpc.hh"
+
 using namespace boost::python;
 
 namespace MPX
@@ -235,6 +237,11 @@ BOOST_PYTHON_MODULE(mpx_boost)
 	// LyricWiki	
 	class_<MPX::LyricWiki::TextRequest, boost::noncopyable>("LyricWiki", init<std::string, std::string>())	
 		.def("run", &MPX::LyricWiki::TextRequest::run)
+	;
+
+	// Last.fm
+	class_<MPX::LastFM::XMLRPC::ArtistMetadataRequestSync, boost::noncopyable>("LastFMArtist", init<std::string>())
+		.def("run", &MPX::LastFM::XMLRPC::ArtistMetadataRequestSync::run)
 	;
 }
 

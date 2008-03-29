@@ -29,11 +29,28 @@
 #include <glibmm.h>
 
 #include <boost/algorithm/string.hpp>
+#define BOOST_REGEX_MATCH_EXTRA 1
+#include <boost/regex.hpp>
 
 #include "md5.h"
 #include "mpx/util-string.hh"
 
 using namespace Glib;
+
+namespace
+{
+  const struct {
+      const char *exp;
+      const char *fmt;
+  } lastfm_regexes[] = {
+
+     { "(\\[[^\\]]+\\])",
+       "(?1)"},
+
+     { "(\\[\\/[^\\]]+\\])",
+       "(?1)"},
+  };
+}
 
 namespace MPX
 {
@@ -195,6 +212,25 @@ namespace MPX
 				return false;
         }
         return true;
+    }
+
+    ustring
+    sanitize_lastfm (ustring const& in)
+    {
+      std::string out = in;
+      try {
+        boost::regex e1;
+        for (unsigned int n = 0; n < G_N_ELEMENTS(lastfm_regexes); ++n)
+        {
+          e1.assign (lastfm_regexes[n].exp);
+          out = boost::regex_replace (out, e1, lastfm_regexes[n].fmt, boost::match_default | boost::format_all | boost::match_extra);
+        }
+       }
+      catch (boost::regex_error & cxe)
+      {
+        g_warning ("%s: Error during Last.FM Markup sanitize: %s", G_STRLOC, cxe.what());
+      }
+      return out; 
     }
   }
 }

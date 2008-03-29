@@ -57,6 +57,7 @@ namespace MPX
 
     std::string stdstrjoin (StrV const& strings, std::string const& delimiter);
     Glib::ustring utf8_string_normalize (Glib::ustring const& in);
+	Glib::ustring sanitize_lastfm (Glib::ustring const& in);
 
   } // Util namespace
 } // MPX namespace
