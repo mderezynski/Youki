@@ -26,8 +26,6 @@ libmpxsource_radio_la_LIBADD =   \
 
 
 libmpxsource_radio_la_SOURCES =  		\
-	xml.hh								\
-	xml.cc								\
 	radio-directory-types.hh      		\
 	radio-directory-view-base.hh  		\
 	radio-directory-view-base.cc  		\

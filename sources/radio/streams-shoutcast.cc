@@ -40,7 +40,7 @@
 #include <sigc++/sigc++.h>
 #include "widgets/dialog-simple-entry.hh"
 #include "mpx/uri.hh"
-#include "xml.hh"
+#include "mpx/xml.hh"
 #include "streams-shoutcast.hh"
 using namespace Glib;
 using namespace Gtk;

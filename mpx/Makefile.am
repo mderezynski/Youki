@@ -189,6 +189,8 @@ mpx_bin_SOURCES =				\
 	video-playback.hh			\
 	video-playback.cc			\
 								\
+	xml.cc						\
+								\
 	xspf.hh						\
 	xspf-libxml2-sax.hh			\
 	xspf-libxml2-sax.cc
