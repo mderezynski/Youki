@@ -1,0 +1,26 @@
+#ifdef HAVE_CONFIG_H
+#  include <config.h>
+#endif //HAVE_CONFIG_H
+
+#include <gtkmm.h>
+
+#include "mpx/mpx-public.hh"
+#include "mpx/playbacksource.hh"
+
+// plugin-specific include
+#include "source-radio.hh"
+
+using namespace MPX;
+using namespace Gtk;
+
+extern "C" MPX::PlaybackSource*
+get_instance (MPX::Player & player)
+{
+	return new MPX::Source::Radio(player);
+}
+
+extern "C" void
+del_instance (PlaybackSource * source)
+{
+	delete source;
+}
