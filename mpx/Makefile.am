@@ -101,7 +101,6 @@ mpx_bin_SOURCES =				\
 	exception-db.hh				\
 								\
 	main.cc						\
-	types.cc					\
 								\
 	amazon.cc					\
 								\
