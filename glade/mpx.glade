@@ -258,26 +258,9 @@
                             <property name="can_focus">True</property>
                             <property name="response_id">0</property>
                             <child>
-                              <widget class="GtkHBox" id="hbox5">
+                              <widget class="GtkLabel" id="label1">
                                 <property name="visible">True</property>
-                                <property name="spacing">2</property>
-                                <child>
-                                  <widget class="GtkImage" id="mpx-current-source-icon">
-                                    <property name="visible">True</property>
-                                    <property name="stock">gtk-missing-image</property>
-                                  </widget>
-                                </child>
-                                <child>
-                                  <widget class="GtkLabel" id="label1">
-                                    <property name="visible">True</property>
-                                    <property name="label" translatable="yes">Sources</property>
-                                  </widget>
-                                  <packing>
-                                    <property name="expand">False</property>
-                                    <property name="fill">False</property>
-                                    <property name="position">1</property>
-                                  </packing>
-                                </child>
+                                <property name="label" translatable="yes">Sources</property>
                               </widget>
                             </child>
                           </widget>

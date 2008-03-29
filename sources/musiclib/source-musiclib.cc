@@ -200,11 +200,11 @@ namespace MPX
               enum Column
               {
                 C_PLAYING,
-                C_ARTIST,
                 C_TITLE,
+                C_ARTIST,
+                C_LENGTH,
                 C_ALBUM,
                 C_TRACK,
-                C_LENGTH
               };
 
               PlaylistTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml, PAccess<MPX::Library> const& lib, MPX::Source::PlaybackSourceMusicLib & mlib)
@@ -224,8 +224,18 @@ namespace MPX
                 col->set_cell_data_func(*cell, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncPlaying ));
                 append_column(*col);
 
-                append_column(_("Artist"), PlaylistColumns.Artist);
                 append_column(_("Title"), PlaylistColumns.Title);
+
+				col = manage (new TreeViewColumn(_("Time")));
+                CellRendererText * cell2 = manage (new CellRendererText);
+				col->property_alignment() = 1.;
+                col->pack_start(*cell2, true);
+                col->set_cell_data_func(*cell2, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFunc ));
+                col->set_sort_column_id(PlaylistColumns.Length);
+				g_object_set(G_OBJECT(cell2->gobj()), "xalign", 1.0f, NULL);
+                append_column(*col);
+
+                append_column(_("Artist"), PlaylistColumns.Artist);
                 append_column(_("Album"), PlaylistColumns.Album);
                 append_column(_("Track"), PlaylistColumns.Track);
                 get_column(C_ARTIST)->set_sort_column_id(PlaylistColumns.Artist);
@@ -233,23 +243,16 @@ namespace MPX
                 get_column(C_ALBUM)->set_sort_column_id(PlaylistColumns.Album);
                 get_column(C_TRACK)->set_sort_column_id(PlaylistColumns.Track);
 
-                for(int c = C_TITLE; c < C_LENGTH; get_column(c++)->set_resizable(true));
 
-				col = manage (new TreeViewColumn(_("Length")));
-                CellRendererText * cell2 = manage (new CellRendererText);
-                col->pack_start(*cell2, false);
-                col->set_cell_data_func(*cell2, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFunc ));
-                col->set_sort_column_id(PlaylistColumns.Length);
-                append_column(*col);
+                for(int c = C_TITLE; c < C_TRACK; get_column(c++)->set_resizable(true));
+
+				get_column(2)->set_resizable(false);
 
                 ListStore = Gtk::ListStore::create(PlaylistColumns);
-
                 ListStore->set_sort_func(PlaylistColumns.Artist,
                     sigc::mem_fun( *this, &PlaylistTreeView::slotSortByArtist ));
-
                 ListStore->set_sort_func(PlaylistColumns.Album,
                     sigc::mem_fun( *this, &PlaylistTreeView::slotSortByAlbum ));
-
                 ListStore->set_sort_func(PlaylistColumns.Track,
                     sigc::mem_fun( *this, &PlaylistTreeView::slotSortByTrack ));
 
@@ -728,6 +731,7 @@ namespace MPX
               {
                 CellRendererText *cell_t = dynamic_cast<CellRendererText*>(basecell);
                 guint64 Length = (*iter)[PlaylistColumns.Length]; 
+				g_object_set(G_OBJECT(cell_t->gobj()), "xalign", 1.0f, NULL);
                 cell_t->property_text() = (boost::format ("%d:%02d") % (Length / 60) % (Length % 60)).str();
               }
 

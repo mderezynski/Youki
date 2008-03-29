@@ -267,7 +267,7 @@ PKG_CHECK_MODULES([GLIBMM], [glibmm-2.4 >= 2.8.3])
 PKG_CHECK_MODULES([SIGC], [sigc++-2.0 >= 2.0.0])
 
 # clutter
-PKG_CHECK_MODULES([CLUTTER], [clutter-0.4 >= 0.4.2 clutter-cairo-0.4 >= 0.4.0 clutter-gtk-0.4 >= 0.4.0 clutter-gst-0.4 >= 0.4.0])
+# PKG_CHECK_MODULES([CLUTTER], [clutter-0.4 >= 0.4.2 clutter-cairo-0.4 >= 0.4.0 clutter-gtk-0.4 >= 0.4.0 clutter-gst-0.4 >= 0.4.0])
 
 # GIO
 PKG_CHECK_MODULES([GIO], [gio-2.0])

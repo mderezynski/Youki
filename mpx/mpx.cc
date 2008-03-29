@@ -902,6 +902,7 @@ namespace MPX
 		switch (field)
 		{
 		  case FIELD_IMAGE:
+			m_Metadata.Image = m.m_image.get();
 			m_InfoArea->set_image (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
 			return;
 	
@@ -1856,6 +1857,7 @@ namespace MPX
 	Player::on_source_changed (int source_id)
 	{
 		dynamic_cast<Gtk::Notebook*>(m_ref_xml->get_widget("sourcepages"))->set_current_page( m_SourceTabMapping[source_id] );
+		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->set_active(false);
 	}
 
 	void
