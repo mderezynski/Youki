@@ -125,6 +125,237 @@ namespace MPX
     {
       return (a.name < b.name);
     }
+
+    namespace XMLRPC
+    {
+      ustring
+      formatXmlRpc (ustring const& method, xmlRpcVariantV const& argv)
+      {
+        xmlDocPtr doc (xmlNewDoc (BAD_CAST "1.0"));
+        xmlNodePtr n_methodCall, n_methodName, n_params;
+
+        n_methodCall = xmlNewNode (0, BAD_CAST "methodCall");
+        xmlDocSetRootElement (doc, n_methodCall);
+
+        n_methodName = xmlNewTextChild (n_methodCall, 0, BAD_CAST "methodName", BAD_CAST method.c_str());
+        n_params = xmlNewChild (n_methodCall, 0, BAD_CAST "params", 0);
+
+        for (xmlRpcVariantV::const_iterator i = argv.begin(); i != argv.end(); ++i)
+        {
+          xmlNodePtr n_param, n_value;
+          n_param = xmlNewChild (n_params, 0, BAD_CAST "param", 0);
+          n_value = xmlNewChild (n_param, 0, BAD_CAST "value", 0);
+
+          xmlRpcVariant const& v (*i);
+
+          switch (v.which())
+          {
+            case 0:
+            {
+              xmlNewTextChild (n_value, 0, BAD_CAST "string", BAD_CAST (boost::get <ustring> (v)).c_str());
+              break;
+            }
+
+            case 1:
+            {
+              xmlNodePtr n_array (xmlNewChild (n_value, 0, BAD_CAST "array", 0)), n_data (xmlNewChild (n_array, 0, BAD_CAST "data", 0));
+              UStrV const& strv (boost::get < ::Bmp::UStrV > (v));
+              for (UStrV::const_iterator i = strv.begin() ; i != strv.end(); ++i)
+              {
+                xmlNodePtr n_data_value (xmlNewChild (n_data, 0, BAD_CAST "value", 0)),
+                           G_GNUC_UNUSED n_data_string (xmlNewTextChild (n_data_value, 0, BAD_CAST "string", BAD_CAST (*i).c_str()));
+              }
+              break;
+            }
+          }
+        }
+
+        xmlKeepBlanksDefault (0);
+        xmlChar * xmldoc = 0;
+        int doclen = 0;
+        xmlDocDumpFormatMemoryEnc (doc, &xmldoc, &doclen, "UTF-8", 1);
+        ustring doc_utf8 ((const char*)(xmldoc));
+        g_free (xmldoc);
+        return doc_utf8;
+      }
+
+      /////////////////////////////////////////////////
+      ///// Requests
+      /////////////////////////////////////////////////
+
+      XmlRpcCall::XmlRpcCall ()
+      {
+        m_soup_request = Soup::Request::create ("http://ws.audioscrobbler.com/1.0/rw/xmlrpc.php", true) ;
+        m_soup_request->add_header("User-Agent", "BMP-2.0");
+        m_soup_request->add_header("Accept-Charset", "utf-8");
+        m_soup_request->add_header("Connection", "close");
+      }
+      void
+      XmlRpcCall::setMethod (const ustring &method)
+      { 
+        ustring xmlData = formatXmlRpc (method, m_v);
+        m_soup_request->add_request ("text/xml", xmlData);
+      }
+      void
+      XmlRpcCall::cancel ()
+      {
+        m_soup_request.clear();
+      }
+      XmlRpcCall::~XmlRpcCall ()
+      {
+      }
+
+
+      XmlRpcCallSync::XmlRpcCallSync ()
+      {
+        m_soup_request = Soup::RequestSync::create ("http://ws.audioscrobbler.com/1.0/rw/xmlrpc.php", true) ;
+        m_soup_request->add_header("User-Agent", "BMP-2.0");
+        m_soup_request->add_header("Accept-Charset", "utf-8");
+        m_soup_request->add_header("Connection", "close");
+      }
+      void
+      XmlRpcCallSync::setMethod (const ustring &method)
+      { 
+        ustring xmlData = formatXmlRpc (method, m_v);
+        m_soup_request->add_request ("text/xml", xmlData);
+      }
+      XmlRpcCallSync::~XmlRpcCallSync ()
+      {
+      }
+
+
+      ArtistMetadataRequest::ArtistMetadataRequest (ustring const& artist) 
+      : XmlRpcCall ()
+      , m_artist (artist)
+      {
+        m_v.push_back (m_artist);
+        m_v.push_back (ustring ("en"));
+        setMethod ("artistMetadata");
+      }
+
+      ArtistMetadataRequestRefPtr
+      ArtistMetadataRequest::create (ustring const& artist)
+      {
+        return ArtistMetadataRequestRefPtr (new ArtistMetadataRequest (artist));
+      }
+
+      void
+      ArtistMetadataRequest::run ()
+      {
+        m_soup_request->request_callback().connect (sigc::mem_fun (*this, &ArtistMetadataRequest::reply_cb));
+        m_soup_request->run ();
+      }
+
+      void
+      ArtistMetadataRequest::reply_cb (char const* data, guint size, guint status_code)
+      {
+        std::string chunk;
+
+        xmlDocPtr             doc;
+        xmlXPathObjectPtr     xpathobj;
+        xmlNodeSetPtr         nv;
+
+        doc = xmlParseMemory (data, size); 
+        if (!doc)
+        {  
+          s_.emit (chunk, status_code);
+          return;
+        }
+
+        xpathobj = xpath_query (doc, BAD_CAST "//member[name = 'wikiText']/value/string", NULL);
+        if (!xpathobj)
+        {
+          s_.emit (chunk, status_code);
+          return;
+        }
+
+        nv = xpathobj->nodesetval;
+        if (!nv || !nv->nodeNr)
+        {
+          xmlXPathFreeObject (xpathobj);
+          s_.emit (chunk, status_code);
+          return;
+        }
+
+        xmlNodePtr node = nv->nodeTab[0];
+        if (!node || !node->children)
+        {
+          xmlXPathFreeObject (xpathobj);
+          s_.emit (chunk, status_code);
+          return;
+        }
+
+        xmlChar * pcdata = XML_GET_CONTENT (node->children);
+
+        if (pcdata)
+        {
+          chunk = (reinterpret_cast<char *>(pcdata));
+          xmlFree (pcdata);
+        }
+
+        s_.emit (chunk, status_code);
+      }
+
+      ArtistMetadataRequestSync::ArtistMetadataRequestSync (ustring const& artist) 
+      : XmlRpcCallSync ()
+      , m_artist (artist)
+      {
+        m_v.push_back (m_artist);
+        m_v.push_back (ustring ("en"));
+        setMethod ("artistMetadata");
+      }
+
+	  std::string
+      ArtistMetadataRequestSync::run ()
+      {
+        m_soup_request->request_callback().connect (sigc::mem_fun (*this, &ArtistMetadataRequest::reply_cb));
+        int code = m_soup_request->run ();
+		std::string text;
+		if(code == 200)
+		{
+			xmlDocPtr             doc;
+			xmlXPathObjectPtr     xpathobj;
+			xmlNodeSetPtr         nv;
+
+			doc = xmlParseMemory (data, size); 
+			if (!doc)
+			{  
+			  s_.emit (chunk, status_code);
+			  return;
+			}
+
+			xpathobj = xpath_query (doc, BAD_CAST "//member[name = 'wikiText']/value/string", NULL);
+			if (!xpathobj)
+			{
+			  s_.emit (chunk, status_code);
+			  return;
+			}
+
+			nv = xpathobj->nodesetval;
+			if (!nv || !nv->nodeNr)
+			{
+			  xmlXPathFreeObject (xpathobj);
+			  s_.emit (chunk, status_code);
+			  return;
+			}
+
+			xmlNodePtr node = nv->nodeTab[0];
+			if (!node || !node->children)
+			{
+			  xmlXPathFreeObject (xpathobj);
+			  s_.emit (chunk, status_code);
+			  return;
+			}
+
+			xmlChar * pcdata = XML_GET_CONTENT (node->children);
+
+			if (pcdata)
+			{
+			  text = (reinterpret_cast<char *>(pcdata));
+			  xmlFree (pcdata);
+			}
+		  }
+
 }
 
 namespace MPX

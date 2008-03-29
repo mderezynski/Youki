@@ -48,14 +48,14 @@ class TrackInfo:
 			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(AttributeId.attr_title).val().get_string(), self.textTagCenter, self.textTagLarge)
 
 		if track.get(AttributeId.attr_artist).is_initialized() and track.get(AttributeId.attr_album).is_initialized():
-			self.buf.insert_with_tags(self.buf.get_end_iter(), "\n(by " + track.get(AttributeId.attr_artist).val().get_string(), self.textTagCenter)
-			self.buf.insert_with_tags(self.buf.get_end_iter(), " from " + track.get(AttributeId.attr_album).val().get_string()+")", self.textTagCenter)
+			self.buf.insert_with_tags(self.buf.get_end_iter(), "\n(from " + track.get(AttributeId.attr_artist).val().get_string(), self.textTagCenter)
+			self.buf.insert_with_tags(self.buf.get_end_iter(), " \"" + track.get(AttributeId.attr_album).val().get_string()+"\")", self.textTagCenter)
 
 		if track.get(AttributeId.attr_artist).is_initialized() and track.get(AttributeId.attr_title).is_initialized():
 			try:
 				lyricwiki = mpx_boost.LyricWiki(track.get(AttributeId.attr_artist).val().get_string(), track.get(AttributeId.attr_title).val().get_string())
 				lyrics = lyricwiki.run()
-				self.buf.insert(self.buf.get_end_iter(), "\n")
+				self.buf.insert(self.buf.get_end_iter(), "\n\n")
 				self.buf.insert(self.buf.get_end_iter(), lyrics)
 			except:
 				print "Couldn't get lyrics"
