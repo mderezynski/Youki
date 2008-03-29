@@ -94,5 +94,7 @@ if test "$ac_cv_boost_python" = "yes"; then
   done
   LDFLAGS=$LDFLAGS_SAVE
   AC_SUBST(BOOST_PYTHON_LIB)
+else
+  AC_MSG_ERROR([Could not find the boost python bindings])
 fi
 ])dnl
