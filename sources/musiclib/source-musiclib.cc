@@ -949,7 +949,7 @@ namespace MPX
 						{
 							int rating = ((cell_x - 102)+7) / 15;
 							(*iter)[AlbumColumns.Rating] = rating;	
-							m_Lib.get().execSQL((boost::format ("UPDATE album SET album_rating = %lld WHERE id = %lld") % gint64(rating) % m_AlbumDragId).str());
+							m_Lib.get().rateAlbum(m_AlbumDragId, rating);
 						}
                     }
                     else
@@ -1309,7 +1309,7 @@ namespace MPX
                 CellRendererText *celltext = manage (new CellRendererText);
                 celltext->property_yalign() = 0.;
                 celltext->property_ypad() = 2;
-                celltext->property_height() = 60;
+                celltext->property_height() = 58;
 				celltext->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE;
 				cvbox->property_renderer1() = celltext;
 

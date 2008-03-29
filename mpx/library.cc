@@ -310,13 +310,20 @@ namespace MPX
     void
     Library::getSQL( RowV & rows, const std::string& sql)
     {
-      m_SQL->get (rows, sql); 
+		m_SQL->get (rows, sql); 
     }
 
 	void
 	Library::execSQL(const std::string& sql)
 	{
-	  m_SQL->exec_sql(sql);
+		m_SQL->exec_sql(sql);
+	}
+
+	void	
+	Library::rateAlbum(gint64 id, int rating)
+	{
+		execSQL((boost::format ("UPDATE album SET album_rating = %d WHERE id = %lld") % rating % id).str());
+		Signals.AlbumUpdated.emit(id);
 	}
 
     gint64

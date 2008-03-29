@@ -103,7 +103,11 @@ namespace MPX
             void
             scanUri (const std::string& uri, const std::string& name = std::string());
 
+			void
+			rateAlbum (gint64 id, int rating);
+
             typedef sigc::signal<void, const std::string& /*mbid*/, const std::string& /*asin*/, gint64/*albumid*/> SignalNewAlbum;
+            typedef sigc::signal<void, gint64/*albumid*/> SignalAlbumUpdated;
             typedef sigc::signal<void, const std::string& /*mbid*/, gint64/*artistid*/> SignalNewArtist;
             typedef sigc::signal<void, Track&, gint64/*albumid*/> SignalNewTrack;
 
@@ -119,9 +123,14 @@ namespace MPX
                 SignalScanStart     ScanStart;  
                 SignalScanRun       ScanRun;
                 SignalScanEnd       ScanEnd;
+				SignalAlbumUpdated	AlbumUpdated;
             };
 
             SignalsT Signals;
+
+            SignalAlbumUpdated&
+            signal_album_updated()
+            { return Signals.AlbumUpdated ; }
 
             SignalNewAlbum&
             signal_new_album()

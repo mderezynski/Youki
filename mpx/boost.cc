@@ -7,6 +7,7 @@
 #include <Python.h>
 #include "boost.hh"
 #include "mpx/playbacksource.hh"
+#include "musicbrainz/mbxml-v2-types.hh"
 using namespace boost::python;
 
 namespace MPX
@@ -228,6 +229,8 @@ BOOST_PYTHON_MODULE(mpx_boost)
       .value("attr_active", MPX::MPX_ATTRIBUTE_ACTIVE)
       .value("attr_mpx_track_id", MPX::MPX_ATTRIBUTE_MPX_TRACK_ID)
 	;
+
+	// Musicbrainz
 }
 
 namespace MPX
