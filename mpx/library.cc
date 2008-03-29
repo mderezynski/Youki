@@ -232,13 +232,14 @@ namespace MPX
         static boost::format
           album_table_f ("CREATE TABLE IF NOT EXISTS album "
                           "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
-                          "'%s' TEXT, '%s' TEXT, '%s' INTEGER, UNIQUE "
+                          "'%s' TEXT, '%s' TEXT, '%s' INTEGER DEFAULT 0, '%s' INTEGER, UNIQUE "
                           "('%s', '%s', '%s', '%s', '%s'));");
 
         m_SQL->exec_sql ((album_table_f % attrs[ATTRIBUTE_ALBUM].id
                                           % attrs[ATTRIBUTE_MB_ALBUM_ID].id
                                           % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
                                           % attrs[ATTRIBUTE_ASIN].id
+										  % "album_rating"
                                           % "album_artist_j"
                                           % attrs[ATTRIBUTE_ALBUM].id
                                           % attrs[ATTRIBUTE_MB_ALBUM_ID].id
@@ -311,6 +312,12 @@ namespace MPX
     {
       m_SQL->get (rows, sql); 
     }
+
+	void
+	Library::execSQL(const std::string& sql)
+	{
+	  m_SQL->exec_sql(sql);
+	}
 
     gint64
     Library::get_track_artist_id (Track &track, bool only_if_exists)

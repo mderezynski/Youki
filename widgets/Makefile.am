@@ -30,7 +30,10 @@ libmpx_widgets_la_SOURCES = 				\
 		taskdialog.cc					\
 										\
 		cell-renderer-cairo-surface.hh	\
-		cell-renderer-cairo-surface.cc	
+		cell-renderer-cairo-surface.cc	\
+										\
+		cell-renderer-vbox.hh			\
+		cell-renderer-vbox.cc	
 
 widget-marshalers.c: widget-marshalers.list 
 	@echo "* Generating widget-marshalers.c"

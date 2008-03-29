@@ -29,6 +29,7 @@
 #include <libglademm.h>
 
 #include "widgets/cell-renderer-cairo-surface.hh"
+#include "widgets/cell-renderer-vbox.hh"
 #include "widgets/gossip-cell-renderer-expander.h"
 
 #include "mpx/library.hh"
@@ -802,6 +803,7 @@ namespace MPX
             Gtk::TreeModelColumn<std::string> ASIN;
             Gtk::TreeModelColumn<gint64> Date;
             Gtk::TreeModelColumn<gint64> Id;
+            Gtk::TreeModelColumn<gint64> Rating;
             Gtk::TreeModelColumn<Glib::ustring> TrackTitle;
             Gtk::TreeModelColumn<Glib::ustring> TrackArtist;
             Gtk::TreeModelColumn<gint64> TrackNumber;
@@ -818,6 +820,7 @@ namespace MPX
                 add (ASIN);
                 add (Date);
                 add (Id);
+                add (Rating);
                 add (TrackTitle);
                 add (TrackArtist);
                 add (TrackNumber);
@@ -845,6 +848,7 @@ namespace MPX
 
               Cairo::RefPtr<Cairo::ImageSurface> m_DiscDefault;
               Glib::RefPtr<Gdk::Pixbuf> m_DiscDefault_Pixbuf;
+              Glib::RefPtr<Gdk::Pixbuf> m_Stars[6];
 
               std::string m_DragASIN;
               gint64 m_AlbumDragId;
@@ -940,10 +944,17 @@ namespace MPX
                         m_DragASIN = (*iter)[AlbumColumns.ASIN];
                         m_AlbumDragId = (*iter)[AlbumColumns.Id];
                         m_TrackDragId = 0;
+
+						if( (cell_x >= 102) && (cell_x <= 178) && (cell_y >= 65) && (cell_y <=78))
+						{
+							int rating = ((cell_x - 102)+7) / 15;
+							(*iter)[AlbumColumns.Rating] = rating;	
+							m_Lib.get().execSQL((boost::format ("UPDATE album SET album_rating = %lld WHERE id = %lld") % gint64(rating) % m_AlbumDragId).str());
+						}
                     }
                     else
                     {
-                        m_DragASIN = "";
+                        m_DragASIN = ""; // TODO: Use boost::optional
                         m_AlbumDragId = 0; 
                         m_TrackDragId = (*iter)[AlbumColumns.TrackId];
                     }
@@ -991,6 +1002,12 @@ namespace MPX
                 g_return_if_fail(!v.empty());
 
                 SQL::Row & r = v[0];
+
+                if(r.count("album_rating"))
+				{
+					gint64 rating = get<gint64>(r["album_rating"]);
+					(*iter)[AlbumColumns.Rating] = rating;
+				}
 
                 std::string date; 
                 if(r.count("mb_release_date"))
@@ -1087,15 +1104,21 @@ namespace MPX
               cellDataFuncText1 (CellRenderer * basecell, TreeModel::iterator const &iter)
               {
                 TreePath path (iter);
-                CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);
+                CellRendererVBox *cvbox = dynamic_cast<CellRendererVBox*>(basecell);
+                CellRendererText *cell1 = dynamic_cast<CellRendererText*>(cvbox->property_renderer1().get_value());
+                CellRendererPixbuf *cell2 = dynamic_cast<CellRendererPixbuf*>(cvbox->property_renderer2().get_value());
                 if(path.get_depth() == 1)
                 {
-                    cell->property_visible() = true; 
-                    cell->property_markup() = (*iter)[AlbumColumns.Text]; 
+                    cvbox->property_visible() = true; 
+
+					if(cell1)
+	                    cell1->property_markup() = (*iter)[AlbumColumns.Text]; 
+					if(cell2)
+	                    cell2->property_pixbuf() = m_Stars[gint64((*iter)[AlbumColumns.Rating])];
                 }
                 else
                 {
-                    cell->property_visible() = false; 
+                    cvbox->property_visible() = false; 
                 }
               }
 
@@ -1166,6 +1189,12 @@ namespace MPX
                     (*iter)[AlbumColumns.ASIN] = ""; 
                     (*iter)[AlbumColumns.Id] = get<gint64>(r["id"]); 
       
+	                if(r.count("album_rating"))
+					{
+						gint64 rating = get<gint64>(r["album_rating"]);
+						(*iter)[AlbumColumns.Rating] = rating;
+					}
+
                     if(r.count("amazon_asin"))
                     {
                         std::string asin = get<std::string>(r["amazon_asin"]);
@@ -1242,6 +1271,12 @@ namespace MPX
               , m_Lib(lib)
               , m_AMZN(amzn)
               {
+
+				for(int n = 0; n < 6; ++n)
+				{
+					m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename(DATA_DIR,"images"), (boost::format("stars%d.png") % n).str()));
+				}
+
                 m_Lib.get().signal_new_album().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_album ));
                 m_Lib.get().signal_new_track().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_track ));
                 m_AMZN.get().signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
@@ -1269,12 +1304,23 @@ namespace MPX
                 cellcairo->property_yalign() = 0.;
                 cellcairo->property_xalign() = 0.;
 
+				CellRendererVBox *cvbox = manage (new CellRendererVBox);
+
                 CellRendererText *celltext = manage (new CellRendererText);
-                col->pack_start(*celltext, true);
-                col->set_cell_data_func(*celltext, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncText1 ));
                 celltext->property_yalign() = 0.;
                 celltext->property_ypad() = 2;
+                celltext->property_height() = 60;
 				celltext->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE;
+				cvbox->property_renderer1() = celltext;
+
+                CellRendererPixbuf *cellpixbuf = manage (new CellRendererPixbuf);
+                cellpixbuf->property_xalign() = 0.;
+                cellpixbuf->property_ypad() = 2;
+				cvbox->property_renderer2() = cellpixbuf;
+
+                col->pack_start(*cvbox, true);
+                col->set_cell_data_func(*cvbox, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncText1 ));
+
 
                 celltext = manage (new CellRendererText);
                 col->pack_start(*celltext, false);
@@ -1303,7 +1349,7 @@ namespace MPX
                 set_enable_tree_lines();
 
                 m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")));
-                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(64,64,Gdk::INTERP_BILINEAR));
+                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(72,72,Gdk::INTERP_BILINEAR));
 
                 album_list_load ();
 

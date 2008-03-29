@@ -93,6 +93,9 @@ namespace MPX
             void
             getSQL(SQL::RowV & rows, const std::string& sql) ;
 
+			void
+			execSQL(const std::string& sql);
+
 
             ScanResult
             insert (const std::string& uri, const std::string& insert_path, const std::string& name = std::string());
