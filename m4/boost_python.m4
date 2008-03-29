@@ -26,6 +26,7 @@
 # COPYLEFT
 #
 #   Copyright (c) 2007 Michael Tindal
+#   Copyright (c) 2008 David Le Brun
 #
 #   This program is free software; you can redistribute it and/or
 #   modify it under the terms of the GNU General Public License as
@@ -78,6 +79,10 @@ ac_cv_boost_python,
 ])
 if test "$ac_cv_boost_python" = "yes"; then
   AC_DEFINE(HAVE_BOOST_PYTHON,,[define if the Boost::Python library is available])
+  LDFLAGS_SAVE=$LDFLAGS
+  if test x$PYTHON_LIB != x; then
+     LDFLAGS="$LDFLAGS -l$PYTHON_LIB"
+  fi
   ax_python_lib=boost_python
   AC_ARG_WITH([boost-python],AS_HELP_STRING([--with-boost-python],[specify the boost python library or suffix to use]),
   [if test "x$with_boost_python" != "xno"; then
@@ -85,8 +90,11 @@ if test "$ac_cv_boost_python" = "yes"; then
      ax_boost_python_lib=boost_python-$with_boost_python
    fi])
   for ax_lib in $ax_python_lib $ax_boost_python_lib boost_python; do
-    AC_CHECK_LIB($ax_lib, exit, [BOOST_PYTHON_LIB=$ax_lib break])
+    AC_CHECK_LIB($ax_lib, exit, [BOOST_PYTHON_LIB="-l$ax_lib" break])
   done
+  LDFLAGS=$LDFLAGS_SAVE
   AC_SUBST(BOOST_PYTHON_LIB)
+else
+  AC_MSG_ERROR([Could not find the boost python bindings])
 fi
 ])dnl
