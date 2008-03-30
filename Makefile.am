@@ -4,15 +4,15 @@ DISTCHECK_CONFIGURE_FLAGS = --with-dbus-services-dir=/tmp --enable-hal --enable-
 
 # Main Service
 servicedir = $(DBUS_SERVICES_DIR)
-service_in_files = org.beepmediaplayer.mpx.service.in
-service_DATA = org.beepmediaplayer.mpx.service
+service_in_files = info.backtrace.mpx.service.in
+service_DATA = info.backtrace.mpx.service
 $(service_DATA): $(service_in_files) Makefile
 	@sed -e "s|\@libexecdir\@|$(libexecdir)|" $< > $@
 
 # Sentinel
 sentineldir = $(DBUS_SERVICES_DIR)
-sentinel_in_files = org.beepmediaplayer.mpxsentinel.service.in
-sentinel_DATA = org.beepmediaplayer.mpxsentinel.service
+sentinel_in_files = info.backtrace.sentinel.service.in
+sentinel_DATA = info.backtrace.sentinel.service
 $(sentinel_DATA): $(sentinel_in_files) Makefile
 	@sed -e "s|\@libexecdir\@|$(libexecdir)|" $< > $@
 
@@ -50,8 +50,8 @@ EXTRA_DIST =									\
 												\
 	autogen.sh									\
 												\
-	org.beepmediaplayer.mpx.service.in			\
-	org.beepmediaplayer.mpxsentinel.service.in	\
+	info.backtrace.mpx.service.in				\
+	info.backtrace.sentinel.service.in			\
 												\
 	mpx.1.in									\
 	mpx.pc.in									\

@@ -1,6 +1,6 @@
 bin_PROGRAMS = mpx 
 
-dist_bin_SCRIPTS  = mpx-play-uris mpx-play-files
+dist_bin_SCRIPTS = 
 
 mpx_LDADD =			\
 	$(GLIBMM_LIBS)	\
@@ -10,9 +10,7 @@ mpx_LDADD =			\
 mpx_CXXFLAGS =			\
 	$(GLIBMM_CFLAGS)	\
 	$(GTK_CFLAGS)		\
-	$(DBUS_CFLAGS)		\
-						\
-	-DMPX_BINARY_PATH=\"$(libexecdir)/mpx-bin\"
+	$(DBUS_CFLAGS)		
 
 mpx_SOURCES =	\
     mpx.cc

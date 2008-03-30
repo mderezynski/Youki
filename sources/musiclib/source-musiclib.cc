@@ -75,6 +75,9 @@ namespace
   {
 		Track track;
 
+		if (row.count("album_artist"))
+		  track[ATTRIBUTE_ALBUM_ARTIST] = get<std::string>(row["album_artist"]);
+
 		if (row.count("artist"))
 		  track[ATTRIBUTE_ARTIST] = get<std::string>(row["artist"]);
 
@@ -96,12 +99,17 @@ namespace
 		if (row.count("mb_album_id"))
 		  track[ATTRIBUTE_MB_ALBUM_ID] = get<std::string>(row["mb_album_id"]);
 
+		if (row.count("mb_track_id"))
+		  track[ATTRIBUTE_MB_TRACK_ID] = get<std::string>(row["mb_track_id"]);
+
+		if (row.count("mb_album_artist_id"))
+		  track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = get<std::string>(row["mb_album_artist_id"]);
+
 		if (row.count("amazon_asin"))
 		  track[ATTRIBUTE_ASIN] = get<std::string>(row["amazon_asin"]);
 
 		return track;
 	}
-
 }
  
 namespace MPX
@@ -1030,7 +1038,7 @@ namespace MPX
                 else
                     ArtistSort = get<std::string>(r["album_artist"]);
 
-                (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='10000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+                (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
                 (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                 (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
               }
@@ -1225,7 +1233,7 @@ namespace MPX
                     else
                         ArtistSort = get<std::string>(r["album_artist"]);
 
-					(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='10000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+					(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
                     (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                     (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
                 }
@@ -1313,13 +1321,14 @@ namespace MPX
                 CellRendererText *celltext = manage (new CellRendererText);
                 celltext->property_yalign() = 0.;
                 celltext->property_ypad() = 2;
-                celltext->property_height() = 58;
+                celltext->property_height() = 52;
 				celltext->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE;
 				cvbox->property_renderer1() = celltext;
 
                 CellRendererPixbuf *cellpixbuf = manage (new CellRendererPixbuf);
                 cellpixbuf->property_xalign() = 0.;
                 cellpixbuf->property_ypad() = 2;
+                cellpixbuf->property_xpad() = 2;
 				cvbox->property_renderer2() = cellpixbuf;
 
                 col->pack_start(*cvbox, true);

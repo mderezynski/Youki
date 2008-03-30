@@ -28,6 +28,7 @@
 #include <gtkmm.h>
 #include <gtkmm/volumebutton.h>
 #include <libglademm/xml.h>
+#include <dbus/dbus-glib.h>
 
 #include "mpx/amazon.hh"
 #include "mpx/library.hh"
@@ -73,16 +74,14 @@ namespace MPX
         static Player*
         create (MPX::Library&, MPX::Amazon::Covers&);
 
+		class Root; 
+		class DBusMPX; 
+
       protected:
 
         virtual bool on_key_press_event (GdkEventKey*);
 
       private:
-
-		Play * m_Play;
-		boost::python::object m_TrackInfo;
-		boost::python::object m_TrackInfoMain;
-		boost::python::object m_TrackInfoDict;
 
         struct SourcePlugin
         {
@@ -98,6 +97,21 @@ namespace MPX
         Glib::RefPtr<Gnome::Glade::Xml>   m_ref_xml;
         Glib::RefPtr<Gtk::ActionGroup>    m_actions;
         Glib::RefPtr<Gtk::UIManager>      m_ui_manager;
+
+		Play * m_Play;
+		DBusGConnection * m_SessionBus;
+
+		struct DBusObjectsT
+		{
+			Root		*root;
+			DBusMPX		*mpx;
+		};
+
+		DBusObjectsT DBusObjects;
+
+		boost::python::object m_TrackInfo;
+		boost::python::object m_TrackInfoMain;
+		boost::python::object m_TrackInfoDict;
 
         Sources *m_Sources;
         InfoArea *m_InfoArea;
@@ -284,6 +298,9 @@ namespace MPX
 
         void
         on_got_cover (Glib::ustring);
+
+		void
+		init_dbus ();
     };
 }
 #endif

@@ -709,12 +709,15 @@ AC_OUTPUT([
     icons/hicolor/24x24/Makefile
     icons/hicolor/24x24/stock/Makefile
 
+	desktop/Makefile
+	desktop/mpx.desktop
     glade/Makefile
     images/Makefile
     jnetlib/Makefile
     libhal++/Makefile
     mcs/Makefile
     python/Makefile
+	remote/Makefile
     scripts/Makefile
     widgets/Makefile
 

@@ -1,5 +1,5 @@
 //  MPX
-//  Copyright (C) 2005-2007 MPX development.
+//  Copyright (C) 2008 MPX 
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License Version 2
@@ -25,9 +25,6 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
-#include <revision.h>
-#include <build.h>
-
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -47,72 +44,14 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus.h>
 
-#include <mpx/dbus.hh>
-#include <src/paths.hh>
-
 namespace
 {
 
   GMainLoop* mainloop = NULL;
 
-  gboolean arg_show_version    = FALSE;
-  gboolean arg_show_configure  = FALSE;
-  gboolean arg_add_files       = FALSE;
-  gboolean arg_add_uris        = FALSE;
-  gboolean arg_no_network      = FALSE;
-  gboolean arg_p_pause         = FALSE;
-  gboolean arg_p_next          = FALSE;
-  gboolean arg_p_prev          = FALSE;
-
   GOptionEntry options[] =
   {
-      {"no-network",  'n', 0, G_OPTION_ARG_NONE, &arg_no_network,     N_("Start MPX in Offline Mode"), NULL},
-      {"version",     'v', 0, G_OPTION_ARG_NONE, &arg_show_version,   N_("Display version"), NULL},
-      {"configure",   'c', 0, G_OPTION_ARG_NONE, &arg_show_configure, N_("Display configure arguments"), NULL},
-      {"files",       'f', 0, G_OPTION_ARG_NONE, &arg_add_files,      N_("Play Files"), NULL},
-      {"uris",        'u', 0, G_OPTION_ARG_NONE, &arg_add_uris,       N_("Play URIs"), NULL},
-      {"ppaus",        0,  0, G_OPTION_ARG_NONE, &arg_p_pause,        N_("Pause Playback"), NULL},
-      {"pnext",        0,  0, G_OPTION_ARG_NONE, &arg_p_next,         N_("Next"), NULL},
-      {"pprev",        0,  0, G_OPTION_ARG_NONE, &arg_p_prev,         N_("Previous"), NULL},
-
-      { NULL }
   };
-
-  static const char *features[] =
-  {
-#ifdef HAVE_SM
-      N_("X11 Session Management"),
-#endif
-
-#ifdef HAVE_HAL
-      N_("HAL support"),
-#endif
-
-#ifdef HAVE_ALSA
-      N_("ALSA Support (Linux)"),
-#endif
-
-#ifdef HAVE_SUNAUDIO
-      N_("SUN Audio support"),
-#endif
-
-#ifdef HAVE_OFA
-      N_("MusicIP support"),
-#endif //HAVE_OFA
-
-#ifdef HAVE_MP4V2
-      N_("M4A/AAC taglib support"),
-#endif //HAVE_MP4V2
-
-#ifdef HAVE_SID
-      N_("SID taglib support"),
-#endif //HAVE_SID
-
-#ifdef HAVE_MOD
-      N_("Tracker modules taglib support")
-#endif //HAVE_MOD
-
-    };
 
   void
   print_version ()
@@ -121,21 +60,7 @@ namespace
              PACKAGE,
              VERSION);
 
-    if (std::strlen (RV_REVISION))
-      g_print (" (%s-R%s)",
-               RV_LAST_CHANGED_DATE,
-               RV_REVISION);
-
-    g_print (_("\nCopyright (c) 2005-2007 MPX Project <http://mpx.beep-media-player.org>\n\n"));
-
-    g_print (_("Built on %s for %s with:\n"),
-             BUILD_DATE,
-             BUILD_ARCH);
-
-    for (unsigned int i = 0; i < G_N_ELEMENTS (features); i++)
-      g_print ("\t* %s\n", _(features[i]));
-
-    g_print ("\n");
+    g_print (_("\nCopyright (c) 2008 MPX <http://mpx.backtrace.info>\n\n"));
   }
 
   void
@@ -181,7 +106,7 @@ namespace
         char *message = g_strconcat
           (_("\n       MPX seems to have crashed.\n\n       Please try starting it from a terminal using '"),
            PREFIX,
-           _("/libexec/beep-media-player-2-bin --no-log'\n       for further information on what could have caused the crash\n"),
+           _("/libexec/mpx-bin --no-log'\n       for further information on what could have caused the crash\n"),
            _("       and report it to our IRC channel, #mpx on irc.freenode.net\n\n"), NULL);
         g_printf (message);
         g_free (message);
@@ -194,7 +119,7 @@ namespace
                                   "Please file a bug at:\n\n"
                                   "http://bugs.beep-media-player.org");
 
-        gtk_window_set_title (GTK_WINDOW (dialog), _("MPX has crashed"));
+        gtk_window_set_title (GTK_WINDOW (dialog), _("MPX Crashed"));
         gtk_dialog_run (GTK_DIALOG (dialog));
         gtk_widget_destroy (dialog);
       }
@@ -208,7 +133,7 @@ namespace
                       char*       new_owner,
                       gpointer    data)
   {
-    if (!name || (name && std::strcmp (name, MPX_DBUS_SERVICE)))
+    if (!name || (name && std::strcmp (name, "info.backtrace.mpx")))
       return;
 
     if (std::strlen (old_owner) && !std::strlen (new_owner))
@@ -254,18 +179,12 @@ main (int    argc,
       return EXIT_FAILURE;
   }
 
-  if (arg_show_version)
+  if ((argc > 1) && !strcmp(argv[1], "--version"))
   {
       print_version ();
-      return EXIT_SUCCESS;
-  }
-
-  if (arg_show_configure)
-  {
       print_configure ();
       return EXIT_SUCCESS;
   }
-
 
   bool startup_only = (argc == 1);
 
@@ -287,7 +206,7 @@ main (int    argc,
       boost::format error_fmt (_("<big><b>MPX/DBus Error</b></big>\n\nMPX can not be started trough DBus activation.\n"
                                  "The following error occured trying to start up MPX:\n\n'<b>%s</b>'\n\n"
                                  "DBus might not be running at all or have even crashed, please consult further "
-                                 "help with this problem from DBus or MPX support."));
+                                 "help with this problem from DBus or MPX"));
 
       std::string message;
 
@@ -316,7 +235,7 @@ main (int    argc,
 
   guint request_name_result = 0;
   if (!dbus_g_proxy_call (o_bus, "RequestName", &error,
-                          G_TYPE_STRING, "org.beepmediaplayer.startup",
+                          G_TYPE_STRING, "info.backtrace.startup",
                           G_TYPE_UINT, 0,
                           G_TYPE_INVALID,
                           G_TYPE_UINT, &request_name_result,
@@ -351,9 +270,9 @@ main (int    argc,
   gboolean was_running = TRUE;
 
   DBusGProxy* o_mpx = dbus_g_proxy_new_for_name_owner (dbus,
-                                                       MPX_DBUS_SERVICE,
-                                                       MPX_DBUS_PATH__MPX,
-                                                       MPX_DBUS_INTERFACE__MPX,
+                                                       "info.backtrace.mpx",
+                                                       "/MPX",
+                                                       "info.backtrace.mpx",
                                                        &error);
 
   if (!o_mpx)
@@ -368,14 +287,14 @@ main (int    argc,
   if (!o_mpx)
   {
     o_mpx = dbus_g_proxy_new_for_name (dbus,
-                                       MPX_DBUS_SERVICE,
-                                       MPX_DBUS_PATH__MPX,
-                                       MPX_DBUS_INTERFACE__MPX);
+                                       "info.backtrace.mpx",
+                                       "/MPX",
+                                       "info.backtrace.mpx");
   }
 
   dbus_g_proxy_call (o_mpx, "Startup", &error,
                      G_TYPE_INT,
-                     arg_no_network ? ((int)1) : ((int)0),
+                     int(0), 
                      G_TYPE_INVALID,
                      G_TYPE_INVALID);
 
@@ -400,18 +319,14 @@ main (int    argc,
 
   g_main_loop_unref (mainloop);
 
+#if 0
   // Start Sentinel
   dbus_error_init (&dbus_error);
-
-  DBusGProxy* o_player = dbus_g_proxy_new_for_name (dbus,  MPX_DBUS_SERVICE,
-                                                           MPX_DBUS_PATH__MPRIS_PLAYER,
-                                                           MPX_DBUS_INTERFACE__MPRIS);
-
   if (!was_running)
   {
       uint32_t reply = 0;
       dbus_bus_start_service_by_name (c_bus,
-                                      "org.beepmediaplayer.mpxsentinel",
+                                      "info.backtrace.sentinel",
                                       uint32_t (0),
                                       &reply,
                                       &dbus_error);
@@ -420,9 +335,14 @@ main (int    argc,
       {
           print_error (&dbus_error);
           dbus_error_free (&dbus_error);
-          goto abort;
       }
   }
+#endif
+
+#if 0
+  DBusGProxy* o_player = dbus_g_proxy_new_for_name (dbus,  "info.backtrace.mpx",
+                                                           MPX_DBUS_PATH__MPRIS_PLAYER,
+                                                           MPX_DBUS_INTERFACE__MPRIS);
 
   // Now MPX is running -> process args
   if (startup_only)
@@ -538,11 +458,14 @@ main (int    argc,
 
       g_strfreev (uri_list);
   }
+#endif
 
  end:
 
+#if 0
   if (o_player)
     g_object_unref (o_player);
+#endif
 
   if (o_bus)
     g_object_unref (o_bus);
@@ -554,8 +477,10 @@ main (int    argc,
 
 abort:
 
+#if 0
   if (o_player)
     g_object_unref (o_player);
+#endif
 
   if (o_bus)
     g_object_unref (o_bus);

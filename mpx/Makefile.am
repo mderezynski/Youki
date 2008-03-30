@@ -197,3 +197,24 @@ mpx_bin_SOURCES =				\
 if HAVE_HAL								
 mpx_bin_SOURCES += hal.hh hal.cc
 endif
+
+built_header_make = \
+	dbus-obj-MPX-glue.h
+
+EXTRA_DIST = \
+	dbus-obj-MPX.xml
+
+dbus-obj-MPX-glue.h: dbus-obj-MPX.xml
+	@echo "* Generating /MPX DBus Glue"
+	@dbus-binding-tool --mode=glib-server --prefix=Player::DBusMPX::mpx \
+    $(abs_top_builddir)/mpx/dbus-obj-MPX.xml > \
+    dbus-obj-MPX-glue.h.temp
+	@cat dbus-obj-MPX-glue.h.temp   | sed s:G_BEGIN_DECLS:: | sed s:G_END_DECLS:: > \
+    dbus-obj-MPX-glue.h.temp.1
+	@cat dbus-obj-MPX-glue.h.temp.1 | sed s/dbus_glib_Player\:\:DBusMPX\:\:mpx/dbus_glib_mpx/g > \
+    dbus-obj-MPX-glue.h.temp.2
+	@cat dbus-obj-MPX-glue.h.temp.2 | sed s/dbus_glib_marshal_Player\:\:DBusMPX\:\:mpx/dbus_glib_marshal_mpx/g > \
+    dbus-obj-MPX-glue.h
+	@rm -f dbus-obj-MPX-glue.h.temp
+	@rm -f dbus-obj-MPX-glue.h.temp.1
+	@rm -f dbus-obj-MPX-glue.h.temp.2

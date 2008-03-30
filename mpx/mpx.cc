@@ -759,206 +759,192 @@ namespace MPX
 
 namespace MPX
 {
-	void
-	Player::get_object (PAccess<MPX::Library> & pa)
-	{
-		pa = PAccess<MPX::Library>(m_Library);
-	}
+#define TYPE_DBUS_OBJ_MPX (DBusMPX::get_type ())
+#define DBUS_OBJ_MPX(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_DBUS_OBJ_MPX, DBusMPX))
 
-	void	
-	Player::get_object (PAccess<MPX::Amazon::Covers> & pa)
-	{
-		pa = PAccess<MPX::Amazon::Covers>(m_Covers);
-	}
+  struct DBusMPXClass
+  {
+    GObjectClass parent;
+  };
 
-    bool
-    Player::load_source_plugin (std::string const& path)
+  struct Player::DBusMPX
+  {
+    GObject parent;
+    Player * player;
+
+    enum
     {
-		enum
-		{
-			LIB_BASENAME,
-			LIB_PLUGNAME,
-			LIB_SUFFIX
-		};
+      SIGNAL_STARTUP_COMPLETE,
+      SIGNAL_SHUTDOWN_COMPLETE,
+      SIGNAL_QUIT,
+      N_SIGNALS,
+    };
 
-		const std::string type = "mpxsource";
+    static guint signals[N_SIGNALS];
 
-		std::string basename (path_get_basename (path));
-		std::string pathname (path_get_dirname  (path));
+    static gpointer parent_class;
 
-		if (!is_module (basename))
-			return false;
+    static GType
+    get_type ();
 
-		StrV subs; 
-		split (subs, basename, is_any_of ("-."));
-		std::string name  = type + std::string("-") + subs[LIB_PLUGNAME];
-		std::string mpath = Module::build_path (build_filename(PLUGIN_DIR, "sources"), name);
+    static DBusMPX *
+    create (Player &, DBusGConnection*);
 
-		Module module (mpath, ModuleFlags (0)); 
-		if (!module)
-		{
-			g_message("Source plugin load FAILURE '%s': %s", mpath.c_str (), module.get_last_error().c_str());
-			return false;
-		}
+    static void
+    class_init (gpointer klass,
+                gpointer class_data);
 
-		g_message("LOADING Source plugin: %s", mpath.c_str ());
+    static GObject *
+    constructor (GType                   type,
+                 guint                   n_construct_properties,
+                 GObjectConstructParam * construct_properties);
 
-		module.make_resident();
+    static gboolean
+    ui_raise (DBusMPX * self,
+              GError **      error);
 
-		SourcePluginPtr plugin = SourcePluginPtr (new SourcePlugin());
-		if (!g_module_symbol (module.gobj(), "get_instance", (gpointer*)(&plugin->get_instance)))
-		{
-          g_message("Source plugin load FAILURE '%s': get_instance hook missing", mpath.c_str ());
-		  return false;
-		}
+    static gboolean
+    startup (DBusMPX * self,
+             int            no_network,
+             GError **      error);
 
-        if (!g_module_symbol (module.gobj(), "del_instance", (gpointer*)(&plugin->del_instance)))
-		{
-          g_message("Source plugin load FAILURE '%s': del_instance hook missing", mpath.c_str ());
-		  return false;
-		}
+    static void
+    startup_complete (DBusMPX * self);
+  
+    static void
+    shutdown_complete (DBusMPX * self);
 
-		
-        PlaybackSource * p = plugin->get_instance(*this); 
-        Gtk::Alignment * a = new Gtk::Alignment;
-        p->get_ui()->reparent(*a);
-        a->show();
-        m_ref_xml->get_widget("sourcepages", m_MainNotebook);
-        m_MainNotebook->append_page(*a);
-        m_Sources->addSource( p->get_name(), p->get_icon() );
-		m_SourceV.push_back(p);
-		install_source(m_SourceCtr++, /* tab # */ m_PageCtr++);
+    static void
+    quit (DBusMPX * self);
+  };
 
-		return false;
-    }
+  gpointer Player::DBusMPX::parent_class       = 0;
+  guint    Player::DBusMPX::signals[N_SIGNALS] = { 0 };
+
+// HACK: Hackery to rename functions in glue
+#define mpx_startup     startup
+#define mpx_ui_raise    ui_raise
+
+#include "dbus-obj-MPX-glue.h"
 
 	void
-	Player::on_volume_value_changed (double volume)
+	Player::DBusMPX::class_init (gpointer klass, gpointer class_data)
 	{
-		m_Play->property_volume() = volume*100;	
-		mcs->key_set("mpx","volume", int(volume*100));
+	  parent_class = g_type_class_peek_parent (klass);
+
+	  GObjectClass *gobject_class = reinterpret_cast<GObjectClass*>(klass);
+	  gobject_class->constructor  = &DBusMPX::constructor;
+
+	  signals[SIGNAL_STARTUP_COMPLETE] =
+		g_signal_new ("startup-complete",
+					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
+					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+					  0,
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+
+	  signals[SIGNAL_SHUTDOWN_COMPLETE] =
+		g_signal_new ("shutdown-complete",
+					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
+					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+					  0,
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+
+	  signals[SIGNAL_QUIT] =
+		g_signal_new ("quit",
+					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
+					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+					  0,
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 	}
 
-	bool
-	Player::on_seek_event (GdkEvent *event)
+	GObject *
+	Player::DBusMPX::constructor (GType                   type,
+							guint                   n_construct_properties,
+							GObjectConstructParam*  construct_properties)
 	{
-	  if( event->type == GDK_KEY_PRESS )
+	  GObject *object = G_OBJECT_CLASS (parent_class)->constructor (type, n_construct_properties, construct_properties);
+
+	  return object;
+	}
+
+	Player::DBusMPX *
+	Player::DBusMPX::create (Player & player, DBusGConnection * session_bus)
+	{
+		dbus_g_object_type_install_info (TYPE_DBUS_OBJ_MPX, &dbus_glib_mpx_object_info);
+
+		DBusMPX * self = DBUS_OBJ_MPX (g_object_new (TYPE_DBUS_OBJ_MPX, NULL));
+		self->player = &player;
+
+	  if(session_bus)
 	  {
-			  GdkEventKey * ev = ((GdkEventKey*)(event));
-			  gint64 status = m_Play->property_status().get_value();
-			  if((status == PLAYSTATUS_PLAYING) || (status == PLAYSTATUS_PAUSED))
-			  {
-					  gint64 pos = m_Play->property_position().get_value();
-
-					  int delta = (ev->state & GDK_SHIFT_MASK) ? 1 : 15;
-
-					  if(ev->keyval == GDK_Left)
-					  {
-						  m_Play->seek( pos - delta );
-						  return true;
-					  }
-					  else if(ev->keyval == GDK_Right)
-					  {
-						  m_Play->seek( pos + delta );
-						  return true;
-					  }
-			  }
-			  return false;
+		dbus_g_connection_register_g_object (session_bus, "/MPX", G_OBJECT(self));
+		g_message("%s: /MPX Object registered on session DBus", G_STRLOC);
 	  }
-	  else if( event->type == GDK_BUTTON_PRESS )
-	  {
-		g_atomic_int_set(&m_Seeking,1);
-		goto SET_SEEK_POSITION;
-	  }
-	  else if( event->type == GDK_BUTTON_RELEASE && g_atomic_int_get(&m_Seeking))
-	  {
-		g_atomic_int_set(&m_Seeking,0);
-		m_Play->seek (gint64(m_Seek->get_value()));
-	  }
-	  else if( event->type == GDK_MOTION_NOTIFY && g_atomic_int_get(&m_Seeking))
-	  {
-		SET_SEEK_POSITION:
 
-		guint64 duration = m_Play->property_duration().get_value();
-		guint64 position = m_Seek->get_value();
+	  return self;
+	}
 
-		guint64 m_pos = position / 60;
-		guint64 m_dur = duration / 60;
-		guint64 s_pos = position % 60;
-		guint64 s_dur = duration % 60;
+	GType
+	Player::DBusMPX::get_type ()
+	{
+	  static GType type = 0;
 
-		static boost::format time_f ("%02d:%02d … %02d:%02d");
+	  if (G_UNLIKELY (type == 0))
+		{
+		  static GTypeInfo const type_info =
+			{
+			  sizeof (DBusMPXClass),
+			  NULL,
+			  NULL,
+			  &class_init,
+			  NULL,
+			  NULL,
+			  sizeof (DBusMPX),
+			  0,
+			  NULL
+			};
 
-		m_TimeLabel->set_text ((time_f % m_pos % s_pos % m_dur % s_dur).str());
-	  }
-	  return false;
+		  type = g_type_register_static (G_TYPE_OBJECT, "MPX", &type_info, GTypeFlags (0));
+		}
+
+	  return type;
+	}
+
+	gboolean
+	Player::DBusMPX::ui_raise (DBusMPX* self, GError** error)
+	{
+	  return TRUE;
+	}
+
+	gboolean
+	Player::DBusMPX::startup  (DBusMPX*   self,
+						 int      no_network, 
+						 GError** error)
+	{
+	  return TRUE;
 	}
 
 	void
-	Player::on_play_metadata (MPXGstMetadataField field)
+	Player::DBusMPX::startup_complete (DBusMPX* self)
 	{
-		MPXGstMetadata const& m = m_Play->get_metadata();
-
-		switch (field)
-		{
-		  case FIELD_IMAGE:
-			m_Metadata.Image = m.m_image.get();
-			m_InfoArea->set_image (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
-			return;
-	
-		  case FIELD_TITLE:
-			return;
-
-		  case FIELD_ALBUM:
-			break;
-
-		  case FIELD_AUDIO_BITRATE:
-			break;
-
-		  case FIELD_AUDIO_CODEC:
-			break;
-
-		  case FIELD_VIDEO_CODEC:
-			break;
-		}
+	  g_signal_emit (self, signals[SIGNAL_STARTUP_COMPLETE], 0);
 	}
 
 	void
-	Player::on_play_position (guint64 position)
+	Player::DBusMPX::shutdown_complete (DBusMPX* self)
 	{
-	  if (g_atomic_int_get(&m_Seeking))
-		return;
-
-	  guint64 duration = m_Play->property_duration().get_value();
-
-	  if( (duration > 0) && (position <= duration) && (position >= 0) )
-	  {
-		if (duration <= 0)
-		  return;
-
-		if (position < 0)
-		  return;
-
-		guint64 m_pos = position / 60;
-		guint64 s_pos = position % 60;
-		guint64 m_dur = duration / 60;
-		guint64 s_dur = duration % 60;
-
-		static boost::format time_f ("%02d:%02d … %02d:%02d");
-
-		m_TimeLabel->set_text((time_f % m_pos % s_pos % m_dur % s_dur).str());
-		m_Seek->set_range(0., duration);
-		m_Seek->set_value(double (position));
-
-#if 0
-		if( m_popup )
-		{
-		  m_popup->set_position (position, duration);
-		}
-#endif
-
-	  }
+	  g_signal_emit (self, signals[SIGNAL_SHUTDOWN_COMPLETE], 0);
 	}
+
+	void
+	Player::DBusMPX::quit (DBusMPX *self)
+	{
+	  g_signal_emit (self, signals[SIGNAL_QUIT], 0);
+	}
+
 
     Player::Player(Glib::RefPtr<Gnome::Glade::Xml> const& xml,
                    MPX::Library & obj_library,
@@ -970,6 +956,11 @@ namespace MPX
 	, m_SourceCtr (0)
 	, m_PageCtr(1)
    {
+		m_DiscDefault = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")))->scale_simple(64,64,Gdk::INTERP_BILINEAR);
+
+		init_dbus ();
+		DBusObjects.mpx = DBusMPX::create(*this, m_SessionBus);
+
 		try {
 			Py_Initialize();
 
@@ -1183,19 +1174,273 @@ namespace MPX
 		m_Sources->sourceChanged().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
 
-		m_DiscDefault = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")))->scale_simple(64,64,Gdk::INTERP_BILINEAR);
+
+		DBusObjects.mpx->startup_complete(DBusObjects.mpx); 
     }
+
+	void
+	Player::init_dbus ()
+	{
+		DBusGProxy * m_SessionBus_proxy;
+		guint dbus_request_name_result;
+		GError * error = NULL;
+
+		m_SessionBus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+		if (!m_SessionBus)
+		{
+		  g_error_free (error);
+		  return;
+		}
+
+		m_SessionBus_proxy = dbus_g_proxy_new_for_name (m_SessionBus,
+													   "org.freedesktop.DBus",
+													   "/org/freedesktop/DBus",
+													   "org.freedesktop.DBus");
+
+		if (!dbus_g_proxy_call (m_SessionBus_proxy, "RequestName", &error,
+								G_TYPE_STRING, "info.backtrace.mpx",
+								G_TYPE_UINT, 0,
+								G_TYPE_INVALID,
+								G_TYPE_UINT, &dbus_request_name_result,
+								G_TYPE_INVALID))
+		{
+		  g_critical ("%s: RequestName Request Failed: %s", G_STRFUNC, error->message);
+		  g_error_free (error);
+		  error = NULL;
+		}
+		else
+		{
+		  switch (dbus_request_name_result)
+		  {
+			case DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER:
+			{
+			  break;
+			}
+
+			case DBUS_REQUEST_NAME_REPLY_EXISTS:
+			{
+			  g_object_unref(m_SessionBus);
+			  m_SessionBus = NULL;
+			  return;
+			}
+		  }
+		}
+
+		g_message("%s: info.backtrace.mpx service registered on session DBus", G_STRLOC);
+	}
+
+	void
+	Player::get_object (PAccess<MPX::Library> & pa)
+	{
+		pa = PAccess<MPX::Library>(m_Library);
+	}
+
+	void	
+	Player::get_object (PAccess<MPX::Amazon::Covers> & pa)
+	{
+		pa = PAccess<MPX::Amazon::Covers>(m_Covers);
+	}
+
+    bool
+    Player::load_source_plugin (std::string const& path)
+    {
+		enum
+		{
+			LIB_BASENAME,
+			LIB_PLUGNAME,
+			LIB_SUFFIX
+		};
+
+		const std::string type = "mpxsource";
+
+		std::string basename (path_get_basename (path));
+		std::string pathname (path_get_dirname  (path));
+
+		if (!is_module (basename))
+			return false;
+
+		StrV subs; 
+		split (subs, basename, is_any_of ("-."));
+		std::string name  = type + std::string("-") + subs[LIB_PLUGNAME];
+		std::string mpath = Module::build_path (build_filename(PLUGIN_DIR, "sources"), name);
+
+		Module module (mpath, ModuleFlags (0)); 
+		if (!module)
+		{
+			g_message("Source plugin load FAILURE '%s': %s", mpath.c_str (), module.get_last_error().c_str());
+			return false;
+		}
+
+		g_message("LOADING Source plugin: %s", mpath.c_str ());
+
+		module.make_resident();
+
+		SourcePluginPtr plugin = SourcePluginPtr (new SourcePlugin());
+		if (!g_module_symbol (module.gobj(), "get_instance", (gpointer*)(&plugin->get_instance)))
+		{
+          g_message("Source plugin load FAILURE '%s': get_instance hook missing", mpath.c_str ());
+		  return false;
+		}
+
+        if (!g_module_symbol (module.gobj(), "del_instance", (gpointer*)(&plugin->del_instance)))
+		{
+          g_message("Source plugin load FAILURE '%s': del_instance hook missing", mpath.c_str ());
+		  return false;
+		}
+
+		
+        PlaybackSource * p = plugin->get_instance(*this); 
+        Gtk::Alignment * a = new Gtk::Alignment;
+        p->get_ui()->reparent(*a);
+        a->show();
+        m_ref_xml->get_widget("sourcepages", m_MainNotebook);
+        m_MainNotebook->append_page(*a);
+        m_Sources->addSource( p->get_name(), p->get_icon() );
+		m_SourceV.push_back(p);
+		install_source(m_SourceCtr++, /* tab # */ m_PageCtr++);
+
+		return false;
+    }
+
+	void
+	Player::on_volume_value_changed (double volume)
+	{
+		m_Play->property_volume() = volume*100;	
+		mcs->key_set("mpx","volume", int(volume*100));
+	}
+
+	bool
+	Player::on_seek_event (GdkEvent *event)
+	{
+	  if( event->type == GDK_KEY_PRESS )
+	  {
+			  GdkEventKey * ev = ((GdkEventKey*)(event));
+			  gint64 status = m_Play->property_status().get_value();
+			  if((status == PLAYSTATUS_PLAYING) || (status == PLAYSTATUS_PAUSED))
+			  {
+					  gint64 pos = m_Play->property_position().get_value();
+
+					  int delta = (ev->state & GDK_SHIFT_MASK) ? 1 : 15;
+
+					  if(ev->keyval == GDK_Left)
+					  {
+						  m_Play->seek( pos - delta );
+						  return true;
+					  }
+					  else if(ev->keyval == GDK_Right)
+					  {
+						  m_Play->seek( pos + delta );
+						  return true;
+					  }
+			  }
+			  return false;
+	  }
+	  else if( event->type == GDK_BUTTON_PRESS )
+	  {
+		g_atomic_int_set(&m_Seeking,1);
+		goto SET_SEEK_POSITION;
+	  }
+	  else if( event->type == GDK_BUTTON_RELEASE && g_atomic_int_get(&m_Seeking))
+	  {
+		g_atomic_int_set(&m_Seeking,0);
+		m_Play->seek (gint64(m_Seek->get_value()));
+	  }
+	  else if( event->type == GDK_MOTION_NOTIFY && g_atomic_int_get(&m_Seeking))
+	  {
+		SET_SEEK_POSITION:
+
+		guint64 duration = m_Play->property_duration().get_value();
+		guint64 position = m_Seek->get_value();
+
+		guint64 m_pos = position / 60;
+		guint64 m_dur = duration / 60;
+		guint64 s_pos = position % 60;
+		guint64 s_dur = duration % 60;
+
+		static boost::format time_f ("%02d:%02d … %02d:%02d");
+
+		m_TimeLabel->set_text ((time_f % m_pos % s_pos % m_dur % s_dur).str());
+	  }
+	  return false;
+	}
+
+	void
+	Player::on_play_metadata (MPXGstMetadataField field)
+	{
+		MPXGstMetadata const& m = m_Play->get_metadata();
+
+		switch (field)
+		{
+		  case FIELD_IMAGE:
+			m_Metadata.Image = m.m_image.get();
+			m_InfoArea->set_image (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
+			return;
+	
+		  case FIELD_TITLE:
+			return;
+
+		  case FIELD_ALBUM:
+			break;
+
+		  case FIELD_AUDIO_BITRATE:
+			break;
+
+		  case FIELD_AUDIO_CODEC:
+			break;
+
+		  case FIELD_VIDEO_CODEC:
+			break;
+		}
+	}
+
+	void
+	Player::on_play_position (guint64 position)
+	{
+	  if (g_atomic_int_get(&m_Seeking))
+		return;
+
+	  guint64 duration = m_Play->property_duration().get_value();
+
+	  if( (duration > 0) && (position <= duration) && (position >= 0) )
+	  {
+		if (duration <= 0)
+		  return;
+
+		if (position < 0)
+		  return;
+
+		guint64 m_pos = position / 60;
+		guint64 s_pos = position % 60;
+		guint64 m_dur = duration / 60;
+		guint64 s_dur = duration % 60;
+
+		static boost::format time_f ("%02d:%02d … %02d:%02d");
+
+		m_TimeLabel->set_text((time_f % m_pos % s_pos % m_dur % s_dur).str());
+		m_Seek->set_range(0., duration);
+		m_Seek->set_value(double (position));
+
+#if 0
+		if( m_popup )
+		{
+		  m_popup->set_position (position, duration);
+		}
+#endif
+	  }
+	}
 
     Player*
     Player::create (MPX::Library & obj_library, MPX::Amazon::Covers & obj_amazn)
     {
-      const std::string path (build_filename(DATA_DIR, build_filename("glade","mpx.glade")));
-      Player * p = new Player(Gnome::Glade::Xml::create (path), obj_library, obj_amazn); 
-      return p;
+		const std::string path (build_filename(DATA_DIR, build_filename("glade","mpx.glade")));
+		Player * p = new Player(Gnome::Glade::Xml::create (path), obj_library, obj_amazn); 
+		return p;
     }
 
     Player::~Player()
     {
+		DBusObjects.mpx->shutdown_complete(DBusObjects.mpx); 
+		g_object_unref(G_OBJECT(DBusObjects.mpx));
     }
 
 	void

@@ -895,7 +895,7 @@ namespace MPX
           g_object_set (G_OBJECT (spectrum),
                         "interval", guint64 (50 * GST_MSECOND),
                         "bands", SPECT_BANDS,
-                        "threshold", int (-72),
+                        "threshold", int (-60),
                         "message", gboolean (TRUE), NULL);
         }
 
@@ -906,9 +906,10 @@ namespace MPX
           if (GST_IS_ELEMENT (spectrum))
           {
             GstElement* tee = gst_element_factory_make ("tee", "tee1"); 
-            gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, m_elmtEqualizer, tee, spectrum, volume, sink_element, NULL);
+            GstElement* queue = gst_element_factory_make ("queue", NULL); 
+            gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, m_elmtEqualizer, tee, queue, spectrum, volume, sink_element, NULL);
             gst_element_link_many (convert, resample, m_elmtEqualizer, tee, volume, sink_element, NULL);
-            gst_element_link_many (tee, spectrum, NULL);
+            gst_element_link_many (tee, queue, spectrum, NULL);
           }
           else
           {
@@ -981,11 +982,10 @@ namespace MPX
       ////////////////// HTTP BIN
       {
         GstElement  * source    = gst_element_factory_make ("jnethttpsrc", "src");
-        GstElement  * queue     = gst_element_factory_make ("queue", (NAME_QUEUE));
         GstElement  * decoder   = gst_element_factory_make ("decodebin", (NAME_DECODER));
         GstElement  * identity  = gst_element_factory_make ("identity", (NAME_IDENTITY));
 
-        if (source && queue && decoder && identity)
+        if (source && decoder && identity)
         {
           m_bin[BIN_HTTP] = gst_bin_new ("bin-http");
           gst_bin_add_many (GST_BIN (m_bin[BIN_HTTP]), source, decoder, identity, NULL);
@@ -995,12 +995,6 @@ namespace MPX
                             "new-decoded-pad",
                             G_CALLBACK (Play::link_pad),
                             identity);
-          g_object_set (G_OBJECT (queue),
-                        "min-threshold-bytes",
-                        8U * 1024U,
-                        "max-size-bytes",
-                        32U * 1024U,
-                        NULL);
           g_object_set (G_OBJECT (source),
                         "iradio-mode", TRUE, 
                          NULL);
@@ -1018,7 +1012,6 @@ namespace MPX
       {
         GstElement *  source    = gst_element_factory_make ("jnethttpsrc", "src");
         GstElement *  decoder   = gst_element_factory_make ("mad", (NAME_DECODER));
-        GstElement  * queue     = gst_element_factory_make ("queue", (NAME_QUEUE));
         GstElement  * identity  = gst_element_factory_make ("identity", (NAME_IDENTITY));
 
         if (!decoder)
@@ -1026,18 +1019,12 @@ namespace MPX
           decoder = gst_element_factory_make ("flump3dec", (NAME_DECODER));
         }
 
-        if (source && decoder && queue && identity)
+        if (source && decoder && identity)
         {
           m_bin[BIN_HTTP_MAD] = gst_bin_new ("bin-http-mad");
           gst_bin_add_many (GST_BIN (m_bin[BIN_HTTP_MAD]), source, decoder, identity, NULL);
           gst_element_link_many (source, decoder, identity, NULL);
 
-          g_object_set (G_OBJECT (queue),
-                        "min-threshold-bytes",
-                        8U * 1024U,
-                        "max-size-bytes",
-                        32U * 1024U,
-                        NULL);
           g_object_set (G_OBJECT (source),
                         "iradio-mode", TRUE,
                         NULL);
