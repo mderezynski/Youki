@@ -1,0 +1,22 @@
+[Desktop Entry]
+Name=MPX
+Comment=Audio Player
+Comment[cs]=Přehrávač audia
+Comment[de]=Audio-Player
+Comment[es]=Reproductor de audio
+Comment[fr]=Lecteur audio
+Comment[it]=Riproduttore Audio
+Comment[lt]=Garso leistuvė
+Comment[pl]=Odtwarzacz dźwięku
+Comment[ro]=Player audio
+Comment[dk]=Lyd afspiller
+TryExec=mpx
+Exec=mpx
+Icon=mpx
+#MimeType=audio/x-scpls;audio/x-mpegurl;audio/mpegurl;audio/mp3;audio/x-mp3;audio/mpeg;audio/x-mpeg;audio/x-wav;application/x-ogg;
+#Actions=Enqueue;Play;
+Categories=GTK;AudioVideo;Player;
+Terminal=false
+Type=Application
+Encoding=UTF-8
+StartupNotify=false

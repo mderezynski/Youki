@@ -24,8 +24,8 @@ class TrackInfo:
 		self.textview = self.xml.get_widget("textview")
 		self.image = self.xml.get_widget("image")
 		self.close = self.xml.get_widget("close")
-		self.close.connect("clicked",self.close_clicked)
-		self.window.connect("delete-event",self.delete_event)
+		#self.close.connect("clicked",self.close_clicked)
+		#self.window.connect("delete-event",self.delete_event)
 
 		self.buf = self.textview.get_buffer()
 
@@ -69,23 +69,40 @@ class TrackInfo:
 			mbtrack = self.q.getTrackById(trackId, self.tinc) 
 			rels = mbtrack.getRelations()
 
+			relobj = []
+			for i in range(7):
+				relobj.append([])
+
 			# Check if it's a cover
 			for rel in rels:
-				if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Cover":
-					self.printCover(track, mbtrack, rel)
-				if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Composer":
-					self.printComposer(track, mbtrack, rel)
-				if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Instrument":
-					self.printInstrument(track, mbtrack, rel)
-				if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#SamplesMaterial":
-					self.printSamplesMaterial(track, mbtrack, rel)
-				if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Remixer":
-					self.printRemixer(track, mbtrack, rel)
-				if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Lyricist":
-					self.printLyricist(track, mbtrack, rel)
-				if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Producer":
-					self.printProducer(track, mbtrack, rel)
+				if rel.getDirection() != "backward":
+					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Cover":
+						relobj[0].append(rel)	
+					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Composer":
+						relobj[1].append(rel)	
+					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Instrument":
+						relobj[2].append(rel)	
+					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#SamplesMaterial":
+						relobj[3].append(rel)	
+					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Remixer":
+						relobj[4].append(rel)	
+					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Lyricist":
+						relobj[5].append(rel)	
+					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Producer":
+						relobj[6].append(rel)	
 
+			funcs = []
+			funcs.append(self.printCover)
+			funcs.append(self.printComposer)
+			funcs.append(self.printInstrument)
+			funcs.append(self.printSamplesMaterial)
+			funcs.append(self.printRemixer)
+			funcs.append(self.printLyricist)
+			funcs.append(self.printProducer)
+
+			for i in range(7):
+				if len(relobj[i]) > 0:
+					funcs[i](track, mbtrack, relobj[i])
 
 		self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
@@ -108,90 +125,114 @@ class TrackInfo:
 			except:
 				print "Couldn't get Last.fm artist info for '" + track.get(AttributeId.attr_artist).val().get_string() 
 
-	def printCover(self, track, mbtrack, rel):
-		# Workaround for buggy pymusicbrainzl; getTarget() on this rel returns None
-		url = rel.getTargetId()
-		id = url[url.rindex("/")+1:]
+	def printCover(self, track, mbtrack, rels):
 
-		cover = self.q.getTrackById(id, self.tinc)	
-		coverartist = cover.getArtist()
+		for rel in rels:
 
-		self.buf.insert_with_tags(self.buf.get_end_iter(), "...is a cover of ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), cover.getTitle(), self.textTagBold)
-		self.buf.insert_with_tags(self.buf.get_end_iter(), " by ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), coverartist.getName(), self.textTagBold)
-		self.buf.insert_with_tags(self.buf.get_end_iter(), "")
+			# Workaround for buggy pymusicbrainzl; getTarget() on this rel returns None
+			url = rel.getTargetId()
+			id = url[url.rindex("/")+1:]
+
+			cover = self.q.getTrackById(id, self.tinc)	
+			coverartist = cover.getArtist()
+
+			self.buf.insert_with_tags(self.buf.get_end_iter(), "...is a cover of ")
+			self.buf.insert_with_tags(self.buf.get_end_iter(), cover.getTitle(), self.textTagBold)
+			self.buf.insert_with_tags(self.buf.get_end_iter(), " by ")
+			self.buf.insert_with_tags(self.buf.get_end_iter(), coverartist.getName(), self.textTagBold)
+			self.buf.insert_with_tags(self.buf.get_end_iter(), "")
+			self.buf.insert(self.buf.get_end_iter(), "\n") 
+
+		return True
+
+	def printComposer(self, track, mbtrack, rels):
+
+		self.buf.insert_with_tags(self.buf.get_end_iter(), "...was composed by ")
+
+		composers = []
+
+		for rel in rels:
+			composer = rel.getTarget()
+			composers.append(composer.getName())
+
+		
+		self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(composers), self.textTagBold) 
 		self.buf.insert(self.buf.get_end_iter(), "\n") 
 		return True
 
-	def printComposer(self, track, mbtrack, rel):
-		composer = rel.getTarget()
-		self.buf.insert_with_tags(self.buf.get_end_iter(), "..was originally composed by ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), composer.getName(), self.textTagBold) 
-		self.buf.insert(self.buf.get_end_iter(), "\n") 
-		return True
+	def printSamplesMaterial(self, track, mbtrack, rels):
 
-	def printSamplesMaterial(self, track, mbtrack, rel):
-		url = rel.getTargetId()
-		id = url[url.rindex("/")+1:]
-		sampled = self.q.getTrackById(id, self.tinc)
-		sampledartist = sampled.getArtist()
+		sampled = []
+
+		for rel in rels:
+			url = rel.getTargetId()
+			id = url[url.rindex("/")+1:]
+			sampled = self.q.getTrackById(id, self.tinc)
+			sampledartist = sampled.getArtist()
+			sampled.append(sampled.getTitle() + " by " + sampledartist.getName())
 
 		self.buf.insert_with_tags(self.buf.get_end_iter(), "...contains samples from ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), sampled.getTitle(), self.textTagBold) 
-		self.buf.insert_with_tags(self.buf.get_end_iter(), " by ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), sampledartist.getTitle(), self.textTagBold) 
+		self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(sampled), self.textTagBold) 
 		self.buf.insert(self.buf.get_end_iter(), "\n") 
 		return True
 
-	def printRemixer(self, track, mbtrack, rel):
-		url = rel.getTargetId()
-		id = url[url.rindex("/")+1:]
-		remixer = self.q.getArtistById(id, self.tinc)
+	def printRemixer(self, track, mbtrack, rels):
+
+		remixers = []
+
+		for rel in rels:
+			url = rel.getTargetId()
+			id = url[url.rindex("/")+1:]
+			remixer = self.q.getArtistById(id, self.tinc)
+			remixers.append(remixer.getName())
 
 		self.buf.insert_with_tags(self.buf.get_end_iter(), "...was remixed by ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), remixer.getName(), self.textTagBold) 
+		self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(remixers), self.textTagBold) 
 		self.buf.insert(self.buf.get_end_iter(), "\n") 
 		return True
 
-	def printProducer(self, track, mbtrack, rel):
-		url = rel.getTargetId()
-		id = url[url.rindex("/")+1:]
-		remixer = self.q.getArtistById(id, self.tinc)
+	def printProducer(self, track, mbtrack, rels):
+
+		producers = []
+
+		for rel in rels:
+			url = rel.getTargetId()
+			id = url[url.rindex("/")+1:]
+			producer = self.q.getArtistById(id, self.tinc)
+			producers.append(producer.getName())
+			
+		self.buf.insert_with_tags(self.buf.get_end_iter(), "...was produced by ")
+		self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(producers), self.textTagBold) 
+		self.buf.insert(self.buf.get_end_iter(), "\n") 
+		return True
+
+	def printLyricist(self, track, mbtrack, rels):
+
+		lyricists = []
+
+		for rel in rels:
+			lyricist = rel.getTarget() 
+			lyricists.append(lyricist.getName())
+
+		self.buf.insert_with_tags(self.buf.get_end_iter(), "...has lyrics by ")
+		self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(lyricists), self.textTagBold) 
+		self.buf.insert(self.buf.get_end_iter(), "\n") 
+		return True
+
+	def printProducer(self, track, mbtrack, rels):
+
+		producers = []
+
+		for rel in rels:
+			producer = rel.getTarget() 
+			producers.append(producer.getName())
 
 		self.buf.insert_with_tags(self.buf.get_end_iter(), "...was produced by ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), remixer.getName(), self.textTagBold) 
+		self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(producers), self.textTagBold) 
 		self.buf.insert(self.buf.get_end_iter(), "\n") 
 		return True
 
-	def printLyricist(self, track, mbtrack, rel):
-		lyricist = rel.getTarget() 
-
-		self.buf.insert_with_tags(self.buf.get_end_iter(), "...has lyrics written by ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), lyricist.getName(), self.textTagBold) 
-		self.buf.insert(self.buf.get_end_iter(), "\n") 
+	def printInstrument(self, track, mbtrack, rels):
 		return True
-
-	def printProducer(self, track, mbtrack, rel):
-		producer = rel.getTarget() 
-
-		self.buf.insert_with_tags(self.buf.get_end_iter(), "...was produced by ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), producer.getName(), self.textTagBold) 
-		self.buf.insert(self.buf.get_end_iter(), "\n") 
-		return True
-
-	def printInstrument(self, track, mbtrack, rel):
-		return True
-
-	def close_clicked(self, button):
-		self.window.hide()
-		return True
-
-	def delete_event(self, window, event):
-		self.window.hide()
-		return True
-
-
-
 
 info = TrackInfo()

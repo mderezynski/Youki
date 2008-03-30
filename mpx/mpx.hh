@@ -109,9 +109,13 @@ namespace MPX
 
 		DBusObjectsT DBusObjects;
 
+#if 0
 		boost::python::object m_TrackInfo;
 		boost::python::object m_TrackInfoMain;
 		boost::python::object m_TrackInfoDict;
+#endif
+
+		std::string m_TrackInfoScript;
 
         Sources *m_Sources;
         InfoArea *m_InfoArea;

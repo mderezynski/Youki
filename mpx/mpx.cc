@@ -57,7 +57,31 @@ using boost::get;
 using boost::algorithm::is_any_of;
 using namespace boost::python;
 
+// TODO: Saner API for sources
 #define SOURCE_NONE (-1)
+
+namespace 
+{
+	void
+	delete_delete_event (GObject * object, GdkEvent*, gpointer data)
+	{
+		boost::python::object * obj = static_cast<boost::python::object*>(data);
+		boost::python::object window = extract<boost::python::object>(obj->attr("window"));
+		GObject * cobj_window = ((PyGObject*)(window.ptr()))->obj;
+		gtk_widget_destroy(GTK_WIDGET(cobj_window));
+		delete obj;
+	}
+
+	void
+	delete_clicked (GObject * object, gpointer data) 
+	{
+		boost::python::object * obj = static_cast<boost::python::object*>(data);
+		boost::python::object window = extract<boost::python::object>(obj->attr("window"));
+		GObject * cobj_window = ((PyGObject*)(window.ptr()))->obj;
+		gtk_widget_destroy(GTK_WIDGET(cobj_window));
+		delete obj;
+	}
+}
 
 namespace
 {
@@ -969,15 +993,8 @@ namespace MPX
 
 			mpx_py_init ();	
 
-			m_TrackInfoMain = object((handle<>(borrowed(PyImport_AddModule("__main__")))));
-			m_TrackInfoDict = m_TrackInfoMain.attr("__dict__");
+			m_TrackInfoScript = build_filename(build_filename(DATA_DIR,"scripts"),"trackinfo.py");
 
-			std::string script = build_filename(build_filename(DATA_DIR,"scripts"),"trackinfo.py");
-
-			if(file_test(script, FILE_TEST_EXISTS))
-				object ignored = exec_file(script.c_str(),
-                                     m_TrackInfoDict,
-                                     m_TrackInfoDict);
 		} catch( error_already_set ) {
 			g_warning("%s; Python Error:", G_STRFUNC);
 		    PyErr_Print();
@@ -1446,11 +1463,26 @@ namespace MPX
 	void
 	Player::on_cover_clicked ()
 	{
-		if(m_TrackInfo.ptr())
+		if(m_TrackInfoScript.empty())
+			return;
+
+		object main = object((handle<>(borrowed(PyImport_AddModule("__main__")))));
+		object dict = main.attr("__dict__");
+		object obj  = exec_file(m_TrackInfoScript.c_str(), dict, dict);
+
+		if(obj.ptr())
 		{
 			using namespace boost::python;
 			try{
-				object info = m_TrackInfoDict["info"];
+				object * info = new object(dict["info"]);
+				object window = extract<object>(info->attr("window"));
+				object button = extract<object>(info->attr("close"));
+				GObject * cobj_window = ((PyGObject*)(window.ptr()))->obj;
+				GObject * cobj_button = ((PyGObject*)(button.ptr()))->obj;
+
+				g_signal_connect(cobj_window, "delete-event", G_CALLBACK(delete_delete_event), info);
+				g_signal_connect(cobj_button, "clicked", G_CALLBACK(delete_clicked), info);
+				
 				// Create a Py Pixbuf
 				PyObject *pypixbuf = NULL; 
 				object pypixbufcc;
@@ -1460,11 +1492,13 @@ namespace MPX
 					pypixbuf = pygobject_new((GObject*)(m_Metadata.Image->gobj()));
 					pypixbufcc = object((handle<>(pypixbuf)));
 				}
-				info.attr("show")(m_Metadata, pypixbufcc);
+				info->attr("show")(m_Metadata, pypixbufcc);
 			} catch ( error_already_set ) {
 				PyErr_Print();
 			}
 		}
+		else
+			g_message ("%s: No object", G_STRLOC);
 	}
 
 	void
