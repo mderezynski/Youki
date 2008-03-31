@@ -352,12 +352,79 @@ namespace MPX
 					m_MusicLib.clear_play();
 			  }
 
+			  void
+			  append_uris (const Util::FileList& uris, Gtk::TreeIter & iter, bool & begin)
+			  {
+					Util::FileList dirs;
+
+					for(Util::FileList::const_iterator i = uris.begin(); i != uris.end(); ++i)
+					{
+						if(file_test(filename_from_uri(*i), FILE_TEST_IS_DIR))
+						{
+							dirs.push_back(*i);
+							continue;
+						}
+
+						Track track;
+						m_Lib.get().getMetadata(*i, track);
+
+						if(!begin)
+						  iter = ListStore->insert_after(iter);
+
+						begin = false;
+
+						if(track[ATTRIBUTE_ARTIST])
+							(*iter)[PlaylistColumns.Artist] = get<std::string>(track[ATTRIBUTE_ARTIST].get()); 
+
+						if(track[ATTRIBUTE_ALBUM])
+							(*iter)[PlaylistColumns.Album] = get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
+
+						if(track[ATTRIBUTE_TRACK])
+							(*iter)[PlaylistColumns.Track] = guint64(get<gint64>(track[ATTRIBUTE_TRACK].get()));
+
+						if(track[ATTRIBUTE_TITLE])
+							(*iter)[PlaylistColumns.Title] = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
+
+						if(track[ATTRIBUTE_TIME])
+							(*iter)[PlaylistColumns.Length] = guint64(get<gint64>(track[ATTRIBUTE_TIME].get()));
+
+						if(track[ATTRIBUTE_MB_ARTIST_ID])
+							(*iter)[PlaylistColumns.ArtistSort] = get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get());
+
+						if(track[ATTRIBUTE_MB_ALBUM_ID])
+							(*iter)[PlaylistColumns.AlbumSort] = get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get());
+
+						if(track[ATTRIBUTE_MPX_TRACK_ID])
+						{
+							(*iter)[PlaylistColumns.RowId] = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()); 
+							if(!m_CurrentIter && m_CurrentId && get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) == m_CurrentId.get())
+							{
+								  m_CurrentIter = iter; 
+								  queue_draw();
+							}
+						}
+
+						if(track[ATTRIBUTE_LOCATION])
+							(*iter)[PlaylistColumns.Location] = get<std::string>(track[ATTRIBUTE_LOCATION].get());
+						else
+							g_warning("Warning, no location given for DnD track; this is totally wrong and should never happen.");
+
+						(*iter)[PlaylistColumns.MPXTrack] = track; 
+					}
+
+					if(!dirs.empty())
+						for(Util::FileList::const_iterator i = dirs.begin(); i != dirs.end(); ++i)
+						{
+							Util::FileList files;
+							Util::collect_audio_paths(*i, files);
+							append_uris(files,iter,begin);
+						}
+			  }
+
               virtual void
               on_drag_data_received (const Glib::RefPtr<Gdk::DragContext>&, int x, int y,
                   const SelectionData& data, guint, guint)
               {
-                typedef std::vector<ustring> UV;
-
                 ListStore->set_sort_column(GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID, Gtk::SORT_ASCENDING);
 
                 TreePath path;
@@ -475,57 +542,13 @@ namespace MPX
                 }
                 else
                 {
-                    UV uris = data.get_uris();
-                    for(UV::const_iterator i = uris.begin(); i != uris.end(); ++i)
-                    {
-                      Track track;
-                      m_Lib.get().getMetadata(*i, track);
+					bool begin = true;
+					Util::FileList uris = data.get_uris();
+					append_uris (uris, iter, begin);
 
-                      if(i != uris.begin())
-                        iter = ListStore->insert_after(iter);
-
-                      if(track[ATTRIBUTE_ARTIST])
-                          (*iter)[PlaylistColumns.Artist] = get<std::string>(track[ATTRIBUTE_ARTIST].get()); 
-
-                      if(track[ATTRIBUTE_ALBUM])
-                          (*iter)[PlaylistColumns.Album] = get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
-
-                      if(track[ATTRIBUTE_TRACK])
-                          (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(track[ATTRIBUTE_TRACK].get()));
-
-                      if(track[ATTRIBUTE_TITLE])
-                          (*iter)[PlaylistColumns.Title] = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
-
-                      if(track[ATTRIBUTE_TIME])
-                          (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(track[ATTRIBUTE_TIME].get()));
-
-                      if(track[ATTRIBUTE_MB_ARTIST_ID])
-                          (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get());
-
-                      if(track[ATTRIBUTE_MB_ALBUM_ID])
-                          (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get());
-
-					  if(track[ATTRIBUTE_MPX_TRACK_ID])
-					  {
-						  (*iter)[PlaylistColumns.RowId] = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()); 
-						  if(!m_CurrentIter && m_CurrentId && get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) == m_CurrentId.get())
-						  {
-								m_CurrentIter = iter; 
-								queue_draw();
-						  }
-					  }
-
-                      if(track[ATTRIBUTE_LOCATION])
-                          (*iter)[PlaylistColumns.Location] = get<std::string>(track[ATTRIBUTE_LOCATION].get());
-					  else
-						  g_warning("Warning, no location given for DnD track; this is totally wrong and should never happen.");
-
-					  (*iter)[PlaylistColumns.MPXTrack] = track; 
-                    }
-                }
-
-				m_MusicLib.check_caps();
-				m_MusicLib.send_caps ();
+					m_MusicLib.check_caps();
+					m_MusicLib.send_caps ();
+				}
               }
 
               bool
@@ -1038,7 +1061,17 @@ namespace MPX
                 else
                     ArtistSort = get<std::string>(r["album_artist"]);
 
-                (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+#if 0
+				if(r.count("album_genre"))
+				{
+					(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%4%, %3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4) % Markup::escape_text(get<std::string>(r["album_genre"])).c_str() ).str();
+				}
+				else
+#endif
+				{
+					(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+				}
+
                 (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                 (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
               }
@@ -1233,7 +1266,16 @@ namespace MPX
                     else
                         ArtistSort = get<std::string>(r["album_artist"]);
 
-					(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+#if 0
+					if(r.count("album_genre"))
+					{
+						(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%4%, %3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4) % Markup::escape_text(get<std::string>(r["album_genre"])).c_str() ).str();
+					}
+					else
+#endif
+					{
+						(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+					}
                     (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                     (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
                 }

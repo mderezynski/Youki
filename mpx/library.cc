@@ -232,13 +232,14 @@ namespace MPX
         static boost::format
           album_table_f ("CREATE TABLE IF NOT EXISTS album "
                           "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
-                          "'%s' TEXT, '%s' TEXT, '%s' INTEGER DEFAULT 0, '%s' INTEGER, UNIQUE "
+                          "'%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, UNIQUE "
                           "('%s', '%s', '%s', '%s', '%s'));");
 
         m_SQL->exec_sql ((album_table_f % attrs[ATTRIBUTE_ALBUM].id
                                           % attrs[ATTRIBUTE_MB_ALBUM_ID].id
                                           % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
                                           % attrs[ATTRIBUTE_ASIN].id
+										  % "album_genre" 
 										  % "album_rating"
                                           % "album_artist_j"
                                           % attrs[ATTRIBUTE_ALBUM].id
@@ -322,7 +323,7 @@ namespace MPX
 	void	
 	Library::rateAlbum(gint64 id, int rating)
 	{
-		execSQL((boost::format ("UPDATE album SET album_rating = %d WHERE id = %lld") % rating % id).str());
+		execSQL((boost::format ("UPDATE album SET album_rating = '%d' WHERE id = %lld") % rating % id).str());
 		Signals.AlbumUpdated.emit(id);
 	}
 
@@ -658,6 +659,19 @@ namespace MPX
       return 0;
     }
 
+	void
+	Library::mean_genre_for_album (gint64 id)
+	{
+		static boost::format select_f ("SELECT DISTINCT genre FROM track WHERE album_j = %lld AND genre IS NOT NULL;"); 
+		RowV rows;
+		m_SQL->get (rows, (select_f % id).str()); 
+
+		if(rows.empty())
+			return;
+
+		execSQL((boost::format ("UPDATE album SET album_genre = '%s' WHERE id = '%lld'") % get<std::string>(rows[0]["genre"]) % id).str());
+	}
+
     Library::ScanResult
     Library::insert (const std::string& uri, const std::string& insert_path, const std::string& name)
     {
@@ -792,6 +806,7 @@ namespace MPX
           column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
           m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
           track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->last_insert_rowid ();
+		  //mean_genre_for_album(album_j);
           Signals.NewTrack.emit( track, album_j ); 
       }
       catch (SqlConstraintError & cxe)
@@ -801,7 +816,6 @@ namespace MPX
           {
               static boost::format delete_track_f ("DELETE FROM track WHERE id='%lld';");
               m_SQL->exec_sql ((delete_track_f % id).str()); 
-
               m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
               gint64 new_id = m_SQL->last_insert_rowid ();
               m_SQL->exec_sql (mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));

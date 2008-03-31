@@ -184,6 +184,9 @@ namespace MPX
 
             gint64
             get_track_id (Track& track) const;
+
+			void
+			mean_genre_for_album (gint64 id);
     };
 
 } // namespace MPX
