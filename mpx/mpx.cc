@@ -21,6 +21,9 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
+
+#define NO_IMPORT
+
 #include "config.h"
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
@@ -973,7 +976,7 @@ namespace MPX
 	}
 
 
-    Player::Player(Glib::RefPtr<Gnome::Glade::Xml> const& xml,
+    Player::Player(const Glib::RefPtr<Gnome::Glade::Xml>& xml,
                    MPX::Library & obj_library,
                    MPX::Amazon::Covers & obj_amazon)
     : WidgetLoader<Gtk::Window>(xml, "mpx")
@@ -983,21 +986,56 @@ namespace MPX
 	, m_SourceCtr (0)
 	, m_PageCtr(1)
    {
-		m_DiscDefault = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")))->scale_simple(64,64,Gdk::INTERP_BILINEAR);
+		signals[PSIGNAL_NEW_TRACK] =
+			g_signal_new ("new-track",
+					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+					  0,
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
+		signals[PSIGNAL_INFOAREA_CLICK] =
+			g_signal_new ("infoarea-click",
+					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+					  0,
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
+		m_DiscDefault = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR,
+			build_filename("images","disc-default.png")))->scale_simple(64,64,Gdk::INTERP_BILINEAR);
 
 		init_dbus ();
 		DBusObjects.mpx = DBusMPX::create(*this, m_SessionBus);
 
 		try {
-			Py_Initialize();
 
+			Py_Initialize();
 			init_pygobject();
 			init_pygtk();
-
 			mpx_py_init ();	
 
-			m_TrackInfoScript = build_filename(build_filename(DATA_DIR,"scripts"),"trackinfo.py");
+			m_PyGObj = pygobject_new((GObject*)(gobj()));
 
+			std::string main_path (build_filename(DATA_DIR,"scripts"));
+			Glib::Dir dir (main_path);
+			std::vector<std::string> strv (dir.begin(), dir.end());
+			dir.close();
+
+			for(std::vector<std::string>::const_iterator i = strv.begin(); i != strv.end(); ++i)
+			{
+				try{
+					object main = object((handle<>(borrowed(PyImport_AddModule("__main__")))));
+					object dict = main.attr("__dict__");
+					object obj  = exec_file(build_filename(main_path, *i).c_str(), dict, dict);
+					object * instance = new object(dict["instance"]);	//TODO: This is clunky, we need an own baseclass for plugins
+																		// FIXME: Memory management of dynamic object
+					instance->attr("activate")(boost::ref(*this));
+				} catch (...) {
+					PyErr_Print();
+					g_error("%s: Error loading plugin '%s': ", G_STRLOC, i->c_str()); 
+				}
+			}
 		} catch( error_already_set ) {
 			g_warning("%s; Python Error:", G_STRFUNC);
 		    PyErr_Print();
@@ -1261,6 +1299,12 @@ namespace MPX
 		pa = PAccess<MPX::Amazon::Covers>(m_Covers);
 	}
 
+	Metadata const&
+	Player::get_metadata ()
+	{
+		return m_Metadata;
+	}
+
     bool
     Player::load_source_plugin (std::string const& path)
     {
@@ -1466,6 +1510,9 @@ namespace MPX
 	void
 	Player::on_cover_clicked ()
 	{
+		g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_INFOAREA_CLICK], 0);
+
+#if 0
 		if(m_TrackInfoScript.empty())
 			return;
 
@@ -1503,6 +1550,7 @@ namespace MPX
 		}
 		else
 			g_message ("%s: No object", G_STRLOC);
+#endif
 	}
 
 	void
@@ -1766,6 +1814,8 @@ namespace MPX
 	  source->send_caps ();
 	  source->send_metadata ();
 
+	  g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
+
 #if 0
 	  if( m_popup )
 	  {
@@ -1835,24 +1885,18 @@ namespace MPX
 		
 		if( m_source_flags[source_id] & PlaybackSource::F_ASYNC)
 		{
-			  source->play_async ();
-			  m_actions->get_action( ACTION_STOP )->set_sensitive (true);
+				source->play_async ();
+				m_actions->get_action( ACTION_STOP )->set_sensitive (true);
+				return;
 		}
 		else
 		{
-			  safe_pause_unset();
-			  if( source->play() )
-			  {
+				safe_pause_unset();
+				if( source->play() )
+				{
 					  std::string type = source->get_type ();
-					  //enable_video_check (type);
 					  ustring uri = source->get_uri();
-
-					  if((uri.substr(0,7) == "file://") && (!file_test(filename_from_uri(uri), FILE_TEST_EXISTS)))
-					  {
-						  //source->bad_track();
-						  next();
-						  return;
-					  }
+					  //enable_video_check (type);
 
 					  safe_pause_unset();
 					  m_Play->switch_stream (uri, type);
@@ -1860,13 +1904,11 @@ namespace MPX
 					  source->play_post ();
 					  play_post_internal (source_id);
 					  return;
-			  }
-
-			  source->stop ();
-			  m_Play->request_status (PLAYSTATUS_STOPPED);
-			  //m_Sources->source_activate (SOURCE_NONE);
+				}
 		}
 	  }
+
+	  stop ();
 	}
 
 	void
@@ -1884,14 +1926,10 @@ namespace MPX
 
 	  PlaybackSource::Caps c = m_source_caps[m_Sources->getSource()];
 	  if( paused && (c & PlaybackSource::C_CAN_PAUSE ))
-	  {
 		m_Play->request_status (PLAYSTATUS_PAUSED);
-	  }
 	  else
 	  if( !paused && (m_Play->property_status() == PLAYSTATUS_PAUSED))
-	  {
 		m_Play->request_status (PLAYSTATUS_PLAYING);
-	  }
 	}
 
 	void
@@ -1900,27 +1938,18 @@ namespace MPX
 	  PlaybackSource* source = m_SourceV[source_id];
 	  PlaybackSource::Flags f = m_source_flags[source_id];
 
-	  if( (f & PlaybackSource::F_PHONY_NEXT) == 0 )
+	  if( (f & PlaybackSource::F_PHONY_PREV) == 0 )
 	  {
-		  std::string type = source->get_type ();
-		  //enable_video_check (type);
-		  ustring uri = source->get_uri();
+			std::string type = source->get_type ();
+			ustring uri = source->get_uri();
+			//enable_video_check (type);
 
-		  if((uri.substr(0,7) == "file://") && (!file_test(filename_from_uri(uri), FILE_TEST_EXISTS)))
-		  {
-			  //source->bad_track();
-			  source->stop ();
-			  m_Play->request_status (PLAYSTATUS_STOPPED);
-			  //m_Sources->source_activate (SOURCE_NONE);
-			  return;
-		  }
-
-		  safe_pause_unset();
-		  m_Play->switch_stream (uri, type);
-
-		  source->prev_post ();
-		  play_post_internal (source_id);
-		  //m_player_dbus_obj->emit_track_change (m_player_dbus_obj);
+			safe_pause_unset();
+			m_Play->switch_stream (uri, type);
+			source->prev_post ();
+			play_post_internal (source_id);
+			g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
+			//m_player_dbus_obj->emit_track_change (m_player_dbus_obj);
 	  }
 	}
 
@@ -1936,41 +1965,22 @@ namespace MPX
 	  {
 			if( f & PlaybackSource::F_ASYNC )
 			{
-				  m_actions->get_action (ACTION_PREV)->set_sensitive( false );
-				  source->go_prev_async ();
-				  return;
+					m_actions->get_action (ACTION_PREV)->set_sensitive( false );
+					source->go_prev_async ();
+					return;
 			}
 			else
-			if( (f & PlaybackSource::F_PHONY_PREV) == 0 )
+			if( source->go_prev () )
 			{
-				  if( source->go_prev () )
-				  {
 					std::string type = source->get_type ();
-					//enable_video_check (type);
 					ustring uri = source->get_uri();
-
-					if((uri.substr(0,7) == "file://") && (!file_test(filename_from_uri(uri), FILE_TEST_EXISTS)))
-					{
-					  prev();
-					  return;
-					}
-
 					m_Play->switch_stream (uri, type);
 					prev_async_cb (m_Sources->getSource());
-				  }
-				  else
-				  {
-					//g_warning(_("%s: Source '%s' indicated C_CAN_GO_PREV, but can not"), G_STRLOC, sources[source_id].name.c_str());
-					stop ();
-				  }
+					return;
 			}
 	  }
-	  else
-	  {
-		source->stop ();
-		m_Play->request_status (PLAYSTATUS_STOPPED);
-		//m_Sources->source_activate (SOURCE_NONE);
-	  }
+	
+	  stop ();
 	}
 
 	void
@@ -1982,20 +1992,14 @@ namespace MPX
 	  if( (f & PlaybackSource::F_PHONY_NEXT) == 0 )
 	  {
 			std::string type = source->get_type ();
-			//enable_video_check (type);
 			ustring uri = source->get_uri();
-
-			if((uri.substr(0,7) == "file://") && (!file_test(filename_from_uri(uri), FILE_TEST_EXISTS)))
-			{
-			  next();
-			  return;
-			}
+			//enable_video_check (type);
 
 			safe_pause_unset();
 			m_Play->switch_stream (uri, type);
-
 		    source->next_post ();
 		    play_post_internal (source_id);
+			g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
 		    //m_player_dbus_obj->emit_track_change (m_player_dbus_obj);
 	  }
 	}
@@ -2012,28 +2016,19 @@ namespace MPX
 	  {
 			if( f & PlaybackSource::F_ASYNC )
 			{
-			  m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
-			  source->go_next_async ();
-			  return;
+				m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
+				source->go_next_async ();
+				return;
 			}
 			else
+			if( source->go_next () )
 			{
-			  if( source->go_next () )
-			  {
 				next_async_cb (m_Sources->getSource());
 				return;
-			  }
-			  else
-			  {
-				//g_warning(_("%s: Source %s indicated C_CAN_GO_NEXT, but can not"), G_STRLOC, sources[source_id].name.c_str());
-				stop ();
-			  }
 			}
 	  }
-	  else
-	  {
-		stop ();
-	  }
+
+	  stop ();
 	}
 
 	void

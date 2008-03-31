@@ -30,13 +30,26 @@
 #include <sigc++/signal.h>
 #include <boost/format.hpp>
 #include "mpx/types.hh"
+#include <Python.h>
+#include <boost/python.hpp>
 
+#define NO_IMPORT
+#include <pygobject.h>
+#
 namespace MPX
 {
     struct Metadata
     :   public Track
     {
         Glib::RefPtr<Gdk::Pixbuf> Image;
+		PyObject *PyImage;
+
+		PyObject*	
+		get_image ()
+		{
+			PyImage = pygobject_new((GObject*)(Image->gobj()));
+			return PyImage; 
+		}
 
 		Metadata ()
 		{

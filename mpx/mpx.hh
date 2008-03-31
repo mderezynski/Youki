@@ -57,19 +57,25 @@ namespace MPX
     {
       public:
 
+		// Plugin/Sources API
 		void
 		get_object (PAccess<MPX::Library> & pa);
 
 		void	
 		get_object (PAccess<MPX::Amazon::Covers> & pa);
 
+		Metadata const&
+		get_metadata ();
+
         virtual ~Player ();
 
       protected:
 
-        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Amazon::Covers&);
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Amazon::Covers&); //BLEH: We need to pass pointers here for the Python API
 
 	  public:
+
+		PyObject *m_PyGObj;
 
         static Player*
         create (MPX::Library&, MPX::Amazon::Covers&);
@@ -82,6 +88,15 @@ namespace MPX
         virtual bool on_key_press_event (GdkEventKey*);
 
       private:
+
+		enum PlayerCSignals
+		{
+			PSIGNAL_NEW_TRACK,
+			PSIGNAL_INFOAREA_CLICK,
+			N_SIGNALS
+		};
+
+	    guint signals[N_SIGNALS];
 
         struct SourcePlugin
         {
@@ -98,50 +113,42 @@ namespace MPX
         Glib::RefPtr<Gtk::ActionGroup>    m_actions;
         Glib::RefPtr<Gtk::UIManager>      m_ui_manager;
 
-		Play * m_Play;
-		DBusGConnection * m_SessionBus;
-
 		struct DBusObjectsT
 		{
 			Root		*root;
 			DBusMPX		*mpx;
 		};
 
-		DBusObjectsT DBusObjects;
-
-#if 0
-		boost::python::object m_TrackInfo;
-		boost::python::object m_TrackInfoMain;
-		boost::python::object m_TrackInfoDict;
-#endif
-
 		std::string m_TrackInfoScript;
+		int m_Seeking;
+		std::vector<int> m_SourceTabMapping;
+		int m_SourceCtr;
+		int m_PageCtr;
+
+		DBusObjectsT DBusObjects;
+		DBusGConnection * m_SessionBus;
+
+		Play *m_Play;
+        Library &m_Library;
+        Amazon::Covers &m_Covers;
 
         Sources *m_Sources;
         InfoArea *m_InfoArea;
+
         Gtk::Statusbar *m_Statusbar;
 		Gtk::Notebook *m_MainNotebook;
 		Gtk::VolumeButton *m_Volume;
-	
-		int m_Seeking;
 		Gtk::HScale *m_Seek;
 		Gtk::Label *m_TimeLabel;
 
-        Library & m_Library;
-        Amazon::Covers & m_Covers;
-
 		VectorSources m_SourceV;
-		std::vector<int> m_SourceTabMapping;
-
 		PlaybackSource::Flags m_source_flags[16];
 		PlaybackSource::Caps m_source_caps[16];
 
 		Metadata m_Metadata;
-
-		gint m_SourceCtr;
-		gint m_PageCtr;
-
 		Glib::RefPtr<Gdk::Pixbuf> m_DiscDefault;
+
+
 
 		bool
 		load_source_plugin (std::string const& path);
@@ -155,6 +162,7 @@ namespace MPX
 		on_cover_clicked();
 
 
+
 		bool
 		on_seek_event(GdkEvent*);
 
@@ -163,6 +171,7 @@ namespace MPX
 
 		bool
 		on_seek_button_release(GdkEventButton*);
+
 
 
         void
@@ -175,6 +184,7 @@ namespace MPX
         on_library_scan_end(gint64,gint64,gint64,gint64,gint64);
 
 		
+
 		void
 		on_play_status_changed ();
 
@@ -183,6 +193,7 @@ namespace MPX
 
 		void
 		on_play_metadata (MPXGstMetadataField);
+
 
 
 		void
@@ -196,6 +207,7 @@ namespace MPX
 
 		void
 		on_controls_prev ();
+
 
 		
 		void
@@ -270,8 +282,7 @@ namespace MPX
 		void
 		reparse_metadata ();
 
-
-
+		// Importing related
         GFile *m_MountFile;
         GMountOperation *m_MountOperation;
         Glib::ustring m_Share, m_ShareName;

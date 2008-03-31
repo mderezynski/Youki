@@ -3,8 +3,8 @@
 # (C) 2008 M. Derezynski
 #
 
-import mpx_boost
-from mpx_boost import *
+import mpx
+from mpx import *
 import pygtk
 pygtk.require('2.0')
 import gtk
@@ -13,9 +13,11 @@ import pango
 import musicbrainz2
 import musicbrainz2.webservice as ws
 
-
 class TrackInfo:
-	def __init__(self):
+	def __init__(self,track):
+
+		self.track = track
+
 		self.q = ws.Query() 
 		self.tinc = musicbrainz2.webservice.TrackIncludes(trackRelations=True,artist=True,puids=True,releases=True,artistRelations=True,releaseRelations=True,urlRelations=True)
 
@@ -24,8 +26,6 @@ class TrackInfo:
 		self.textview = self.xml.get_widget("textview")
 		self.image = self.xml.get_widget("image")
 		self.close = self.xml.get_widget("close")
-		#self.close.connect("clicked",self.close_clicked)
-		#self.window.connect("delete-event",self.delete_event)
 
 		self.buf = self.textview.get_buffer()
 
@@ -45,12 +45,14 @@ class TrackInfo:
 		self.textTagSlant.set_property("style", pango.STYLE_ITALIC) 
 		self.buf.get_tag_table().add(self.textTagSlant)
 
+	def show(self):
 
-	def show(self, track, image):
-		self.window.show()
+		track = self.track
+		image = track.get_image()
 
 		if image: 
 			self.image.set_from_pixbuf(image.scale_simple(192,192,gtk.gdk.INTERP_BILINEAR))
+
 		self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
 
 		if track.get(AttributeId.attr_title).is_initialized() and track.get(AttributeId.attr_artist).is_initialized():
@@ -108,7 +110,7 @@ class TrackInfo:
 
 		if track.get(AttributeId.attr_artist).is_initialized() and track.get(AttributeId.attr_title).is_initialized():
 			try:
-				lyricwiki = mpx_boost.LyricWiki(track.get(AttributeId.attr_artist).val().get_string(), track.get(AttributeId.attr_title).val().get_string())
+				lyricwiki = mpx.LyricWiki(track.get(AttributeId.attr_artist).val().get_string(), track.get(AttributeId.attr_title).val().get_string())
 				lyrics = lyricwiki.run()
 				self.buf.insert(self.buf.get_end_iter(), lyrics)
 			except:
@@ -119,11 +121,13 @@ class TrackInfo:
 				self.buf.insert(self.buf.get_end_iter(), "\n\n")
 				self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track.get(AttributeId.attr_artist).val().get_string(), self.textTagCenter, self.textTagLarge)
 				self.buf.insert(self.buf.get_end_iter(), "\n\n")
-				lastfmartist = mpx_boost.LastFMArtist(track.get(AttributeId.attr_artist).val().get_string())
+				lastfmartist = mpx.LastFMArtist(track.get(AttributeId.attr_artist).val().get_string())
 				artist = lastfmartist.run()
 				self.buf.insert(self.buf.get_end_iter(), artist)
 			except:
 				print "Couldn't get Last.fm artist info for '" + track.get(AttributeId.attr_artist).val().get_string() 
+
+		self.window.show()
 
 	def printCover(self, track, mbtrack, rels):
 
@@ -235,4 +239,34 @@ class TrackInfo:
 	def printInstrument(self, track, mbtrack, rels):
 		return True
 
-info = TrackInfo()
+class TrackInfoDispatcher:
+	def __init__(self):
+		print "TrackInfo Plugin initialized"
+
+	def activate(self,player):
+		print "TrackInfo Plugin activated"
+		self.player = player
+		self.player_infoarea_click_id = self.player.gobj.connect("infoarea-click", self.infoarea_click)
+
+	def deactivate(self):
+		self.player.disconnect(self.player_infoarea_click_id)
+		self.player = None
+
+	def infoarea_click(self, data):
+		print "Infoarea clicked"
+		info = TrackInfo(self.player.get_metadata())
+		info.close.connect("clicked",self.close_clicked, info)
+		info.window.connect("delete-event",self.delete_event, info)
+		info.show()
+
+	def close_clicked(self, button, instance):
+		instance.window.destroy()
+		instance.window = None
+		instance = None
+		
+	def delete_event(self, window, event, instance):
+		instance.window.destroy()
+		instance.window = None
+		instance = None
+
+instance = TrackInfoDispatcher()

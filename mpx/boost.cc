@@ -3,12 +3,18 @@
 #include <boost/variant.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/cstdint.hpp>
+#include <pygobject.h>
+#include <pygtk/pygtk.h>
 #include <gdkmm/pixbuf.h>
 #include <Python.h>
 #include "boost.hh"
 #include "mpx/playbacksource.hh"
 #include "lyrics-v2.hh"
 #include "last-fm-xmlrpc.hh"
+#include "mpx.hh"
+#include <libglademm/xml.h>
+#include "mpx/amazon.hh"
+#include "mpx/library.hh"
 
 using namespace boost::python;
 
@@ -71,7 +77,7 @@ namespace MPX
     };
 }
 
-namespace bpy
+namespace mpxpy
 {
 	std::string
 	variant_repr(MPX::Variant &self)
@@ -160,37 +166,39 @@ namespace bpy
 	{
 		return MPX::N_ATTRIBUTES_INT;
 	}
+
 }
 
-BOOST_PYTHON_MODULE(mpx_boost)
+BOOST_PYTHON_MODULE(mpx)
 {
 	class_<MPX::OVariant>("optional")
 		.def("val", (MPX::Variant& (MPX::OVariant::*) ()) &MPX::OVariant::get, return_internal_reference<>() /*return_value_policy<return_by_value>()*/) 
 		.def("is_initialized", (bool (MPX::OVariant::*) ()) &MPX::OVariant::is_initialized, return_value_policy<return_by_value>()) 
-		.def("init", &bpy::opt_init)
-		.def("__repr__", &bpy::opt_repr, return_value_policy<return_by_value>())
+		.def("init", &mpxpy::opt_init)
+		.def("__repr__", &mpxpy::opt_repr, return_value_policy<return_by_value>())
 	;
 
 	class_<MPX::Variant >("variant")
-		.def("get_int", &bpy::variant_getint, return_value_policy<return_by_value>()) 
-		.def("set_int", &bpy::variant_setint)
-		.def("get_string", &bpy::variant_getstring, return_value_policy<return_by_value>()) 
-		.def("set_string", &bpy::variant_setstring)
-		.def("get_double", &bpy::variant_getdouble, return_value_policy<return_by_value>()) 
-		.def("set_double", &bpy::variant_setdouble)
-		.def("__repr__", &bpy::variant_repr, return_value_policy<return_by_value>())
+		.def("get_int", &mpxpy::variant_getint, return_value_policy<return_by_value>()) 
+		.def("set_int", &mpxpy::variant_setint)
+		.def("get_string", &mpxpy::variant_getstring, return_value_policy<return_by_value>()) 
+		.def("set_string", &mpxpy::variant_setstring)
+		.def("get_double", &mpxpy::variant_getdouble, return_value_policy<return_by_value>()) 
+		.def("set_double", &mpxpy::variant_setdouble)
+		.def("__repr__", &mpxpy::variant_repr, return_value_policy<return_by_value>())
 	;
 
 	class_<MPX::Track >("track")
-		.def("__getitem__", &bpy::track_getitem, return_value_policy<return_by_value>()) 
-		.def("__len__", &bpy::track_len, return_value_policy<return_by_value>())
-		.def("get", &bpy::track_getitem, return_value_policy<return_by_value>()) 
+		.def("__getitem__", &mpxpy::track_getitem, return_value_policy<return_by_value>()) 
+		.def("__len__", &mpxpy::track_len, return_value_policy<return_by_value>())
+		.def("get", &mpxpy::track_getitem, return_value_policy<return_by_value>()) 
 	;
 
 	class_<MPX::Metadata >("metadata")
-		.def("__getitem__", &bpy::metadata_getitem, return_value_policy<return_by_value>()) 
-		.def("__len__", &bpy::metadata_len, return_value_policy<return_by_value>())
-		.def("get", &bpy::metadata_getitem, return_value_policy<return_by_value>()) 
+		.def("__getitem__", &mpxpy::metadata_getitem, return_value_policy<return_by_value>()) 
+		.def("__len__", &mpxpy::metadata_len, return_value_policy<return_by_value>())
+		.def("get", &mpxpy::metadata_getitem, return_value_policy<return_by_value>()) 
+		.def("get_image", &MPX::Metadata::get_image)
 	;
 
 	enum_<MPX::AttributeId>("AttributeId")
@@ -232,15 +240,21 @@ BOOST_PYTHON_MODULE(mpx_boost)
       .value("attr_mpx_track_id", MPX::MPX_ATTRIBUTE_MPX_TRACK_ID)
 	;
 
+	// Player 
+	class_<MPX::Player, boost::noncopyable>("Player", boost::python::no_init)
+		.def_readwrite("gobj", &MPX::Player::m_PyGObj)
+		.def("get_metadata", &MPX::Player::get_metadata, return_internal_reference<>()) 
+	;
+
 	// Musicbrainz
 
 	// LyricWiki	
-	class_<MPX::LyricWiki::TextRequest, boost::noncopyable>("LyricWiki", init<std::string, std::string>())	
+	class_<MPX::LyricWiki::TextRequest, boost::noncopyable>("LyricWiki", boost::python::init<std::string, std::string>())	
 		.def("run", &MPX::LyricWiki::TextRequest::run)
 	;
 
 	// Last.fm
-	class_<MPX::LastFM::XMLRPC::ArtistMetadataRequestSync, boost::noncopyable>("LastFMArtist", init<std::string>())
+	class_<MPX::LastFM::XMLRPC::ArtistMetadataRequestSync, boost::noncopyable>("LastFMArtist", boost::python::init<std::string>())
 		.def("run", &MPX::LastFM::XMLRPC::ArtistMetadataRequestSync::run)
 	;
 }
@@ -250,6 +264,6 @@ namespace MPX
 	void
 	mpx_py_init ()
 	{
-		initmpx_boost();
+		initmpx();
 	}
 }

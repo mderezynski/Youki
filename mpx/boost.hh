@@ -5,9 +5,10 @@
 #include <boost/cstdint.hpp>
 #include <Python.h>
 #include "mpx/types.hh"
+#include "mpx.hh"
 using namespace boost::python;
 
-namespace bpy
+namespace mpxpy
 {
 	std::string
 	variant_repr(MPX::Variant &self);

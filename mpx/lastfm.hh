@@ -34,7 +34,7 @@
 #include <string>
 
 #include <glibmm/markup.h>
-#include <glibmm/ustring.h>
+#include <glibmm/Glib::ustring.h>
 #include <gtkmm.h>
 #include <libglademm.h>
 #include <boost/variant.hpp>
@@ -42,8 +42,6 @@
 #include "mcs/mcs.h"
 #include "xspf.hh"
 #include "minisoup.hh"
-
-using namespace Glib;
 
 namespace MPX
 {
@@ -68,7 +66,7 @@ namespace MPX
       ///// Requests
       /////////////////////////////////////////////////
 
-      ustring formatXmlRpc (ustring const& method, xmlRpcVariantV const& argv);
+      Glib::ustring formatXmlRpc (Glib::ustring const& method, xmlRpcVariantV const& argv);
 
       class XmlRpcCall; 
       typedef Glib::RefPtr<XmlRpcCall> XmlRpcCallRefPtr;
@@ -88,7 +86,7 @@ namespace MPX
         public:
           virtual ~XmlRpcCall ();
           void cancel ();
-          void setMethod (const ustring& method);
+          void setMethod (const Glib::ustring& method);
       };
 
       class XmlRpcCallSync
@@ -100,7 +98,7 @@ namespace MPX
           XmlRpcCallSync ();
         public:
           virtual ~XmlRpcCallSync ();
-          void setMethod (const ustring& method);
+          void setMethod (const Glib::ustring& method);
       };
 
       class ArtistMetadataRequest;
@@ -109,12 +107,12 @@ namespace MPX
       class ArtistMetadataRequest
         : public XmlRpcCall
       {
-          ustring m_artist;
+          Glib::ustring m_artist;
           void reply_cb (char const* data, guint size, guint status_code);
         private: 
-          ArtistMetadataRequest (ustring const& artist); 
+          ArtistMetadataRequest (Glib::ustring const& artist); 
         public:
-          static ArtistMetadataRequestRefPtr create (ustring const& artist); 
+          static ArtistMetadataRequestRefPtr create (Glib::ustring const& artist); 
           virtual ~ArtistMetadataRequest () {};
           void run ();
       };
@@ -122,9 +120,9 @@ namespace MPX
       class ArtistMetadataRequestSync
         : public XmlRpcCallSync
       {
-          ustring m_artist;
+          Glib::ustring m_artist;
         private: 
-          ArtistMetadataRequestSync (ustring const& artist); 
+          ArtistMetadataRequestSync (Glib::ustring const& artist); 
         public:
           virtual ~ArtistMetadataRequest () {};
           std::string run ();
@@ -135,7 +133,7 @@ namespace MPX
       {
         public:
   
-          RequestBase (ustring const& method);
+          RequestBase (Glib::ustring const& method);
           virtual ~RequestBase () {};
 
           void run ();
@@ -155,7 +153,7 @@ namespace MPX
       {
         public:
 
-          TrackAction (ustring const& method, XSPF::Item const& item);
+          TrackAction (Glib::ustring const& method, XSPF::Item const& item);
           virtual ~TrackAction () {}
       };
 
@@ -164,7 +162,7 @@ namespace MPX
       {
         public:
 
-          TagAction (ustring const& method, MPX::XSPF::Item const& item, MPX::UStrV const& tags);
+          TagAction (Glib::ustring const& method, MPX::XSPF::Item const& item, MPX::UStrV const& tags);
           virtual ~TagAction () {}
       };
 
@@ -181,7 +179,7 @@ namespace MPX
           };
 
           RecommendAction (RecommendItem item,
-                      ustring const& artist, ustring const& album, ustring const& title, ustring const& user, ustring const& message); 
+                      Glib::ustring const& artist, Glib::ustring const& album, Glib::ustring const& title, Glib::ustring const& user, Glib::ustring const& message); 
           virtual ~RecommendAction () {}
       };
     } // namespace:XMLRPC
