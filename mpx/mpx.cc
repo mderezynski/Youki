@@ -496,6 +496,24 @@ namespace MPX
       }
 
       void
+      play_update_spectrum (Spectrum const& spectrum)
+      {
+#if 0
+        for (int n = 0; n < SPECT_BANDS; ++n)
+        {
+          if( spectrum[n] < m_spectrum_data[n] )
+            m_spectrum_data[n] = (((m_spectrum_data[n] - 6) < 0) ? 0 : (m_spectrum_data[n] - 6));
+          else
+            m_spectrum_data[n] = spectrum[n];
+        }
+#endif
+
+		m_spectrum_data = spectrum;
+        queue_draw ();
+
+      }
+
+      void
       play_status_changed ()
       {
         int status = m_Play.property_status ().get_value ();
@@ -648,21 +666,6 @@ namespace MPX
       }
 
       void
-      play_update_spectrum (Spectrum const& spectrum)
-      {
-        for (int n = 0; n < SPECT_BANDS; ++n)
-        {
-          if( spectrum[n] < m_spectrum_data[n] )
-            m_spectrum_data[n] = (((m_spectrum_data[n] - 6) < 0) ? 0 : (m_spectrum_data[n] - 6));
-          else
-            m_spectrum_data[n] = spectrum[n];
-        }
-
-        queue_draw ();
-
-      }
-
-      void
       draw_background (Cairo::RefPtr<Cairo::Context> const& cr)
       {
         Gtk::Allocation allocation = get_allocation ();
@@ -707,7 +710,7 @@ namespace MPX
 
           p->layout->set_single_paragraph_mode (true);
           p->layout->set_ellipsize (Pango::ELLIPSIZE_END);
-          p->layout->set_width ((allocation.get_width() - p->x - 210) * PANGO_SCALE);
+          p->layout->set_width ((allocation.get_width() - p->x - (8*SPECT_BANDS+12)) * PANGO_SCALE);
           p->layout->set_wrap (Pango::WRAP_CHAR);
 
           pango_cairo_show_layout (cr->cobj(), p->layout->gobj());
@@ -724,13 +727,13 @@ namespace MPX
           int x = 0, y = 0, w = 0, h = 0;
 
           // Bar
-          x = allocation.get_width () - 112 + (n*8);
-          y = 11 + (64 - m_spectrum_data[n]);
+          x = allocation.get_width () - (8*SPECT_BANDS+8) + (n*8);
+          y = 11 + (64 - (m_spectrum_data[n]+64));
 
           w = 6;
-          h = m_spectrum_data[n];
+          h = (m_spectrum_data[n]+64);
 
-          cr->set_source_rgba (double(colors[n].red)/255., double(colors[n].green)/255., double(colors[n].blue)/255., 0.8);
+          cr->set_source_rgba (double(colors[n/2].red)/255., double(colors[n/2].green)/255., double(colors[n/2].blue)/255., 0.8);
           cr->rectangle (x,y,w,h);
           cr->fill ();
         }

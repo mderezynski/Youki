@@ -688,10 +688,10 @@ namespace MPX
             GstStructure const* s = gst_message_get_structure (message);
             if (std::string (gst_structure_get_name (s)) == "spectrum")
             {
-              GValue const* list = gst_structure_get_value (s, "spectrum");
+              GValue const* mags = gst_structure_get_value (s, "magnitude");
               for (int i = 0; i < SPECT_BANDS; ++i)
               {
-                play.m_spectrum[i] = g_value_get_uchar(gst_value_list_get_value(list, i)); 
+                play.m_spectrum[i] = g_value_get_float(gst_value_list_get_value(mags, i)); 
               }
               play.signal_spectrum_.emit (play.m_spectrum);
             }
@@ -888,14 +888,15 @@ namespace MPX
         GstElement* convert   = gst_element_factory_make ("audioconvert", (NAME_CONVERT));
         GstElement* resample  = gst_element_factory_make ("audioresample", (NAME_RESAMPLE));
         GstElement* volume    = gst_element_factory_make ("volume", (NAME_VOLUME));
-        GstElement* spectrum  = gst_element_factory_make ("bmpx-spectrum", (NAME_SPECTRUM));
+        GstElement* spectrum  = gst_element_factory_make ("spectrum", (NAME_SPECTRUM));
 
         if (GST_IS_ELEMENT (spectrum))
         {
           g_object_set (G_OBJECT (spectrum),
-                        "interval", guint64 (50 * GST_MSECOND),
+                        "interval", guint64 (40 * GST_MSECOND),
                         "bands", SPECT_BANDS,
-                        "threshold", int (-60),
+                        "threshold", int (-64),
+                        "message-magnitude", gboolean (TRUE),
                         "message", gboolean (TRUE), NULL);
         }
 

@@ -113,10 +113,6 @@ mpx_bin_SOURCES =				\
 	boost.hh					\
 	boost.cc					\
 								\
-	gstspectrum.h				\
-	gstspectrum.cc				\
-	fix_fft.cc					\
-								\
 	import-share.hh				\
 	import-share.cc				\
 								\

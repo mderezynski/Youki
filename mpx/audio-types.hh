@@ -23,7 +23,7 @@ struct GstMessage;
 namespace MPX
 {
   typedef sigc::signal<void, GstBus*, GstMessage*> SignalBusWatchCascade; 
-  typedef std::vector<unsigned char> Spectrum; 
+  typedef std::vector<float> Spectrum; 
   typedef std::map<std::string, bool> MPXFileExtensions;
 
   enum MPXPlaystatus
