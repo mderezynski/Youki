@@ -1475,11 +1475,11 @@ namespace MPX
 			using namespace boost::python;
 			try{
 				object * info = new object(dict["info"]);
+
 				object window = extract<object>(info->attr("window"));
 				object button = extract<object>(info->attr("close"));
 				GObject * cobj_window = ((PyGObject*)(window.ptr()))->obj;
 				GObject * cobj_button = ((PyGObject*)(button.ptr()))->obj;
-
 				g_signal_connect(cobj_window, "delete-event", G_CALLBACK(delete_delete_event), info);
 				g_signal_connect(cobj_button, "clicked", G_CALLBACK(delete_clicked), info);
 				
@@ -1492,6 +1492,7 @@ namespace MPX
 					pypixbuf = pygobject_new((GObject*)(m_Metadata.Image->gobj()));
 					pypixbufcc = object((handle<>(pypixbuf)));
 				}
+
 				info->attr("show")(m_Metadata, pypixbufcc);
 			} catch ( error_already_set ) {
 				PyErr_Print();

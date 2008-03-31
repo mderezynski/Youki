@@ -167,8 +167,8 @@ class TrackInfo:
 		for rel in rels:
 			url = rel.getTargetId()
 			id = url[url.rindex("/")+1:]
-			sampled = self.q.getTrackById(id, self.tinc)
-			sampledartist = sampled.getArtist()
+			trk = self.q.getTrackById(id, self.tinc)
+			sampledartist = trk.getArtist()
 			sampled.append(sampled.getTitle() + " by " + sampledartist.getName())
 
 		self.buf.insert_with_tags(self.buf.get_end_iter(), "...contains samples from ")
