@@ -47,6 +47,9 @@ namespace MPX
 		PyObject*	
 		get_image ()
 		{
+			if(!Image)
+				return NULL;
+
 			PyImage = pygobject_new((GObject*)(Image->gobj()));
 			return PyImage; 
 		}
