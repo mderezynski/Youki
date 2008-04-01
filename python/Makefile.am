@@ -1,1 +1,1 @@
-SUDBIRS = trackinfo
+SUBDIRS = trackinfo
