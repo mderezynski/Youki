@@ -979,20 +979,21 @@ namespace MPX
                 if(get_path_at_pos (event->x, event->y, m_PathButtonPress, col, cell_x, cell_y))
                 {
                     TreeIter iter = TreeStore->get_iter(TreeStoreFilter->convert_path_to_child_path(m_PathButtonPress));
-                    if(m_PathButtonPress.get_depth() == 1)
+                    if(m_PathButtonPress.get_depth() == 2)
                     {
                         m_DragASIN = (*iter)[AlbumColumns.ASIN];
                         m_AlbumDragId = (*iter)[AlbumColumns.Id];
                         m_TrackDragId = 0;
 
-						if( (cell_x >= 102) && (cell_x <= 178) && (cell_y >= 65) && (cell_y <=78))
+						if( (cell_x >= 134) && (cell_x <= 210) && (cell_y >= 65) && (cell_y <=78))
 						{
-							int rating = ((cell_x - 102)+7) / 15;
+							int rating = ((cell_x - 134)+7) / 15;
 							(*iter)[AlbumColumns.Rating] = rating;	
 							m_Lib.get().rateAlbum(m_AlbumDragId, rating);
 						}
                     }
                     else
+                    if(m_PathButtonPress.get_depth() == 3)
                     {
                         m_DragASIN = ""; // TODO: Use boost::optional
                         m_AlbumDragId = 0; 
@@ -1448,8 +1449,6 @@ namespace MPX
                 set_model(TreeStoreFilter);
                 TreeStore->set_default_sort_func(sigc::mem_fun( *this, &AlbumTreeView::slotSort ));
                 TreeStore->set_sort_column(GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID, Gtk::SORT_ASCENDING);
-
-                set_enable_tree_lines();
 
                 m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")));
                 m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(72,72,Gdk::INTERP_BILINEAR));

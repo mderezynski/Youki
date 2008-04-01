@@ -76,14 +76,14 @@ namespace
     using boost::algorithm::split_regex;
     using boost::algorithm::is_any_of;
 
-	g_message("Buffer: \n\n%s", buffer.c_str());
+    //vector<string> lines;
+    //split_regex (lines, buffer, boost::regex ("\\\r?\\\n"));
+	char **lines = g_strsplit(buffer.c_str(), "\n", -1);
 
-    vector<string> lines;
-    split_regex (lines, buffer, boost::regex ("\\\r?\\\n"));
-
-    for (unsigned int n = 0; n < lines.size(); ++n)
+    //for (unsigned int n = 0; n < lines.size(); ++n)
+    for (int n = 0; lines[n] != NULL; ++n)
     {
-      char **line = g_strsplit (lines[n].c_str(), "=", 2);
+      char **line = g_strsplit (lines[n], "=", 2);
       if (line[0] && line[1] && strlen(line[0]) && strlen(line[1]))
       {
         ustring key (line[0]);
@@ -91,6 +91,7 @@ namespace
       }
       g_strfreev (line);
     }
+    g_strfreev (lines);
   }
 
   void 

@@ -165,7 +165,7 @@ namespace MPX
           {
             boost::shared_ptr<DialogSimpleEntry> p = boost::shared_ptr<DialogSimpleEntry> (DialogSimpleEntry::create());
             p->set_title (_("Shoutcast: Custom Search - MPX"));
-            p->set_heading (_("Please enter search terms to search for stations"));
+            p->set_heading (_("Please enter search terms to search for stations:"));
             ustring text;
             int response = p->run (text);
             p->hide ();
