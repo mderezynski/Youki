@@ -76,6 +76,8 @@ namespace
     using boost::algorithm::split_regex;
     using boost::algorithm::is_any_of;
 
+	g_message("Buffer: \n\n%s", buffer.c_str());
+
     vector<string> lines;
     split_regex (lines, buffer, boost::regex ("\\\r?\\\n"));
 

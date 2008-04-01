@@ -5,6 +5,8 @@ INCLUDES = 						\
 	$(GLADEMM_CFLAGS)			\
 	$(GLIBMM_CFLAGS)			\
 	$(GTKMM_CFLAGS)				\
+	$(PYTHON_CFLAGS)			\
+	$(PYGTK_CFLAGS)				\
 	$(SEXYMM_CFLAGS)			\
 	$(SOUP_CFLAGS)				\
   	-I$(top_srcdir)/include	
@@ -21,6 +23,8 @@ libmpxsource_radio_la_LIBADD =   \
 		$(GLIBMM_LIBS)				\
 		$(GTKMM_LIBS)				\
 		$(SEXYMM_LIBS)				\
+		$(PYTHON_LIBS)				\
+		$(PYGTK_LIBS)				\
 		$(SOUP_LIBS)				\
 		$(top_builddir)/widgets/libmpx-widgets.la
 

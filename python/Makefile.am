@@ -1,4 +1,5 @@
 python_DATA = 				\
-	trackinfo.py
+	trackinfo.py			\
+	trackinfo2.py
 
 pythondir = $(pkgdatadir)/scripts

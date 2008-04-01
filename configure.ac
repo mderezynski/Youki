@@ -711,12 +711,17 @@ AC_OUTPUT([
 
 	desktop/Makefile
 	desktop/mpx.desktop
+
     glade/Makefile
     images/Makefile
     jnetlib/Makefile
     libhal++/Makefile
     mcs/Makefile
+
     python/Makefile
+	python/trackinfo/Makefile
+	python/trackinfo/__init__.py
+
 	remote/Makefile
     scripts/Makefile
     widgets/Makefile

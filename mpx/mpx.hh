@@ -75,8 +75,6 @@ namespace MPX
 
 	  public:
 
-		PyObject *m_PyGObj;
-
         static Player*
         create (MPX::Library&, MPX::Amazon::Covers&);
 

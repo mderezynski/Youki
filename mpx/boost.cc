@@ -169,6 +169,31 @@ namespace mpxpy
 
 }
 
+namespace mpxpy
+{
+	PyObject*
+	player_get_gobject (MPX::Player & obj)
+	{
+		return pygobject_new((GObject*)(obj.gobj()));
+	}
+}
+
+namespace MPX
+{
+	struct Plugin
+	{
+		void
+		activate (MPX::Player & player)
+		{
+		}
+
+		void
+		deactivate ()
+		{
+		}
+	};
+}
+
 BOOST_PYTHON_MODULE(mpx)
 {
 	class_<MPX::OVariant>("optional")
@@ -242,8 +267,8 @@ BOOST_PYTHON_MODULE(mpx)
 
 	// Player 
 	class_<MPX::Player, boost::noncopyable>("Player", boost::python::no_init)
-		.def_readwrite("gobj", &MPX::Player::m_PyGObj)
 		.def("get_metadata", &MPX::Player::get_metadata, return_internal_reference<>()) 
+		.def("gobj", &mpxpy::player_get_gobject)
 	;
 
 	// Musicbrainz
@@ -256,6 +281,11 @@ BOOST_PYTHON_MODULE(mpx)
 	// Last.fm
 	class_<MPX::LastFM::XMLRPC::ArtistMetadataRequestSync, boost::noncopyable>("LastFMArtist", boost::python::init<std::string>())
 		.def("run", &MPX::LastFM::XMLRPC::ArtistMetadataRequestSync::run)
+	;
+
+	class_<MPX::Plugin>("Plugin")	
+		.def("activate", &MPX::Plugin::activate)
+		.def("deactivate", &MPX::Plugin::deactivate)
 	;
 }
 

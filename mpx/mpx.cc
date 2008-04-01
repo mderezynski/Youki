@@ -1013,11 +1013,22 @@ namespace MPX
 			Py_Initialize();
 			init_pygobject();
 			init_pygtk();
+			pyg_enable_threads ();
 			mpx_py_init ();	
 
-			m_PyGObj = pygobject_new((GObject*)(gobj()));
-
 			std::string main_path (build_filename(DATA_DIR,"scripts"));
+			
+			// Append path to python search path
+			PyObject *sys_path = PySys_GetObject ("path");
+			PyObject *path = PyString_FromString ((char*)main_path.c_str());
+			if (PySequence_Contains(sys_path, path) == 0)
+				PyList_Insert (sys_path, 0, path);
+			Py_DECREF(path);
+
+			PyObject *mpx = PyImport_ImportModule("mpx");
+			PyObject *mpx_dict = PyModule_GetDict(mpx);
+			PyTypeObject *PyMPXPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "Plugin"); 
+
 			Glib::Dir dir (main_path);
 			std::vector<std::string> strv (dir.begin(), dir.end());
 			dir.close();
@@ -1025,12 +1036,46 @@ namespace MPX
 			for(std::vector<std::string>::const_iterator i = strv.begin(); i != strv.end(); ++i)
 			{
 				try{
-					object main = object((handle<>(borrowed(PyImport_AddModule("__main__")))));
-					object dict = main.attr("__dict__");
-					object obj  = exec_file(build_filename(main_path, *i).c_str(), dict, dict);
-					object * instance = new object(dict["instance"]);	//TODO: This is clunky, we need an own baseclass for plugins
-																		// FIXME: Memory management of dynamic object
-					instance->attr("activate")(boost::ref(*this));
+					PyObject * main_module = PyImport_AddModule ("__main__");
+					if(main_module == NULL)
+					{
+						g_message("Couldn't get __main__");
+						continue;
+					}
+
+					//object dict = main.attr("__dict__");
+					PyObject * main_locals = PyModule_GetDict(main_module);
+
+					/* we need a fromlist to be able to import modules with a '.' in the
+					 *        name. */
+					PyObject *fromlist = PyTuple_New(0);
+					PyObject *module = PyImport_ImportModuleEx ((char*)i->c_str(), main_locals,
+									  main_locals, fromlist);
+					Py_DECREF (fromlist);
+					if (!module) {
+						PyErr_Print ();
+						continue;	
+					}
+
+					PyObject *locals = PyModule_GetDict (module);
+					Py_ssize_t pos = 0;
+					PyObject *key, *value;
+					while (PyDict_Next (locals, &pos, &key, &value))
+					{
+						if(!PyType_Check(value))
+							continue;
+
+						if (PyObject_IsSubclass (value, (PyObject*) PyMPXPlugin_Type))
+						{
+							PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+							PyObject * instance = PyObject_CallObject(value, NULL);
+							if(instance == NULL)
+								PyErr_Print();
+							object ccinstance = object((handle<>(borrowed(instance))));
+							ccinstance.attr("activate")(boost::ref(*this));
+							pyg_gil_state_release(state);
+						}
+					}
 				} catch (...) {
 					PyErr_Print();
 					g_error("%s: Error loading plugin '%s': ", G_STRLOC, i->c_str()); 
