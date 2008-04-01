@@ -825,6 +825,7 @@ namespace MPX
         {
             ROW_ALBUM,
             ROW_TRACK,
+			ROW_ARTIST,
         };
 
         struct AlbumColumnsT : public Gtk::TreeModel::ColumnRecord 
@@ -880,6 +881,7 @@ namespace MPX
 
               ASINIterMap m_ASINIterMap;
               IdIterMap m_AlbumIterMap;
+			  IdIterMap m_ArtistIterMap;
 
               Cairo::RefPtr<Cairo::ImageSurface> m_DiscDefault;
               Glib::RefPtr<Gdk::Pixbuf> m_DiscDefault_Pixbuf;
@@ -896,6 +898,9 @@ namespace MPX
               on_row_expanded (const TreeIter &iter_filter,
                                const TreePath &path) 
               {
+				if(path.size() == 1)
+					return;
+
 				TreeIter iter = TreeStoreFilter->convert_iter_to_child_iter(iter_filter);
                 if(!(*iter)[AlbumColumns.HasTracks])
                 {
@@ -1012,11 +1017,26 @@ namespace MPX
               }
     
               void
-              on_new_album(const std::string& mbid, const std::string& asin, gint64 id)
+              on_new_album(const std::string& mbid, const std::string& asin, gint64 id, gint64 album_artist_id)
               {
-                TreeIter iter = TreeStore->append();
+				TreeIter iter_artist; 
+				IdIterMap::const_iterator i = m_ArtistIterMap.find(album_artist_id);
+				if(i !=	m_ArtistIterMap.end())
+				{
+					iter_artist = i->second;
+				}
+				else
+				{
+					iter_artist = TreeStore->append();
+					(*iter_artist)[AlbumColumns.Text] = ""; /*FIXME*/ 
+					(*iter_artist)[AlbumColumns.RowType] = ROW_ARTIST;
+					m_ArtistIterMap[album_artist_id] = iter_artist;
+				}
+
+                TreeIter iter = TreeStore->append(iter_artist->children());
                 m_AlbumIterMap[id] = iter;
-                TreeStore->append(iter->children());
+
+                TreeStore->append(iter->children()); //create dummy/placeholder row for tracks
 
                 (*iter)[AlbumColumns.RowType] = ROW_ALBUM; 
                 (*iter)[AlbumColumns.HasTracks] = false; 
@@ -1077,146 +1097,6 @@ namespace MPX
               }
 
               void
-              on_new_track(Track & track, gint64 albumid)
-              {
-                if(m_AlbumIterMap.count(albumid))
-                {
-                    TreeIter iter = m_AlbumIterMap[albumid];
-                    if (((*iter)[AlbumColumns.HasTracks]))
-                    {
-                        TreeIter child = TreeStore->append(iter->children());
-                        if(track[ATTRIBUTE_TITLE])
-                            (*child)[AlbumColumns.TrackTitle] = get<std::string>(track[ATTRIBUTE_TITLE].get());
-                        if(track[ATTRIBUTE_ARTIST])
-                            (*child)[AlbumColumns.TrackArtist] = get<std::string>(track[ATTRIBUTE_ARTIST].get());
-                        if(track[ATTRIBUTE_TRACK])
-                            (*child)[AlbumColumns.TrackNumber] = get<gint64>(track[ATTRIBUTE_TRACK].get());
-                        if(track[ATTRIBUTE_TIME])
-                            (*child)[AlbumColumns.TrackLength] = get<gint64>(track[ATTRIBUTE_TIME].get());
-
-                        (*child)[AlbumColumns.TrackId] = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get());
-                        (*child)[AlbumColumns.RowType] = ROW_TRACK; 
-                    }
-                }
-              }
-
-              int
-              slotSort(const TreeIter& iter_a, const TreeIter& iter_b)
-              {
-                AlbumRowType rt_a = (*iter_a)[AlbumColumns.RowType];
-                AlbumRowType rt_b = (*iter_b)[AlbumColumns.RowType];
-
-                if((rt_a == ROW_ALBUM) && (rt_b == ROW_ALBUM))
-                {
-                  gint64 alb_a = (*iter_a)[AlbumColumns.Date];
-                  gint64 alb_b = (*iter_b)[AlbumColumns.Date];
-                  std::string art_a = (*iter_a)[AlbumColumns.ArtistSort];
-                  std::string art_b = (*iter_b)[AlbumColumns.ArtistSort];
-
-                  if(art_a != art_b)
-                      return art_a.compare(art_b);
-
-                  return alb_a - alb_b;
-                }
-                else if((rt_a == ROW_TRACK) && (rt_b == ROW_TRACK))
-                {
-                  gint64 trk_a = (*iter_a)[AlbumColumns.TrackNumber];
-                  gint64 trk_b = (*iter_b)[AlbumColumns.TrackNumber];
-
-                  return trk_a - trk_b;
-                }
-
-				return 0;
-              }
-
-              void
-              cellDataFuncCover (CellRenderer * basecell, TreeModel::iterator const &iter)
-              {
-                TreePath path (iter);
-                CellRendererCairoSurface *cell = dynamic_cast<CellRendererCairoSurface*>(basecell);
-                if(path.get_depth() == 1)
-                {
-                    cell->property_visible() = true;
-                    cell->property_surface() = (*iter)[AlbumColumns.Image]; 
-                }
-                else
-                {
-                    cell->property_visible() = false;
-                }
-              }
-
-              void
-              cellDataFuncText1 (CellRenderer * basecell, TreeModel::iterator const &iter)
-              {
-                TreePath path (iter);
-                CellRendererVBox *cvbox = dynamic_cast<CellRendererVBox*>(basecell);
-                CellRendererText *cell1 = dynamic_cast<CellRendererText*>(cvbox->property_renderer1().get_value());
-                CellRendererPixbuf *cell2 = dynamic_cast<CellRendererPixbuf*>(cvbox->property_renderer2().get_value());
-                if(path.get_depth() == 1)
-                {
-                    cvbox->property_visible() = true; 
-
-					if(cell1)
-	                    cell1->property_markup() = (*iter)[AlbumColumns.Text]; 
-					if(cell2)
-	                    cell2->property_pixbuf() = m_Stars[gint64((*iter)[AlbumColumns.Rating])];
-                }
-                else
-                {
-                    cvbox->property_visible() = false; 
-                }
-              }
-
-              void
-              cellDataFuncText2 (CellRenderer * basecell, TreeModel::iterator const &iter)
-              {
-                TreePath path (iter);
-                CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);
-                if(path.get_depth() == 1)
-                {
-                    cell->property_visible() = false; 
-                }
-                else
-                {
-                    cell->property_visible() = true; 
-                    cell->property_markup() = (boost::format("%lld.") % (*iter)[AlbumColumns.TrackNumber]).str();
-                }
-              }
-
-              void
-              cellDataFuncText3 (CellRenderer * basecell, TreeModel::iterator const &iter)
-              {
-                TreePath path (iter);
-                CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);
-                if(path.get_depth() == 1)
-                {
-                    cell->property_visible() = false; 
-                }
-                else
-                {
-                    cell->property_visible() = true; 
-                    cell->property_markup() = Markup::escape_text((*iter)[AlbumColumns.TrackTitle]);
-                }
-              }
-
-              void
-              cellDataFuncText4 (CellRenderer * basecell, TreeModel::iterator const &iter)
-              {
-                TreePath path (iter);
-                CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);
-                if(path.get_depth() == 1)
-                {
-                    cell->property_visible() = false; 
-                }
-                else
-                {
-                    cell->property_visible() = true; 
-                    gint64 Length = (*iter)[AlbumColumns.TrackLength];
-                    cell->property_text() = (boost::format ("%d:%02d") % (Length / 60) % (Length % 60)).str();
-                }
-              }
-
-              void
               album_list_load ()
               {
                 SQL::RowV v;
@@ -1225,13 +1105,28 @@ namespace MPX
                 {
                     SQL::Row & r = *i; 
 
-                    TreeIter iter = TreeStore->append();
-                    TreeStore->append(iter->children());
+					gint64 album_artist_id = get<gint64>(r["album_artist_j"]);
+
+					TreeIter iter_artist; 
+					IdIterMap::const_iterator i = m_ArtistIterMap.find(album_artist_id);
+					if(i !=	m_ArtistIterMap.end())
+					{
+						iter_artist = i->second;
+					}
+					else
+					{
+						iter_artist = TreeStore->append();
+						(*iter_artist)[AlbumColumns.Text] = get<std::string>(r["album_artist"]);
+						(*iter_artist)[AlbumColumns.RowType] = ROW_ARTIST;
+						m_ArtistIterMap[album_artist_id] = iter_artist;
+					}
+
+                    TreeIter iter = TreeStore->append(iter_artist->children());
+                    TreeStore->append(iter->children()); // create placeholder/dummy row for tracks
 
                     (*iter)[AlbumColumns.RowType] = ROW_ALBUM; 
                     (*iter)[AlbumColumns.HasTracks] = false; 
                     (*iter)[AlbumColumns.Image] = m_DiscDefault; 
-                    (*iter)[AlbumColumns.ASIN] = ""; 
                     (*iter)[AlbumColumns.Id] = get<gint64>(r["id"]); 
       
 	                if(r.count("album_rating"))
@@ -1278,6 +1173,159 @@ namespace MPX
 					}
                     (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                     (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
+                }
+              }
+
+              void
+              on_new_track(Track & track, gint64 albumid)
+              {
+                if(m_AlbumIterMap.count(albumid))
+                {
+                    TreeIter iter = m_AlbumIterMap[albumid];
+                    if (((*iter)[AlbumColumns.HasTracks]))
+                    {
+                        TreeIter child = TreeStore->append(iter->children());
+                        if(track[ATTRIBUTE_TITLE])
+                            (*child)[AlbumColumns.TrackTitle] = get<std::string>(track[ATTRIBUTE_TITLE].get());
+                        if(track[ATTRIBUTE_ARTIST])
+                            (*child)[AlbumColumns.TrackArtist] = get<std::string>(track[ATTRIBUTE_ARTIST].get());
+                        if(track[ATTRIBUTE_TRACK])
+                            (*child)[AlbumColumns.TrackNumber] = get<gint64>(track[ATTRIBUTE_TRACK].get());
+                        if(track[ATTRIBUTE_TIME])
+                            (*child)[AlbumColumns.TrackLength] = get<gint64>(track[ATTRIBUTE_TIME].get());
+
+                        (*child)[AlbumColumns.TrackId] = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get());
+                        (*child)[AlbumColumns.RowType] = ROW_TRACK; 
+                    }
+                }
+              }
+
+              int
+              slotSort(const TreeIter& iter_a, const TreeIter& iter_b)
+              {
+                AlbumRowType rt_a = (*iter_a)[AlbumColumns.RowType];
+                AlbumRowType rt_b = (*iter_b)[AlbumColumns.RowType];
+
+				if((rt_a == ROW_ARTIST) && (rt_b == ROW_ARTIST))
+				{
+                  Glib::ustring text_a = (*iter_a)[AlbumColumns.Text];
+                  Glib::ustring text_b = (*iter_b)[AlbumColumns.Text];
+				  return text_a.compare(text_b);
+				}
+
+                if((rt_a == ROW_ALBUM) && (rt_b == ROW_ALBUM))
+                {
+                  gint64 alb_a = (*iter_a)[AlbumColumns.Date];
+                  gint64 alb_b = (*iter_b)[AlbumColumns.Date];
+                  std::string art_a = (*iter_a)[AlbumColumns.ArtistSort];
+                  std::string art_b = (*iter_b)[AlbumColumns.ArtistSort];
+
+                  if(art_a != art_b)
+                      return art_a.compare(art_b);
+
+                  return alb_a - alb_b;
+                }
+                else if((rt_a == ROW_TRACK) && (rt_b == ROW_TRACK))
+                {
+                  gint64 trk_a = (*iter_a)[AlbumColumns.TrackNumber];
+                  gint64 trk_b = (*iter_b)[AlbumColumns.TrackNumber];
+
+                  return trk_a - trk_b;
+                }
+
+				return 0;
+              }
+
+              void
+              cellDataFuncCover (CellRenderer * basecell, TreeModel::iterator const &iter)
+              {
+                TreePath path (iter);
+                CellRendererCairoSurface *cell = dynamic_cast<CellRendererCairoSurface*>(basecell);
+                if(path.get_depth() == 2)
+                {
+                    cell->property_visible() = true;
+                    cell->property_surface() = (*iter)[AlbumColumns.Image]; 
+                }
+                else
+                {
+                    cell->property_visible() = false;
+                }
+              }
+
+              void
+              cellDataFuncText1 (CellRenderer * basecell, TreeModel::iterator const &iter)
+              {
+                TreePath path (iter);
+                CellRendererVBox *cvbox = dynamic_cast<CellRendererVBox*>(basecell);
+                CellRendererText *cell1 = dynamic_cast<CellRendererText*>(cvbox->property_renderer1().get_value());
+                CellRendererPixbuf *cell2 = dynamic_cast<CellRendererPixbuf*>(cvbox->property_renderer2().get_value());
+                if(path.get_depth() == 2)
+                {
+                    cvbox->property_visible() = true; 
+
+					if(cell1)
+	                    cell1->property_markup() = (*iter)[AlbumColumns.Text]; 
+					if(cell2)
+	                    cell2->property_pixbuf() = m_Stars[gint64((*iter)[AlbumColumns.Rating])];
+                }
+                else
+                {
+                    cvbox->property_visible() = false; 
+                }
+              }
+
+              void
+              cellDataFuncText2 (CellRenderer * basecell, TreeModel::iterator const &iter)
+              {
+                TreePath path (iter);
+                CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);
+                if(path.get_depth() == 3)
+                {
+                    cell->property_visible() = true; 
+                    cell->property_markup() = (boost::format("%lld.") % (*iter)[AlbumColumns.TrackNumber]).str();
+                }
+                else
+                {
+                    cell->property_visible() = false; 
+                }
+              }
+
+              void
+              cellDataFuncText3 (CellRenderer * basecell, TreeModel::iterator const &iter)
+              {
+                TreePath path (iter);
+                CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);
+                if(path.get_depth() == 3)
+                {
+                    cell->property_visible() = true; 
+                    cell->property_markup() = Markup::escape_text((*iter)[AlbumColumns.TrackTitle]);
+                }
+				else
+                if(path.get_depth() == 1)
+				{
+                    cell->property_visible() = true; 
+                    cell->property_markup() = Markup::escape_text((*iter)[AlbumColumns.Text]);
+				}
+                else
+                {
+                    cell->property_visible() = false; 
+                }
+              }
+
+              void
+              cellDataFuncText4 (CellRenderer * basecell, TreeModel::iterator const &iter)
+              {
+                TreePath path (iter);
+                CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);
+                if(path.get_depth() == 3)
+                {
+                    cell->property_visible() = true; 
+                    gint64 Length = (*iter)[AlbumColumns.TrackLength];
+                    cell->property_text() = (boost::format ("%d:%02d") % (Length / 60) % (Length % 60)).str();
+                }
+                else
+                {
+                    cell->property_visible() = false; 
                 }
               }
 

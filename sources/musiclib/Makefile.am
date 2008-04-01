@@ -1,13 +1,15 @@
 INCLUDES = 						\
-    $(BOOST_CPPFLAGS)			\
-	$(DBUS_CFLAGS)				\
-	$(EXO_CFLAGS)				\
-	$(GLADEMM_CFLAGS)			\
-	$(GLIBMM_CFLAGS)			\
-	$(GTKMM_CFLAGS)				\
-	$(SEXYMM_CFLAGS)			\
-	$(SOUP_CFLAGS)				\
-  	-I$(top_srcdir)/include	
+		$(BOOST_CPPFLAGS)			\
+		$(DBUS_CFLAGS)				\
+		$(EXO_CFLAGS)				\
+		$(GLADEMM_CFLAGS)			\
+		$(GLIBMM_CFLAGS)			\
+		$(GTKMM_CFLAGS)				\
+		$(PYTHON_CFLAGS)			\
+		$(PYGTK_CFLAGS)				\
+		$(SEXYMM_CFLAGS)			\
+		$(SOUP_CFLAGS)				\
+		-I$(top_srcdir)/include	
 
 libmpxsource_musiclib_LTLIBRARIES = libmpxsource-musiclib.la
 libmpxsource_musiclib_la_LDFLAGS = -fPIC -module
@@ -20,6 +22,8 @@ libmpxsource_musiclib_la_LIBADD =   \
 		$(GLADEMM_LIBS)				\
 		$(GLIBMM_LIBS)				\
 		$(GTKMM_LIBS)				\
+		$(PYTHON_LIBS)				\
+		$(PYGTK_LIBS)				\
 		$(SEXYMM_LIBS)				\
 		$(SOUP_LIBS)				\
 		$(top_builddir)/widgets/libmpx-widgets.la

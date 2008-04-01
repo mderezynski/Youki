@@ -581,7 +581,8 @@ namespace MPX
 
           Signals.NewAlbum.emit(    (track[ATTRIBUTE_MB_ALBUM_ID] ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()) : std::string())
                                 ,   (track[ATTRIBUTE_ASIN] ? get<std::string>(track[ATTRIBUTE_ASIN].get()) : std::string())
-                                ,   album_j );
+                                ,   album_j
+								,	album_artist_id );
 
           if(track[ATTRIBUTE_ASIN])
           {

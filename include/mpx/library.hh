@@ -106,7 +106,8 @@ namespace MPX
 			void
 			rateAlbum (gint64 id, int rating);
 
-            typedef sigc::signal<void, const std::string& /*mbid*/, const std::string& /*asin*/, gint64/*albumid*/> SignalNewAlbum;
+            typedef sigc::signal<void, const std::string& /*mbid*/,
+									const std::string& /*asin*/, gint64/*albumid*/, gint64 /*album artist id*/> SignalNewAlbum;
             typedef sigc::signal<void, gint64/*albumid*/> SignalAlbumUpdated;
             typedef sigc::signal<void, const std::string& /*mbid*/, gint64/*artistid*/> SignalNewArtist;
             typedef sigc::signal<void, Track&, gint64/*albumid*/> SignalNewTrack;
