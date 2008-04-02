@@ -49,7 +49,7 @@
 #include "mpx/util-graphics.hh"
 #include "mpx/util-string.hh"
 #include "mpx/util-ui.hh"
-#include "boost.hh"
+#include "mpxpy.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -1007,85 +1007,7 @@ namespace MPX
 
 		init_dbus ();
 		DBusObjects.mpx = DBusMPX::create(*this, m_SessionBus);
-
-		try {
-
-			Py_Initialize();
-			init_pygobject();
-			init_pygtk();
-			pyg_enable_threads ();
-			mpx_py_init ();	
-
-			std::string main_path (build_filename(DATA_DIR,"scripts"));
-			
-			// Append path to python search path
-			PyObject *sys_path = PySys_GetObject ("path");
-			PyObject *path = PyString_FromString ((char*)main_path.c_str());
-			if (PySequence_Contains(sys_path, path) == 0)
-				PyList_Insert (sys_path, 0, path);
-			Py_DECREF(path);
-
-			PyObject *mpx = PyImport_ImportModule("mpx");
-			PyObject *mpx_dict = PyModule_GetDict(mpx);
-			PyTypeObject *PyMPXPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "Plugin"); 
-
-			Glib::Dir dir (main_path);
-			std::vector<std::string> strv (dir.begin(), dir.end());
-			dir.close();
-
-			for(std::vector<std::string>::const_iterator i = strv.begin(); i != strv.end(); ++i)
-			{
-				try{
-					PyObject * main_module = PyImport_AddModule ("__main__");
-					if(main_module == NULL)
-					{
-						g_message("Couldn't get __main__");
-						continue;
-					}
-
-					//object dict = main.attr("__dict__");
-					PyObject * main_locals = PyModule_GetDict(main_module);
-
-					/* we need a fromlist to be able to import modules with a '.' in the
-					 *        name. */
-					PyObject *fromlist = PyTuple_New(0);
-					PyObject *module = PyImport_ImportModuleEx ((char*)i->c_str(), main_locals,
-									  main_locals, fromlist);
-					Py_DECREF (fromlist);
-					if (!module) {
-						PyErr_Print ();
-						continue;	
-					}
-
-					PyObject *locals = PyModule_GetDict (module);
-					Py_ssize_t pos = 0;
-					PyObject *key, *value;
-					while (PyDict_Next (locals, &pos, &key, &value))
-					{
-						if(!PyType_Check(value))
-							continue;
-
-						if (PyObject_IsSubclass (value, (PyObject*) PyMPXPlugin_Type))
-						{
-							PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-							PyObject * instance = PyObject_CallObject(value, NULL);
-							if(instance == NULL)
-								PyErr_Print();
-							object ccinstance = object((handle<>(borrowed(instance))));
-							ccinstance.attr("activate")(boost::ref(*this));
-							pyg_gil_state_release(state);
-						}
-					}
-				} catch (...) {
-					PyErr_Print();
-					g_error("%s: Error loading plugin '%s': ", G_STRLOC, i->c_str()); 
-				}
-			}
-		} catch( error_already_set ) {
-			g_warning("%s; Python Error:", G_STRFUNC);
-		    PyErr_Print();
-		}
-
+	
         // Playback Engine
         m_Play = new Play;
 		m_Play->signal_eos().connect
@@ -1277,6 +1199,9 @@ namespace MPX
 		m_Sources->sourceChanged().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
 
+		m_PluginManager = new PluginManager;
+		m_PluginManager->append_search_path (build_filename(DATA_DIR,"scripts"));
+		m_PluginManager->load_plugins(this);
 
 		DBusObjects.mpx->startup_complete(DBusObjects.mpx); 
     }
@@ -1550,6 +1475,7 @@ namespace MPX
     {
 		DBusObjects.mpx->shutdown_complete(DBusObjects.mpx); 
 		g_object_unref(G_OBJECT(DBusObjects.mpx));
+		delete m_PluginManager;
     }
 
 	void

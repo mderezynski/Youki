@@ -140,9 +140,9 @@ namespace MPX
     //dtor
     Play::~Play ()
     {
-      request_status (PLAYSTATUS_STOPPED);
-      destroy_bins ();
       g_async_queue_unref (m_MessageQueue);
+	  stop_stream ();
+      destroy_bins ();
     }
 
     GstElement*
@@ -529,21 +529,20 @@ namespace MPX
     Play::switch_stream (ustring const& stream,
                          ustring const& type)
     {
-	  Audio::Message message;
-	  message.stream = stream;
-	  message.type = type;
-      message.id = 1;
-	  push_message (message);
+		Audio::Message message;
+		message.stream = stream;
+		message.type = type;
+		message.id = 1;
+		push_message (message);
 	}		
 
     void
     Play::request_status (MPXPlaystatus status)
     {
-	Audio::Message message;
-	message.status = status;
-	message.id = 0;
-
-	push_message (message);
+		Audio::Message message;
+		message.status = status;
+		message.id = 0;
+		push_message (message);
     } 
 
     void

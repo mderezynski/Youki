@@ -275,6 +275,8 @@ namespace
 	  mcs->key_register ("hotkeys", "key-5", int (0)); // Stop
 	  mcs->key_register ("hotkeys", "key-5-mask", int (0));
 
+	  mcs->domain_register ("pyplugs");
+
 	  mcs->load (Mcs::Mcs::VERSION_IGNORE);
 	}
 } // anonymous namespace

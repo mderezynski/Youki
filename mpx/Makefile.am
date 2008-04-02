@@ -110,8 +110,8 @@ mpx_bin_SOURCES =				\
 	base64.h					\
 	base64.c					\
 								\
-	boost.hh					\
-	boost.cc					\
+	mpxpy.hh					\
+	mpxpy.cc					\
 								\
 	import-share.hh				\
 	import-share.cc				\
@@ -153,6 +153,9 @@ mpx_bin_SOURCES =				\
 								\
 	playbacksource.hh			\
 	playbacksource.cc			\
+								\
+	plugin.hh					\
+	plugin.cc					\
 								\
 	py-library.hh				\
 	py-library.cc				\

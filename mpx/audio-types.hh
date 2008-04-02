@@ -11,14 +11,7 @@
 #include <glibmm/ustring.h>
 #include <glibmm/refptr.h>
 #include <gdkmm/pixbuf.h>
-
-#ifndef GST_TYPE_BUS
-struct GstBus;
-#endif // !GST_TYPE_BUS
-
-#ifndef GST_TYPE_MESSAGE
-struct GstMessage;
-#endif // !GST_TYPE_MESSAGE
+#include <gst/gst.h>
 
 namespace MPX
 {

@@ -36,10 +36,11 @@
 #include "mpx/playbacksource.hh"
 #include "mpx/widgetloader.h"
 
-#include "play.hh"
 #include "audio-types.hh"
+#include "play.hh"
 
 #include <boost/python.hpp>
+#include "plugin.hh"
 
 using namespace Gnome::Glade;
 
@@ -129,6 +130,7 @@ namespace MPX
 		Play *m_Play;
         Library &m_Library;
         Amazon::Covers &m_Covers;
+		PluginManager *m_PluginManager;
 
         Sources *m_Sources;
         InfoArea *m_InfoArea;

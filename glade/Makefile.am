@@ -9,6 +9,8 @@ glade_DATA = 				\
 							\
 	trackinfo.glade			\
 							\
+	plugin-manager.glade	\
+							\
 	source-musiclib.glade	\
 	source-radio.glade		\
 							\

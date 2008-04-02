@@ -6,15 +6,18 @@
 #include <pygobject.h>
 #include <pygtk/pygtk.h>
 #include <gdkmm/pixbuf.h>
-#include <Python.h>
-#include "boost.hh"
-#include "mpx/playbacksource.hh"
-#include "lyrics-v2.hh"
-#include "last-fm-xmlrpc.hh"
-#include "mpx.hh"
 #include <libglademm/xml.h>
+#include <Python.h>
+
+#include "mpx/playbacksource.hh"
+#include "mpx.hh"
 #include "mpx/amazon.hh"
 #include "mpx/library.hh"
+
+#include "lyrics-v2.hh"
+#include "last-fm-xmlrpc.hh"
+
+#include "mpxpy.hh"
 
 using namespace boost::python;
 
