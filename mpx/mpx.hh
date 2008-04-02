@@ -29,6 +29,7 @@
 #include <gtkmm/volumebutton.h>
 #include <libglademm/xml.h>
 #include <dbus/dbus-glib.h>
+#include <boost/python.hpp>
 
 #include "mpx/amazon.hh"
 #include "mpx/library.hh"
@@ -38,9 +39,8 @@
 
 #include "audio-types.hh"
 #include "play.hh"
-
-#include <boost/python.hpp>
 #include "plugin.hh"
+#include "plugin-manager-gui.hh"
 
 using namespace Gnome::Glade;
 
@@ -132,11 +132,10 @@ namespace MPX
 			DBusMPX		*mpx;
 		};
 
-		std::string m_TrackInfoScript;
 		int m_Seeking;
-		std::vector<int> m_SourceTabMapping;
 		int m_SourceCtr;
 		int m_PageCtr;
+		std::vector<int> m_SourceTabMapping;
 
 		DBusObjectsT DBusObjects;
 		DBusGConnection * m_SessionBus;
@@ -145,6 +144,7 @@ namespace MPX
         Library &m_Library;
         Amazon::Covers &m_Covers;
 		PluginManager *m_PluginManager;
+		PluginManagerGUI *m_PluginManagerGUI;
 
         Sources *m_Sources;
         InfoArea *m_InfoArea;

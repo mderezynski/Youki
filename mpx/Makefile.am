@@ -156,6 +156,8 @@ mpx_bin_SOURCES =				\
 								\
 	plugin.hh					\
 	plugin.cc					\
+	plugin-manager-gui.hh		\
+	plugin-manager-gui.cc		\
 								\
 	py-library.hh				\
 	py-library.cc				\

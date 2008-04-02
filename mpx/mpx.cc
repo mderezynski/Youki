@@ -1202,6 +1202,7 @@ namespace MPX
 		m_PluginManager = new PluginManager;
 		m_PluginManager->append_search_path (build_filename(DATA_DIR,"scripts"));
 		m_PluginManager->load_plugins(this);
+		m_PluginManagerGUI = PluginManagerGUI::create(*m_PluginManager);
 
 		DBusObjects.mpx->startup_complete(DBusObjects.mpx); 
     }
