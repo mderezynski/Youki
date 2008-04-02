@@ -353,6 +353,33 @@ namespace MPX
       SignalUris         m_signal_uris_dropped;
 #endif
 
+    public:
+
+      InfoArea (MPX::Play & play,
+			    Glib::RefPtr<Gnome::Glade::Xml> const& xml)
+	  : WidgetLoader<Gtk::EventBox>(xml, "infoarea")
+	  , m_Play			(play)
+      , m_spectrum_data (SPECT_BANDS, 0)
+      , m_source_icon   (Glib::RefPtr<Gdk::Pixbuf> (0))
+      , m_cover_alpha   (1.0)
+	  , m_pressed		(false)
+      {
+        add_events (Gdk::BUTTON_PRESS_MASK);
+
+        Gdk::Color const color ("#000000");
+        modify_bg (Gtk::STATE_NORMAL, color);
+        modify_base (Gtk::STATE_NORMAL, color);
+
+        m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum));
+		m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
+#if 0
+        enable_drag_dest ();
+#endif
+      }
+
+      ~InfoArea ()
+      {}
+
     protected:
 
       bool
@@ -361,7 +388,7 @@ namespace MPX
         int x = int (event->x);
         int y = int (event->y);
 
-        if ((x >= 6) && (x <= 78) && (y >= 3) && (y <= 75))
+        if ((event->window == get_window()->gobj()) && (x >= 6) && (x <= (m_cover_pos+72)) && (y >= 3) && (y <= 75))
         {
 			m_pressed = true;
 			queue_draw ();
@@ -376,10 +403,11 @@ namespace MPX
         int x = int (event->x);
         int y = int (event->y);
 
-        if ((event->window == get_window()->gobj()) && (x >= cover_anim_area_x0) && (x <= cover_anim_area_width) && (y >= 3) && (y <= 75))
+		m_pressed = false;
+		queue_draw ();
+
+        if ((event->window == get_window()->gobj()) && (x >= 6) && (x <= (m_cover_pos+72)) && (y >= 3) && (y <= 75))
         {
-			m_pressed = false;
-			queue_draw ();
 			m_SignalCoverClicked.emit ();
         }
 
@@ -482,33 +510,6 @@ namespace MPX
       }
 #endif
 
-    public:
-
-      InfoArea (MPX::Play & play,
-			    Glib::RefPtr<Gnome::Glade::Xml> const& xml)
-	  : WidgetLoader<Gtk::EventBox>(xml, "infoarea")
-	  , m_Play			(play)
-      , m_spectrum_data (SPECT_BANDS, 0)
-      , m_source_icon   (Glib::RefPtr<Gdk::Pixbuf> (0))
-      , m_cover_alpha   (1.0)
-	  , m_pressed		(false)
-      {
-        add_events (Gdk::BUTTON_PRESS_MASK);
-
-        Gdk::Color const color ("#000000");
-        modify_bg (Gtk::STATE_NORMAL, color);
-        modify_base (Gtk::STATE_NORMAL, color);
-
-        m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum));
-		m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
-#if 0
-        enable_drag_dest ();
-#endif
-      }
-
-      ~InfoArea ()
-      {}
-
       bool
       decay_spectrum ()
       {
@@ -548,6 +549,8 @@ namespace MPX
         m_source_icon = source_icon;
         queue_draw ();
       }
+
+	public:
 
       void
       reset ()
@@ -697,13 +700,14 @@ namespace MPX
         {
           cr->save ();
 
-          cr->rectangle (cover_anim_area_x0 + (m_pressed ? 1 : 0),
-						 cover_anim_area_y0 + (m_pressed ? 1 : 0), cover_anim_area_width, cover_anim_area_height);
+          cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
+						 cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
+															 cover_anim_area_height+(m_pressed?1:0));
           cr->clip ();
 
           double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface->get_height ()) / 2;
 
-          draw_cairo_image (cr, m_cover_surface, m_cover_pos, y, m_cover_alpha);
+          draw_cairo_image (cr, m_cover_surface, m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), m_cover_alpha);
 
           cr->restore ();
         }
