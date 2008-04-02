@@ -272,6 +272,11 @@ BOOST_PYTHON_MODULE(mpx)
 	class_<MPX::Player, boost::noncopyable>("Player", boost::python::no_init)
 		.def("get_metadata", &MPX::Player::get_metadata, return_internal_reference<>()) 
 		.def("gobj", &mpxpy::player_get_gobject)
+		.def("play", &MPX::Player::play)
+		.def("pause", &MPX::Player::play)
+		.def("prev", &MPX::Player::play)
+		.def("next", &MPX::Player::play)
+		.def("stop", &MPX::Player::play)
 	;
 
 	// Musicbrainz

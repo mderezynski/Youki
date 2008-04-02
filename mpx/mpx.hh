@@ -58,7 +58,6 @@ namespace MPX
     {
       public:
 
-		// Plugin/Sources API
 		void
 		get_object (PAccess<MPX::Library> & pa);
 
@@ -67,6 +66,21 @@ namespace MPX
 
 		Metadata const&
 		get_metadata ();
+
+		void
+		play ();
+
+		void
+		pause ();
+
+		void
+		prev ();
+
+		void
+		next ();
+
+		void
+		stop ();
 
         virtual ~Player ();
 
@@ -263,21 +277,6 @@ namespace MPX
 
 		void
 		next_async_cb (int);
-
-		void
-		play ();
-
-		void
-		pause ();
-
-		void
-		prev ();
-
-		void
-		next ();
-
-		void
-		stop ();
 
 		void
 		reparse_metadata ();

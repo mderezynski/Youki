@@ -899,7 +899,10 @@ namespace MPX
                                const TreePath &path) 
               {
 				if(path.size() == 1)
+				{
+					scroll_to_row (path, 0.);
 					return;
+				}
 
 				TreeIter iter = TreeStoreFilter->convert_iter_to_child_iter(iter_filter);
                 if(!(*iter)[AlbumColumns.HasTracks])
@@ -1028,8 +1031,15 @@ namespace MPX
 				}
 				else
 				{
+					SQL::RowV v;
+					m_Lib.get().getSQL(v, (boost::format("SELECT * FROM album_artist WHERE id = %lld;") % album_artist_id).str());
+					SQL::Row & r = v[0];
+
 					iter_artist = TreeStore->append();
-					(*iter_artist)[AlbumColumns.Text] = ""; /*FIXME*/ 
+					if(r.count("album_artist_sortname"))
+						(*iter_artist)[AlbumColumns.Text] = get<std::string>(r["album_artist_sortname"]);
+					else
+						(*iter_artist)[AlbumColumns.Text] = get<std::string>(r["album_artist"]);
 					(*iter_artist)[AlbumColumns.RowType] = ROW_ARTIST;
 					m_ArtistIterMap[album_artist_id] = iter_artist;
 				}
@@ -1117,7 +1127,10 @@ namespace MPX
 					else
 					{
 						iter_artist = TreeStore->append();
-						(*iter_artist)[AlbumColumns.Text] = get<std::string>(r["album_artist"]);
+						if(r.count("album_artist_sortname"))
+							(*iter_artist)[AlbumColumns.Text] = get<std::string>(r["album_artist_sortname"]);
+						else
+							(*iter_artist)[AlbumColumns.Text] = get<std::string>(r["album_artist"]);
 						(*iter_artist)[AlbumColumns.RowType] = ROW_ARTIST;
 						m_ArtistIterMap[album_artist_id] = iter_artist;
 					}
