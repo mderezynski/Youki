@@ -32,7 +32,9 @@
 
 namespace MPX
 {
-	PluginManager::PluginManager ()
+	PluginManager::PluginManager (MPX::Player *player)
+	: m_Id(1)
+	, m_Player(player)
 	{
 		try {
 			Py_Initialize();
@@ -53,7 +55,7 @@ namespace MPX
 	}
 
 	void
-	PluginManager::load_plugins (MPX::Player * player)
+	PluginManager::load_plugins ()
 	{
 		PyObject *sys_path = PySys_GetObject ("path");
 		for(Strings::const_iterator i = m_Paths.begin(); i != m_Paths.end(); ++i)
@@ -113,18 +115,34 @@ namespace MPX
 								continue;
 							}
 
-							char const* name = PyString_AsString (PyObject_GetAttrString (module, "__name__")); 
-							char const* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
+							Glib::KeyFile keyfile;
+							keyfile.load_from_file(build_filename(*p, build_filename(*i, (*i)+".mpx-plugin")));
+
 							PluginHolderRefP p = PluginHolderRefP(new PluginHolder);
 							p->m_PluginInstance = instance;
-							p->m_Name = name; 
-							p->m_Description = doc ? doc : ""; 
-							p->m_Active = true; //TODO
-							m_Map.insert(std::make_pair(p->m_Name, p));
+							p->m_Name = keyfile.get_string("MPX Plugin", "Name"); 
+							const char* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
+							p->m_Description = doc ? doc : "(No Description given)";
+							p->m_Authors = keyfile.get_string("MPX Plugin", "Authors"); 
+							p->m_Copyright = keyfile.get_string("MPX Plugin", "Copyright"); 
+							p->m_IAge = keyfile.get_integer("MPX Plugin", "IAge");
+							p->m_Website = keyfile.get_string("MPX Plugin", "Website");
+							p->m_Id = m_Id++;
 
-							object ccinstance = object((handle<>(borrowed(instance))));
-							ccinstance.attr("activate")(boost::ref(player)); // TODO
+							if(p->m_Name.empty())
+								p->m_Name = PyString_AsString (PyObject_GetAttrString (module, "__name__")); 
 
+							bool active = false;
+							try {
+								object ccinstance = object((handle<>(borrowed(instance))));
+								ccinstance.attr("activate")(boost::ref(m_Player)); // TODO
+								active = true;
+							} catch( error_already_set )
+							{
+							}
+
+							p->m_Active = active; 
+							m_Map.insert(std::make_pair(p->m_Id, p));
 							pyg_gil_state_release(state);
 
 							g_message("%s: >> Loaded: '%s'", G_STRLOC, p->m_Name.c_str());
@@ -143,5 +161,45 @@ namespace MPX
 	PluginManager::get_map () const
 	{
 		return m_Map;
+	}
+
+	void
+	PluginManager::activate(gint64 id)
+	{
+		PluginHoldMap::iterator i = m_Map.find(id);
+		g_return_if_fail(i != m_Map.end());
+
+		if(i->second->m_Active)
+		{
+			g_message("%s: Requested deactivate from plugin %lld, but is active.", G_STRLOC, id);	
+			g_return_if_reached();
+		}
+		try{
+			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
+			ccinstance.attr("activate")(boost::ref(m_Player));
+			i->second->m_Active = true;
+		} catch( error_already_set ) 
+		{
+		}
+	}
+
+	void
+	PluginManager::deactivate(gint64 id)
+	{
+		PluginHoldMap::iterator i = m_Map.find(id);
+		g_return_if_fail(i != m_Map.end());
+
+		if(!i->second->m_Active)
+		{
+			g_message("%s: Requested deactivate from plugin %lld, but is deactivated.", G_STRLOC, id);	
+			g_return_if_reached();
+		}
+		try{
+			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
+			ccinstance.attr("deactivate")();
+			i->second->m_Active = false;
+		} catch( error_already_set ) 
+		{
+		}
 	}
 }

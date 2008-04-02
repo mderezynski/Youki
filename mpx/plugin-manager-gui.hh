@@ -44,6 +44,7 @@ namespace MPX
 		protected:
 
 			PluginManagerGUI (const Glib::RefPtr<Gnome::Glade::Xml>&, PluginManager &);
+			virtual bool on_delete_event (GdkEventAny* G_GNUC_UNUSED);
 
 		public:
 

@@ -44,12 +44,13 @@
 #include "import-folder.hh"
 #include "mpx.hh"
 #include "mpx-sources.hh"
-#include "request-value.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-graphics.hh"
 #include "mpx/util-string.hh"
 #include "mpx/util-ui.hh"
 #include "mpxpy.hh"
+#include "request-value.hh"
+#include "stock.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -98,6 +99,9 @@ namespace
   "         <separator name='sep00'/>"
   "         <menuitem action='action-quit'/>"
   "   </menu>"
+  "   <menu action='MenuEdit'>"
+  "         <menuitem action='action-plugins'/>"
+  "   </menu>"
   "</menubar>"
   ""
   "</ui>"
@@ -108,6 +112,7 @@ namespace
   char const ACTION_NEXT [] = "action-next";
   char const ACTION_PREV [] = "action-prev";
   char const ACTION_PAUSE [] = "action-pause";
+  char const ACTION_PLUGINS [] = "action-plugins";
 
   std::string
   gprintf (const char *format, ...)
@@ -316,6 +321,7 @@ namespace MPX
       double                              m_cover_velocity;
       double                              m_cover_accel;
       double                              m_cover_alpha;
+	  bool								  m_pressed;
       sigc::connection                    m_cover_anim_conn;
       sigc::connection                    m_decay_conn;
 
@@ -357,6 +363,23 @@ namespace MPX
 
         if ((x >= 6) && (x <= 78) && (y >= 3) && (y <= 75))
         {
+			m_pressed = true;
+			queue_draw ();
+        }
+
+        return false;
+      }
+
+      bool
+      on_button_release_event (GdkEventButton * event)
+      {
+        int x = int (event->x);
+        int y = int (event->y);
+
+        if ((event->window == get_window()->gobj()) && (x >= cover_anim_area_x0) && (x <= cover_anim_area_width) && (y >= 3) && (y <= 75))
+        {
+			m_pressed = false;
+			queue_draw ();
 			m_SignalCoverClicked.emit ();
         }
 
@@ -468,6 +491,7 @@ namespace MPX
       , m_spectrum_data (SPECT_BANDS, 0)
       , m_source_icon   (Glib::RefPtr<Gdk::Pixbuf> (0))
       , m_cover_alpha   (1.0)
+	  , m_pressed		(false)
       {
         add_events (Gdk::BUTTON_PRESS_MASK);
 
@@ -477,8 +501,6 @@ namespace MPX
 
         m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum));
 		m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
-
-
 #if 0
         enable_drag_dest ();
 #endif
@@ -501,16 +523,6 @@ namespace MPX
       void
       play_update_spectrum (Spectrum const& spectrum)
       {
-#if 0
-        for (int n = 0; n < SPECT_BANDS; ++n)
-        {
-          if( spectrum[n] < m_spectrum_data[n] )
-            m_spectrum_data[n] = (((m_spectrum_data[n] - 6) < 0) ? 0 : (m_spectrum_data[n] - 6));
-          else
-            m_spectrum_data[n] = spectrum[n];
-        }
-#endif
-
 		m_spectrum_data = spectrum;
         queue_draw ();
 
@@ -685,7 +697,8 @@ namespace MPX
         {
           cr->save ();
 
-          cr->rectangle (cover_anim_area_x0, cover_anim_area_y0, cover_anim_area_width, cover_anim_area_height);
+          cr->rectangle (cover_anim_area_x0 + (m_pressed ? 1 : 0),
+						 cover_anim_area_y0 + (m_pressed ? 1 : 0), cover_anim_area_width, cover_anim_area_height);
           cr->clip ();
 
           double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface->get_height ()) / 2;
@@ -986,6 +999,8 @@ namespace MPX
 	, m_SourceCtr (0)
 	, m_PageCtr(1)
    {
+		register_stock_icons();
+
 		signals[PSIGNAL_NEW_TRACK] =
 			g_signal_new ("new-track",
 					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
@@ -1067,6 +1082,7 @@ namespace MPX
 		m_actions = ActionGroup::create ("Actions_Player");
 
 		m_actions->add (Action::create("MenuMusic", _("_Music")));
+		m_actions->add (Action::create("MenuEdit", _("_Edit")));
 
 		m_actions->add (Action::create ("action-import-folder",
 										Gtk::Stock::HARDDISK,
@@ -1108,6 +1124,11 @@ namespace MPX
 										Gtk::Stock::MEDIA_PREVIOUS,
 										_("Prev")),
 										sigc::mem_fun (*this, &Player::on_controls_prev ));
+
+		m_actions->add (Action::create (ACTION_PLUGINS,
+										Gtk::StockID(MPX_STOCK_PLUGIN),
+										_("Plugins...")),
+										sigc::mem_fun (*this, &Player::on_show_plugins ));
 
 		m_ui_manager = UIManager::create ();
 		m_ui_manager->insert_action_group (m_actions);
@@ -1199,13 +1220,19 @@ namespace MPX
 		m_Sources->sourceChanged().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
 
-		m_PluginManager = new PluginManager;
+		m_PluginManager = new PluginManager(this);
 		m_PluginManager->append_search_path (build_filename(DATA_DIR,"scripts"));
-		m_PluginManager->load_plugins(this);
+		m_PluginManager->load_plugins();
 		m_PluginManagerGUI = PluginManagerGUI::create(*m_PluginManager);
 
 		DBusObjects.mpx->startup_complete(DBusObjects.mpx); 
     }
+
+	void
+	Player::on_show_plugins ()
+	{
+		m_PluginManagerGUI->present ();
+	}
 
 	void
 	Player::init_dbus ()
@@ -1483,46 +1510,6 @@ namespace MPX
 	Player::on_cover_clicked ()
 	{
 		g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_INFOAREA_CLICK], 0);
-
-#if 0
-		if(m_TrackInfoScript.empty())
-			return;
-
-		object main = object((handle<>(borrowed(PyImport_AddModule("__main__")))));
-		object dict = main.attr("__dict__");
-		object obj  = exec_file(m_TrackInfoScript.c_str(), dict, dict);
-
-		if(obj.ptr())
-		{
-			using namespace boost::python;
-			try{
-				object * info = new object(dict["info"]);
-
-				object window = extract<object>(info->attr("window"));
-				object button = extract<object>(info->attr("close"));
-				GObject * cobj_window = ((PyGObject*)(window.ptr()))->obj;
-				GObject * cobj_button = ((PyGObject*)(button.ptr()))->obj;
-				g_signal_connect(cobj_window, "delete-event", G_CALLBACK(delete_delete_event), info);
-				g_signal_connect(cobj_button, "clicked", G_CALLBACK(delete_clicked), info);
-				
-				// Create a Py Pixbuf
-				PyObject *pypixbuf = NULL; 
-				object pypixbufcc;
-				if(m_Metadata.Image)
-				{
-					g_return_if_fail(GDK_IS_PIXBUF(m_Metadata.Image->gobj()));
-					pypixbuf = pygobject_new((GObject*)(m_Metadata.Image->gobj()));
-					pypixbufcc = object((handle<>(pypixbuf)));
-				}
-
-				info->attr("show")(m_Metadata, pypixbufcc);
-			} catch ( error_already_set ) {
-				PyErr_Print();
-			}
-		}
-		else
-			g_message ("%s: No object", G_STRLOC);
-#endif
 	}
 
 	void
