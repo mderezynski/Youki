@@ -164,7 +164,7 @@ namespace MPX
 
         void  device_condition            (std::string const& udi,
                                            std::string const& cond_name,
-                                           std::string const& cond_name );
+                                           std::string const& cond_details );
         void  device_added                (std::string const& udi );
         void  device_removed              (std::string const& udi );
         void  device_property             (std::string const& udi,
