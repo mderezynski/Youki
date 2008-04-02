@@ -30,9 +30,9 @@ SUBDIRS =		\
 	mcs		\
 	po		\
 	python		\
+	widgets		\
 	sources		\
 	taglib		\
-	widgets		\
 	xmlcpp		
 
 if HAVE_HAL
