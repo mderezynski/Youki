@@ -4,7 +4,6 @@
 #
 
 import mpx
-from mpx import *
 import pygtk
 pygtk.require('2.0')
 import gtk
@@ -55,19 +54,19 @@ class TrackInfo:
 
 		self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
 
-		if track.get(AttributeId.attr_title).is_initialized() and track.get(AttributeId.attr_artist).is_initialized():
-			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(AttributeId.attr_title).val().get_string(), self.textTagCenter, self.textTagLarge)
+		if track.get(mpx.AttributeId.attr_title).is_initialized() and track.get(mpx.AttributeId.attr_artist).is_initialized():
+			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(mpx.AttributeId.attr_title).val().get_string(), self.textTagCenter, self.textTagLarge)
 			self.buf.insert_with_tags(self.buf.get_end_iter(), "\nby\n", self.textTagCenter) 
-			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(AttributeId.attr_artist).val().get_string(), self.textTagCenter, self.textTagLarge)
+			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(mpx.AttributeId.attr_artist).val().get_string(), self.textTagCenter, self.textTagLarge)
 
-		if track.get(AttributeId.attr_album_artist).is_initialized() and track.get(AttributeId.attr_album).is_initialized():
-			self.buf.insert_with_tags(self.buf.get_end_iter(), "\n(from \"" + track.get(AttributeId.attr_album).val().get_string()+"\"", self.textTagCenter)
-			self.buf.insert_with_tags(self.buf.get_end_iter(), " by " + track.get(AttributeId.attr_album_artist).val().get_string()+")", self.textTagCenter)
+		if track.get(mpx.AttributeId.attr_album_artist).is_initialized() and track.get(mpx.AttributeId.attr_album).is_initialized():
+			self.buf.insert_with_tags(self.buf.get_end_iter(), "\n(from \"" + track.get(mpx.AttributeId.attr_album).val().get_string()+"\"", self.textTagCenter)
+			self.buf.insert_with_tags(self.buf.get_end_iter(), " by " + track.get(mpx.AttributeId.attr_album_artist).val().get_string()+")", self.textTagCenter)
 
 		self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
-		if track.get(AttributeId.attr_mb_track_id).is_initialized():
-			trackId = track.get(AttributeId.attr_mb_track_id).val().get_string()
+		if track.get(mpx.AttributeId.attr_mb_track_id).is_initialized():
+			trackId = track.get(mpx.AttributeId.attr_mb_track_id).val().get_string()
 			mbtrack = self.q.getTrackById(trackId, self.tinc) 
 			rels = mbtrack.getRelations()
 
@@ -108,24 +107,24 @@ class TrackInfo:
 
 		self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
-		if track.get(AttributeId.attr_artist).is_initialized() and track.get(AttributeId.attr_title).is_initialized():
+		if track.get(mpx.AttributeId.attr_artist).is_initialized() and track.get(mpx.AttributeId.attr_title).is_initialized():
 			try:
-				lyricwiki = mpx.LyricWiki(track.get(AttributeId.attr_artist).val().get_string(), track.get(AttributeId.attr_title).val().get_string())
+				lyricwiki = mpx.LyricWiki(track.get(mpx.AttributeId.attr_artist).val().get_string(), track.get(mpx.AttributeId.attr_title).val().get_string())
 				lyrics = lyricwiki.run()
 				self.buf.insert(self.buf.get_end_iter(), lyrics)
 			except:
-				print "Couldn't get lyrics for '" + track.get(AttributeId.attr_artist).val().get_string() + " / " +  track.get(AttributeId.attr_title).val().get_string()+ "'"
+				print "Couldn't get lyrics for '" + track.get(mpx.AttributeId.attr_artist).val().get_string() + " / " +  track.get(mpx.AttributeId.attr_title).val().get_string()+ "'"
 		
-		if track.get(AttributeId.attr_artist).is_initialized():
+		if track.get(mpx.AttributeId.attr_artist).is_initialized():
 			try:
 				self.buf.insert(self.buf.get_end_iter(), "\n\n")
-				self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track.get(AttributeId.attr_artist).val().get_string(), self.textTagCenter, self.textTagLarge)
+				self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track.get(mpx.AttributeId.attr_artist).val().get_string(), self.textTagCenter, self.textTagLarge)
 				self.buf.insert(self.buf.get_end_iter(), "\n\n")
-				lastfmartist = mpx.LastFMArtist(track.get(AttributeId.attr_artist).val().get_string())
+				lastfmartist = mpx.LastFMArtist(track.get(mpx.AttributeId.attr_artist).val().get_string())
 				artist = lastfmartist.run()
 				self.buf.insert(self.buf.get_end_iter(), artist)
 			except:
-				print "Couldn't get Last.fm artist info for '" + track.get(AttributeId.attr_artist).val().get_string() 
+				print "Couldn't get Last.fm artist info for '" + track.get(mpx.AttributeId.attr_artist).val().get_string() 
 
 		self.window.show()
 

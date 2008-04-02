@@ -105,6 +105,7 @@ namespace MPX
 						if (PyObject_IsSubclass (value, (PyObject*) PyMPXPlugin_Type))
 						{
 							PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+
 							PyObject * instance = PyObject_CallObject(value, NULL);
 							if(instance == NULL)
 							{
@@ -123,6 +124,7 @@ namespace MPX
 
 							object ccinstance = object((handle<>(borrowed(instance))));
 							ccinstance.attr("activate")(boost::ref(player)); // TODO
+
 							pyg_gil_state_release(state);
 
 							g_message("%s: >> Loaded: '%s'", G_STRLOC, p->m_Name.c_str());
@@ -131,6 +133,10 @@ namespace MPX
 					}
 			}
 		}
+	}
+
+	PluginManager::~PluginManager ()
+	{
 	}
 
 	PluginHoldMap const&

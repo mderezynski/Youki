@@ -64,6 +64,7 @@ namespace MPX
 		public:
 	
 			PluginManager ();
+			~PluginManager ();
 	
 			void
 			append_search_path (std::string const& /*path*/);
