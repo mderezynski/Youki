@@ -30,6 +30,10 @@
 #include <pygobject.h>
 #include "mpxpy.hh"
 
+#ifndef Py_ssize_t
+#define Py_ssize_t int
+#endif
+
 namespace MPX
 {
 	PluginManager::PluginManager ()
