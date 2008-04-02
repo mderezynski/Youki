@@ -162,18 +162,21 @@ namespace MPX
 		Metadata m_Metadata;
 		Glib::RefPtr<Gdk::Pixbuf> m_DiscDefault;
 
+		void
+		on_cover_clicked ();
+
+		void
+		on_show_plugins ();
+
 
 
 		bool
 		load_source_plugin (std::string const& path);
 
 
+
 		void
 		on_volume_value_changed(double);
-
-		
-		void
-		on_cover_clicked();
 
 
 

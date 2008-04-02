@@ -168,6 +168,9 @@ mpx_bin_SOURCES =				\
 	sql.hh						\
 	sql.cc						\
 								\
+	stock.hh					\
+	stock.cc					\
+								\
 	tasks.hh					\
 	tasks.cc					\
 								\
