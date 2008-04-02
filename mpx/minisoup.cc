@@ -22,6 +22,7 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 #include "config.h"
+#include <cstring>
 #include <glib/gstdio.h>
 #include <glibmm/i18n.h>
 #include <boost/format.hpp>
