@@ -87,6 +87,8 @@ namespace MPX
 #endif
             ~Library () ;
 
+
+
             void
             getMetadata(const std::string& uri, Track & track) ;
 
@@ -96,15 +98,17 @@ namespace MPX
 			void
 			execSQL(const std::string& sql);
 
-
-            ScanResult
-            insert (const std::string& uri, const std::string& insert_path, const std::string& name = std::string());
-
             void
-            scanUri (const std::string& uri, const std::string& name = std::string());
+            scanUri(const std::string& uri, const std::string& name = std::string());
 
 			void
-			rateAlbum (gint64 id, int rating);
+			rateAlbum(gint64 id, int rating);
+
+			void
+			vacuum();
+
+
+
 
             typedef sigc::signal<void, const std::string& /*mbid*/,
 									const std::string& /*asin*/, gint64/*albumid*/, gint64 /*album artist id*/> SignalNewAlbum;
@@ -116,6 +120,8 @@ namespace MPX
             typedef sigc::signal<void, gint64,gint64>                       SignalScanRun;
             typedef sigc::signal<void, gint64,gint64,gint64,gint64,gint64>  SignalScanEnd;
 
+            typedef sigc::signal<void> SignalVacuumized;
+
             struct SignalsT
             {
                 SignalNewAlbum      NewAlbum;
@@ -125,9 +131,14 @@ namespace MPX
                 SignalScanRun       ScanRun;
                 SignalScanEnd       ScanEnd;
 				SignalAlbumUpdated	AlbumUpdated;
+				SignalVacuumized	Vacuumized;
             };
 
             SignalsT Signals;
+
+            SignalVacuumized&
+            signal_vacuumized()
+            { return Signals.Vacuumized ; }
 
             SignalAlbumUpdated&
             signal_album_updated()
@@ -188,6 +199,9 @@ namespace MPX
 
 			void
 			mean_genre_for_album (gint64 id);
+
+            ScanResult
+            insert (const std::string& uri, const std::string& insert_path, const std::string& name = std::string());
     };
 
 } // namespace MPX

@@ -302,6 +302,120 @@ namespace MPX
 		delete mReaderTagLib;
     }
 
+	void
+	Library::vacuum ()
+	{
+		typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
+
+		VolMountPointMap m;
+		RowV rows;
+		getSQL (rows, "SELECT * FROM track");
+
+		for (RowV::iterator i = rows.begin(); i != rows.end(); ++i)
+		{
+		  Row & r = *i;
+
+		  std::string uri;
+
+  #ifdef HAVE_HAL
+		  std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
+		  std::string device_udi = get<std::string>(r["hal_device_udi"]); 
+		  std::string hal_vrp	 = get<std::string>(r["hal_vrp"]);
+
+		  // FIXME: More intelliget scanning by prefetching grouped data from the DB
+
+		  HAL::VolumeKey key (volume_udi, device_udi);
+		  VolMountPointMap::const_iterator i = m.find(key);
+
+		  if(i == m.end())
+		  {
+			  try{		
+				  std::string mount_point = m_HAL->get_mount_point_for_volume (volume_udi, device_udi);
+				  m[key] = mount_point;
+				  uri = filename_to_uri(build_filename(mount_point, hal_vrp));
+			  } catch (...) {
+				  continue; // Not mounted, we're not checking
+			  }
+		  }
+		  else
+		  {
+			  uri = filename_to_uri(build_filename(i->second, hal_vrp));
+		  }
+  #else
+		  uri = get<std::string>(r["location"]);
+  #endif
+		  if (!file_test (filename_from_uri (uri), FILE_TEST_EXISTS))
+		  {
+			  execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(r["id"])).str()); 
+		  }
+		}
+
+		typedef std::set <gint64> IdSet;
+		static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld';");
+
+		IdSet idset1;
+		IdSet idset2;
+
+		idset1.clear();
+		rows.clear();
+		getSQL(rows, "SELECT DISTINCT artist_j FROM track;");
+		for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+		  idset1.insert (get<gint64>(i->find ("artist_j")->second));
+
+		idset2.clear();
+		rows.clear();
+		getSQL(rows, "SELECT DISTINCT id FROM artist;");
+		for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+		  idset2.insert (get<gint64>(i->find ("id")->second));
+
+		// If the artist is unused in the track table, delete it
+		for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
+		{
+		  if (idset1.find (*i) == idset1.end())
+			execSQL((delete_f % "artist" % (*i)).str());
+		}
+
+
+        idset1.clear();
+        rows.clear();
+		getSQL(rows, "SELECT DISTINCT album_j FROM track;");
+        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+          idset1.insert (get<gint64>(i->find ("album_j")->second));
+
+        idset2.clear();
+        rows.clear();
+        getSQL(rows, "SELECT DISTINCT id FROM album;");
+        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+          idset2.insert (get<gint64>(i->find ("id")->second));
+
+        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
+        {
+          if (idset1.find (*i) == idset1.end())
+			execSQL((delete_f % "album" % (*i)).str());
+        }
+
+
+        idset1.clear();
+        rows.clear();
+		getSQL(rows, "SELECT DISTINCT album_artist_j FROM album;");
+        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+          idset1.insert (get<gint64>(i->find ("album_artist_j")->second));
+
+        idset2.clear();
+        rows.clear();
+		getSQL(rows, "SELECT DISTINCT id FROM album_artist;");
+        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+          idset2.insert (get<gint64>(i->find ("id")->second));
+
+        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
+        {
+          if (idset1.find (*i) == idset1.end())
+			execSQL((delete_f % "album_artist" % (*i)).str());
+        }
+
+		Signals.Vacuumized.emit ();
+	}
+
     void
     Library::getMetadata (const std::string& uri, Track & track)
     {
@@ -708,7 +822,7 @@ namespace MPX
       {
 #ifdef HAVE_HAL
           try{
-              if ((m_Flags & F_USING_HAL) == F_USING_HAL)
+              if (m_Flags & F_USING_HAL)
               {
                 HAL::Volume const& volume (m_HAL->get_volume_for_uri (uri));
 

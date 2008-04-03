@@ -96,6 +96,7 @@ namespace
   "   <menu action='MenuMusic'>"
   "         <menuitem action='action-import-folder'/>"
   "         <menuitem action='action-import-share'/>"
+  "			<menuitem action='action-vacuum-lib'/>"
   "         <separator name='sep00'/>"
   "         <menuitem action='action-quit'/>"
   "   </menu>"
@@ -998,10 +999,10 @@ namespace MPX
                    MPX::Amazon::Covers & obj_amazon)
     : WidgetLoader<Gtk::Window>(xml, "mpx")
     , m_ref_xml(xml)
-    , m_Library (obj_library)
-    , m_Covers (obj_amazon)
 	, m_SourceCtr (0)
 	, m_PageCtr(1)
+    , m_Library (obj_library)
+    , m_Covers (obj_amazon)
    {
 		register_stock_icons();
 
@@ -1092,6 +1093,10 @@ namespace MPX
 										Gtk::Stock::HARDDISK,
 										_("Import _Folder")),
 										sigc::mem_fun (*this, &Player::on_import_folder));
+
+		m_actions->add (Action::create ("action-vacuum-lib",
+										_("Vacuum Library")),
+										sigc::mem_fun (m_Library, &Library::vacuum));
 
 		m_actions->add (Action::create ("action-import-share",
 										Gtk::Stock::NETWORK,
@@ -1224,6 +1229,8 @@ namespace MPX
 		m_Sources->sourceChanged().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
 
+		show_all ();
+	
 		m_PluginManager = new PluginManager(this);
 		m_PluginManager->append_search_path (build_filename(DATA_DIR,"scripts"));
 		m_PluginManager->load_plugins();
@@ -1287,6 +1294,22 @@ namespace MPX
 		}
 
 		g_message("%s: info.backtrace.mpx service registered on session DBus", G_STRLOC);
+	}
+
+	void
+	Player::add_widget (Gtk::Widget *widget)
+	{
+		Gtk::VBox * box;
+		m_ref_xml->get_widget("vbox3", box);
+		box->pack_start(*widget);
+	}
+
+	void
+	Player::remove_widget (Gtk::Widget *widget)
+	{
+		Gtk::VBox * box;
+		m_ref_xml->get_widget("vbox3", box);
+		box->remove(*widget);
 	}
 
 	void
@@ -1443,9 +1466,25 @@ namespace MPX
 			return;
 	
 		  case FIELD_TITLE:
+			if(m_Metadata[ATTRIBUTE_TITLE])
+			{
+				std::string album = get<std::string>(m_Metadata[ATTRIBUTE_TITLE].get());
+				if(album == m.m_title.get())
+					return;
+			}
+
+			m_Metadata[ATTRIBUTE_TITLE] = std::string(m.m_title.get());
 			return;
 
 		  case FIELD_ALBUM:
+			if(m_Metadata[ATTRIBUTE_ALBUM])
+			{
+				std::string album = get<std::string>(m_Metadata[ATTRIBUTE_ALBUM].get());
+				if(album == m.m_album.get())
+					return;
+			}
+
+			m_Metadata[ATTRIBUTE_ALBUM] = std::string(m.m_album.get());
 			break;
 
 		  case FIELD_AUDIO_BITRATE:
@@ -1551,76 +1590,20 @@ namespace MPX
 	}
 
 	void
-	Player::reparse_metadata (/*MpxMetadataParseFlags parse_flags*/)
+	Player::reparse_metadata ()
 	{
-		if( m_Metadata.Image )
+		if( !m_Metadata.Image )
 		{
-			m_InfoArea->set_image (m_Metadata.Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
+			m_Metadata.Image = m_DiscDefault;
 		}
 
-#if 0
-	  struct NoCurrentImage {};
+		m_InfoArea->set_image (m_Metadata.Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
 
-	  try{
-		  if( parse_flags & PARSE_FLAGS_IMAGE )
-		  {
-			if( m_Metadata.Image )
-			{
-			  m_InfoArea->set_image (m_Metadata.image->scale_simple (72, 72, Gdk::INTERP_HYPER));
-			}
-			else
-			if( m_Metadata[ATTRIBUTE_ASIN] )
-			{
-			  if( get<std::string>(m_Metadata[ATTRIBUTE_ASIN].get()) != m_asin )
-			  {
-				try{
-					m_InfoArea->set_image (Amazon::Covers::Obj()->fetch (m_Metadata.asin.get(), COVER_SIZE_INFO_AREA, true));
-					Amazon::Covers::Obj()->fetch (m_Metadata.asin.get(), m_Metadata.image, true); //FIXME: Redundancy here ^
-					m_asin = m_Metadata.asin;
-				  }
-				catch (MPX::Amazon::NoCoverError & cxe)
-				  {
-					throw NoCurrentImage ();
-				  }
-			  }
-			  else
-			  {
-				// Same ASIN, so same cover, save the reparsing
-				parse_flags = MPXMetadataParseFlags (parse_flags & ~PARSE_FLAGS_IMAGE);
-			  }
-			}
-			else
-			{
-			  throw NoCurrentImage();
-			}
-		  }
-		}
-	  catch (NoCurrentImage & cxe)
-		{
-		  m_asin.reset ();
-		  set_current_source_image ();
-		}
-#endif
-
-#if 0
-	  if( parse_flags & PARSE_FLAGS_TEXT )
-	  {
-#endif
 		ustring artist, album, title;
 		parse_metadata (m_Metadata, artist, album, title);
 		m_InfoArea->set_text (L_TITLE, title);
 		m_InfoArea->set_text (L_ARTIST, artist);
 		m_InfoArea->set_text (L_ALBUM, album);
-#if 0
-	  }
-#endif
-
-#if 0
-	  m_actions->get_action (ACTION_LASTFM_LOVE)->set_sensitive( 0 );
-	  m_actions->get_action (ACTION_LASTFM_TAG)->set_sensitive( 0 );
-	  m_actions->get_action (ACTION_LASTFM_RECM)->set_sensitive( 0 );
-	  m_actions->get_action (ACTION_LASTFM_PLAY)->set_sensitive( 0 );
-#endif
 	}
 
 	void

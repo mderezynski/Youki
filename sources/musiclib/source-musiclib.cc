@@ -1110,6 +1110,9 @@ namespace MPX
               void
               album_list_load ()
               {
+				m_ArtistIterMap.clear();
+				TreeStore->clear ();
+
                 SQL::RowV v;
                 m_Lib.get().getSQL(v, "SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id;");
                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
@@ -1395,6 +1398,7 @@ namespace MPX
 
                 m_Lib.get().signal_new_album().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_album ));
                 m_Lib.get().signal_new_track().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_track ));
+                m_Lib.get().signal_vacuumized().connect( sigc::mem_fun( *this, &AlbumTreeView::album_list_load ));
                 m_AMZN.get().signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
 
 				xml->get_widget("album-filter-entry", m_FilterEntry);

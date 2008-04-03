@@ -59,6 +59,12 @@ namespace MPX
       public:
 
 		void
+		add_widget (Gtk::Widget *widget);
+
+		void
+		remove_widget (Gtk::Widget *widget);
+
+		void
 		get_object (PAccess<MPX::Library> & pa);
 
 		void	

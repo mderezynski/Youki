@@ -24,6 +24,7 @@
 #include "config.h"
 #include "plugin.hh"
 #include "mpx/main.hh"
+#include "mcs/base.h"
 
 #define NO_IMPORT
 #include <pygtk/pygtk.h>
@@ -74,6 +75,13 @@ namespace MPX
 		PyObject *mpx_dict = PyModule_GetDict(mpx);
 		PyTypeObject *PyMPXPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "Plugin"); 
 
+		PyObject * main_module = PyImport_AddModule ("__main__");
+		if(main_module == NULL)
+		{
+			g_message("Couldn't get __main__");
+			return;	
+		}
+
 		for(Strings::const_iterator p = m_Paths.begin(); p != m_Paths.end(); ++p)
 		{
 			Glib::Dir dir (*p);
@@ -82,13 +90,6 @@ namespace MPX
 
 			for(std::vector<std::string>::const_iterator i = strv.begin(); i != strv.end(); ++i)
 			{
-					PyObject * main_module = PyImport_AddModule ("__main__");
-					if(main_module == NULL)
-					{
-						g_message("Couldn't get __main__");
-						continue;
-					}
-
 					PyObject * main_locals = PyModule_GetDict(main_module);
 					PyObject * fromlist = PyTuple_New(0);
 					PyObject * module = PyImport_ImportModuleEx ((char*)i->c_str(), main_locals, main_locals, fromlist);
@@ -97,8 +98,6 @@ namespace MPX
 						PyErr_Print ();
 						continue;	
 					}
-
-
 
 					PyObject *locals = PyModule_GetDict (module);
 					Py_ssize_t pos = 0;
@@ -137,12 +136,18 @@ namespace MPX
 								p->m_Name = PyString_AsString (PyObject_GetAttrString (module, "__name__")); 
 
 							bool active = false;
-							try {
-								object ccinstance = object((handle<>(borrowed(instance))));
-								ccinstance.attr("activate")(boost::ref(m_Player)); // TODO
-								active = true;
-							} catch( error_already_set )
+
+							/* TODO: Query MCS for active state */
+
+							if (active)
 							{
+								try {
+									object ccinstance = object((handle<>(borrowed(instance))));
+									ccinstance.attr("activate")(boost::ref(m_Player)); // TODO
+									active = true;
+								} catch( error_already_set )
+								{
+								}
 							}
 
 							p->m_Active = active; 

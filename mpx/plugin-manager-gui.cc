@@ -29,6 +29,7 @@
 #include <boost/format.hpp>
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
+#include "mpx/main.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -48,6 +49,7 @@ namespace MPX
 					Gtk::TreeModelColumn<Glib::ustring>		Copyright;
 					Gtk::TreeModelColumn<Glib::ustring>		Website;
 					Gtk::TreeModelColumn<gint64>			Id;
+					Gtk::TreeModelColumn<Glib::ustring>		Name;
 	
 				ColumnsT ()
 				{
@@ -57,6 +59,7 @@ namespace MPX
 					add(Copyright);
 					add(Website);
 					add(Id);
+					add(Name);
 				};
 			};
 	
@@ -92,12 +95,12 @@ namespace MPX
 
 				cell_toggle->signal_toggled().connect( sigc::mem_fun( *this, &PTV::on_cell_toggled ) );
 
-
 				PluginHoldMap const& map = m_Manager.get_map();	
 
 				for(PluginHoldMap::const_iterator i = map.begin(); i != map.end(); ++i)
 				{
 					TreeIter iter = Store->append();
+					(*iter)[Columns.Name] = i->second->get_name();
 					(*iter)[Columns.NameDesc] = (boost::format("<b><big>%1%</big></b>\n%2%") % i->second->get_name() % i->second->get_desc()).str();
 					(*iter)[Columns.Authors] = i->second->get_authors();
 					(*iter)[Columns.Copyright] = i->second->get_copyright();
@@ -125,6 +128,13 @@ namespace MPX
 				active = !active;
 
 				(*iter)[Columns.Active] = active;
+				
+				std::string name = Glib::ustring((*iter)[Columns.Name]);
+				try{
+					mcs->key_set<bool>("pyplugs", name, active);
+				} catch (...) {
+					mcs->key_register("pyplugs", name, active);
+				}
 			}
 
 			~PTV ()
