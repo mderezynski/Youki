@@ -1474,6 +1474,7 @@ namespace MPX
 			}
 
 			m_Metadata[ATTRIBUTE_TITLE] = std::string(m.m_title.get());
+			reparse_metadata();
 			return;
 
 		  case FIELD_ALBUM:
@@ -1485,6 +1486,7 @@ namespace MPX
 			}
 
 			m_Metadata[ATTRIBUTE_ALBUM] = std::string(m.m_album.get());
+			reparse_metadata();
 			break;
 
 		  case FIELD_AUDIO_BITRATE:
