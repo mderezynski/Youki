@@ -38,6 +38,7 @@
 #include "mpx/util-ui.hh"
 #include "mpx/util-string.hh"
 #include "mpx/widgetloader.h"
+#include "mpx/playlistparser-xspf.hh"
 
 #include "source-musiclib.hh"
 
@@ -201,6 +202,7 @@ namespace MPX
             public:
 
 			  boost::optional<Gtk::TreeIter> m_CurrentIter;
+			  boost::optional<Gtk::TreeIter> m_PlayInitIter;
 			  boost::optional<gint64> m_CurrentId;
               PlaylistColumnsT PlaylistColumns;
               Glib::RefPtr<Gtk::ListStore> ListStore;
@@ -364,6 +366,16 @@ namespace MPX
 							dirs.push_back(*i);
 							continue;
 						}
+
+						// Check for playlist types
+						if(Util::str_has_suffix_nocase(*i, "xspf"))
+						{
+							PlaylistParserXSPF p;
+							Util::FileList xspf_uris;
+							p.read(*i, xspf_uris); 
+							append_uris(xspf_uris, iter, begin);
+						}
+
 
 						Track track;
 						m_Lib.get().getMetadata(*i, track);
@@ -545,7 +557,6 @@ namespace MPX
 					bool begin = true;
 					Util::FileList uris = data.get_uris();
 					append_uris (uris, iter, begin);
-
 					m_MusicLib.check_caps();
 					m_MusicLib.send_caps ();
 				}
@@ -819,13 +830,25 @@ namespace MPX
 
                 return art_a.compare(art_b); 
               }
+
+              void
+              prepare_uris (Util::FileList const& uris)
+              {
+				bool begin = true;
+				TreeIter iter = ListStore->append();
+				m_PlayInitIter = iter;
+				append_uris (uris, iter, begin);
+				m_MusicLib.check_caps();
+				m_MusicLib.send_caps ();
+              }
+
         };
 
         enum AlbumRowType
         {
-            ROW_ALBUM,
-            ROW_TRACK,
-			ROW_ARTIST,
+//			ROW_ARTIST	=	1,
+            ROW_ALBUM	=	1,
+            ROW_TRACK	=	2,
         };
 
         struct AlbumColumnsT : public Gtk::TreeModel::ColumnRecord 
@@ -898,11 +921,13 @@ namespace MPX
               on_row_expanded (const TreeIter &iter_filter,
                                const TreePath &path) 
               {
+#if 0
 				if(path.size() == 1)
 				{
 					scroll_to_row (path, 0.);
 					return;
 				}
+#endif
 
 				TreeIter iter = TreeStoreFilter->convert_iter_to_child_iter(iter_filter);
                 if(!(*iter)[AlbumColumns.HasTracks])
@@ -982,7 +1007,7 @@ namespace MPX
                 if(get_path_at_pos (event->x, event->y, m_PathButtonPress, col, cell_x, cell_y))
                 {
                     TreeIter iter = TreeStore->get_iter(TreeStoreFilter->convert_path_to_child_path(m_PathButtonPress));
-                    if(m_PathButtonPress.get_depth() == 2)
+                    if(m_PathButtonPress.get_depth() == ROW_ALBUM)
                     {
                         m_DragASIN = (*iter)[AlbumColumns.ASIN];
                         m_AlbumDragId = (*iter)[AlbumColumns.Id];
@@ -996,7 +1021,7 @@ namespace MPX
 						}
                     }
                     else
-                    if(m_PathButtonPress.get_depth() == 3)
+                    if(m_PathButtonPress.get_depth() == ROW_TRACK)
                     {
                         m_DragASIN = ""; // TODO: Use boost::optional
                         m_AlbumDragId = 0; 
@@ -1023,6 +1048,7 @@ namespace MPX
               void
               on_new_album(const std::string& mbid, const std::string& asin, gint64 id, gint64 album_artist_id)
               {
+#if 0
 				TreeIter iter_artist; 
 				IdIterMap::const_iterator i = m_ArtistIterMap.find(album_artist_id);
 				if(i !=	m_ArtistIterMap.end())
@@ -1048,6 +1074,8 @@ namespace MPX
                 m_AlbumIterMap[id] = iter;
 
                 TreeStore->append(iter->children()); //create dummy/placeholder row for tracks
+#endif
+                TreeIter iter = TreeStore->append();
 
                 (*iter)[AlbumColumns.RowType] = ROW_ALBUM; 
                 (*iter)[AlbumColumns.HasTracks] = false; 
@@ -1110,7 +1138,7 @@ namespace MPX
               void
               album_list_load ()
               {
-				m_ArtistIterMap.clear();
+				//m_ArtistIterMap.clear();
 				TreeStore->clear ();
 
                 SQL::RowV v;
@@ -1119,6 +1147,7 @@ namespace MPX
                 {
                     SQL::Row & r = *i; 
 
+#if 0
 					gint64 album_artist_id = get<gint64>(r["album_artist_j"]);
 
 					TreeIter iter_artist; 
@@ -1139,6 +1168,8 @@ namespace MPX
 					}
 
                     TreeIter iter = TreeStore->append(iter_artist->children());
+#endif
+					TreeIter iter = TreeStore->append ();
                     TreeStore->append(iter->children()); // create placeholder/dummy row for tracks
 
                     (*iter)[AlbumColumns.RowType] = ROW_ALBUM; 
@@ -1223,12 +1254,14 @@ namespace MPX
                 AlbumRowType rt_a = (*iter_a)[AlbumColumns.RowType];
                 AlbumRowType rt_b = (*iter_b)[AlbumColumns.RowType];
 
+#if 0
 				if((rt_a == ROW_ARTIST) && (rt_b == ROW_ARTIST))
 				{
                   Glib::ustring text_a = (*iter_a)[AlbumColumns.Text];
                   Glib::ustring text_b = (*iter_b)[AlbumColumns.Text];
 				  return text_a.compare(text_b);
 				}
+#endif
 
                 if((rt_a == ROW_ALBUM) && (rt_b == ROW_ALBUM))
                 {
@@ -1258,7 +1291,7 @@ namespace MPX
               {
                 TreePath path (iter);
                 CellRendererCairoSurface *cell = dynamic_cast<CellRendererCairoSurface*>(basecell);
-                if(path.get_depth() == 2)
+                if(path.get_depth() == ROW_ALBUM)
                 {
                     cell->property_visible() = true;
                     cell->property_surface() = (*iter)[AlbumColumns.Image]; 
@@ -1276,7 +1309,7 @@ namespace MPX
                 CellRendererVBox *cvbox = dynamic_cast<CellRendererVBox*>(basecell);
                 CellRendererText *cell1 = dynamic_cast<CellRendererText*>(cvbox->property_renderer1().get_value());
                 CellRendererPixbuf *cell2 = dynamic_cast<CellRendererPixbuf*>(cvbox->property_renderer2().get_value());
-                if(path.get_depth() == 2)
+                if(path.get_depth() == ROW_ALBUM)
                 {
                     cvbox->property_visible() = true; 
 
@@ -1296,7 +1329,7 @@ namespace MPX
               {
                 TreePath path (iter);
                 CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);
-                if(path.get_depth() == 3)
+                if(path.get_depth() == ROW_TRACK)
                 {
                     cell->property_visible() = true; 
                     cell->property_markup() = (boost::format("%lld.") % (*iter)[AlbumColumns.TrackNumber]).str();
@@ -1312,18 +1345,20 @@ namespace MPX
               {
                 TreePath path (iter);
                 CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);
-                if(path.get_depth() == 3)
+                if(path.get_depth() == ROW_TRACK)
                 {
                     cell->property_visible() = true; 
                     cell->property_markup() = Markup::escape_text((*iter)[AlbumColumns.TrackTitle]);
                 }
 				else
-                if(path.get_depth() == 1)
+#if 0
+                if(path.get_depth() == ROW_ARTIST)
 				{
                     cell->property_visible() = true; 
                     cell->property_markup() = Markup::escape_text((*iter)[AlbumColumns.Text]);
 				}
                 else
+#endif
                 {
                     cell->property_visible() = false; 
                 }
@@ -1334,7 +1369,7 @@ namespace MPX
               {
                 TreePath path (iter);
                 CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);
-                if(path.get_depth() == 3)
+                if(path.get_depth() == ROW_TRACK)
                 {
                     cell->property_visible() = true; 
                     gint64 Length = (*iter)[AlbumColumns.TrackLength];
@@ -1551,12 +1586,18 @@ namespace Source
     {
 		std::vector<Gtk::TreePath> rows = m_Private->m_TreeViewPlaylist->get_selection()->get_selected_rows();
 
+		if(m_Private->m_TreeViewPlaylist->m_PlayInitIter)
+		{
+			m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->m_PlayInitIter.get();
+			m_Private->m_TreeViewPlaylist->m_PlayInitIter.reset ();
+			return true;
+		}
+
 		if(!rows.empty() && !m_Private->m_TreeViewPlaylist->m_CurrentIter)
 		{
 			m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter (rows[0]); 
 			m_Private->m_TreeViewPlaylist->m_CurrentId = (*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.RowId];
 			m_Private->m_TreeViewPlaylist->queue_draw();
-			g_message("Got it");
 			return true;
 		}
 		else
@@ -1727,6 +1768,21 @@ namespace Source
     {
         return m_Private->m_UI;
     }
+
+	UriSchemes 
+	PlaybackSourceMusicLib::getSchemes ()
+	{
+		UriSchemes s;
+		s.push_back("file");
+		return s;
+	}
+
+	void    
+	PlaybackSourceMusicLib::processURIs (Util::FileList const& uris)
+	{
+		m_Private->m_TreeViewPlaylist->prepare_uris (uris);
+		Signals.PlayRequest.emit();
+	}
 
 } // end namespace Source
 } // end namespace MPX 

@@ -29,15 +29,20 @@
 #include <gtkmm/widget.h>
 #include <sigc++/signal.h>
 #include <boost/format.hpp>
-#include "mpx/types.hh"
 #include <Python.h>
 #include <boost/python.hpp>
+#include <vector>
 
 #define NO_IMPORT
 #include <pygobject.h>
-#
+
+#include "mpx/types.hh"
+#include "mpx/util-file.hh"
+
 namespace MPX
 {
+	typedef std::vector<std::string> UriSchemes;
+
     struct Metadata
     :   public Track
     {
@@ -112,9 +117,9 @@ namespace MPX
         PlaybackSource (const Glib::ustring& name,
                         Caps  caps  = C_NONE,
                         Flags flags = F_NONE)
-        : m_caps        (caps),
-          m_flags       (flags),
-          m_name        (name)
+        : m_caps(caps)
+		, m_flags(flags)
+		, m_name(name)
         {}
 
         virtual ~PlaybackSource ()
@@ -245,6 +250,17 @@ namespace MPX
         virtual Gtk::Widget*
         get_ui () = 0;
 
+
+        virtual UriSchemes 
+        getSchemes ()
+		{
+			return UriSchemes();
+		}
+
+        virtual void    
+        processURIs (Util::FileList const&) 
+		{
+		}
 
       protected:
 

@@ -57,7 +57,7 @@ namespace MPX
 
                 m_ConfigFileParser = new XercesDOMParser;
                 m_ConfigFileParser->setValidationScheme( XercesDOMParser::Val_Never );
-                m_ConfigFileParser->setDoNamespaces( false );
+                m_ConfigFileParser->setDoNamespaces( true );
                 m_ConfigFileParser->setDoSchema( false );
                 m_ConfigFileParser->setLoadExternalDTD( false );
 

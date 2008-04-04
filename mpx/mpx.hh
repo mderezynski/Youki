@@ -34,13 +34,14 @@
 #include "mpx/amazon.hh"
 #include "mpx/library.hh"
 #include "mpx/paccess.hh"
-#include "mpx/playbacksource.hh"
 #include "mpx/widgetloader.h"
 
 #include "audio-types.hh"
 #include "play.hh"
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
+
+#include "mpx/i-playbacksource.hh"
 
 using namespace Gnome::Glade;
 
@@ -126,7 +127,10 @@ namespace MPX
         typedef boost::shared_ptr<SourcePlugin> SourcePluginPtr;
         typedef std::vector<SourcePluginPtr> SourcePluginsKeeper;
 		typedef std::vector<PlaybackSource*> VectorSources;
+		typedef std::map<std::string, int> UriSchemeMap;
+
         SourcePluginsKeeper m_SourcePlugins;
+		UriSchemeMap m_UriMap;
 
         Glib::RefPtr<Gnome::Glade::Xml>   m_ref_xml;
         Glib::RefPtr<Gtk::ActionGroup>    m_actions;
@@ -249,7 +253,7 @@ namespace MPX
 		on_source_flags (PlaybackSource::Flags, int);
 
 		void
-		on_source_track_metadata (Metadata const&);
+		on_source_track_metadata (Metadata const&, int);
 
 		void
 		on_source_play_request (int);
@@ -318,6 +322,9 @@ namespace MPX
 
         void
         on_import_share();
+
+		void
+		on_play_files ();
 
         void
         on_got_cover (Glib::ustring);

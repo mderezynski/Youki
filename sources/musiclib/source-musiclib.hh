@@ -33,8 +33,9 @@
 #include "mpx/amazon.hh"
 #include "mpx/library.hh"
 #include "mpx/mpx-public.hh"
-#include "mpx/playbacksource.hh"
 #include "mpx/types.hh"
+
+#include "mpx/i-playbacksource.hh"
 
 namespace MPX
 {
@@ -135,8 +136,15 @@ namespace Source
 				virtual Gtk::Widget*
 				get_ui ();
 
-		}; // end class PlaybackSourceMusicLib 
 
+				// UriHandler
+				virtual UriSchemes 
+				getSchemes (); 
+
+				virtual void    
+		        processURIs (Util::FileList const&);
+
+		}; // end class PlaybackSourceMusicLib 
 } // end namespace Source
 } // end namespace MPX 
   

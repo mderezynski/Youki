@@ -97,6 +97,9 @@ mpx_bin_SOURCES =				\
 								\
 	widgetloader.h				\
 								\
+	dialog-filebrowser.hh		\
+	dialog-filebrowser.cc		\
+								\
 	exception.hh				\
 	exception-db.hh				\
 								\
@@ -153,6 +156,9 @@ mpx_bin_SOURCES =				\
 								\
 	playbacksource.hh			\
 	playbacksource.cc			\
+								\
+	playlistparser-xspf.hh		\
+	playlistparser-xspf.cc		\
 								\
 	plugin.hh					\
 	plugin.cc					\

@@ -13,16 +13,16 @@
 #include <Python.h>
 
 #include "mpx.hh"
+#include "mpxpy.hh"
 #include "mpx/amazon.hh"
 #include "mpx/library.hh"
 #include "mpx/paccess.hh"
-#include "mpx/playbacksource.hh"
 #include "mpx/types.hh"
+
+#include "mpx/i-playbacksource.hh"
 
 #include "lyrics-v2.hh"
 #include "last-fm-xmlrpc.hh"
-
-#include "mpxpy.hh"
 
 using namespace boost::python;
 

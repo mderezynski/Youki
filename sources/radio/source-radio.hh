@@ -39,7 +39,7 @@
 #include <gtkmm/uimanager.h>
 #include <libglademm/xml.h>
 #include "mpx/mpx-public.hh"
-#include "mpx/playbacksource.hh"
+#include "mpx/i-playbacksource.hh"
 #include "streams-shoutcast.hh"
 #include "streams-icecast.hh"
 #include "radio-directory-types.hh"

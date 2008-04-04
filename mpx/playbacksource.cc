@@ -28,7 +28,7 @@
 #include <sigc++/signal.h>
 #include <boost/format.hpp>
 
-#include "mpx/playbacksource.hh"
+#include "mpx/i-playbacksource.hh"
 
 using namespace Glib;
 

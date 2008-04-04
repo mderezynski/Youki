@@ -40,15 +40,20 @@
 #include <Python.h>
 #include <pygobject.h>
 #include <pygtk/pygtk.h>
+
 #include "import-share.hh"
 #include "import-folder.hh"
+#include "dialog-filebrowser.hh"
+
 #include "mpx.hh"
+#include "mpxpy.hh"
 #include "mpx-sources.hh"
+#include "mpx/uri.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-graphics.hh"
 #include "mpx/util-string.hh"
 #include "mpx/util-ui.hh"
-#include "mpxpy.hh"
+
 #include "request-value.hh"
 #include "stock.hh"
 
@@ -94,10 +99,12 @@ namespace
   ""
   "<menubar name='MenubarMain'>"
   "   <menu action='MenuMusic'>"
+  "         <menuitem action='action-play-files'/>"
+  "         <separator name='sep00'/>"
   "         <menuitem action='action-import-folder'/>"
   "         <menuitem action='action-import-share'/>"
   "			<menuitem action='action-vacuum-lib'/>"
-  "         <separator name='sep00'/>"
+  "         <separator name='sep01'/>"
   "         <menuitem action='action-quit'/>"
   "   </menu>"
   "   <menu action='MenuEdit'>"
@@ -1089,6 +1096,11 @@ namespace MPX
 		m_actions->add (Action::create("MenuMusic", _("_Music")));
 		m_actions->add (Action::create("MenuEdit", _("_Edit")));
 
+		m_actions->add (Action::create ("action-play-files",
+										Gtk::Stock::OPEN,
+										_("_Play Files...")),
+										sigc::mem_fun (*this, &Player::on_play_files));
+
 		m_actions->add (Action::create ("action-import-folder",
 										Gtk::Stock::HARDDISK,
 										_("Import _Folder")),
@@ -1238,6 +1250,109 @@ namespace MPX
 
 		DBusObjects.mpx->startup_complete(DBusObjects.mpx); 
     }
+
+	void
+	Player::install_source (int source, int tab)
+	{
+		m_SourceTabMapping.resize(source+1);
+		m_SourceTabMapping[source] = tab;
+
+		m_source_flags[source] = PlaybackSource::Flags(0);
+		m_source_caps[source] = PlaybackSource::Caps(0); 
+
+		m_SourceV[source]->send_caps();
+		m_SourceV[source]->send_flags();
+
+		m_SourceV[source]->signal_caps().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_caps), source));
+
+		m_SourceV[source]->signal_flags().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_flags), source));
+
+		m_SourceV[source]->signal_track_metadata().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_track_metadata), source));
+
+		m_SourceV[source]->signal_playback_request().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_play_request), source));
+
+		m_SourceV[source]->signal_segment().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_segment), source));
+
+		m_SourceV[source]->signal_stop_request().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_stop), source));
+
+		m_SourceV[source]->signal_next_request().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_next), source));
+
+  #if 0
+		m_SourceV[source]->signal_message().connect
+		  (sigc::mem_fun (*this, &Player::on_source_message_set));
+
+		m_SourceV[source]->signal_message_clear().connect
+		  (sigc::mem_fun (*this, &Player::on_source_message_clear));
+  #endif
+
+		m_SourceV[source]->signal_play_async().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::play_async_cb), source));
+
+		m_SourceV[source]->signal_next_async().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::next_async_cb), source));
+
+		m_SourceV[source]->signal_prev_async().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::prev_async_cb), source));
+
+		UriSchemes v = m_SourceV[source]->getSchemes ();
+		if(v.size())
+		{
+		  for(UriSchemes::const_iterator i = v.begin(); i != v.end(); ++i)
+		  {
+				if(m_UriMap.find(*i) != m_UriMap.end())
+				{
+				  g_warning("%s: Source '%s' tried to override URI handler for scheme '%s'!",
+					  G_STRLOC,
+					  m_SourceV[source]->get_name().c_str(),
+					  i->c_str());	
+				  continue;
+				}
+				g_message("%s: Source '%s' registers for URI scheme '%s'", G_STRLOC, m_SourceV[source]->get_name().c_str(), i->c_str()); 
+				m_UriMap.insert (std::make_pair (std::string(*i), source));
+		  }
+		}
+	}
+
+	void
+	Player::on_play_files ()
+	{
+		typedef boost::shared_ptr<FileBrowser> FBRefP;
+		FBRefP p (FileBrowser::create());
+		int response = p->run ();
+		p->hide ();
+
+		if( response == GTK_RESPONSE_OK )
+		{
+			Util::FileList uris = p->get_uris ();
+
+			if( uris.size() ) 
+			{
+				try{
+					URI u (uris[0]); //TODO/FIXME: We assume all URIs are of the same scheme
+					UriSchemeMap::const_iterator i = m_UriMap.find (u.scheme);
+					if( i != m_UriMap.end ())
+					{
+					  m_SourceV[i->second]->processURIs (uris);
+					}
+				  }
+				catch (URI::ParseError & cxe)
+				  {
+					g_warning (G_STRLOC ": Couldn't parse URI %s", uris[0].c_str());
+				  }
+				catch (bad_cast & cxe)
+				  {
+					g_critical (G_STRLOC ": Source isn't URI handler (dynamic_cast<> failed)");
+				  }
+			}
+		}
+	}
 
 	void
 	Player::on_show_plugins ()
@@ -1609,8 +1724,10 @@ namespace MPX
 	}
 
 	void
-	Player::on_source_track_metadata (Metadata const& metadata)
+	Player::on_source_track_metadata (Metadata const& metadata, int source)
 	{
+	  g_return_if_fail( m_Sources->getSource() == source);
+
 	  m_Metadata = metadata;
 	  if(!m_Metadata.Image)
 	  {
@@ -1625,6 +1742,8 @@ namespace MPX
 	void
 	Player::on_source_play_request (int source_id)
 	{
+	  g_return_if_fail( m_Sources->getSource() == source_id);
+
 	  if( m_Sources->getSource() != SOURCE_NONE )
 	  {
 			if( m_source_flags[m_Sources->getSource()] & PlaybackSource::F_HANDLE_LASTFM )
@@ -1705,6 +1824,8 @@ namespace MPX
 	void
 	Player::on_source_stop (int source_id)
 	{
+	  g_return_if_fail( m_Sources->getSource() == source_id);
+
 	  if( source_id == m_Sources->getSource() )
 	  {
 		stop ();
@@ -1718,6 +1839,8 @@ namespace MPX
 	void
 	Player::on_source_next (int source_id)
 	{
+	  g_return_if_fail( m_Sources->getSource() == source_id);
+
 	  if( source_id == m_Sources->getSource() )
 	  {
 		next ();
@@ -2006,71 +2129,6 @@ namespace MPX
 		m_SourceV[source_id]->send_caps();
 	  }
 	}
-
-	void
-	Player::install_source (int source, int tab)
-	{
-	  m_SourceTabMapping.resize(source+1);
-	  m_SourceTabMapping[source] = tab;
-
-	  m_source_flags[source] = PlaybackSource::Flags(0);
-	  m_source_caps[source] = PlaybackSource::Caps(0); 
-
-	  m_SourceV[source]->send_caps();
-	  m_SourceV[source]->send_flags();
-
-	  m_SourceV[source]->signal_caps().connect
-		(sigc::bind (sigc::mem_fun (*this, &Player::on_source_caps), source));
-
-	  m_SourceV[source]->signal_flags().connect
-		(sigc::bind (sigc::mem_fun (*this, &Player::on_source_flags), source));
-
-	  m_SourceV[source]->signal_track_metadata().connect
-		(sigc::mem_fun (*this, &Player::on_source_track_metadata));
-
-	  m_SourceV[source]->signal_playback_request().connect
-		(sigc::bind (sigc::mem_fun (*this, &Player::on_source_play_request), source));
-
-	  m_SourceV[source]->signal_segment().connect
-		(sigc::bind (sigc::mem_fun (*this, &Player::on_source_segment), source));
-
-	  m_SourceV[source]->signal_stop_request().connect
-		(sigc::bind (sigc::mem_fun (*this, &Player::on_source_stop), source));
-
-	  m_SourceV[source]->signal_next_request().connect
-		(sigc::bind (sigc::mem_fun (*this, &Player::on_source_next), source));
-
-#if 0
-	  m_SourceV[source]->signal_message().connect
-		(sigc::mem_fun (*this, &Player::on_source_message_set));
-
-	  m_SourceV[source]->signal_message_clear().connect
-		(sigc::mem_fun (*this, &Player::on_source_message_clear));
-#endif
-
-	  m_SourceV[source]->signal_play_async().connect
-		(sigc::bind (sigc::mem_fun (*this, &Player::play_async_cb), source));
-
-	  m_SourceV[source]->signal_next_async().connect
-		(sigc::bind (sigc::mem_fun (*this, &Player::next_async_cb), source));
-
-	  m_SourceV[source]->signal_prev_async().connect
-		(sigc::bind (sigc::mem_fun (*this, &Player::prev_async_cb), source));
-
-#if 0
-	  UriHandler * p = boost::dynamic_pointer_cast <UriHandler> (m_SourceV[source]).get();
-
-	  if( p )
-	  {
-		StrV v = p->get_schemes ();
-		for(StrV::const_iterator i = v.begin(); i != v.end(); ++i)
-		{
-		  m_uri_map.insert (std::make_pair (*i, source));
-		}
-	  }
-#endif
-	}
-
 
 	void
 	Player::on_sources_toggled ()

@@ -5,7 +5,7 @@
 #include <gtkmm.h>
 
 #include "mpx/mpx-public.hh"
-#include "mpx/playbacksource.hh"
+#include "mpx/i-playbacksource.hh"
 
 // plugin-specific include
 #include "source-musiclib.hh"
