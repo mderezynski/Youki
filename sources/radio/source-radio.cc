@@ -143,8 +143,8 @@ namespace Source
         return m_UI;
     }
 
-    Radio::Radio (MPX::Player & player)
-    : PlaybackSource  (_("Radio"))
+    Radio::Radio (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
+    : PlaybackSource  (ui_manager, _("Radio"))
     {
 		const std::string path (build_filename(DATA_DIR, build_filename("glade","source-radio.glade")));
 		m_ref_xml = Gnome::Glade::Xml::create (path);
@@ -249,10 +249,10 @@ namespace Source
 		p->set_filter (m_filter_entry->get_text());
 
 		if( p->get_selection ()->count_selected_rows() ) 
-			  m_caps = Caps (m_caps |  PlaybackSource::C_CAN_PLAY);
+			  m_Caps = Caps (m_Caps |  PlaybackSource::C_CAN_PLAY);
 		else
-			  m_caps = Caps (m_caps & ~PlaybackSource::C_CAN_PLAY);
-		Signals.Caps.emit (m_caps);
+			  m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_PLAY);
+		Signals.Caps.emit (m_Caps);
     }
 
     void
@@ -284,10 +284,10 @@ namespace Source
     Radio::on_selection_changed (RadioDirectory::ViewBase * view)
     {
 		if( view->get_selection ()->count_selected_rows() == 1 )
-			  m_caps = Caps (m_caps |  PlaybackSource::C_CAN_PLAY);
+			  m_Caps = Caps (m_Caps |  PlaybackSource::C_CAN_PLAY);
 		else
-			  m_caps = Caps (m_caps & ~PlaybackSource::C_CAN_PLAY);
-		Signals.Caps.emit (m_caps);
+			  m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_PLAY);
+		Signals.Caps.emit (m_Caps);
     }
 
     void
@@ -307,7 +307,7 @@ namespace Source
 		m_notebook_shoutcast->set_current_page (0);
     }
 
-    ustring
+    std::string
     Radio::get_uri ()
     {
 		return m_current_uri;
@@ -330,13 +330,13 @@ namespace Source
     {
 		if ( !m_shoutcast_list->get_selection()->count_selected_rows() && !m_icecast_list->get_selection()->count_selected_rows())
 		{
-		  m_caps = Caps (m_caps & ~PlaybackSource::C_CAN_PLAY);
+		  m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_PLAY);
 		}
 
 		m_current_uri = ustring();
 		m_current_name = ustring();
-		m_caps = Caps (m_caps & ~PlaybackSource::C_CAN_PAUSE);
-		Signals.Caps.emit (m_caps);
+		m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_PAUSE);
+		Signals.Caps.emit (m_Caps);
     }
 
     bool
@@ -375,14 +375,20 @@ namespace Source
 		return true;
     }
 
-    void
-    Radio::play_post ()
-    {
+	void
+	Radio::send_metadata ()
+	{
 		Metadata metadata;
 		metadata[ATTRIBUTE_ARTIST] = m_current_name; 
 		metadata[ATTRIBUTE_TITLE]  = m_current_uri;
 		Signals.Metadata.emit (metadata);
-		m_caps = Caps (m_caps | PlaybackSource::C_CAN_PAUSE);
+	}
+
+    void
+    Radio::play_post ()
+    {
+		send_metadata ();
+		m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_PAUSE);
 		send_caps ();
     }
 

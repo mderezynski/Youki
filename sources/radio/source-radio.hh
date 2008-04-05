@@ -56,7 +56,7 @@ namespace Source
     {
       public:
 
-        Radio (MPX::Player & player);
+        Radio (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
         virtual ~Radio () {}
   
       private:
@@ -64,6 +64,7 @@ namespace Source
 		Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
 		Glib::RefPtr<Gtk::ActionGroup> m_actions;
 		Glib::RefPtr<Gtk::UIManager> m_ui_manager;
+		Glib::RefPtr<Gtk::UIManager> m_ui_manager_main;
 	
 		Gtk::Widget					* m_UI;
 
@@ -107,7 +108,7 @@ namespace Source
 	    virtual Gtk::Widget*
 		get_ui ();
 
-        virtual ustring
+        virtual std::string
         get_uri ();
 
         virtual bool
@@ -127,6 +128,9 @@ namespace Source
 
         virtual void
         restore_context ();
+
+		virtual void
+		send_metadata ();
     };
   }
 }

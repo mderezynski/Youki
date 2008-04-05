@@ -23,7 +23,6 @@
 #include "config.h" 
 #include <exception>
 #include <glib/ghash.h>
-#include <glibmm/ustring.h>
 #include <glibmm/i18n.h>
 #include <sigc++/signal.h>
 #include <boost/format.hpp>
@@ -34,6 +33,17 @@ using namespace Glib;
 
 namespace MPX
 {
+		PlaybackSource::PlaybackSource (const Glib::RefPtr<Gtk::UIManager>&, const std::string& name, Caps caps, Flags flags)
+        : m_Caps(caps)
+        , m_Flags(flags)
+        , m_Name(name)
+        {
+        }
+
+        PlaybackSource::~PlaybackSource ()
+        {
+        }
+
         PlaybackSource::SignalNextAsync&
         PlaybackSource::signal_next_async ()
         {
@@ -94,18 +104,26 @@ namespace MPX
           return Signals.Segment;
         }
 
-        PlaybackSource::SignalMessage &
-        PlaybackSource::signal_message ()
-        {
-          return Signals.Message;
-        }
+		std::string
+		PlaybackSource::get_type ()
+		{
+			return std::string();
+		}
 
-        PlaybackSource::SignalMessageClear &
-        PlaybackSource::signal_message_clear ()
-        {
-          return Signals.MessageClear;
-        }
+        void
+        PlaybackSource::play_async ()
+		{
+		}
 
+        void
+        PlaybackSource::go_next_async ()
+		{
+		}
+
+        void
+        PlaybackSource::go_prev_async ()
+		{
+		}
 
         void
         PlaybackSource::next_post ()
@@ -125,34 +143,45 @@ namespace MPX
         void
         PlaybackSource::send_caps ()
         {
-          Signals.Caps.emit (m_caps);
+          Signals.Caps.emit (m_Caps);
         }
 
         void
         PlaybackSource::send_flags ()
         {
-          Signals.Flags.emit (m_flags);
+          Signals.Flags.emit (m_Flags);
         }
-
-        GHashTable*
-        PlaybackSource::get_metadata ()
-        {
-          return 0;
-        } 
 
         void
         PlaybackSource::segment ()
         {
         }
 
-        ustring
+        std::string
         PlaybackSource::get_name ()
         {
-          return m_name;
+          return m_Name;
         }
 
         void
         PlaybackSource::buffering_done ()
-        {};
+        {
+		}
 
+        UriSchemes
+        PlaybackSource::Get_Schemes ()
+        {
+            return UriSchemes();
+        }
+
+        void
+        PlaybackSource::Process_URI_List (Util::FileList const&)
+        {
+        }
+
+		guint
+		PlaybackSource::add_menu ()
+		{
+			return 0;
+		}
 } // end namespace MPX 

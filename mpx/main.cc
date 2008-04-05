@@ -13,6 +13,7 @@
 #include <glibmm/miscutils.h>
 #include <gst/gst.h>
 #include <gtkmm/main.h>
+#include <clutter/clutter.h>
 
 #include "mpx.hh"
 
@@ -297,6 +298,7 @@ main (int argc, char ** argv)
     g_mkdir(build_filename(g_get_user_config_dir(), "mpx").c_str(), 0700);
 
     gst_init(&argc, &argv);
+	clutter_init(&argc, &argv);
     gtk = new Gtk::Main (argc, argv);
 
 #ifdef HAVE_HAL

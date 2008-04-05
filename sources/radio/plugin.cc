@@ -14,9 +14,9 @@ using namespace MPX;
 using namespace Gtk;
 
 extern "C" MPX::PlaybackSource*
-get_instance (MPX::Player & player)
+get_instance (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
 {
-	return new MPX::Source::Radio(player);
+	return new MPX::Source::Radio(ui_manager, player);
 }
 
 extern "C" void

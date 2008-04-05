@@ -27,6 +27,7 @@
 #include <glibmm/ustring.h>
 #include <gdkmm/pixbuf.h>
 #include <gtkmm/widget.h>
+#include <gtkmm/uimanager.h>
 #include <sigc++/signal.h>
 #include <boost/format.hpp>
 #include <Python.h>
@@ -80,7 +81,6 @@ namespace MPX
           F_HANDLE_STREAMINFO       = 1 << 1,
           F_PHONY_NEXT              = 1 << 2,
           F_PHONY_PREV              = 1 << 3,
-          F_ALWAYS_IMAGE_FRAME      = 1 << 4,
           F_HANDLE_LASTFM           = 1 << 5,
           F_HANDLE_LASTFM_ACTIONS   = 1 << 6,
           F_USES_REPEAT             = 1 << 7,
@@ -104,9 +104,7 @@ namespace MPX
         typedef sigc::signal<void, Caps>                    SignalCaps;
         typedef sigc::signal<void, Flags>                   SignalFlags;
         typedef sigc::signal<void, const Metadata&>         SignalTrackMetadata;
-        typedef sigc::signal<void, const Glib::ustring&>    SignalMessage;
         typedef sigc::signal<void>                          SignalSegment;
-        typedef sigc::signal<void>                          SignalMessageClear;
         typedef sigc::signal<void>                          SignalPlaybackRequest;
         typedef sigc::signal<void>                          SignalStopRequest;
         typedef sigc::signal<void>                          SignalNextRequest;
@@ -114,16 +112,8 @@ namespace MPX
         typedef sigc::signal<void>                          SignalNextAsync;
         typedef sigc::signal<void>                          SignalPrevAsync;
 
-        PlaybackSource (const Glib::ustring& name,
-                        Caps  caps  = C_NONE,
-                        Flags flags = F_NONE)
-        : m_caps(caps)
-		, m_flags(flags)
-		, m_name(name)
-        {}
-
-        virtual ~PlaybackSource ()
-        {}
+        PlaybackSource (const Glib::RefPtr<Gtk::UIManager>&, const std::string&, Caps = C_NONE, Flags = F_NONE);
+		virtual ~PlaybackSource ();
 
         SignalCaps&
         signal_caps ();
@@ -146,14 +136,6 @@ namespace MPX
         SignalSegment&
         signal_segment ();
 
-        SignalMessage &
-        signal_message ();
-
-        SignalMessageClear &
-        signal_message_clear ();
-
-
-
         SignalNextAsync&
         signal_next_async ();
 
@@ -163,48 +145,32 @@ namespace MPX
         SignalPlayAsync&
         signal_play_async ();
 
-
-
-        virtual Glib::ustring
+        virtual std::string
         get_uri () = 0; 
     
-        virtual Glib::ustring
-        get_type () 
-        { return Glib::ustring(); }
-
-        virtual GHashTable *
-        get_metadata ();
-
-
-
+        virtual std::string
+        get_type ();
 
         virtual bool
-        play ()
-        { return false; } 
+        play () = 0;
 
         virtual bool
-        go_next ()
-        { return false; }
+        go_next () = 0;
 
         virtual bool
-        go_prev ()
-        { return false; } 
+        go_prev () = 0; 
 
         virtual void
         stop () = 0;
   
-
+        virtual void
+        play_async ();
 
         virtual void
-        play_async () {}
-
-        virtual void
-        go_next_async () {}
+        go_next_async ();
   
         virtual void
-        go_prev_async () {}
-
-
+        go_prev_async (); 
 
         virtual void
         play_post () = 0;
@@ -215,10 +181,8 @@ namespace MPX
         virtual void
         prev_post ();
 
-
         virtual void
         restore_context () = 0;
-
 
         virtual void
         skipped (); 
@@ -229,8 +193,6 @@ namespace MPX
         virtual void
         buffering_done (); 
 
-
-
         virtual void
         send_caps ();
 
@@ -238,10 +200,9 @@ namespace MPX
         send_flags ();
 
 		virtual void
-		send_metadata () {};
+		send_metadata () = 0;
 
-
-        Glib::ustring
+        std::string
         get_name ();
 
         virtual Glib::RefPtr<Gdk::Pixbuf>
@@ -250,17 +211,14 @@ namespace MPX
         virtual Gtk::Widget*
         get_ui () = 0;
 
+		virtual guint
+		add_menu ();
 
         virtual UriSchemes 
-        getSchemes ()
-		{
-			return UriSchemes();
-		}
+        Get_Schemes ();
 
         virtual void    
-        processURIs (Util::FileList const&) 
-		{
-		}
+        Process_URI_List (Util::FileList const&); 
 
       protected:
 
@@ -270,8 +228,6 @@ namespace MPX
           SignalFlags                     Flags;
           SignalTrackMetadata             Metadata;
           SignalSegment                   Segment;
-          SignalMessage                   Message;
-          SignalMessageClear              MessageClear;
           SignalPlaybackRequest           PlayRequest;
           SignalStopRequest               StopRequest;
           SignalNextRequest               NextRequest;
@@ -281,9 +237,9 @@ namespace MPX
         };
 
         SignalsT        Signals;
-        Caps            m_caps;
-        Flags           m_flags;
-        Glib::ustring   m_name;
+        Caps            m_Caps;
+        Flags           m_Flags;
+        std::string     m_Name;
 
     }; // end class PlaybackSource 
 

@@ -44,13 +44,6 @@ namespace
   using namespace MPX;
   using namespace MPX::SQL;
 
-  char const* sql_valuenames[] =
-  {
-      "INTEGER",
-      "REAL",
-      "TEXT"
-  };
-
   static boost::format format_int  ("%lld");
   static boost::format format_real ("%f");
 
@@ -168,6 +161,15 @@ namespace
 
 namespace MPX
 {
+  void
+  absRatingFunc (sqlite3_context *ctx, int argc, sqlite3_value **argv)
+  {
+	gint64 trackRating = sqlite3_value_int64(argv[0]);
+	gint64 albumRating = sqlite3_value_int64(argv[1]);
+	gint64 absRating = (albumRating * 10) + trackRating;
+	sqlite3_result_int64(ctx, absRating);
+  }
+
   string
   mprintf (const char *format, ...)
   {
@@ -634,6 +636,8 @@ namespace MPX
 #ifdef SQLITE_TRACE
         sqlite3_trace (m_sqlite, SQLDB::sqlite_trace, this);
 #endif //SQLITE_TRACE
+
+		sqlite3_create_function(m_sqlite, "abs_rating", 2, SQLITE_ANY, this, absRatingFunc, 0, 0);
 
         exec_sql ("PRAGMA synchronous=OFF;"); 
       }

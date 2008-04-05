@@ -287,9 +287,10 @@ namespace MPX
         m_SQL->exec_sql ("CREATE VIEW IF NOT EXISTS track_view AS " 
                          "SELECT"
                          "  track.* "
-                         ", album.id AS bmpx_album_id"
-                         ", artist.id AS bmpx_artist_id "
-                         ", album_artist.id AS bmpx_album_artist_id "
+                         ", album.id AS mpx_album_id"
+						 ", album.album_rating AS album_rating"
+                         ", artist.id AS mpx_artist_id "
+                         ", album_artist.id AS mpx_album_artist_id "
                          " FROM track "
                          "JOIN album ON album.id = track.album_j JOIN artist "
                          "ON artist.id = track.artist_j JOIN album_artist ON album.album_artist_j = album_artist.id;");
@@ -435,10 +436,25 @@ namespace MPX
 	}
 
 	void	
-	Library::rateAlbum(gint64 id, int rating)
+	Library::albumRated(gint64 id, int rating)
 	{
 		execSQL((boost::format ("UPDATE album SET album_rating = '%d' WHERE id = %lld") % rating % id).str());
 		Signals.AlbumUpdated.emit(id);
+	}
+
+	void	
+	Library::trackRated(gint64 id, int rating)
+	{
+		execSQL((boost::format ("UPDATE track SET rating = '%d' WHERE id = %lld") % rating % id).str());
+		Signals.TrackUpdated.emit(id);
+	}
+
+	void	
+	Library::trackPlayed(gint64 id, time_t time_)
+	{
+		execSQL((boost::format ("UPDATE track SET pdate = '%lld' WHERE id = %lld") % gint64(time_) % id).str());
+		execSQL((boost::format ("UPDATE track SET pcount = pcount + 1 WHERE Id =%lld") % id).str());
+		Signals.TrackUpdated.emit(id);
 	}
 
     gint64

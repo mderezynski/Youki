@@ -69,29 +69,6 @@ using namespace boost::python;
 // TODO: Saner API for sources
 #define SOURCE_NONE (-1)
 
-namespace 
-{
-	void
-	delete_delete_event (GObject * object, GdkEvent*, gpointer data)
-	{
-		boost::python::object * obj = static_cast<boost::python::object*>(data);
-		boost::python::object window = extract<boost::python::object>(obj->attr("window"));
-		GObject * cobj_window = ((PyGObject*)(window.ptr()))->obj;
-		gtk_widget_destroy(GTK_WIDGET(cobj_window));
-		delete obj;
-	}
-
-	void
-	delete_clicked (GObject * object, gpointer data) 
-	{
-		boost::python::object * obj = static_cast<boost::python::object*>(data);
-		boost::python::object window = extract<boost::python::object>(obj->attr("window"));
-		GObject * cobj_window = ((PyGObject*)(window.ptr()))->obj;
-		gtk_widget_destroy(GTK_WIDGET(cobj_window));
-		delete obj;
-	}
-}
-
 namespace
 {
   char const * MenubarMain =
@@ -110,6 +87,7 @@ namespace
   "   <menu action='MenuEdit'>"
   "         <menuitem action='action-plugins'/>"
   "   </menu>"
+  "   <placeholder name='placeholder-source'/>"
   "</menubar>"
   ""
   "</ui>"
@@ -230,12 +208,10 @@ namespace MPX
     double target;
     int    x;
     int    y;
-
-    //FIXME: Encode size here as well
   };
 
   LayoutData const layout_info[] = {
-    {-0.0, 1.0, 86, 52},
+    {-0.0, 1.0, 86, 55},
     {-0.4, 1.0, 86,  8},
     {-0.4, 0.8, 86, 26}
   };
@@ -336,6 +312,7 @@ namespace MPX
     public:
 
       typedef sigc::signal<void> SignalCoverClicked;
+      typedef sigc::signal<void, Util::FileList const&> SignalUris;
 
       SignalCoverClicked&
       signal_cover_clicked()
@@ -343,23 +320,16 @@ namespace MPX
         return m_SignalCoverClicked;
       }
 
-	private:
-
-      SignalCoverClicked m_SignalCoverClicked;
-
-#if 0
-      typedef sigc::signal<void, VUri const&> SignalUris;
-
       SignalUris &
       signal_uris_dropped()
       {
-        return m_signal_uris_dropped;
+        return m_SignalUrisDropped;
       }
 
     private:
 
-      SignalUris         m_signal_uris_dropped;
-#endif
+      SignalUris m_SignalUrisDropped;
+      SignalCoverClicked m_SignalCoverClicked;
 
     public:
 
@@ -380,9 +350,8 @@ namespace MPX
 
         m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum));
 		m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
-#if 0
+
         enable_drag_dest ();
-#endif
       }
 
       ~InfoArea ()
@@ -422,7 +391,6 @@ namespace MPX
         return false;
       }
 
-#if 0
       bool
       on_drag_drop (Glib::RefPtr<Gdk::DragContext> const& context,
                     int                                   x,
@@ -453,8 +421,8 @@ namespace MPX
       {
         if( data.get_data_type() == "text/uri-list")
         {
-          VUri u = data.get_uris();
-          m_signal_uris_dropped.emit (u);
+          Util::FileList u = data.get_uris();
+          m_SignalUrisDropped.emit (u);
         }
         else
         if( data.get_data_type() == "text/plain")
@@ -474,7 +442,7 @@ namespace MPX
             v.push_back (text);
           }
 
-          VUri u;
+          Util::FileList u;
 
           for(StrV::const_iterator i = v.begin(); i != v.end(); ++i)
           {
@@ -490,23 +458,19 @@ namespace MPX
 
           if( !u.empty() )
           {
-            m_signal_uris_dropped.emit (u);
+            m_SignalUrisDropped.emit (u);
           }
         }
       }
-#endif
 
     private:
 
-#if 0
       void
       enable_drag_dest ()
       {
         disable_drag_dest ();
-
-        DNDEntries target_entries;
+        std::vector<Gtk::TargetEntry> target_entries;
         target_entries.push_back (TargetEntry ("text/plain"));
-
         drag_dest_set (target_entries, Gtk::DEST_DEFAULT_MOTION);
         drag_dest_add_uri_targets ();
       }
@@ -516,7 +480,6 @@ namespace MPX
       {
         drag_dest_unset ();
       }
-#endif
 
       bool
       decay_spectrum ()
@@ -1006,6 +969,7 @@ namespace MPX
                    MPX::Amazon::Covers & obj_amazon)
     : WidgetLoader<Gtk::Window>(xml, "mpx")
     , m_ref_xml(xml)
+	, m_SourceUI(0)
 	, m_SourceCtr (0)
 	, m_PageCtr(1)
     , m_Library (obj_library)
@@ -1054,6 +1018,8 @@ namespace MPX
 
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 
+		m_ui_manager = UIManager::create ();
+
         m_Sources = new Sources(xml);
         m_ref_xml->get_widget("statusbar", m_Statusbar);
 		Util::dir_for_each_entry (build_filename(PLUGIN_DIR, "sources"), sigc::mem_fun(*this, &MPX::Player::load_source_plugin));  
@@ -1084,11 +1050,8 @@ namespace MPX
         m_InfoArea = InfoArea::create(*m_Play, m_ref_xml);
 		m_InfoArea->signal_cover_clicked().connect
 		  ( sigc::mem_fun( *this, &Player::on_cover_clicked ));
-
-#if 0
 		m_InfoArea->signal_uris_dropped().connect
-		  ( sigc::mem_fun( *this, &MPX::Player::on_uris_dropped ) );
-#endif
+		  ( sigc::mem_fun( *this, &MPX::Player::on_infoarea_uris ) );
 
         // UIManager + Menus + Proxy Widgets
 		m_actions = ActionGroup::create ("Actions_Player");
@@ -1151,7 +1114,6 @@ namespace MPX
 										_("Plugins...")),
 										sigc::mem_fun (*this, &Player::on_show_plugins ));
 
-		m_ui_manager = UIManager::create ();
 		m_ui_manager->insert_action_group (m_actions);
 
 		if(Util::ui_manager_add_ui(m_ui_manager, MenubarMain, *this, _("Main Menubar")))
@@ -1284,14 +1246,6 @@ namespace MPX
 		m_SourceV[source]->signal_next_request().connect
 		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_next), source));
 
-  #if 0
-		m_SourceV[source]->signal_message().connect
-		  (sigc::mem_fun (*this, &Player::on_source_message_set));
-
-		m_SourceV[source]->signal_message_clear().connect
-		  (sigc::mem_fun (*this, &Player::on_source_message_clear));
-  #endif
-
 		m_SourceV[source]->signal_play_async().connect
 		  (sigc::bind (sigc::mem_fun (*this, &Player::play_async_cb), source));
 
@@ -1301,7 +1255,7 @@ namespace MPX
 		m_SourceV[source]->signal_prev_async().connect
 		  (sigc::bind (sigc::mem_fun (*this, &Player::prev_async_cb), source));
 
-		UriSchemes v = m_SourceV[source]->getSchemes ();
+		UriSchemes v = m_SourceV[source]->Get_Schemes ();
 		if(v.size())
 		{
 		  for(UriSchemes::const_iterator i = v.begin(); i != v.end(); ++i)
@@ -1317,6 +1271,30 @@ namespace MPX
 				g_message("%s: Source '%s' registers for URI scheme '%s'", G_STRLOC, m_SourceV[source]->get_name().c_str(), i->c_str()); 
 				m_UriMap.insert (std::make_pair (std::string(*i), source));
 		  }
+		}
+	}
+
+	void
+	Player::on_infoarea_uris (Util::FileList const& uris)
+	{
+		if( uris.size() ) 
+		{
+			try{
+				URI u (uris[0]); //TODO/FIXME: We assume all URIs are of the same scheme
+				UriSchemeMap::const_iterator i = m_UriMap.find (u.scheme);
+				if( i != m_UriMap.end ())
+				{
+				  m_SourceV[i->second]->Process_URI_List (uris);
+				}
+			  }
+			catch (URI::ParseError & cxe)
+			  {
+				g_warning (G_STRLOC ": Couldn't parse URI %s", uris[0].c_str());
+			  }
+			catch (bad_cast & cxe)
+			  {
+				g_critical (G_STRLOC ": Source isn't URI handler (dynamic_cast<> failed)");
+			  }
 		}
 	}
 
@@ -1339,7 +1317,7 @@ namespace MPX
 					UriSchemeMap::const_iterator i = m_UriMap.find (u.scheme);
 					if( i != m_UriMap.end ())
 					{
-					  m_SourceV[i->second]->processURIs (uris);
+					  m_SourceV[i->second]->Process_URI_List (uris);
 					}
 				  }
 				catch (URI::ParseError & cxe)
@@ -1493,7 +1471,7 @@ namespace MPX
 		}
 
 		
-        PlaybackSource * p = plugin->get_instance(*this); 
+        PlaybackSource * p = plugin->get_instance(m_ui_manager, *this); 
         Gtk::Alignment * a = new Gtk::Alignment;
         p->get_ui()->reparent(*a);
         a->show();
@@ -1529,6 +1507,7 @@ namespace MPX
 					  if(ev->keyval == GDK_Left)
 					  {
 						  m_Play->seek( pos - delta );
+						  m_TrackPlayedSeconds -= delta;
 						  return true;
 					  }
 					  else if(ev->keyval == GDK_Right)
@@ -1542,11 +1521,16 @@ namespace MPX
 	  else if( event->type == GDK_BUTTON_PRESS )
 	  {
 		g_atomic_int_set(&m_Seeking,1);
+		m_PreSeekPosition = m_Play->property_position().get_value();
 		goto SET_SEEK_POSITION;
 	  }
 	  else if( event->type == GDK_BUTTON_RELEASE && g_atomic_int_get(&m_Seeking))
 	  {
 		g_atomic_int_set(&m_Seeking,0);
+		if(m_PreSeekPosition > m_Seek->get_value())
+		{
+			m_TrackPlayedSeconds -= (m_PreSeekPosition - m_Seek->get_value());
+		}
 		m_Play->seek (gint64(m_Seek->get_value()));
 	  }
 	  else if( event->type == GDK_MOTION_NOTIFY && g_atomic_int_get(&m_Seeking))
@@ -1642,6 +1626,7 @@ namespace MPX
 		m_Seek->set_range(0., duration);
 		m_Seek->set_value(double (position));
 
+		m_TrackPlayedSeconds += 0.5; // this is slightly incorrect, the tick is every 500ms, but nothing says that the time always also progresses by exactly 0.5s
 #if 0
 		if( m_popup )
 		{
@@ -1675,16 +1660,15 @@ namespace MPX
 	void
 	Player::on_source_caps (PlaybackSource::Caps caps, int source)
 	{
-	  //Mutex::Lock L (m_source_cf_lock);
+	  Mutex::Lock L (m_SourceCFLock);
+
 	  m_source_caps[source] = caps;
-	  //m_player_dbus_obj->emit_caps_change (m_player_dbus_obj, int (caps));
 
 	  if( (source == m_Sources->getSource()) || (m_MainNotebook->get_current_page()-1 == source) )
 	  {
 		m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
 		m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
 		m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
-		//m_actions->get_action (ACTION_CREATE_BOOKMARK)->set_sensitive (caps & PlaybackSource::C_CAN_BOOKMARK);
 	  }
 
 	  if( source == m_Sources->getSource() )
@@ -1692,7 +1676,6 @@ namespace MPX
 			if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
 			{
 				  m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
-				  //m_Seek->set_sensitive( caps & PlaybackSource::C_CAN_SEEK );
 			}
 	  }
 	}
@@ -1700,7 +1683,7 @@ namespace MPX
 	void
 	Player::on_source_flags (PlaybackSource::Flags flags, int source)
 	{
-	  //Mutex::Lock L (m_source_cf_lock);
+	  Mutex::Lock L (m_SourceCFLock);
 	  m_source_flags[source] = flags;
 	  //m_actions->get_action (ACTION_REPEAT)->set_sensitive (flags & PlaybackSource::F_USES_REPEAT);
 	  //m_actions->get_action (ACTION_SHUFFLE)->set_sensitive (flags & PlaybackSource::F_USES_SHUFFLE);
@@ -1744,17 +1727,17 @@ namespace MPX
 	{
 	  g_return_if_fail( m_Sources->getSource() == source_id);
 
-	  if( m_Sources->getSource() != SOURCE_NONE )
+	  if( (m_Sources->getSource() != SOURCE_NONE ) && (m_Play->property_status().get_value() != PLAYSTATUS_STOPPED))
 	  {
 			if( m_source_flags[m_Sources->getSource()] & PlaybackSource::F_HANDLE_LASTFM )
 			{
-				  // shell_lastfm_scrobble_current (); // scrobble the current item before switching
+					track_played ();	
 			}
 
 			if( m_Sources->getSource() != source_id)
 			{
-				  m_SourceV[m_Sources->getSource()]->stop ();
-				  m_Play->request_status (PLAYSTATUS_STOPPED);
+					m_SourceV[m_Sources->getSource()]->stop ();
+					m_Play->request_status (PLAYSTATUS_STOPPED);
 			}
 	  }
 
@@ -1762,29 +1745,15 @@ namespace MPX
 
 	  if( m_source_flags[source_id] & PlaybackSource::F_ASYNC)
 	  {
-			source->play_async ();
 			m_actions->get_action( ACTION_STOP )->set_sensitive (true);
+			source->play_async ();
 	  }
 	  else
 	  {
 			  safe_pause_unset();
 			  if( source->play () )
 			  {
-					  std::string type = source->get_type ();
-					  //enable_video_check(type);
-
-					  ustring uri = source->get_uri();
-					  if((uri.substr(0,7) == "file://") && (!file_test(filename_from_uri(uri), FILE_TEST_EXISTS)))
-					  {
-						//source->bad_track();
-						next();
-						return;
-					  }
-
-					  safe_pause_unset();
-					  m_Play->switch_stream (uri, type);
-					  //m_Sources->source_select (source_id);
-
+					  m_Play->switch_stream (source->get_uri(), source->get_type());
 					  source->play_post ();
 					  play_post_internal (source_id);
 			  }
@@ -1792,19 +1761,8 @@ namespace MPX
 			  {
 				source->stop ();
 				m_Play->request_status (PLAYSTATUS_STOPPED);
-				//m_Sources->source_activate (SOURCE_NONE);
 			  }
 	  }
-	}
-
-	void
-	Player::on_source_message_set (Glib::ustring const& message)
-	{
-	}
-
-	void
-	Player::on_source_message_clear ()
-	{
 	}
 
 	void
@@ -1812,12 +1770,12 @@ namespace MPX
 	{
 	  if( source_id == m_Sources->getSource() )
 	  {
-		//m_InfoArea->reset ();
+		m_InfoArea->reset ();
 		m_SourceV[source_id]->segment ();
 	  }
 	  else
 	  {
-		//g_warning (_("%s: Source '%s' requested segment, but is not the active source"), G_STRLOC, sources[source_id].name.c_str());
+		g_warning (_("%s: Source '%s' requested segment, but is not the active source"), G_STRLOC, m_SourceV[source_id]->get_name().c_str());
 	  }
 	}
 
@@ -1832,7 +1790,7 @@ namespace MPX
 	  }
 	  else
 	  {
-		//g_warning (_("%s: Source '%s' requested stop, but is not the active source"), G_STRLOC, sources[source_id].name.c_str());
+		g_warning (_("%s: Source '%s' requested stop, but is not the active source"), G_STRLOC, m_SourceV[source_id]->get_name().c_str());
 	  }
 	}
 
@@ -1847,40 +1805,42 @@ namespace MPX
 	  }
 	  else
 	  {
-		//g_warning (_("%s: Source '%s' requested next, but is not the active source"), G_STRLOC, sources[source_id].name.c_str());
+		g_warning (_("%s: Source '%s' requested next, but is not the active source"), G_STRLOC, m_SourceV[source_id]->get_name().c_str());
 	  }
 	}
 
 	//////////////////////////////// Internal Playback Control
 
 	void
+	Player::track_played ()
+	{
+		if(!m_Metadata[ATTRIBUTE_MPX_TRACK_ID])
+			return;
+
+		if((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_Play->property_duration().get_value()/2))
+		{
+			gint64 id = get<gint64>(m_Metadata[ATTRIBUTE_MPX_TRACK_ID].get());
+			m_Library.trackPlayed(id, time(NULL));
+		}
+
+		m_TrackPlayedSeconds = 0.;
+	}
+
+	void
 	Player::play_async_cb (int source_id)
 	{
 	  PlaybackSource* source = m_SourceV[source_id];
 
-	  std::string type = source->get_type ();
-	  //enable_video_check (type);
-	  ustring uri = source->get_uri();
-
-	  if((uri.substr(0,7) == "file://") && (!file_test(filename_from_uri(uri), FILE_TEST_EXISTS)))
-	  {
-		  //source->bad_track();
-		  source->stop ();
-		  m_Play->request_status (PLAYSTATUS_STOPPED);
-		  //m_Sources->source_activate (SOURCE_NONE);
-		  return;
-	  }
-
-	  m_Play->switch_stream (uri, type);
+	  m_Play->switch_stream (source->get_uri(), source->get_type());
 	  play_post_internal (source_id);
 	}
 
 	void
 	Player::play_post_internal (int source_id)
 	{
-	  //m_Sources->source_activate (int (source_id));
-
 	  PlaybackSource* source = m_SourceV[source_id];
+
+	  m_TrackDuration = m_Play->property_duration().get_value();
 
 	  source->send_caps ();
 	  source->send_metadata ();
@@ -1942,8 +1902,9 @@ namespace MPX
 
 	  if( c & PlaybackSource::C_CAN_PLAY )
 	  {
-		if( m_Sources->getSource() != SOURCE_NONE )
+		if( (m_Sources->getSource() != SOURCE_NONE ) && (m_Play->property_status().get_value() != PLAYSTATUS_STOPPED))
 		{
+			  track_played ();
 			  m_SourceV[m_Sources->getSource()]->stop ();
 			  if( m_Sources->getSource() != source_id)
 			  {
@@ -1952,7 +1913,6 @@ namespace MPX
 		}
 
 		PlaybackSource* source = m_SourceV[source_id];
-		//m_Sources->source_activate (int (source_id));
 		
 		if( m_source_flags[source_id] & PlaybackSource::F_ASYNC)
 		{
@@ -1965,13 +1925,7 @@ namespace MPX
 				safe_pause_unset();
 				if( source->play() )
 				{
-					  std::string type = source->get_type ();
-					  ustring uri = source->get_uri();
-					  //enable_video_check (type);
-
-					  safe_pause_unset();
-					  m_Play->switch_stream (uri, type);
-					  //m_Sources->source_select (source_id);
+					  m_Play->switch_stream (source->get_uri(), source->get_type());
 					  source->play_post ();
 					  play_post_internal (source_id);
 					  return;
@@ -2013,9 +1967,6 @@ namespace MPX
 	  {
 			std::string type = source->get_type ();
 			ustring uri = source->get_uri();
-			//enable_video_check (type);
-
-			safe_pause_unset();
 			m_Play->switch_stream (uri, type);
 			source->prev_post ();
 			play_post_internal (source_id);
@@ -2034,6 +1985,8 @@ namespace MPX
 
 	  if( c & PlaybackSource::C_CAN_GO_PREV )
 	  {
+			track_played();
+			safe_pause_unset();
 			if( f & PlaybackSource::F_ASYNC )
 			{
 					m_actions->get_action (ACTION_PREV)->set_sensitive( false );
@@ -2043,9 +1996,7 @@ namespace MPX
 			else
 			if( source->go_prev () )
 			{
-					std::string type = source->get_type ();
-					ustring uri = source->get_uri();
-					m_Play->switch_stream (uri, type);
+					m_Play->switch_stream (source->get_uri(), source->get_type());
 					prev_async_cb (m_Sources->getSource());
 					return;
 			}
@@ -2062,12 +2013,9 @@ namespace MPX
 
 	  if( (f & PlaybackSource::F_PHONY_NEXT) == 0 )
 	  {
-			std::string type = source->get_type ();
-			ustring uri = source->get_uri();
-			//enable_video_check (type);
-
+			track_played();
 			safe_pause_unset();
-			m_Play->switch_stream (uri, type);
+			m_Play->switch_stream (source->get_uri(), source->get_type());
 		    source->next_post ();
 		    play_post_internal (source_id);
 			g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
@@ -2085,6 +2033,7 @@ namespace MPX
 
 	  if( c & PlaybackSource::C_CAN_GO_NEXT )
 	  {
+			track_played();
 			if( f & PlaybackSource::F_ASYNC )
 			{
 				m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
@@ -2118,6 +2067,7 @@ namespace MPX
 	{
 	  if( m_Sources->getSource() != SOURCE_NONE )
 	  {
+		track_played();
 		int source_id = int( m_Sources->getSource() );
 		PlaybackSource::Flags f = m_source_flags[source_id];
 		if( f & PlaybackSource::F_ASYNC )
@@ -2140,8 +2090,16 @@ namespace MPX
 	void
 	Player::on_source_changed (int source_id)
 	{
+		if(m_SourceUI)
+		{
+			m_ui_manager->remove_ui (m_SourceUI);
+		}
+
 		dynamic_cast<Gtk::Notebook*>(m_ref_xml->get_widget("sourcepages"))->set_current_page( m_SourceTabMapping[source_id] );
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->set_active(false);
+
+		m_SourceUI = m_SourceV[source_id]->add_menu();
+		g_message("%s: New merge iD: %u", G_STRLOC, m_SourceUI);
 	}
 
 	void
@@ -2224,8 +2182,6 @@ namespace MPX
 			  m_SourceV[m_Sources->getSource()]->send_caps ();
 			}
 
-			//m_selection->source_activate (SOURCE_NONE);
-
 			m_InfoArea->reset ();
 
 			m_TimeLabel->set_text("      …      ");
@@ -2234,15 +2190,11 @@ namespace MPX
 			m_Seek->set_sensitive(false);
 
 #if 0
-			message_clear ();
-
 			if( m_popup )
 			{
 			  m_popup->hide ();
 			}
-
 			bmp_status_icon_set_from_pixbuf (m_status_icon, m_status_icon_image_default->gobj());
-
 			m_actions->get_action (ACTION_LASTFM_RECM)->set_sensitive( 0 );
 			m_actions->get_action (ACTION_TRACK_DETAILS)->set_sensitive( 0 );
 			m_actions->get_action (ACTION_CREATE_BOOKMARK)->set_sensitive( 0 );
@@ -2262,9 +2214,7 @@ namespace MPX
 			m_Seek->set_range(0., 1.);
 			m_Seek->set_value(0.);
 			m_Seek->set_sensitive(false);
-
 #if 0
-			reset_seek_range ();
 			bmp_status_icon_set_from_pixbuf (m_status_icon, m_status_icon_image_default->gobj());
 #endif
 			break;
@@ -2295,7 +2245,6 @@ namespace MPX
 	  {
 		m_popup->set_playstatus (status);
 	  }
-
 	  m_player_dbus_obj->emit_status_change (m_player_dbus_obj, int (status));
 #endif
 	}

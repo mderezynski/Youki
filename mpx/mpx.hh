@@ -34,6 +34,7 @@
 #include "mpx/amazon.hh"
 #include "mpx/library.hh"
 #include "mpx/paccess.hh"
+#include "mpx/util-file.hh"
 #include "mpx/widgetloader.h"
 
 #include "audio-types.hh"
@@ -120,8 +121,8 @@ namespace MPX
 
         struct SourcePlugin
         {
-			PlaybackSource*	(*get_instance)       (MPX::Player & player);
-			void			(*del_instance)       (MPX::PlaybackSource * source);
+			PlaybackSource*	(*get_instance)       (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
+			void			(*del_instance)       (MPX::PlaybackSource*);
         };
 
         typedef boost::shared_ptr<SourcePlugin> SourcePluginPtr;
@@ -132,9 +133,10 @@ namespace MPX
         SourcePluginsKeeper m_SourcePlugins;
 		UriSchemeMap m_UriMap;
 
-        Glib::RefPtr<Gnome::Glade::Xml>   m_ref_xml;
-        Glib::RefPtr<Gtk::ActionGroup>    m_actions;
-        Glib::RefPtr<Gtk::UIManager>      m_ui_manager;
+        Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
+        Glib::RefPtr<Gtk::ActionGroup> m_actions;
+        Glib::RefPtr<Gtk::UIManager> m_ui_manager;
+		guint m_SourceUI;
 
 		struct DBusObjectsT
 		{
@@ -145,6 +147,10 @@ namespace MPX
 		int m_Seeking;
 		int m_SourceCtr;
 		int m_PageCtr;
+		gdouble m_TrackPlayedSeconds;
+		gdouble m_PreSeekPosition;
+		gdouble m_TrackDuration;
+		Glib::Mutex m_SourceCFLock;
 		std::vector<int> m_SourceTabMapping;
 
 		DBusObjectsT DBusObjects;
@@ -176,8 +182,13 @@ namespace MPX
 		on_cover_clicked ();
 
 		void
+		on_infoarea_uris (Util::FileList const&);
+		
+		void
 		on_show_plugins ();
 
+		void
+		on_play_files ();
 
 
 		bool
@@ -259,12 +270,6 @@ namespace MPX
 		on_source_play_request (int);
 
 		void
-		on_source_message_set (Glib::ustring const&);
-
-		void
-		on_source_message_clear ();
-
-		void
 		on_source_segment (int);
 
 		void
@@ -290,6 +295,10 @@ namespace MPX
 
 		void
 		next_async_cb (int);
+
+		void
+		track_played ();
+
 
 		void
 		reparse_metadata ();
@@ -322,9 +331,6 @@ namespace MPX
 
         void
         on_import_share();
-
-		void
-		on_play_files ();
 
         void
         on_got_cover (Glib::ustring);

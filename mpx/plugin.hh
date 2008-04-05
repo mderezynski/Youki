@@ -35,6 +35,7 @@ namespace MPX
 	struct PluginHolder
 	{
 		private:
+
 			PyObject	*	m_PluginInstance;
 
 			std::string		m_Name;

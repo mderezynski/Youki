@@ -19,7 +19,7 @@
 #include "mpx/paccess.hh"
 #include "mpx/types.hh"
 
-#include "mpx/i-playbacksource.hh"
+#include "playbacksource-py.hh"
 
 #include "lyrics-v2.hh"
 #include "last-fm-xmlrpc.hh"
@@ -245,8 +245,10 @@ namespace MPX
 
 BOOST_PYTHON_MODULE(mpx)
 {
-	class_<Gtk::Widget, boost::noncopyable>("GtkWidget", boost::python::no_init)
+	class_<Gtk::Widget, boost::noncopyable>("GtkWidget", no_init)
 	;
+
+	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::OVariant>("Optional")
 		.def("val", (MPX::Variant& (MPX::OVariant::*) ()) &MPX::OVariant::get, return_internal_reference<>() /*return_value_policy<return_by_value>()*/) 
@@ -254,6 +256,8 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("init", &mpxpy::opt_init)
 		.def("__repr__", &mpxpy::opt_repr, return_value_policy<return_by_value>())
 	;
+
+	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::Variant >("Variant")
 		.def("get_int", &mpxpy::variant_getint, return_value_policy<return_by_value>()) 
@@ -265,11 +269,15 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("__repr__", &mpxpy::variant_repr, return_value_policy<return_by_value>())
 	;
 
+	/*-------------------------------------------------------------------------------------*/
+
 	class_<MPX::Track >("Track")
 		.def("__getitem__", &mpxpy::track_getitem, return_value_policy<return_by_value>()) 
 		.def("__len__", &mpxpy::track_len, return_value_policy<return_by_value>())
 		.def("get", &mpxpy::track_getitem, return_value_policy<return_by_value>()) 
 	;
+
+	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::Metadata >("Metadata")
 		.def("__getitem__", &mpxpy::metadata_getitem, return_value_policy<return_by_value>()) 
@@ -277,6 +285,8 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("get", &mpxpy::metadata_getitem, return_value_policy<return_by_value>()) 
 		.def("get_image", &MPX::Metadata::get_image)
 	;
+
+	/*-------------------------------------------------------------------------------------*/
 
 	enum_<MPX::AttributeId>("AttributeId")
       .value("attr_location", MPX::MPX_ATTRIBUTE_LOCATION)
@@ -317,7 +327,8 @@ BOOST_PYTHON_MODULE(mpx)
       .value("attr_mpx_track_id", MPX::MPX_ATTRIBUTE_MPX_TRACK_ID)
 	;
 
-	// Player 
+	/*-------------------------------------------------------------------------------------*/
+
 	class_<MPX::Player, boost::noncopyable>("Player", boost::python::no_init)
 		.def("get_metadata", &MPX::Player::get_metadata, return_internal_reference<>()) 
 		.def("gobj", &mpxpy::player_get_gobject)
@@ -331,34 +342,94 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("remove_widget", &mpxpy::player_remove_widget)
 	;
 
-	// LyricWiki	
+	/*-------------------------------------------------------------------------------------*/
+
 	class_<MPX::LyricWiki::TextRequest, boost::noncopyable>("LyricWiki", boost::python::init<std::string, std::string>())	
 		.def("run", &MPX::LyricWiki::TextRequest::run)
 	;
 
-	// Last.fm
+	/*-------------------------------------------------------------------------------------*/
+
 	class_<MPX::LastFM::XMLRPC::ArtistMetadataRequestSync, boost::noncopyable>("LastFMArtist", boost::python::init<std::string>())
 		.def("run", &MPX::LastFM::XMLRPC::ArtistMetadataRequestSync::run)
 	;
+
+	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::Plugin>("Plugin")	
 		.def("activate", &MPX::Plugin::activate)
 		.def("deactivate", &MPX::Plugin::deactivate)
 	;
 
-	// Library
+	/*-------------------------------------------------------------------------------------*/
+
 	class_<MPX::SQL::Row>("SQLRow")
 		.def(map_indexing_suite<MPX::SQL::Row>())
 	;
+
+	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::SQL::RowV>("SQLRowV")
 		.def(vector_indexing_suite<MPX::SQL::RowV>())
 	;
 
+	/*-------------------------------------------------------------------------------------*/
+
 	class_<MPX::Library, boost::noncopyable>("Library", boost::python::no_init)
 		.def("getSQL", &MPX::Library::getSQL)
 		.def("execSQL", &MPX::Library::execSQL)
 		.def("getMetadata", &MPX::Library::getMetadata)
+	;
+
+	/*-------------------------------------------------------------------------------------*/
+
+	enum_<MPX::PlaybackSource::Flags>("PlaybackSourceFlags")
+		.value("F_NONE", MPX::PlaybackSource::F_NONE)	
+		.value("F_ASYNC", MPX::PlaybackSource::F_ASYNC)	
+		.value("F_HANDLE_STREAMINFO", MPX::PlaybackSource::F_HANDLE_STREAMINFO)	
+		.value("F_PHONY_NEXT", MPX::PlaybackSource::F_PHONY_NEXT)	
+		.value("F_PHONY_PREV", MPX::PlaybackSource::F_PHONY_PREV)	
+		.value("F_HANDLE_LASTFM", MPX::PlaybackSource::F_HANDLE_LASTFM)	
+		.value("F_HANDLE_LASTFM_ACTIONS", MPX::PlaybackSource::F_HANDLE_LASTFM_ACTIONS)	
+		.value("F_USES_REPEAT", MPX::PlaybackSource::F_USES_REPEAT)	
+		.value("F_USES_SHUFFLE", MPX::PlaybackSource::F_USES_SHUFFLE)	
+	;
+
+	enum_<MPX::PlaybackSource::Caps>("PlaybackSourceCaps")
+		.value("C_NONE", MPX::PlaybackSource::C_NONE)	
+		.value("C_CAN_GO_NEXT", MPX::PlaybackSource::C_CAN_GO_NEXT)	
+		.value("C_CAN_GO_PREV", MPX::PlaybackSource::C_CAN_GO_PREV)	
+		.value("C_CAN_PAUSE", MPX::PlaybackSource::C_CAN_PAUSE)	
+		.value("C_CAN_PLAY", MPX::PlaybackSource::C_CAN_PLAY)	
+		.value("C_CAN_SEEK", MPX::PlaybackSource::C_CAN_SEEK)	
+		.value("C_CAN_RESTORE_CONTEXT", MPX::PlaybackSource::C_CAN_RESTORE_CONTEXT)	
+		.value("C_CAN_PROVIDE_METADATA", MPX::PlaybackSource::C_CAN_PROVIDE_METADATA)	
+		.value("C_CAN_BOOKMARK", MPX::PlaybackSource::C_CAN_BOOKMARK)	
+		.value("C_PROVIDES_TIMING", MPX::PlaybackSource::C_PROVIDES_TIMING)	
+	;
+
+	class_<MPX::PlaybackSourcePy, boost::noncopyable>("PlaybackSource", boost::python::no_init)
+		.def("getUri", &MPX::PlaybackSourcePy::get_uri)
+		.def("getType", &MPX::PlaybackSourcePy::get_type)
+		.def("play", &MPX::PlaybackSourcePy::play)
+		.def("goNext", &MPX::PlaybackSourcePy::go_next)
+		.def("goPrev", &MPX::PlaybackSourcePy::go_prev)
+		.def("stop", &MPX::PlaybackSourcePy::stop)
+		.def("playAsync", &MPX::PlaybackSourcePy::play_async)
+		.def("goNextAsync", &MPX::PlaybackSourcePy::go_next_async)
+		.def("goPrevAsync", &MPX::PlaybackSourcePy::go_prev_async)
+		.def("playPost", &MPX::PlaybackSourcePy::play_post)
+		.def("nextPost", &MPX::PlaybackSourcePy::next_post)
+		.def("prevPost", &MPX::PlaybackSourcePy::prev_post)
+		.def("restoreContext", &MPX::PlaybackSourcePy::restore_context)
+		.def("skipped", &MPX::PlaybackSourcePy::skipped)
+		.def("segment", &MPX::PlaybackSourcePy::segment)
+		.def("bufferingDone", &MPX::PlaybackSourcePy::buffering_done)
+		.def("sendCaps", &MPX::PlaybackSourcePy::send_caps)
+		.def("sendFlags", &MPX::PlaybackSourcePy::send_flags)
+		.def("getName", &MPX::PlaybackSourcePy::get_name)
+		.def("getUi", &MPX::PlaybackSourcePy::get_ui, return_internal_reference<>())
+		.def("player", &MPX::PlaybackSourcePy::player, return_internal_reference<>())
 	;
 }
 

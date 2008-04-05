@@ -102,24 +102,33 @@ namespace MPX
             scanUri(const std::string& uri, const std::string& name = std::string());
 
 			void
-			rateAlbum(gint64 id, int rating);
+			vacuum();
+
 
 			void
-			vacuum();
+			albumRated(gint64 id, int rating);
+
+		
+			void
+			trackRated(gint64 id, int rating);
+		
+			void
+			trackPlayed(gint64 id, time_t time_);
+
 
 
 
 
             typedef sigc::signal<void, const std::string& /*mbid*/,
-									const std::string& /*asin*/, gint64/*albumid*/, gint64 /*album artist id*/> SignalNewAlbum;
+				const std::string& /*asin*/, gint64/*albumid*/, gint64 /*album artist id*/> SignalNewAlbum;
             typedef sigc::signal<void, gint64/*albumid*/> SignalAlbumUpdated;
             typedef sigc::signal<void, const std::string& /*mbid*/, gint64/*artistid*/> SignalNewArtist;
             typedef sigc::signal<void, Track&, gint64/*albumid*/> SignalNewTrack;
+			typedef sigc::signal<void, gint64 /*id*/> SignalTrackUpdated;
 
-            typedef sigc::signal<void>                                      SignalScanStart;
-            typedef sigc::signal<void, gint64,gint64>                       SignalScanRun;
-            typedef sigc::signal<void, gint64,gint64,gint64,gint64,gint64>  SignalScanEnd;
-
+            typedef sigc::signal<void> SignalScanStart;
+            typedef sigc::signal<void, gint64,gint64> SignalScanRun;
+            typedef sigc::signal<void, gint64,gint64,gint64,gint64,gint64> SignalScanEnd;
             typedef sigc::signal<void> SignalVacuumized;
 
             struct SignalsT
@@ -127,6 +136,7 @@ namespace MPX
                 SignalNewAlbum      NewAlbum;
                 SignalNewArtist     NewArtist;
                 SignalNewTrack      NewTrack;
+				SignalTrackUpdated	TrackUpdated;
                 SignalScanStart     ScanStart;  
                 SignalScanRun       ScanRun;
                 SignalScanEnd       ScanEnd;
@@ -152,6 +162,10 @@ namespace MPX
             signal_new_artist()
             { return Signals.NewArtist ; }
             
+            SignalTrackUpdated&
+            signal_track_updated()
+            { return Signals.TrackUpdated ; }
+
             SignalNewTrack&
             signal_new_track()
             { return Signals.NewTrack ; }

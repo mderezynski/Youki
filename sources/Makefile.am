@@ -1,1 +1,1 @@
-SUBDIRS = musiclib
+SUBDIRS = musiclib radio

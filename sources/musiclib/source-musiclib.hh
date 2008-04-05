@@ -48,16 +48,21 @@ namespace Source
 		{
 		
 				MusicLibPrivate * m_Private;
+				Glib::RefPtr<Gtk::UIManager> m_MainUIManager;
+				Glib::RefPtr<Gtk::ActionGroup> m_MainActionGroup;
 
 				void
 				on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
 
+				void
+				action_cb_playlist_scripts ();
+
 			public:
 
-				PlaybackSourceMusicLib (MPX::Player&);
+				PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
 
 				void
-				on_plist_play ();
+				action_cb_play ();
 
 				void
 				check_caps ();
@@ -71,10 +76,10 @@ namespace Source
 				virtual void
 				send_metadata ();
 
-				virtual Glib::ustring
+				virtual std::string
 				get_uri (); 
 			
-				virtual Glib::ustring
+				virtual std::string
 				get_type ();
 
 				virtual GHashTable *
@@ -92,20 +97,6 @@ namespace Source
 				virtual void
 				stop (); 
 		  
-
-				virtual void
-				play_async ()
-				{}
-
-				virtual void
-				go_next_async ()
-				{}
-		  
-				virtual void
-				go_prev_async () 
-				{}
-
-
 				virtual void
 				play_post (); 
 
@@ -115,10 +106,8 @@ namespace Source
 				virtual void
 				prev_post ();
 
-
 				virtual void
 				restore_context ();
-
 
 				virtual void
 				skipped (); 
@@ -136,13 +125,15 @@ namespace Source
 				virtual Gtk::Widget*
 				get_ui ();
 
+				virtual guint
+				add_menu ();
 
 				// UriHandler
 				virtual UriSchemes 
-				getSchemes (); 
+				Get_Schemes (); 
 
 				virtual void    
-		        processURIs (Util::FileList const&);
+		        Process_URI_List (Util::FileList const&);
 
 		}; // end class PlaybackSourceMusicLib 
 } // end namespace Source

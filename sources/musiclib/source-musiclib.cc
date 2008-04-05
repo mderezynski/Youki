@@ -70,6 +70,19 @@ namespace
   ""
   "</ui>";
 
+  char const * ui_mainmerge =
+  "<ui>"
+  ""
+  "<menubar name='MenubarMain'>"
+  "   <placeholder name='placeholder-source'>"
+  "		<menu action='menu-source-musiclib'>"
+  "         <menuitem action='action-playlist-scripts'/>"
+  "		</menu>"
+  "   </placeholder>"
+  "</menubar>"
+  ""
+  "</ui>"
+  "";
 
   Track
   sql_to_track (SQL::Row & row)
@@ -164,11 +177,11 @@ namespace MPX
 
             Gtk::TreeModelColumn<ustring> ArtistSort;
             Gtk::TreeModelColumn<ustring> AlbumSort;
-
             Gtk::TreeModelColumn<gint64> RowId;
-
             Gtk::TreeModelColumn<ustring> Location;
             Gtk::TreeModelColumn< ::MPX::Track> MPXTrack;
+			Gtk::TreeModelColumn<gint64> Rating;
+			Gtk::TreeModelColumn<bool> IsMPXTrack;
 
             PlaylistColumnsT ()
             {
@@ -182,6 +195,8 @@ namespace MPX
                 add (RowId);
                 add (Location);
                 add (MPXTrack);
+                add (Rating);
+                add (IsMPXTrack);
             };
         };
 
@@ -190,11 +205,11 @@ namespace MPX
         {
               PAccess<MPX::Library> m_Lib;
 			  MPX::Source::PlaybackSourceMusicLib & m_MusicLib;
-              gint64 m_RowId;
 			  Glib::RefPtr<Gdk::Pixbuf> m_Playing;
+              gint64 m_RowId;
 
-		      TreePath  m_PathButtonPress;
-			  bool      m_ButtonDepressed;
+		      TreePath m_PathButtonPress;
+			  int m_ButtonDepressed;
 
 			  Glib::RefPtr<Gtk::UIManager> m_UIManager;
 			  Glib::RefPtr<Gtk::ActionGroup> m_ActionGroup;
@@ -206,13 +221,15 @@ namespace MPX
 			  boost::optional<gint64> m_CurrentId;
               PlaylistColumnsT PlaylistColumns;
               Glib::RefPtr<Gtk::ListStore> ListStore;
+              Glib::RefPtr<Gdk::Pixbuf> m_Stars[6];
 
               enum Column
               {
                 C_PLAYING,
                 C_TITLE,
-                C_ARTIST,
                 C_LENGTH,
+				C_RATING,
+                C_ARTIST,
                 C_ALBUM,
                 C_TRACK,
               };
@@ -225,6 +242,10 @@ namespace MPX
 			  , m_ButtonDepressed(0)
               {
 				m_Playing = Gdk::Pixbuf::create_from_file(Glib::build_filename(Glib::build_filename(DATA_DIR,"images"),"play.png"));
+				for(int n = 0; n < 6; ++n)
+				{
+					m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename(DATA_DIR,"images"), (boost::format("stars%d.png") % n).str()));
+				}
 
                 TreeViewColumn * col = manage (new TreeViewColumn(""));
                 CellRendererPixbuf * cell = manage (new CellRendererPixbuf);
@@ -245,9 +266,16 @@ namespace MPX
 				g_object_set(G_OBJECT(cell2->gobj()), "xalign", 1.0f, NULL);
                 append_column(*col);
 
+                col = manage (new TreeViewColumn(_("Rating")));
+				cell = manage (new CellRendererPixbuf);
+                col->pack_start(*cell, true);
+                col->set_cell_data_func(*cell, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncRating ));
+                append_column(*col);
+
                 append_column(_("Artist"), PlaylistColumns.Artist);
                 append_column(_("Album"), PlaylistColumns.Album);
                 append_column(_("Track"), PlaylistColumns.Track);
+
                 get_column(C_ARTIST)->set_sort_column_id(PlaylistColumns.Artist);
                 get_column(C_TITLE)->set_sort_column_id(PlaylistColumns.Title);
                 get_column(C_ALBUM)->set_sort_column_id(PlaylistColumns.Album);
@@ -293,7 +321,7 @@ namespace MPX
 		        m_ActionGroup->add  (Gtk::Action::create (ACTION_PLAY,
                                             Gtk::StockID (GTK_STOCK_MEDIA_PLAY),
                                             _("Play")),
-                                            sigc::mem_fun (mlib, &MPX::Source::PlaybackSourceMusicLib::on_plist_play));
+                                            sigc::mem_fun (mlib, &MPX::Source::PlaybackSourceMusicLib::action_cb_play));
 
 		        m_ActionGroup->add  (Gtk::Action::create (ACTION_CLEAR,
                                             Gtk::StockID (GTK_STOCK_CLEAR),
@@ -406,6 +434,9 @@ namespace MPX
 						if(track[ATTRIBUTE_MB_ALBUM_ID])
 							(*iter)[PlaylistColumns.AlbumSort] = get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get());
 
+						if(track[ATTRIBUTE_RATING])
+							(*iter)[PlaylistColumns.Rating] = get<gint64>(track[ATTRIBUTE_RATING].get());
+
 						if(track[ATTRIBUTE_MPX_TRACK_ID])
 						{
 							(*iter)[PlaylistColumns.RowId] = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()); 
@@ -419,9 +450,10 @@ namespace MPX
 						if(track[ATTRIBUTE_LOCATION])
 							(*iter)[PlaylistColumns.Location] = get<std::string>(track[ATTRIBUTE_LOCATION].get());
 						else
-							g_warning("Warning, no location given for DnD track; this is totally wrong and should never happen.");
+							g_warning("Warning, no location given for track; this is totally wrong and should never happen.");
 
 						(*iter)[PlaylistColumns.MPXTrack] = track; 
+						(*iter)[PlaylistColumns.IsMPXTrack] = track[ATTRIBUTE_MPX_TRACK_ID] ? true : false; 
 					}
 
 					if(!dirs.empty())
@@ -505,9 +537,15 @@ namespace MPX
 								queue_draw();
 							}
 						}
+						else
+							g_critical("Track with no id; this should never happen.");
+
+						if(r.count("rating"))
+							(*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
 
                         (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
 					    (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
+						(*iter)[PlaylistColumns.IsMPXTrack] = true; 
                     }
                 }
                 if(data.get_data_type() == "mpx-track")
@@ -548,8 +586,12 @@ namespace MPX
 							}
 						}
 
+						if(r.count("rating"))
+							(*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
+
                         (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
 					    (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
+						(*iter)[PlaylistColumns.IsMPXTrack] = true; 
                     }
                 }
                 else
@@ -561,6 +603,29 @@ namespace MPX
 					m_MusicLib.send_caps ();
 				}
               }
+
+              virtual bool
+              on_button_press_event (GdkEventButton* event)
+              {
+                int cell_x, cell_y ;
+                TreeViewColumn *col ;
+				TreePath path;
+
+                if(get_path_at_pos (event->x, event->y, path, col, cell_x, cell_y))
+                {
+                    if(col == get_column(3))
+                    {
+						int rating = (cell_x + 7) / 12;
+						g_return_val_if_fail(((rating >= 0) && (rating <= 5)), false);
+						TreeIter iter = ListStore->get_iter(path);
+						(*iter)[PlaylistColumns.Rating] = rating;	
+						m_Lib.get().trackRated(gint64((*iter)[PlaylistColumns.RowId]), rating);
+                    }
+                }
+                TreeView::on_button_press_event(event);
+                return false;
+              }
+
 
               bool
               on_drag_motion (RefPtr<Gdk::DragContext> const& context, int x, int y, guint time)
@@ -611,7 +676,6 @@ namespace MPX
 										  tree_y;
 					TreePath              path;
 
-					//convert_bin_window_to_tree_coords (int (event->x), int (event->y), tree_x, tree_y);
 					tree_x = event->x; tree_y = event->y;
 					m_ButtonDepressed  = get_path_at_pos (tree_x, tree_y, path, column, cell_x, cell_y) ;
 					if(m_ButtonDepressed)
@@ -656,8 +720,8 @@ namespace MPX
 				  int                 tree_x,
 									  tree_y;
 
-				  //convert_bin_window_to_tree_coords (int (event->x), int (event->y), tree_x, tree_y);
-				  tree_x = event->x; tree_y = event->y;
+				  tree_x = event->x;
+				  tree_y = event->y;
 				  if( get_path_at_pos (tree_x, tree_y, path, column, cell_x, cell_y) )
 				  {
 					if( path != m_PathButtonPress )
@@ -788,6 +852,24 @@ namespace MPX
               }
 
 
+              void
+              cellDataFuncRating (CellRenderer * basecell, TreeModel::iterator const &iter)
+              {
+                CellRendererPixbuf *cell_p = dynamic_cast<CellRendererPixbuf*>(basecell);
+				if(!(*iter)[PlaylistColumns.IsMPXTrack])
+				{
+	                cell_p->property_sensitive() = false; 
+	                cell_p->property_pixbuf() = Glib::RefPtr<Gdk::Pixbuf>(0);
+				}
+				else
+				{
+	                cell_p->property_sensitive() = true; 
+					gint64 i = ((*iter)[PlaylistColumns.Rating]);
+					g_return_if_fail((i >= 0) && (i <= 5));
+					cell_p->property_pixbuf() = m_Stars[i];
+				}
+              }
+
               int
               slotSortById(const TreeIter& iter_a, const TreeIter& iter_b)
               {
@@ -846,7 +928,6 @@ namespace MPX
 
         enum AlbumRowType
         {
-//			ROW_ARTIST	=	1,
             ROW_ALBUM	=	1,
             ROW_TRACK	=	2,
         };
@@ -904,16 +985,16 @@ namespace MPX
 
               ASINIterMap m_ASINIterMap;
               IdIterMap m_AlbumIterMap;
-			  IdIterMap m_ArtistIterMap;
 
               Cairo::RefPtr<Cairo::ImageSurface> m_DiscDefault;
               Glib::RefPtr<Gdk::Pixbuf> m_DiscDefault_Pixbuf;
               Glib::RefPtr<Gdk::Pixbuf> m_Stars[6];
 
-              std::string m_DragASIN;
-              gint64 m_AlbumDragId;
-              gint64 m_TrackDragId;
+              boost::optional<std::string> m_DragASIN;
+              boost::optional<gint64> m_DragAlbumId;
+              boost::optional<gint64> m_DragTrackId;
               TreePath m_PathButtonPress;
+			  bool m_ButtonPressed;
 
 			  Gtk::Entry *m_FilterEntry;
 
@@ -921,14 +1002,6 @@ namespace MPX
               on_row_expanded (const TreeIter &iter_filter,
                                const TreePath &path) 
               {
-#if 0
-				if(path.size() == 1)
-				{
-					scroll_to_row (path, 0.);
-					return;
-				}
-#endif
-
 				TreeIter iter = TreeStoreFilter->convert_iter_to_child_iter(iter_filter);
                 if(!(*iter)[AlbumColumns.HasTracks])
                 {
@@ -967,21 +1040,25 @@ namespace MPX
               virtual void
               on_drag_data_get (const Glib::RefPtr<Gdk::DragContext>& context, SelectionData& selection_data, guint info, guint time)
               {
-                if(m_AlbumDragId)
-                    selection_data.set("mpx-album", 8, reinterpret_cast<const guint8*>(&m_AlbumDragId), 8);
-                else if(m_TrackDragId)
-                    selection_data.set("mpx-track", 8, reinterpret_cast<const guint8*>(&m_TrackDragId), 8);
+                if(m_DragAlbumId)
+                    selection_data.set("mpx-album", 8, reinterpret_cast<const guint8*>(&m_DragAlbumId.get()), 8);
+                else if(m_DragTrackId)
+                    selection_data.set("mpx-track", 8, reinterpret_cast<const guint8*>(&m_DragTrackId.get()), 8);
+
+				m_DragASIN.reset();
+				m_DragAlbumId.reset();
+				m_DragTrackId.reset();
               }
 
               virtual void
               on_drag_begin (const Glib::RefPtr<Gdk::DragContext>& context) 
               {
                 Glib::RefPtr<Gdk::Pixbuf> Cover;
-                if(m_AlbumDragId)
+                if(m_DragAlbumId)
                 {
-                    if(!m_DragASIN.empty())
+                    if(m_DragASIN)
                     {
-                        m_AMZN.get().fetch(m_DragASIN, Cover);
+                        m_AMZN.get().fetch(m_DragASIN.get(), Cover);
 						if(Cover)
 						{
 							drag_source_set_icon(Cover->scale_simple(128,128,Gdk::INTERP_BILINEAR));
@@ -998,6 +1075,51 @@ namespace MPX
                 }
               }
 
+			  virtual bool
+			  on_motion_notify_event (GdkEventMotion *event)
+			  {
+				int x_orig, y_orig;
+				GdkModifierType state;
+
+				if(!g_atomic_int_get(&m_ButtonPressed))
+					return false;
+
+				if (event->is_hint)
+				{
+				  gdk_window_get_pointer (event->window, &x_orig, &y_orig, &state);
+				}
+				else
+				{
+				  x_orig = int (event->x);
+				  y_orig = int (event->y);
+				  state = GdkModifierType (event->state);
+				}
+
+				TreePath path;				
+				TreeViewColumn *col;
+				int cell_x, cell_y;
+                if(get_path_at_pos (x_orig, y_orig, path, col, cell_x, cell_y))
+                {
+                    TreeIter iter = TreeStore->get_iter(TreeStoreFilter->convert_path_to_child_path(path));
+					
+					if( (cell_x >= 102) && (cell_x <= 162) && (cell_y >= 65) && (cell_y <=78))
+					{
+						int rating = ((cell_x - 102)+7) / 12;
+						(*iter)[AlbumColumns.Rating] = rating;	
+						m_Lib.get().albumRated(m_DragAlbumId.get(), rating);
+					}
+				}
+
+				return false;
+			 } 
+
+              virtual bool
+              on_button_release_event (GdkEventButton* event)
+              {
+				g_atomic_int_set(&m_ButtonPressed, 0);
+				return false;
+			  }
+
               virtual bool
               on_button_press_event (GdkEventButton* event)
               {
@@ -1010,22 +1132,24 @@ namespace MPX
                     if(m_PathButtonPress.get_depth() == ROW_ALBUM)
                     {
                         m_DragASIN = (*iter)[AlbumColumns.ASIN];
-                        m_AlbumDragId = (*iter)[AlbumColumns.Id];
-                        m_TrackDragId = 0;
+                        m_DragAlbumId = (*iter)[AlbumColumns.Id];
+                        m_DragTrackId.reset(); 
+				
+						g_atomic_int_set(&m_ButtonPressed, 1);
 
-						if( (cell_x >= 134) && (cell_x <= 210) && (cell_y >= 65) && (cell_y <=78))
+						if( (cell_x >= 102) && (cell_x <= 162) && (cell_y >= 65) && (cell_y <=78))
 						{
-							int rating = ((cell_x - 134)+7) / 15;
+							int rating = ((cell_x - 102)+7) / 12;
 							(*iter)[AlbumColumns.Rating] = rating;	
-							m_Lib.get().rateAlbum(m_AlbumDragId, rating);
+							m_Lib.get().albumRated(m_DragAlbumId.get(), rating);
 						}
                     }
                     else
                     if(m_PathButtonPress.get_depth() == ROW_TRACK)
                     {
-                        m_DragASIN = ""; // TODO: Use boost::optional
-                        m_AlbumDragId = 0; 
-                        m_TrackDragId = (*iter)[AlbumColumns.TrackId];
+                        m_DragASIN.reset(); 
+                        m_DragAlbumId.reset();
+                        m_DragTrackId = (*iter)[AlbumColumns.TrackId];
                     }
                 }
                 TreeView::on_button_press_event(event);
@@ -1048,34 +1172,8 @@ namespace MPX
               void
               on_new_album(const std::string& mbid, const std::string& asin, gint64 id, gint64 album_artist_id)
               {
-#if 0
-				TreeIter iter_artist; 
-				IdIterMap::const_iterator i = m_ArtistIterMap.find(album_artist_id);
-				if(i !=	m_ArtistIterMap.end())
-				{
-					iter_artist = i->second;
-				}
-				else
-				{
-					SQL::RowV v;
-					m_Lib.get().getSQL(v, (boost::format("SELECT * FROM album_artist WHERE id = %lld;") % album_artist_id).str());
-					SQL::Row & r = v[0];
-
-					iter_artist = TreeStore->append();
-					if(r.count("album_artist_sortname"))
-						(*iter_artist)[AlbumColumns.Text] = get<std::string>(r["album_artist_sortname"]);
-					else
-						(*iter_artist)[AlbumColumns.Text] = get<std::string>(r["album_artist"]);
-					(*iter_artist)[AlbumColumns.RowType] = ROW_ARTIST;
-					m_ArtistIterMap[album_artist_id] = iter_artist;
-				}
-
-                TreeIter iter = TreeStore->append(iter_artist->children());
-                m_AlbumIterMap[id] = iter;
-
-                TreeStore->append(iter->children()); //create dummy/placeholder row for tracks
-#endif
                 TreeIter iter = TreeStore->append();
+                TreeStore->append(iter->children()); //create dummy/placeholder row for tracks
 
                 (*iter)[AlbumColumns.RowType] = ROW_ALBUM; 
                 (*iter)[AlbumColumns.HasTracks] = false; 
@@ -1120,17 +1218,7 @@ namespace MPX
                 else
                     ArtistSort = get<std::string>(r["album_artist"]);
 
-#if 0
-				if(r.count("album_genre"))
-				{
-					(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%4%, %3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4) % Markup::escape_text(get<std::string>(r["album_genre"])).c_str() ).str();
-				}
-				else
-#endif
-				{
-					(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
-				}
-
+				(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
                 (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                 (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
               }
@@ -1138,7 +1226,6 @@ namespace MPX
               void
               album_list_load ()
               {
-				//m_ArtistIterMap.clear();
 				TreeStore->clear ();
 
                 SQL::RowV v;
@@ -1147,28 +1234,6 @@ namespace MPX
                 {
                     SQL::Row & r = *i; 
 
-#if 0
-					gint64 album_artist_id = get<gint64>(r["album_artist_j"]);
-
-					TreeIter iter_artist; 
-					IdIterMap::const_iterator i = m_ArtistIterMap.find(album_artist_id);
-					if(i !=	m_ArtistIterMap.end())
-					{
-						iter_artist = i->second;
-					}
-					else
-					{
-						iter_artist = TreeStore->append();
-						if(r.count("album_artist_sortname"))
-							(*iter_artist)[AlbumColumns.Text] = get<std::string>(r["album_artist_sortname"]);
-						else
-							(*iter_artist)[AlbumColumns.Text] = get<std::string>(r["album_artist"]);
-						(*iter_artist)[AlbumColumns.RowType] = ROW_ARTIST;
-						m_ArtistIterMap[album_artist_id] = iter_artist;
-					}
-
-                    TreeIter iter = TreeStore->append(iter_artist->children());
-#endif
 					TreeIter iter = TreeStore->append ();
                     TreeStore->append(iter->children()); // create placeholder/dummy row for tracks
 
@@ -1209,16 +1274,7 @@ namespace MPX
                     else
                         ArtistSort = get<std::string>(r["album_artist"]);
 
-#if 0
-					if(r.count("album_genre"))
-					{
-						(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%4%, %3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4) % Markup::escape_text(get<std::string>(r["album_genre"])).c_str() ).str();
-					}
-					else
-#endif
-					{
-						(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
-					}
+					(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
                     (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                     (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
                 }
@@ -1253,15 +1309,6 @@ namespace MPX
               {
                 AlbumRowType rt_a = (*iter_a)[AlbumColumns.RowType];
                 AlbumRowType rt_b = (*iter_b)[AlbumColumns.RowType];
-
-#if 0
-				if((rt_a == ROW_ARTIST) && (rt_b == ROW_ARTIST))
-				{
-                  Glib::ustring text_a = (*iter_a)[AlbumColumns.Text];
-                  Glib::ustring text_b = (*iter_b)[AlbumColumns.Text];
-				  return text_a.compare(text_b);
-				}
-#endif
 
                 if((rt_a == ROW_ALBUM) && (rt_b == ROW_ALBUM))
                 {
@@ -1316,7 +1363,11 @@ namespace MPX
 					if(cell1)
 	                    cell1->property_markup() = (*iter)[AlbumColumns.Text]; 
 					if(cell2)
-	                    cell2->property_pixbuf() = m_Stars[gint64((*iter)[AlbumColumns.Rating])];
+					{
+	                    gint64 i = ((*iter)[AlbumColumns.Rating]);
+						g_return_if_fail((i >= 0) && (i <= 5));
+	                    cell2->property_pixbuf() = m_Stars[i];
+					}
                 }
                 else
                 {
@@ -1351,14 +1402,6 @@ namespace MPX
                     cell->property_markup() = Markup::escape_text((*iter)[AlbumColumns.TrackTitle]);
                 }
 				else
-#if 0
-                if(path.get_depth() == ROW_ARTIST)
-				{
-                    cell->property_visible() = true; 
-                    cell->property_markup() = Markup::escape_text((*iter)[AlbumColumns.Text]);
-				}
-                else
-#endif
                 {
                     cell->property_visible() = false; 
                 }
@@ -1424,12 +1467,11 @@ namespace MPX
               : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-albums")
               , m_Lib(lib)
               , m_AMZN(amzn)
+			  , m_ButtonPressed(false)
               {
-
 				for(int n = 0; n < 6; ++n)
-				{
-					m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename(DATA_DIR,"images"), (boost::format("stars%d.png") % n).str()));
-				}
+					m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename(DATA_DIR,"images"),
+						(boost::format("stars%d.png") % n).str()));
 
                 m_Lib.get().signal_new_album().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_album ));
                 m_Lib.get().signal_new_track().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_track ));
@@ -1536,18 +1578,35 @@ namespace MPX
 {
 namespace Source
 {
-    PlaybackSourceMusicLib::PlaybackSourceMusicLib (MPX::Player & player)
-    : PlaybackSource(_("Music"))
+    PlaybackSourceMusicLib::PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
+    : PlaybackSource(ui_manager, _("Music"))
+	, m_MainUIManager(ui_manager)
     {
       m_Private = new MusicLibPrivate(player,*this);
 	  m_Private->m_TreeViewPlaylist->signal_row_activated().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_row_activated ) );
 
-	  m_caps = Caps (m_caps | PlaybackSource::C_CAN_SEEK);
+	  m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_SEEK);
 	  send_caps ();
+
+	  m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
+	  m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music Library")));
+	  m_MainActionGroup->add(Action::create("action-playlist-scripts", _("Playlist Scripts")), sigc::mem_fun( *this, &PlaybackSourceMusicLib::action_cb_playlist_scripts));
+	  m_MainUIManager->insert_action_group(m_MainActionGroup);
     }
 
+	guint
+	PlaybackSourceMusicLib::add_menu ()
+	{
+		return m_MainUIManager->add_ui_from_string(ui_mainmerge);
+	}
+
 	void
-	PlaybackSourceMusicLib::on_plist_play ()
+	PlaybackSourceMusicLib::action_cb_playlist_scripts ()
+	{
+	}
+
+	void
+	PlaybackSourceMusicLib::action_cb_play ()
 	{
       m_Private->m_TreeViewPlaylist->m_CurrentIter = boost::optional<Gtk::TreeIter>(); 
       m_Private->m_TreeViewPlaylist->m_CurrentId = boost::optional<gint64>();
@@ -1563,13 +1622,13 @@ namespace Source
 	  Signals.PlayRequest.emit();
 	}
 
-    Glib::ustring
+    std::string
     PlaybackSourceMusicLib::get_uri () 
     {
-		return (*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.Location];
+		return Glib::ustring((*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.Location]);
 	}
 
-    Glib::ustring
+    std::string
     PlaybackSourceMusicLib::get_type ()
     {
 		return Glib::ustring();
@@ -1656,14 +1715,14 @@ namespace Source
 	void
 	PlaybackSourceMusicLib::set_play ()
 	{
-		m_caps = Caps (m_caps | PlaybackSource::C_CAN_PLAY);
+		m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_PLAY);
 		send_caps ();
 	}
 
 	void
 	PlaybackSourceMusicLib::clear_play ()
 	{
-		m_caps = Caps (m_caps &~ PlaybackSource::C_CAN_PLAY);
+		m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_PLAY);
 		send_caps ();
 	}
 
@@ -1672,9 +1731,9 @@ namespace Source
 	{
 		if (!m_Private->m_TreeViewPlaylist->m_CurrentIter)
 		{
-			m_caps = Caps (m_caps &~ PlaybackSource::C_CAN_GO_NEXT);
-			m_caps = Caps (m_caps &~ PlaybackSource::C_CAN_GO_PREV);
-			m_caps = Caps (m_caps &~ PlaybackSource::C_CAN_PLAY);
+			m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_NEXT);
+			m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_PREV);
+			m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_PLAY);
 			return;
 		}
 
@@ -1686,23 +1745,23 @@ namespace Source
 
 		if(path1[0] > path2[0])
 		{
-			m_caps = Caps (m_caps | PlaybackSource::C_CAN_GO_PREV);
+			m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_GO_PREV);
 			g_message("Can go previous");
 		}
 		else
 		{
-			m_caps = Caps (m_caps &~ PlaybackSource::C_CAN_GO_PREV);
+			m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_PREV);
 			g_message("Can not go previous");
 		}
 
 		if(path1[0] < path3[0])
 		{
-			m_caps = Caps (m_caps | PlaybackSource::C_CAN_GO_NEXT);
+			m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_GO_NEXT);
 			g_message("Can go next");
 		}
 		else
 		{
-			m_caps = Caps (m_caps &~ PlaybackSource::C_CAN_GO_NEXT);
+			m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_NEXT);
 			g_message("Can not go next");
 		}
 	}
@@ -1719,8 +1778,8 @@ namespace Source
     void
     PlaybackSourceMusicLib::play_post () 
     {
-        m_caps = Caps (m_caps | PlaybackSource::C_CAN_PAUSE);
-        m_caps = Caps (m_caps | PlaybackSource::C_CAN_PROVIDE_METADATA);
+        m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_PAUSE);
+        m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_PROVIDE_METADATA);
 
 		check_caps ();
     }
@@ -1770,7 +1829,7 @@ namespace Source
     }
 
 	UriSchemes 
-	PlaybackSourceMusicLib::getSchemes ()
+	PlaybackSourceMusicLib::Get_Schemes ()
 	{
 		UriSchemes s;
 		s.push_back("file");
@@ -1778,7 +1837,7 @@ namespace Source
 	}
 
 	void    
-	PlaybackSourceMusicLib::processURIs (Util::FileList const& uris)
+	PlaybackSourceMusicLib::Process_URI_List (Util::FileList const& uris)
 	{
 		m_Private->m_TreeViewPlaylist->prepare_uris (uris);
 		Signals.PlayRequest.emit();
