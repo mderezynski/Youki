@@ -13,7 +13,7 @@ mpx_bin_CXXFLAGS = 					\
 		$(CDPARANOIA_INCLUDES) 		\
 		$(DBUS_CFLAGS)				\
 		$(EXO_CFLAGS)				\
-		$(GIO_CFLAGS)				\
+		$(GIOMM_CFLAGS)				\
 		$(GLADEMM_CFLAGS)			\
 		$(GLIBMM_CFLAGS)			\
 		$(GST_CFLAGS)				\
@@ -47,7 +47,7 @@ mpx_bin_LDADD =						\
 		$(CDPARANOIA_LIBS)			\
 		$(DBUS_LIBS)				\
 		$(EXO_LIBS)					\
-		$(GIO_LIBS)					\
+		$(GIOMM_LIBS)					\
 		$(GLADEMM_LIBS)				\
 		$(GLIBMM_LIBS)				\
 		$(GST_LIBS)					\
