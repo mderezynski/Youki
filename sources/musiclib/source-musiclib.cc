@@ -55,6 +55,7 @@ namespace
   const char ACTION_CLEAR [] = "action-clear";
   const char ACTION_REMOVE_ITEMS [] = "action-remove-items";
   const char ACTION_PLAY [] = "action-play";
+  const char ACTION_GO_TO_ALBUM [] = "action-go-to-album";
   
   const char ui_playlist_popup [] =
   "<ui>"
@@ -126,6 +127,9 @@ namespace
 
 		if (row.count("id"))
 		  track[ATTRIBUTE_MPX_TRACK_ID] = get<gint64>(row["id"]);
+
+		if (row.count("album_j"))
+		  track[ATTRIBUTE_MPX_ALBUM_ID] = get<gint64>(row["album_j"]);
 
 		return track;
 	}
@@ -340,6 +344,11 @@ namespace MPX
                                             _("Remove Selected Tracks")),
                                             sigc::mem_fun (*this, &PlaylistTreeView::action_cb_playlist_remove_items));
 
+			    m_ActionGroup->add  (Gtk::Action::create (ACTION_GO_TO_ALBUM,
+                                            Gtk::StockID (GTK_STOCK_GO_FORWARD),
+                                            _("Go to selected Album")),
+                                            sigc::mem_fun (*this, &PlaylistTreeView::action_cb_go_selected_album));
+
 				m_UIManager->insert_action_group (m_ActionGroup);
 				m_UIManager->add_ui_from_string (ui_playlist_popup);
 
@@ -347,6 +356,19 @@ namespace MPX
 				Gtk::Label * label = dynamic_cast<Gtk::Label*>(dynamic_cast<Gtk::Bin*>(item)->get_child());
 				label->set_markup(_("<b>Play</b>"));
               }
+
+			  virtual void
+			  action_cb_go_selected_album ()
+			  {
+				  PathV p = get_selection()->get_selected_rows();
+				  TreeIter iter = ListStore->get_iteR(p[0]);
+				  Track t = (*iter)[PlaylistColumns.MPXTrack];
+				  if(t[ATTRIBUTE_MPX_ALBUM_ID])
+				  {
+					gint64 id = get<gint64>(t[ATTRIBUTE_MPX_ALBUM_ID].get());
+					m_MusicLib.action_cb_go_to_album(id);
+				  }
+			  }
 
 			  virtual void
 		      action_cb_playlist_clear ()	
@@ -766,6 +788,9 @@ namespace MPX
 
 					m_ActionGroup->get_action (ACTION_PLAY)->set_sensitive
 					  (get_selection()->count_selected_rows());
+
+					m_ActionGroup->get_action (ACTION_GO_TO_ALBUM)->set_sensitive
+					  (get_selection()->count_selected_rows() == 1);
 
 					Gtk::Menu * menu = dynamic_cast < Gtk::Menu* > (Util::get_popup (m_UIManager, "/popup-playlist-list/menu-playlist-list"));
 					if (menu) // better safe than screwed
@@ -1537,6 +1562,17 @@ namespace MPX
 
             public:
 
+			  void
+			  go_to_album(gint64 id)
+			  {
+				if(m_AlbumIterMap.count(id))
+				{
+					TreeIter iter = m_AlbumIterMap.find(id)->second;
+					scroll_to_row (TreeStore->get_path(iter), 0.);
+				}
+			  }
+
+
               AlbumTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml,	
 								PAccess<MPX::Library> const& lib, PAccess<MPX::Amazon::Covers> const& amzn)
               : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-albums")
@@ -1701,6 +1737,12 @@ namespace Source
       m_Private->m_TreeViewPlaylist->m_CurrentIter = boost::optional<Gtk::TreeIter>(); 
       m_Private->m_TreeViewPlaylist->m_CurrentId = boost::optional<gint64>();
 	  Signals.PlayRequest.emit();
+	}
+
+	void
+	PlaybackSourceMusicLib::action_cb_go_to_album(gint64 id)
+	{
+		m_Private->m_TreeViewAlbums->go_to_album(id);
 	}
 
 	void
