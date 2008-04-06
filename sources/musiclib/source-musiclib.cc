@@ -65,6 +65,8 @@ namespace
   "   <menu action='dummy' name='menu-playlist-list'>"
   "       <menuitem action='action-play' name='action-play'/>"
   "		<separator/>"
+  "		  <menuitem action='action-go-to-album'/>"
+  "		<separator/>"
   "       <menuitem action='action-remove-items'/>"
   "       <menuitem action='action-clear'/>"
   "   </menu>"
@@ -368,6 +370,8 @@ namespace MPX
 					gint64 id = get<gint64>(t[ATTRIBUTE_MPX_ALBUM_ID].get());
 					m_MusicLib.action_cb_go_to_album(id);
 				  }
+				  else
+					g_message("%s: No Album ID", G_STRLOC);
 			  }
 
 			  virtual void
@@ -1273,6 +1277,7 @@ namespace MPX
               on_new_album(const std::string& mbid, const std::string& asin, gint64 id, gint64 album_artist_id)
               {
                 TreeIter iter = TreeStore->append();
+				m_AlbumIterMap.insert(std::make_pair(id, iter));
                 TreeStore->append(iter->children()); //create dummy/placeholder row for tracks
 
                 (*iter)[AlbumColumns.RowType] = ROW_ALBUM; 
@@ -1328,6 +1333,7 @@ namespace MPX
               {
 				TreeStore->clear ();
 				m_ASINIterMap.clear();
+				m_AlbumIterMap.clear();
 
                 SQL::RowV v;
                 m_Lib.get().getSQL(v, "SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id;");
@@ -1342,6 +1348,7 @@ namespace MPX
                     (*iter)[AlbumColumns.HasTracks] = false; 
                     (*iter)[AlbumColumns.Image] = m_DiscDefault; 
                     (*iter)[AlbumColumns.Id] = get<gint64>(r["id"]); 
+					m_AlbumIterMap.insert(std::make_pair(get<gint64>(r["id"]), iter));
       
 	                if(r.count("album_rating"))
 					{
