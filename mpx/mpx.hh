@@ -24,7 +24,7 @@
 #ifndef MPX_HH
 #define MPX_HH
 #include "config.h"
-#include <gio/gio.h>
+#include <giomm.h>
 #include <gtkmm.h>
 #include <gtkmm/volumebutton.h>
 #include <libglademm/xml.h>
@@ -304,28 +304,22 @@ namespace MPX
 		void
 		reparse_metadata ();
 
-		// Importing related
-        GFile *m_MountFile;
-        GMountOperation *m_MountOperation;
+        // Importing related
+        Glib::RefPtr<Gio::File> m_MountFile;
+        Glib::RefPtr<Gio::MountOperation> m_MountOperation;
         Glib::ustring m_Share, m_ShareName;
 
-        static void
-        mount_ready_callback (GObject*,
-                              GAsyncResult*,
-                              gpointer);
+        void
+        mount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
 
-        static void
-        unmount_ready_callback (GObject*,
-                              GAsyncResult*,
-                              gpointer);
+        void
+        unmount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
 
-
-        static gboolean
-        ask_password_cb (GMountOperation *op,
-                 const char      *message,
-                 const char      *default_user,
-                 const char      *default_domain,
-                 GAskPasswordFlags   flags);
+        void
+        ask_password_cb (const Glib::ustring& message,
+                         const Glib::ustring& default_user,
+                         const Glib::ustring& default_domain,
+                         Gio::AskPasswordFlags flags);
 
         void
         on_import_folder();
