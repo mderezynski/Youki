@@ -1063,7 +1063,6 @@ namespace MPX
 
 		//---------------------- Seek ------------------------------------------------------------*/
         m_ref_xml->get_widget("scale-seek", m_Seek);
-		m_Seek->set_events (Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK);
 		m_Seek->signal_event().connect( sigc::mem_fun( *this, &Player::on_seek_event ) );
 		m_Seek->set_sensitive(false);
 		g_atomic_int_set(&m_Seeking,0);

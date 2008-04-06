@@ -230,6 +230,7 @@
                 </child>
                 <child>
                   <widget class="GtkLabel" id="label-time">
+                    <property name="width_request">110</property>
                     <property name="visible">True</property>
                   </widget>
                   <packing>

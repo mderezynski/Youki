@@ -126,15 +126,7 @@ namespace MPX
 					m_Manager.activate(id);
 
 				active = !active;
-
 				(*iter)[Columns.Active] = active;
-				
-				std::string name = Glib::ustring((*iter)[Columns.Name]);
-				try{
-					mcs->key_set<bool>("pyplugs", name, active);
-				} catch (...) {
-					mcs->key_register("pyplugs", name, active);
-				}
 			}
 
 			~PTV ()

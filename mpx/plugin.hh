@@ -106,6 +106,7 @@ namespace MPX
 			Strings			m_Paths;
 			gint64			m_Id;
 			Player		   *m_Player;
+			Glib::Mutex		m_StateChangeLock;
     };
 }
 #endif

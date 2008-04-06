@@ -186,6 +186,8 @@ namespace MPX
 	void
 	PluginManager::activate(gint64 id)
 	{
+		Glib::Mutex::Lock L (m_StateChangeLock);
+
 		PluginHoldMap::iterator i = m_Map.find(id);
 		g_return_if_fail(i != m_Map.end());
 
@@ -199,10 +201,13 @@ namespace MPX
 
 		try{
 			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			ccinstance.attr("activate")(boost::ref(m_Player), boost::ref(mcs));
+			object callable = ccinstance.attr("activate");
+			boost::python::call<void>(callable.ptr(), boost::ref(*m_Player), boost::ref(*mcs));
 			i->second->m_Active = true;
+			PyErr_Print ();
 		} catch( error_already_set ) 
 		{
+			PyErr_Print ();
 		}
 
 		pyg_gil_state_release (state);
@@ -211,6 +216,8 @@ namespace MPX
 	void
 	PluginManager::deactivate(gint64 id)
 	{
+		Glib::Mutex::Lock L (m_StateChangeLock);
+
 		PluginHoldMap::iterator i = m_Map.find(id);
 		g_return_if_fail(i != m_Map.end());
 
