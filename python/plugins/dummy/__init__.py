@@ -10,7 +10,7 @@ class Dummy(mpx.Plugin):
 	def __init__(self):
 		print ">> Dummy Plugin initialized"
 
-	def activate(self,player,test):
+	def activate(self,player,mcs):
 		print ">> Dummy Plugin activated"
                 self.player = player
 
