@@ -21,6 +21,8 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 		self.dialog = self.xml.get_widget("dialog")
 		self.combo = self.xml.get_widget("combobox")
 		self.label = self.xml.get_widget("label")
+		self.go = self.xml.get_widget("button-go")
+		self.go.set_sensitive(False)
 		self.header_image = self.xml.get_widget("header-image")
 		self.header_image.set_from_file("@DATA_DIR@" + "/playlist-scripts/mpxdj/mpxdj.png")
 
@@ -28,7 +30,16 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 		options = ["Entertain Me!", "Play All", "Top Tunes", "New Music", "Memory Lane", "Sounds Of...",
 				   "Forgotten Gems", "Deja Vu", "Random Mix"]
 
-		self.callables = [ self.proc__entertain_me ]
+		self.callables = [  self.OPTION_entertain_me,
+							None,	
+							None,
+							None,
+							None,
+						    self.OPTION_sounds_of,
+							None,
+							None,
+							None
+						 ]
 
 		self.helptexts = [
 				"Creates a running order composed of the most frequently played tracks.",
@@ -52,17 +63,40 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 		for option in options:
 			self.store.append([option])
 
+		self.notebook = self.xml.get_widget("notebook")
+
+
+		# Finally:
 		self.combo.connect("changed", self.cbox_changed)
 		self.combo.set_active(0)
 
 	def cbox_changed(self, cbox):
 
 		self.label.set_text(self.helptexts[cbox.get_active()])		
+		self.notebook.set_current_page(cbox.get_active())		
+		self.go.set_sensitive(self.callables[self.combo.get_active()] is not None)
 
-	def proc__entertain_me(self, lib, v):
+	def OPTION_sounds_of(self, lib, v):
+	
+		active = self.xml.get_widget("cbox-decade").get_active()
+		upper = 0
+		lower = 0
+		if(active == 6):
+			lower = 2000
+			upper = 3000
+		else:
+			lower = 1940 + (active * 10)
+			upper = 1950 + (active * 10)
+		
+		
+		rv = mpx.SQLRowV()
+		lib.getSQL(rv, "SELECT id FROM track_view WHERE date > " + str(lower) + " AND date < " + str(upper) + " ORDER BY date ASC LIMIT 50")
+		for val in rv:
+			v.append(val["id"].get_int())
 
-		t = time.time()
-		t = t - 2419200
+
+	def OPTION_entertain_me(self, lib, v):
+
 		rv = mpx.SQLRowV()
 		lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC LIMIT 20")
 		for val in rv:

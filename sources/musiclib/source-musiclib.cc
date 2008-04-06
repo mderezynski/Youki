@@ -414,6 +414,9 @@ namespace MPX
 			  void			
 			  append_trackid_v (TrackIdV const& tid_v)
 			  {
+				if(tid_v.empty())
+					return;
+
 				std::stringstream numbers;
 				TrackIdV::const_iterator end = tid_v.end();
 				end--;
@@ -424,8 +427,6 @@ namespace MPX
 					if(i != end)
 						numbers << ",";
 				}
-
-				g_message("Numbers: %s", numbers.str().c_str());
 
 				SQL::RowV v;
 				m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s)") % numbers.str()).str()); 
