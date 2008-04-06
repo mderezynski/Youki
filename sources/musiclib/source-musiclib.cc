@@ -41,6 +41,8 @@
 #include "mpx/playlistparser-xspf.hh"
 
 #include "source-musiclib.hh"
+#include "plugin-manager.hh"
+#include "plugin-manager-gui.hh"
 
 using namespace Gtk;
 using namespace Glib;
@@ -269,6 +271,8 @@ namespace MPX
                 col = manage (new TreeViewColumn(_("Rating")));
 				cell = manage (new CellRendererPixbuf);
                 col->pack_start(*cell, true);
+				col->set_min_width(66);
+				col->set_max_width(66);
                 col->set_cell_data_func(*cell, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncRating ));
                 append_column(*col);
 
@@ -381,6 +385,70 @@ namespace MPX
 				else
 					m_MusicLib.clear_play();
 			  }
+
+			  void			
+			  append_trackid_v (TrackIdV const& tid_v)
+			  {
+				std::stringstream numbers;
+				TrackIdV::const_iterator end = tid_v.end();
+				end--;
+
+				for(TrackIdV::const_iterator i = tid_v.begin(); i != tid_v.end(); ++i)
+				{
+					numbers << *i;
+					if(i != end)
+						numbers << ",";
+				}
+
+				g_message("Numbers: %s", numbers.str().c_str());
+
+				SQL::RowV v;
+				m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s)") % numbers.str()).str()); 
+
+				TreeIter iter = ListStore->append();
+
+				for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+				{
+                        SQL::Row & r = *i;
+                        
+                        if(i != v.begin())
+                            iter = ListStore->insert_after(iter);
+
+						if(r.count("artist"))
+							(*iter)[PlaylistColumns.Artist] = get<std::string>(r["artist"]); 
+						if(r.count("album"))
+							(*iter)[PlaylistColumns.Album] = get<std::string>(r["album"]); 
+						if(r.count("track"))
+							(*iter)[PlaylistColumns.Track] = guint64(get<gint64>(r["track"]));
+						if(r.count("title"))
+							(*iter)[PlaylistColumns.Title] = get<std::string>(r["title"]);
+						if(r.count("time"))
+							(*iter)[PlaylistColumns.Length] = guint64(get<gint64>(r["time"]));
+						if(r.count("mb_artist_id"))
+							(*iter)[PlaylistColumns.ArtistSort] = get<std::string>(r["mb_artist_id"]);
+						if(r.count("mb_album_id"))
+							(*iter)[PlaylistColumns.AlbumSort] = get<std::string>(r["mb_album_id"]);
+
+						if(r.count("id"))
+						{
+							(*iter)[PlaylistColumns.RowId] = get<gint64>(r["id"]); 
+							if(!m_CurrentIter && m_CurrentId && get<gint64>(r["id"]) == m_CurrentId.get())
+							{
+								m_CurrentIter = iter; 
+								queue_draw();
+							}
+						}
+						else
+							g_critical("Track with no id; this should never happen.");
+
+						if(r.count("rating"))
+							(*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
+
+                        (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
+					    (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
+						(*iter)[PlaylistColumns.IsMPXTrack] = true; 
+				}
+			  }	
 
 			  void
 			  append_uris (const Util::FileList& uris, Gtk::TreeIter & iter, bool & begin)
@@ -1582,16 +1650,30 @@ namespace Source
     : PlaybackSource(ui_manager, _("Music"))
 	, m_MainUIManager(ui_manager)
     {
-      m_Private = new MusicLibPrivate(player,*this);
-	  m_Private->m_TreeViewPlaylist->signal_row_activated().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_row_activated ) );
+		player.get_object(m_Lib);
 
-	  m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_SEEK);
-	  send_caps ();
+		m_Private = new MusicLibPrivate(player,*this);
+		m_Private->m_TreeViewPlaylist->signal_row_activated().connect( sigc::mem_fun( *this,
+			&PlaybackSourceMusicLib::on_plist_row_activated ) );
 
-	  m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
-	  m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music Library")));
-	  m_MainActionGroup->add(Action::create("action-playlist-scripts", _("Playlist Scripts")), sigc::mem_fun( *this, &PlaybackSourceMusicLib::action_cb_playlist_scripts));
-	  m_MainUIManager->insert_action_group(m_MainActionGroup);
+		m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_SEEK);
+		send_caps ();
+
+		m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
+		m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music Library")));
+		m_MainActionGroup->add(Action::create("action-playlist-scripts", _("Playlist Scripts")),
+			sigc::mem_fun( *this, &PlaybackSourceMusicLib::action_cb_playlist_scripts));
+		m_MainUIManager->insert_action_group(m_MainActionGroup);
+
+		m_PluginManager = new PlaylistPluginManager();
+		std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"playlist-scripts");
+		if(file_test(user_path, FILE_TEST_EXISTS))
+			m_PluginManager->append_search_path (user_path);
+		m_PluginManager->append_search_path (build_filename(DATA_DIR,"playlist-scripts"));
+		m_PluginManager->load_plugins();
+		m_PluginManagerGUI = PlaylistPluginManagerGUI::create(*m_PluginManager, m_Lib.get());
+
+		m_PluginManagerGUI->signal_got_ids().connect( sigc::mem_fun( *m_Private->m_TreeViewPlaylist, &MusicLibPrivate::PlaylistTreeView::append_trackid_v ));
     }
 
 	guint
@@ -1603,6 +1685,7 @@ namespace Source
 	void
 	PlaybackSourceMusicLib::action_cb_playlist_scripts ()
 	{
+		m_PluginManagerGUI->present();
 	}
 
 	void

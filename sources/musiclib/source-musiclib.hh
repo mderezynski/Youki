@@ -34,8 +34,11 @@
 #include "mpx/library.hh"
 #include "mpx/mpx-public.hh"
 #include "mpx/types.hh"
-
 #include "mpx/i-playbacksource.hh"
+#include "mpx/paccess.hh"
+
+#include "plugin-manager.hh"
+#include "plugin-manager-gui.hh"
 
 namespace MPX
 {
@@ -46,10 +49,12 @@ namespace Source
 		class PlaybackSourceMusicLib
 			:   public PlaybackSource
 		{
-		
 				MusicLibPrivate * m_Private;
 				Glib::RefPtr<Gtk::UIManager> m_MainUIManager;
 				Glib::RefPtr<Gtk::ActionGroup> m_MainActionGroup;
+				PlaylistPluginManager *m_PluginManager;
+				PlaylistPluginManagerGUI *m_PluginManagerGUI;
+				PAccess<MPX::Library> m_Lib;
 
 				void
 				on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);

@@ -975,6 +975,22 @@ namespace MPX
     , m_Library (obj_library)
     , m_Covers (obj_amazon)
    {
+		/*------------------------ Load Plugins -------------------------------------------------*/
+		// This also initializes Python for us and hence it's of utmost importance it is kept
+		// before loading the sources as they might use Python themselves
+		m_PluginManager = new PluginManager(this);
+		std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"scripts");
+		if(file_test(user_path, FILE_TEST_EXISTS))
+			m_PluginManager->append_search_path (user_path);
+		m_PluginManager->append_search_path (build_filename(DATA_DIR,"scripts"));
+		m_PluginManager->load_plugins();
+		m_PluginManagerGUI = PluginManagerGUI::create(*m_PluginManager);
+
+		/*------------------------ Connect Library -----------------------------------------------*/ 
+        m_Library.signal_scan_start().connect( sigc::mem_fun( *this, &Player::on_library_scan_start ) );
+        m_Library.signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
+        m_Library.signal_scan_end().connect( sigc::mem_fun( *this, &Player::on_library_scan_end ) );
+
 		register_stock_icons();
 
 		signals[PSIGNAL_NEW_TRACK] =
@@ -1018,17 +1034,15 @@ namespace MPX
 
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 
+		/*------------------------ Create the UI Manager, sources need it ------------------------*/
 		m_ui_manager = UIManager::create ();
 
+		/*------------------------ Load Sources --------------------------------------------------*/ 
         m_Sources = new Sources(xml);
         m_ref_xml->get_widget("statusbar", m_Statusbar);
 		Util::dir_for_each_entry (build_filename(PLUGIN_DIR, "sources"), sigc::mem_fun(*this, &MPX::Player::load_source_plugin));  
 
-        m_Library.signal_scan_start().connect( sigc::mem_fun( *this, &Player::on_library_scan_start ) );
-        m_Library.signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
-        m_Library.signal_scan_end().connect( sigc::mem_fun( *this, &Player::on_library_scan_end ) );
-
-		// Volume
+		//----------------------- Volume ---------------------------------------------------------*/
         m_ref_xml->get_widget("volumebutton", m_Volume);
 		m_Volume->signal_value_changed().connect( sigc::mem_fun( *this, &Player::on_volume_value_changed ) );
 		std::vector<Glib::ustring> Icons;
@@ -1036,24 +1050,24 @@ namespace MPX
 		m_Volume->property_size() = Gtk::ICON_SIZE_SMALL_TOOLBAR;
 		m_Volume->set_icons(Icons);
 
-		// Time display
+		//----------------------- Time Display ---------------------------------------------------*/
         m_ref_xml->get_widget("label-time", m_TimeLabel);
 
-		// Seek
+		//---------------------- Seek ------------------------------------------------------------*/
         m_ref_xml->get_widget("scale-seek", m_Seek);
 		m_Seek->set_events (Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK);
 		m_Seek->signal_event().connect( sigc::mem_fun( *this, &Player::on_seek_event ) );
 		m_Seek->set_sensitive(false);
 		g_atomic_int_set(&m_Seeking,0);
 
-        // Infoarea
+        //---------------------- Infoarea --------------------------------------------------------*/
         m_InfoArea = InfoArea::create(*m_Play, m_ref_xml);
 		m_InfoArea->signal_cover_clicked().connect
 		  ( sigc::mem_fun( *this, &Player::on_cover_clicked ));
 		m_InfoArea->signal_uris_dropped().connect
 		  ( sigc::mem_fun( *this, &MPX::Player::on_infoarea_uris ) );
 
-        // UIManager + Menus + Proxy Widgets
+        //---------------------- UIManager + Menus + Proxy Widgets --------------------------------*/
 		m_actions = ActionGroup::create ("Actions_Player");
 
 		m_actions->add (Action::create("MenuMusic", _("_Music")));
@@ -1133,29 +1147,27 @@ namespace MPX
 		m_actions->get_action (ACTION_STOP)->connect_proxy
 			  (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-stop"))));
 
-#if 0
-		dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-repeat"))
-		  ->set (render_icon (Gtk::StockID (MPX_STOCK_REPEAT), Gtk::ICON_SIZE_BUTTON));
-		dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-shuffle"))
-		  ->set (render_icon (Gtk::StockID (MPX_STOCK_SHUFFLE), Gtk::ICON_SIZE_BUTTON));
-
-		m_actions->get_action (ACTION_REPEAT)->connect_proxy
-			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-repeat"))));
-		m_actions->get_action (ACTION_SHUFFLE)->connect_proxy
-			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-shuffle"))));
-
-		mcs_bind->bind_toggle_action
-		  (RefPtr<ToggleAction>::cast_static (m_actions->get_action (ACTION_SHUFFLE)), "bmp", "shuffle");
-		mcs_bind->bind_toggle_action
-		  (RefPtr<ToggleAction>::cast_static (m_actions->get_action (ACTION_REPEAT)), "bmp", "repeat");
-#endif
-
 		m_actions->get_action (ACTION_PLAY)->set_sensitive( 0 );
 		m_actions->get_action (ACTION_PAUSE)->set_sensitive( 0 );
 		m_actions->get_action (ACTION_PREV)->set_sensitive( 0 );
 		m_actions->get_action (ACTION_NEXT)->set_sensitive( 0 );
 		m_actions->get_action (ACTION_STOP)->set_sensitive( 0 );
         add_accel_group (m_ui_manager->get_accel_group());
+
+#if 0
+		dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-repeat"))
+		  ->set (render_icon (Gtk::StockID (MPX_STOCK_REPEAT), Gtk::ICON_SIZE_BUTTON));
+		dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-shuffle"))
+		  ->set (render_icon (Gtk::StockID (MPX_STOCK_SHUFFLE), Gtk::ICON_SIZE_BUTTON));
+		m_actions->get_action (ACTION_REPEAT)->connect_proxy
+			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-repeat"))));
+		m_actions->get_action (ACTION_SHUFFLE)->connect_proxy
+			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-shuffle"))));
+		mcs_bind->bind_toggle_action
+		  (RefPtr<ToggleAction>::cast_static (m_actions->get_action (ACTION_SHUFFLE)), "mpx", "shuffle");
+		mcs_bind->bind_toggle_action
+		  (RefPtr<ToggleAction>::cast_static (m_actions->get_action (ACTION_REPEAT)), "mpx", "repeat");
+#endif
 
 #if 0
         // Tray icon
@@ -1204,12 +1216,6 @@ namespace MPX
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
 
 		show_all ();
-	
-		m_PluginManager = new PluginManager(this);
-		m_PluginManager->append_search_path (build_filename(DATA_DIR,"scripts"));
-		m_PluginManager->load_plugins();
-		m_PluginManagerGUI = PluginManagerGUI::create(*m_PluginManager);
-
 		DBusObjects.mpx->startup_complete(DBusObjects.mpx); 
     }
 

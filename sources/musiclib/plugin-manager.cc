@@ -17,36 +17,65 @@
 //
 //  --
 //
-//  The MPX project hereby grants permission for non-GPL compatible GStreamer
+//  The MPX project hereby grants permission for non-GPlaylist compatible GStreamer
 //  plugins to be used and distributed together with GStreamer and MPX. This
-//  permission is above and beyond the permissions granted by the GPL license
+//  permission is above and beyond the permissions granted by the GPlaylist license
 //  MPX is covered by.
 #include "config.h"
-#include "plugin.hh"
 #include "mpx/main.hh"
 #include "mcs/base.h"
 
 #define NO_IMPORT
 #include <pygtk/pygtk.h>
 #include <pygobject.h>
-#include "mpxpy.hh"
+#include <boost/python.hpp>
+#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+using namespace boost::python;
+
+#include "plugin-manager.hh"
 
 #ifndef Py_ssize_t
 #define Py_ssize_t int
 #endif
 
+using namespace Glib;
+
 namespace MPX
 {
-	PluginManager::PluginManager (MPX::Player *player)
+	struct PlaylistPlugin
+	{
+		void
+		prepare (MPX::Library& G_GNUC_UNUSED)
+		{
+		}
+
+		void
+		run (MPX::Library& G_GNUC_UNUSED, TrackIdV& G_GNUC_UNUSED)
+		{
+		}
+	};
+}
+
+BOOST_PYTHON_MODULE(mpx_playlist)
+{
+	class_<MPX::PlaylistPlugin>("PlaylistPlugin")	
+		.def("prepare", &MPX::PlaylistPlugin::prepare)
+		.def("run", &MPX::PlaylistPlugin::run)
+	;
+
+	class_<MPX::TrackIdV>("TrackIdVector")
+		.def(vector_indexing_suite<MPX::TrackIdV>());
+	;
+}
+
+
+namespace MPX
+{
+	PlaylistPluginManager::PlaylistPluginManager ()
 	: m_Id(1)
-	, m_Player(player)
 	{
 		try {
-			Py_Initialize();
-			init_pygobject();
-			init_pygtk();
-			pyg_enable_threads ();
-			mpx_py_init ();	
+			initmpx_playlist();
 		} catch( error_already_set ) {
 			g_warning("%s; Python Error:", G_STRFUNC);
 		    PyErr_Print();
@@ -54,26 +83,32 @@ namespace MPX
 	}
 
 	void
-	PluginManager::append_search_path (std::string const& path)
+	PlaylistPluginManager::append_search_path (std::string const& path)
 	{	
 		m_Paths.push_back(path);
 	}
 
 	void
-	PluginManager::load_plugins ()
+	PlaylistPluginManager::load_plugins ()
 	{
 		PyObject *sys_path = PySys_GetObject ("path");
-		for(Strings::const_iterator i = m_Paths.begin(); i != m_Paths.end(); ++i)
+		for(std::vector<std::string>::const_iterator i = m_Paths.begin(); i != m_Paths.end(); ++i)
 		{
+			g_message("%s: Appending path: '%s'", G_STRLOC, i->c_str());
+	
+			if(!file_test(*i, FILE_TEST_EXISTS))
+				continue;
+
 			PyObject *path = PyString_FromString ((char*)i->c_str());
 			if (PySequence_Contains(sys_path, path) == 0)
 				PyList_Insert (sys_path, 0, path);
 			Py_DECREF(path);
 		}
 
-		PyObject *mpx = PyImport_ImportModule("mpx");
+		PyObject *mpx = PyImport_ImportModule("mpx_playlist");
 		PyObject *mpx_dict = PyModule_GetDict(mpx);
-		PyTypeObject *PyMPXPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "Plugin"); 
+		PyTypeObject *PyMPXPlaylistPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "PlaylistPlugin"); 
+		g_return_if_fail(PyMPXPlaylistPlugin_Type);
 
 		PyObject * main_module = PyImport_AddModule ("__main__");
 		if(main_module == NULL)
@@ -82,7 +117,7 @@ namespace MPX
 			return;	
 		}
 
-		for(Strings::const_iterator p = m_Paths.begin(); p != m_Paths.end(); ++p)
+		for(std::vector<std::string>::const_iterator p = m_Paths.begin(); p != m_Paths.end(); ++p)
 		{
 			if(!file_test(*p, FILE_TEST_EXISTS))
 				continue;
@@ -110,7 +145,7 @@ namespace MPX
 						if(!PyType_Check(value))
 							continue;
 
-						if (PyObject_IsSubclass (value, (PyObject*) PyMPXPlugin_Type))
+						if (PyObject_IsSubclass (value, (PyObject*) PyMPXPlaylistPlugin_Type))
 						{
 							PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 
@@ -121,50 +156,35 @@ namespace MPX
 								continue;
 							}
 
-							PluginHolderRefP p = PluginHolderRefP(new PluginHolder);
-							p->m_PluginInstance = instance;
+							PlaylistPluginHolderRefP ptr = PlaylistPluginHolderRefP(new PlaylistPluginHolder);
+							ptr->m_PluginInstance = instance;
 							const char* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
-							p->m_Description = doc ? doc : "(No Description given)";
-							p->m_Id = m_Id++;
+							ptr->m_Description = doc ? doc : "(No Description given)";
+							ptr->m_Id = m_Id++;
 
 							Glib::KeyFile keyfile;
-							key_filename = build_filename(*p, build_filename(*i, (*i)+".mpx-plugin"));
+							std::string key_filename = build_filename(*p, build_filename(*i, (*i)+".mpx-plugin"));
+			
 							if(file_test(key_filename, FILE_TEST_EXISTS))
 							{
 								try{
-									keyfile.load_from_file(build_filename(*p, build_filename(*i, (*i)+".mpx-plugin")));
-									p->m_Name = keyfile.get_string("MPX Plugin", "Name"); 
-									p->m_Authors = keyfile.get_string("MPX Plugin", "Authors"); 
-									p->m_Copyright = keyfile.get_string("MPX Plugin", "Copyright"); 
-									p->m_IAge = keyfile.get_integer("MPX Plugin", "IAge");
-									p->m_Website = keyfile.get_string("MPX Plugin", "Website");
+									keyfile.load_from_file(key_filename);
+									ptr->m_Name = keyfile.get_string("MPX PlaylistPlugin", "Name"); 
+									ptr->m_Authors = keyfile.get_string("MPX PlaylistPlugin", "Authors"); 
+									ptr->m_Copyright = keyfile.get_string("MPX PlaylistPlugin", "Copyright"); 
+									ptr->m_IAge = keyfile.get_integer("MPX PlaylistPlugin", "IAge");
+									ptr->m_Website = keyfile.get_string("MPX PlaylistPlugin", "Website");
 								} catch (Glib::KeyFileError) {
 								}
 							}
 
-							if(p->m_Name.empty())
-								p->m_Name = PyString_AsString (PyObject_GetAttrString (module, "__name__")); 
+							if(ptr->m_Name.empty())
+								ptr->m_Name = PyString_AsString (PyObject_GetAttrString (module, "__name__")); 
 
-							bool active = false;
-
-							/* TODO: Query MCS for active state */
-
-							if (active)
-							{
-								try {
-									object ccinstance = object((handle<>(borrowed(instance))));
-									ccinstance.attr("activate")(boost::ref(m_Player)); // TODO
-									active = true;
-								} catch( error_already_set )
-								{
-								}
-							}
-
-							p->m_Active = active; 
-							m_Map.insert(std::make_pair(p->m_Id, p));
+							m_Map.insert(std::make_pair(ptr->m_Id, ptr));
 							pyg_gil_state_release(state);
 
-							g_message("%s: >> Loaded: '%s'", G_STRLOC, p->m_Name.c_str());
+							g_message("%s: >> Loaded: '%s'", G_STRLOC, ptr->m_Name.c_str());
 							break;
 						}
 					}
@@ -172,53 +192,29 @@ namespace MPX
 		}
 	}
 
-	PluginManager::~PluginManager ()
+	PlaylistPluginManager::~PlaylistPluginManager ()
 	{
 	}
 
-	PluginHoldMap const&
-	PluginManager::get_map () const
+	PlaylistPluginHoldMap const&
+	PlaylistPluginManager::get_map () const
 	{
 		return m_Map;
 	}
 
 	void
-	PluginManager::activate(gint64 id)
+	PlaylistPluginManager::run(gint64 id, MPX::Library & lib, MPX::TrackIdV & v)
 	{
-		PluginHoldMap::iterator i = m_Map.find(id);
+		PlaylistPluginHoldMap::iterator i = m_Map.find(id);
 		g_return_if_fail(i != m_Map.end());
 
-		if(i->second->m_Active)
-		{
-			g_message("%s: Requested deactivate from plugin %lld, but is active.", G_STRLOC, id);	
-			g_return_if_reached();
-		}
 		try{
 			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			ccinstance.attr("activate")(boost::ref(m_Player));
-			i->second->m_Active = true;
+			ccinstance.attr("prepare")(boost::ref(lib));
+			ccinstance.attr("run")(boost::ref(lib), boost::ref(v));
 		} catch( error_already_set ) 
 		{
-		}
-	}
-
-	void
-	PluginManager::deactivate(gint64 id)
-	{
-		PluginHoldMap::iterator i = m_Map.find(id);
-		g_return_if_fail(i != m_Map.end());
-
-		if(!i->second->m_Active)
-		{
-			g_message("%s: Requested deactivate from plugin %lld, but is deactivated.", G_STRLOC, id);	
-			g_return_if_reached();
-		}
-		try{
-			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			ccinstance.attr("deactivate")();
-			i->second->m_Active = false;
-		} catch( error_already_set ) 
-		{
+			PyErr_Print();
 		}
 	}
 }

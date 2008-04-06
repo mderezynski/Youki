@@ -166,7 +166,7 @@ namespace MPX
   {
 	gint64 trackRating = sqlite3_value_int64(argv[0]);
 	gint64 albumRating = sqlite3_value_int64(argv[1]);
-	gint64 absRating = (albumRating * 10) + trackRating;
+	gint64 absRating = (albumRating * 5) + trackRating;
 	sqlite3_result_int64(ctx, absRating);
   }
 
