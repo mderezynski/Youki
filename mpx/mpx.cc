@@ -1633,6 +1633,7 @@ namespace MPX
 		m_Seek->set_value(double (position));
 
 		m_TrackPlayedSeconds += 0.5; // this is slightly incorrect, the tick is every 500ms, but nothing says that the time always also progresses by exactly 0.5s
+		m_TrackDuration = m_Play->property_duration().get_value();
 #if 0
 		if( m_popup )
 		{
@@ -1848,8 +1849,6 @@ namespace MPX
 	{
 	  PlaybackSource* source = m_SourceV[source_id];
 
-	  m_TrackDuration = m_Play->property_duration().get_value();
-
 	  source->send_caps ();
 	  source->send_metadata ();
 
@@ -2021,7 +2020,6 @@ namespace MPX
 
 	  if( (f & PlaybackSource::F_PHONY_NEXT) == 0 )
 	  {
-			track_played();
 			safe_pause_unset();
 			m_Play->switch_stream (source->get_uri(), source->get_type());
 		    source->next_post ();

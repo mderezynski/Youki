@@ -1,1 +1,1 @@
-SUBDIRS = trackinfo
+SUBDIRS = plugins modules

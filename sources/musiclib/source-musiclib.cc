@@ -1301,6 +1301,7 @@ namespace MPX
               album_list_load ()
               {
 				TreeStore->clear ();
+				m_ASINIterMap.clear();
 
                 SQL::RowV v;
                 m_Lib.get().getSQL(v, "SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id;");

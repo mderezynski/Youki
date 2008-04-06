@@ -725,9 +725,13 @@ AC_OUTPUT([
 	boost/python/suite/indexing/detail/Makefile
 
     python/Makefile
-	python/trackinfo/Makefile
-	python/trackinfo/__init__.py
-	python/enqueuefavs/Makefile
+	python/plugins/Makefile
+	python/plugins/trackinfo/Makefile
+	python/plugins/trackinfo/__init__.py
+	python/plugins/mpxdj/Makefile
+	python/plugins/mpxdj/__init__.py
+	python/modules/Makefile
+	python/modules/audioscrobbler/Makefile
 
 	remote/Makefile
     scripts/Makefile
