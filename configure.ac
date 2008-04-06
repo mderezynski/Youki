@@ -725,7 +725,9 @@ AC_OUTPUT([
 	boost/python/suite/indexing/detail/Makefile
 
     python/Makefile
+	python/modules/Makefile
 	python/plugins/Makefile
+	python/plugins/dummy/Makefile
 	python/plugins/trackinfo/Makefile
 	python/plugins/trackinfo/__init__.py
 	python/plugins/mpxdj/Makefile
