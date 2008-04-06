@@ -33,7 +33,7 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
-#include <gio/gio.h>
+#include <giomm.h>
 #include <glib/gstdio.h>
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
@@ -2335,8 +2335,8 @@ namespace MPX
                     goto rerun_import_share_dialog;
                 }
 
-                m_MountFile = g_vfs_get_file_for_uri(g_vfs_get_default(), m_Share.c_str());
-                if(!G_IS_FILE(m_MountFile))
+                m_MountFile = Glib::wrap (g_vfs_get_file_for_uri (g_vfs_get_default(), m_Share.c_str()));
+                if(!m_MountFile)
                 {
                     MessageDialog dialog (*this, (boost::format (_("An Error occcured getting a handle for the share '%s'\n"
                         "Please veryify the share URI and credentials")) % m_Share.c_str()).str());
@@ -2344,114 +2344,104 @@ namespace MPX
                     goto rerun_import_share_dialog;
                 }
 
-                GMountOperation * m_MountOperation = g_mount_operation_new();
-                if(!G_IS_MOUNT_OPERATION(m_MountOperation))
+                m_MountOperation = Gio::MountOperation::create();
+                if(!m_MountOperation)
                 {
                     MessageDialog dialog (*this, (boost::format (_("An Error occcured trying to mount the share '%s'")) % m_Share.c_str()).str());
                     dialog.run();
                     return; 
                 }
 
-                g_mount_operation_set_username(m_MountOperation, login.c_str());
-                g_mount_operation_set_password(m_MountOperation, password.c_str()); 
-                g_signal_connect(m_MountOperation, "ask_password", G_CALLBACK(Player::ask_password_cb), NULL);
-                g_file_mount_mountable(m_MountFile, G_MOUNT_MOUNT_NONE, m_MountOperation, NULL, mount_ready_callback, this);
+				m_MountOperation->set_username(login);
+				m_MountOperation->set_password(password);
+				m_MountOperation->signal_ask_password().connect(sigc::mem_fun(*this, &Player::ask_password_cb));
+				m_MountFile->mount_mountable(m_MountOperation, sigc::mem_fun(*this, &Player::mount_ready_callback));
             }
     }
 
-    gboolean
-    Player::ask_password_cb (GMountOperation *op,
-             const char      *message,
-             const char      *default_user,
-             const char      *default_domain,
-             GAskPasswordFlags   flags)
+    void
+    Player::ask_password_cb (const Glib::ustring& message,
+                             const Glib::ustring& default_user,
+                             const Glib::ustring& default_domain,
+                             Gio::AskPasswordFlags flags)
     {
       Glib::ustring value;
-      if (flags & G_ASK_PASSWORD_NEED_USERNAME)
+      if (flags & Gio::ASK_PASSWORD_NEED_USERNAME)
       {
         RequestValue * p = RequestValue::create();
         p->set_question(_("Please Enter the Username:"));
         int reply = p->run();
         if(reply == GTK_RESPONSE_CANCEL)
         {
-            g_mount_operation_reply (op, G_MOUNT_OPERATION_ABORTED /*abort*/);
-            return TRUE;
+            m_MountOperation->reply (Gio::MOUNT_OPERATION_ABORTED /*abort*/);
+            return;
         }
         p->get_request_infos(value);
-        g_mount_operation_set_username (op, value.c_str());
+        m_MountOperation->set_username (value);
         delete p;
         value.clear();
       }
 
-      if (flags & G_ASK_PASSWORD_NEED_DOMAIN)
+      if (flags & Gio::ASK_PASSWORD_NEED_DOMAIN)
       {
         RequestValue * p = RequestValue::create();
         p->set_question(_("Please Enter the Domain:"));
         int reply = p->run();
         if(reply == GTK_RESPONSE_CANCEL)
         {
-            g_mount_operation_reply (op, G_MOUNT_OPERATION_ABORTED /*abort*/);
-            return TRUE;
+            m_MountOperation->reply (Gio::MOUNT_OPERATION_ABORTED /*abort*/);
+            return;
         }
         p->get_request_infos(value);
-        g_mount_operation_set_domain (op, value.c_str());
+        m_MountOperation->set_domain (value);
         delete p;
         value.clear();
       }
 
-      if (flags & G_ASK_PASSWORD_NEED_PASSWORD)
+      if (flags & Gio::ASK_PASSWORD_NEED_PASSWORD)
       {
         RequestValue * p = RequestValue::create();
         p->set_question(_("Please Enter the Password:"));
         int reply = p->run();
         if(reply == GTK_RESPONSE_CANCEL)
         {
-            g_mount_operation_reply (op, G_MOUNT_OPERATION_ABORTED /*abort*/);
-            return TRUE;
+            m_MountOperation->reply (Gio::MOUNT_OPERATION_ABORTED /*abort*/);
+            return;
         }
         p->get_request_infos(value);
-        g_mount_operation_set_password (op, value.c_str());
+        m_MountOperation->set_password (value);
         delete p;
         value.clear();
       }
 
-      g_mount_operation_reply (op, G_MOUNT_OPERATION_HANDLED);
-      return TRUE;
+      m_MountOperation->reply (Gio::MOUNT_OPERATION_HANDLED);
     }
 
     void
-    Player::mount_ready_callback (GObject *source_object,
-                     GAsyncResult *res,
-                     gpointer data)
+    Player::mount_ready_callback (Glib::RefPtr<Gio::AsyncResult>& res)
     {
-        Player & player = *(reinterpret_cast<Player*>(data));
-        GError *error = 0;
-        g_file_mount_mountable_finish(player.m_MountFile, res, &error);
-
-        if(error)
-        {
-            if(error->code != G_IO_ERROR_ALREADY_MOUNTED)
+        try
+	{
+            m_MountFile->mount_mountable_finish(res);
+	}
+	catch(const Glib::Error& error)
+	{
+            if(error.code() != G_IO_ERROR_ALREADY_MOUNTED)
             {
-                MessageDialog dialog (player, (boost::format ("An Error occcured while mounting the share: %s") % error->message).str());
+                MessageDialog dialog (*this, (boost::format ("An Error occcured while mounting the share: %s") % error.what()).str());
                 dialog.run();
                 return;
             }
             else
-                g_warning("%s: Location '%s' is already mounted", G_STRLOC, player.m_Share.c_str());
+                g_warning("%s: Location '%s' is already mounted", G_STRLOC, m_Share.c_str());
 
-            g_error_free(error);
         }
 
-        //g_object_unref(player.m_MountOperation);
-        //g_object_unref(player.m_MountFile);
-     
-        player.m_Library.scanUri( player.m_Share, player.m_ShareName );  
+        m_Library.scanUri( m_Share, m_ShareName );  
     }
 
     void
-    Player::unmount_ready_callback (GObject *source_object,
-                                    GAsyncResult *res,
-                                    gpointer data)
+    Player::unmount_ready_callback (Glib::RefPtr<Gio::AsyncResult>& res)
     {
     }
 
