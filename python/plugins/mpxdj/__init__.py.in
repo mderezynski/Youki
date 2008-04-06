@@ -90,7 +90,7 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 		
 		
 		rv = mpx.SQLRowV()
-		lib.getSQL(rv, "SELECT id FROM track_view WHERE date > " + str(lower) + " AND date < " + str(upper) + " ORDER BY date ASC LIMIT 50")
+		lib.getSQL(rv, "SELECT id FROM track_view WHERE date > " + str(lower) + " AND date < " + str(upper) + " ORDER BY random(*) LIMIT 50")
 		for val in rv:
 			v.append(val["id"].get_int())
 
@@ -98,7 +98,7 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 	def OPTION_entertain_me(self, lib, v):
 
 		rv = mpx.SQLRowV()
-		lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC LIMIT 20")
+		lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY random(*) DESC LIMIT 20")
 		for val in rv:
 			v.append(val["id"].get_int())
 
