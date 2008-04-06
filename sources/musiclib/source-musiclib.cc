@@ -361,7 +361,7 @@ namespace MPX
 			  action_cb_go_selected_album ()
 			  {
 				  PathV p = get_selection()->get_selected_rows();
-				  TreeIter iter = ListStore->get_iteR(p[0]);
+				  TreeIter iter = ListStore->get_iter(p[0]);
 				  Track t = (*iter)[PlaylistColumns.MPXTrack];
 				  if(t[ATTRIBUTE_MPX_ALBUM_ID])
 				  {
