@@ -148,6 +148,9 @@ namespace
         {   "pdate",
             VALUE_TYPE_INT      },
 
+        {   "insert_date",
+            VALUE_TYPE_INT      },
+
         {   "is_mb_album_artist",
             VALUE_TYPE_INT      },
 
@@ -453,7 +456,7 @@ namespace MPX
 	Library::trackPlayed(gint64 id, time_t time_)
 	{
 		execSQL((boost::format ("UPDATE track SET pdate = '%lld' WHERE id = %lld") % gint64(time_) % id).str());
-		execSQL((boost::format ("UPDATE track SET pcount = pcount + 1 WHERE Id =%lld") % id).str());
+		execSQL((boost::format ("UPDATE track SET pcount = ifnull(pcount,0) + 1 WHERE Id =%lld") % id).str());
 		Signals.TrackUpdated.emit(id);
 	}
 
@@ -894,7 +897,7 @@ namespace MPX
       }      
 
       track[ATTRIBUTE_INSERT_PATH] = insert_path_value;
-      track[ATTRIBUTE_NEW_ITEM] = gint64(1); 
+	  track[ATTRIBUTE_INSERT_DATE] = gint64(time(NULL));
 
       char const* track_set_f ("INSERT INTO track (%s) VALUES (%s);");
 

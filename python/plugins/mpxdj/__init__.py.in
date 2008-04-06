@@ -6,29 +6,71 @@
 import mpx
 import mpx_playlist
 import time
-#import pygtk
-#pygtk.require('2.0')
-#import gtk
-#import gtk.glade
-#import pango
+import pygtk
+pygtk.require('2.0')
+import gtk
+import gobject
+import gtk.glade
 #import musicbrainz2
 #import musicbrainz2.webservice as ws
 
 class MPXDJ(mpx_playlist.PlaylistPlugin):
 	def __init__(self):
 		print ">> MPXDJ Plugin initialized (C) 2008 M. Derezynski"
-		self.gladedir = "@DATA_DIR@" + "/glade/mpxdj.glade"
+		self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-scripts/mpxdj/mpxdj.glade")
+		self.dialog = self.xml.get_widget("dialog")
+		self.combo = self.xml.get_widget("combobox")
+		self.label = self.xml.get_widget("label")
+		self.header_image = self.xml.get_widget("header-image")
+		self.header_image.set_from_file("@DATA_DIR@" + "/playlist-scripts/mpxdj/mpxdj.png")
 
-	def prepare(self,lib):
-		print ">> MPXDJ Plugin preparing"
 
-	def run(self,lib,v):
-		print ">> MPXDJ Running"
-		rv = mpx.SQLRowV()
+		options = ["Entertain Me!", "Play All", "Top Tunes", "New Music", "Memory Lane", "Sounds Of...",
+				   "Forgotten Gems", "Deja Vu", "Random Mix"]
+
+		self.callables = [ self.proc__entertain_me ]
+
+		self.helptexts = [
+				"Creates a running order composed of the most frequently played tracks.",
+				"Creates a running order that sorts all of the tracks on the player into basic categories.",
+				"Creates a running order composed of a set number of the most frequently played tracks.",
+				"Creates a running order composed of the most recently loaded tracks during a set amount of time.",
+				"Creates a running order composed of the least frequently played tracks during a set amount of time.",
+				"Select to create a running order composed of tracks from a specific decade.",
+				"Select to create a running order composed of the most popular, but least recently played, tracks during a set amount of time.",
+				"Select to create a running order composed of the most popular and most recently played tracks during a set amount of time.",
+				"Select to create a running order composed of all tracks, in random order, on the player."
+		]	
+
+		cell = gtk.CellRendererText()
+		self.combo.pack_start(cell)
+		self.combo.add_attribute(cell, "text", 0)
+
+		self.store = gtk.ListStore(gobject.TYPE_STRING)
+		self.combo.set_model(self.store)
+	
+		for option in options:
+			self.store.append([option])
+
+		self.combo.connect("changed", self.cbox_changed)
+		self.combo.set_active(0)
+
+	def cbox_changed(self, cbox):
+
+		self.label.set_text(self.helptexts[cbox.get_active()])		
+
+	def proc__entertain_me(self, lib, v):
+
 		t = time.time()
 		t = t - 2419200
-		lib.getSQL(rv, "SELECT id FROM track_view WHERE abs_rating(rating,album_rating) > 22 AND pdate > " + str(t));
+		rv = mpx.SQLRowV()
+		lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC LIMIT 20")
 		for val in rv:
 			v.append(val["id"].get_int())
 
-
+	def run(self,lib,v):
+		print ">> MPXDJ Running"
+		ret = self.dialog.run()
+		if(ret == gtk.RESPONSE_OK):
+			self.callables[self.combo.get_active()](lib, v)
+		self.dialog.hide()

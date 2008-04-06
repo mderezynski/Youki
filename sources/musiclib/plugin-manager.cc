@@ -45,11 +45,6 @@ namespace MPX
 	struct PlaylistPlugin
 	{
 		void
-		prepare (MPX::Library& G_GNUC_UNUSED)
-		{
-		}
-
-		void
 		run (MPX::Library& G_GNUC_UNUSED, TrackIdV& G_GNUC_UNUSED)
 		{
 		}
@@ -59,7 +54,6 @@ namespace MPX
 BOOST_PYTHON_MODULE(mpx_playlist)
 {
 	class_<MPX::PlaylistPlugin>("PlaylistPlugin")	
-		.def("prepare", &MPX::PlaylistPlugin::prepare)
 		.def("run", &MPX::PlaylistPlugin::run)
 	;
 
@@ -210,7 +204,6 @@ namespace MPX
 
 		try{
 			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			ccinstance.attr("prepare")(boost::ref(lib));
 			ccinstance.attr("run")(boost::ref(lib), boost::ref(v));
 		} catch( error_already_set ) 
 		{
