@@ -70,7 +70,7 @@ namespace Source
 				action_cb_play ();
 
 				void
-				action_cb_go_to_album(gint64 id);
+				action_cb_go_to_album(gint64);
 
 				void
 				check_caps ();
