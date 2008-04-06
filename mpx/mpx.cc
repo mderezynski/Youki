@@ -1823,7 +1823,9 @@ namespace MPX
 		if(!m_Metadata[ATTRIBUTE_MPX_TRACK_ID])
 			return;
 
-		if((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_Play->property_duration().get_value()/2))
+		g_message("Track Played; Seconds: %f, Duration: %f", m_TrackPlayedSeconds, m_TrackDuration); 
+
+		if((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_TrackDuration/2))
 		{
 			gint64 id = get<gint64>(m_Metadata[ATTRIBUTE_MPX_TRACK_ID].get());
 			m_Library.trackPlayed(id, time(NULL));

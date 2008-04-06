@@ -5,6 +5,7 @@
 
 import mpx
 import mpx_playlist
+import time
 #import pygtk
 #pygtk.require('2.0')
 #import gtk
@@ -23,7 +24,9 @@ class EnqueueFavs(mpx_playlist.PlaylistPlugin):
 	def run(self,lib,v):
 		print ">> EnqueueFavs Running"
 		rv = mpx.SQLRowV()
-		lib.getSQL(rv, "SELECT id FROM track_view WHERE abs_rating(rating,album_rating) > 25");
+		t = time.time()
+		t = t - 2419200
+		lib.getSQL(rv, "SELECT id FROM track_view WHERE abs_rating(rating,album_rating) > 25 AND pdate > " + str(t));
 		for val in rv:
 			v.append(val["id"].get_int())
 

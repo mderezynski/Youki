@@ -121,29 +121,29 @@ namespace MPX
 								continue;
 							}
 
-							PluginHolderRefP p = PluginHolderRefP(new PluginHolder);
-							p->m_PluginInstance = instance;
+							PluginHolderRefP ptr = PluginHolderRefP(new PluginHolder);
+							ptr->m_PluginInstance = instance;
 							const char* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
-							p->m_Description = doc ? doc : "(No Description given)";
-							p->m_Id = m_Id++;
+							ptr->m_Description = doc ? doc : "(No Description given)";
+							ptr->m_Id = m_Id++;
 
 							Glib::KeyFile keyfile;
-							key_filename = build_filename(*p, build_filename(*i, (*i)+".mpx-plugin"));
+							std::string key_filename = build_filename(*p, build_filename(*i, (*i)+".mpx-plugin"));
 							if(file_test(key_filename, FILE_TEST_EXISTS))
 							{
 								try{
 									keyfile.load_from_file(build_filename(*p, build_filename(*i, (*i)+".mpx-plugin")));
-									p->m_Name = keyfile.get_string("MPX Plugin", "Name"); 
-									p->m_Authors = keyfile.get_string("MPX Plugin", "Authors"); 
-									p->m_Copyright = keyfile.get_string("MPX Plugin", "Copyright"); 
-									p->m_IAge = keyfile.get_integer("MPX Plugin", "IAge");
-									p->m_Website = keyfile.get_string("MPX Plugin", "Website");
+									ptr->m_Name = keyfile.get_string("MPX Plugin", "Name"); 
+									ptr->m_Authors = keyfile.get_string("MPX Plugin", "Authors"); 
+									ptr->m_Copyright = keyfile.get_string("MPX Plugin", "Copyright"); 
+									ptr->m_IAge = keyfile.get_integer("MPX Plugin", "IAge");
+									ptr->m_Website = keyfile.get_string("MPX Plugin", "Website");
 								} catch (Glib::KeyFileError) {
 								}
 							}
 
-							if(p->m_Name.empty())
-								p->m_Name = PyString_AsString (PyObject_GetAttrString (module, "__name__")); 
+							if(ptr->m_Name.empty())
+								ptr->m_Name = PyString_AsString (PyObject_GetAttrString (module, "__name__")); 
 
 							bool active = false;
 
@@ -160,11 +160,11 @@ namespace MPX
 								}
 							}
 
-							p->m_Active = active; 
-							m_Map.insert(std::make_pair(p->m_Id, p));
+							ptr->m_Active = active; 
+							m_Map.insert(std::make_pair(ptr->m_Id, ptr));
 							pyg_gil_state_release(state);
 
-							g_message("%s: >> Loaded: '%s'", G_STRLOC, p->m_Name.c_str());
+							g_message("%s: >> Loaded: '%s'", G_STRLOC, ptr->m_Name.c_str());
 							break;
 						}
 					}

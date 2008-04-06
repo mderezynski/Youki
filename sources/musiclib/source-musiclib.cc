@@ -124,6 +124,9 @@ namespace
 		if (row.count("amazon_asin"))
 		  track[ATTRIBUTE_ASIN] = get<std::string>(row["amazon_asin"]);
 
+		if (row.count("id"))
+		  track[ATTRIBUTE_MPX_TRACK_ID] = get<gint64>(row["id"]);
+
 		return track;
 	}
 }
@@ -406,6 +409,7 @@ namespace MPX
 				m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s)") % numbers.str()).str()); 
 
 				TreeIter iter = ListStore->append();
+				m_PlayInitIter = iter;
 
 				for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
 				{
@@ -448,6 +452,8 @@ namespace MPX
 					    (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
 						(*iter)[PlaylistColumns.IsMPXTrack] = true; 
 				}
+
+				m_MusicLib.action_cb_play ();
 			  }	
 
 			  void
