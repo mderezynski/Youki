@@ -37,13 +37,13 @@
 #include <mcs/key.h>
 #include <mcs/subscriber.h>
 
-#define MCS_CB_DEFAULT_SIGNATURE \
-      const ::std::string&    domain, \
-      const ::std::string&    key,    \
+#define MCS_CB_DEFAULT_SIGNATURE	\
+      const ::std::string& domain,	\
+      const ::std::string& key,		\
       const ::Mcs::KeyVariant& value
 
-namespace Mcs {
-
+namespace Mcs
+{
       class Mcs
       {
         public:
@@ -73,8 +73,7 @@ namespace Mcs {
           key_set (std::string const& domain,
                    std::string const& key, T value) 
           {
-            if (!domain_key_exist (domain, key))
-              throw NO_KEY;
+			g_return_if_fail(domain_key_exist (domain, key));
 
             MKeys &keys (domains.find (domain)->second);
             Key &k (keys.find (key)->second);
@@ -86,32 +85,33 @@ namespace Mcs {
           key_get (std::string const& domain,
                    std::string const& key)
           {
-            if (!domain_key_exist (domain, key))
-              throw NO_KEY;
-            return T (domains. find (domain)->second. find (key)->second);
+			g_return_val_if_fail(domain_key_exist (domain, key), T());
+            return T (domains.find(domain)->second.find(key)->second);
           }
 
-          void key_push (std::string const& domain, std::string const& key)
+          void
+		  key_push (std::string const& domain, std::string const& key)
           {
-            if (!domain_key_exist (domain, key))
-              throw NO_KEY;
-
-            MKeys &keys (domains.find (domain)->second);
-            Key &k (keys.find (key)->second);
+			g_return_if_fail(domain_key_exist (domain, key));
+            MKeys & keys (domains.find (domain)->second);
+            Key & k (keys.find (key)->second);
             k.push ();
           }
           
-          void key_unset (std::string const& domain,
-                          std::string const& key);
+          void
+		  key_unset (std::string const& domain,
+                     std::string const& key);
 
-          void subscribe  (std::string const& name,   //Must be unique
-                           std::string const& domain, //Must be registered 
-                           std::string const& key,  //Must be registered,
-                           SubscriberNotify notify);  
+          void
+		  subscribe (std::string const& name,   //Must be unique
+                     std::string const& domain, //Must be registered 
+                     std::string const& key,  //Must be registered,
+                     SubscriberNotify const& notify);  
 
-          void unsubscribe (std::string const& name,   //Must be unique
-                           std::string const& domain, //Must be registered 
-                           std::string const& key); //Must be registered,
+          void
+	      unsubscribe (std::string const& name,   //Must be unique
+                       std::string const& domain, //Must be registered 
+                       std::string const& key); //Must be registered,
 
         private:
 

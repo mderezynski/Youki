@@ -1734,6 +1734,10 @@ namespace MPX
 		else
 			m_Metadata.Image = m_DiscDefault;
 	  }
+
+	  if(!m_Metadata[ATTRIBUTE_LOCATION])
+		m_Metadata[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
+
 	  reparse_metadata ();
 	}
 

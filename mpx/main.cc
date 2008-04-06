@@ -237,9 +237,6 @@ namespace
 	  mcs->domain_register ("lastfm");
 	  mcs->key_register ("lastfm", "username", std::string ());
 	  mcs->key_register ("lastfm", "password", std::string ());
-	  mcs->key_register ("lastfm", "radio-connect", false);
-	  mcs->key_register ("lastfm", "queue-enable", false);
-	  mcs->key_register ("lastfm", "discoverymode", false);
 
   #ifdef HAVE_OFA
 	  mcs->domain_register ("musicbrainz");

@@ -6,6 +6,7 @@
 #include <Python.h>
 #include "mpx/types.hh"
 #include "mpx.hh"
+#include "mcs/mcs.h"
 using namespace boost::python;
 
 namespace mpxpy

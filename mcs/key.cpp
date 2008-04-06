@@ -1,32 +1,41 @@
 #include <mcs/key.h>
+#include <glib.h>
 
 namespace Mcs
 {
     Key::Key (std::string const& domain,
               std::string const& key,
-              const KeyVariant  & key_default,
-              KeyType		          key_type)
+              KeyVariant  const& key_default,
+              KeyType		     key_type)
 
-        : domain	    (domain), 
-          key		      (key),
-          key_default	(key_default),
-          key_value	  (key_default),
-          key_type	  (key_type)
-    {}
+	: domain(domain) 
+    , key(key)
+    , key_default(key_default)
+    , key_value(key_default)
+    , key_type(key_type)
+    {
+	}
+
+	Key::Key ()
+	{
+	}
+
+	Key::~Key ()
+	{
+	}
 
     void 
-    Key::add_subscriber  (std::string const& name,   //Must be unique
-                          SubscriberNotify   notify)
+    Key::add_subscriber(std::string const& name, SubscriberNotify const& notify)
     {
-      if (subscribers.find (name) != subscribers.end()) return;
-      subscribers[name] = Subscriber (notify);
+      g_return_if_fail(subscribers.find (name) == subscribers.end());
+      subscribers[name] = Subscriber(notify);
     }
 
     void 
-    Key::remove_subscriber  (std::string const& name)
+    Key::remove_subscriber(std::string const& name)
               
     {
-      if (subscribers.find (name) == subscribers.end()) return;
+      g_return_if_fail (subscribers.find (name) != subscribers.end());
       subscribers.erase(name);
     }
 
@@ -47,5 +56,4 @@ namespace Mcs
     {
       return key_type;
     }
-
-};
+}

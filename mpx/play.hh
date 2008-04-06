@@ -124,9 +124,6 @@ namespace MPX
 
         void  reset ();
 
-        bool  lastfm_qualifies ();
-        bool  lastfm_qualifies_duration (gint64 duration);
-
 #ifndef MPX_PLUGIN_BUILD
         void seek (gint64 position);
         void set_window_id ( ::Window id);
@@ -310,7 +307,6 @@ namespace MPX
         VideoPipe         * m_video_pipe;
 
         sigc::connection    m_conn_stream_position;
-        double              m_played_seconds;
         bool                m_seeking;
 
         void  destroy_bins ();

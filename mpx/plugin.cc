@@ -24,7 +24,7 @@
 #include "config.h"
 #include "plugin.hh"
 #include "mpx/main.hh"
-#include "mcs/base.h"
+#include "mcs/mcs.h"
 
 #define NO_IMPORT
 #include <pygtk/pygtk.h>
@@ -199,7 +199,7 @@ namespace MPX
 
 		try{
 			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			ccinstance.attr("activate")(boost::ref(m_Player));
+			ccinstance.attr("activate")(boost::ref(m_Player), boost::ref(mcs));
 			i->second->m_Active = true;
 		} catch( error_already_set ) 
 		{

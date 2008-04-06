@@ -334,11 +334,8 @@ namespace Mcs
       void 
       Mcs::domain_register (std::string const& domain)
       {
-        if (domains.find (domain) == domains.end())
-          {
-            domains[domain] = MKeys();
-            return; 
-          }
+        g_return_if_fail (domains.find (domain) == domains.end());
+		domains[domain] = MKeys();
       }
 
       void
@@ -346,28 +343,26 @@ namespace Mcs
                          std::string const& key,
                          KeyVariant const& key_default)
       {
-      	if (domains. find (domain) == domains. end())
-          return;
-      	domains.find (domain)->second[key] = Key ( domain, key, key_default, KeyType(key_default.which()) );
+      	g_return_if_fail(domains.find(domain) != domains.end());
+      	domains.find (domain)->second[key] = Key( domain, key, key_default, KeyType(key_default.which()) );
       }
 
       void 
       Mcs::key_unset (std::string const& domain,
                       std::string const& key)
       {
-      	if (!domain_key_exist (domain, key)) return;
-        return domains. find (domain)->second. find (key)->second. unset ();
+        g_return_if_fail (domain_key_exist(domain, key));
+        return domains.find(domain)->second.find(key)->second.unset ();
       } 
 
       void 
       Mcs::subscribe (std::string const& name,   //Must be unique
                       std::string const& domain, //Must be registered 
                       std::string const& key,    //Must be registered,
-                      SubscriberNotify   notify)
+                      SubscriberNotify const& notify)
       {
-      	if (!domain_key_exist (domain, key))
-          return;
-        return domains.find (domain)->second.find (key)->second.add_subscriber (name, notify);
+        g_return_if_fail (domain_key_exist(domain, key));
+        return domains.find (domain)->second.find (key)->second.add_subscriber(name, notify);
       }
 
       void 
@@ -376,8 +371,7 @@ namespace Mcs
                         std::string const& key)    //Must be registered,
                         
       {
-      	if (!domain_key_exist (domain, key))
-          return;
-        return domains . find (domain)->second . find (key)->second . remove_subscriber (name);
+        g_return_if_fail (domain_key_exist(domain, key));
+        return domains.find(domain)->second.find(key)->second.remove_subscriber(name);
       }
 }

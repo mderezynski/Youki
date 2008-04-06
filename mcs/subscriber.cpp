@@ -3,12 +3,14 @@
 
 namespace Mcs
 {
-    Subscriber::Subscriber (SubscriberNotify notify)
-      : m_notify (notify)
-    {}
+    Subscriber::Subscriber (SubscriberNotify const& notify)
+    : m_notify (notify)
+    {
+	}
 
-    Subscriber::Subscriber ()
-    {}
+	Subscriber::Subscriber ()
+	{
+	}
 
     Subscriber::~Subscriber ()
     {

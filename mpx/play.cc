@@ -109,7 +109,6 @@ namespace MPX
     , property_duration_      (*this, "duration", 0)
     , m_http_elmt             (0)
     , m_play_elmt             (0)
-    , m_played_seconds        (0)
     , m_seeking               (false)
     {
 	  m_MessageQueue = g_async_queue_new ();
@@ -266,7 +265,6 @@ namespace MPX
         gint64 time_nsec;
         gst_element_query_position (control_pipe (), &format, &time_nsec);
         int time_sec = time_nsec / GST_SECOND;
-        m_played_seconds += 0.5;
         signal_position_.emit (time_sec);
         return true;
       }
@@ -485,31 +483,6 @@ namespace MPX
 
     }
 
-    bool
-    Play::lastfm_qualifies ()
-    {
-      if (property_status_.get_value() != PLAYSTATUS_PLAYING)
-        return false;
-
-      if (video_type (m_stream_type))
-        return false;
-
-      m_stream_lock.lock ();
-      gint64 duration = property_duration_.get_value();
-      bool qualifies ((m_played_seconds >= 240) || (m_played_seconds >= (duration/2)));
-      m_stream_lock.unlock ();
-      return qualifies;
-    }
-
-    bool
-    Play::lastfm_qualifies_duration (gint64 duration)
-    {
-      m_stream_lock.lock ();
-      bool qualifies = ((m_played_seconds >= 240) || (m_played_seconds >= (duration/2)));
-      m_stream_lock.unlock ();
-      return qualifies;
-    }
-
     void
     Play::switch_stream_real (ustring const& stream,
                          ustring const& type)
@@ -518,7 +491,6 @@ namespace MPX
 	  m_metadata.reset();
 	  m_stream_type = ustring();
       readify_stream (); 
-      m_played_seconds = 0.;
       m_stream_type = type;
       property_stream_ = stream;
 	  play_stream ();
