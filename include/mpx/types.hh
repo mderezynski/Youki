@@ -93,6 +93,7 @@ namespace MPX
 
       ATTRIBUTE_ACTIVE,
       ATTRIBUTE_MPX_TRACK_ID,
+	  ATTRIBUTE_MPX_ALBUM_ID,
 
       N_ATTRIBUTES_INT
     };
