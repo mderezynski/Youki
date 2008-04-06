@@ -266,11 +266,11 @@ PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.10.0 gobject-2.0 gthread-2.0 gmodule-2.
 PKG_CHECK_MODULES([GLIBMM], [glibmm-2.4 >= 2.8.3])
 PKG_CHECK_MODULES([SIGC], [sigc++-2.0 >= 2.0.0])
 
- clutter
+# clutter
 PKG_CHECK_MODULES([CLUTTER], [clutter-0.6 >= 0.6.0 clutter-cairo-0.6 >= 0.6.0 clutter-gtk-0.6 >= 0.6.0])
 
-# GIO
-PKG_CHECK_MODULES([GIO], [gio-2.0])
+# GIOMM
+PKG_CHECK_MODULES([GIOMM], [giomm-2.4])
 
 # Gtk+
 PKG_CHECK_MODULES([GTK], [gtk+-2.0 >= 2.10.0])
