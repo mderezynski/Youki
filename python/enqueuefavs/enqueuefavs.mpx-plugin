@@ -1,0 +1,8 @@
+[MPX PlaylistPlugin]
+Loader=python
+Module=enqueuefavs
+IAge=1
+Name=Enqueue Favorite Tracks
+Authors=Milosz Derezynski <milosz@backtrace.info>
+Copyright=Copyright © 2008 Milosz Derezynski 
+Website=http://mpx.backtrace.info/

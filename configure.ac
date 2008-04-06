@@ -727,6 +727,7 @@ AC_OUTPUT([
     python/Makefile
 	python/trackinfo/Makefile
 	python/trackinfo/__init__.py
+	python/enqueuefavs/Makefile
 
 	remote/Makefile
     scripts/Makefile
