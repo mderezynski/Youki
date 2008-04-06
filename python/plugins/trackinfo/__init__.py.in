@@ -242,7 +242,7 @@ class TrackInfoDispatcher(mpx.Plugin):
 	def __init__(self):
 		print ">> TrackInfo Plugin initialized (C) 2008 M. Derezynski"
 
-	def activate(self,player):
+	def activate(self,player,mcs):
 		print ">> TrackInfo Plugin activated"
 		self.player = player
 		self.player_infoarea_click_id = self.player.gobj().connect("infoarea-click", self.infoarea_click)
