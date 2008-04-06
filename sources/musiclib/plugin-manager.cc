@@ -105,18 +105,6 @@ namespace MPX
 			Py_DECREF(path);
 		}
 
-		PyObject *mpx = PyImport_ImportModule("mpx_playlist");
-		PyObject *mpx_dict = PyModule_GetDict(mpx);
-		PyTypeObject *PyMPXPlaylistPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "PlaylistPlugin"); 
-		g_return_if_fail(PyMPXPlaylistPlugin_Type);
-
-		PyObject * main_module = PyImport_AddModule ("__main__");
-		if(main_module == NULL)
-		{
-			g_message("Couldn't get __main__");
-			return;	
-		}
-
 		for(std::vector<std::string>::const_iterator p = m_Paths.begin(); p != m_Paths.end(); ++p)
 		{
 			if(!file_test(*p, FILE_TEST_EXISTS))
@@ -128,6 +116,18 @@ namespace MPX
 
 			for(std::vector<std::string>::const_iterator i = strv.begin(); i != strv.end(); ++i)
 			{
+					PyObject * main_module = PyImport_AddModule ("__main__");
+					if(main_module == NULL)
+					{
+						g_message("Couldn't get __main__");
+						return;	
+					}
+
+					PyObject * mpx = PyImport_ImportModule("mpx_playlist");
+					PyObject * mpx_dict = PyModule_GetDict(mpx);
+					PyTypeObject *PyMPXPlaylistPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "PlaylistPlugin"); 
+					g_return_if_fail(PyMPXPlaylistPlugin_Type);
+
 					PyObject * main_locals = PyModule_GetDict(main_module);
 					PyObject * fromlist = PyTuple_New(0);
 					PyObject * module = PyImport_ImportModuleEx ((char*)i->c_str(), main_locals, main_locals, fromlist);

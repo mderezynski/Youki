@@ -730,8 +730,7 @@ AC_OUTPUT([
 	python/plugins/trackinfo/__init__.py
 	python/plugins/mpxdj/Makefile
 	python/plugins/mpxdj/__init__.py
-	python/modules/Makefile
-	python/modules/audioscrobbler/Makefile
+	python/plugins/audioscrobbler/Makefile
 
 	remote/Makefile
     scripts/Makefile

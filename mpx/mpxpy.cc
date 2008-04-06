@@ -245,9 +245,6 @@ namespace MPX
 
 BOOST_PYTHON_MODULE(mpx)
 {
-	class_<Gtk::Widget, boost::noncopyable>("GtkWidget", no_init)
-	;
-
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::OVariant>("Optional")

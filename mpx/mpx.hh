@@ -113,6 +113,7 @@ namespace MPX
 		enum PlayerCSignals
 		{
 			PSIGNAL_NEW_TRACK,
+			PSIGNAL_TRACK_PLAYED,
 			PSIGNAL_INFOAREA_CLICK,
 			N_SIGNALS
 		};

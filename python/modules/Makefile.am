@@ -1,1 +1,1 @@
-SUBDIRS = audioscrobbler
+SUBDIRS =

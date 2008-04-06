@@ -17,7 +17,7 @@ import time
 class MPXDJ(mpx_playlist.PlaylistPlugin):
 	def __init__(self):
 		print ">> MPXDJ Plugin initialized (C) 2008 M. Derezynski"
-		self.gladedir = "@DATA_DIR" + "/glade/mpxdj.glade"
+		self.gladedir = "@DATA_DIR@" + "/glade/mpxdj.glade"
 
 	def prepare(self,lib):
 		print ">> MPXDJ Plugin preparing"

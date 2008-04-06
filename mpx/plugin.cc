@@ -71,17 +71,6 @@ namespace MPX
 			Py_DECREF(path);
 		}
 
-		PyObject *mpx = PyImport_ImportModule("mpx");
-		PyObject *mpx_dict = PyModule_GetDict(mpx);
-		PyTypeObject *PyMPXPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "Plugin"); 
-
-		PyObject * main_module = PyImport_AddModule ("__main__");
-		if(main_module == NULL)
-		{
-			g_message("Couldn't get __main__");
-			return;	
-		}
-
 		for(Strings::const_iterator p = m_Paths.begin(); p != m_Paths.end(); ++p)
 		{
 			if(!file_test(*p, FILE_TEST_EXISTS))
@@ -93,11 +82,23 @@ namespace MPX
 
 			for(std::vector<std::string>::const_iterator i = strv.begin(); i != strv.end(); ++i)
 			{
+					PyObject * main_module = PyImport_AddModule ("__main__");
+					if(main_module == NULL)
+					{
+						g_message("Couldn't get __main__");
+						return;	
+					}
+
+					PyObject * mpx = PyImport_ImportModule("mpx");
+					PyObject * mpx_dict = PyModule_GetDict(mpx);
+					PyTypeObject *PyMPXPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "Plugin"); 
+
 					PyObject * main_locals = PyModule_GetDict(main_module);
 					PyObject * fromlist = PyTuple_New(0);
 					PyObject * module = PyImport_ImportModuleEx ((char*)i->c_str(), main_locals, main_locals, fromlist);
 					Py_DECREF (fromlist);
 					if (!module) {
+						g_message("%s: Couldn't load module '%s'", G_STRLOC, i->c_str());
 						PyErr_Print ();
 						continue;	
 					}
@@ -193,6 +194,9 @@ namespace MPX
 			g_message("%s: Requested deactivate from plugin %lld, but is active.", G_STRLOC, id);	
 			g_return_if_reached();
 		}
+
+		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+
 		try{
 			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
 			ccinstance.attr("activate")(boost::ref(m_Player));
@@ -200,6 +204,8 @@ namespace MPX
 		} catch( error_already_set ) 
 		{
 		}
+
+		pyg_gil_state_release (state);
 	}
 
 	void
@@ -213,6 +219,9 @@ namespace MPX
 			g_message("%s: Requested deactivate from plugin %lld, but is deactivated.", G_STRLOC, id);	
 			g_return_if_reached();
 		}
+
+		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+
 		try{
 			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
 			ccinstance.attr("deactivate")();
@@ -220,5 +229,7 @@ namespace MPX
 		} catch( error_already_set ) 
 		{
 		}
+
+		pyg_gil_state_release (state);
 	}
 }

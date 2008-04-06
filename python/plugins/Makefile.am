@@ -1,1 +1,1 @@
-SUBDIRS = mpxdj trackinfo
+SUBDIRS = audioscrobbler mpxdj trackinfo

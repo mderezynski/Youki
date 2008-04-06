@@ -1001,6 +1001,14 @@ namespace MPX
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
 
+		signals[PSIGNAL_TRACK_PLAYED] =
+			g_signal_new ("track-played",
+					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+					  0,
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
 		signals[PSIGNAL_INFOAREA_CLICK] =
 			g_signal_new ("infoarea-click",
 					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
@@ -1830,6 +1838,7 @@ namespace MPX
 		{
 			gint64 id = get<gint64>(m_Metadata[ATTRIBUTE_MPX_TRACK_ID].get());
 			m_Library.trackPlayed(id, time(NULL));
+			g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_TRACK_PLAYED], 0);
 		}
 
 		m_TrackPlayedSeconds = 0.;
@@ -1977,7 +1986,6 @@ namespace MPX
 			m_Play->switch_stream (uri, type);
 			source->prev_post ();
 			play_post_internal (source_id);
-			g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
 			//m_player_dbus_obj->emit_track_change (m_player_dbus_obj);
 	  }
 	}
@@ -2024,7 +2032,6 @@ namespace MPX
 			m_Play->switch_stream (source->get_uri(), source->get_type());
 		    source->next_post ();
 		    play_post_internal (source_id);
-			g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
 		    //m_player_dbus_obj->emit_track_change (m_player_dbus_obj);
 	  }
 	}
