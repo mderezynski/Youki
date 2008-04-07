@@ -230,7 +230,7 @@ namespace MPX
 {
 	struct Plugin
 	{
-		void
+		bool
 		activate (MPX::Player&, Mcs::Mcs&)
 		{
 		}

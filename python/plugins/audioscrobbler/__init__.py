@@ -704,6 +704,8 @@ class MPXAudioScrobbler(mpx.Plugin):
 		self.hand1 = self.player.gobj().connect("track-played", self.track_played)
 		self.hand2 = self.player.gobj().connect("new-track", self.now_playing)
 
+		return True
+
 	def deactivate(self):
 
 		""" Deactivate plugin """

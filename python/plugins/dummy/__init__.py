@@ -12,7 +12,8 @@ class Dummy(mpx.Plugin):
 
 	def activate(self,player,mcs):
 		print ">> Dummy Plugin activated"
-                self.player = player
+		self.player = player
+		return True
 
 	def deactivate(self):
 		print ">> Dummy Plugin deactivated"
