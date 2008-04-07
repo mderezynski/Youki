@@ -94,7 +94,7 @@ namespace MPX
 			PluginHoldMap const&
 			get_map () const;
 		
-			void	
+			bool	
 			activate (gint64 /*id*/);
 	
 			void

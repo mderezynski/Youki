@@ -183,18 +183,19 @@ namespace MPX
 		return m_Map;
 	}
 
-	void
+	bool
 	PluginManager::activate(gint64 id)
 	{
+		bool result = false;
 		Glib::Mutex::Lock L (m_StateChangeLock);
 
 		PluginHoldMap::iterator i = m_Map.find(id);
-		g_return_if_fail(i != m_Map.end());
+		g_return_val_if_fail(i != m_Map.end(), false);
 
 		if(i->second->m_Active)
 		{
-			g_message("%s: Requested deactivate from plugin %lld, but is active.", G_STRLOC, id);	
-			g_return_if_reached();
+			g_message("%s: Requested activate from plugin %lld, but is active.", G_STRLOC, id);	
+			g_return_val_if_reached(false);
 		}
 
 		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
@@ -202,7 +203,7 @@ namespace MPX
 		try{
 			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
 			object callable = ccinstance.attr("activate");
-			boost::python::call<void>(callable.ptr(), boost::ref(*m_Player), boost::ref(*mcs));
+			result = boost::python::call<bool>(callable.ptr(), boost::ref(*m_Player), boost::ref(*mcs));
 			i->second->m_Active = true;
 			PyErr_Print ();
 		} catch( error_already_set ) 
@@ -211,6 +212,8 @@ namespace MPX
 		}
 
 		pyg_gil_state_release (state);
+
+		return result;
 	}
 
 	void
@@ -235,6 +238,7 @@ namespace MPX
 			i->second->m_Active = false;
 		} catch( error_already_set ) 
 		{
+			PyErr_Print ();
 		}
 
 		pyg_gil_state_release (state);
