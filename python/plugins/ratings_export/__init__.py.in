@@ -1,0 +1,98 @@
+#
+# MPX Ratings Import/Export plugin
+# (C) 2008 D. Le Brun
+#
+
+import mpx
+import mpx_playlist
+import pygtk
+pygtk.require('2.0')
+import gtk
+import gtk.glade
+import gobject
+import csv
+
+
+class Ratings(mpx_playlist.PlaylistPlugin):
+	def __init__(self):
+		print ">> Ratings Import/Export Plugin initialized"
+		self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-scripts/ratings_export/ratings_export.glade")
+		self.dialog = self.xml.get_widget("dialog")
+		self.combo = self.xml.get_widget("combobox")
+		self.label = self.xml.get_widget("label")
+		self.fileentry = self.xml.get_widget("fileentry")
+		self.go = self.xml.get_widget("button-go")
+		self.go.set_sensitive(False)
+
+		operations = [
+				"Export ratings to file", 
+				"Import ratings from file"
+		]
+		self.callables = [
+				self.OPERATION_export,
+				self.OPERATION_import
+				
+		]
+		self.helptexts = [
+				"Export the ratings you set to your tracks into a file. It could be useful if the library is erased.",
+				"Import the ratings from a file you've previously exported."
+		]
+		cell = gtk.CellRendererText()
+		self.combo.pack_start(cell)
+		self.combo.add_attribute(cell, "text", 0)
+
+		self.store = gtk.ListStore(gobject.TYPE_STRING)
+		self.combo.set_model(self.store)
+	
+		for operation in operations:
+			self.store.append([operation])
+
+		self.notebook = self.xml.get_widget("notebook")
+
+		self.combo.connect("changed", self.cbox_changed)
+		self.combo.set_active(0)
+
+	def cbox_changed(self, cbox):
+		self.label.set_text(self.helptexts[cbox.get_active()])		
+		self.notebook.set_current_page(cbox.get_active())		
+		self.go.set_sensitive(self.callables[self.combo.get_active()] is not None)
+
+	def OPERATION_export(self,lib,v):
+		file = self.fileentry.get_text()
+		print ">> Export to " + file
+		try:
+			csvwriter = csv.writer(open(file, "wb"))
+		except IOError:
+			print ">> Cannot open file " + file
+			return False
+
+		rv = mpx.SQLRowV()
+		lib.getSQL(rv, "SELECT mb_track_id, rating FROM track WHERE rating IS NOT NULL AND mb_track_id IS NOT NULL")
+
+		line = 0
+		for row in rv:
+			csvwriter.writerow([(row["mb_track_id"]), (row["rating"])])
+			line = line + 1
+
+		print ">> " + str(line) + " rows exported"
+
+	def OPERATION_import(self,lib,v):
+		file = self.fileentry.get_text()
+		print ">> Import from " + file
+		try:
+			csvreader = csv.reader(open(file, "rb"))
+			line = 0
+			for row in csvreader:
+				lib.execSQL("UPDATE track SET rating = '" + row[1] + "' WHERE mb_track_id = '" + row[0] + "'")
+				line = line + 1
+			print ">> " + str(line) + " tracks updated"
+		except IOError:
+			print ">> Cannot open file or is not parsable" + file
+			return False
+
+	def run(self,lib,v):
+		print ">> Ratings Import/Export Plugin running"
+		ret = self.dialog.run()
+		if(ret == gtk.RESPONSE_OK):
+			self.callables[self.combo.get_active()](lib, v)
+		self.dialog.hide()
