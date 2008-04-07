@@ -733,6 +733,8 @@ AC_OUTPUT([
 	python/plugins/mpxdj/Makefile
 	python/plugins/mpxdj/__init__.py
 	python/plugins/audioscrobbler/Makefile
+	python/plugins/ratings_export/Makefile
+	python/plugins/ratings_export/__init__.py
 
 	remote/Makefile
     scripts/Makefile
