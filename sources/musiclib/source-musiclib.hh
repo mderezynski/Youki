@@ -38,7 +38,6 @@
 #include "mpx/paccess.hh"
 
 #include "plugin-manager.hh"
-#include "plugin-manager-gui.hh"
 
 namespace MPX
 {
@@ -53,18 +52,19 @@ namespace Source
 				Glib::RefPtr<Gtk::UIManager> m_MainUIManager;
 				Glib::RefPtr<Gtk::ActionGroup> m_MainActionGroup;
 				PlaylistPluginManager *m_PluginManager;
-				PlaylistPluginManagerGUI *m_PluginManagerGUI;
 				PAccess<MPX::Library> m_Lib;
+				std::string m_MergedUI;
 
 				void
 				on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
 
-				void
-				action_cb_playlist_scripts ();
-
 			public:
 
 				PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
+				~PlaybackSourceMusicLib ();
+
+				void
+				action_cb_run_plugin (gint64);
 
 				void
 				action_cb_play ();

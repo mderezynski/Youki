@@ -38,7 +38,6 @@ namespace MPX
 		private:
 
 			PyObject	*	m_PluginInstance;
-
 			std::string		m_Name;
 			std::string		m_Description;
 			std::string		m_Authors;
@@ -46,8 +45,12 @@ namespace MPX
 			int				m_IAge;
 			std::string		m_Website;
 			gint64			m_Id;
+			Glib::RefPtr<Gdk::Pixbuf> m_Icon;
 
 		public:
+
+			Glib::RefPtr<Gdk::Pixbuf> const&
+			get_icon ()			const	{ return m_Icon; }
 
 			std::string const&
 			get_name ()			const	{ return m_Name; }
@@ -66,6 +69,11 @@ namespace MPX
 	
 			gint64
 			get_id ()			const	{ return m_Id; }
+
+			PlaylistPluginHolder ()
+			: m_Icon(Glib::RefPtr<Gdk::Pixbuf>(0))
+			{
+			}
 
 		friend class PlaylistPluginManager;
 	};

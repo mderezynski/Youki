@@ -1,3 +1,9 @@
-python_DATA = __init__.py mpxdj.mpx-plugin mpxdj.glade mpxdj.png
+python_DATA = 				\
+		__init__.py 		\
+		mpxdj.mpx-plugin 	\
+		mpxdj.glade			\
+		mpxdj.png			\
+		mpxdj-icon.png
+
 pythondir = $(pkgdatadir)/playlist-scripts/mpxdj
-EXTRA_DIST = __init__.py
+BUILT_SOURCES = __init__.py

@@ -648,7 +648,7 @@ namespace MPX
                      gpointer    data)
     {
       Play & play = *(static_cast<Play*> (data));
-	  Glib::Mutex::Lock L (play.m_BusLock);
+	  //Glib::Mutex::Lock L (play.m_BusLock);
 
       static GstState old_state = GstState (0), new_state = GstState (0), pending_state = GstState (0);
 

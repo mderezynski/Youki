@@ -33,8 +33,6 @@ libmpxsource_musiclib_la_SOURCES =  \
 		plugin.cc					\
 		plugin-manager.hh			\
 		plugin-manager.cc			\
-		plugin-manager-gui.hh		\
-		plugin-manager-gui.cc		\
 		source-musiclib.hh			\
 		source-musiclib.cc
 

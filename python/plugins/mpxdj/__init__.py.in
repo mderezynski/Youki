@@ -11,6 +11,10 @@ pygtk.require('2.0')
 import gtk
 import gobject
 import gtk.glade
+from Ft.Xml.XPath.Context import Context
+from Ft.Xml.XPath import Evaluate
+from Ft.Xml.Domlette import NonvalidatingReader
+from Ft.Xml import EMPTY_NAMESPACE
 #import musicbrainz2
 #import musicbrainz2.webservice as ws
 
@@ -26,19 +30,24 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 		self.header_image = self.xml.get_widget("header-image")
 		self.header_image.set_from_file("@DATA_DIR@" + "/playlist-scripts/mpxdj/mpxdj.png")
 
+		try:
+			self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/playlist-scripts/mpxdj/mpxdj-icon.png")
+		except:
+			print "MPXDJ: No Icon"
 
 		options = ["Entertain Me!", "Play All", "Top Tunes", "New Music", "Memory Lane", "Sounds Of...",
-				   "Forgotten Gems", "Deja Vu", "Random Mix"]
+				   "Forgotten Gems", "Deja Vu", "Random Mix", "Last.fm Tag"]
 
 		self.callables = [  self.OPTION_entertain_me,
 							None,	
-							None,
+							self.OPTION_top_tunes,
 							None,
 							None,
 						    self.OPTION_sounds_of,
 							None,
 							None,
-							None
+							None,
+							self.OPTION_lastfm_tag
 						 ]
 
 		self.helptexts = [
@@ -50,7 +59,8 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 				"Select to create a running order composed of tracks from a specific decade.",
 				"Select to create a running order composed of the most popular, but least recently played, tracks during a set amount of time.",
 				"Select to create a running order composed of the most popular and most recently played tracks during a set amount of time.",
-				"Select to create a running order composed of all tracks, in random order, on the player."
+				"Select to create a running order composed of all tracks, in random order, on the player.",
+				"Creates a playlist from your music library based on a Last.fm tag"
 		]	
 
 		cell = gtk.CellRendererText()
@@ -76,6 +86,26 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 		self.notebook.set_current_page(cbox.get_active())		
 		self.go.set_sensitive(self.callables[self.combo.get_active()] is not None)
 
+	def extract_ids(self, rv, v):
+
+		for val in rv:
+			v.append(val["id"].get_int())
+
+
+	def OPTION_lastfm_tag(self, lib, v):
+		
+		MBID_NODE_XPATH = u'//mbid'
+		text = self.xml.get_widget("entry-lastfm-tag").get_text()
+		uri = u"http://ws.audioscrobbler.com/1.0/tag/%s/topartists.xml" % text
+		lastfm = NonvalidatingReader.parseUri(uri)
+		ctx = Context(lastfm)
+		mbids = Evaluate(MBID_NODE_XPATH, context=ctx)
+		rv = mpx.SQLRowV()
+		for mbid in mbids:
+			if mbid.firstChild:
+				lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY mpxrand(*) LIMIT 1"))
+		self.extract_ids(rv, v)
+
 	def OPTION_sounds_of(self, lib, v):
 	
 		active = self.xml.get_widget("cbox-decade").get_active()
@@ -90,17 +120,25 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 		
 		
 		rv = mpx.SQLRowV()
-		lib.getSQL(rv, "SELECT id FROM track_view WHERE date > " + str(lower) + " AND date < " + str(upper) + " ORDER BY random(*) LIMIT 50")
-		for val in rv:
-			v.append(val["id"].get_int())
+		for x in range(10):
+			lib.getSQL(rv, "SELECT id FROM track_view WHERE date >= " + str(lower) + " AND date < " + str(upper) + " ORDER BY mpxrand(*) LIMIT 1")
+		self.extract_ids(rv, v)
 
+	def OPTION_top_tunes(self, lib, v):
+	
+		rv = mpx.SQLRowV()
+		lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY mpxrand(*) LIMIT 10")
+		self.extract_ids(rv, v)
 
 	def OPTION_entertain_me(self, lib, v):
 
 		rv = mpx.SQLRowV()
-		lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY random(*) DESC LIMIT 20")
-		for val in rv:
-			v.append(val["id"].get_int())
+		lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC, rating DESC, mpxrand(*) LIMIT 10")
+		self.extract_ids(rv, v)
+
+	def get_icon(self):
+
+		return self.icon
 
 	def run(self,lib,v):
 		print ">> MPXDJ Running"

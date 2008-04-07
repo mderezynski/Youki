@@ -26,6 +26,7 @@
 #endif //HAVE_TR1
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
+#include <glib.h>
 #include <libglademm.h>
 
 #include "widgets/cell-renderer-cairo-surface.hh"
@@ -42,7 +43,6 @@
 
 #include "source-musiclib.hh"
 #include "plugin-manager.hh"
-#include "plugin-manager-gui.hh"
 
 using namespace Gtk;
 using namespace Glib;
@@ -75,13 +75,14 @@ namespace
   ""
   "</ui>";
 
-  char const * ui_mainmerge =
+  char const * ui_mainmerge1 =
   "<ui>"
   ""
   "<menubar name='MenubarMain'>"
   "   <placeholder name='placeholder-source'>"
-  "		<menu action='menu-source-musiclib'>"
-  "         <menuitem action='action-playlist-scripts'/>"
+  "		<menu action='menu-source-musiclib'>";
+  
+  char const * ui_mainmerge2 =
   "		</menu>"
   "   </placeholder>"
   "</menubar>"
@@ -1711,10 +1712,7 @@ namespace Source
 		send_caps ();
 
 		m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
-		m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music Library")));
-		m_MainActionGroup->add(Action::create("action-playlist-scripts", _("Playlist Scripts")),
-			sigc::mem_fun( *this, &PlaybackSourceMusicLib::action_cb_playlist_scripts));
-		m_MainUIManager->insert_action_group(m_MainActionGroup);
+		m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
 
 		m_PluginManager = new PlaylistPluginManager();
 		std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"playlist-scripts");
@@ -1722,21 +1720,51 @@ namespace Source
 			m_PluginManager->append_search_path (user_path);
 		m_PluginManager->append_search_path (build_filename(DATA_DIR,"playlist-scripts"));
 		m_PluginManager->load_plugins();
-		m_PluginManagerGUI = PlaylistPluginManagerGUI::create(*m_PluginManager, m_Lib.get());
 
-		m_PluginManagerGUI->signal_got_ids().connect( sigc::mem_fun( *m_Private->m_TreeViewPlaylist, &MusicLibPrivate::PlaylistTreeView::append_trackid_v ));
+		Glib::RefPtr<Gtk::IconFactory> factory = Gtk::IconFactory::create();
+
+		m_MergedUI = ui_mainmerge1;
+		PlaylistPluginHoldMap const& map = m_PluginManager->get_map();
+		for(PlaylistPluginHoldMap::const_iterator i = map.begin(); i != map.end(); ++i)
+		{
+			PlaylistPluginHolderRefP const& p = i->second;
+			static boost::format menuitem_f ("<menuitem action='plugin-%lld'/>");
+			static boost::format name_f ("plugin-%lld");
+			static boost::format stock_f ("stock-mpx-playlist-plugin-%lld");
+
+			ustring name = (name_f % p->get_id()).str();
+
+			if(p->get_icon())
+			{
+				factory->add(StockID ((stock_f % p->get_id()).str()), Gtk::IconSet(p->get_icon()));	
+				m_MainActionGroup->add (Action::create( name, StockID((stock_f % p->get_id()).str()), p->get_name()),
+										sigc::bind( sigc::mem_fun (*this, &PlaybackSourceMusicLib::action_cb_run_plugin),
+										p->get_id()));
+			}
+			else
+			{
+				m_MainActionGroup->add (Action::create( name, p->get_name()),
+										sigc::bind( sigc::mem_fun (*this, &PlaybackSourceMusicLib::action_cb_run_plugin),
+										p->get_id()));
+			}
+			m_MergedUI += (menuitem_f % p->get_id()).str();
+		}
+		m_MergedUI += ui_mainmerge2;
+		factory->add_default();
+
+		m_MainUIManager->insert_action_group(m_MainActionGroup);
     }
+
+	PlaybackSourceMusicLib::~PlaybackSourceMusicLib ()
+	{
+		delete m_Private;
+		delete m_PluginManager;
+	}
 
 	guint
 	PlaybackSourceMusicLib::add_menu ()
 	{
-		return m_MainUIManager->add_ui_from_string(ui_mainmerge);
-	}
-
-	void
-	PlaybackSourceMusicLib::action_cb_playlist_scripts ()
-	{
-		m_PluginManagerGUI->present();
+		return m_MainUIManager->add_ui_from_string(m_MergedUI);
 	}
 
 	void
@@ -1745,6 +1773,14 @@ namespace Source
       m_Private->m_TreeViewPlaylist->m_CurrentIter = boost::optional<Gtk::TreeIter>(); 
       m_Private->m_TreeViewPlaylist->m_CurrentId = boost::optional<gint64>();
 	  Signals.PlayRequest.emit();
+	}
+
+	void
+	PlaybackSourceMusicLib::action_cb_run_plugin (gint64 id)
+	{
+		TrackIdV v;
+		m_PluginManager->run( id, m_Lib.get(), v );
+		m_Private->m_TreeViewPlaylist->append_trackid_v( v );
 	}
 
 	void

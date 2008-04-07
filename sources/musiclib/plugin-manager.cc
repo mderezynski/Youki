@@ -48,6 +48,12 @@ namespace MPX
 		run (MPX::Library& G_GNUC_UNUSED, TrackIdV& G_GNUC_UNUSED)
 		{
 		}
+
+		PyObject*	
+		get_icon ()
+		{
+			return NULL;
+		}
 	};
 }
 
@@ -155,6 +161,18 @@ namespace MPX
 							const char* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
 							ptr->m_Description = doc ? doc : "(No Description given)";
 							ptr->m_Id = m_Id++;
+
+							try{
+								object ccinstance = object((handle<>(borrowed(ptr->m_PluginInstance))));
+								object ccicon =	ccinstance.attr("get_icon")();
+								if(ccicon.ptr())
+								{
+									ptr->m_Icon = Glib::wrap(((GdkPixbuf*)(pygobject_get(ccicon.ptr()))), true);
+								}
+							} catch( error_already_set )
+							{
+								PyErr_Print();
+							}
 
 							Glib::KeyFile keyfile;
 							std::string key_filename = build_filename(*p, build_filename(*i, (*i)+".mpx-plugin"));

@@ -161,6 +161,7 @@ namespace
 
 namespace MPX
 {
+  // SQLITE ADDITIONS //
   void
   absRatingFunc (sqlite3_context *ctx, int argc, sqlite3_value **argv)
   {
@@ -169,6 +170,15 @@ namespace MPX
 	gint64 absRating = (albumRating * 5) + trackRating;
 	sqlite3_result_int64(ctx, absRating);
   }
+
+  void
+  randFunc (sqlite3_context *ctx, int argc, sqlite3_value **argv)
+  {
+	gint64 rand = g_random_int(); 
+	sqlite3_result_int64(ctx, rand);
+  }
+
+  // SQLITE ADDITIONS //
 
   string
   mprintf (const char *format, ...)
@@ -638,6 +648,7 @@ namespace MPX
 #endif //SQLITE_TRACE
 
 		sqlite3_create_function(m_sqlite, "abs_rating", 2, SQLITE_ANY, this, absRatingFunc, 0, 0);
+		sqlite3_create_function(m_sqlite, "mpxrand", 0, SQLITE_ANY, this, randFunc, 0, 0);
 
         exec_sql ("PRAGMA synchronous=OFF;"); 
       }

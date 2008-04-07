@@ -834,6 +834,16 @@ namespace MPX
       if( !(track[ATTRIBUTE_ALBUM] && track[ATTRIBUTE_ARTIST] && track[ATTRIBUTE_TITLE]) )
         return SCAN_RESULT_ERROR ;
 
+	  if( (!track[ATTRIBUTE_DATE]) && (track[ATTRIBUTE_MB_RELEASE_DATE]))
+	  {
+		std::string mb_date = get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get());
+		int mb_date_int = 0;
+		if (sscanf(mb_date.c_str(), "%04d", &mb_date_int) == 1)
+		{
+			track[ATTRIBUTE_DATE] = gint64(mb_date_int);
+		}
+	  }
+
       std::string insert_path_value ; 
       URI u (uri);
 
