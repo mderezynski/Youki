@@ -723,28 +723,28 @@ class MPXAudioScrobbler(mpx.Plugin):
 		p_date = time.time()
 		m = self.player.get_metadata()
 
-		if m.get(mpx.AttributeId.attr_artist).is_initialized() and m.get(mpx.AttributeId.attr_title).is_initialized():
+		if m.get(mpx.AttributeId.ARTIST).is_initialized() and m.get(mpx.AttributeId.TITLE).is_initialized():
 
-			p_artist = m.get(mpx.AttributeId.attr_artist).val().get_string()
-			p_title = m.get(mpx.AttributeId.attr_title).val().get_string()
+			p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
+			p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
 
 			p_len = 0
-			m_len = m.get(mpx.AttributeId.attr_time)
+			m_len = m.get(mpx.AttributeId.TIME)
 			if m_len.is_initialized():
 				p_len = m_len.val().get_int()
 
 			p_tracknumber=u''
-			m_tracknumber = m.get(mpx.AttributeId.attr_track)
+			m_tracknumber = m.get(mpx.AttributeId.TRACK)
 			if m_tracknumber.is_initialized():
 				p_tracknumber = str(m_tracknumber.val().get_int())
 
 			p_album=u''
-			m_album = m.get(mpx.AttributeId.attr_album)
+			m_album = m.get(mpx.AttributeId.ALBUM)
 			if m_album.is_initialized():
 				p_album = m_album.val().get_string()
 
 			p_mbid=u''
-			m_mbid = m.get(mpx.AttributeId.attr_mb_track_id)
+			m_mbid = m.get(mpx.AttributeId.MB_TRACK_ID)
 			if m_mbid.is_initialized():
 				p_mbid = m_mbid.val().get_string()
 
@@ -766,30 +766,30 @@ class MPXAudioScrobbler(mpx.Plugin):
 
 		print ">> AS Now-Playing!"
 
-		if m.get(mpx.AttributeId.attr_artist).is_initialized() and m.get(mpx.AttributeId.attr_title).is_initialized():
+		if m.get(mpx.AttributeId.ARTIST).is_initialized() and m.get(mpx.AttributeId.TITLE).is_initialized():
 
 			print ">> Posting..." 
 
-			p_artist = m.get(mpx.AttributeId.attr_artist).val().get_string()
-			p_title = m.get(mpx.AttributeId.attr_title).val().get_string()
+			p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
+			p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
 
 			p_len = 0
-			m_len = m.get(mpx.AttributeId.attr_time)
+			m_len = m.get(mpx.AttributeId.TIME)
 			if m_len.is_initialized():
 				p_len = m_len.val().get_int()
 
 			p_tracknumber=u''
-			m_tracknumber = m.get(mpx.AttributeId.attr_track)
+			m_tracknumber = m.get(mpx.AttributeId.TRACK)
 			if m_tracknumber.is_initialized():
 				p_tracknumber = str(m_tracknumber.val().get_int())
 
 			p_album=u''
-			m_album = m.get(mpx.AttributeId.attr_album)
+			m_album = m.get(mpx.AttributeId.ALBUM)
 			if m_album.is_initialized():
 				p_album = m_album.val().get_string()
 
 			p_mbid=u''
-			m_mbid = m.get(mpx.AttributeId.attr_mb_track_id)
+			m_mbid = m.get(mpx.AttributeId.MB_TRACK_ID)
 			if m_mbid.is_initialized():
 				p_mbid = m_mbid.val().get_string()
 

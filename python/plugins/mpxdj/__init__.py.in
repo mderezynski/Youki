@@ -11,6 +11,7 @@ pygtk.require('2.0')
 import gtk
 import gobject
 import gtk.glade
+import urllib
 from Ft.Xml.XPath.Context import Context
 from Ft.Xml.XPath import Evaluate
 from Ft.Xml.Domlette import NonvalidatingReader
@@ -96,7 +97,7 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 		
 		MBID_NODE_XPATH = u'//mbid'
 		text = self.xml.get_widget("entry-lastfm-tag").get_text()
-		uri = u"http://ws.audioscrobbler.com/1.0/tag/%s/topartists.xml" % text
+		uri = u"http://ws.audioscrobbler.com/1.0/tag/%s/topartists.xml" % urllib.quote(text)
 		lastfm = NonvalidatingReader.parseUri(uri)
 		ctx = Context(lastfm)
 		mbids = Evaluate(MBID_NODE_XPATH, context=ctx)

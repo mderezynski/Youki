@@ -1,1 +1,6 @@
-SUBDIRS = audioscrobbler dummy mpxdj trackinfo
+SUBDIRS = 				\
+		audioscrobbler 	\
+		dummy 			\
+		mpxdj			\
+		ratings_export	\
+		trackinfo
