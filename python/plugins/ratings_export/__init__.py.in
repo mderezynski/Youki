@@ -11,7 +11,7 @@ import gtk
 import gtk.glade
 import gobject
 import csv
-
+import time
 
 class Ratings(mpx_playlist.PlaylistPlugin):
 	def __init__(self):
@@ -20,9 +20,14 @@ class Ratings(mpx_playlist.PlaylistPlugin):
 		self.dialog = self.xml.get_widget("dialog")
 		self.combo = self.xml.get_widget("combobox")
 		self.label = self.xml.get_widget("label")
-		self.fileentry = self.xml.get_widget("fileentry")
+		self.fc = self.xml.get_widget("fcbutton")
 		self.go = self.xml.get_widget("button-go")
 		self.go.set_sensitive(False)
+		
+		try:
+			self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/playlist-scripts/ratings_export/rexp-icon.png")
+		except:
+			print "MPXDJ: No Icon"
 
 		operations = [
 				"Export ratings to file", 
@@ -47,40 +52,85 @@ class Ratings(mpx_playlist.PlaylistPlugin):
 		for operation in operations:
 			self.store.append([operation])
 
-		self.notebook = self.xml.get_widget("notebook")
-
 		self.combo.connect("changed", self.cbox_changed)
 		self.combo.set_active(0)
 
 	def cbox_changed(self, cbox):
 		self.label.set_text(self.helptexts[cbox.get_active()])		
-		self.notebook.set_current_page(cbox.get_active())		
 		self.go.set_sensitive(self.callables[self.combo.get_active()] is not None)
 
 	def OPERATION_export(self,lib,v):
-		file = self.fileentry.get_text()
-		print ">> Export to " + file
+		path = self.fc.get_current_folder()
+		uxtime = str(int(time.time()))
+		filenames = ["%(path)s/mpx-ratings-track-%(unixtime)s.mre" % {'path': path, 'unixtime': uxtime},
+					 "%(path)s/mpx-ratings-album-%(unixtime)s.mre" % {'path': path, 'unixtime': uxtime}]
+
 		try:
-			csvwriter = csv.writer(open(file, "wb"))
+			csvwriter = csv.writer(open(filenames[0], "wb"))
 		except IOError:
-			print ">> Cannot open file " + file
-			return False
+			print ">> Cannot open file " + filenames[0]
+			return
 
 		rv = mpx.SQLRowV()
-		lib.getSQL(rv, "SELECT mb_track_id, rating FROM track WHERE rating IS NOT NULL AND mb_track_id IS NOT NULL")
+		lib.getSQL(rv, "SELECT mb_track_id, rating, pcount, pdate FROM track WHERE rating IS NOT NULL AND mb_track_id IS NOT NULL")
 
-		line = 0
 		for row in rv:
-			csvwriter.writerow([(row["mb_track_id"]), (row["rating"])])
-			line = line + 1
 
-		print ">> " + str(line) + " rows exported"
+			vals = [ None, None, None, None ] 
+
+			try:
+				vals[0] = row["mb_track_id"]
+			except:
+				print "No MB Track ID"				
+
+			try:
+				vals[1] = row["rating"]
+			except:
+				print "No rating" 
+
+			try:
+				vals[2] = row["pcount"]
+			except:
+				print "No pcount" 
+
+			try:
+				vals[3] = row["pdate"]
+			except:
+				print "No pdate" 
+
+			csvwriter.writerow(vals)
+
+		try:
+			csvwriter = csv.writer(open(filenames[1], "wb"))
+		except IOError:
+			print ">> Cannot open file " + filenames[1]
+			return
+
+		rv = mpx.SQLRowV()
+		lib.getSQL(rv, "SELECT mb_album_id, album_rating FROM album WHERE mb_album_id AND album_rating IS NOT NULL")
+
+		for row in rv:
+
+			vals = [ None, None ] 
+
+			try:
+				vals[0] = row["mb_album_id"]
+			except:
+				print "No MB Album ID"				
+
+			try:
+				vals[1] = row["album_rating"]
+			except:
+				print "No rating" 
+
+			csvwriter.writerow(vals)
+
 
 	def OPERATION_import(self,lib,v):
-		file = self.fileentry.get_text()
-		print ">> Import from " + file
+		path = self.fc.get_current_folder()
+		print ">> Import from " + path
 		try:
-			csvreader = csv.reader(open(file, "rb"))
+			csvreader = csv.reader(open(path, "rb"))
 			line = 0
 			for row in csvreader:
 				lib.execSQL("UPDATE track SET rating = '" + row[1] + "' WHERE mb_track_id = '" + row[0] + "'")

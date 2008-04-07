@@ -48,12 +48,6 @@ namespace MPX
 		run (MPX::Library& G_GNUC_UNUSED, TrackIdV& G_GNUC_UNUSED)
 		{
 		}
-
-		PyObject*	
-		get_icon ()
-		{
-			return NULL;
-		}
 	};
 }
 
@@ -164,7 +158,7 @@ namespace MPX
 
 							try{
 								object ccinstance = object((handle<>(borrowed(ptr->m_PluginInstance))));
-								object ccicon =	ccinstance.attr("get_icon")();
+								object ccicon =	ccinstance.attr("icon");
 								if(ccicon.ptr())
 								{
 									ptr->m_Icon = Glib::wrap(((GdkPixbuf*)(pygobject_get(ccicon.ptr()))), true);

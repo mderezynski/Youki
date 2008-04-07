@@ -1,6 +1,8 @@
-python_DATA = 					\
-		__init__.py 			\
+python_DATA = 						\
+		__init__.py 				\
 		ratings_export.mpx-plugin	\
-		ratings_export.glade
+		ratings_export.glade		\
+		rexp-icon.png
+
 pythondir = $(pkgdatadir)/playlist-scripts/ratings_export
 BUILT_SOURCES = __init__.py

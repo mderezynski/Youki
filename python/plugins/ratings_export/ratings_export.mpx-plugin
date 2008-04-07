@@ -2,7 +2,7 @@
 Loader=python
 Module=ratings-export
 IAge=1
-Name=Import and export ratings
+Name=Import and Export statistics 
 Authors=David Le Brun <david@backtrace.info>
 Copyright=Copyright © 2008 David Le Brun
 Website=http://mpx.backtrace.info/
