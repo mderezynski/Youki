@@ -1110,8 +1110,18 @@ namespace MPX
               on_row_activated (const TreeModel::Path& path, TreeViewColumn* column)
               {
                 TreeIter iter = TreeStore->get_iter (path);
-                gint64 id = (*iter)[AlbumColumns.Id];
-                m_MLib.play_album(id, true);
+                if(path.get_depth() == ROW_ALBUM)
+                {
+                        gint64 id = (*iter)[AlbumColumns.Id];
+                        m_MLib.play_album(id, true);
+                }
+                else
+                {
+                        gint64 id = (*iter)[AlbumColumns.TrackId];
+                        TrackIdV v;
+                        v.push_back(id);
+                        m_MLib.play_tracks(id, true);
+                }
               }
 
               virtual void
