@@ -141,9 +141,11 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 
 		return self.icon
 
-	def run(self,lib,v):
+	def run(self,lib,mlib):
 		print ">> MPXDJ Running"
 		ret = self.dialog.run()
+                idv = mpx_playlist.TrackIdVector()
 		if(ret == gtk.RESPONSE_OK):
-			self.callables[self.combo.get_active()](lib, v)
+			self.callables[self.combo.get_active()](lib, idv)
+                mlib.play_tracks(idv, True)
 		self.dialog.hide()

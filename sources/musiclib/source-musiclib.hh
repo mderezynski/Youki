@@ -41,109 +41,115 @@
 
 namespace MPX
 {
-		class MusicLibPrivate;
+        class MusicLibPrivate;
 
 namespace Source
 {
-		class PlaybackSourceMusicLib
-			:   public PlaybackSource
-		{
-				MusicLibPrivate * m_Private;
-				Glib::RefPtr<Gtk::UIManager> m_MainUIManager;
-				Glib::RefPtr<Gtk::ActionGroup> m_MainActionGroup;
-				PlaylistPluginManager *m_PluginManager;
-				PAccess<MPX::Library> m_Lib;
-				std::string m_MergedUI;
+        class PlaybackSourceMusicLib
+            :   public PlaybackSource
+        {
+                MusicLibPrivate * m_Private;
+                Glib::RefPtr<Gtk::UIManager> m_MainUIManager;
+                Glib::RefPtr<Gtk::ActionGroup> m_MainActionGroup;
+                PlaylistPluginManager *m_PluginManager;
+                PAccess<MPX::Library> m_Lib;
+                std::string m_MergedUI;
 
-				void
-				on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
+                void
+                on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
 
-			public:
+            public:
 
-				PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
-				~PlaybackSourceMusicLib ();
+                PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
+                ~PlaybackSourceMusicLib ();
 
-				void
-				action_cb_run_plugin (gint64);
+                void
+                play_album(gint64, bool = false);
 
-				void
-				action_cb_play ();
+                void
+                play_tracks(TrackIdV const&, bool = false);
 
-				void
-				action_cb_go_to_album(gint64);
+                void
+                action_cb_run_plugin (gint64);
 
-				void
-				check_caps ();
+                void
+                action_cb_play ();
 
-				void
-				set_play ();
+                void
+                action_cb_go_to_album(gint64);
 
-				void
-				clear_play ();
+                void
+                check_caps ();
 
-				virtual void
-				send_metadata ();
+                void
+                set_play ();
 
-				virtual std::string
-				get_uri (); 
-			
-				virtual std::string
-				get_type ();
+                void
+                clear_play ();
 
-				virtual GHashTable *
-				get_metadata ();
+                virtual void
+                send_metadata ();
 
-				virtual bool
-				play ();
+                virtual std::string
+                get_uri (); 
+            
+                virtual std::string
+                get_type ();
 
-				virtual bool
-				go_next ();
+                virtual GHashTable *
+                get_metadata ();
 
-				virtual bool
-				go_prev ();
+                virtual bool
+                play ();
 
-				virtual void
-				stop (); 
-		  
-				virtual void
-				play_post (); 
+                virtual bool
+                go_next ();
 
-				virtual void
-				next_post (); 
+                virtual bool
+                go_prev ();
 
-				virtual void
-				prev_post ();
+                virtual void
+                stop (); 
+          
+                virtual void
+                play_post (); 
 
-				virtual void
-				restore_context ();
+                virtual void
+                next_post (); 
 
-				virtual void
-				skipped (); 
+                virtual void
+                prev_post ();
 
-				virtual void
-				segment (); 
+                virtual void
+                restore_context ();
 
-				virtual void
-				buffering_done (); 
+                virtual void
+                skipped (); 
+
+                virtual void
+                segment (); 
+
+                virtual void
+                buffering_done (); 
 
 
-				virtual Glib::RefPtr<Gdk::Pixbuf>
-				get_icon ();
+                virtual Glib::RefPtr<Gdk::Pixbuf>
+                get_icon ();
 
-				virtual Gtk::Widget*
-				get_ui ();
+                virtual Gtk::Widget*
+                get_ui ();
 
-				virtual guint
-				add_menu ();
+                virtual guint
+                add_menu ();
 
-				// UriHandler
-				virtual UriSchemes 
-				Get_Schemes (); 
+                // UriHandler
+                virtual UriSchemes 
+                Get_Schemes (); 
 
-				virtual void    
-		        Process_URI_List (Util::FileList const&);
+                virtual void    
+                                Process_URI_List (Util::FileList const&);
 
-		}; // end class PlaybackSourceMusicLib 
+        }; // end class PlaybackSourceMusicLib 
 } // end namespace Source
 } // end namespace MPX 
   

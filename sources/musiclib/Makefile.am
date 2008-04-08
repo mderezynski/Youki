@@ -13,12 +13,12 @@ INCLUDES = 						\
 
 libmpxsource_musiclib_LTLIBRARIES = libmpxsource-musiclib.la
 libmpxsource_musiclib_la_LDFLAGS = -fPIC -module
-libmpxsource_musiclib_la_LIBADD =   \
+libmpxsource_musiclib_la_LIBADD =   			\
 		$(BOOST_LDFLAGS)			\
 		$(BOOST_REGEX_LIB)			\
-		$(BOOST_FILESYSTEM_LIB)		\
-		$(BOOST_IOSTREAMS_LIB)		\
-		$(EXO_LIBS)					\
+		$(BOOST_FILESYSTEM_LIB)			\
+		$(BOOST_IOSTREAMS_LIB)			\
+		$(EXO_LIBS)				\
 		$(GLADEMM_LIBS)				\
 		$(GLIBMM_LIBS)				\
 		$(GTKMM_LIBS)				\
@@ -29,10 +29,12 @@ libmpxsource_musiclib_la_LIBADD =   \
 		$(top_builddir)/widgets/libmpx-widgets.la
 
 
-libmpxsource_musiclib_la_SOURCES =  \
-		plugin.cc					\
+libmpxsource_musiclib_la_SOURCES =  			\
+		plugin.cc				\
 		plugin-manager.hh			\
 		plugin-manager.cc			\
+		musiclib-py.hh				\
+		musiclib-py.cc				\
 		source-musiclib.hh			\
 		source-musiclib.cc
 

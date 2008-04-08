@@ -33,6 +33,11 @@
 
 namespace MPX
 {
+        namespace Source
+        {
+                class PlaybackSourceMusicLib;
+        };
+
 	struct PlaylistPluginHolder
 	{
 		private:
@@ -99,7 +104,7 @@ namespace MPX
 			get_map () const;
 		
 			void	
-			run (gint64 /*id*/, MPX::Library&, TrackIdV&);
+			run (gint64 /*id*/, MPX::Library&, MPX::Source::PlaybackSourceMusicLib*); 
 	
 		private:
 

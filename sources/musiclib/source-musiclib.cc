@@ -340,7 +340,7 @@ namespace MPX
 		        m_ActionGroup->add  (Gtk::Action::create (ACTION_CLEAR,
                                             Gtk::StockID (GTK_STOCK_CLEAR),
                                             _("Clear Playlist")),
-                                            sigc::mem_fun (*this, &PlaylistTreeView::action_cb_playlist_clear));
+                                            sigc::mem_fun (*this, &PlaylistTreeView::clear));
 
 			    m_ActionGroup->add  (Gtk::Action::create (ACTION_REMOVE_ITEMS,
                                             Gtk::StockID (GTK_STOCK_REMOVE),
@@ -376,7 +376,7 @@ namespace MPX
 			  }
 
 			  virtual void
-		      action_cb_playlist_clear ()	
+		      clear ()	
 			  {
 				  ListStore->clear ();
 				  m_CurrentIter.reset ();
@@ -1083,10 +1083,11 @@ namespace MPX
 
               AlbumColumnsT AlbumColumns;
               Glib::RefPtr<Gtk::TreeStore> TreeStore;
-			  Glib::RefPtr<Gtk::TreeModelFilter> TreeStoreFilter;
+              Glib::RefPtr<Gtk::TreeModelFilter> TreeStoreFilter;
 
               PAccess<MPX::Library> m_Lib;
               PAccess<MPX::Covers> m_Covers;
+              MPX::Source::PlaybackSourceMusicLib & m_MLib;
 
               MBIDIterMap m_MBIDIterMap;
               IdIterMap m_AlbumIterMap;
@@ -1099,15 +1100,26 @@ namespace MPX
               boost::optional<gint64> m_DragAlbumId;
               boost::optional<gint64> m_DragTrackId;
               TreePath m_PathButtonPress;
-			  bool m_ButtonPressed;
+              bool m_ButtonPressed;
 
-			  Gtk::Entry *m_FilterEntry;
+              Gtk::Entry *m_FilterEntry;
+
+
+
+              virtual void
+              on_row_activated (const TreeModel::Path& path, TreeViewColumn* column)
+              {
+                TreeIter iter_filter = TreeStore->get_iter (path);
+                TreeIter iter = TreeStoreFilter->convert_iter_to_child_iter(iter_filter);
+                gint64 id = (*iter)[AlbumColumns.Id];
+                m_MLib.play_album(id, true);
+              }
 
               virtual void
               on_row_expanded (const TreeIter &iter_filter,
                                const TreePath &path) 
               {
-				TreeIter iter = TreeStoreFilter->convert_iter_to_child_iter(iter_filter);
+                TreeIter iter = TreeStoreFilter->convert_iter_to_child_iter(iter_filter);
                 if(!(*iter)[AlbumColumns.HasTracks])
                 {
                     GtkTreeIter children;
@@ -1589,11 +1601,12 @@ namespace MPX
 
 
               AlbumTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml,	
-								PAccess<MPX::Library> const& lib, PAccess<MPX::Covers> const& amzn)
+	                     PAccess<MPX::Library> const& lib, PAccess<MPX::Covers> const& amzn, MPX::Source::PlaybackSourceMusicLib & mlib)
               : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-albums")
               , m_Lib(lib)
               , m_Covers(amzn)
-			  , m_ButtonPressed(false)
+              , m_MLib(mlib)
+              , m_ButtonPressed(false)
               {
 				for(int n = 0; n < 6; ++n)
 					m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename(DATA_DIR,"images"),
@@ -1695,7 +1708,7 @@ namespace MPX
 			player.get_object(m_Lib);
 			player.get_object(m_Covers);
             m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, m_Lib, mlib);
-            m_TreeViewAlbums = new AlbumTreeView(m_RefXml, m_Lib, m_Covers);
+            m_TreeViewAlbums = new AlbumTreeView(m_RefXml, m_Lib, m_Covers, mlib);
         }
     };
 }
@@ -1773,6 +1786,32 @@ namespace Source
 		return m_MainUIManager->add_ui_from_string(m_MergedUI);
 	}
 
+    void
+    PlaybackSourceMusicLib::play_album(gint64 id, bool play)
+    {
+        SQL::RowV v;
+        m_Lib.get().getSQL(v, (boost::format("SELECT id FROM track_view WHERE album_j = '%lld'") % id).str()); 
+        TrackIdV idv;
+        for(SQL::RowV::const_iterator i = v.begin(); i != v.end(); ++i)
+        {
+            SQL::Row r = *i;
+            idv.push_back(get<gint64>(r["id"]));
+        }
+        m_Private->m_TreeViewPlaylist->clear();
+        m_Private->m_TreeViewPlaylist->append_trackid_v(idv);
+        if(play)
+    	  Signals.PlayRequest.emit();
+    }
+
+    void
+    PlaybackSourceMusicLib::play_tracks(TrackIdV const& idv , bool play)
+    {
+        m_Private->m_TreeViewPlaylist->clear();
+        m_Private->m_TreeViewPlaylist->append_trackid_v(idv);
+        if(play)
+    	  Signals.PlayRequest.emit();
+    }
+
 	void
 	PlaybackSourceMusicLib::action_cb_play ()
 	{
@@ -1785,8 +1824,7 @@ namespace Source
 	PlaybackSourceMusicLib::action_cb_run_plugin (gint64 id)
 	{
 		TrackIdV v;
-		m_PluginManager->run( id, m_Lib.get(), v );
-		m_Private->m_TreeViewPlaylist->append_trackid_v( v );
+		m_PluginManager->run( id, m_Lib.get(), this );
 	}
 
 	void
@@ -1841,6 +1879,14 @@ namespace Source
 			m_Private->m_TreeViewPlaylist->queue_draw();
 			return true;
 		}
+        else
+		if(rows.empty() && !m_Private->m_TreeViewPlaylist->m_CurrentIter)
+                {
+                        TreePath path;
+                        path.append_index(0);
+			m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter(path);
+                        return true;
+                }
 		else
 		if(m_Private->m_TreeViewPlaylist->m_CurrentIter)
 			return true;
@@ -1926,26 +1972,14 @@ namespace Source
 		TreePath path3 = m_Private->m_TreeViewPlaylist->ListStore->get_path(--m_Private->m_TreeViewPlaylist->ListStore->children().end());
 
 		if(path1[0] > path2[0])
-		{
 			m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_GO_PREV);
-			g_message("Can go previous");
-		}
 		else
-		{
 			m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_PREV);
-			g_message("Can not go previous");
-		}
 
 		if(path1[0] < path3[0])
-		{
 			m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_GO_NEXT);
-			g_message("Can go next");
-		}
 		else
-		{
 			m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_NEXT);
-			g_message("Can not go next");
-		}
 	}
 
 	void
@@ -1968,7 +2002,7 @@ namespace Source
 
     void
     PlaybackSourceMusicLib::next_post () 
-	{ 
+    { 
 		m_Private->m_TreeViewPlaylist->queue_draw();
 		check_caps ();
 	}

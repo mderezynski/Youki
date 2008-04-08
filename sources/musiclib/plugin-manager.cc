@@ -33,6 +33,8 @@
 using namespace boost::python;
 
 #include "plugin-manager.hh"
+#include "musiclib-py.hh"
+#include "source-musiclib.hh"
 
 #ifndef Py_ssize_t
 #define Py_ssize_t int
@@ -42,34 +44,11 @@ using namespace Glib;
 
 namespace MPX
 {
-	struct PlaylistPlugin
-	{
-		void
-		run (MPX::Library& G_GNUC_UNUSED, TrackIdV& G_GNUC_UNUSED)
-		{
-		}
-	};
-}
-
-BOOST_PYTHON_MODULE(mpx_playlist)
-{
-	class_<MPX::PlaylistPlugin>("PlaylistPlugin")	
-		.def("run", &MPX::PlaylistPlugin::run)
-	;
-
-	class_<MPX::TrackIdV>("TrackIdVector")
-		.def(vector_indexing_suite<MPX::TrackIdV>());
-	;
-}
-
-
-namespace MPX
-{
 	PlaylistPluginManager::PlaylistPluginManager ()
 	: m_Id(1)
 	{
 		try {
-			initmpx_playlist();
+			mpx_playlist_py_init();
 		} catch( error_already_set ) {
 			g_warning("%s; Python Error:", G_STRFUNC);
 		    PyErr_Print();
@@ -209,14 +188,14 @@ namespace MPX
 	}
 
 	void
-	PlaylistPluginManager::run(gint64 id, MPX::Library & lib, MPX::TrackIdV & v)
+	PlaylistPluginManager::run(gint64 id, MPX::Library & lib, MPX::Source::PlaybackSourceMusicLib * mlib)
 	{
 		PlaylistPluginHoldMap::iterator i = m_Map.find(id);
 		g_return_if_fail(i != m_Map.end());
 
 		try{
 			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			ccinstance.attr("run")(boost::ref(lib), boost::ref(v));
+			ccinstance.attr("run")(boost::ref(lib), boost::ref(*mlib));
 		} catch( error_already_set ) 
 		{
 			PyErr_Print();

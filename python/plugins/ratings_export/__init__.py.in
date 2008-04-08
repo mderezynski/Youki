@@ -140,9 +140,7 @@ class Ratings(mpx_playlist.PlaylistPlugin):
 			print ">> Cannot open file or is not parsable" + file
 			return False
 
-	def run(self,lib,v):
+	def run(self,lib,mlib):
 		print ">> Ratings Import/Export Plugin running"
 		ret = self.dialog.run()
-		if(ret == gtk.RESPONSE_OK):
-			self.callables[self.combo.get_active()](lib, v)
 		self.dialog.hide()
