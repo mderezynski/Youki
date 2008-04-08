@@ -262,6 +262,7 @@ class TrackInfo:
 
             if track.get(mpx.AttributeId.ARTIST).is_initialized() and track.get(mpx.AttributeId.TITLE).is_initialized():
                 try:
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics", self.textTagCenter, self.textTagLarge)
                     lyricwiki = mpx.LyricWiki(track.get(mpx.AttributeId.ARTIST).val().get_string(), track.get(mpx.AttributeId.TITLE).val().get_string())
                     lyrics = lyricwiki.run()
                     self.buf.insert(self.buf.get_end_iter(), lyrics)
