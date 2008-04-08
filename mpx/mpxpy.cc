@@ -14,7 +14,7 @@
 
 #include "mpx.hh"
 #include "mpxpy.hh"
-#include "mpx/amazon.hh"
+#include "mpx/covers.hh"
 #include "mpx/library.hh"
 #include "mpx/paccess.hh"
 #include "mpx/types.hh"
@@ -233,6 +233,7 @@ namespace MPX
 		bool
 		activate (MPX::Player&, Mcs::Mcs&)
 		{
+			return false;
 		}
 
 		void

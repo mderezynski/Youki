@@ -1078,7 +1078,7 @@ namespace MPX
             :   public WidgetLoader<Gtk::TreeView>
         {
               typedef std::set<TreeIter> IterSet;
-              typedef std::map<std::string, IterSet> ASINIterMap;
+              typedef std::map<std::string, IterSet> MBIDIterMap;
               typedef std::map<gint64, TreeIter> IdIterMap; 
 
               AlbumColumnsT AlbumColumns;
@@ -1086,9 +1086,9 @@ namespace MPX
 			  Glib::RefPtr<Gtk::TreeModelFilter> TreeStoreFilter;
 
               PAccess<MPX::Library> m_Lib;
-              PAccess<MPX::Amazon::Covers> m_AMZN;
+              PAccess<MPX::Covers> m_Covers;
 
-              ASINIterMap m_ASINIterMap;
+              MBIDIterMap m_MBIDIterMap;
               IdIterMap m_AlbumIterMap;
 
               Cairo::RefPtr<Cairo::ImageSurface> m_DiscDefault;
@@ -1163,7 +1163,7 @@ namespace MPX
                 {
                     if(m_DragASIN)
                     {
-                        m_AMZN.get().fetch(m_DragASIN.get(), Cover);
+                        m_Covers.get().fetch(m_DragASIN.get(), Cover);
 						if(Cover)
 						{
 							drag_source_set_icon(Cover->scale_simple(128,128,Gdk::INTERP_BILINEAR));
@@ -1262,12 +1262,12 @@ namespace MPX
               }
 
               void
-              on_got_cover(const Glib::ustring& asin)
+              on_got_cover(const Glib::ustring& mbid)
               {
                 Cairo::RefPtr<Cairo::ImageSurface> Cover;
-                m_AMZN.get().fetch(asin, Cover, COVER_SIZE_ALBUM_LIST);
+                m_Covers.get().fetch(mbid, Cover, COVER_SIZE_ALBUM_LIST);
                 Util::cairo_image_surface_border(Cover, 1.);
-                IterSet & set = m_ASINIterMap[asin];
+                IterSet & set = m_MBIDIterMap[mbid];
                 for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
                 {
                     (*(*i))[AlbumColumns.Image] = Cover;
@@ -1287,12 +1287,12 @@ namespace MPX
                 (*iter)[AlbumColumns.ASIN] = asin; 
                 (*iter)[AlbumColumns.Id] = id; 
 
-                if(!asin.empty())
-                {
-                  IterSet & s = m_ASINIterMap[asin];
-                  s.insert(iter);
-                  m_AMZN.get().cache(asin);
-                }
+				if(!mbid.empty())
+				{
+					IterSet & s = m_MBIDIterMap[mbid];
+					s.insert(iter);
+					m_Covers.get().cache(mbid, asin);
+				}
 
                 SQL::RowV v;
                 m_Lib.get().getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
@@ -1333,7 +1333,7 @@ namespace MPX
               album_list_load ()
               {
 				TreeStore->clear ();
-				m_ASINIterMap.clear();
+				m_MBIDIterMap.clear();
 				m_AlbumIterMap.clear();
 
                 SQL::RowV v;
@@ -1357,14 +1357,20 @@ namespace MPX
 						(*iter)[AlbumColumns.Rating] = rating;
 					}
 
+					std::string asin;
                     if(r.count("amazon_asin"))
                     {
-                        std::string asin = get<std::string>(r["amazon_asin"]);
+						asin = get<std::string>(r["amazon_asin"]);
                         (*iter)[AlbumColumns.ASIN] = asin; 
-                        IterSet & s = m_ASINIterMap[asin];
-                        s.insert(iter);
-                        m_AMZN.get().cache(asin);
                     }
+
+                    if(r.count("mb_album_id"))
+					{
+                        std::string mbid = get<std::string>(r["mb_album_id"]);
+                        IterSet & s = m_MBIDIterMap[mbid];
+                        s.insert(iter);
+                        m_Covers.get().cache(mbid, asin);
+					}
 
                     std::string date;
                     if(r.count("mb_release_date"))
@@ -1583,10 +1589,10 @@ namespace MPX
 
 
               AlbumTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml,	
-								PAccess<MPX::Library> const& lib, PAccess<MPX::Amazon::Covers> const& amzn)
+								PAccess<MPX::Library> const& lib, PAccess<MPX::Covers> const& amzn)
               : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-albums")
               , m_Lib(lib)
-              , m_AMZN(amzn)
+              , m_Covers(amzn)
 			  , m_ButtonPressed(false)
               {
 				for(int n = 0; n < 6; ++n)
@@ -1596,7 +1602,7 @@ namespace MPX
                 m_Lib.get().signal_new_album().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_album ));
                 m_Lib.get().signal_new_track().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_track ));
                 m_Lib.get().signal_vacuumized().connect( sigc::mem_fun( *this, &AlbumTreeView::album_list_load ));
-                m_AMZN.get().signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
+                m_Covers.get().signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
 
 				xml->get_widget("album-filter-entry", m_FilterEntry);
 
@@ -1679,7 +1685,7 @@ namespace MPX
         PlaylistTreeView *m_TreeViewPlaylist;
         AlbumTreeView *m_TreeViewAlbums;
 		PAccess<MPX::Library> m_Lib;
-		PAccess<MPX::Amazon::Covers> m_AMZN;
+		PAccess<MPX::Covers> m_Covers;
 
         MusicLibPrivate (MPX::Player & player, MPX::Source::PlaybackSourceMusicLib & mlib)
         {
@@ -1687,9 +1693,9 @@ namespace MPX
             m_RefXml = Gnome::Glade::Xml::create (path);
             m_UI = m_RefXml->get_widget("source-musiclib");
 			player.get_object(m_Lib);
-			player.get_object(m_AMZN);
+			player.get_object(m_Covers);
             m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, m_Lib, mlib);
-            m_TreeViewAlbums = new AlbumTreeView(m_RefXml, m_Lib, m_AMZN);
+            m_TreeViewAlbums = new AlbumTreeView(m_RefXml, m_Lib, m_Covers);
         }
     };
 }

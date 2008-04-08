@@ -30,7 +30,7 @@
 #include <sigc++/signal.h>
 #include <boost/format.hpp>
 
-#include "mpx/amazon.hh"
+#include "mpx/covers.hh"
 #include "mpx/library.hh"
 #include "mpx/mpx-public.hh"
 #include "mpx/types.hh"

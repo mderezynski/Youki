@@ -41,13 +41,14 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "mpx/amazon.hh"
-
+#include "mpx/covers.hh"
 #include "mpx/minisoup.hh"
 #include "mpx/network.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-graphics.hh"
+#include "mpx/xml.hh"
+
 using namespace Glib;
 
 namespace
@@ -61,6 +62,8 @@ namespace
     boost::format("http://images-eu.amazon.com/images/P/%s.01.MZZZZZZZ.jpg"),
     boost::format("http://ec1.images-amazon.com/images/P/%s.01.MZZZZZZZ.jpg"),
   };
+
+  static boost::format mbxml_f ("http://musicbrainz.org/ws/1/release/%s?type=xml&inc=url-rels");
 
   int
   pixel_size (MPX::CoverSize size)
@@ -89,8 +92,6 @@ namespace
 
 namespace MPX
 {
-  namespace Amazon
-  {
     Covers::Covers (NM & nm)
     : m_NM (nm)
     {
@@ -99,15 +100,48 @@ namespace MPX
     }
 
     void
-    Covers::site_fetch_and_save_cover (AmazonFetchData * amzn_data)
+    Covers::site_fetch_and_save_cover_amazn (CoverFetchData * amzn_data)
     {
         amzn_data->request = Soup::Request::create ((amazon_f[amzn_data->n] % amzn_data->asin).str());
-        amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb ), amzn_data ));
+        amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_amazn ), amzn_data ));
         amzn_data->request->run();
     }
 
     void
-    Covers::reply_cb (char const* data, guint size, guint code, AmazonFetchData* amzn_data)
+    Covers::site_fetch_and_save_cover_mbxml (CoverFetchData * amzn_data)
+    {
+        amzn_data->request = Soup::Request::create ((mbxml_f % amzn_data->mbid).str());
+        amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_mbxml ), amzn_data ));
+        amzn_data->request->run();
+    }
+
+    void
+    Covers::reply_cb_mbxml (char const* data, guint size, guint code, CoverFetchData* amzn_data)
+    {
+        if (code == 200)
+        {
+			std::string image_url;
+			try{
+				image_url = xpath_get_text (data, size,
+					"/metadata/release/relation-list//relation[@type='CoverArtLink']/@target", "mb=http://musicbrainz.org/ns/mmd-1.0#"); 
+			} catch (std::runtime_error & cxe)
+			{
+				delete amzn_data;
+				return;
+			}
+			g_message("Image URL: %s", image_url.c_str());
+	        amzn_data->request = Soup::Request::create (image_url);
+		    amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_amazn ), amzn_data ));
+			amzn_data->request->run();
+        }
+        else
+        {
+			delete amzn_data;
+        }
+    }
+
+    void
+    Covers::reply_cb_amazn (char const* data, guint size, guint code, CoverFetchData* amzn_data)
     {
         if (code == 200)
         {
@@ -124,10 +158,10 @@ namespace MPX
             else
             { 
                 Glib::Mutex::Lock L (RequestKeeperLock);
-                cover->save (get_thumb_path(amzn_data->asin), "png");
-                m_pixbuf_cache.insert (std::make_pair (amzn_data->asin, cover));
-                Signals.GotCover.emit(amzn_data->asin);
-                RequestKeeper.erase(amzn_data->asin);
+                cover->save (get_thumb_path(amzn_data->mbid), "png");
+                m_pixbuf_cache.insert (std::make_pair (amzn_data->mbid, cover));
+                Signals.GotCover.emit(amzn_data->mbid);
+                RequestKeeper.erase(amzn_data->mbid);
             }
             delete amzn_data;
             return;
@@ -140,54 +174,60 @@ namespace MPX
                 delete amzn_data;
                 return; // no more hosts to try
             }
-            site_fetch_and_save_cover(amzn_data);
+            site_fetch_and_save_cover_amazn(amzn_data);
         }
     }
     
     std::string
-    Covers::get_thumb_path (ustring const& asin)
+    Covers::get_thumb_path (std::string const& mbid)
     {
-        std::string basename = (boost::format ("%s.png") % asin).str ();
+        std::string basename = (boost::format ("%s.png") % mbid).str ();
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", basename.c_str(), NULL));
         return std::string(path.get());
     }
 
     void 
-    Covers::cache (ustring const& asin)
+    Covers::cache (std::string const& mbid, std::string const& asin)
     {
         Glib::Mutex::Lock L (RequestKeeperLock);
-        if(RequestKeeper.count(asin))
+        if(RequestKeeper.count(mbid))
         {
             return;
         }
 
-        std::string thumb_path = get_thumb_path (asin);
+        std::string thumb_path = get_thumb_path (mbid);
         if (file_test (thumb_path, FILE_TEST_EXISTS))
         {
-            Signals.GotCover.emit(asin);
+            Signals.GotCover.emit(mbid);
             return; 
         }
 
-        AmazonFetchData * data = new AmazonFetchData(asin);
-        RequestKeeper.insert(asin);
-        site_fetch_and_save_cover(data);
+		// OK now it's getting serious
+
+        CoverFetchData * data = new CoverFetchData(mbid, asin);
+        RequestKeeper.insert(mbid);
+
+		if(asin.empty())
+			site_fetch_and_save_cover_mbxml(data);
+		else
+	        site_fetch_and_save_cover_amazn(data);
     }
 
     bool
-    Covers::fetch (ustring const& asin, RefPtr<Gdk::Pixbuf>& cover)
+    Covers::fetch (std::string const& mbid, RefPtr<Gdk::Pixbuf>& cover)
     {
-        MPixbufCache::const_iterator i = m_pixbuf_cache.find(asin);
+        MPixbufCache::const_iterator i = m_pixbuf_cache.find(mbid);
         if (i != m_pixbuf_cache.end())
         {
           cover = i->second; 
           return true;
         }
 
-        std::string thumb_path = get_thumb_path (asin);
+        std::string thumb_path = get_thumb_path (mbid);
         if (file_test (thumb_path, FILE_TEST_EXISTS))
         {
           cover = Gdk::Pixbuf::create_from_file (thumb_path); 
-          m_pixbuf_cache.insert (std::make_pair(asin, cover));
+          m_pixbuf_cache.insert (std::make_pair(mbid, cover));
           return true;
         }
 
@@ -195,25 +235,25 @@ namespace MPX
     }
 
     bool
-    Covers::fetch (ustring const& asin, Cairo::RefPtr<Cairo::ImageSurface>& surface, CoverSize size)
+    Covers::fetch (std::string const& mbid, Cairo::RefPtr<Cairo::ImageSurface>& surface, CoverSize size)
     {
-        MSurfaceCache::const_iterator i = m_surface_cache[size].find (asin);
+        MSurfaceCache::const_iterator i = m_surface_cache[size].find (mbid);
         if (i != m_surface_cache[size].end())
         {
           surface = i->second; 
           return true;
         }
 
-        std::string thumb_path = get_thumb_path (asin);
+        std::string thumb_path = get_thumb_path (mbid);
         if (file_test (thumb_path, FILE_TEST_EXISTS))
         {
           int px = pixel_size (size);
-          surface = Util::cairo_image_surface_from_pixbuf (Gdk::Pixbuf::create_from_file (thumb_path)->scale_simple (px, px, Gdk::INTERP_BILINEAR));
-          m_surface_cache[size].insert (std::make_pair (asin, surface));
+          surface = Util::cairo_image_surface_from_pixbuf
+			(Gdk::Pixbuf::create_from_file (thumb_path)->scale_simple (px, px, Gdk::INTERP_BILINEAR));
+          m_surface_cache[size].insert (std::make_pair (mbid, surface));
           return true;
         }
 
         return false;
     }
-  }
 }

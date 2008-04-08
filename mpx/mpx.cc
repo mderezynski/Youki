@@ -966,7 +966,7 @@ namespace MPX
 
     Player::Player(const Glib::RefPtr<Gnome::Glade::Xml>& xml,
                    MPX::Library & obj_library,
-                   MPX::Amazon::Covers & obj_amazon)
+                   MPX::Covers & obj_amazon)
     : WidgetLoader<Gtk::Window>(xml, "mpx")
     , m_ref_xml(xml)
 	, m_SourceUI(0)
@@ -1425,9 +1425,9 @@ namespace MPX
 	}
 
 	void	
-	Player::get_object (PAccess<MPX::Amazon::Covers> & pa)
+	Player::get_object (PAccess<MPX::Covers> & pa)
 	{
-		pa = PAccess<MPX::Amazon::Covers>(m_Covers);
+		pa = PAccess<MPX::Covers>(m_Covers);
 	}
 
 	Metadata const&
@@ -1651,7 +1651,7 @@ namespace MPX
 	}
 
     Player*
-    Player::create (MPX::Library & obj_library, MPX::Amazon::Covers & obj_amazn)
+    Player::create (MPX::Library & obj_library, MPX::Covers & obj_amazn)
     {
 		const std::string path (build_filename(DATA_DIR, build_filename("glade","mpx.glade")));
 		Player * p = new Player(Gnome::Glade::Xml::create (path), obj_library, obj_amazn); 

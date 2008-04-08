@@ -26,15 +26,17 @@
 #include <libxml/xmlreader.h>
 #include <libxml/xpath.h>
 #include <libxml/xpathInternals.h>
-
 #include <stdlib.h>
 #include <glib.h>
-
+#include <glib/gi18n.h>
+#include <string>
+#include <stdexcept>
 #include "mpx/xml.hh"
 
 namespace
 {
-  int register_namespaces (xmlXPathContextPtr xpathCtx, const xmlChar* nsList)
+  int
+  register_namespaces (xmlXPathContextPtr xpathCtx, const xmlChar* nsList)
   {
     xmlChar* nsListDup;
     xmlChar* prefix;
@@ -101,22 +103,22 @@ namespace MPX
      */
     xpathCtx = xmlXPathNewContext (doc);
     if (xpathCtx == NULL)
-     {
-         return NULL;
-     }
+    {
+		return NULL;
+    }
 
      if (nsList)
-    register_namespaces (xpathCtx, nsList);
+     register_namespaces (xpathCtx, nsList);
 
     /*
      * Evaluate xpath expression
      */
-    xpathObj = xmlXPathEvalExpression (xpathExpr, xpathCtx);
+	xpathObj = xmlXPathEvalExpression (xpathExpr, xpathCtx);
     if (xpathObj == NULL)
-     {
-         xmlXPathFreeContext (xpathCtx);
-         return NULL;
-     }
+    {
+		xmlXPathFreeContext (xpathCtx);
+		return NULL;
+    }
 
     /*
      * Cleanup
@@ -125,4 +127,45 @@ namespace MPX
 
     return xpathObj;
   }
+
+  std::string
+  xpath_get_text (char const* data, guint size, char const* xpathExpr, char const* nsList)
+  {
+        xmlDocPtr             doc;
+        xmlXPathObjectPtr     xpathobj;
+        xmlNodeSetPtr         nv;
+
+        doc = xmlParseMemory (data, size); 
+        if (!doc)
+        {  
+          throw std::runtime_error(_("Couldn't parse document"));
+        }
+
+        xpathobj = xpath_query (doc, (xmlChar*)xpathExpr, NULL);
+        if (!xpathobj)
+        {
+          throw std::runtime_error(_("Invalid XPath"));
+        }
+
+        nv = xpathobj->nodesetval;
+        if (!nv || !nv->nodeNr)
+        {
+          xmlXPathFreeObject (xpathobj);
+          throw std::runtime_error(_("No nodes in XPath result"));
+        }
+
+        xmlNodePtr node = nv->nodeTab[0];
+        if (!node || !node->children)
+        {
+          xmlXPathFreeObject (xpathobj);
+          throw std::runtime_error(_("No nodes in XPath result"));
+        }
+
+        xmlChar * pcdata = XML_GET_CONTENT (node->children);
+		std::string pcdata_cc = (char*)pcdata;
+		xmlFree(pcdata);
+		xmlXPathFreeObject(xpathobj);	
+		xmlFreeDoc(doc);
+		return pcdata_cc;
+	}
 }

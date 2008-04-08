@@ -575,7 +575,7 @@ namespace MPX
         try{
             if (m_context->device_query_capability (udi, "volume"))
             {
-              g_message("%s: Got new Device: '%s'", G_STRLOC, udi.c_str());
+              g_message("%s: Got new Volume: '%s'", G_STRLOC, udi.c_str());
               process_volume (udi);       
             }
         }

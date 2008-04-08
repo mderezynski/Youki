@@ -162,11 +162,11 @@ namespace
 namespace MPX
 {
 #ifdef HAVE_HAL
-    Library::Library (Amazon::Covers &covers, HAL &hal, TaskKernel &kernel, bool use_hal)
+    Library::Library (Covers &covers, HAL &hal, TaskKernel &kernel, bool use_hal)
     : m_HAL (&hal)
     , m_TaskKernel (&kernel)
 #else
-    Library::Library (Amazon::Covers &covers, TaskKernel & kernel)
+    Library::Library (Covers &covers, TaskKernel & kernel)
     : m_TaskKernel (&kernel)
 #endif
     , m_Covers (&covers)

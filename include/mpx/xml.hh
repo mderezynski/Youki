@@ -32,7 +32,11 @@
 
 namespace MPX
 {
-  xmlXPathObjectPtr xpath_query (xmlDocPtr doc, const xmlChar * xpathExpr, const xmlChar * nsList);
+	xmlXPathObjectPtr
+	xpath_query (xmlDocPtr doc, const xmlChar * xpathExpr, const xmlChar * nsList);
+
+	std::string
+	xpath_get_text (char const* data, guint size, char const* xpathExpr, char const* nsList);
 }
 
 #endif //MPX_XML_HPP

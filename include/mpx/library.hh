@@ -23,7 +23,7 @@
 #ifndef MPX_LIBRARY_CLASS_HH
 #define MPX_LIBRARY_CLASS_HH
 
-#include "mpx/amazon.hh"
+#include "mpx/covers.hh"
 #include "mpx/sql.hh"
 #include "mpx/tasks.hh"
 #include "mpx/types.hh"
@@ -77,13 +77,13 @@ namespace MPX
             HAL * m_HAL;
 #endif
             TaskKernel * m_TaskKernel;
-            Amazon::Covers * m_Covers;
+            Covers * m_Covers;
 
         public:
 #ifdef HAVE_HAL
-            Library (Amazon::Covers&, HAL&, TaskKernel&, bool use_hal) ;
+            Library (Covers&, HAL&, TaskKernel&, bool use_hal) ;
 #else
-            Library (Amazon::Covers&, TaskKernel&) ;
+            Library (Covers&, TaskKernel&) ;
 #endif
             ~Library () ;
 

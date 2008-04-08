@@ -17,7 +17,7 @@
 
 #include "mpx.hh"
 
-#include "mpx/amazon.hh"
+#include "mpx/covers.hh"
 #ifdef HAVE_HAL
 #include "mpx/hal.hh"
 #endif // HAVE_HAL
@@ -304,7 +304,7 @@ main (int argc, char ** argv)
 #endif
         MPX::TaskKernel * obj_task_kernel = new MPX::TaskKernel;
         MPX::NM * obj_netman = new MPX::NM;
-        MPX::Amazon::Covers * obj_amzn = new MPX::Amazon::Covers(*obj_netman);
+        MPX::Covers * obj_amzn = new MPX::Covers(*obj_netman);
 #ifdef HAVE_HAL
         MPX::Library * obj_library = new MPX::Library(*obj_amzn, *obj_hal, *obj_task_kernel, true); // use HAL
 #else

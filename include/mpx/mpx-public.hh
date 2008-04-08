@@ -38,11 +38,7 @@ namespace Gtk
 namespace MPX
 {
 	class Library;
-
-	namespace Amazon
-	{
-		class Covers;
-	}
+	class Covers;
 
     class Player
       : public WidgetLoader<Gtk::Window>
@@ -53,13 +49,13 @@ namespace MPX
 		get_object (PAccess<MPX::Library> & pa);
 
 		void	
-		get_object (PAccess<MPX::Amazon::Covers> & pa);
+		get_object (PAccess<MPX::Covers> & pa);
 
         virtual ~Player ();
 
       protected:
 
-        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Amazon::Covers&);
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Covers&);
     };
 }
 #endif

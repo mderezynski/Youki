@@ -31,7 +31,7 @@
 #include <dbus/dbus-glib.h>
 #include <boost/python.hpp>
 
-#include "mpx/amazon.hh"
+#include "mpx/covers.hh"
 #include "mpx/library.hh"
 #include "mpx/paccess.hh"
 #include "mpx/util-file.hh"
@@ -70,7 +70,7 @@ namespace MPX
 		get_object (PAccess<MPX::Library> & pa);
 
 		void	
-		get_object (PAccess<MPX::Amazon::Covers> & pa);
+		get_object (PAccess<MPX::Covers> & pa);
 
 		Metadata const&
 		get_metadata ();
@@ -94,12 +94,12 @@ namespace MPX
 
       protected:
 
-        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Amazon::Covers&); //BLEH: We need to pass pointers here for the Python API
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Covers&); //BLEH: We need to pass pointers here for the Python API
 
 	  public:
 
         static Player*
-        create (MPX::Library&, MPX::Amazon::Covers&);
+        create (MPX::Library&, MPX::Covers&);
 
 		class Root; 
 		class DBusMPX; 
@@ -159,7 +159,7 @@ namespace MPX
 
 		Play *m_Play;
         Library &m_Library;
-        Amazon::Covers &m_Covers;
+        Covers &m_Covers;
 		PluginManager *m_PluginManager;
 		PluginManagerGUI *m_PluginManagerGUI;
 

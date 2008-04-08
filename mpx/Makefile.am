@@ -105,7 +105,7 @@ mpx_bin_SOURCES =				\
 								\
 	main.cc						\
 								\
-	amazon.cc					\
+	covers.cc					\
 								\
 	audio.hh					\
 	audio.cc					\
