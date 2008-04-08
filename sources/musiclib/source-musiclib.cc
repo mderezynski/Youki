@@ -1120,7 +1120,7 @@ namespace MPX
                         gint64 id = (*iter)[AlbumColumns.TrackId];
                         TrackIdV v;
                         v.push_back(id);
-                        m_MLib.play_tracks(id, true);
+                        m_MLib.play_tracks(v, true);
                 }
               }
 
