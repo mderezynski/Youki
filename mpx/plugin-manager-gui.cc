@@ -115,6 +115,7 @@ namespace MPX
 			void
 			on_cell_toggled (const Glib::ustring& p_string)
 			{
+				bool result = false;
 				TreePath path (p_string);
 				TreeIter iter = Store->get_iter(path);
 				gint64 id = (*iter)[Columns.Id];
@@ -123,10 +124,9 @@ namespace MPX
 				if(active)
 					m_Manager.deactivate(id);
 				else
-					m_Manager.activate(id);
+					result = m_Manager.activate(id);
 
-				active = !active;
-				(*iter)[Columns.Active] = active;
+				(*iter)[Columns.Active] = result;
 			}
 
 			~PTV ()
@@ -147,6 +147,20 @@ namespace MPX
 		, m_Manager(obj_manager)
 		, m_PTV(new PTV(xml, obj_manager))
 		{
+			m_PTV->get_model()->signal_row_changed().connect( sigc::mem_fun( *this, &PluginManagerGUI::on_row_changed ) );
+
+			xml->get_widget("label", label);
+
+			if(obj_manager.get_traceback_count())
+			{
+				label->set_text("Failed to activate: " + obj_manager.get_last_traceback().get_name());
+				buTraceback->show();
+			}
+
+
+			xml->get_widget("traceback", buTraceback);
+			buTraceback->signal_clicked().connect( sigc::mem_fun( *this, &PluginManagerGUI::show_dialog ) );
+
 			Gtk::Button * buClose;
 			xml->get_widget("close", buClose);
 			buClose->signal_clicked().connect( sigc::mem_fun( *this, &Gtk::Widget::hide ) );
@@ -167,4 +181,31 @@ namespace MPX
 			Gtk::Window::hide ();
 			return true;
 		}
+
+		void
+		PluginManagerGUI::on_row_changed(const Gtk::TreeModel::Path& /*path*/, const Gtk::TreeModel::iterator& /*iter*/)
+		{
+			if(m_Manager.get_traceback_count())
+			{
+				label->set_text("Failed to activate: " + m_Manager.get_last_traceback().get_name());
+				buTraceback->show();
+			}
+			else
+				buTraceback->hide();
+		}
+
+		void
+		PluginManagerGUI::show_dialog()
+		{
+			Gtk::MessageDialog dialog ("Failed to activate: " + m_Manager.get_last_traceback().get_name(), false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_CLOSE);
+			dialog.set_title ("Plugin traceback - MPX");
+			dialog.set_secondary_text (m_Manager.pull_last_traceback().get_traceback());
+			dialog.run();
+
+			if(m_Manager.get_traceback_count())
+				label->set_text("Failed to activate: " + m_Manager.get_last_traceback().get_name());
+			else
+				buTraceback->hide();
+		}
+		
 }

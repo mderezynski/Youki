@@ -51,10 +51,18 @@ namespace MPX
 			static PluginManagerGUI*
 			create (PluginManager &);
 
+			void
+			on_row_changed(const Gtk::TreeModel::Path& /*path*/, const Gtk::TreeModel::iterator& /*iter*/);
+
+			void
+			show_dialog();
+
 		private:
 
 			PluginManager & m_Manager;
 			PTV * m_PTV;
+			Gtk::Button * buTraceback;
+			Gtk::Label * label;
     };
 }
 #endif
