@@ -1,4 +1,4 @@
-#
+
 # MPX Trackinfo
 # (C) 2008 M. Derezynski
 #
@@ -8,262 +8,389 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 import gtk.glade
+import gobject
 import pango
+import time
+import os
+import thread
 import musicbrainz2
 import musicbrainz2.webservice as ws
 
+class WaitSecond():
+
+        def __init__(self):
+
+                self.initialtime = time.time()
+
+        def waitsecond(self):
+
+                return        
+                t = time.time() # Only to do something in the loop
+                while (t - self.initialtime) < 2: 
+                        t = time.time()
+
+                self.initialtime = time.time()
+
+class LinkTag(gtk.TextTag):
+
+    __gsignals__ = {
+            'url-clicked' : (gobject.SIGNAL_RUN_LAST, gobject.TYPE_NONE,
+                (gobject.TYPE_STRING,))
+        }
+
+    def __init__(self, link):
+
+        gtk.TextTag.__init__(self)
+        self.set_property("foreground", "#0000ff")
+        self.link = link
+
+    def do_event(self, event_obj, event, iter):     
+
+        if event.type == gtk.gdk.BUTTON_PRESS:
+             if event.button == 1:
+                self.emit("url-clicked", self.link)
+
 class TrackInfo:
-	def __init__(self,track):
 
-		self.track = track
+    def __init__(self,track):
 
-		self.q = ws.Query() 
-		self.tinc = musicbrainz2.webservice.TrackIncludes(trackRelations=True,artist=True,puids=True,releases=True,artistRelations=True,releaseRelations=True,urlRelations=True)
+        self.wait = WaitSecond()
+        self.track = track
+        ourws = musicbrainz2.webservice.WebService("www.uk.musicbrainz.org")
+        self.q = ws.Query(ourws) 
+        self.tinc = musicbrainz2.webservice.TrackIncludes(trackRelations=True,artist=True,puids=True,releases=True,artistRelations=True,releaseRelations=True,urlRelations=True)
 
-		self.xml = gtk.glade.XML("@DATA_DIR@" + "/glade/trackinfo.glade")
-		self.window = self.xml.get_widget("window1") 
-		self.textview = self.xml.get_widget("textview")
-		self.image = self.xml.get_widget("image")
-		self.close = self.xml.get_widget("close")
+        self.xml = gtk.glade.XML("@DATA_DIR@" + "/scripts/trackinfo/trackinfo.glade")
+        self.window = self.xml.get_widget("window1") 
+        self.textview = self.xml.get_widget("textview")
+        self.image = self.xml.get_widget("image")
+        self.close = self.xml.get_widget("close")
+        self.notebook = self.xml.get_widget("notebook")
+        self.throb = self.xml.get_widget("throb")
+        self.throb.set_from_file("@DATA_DIR@" + "/images/throbber.gif")
+        self.notebook.set_current_page(0)
 
-		self.buf = self.textview.get_buffer()
+        self.buf = self.textview.get_buffer()
 
-		self.textTagBold = gtk.TextTag()
-		self.textTagBold.set_property("weight", pango.WEIGHT_BOLD)
-		self.buf.get_tag_table().add(self.textTagBold)
-		
-		self.textTagCenter = gtk.TextTag()
-		self.textTagCenter.set_property("justification", gtk.JUSTIFY_CENTER) 
-		self.buf.get_tag_table().add(self.textTagCenter)
+        self.textTagBold = gtk.TextTag()
+        self.textTagBold.set_property("weight", pango.WEIGHT_BOLD)
+        self.buf.get_tag_table().add(self.textTagBold)
+        
+        self.textTagCenter = gtk.TextTag()
+        self.textTagCenter.set_property("justification", gtk.JUSTIFY_CENTER) 
+        self.buf.get_tag_table().add(self.textTagCenter)
 
-		self.textTagLarge = gtk.TextTag()
-		self.textTagLarge.set_property("size-points", 14) 
-		self.buf.get_tag_table().add(self.textTagLarge)
+        self.textTagLarge = gtk.TextTag()
+        self.textTagLarge.set_property("size-points", 14) 
+        self.buf.get_tag_table().add(self.textTagLarge)
 
-		self.textTagSlant = gtk.TextTag()
-		self.textTagSlant.set_property("style", pango.STYLE_ITALIC) 
-		self.buf.get_tag_table().add(self.textTagSlant)
+        self.textTagSlant = gtk.TextTag()
+        self.textTagSlant.set_property("style", pango.STYLE_ITALIC) 
+        self.buf.get_tag_table().add(self.textTagSlant)
 
-	def show(self):
+    def run(self):
 
-		track = self.track
-		image = track.get_image()
+        image = self.track.get_image()
 
-		if image: 
-			self.image.set_from_pixbuf(image.scale_simple(192,192,gtk.gdk.INTERP_BILINEAR))
+        if image: 
+                self.image.set_from_pixbuf(image.scale_simple(192,192,gtk.gdk.INTERP_BILINEAR))
 
-		self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
+        self.window.show()
 
-		if track.get(mpx.AttributeId.TITLE).is_initialized() and track.get(mpx.AttributeId.ARTIST).is_initialized():
-			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(mpx.AttributeId.TITLE).val().get_string(), self.textTagCenter, self.textTagLarge)
-			self.buf.insert_with_tags(self.buf.get_end_iter(), "\nby\n", self.textTagCenter) 
-			self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(mpx.AttributeId.ARTIST).val().get_string(), self.textTagCenter, self.textTagLarge)
+        self.thread = thread.start_new_thread(self.show, (self,))
+        self.Done = False
 
-		if track.get(mpx.AttributeId.ALBUM_ARTIST).is_initialized() and track.get(mpx.AttributeId.ALBUM).is_initialized():
-			self.buf.insert_with_tags(self.buf.get_end_iter(), "\n(from \"" + track.get(mpx.AttributeId.ALBUM).val().get_string()+"\"", self.textTagCenter)
-			self.buf.insert_with_tags(self.buf.get_end_iter(), " by " + track.get(mpx.AttributeId.ALBUM_ARTIST).val().get_string()+")", self.textTagCenter)
+        while not self.Done:
+                while gtk.events_pending():
+                        gtk.main_iteration()
 
-		self.buf.insert(self.buf.get_end_iter(), "\n\n")
+        self.notebook.set_current_page(1)
 
-		if track.get(mpx.AttributeId.MB_TRACK_ID).is_initialized():
-			trackId = track.get(mpx.AttributeId.MB_TRACK_ID).val().get_string()
-			mbtrack = self.q.getTrackById(trackId, self.tinc) 
-			rels = mbtrack.getRelations()
+    def show(self, blah):
 
-			relobj = []
-			for i in range(7):
-				relobj.append([])
+        try:
+            track = self.track
+            self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
 
-			# Check if it's a cover
-			for rel in rels:
-				if rel.getDirection() != "backward":
-					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Cover":
-						relobj[0].append(rel)	
-					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Composer":
-						relobj[1].append(rel)	
-					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Instrument":
-						relobj[2].append(rel)	
-					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#SamplesMaterial":
-						relobj[3].append(rel)	
-					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Remixer":
-						relobj[4].append(rel)	
-					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Lyricist":
-						relobj[5].append(rel)	
-					if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Producer":
-						relobj[6].append(rel)	
+            if track.get(mpx.AttributeId.TITLE).is_initialized() and track.get(mpx.AttributeId.ARTIST).is_initialized():
+                self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(mpx.AttributeId.TITLE).val().get_string(), self.textTagCenter, self.textTagLarge)
+                self.buf.insert_with_tags(self.buf.get_end_iter(), "\nby\n", self.textTagCenter) 
+                self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(mpx.AttributeId.ARTIST).val().get_string(), self.textTagCenter, self.textTagLarge)
 
-			funcs = []
-			funcs.append(self.printCover)
-			funcs.append(self.printComposer)
-			funcs.append(self.printInstrument)
-			funcs.append(self.printSamplesMaterial)
-			funcs.append(self.printRemixer)
-			funcs.append(self.printLyricist)
-			funcs.append(self.printProducer)
+            if track.get(mpx.AttributeId.ALBUM_ARTIST).is_initialized() and track.get(mpx.AttributeId.ALBUM).is_initialized():
+                self.buf.insert_with_tags(self.buf.get_end_iter(), "\n(from \"" + track.get(mpx.AttributeId.ALBUM).val().get_string()+"\"", self.textTagCenter)
+                self.buf.insert_with_tags(self.buf.get_end_iter(), " by " + track.get(mpx.AttributeId.ALBUM_ARTIST).val().get_string()+")", self.textTagCenter)
 
-			for i in range(7):
-				if len(relobj[i]) > 0:
-					funcs[i](track, mbtrack, relobj[i])
+            self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
-		self.buf.insert(self.buf.get_end_iter(), "\n\n")
+            if track.get(mpx.AttributeId.MB_TRACK_ID).is_initialized():
+                trackId = track.get(mpx.AttributeId.MB_TRACK_ID).val().get_string()
+                mbtrack = self.q.getTrackById(trackId, self.tinc) 
+                rels = mbtrack.getRelations()
 
-		if track.get(mpx.AttributeId.ARTIST).is_initialized() and track.get(mpx.AttributeId.TITLE).is_initialized():
-			try:
-				lyricwiki = mpx.LyricWiki(track.get(mpx.AttributeId.ARTIST).val().get_string(), track.get(mpx.AttributeId.TITLE).val().get_string())
-				lyrics = lyricwiki.run()
-				self.buf.insert(self.buf.get_end_iter(), lyrics)
-			except:
-				print "Couldn't get lyrics for '" + track.get(mpx.AttributeId.ARTIST).val().get_string() + " / " +  track.get(mpx.AttributeId.TITLE).val().get_string()+ "'"
-		
-		if track.get(mpx.AttributeId.ARTIST).is_initialized():
-			try:
-				self.buf.insert(self.buf.get_end_iter(), "\n\n")
-				self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track.get(mpx.AttributeId.ARTIST).val().get_string(), self.textTagCenter, self.textTagLarge)
-				self.buf.insert(self.buf.get_end_iter(), "\n\n")
-				lastfmartist = mpx.LastFMArtist(track.get(mpx.AttributeId.ARTIST).val().get_string())
-				artist = lastfmartist.run()
-				self.buf.insert(self.buf.get_end_iter(), artist)
-			except:
-				print "Couldn't get Last.fm artist info for '" + track.get(mpx.AttributeId.ARTIST).val().get_string() 
+                relobj = []
+                for i in range(7):
+                    relobj.append([])
 
-		self.window.show()
+                # Check if it's a cover
+                for rel in rels:
+                    if rel.getDirection() != "backward":
+                        if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Cover":
+                            relobj[0].append(rel)   
+                        if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Composer":
+                            relobj[1].append(rel)   
+                        if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Instrument":
+                            relobj[2].append(rel)   
+                        if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#SamplesMaterial":
+                            relobj[3].append(rel)   
+                        if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Remixer":
+                            relobj[4].append(rel)   
+                        if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Lyricist":
+                            relobj[5].append(rel)   
+                        if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Producer":
+                            relobj[6].append(rel)   
 
-	def printCover(self, track, mbtrack, rels):
+                funcs = []
+                funcs.append(self.printCover)
+                funcs.append(self.printComposer)
+                funcs.append(self.printInstrument)
+                funcs.append(self.printSamplesMaterial)
+                funcs.append(self.printRemixer)
+                funcs.append(self.printLyricist)
+                funcs.append(self.printProducer)
 
-		for rel in rels:
+                self.entities = []
+                self.link_tags = []
 
-			# Workaround for buggy pymusicbrainzl; getTarget() on this rel returns None
-			url = rel.getTargetId()
-			id = url[url.rindex("/")+1:]
+                if track.get(mpx.AttributeId.MB_ARTIST_ID).is_initialized():
+                        self.entities.append(track.get(mpx.AttributeId.MB_ARTIST_ID).val().get_string())
 
-			cover = self.q.getTrackById(id, self.tinc)	
-			coverartist = cover.getArtist()
+                for i in range(7):
+                    if len(relobj[i]) > 0:
+                        funcs[i](track, mbtrack, relobj[i])
 
-			self.buf.insert_with_tags(self.buf.get_end_iter(), "...is a cover of ")
-			self.buf.insert_with_tags(self.buf.get_end_iter(), cover.getTitle(), self.textTagBold)
-			self.buf.insert_with_tags(self.buf.get_end_iter(), " by ")
-			self.buf.insert_with_tags(self.buf.get_end_iter(), coverartist.getName(), self.textTagBold)
-			self.buf.insert_with_tags(self.buf.get_end_iter(), "")
-			self.buf.insert(self.buf.get_end_iter(), "\n") 
+                self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
-		return True
+                for ent in self.entities:
 
-	def printComposer(self, track, mbtrack, rels):
+                    entity = self.q.getArtistById(ent, self.tinc)   
 
-		self.buf.insert_with_tags(self.buf.get_end_iter(), "...was composed by ")
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), entity.getName(), self.textTagBold)
+                    self.buf.insert(self.buf.get_end_iter(), ": ")
 
-		composers = []
+                    rels = entity.getRelations()
 
-		for rel in rels:
-			composer = rel.getTarget()
-			composers.append(composer.getName())
+                    for rel in rels:
+                    
+                        if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Discogs":
+                                link_tag = LinkTag(rel.getTargetId()) 
+                                link_tag.connect("url-clicked", self.on_url_clicked)
+                                self.buf.get_tag_table().add(link_tag)
+                                self.buf.insert_with_tags(self.buf.get_end_iter(), "Discogs", link_tag) 
+                                self.buf.insert(self.buf.get_end_iter(), "  ")
 
-		
-		self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(composers), self.textTagBold) 
-		self.buf.insert(self.buf.get_end_iter(), "\n") 
-		return True
+                        if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Wikipedia":
+                                link_tag = LinkTag(rel.getTargetId()) 
+                                link_tag.connect("url-clicked", self.on_url_clicked)
+                                self.buf.get_tag_table().add(link_tag)
+                                self.buf.insert_with_tags(self.buf.get_end_iter(), "Wikipedia", link_tag) 
+                                self.buf.insert(self.buf.get_end_iter(), "  ")
 
-	def printSamplesMaterial(self, track, mbtrack, rels):
+                        #if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Discography":
+                        #        link_tag = LinkTag(rel.getTargetId()) 
+                        #        self.buf.get_tag_table().add(link_tag)
+                        #        self.buf.insert_with_tags(self.buf.get_end_iter(), "(Discography)", link_tag) 
+                        #        self.buf.insert(self.buf.get_end_iter(), "  ")
 
-		sampled = []
+                        if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Myspace":
+                                link_tag = LinkTag(rel.getTargetId()) 
+                                link_tag.connect("url-clicked", self.on_url_clicked)
+                                self.buf.get_tag_table().add(link_tag)
+                                self.buf.insert_with_tags(self.buf.get_end_iter(), "MySpace", link_tag) 
+                                self.buf.insert(self.buf.get_end_iter(), "  ")
 
-		for rel in rels:
-			url = rel.getTargetId()
-			id = url[url.rindex("/")+1:]
-			trk = self.q.getTrackById(id, self.tinc)
-			sampledartist = trk.getArtist()
-			sampled.append(trk.getTitle() + " by " + sampledartist.getName())
+                        #if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#OfficialHomepage":
+                        #        link_tag = LinkTag(rel.getTargetId()) 
+                        #        self.buf.get_tag_table().add(link_tag)
+                        #        self.buf.insert_with_tags(self.buf.get_end_iter(), "(Homepage)", link_tag) 
+                        #        self.buf.insert(self.buf.get_end_iter(), "  ")
 
-		self.buf.insert_with_tags(self.buf.get_end_iter(), "...contains samples from ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(sampled), self.textTagBold) 
-		self.buf.insert(self.buf.get_end_iter(), "\n") 
-		return True
+                    self.buf.insert(self.buf.get_end_iter(), "\n")
 
-	def printRemixer(self, track, mbtrack, rels):
+            self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
-		remixers = []
 
-		for rel in rels:
-			url = rel.getTargetId()
-			id = url[url.rindex("/")+1:]
-			remixer = self.q.getArtistById(id, self.tinc)
-			remixers.append(remixer.getName())
+            if track.get(mpx.AttributeId.ARTIST).is_initialized() and track.get(mpx.AttributeId.TITLE).is_initialized():
+                try:
+                    lyricwiki = mpx.LyricWiki(track.get(mpx.AttributeId.ARTIST).val().get_string(), track.get(mpx.AttributeId.TITLE).val().get_string())
+                    lyrics = lyricwiki.run()
+                    self.buf.insert(self.buf.get_end_iter(), lyrics)
+                except:
+                    print "Couldn't get lyrics for '" + track.get(mpx.AttributeId.ARTIST).val().get_string() + " / " +  track.get(mpx.AttributeId.TITLE).val().get_string()+ "'"
+            
+            if track.get(mpx.AttributeId.ARTIST).is_initialized():
+                try:
+                    self.buf.insert(self.buf.get_end_iter(), "\n\n")
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track.get(mpx.AttributeId.ARTIST).val().get_string(), self.textTagCenter, self.textTagLarge)
+                    self.buf.insert(self.buf.get_end_iter(), "\n\n")
+                    lastfmartist = mpx.LastFMArtist(track.get(mpx.AttributeId.ARTIST).val().get_string())
+                    artist = lastfmartist.run()
+                    self.buf.insert(self.buf.get_end_iter(), artist)
+                except:
+                    print "Couldn't get Last.fm artist info for '" + track.get(mpx.AttributeId.ARTIST).val().get_string() 
 
-		self.buf.insert_with_tags(self.buf.get_end_iter(), "...was remixed by ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(remixers), self.textTagBold) 
-		self.buf.insert(self.buf.get_end_iter(), "\n") 
-		return True
+            self.Done = True
+            exit()
 
-	def printProducer(self, track, mbtrack, rels):
+        except musicbrainz2.webservice.WebServiceError:
+        
+            exit() 
+ 
+    def on_url_clicked(self, obj, url):
+        
+        command = "xdg-open \"%s\"" % url
+        os.system(command)
 
-		producers = []
+    def printCover(self, track, mbtrack, rels):
 
-		for rel in rels:
-			url = rel.getTargetId()
-			id = url[url.rindex("/")+1:]
-			producer = self.q.getArtistById(id, self.tinc)
-			producers.append(producer.getName())
-			
-		self.buf.insert_with_tags(self.buf.get_end_iter(), "...was produced by ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(producers), self.textTagBold) 
-		self.buf.insert(self.buf.get_end_iter(), "\n") 
-		return True
+        for rel in rels:
 
-	def printLyricist(self, track, mbtrack, rels):
+            # Workaround for buggy pymusicbrainzl; getTarget() on this rel returns None
+            url = rel.getTargetId()
+            id = url[url.rindex("/")+1:]
+            cover = self.q.getTrackById(id, self.tinc)  
+            coverartist = cover.getArtist()
 
-		lyricists = []
+            self.buf.insert_with_tags(self.buf.get_end_iter(), "...is a cover of ")
+            self.buf.insert_with_tags(self.buf.get_end_iter(), cover.getTitle(), self.textTagBold)
+            self.buf.insert_with_tags(self.buf.get_end_iter(), " by ")
+            self.buf.insert_with_tags(self.buf.get_end_iter(), coverartist.getName(), self.textTagBold)
+            self.buf.insert_with_tags(self.buf.get_end_iter(), "")
+            self.buf.insert(self.buf.get_end_iter(), "\n") 
 
-		for rel in rels:
-			lyricist = rel.getTarget() 
-			lyricists.append(lyricist.getName())
+        return True
 
-		self.buf.insert_with_tags(self.buf.get_end_iter(), "...has lyrics by ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(lyricists), self.textTagBold) 
-		self.buf.insert(self.buf.get_end_iter(), "\n") 
-		return True
+    def printComposer(self, track, mbtrack, rels):
 
-	def printProducer(self, track, mbtrack, rels):
+        self.buf.insert_with_tags(self.buf.get_end_iter(), "...was composed by ")
 
-		producers = []
+        composers = []
 
-		for rel in rels:
-			producer = rel.getTarget() 
-			producers.append(producer.getName())
+        for rel in rels:
+            composer = rel.getTarget()
+            self.entities.append(rel.getTargetId())
+            composers.append(composer.getName())
+        
+        self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(composers), self.textTagBold) 
+        self.buf.insert(self.buf.get_end_iter(), "\n") 
+        return True
 
-		self.buf.insert_with_tags(self.buf.get_end_iter(), "...was produced by ")
-		self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(producers), self.textTagBold) 
-		self.buf.insert(self.buf.get_end_iter(), "\n") 
-		return True
+    def printSamplesMaterial(self, track, mbtrack, rels):
 
-	def printInstrument(self, track, mbtrack, rels):
-		return True
+        sampled = []
+
+        for rel in rels:
+            url = rel.getTargetId()
+            id = url[url.rindex("/")+1:]
+            trk = self.q.getTrackById(id, self.tinc)
+            sampledartist = trk.getArtist()
+            self.entities.append(rel.getArtistId())
+            sampled.append(trk.getTitle() + " by " + sampledartist.getName())
+
+        self.buf.insert_with_tags(self.buf.get_end_iter(), "...contains samples from ")
+        self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(sampled), self.textTagBold) 
+        self.buf.insert(self.buf.get_end_iter(), "\n") 
+        return True
+
+    def printRemixer(self, track, mbtrack, rels):
+
+        remixers = []
+
+        for rel in rels:
+            url = rel.getTargetId()
+            id = url[url.rindex("/")+1:]
+            remixer = self.q.getArtistById(id, self.tinc)
+            self.entities.append(id)
+            remixers.append(remixer.getName())
+
+        self.buf.insert_with_tags(self.buf.get_end_iter(), "...was remixed by ")
+        self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(remixers), self.textTagBold) 
+        self.buf.insert(self.buf.get_end_iter(), "\n") 
+        return True
+
+    def printProducer(self, track, mbtrack, rels):
+
+        producers = []
+
+        for rel in rels:
+            url = rel.getTargetId()
+            id = url[url.rindex("/")+1:]
+            producer = self.q.getArtistById(id, self.tinc)
+            self.entities.append(id)
+            producers.append(producer.getName())
+            
+        self.buf.insert_with_tags(self.buf.get_end_iter(), "...was produced by ")
+        self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(producers), self.textTagBold) 
+        self.buf.insert(self.buf.get_end_iter(), "\n") 
+        return True
+
+    def printLyricist(self, track, mbtrack, rels):
+
+        lyricists = []
+
+        for rel in rels:
+            lyricist = rel.getTarget() 
+            self.entities.append(rel.getTargetId())
+            lyricists.append(lyricist.getName())
+
+        self.buf.insert_with_tags(self.buf.get_end_iter(), "...has lyrics by ")
+        self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(lyricists), self.textTagBold) 
+        self.buf.insert(self.buf.get_end_iter(), "\n") 
+        return True
+
+    def printProducer(self, track, mbtrack, rels):
+
+        producers = []
+
+        for rel in rels:
+            producer = rel.getTarget() 
+            self.entities.append(rel.getTargetId())
+            producers.append(producer.getName())
+
+        self.buf.insert_with_tags(self.buf.get_end_iter(), "...was produced by ")
+        self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(producers), self.textTagBold) 
+        self.buf.insert(self.buf.get_end_iter(), "\n") 
+        return True
+
+    def printInstrument(self, track, mbtrack, rels):
+        return True
 
 class TrackInfoDispatcher(mpx.Plugin):
-	def __init__(self):
-		print ">> TrackInfo Plugin initialized (C) 2008 M. Derezynski"
+    def __init__(self):
+        print ">> TrackInfo Plugin initialized (C) 2008 M. Derezynski"
 
-	def activate(self,player,mcs):
-		print ">> TrackInfo Plugin activated"
-		self.player = player
-		self.player_infoarea_click_id = self.player.gobj().connect("infoarea-click", self.infoarea_click)
-		return True
+    def activate(self,player,mcs):
+        print ">> TrackInfo Plugin activated"
+        self.player = player
+        self.player_infoarea_click_id = self.player.gobj().connect("infoarea-click", self.infoarea_click)
+        return True
 
-	def deactivate(self):
-		self.player.gobj().disconnect(self.player_infoarea_click_id)
-		self.player = None
+    def deactivate(self):
+        self.player.gobj().disconnect(self.player_infoarea_click_id)
+        self.player = None
 
-	def infoarea_click(self, data):
-		info = TrackInfo(self.player.get_metadata())
-		info.close.connect("clicked",self.close_clicked, info)
-		info.window.connect("delete-event",self.delete_event, info)
-		info.show()
+    def infoarea_click(self, data):
+        info = TrackInfo(self.player.get_metadata())
+        info.close.connect("clicked",self.close_clicked, info)
+        info.window.connect("delete-event",self.delete_event, info)
+        info.run()
 
-	def close_clicked(self, button, instance):
-		instance.window.destroy()
-		instance.window = None
-		instance = None
-		
-	def delete_event(self, window, event, instance):
-		instance.window.destroy()
-		instance.window = None
-		instance = None
+    def close_clicked(self, button, instance):
+        instance.window.destroy()
+        instance.window = None
+        instance = None
+        
+    def delete_event(self, window, event, instance):
+        instance.window.destroy()
+        instance.window = None
+        instance = None

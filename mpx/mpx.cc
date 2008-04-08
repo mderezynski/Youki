@@ -1728,8 +1728,8 @@ namespace MPX
 	  m_Metadata = metadata;
 	  if(!m_Metadata.Image)
 	  {
-	    if(m_Metadata[ATTRIBUTE_ASIN]) 
-			m_Covers.fetch(get<std::string>(m_Metadata[ATTRIBUTE_ASIN].get()), m_Metadata.Image);
+	    if(m_Metadata[ATTRIBUTE_MB_ALBUM_ID]) 
+			m_Covers.fetch(get<std::string>(m_Metadata[ATTRIBUTE_MB_ALBUM_ID].get()), m_Metadata.Image);
 		else
 			m_Metadata.Image = m_DiscDefault;
 	  }
