@@ -63,6 +63,7 @@ class TrackInfo:
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/scripts/trackinfo/trackinfo.glade")
         self.window = self.xml.get_widget("window1") 
         self.textview = self.xml.get_widget("textview")
+        self.textview.connect("motion-notify-event", self.on_view_motion_notify)
         self.image = self.xml.get_widget("image")
         self.close = self.xml.get_widget("close")
         self.notebook = self.xml.get_widget("notebook")
@@ -88,6 +89,42 @@ class TrackInfo:
         self.textTagSlant.set_property("style", pango.STYLE_ITALIC) 
         self.buf.get_tag_table().add(self.textTagSlant)
 
+        self.Hand = False
+
+    def on_view_motion_notify(self, widget, event):
+
+        if event.is_hint: 
+
+            x, y, state = event.window.get_pointer()
+        
+        else:
+
+            x = event.x
+            y = event.y
+            state = event.state
+
+        xb, yb = self.textview.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, x, y)
+        iter = self.textview.get_iter_at_location(xb, yb)
+        tags = iter.get_tags() 
+
+        for tag in tags:
+
+            if isinstance(tag, LinkTag):
+                window = self.textview.get_window(gtk.TEXT_WINDOW_TEXT)                
+                cursor = gtk.gdk.cursor_new_from_name(gtk.gdk.display_get_default(), "hand2")
+                window.set_cursor(cursor)
+                self.Hand = True
+                return False
+
+        if self.Hand:
+
+            window = self.textview.get_window(gtk.TEXT_WINDOW_TEXT)                
+            cursor = gtk.gdk.cursor_new_from_name(gtk.gdk.display_get_default(), "xterm")
+            window.set_cursor(cursor)
+            self.Hand = False
+
+        return False
+
     def run(self):
 
         image = self.track.get_image()
@@ -111,11 +148,14 @@ class TrackInfo:
         try:
             track = self.track
             self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
+            self.buf.insert(self.buf.get_end_iter(), "\n")
 
             if track.get(mpx.AttributeId.TITLE).is_initialized() and track.get(mpx.AttributeId.ARTIST).is_initialized():
                 self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(mpx.AttributeId.TITLE).val().get_string(), self.textTagCenter, self.textTagLarge)
                 self.buf.insert_with_tags(self.buf.get_end_iter(), "\nby\n", self.textTagCenter) 
                 self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(mpx.AttributeId.ARTIST).val().get_string(), self.textTagCenter, self.textTagLarge)
+
+            self.buf.insert(self.buf.get_end_iter(), "\n")
 
             if track.get(mpx.AttributeId.ALBUM_ARTIST).is_initialized() and track.get(mpx.AttributeId.ALBUM).is_initialized():
                 self.buf.insert_with_tags(self.buf.get_end_iter(), "\n(from \"" + track.get(mpx.AttributeId.ALBUM).val().get_string()+"\"", self.textTagCenter)
