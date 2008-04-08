@@ -27,6 +27,7 @@
 #include "mcs/mcs.h"
 
 #define NO_IMPORT
+#include <iostream>
 #include <pygtk/pygtk.h>
 #include <pygobject.h>
 #include "mpxpy.hh"
@@ -37,6 +38,28 @@
 
 namespace MPX
 {
+	Traceback::Traceback(const std::string& aname, const std::string& atraceback)
+	:	name (aname)
+	,	traceback (atraceback)
+	{
+	}
+
+	Traceback::~Traceback()
+	{
+	}
+
+	std::string
+	Traceback::get_name() const
+	{
+		return name;
+	}
+
+	std::string
+	Traceback::get_traceback() const
+	{
+		return traceback;
+	}
+
 	PluginManager::PluginManager (MPX::Player *player)
 	: m_Id(1)
 	, m_Player(player)
@@ -205,10 +228,25 @@ namespace MPX
 			object callable = ccinstance.attr("activate");
 			result = boost::python::call<bool>(callable.ptr(), boost::ref(*m_Player), boost::ref(*mcs));
 			i->second->m_Active = true;
-			PyErr_Print ();
-		} catch( error_already_set ) 
+		} catch( error_already_set )
 		{
-			PyErr_Print ();
+			std::string name (i->second->get_name());
+
+			PyObject *pytype = NULL, *pyvalue = NULL, *pytraceback = NULL, *pystring = NULL;
+			PyErr_Fetch (&pytype, &pyvalue, &pytraceback);
+			pystring = PyObject_Str(pyvalue);
+
+			std::string traceback = PyString_AsString (pystring);
+
+			push_traceback (name, traceback);
+
+			g_message("%s: Failed to activate plugin %lld, traceback:\n%s", G_STRLOC, id, PyString_AsString (pystring));
+
+			Py_XDECREF (pytype);
+			Py_XDECREF (pyvalue);
+			Py_XDECREF (pytraceback);
+			Py_XDECREF (pystring);
+
 		}
 
 		pyg_gil_state_release (state);
@@ -242,5 +280,32 @@ namespace MPX
 		}
 
 		pyg_gil_state_release (state);
+	}
+
+	void
+	PluginManager::push_traceback(const std::string& name, const std::string& traceback)
+	{
+		m_TracebackList.push_front(Traceback(name, traceback));
+	}
+
+	unsigned int
+	PluginManager::get_traceback_count() const
+	{
+		return m_TracebackList.size();
+	}
+
+	Traceback
+	PluginManager::get_last_traceback() const
+	{
+		return *(m_TracebackList.begin());
+	}
+
+	Traceback
+	PluginManager::pull_last_traceback()
+	{
+		std::list<Traceback>::iterator i = m_TracebackList.begin();
+		Traceback t = *i;
+		m_TracebackList.pop_front();
+		return t;
 	}
 }

@@ -76,7 +76,24 @@ namespace MPX
 	typedef boost::shared_ptr<PluginHolder>	PluginHolderRefP;
 	typedef std::map<gint64, PluginHolderRefP>	PluginHoldMap; 
 	typedef std::vector<std::string> Strings;
-	
+
+    class Traceback
+	{
+		std::string name;
+		std::string traceback;
+
+		public:
+			Traceback(const std::string& /*name*/, const std::string& /*traceback*/);
+			~Traceback();
+
+			std::string
+			get_name() const;
+
+			std::string
+			get_traceback() const;
+	};
+
+
 	class Player;
     class PluginManager
     {
@@ -100,6 +117,19 @@ namespace MPX
 			void
 			deactivate (gint64 /*id*/);
 
+			void
+			push_traceback(const std::string& /*name*/, const std::string& /*traceback*/);
+
+			unsigned int
+			get_traceback_count() const;
+
+			Traceback
+			get_last_traceback() const;
+
+			Traceback
+			pull_last_traceback();
+
+
 		private:
 
 			PluginHoldMap	m_Map;	
@@ -107,6 +137,7 @@ namespace MPX
 			gint64			m_Id;
 			Player		   *m_Player;
 			Glib::Mutex		m_StateChangeLock;
+			std::list<Traceback>	m_TracebackList;
     };
 }
 #endif
