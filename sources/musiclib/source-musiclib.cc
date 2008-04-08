@@ -1109,8 +1109,7 @@ namespace MPX
               virtual void
               on_row_activated (const TreeModel::Path& path, TreeViewColumn* column)
               {
-                TreeIter iter_filter = TreeStore->get_iter (path);
-                TreeIter iter = TreeStoreFilter->convert_iter_to_child_iter(iter_filter);
+                TreeIter iter = TreeStore->get_iter (path);
                 gint64 id = (*iter)[AlbumColumns.Id];
                 m_MLib.play_album(id, true);
               }
