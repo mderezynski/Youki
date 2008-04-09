@@ -67,10 +67,13 @@ namespace MPX
 		remove_widget (Gtk::Widget *widget);
 
 		void
-		get_object (PAccess<MPX::Library> & pa);
+		get_object (PAccess<MPX::Library>&);
 
 		void	
-		get_object (PAccess<MPX::Covers> & pa);
+		get_object (PAccess<MPX::Covers>&);
+
+        void
+        get_object (PAccess<MPX::Play>&);
 
 		Metadata const&
 		get_metadata ();

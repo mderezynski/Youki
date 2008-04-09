@@ -76,6 +76,7 @@ enum
   PROP_0,
   PROP_PREBUFFER,
   PROP_LOCATION,
+  PROP_CUSTOMHEADER,
   PROP_URI,
   PROP_USER_AGENT,
   PROP_IRADIO_MODE,
@@ -146,6 +147,12 @@ gst_jnethttpsrc_class_init (MPXJNLHttpSrcClass * klass)
           "", GParamFlags (G_PARAM_READWRITE)));
 
   g_object_class_install_property
+      (gobject_class, PROP_CUSTOMHEADER,
+      g_param_spec_string ("customheader", "Custom HTTP header",
+          "Custom HTTP header",
+          "", GParamFlags (G_PARAM_READWRITE)));
+
+  g_object_class_install_property
       (gobject_class, PROP_URI,
       g_param_spec_string ("uri", "Uri",
           "The location in form of a URI (deprecated; use location)",
@@ -198,6 +205,8 @@ gst_jnethttpsrc_init (MPXJNLHttpSrc * jnlhttpsrc, MPXJNLHttpSrcClass * g_class)
   jnlhttpsrc->eos = FALSE;
   jnlhttpsrc->abort = FALSE;
   jnlhttpsrc->abort_lock = g_mutex_new();
+  jnlhttpsrc->uri = NULL;
+  jnlhttpsrc->customheader = NULL;
 }
 
 static void
@@ -377,6 +386,9 @@ send_request_and_redirect (MPXJNLHttpSrc * src)
   src->get->addheader ("User-Agent: Winamp/5.0");
   src->get->addheader ("icy-metadata: 1");
   src->get->addheader ("Accept: audio/mpeg, */*");
+  if(src->customheader)
+    src->get->addheader(src->customheader);
+
   src->get->connect(src->uri);
 
   Glib::Timer timer;
@@ -532,6 +544,15 @@ gst_jnethttpsrc_set_property (GObject * object, guint prop_id, const GValue * va
       break;
     }
 
+    case PROP_CUSTOMHEADER:
+    {
+      if(jnlhttpsrc->customheader)
+        g_free(jnlhttpsrc->customheader);
+
+      jnlhttpsrc->customheader = g_value_dup_string(value);
+      break;
+    }
+
     case PROP_URI:
     case PROP_LOCATION:
     {
@@ -540,6 +561,9 @@ gst_jnethttpsrc_set_property (GObject * object, guint prop_id, const GValue * va
         GST_WARNING ("location property cannot be NULL");
         return;
       }
+
+      if(jnlhttpsrc->uri)
+        g_free(jnlhttpsrc->uri);
 
       jnlhttpsrc->uri = g_value_dup_string (value);
       break;
@@ -572,6 +596,12 @@ gst_jnethttpsrc_get_property (GObject * object, guint prop_id, GValue * value, G
     case PROP_PREBUFFER:
     {
       g_value_set_boolean (value, jnlhttpsrc->first_buffering);
+      break;
+    }
+
+    case PROP_CUSTOMHEADER:
+    {
+      g_value_set_string (value, jnlhttpsrc->customheader);
       break;
     }
 

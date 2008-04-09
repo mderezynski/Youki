@@ -54,7 +54,7 @@ namespace Source
                 PlaylistPluginManager *m_PluginManager;
                 PAccess<MPX::Library> m_Lib;
                 std::string m_MergedUI;
-
+    
                 void
                 on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
 

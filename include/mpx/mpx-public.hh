@@ -39,6 +39,7 @@ namespace MPX
 {
 	class Library;
 	class Covers;
+    class Play;
 
     class Player
       : public WidgetLoader<Gtk::Window>
@@ -46,10 +47,13 @@ namespace MPX
       public:
 
 		void
-		get_object (PAccess<MPX::Library> & pa);
+		get_object (PAccess<MPX::Library>&);
 
 		void	
-		get_object (PAccess<MPX::Covers> & pa);
+		get_object (PAccess<MPX::Covers>&);
+
+		void	
+		get_object (PAccess<MPX::Play>&);
 
         virtual ~Player ();
 

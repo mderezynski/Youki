@@ -282,6 +282,7 @@ namespace MPX
         property_status_ = PLAYSTATUS_STOPPED;
 		g_message("Gone to STOPPED");
       }
+      set_custom_httpheader(NULL);
     }
 
     void
@@ -485,15 +486,20 @@ namespace MPX
 
     void
     Play::switch_stream_real (ustring const& stream,
-                         ustring const& type)
+                              ustring const& type)
     {
-      m_stream_lock.lock ();
+      Glib::Mutex::Lock L (m_stream_lock);
+
 	  m_metadata.reset();
 	  m_stream_type = ustring();
+
       readify_stream (); 
+
       m_stream_type = type;
+      g_message("%s: Switching to stream with URI: %s", G_STRLOC, stream.c_str());
       property_stream_ = stream;
 	  play_stream ();
+
       m_stream_lock.unlock ();
     }
 
@@ -1109,6 +1115,18 @@ namespace MPX
       {
         m_video_pipe->set_window_id (id);
       }
+    }
+
+    void
+    Play::set_custom_httpheader( char const* header ) 
+    {
+      if(!m_bin[BIN_HTTP] && !m_bin[BIN_HTTP_MAD])
+        return;
+
+      GstElement* e = gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP]), "src");
+      g_object_set(G_OBJECT(e), "customheader", header, NULL);
+      e = gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP_MAD]), "src");
+      g_object_set(G_OBJECT(e), "customheader", header, NULL);
     }
 
     ///////////////////////////////////////////////

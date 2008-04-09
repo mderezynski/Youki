@@ -197,7 +197,7 @@ namespace MPX
         return -1;
       }
 
-      if (xmlParseChunk (ctxt, data, size-1, 1))
+      if (xmlParseChunk (ctxt, data, size, 1))
       {
         g_warning ("%s: Error parsing document!", G_STRLOC);
         return -1;

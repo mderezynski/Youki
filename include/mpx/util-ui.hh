@@ -38,6 +38,9 @@ namespace MPX
     Gtk::Widget*
     get_popup (Glib::RefPtr<Gtk::UIManager> ui_manager, Glib::ustring const& menupath);
 
+    Glib::RefPtr<Gdk::Pixbuf>
+    get_image_from_uri (Glib::ustring const&);
+
   } // Util
 } // MPX
 

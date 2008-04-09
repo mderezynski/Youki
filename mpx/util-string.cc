@@ -32,7 +32,7 @@
 #define BOOST_REGEX_MATCH_EXTRA 1
 #include <boost/regex.hpp>
 
-#include "md5.h"
+#include "mpx/md5.h"
 #include "mpx/util-string.hh"
 
 using namespace Glib;

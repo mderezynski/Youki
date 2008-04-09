@@ -41,13 +41,13 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/regex.hpp>
 
-#include "base64.h"
-#include "md5.h"
+#include "mpx/base64.h"
+#include "mpx/md5.h"
 #include "mpx/main.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-string.hh"
+#include "mpx/xspf-libxml2-sax.hh"
 #include "last-fm-xmlrpc.hh"
-#include "xspf-libxml2-sax.hh"
 
 using namespace Gtk;
 using namespace Glib;

@@ -116,17 +116,13 @@ namespace MPX
         MPXGstMetadata const&        
         get_metadata ();
 
-        void  request_status_real (MPXPlaystatus status);
-        void  switch_stream_real (Glib::ustring const& stream, Glib::ustring const& type = Glib::ustring());
-
         void  request_status (MPXPlaystatus status);
         void  switch_stream (Glib::ustring const& stream, Glib::ustring const& type = Glib::ustring());
+        void  set_custom_httpheader (char const*);
+        void  seek (gint64 position);
+        void  set_window_id ( ::Window id);
 
         void  reset ();
-
-#ifndef MPX_PLUGIN_BUILD
-        void seek (gint64 position);
-        void set_window_id ( ::Window id);
 
         ProxyOf<PropString>::ReadWrite  property_stream ();
         ProxyOf<PropInt>::ReadWrite     property_volume ();
@@ -323,8 +319,10 @@ namespace MPX
         void  on_volume_changed ();
 
         void  pipeline_configure (PipelineId id);
+        void  request_status_real (MPXPlaystatus status);
+        void  switch_stream_real (Glib::ustring const& stream, Glib::ustring const& type = Glib::ustring());
+
         GstElement * control_pipe () const;
-#endif
     };
 }
 

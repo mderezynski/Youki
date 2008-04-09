@@ -1430,6 +1430,12 @@ namespace MPX
 		pa = PAccess<MPX::Covers>(m_Covers);
 	}
 
+	void
+	Player::get_object (PAccess<MPX::Play> & pa)
+	{
+		pa = PAccess<MPX::Play>(*m_Play);
+	}
+
 	Metadata const&
 	Player::get_metadata ()
 	{
@@ -1853,6 +1859,7 @@ namespace MPX
 	  PlaybackSource* source = m_SourceV[source_id];
 
 	  m_Play->switch_stream (source->get_uri(), source->get_type());
+      source->play_post ();
 	  play_post_internal (source_id);
 	}
 

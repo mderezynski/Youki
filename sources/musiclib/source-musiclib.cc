@@ -444,7 +444,7 @@ namespace MPX
                 }
 
                 SQL::RowV v;
-                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s)") % numbers.str()).str()); 
+                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s) ORDER BY track") % numbers.str()).str()); 
 
                 TreeIter iter = ListStore->append();
                 m_PlayInitIter = iter;
@@ -1809,7 +1809,7 @@ namespace Source
     PlaybackSourceMusicLib::play_album(gint64 id, bool play)
     {
         SQL::RowV v;
-        m_Lib.get().getSQL(v, (boost::format("SELECT id, track FROM track_view WHERE album_j = '%lld' ORDER BY track") % id).str()); 
+        m_Lib.get().getSQL(v, (boost::format("SELECT id, track FROM track_view WHERE album_j = '%lld'") % id).str()); 
         TrackIdV idv;
         for(SQL::RowV::const_iterator i = v.begin(); i != v.end(); ++i)
         {

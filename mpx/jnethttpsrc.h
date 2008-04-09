@@ -50,6 +50,7 @@ struct _MPXJNLHttpSrc
 
   JNL_HTTPGet * get;
   gchar * uri; 
+  gchar * customheader;
 
   gint64 content_size;
   gint64 content_read;
