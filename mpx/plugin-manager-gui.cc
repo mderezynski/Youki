@@ -154,7 +154,7 @@ namespace MPX
 			if(obj_manager.get_traceback_count())
 			{
 				label->set_text("Failed to activate: " + obj_manager.get_last_traceback().get_name());
-				buTraceback->show();
+				buTraceback->set_sensitive();
 			}
 
 
@@ -188,10 +188,10 @@ namespace MPX
 			if(m_Manager.get_traceback_count())
 			{
 				label->set_text("Failed to activate: " + m_Manager.get_last_traceback().get_name());
-				buTraceback->show();
+				buTraceback->set_sensitive();
 			}
 			else
-				buTraceback->hide();
+				buTraceback->set_sensitive(false);
 		}
 
 		void
@@ -205,7 +205,7 @@ namespace MPX
 			if(m_Manager.get_traceback_count())
 				label->set_text("Failed to activate: " + m_Manager.get_last_traceback().get_name());
 			else
-				buTraceback->hide();
+				buTraceback->set_sensitive(false);
 		}
 		
 }
