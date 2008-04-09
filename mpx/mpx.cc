@@ -1247,9 +1247,6 @@ namespace MPX
 		m_source_flags[source] = PlaybackSource::Flags(0);
 		m_source_caps[source] = PlaybackSource::Caps(0); 
 
-		m_SourceV[source]->send_caps();
-		m_SourceV[source]->send_flags();
-
 		m_SourceV[source]->signal_caps().connect
 		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_caps), source));
 
@@ -1279,6 +1276,9 @@ namespace MPX
 
 		m_SourceV[source]->signal_prev_async().connect
 		  (sigc::bind (sigc::mem_fun (*this, &Player::prev_async_cb), source));
+
+		m_SourceV[source]->send_caps();
+		m_SourceV[source]->send_flags();
 
 		UriSchemes v = m_SourceV[source]->Get_Schemes ();
 		if(v.size())
@@ -1774,6 +1774,8 @@ namespace MPX
 	{
 	  g_return_if_fail( m_Sources->getSource() == source_id);
 
+      g_message("%s: (enter)", G_STRLOC);
+
 	  if( (m_Sources->getSource() != SOURCE_NONE ) && (m_Play->property_status().get_value() != PLAYSTATUS_STOPPED))
 	  {
 			if( m_source_flags[m_Sources->getSource()] & PlaybackSource::F_HANDLE_LASTFM )
@@ -1788,16 +1790,19 @@ namespace MPX
 			}
 	  }
 
+      safe_pause_unset();
+
 	  PlaybackSource* source = m_SourceV[source_id];
 
 	  if( m_source_flags[source_id] & PlaybackSource::F_ASYNC)
 	  {
+            g_message("%s: ASYNC source", G_STRLOC);
 			m_actions->get_action( ACTION_STOP )->set_sensitive (true);
 			source->play_async ();
 	  }
 	  else
 	  {
-			  safe_pause_unset();
+              g_message("%s: SYNC source", G_STRLOC);
 			  if( source->play () )
 			  {
 					  m_Play->switch_stream (source->get_uri(), source->get_type());
@@ -1961,17 +1966,20 @@ namespace MPX
 			  }
 		}
 
+        safe_pause_unset();
+
 		PlaybackSource* source = m_SourceV[source_id];
 		
 		if( m_source_flags[source_id] & PlaybackSource::F_ASYNC)
 		{
+                g_message("%s: ASYNC source", G_STRLOC);
 				source->play_async ();
 				m_actions->get_action( ACTION_STOP )->set_sensitive (true);
 				return;
 		}
 		else
 		{
-				safe_pause_unset();
+                g_message("%s: SYNC source", G_STRLOC);
 				if( source->play() )
 				{
 					  m_Play->switch_stream (source->get_uri(), source->get_type());
@@ -2082,6 +2090,7 @@ namespace MPX
 			track_played();
 			if( f & PlaybackSource::F_ASYNC )
 			{
+                g_message("%s: ASYNC source", G_STRLOC);
 				m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
 				source->go_next_async ();
 				return;
@@ -2089,6 +2098,7 @@ namespace MPX
 			else
 			if( source->go_next () )
 			{
+                g_message("%s: SYNC source", G_STRLOC);
 				next_async_cb (m_Sources->getSource());
 				return;
 			}
