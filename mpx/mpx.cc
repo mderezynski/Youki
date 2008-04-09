@@ -116,12 +116,16 @@ namespace
   parse_metadata (MPX::Metadata & metadata,
                   ustring       & artist,
                   ustring       & album,
-                  ustring       & title)
+                  ustring       & title,
+                  ustring       & genre)
   {
     using namespace MPX;
 
     static char const *
       text_b_f ("<b>%s</b>");
+
+    static char const *
+      text_i_f ("<i>%s</i>");
 
     static char const *
       text_b_f2 ("<b>%s</b> (%s)");
@@ -130,10 +134,10 @@ namespace
       text_big_f ("<span size='14000'><b>%s</b></span>");
 
     static char const *
-      text_album_artist_f ("%s (%s)");
+      text_album_artist_f ("<b>%s</b> (%s)");
 
     static char const *
-      text_album_f ("%s");
+      text_album_f ("<b>%s</b>");
 
     static char const *
       text_artist_f ("(%s)");
@@ -179,6 +183,11 @@ namespace
     {
       title = gprintf (text_big_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_TITLE].get())).c_str());
     }
+
+    if( metadata[ATTRIBUTE_GENRE] )
+    {
+      genre = gprintf (text_i_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_GENRE].get())).c_str());
+    }
   }
 }
 
@@ -199,6 +208,7 @@ namespace MPX
     L_TITLE,
     L_ARTIST,
     L_ALBUM,
+    L_GENRE,
     N_LAYOUTS
   };
 
@@ -211,9 +221,10 @@ namespace MPX
   };
 
   LayoutData const layout_info[] = {
-    {-0.0, 1.0, 86, 55},
+    {-0.0, 1.0, 86, 58},
     {-0.4, 1.0, 86,  8},
-    {-0.4, 0.8, 86, 26}
+    {-0.4, 0.8, 86, 22},
+    {-0.4, 0.6, 86, 36}
   };
 
   // WARNING: If you set the gravity or timescale too high, the cover
@@ -348,7 +359,7 @@ namespace MPX
         modify_bg (Gtk::STATE_NORMAL, color);
         modify_base (Gtk::STATE_NORMAL, color);
 
-        m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum));
+        m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum ));
 		m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
 
         enable_drag_dest ();
@@ -531,13 +542,15 @@ namespace MPX
         remove_layout_if_exists (L_ARTIST);
         remove_layout_if_exists (L_ALBUM);
         remove_layout_if_exists (L_TITLE);
+        remove_layout_if_exists (L_GENRE);
 
         m_cover_anim_conn.disconnect ();
         m_cover_surface = Cairo::RefPtr<Cairo::ImageSurface> (0);
 
-        m_text[0].clear ();
-        m_text[1].clear ();
-        m_text[2].clear ();
+        m_text[L_ARTIST].clear ();
+        m_text[L_ALBUM].clear ();
+        m_text[L_TITLE].clear ();
+        m_text[L_GENRE].clear ();
 
         set_source (Glib::RefPtr<Gdk::Pixbuf> (0));
         queue_draw ();
@@ -1717,13 +1730,24 @@ namespace MPX
 			m_Metadata.Image = m_DiscDefault;
 		}
 
+        m_InfoArea->reset();
+        
 		m_InfoArea->set_image (m_Metadata.Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
 
-		ustring artist, album, title;
-		parse_metadata (m_Metadata, artist, album, title);
-		m_InfoArea->set_text (L_TITLE, title);
-		m_InfoArea->set_text (L_ARTIST, artist);
-		m_InfoArea->set_text (L_ALBUM, album);
+		ustring artist, album, title, genre;
+		parse_metadata (m_Metadata, artist, album, title, genre);
+
+        if(!title.empty())
+    		m_InfoArea->set_text (L_TITLE, title);
+
+        if(!artist.empty())
+    		m_InfoArea->set_text (L_ARTIST, artist);
+
+        if(!album.empty())
+    		m_InfoArea->set_text (L_ALBUM, album);
+
+        if(!genre.empty())
+    		m_InfoArea->set_text (L_GENRE, genre);
 	}
 
 	void

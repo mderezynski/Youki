@@ -51,6 +51,13 @@
 using namespace Glib;
 using namespace Gtk;
 
+namespace
+{
+    boost::format f1 ("lastfm://artist/%s/similarartists");
+    boost::format f2 ("lastfm://globaltags/%s");
+    boost::format f3 ("lastfm://user/%s/neighbours");
+}
+
 namespace MPX
 {
 namespace Source
@@ -81,6 +88,9 @@ namespace Source
 
 		m_UI = m_ref_xml->get_widget("source-lastfm");
         m_ref_xml->get_widget("url-entry", m_URL_Entry);
+        m_ref_xml->get_widget("cbox-sel", m_CBox_Sel);
+
+        m_CBox_Sel->set_active(0);
         m_URL_Entry->signal_activate().connect( sigc::mem_fun( *this, &LastFM::on_url_entry_activated ));
 
         m_LastFMRadio.handshake();
@@ -97,7 +107,24 @@ namespace Source
     void
     LastFM::on_url_entry_activated()
     {
-        m_LastFMRadio.playurl(m_URL_Entry->get_text());
+        int c = m_CBox_Sel->get_active();
+
+        switch(c)
+        {
+            case 0:
+                m_LastFMRadio.playurl((f1 % m_URL_Entry->get_text()).str());
+                break;
+
+            case 1:
+                m_LastFMRadio.playurl((f2 % m_URL_Entry->get_text()).str());
+                break;
+
+            case 2:
+                m_LastFMRadio.playurl((f3 % m_URL_Entry->get_text()).str());
+                break;
+        }
+
+        m_URL_Entry->set_text("");
     }
 
     void
@@ -163,6 +190,7 @@ namespace Source
         } 
         else
         {
+            m_PlaylistIter++;
             Signals.NextAsync.emit();
         }
     }
@@ -184,7 +212,8 @@ namespace Source
     bool
     LastFM::go_next ()
     {
-		return false;
+        m_PlaylistIter++;
+		return true;
     }
 
     bool
@@ -225,10 +254,11 @@ namespace Source
         XSPF::Item const& item = *m_PlaylistIter;
 
         Metadata metadata;
-        metadata[ATTRIBUTE_ARTIST] = "(Last.fm: " + m_Playlist.get().Title + ") " + item.creator;
+        metadata[ATTRIBUTE_ARTIST] = item.creator;
         metadata[ATTRIBUTE_ALBUM] = item.album;
         metadata[ATTRIBUTE_TITLE] = item.title;
         metadata[ATTRIBUTE_TIME] = gint64(item.duration);
+        metadata[ATTRIBUTE_GENRE] = "Last.fm: " + m_Playlist.get().Title; 
         metadata.Image = Util::get_image_from_uri (item.image);
         Signals.Metadata.emit (metadata);
 

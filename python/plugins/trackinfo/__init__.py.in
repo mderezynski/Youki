@@ -149,6 +149,11 @@ class TrackInfo:
             track = self.track
             self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
             self.buf.insert(self.buf.get_end_iter(), "\n")
+            #self.imageanchor = self.buf.create_child_anchor(self.buf.get_end_iter())
+            #self.inlineimage = gtk.Image()
+            #self.inlineimage.set_from_pixbuf(self.track.get_image())
+            #self.inlineimage.show()
+            #self.textview.add_child_at_anchor(self.inlineimage, self.imageanchor)
 
             if track.get(mpx.AttributeId.TITLE).is_initialized() and track.get(mpx.AttributeId.ARTIST).is_initialized():
                 self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(mpx.AttributeId.TITLE).val().get_string(), self.textTagCenter, self.textTagLarge)

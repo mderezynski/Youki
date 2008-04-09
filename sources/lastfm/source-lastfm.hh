@@ -66,6 +66,7 @@ namespace Source
 		Glib::RefPtr<Gtk::UIManager>    m_ui_manager_main;
 		Gtk::Widget					  * m_UI;
         Gtk::Entry                    * m_URL_Entry;
+        Gtk::ComboBox                 * m_CBox_Sel;
     
         MPX::LastFMRadio                m_LastFMRadio;
         boost::optional<XSPF::Playlist> m_Playlist;
