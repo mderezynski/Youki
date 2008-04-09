@@ -713,7 +713,7 @@ namespace MPX
 
           p->layout->set_single_paragraph_mode (true);
           p->layout->set_ellipsize (Pango::ELLIPSIZE_END);
-          p->layout->set_width ((allocation.get_width() - p->x - (8*SPECT_BANDS+12)) * PANGO_SCALE);
+          p->layout->set_width ((allocation.get_width() - p->x - (8*SPECT_BANDS+12)) * PANGO_SCALE - 40);
           p->layout->set_wrap (Pango::WRAP_CHAR);
 
           pango_cairo_show_layout (cr->cobj(), p->layout->gobj());
