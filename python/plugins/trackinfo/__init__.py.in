@@ -279,11 +279,11 @@ class TrackInfo:
                     self.buf.insert(self.buf.get_end_iter(), "\n")
 
             self.Done = True
-            exit()
+            return
 
         except musicbrainz2.webservice.WebServiceError:
         
-            exit() 
+            return 
  
     def on_url_clicked(self, obj, url):
         
@@ -409,14 +409,15 @@ class TrackInfoDispatcher(mpx.Plugin):
         print ">> TrackInfo Plugin initialized (C) 2008 M. Derezynski"
 
     def activate(self,player,mcs):
-        print ">> TrackInfo Plugin activated"
         self.player = player
         self.player_infoarea_click_id = self.player.gobj().connect("infoarea-click", self.infoarea_click)
+        print ">> TrackInfo Plugin activated"
         return True
 
     def deactivate(self):
         self.player.gobj().disconnect(self.player_infoarea_click_id)
         self.player = None
+        print ">> TrackInfo Plugin deactivated"
 
     def infoarea_click(self, data):
         info = TrackInfo(self.player.get_metadata())
