@@ -1054,39 +1054,9 @@ namespace MPX
 
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 
-		/*------------------------ Create the UI Manager, sources need it ------------------------*/
-		m_ui_manager = UIManager::create ();
-
-		/*------------------------ Load Sources --------------------------------------------------*/ 
-        m_Sources = new Sources(xml);
-        m_ref_xml->get_widget("statusbar", m_Statusbar);
-		Util::dir_for_each_entry (build_filename(PLUGIN_DIR, "sources"), sigc::mem_fun(*this, &MPX::Player::load_source_plugin));  
-
-		//----------------------- Volume ---------------------------------------------------------*/
-        m_ref_xml->get_widget("volumebutton", m_Volume);
-		m_Volume->signal_value_changed().connect( sigc::mem_fun( *this, &Player::on_volume_value_changed ) );
-		std::vector<Glib::ustring> Icons;
-		Icons.push_back("volume-knob");
-		m_Volume->property_size() = Gtk::ICON_SIZE_SMALL_TOOLBAR;
-		m_Volume->set_icons(Icons);
-
-		//----------------------- Time Display ---------------------------------------------------*/
-        m_ref_xml->get_widget("label-time", m_TimeLabel);
-
-		//---------------------- Seek ------------------------------------------------------------*/
-        m_ref_xml->get_widget("scale-seek", m_Seek);
-		m_Seek->signal_event().connect( sigc::mem_fun( *this, &Player::on_seek_event ) );
-		m_Seek->set_sensitive(false);
-		g_atomic_int_set(&m_Seeking,0);
-
-        //---------------------- Infoarea --------------------------------------------------------*/
-        m_InfoArea = InfoArea::create(*m_Play, m_ref_xml);
-		m_InfoArea->signal_cover_clicked().connect
-		  ( sigc::mem_fun( *this, &Player::on_cover_clicked ));
-		m_InfoArea->signal_uris_dropped().connect
-		  ( sigc::mem_fun( *this, &MPX::Player::on_infoarea_uris ) );
-
         //---------------------- UIManager + Menus + Proxy Widgets --------------------------------*/
+
+		m_ui_manager = UIManager::create ();
 		m_actions = ActionGroup::create ("Actions_Player");
 
 		m_actions->add (Action::create("MenuMusic", _("_Music")));
@@ -1172,6 +1142,37 @@ namespace MPX
 		m_actions->get_action (ACTION_NEXT)->set_sensitive( 0 );
 		m_actions->get_action (ACTION_STOP)->set_sensitive( 0 );
         add_accel_group (m_ui_manager->get_accel_group());
+
+
+
+		/*------------------------ Load Sources --------------------------------------------------*/ 
+        m_Sources = new Sources(xml);
+        m_ref_xml->get_widget("statusbar", m_Statusbar);
+		Util::dir_for_each_entry (build_filename(PLUGIN_DIR, "sources"), sigc::mem_fun(*this, &MPX::Player::load_source_plugin));  
+
+		//----------------------- Volume ---------------------------------------------------------*/
+        m_ref_xml->get_widget("volumebutton", m_Volume);
+		m_Volume->signal_value_changed().connect( sigc::mem_fun( *this, &Player::on_volume_value_changed ) );
+		std::vector<Glib::ustring> Icons;
+		Icons.push_back("volume-knob");
+		m_Volume->property_size() = Gtk::ICON_SIZE_SMALL_TOOLBAR;
+		m_Volume->set_icons(Icons);
+
+		//----------------------- Time Display ---------------------------------------------------*/
+        m_ref_xml->get_widget("label-time", m_TimeLabel);
+
+		//---------------------- Seek ------------------------------------------------------------*/
+        m_ref_xml->get_widget("scale-seek", m_Seek);
+		m_Seek->signal_event().connect( sigc::mem_fun( *this, &Player::on_seek_event ) );
+		m_Seek->set_sensitive(false);
+		g_atomic_int_set(&m_Seeking,0);
+
+        //---------------------- Infoarea --------------------------------------------------------*/
+        m_InfoArea = InfoArea::create(*m_Play, m_ref_xml);
+		m_InfoArea->signal_cover_clicked().connect
+		  ( sigc::mem_fun( *this, &Player::on_cover_clicked ));
+		m_InfoArea->signal_uris_dropped().connect
+		  ( sigc::mem_fun( *this, &MPX::Player::on_infoarea_uris ) );
 
 #if 0
 		dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-repeat"))
