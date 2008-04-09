@@ -16,7 +16,7 @@ import thread
 import musicbrainz2
 import musicbrainz2.webservice as ws
 
-class WaitSecond():
+class WaitSecond:
 
         def __init__(self):
 
