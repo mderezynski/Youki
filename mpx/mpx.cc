@@ -525,14 +525,14 @@ namespace MPX
         }
       }
 
+	public:
+
       void
       set_source (Glib::RefPtr<Gdk::Pixbuf> const& source_icon)
       {
         m_source_icon = source_icon;
         queue_draw ();
       }
-
-	public:
 
       void
       reset ()
@@ -552,7 +552,6 @@ namespace MPX
         m_text[L_TITLE].clear ();
         m_text[L_GENRE].clear ();
 
-        set_source (Glib::RefPtr<Gdk::Pixbuf> (0));
         queue_draw ();
       }
 
@@ -731,7 +730,7 @@ namespace MPX
           int x = 0, y = 0, w = 0, h = 0;
 
           // Bar
-          x = allocation.get_width () - (8*SPECT_BANDS+8) + (n*8);
+          x = allocation.get_width () - (8*SPECT_BANDS+8) + (n*8) - 24;
           y = 11 + (64 - (m_spectrum_data[n]+64));
 
           w = 6;
@@ -752,7 +751,7 @@ namespace MPX
 
           cr->set_operator (Cairo::OPERATOR_ATOP);
           Gdk::Cairo::set_source_pixbuf (cr, m_source_icon, allocation.get_width () - 28, 12);
-          cr->rectangle (allocation.get_width () - 28, 4, 20, 20);
+          cr->rectangle (allocation.get_width () - 28, 12, 20, 20);
           cr->fill ();
         }
       }
@@ -2146,7 +2145,7 @@ namespace MPX
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->set_active(false);
 
 		m_SourceUI = m_SourceV[source_id]->add_menu();
-		g_message("%s: New merge iD: %u", G_STRLOC, m_SourceUI);
+        m_InfoArea->set_source(m_SourceV[source_id]->get_icon()->scale_simple(20, 20, Gdk::INTERP_BILINEAR));
 	}
 
 	void
