@@ -67,11 +67,15 @@ namespace Source
 		Gtk::Widget					  * m_UI;
         Gtk::Entry                    * m_URL_Entry;
         Gtk::ComboBox                 * m_CBox_Sel;
+        Gtk::HBox                     * m_HBox_Error;
+        Gtk::Label                    * m_Label_Error;
+        Gtk::Button                   * m_Button_Error_Hide;
     
         MPX::LastFMRadio                m_LastFMRadio;
         boost::optional<XSPF::Playlist> m_Playlist;
         XSPF::ItemIter                  m_PlaylistIter;
         Glib::Mutex                     m_PlaylistLock;
+        
 
         MPX::Player                   & m_Player;
 

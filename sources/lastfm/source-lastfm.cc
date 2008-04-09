@@ -89,6 +89,11 @@ namespace Source
 		m_UI = m_ref_xml->get_widget("source-lastfm");
         m_ref_xml->get_widget("url-entry", m_URL_Entry);
         m_ref_xml->get_widget("cbox-sel", m_CBox_Sel);
+        m_ref_xml->get_widget("hbox-error", m_HBox_Error);
+        m_ref_xml->get_widget("label-error", m_Label_Error);
+        m_ref_xml->get_widget("button-error-hide", m_Button_Error_Hide);
+
+        m_Button_Error_Hide->signal_clicked().connect( sigc::mem_fun( *m_HBox_Error, &Gtk::Widget::hide ));
 
         m_CBox_Sel->set_active(0);
         m_URL_Entry->signal_activate().connect( sigc::mem_fun( *this, &LastFM::on_url_entry_activated ));
@@ -160,7 +165,8 @@ namespace Source
     void
     LastFM::on_tune_error (Glib::ustring const& error)
     {
-        g_message("%s: Tune Error: %s", G_STRLOC, error.c_str());
+        m_Label_Error->set_text(error);
+        m_HBox_Error->show();
     }
 
     ////// 
@@ -251,6 +257,9 @@ namespace Source
     void
     LastFM::play_post ()
     {
+        g_return_if_fail (m_Playlist);
+        g_return_if_fail (m_PlaylistIter != m_Playlist.get().Items.end());
+
         XSPF::Item const& item = *m_PlaylistIter;
 
         Metadata metadata;
