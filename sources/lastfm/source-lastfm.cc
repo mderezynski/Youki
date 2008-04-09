@@ -174,8 +174,6 @@ namespace Source
     std::string
     LastFM::get_uri ()
     {
-        Glib::Mutex::Lock L (m_PlaylistLock);
-
         g_return_val_if_fail(m_Playlist, std::string());
         g_return_val_if_fail(m_PlaylistIter != m_Playlist.get().Items.end(), std::string());
 
@@ -186,8 +184,6 @@ namespace Source
     void
     LastFM::go_next_async ()
     {
-        Glib::Mutex::Lock L (m_PlaylistLock);
-
         if( m_PlaylistIter == m_Playlist.get().Items.end() )
         {
             m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_GO_NEXT);
@@ -209,8 +205,6 @@ namespace Source
     void
     LastFM::play_async ()
     {
-        Glib::Mutex::Lock L (m_PlaylistLock);
-
         m_Playlist.reset();
         m_LastFMRadio.get_xspf_playlist();
     }
