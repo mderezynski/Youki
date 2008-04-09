@@ -391,7 +391,7 @@ namespace MPX
         }
       catch (...)
         {
-          request_status (PLAYSTATUS_STOPPED);
+          stop_stream (); 
           return;
         }
 
