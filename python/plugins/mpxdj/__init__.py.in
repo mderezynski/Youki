@@ -92,7 +92,6 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 		for val in rv:
 			v.append(val["id"].get_int())
 
-
 	def OPTION_lastfm_tag(self, lib, v):
 		
 		MBID_NODE_XPATH = u'//mbid'
@@ -110,8 +109,7 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 	def OPTION_random_mix(self, lib, v):
 
 		rv = mpx.SQLRowV()
-		for x in range(10):
-			lib.getSQL(rv, "SELECT id FROM track_view ORDER BY mpxrand() LIMIT 5")
+		lib.getSQL(rv, "SELECT id FROM track_view ORDER BY mpxrand()")
 		self.extract_ids(rv, v)
 
 	def OPTION_sounds_of(self, lib, v):
@@ -160,5 +158,5 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
                 idv = mpx_playlist.TrackIdVector()
 		if(ret == gtk.RESPONSE_OK):
 			self.callables[self.combo.get_active()](lib, idv)
-			mlib.play_tracks(idv, True)
+		mlib.play_tracks(idv, True)
 		self.dialog.hide()
