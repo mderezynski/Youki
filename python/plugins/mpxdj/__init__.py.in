@@ -147,5 +147,5 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
                 idv = mpx_playlist.TrackIdVector()
 		if(ret == gtk.RESPONSE_OK):
 			self.callables[self.combo.get_active()](lib, idv)
-                mlib.play_tracks(idv, True)
+			mlib.play_tracks(idv, True)
 		self.dialog.hide()
