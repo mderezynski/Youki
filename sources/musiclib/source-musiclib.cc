@@ -1049,21 +1049,27 @@ namespace MPX
 
         struct AlbumColumnsT : public Gtk::TreeModel::ColumnRecord 
         {
-            Gtk::TreeModelColumn<AlbumRowType> RowType;
-            Gtk::TreeModelColumn<bool> HasTracks;
-            Gtk::TreeModelColumn<Cairo::RefPtr<Cairo::ImageSurface> > Image;
-            Gtk::TreeModelColumn<Glib::ustring> Text;
-            Gtk::TreeModelColumn<std::string> AlbumSort;
-            Gtk::TreeModelColumn<std::string> ArtistSort;
-            Gtk::TreeModelColumn<std::string> ASIN;
-            Gtk::TreeModelColumn<gint64> Date;
-            Gtk::TreeModelColumn<gint64> Id;
-            Gtk::TreeModelColumn<gint64> Rating;
-            Gtk::TreeModelColumn<Glib::ustring> TrackTitle;
-            Gtk::TreeModelColumn<Glib::ustring> TrackArtist;
-            Gtk::TreeModelColumn<gint64> TrackNumber;
-            Gtk::TreeModelColumn<gint64> TrackLength;
-            Gtk::TreeModelColumn<gint64> TrackId;
+            Gtk::TreeModelColumn<AlbumRowType>                          RowType;
+            Gtk::TreeModelColumn<Cairo::RefPtr<Cairo::ImageSurface> >   Image;
+            Gtk::TreeModelColumn<Glib::ustring>                         Text;
+
+            Gtk::TreeModelColumn<bool>                                  HasTracks;
+
+            Gtk::TreeModelColumn<std::string>                           AlbumSort;
+            Gtk::TreeModelColumn<std::string>                           ArtistSort;
+
+            Gtk::TreeModelColumn<gint64>                                Id;
+            Gtk::TreeModelColumn<std::string>                           MBID;
+
+            Gtk::TreeModelColumn<gint64>                                Date;
+            Gtk::TreeModelColumn<gint64>                                Rating;
+
+            Gtk::TreeModelColumn<Glib::ustring>                         TrackTitle;
+            Gtk::TreeModelColumn<Glib::ustring>                         TrackArtist;
+            Gtk::TreeModelColumn<gint64>                                TrackNumber;
+            Gtk::TreeModelColumn<gint64>                                TrackLength;
+            Gtk::TreeModelColumn<gint64>                                TrackId;
+
             AlbumColumnsT ()
             {
                 add (RowType);
@@ -1072,7 +1078,7 @@ namespace MPX
                 add (Text);
                 add (AlbumSort);
                 add (ArtistSort);
-                add (ASIN);
+                add (MBID);
                 add (Date);
                 add (Id);
                 add (Rating);
@@ -1106,7 +1112,7 @@ namespace MPX
               Glib::RefPtr<Gdk::Pixbuf> m_DiscDefault_Pixbuf;
               Glib::RefPtr<Gdk::Pixbuf> m_Stars[6];
 
-              boost::optional<std::string> m_DragASIN;
+              boost::optional<std::string> m_DragMBID;
               boost::optional<gint64> m_DragAlbumId;
               boost::optional<gint64> m_DragTrackId;
               TreePath m_PathButtonPress;
@@ -1181,7 +1187,7 @@ namespace MPX
                 else if(m_DragTrackId)
                     selection_data.set("mpx-track", 8, reinterpret_cast<const guint8*>(&m_DragTrackId.get()), 8);
 
-                m_DragASIN.reset();
+                m_DragMBID.reset();
                 m_DragAlbumId.reset();
                 m_DragTrackId.reset();
               }
@@ -1189,15 +1195,17 @@ namespace MPX
               virtual void
               on_drag_begin (const Glib::RefPtr<Gdk::DragContext>& context) 
               {
-                Glib::RefPtr<Gdk::Pixbuf> Cover;
                 if(m_DragAlbumId)
                 {
-                    if(m_DragASIN)
+                    if(m_DragMBID)
                     {
-                        m_Covers.get().fetch(m_DragASIN.get(), Cover);
-                        if(Cover)
+                        Cairo::RefPtr<Cairo::ImageSurface> CoverCairo;
+                        m_Covers.get().fetch(m_DragMBID.get(), CoverCairo, COVER_SIZE_DEFAULT);
+                        if(CoverCairo)
                         {
-                            drag_source_set_icon(Cover->scale_simple(128,128,Gdk::INTERP_BILINEAR));
+                            CoverCairo = Util::cairo_image_surface_round(CoverCairo, 21.3); 
+                            Glib::RefPtr<Gdk::Pixbuf> CoverPixbuf = Util::cairo_image_surface_to_pixbuf(CoverCairo);
+                            drag_source_set_icon(CoverPixbuf->scale_simple(128,128,Gdk::INTERP_BILINEAR));
                             return;
                         }
                     }
@@ -1267,7 +1275,7 @@ namespace MPX
                     TreeIter iter = TreeStore->get_iter(TreeStoreFilter->convert_path_to_child_path(m_PathButtonPress));
                     if(m_PathButtonPress.get_depth() == ROW_ALBUM)
                     {
-                        m_DragASIN = (*iter)[AlbumColumns.ASIN];
+                        m_DragMBID = (*iter)[AlbumColumns.MBID];
                         m_DragAlbumId = (*iter)[AlbumColumns.Id];
                         m_DragTrackId.reset(); 
                 
@@ -1283,7 +1291,7 @@ namespace MPX
                     else
                     if(m_PathButtonPress.get_depth() == ROW_TRACK)
                     {
-                        m_DragASIN.reset(); 
+                        m_DragMBID.reset(); 
                         m_DragAlbumId.reset();
                         m_DragTrackId = (*iter)[AlbumColumns.TrackId];
                     }
@@ -1316,7 +1324,7 @@ namespace MPX
                 (*iter)[AlbumColumns.RowType] = ROW_ALBUM; 
                 (*iter)[AlbumColumns.HasTracks] = false; 
                 (*iter)[AlbumColumns.Image] = m_DiscDefault; 
-                (*iter)[AlbumColumns.ASIN] = asin; 
+                (*iter)[AlbumColumns.MBID] = mbid; 
                 (*iter)[AlbumColumns.Id] = id; 
 
                 if(!mbid.empty())
@@ -1393,7 +1401,6 @@ namespace MPX
                     if(r.count("amazon_asin"))
                     {
                         asin = get<std::string>(r["amazon_asin"]);
-                        (*iter)[AlbumColumns.ASIN] = asin; 
                     }
 
                     if(r.count("mb_album_id"))
@@ -1402,6 +1409,7 @@ namespace MPX
                         IterSet & s = m_MBIDIterMap[mbid];
                         s.insert(iter);
                         m_Covers.get().cache(mbid, asin);
+                        (*iter)[AlbumColumns.MBID] = mbid; 
                     }
 
                     std::string date;
@@ -1664,7 +1672,7 @@ namespace MPX
 
                 CellRendererText *celltext = manage (new CellRendererText);
                 celltext->property_yalign() = 0.;
-                celltext->property_ypad() = 2;
+                celltext->property_ypad() = 4;
                 celltext->property_height() = 52;
                 celltext->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE;
                 cvbox->property_renderer1() = celltext;

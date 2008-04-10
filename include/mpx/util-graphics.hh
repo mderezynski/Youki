@@ -72,7 +72,10 @@ namespace MPX
                    double&           a);
 
     Cairo::RefPtr<Cairo::ImageSurface>
-    cairo_image_surface_from_pixbuf (Glib::RefPtr<Gdk::Pixbuf> pixbuf);
+    cairo_image_surface_from_pixbuf (Glib::RefPtr<Gdk::Pixbuf>);
+
+    Glib::RefPtr<Gdk::Pixbuf>
+    cairo_image_surface_to_pixbuf (Cairo::RefPtr<Cairo::ImageSurface>);
 
     void
     cairo_rounded_rect (Cairo::RefPtr<Cairo::Context>& cr,
