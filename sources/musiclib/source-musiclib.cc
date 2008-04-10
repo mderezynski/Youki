@@ -711,9 +711,10 @@ namespace MPX
                     bool begin = true;
                     Util::FileList uris = data.get_uris();
                     append_uris (uris, iter, begin);
-                    m_MusicLib.check_caps();
-                    m_MusicLib.send_caps ();
                 }
+
+                m_MusicLib.check_caps ();
+                m_MusicLib.send_caps ();
               }
 
               virtual bool

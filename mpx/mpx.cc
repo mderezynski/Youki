@@ -1695,20 +1695,20 @@ namespace MPX
 	}
 
 	void
-	Player::on_source_caps (PlaybackSource::Caps caps, int source)
+	Player::on_source_caps (PlaybackSource::Caps caps, int source_id)
 	{
 	  Mutex::Lock L (m_SourceCFLock);
 
-	  m_source_caps[source] = caps;
+	  m_source_caps[source_id] = caps;
 
-	  if( (source == m_ActiveSource) || (m_MainNotebook->get_current_page() == m_SourceTabMapping[m_ActiveSource]) || (m_ActiveSource == SOURCE_NONE))
+	  if( (source_id == m_ActiveSource) || (m_MainNotebook->get_current_page() == m_SourceTabMapping[m_ActiveSource]) || (m_ActiveSource == SOURCE_NONE))
 	  {
 		m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
 		m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
 		m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
 	  }
 
-	  if( source == m_ActiveSource ) 
+	  if( (source_id == m_ActiveSource) || (m_ActiveSource == SOURCE_NONE))
 	  {
 			if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
 			{
