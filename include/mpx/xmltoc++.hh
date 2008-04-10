@@ -66,6 +66,7 @@ namespace MPX
 
                   // no need to free this pointer - owned by the parent parser object
                   DOMDocument* xmlDoc = m_ConfigFileParser->getDocument();
+                  if( !xmlDoc ) throw(std::runtime_error("No Document!"));
 
                   // Get the top-level element: NAme is "root". No attributes for "root"
                   

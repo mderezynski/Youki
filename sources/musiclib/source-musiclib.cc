@@ -1298,6 +1298,7 @@ namespace MPX
                 Cairo::RefPtr<Cairo::ImageSurface> Cover;
                 m_Covers.get().fetch(mbid, Cover, COVER_SIZE_ALBUM_LIST);
                 Util::cairo_image_surface_border(Cover, 1.);
+                Cover = Util::cairo_image_surface_round(Cover, 6.);
                 IterSet & set = m_MBIDIterMap[mbid];
                 for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
                 {

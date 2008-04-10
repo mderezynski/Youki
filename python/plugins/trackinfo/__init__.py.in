@@ -231,6 +231,8 @@ class TrackInfo:
                 if track.get(mpx.AttributeId.MB_ARTIST_ID).is_initialized():
                         self.entities.append(track.get(mpx.AttributeId.MB_ARTIST_ID).val().get_string())
 
+                self.buf.insert(self.buf.get_end_iter(), "\n\n\n")
+
                 for i in range(7):
                     if len(relobj[i]) > 0:
                         funcs[i](track, mbtrack, relobj[i])
@@ -410,8 +412,6 @@ class TrackInfo:
         return True
 
 class TrackInfoDispatcher(mpx.Plugin):
-    def __init__(self):
-        print ">> TrackInfo Plugin initialized (C) 2008 M. Derezynski"
 
     def activate(self,player,mcs):
         self.player = player

@@ -47,6 +47,195 @@ using namespace Glib;
 
 namespace MPX
 {
+namespace LastFMXMLRPC
+{
+    typedef std::vector <Glib::ustring> UStrV;
+    typedef boost::variant <Glib::ustring, UStrV> xmlRpcVariant;
+    typedef std::vector <xmlRpcVariant> xmlRpcVariantV;
+
+    // User
+    struct User
+    { 
+      ustring	username;
+      ustring	url;
+      ustring	image;
+      double match;
+    };
+    typedef std::vector <User> UserV;
+
+    // Tag
+    struct Tag
+    {
+      ustring name;
+      ustring url;
+      guint64 count;
+    };
+    typedef std::vector <Tag> TagV;
+    typedef std::pair   <Tag, double> TagRankP;
+    typedef std::vector <TagRankP> RankedTagV;
+
+    //bool operator< (TagRankP const& a, TagRankP const& b);
+    //bool operator< (Tag const& a, Tag const& b);
+
+    // LastFMArtist
+    struct LastFMArtist
+    {
+      ustring name;
+      ustring mbid;
+      ustring url;
+      ustring thumbnail;
+      ustring image;
+      guint64 count;
+      guint64 rank;
+      bool    streamable;
+
+      LastFMArtist () : streamable(false) {}
+    };
+    typedef std::vector <LastFMArtist> LastFMArtistV;
+
+    enum TagGlobalType
+    {
+      TAGS_GLOBAL_ARTIST,
+      TAGS_GLOBAL_TRACK, 
+    };
+
+    enum TagUserType
+    {
+      TAGS_USER_TOPTAGS,
+      TAGS_USER_ARTIST,
+      TAGS_USER_ALBUM,
+      TAGS_USER_TRACK, 
+    };
+
+    enum UserType
+    {
+      UT_N,
+      UT_F, 
+    };
+
+    enum ArtistType
+    {
+      AT_USER_TOP,
+      AT_USER_SYSTEMREC,
+      AT_TAG_TOP,
+      AT_SIMILAR
+    };
+
+    /////////////////////////////////////////////////
+    ///// Requests
+    /////////////////////////////////////////////////
+
+    ustring formatXmlRpc (ustring const& method, xmlRpcVariantV const& argv);
+
+    class XmlRpcCall; 
+    typedef Glib::RefPtr<XmlRpcCall> XmlRpcCallRefPtr;
+
+    class XmlRpcCall
+      : public Glib::Object
+    {
+      public:
+        typedef sigc::signal<void, std::string const&, guint> SignalReply;
+      public:
+        SignalReply & reply() { return s_; }
+      protected:
+        xmlRpcVariantV m_v;
+        Soup::RequestRefP m_soup_request;
+        SignalReply s_;
+        XmlRpcCall ();
+      public:
+        virtual ~XmlRpcCall ();
+        void cancel ();
+        void setMethod (const ustring& method);
+    };
+
+    class XmlRpcCallSync
+      : public Glib::Object
+    {
+      protected:
+        xmlRpcVariantV m_v;
+        Soup::RequestSyncRefP m_soup_request;
+        XmlRpcCallSync ();
+      public:
+        virtual ~XmlRpcCallSync ();
+        void setMethod (const ustring& method);
+    };
+
+    class ArtistMetadataRequest;
+    typedef Glib::RefPtr<ArtistMetadataRequest> ArtistMetadataRequestRefPtr;
+
+    class ArtistMetadataRequest
+      : public XmlRpcCall
+    {
+        ustring m_artist;
+        void reply_cb (char const* data, guint size, guint status_code);
+      private: 
+        ArtistMetadataRequest (ustring const& artist); 
+      public:
+        static ArtistMetadataRequestRefPtr create (ustring const& artist); 
+        virtual ~ArtistMetadataRequest () {};
+        void run ();
+    };
+
+    class RequestBase
+      : public XmlRpcCallSync
+    {
+      public:
+
+        RequestBase (ustring const& method);
+        virtual ~RequestBase () {};
+
+        void run ();
+
+      protected:
+
+        std::string   m_name;
+        std::string   m_pass;
+        std::string   m_user;
+        std::string   m_time;
+        std::string   m_key;
+        std::string   m_kmd5;
+    };
+
+    class TrackAction
+      : public RequestBase
+    {
+      public:
+
+        TrackAction (ustring const& method, XSPF::Item const& item);
+        virtual ~TrackAction () {}
+    };
+
+    class TagAction 
+      : public RequestBase
+    {
+      public:
+
+        TagAction (ustring const& method, XSPF::Item const& item, UStrV const& tags);
+        virtual ~TagAction () {}
+    };
+
+    class RecommendAction
+      : public RequestBase
+    {
+      public:
+
+        enum RecommendItem
+        {
+          RECOMMEND_TRACK,
+          RECOMMEND_ARTIST,
+          RECOMMEND_ALBUM,
+        };
+
+        RecommendAction (RecommendItem item,
+                    ustring const& artist, ustring const& album, ustring const& title, ustring const& user, ustring const& message); 
+        virtual ~RecommendAction () {}
+    };
+}
+}
+
+
+namespace MPX
+{
     typedef sigc::signal<void, XSPF::Playlist const&> SignalPlaylist;
     typedef sigc::signal<void, Glib::ustring const&>  SignalTuneError; 
     typedef sigc::signal<void> Signal;

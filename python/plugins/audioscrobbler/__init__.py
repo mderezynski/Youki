@@ -758,8 +758,6 @@ class MPXAudioScrobbler(mpx.Plugin):
 								str(p_album),
 								str(p_mbid))
 
-			self.post.flushcache ()
-	
 	def now_playing(self, blah):
 
 		m = self.player.get_metadata()
@@ -795,6 +793,7 @@ class MPXAudioScrobbler(mpx.Plugin):
 
 			print "Posting now-playing with MBID: " + p_mbid + " at date " + str(time.time())
 
+			self.post.flushcache ()
 			self.post.nowplaying(str(p_artist),
 								 str(p_title),
 								 str(p_len),

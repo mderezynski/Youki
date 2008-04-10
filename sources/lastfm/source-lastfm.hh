@@ -43,6 +43,7 @@
 #include "mpx/i-playbacksource.hh"
 
 #include "lastfm.hh"
+#include "lastfm-extra-widgets.hh"
 
 using namespace Glib;
 
@@ -70,6 +71,7 @@ namespace Source
         Gtk::HBox                     * m_HBox_Error;
         Gtk::Label                    * m_Label_Error;
         Gtk::Button                   * m_Button_Error_Hide;
+        MPX::LastFMTagView            * m_TagView;
     
         MPX::LastFMRadio                m_LastFMRadio;
         boost::optional<XSPF::Playlist> m_Playlist;

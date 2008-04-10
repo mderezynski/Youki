@@ -39,14 +39,19 @@
 #include <boost/algorithm/string/regex.hpp>
 
 #include "mpx/mpx-public.hh"
-#include "mpx/library.hh"
-#include "mpx/types.hh"
-#include "mpx/minisoup.hh"
-#include "mpx/util-ui.hh"
 #include "mpx/play-public.hh"
+
+#include "mpx/library.hh"
 #include "mpx/main.hh"
+#include "mpx/minisoup.hh"
+#include "mpx/types.hh"
+#include "mpx/uri.hh"
+#include "mpx/util-ui.hh"
+#include "mpx/xmltoc++.hh"
 
 #include "source-lastfm.hh"
+#include "lastfm-extra-widgets.hh"
+#include "xsd-track-toptags.hxx"
 
 using namespace Glib;
 using namespace Gtk;
@@ -56,6 +61,26 @@ namespace
     boost::format f1 ("lastfm://artist/%s/similarartists");
     boost::format f2 ("lastfm://globaltags/%s");
     boost::format f3 ("lastfm://user/%s/neighbours");
+
+    class TagInserter
+    {
+      public:
+
+        TagInserter (MPX::LastFMTagView & view)
+        : m_View(view)
+        {
+        }
+
+        void
+        operator()(::tag const& t)
+        {
+            m_View.insert_tag( t.name(), t.url(), t.count() );
+        }
+
+      private:
+
+        MPX::LastFMTagView & m_View;
+    };
 }
 
 namespace MPX
@@ -87,8 +112,9 @@ namespace Source
 		m_ref_xml = Gnome::Glade::Xml::create (path);
 
 		m_UI = m_ref_xml->get_widget("source-lastfm");
-        m_ref_xml->get_widget("url-entry", m_URL_Entry);
         m_ref_xml->get_widget("cbox-sel", m_CBox_Sel);
+        m_ref_xml->get_widget("url-entry", m_URL_Entry);
+        m_ref_xml->get_widget_derived("tagview", m_TagView);
         m_ref_xml->get_widget("hbox-error", m_HBox_Error);
         m_ref_xml->get_widget("label-error", m_Label_Error);
         m_ref_xml->get_widget("button-error-hide", m_Button_Error_Hide);
@@ -99,6 +125,9 @@ namespace Source
         m_URL_Entry->signal_activate().connect( sigc::mem_fun( *this, &LastFM::on_url_entry_activated ));
 
         m_LastFMRadio.handshake();
+        if(m_LastFMRadio.connected())
+    		m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_PLAY);
+
         m_LastFMRadio.signal_playlist().connect( sigc::mem_fun( *this, &LastFM::on_playlist ));
         m_LastFMRadio.signal_no_playlist().connect( sigc::mem_fun( *this, &LastFM::on_no_playlist ));
         m_LastFMRadio.signal_tuned().connect( sigc::mem_fun( *this, &LastFM::on_tuned ));
@@ -235,6 +264,7 @@ namespace Source
         PAccess<MPX::Play> pa;
         m_Player.get_object(pa);
         pa.get().set_custom_httpheader(NULL);
+        m_TagView->clear();
     }
 
 	void
@@ -269,6 +299,26 @@ namespace Source
           m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_GO_NEXT);
         else
           m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_GO_NEXT);
+
+        m_TagView->clear ();
+
+        try{
+            URI u ((boost::format ("http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml") % item.creator % item.title).str());    
+            u.escape();
+            ustring request_uri = u;
+            g_message("%s: Request URI: '%s'", G_STRLOC, request_uri.c_str());
+            MPX::XmlInstance< ::toptags> tags (request_uri);
+            if(tags.xml().tag().size())
+            {
+                g_message("%s: Got %d tags", G_STRLOC, int(tags.xml().tag().size()));
+                std::for_each(tags.xml().tag().begin(), tags.xml().tag().end(), TagInserter(*m_TagView));
+            }
+            else
+                g_message("%s: tag() is empty", G_STRLOC);
+        } catch (std::runtime_error & cxe)
+        {
+            g_message("%s: Error: %s", G_STRLOC, cxe.what());
+        }
     }
 
     void

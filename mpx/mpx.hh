@@ -118,6 +118,7 @@ namespace MPX
 			PSIGNAL_NEW_TRACK,
 			PSIGNAL_TRACK_PLAYED,
 			PSIGNAL_INFOAREA_CLICK,
+            PSIGNAL_STATE_CHANGED,
 			N_SIGNALS
 		};
 
@@ -133,13 +134,14 @@ namespace MPX
         typedef std::vector<SourcePluginPtr> SourcePluginsKeeper;
 		typedef std::vector<PlaybackSource*> VectorSources;
 		typedef std::map<std::string, int> UriSchemeMap;
+		typedef std::vector<int> SourceTabMapping;
 
         SourcePluginsKeeper m_SourcePlugins;
 		UriSchemeMap m_UriMap;
 
         Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
-        Glib::RefPtr<Gtk::ActionGroup> m_actions;
-        Glib::RefPtr<Gtk::UIManager> m_ui_manager;
+        Glib::RefPtr<Gtk::ActionGroup>  m_actions;
+        Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
 		guint m_SourceUI;
 
 		struct DBusObjectsT
@@ -151,11 +153,12 @@ namespace MPX
 		int m_Seeking;
 		int m_SourceCtr;
 		int m_PageCtr;
+        int m_ActiveSource;
 		gdouble m_TrackPlayedSeconds;
 		gdouble m_PreSeekPosition;
 		gdouble m_TrackDuration;
 		Glib::Mutex m_SourceCFLock;
-		std::vector<int> m_SourceTabMapping;
+        SourceTabMapping m_SourceTabMapping;
 
 		DBusObjectsT DBusObjects;
 		DBusGConnection * m_SessionBus;

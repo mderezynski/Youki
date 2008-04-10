@@ -5,7 +5,7 @@
 #include <string>
 #include "mpx/playlistparser-xspf.hh"
 #include "xmlcpp/xspf.hxx"
-#include "xmltoc++.hh"
+#include "mpx/xmltoc++.hh"
 
 namespace MPX
 {

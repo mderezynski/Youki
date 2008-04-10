@@ -28,9 +28,6 @@
 #include "mpx/types.hh"
 #include "mpx/util-file.hh"
 
-#include "xmltoc++.hh"
-#include "xmlcpp/xsd-profile.hxx"
-
 using namespace MPX;
 
 namespace MPX

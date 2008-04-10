@@ -40,6 +40,7 @@ libmpxsource_lastfm_la_SOURCES =	\
 		lastfm.hh					\
 		lastfm.cc					\
 		source-lastfm.hh			\
-		source-lastfm.cc
+		source-lastfm.cc			\
+		xsd-track-toptags.cxx
 
 libmpxsource_lastfmdir = $(PLUGIN_DIR)/sources

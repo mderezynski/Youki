@@ -15,7 +15,7 @@ import time
 
 class Ratings(mpx_playlist.PlaylistPlugin):
 	def __init__(self):
-		print ">> Ratings Import/Export Plugin initialized"
+
 		self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-scripts/ratings_export/ratings_export.glade")
 		self.dialog = self.xml.get_widget("dialog")
 		self.combo = self.xml.get_widget("combobox")
