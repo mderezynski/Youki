@@ -40,14 +40,14 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 				   "Forgotten Gems", "Deja Vu", "Random Mix", "Last.fm Tag"]
 
 		self.callables = [  self.OPTION_entertain_me,
-							None,	
+							self.OPTION_play_all,	
 							self.OPTION_top_tunes,
 							None,
 							None,
-						    self.OPTION_sounds_of,
+							self.OPTION_sounds_of,
 							None,
 							None,
-							None,
+							self.OPTION_random_mix,
 							self.OPTION_lastfm_tag
 						 ]
 
@@ -107,6 +107,13 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 				lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY mpxrand(*) LIMIT 1"))
 		self.extract_ids(rv, v)
 
+	def OPTION_random_mix(self, lib, v):
+
+		rv = mpx.SQLRowV()
+		for x in range(10):
+			lib.getSQL(rv, "SELECT id FROM track_view ORDER BY mpxrand(*)")
+		self.extract_ids(rv, v)
+
 	def OPTION_sounds_of(self, lib, v):
 	
 		active = self.xml.get_widget("cbox-decade").get_active()
@@ -129,6 +136,12 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 	
 		rv = mpx.SQLRowV()
 		lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY mpxrand(*) LIMIT 10")
+		self.extract_ids(rv, v)
+
+	def OPTION_play_all(self, lib, v):
+
+		rv = mpx.SQLRowV()
+		lib.getSQL(rv, "SELECT id FROM track_view ORDER BY album, track")
 		self.extract_ids(rv, v)
 
 	def OPTION_entertain_me(self, lib, v):
