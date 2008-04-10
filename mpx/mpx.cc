@@ -221,7 +221,7 @@ namespace MPX
   };
 
   LayoutData const layout_info[] = {
-    {-0.0, 1.0, 86, 58},
+    {-0.0, 1.0, 86, 55},
     {-0.4, 1.0, 86,  8},
     {-0.4, 0.8, 86, 22},
     {-0.4, 0.6, 86, 36}
@@ -704,17 +704,19 @@ namespace MPX
         for (Layouts::const_iterator i = m_layouts.begin(); i != m_layouts.end(); ++i)
         {
           TextP const& p (i->second);
+
           if( p->alpha < 0 )
             continue;
 
-          cr->set_source_rgba (1.0, 1.0, 1.0, p->alpha);
+          int w = (allocation.get_width() - p->x - (8*SPECT_BANDS+12) - 40) * PANGO_SCALE;
+
+          //cr->set_source_rgba (1.0, 1.0, 1.0, p->alpha);
+          cr->set_source_rgba (1.0, 1.0, 1.0, p->target);
           cr->set_operator (Cairo::OPERATOR_ATOP);
           cr->move_to (p->x, p->y);
-
+    
           p->layout->set_single_paragraph_mode (true);
           p->layout->set_ellipsize (Pango::ELLIPSIZE_END);
-          int w = ((allocation.get_width() - p->x - (8*SPECT_BANDS+12)) * PANGO_SCALE);
-          w -= (40 * PANGO_SCALE);
           p->layout->set_width (w);
           p->layout->set_wrap (Pango::WRAP_CHAR);
 
@@ -1699,7 +1701,7 @@ namespace MPX
 
 	  m_source_caps[source] = caps;
 
-	  if( (source == m_ActiveSource) || (m_MainNotebook->get_current_page() == m_SourceTabMapping[m_ActiveSource]) )
+	  if( (source == m_ActiveSource) || (m_MainNotebook->get_current_page() == m_SourceTabMapping[m_ActiveSource]) || (m_ActiveSource == SOURCE_NONE))
 	  {
 		m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
 		m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
@@ -2134,6 +2136,19 @@ namespace MPX
 
 		m_SourceUI = m_SourceV[source_id]->add_menu();
         m_InfoArea->set_source(m_SourceV[source_id]->get_icon()->scale_simple(20, 20, Gdk::INTERP_BILINEAR));
+
+        if( source_id == m_ActiveSource ) 
+        {
+          PlaybackSource::Caps caps = m_source_caps[source_id];
+          m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
+          m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
+          m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
+
+          if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
+            m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
+          else
+            m_actions->get_action (ACTION_PAUSE)->set_sensitive (false);
+        }
 	}
 
 	void

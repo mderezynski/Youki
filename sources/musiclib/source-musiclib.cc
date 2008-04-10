@@ -1909,15 +1909,17 @@ namespace Source
         }
         else
         if(rows.empty() && !m_Private->m_TreeViewPlaylist->m_CurrentIter)
-                {
+        {
                         TreePath path;
                         path.append_index(0);
-            m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter(path);
+                        m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter(path);
                         return true;
-                }
+        }
         else
         if(m_Private->m_TreeViewPlaylist->m_CurrentIter)
             return true;
+
+        check_caps ();
     
         return false;
     }
@@ -1966,6 +1968,7 @@ namespace Source
         m_Private->m_TreeViewPlaylist->m_CurrentIter = boost::optional<Gtk::TreeIter>();
         m_Private->m_TreeViewPlaylist->m_CurrentId = boost::optional<gint64>(); 
         m_Private->m_TreeViewPlaylist->queue_draw();
+        check_caps ();
     }
 
     void

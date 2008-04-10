@@ -884,10 +884,9 @@ namespace MPX
           if (GST_IS_ELEMENT (spectrum))
           {
             GstElement* tee = gst_element_factory_make ("tee", "tee1"); 
-            GstElement* queue = gst_element_factory_make ("queue", NULL); 
-            gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, m_elmtEqualizer, tee, queue, spectrum, volume, sink_element, NULL);
+            gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, m_elmtEqualizer, tee, spectrum, volume, sink_element, NULL);
             gst_element_link_many (convert, resample, m_elmtEqualizer, tee, volume, sink_element, NULL);
-            gst_element_link_many (tee, queue, spectrum, NULL);
+            gst_element_link_many (tee, spectrum, NULL);
           }
           else
           {
