@@ -171,13 +171,6 @@ namespace MPX
 	sqlite3_result_int64(ctx, absRating);
   }
 
-  void
-  randFunc (sqlite3_context *ctx, int argc, sqlite3_value **argv)
-  {
-	gint64 rand = g_random_int(); 
-	sqlite3_result_int64(ctx, rand);
-  }
-
   // SQLITE ADDITIONS //
 
   string
@@ -630,9 +623,11 @@ namespace MPX
       }
 
       SQLDB::SQLDB (std::string const& name, std::string const& path, DbOpenMode openmode)
-        : m_name (name),
-          m_path (path)
+      : m_name (name)
+      , m_path (path)
       {
+        m_rand.set_seed(time(NULL));
+
         m_filename = build_filename (path, name) + ".mlib";
 
         if (file_test (m_filename, FILE_TEST_EXISTS) && openmode == SQLDB_TRUNCATE) {
@@ -648,7 +643,7 @@ namespace MPX
 #endif //SQLITE_TRACE
 
 		sqlite3_create_function(m_sqlite, "abs_rating", 2, SQLITE_ANY, this, absRatingFunc, 0, 0);
-		sqlite3_create_function(m_sqlite, "mpxrand", 0, SQLITE_ANY, this, randFunc, 0, 0);
+		sqlite3_create_function(m_sqlite, "mpxrand", 0, SQLITE_ANY, this, SQLDB::randFunc, 0, 0);
 
         exec_sql ("PRAGMA synchronous=OFF;"); 
       }
@@ -830,6 +825,14 @@ namespace MPX
       {
         static boost::format sql_table_exists_f ("SELECT name FROM sqlite_master WHERE name='%s';");
         return (0 != exec_sql ((sql_table_exists_f % name).str()));
+      }
+
+      void
+      SQLDB::randFunc (sqlite3_context *ctx, int argc, sqlite3_value **argv)
+      {
+        SQLDB & db = *(reinterpret_cast<SQLDB*>(sqlite3_user_data(ctx)));
+        gint64 rand = db.m_rand.get_int(); 
+        sqlite3_result_int64(ctx, rand);
       }
 
   } // SQL

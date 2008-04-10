@@ -444,7 +444,7 @@ namespace MPX
                 }
 
                 SQL::RowV v;
-                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s) ORDER BY track") % numbers.str()).str()); 
+                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s)") % numbers.str()).str()); 
 
                 TreeIter iter = ListStore->append();
                 m_PlayInitIter = iter;
@@ -711,9 +711,10 @@ namespace MPX
                     bool begin = true;
                     Util::FileList uris = data.get_uris();
                     append_uris (uris, iter, begin);
-                    m_MusicLib.check_caps();
-                    m_MusicLib.send_caps ();
                 }
+
+                m_MusicLib.check_caps ();
+                m_MusicLib.send_caps ();
               }
 
               virtual bool
@@ -1909,15 +1910,17 @@ namespace Source
         }
         else
         if(rows.empty() && !m_Private->m_TreeViewPlaylist->m_CurrentIter)
-                {
+        {
                         TreePath path;
                         path.append_index(0);
-            m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter(path);
+                        m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter(path);
                         return true;
-                }
+        }
         else
         if(m_Private->m_TreeViewPlaylist->m_CurrentIter)
             return true;
+
+        check_caps ();
     
         return false;
     }
@@ -1966,6 +1969,7 @@ namespace Source
         m_Private->m_TreeViewPlaylist->m_CurrentIter = boost::optional<Gtk::TreeIter>();
         m_Private->m_TreeViewPlaylist->m_CurrentId = boost::optional<gint64>(); 
         m_Private->m_TreeViewPlaylist->queue_draw();
+        check_caps ();
     }
 
     void

@@ -165,10 +165,15 @@ namespace MPX
         assemble_row (sqlite3_stmt* stmt,
                       RowV & rows) const;
 
-        std::string m_name;
-        std::string m_path; //sqlite3 filename = path+name+".mlib";
-        std::string m_filename; 
-        sqlite3   * m_sqlite;
+        static void
+        randFunc (sqlite3_context *ctx, int argc, sqlite3_value **argv);
+
+        std::string     m_name;
+        std::string     m_path; //sqlite3 filename = path+name+".mlib";
+        std::string     m_filename; 
+
+        sqlite3       * m_sqlite;
+        Glib::Rand      m_rand;
     };
   } // namespace SQL
 }; // namespace MPX
