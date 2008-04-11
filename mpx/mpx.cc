@@ -87,6 +87,9 @@ namespace
   "   <menu action='MenuEdit'>"
   "         <menuitem action='action-plugins'/>"
   "   </menu>"
+  "   <menu action='MenuView'>"
+  "         <menuitem action='action-show-info'/>"
+  "   </menu>"
   "   <placeholder name='placeholder-source'/>"
   "</menubar>"
   ""
@@ -99,6 +102,7 @@ namespace
   char const ACTION_PREV [] = "action-prev";
   char const ACTION_PAUSE [] = "action-pause";
   char const ACTION_PLUGINS [] = "action-plugins";
+  char const ACTION_SHOW_INFO[] = "action-show-info";
 
   std::string
   gprintf (const char *format, ...)
@@ -719,7 +723,7 @@ namespace MPX
           if( p->alpha < 0 )
             continue;
 
-          int w = (allocation.get_width() - p->x - 8*SPECT_BANDS - 40) * PANGO_SCALE;
+          int w = (allocation.get_width() /*- p->x - 8*SPECT_BANDS - 40*/) * PANGO_SCALE;
 
           cr->set_source_rgba (1.0, 1.0, 1.0, p->alpha);
           cr->set_operator (Cairo::OPERATOR_ATOP);
@@ -732,7 +736,7 @@ namespace MPX
           Pango::Rectangle ink, logical;
           p->layout->get_pixel_extents(ink, logical);
 
-          cr->move_to (p->x + (w/PANGO_SCALE)/2 - logical.get_width()/2, p->y);
+          cr->move_to (/*p->x*/ + (w/PANGO_SCALE)/2 - logical.get_width()/2, p->y);
           pango_cairo_show_layout (cr->cobj(), p->layout->gobj());
         }
       }
@@ -745,7 +749,7 @@ namespace MPX
         const int WIDTH = 6;
         const int SPACING = 2;
         const int HEIGHT = 72;
-        const double ALPHA = 0.8;
+        const double ALPHA = 0.3;
 
         Gtk::Allocation allocation = get_allocation ();
 
@@ -794,9 +798,9 @@ namespace MPX
 
         draw_background (cr);
         draw_cover (cr);
+        draw_spectrum (cr);
         draw_text (cr);
         //draw_source_icon (cr);
-        draw_spectrum (cr);
 
         return true;
       }
@@ -1018,6 +1022,11 @@ namespace MPX
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
 		register_stock_icons();
 
+        m_ref_xml->get_widget("notebook-info", m_InfoNotebook);
+        m_ref_xml->get_widget("notebook-sources", m_MainNotebook);
+
+        m_InfoNotebook->hide();
+
 		signals[PSIGNAL_NEW_TRACK] =
 			g_signal_new ("new-track",
 					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
@@ -1079,17 +1088,13 @@ namespace MPX
 		m_Play->signal_metadata().connect( sigc::mem_fun( *this, &MPX::Player::on_play_metadata ));
 		m_Play->property_status().signal_changed().connect( sigc::mem_fun( *this, &MPX::Player::on_play_status_changed ));
 			  
-#if 0
-		m_Play->signal_error().connect
-			  (sigc::mem_fun (*this, &MPX::Player::on_play_error));
-#endif
-
         //---------------------- UIManager + Menus + Proxy Widgets --------------------------------*/
 		m_ui_manager = UIManager::create ();
 		m_actions = ActionGroup::create ("Actions_Player");
 
 		m_actions->add (Action::create("MenuMusic", _("_Music")));
 		m_actions->add (Action::create("MenuEdit", _("_Edit")));
+		m_actions->add (Action::create("MenuView", _("_View")));
 
 		m_actions->add (Action::create ("action-play-files",
 										Gtk::Stock::OPEN,
@@ -1145,6 +1150,11 @@ namespace MPX
 										Gtk::StockID(MPX_STOCK_PLUGIN),
 										_("Plugins...")),
 										sigc::mem_fun (*this, &Player::on_show_plugins ));
+
+		m_actions->add (ToggleAction::create (ACTION_SHOW_INFO,
+										_("Show Details")),
+                                        AccelKey("<ctrl>I"),
+										sigc::mem_fun (*this, &Player::on_show_info_toggled ));
 
 		m_ui_manager->insert_action_group (m_actions);
 
@@ -1451,6 +1461,32 @@ namespace MPX
 	}
 
 	void
+	Player::add_info_widget (Gtk::Widget *widget, std::string const& name)
+	{
+        Gtk::Alignment * a = Gtk::manage (new Gtk::Alignment());
+        widget->reparent(*a);
+        a->show_all();
+        m_InfoNotebook->append_page(*a, name);
+	}
+   
+    void 
+    Player::on_show_info_toggled ()
+    {
+	    bool active = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_INFO))->get_active();
+
+        if(active)
+        {
+            m_MainNotebook->hide();
+            m_InfoNotebook->show();
+        }
+        else
+        {
+            m_InfoNotebook->hide();
+            m_MainNotebook->show();
+        }
+    }
+
+	void
 	Player::remove_widget (Gtk::Widget *widget)
 	{
 		Gtk::VBox * box;
@@ -1534,7 +1570,6 @@ namespace MPX
         Gtk::Alignment * a = new Gtk::Alignment;
         p->get_ui()->reparent(*a);
         a->show();
-        m_ref_xml->get_widget("sourcepages", m_MainNotebook);
         m_MainNotebook->append_page(*a);
         m_Sources->addSource( p->get_name(), p->get_icon() );
 		m_SourceV.push_back(p);
@@ -2138,7 +2173,7 @@ namespace MPX
 	Player::on_sources_toggled ()
 	{
 		bool active = dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->get_active();
-		dynamic_cast<Gtk::Notebook*>(m_ref_xml->get_widget("sourcepages"))->set_current_page( active ? 0 : m_SourceTabMapping[m_Sources->getSource()] ); 
+		m_MainNotebook->set_current_page( active ? 0 : m_SourceTabMapping[m_Sources->getSource()] ); 
 	}
 
 	void
@@ -2149,7 +2184,7 @@ namespace MPX
 			m_ui_manager->remove_ui (m_SourceUI);
 		}
 
-		dynamic_cast<Gtk::Notebook*>(m_ref_xml->get_widget("sourcepages"))->set_current_page( m_SourceTabMapping[source_id] );
+		m_MainNotebook->set_current_page( m_SourceTabMapping[source_id] );
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->set_active(false);
 
 		m_SourceUI = m_SourceV[source_id]->add_menu();
