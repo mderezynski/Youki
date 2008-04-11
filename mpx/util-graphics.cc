@@ -189,7 +189,7 @@ namespace MPX
       double edge_length_x = width - radius * 2;
       double edge_length_y = height - radius * 2;
 
-      g_return_if_fail (edge_length_x >= 0 && edge_length_y >= 0);
+      //g_return_if_fail (edge_length_x >= 0 && edge_length_y >= 0);
 
       cr->move_to (x + radius, y);
       cr->rel_line_to (edge_length_x, 0);

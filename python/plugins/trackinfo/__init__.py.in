@@ -234,7 +234,8 @@ class TrackInfo:
                 if track.get(mpx.AttributeId.MB_ARTIST_ID).is_initialized():
                         self.entities.append(track.get(mpx.AttributeId.MB_ARTIST_ID).val().get_string())
 
-                self.buf.insert(self.buf.get_end_iter(), "\n\n\n")
+                self.buf.insert(self.buf.get_end_iter(), "\n")
+                self.buf.insert_with_tags(self.buf.get_end_iter(), "More...", self.textTagCenter, self.textTagLarge)
 
                 for i in range(7):
                     if len(relobj[i]) > 0:

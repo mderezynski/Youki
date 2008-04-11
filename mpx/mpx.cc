@@ -122,25 +122,25 @@ namespace
     using namespace MPX;
 
     static char const *
-      text_b_f ("<b>%s</b>");
+      text_b_f ("<span size='12500'><b>%s</b></span>");
 
     static char const *
-      text_i_f ("<i>%s</i>");
+      text_i_f ("<span size='12500'><i>%s</i></span>");
 
     static char const *
-      text_b_f2 ("<b>%s</b> (%s)");
+      text_b_f2 ("<span size='12500'><b>%s</b> (%s)</span>");
 
     static char const *
-      text_big_f ("<span size='14000'><b>%s</b></span>");
+      text_big_f ("<span size='15000'><b>%s</b></span>");
 
     static char const *
-      text_album_artist_f ("<b>%s</b> (%s)");
+      text_album_artist_f ("<span size='12500'><b>%s</b> (%s)</span>");
 
     static char const *
-      text_album_f ("<b>%s</b>");
+      text_album_f ("<span size='12500'><b>%s</b></span>");
 
     static char const *
-      text_artist_f ("(%s)");
+      text_artist_f ("<span size='12500'>(%s)</span>");
 
     if( (metadata[ATTRIBUTE_MB_ALBUM_ARTIST_ID] != metadata[ATTRIBUTE_MB_ARTIST_ID]) && metadata[ATTRIBUTE_ALBUM_ARTIST] )
     {
@@ -204,10 +204,9 @@ namespace MPX
 {
   enum LayoutID
   {
-    L_TITLE,
     L_ARTIST,
     L_ALBUM,
-    L_GENRE,
+    L_TITLE,
     N_LAYOUTS
   };
 
@@ -220,10 +219,9 @@ namespace MPX
   };
 
   LayoutData const layout_info[] = {
-    {-0.0, 1.0, 86, 55},
-    {-0.4, 1.0, 86,  8},
-    {-0.4, 0.8, 86, 22},
-    {-0.4, 0.6, 86, 36}
+    {-0.8, 1.0,  86,  8},
+    {-1.0, 0.65, 86, 25},
+    {-1.5, 1.0,  86, 52},
   };
 
   // WARNING: If you set the gravity or timescale too high, the cover
@@ -354,9 +352,9 @@ namespace MPX
       {
         add_events (Gdk::BUTTON_PRESS_MASK);
 
-        //Gdk::Color const color ("#000000");
-        //modify_bg (Gtk::STATE_NORMAL, color);
-        //modify_base (Gtk::STATE_NORMAL, color);
+        /*Gdk::Color const color ("#000000");
+        modify_bg (Gtk::STATE_NORMAL, color);
+        modify_base (Gtk::STATE_NORMAL, color);*/
 
         m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum ));
 		m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
@@ -541,7 +539,6 @@ namespace MPX
         remove_layout_if_exists (L_ARTIST);
         remove_layout_if_exists (L_ALBUM);
         remove_layout_if_exists (L_TITLE);
-        remove_layout_if_exists (L_GENRE);
 
         m_cover_anim_conn.disconnect ();
         m_cover_surface = Cairo::RefPtr<Cairo::ImageSurface> (0);
@@ -549,7 +546,6 @@ namespace MPX
         m_text[L_ARTIST].clear ();
         m_text[L_ALBUM].clear ();
         m_text[L_TITLE].clear ();
-        m_text[L_GENRE].clear ();
 
         queue_draw ();
       }
@@ -671,10 +667,11 @@ namespace MPX
         Gtk::Allocation allocation = get_allocation ();
 
         cr->set_source_rgb(0., 0., 0.);
-        Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 12.);
+        Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 4.);
         cr->fill_preserve ();
-        Gdk::Cairo::set_source_color (cr, get_style()->get_bg (Gtk::STATE_SELECTED));
-        cr->set_line_width(.5);
+        //Gdk::Cairo::set_source_color (cr, get_style()->get_bg (Gtk::STATE_SELECTED));
+        cr->set_source_rgba(1., 1., 1., .6);
+        cr->set_line_width(2);
         cr->stroke();
 
 #if 0
@@ -703,10 +700,10 @@ namespace MPX
 
           cr->restore ();
 
-          cr->set_source_rgba(1., 1., 1., 1.);
-          cr->set_line_width(2.);
-          Util::cairo_rounded_rect (cr, cover_anim_area_x0, cover_anim_area_y0, cover_anim_area_width, cover_anim_area_height, 6.); 
-          cr->stroke();
+          cr->set_source_rgba(1., 1., 1., .6);
+          //cr->set_line_width(2.);
+          //Util::cairo_rounded_rect (cr, cover_anim_area_x0-2, cover_anim_area_y0-2, cover_anim_area_width+4, cover_anim_area_height+4, 6.); 
+          //cr->stroke();
         }
       }
 
@@ -722,26 +719,28 @@ namespace MPX
           if( p->alpha < 0 )
             continue;
 
-          int w = (allocation.get_width() - p->x - (8*SPECT_BANDS+12) - 40) * PANGO_SCALE;
+          int w = (allocation.get_width() - p->x - 8*SPECT_BANDS - 40) * PANGO_SCALE;
 
-          //cr->set_source_rgba (1.0, 1.0, 1.0, p->alpha);
-          cr->set_source_rgba (1.0, 1.0, 1.0, p->target);
+          cr->set_source_rgba (1.0, 1.0, 1.0, p->alpha);
           cr->set_operator (Cairo::OPERATOR_ATOP);
-          cr->move_to (p->x, p->y);
     
           p->layout->set_single_paragraph_mode (true);
-          p->layout->set_ellipsize (Pango::ELLIPSIZE_END);
+          p->layout->set_ellipsize (Pango::ELLIPSIZE_MIDDLE);
           p->layout->set_width (w);
           p->layout->set_wrap (Pango::WRAP_CHAR);
 
+          Pango::Rectangle ink, logical;
+          p->layout->get_pixel_extents(ink, logical);
+
+          cr->move_to (p->x + (w/PANGO_SCALE)/2 - logical.get_width()/2, p->y);
           pango_cairo_show_layout (cr->cobj(), p->layout->gobj());
         }
       }
 
       void
-      draw_spectrum (Cairo::RefPtr<Cairo::Context> const& cr)
+      draw_spectrum (Cairo::RefPtr<Cairo::Context> & cr)
       {
-        const int RIGHT_MARGIN = /*24*/ 4;
+        const int RIGHT_MARGIN = /*24*/ 16;
         const int TOP_MARGIN = 6;
         const int WIDTH = 6;
         const int SPACING = 2;
@@ -760,9 +759,13 @@ namespace MPX
           w = WIDTH; 
           h = m_spectrum_data[n]+HEIGHT;
 
-          cr->set_source_rgba (double(colors[n/2].red)/255., double(colors[n/2].green)/255., double(colors[n/2].blue)/255., ALPHA);
-          cr->rectangle (x,y,w,h);
-          cr->fill ();
+          if( w>0 && h>0)
+          {
+              cr->set_source_rgba (double(colors[n/2].red)/255., double(colors[n/2].green)/255., double(colors[n/2].blue)/255., ALPHA);
+              //cr->rectangle (x,y,w,h);
+              Util::cairo_rounded_rect(cr, x, y, w, h, 1.);
+              cr->fill ();
+          }
         }
       }
 
@@ -1767,9 +1770,6 @@ namespace MPX
 
         if(!album.empty())
     		m_InfoArea->set_text (L_ALBUM, album);
-
-        if(!genre.empty())
-    		m_InfoArea->set_text (L_GENRE, genre);
 	}
 
 	void
