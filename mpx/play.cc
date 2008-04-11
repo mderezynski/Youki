@@ -872,7 +872,7 @@ namespace MPX
           g_object_set (G_OBJECT (spectrum),
                         "interval", guint64 (40 * GST_MSECOND),
                         "bands", SPECT_BANDS,
-                        "threshold", int (-64),
+                        "threshold", int (-72),
                         "message-magnitude", gboolean (TRUE),
                         "message", gboolean (TRUE), NULL);
         }
