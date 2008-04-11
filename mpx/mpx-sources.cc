@@ -45,7 +45,7 @@ namespace MPX
 		gtk_cell_layout_add_attribute(GTK_CELL_LAYOUT(m_IconView), cellPixbuf, "pixbuf", 0);
 		gtk_cell_layout_add_attribute(GTK_CELL_LAYOUT(m_IconView), cellText, "text", 1);
 		g_object_set(G_OBJECT(cellText), "xalign", double(0.5), NULL);
-		GtkContainer * container = GTK_CONTAINER((xml->get_widget("alignment1")->gobj()));
+		GtkContainer * container = GTK_CONTAINER((xml->get_widget("scrolledwindow-sources")->gobj()));
 		gtk_container_add(GTK_CONTAINER(container), GTK_WIDGET(m_IconView));
 		gtk_widget_show_all(GTK_WIDGET(m_IconView));
 		g_signal_connect(G_OBJECT(m_IconView), "selection-changed", G_CALLBACK(on_selection_changed), this);

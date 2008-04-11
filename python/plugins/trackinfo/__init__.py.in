@@ -52,21 +52,16 @@ class LinkTag(gtk.TextTag):
 
 class TrackInfo:
 
-    def __init__(self,track):
+    def __init__(self, xml):
 
         self.wait = WaitSecond()
-        self.track = track
-        ourws = musicbrainz2.webservice.WebService("www.uk.musicbrainz.org")
-        self.q = ws.Query(ourws) 
+        self.q = ws.Query(musicbrainz2.webservice.WebService("www.uk.musicbrainz.org"))
         self.tinc = musicbrainz2.webservice.TrackIncludes(trackRelations=True,artist=True,puids=True,releases=True,artistRelations=True,releaseRelations=True,urlRelations=True)
 
-        self.xml = gtk.glade.XML("@DATA_DIR@" + "/scripts/trackinfo/trackinfo.glade")
-        self.window = self.xml.get_widget("window1") 
+        self.xml = xml
+        self.notebook = self.xml.get_widget("notebook-track-info-1")
         self.textview = self.xml.get_widget("textview")
         self.textview.connect("motion-notify-event", self.on_view_motion_notify)
-        self.image = self.xml.get_widget("image")
-        self.close = self.xml.get_widget("close")
-        self.notebook = self.xml.get_widget("notebook")
         self.throb = self.xml.get_widget("throb")
         self.throb.set_from_file("@DATA_DIR@" + "/images/throbber.gif")
         self.notebook.set_current_page(0)
@@ -82,7 +77,7 @@ class TrackInfo:
         self.buf.get_tag_table().add(self.textTagCenter)
 
         self.textTagLarge = gtk.TextTag()
-        self.textTagLarge.set_property("size-points", 14) 
+        self.textTagLarge.set_property("size-points", 16) 
         self.buf.get_tag_table().add(self.textTagLarge)
 
         self.textTagSlant = gtk.TextTag()
@@ -125,26 +120,23 @@ class TrackInfo:
 
         return False
 
-    def run(self):
+    def run(self,track):
 
-        image = self.track.get_image()
-
-        if image: 
-                self.image.set_from_pixbuf(image.scale_simple(192,192,gtk.gdk.INTERP_BILINEAR))
-
-        self.window.show()
+        self.track = track
 
         while gtk.events_pending():
             gtk.main_iteration()
 
-        self.thread = thread.start_new_thread(self.show, (self,))
         self.Done = False
+        self.thread = thread.start_new_thread(self.show, (self,))
+
+        self.notebook.set_current_page(1)
 
         while not self.Done:
                 while gtk.events_pending():
                         gtk.main_iteration()
 
-        self.notebook.set_current_page(1)
+        self.notebook.set_current_page(2)
 
     def show(self, blah):
 
@@ -158,22 +150,22 @@ class TrackInfo:
             #self.inlineimage.show()
             #self.textview.add_child_at_anchor(self.inlineimage, self.imageanchor)
 
-            if track.get(mpx.AttributeId.TITLE).is_initialized() and track.get(mpx.AttributeId.ARTIST).is_initialized():
-                self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(mpx.AttributeId.TITLE).val().get_string(), self.textTagCenter, self.textTagLarge)
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "\nby\n", self.textTagCenter) 
-                self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(mpx.AttributeId.ARTIST).val().get_string(), self.textTagCenter, self.textTagLarge)
+            #if track.get(mpx.AttributeId.TITLE).is_initialized() and track.get(mpx.AttributeId.ARTIST).is_initialized():
+            #    self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(mpx.AttributeId.TITLE).val().get_string(), self.textTagCenter, self.textTagLarge)
+            #    self.buf.insert_with_tags(self.buf.get_end_iter(), "\nby\n", self.textTagCenter) 
+            #    self.buf.insert_with_tags(self.buf.get_end_iter(), track.get(mpx.AttributeId.ARTIST).val().get_string(), self.textTagCenter, self.textTagLarge)
 
-            self.buf.insert(self.buf.get_end_iter(), "\n")
+            #self.buf.insert(self.buf.get_end_iter(), "\n")
 
-            if track.get(mpx.AttributeId.ALBUM_ARTIST).is_initialized() and track.get(mpx.AttributeId.ALBUM).is_initialized():
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "\n(from \"" + track.get(mpx.AttributeId.ALBUM).val().get_string()+"\"", self.textTagCenter)
-                self.buf.insert_with_tags(self.buf.get_end_iter(), " by " + track.get(mpx.AttributeId.ALBUM_ARTIST).val().get_string()+")", self.textTagCenter)
+            #if track.get(mpx.AttributeId.ALBUM_ARTIST).is_initialized() and track.get(mpx.AttributeId.ALBUM).is_initialized():
+            #    self.buf.insert_with_tags(self.buf.get_end_iter(), "\n(from \"" + track.get(mpx.AttributeId.ALBUM).val().get_string()+"\"", self.textTagCenter)
+            #    self.buf.insert_with_tags(self.buf.get_end_iter(), " by " + track.get(mpx.AttributeId.ALBUM_ARTIST).val().get_string()+")", self.textTagCenter)
 
-            self.buf.insert(self.buf.get_end_iter(), "\n\n")
+            #self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
             if track.get(mpx.AttributeId.ARTIST).is_initialized() and track.get(mpx.AttributeId.TITLE).is_initialized():
                 try:
-                    self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics", self.textTagCenter, self.textTagLarge)
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics", self.textTagLarge)
                     self.buf.insert(self.buf.get_end_iter(), "\n\n")
                     lyricwiki = mpx.LyricWiki(track.get(mpx.AttributeId.ARTIST).val().get_string(), track.get(mpx.AttributeId.TITLE).val().get_string())
                     lyrics = lyricwiki.run()
@@ -184,7 +176,7 @@ class TrackInfo:
             if track.get(mpx.AttributeId.ARTIST).is_initialized():
                 try:
                     self.buf.insert(self.buf.get_end_iter(), "\n\n")
-                    self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track.get(mpx.AttributeId.ARTIST).val().get_string(), self.textTagCenter, self.textTagLarge)
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track.get(mpx.AttributeId.ARTIST).val().get_string(), self.textTagLarge)
                     self.buf.insert(self.buf.get_end_iter(), "\n\n")
                     lastfmartist = mpx.LastFMArtist(track.get(mpx.AttributeId.ARTIST).val().get_string())
                     artist = lastfmartist.run()
@@ -234,14 +226,13 @@ class TrackInfo:
                 if track.get(mpx.AttributeId.MB_ARTIST_ID).is_initialized():
                         self.entities.append(track.get(mpx.AttributeId.MB_ARTIST_ID).val().get_string())
 
-                self.buf.insert(self.buf.get_end_iter(), "\n")
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "More...", self.textTagCenter, self.textTagLarge)
+                self.buf.insert(self.buf.get_end_iter(), "\n\n")
+                self.buf.insert_with_tags(self.buf.get_end_iter(), "More...", self.textTagLarge)
+                self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
                 for i in range(7):
                     if len(relobj[i]) > 0:
                         funcs[i](track, mbtrack, relobj[i])
-
-                self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
                 for ent in self.entities:
 
@@ -417,29 +408,29 @@ class TrackInfo:
 
 class TrackInfoDispatcher(mpx.Plugin):
 
+    def __init__(self):
+
+        self.xml = gtk.glade.XML("@DATA_DIR@" + "/scripts/trackinfo/trackinfo.glade")
+        self.notebook = self.xml.get_widget("notebook-track-info-1")
+
     def activate(self,player,mcs):
         self.player = player
-        self.player_infoarea_click_id = self.player.gobj().connect("infoarea-click", self.infoarea_click)
+        self.player_infoarea_click_id = self.player.gobj().connect("new-track", self.new_track)
+        self.info = TrackInfo(self.xml)
+        self.player.add_info_widget(self.notebook, "Track Info")
+        self.notebook.show_all()
         print ">> TrackInfo Plugin activated"
         return True
 
     def deactivate(self):
         self.player.gobj().disconnect(self.player_infoarea_click_id)
         self.player = None
+        self.info = None
         print ">> TrackInfo Plugin deactivated"
 
-    def infoarea_click(self, data):
-        info = TrackInfo(self.player.get_metadata())
-        info.close.connect("clicked",self.close_clicked, info)
-        info.window.connect("delete-event",self.delete_event, info)
-        info.run()
+    def new_track(self, blah):
+        print blah
+        m = self.player.get_metadata()
+        self.info.run(m)
 
-    def close_clicked(self, button, instance):
-        instance.window.destroy()
-        instance.window = None
-        instance = None
-        
-    def delete_event(self, window, event, instance):
-        instance.window.destroy()
-        instance.window = None
-        instance = None
+

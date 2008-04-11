@@ -61,10 +61,13 @@ namespace MPX
       public:
 
 		void
-		add_widget (Gtk::Widget *widget);
+		add_widget (Gtk::Widget*);
+
+        void
+        add_info_widget(Gtk::Widget*, std::string const&);
 
 		void
-		remove_widget (Gtk::Widget *widget);
+		remove_widget (Gtk::Widget*);
 
 		void
 		get_object (PAccess<MPX::Library>&);
@@ -136,13 +139,13 @@ namespace MPX
 		typedef std::map<std::string, int> UriSchemeMap;
 		typedef std::vector<int> SourceTabMapping;
 
-        SourcePluginsKeeper m_SourcePlugins;
-		UriSchemeMap m_UriMap;
-
         Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
         Glib::RefPtr<Gtk::ActionGroup>  m_actions;
         Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
 		guint m_SourceUI;
+
+		UriSchemeMap m_UriMap;
+        SourcePluginsKeeper m_SourcePlugins;
 
 		struct DBusObjectsT
 		{
@@ -167,16 +170,17 @@ namespace MPX
         Library &m_Library;
         Covers &m_Covers;
 		PluginManager *m_PluginManager;
-		PluginManagerGUI *m_PluginManagerGUI;
 
+		PluginManagerGUI *m_PluginManagerGUI;
         Sources *m_Sources;
         InfoArea *m_InfoArea;
-
         Gtk::Statusbar *m_Statusbar;
 		Gtk::Notebook *m_MainNotebook;
 		Gtk::VolumeButton *m_Volume;
 		Gtk::HScale *m_Seek;
 		Gtk::Label *m_TimeLabel;
+        Gtk::Notebook *m_InfoNotebook;
+        Gtk::Expander *m_InfoExpander;
 
 		VectorSources m_SourceV;
 		PlaybackSource::Flags m_source_flags[16];
@@ -198,13 +202,12 @@ namespace MPX
 		on_play_files ();
 
 
-		bool
-		load_source_plugin (std::string const& path);
-
-
 
 		void
 		on_volume_value_changed(double);
+
+        void
+        on_show_info_toggled();
 
 
 
@@ -336,8 +339,13 @@ namespace MPX
         void
         on_got_cover (Glib::ustring);
 
+
+
 		void
 		init_dbus ();
+
+		bool
+		load_source_plugin (std::string const& path);
     };
 }
 #endif

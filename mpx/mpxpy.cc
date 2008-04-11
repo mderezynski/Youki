@@ -199,6 +199,16 @@ namespace mpxpy
 	}
 
 	void
+	player_add_info_widget (MPX::Player & obj, PyObject * pyobj, PyObject * name_py)
+	{
+        const char* name = PyString_AsString (name_py);
+
+        g_return_if_fail(name != NULL);
+
+		obj.add_info_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false), name);
+	}
+
+	void
 	player_remove_widget (MPX::Player & obj, PyObject * pyobj)
 	{
 		obj.remove_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false));
@@ -335,6 +345,7 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("stop", &MPX::Player::play)
 		.def("get_library", &mpxpy::player_get_library, return_internal_reference<>()) 
 		.def("add_widget", &mpxpy::player_add_widget)
+        .def("add_info_widget", &mpxpy::player_add_info_widget)
 		.def("remove_widget", &mpxpy::player_remove_widget)
 	;
 
