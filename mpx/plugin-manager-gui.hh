@@ -57,6 +57,9 @@ namespace MPX
 			void
 			show_dialog();
 
+			void
+			set_error_text();
+
 		private:
 
 			PluginManager & m_Manager;

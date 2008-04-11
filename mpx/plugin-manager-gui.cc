@@ -153,7 +153,7 @@ namespace MPX
 
 			if(obj_manager.get_traceback_count())
 			{
-				label->set_text("Failed to activate: " + obj_manager.get_last_traceback().get_name());
+				set_error_text();
 				buTraceback->set_sensitive();
 			}
 
@@ -187,11 +187,14 @@ namespace MPX
 		{
 			if(m_Manager.get_traceback_count())
 			{
-				label->set_text("Failed to activate: " + m_Manager.get_last_traceback().get_name());
+				set_error_text();
 				buTraceback->set_sensitive();
 			}
 			else
+			{
+				label->set_markup(" ");
 				buTraceback->set_sensitive(false);
+			}
 		}
 
 		void
@@ -203,9 +206,24 @@ namespace MPX
 			dialog.run();
 
 			if(m_Manager.get_traceback_count())
-				label->set_text("Failed to activate: " + m_Manager.get_last_traceback().get_name());
+				set_error_text();
 			else
+			{
+				label->set_markup(" ");
 				buTraceback->set_sensitive(false);
+			}
 		}
 		
+		void
+		PluginManagerGUI::set_error_text()
+		{
+			Glib::ustring text = "<b>Failed to activate: " + m_Manager.get_last_traceback().get_name() + "</b> ";
+
+			unsigned int n = m_Manager.get_traceback_count();
+			if(n > 1)
+				text += Glib::ustring::compose("(%1 more errors)", n-1);
+
+			label->set_markup(text);
+		}
+
 }
