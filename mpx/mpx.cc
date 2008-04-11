@@ -196,8 +196,7 @@ namespace
   inline bool
   is_module (std::string const& basename)
   {
-    return MPX::Util::str_has_suffix_nocase
-      (basename.c_str (), G_MODULE_SUFFIX);
+    return MPX::Util::str_has_suffix_nocase(basename.c_str (), G_MODULE_SUFFIX);
   } 
 }
 
@@ -347,17 +346,17 @@ namespace MPX
       InfoArea (MPX::Play & play,
 			    Glib::RefPtr<Gnome::Glade::Xml> const& xml)
 	  : WidgetLoader<Gtk::EventBox>(xml, "infoarea")
-	  , m_Play			(play)
-      , m_spectrum_data (SPECT_BANDS, 0)
-      , m_source_icon   (Glib::RefPtr<Gdk::Pixbuf> (0))
-      , m_cover_alpha   (1.0)
-	  , m_pressed		(false)
+	  , m_Play(play)
+      , m_spectrum_data(SPECT_BANDS, 0)
+      , m_source_icon(Glib::RefPtr<Gdk::Pixbuf>(0))
+      , m_cover_alpha(1.0)
+	  , m_pressed(false)
       {
         add_events (Gdk::BUTTON_PRESS_MASK);
 
-        Gdk::Color const color ("#000000");
-        modify_bg (Gtk::STATE_NORMAL, color);
-        modify_base (Gtk::STATE_NORMAL, color);
+        //Gdk::Color const color ("#000000");
+        //modify_bg (Gtk::STATE_NORMAL, color);
+        //modify_base (Gtk::STATE_NORMAL, color);
 
         m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum ));
 		m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
@@ -667,17 +666,27 @@ namespace MPX
       }
 
       void
-      draw_background (Cairo::RefPtr<Cairo::Context> const& cr)
+      draw_background (Cairo::RefPtr<Cairo::Context> & cr)
       {
         Gtk::Allocation allocation = get_allocation ();
 
+        cr->set_source_rgb(0., 0., 0.);
+        Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 12.);
+        cr->fill_preserve ();
+        Gdk::Cairo::set_source_color (cr, get_style()->get_bg (Gtk::STATE_SELECTED));
+        cr->set_line_width(.5);
+        cr->stroke();
+
+#if 0
         Gdk::Cairo::set_source_color (cr, get_style()->get_bg (Gtk::STATE_SELECTED));
         cr->rectangle (0, 0, allocation.get_width (), allocation.get_height ());
+        cr->set_line_width(.5);
         cr->stroke ();
+#endif
       }
 
       void
-      draw_cover (Cairo::RefPtr<Cairo::Context> const& cr)
+      draw_cover (Cairo::RefPtr<Cairo::Context> & cr)
       {
         if( m_cover_surface && (m_cover_pos >= cover_anim_area_x0 - m_cover_surface->get_width ()) )
         {
@@ -693,6 +702,11 @@ namespace MPX
           draw_cairo_image (cr, m_cover_surface, m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), m_cover_alpha);
 
           cr->restore ();
+
+          cr->set_source_rgba(1., 1., 1., 1.);
+          cr->set_line_width(2.);
+          Util::cairo_rounded_rect (cr, cover_anim_area_x0, cover_anim_area_y0, cover_anim_area_width, cover_anim_area_height, 6.); 
+          cr->stroke();
         }
       }
 
@@ -727,6 +741,13 @@ namespace MPX
       void
       draw_spectrum (Cairo::RefPtr<Cairo::Context> const& cr)
       {
+        const int RIGHT_MARGIN = /*24*/ 4;
+        const int TOP_MARGIN = 6;
+        const int WIDTH = 6;
+        const int SPACING = 2;
+        const int HEIGHT = 72;
+        const double ALPHA = 0.8;
+
         Gtk::Allocation allocation = get_allocation ();
 
         for (int n = 0; n < SPECT_BANDS; ++n)
@@ -734,13 +755,12 @@ namespace MPX
           int x = 0, y = 0, w = 0, h = 0;
 
           // Bar
-          x = allocation.get_width () - (8*SPECT_BANDS+8) + (n*8) - 24;
-          y = 11 + (64 - (m_spectrum_data[n]+64));
+          x = allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS + (WIDTH+SPACING)*n - RIGHT_MARGIN;
+          y = TOP_MARGIN + (HEIGHT - (m_spectrum_data[n]+HEIGHT)); 
+          w = WIDTH; 
+          h = m_spectrum_data[n]+HEIGHT;
 
-          w = 6;
-          h = (m_spectrum_data[n]+64);
-
-          cr->set_source_rgba (double(colors[n/2].red)/255., double(colors[n/2].green)/255., double(colors[n/2].blue)/255., 0.8);
+          cr->set_source_rgba (double(colors[n/2].red)/255., double(colors[n/2].green)/255., double(colors[n/2].blue)/255., ALPHA);
           cr->rectangle (x,y,w,h);
           cr->fill ();
         }
@@ -754,8 +774,8 @@ namespace MPX
           Gtk::Allocation allocation = get_allocation ();
 
           cr->set_operator (Cairo::OPERATOR_ATOP);
-          Gdk::Cairo::set_source_pixbuf (cr, m_source_icon, allocation.get_width () - 28, 12);
-          cr->rectangle (allocation.get_width () - 28, 12, 20, 20);
+          Gdk::Cairo::set_source_pixbuf (cr, m_source_icon, allocation.get_width () - 22, 2);
+          cr->rectangle (allocation.get_width () - 22, 2, 20, 20);
           cr->fill ();
         }
       }
@@ -772,7 +792,7 @@ namespace MPX
         draw_background (cr);
         draw_cover (cr);
         draw_text (cr);
-        draw_source_icon (cr);
+        //draw_source_icon (cr);
         draw_spectrum (cr);
 
         return true;
@@ -1734,8 +1754,6 @@ namespace MPX
 			m_Metadata.Image = m_DiscDefault;
 		}
 
-        m_InfoArea->reset();
-        
 		m_InfoArea->set_image (m_Metadata.Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
 
 		ustring artist, album, title, genre;

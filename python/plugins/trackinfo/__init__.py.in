@@ -134,6 +134,9 @@ class TrackInfo:
 
         self.window.show()
 
+        while gtk.events_pending():
+            gtk.main_iteration()
+
         self.thread = thread.start_new_thread(self.show, (self,))
         self.Done = False
 
@@ -286,11 +289,11 @@ class TrackInfo:
                     self.buf.insert(self.buf.get_end_iter(), "\n")
 
             self.Done = True
-            return
+            exit()
 
         except musicbrainz2.webservice.WebServiceError:
         
-            return 
+            exit() 
  
     def on_url_clicked(self, obj, url):
         
