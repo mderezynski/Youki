@@ -240,7 +240,7 @@ namespace MPX
 
 			push_traceback (name, traceback);
 
-			g_message("%s: Failed to activate plugin %lld, traceback:\n%s", G_STRLOC, id, PyString_AsString (pystring));
+			g_message("%s: Failed to activate plugin %lld:\nTraceback: %s", G_STRLOC, id, traceback.c_str());
 
 			Py_XDECREF (pytype);
 			Py_XDECREF (pyvalue);
