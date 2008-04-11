@@ -6,7 +6,7 @@
     <property name="border_width">8</property>
     <property name="title" translatable="yes">Plugin Manager - MPX</property>
     <property name="window_position">GTK_WIN_POS_CENTER</property>
-    <property name="default_width">500</property>
+    <property name="default_width">350</property>
     <property name="default_height">350</property>
     <child>
       <widget class="GtkVBox" id="vbox1">
@@ -16,13 +16,15 @@
           <widget class="GtkScrolledWindow" id="scrolledwindow">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+            <property name="hscrollbar_policy">GTK_POLICY_NEVER</property>
             <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
             <property name="shadow_type">GTK_SHADOW_IN</property>
             <child>
               <widget class="GtkTreeView" id="treeview">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="has_tooltip">True</property>
+                <property name="search_column">1</property>
               </widget>
             </child>
           </widget>

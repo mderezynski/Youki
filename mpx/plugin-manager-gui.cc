@@ -26,7 +26,6 @@
 #include <glibmm/i18n.h>
 #include <libglademm/xml.h>
 #include <boost/python.hpp>
-#include <boost/format.hpp>
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
 #include "mpx/main.hh"
@@ -45,9 +44,7 @@ namespace MPX
 
 					Gtk::TreeModelColumn<bool>				Active;
 					Gtk::TreeModelColumn<Glib::ustring>		NameDesc;
-					Gtk::TreeModelColumn<Glib::ustring>		Authors;
-					Gtk::TreeModelColumn<Glib::ustring>		Copyright;
-					Gtk::TreeModelColumn<Glib::ustring>		Website;
+					Gtk::TreeModelColumn<Glib::ustring>		Tooltip;
 					Gtk::TreeModelColumn<gint64>			Id;
 					Gtk::TreeModelColumn<Glib::ustring>		Name;
 	
@@ -55,9 +52,7 @@ namespace MPX
 				{
 					add(Active);
 					add(NameDesc);
-					add(Authors);
-					add(Copyright);
-					add(Website);
+					add(Tooltip);
 					add(Id);
 					add(Name);
 				};
@@ -84,10 +79,6 @@ namespace MPX
 				col->add_attribute(*cell, "markup", Columns.NameDesc);
 				append_column(*col);
 		
-				append_column(_("Authors"), Columns.Authors);
-				append_column(_("Copyright"), Columns.Copyright);
-				append_column(_("Website"), Columns.Website);
-
 				std::vector<Gtk::CellRenderer*> renderers = get_column(0)->get_cell_renderers();
 				renderers[0]->property_sensitive () = true;
 				Gtk::CellRendererToggle * cell_toggle =
@@ -101,15 +92,18 @@ namespace MPX
 				{
 					TreeIter iter = Store->append();
 					(*iter)[Columns.Name] = i->second->get_name();
-					(*iter)[Columns.NameDesc] = (boost::format("<b><big>%1%</big></b>\n%2%") % i->second->get_name() % i->second->get_desc()).str();
-					(*iter)[Columns.Authors] = i->second->get_authors();
-					(*iter)[Columns.Copyright] = i->second->get_copyright();
-					(*iter)[Columns.Website] = i->second->get_website();
+					(*iter)[Columns.NameDesc] = Glib::ustring::compose("<b>%1</b>\n%2", i->second->get_name(), i->second->get_desc());
+					(*iter)[Columns.Tooltip] = Glib::ustring::compose("<b>Authors:</b> %1\n<b>Copyright:</b> %2\n<b>Website:</b> %3",
+																		Glib::Markup::escape_text( i->second->get_authors() ),
+																		Glib::Markup::escape_text( i->second->get_copyright() ),
+																		Glib::Markup::escape_text( i->second->get_website() ) );
 					(*iter)[Columns.Active] = i->second->get_active();
 					(*iter)[Columns.Id] = i->second->get_id();
+
 				}
 
 				set_model (Store);
+				set_tooltip_column(2);
 			}
 
 			void
@@ -174,7 +168,6 @@ namespace MPX
 			return p;
 		}
 
-	
 		bool
 		PluginManagerGUI::on_delete_event (GdkEventAny* G_GNUC_UNUSED)
 		{

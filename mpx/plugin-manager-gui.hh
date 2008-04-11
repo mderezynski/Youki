@@ -52,7 +52,7 @@ namespace MPX
 			create (PluginManager &);
 
 			void
-			on_row_changed(const Gtk::TreeModel::Path& /*path*/, const Gtk::TreeModel::iterator& /*iter*/);
+			on_row_changed(const Gtk::TreeModel::Path&, const Gtk::TreeModel::iterator&);
 
 			void
 			show_dialog();
