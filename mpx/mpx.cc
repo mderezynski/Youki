@@ -370,6 +370,8 @@ namespace MPX
 		m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
 
         enable_drag_dest ();
+
+		set_tooltip_text(_("Drag and drop files here to play them."));
       }
 
       ~InfoArea ()

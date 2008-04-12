@@ -93,7 +93,7 @@ namespace MPX
 					TreeIter iter = Store->append();
 					(*iter)[Columns.Name] = i->second->get_name();
 					(*iter)[Columns.NameDesc] = Glib::ustring::compose("<b>%1</b>\n%2", i->second->get_name(), i->second->get_desc());
-					(*iter)[Columns.Tooltip] = Glib::ustring::compose("<b>Authors:</b> %1\n<b>Copyright:</b> %2\n<b>Website:</b> %3",
+					(*iter)[Columns.Tooltip] = Glib::ustring::compose(_("<b>Authors:</b> %1\n<b>Copyright:</b> %2\n<b>Website:</b> %3"),
 																		Glib::Markup::escape_text( i->second->get_authors() ),
 																		Glib::Markup::escape_text( i->second->get_copyright() ),
 																		Glib::Markup::escape_text( i->second->get_website() ) );
@@ -193,8 +193,8 @@ namespace MPX
 		void
 		PluginManagerGUI::show_dialog()
 		{
-			Gtk::MessageDialog dialog ("Failed to activate: " + m_Manager.get_last_traceback().get_name(), false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_CLOSE);
-			dialog.set_title ("Plugin traceback - MPX");
+			Gtk::MessageDialog dialog (_("Failed to activate: ") + m_Manager.get_last_traceback().get_name(), false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_CLOSE);
+			dialog.set_title (_("Plugin traceback - MPX"));
 			dialog.set_secondary_text (m_Manager.pull_last_traceback().get_traceback());
 			dialog.run();
 
@@ -210,11 +210,11 @@ namespace MPX
 		void
 		PluginManagerGUI::set_error_text()
 		{
-			Glib::ustring text = "<b>Failed to activate: " + m_Manager.get_last_traceback().get_name() + "</b> ";
+			Glib::ustring text = _("<b>Failed to activate: ") + m_Manager.get_last_traceback().get_name() + "</b> ";
 
 			unsigned int n = m_Manager.get_traceback_count();
 			if(n > 1)
-				text += Glib::ustring::compose("(%1 more errors)", n-1);
+				text += Glib::ustring::compose(_("(%1 more errors)"), n-1);
 
 			label->set_markup(text);
 		}
