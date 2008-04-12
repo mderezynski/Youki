@@ -12,12 +12,15 @@ import gtk
 import gobject
 import gtk.glade
 import urllib
+import random
 from Ft.Xml.XPath.Context import Context
 from Ft.Xml.XPath import Evaluate
 from Ft.Xml.Domlette import NonvalidatingReader
 from Ft.Xml import EMPTY_NAMESPACE
 #import musicbrainz2
 #import musicbrainz2.webservice as ws
+
+MBID_NODE_XPATH = u'//mbid'
 
 class MPXDJ(mpx_playlist.PlaylistPlugin):
     def __init__(self):
@@ -94,7 +97,6 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 
     def OPTION_lastfm_tag(self, lib, v):
         
-        MBID_NODE_XPATH = u'//mbid'
         text = self.xml.get_widget("entry-lastfm-tag").get_text()
         uri = u"http://ws.audioscrobbler.com/1.0/tag/%s/topartists.xml" % urllib.quote(text)
         lastfm = NonvalidatingReader.parseUri(uri)
@@ -106,11 +108,31 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
                 lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY mpxrand() LIMIT 1"))
         self.extract_ids(rv, v)
 
-    def OPTION_random_mix(self, lib, v):
+    def RANDOM_lastfm(self, lib, v):
 
         rv = mpx.SQLRowV()
-        lib.getSQL(rv, "SELECT id FROM track_view ORDER BY mpxrand()")
+        lib.getSQL(rv, "SELECT id, artist FROM track_view ORDER BY mpxrand()")
+        artist = rv[0]["artist"].get_string()
+
+        rv = mpx.SQLRowV()
+
+        while not rv:
+
+            uri = u"http://ws.audioscrobbler.com/1.0/artist/%s/similar.xml" % urllib.quote(artist)
+            lastfm = NonvalidatingReader.parseUri(uri)
+            ctx = Context(lastfm)
+            mbids = Evaluate(MBID_NODE_XPATH, context=ctx)
+
+            for mbid in mbids:
+                if mbid.firstChild:
+                    lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY mpxrand() LIMIT 2"))
         self.extract_ids(rv, v)
+
+
+    def OPTION_random_mix(self, lib, v):
+
+        random_algos = [ self.RANDOM_lastfm ]
+        random_algos[ random.randint(0,0) ](lib, v)
 
     def OPTION_sounds_of(self, lib, v):
     
