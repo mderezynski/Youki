@@ -68,10 +68,10 @@ mpx_bin_LDADD =										\
 		-lgstinterfaces-0.10 						\
 		-lgstvideo-0.10								\
 		$(top_builddir)/jnetlib/libjnetlib.la		\
-		$(top_builddir)/widgets/limpxx-widgets.la	\
-		$(top_builddir)/xmlcpp/limpxx-parsers.la	\
+		$(top_builddir)/widgets/libmpx-widgets.la	\
+		$(top_builddir)/xmlcpp/libmpx-parsers.la	\
 		$(top_builddir)/mcs/libmconfig.la			\
-		$(top_builddir)/mpx/parser/limpxxparser.la
+		$(top_builddir)/mpx/parser/libmpxparser.la
 
 mpx_bin_CFLAGS =				\
     $(GLIB_CFLAGS) $(GST_CFLAGS) -I$(top_srcdir)/include
