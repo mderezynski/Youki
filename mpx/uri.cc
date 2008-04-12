@@ -646,7 +646,7 @@ namespace MPX
       return p;
     }
 
-    URI::operator Glib::ustring () const
+    URI::operator Glib::ustring() const
     {
       GString* buffer = NULL;
       buffer = g_string_sized_new (16);
@@ -701,8 +701,8 @@ namespace MPX
         g_string_sprintfa (buffer, "#%s", fragment.c_str());
 
       // Free only GString not data contained, return the data instead
-      Glib::ustring rvstd (buffer->str);
+      complete = buffer->str;
       g_string_free (buffer, TRUE); 
-      return rvstd;
+      return complete;
     }
 }

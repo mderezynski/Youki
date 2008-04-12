@@ -1,6 +1,7 @@
 icons_DATA =			\
-	volume-knob.png		\
-	plugin.png
+	lastfm.png			\
+	plugin.png			\
+	volume-knob.png		
 
 iconsdir = $(pkgdatadir)/icons/hicolor/24x24/stock
 

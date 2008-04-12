@@ -104,10 +104,8 @@ namespace MPX
 {
   namespace LastFM
   {
-    namespace XMLRPC
-    {
-      ustring
-      formatXmlRpc (ustring const& method, xmlRpcVariantV const& argv)
+      std::string
+      formatXmlRpc (std::string const& method, xmlRpcVariantV const& argv)
       {
         xmlDocPtr doc (xmlNewDoc (BAD_CAST "1.0"));
         xmlNodePtr n_methodCall, n_methodName, n_params;
@@ -130,7 +128,7 @@ namespace MPX
           {
             case 0:
             {
-              xmlNewTextChild (n_value, 0, BAD_CAST "string", BAD_CAST (boost::get <ustring> (v)).c_str());
+              xmlNewTextChild (n_value, 0, BAD_CAST "string", BAD_CAST (boost::get <std::string> (v)).c_str());
               break;
             }
 
@@ -152,7 +150,7 @@ namespace MPX
         xmlChar * xmldoc = 0;
         int doclen = 0;
         xmlDocDumpFormatMemoryEnc (doc, &xmldoc, &doclen, "UTF-8", 1);
-        ustring doc_utf8 ((const char*)(xmldoc));
+        std::string doc_utf8 ((const char*)(xmldoc));
         g_free (xmldoc);
         return doc_utf8;
       }
@@ -169,9 +167,9 @@ namespace MPX
         m_soup_request->add_header("Connection", "close");
       }
       void
-      XmlRpcCall::setMethod (const ustring &method)
+      XmlRpcCall::setMethod (const std::string &method)
       { 
-        ustring xmlData = formatXmlRpc (method, m_v);
+        std::string xmlData = formatXmlRpc (method, m_v);
         m_soup_request->add_request ("text/xml", xmlData);
       }
       void
@@ -192,26 +190,55 @@ namespace MPX
         m_soup_request->add_header("Connection", "close");
       }
       void
-      XmlRpcCallSync::setMethod (const ustring &method)
+      XmlRpcCallSync::setMethod (const std::string &method)
       { 
-        ustring xmlData = formatXmlRpc (method, m_v);
+        std::string xmlData = formatXmlRpc (method, m_v);
         m_soup_request->add_request ("text/xml", xmlData);
       }
       XmlRpcCallSync::~XmlRpcCallSync ()
       {
       }
 
-      ArtistMetadataRequest::ArtistMetadataRequest (ustring const& artist) 
+
+      RequestBase::RequestBase (std::string const& name, std::string const& user, std::string const& pass)
+      : m_name  (name)
+      , m_pass  (pass)
+      , m_user  (user)
+      , m_time  ((boost::format ("%llu") % time (NULL)).str())
+      , m_key   (Util::md5_hex_string (m_pass.data(), m_pass.size()) + m_time) 
+      , m_kmd5  (Util::md5_hex_string (m_key.data(), m_key.size()))
+      {
+        m_v.push_back (m_user);
+        m_v.push_back (m_time);
+        m_v.push_back (m_kmd5);
+      }
+  
+      void
+      RequestBase::run ()
+      {
+        setMethod (m_name);
+        m_soup_request->run ();
+      }
+
+
+      TrackAction::TrackAction (std::string const& name, XSPF::Item const& item, std::string const& user, std::string const& pass)
+      : RequestBase (name, user, pass)
+      {
+        m_v.push_back (item.creator);
+        m_v.push_back (item.title);
+      }
+
+      ArtistMetadataRequest::ArtistMetadataRequest (std::string const& artist) 
       : XmlRpcCall ()
       , m_artist (artist)
       {
         m_v.push_back (m_artist);
-        m_v.push_back (ustring ("en"));
+        m_v.push_back (std::string ("en"));
         setMethod ("artistMetadata");
       }
 
       ArtistMetadataRequestRefPtr
-      ArtistMetadataRequest::create (ustring const& artist)
+      ArtistMetadataRequest::create (std::string const& artist)
       {
         return ArtistMetadataRequestRefPtr (new ArtistMetadataRequest (artist));
       }
@@ -273,12 +300,12 @@ namespace MPX
         s_.emit (chunk, status_code);
       }
 
-      ArtistMetadataRequestSync::ArtistMetadataRequestSync (ustring const& artist) 
+      ArtistMetadataRequestSync::ArtistMetadataRequestSync (std::string const& artist) 
       : XmlRpcCallSync ()
       , m_artist (artist)
       {
         m_v.push_back (m_artist);
-        m_v.push_back (ustring ("en"));
+        m_v.push_back (std::string ("en"));
         setMethod ("artistMetadata");
       }
 
@@ -342,6 +369,5 @@ namespace MPX
 
 	      return Util::sanitize_lastfm(text);
 	}
-}
 }
 }

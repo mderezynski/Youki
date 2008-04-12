@@ -303,18 +303,12 @@ namespace Source
         m_TagView->clear ();
 
         try{
-            URI u ((boost::format ("http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml") % item.creator % item.title).str());    
-            u.escape();
-            ustring request_uri = u;
-            g_message("%s: Request URI: '%s'", G_STRLOC, request_uri.c_str());
-            MPX::XmlInstance< ::toptags> tags (request_uri);
+            URI u ((boost::format ("http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml") % item.creator % item.title).str(), true);    
+            MPX::XmlInstance< ::toptags> tags ((ustring(u)));
             if(tags.xml().tag().size())
             {
-                g_message("%s: Got %d tags", G_STRLOC, int(tags.xml().tag().size()));
                 std::for_each(tags.xml().tag().begin(), tags.xml().tag().end(), TagInserter(*m_TagView));
             }
-            else
-                g_message("%s: tag() is empty", G_STRLOC);
         } catch (std::runtime_error & cxe)
         {
             g_message("%s: Error: %s", G_STRLOC, cxe.what());

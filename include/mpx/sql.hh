@@ -45,6 +45,170 @@ namespace MPX
 
   namespace SQL
   {
+      enum MatchStyle
+      {
+        NOOP,
+        FUZZY,
+        EXACT,
+        NOT_EQUAL,
+        GREATER_THAN,
+        LESSER_THAN,
+        GREATER_THAN_OR_EQUAL,
+        LESSER_THAN_OR_EQUAL,
+        NOT_NULL,
+        IS_NULL
+      };
+
+      enum Chain
+      {
+        CHAIN_AND,
+        CHAIN_OR,
+      };
+
+      typedef std::vector < Chain > AttributeChain;
+
+      struct Attribute
+      {
+        MatchStyle    m_match_style;
+        Glib::ustring m_name;
+        Variant       m_variant;
+
+        Attribute (MatchStyle match_style, Glib::ustring const& name, Variant variant)
+          : m_match_style (match_style),
+            m_name        (name),
+            m_variant     (variant)
+            {}
+
+        Attribute (Glib::ustring const& name, Variant variant)
+          : m_match_style (NOOP),
+            m_name        (name),
+            m_variant     (variant)
+            {}
+
+        Attribute (MatchStyle match_style, Glib::ustring const& name)
+          : m_match_style (match_style),
+            m_name        (name)
+          {}
+
+        Attribute () {}
+        ~Attribute () {}
+      };
+
+      /** A vector of @link Attribute@endlink
+        *
+        */
+      typedef std::vector <Attribute>                   AttributeV;
+      typedef std::vector <AttributeV>                  AttributeVV;
+      typedef std::pair   <AttributeV, AttributeChain>  AttributeSeqP;
+      typedef std::vector <AttributeSeqP>               AttributeSeq;
+
+      /** Query class, contains information to structure an SQL query  
+        *
+        */
+
+      class SQLDB;
+      class Query
+      {
+        private:
+
+          AttributeSeq    m_attributes;
+          AttributeChain  m_seq_chain;
+          std::string     m_prefix;
+          std::string     m_suffix;
+          std::string     m_columns;
+
+          friend class SQLDB;
+
+        public:
+
+          Query () : m_columns ("*") {}
+
+          Query (AttributeV const& attributes)
+          : m_columns ("*")
+          {
+            m_attributes.push_back (AttributeSeqP (attributes, AttributeChain()));
+            attr_join (0, CHAIN_AND);
+          }
+
+          Query (AttributeV const& attributes,
+                 AttributeChain const& chain)
+          : m_columns ("*")
+          {
+            m_attributes.push_back (AttributeSeqP (attributes, chain));
+          }
+
+          Query (AttributeV const& attributes,
+                 Chain chain) 
+          : m_columns ("*")
+          {
+            m_attributes.push_back (AttributeSeqP (attributes, AttributeChain()));
+            attr_join (0, chain);
+          }
+
+          ///---end ctors
+
+          void
+          set_seq_chain (AttributeChain const& chain)
+          {
+            m_seq_chain = chain;
+          }
+
+          void
+          seq_chain_append (Chain chain)
+          {
+            m_seq_chain.push_back (chain);
+          }
+
+          void
+          add_attr_v (AttributeV const& attributes)
+          {
+            m_attributes.push_back (AttributeSeqP (attributes, AttributeChain()));
+          }
+
+          void
+          add_attr_v (AttributeV const& attributes, Chain chain)
+          {
+            m_attributes.push_back (AttributeSeqP (attributes, AttributeChain()));
+            AttributeSeq::size_type n (m_attributes.size());
+            attr_join (n-1, chain);
+          }
+
+          void
+          add_attr_v (AttributeV const& attributes, AttributeChain const& chain)
+          {
+            m_attributes.push_back (AttributeSeqP (attributes, chain)); 
+          }
+
+          void
+          attr_join (AttributeSeq::size_type i, Chain c_op)
+          {
+            AttributeV::size_type z (m_attributes[i].first.size());
+            AttributeChain & chain (m_attributes[i].second);
+            chain.clear ();
+            for (AttributeChain::size_type n = 0; n < z; ++n)
+            {
+              chain.push_back (c_op);
+            }
+          }
+
+          void
+          set_prefix (std::string const& prefix)
+          {
+            m_prefix = prefix;
+          }
+
+          void
+          set_suffix (std::string const& suffix)
+          {
+            m_suffix = suffix;
+          }
+
+          void
+          set_columns (std::string const& columns)
+          {
+            m_columns = columns;
+          }
+      };
 
 #include "mpx/exception-db.hh"
 

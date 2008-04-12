@@ -41,22 +41,24 @@
 #include <pygobject.h>
 #include <pygtk/pygtk.h>
 
+#include "dialog-filebrowser.hh"
 #include "import-share.hh"
 #include "import-folder.hh"
-#include "dialog-filebrowser.hh"
-
+#include "last-fm-xmlrpc.hh"
+#include "request-value.hh"
+#include "stock.hh"
+#include "xspf.hh"
+ 
 #include "mpx.hh"
-#include "mpxpy.hh"
+#include "mpx-py.hh"
 #include "mpx-sources.hh"
+
 #include "mpx/uri.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-graphics.hh"
 #include "mpx/util-string.hh"
 #include "mpx/util-ui.hh"
-
-#include "request-value.hh"
-#include "stock.hh"
-
+ 
 using namespace Glib;
 using namespace Gtk;
 using namespace std;
@@ -90,6 +92,9 @@ namespace
   "   <menu action='MenuView'>"
   "         <menuitem action='action-show-info'/>"
   "   </menu>"
+  "   <menu action='MenuTrack'>"
+  "         <menuitem action='action-lastfm-love'/>"
+  "   </menu>"
   "   <placeholder name='placeholder-source'/>"
   "</menubar>"
   ""
@@ -103,6 +108,7 @@ namespace
   char const ACTION_PAUSE [] = "action-pause";
   char const ACTION_PLUGINS [] = "action-plugins";
   char const ACTION_SHOW_INFO[] = "action-show-info";
+  char const ACTION_LASTFM_LOVE[] = "action-lastfm-love";
 
   std::string
   gprintf (const char *format, ...)
@@ -673,17 +679,9 @@ namespace MPX
         cr->set_source_rgb(0., 0., 0.);
         Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 4.);
         cr->fill_preserve ();
-        //Gdk::Cairo::set_source_color (cr, get_style()->get_bg (Gtk::STATE_SELECTED));
         cr->set_source_rgba(1., 1., 1., .6);
         cr->set_line_width(2);
         cr->stroke();
-
-#if 0
-        Gdk::Cairo::set_source_color (cr, get_style()->get_bg (Gtk::STATE_SELECTED));
-        cr->rectangle (0, 0, allocation.get_width (), allocation.get_height ());
-        cr->set_line_width(.5);
-        cr->stroke ();
-#endif
       }
 
       void
@@ -1012,10 +1010,10 @@ namespace MPX
                    MPX::Covers & obj_amazon)
     : WidgetLoader<Gtk::Window>(xml, "mpx")
     , m_ref_xml(xml)
-	, m_SourceUI(0)
 	, m_SourceCtr (0)
 	, m_PageCtr(1)
     , m_ActiveSource(SOURCE_NONE)
+	, m_SourceUI(0)
     , m_Library(obj_library)
     , m_Covers(obj_amazon)
    {
@@ -1095,6 +1093,7 @@ namespace MPX
 		m_actions->add (Action::create("MenuMusic", _("_Music")));
 		m_actions->add (Action::create("MenuEdit", _("_Edit")));
 		m_actions->add (Action::create("MenuView", _("_View")));
+		m_actions->add (Action::create("MenuTrack", _("_Track")));
 
 		m_actions->add (Action::create ("action-play-files",
 										Gtk::Stock::OPEN,
@@ -1156,6 +1155,12 @@ namespace MPX
                                         AccelKey("<ctrl>I"),
 										sigc::mem_fun (*this, &Player::on_show_info_toggled ));
 
+		m_actions->add (Action::create (ACTION_LASTFM_LOVE,
+                                        Gtk::StockID(MPX_STOCK_LASTFM),
+										_("I Love this Track!")),
+                                        AccelKey("<ctrl>L"),
+										sigc::mem_fun (*this, &Player::on_lastfm_love_track ));
+
 		m_ui_manager->insert_action_group (m_actions);
 
 		if(Util::ui_manager_add_ui(m_ui_manager, MenubarMain, *this, _("Main Menubar")))
@@ -1175,11 +1180,13 @@ namespace MPX
 		m_actions->get_action (ACTION_STOP)->connect_proxy
 			  (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-stop"))));
 
-		m_actions->get_action (ACTION_PLAY)->set_sensitive( 0 );
-		m_actions->get_action (ACTION_PAUSE)->set_sensitive( 0 );
-		m_actions->get_action (ACTION_PREV)->set_sensitive( 0 );
-		m_actions->get_action (ACTION_NEXT)->set_sensitive( 0 );
-		m_actions->get_action (ACTION_STOP)->set_sensitive( 0 );
+		m_actions->get_action (ACTION_PLAY)->set_sensitive( false );
+		m_actions->get_action (ACTION_PAUSE)->set_sensitive( false );
+		m_actions->get_action (ACTION_PREV)->set_sensitive( false );
+		m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
+		m_actions->get_action (ACTION_STOP)->set_sensitive( false );
+		m_actions->get_action (ACTION_LASTFM_LOVE)->set_sensitive( false );
+
         add_accel_group (m_ui_manager->get_accel_group());
 
 		/*------------------------ Load Sources --------------------------------------------------*/ 
@@ -1469,6 +1476,24 @@ namespace MPX
         m_InfoNotebook->append_page(*a, name);
 	}
    
+    void
+    Player::on_lastfm_love_track ()
+    {
+        Glib::Mutex::Lock L (m_MetadataLock);
+
+        std::string username = mcs->key_get<std::string>("lastfm", "username");
+        std::string password = mcs->key_get<std::string>("lastfm", "password");
+
+        if((!username.empty() && !password.empty()) && m_Metadata.get()[ATTRIBUTE_ARTIST] && m_Metadata.get()[ATTRIBUTE_TITLE])
+        {
+            XSPF::Item item;
+            item.creator = get<std::string>(m_Metadata.get()[ATTRIBUTE_ARTIST].get());
+            item.title = get<std::string>(m_Metadata.get()[ATTRIBUTE_TITLE].get());
+            m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive(false);
+            LastFM::TrackAction ("loveTrack", item, username, password).run();
+        }
+    }
+
     void 
     Player::on_show_info_toggled ()
     {
@@ -1515,7 +1540,12 @@ namespace MPX
 	Metadata const&
 	Player::get_metadata ()
 	{
-		return m_Metadata;
+        Glib::Mutex::Lock L (m_MetadataLock);
+
+        if(m_Metadata)
+    		return m_Metadata.get();
+        else
+            throw std::runtime_error("No Current Metadata");
 	}
 
     bool
@@ -1649,36 +1679,38 @@ namespace MPX
 	void
 	Player::on_play_metadata (MPXGstMetadataField field)
 	{
+        Glib::Mutex::Lock L (m_MetadataLock);
+
 		MPXGstMetadata const& m = m_Play->get_metadata();
 
 		switch (field)
 		{
 		  case FIELD_IMAGE:
-			m_Metadata.Image = m.m_image.get();
+			m_Metadata.get().Image = m.m_image.get();
 			m_InfoArea->set_image (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
 			return;
 	
 		  case FIELD_TITLE:
-			if(m_Metadata[ATTRIBUTE_TITLE])
+			if(m_Metadata.get()[ATTRIBUTE_TITLE])
 			{
-				std::string album = get<std::string>(m_Metadata[ATTRIBUTE_TITLE].get());
+				std::string album = get<std::string>(m_Metadata.get()[ATTRIBUTE_TITLE].get());
 				if(album == m.m_title.get())
 					return;
 			}
 
-			m_Metadata[ATTRIBUTE_TITLE] = std::string(m.m_title.get());
+			m_Metadata.get()[ATTRIBUTE_TITLE] = std::string(m.m_title.get());
 			reparse_metadata();
 			return;
 
 		  case FIELD_ALBUM:
-			if(m_Metadata[ATTRIBUTE_ALBUM])
+			if(m_Metadata.get()[ATTRIBUTE_ALBUM])
 			{
-				std::string album = get<std::string>(m_Metadata[ATTRIBUTE_ALBUM].get());
+				std::string album = get<std::string>(m_Metadata.get()[ATTRIBUTE_ALBUM].get());
 				if(album == m.m_album.get())
 					return;
 			}
 
-			m_Metadata[ATTRIBUTE_ALBUM] = std::string(m.m_album.get());
+			m_Metadata.get()[ATTRIBUTE_ALBUM] = std::string(m.m_album.get());
 			reparse_metadata();
 			break;
 
@@ -1722,12 +1754,6 @@ namespace MPX
 
 		m_TrackPlayedSeconds += 0.5; // this is slightly incorrect, the tick is every 500ms, but nothing says that the time always also progresses by exactly 0.5s
 		m_TrackDuration = m_Play->property_duration().get_value();
-#if 0
-		if( m_popup )
-		{
-		  m_popup->set_position (position, duration);
-		}
-#endif
 	  }
 	}
 
@@ -1787,15 +1813,15 @@ namespace MPX
 	void
 	Player::reparse_metadata ()
 	{
-		if( !m_Metadata.Image )
+		if( !m_Metadata.get().Image )
 		{
-			m_Metadata.Image = m_DiscDefault;
+			m_Metadata.get().Image = m_DiscDefault;
 		}
 
-		m_InfoArea->set_image (m_Metadata.Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
+		m_InfoArea->set_image (m_Metadata.get().Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
 
 		ustring artist, album, title, genre;
-		parse_metadata (m_Metadata, artist, album, title, genre);
+		parse_metadata (m_Metadata.get(), artist, album, title, genre);
 
         if(!title.empty())
     		m_InfoArea->set_text (L_TITLE, title);
@@ -1812,17 +1838,21 @@ namespace MPX
 	{
 	  //g_return_if_fail( m_ActiveSource == source_id );
 
+      Glib::Mutex::Lock L (m_MetadataLock);
+
+      m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive(true);
+
 	  m_Metadata = metadata;
-	  if(!m_Metadata.Image)
+	  if(!m_Metadata.get().Image)
 	  {
-	    if(m_Metadata[ATTRIBUTE_MB_ALBUM_ID]) 
-			m_Covers.fetch(get<std::string>(m_Metadata[ATTRIBUTE_MB_ALBUM_ID].get()), m_Metadata.Image);
+	    if(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
+			m_Covers.fetch(get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()), m_Metadata.get().Image);
 		else
-			m_Metadata.Image = m_DiscDefault;
+			m_Metadata.get().Image = m_DiscDefault;
 	  }
 
-	  if(!m_Metadata[ATTRIBUTE_LOCATION])
-		m_Metadata[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
+	  if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
+		m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
 
 	  reparse_metadata ();
 	}
@@ -1900,19 +1930,21 @@ namespace MPX
 	void
 	Player::track_played ()
 	{
-		if(!m_Metadata[ATTRIBUTE_MPX_TRACK_ID])
-			return;
+      Glib::Mutex::Lock L (m_MetadataLock);
 
-		g_message("Track Played; Seconds: %f, Duration: %f", m_TrackPlayedSeconds, m_TrackDuration); 
+      if(!m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID])
+          return;
 
-		if((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_TrackDuration/2))
-		{
-			gint64 id = get<gint64>(m_Metadata[ATTRIBUTE_MPX_TRACK_ID].get());
-			m_Library.trackPlayed(id, time(NULL));
-			g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_TRACK_PLAYED], 0);
-		}
+      g_message("Track Played; Seconds: %f, Duration: %f", m_TrackPlayedSeconds, m_TrackDuration); 
 
-		m_TrackPlayedSeconds = 0.;
+      if((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_TrackDuration/2))
+      {
+          gint64 id = get<gint64>(m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID].get());
+          m_Library.trackPlayed(id, time(NULL));
+          g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_TRACK_PLAYED], 0);
+      }
+
+      m_TrackPlayedSeconds = 0.;
 	}
 
 	void
@@ -1936,52 +1968,6 @@ namespace MPX
       m_ActiveSource = source_id;
 
 	  g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
-
-#if 0
-	  if( m_popup )
-	  {
-			m_popup->set_source_icon (m_source_icons_small[source_id]);
-	  }
-
-	  if( m_source_flags[source_id] & PlaybackSource::F_HANDLE_LASTFM )
-	  {
-			shell_lastfm_now_playing ();
-	  }
-
-	  m_player_dbus_obj->emit_track_change (m_player_dbus_obj);
-
-	  if( m_ui_merge_id_context )
-	  {
-			m_ui_manager->remove_ui (m_ui_merge_id_context);
-			m_ui_merge_id_context = boost::dynamic_pointer_cast <UiPart::Base> (source)->add_context_ui();
-	  }
-
-	  if( m_ui_merge_id_tray )
-	  {
-			m_ui_manager->remove_ui (m_ui_merge_id_tray);
-			m_ui_merge_id_tray = boost::dynamic_pointer_cast <UiPart::Base> (source)->add_tray_ui();
-	  }
-
-	  if( m_ui_merge_id_lastfm )
-	  {
-			m_ui_manager->remove_ui (m_ui_merge_id_lastfm);
-			m_ui_merge_id_lastfm = 0;
-	  }
-
-	  m_InfoArea->set_source (m_source_icons_small[source_id]->scale_simple (20, 20, Gdk::INTERP_BILINEAR));
-
-	  if( (m_ui_merge_id_lastfm == 0) && LastFM::Scrobbler::Obj()->connected() && (m_source_flags[source_id] & PlaybackSource::F_HANDLE_LASTFM_ACTIONS) )
-	  {
-			m_ui_merge_id_lastfm = m_ui_manager->add_ui_from_string (ui_lastfm_actions);
-	  }
-	  else
-	  {
-			if (m_ui_merge_id_lastfm != 0)
-			{
-				  m_ui_manager->remove_ui (m_ui_merge_id_lastfm);
-			}
-	  }
-#endif
 	}
 
 	void
@@ -2213,44 +2199,20 @@ namespace MPX
 	  switch (status)
 	  {
 		case PLAYSTATUS_STOPPED:
+        case PLAYSTATUS_WAITING:
 		{
-		  m_Seek->set_sensitive(false);
 		  g_atomic_int_set(&m_Seeking, 0);
-
-#if 0
-		  if( NM::Obj()->Check_Status() )
-		  {
-			m_actions->get_action (ACTION_LASTFM_TAG)->set_sensitive( 0 );
-			m_actions->get_action (ACTION_LASTFM_LOVE)->set_sensitive( 0 );
-			m_actions->get_action (ACTION_LASTFM_RECM)->set_sensitive( 0 );
-			m_actions->get_action (ACTION_LASTFM_PLAY)->set_sensitive( 0 );
-		  }
-
-		  if( m_ui_merge_id_context )
-		  {
-			m_ui_manager->remove_ui (m_ui_merge_id_context);
-			m_ui_merge_id_context = 0;
-		  }
-
-		  if( m_ui_merge_id_tray )
-		  {
-			m_ui_manager->remove_ui (m_ui_merge_id_tray);
-			m_ui_merge_id_tray = 0;
-		  }
-
-		  if( m_ui_merge_id_lastfm )
-		  {
-			m_ui_manager->remove_ui (m_ui_merge_id_lastfm);
-			m_ui_merge_id_lastfm = 0;
-		  }
-#endif
-
+		  m_TimeLabel->set_text("      …      ");
+	      m_Seek->set_range(0., 1.);
+		  m_Seek->set_value(0.);
+	 	  m_Seek->set_sensitive(false);
 		  break;
 		}
 
 		case PLAYSTATUS_PLAYING:
 		{
 		  g_atomic_int_set(&m_Seeking,0);
+	 	  m_Seek->set_sensitive(m_source_caps[m_ActiveSource] & PlaybackSource::C_CAN_SEEK);
 		  m_actions->get_action( ACTION_STOP )->set_sensitive (true);
 		  break;
 		}
@@ -2270,13 +2232,7 @@ namespace MPX
 
 		  case PLAYSTATUS_STOPPED:
 		  {
-			m_Metadata = Metadata();
-#if 0
-			mVideoWidget->property_playing() = false;
-			RefPtr<RadioAction>::cast_static (m_actions->get_action(ACTION_VIDEO_ASPECT_AUTO))->set_current_value( 0 );
-			m_actions->get_action("MenuVideo")->set_sensitive( false );
-			mMainNotebook->set_current_page( 0 );
-#endif
+            Glib::Mutex::Lock L (m_MetadataLock);
 
 			if( m_ActiveSource != SOURCE_NONE )
 			{
@@ -2284,71 +2240,38 @@ namespace MPX
 			  m_SourceV[m_ActiveSource]->send_caps ();
 			}
 
-			m_InfoArea->reset ();
-
 			m_TimeLabel->set_text("      …      ");
 			m_Seek->set_range(0., 1.);
 			m_Seek->set_value(0.);
 			m_Seek->set_sensitive(false);
-
-#if 0
-			if( m_popup )
-			{
-			  m_popup->hide ();
-			}
-			bmp_status_icon_set_from_pixbuf (m_status_icon, m_status_icon_image_default->gobj());
-			m_actions->get_action (ACTION_LASTFM_RECM)->set_sensitive( 0 );
-			m_actions->get_action (ACTION_TRACK_DETAILS)->set_sensitive( 0 );
-			m_actions->get_action (ACTION_CREATE_BOOKMARK)->set_sensitive( 0 );
-#endif
 
 			m_actions->get_action (ACTION_STOP)->set_sensitive( false );
 			m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
 			m_actions->get_action (ACTION_PREV)->set_sensitive( false );
 			m_actions->get_action (ACTION_PAUSE)->set_sensitive( false );
 
+			m_InfoArea->reset ();
+		    m_Metadata.reset ();	
+
 			break;
 		  }
 
 		  case PLAYSTATUS_WAITING:
 		  {
-			m_TimeLabel->set_text("      …      ");
-			m_Seek->set_range(0., 1.);
-			m_Seek->set_value(0.);
-			m_Seek->set_sensitive(false);
-#if 0
-			bmp_status_icon_set_from_pixbuf (m_status_icon, m_status_icon_image_default->gobj());
-#endif
 			break;
 		  }
 
 		  case PLAYSTATUS_PLAYING:
 		  {
-#if 0
-			bmp_status_icon_set_from_pixbuf (m_status_icon, m_status_icon_image_playing->gobj());
-			m_spm_paused = false;
-#endif
 			m_Seek->set_sensitive(true);
 			break;
 		  }
 
 		  case PLAYSTATUS_PAUSED:
 		  {
-#if 0
-			bmp_status_icon_set_from_pixbuf (m_status_icon, m_status_icon_image_paused->gobj());
-			m_spm_paused = false;
-#endif
 			break;
 		  }
 	  }
-
-#if 0
-	  if( m_popup )
-	  {
-		m_popup->set_playstatus (status);
-	  }
-	  m_player_dbus_obj->emit_status_change (m_player_dbus_obj, int (status));
-#endif
 	}
 
 

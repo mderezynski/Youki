@@ -30,6 +30,7 @@
 
 // Stock icons
 #  define MPX_STOCK_PLUGIN          "mpx-stock-plugin"
+#  define MPX_STOCK_LASTFM          "mpx-stock-lastfm"
 
 namespace MPX
 {

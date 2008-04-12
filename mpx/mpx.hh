@@ -53,6 +53,57 @@ namespace Gtk
 
 namespace MPX
 {
+    class ActionState
+    {
+      public:
+
+        ActionState(Glib::RefPtr<Gtk::UIManager> & manager, bool state)
+        : m_Manager(manager)
+        , m_State(state)
+        {
+        }
+
+        void
+        operator()(std::string const& action)
+        {
+            m_Manager->get_action(action)->set_sensitive(m_State);
+        }
+
+      private:
+
+        Glib::RefPtr<Gtk::UIManager> & m_Manager;
+        bool m_State;
+    };
+
+
+    class ActionSet
+    {
+        public:
+
+            ActionSet(Glib::RefPtr<Gtk::UIManager> & manager)
+            : m_Manager(manager)
+            {
+            }
+
+            void
+            add (std::string const& name)
+            {
+                m_ActionNames.push_back(name);
+            }
+
+            void
+            set_sensitive(bool state)
+            {
+               std::for_each(m_ActionNames.begin(), m_ActionNames.end(), ActionState(m_Manager, state)); 
+            }
+
+        private:
+
+            std::vector<std::string> m_ActionNames;
+            Glib::RefPtr<Gtk::UIManager> & m_Manager;
+    };
+
+
     class Sources;
     class InfoArea;
     class Player
@@ -142,29 +193,29 @@ namespace MPX
         Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
         Glib::RefPtr<Gtk::ActionGroup>  m_actions;
         Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
-		guint m_SourceUI;
-
-		UriSchemeMap m_UriMap;
-        SourcePluginsKeeper m_SourcePlugins;
 
 		struct DBusObjectsT
 		{
 			Root		*root;
 			DBusMPX		*mpx;
 		};
+		DBusObjectsT DBusObjects;
+		DBusGConnection * m_SessionBus;
+
 
 		int m_Seeking;
-		int m_SourceCtr;
-		int m_PageCtr;
-        int m_ActiveSource;
 		gdouble m_TrackPlayedSeconds;
 		gdouble m_PreSeekPosition;
 		gdouble m_TrackDuration;
+
+		int m_SourceCtr;
+		int m_PageCtr;
+        int m_ActiveSource;
 		Glib::Mutex m_SourceCFLock;
         SourceTabMapping m_SourceTabMapping;
-
-		DBusObjectsT DBusObjects;
-		DBusGConnection * m_SessionBus;
+		guint m_SourceUI;
+		UriSchemeMap m_UriMap;
+        SourcePluginsKeeper m_SourcePlugins;
 
 		Play *m_Play;
         Library &m_Library;
@@ -186,8 +237,12 @@ namespace MPX
 		PlaybackSource::Flags m_source_flags[16];
 		PlaybackSource::Caps m_source_caps[16];
 
-		Metadata m_Metadata;
+		boost::optional<Metadata> m_Metadata;
+        Glib::Mutex m_MetadataLock;
 		Glib::RefPtr<Gdk::Pixbuf> m_DiscDefault;
+
+        ActionSet * m_StopActions;
+        ActionSet * m_ControlActions; 
 
 		void
 		on_cover_clicked ();
@@ -201,13 +256,16 @@ namespace MPX
 		void
 		on_play_files ();
 
-
+        void
+        on_show_info_toggled();
 
 		void
 		on_volume_value_changed(double);
 
+
+
         void
-        on_show_info_toggled();
+        on_lastfm_love_track ();
 
 
 
@@ -335,9 +393,6 @@ namespace MPX
 
         void
         on_import_share();
-
-        void
-        on_got_cover (Glib::ustring);
 
 
 

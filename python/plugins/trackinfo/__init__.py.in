@@ -122,15 +122,11 @@ class TrackInfo:
 
     def run(self,track):
 
+        self.notebook.set_current_page(1)
+
         self.track = track
-
-        while gtk.events_pending():
-            gtk.main_iteration()
-
         self.Done = False
         self.thread = thread.start_new_thread(self.show, (self,))
-
-        self.notebook.set_current_page(1)
 
         while not self.Done:
                 while gtk.events_pending():
@@ -281,11 +277,12 @@ class TrackInfo:
                     self.buf.insert(self.buf.get_end_iter(), "\n")
 
             self.Done = True
-            exit()
+            return
 
         except musicbrainz2.webservice.WebServiceError:
-        
-            exit() 
+            
+            self.Done = True 
+            return 
  
     def on_url_clicked(self, obj, url):
         
@@ -415,7 +412,7 @@ class TrackInfoDispatcher(mpx.Plugin):
 
     def activate(self,player,mcs):
         self.player = player
-        self.player_infoarea_click_id = self.player.gobj().connect("new-track", self.new_track)
+        self.player_infoarea_click_id = self.player.gobj().connect("infoarea-click", self.new_track)
         self.info = TrackInfo(self.xml)
         self.player.add_info_widget(self.notebook, "Track Info")
         self.notebook.show_all()

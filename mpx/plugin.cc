@@ -30,7 +30,7 @@
 #include <iostream>
 #include <pygtk/pygtk.h>
 #include <pygobject.h>
-#include "mpxpy.hh"
+#include "mpx-py.hh"
 
 #ifndef Py_ssize_t
 #define Py_ssize_t int

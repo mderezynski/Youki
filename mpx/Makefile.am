@@ -109,8 +109,8 @@ mpx_bin_SOURCES =				\
 	base64.h					\
 	base64.c					\
 								\
-	mpxpy.hh					\
-	mpxpy.cc					\
+	mpx-py.hh					\
+	mpx-py.cc					\
 								\
 	import-share.hh				\
 	import-share.cc				\
@@ -120,6 +120,8 @@ mpx_bin_SOURCES =				\
 								\
 	jnethttpsrc.h				\
 	jnethttpsrc.cc				\
+								\
+	lastfm.hh					\
 								\
 	last-fm-xmlrpc.hh			\
 	last-fm-xmlrpc.cc			\

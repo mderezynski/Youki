@@ -13,11 +13,12 @@
 #include <Python.h>
 
 #include "mpx.hh"
-#include "mpxpy.hh"
+#include "mpx-py.hh"
 #include "mpx/covers.hh"
 #include "mpx/library.hh"
 #include "mpx/paccess.hh"
 #include "mpx/types.hh"
+
 #include "playbacksource-py.hh"
 #include "lyrics-v2.hh"
 #include "last-fm-xmlrpc.hh"
@@ -357,8 +358,8 @@ BOOST_PYTHON_MODULE(mpx)
 
 	/*-------------------------------------------------------------------------------------*/
 
-	class_<MPX::LastFM::XMLRPC::ArtistMetadataRequestSync, boost::noncopyable>("LastFMArtist", boost::python::init<std::string>())
-		.def("run", &MPX::LastFM::XMLRPC::ArtistMetadataRequestSync::run)
+	class_<MPX::LastFM::ArtistMetadataRequestSync, boost::noncopyable>("LastFMArtist", boost::python::init<std::string>())
+		.def("run", &MPX::LastFM::ArtistMetadataRequestSync::run)
 	;
 
 	/*-------------------------------------------------------------------------------------*/

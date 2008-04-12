@@ -59,11 +59,13 @@ namespace MPX
         ustring	path;
         ustring	query;
         ustring	fragment;
-        int		  port;
+        int		port;
 
       private:
 
         bool fragmentize (ustring const& uri);
+
+        mutable ustring complete;
 
     };
 }
