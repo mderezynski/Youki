@@ -274,6 +274,7 @@ namespace MPX
 
 		PluginHoldMap::iterator i = m_Map.find(id);
 		g_return_val_if_fail(i != m_Map.end(), false);
+        g_return_val_if_fail(m_Map.find(id)->second->get_has_gui(), false);
 
 		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 
