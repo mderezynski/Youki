@@ -1901,10 +1901,10 @@ namespace MPX
       safe_pause_unset();
 
 	  PlaybackSource* source = m_SourceV[source_id];
+      m_ActiveSource = source_id;
 
 	  if( m_source_flags[source_id] & PlaybackSource::F_ASYNC)
 	  {
-            m_ActiveSource = source_id;
 			m_actions->get_action( ACTION_STOP )->set_sensitive (true);
 			source->play_async ();
 	  }
@@ -1989,8 +1989,6 @@ namespace MPX
 	  source->send_caps ();
 	  source->send_metadata ();
 
-      m_ActiveSource = source_id;
-
 	  g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
 	}
 
@@ -2015,10 +2013,10 @@ namespace MPX
         safe_pause_unset();
 
 		PlaybackSource* source = m_SourceV[source_id];
+        m_ActiveSource = source_id;
 		
 		if( m_source_flags[source_id] & PlaybackSource::F_ASYNC)
 		{
-                m_ActiveSource = source_id;
 				source->play_async ();
 				m_actions->get_action( ACTION_STOP )->set_sensitive (true);
 				return;

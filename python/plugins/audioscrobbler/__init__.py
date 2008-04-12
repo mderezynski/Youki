@@ -5,7 +5,8 @@ __version__ = "$Revision$"[11:-2]
 __docformat__ = "restructuredtext"
 
 
-import datetime, locale, md5, site, sys, time, urllib, urllib2, os, mpx
+import datetime, locale, md5, site, sys, time, urllib, urllib2, os, threading, thread
+import mpx
 
 try:
     # Python 2.5, module bundled:
@@ -345,6 +346,8 @@ class AudioScrobblerPost:
         self.updateurl = None
         self.posturl = None
         self.npurl = None
+        self.cv = threading.Condition()
+        self.cachelock = threading.Lock()
         
     def auth(self):
         
@@ -621,12 +624,32 @@ class AudioScrobblerPost:
             msg = "Server returned something unexpected."
             raise AudioScrobblerPostFailed(msg)
         
+        self.notebook.set_current_page(1)
+
     def flushcache(self):
+
+        self.cv.acquire()
+
+        self.flushdone = False
+        self.flushthread = thread.start_new_thread(self.flushcache_real, (self,))
+
+        while not self.flushdone:
+            self.cv.wait(0.1)
+
+        self.cv.release ()
+
+    def flushcache_real(self, blah):
         
         """ Post all the tracks in the cache """
-        
+       
+        self.cv.acquire()
+ 
         while len(self.cache) > 0:
             self.post()
+
+        self.flushdone = True
+        self.cv.notify()
+        self.cv.release()
     
     def savecache(self, filename):
         
