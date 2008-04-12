@@ -86,14 +86,18 @@ namespace MPX
     class Traceback
 	{
 		std::string name;
+		std::string method;
 		std::string traceback;
 
 		public:
-			Traceback(const std::string& /*name*/, const std::string& /*traceback*/);
+			Traceback(const std::string& /*name*/, const std::string& /*method*/, const std::string& /*traceback*/);
 			~Traceback();
 
 			std::string
 			get_name() const;
+
+			std::string
+			get_method() const;
 
 			std::string
 			get_traceback() const;

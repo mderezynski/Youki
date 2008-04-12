@@ -53,9 +53,10 @@ using namespace boost::python;
 
 namespace MPX
 {
-	Traceback::Traceback(const std::string& aname, const std::string& atraceback)
-	:	name (aname)
-	,	traceback (atraceback)
+	Traceback::Traceback(const std::string& n, const std::string& m, const std::string& t)
+	:	name (n)
+	,	method (m)
+	,	traceback (t)
 	{
 	}
 
@@ -67,6 +68,12 @@ namespace MPX
 	Traceback::get_name() const
 	{
 		return name;
+	}
+
+	std::string
+	Traceback::get_method() const
+	{
+		return method;
 	}
 
 	std::string
@@ -395,7 +402,7 @@ namespace MPX
 
         std::string name = m_Map.find(id)->second->get_name();
         g_message("%s: Failed to call '%s' on plugin %lld:\nTraceback: %s", G_STRLOC, method.c_str(), id, traceback.c_str());
-		m_TracebackList.push_front(Traceback(name, traceback));
+		m_TracebackList.push_front(Traceback(name, method, traceback));
 
         Py_XDECREF (pytype);
         Py_XDECREF (pyvalue);
