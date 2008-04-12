@@ -21,6 +21,8 @@ from Ft.Xml import EMPTY_NAMESPACE
 #import musicbrainz2.webservice as ws
 
 MBID_NODE_XPATH = u'//mbid'
+MATCH_NODE_XPATH = u'//match'
+
 
 class MPXDJ(mpx_playlist.PlaylistPlugin):
     def __init__(self):
@@ -28,6 +30,7 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-scripts/mpxdj/mpxdj.glade")
         self.dialog = self.xml.get_widget("dialog")
         self.combo = self.xml.get_widget("combobox")
+        self.play = self.xml.get_widget("cb-play")
         self.label = self.xml.get_widget("label")
         self.go = self.xml.get_widget("button-go")
         self.go.set_sensitive(False)
@@ -114,16 +117,30 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
         lib.getSQL(rv, "SELECT id, artist FROM track_view ORDER BY mpxrand() LIMIT 1")
         artist = rv[0]["artist"].get_string()
 
+        uri = u"http://ws.audioscrobbler.com/1.0/artist/%s/similar.xml" % urllib.quote(artist)
+        lastfm = NonvalidatingReader.parseUri(uri)
+        ctx = Context(lastfm)
+
+        mbids_xml = Evaluate(MBID_NODE_XPATH, context=ctx)
+        mbids = []
+   
+        for mbid in mbids_xml: 
+            if mbid.firstChild:
+                mbids.append(str(mbid.firstChild.data))
+        
+        matches_xml = Evaluate(MATCH_NODE_XPATH, context=ctx)
+        matches = []
+   
+        for match in matches_xml: 
+            if match.firstChild:
+                matches.append(float(match.firstChild.data))
+
         while len(rv) is 1:
 
-            uri = u"http://ws.audioscrobbler.com/1.0/artist/%s/similar.xml" % urllib.quote(artist)
-            lastfm = NonvalidatingReader.parseUri(uri)
-            ctx = Context(lastfm)
-            mbids = Evaluate(MBID_NODE_XPATH, context=ctx)
-
             for mbid in mbids:
-                if mbid.firstChild:
-                    lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY mpxrand() LIMIT 2"))
+                if matches[mbids.index(mbid)] > 50:
+                    lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid + "' ORDER BY mpxrand() LIMIT 1"))
+
         self.extract_ids(rv, v)
 
 
@@ -139,7 +156,7 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
     def OPTION_random_mix(self, lib, v):
 
         random_algos = [ self.RANDOM_lastfm, self.RANDOM_genre ]
-        random_algos[ random.randint(0,1) ](lib, v)
+        random_algos[ random.randint(0,0) ](lib, v)
 
     def OPTION_sounds_of(self, lib, v):
     
@@ -188,5 +205,5 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
         if(ret == gtk.RESPONSE_OK):
             self.callables[self.combo.get_active()](lib, idv)
         if idv:
-            mlib.play_tracks(idv, False)
+            mlib.play_tracks(idv, self.play.get_active())
         self.dialog.hide()
