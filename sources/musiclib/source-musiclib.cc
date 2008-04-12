@@ -359,7 +359,7 @@ namespace MPX
                 Gtk::Label * label = dynamic_cast<Gtk::Label*>(dynamic_cast<Gtk::Bin*>(item)->get_child());
                 label->set_markup(_("<b>Play</b>"));
 
-				set_tooltip_text(_("Drag and drop albums, tracks and files to add them to the playlist."));
+				set_tooltip_text(_("Drag and drop albums, tracks and files here to add them to the playlist."));
               }
 
               virtual void
