@@ -4,5 +4,5 @@ Module=audioscrobbler
 IAge=1
 Name=MPX AudioScrobbler
 Authors=Andy Theyers <andy@isotoma.com>, Milosz Derezynski <milosz@backtrace.info>
-Copyright=Copyright © 2008 Milosz Derezynski 
+Copyright=Copyright © 2008 Andy Theyers, Milosz Derezynski 
 Website=http://mpx.backtrace.info/
