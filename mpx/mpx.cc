@@ -1282,7 +1282,9 @@ namespace MPX
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
 
 		show_all ();
-		DBusObjects.mpx->startup_complete(DBusObjects.mpx); 
+		DBusObjects.mpx->startup_complete(DBusObjects.mpx);
+
+		on_show_info_toggled();
     }
 
 	void
