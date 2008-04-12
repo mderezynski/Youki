@@ -1221,6 +1221,8 @@ namespace MPX
 
 		//----------------------- Volume ---------------------------------------------------------*/
         m_ref_xml->get_widget("volumebutton", m_Volume);
+        m_Volume->set_value(double(mcs->key_get<int>("mpx", "volume"));
+		m_Play->property_volume() = mcs->key_get<int>("mpx", "volume")); 
 		m_Volume->signal_value_changed().connect( sigc::mem_fun( *this, &Player::on_volume_value_changed ) );
 		std::vector<Glib::ustring> Icons;
 		Icons.push_back("volume-knob");
