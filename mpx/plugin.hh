@@ -99,15 +99,24 @@ namespace MPX
 			get_traceback() const;
 	};
 
+    typedef sigc::signal<void, gint64> SignalPluginActivated;
+
 
 	class Player;
     class PluginManager
     {
+        friend class PluginActivate;
+
+        SignalPluginActivated signal_;
+
 		public:
 	
 			PluginManager (MPX::Player* /*player*/);
 			~PluginManager ();
-	
+
+            SignalPluginActivated&	
+            signal_plugin_activated() { return signal_; }
+
 			void
 			append_search_path (std::string const& /*path*/);
 
@@ -116,6 +125,7 @@ namespace MPX
 
             void
             activate_plugins ();
+
 
 			PluginHoldMap const&
 			get_map () const;

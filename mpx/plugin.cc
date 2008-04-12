@@ -109,9 +109,10 @@ namespace MPX
     {
       public:
 
-        PluginActivate (Mcs::Mcs & mcs, MPX::Player * player)
+        PluginActivate (Mcs::Mcs & mcs, MPX::Player * player, MPX::PluginManager & manager)
         : m_mcs(mcs)
         , m_player(player)
+        , m_manager(manager)
         {} 
 
         void
@@ -122,16 +123,11 @@ namespace MPX
 
                 if (active)
                 {
-                    try {
-                        object ccinstance = object((handle<>(borrowed(item.second->m_PluginInstance))));
-                        ccinstance.attr("activate")(boost::ref(m_player)); // TODO
-                        item.second->m_Active = true;
-                    } catch( error_already_set )
-                    {
-                    }
+                    m_manager.activate(item.first);
                 }
              } catch(...)
              {
+                g_message("%s: Error getting activation state key from MCS for %lld", G_STRLOC, item.first);
              }
          }
 
@@ -139,13 +135,14 @@ namespace MPX
 
         Mcs::Mcs & m_mcs;
         MPX::Player * m_player;
+        PluginManager & m_manager;
     };  
 
 
     void
     PluginManager::activate_plugins ()
     {
-        std::for_each (m_Map.begin(), m_Map.end(), PluginActivate(*mcs_plugins, m_Player));
+        std::for_each (m_Map.begin(), m_Map.end(), PluginActivate(*mcs_plugins, m_Player, *this));
     }
 
 	void
@@ -255,6 +252,13 @@ namespace MPX
 					}
 			}
 		}
+        
+        try{
+            mcs_plugins->load();
+        } catch(...)
+        {
+            g_message("%s: Couldn't load plugin activation states", G_STRLOC);
+        }
 	}
 
 	PluginManager::~PluginManager ()
@@ -290,7 +294,6 @@ namespace MPX
 		}
 
         try{
-            mcs_plugins->key_register("pyplugs", i->second->get_name(), i->second->m_Active);
             mcs_plugins->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
         } catch(...) {
             g_message("%s: Failed saving plugin state for '%s'", G_STRLOC, i->second->get_name().c_str());
@@ -324,6 +327,7 @@ namespace MPX
 			object callable = ccinstance.attr("activate");
 			result = boost::python::call<bool>(callable.ptr(), boost::ref(*m_Player), boost::ref(*mcs));
 			i->second->m_Active = true;
+            signal_.emit(id);
 		} catch( error_already_set )
 		{
 			push_traceback (id, "activate");
