@@ -57,6 +57,7 @@ class TrackInfo:
         self.wait = WaitSecond()
         self.q = ws.Query(musicbrainz2.webservice.WebService("www.uk.musicbrainz.org"))
         self.wsinc = musicbrainz2.webservice.TrackIncludes(trackRelations=True,artist=True,puids=True,releases=True,artistRelations=True,releaseRelations=True,urlRelations=True)
+        self.wsinc_release = musicbrainz2.webservice.ReleaseIncludes(releaseEvents=True,releaseRelations=True,urlRelations=True)
 
         self.xml = xml
         self.notebook = self.xml.get_widget("notebook-track-info-1")
@@ -83,6 +84,10 @@ class TrackInfo:
         self.textTagSlant = gtk.TextTag()
         self.textTagSlant.set_property("style", pango.STYLE_ITALIC) 
         self.buf.get_tag_table().add(self.textTagSlant)
+
+        self.textTagUnderline = gtk.TextTag()
+        self.textTagUnderline.set_property("underline", pango.UNDERLINE_SINGLE) 
+        self.buf.get_tag_table().add(self.textTagUnderline)
 
         self.Hand = False
 
@@ -126,7 +131,7 @@ class TrackInfo:
 
         self.track = track
         self.Done = False
-        self.show ([])
+        self.show([])
         #self.thread = thread.start_new_thread(self.show, (self,))
 
         #while not self.Done:
@@ -224,12 +229,23 @@ class TrackInfo:
                         self.entities.append(track.get(mpx.AttributeId.MB_ARTIST_ID).val().get_string())
 
                 self.buf.insert(self.buf.get_end_iter(), "\n\n")
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "More...", self.textTagLarge)
-                self.buf.insert(self.buf.get_end_iter(), "\n\n")
+                self.buf.insert_with_tags(self.buf.get_end_iter(), "Album Links", self.textTagUnderline, self.textTagLarge)
 
                 for i in range(7):
                     if len(relobj[i]) > 0:
                         funcs[i](track, mbtrack, relobj[i])
+
+                self.buf.insert(self.buf.get_end_iter(), "\n")
+
+                # Display album relations
+                entity = self.q.getReleaseById(track.get(mpx.AttributeId.MB_ALBUM_ID).val().get_string(), self.wsinc_release)
+                rels = entity.getRelations()
+                self.display_relations (rels)
+
+                self.buf.insert(self.buf.get_end_iter(), "\n\n")
+
+                self.buf.insert_with_tags(self.buf.get_end_iter(), "Contributor Links", self.textTagUnderline, self.textTagLarge)
+                self.buf.insert(self.buf.get_end_iter(), "\n")
 
                 # Eliminate dupes
                 self.entities = dict(zip(self.entities,self.entities)).keys() 
@@ -246,19 +262,13 @@ class TrackInfo:
 
                     self.buf.insert(self.buf.get_end_iter(), "\n")
 
-                # Display album relations
-
-                entity = self.q.getAlbumById(track.get(mpx.AttributeId.MB_ALBUM_ID).val().get_string(), self.wsinc)
-                rels = entity.getRelations()
-                self.display_relations (rels)
-
             self.Done = True
-            exit()
+            #exit()
 
         except musicbrainz2.webservice.WebServiceError:
             
             self.Done = True 
-            exit()
+            #exit()
 
     def display_relations(self, rels): 
 

@@ -492,8 +492,6 @@ namespace MPX
                         (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
                         (*iter)[PlaylistColumns.IsMPXTrack] = true; 
                 }
-
-                m_MusicLib.action_cb_play ();
               } 
 
               void
@@ -1749,7 +1747,7 @@ namespace MPX
 namespace Source
 {
     PlaybackSourceMusicLib::PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
-    : PlaybackSource(ui_manager, _("Music"))
+    : PlaybackSource(ui_manager, _("Music"), C_CAN_SEEK)
     , m_MainUIManager(ui_manager)
     {
         player.get_object(m_Lib);
@@ -1757,9 +1755,6 @@ namespace Source
         m_Private = new MusicLibPrivate(player,*this);
         m_Private->m_TreeViewPlaylist->signal_row_activated().connect( sigc::mem_fun( *this,
             &PlaybackSourceMusicLib::on_plist_row_activated ) );
-
-        m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_SEEK);
-        send_caps ();
 
         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));

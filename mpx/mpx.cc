@@ -1316,9 +1316,6 @@ namespace MPX
 		m_SourceTabMapping.push_back(SourceTabMapping::value_type());
 		m_SourceTabMapping[source] = tab;
 
-		m_source_flags[source] = PlaybackSource::Flags(0);
-		m_source_caps[source] = PlaybackSource::Caps(0); 
-
 		m_SourceV[source]->signal_caps().connect
 		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_caps), source));
 
@@ -1807,6 +1804,8 @@ namespace MPX
 	Player::on_source_caps (PlaybackSource::Caps caps, int source_id)
 	{
 	  Mutex::Lock L (m_SourceCFLock);
+
+      g_message("%s: Source: %d, Caps: %d", G_STRLOC, source_id, int(caps));
 
 	  m_source_caps[source_id] = caps;
 
@@ -2544,7 +2543,7 @@ namespace MPX
     {
       dbus_g_proxy_call (m_mmkeys_dbusproxy,
              "GrabMediaPlayerKeys", NULL,
-             G_TYPE_STRING, "BMPx",
+             G_TYPE_STRING, "MPX",
              G_TYPE_UINT, 0,
              G_TYPE_INVALID, G_TYPE_INVALID);
 
@@ -2861,7 +2860,7 @@ namespace MPX
           {
             dbus_g_proxy_call (m_mmkeys_dbusproxy,
                    "GrabMediaPlayerKeys", &error,
-                   G_TYPE_STRING, "Rhythmbox",
+                   G_TYPE_STRING, "MPX",
                    G_TYPE_UINT, 0,
                    G_TYPE_INVALID,
                    G_TYPE_INVALID);
@@ -2891,7 +2890,7 @@ namespace MPX
               /* settings daemon dbus service doesn't exist.
                * just silently fail.
                */
-              g_message(G_STRLOC ": org.gnome.SettingsDaemon dbus service not found");
+              g_message(G_STRLOC ": org.gnome.SettingsDaemon dbus service not found: %s", error->message);
               g_error_free (error);
             }
             else
@@ -2930,7 +2929,7 @@ namespace MPX
         {
           dbus_g_proxy_call (m_mmkeys_dbusproxy,
                  "ReleaseMediaPlayerKeys", &error,
-                 G_TYPE_STRING, "BMPx",
+                 G_TYPE_STRING, "MPX",
                  G_TYPE_INVALID, G_TYPE_INVALID);
           if (error != NULL)
           {
