@@ -206,7 +206,7 @@ namespace MPX
     TextRequest::run ()
     {
         boost::format lyrics_url_f ("http://lyricwiki.org/api.php?fmt=xml&artist=%s&song=%s");
-        URI request_url =((lyrics_url_f % m_artist.c_str() % m_title.c_str()).str(), true);
+        URI request_url ((lyrics_url_f % m_artist.c_str() % m_title.c_str()).str(), true);
         m_soup_request = Soup::RequestSync::create ((ustring(request_url)));
         m_soup_request->add_header("User-Agent", "BMP-2.0");
         m_soup_request->add_header("Content-Type", "text/xml"); 
