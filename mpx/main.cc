@@ -33,6 +33,7 @@ using namespace MPX;
 namespace MPX
 {
 	Mcs::Mcs * mcs = 0;
+    Mcs::Bind * mcs_bind = 0;
 }
 
 namespace 
@@ -157,6 +158,8 @@ namespace
 		  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, _("Unable to parse configuration file!"));
 		}
 	  }
+
+      mcs_bind = new Mcs::Bind(mcs);
 
 	  mcs->domain_register ("main-window");
 	  mcs->key_register ("main-window", "width", 0); //FIXME:

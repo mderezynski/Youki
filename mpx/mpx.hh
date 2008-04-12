@@ -41,8 +41,11 @@
 #include "play.hh"
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
+#include "preferences.hh"
 
 #include "mpx/i-playbacksource.hh"
+
+#include "dbus-marshalers.h"
 
 using namespace Gnome::Glade;
 
@@ -221,6 +224,7 @@ namespace MPX
         Library &m_Library;
         Covers &m_Covers;
 		PluginManager *m_PluginManager;
+        Preferences *m_Preferences;
 
 		PluginManagerGUI *m_PluginManagerGUI;
         Sources *m_Sources;
@@ -300,6 +304,10 @@ namespace MPX
 		void
 		on_play_metadata (MPXGstMetadataField);
 
+		void
+		reparse_metadata ();
+
+
 
 
 		void
@@ -368,10 +376,62 @@ namespace MPX
 		track_played ();
 
 
-		void
-		reparse_metadata ();
 
-        // Importing related
+
+        enum grab_type
+        {
+          NONE = 0,
+          SETTINGS_DAEMON,
+          X_KEY_GRAB
+        };
+
+        DBusGProxy * m_mmkeys_dbusproxy;
+        grab_type m_mmkeys_grab_type;
+
+        static void
+        media_player_key_pressed (DBusGProxy *proxy,
+                                  const gchar *application,
+                                  const gchar *key,
+                                  gpointer data);
+
+        bool
+        window_focus_cb (GdkEventFocus *event);
+
+        void grab_mmkey (int key_code,
+                         int mask,
+                         GdkWindow *root);
+        void grab_mmkey (int key_code,
+                         GdkWindow *root);
+        void ungrab_mmkeys (GdkWindow *root);
+        static GdkFilterReturn
+        filter_mmkeys (GdkXEvent *xevent,
+                       GdkEvent *event,
+                       gpointer data);
+        void
+        mmkeys_grab (bool grab);
+
+        void
+        mmkeys_get_offending_modifiers ();
+
+        guint m_capslock_mask, m_numlock_mask, m_scrolllock_mask;
+
+        void
+        mmkeys_activate ();
+
+        void 
+        mmkeys_deactivate ();
+
+        void
+        on_mm_edit_begin (); 
+
+        void
+        on_mm_edit_done (); 
+
+        bool mm_active;
+        sigc::connection mWindowFocusConn;
+
+
+
         Glib::RefPtr<Gio::File> m_MountFile;
         Glib::RefPtr<Gio::MountOperation> m_MountOperation;
         Glib::ustring m_Share, m_ShareName;

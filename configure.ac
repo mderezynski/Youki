@@ -556,8 +556,8 @@ case $host in
       default_sink="alsasink"
       default_device="default"
       PKG_CHECK_MODULES([ALSA], [alsa >= 1.0.9])
-      AC_DEFINE([HAVE_ALSA], [], [Define if ALSA is present])
-      AC_DEFINE([HAVE_LINUX], [], [Define if building on FreeBSD])
+      AC_DEFINE([HAVE_ALSA], [1], [Define if ALSA is present])
+      AC_DEFINE([HAVE_LINUX], [1], [Define if building on FreeBSD])
       have_alsa=true
       ;;
     *freebsd*)
