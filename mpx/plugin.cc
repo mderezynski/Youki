@@ -95,6 +95,8 @@ namespace MPX
         } catch (Mcs::Mcs::Exceptions & cxe)
         {
         }
+
+        mcs_plugins->register_domain("pyplugs");
 	}
 
 	void
