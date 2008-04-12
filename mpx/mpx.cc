@@ -363,8 +363,8 @@ namespace MPX
         add_events (Gdk::BUTTON_PRESS_MASK);
 
         /*Gdk::Color const color ("#000000");
-        modify_bg (Gtk::STATE_NORMAL, color);
-        modify_base (Gtk::STATE_NORMAL, color);*/
+        modify_bg (Gtk::STATUS_NORMAL, color);
+        modify_base (Gtk::STATUS_NORMAL, color);*/
 
         m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum ));
 		m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
@@ -1051,8 +1051,8 @@ namespace MPX
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
 
-		signals[PSIGNAL_STATE_CHANGED] =
-			g_signal_new ("play-state-changed",
+		signals[PSIGNAL_STATUS_CHANGED] =
+			g_signal_new ("play-status-changed",
 					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
 					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
 					  0,
@@ -1074,6 +1074,7 @@ namespace MPX
 			m_PluginManager->append_search_path (user_path);
 		m_PluginManager->append_search_path (build_filename(DATA_DIR,"scripts"));
 		m_PluginManager->load_plugins();
+		m_PluginManager->activate_plugins();
 		m_PluginManagerGUI = PluginManagerGUI::create(*m_PluginManager);
 
 		/*------------------------ Connect Library -----------------------------------------------*/ 
@@ -1541,11 +1542,9 @@ namespace MPX
 		pa = PAccess<MPX::Play>(*m_Play);
 	}
 
-	Metadata const&
+	Metadata
 	Player::get_metadata ()
 	{
-        Glib::Mutex::Lock L (m_MetadataLock);
-
         if(m_Metadata)
     		return m_Metadata.get();
         else
@@ -2200,6 +2199,8 @@ namespace MPX
 	  MPXPlaystatus status = MPXPlaystatus (m_Play->property_status().get_value());
 	  MPX::URI u;
 
+      g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_STATUS_CHANGED], 0, int(status));
+
 	  switch (status)
 	  {
 		case PLAYSTATUS_STOPPED:
@@ -2267,7 +2268,6 @@ namespace MPX
 
 		  case PLAYSTATUS_PLAYING:
 		  {
-			m_Seek->set_sensitive(true);
 			break;
 		  }
 

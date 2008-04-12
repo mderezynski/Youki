@@ -129,7 +129,7 @@ namespace MPX
         void
         get_object (PAccess<MPX::Play>&);
 
-		Metadata const&
+		Metadata // we don't return a reference since it might go away while a plugin processes it (boost::optional)
 		get_metadata ();
 
 		void
@@ -172,7 +172,7 @@ namespace MPX
 			PSIGNAL_NEW_TRACK,
 			PSIGNAL_TRACK_PLAYED,
 			PSIGNAL_INFOAREA_CLICK,
-            PSIGNAL_STATE_CHANGED,
+            PSIGNAL_STATUS_CHANGED,
 			N_SIGNALS
 		};
 

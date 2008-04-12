@@ -36,6 +36,21 @@
 #define Py_ssize_t int
 #endif
 
+#include <boost/python.hpp>
+#include <boost/python/suite/indexing/indexing_suite.hpp>
+#include <boost/python/suite/indexing/map_indexing_suite.hpp>
+#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include <boost/optional.hpp>
+#include <boost/variant.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/cstdint.hpp>
+#include <Python.h>
+
+#include "mpx/mpx-public.hh"
+
+using namespace Glib;
+using namespace boost::python;
+
 namespace MPX
 {
 	Traceback::Traceback(const std::string& aname, const std::string& atraceback)
@@ -74,6 +89,12 @@ namespace MPX
 			g_warning("%s; Python Error:", G_STRFUNC);
 		    PyErr_Print();
 		}
+
+        try{
+            mcs_plugins = new Mcs::Mcs (Glib::build_filename (Glib::build_filename (Glib::get_user_config_dir (), "mpx"), "plugins.xml"), "mpx", 0.01);
+        } catch (Mcs::Mcs::Exceptions & cxe)
+        {
+        }
 	}
 
 	void
@@ -81,6 +102,49 @@ namespace MPX
 	{	
 		m_Paths.push_back(path);
 	}
+
+    class PluginActivate
+    {
+      public:
+
+        PluginActivate (Mcs::Mcs & mcs, MPX::Player * player)
+        : m_mcs(mcs)
+        , m_player(player)
+        {} 
+
+        void
+        operator()(std::pair<const gint64, PluginHolderRefP> & item)
+        {
+            try{
+                bool active = m_mcs.key_get<bool>("pyplugs", item.second->get_name());
+
+                if (active)
+                {
+                    try {
+                        object ccinstance = object((handle<>(borrowed(item.second->m_PluginInstance))));
+                        ccinstance.attr("activate")(boost::ref(m_player)); // TODO
+                        item.second->m_Active = true;
+                    } catch( error_already_set )
+                    {
+                    }
+                }
+             } catch(...)
+             {
+             }
+         }
+
+      private:
+
+        Mcs::Mcs & m_mcs;
+        MPX::Player * m_player;
+    };  
+
+
+    void
+    PluginManager::activate_plugins ()
+    {
+        std::for_each (m_Map.begin(), m_Map.end(), PluginActivate(*mcs_plugins, m_Player));
+    }
 
 	void
 	PluginManager::load_plugins ()
@@ -169,22 +233,17 @@ namespace MPX
 							if(ptr->m_Name.empty())
 								ptr->m_Name = PyString_AsString (PyObject_GetAttrString (module, "__name__")); 
 
-							bool active = false;
-
 							/* TODO: Query MCS for active state */
 
-							if (active)
-							{
-								try {
-									object ccinstance = object((handle<>(borrowed(instance))));
-									ccinstance.attr("activate")(boost::ref(m_Player)); // TODO
-									active = true;
-								} catch( error_already_set )
-								{
-								}
-							}
+                            mcs->key_register("pyplugs", ptr->m_Name, false);
 
-							ptr->m_Active = active; 
+							ptr->m_Active = false; 
+
+                            PyObject * HasGUI = PyObject_GetAttrString(instance, "show");
+                            ptr->m_HasGUI = (HasGUI ? true : false);
+                            if(HasGUI)
+                                Py_DECREF(HasGUI);
+
 							m_Map.insert(std::make_pair(ptr->m_Id, ptr));
 							pyg_gil_state_release(state);
 
@@ -198,6 +257,7 @@ namespace MPX
 
 	PluginManager::~PluginManager ()
 	{
+        delete mcs_plugins;
 	}
 
 	PluginHoldMap const&
@@ -205,6 +265,39 @@ namespace MPX
 	{
 		return m_Map;
 	}
+
+	bool
+	PluginManager::show(gint64 id)
+	{
+		bool result = false;
+		Glib::Mutex::Lock L (m_StateChangeLock);
+
+		PluginHoldMap::iterator i = m_Map.find(id);
+		g_return_val_if_fail(i != m_Map.end(), false);
+
+		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+
+		try{
+			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
+			object callable = ccinstance.attr("show");
+			result = boost::python::call<bool>(callable.ptr());
+		} catch( error_already_set )
+		{
+			push_traceback (id, "show");
+		}
+
+        try{
+            mcs->key_register("pyplugs", i->second->get_name(), i->second->m_Active);
+            mcs->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
+        } catch(...) {
+            g_message("%s: Failed saving plugin state for '%s'", G_STRLOC, i->second->get_name().c_str());
+        }
+
+		pyg_gil_state_release (state);
+
+		return result;
+	}
+
 
 	bool
 	PluginManager::activate(gint64 id)
@@ -230,63 +323,77 @@ namespace MPX
 			i->second->m_Active = true;
 		} catch( error_already_set )
 		{
-			std::string name (i->second->get_name());
-
-			PyObject *pytype = NULL, *pyvalue = NULL, *pytraceback = NULL, *pystring = NULL;
-			PyErr_Fetch (&pytype, &pyvalue, &pytraceback);
-			PyErr_Clear();
-			pystring = PyObject_Str(pyvalue);
-
-			std::string traceback = PyString_AsString (pystring);
-
-			push_traceback (name, traceback);
-
-			g_message("%s: Failed to activate plugin %lld:\nTraceback: %s", G_STRLOC, id, traceback.c_str());
-
-			Py_XDECREF (pytype);
-			Py_XDECREF (pyvalue);
-			Py_XDECREF (pytraceback);
-			Py_XDECREF (pystring);
-
+			push_traceback (id, "activate");
 		}
+
+        try{
+            mcs->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
+        } catch(...) {
+            g_message("%s: Failed saving plugin state for '%s'", G_STRLOC, i->second->get_name().c_str());
+        }
 
 		pyg_gil_state_release (state);
 
 		return result;
 	}
 
-	void
+    bool
 	PluginManager::deactivate(gint64 id)
 	{
 		Glib::Mutex::Lock L (m_StateChangeLock);
 
 		PluginHoldMap::iterator i = m_Map.find(id);
-		g_return_if_fail(i != m_Map.end());
+		g_return_val_if_fail(i != m_Map.end(), false);
+
+        bool result = false;
 
 		if(!i->second->m_Active)
 		{
 			g_message("%s: Requested deactivate from plugin %lld, but is deactivated.", G_STRLOC, id);	
-			g_return_if_reached();
+			g_return_val_if_reached(false);
 		}
 
 		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 
 		try{
 			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			ccinstance.attr("deactivate")();
+			object callable = ccinstance.attr("deactivate");
+			result = boost::python::call<bool>(callable.ptr());
 			i->second->m_Active = false;
 		} catch( error_already_set ) 
 		{
-			PyErr_Print ();
+			push_traceback (id, "deactivate");
 		}
 
 		pyg_gil_state_release (state);
+
+        try{
+            mcs->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
+        } catch(...) {
+            g_message("%s: Failed saving plugin state for '%s'", G_STRLOC, i->second->get_name().c_str());
+        }
+        return result;
 	}
 
 	void
-	PluginManager::push_traceback(const std::string& name, const std::string& traceback)
+	PluginManager::push_traceback(gint64 id, const std::string& method)
 	{
+        g_return_if_fail(m_Map.count(id) != 0);
+
+        PyObject *pytype = NULL, *pyvalue = NULL, *pytraceback = NULL, *pystring = NULL;
+        PyErr_Fetch (&pytype, &pyvalue, &pytraceback);
+        PyErr_Clear();
+        pystring = PyObject_Str(pyvalue);
+        std::string traceback = PyString_AsString (pystring);
+
+        std::string name = m_Map.find(id)->second->get_name();
+        g_message("%s: Failed to call '%s' on plugin %lld:\nTraceback: %s", G_STRLOC, method.c_str(), id, traceback.c_str());
 		m_TracebackList.push_front(Traceback(name, traceback));
+
+        Py_XDECREF (pytype);
+        Py_XDECREF (pyvalue);
+        Py_XDECREF (pytraceback);
+        Py_XDECREF (pystring);
 	}
 
 	unsigned int

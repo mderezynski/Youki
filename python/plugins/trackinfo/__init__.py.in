@@ -56,7 +56,7 @@ class TrackInfo:
 
         self.wait = WaitSecond()
         self.q = ws.Query(musicbrainz2.webservice.WebService("www.uk.musicbrainz.org"))
-        self.tinc = musicbrainz2.webservice.TrackIncludes(trackRelations=True,artist=True,puids=True,releases=True,artistRelations=True,releaseRelations=True,urlRelations=True)
+        self.wsinc = musicbrainz2.webservice.TrackIncludes(trackRelations=True,artist=True,puids=True,releases=True,artistRelations=True,releaseRelations=True,urlRelations=True)
 
         self.xml = xml
         self.notebook = self.xml.get_widget("notebook-track-info-1")
@@ -126,11 +126,12 @@ class TrackInfo:
 
         self.track = track
         self.Done = False
-        self.thread = thread.start_new_thread(self.show, (self,))
+        self.show ([])
+        #self.thread = thread.start_new_thread(self.show, (self,))
 
-        while not self.Done:
-                while gtk.events_pending():
-                        gtk.main_iteration()
+        #while not self.Done:
+        #        while gtk.events_pending():
+        #                gtk.main_iteration()
 
         self.notebook.set_current_page(2)
 
@@ -182,7 +183,7 @@ class TrackInfo:
 
             if track.get(mpx.AttributeId.MB_TRACK_ID).is_initialized():
                 trackId = track.get(mpx.AttributeId.MB_TRACK_ID).val().get_string()
-                mbtrack = self.q.getTrackById(trackId, self.tinc) 
+                mbtrack = self.q.getTrackById(trackId, self.wsinc) 
                 rels = mbtrack.getRelations()
 
                 relobj = []
@@ -230,60 +231,73 @@ class TrackInfo:
                     if len(relobj[i]) > 0:
                         funcs[i](track, mbtrack, relobj[i])
 
+                # Eliminate dupes
+                self.entities = dict(zip(self.entities,self.entities)).keys() 
+
                 for ent in self.entities:
 
-                    entity = self.q.getArtistById(ent, self.tinc)   
+                    entity = self.q.getArtistById(ent, self.wsinc)   
 
                     self.buf.insert_with_tags(self.buf.get_end_iter(), entity.getName(), self.textTagBold)
                     self.buf.insert(self.buf.get_end_iter(), ": ")
 
                     rels = entity.getRelations()
-
-                    for rel in rels:
-                    
-                        if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Discogs":
-                                link_tag = LinkTag(rel.getTargetId()) 
-                                link_tag.connect("url-clicked", self.on_url_clicked)
-                                self.buf.get_tag_table().add(link_tag)
-                                self.buf.insert_with_tags(self.buf.get_end_iter(), "Discogs", link_tag) 
-                                self.buf.insert(self.buf.get_end_iter(), "  ")
-
-                        if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Wikipedia":
-                                link_tag = LinkTag(rel.getTargetId()) 
-                                link_tag.connect("url-clicked", self.on_url_clicked)
-                                self.buf.get_tag_table().add(link_tag)
-                                self.buf.insert_with_tags(self.buf.get_end_iter(), "Wikipedia", link_tag) 
-                                self.buf.insert(self.buf.get_end_iter(), "  ")
-
-                        #if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Discography":
-                        #        link_tag = LinkTag(rel.getTargetId()) 
-                        #        self.buf.get_tag_table().add(link_tag)
-                        #        self.buf.insert_with_tags(self.buf.get_end_iter(), "(Discography)", link_tag) 
-                        #        self.buf.insert(self.buf.get_end_iter(), "  ")
-
-                        if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Myspace":
-                                link_tag = LinkTag(rel.getTargetId()) 
-                                link_tag.connect("url-clicked", self.on_url_clicked)
-                                self.buf.get_tag_table().add(link_tag)
-                                self.buf.insert_with_tags(self.buf.get_end_iter(), "MySpace", link_tag) 
-                                self.buf.insert(self.buf.get_end_iter(), "  ")
-
-                        #if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#OfficialHomepage":
-                        #        link_tag = LinkTag(rel.getTargetId()) 
-                        #        self.buf.get_tag_table().add(link_tag)
-                        #        self.buf.insert_with_tags(self.buf.get_end_iter(), "(Homepage)", link_tag) 
-                        #        self.buf.insert(self.buf.get_end_iter(), "  ")
+                    self.display_relations (rels)
 
                     self.buf.insert(self.buf.get_end_iter(), "\n")
 
+                # Display album relations
+
+                entity = self.q.getAlbumById(track.get(mpx.AttributeId.MB_ALBUM_ID).val().get_string(), self.wsinc)
+                rels = entity.getRelations()
+                self.display_relations (rels)
+
             self.Done = True
-            return
+            exit()
 
         except musicbrainz2.webservice.WebServiceError:
             
             self.Done = True 
-            return 
- 
+            exit()
+
+    def display_relations(self, rels): 
+
+            for rel in rels:
+            
+                if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Discogs":
+                        link_tag = LinkTag(rel.getTargetId()) 
+                        link_tag.connect("url-clicked", self.on_url_clicked)
+                        self.buf.get_tag_table().add(link_tag)
+                        self.buf.insert_with_tags(self.buf.get_end_iter(), "Discogs", link_tag) 
+                        self.buf.insert(self.buf.get_end_iter(), "  ")
+
+                if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Wikipedia":
+                        link_tag = LinkTag(rel.getTargetId()) 
+                        link_tag.connect("url-clicked", self.on_url_clicked)
+                        self.buf.get_tag_table().add(link_tag)
+                        self.buf.insert_with_tags(self.buf.get_end_iter(), "Wikipedia", link_tag) 
+                        self.buf.insert(self.buf.get_end_iter(), "  ")
+
+                #if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Discography":
+                #        link_tag = LinkTag(rel.getTargetId()) 
+                #        self.buf.get_tag_table().add(link_tag)
+                #        self.buf.insert_with_tags(self.buf.get_end_iter(), "(Discography)", link_tag) 
+                #        self.buf.insert(self.buf.get_end_iter(), "  ")
+
+                if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#Myspace":
+                        link_tag = LinkTag(rel.getTargetId()) 
+                        link_tag.connect("url-clicked", self.on_url_clicked)
+                        self.buf.get_tag_table().add(link_tag)
+                        self.buf.insert_with_tags(self.buf.get_end_iter(), "MySpace", link_tag) 
+                        self.buf.insert(self.buf.get_end_iter(), "  ")
+
+                #if rel.getType() == "http://musicbrainz.org/ns/rel-1.0#OfficialHomepage":
+                #        link_tag = LinkTag(rel.getTargetId()) 
+                #        self.buf.get_tag_table().add(link_tag)
+                #        self.buf.insert_with_tags(self.buf.get_end_iter(), "(Homepage)", link_tag) 
+                #        self.buf.insert(self.buf.get_end_iter(), "  ")
+
+
     def on_url_clicked(self, obj, url):
         
         command = "xdg-open \"%s\"" % url
@@ -296,7 +310,7 @@ class TrackInfo:
             # Workaround for buggy pymusicbrainzl; getTarget() on this rel returns None
             url = rel.getTargetId()
             id = url[url.rindex("/")+1:]
-            cover = self.q.getTrackById(id, self.tinc)  
+            cover = self.q.getTrackById(id, self.wsinc)  
             coverartist = cover.getArtist()
 
             self.buf.insert_with_tags(self.buf.get_end_iter(), "...is a cover of ")
@@ -330,7 +344,7 @@ class TrackInfo:
         for rel in rels:
             url = rel.getTargetId()
             id = url[url.rindex("/")+1:]
-            trk = self.q.getTrackById(id, self.tinc)
+            trk = self.q.getTrackById(id, self.wsinc)
             sampledartist = trk.getArtist()
             self.entities.append(rel.getArtistId())
             sampled.append(trk.getTitle() + " by " + sampledartist.getName())
@@ -347,7 +361,7 @@ class TrackInfo:
         for rel in rels:
             url = rel.getTargetId()
             id = url[url.rindex("/")+1:]
-            remixer = self.q.getArtistById(id, self.tinc)
+            remixer = self.q.getArtistById(id, self.wsinc)
             self.entities.append(id)
             remixers.append(remixer.getName())
 
@@ -363,7 +377,7 @@ class TrackInfo:
         for rel in rels:
             url = rel.getTargetId()
             id = url[url.rindex("/")+1:]
-            producer = self.q.getArtistById(id, self.tinc)
+            producer = self.q.getArtistById(id, self.wsinc)
             self.entities.append(id)
             producers.append(producer.getName())
             

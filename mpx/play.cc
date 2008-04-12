@@ -1084,10 +1084,13 @@ namespace MPX
     void
     Play::reset ()
     {
-      stop_stream ();
-
       if (m_pipeline)
       {
+        if(property_status().get_value() != PLAYSTATUS_STOPPED)
+        {
+          stop_stream ();
+        }
+
         if (m_play_elmt)
         {
           gst_element_set_state (m_play_elmt, GST_STATE_NULL);

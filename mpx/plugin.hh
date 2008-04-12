@@ -29,6 +29,7 @@
 #include <boost/shared_ptr.hpp>
 #include <map>
 #include <string>
+#include <mcs/mcs.h>
 
 namespace MPX
 {
@@ -45,6 +46,7 @@ namespace MPX
 			int				m_IAge;
 			std::string		m_Website;
 			bool			m_Active;
+            bool            m_HasGUI;
 			gint64			m_Id;
 
 		public:
@@ -67,14 +69,18 @@ namespace MPX
 			bool
 			get_active ()		const	{ return m_Active; }
 
+            bool
+            get_has_gui ()      const   { return m_HasGUI; }
+
 			gint64
 			get_id ()			const	{ return m_Id; }
 
 		friend class PluginManager;
+        friend class PluginActivate;
 	};
 
 	typedef boost::shared_ptr<PluginHolder>	PluginHolderRefP;
-	typedef std::map<gint64, PluginHolderRefP>	PluginHoldMap; 
+	typedef std::map<gint64, PluginHolderRefP> PluginHoldMap; 
 	typedef std::vector<std::string> Strings;
 
     class Traceback
@@ -108,17 +114,25 @@ namespace MPX
 			void
 			load_plugins ();
 
+            void
+            activate_plugins ();
+
 			PluginHoldMap const&
 			get_map () const;
 		
+
 			bool	
 			activate (gint64 /*id*/);
 	
-			void
+			bool
 			deactivate (gint64 /*id*/);
 
+            bool
+            show (gint64 /*id*/);
+
+
 			void
-			push_traceback(const std::string& /*name*/, const std::string& /*traceback*/);
+			push_traceback(gint64 id, const std::string& /*method*/);
 
 			unsigned int
 			get_traceback_count() const;
@@ -132,12 +146,13 @@ namespace MPX
 
 		private:
 
-			PluginHoldMap	m_Map;	
-			Strings			m_Paths;
-			gint64			m_Id;
-			Player		   *m_Player;
-			Glib::Mutex		m_StateChangeLock;
-			std::list<Traceback>	m_TracebackList;
+			PluginHoldMap	      m_Map;	
+			Strings		          m_Paths;
+			gint64			      m_Id;
+			Player		        * m_Player;
+			Glib::Mutex		      m_StateChangeLock;
+			std::list<Traceback>  m_TracebackList;
+            Mcs::Mcs            * mcs_plugins;
     };
 }
 #endif

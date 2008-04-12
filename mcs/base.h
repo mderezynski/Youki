@@ -85,14 +85,18 @@ namespace Mcs
           key_get (std::string const& domain,
                    std::string const& key)
           {
-			g_return_val_if_fail(domain_key_exist (domain, key), T());
+            if(!domain_key_exist(domain,key))
+                throw NO_KEY;
+
             return T (domains.find(domain)->second.find(key)->second);
           }
 
           void
 		  key_push (std::string const& domain, std::string const& key)
           {
-			g_return_if_fail(domain_key_exist (domain, key));
+            if(!domain_key_exist(domain,key))
+                throw NO_KEY;
+
             MKeys & keys (domains.find (domain)->second);
             Key & k (keys.find (key)->second);
             k.push ();

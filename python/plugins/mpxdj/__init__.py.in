@@ -20,143 +20,144 @@ from Ft.Xml import EMPTY_NAMESPACE
 #import musicbrainz2.webservice as ws
 
 class MPXDJ(mpx_playlist.PlaylistPlugin):
-	def __init__(self):
+    def __init__(self):
 
-		self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-scripts/mpxdj/mpxdj.glade")
-		self.dialog = self.xml.get_widget("dialog")
-		self.combo = self.xml.get_widget("combobox")
-		self.label = self.xml.get_widget("label")
-		self.go = self.xml.get_widget("button-go")
-		self.go.set_sensitive(False)
-		self.header_image = self.xml.get_widget("header-image")
-		self.header_image.set_from_file("@DATA_DIR@" + "/playlist-scripts/mpxdj/mpxdj.png")
+        self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-scripts/mpxdj/mpxdj.glade")
+        self.dialog = self.xml.get_widget("dialog")
+        self.combo = self.xml.get_widget("combobox")
+        self.label = self.xml.get_widget("label")
+        self.go = self.xml.get_widget("button-go")
+        self.go.set_sensitive(False)
+        self.header_image = self.xml.get_widget("header-image")
+        self.header_image.set_from_file("@DATA_DIR@" + "/playlist-scripts/mpxdj/mpxdj.png")
 
-		try:
-			self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/playlist-scripts/mpxdj/mpxdj-icon.png")
-		except:
-			print "MPXDJ: No Icon"
+        try:
+            self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/playlist-scripts/mpxdj/mpxdj-icon.png")
+        except:
+            print "MPXDJ: No Icon"
 
-		options = ["Entertain Me!", "Play All", "Top Tunes", "New Music", "Memory Lane", "Sounds Of...",
-				   "Forgotten Gems", "Deja Vu", "Random Mix", "Last.fm Tag"]
+        options = ["Entertain Me!", "Play All", "Top Tunes", "New Music", "Memory Lane", "Sounds Of...",
+                   "Forgotten Gems", "Deja Vu", "Random Mix", "Last.fm Tag"]
 
-		self.callables = [  self.OPTION_entertain_me,
-							self.OPTION_play_all,	
-							self.OPTION_top_tunes,
-							None,
-							None,
-							self.OPTION_sounds_of,
-							None,
-							None,
-							self.OPTION_random_mix,
-							self.OPTION_lastfm_tag
-						 ]
+        self.callables = [  self.OPTION_entertain_me,
+                            self.OPTION_play_all,   
+                            self.OPTION_top_tunes,
+                            None,
+                            None,
+                            self.OPTION_sounds_of,
+                            None,
+                            None,
+                            self.OPTION_random_mix,
+                            self.OPTION_lastfm_tag
+                         ]
 
-		self.helptexts = [
-				"Creates a running order composed of the most frequently played tracks.",
-				"Creates a running order that sorts all of the tracks on the player into basic categories.",
-				"Creates a running order composed of a set number of the most frequently played tracks.",
-				"Creates a running order composed of the most recently loaded tracks during a set amount of time.",
-				"Creates a running order composed of the least frequently played tracks during a set amount of time.",
-				"Select to create a running order composed of tracks from a specific decade.",
-				"Select to create a running order composed of the most popular, but least recently played, tracks during a set amount of time.",
-				"Select to create a running order composed of the most popular and most recently played tracks during a set amount of time.",
-				"Select to create a running order composed of all tracks, in random order, on the player.",
-				"Creates a playlist from your music library based on a Last.fm tag"
-		]	
+        self.helptexts = [
+                "Creates a running order composed of the most frequently played tracks.",
+                "Creates a running order that sorts all of the tracks on the player into basic categories.",
+                "Creates a running order composed of a set number of the most frequently played tracks.",
+                "Creates a running order composed of the most recently loaded tracks during a set amount of time.",
+                "Creates a running order composed of the least frequently played tracks during a set amount of time.",
+                "Select to create a running order composed of tracks from a specific decade.",
+                "Select to create a running order composed of the most popular, but least recently played, tracks during a set amount of time.",
+                "Select to create a running order composed of the most popular and most recently played tracks during a set amount of time.",
+                "Select to create a running order composed of all tracks, in random order, on the player.",
+                "Creates a playlist from your music library based on a Last.fm tag"
+        ]   
 
-		cell = gtk.CellRendererText()
-		self.combo.pack_start(cell)
-		self.combo.add_attribute(cell, "text", 0)
+        cell = gtk.CellRendererText()
+        self.combo.pack_start(cell)
+        self.combo.add_attribute(cell, "text", 0)
 
-		self.store = gtk.ListStore(gobject.TYPE_STRING)
-		self.combo.set_model(self.store)
-	
-		for option in options:
-			self.store.append([option])
+        self.store = gtk.ListStore(gobject.TYPE_STRING)
+        self.combo.set_model(self.store)
+    
+        for option in options:
+            self.store.append([option])
 
-		self.notebook = self.xml.get_widget("notebook")
+        self.notebook = self.xml.get_widget("notebook")
 
 
-		# Finally:
-		self.combo.connect("changed", self.cbox_changed)
-		self.combo.set_active(0)
+        # Finally:
+        self.combo.connect("changed", self.cbox_changed)
+        self.combo.set_active(0)
 
-	def cbox_changed(self, cbox):
+    def cbox_changed(self, cbox):
 
-		self.label.set_text(self.helptexts[cbox.get_active()])		
-		self.notebook.set_current_page(cbox.get_active())		
-		self.go.set_sensitive(self.callables[self.combo.get_active()] is not None)
+        self.label.set_text(self.helptexts[cbox.get_active()])      
+        self.notebook.set_current_page(cbox.get_active())       
+        self.go.set_sensitive(self.callables[self.combo.get_active()] is not None)
 
-	def extract_ids(self, rv, v):
+    def extract_ids(self, rv, v):
 
-		for val in rv:
-			v.append(val["id"].get_int())
+        for val in rv:
+            v.append(val["id"].get_int())
 
-	def OPTION_lastfm_tag(self, lib, v):
-		
-		MBID_NODE_XPATH = u'//mbid'
-		text = self.xml.get_widget("entry-lastfm-tag").get_text()
-		uri = u"http://ws.audioscrobbler.com/1.0/tag/%s/topartists.xml" % urllib.quote(text)
-		lastfm = NonvalidatingReader.parseUri(uri)
-		ctx = Context(lastfm)
-		mbids = Evaluate(MBID_NODE_XPATH, context=ctx)
-		rv = mpx.SQLRowV()
-		for mbid in mbids:
-			if mbid.firstChild:
-				lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY mpxrand() LIMIT 1"))
-		self.extract_ids(rv, v)
+    def OPTION_lastfm_tag(self, lib, v):
+        
+        MBID_NODE_XPATH = u'//mbid'
+        text = self.xml.get_widget("entry-lastfm-tag").get_text()
+        uri = u"http://ws.audioscrobbler.com/1.0/tag/%s/topartists.xml" % urllib.quote(text)
+        lastfm = NonvalidatingReader.parseUri(uri)
+        ctx = Context(lastfm)
+        mbids = Evaluate(MBID_NODE_XPATH, context=ctx)
+        rv = mpx.SQLRowV()
+        for mbid in mbids:
+            if mbid.firstChild:
+                lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY mpxrand() LIMIT 1"))
+        self.extract_ids(rv, v)
 
-	def OPTION_random_mix(self, lib, v):
+    def OPTION_random_mix(self, lib, v):
 
-		rv = mpx.SQLRowV()
-		lib.getSQL(rv, "SELECT id FROM track_view ORDER BY mpxrand()")
-		self.extract_ids(rv, v)
+        rv = mpx.SQLRowV()
+        lib.getSQL(rv, "SELECT id FROM track_view ORDER BY mpxrand()")
+        self.extract_ids(rv, v)
 
-	def OPTION_sounds_of(self, lib, v):
-	
-		active = self.xml.get_widget("cbox-decade").get_active()
-		upper = 0
-		lower = 0
-		if(active == 6):
-			lower = 2000
-			upper = 3000
-		else:
-			lower = 1940 + (active * 10)
-			upper = 1950 + (active * 10)
-		
-		
-		rv = mpx.SQLRowV()
-		for x in range(10):
-			lib.getSQL(rv, "SELECT id FROM track_view WHERE date >= " + str(lower) + " AND date < " + str(upper) + " ORDER BY mpxrand() LIMIT 1")
-		self.extract_ids(rv, v)
+    def OPTION_sounds_of(self, lib, v):
+    
+        active = self.xml.get_widget("cbox-decade").get_active()
+        upper = 0
+        lower = 0
+        if(active == 6):
+            lower = 2000
+            upper = 3000
+        else:
+            lower = 1940 + (active * 10)
+            upper = 1950 + (active * 10)
+        
+        
+        rv = mpx.SQLRowV()
+        for x in range(10):
+            lib.getSQL(rv, "SELECT id FROM track_view WHERE date >= " + str(lower) + " AND date < " + str(upper) + " ORDER BY mpxrand() LIMIT 1")
+        self.extract_ids(rv, v)
 
-	def OPTION_top_tunes(self, lib, v):
-	
-		rv = mpx.SQLRowV()
-		lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY mpxrand() LIMIT 10")
-		self.extract_ids(rv, v)
+    def OPTION_top_tunes(self, lib, v):
+    
+        rv = mpx.SQLRowV()
+        lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY mpxrand() LIMIT 10")
+        self.extract_ids(rv, v)
 
-	def OPTION_play_all(self, lib, v):
+    def OPTION_play_all(self, lib, v):
 
-		rv = mpx.SQLRowV()
-		lib.getSQL(rv, "SELECT id FROM track_view ORDER BY album, track")
-		self.extract_ids(rv, v)
+        rv = mpx.SQLRowV()
+        lib.getSQL(rv, "SELECT id FROM track_view ORDER BY album, track")
+        self.extract_ids(rv, v)
 
-	def OPTION_entertain_me(self, lib, v):
+    def OPTION_entertain_me(self, lib, v):
 
-		rv = mpx.SQLRowV()
-		lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC, rating DESC, mpxrand() LIMIT 10")
-		self.extract_ids(rv, v)
+        rv = mpx.SQLRowV()
+        lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC, rating DESC, mpxrand() LIMIT 10")
+        self.extract_ids(rv, v)
 
-	def get_icon(self):
+    def get_icon(self):
 
-		return self.icon
+        return self.icon
 
-	def run(self,lib,mlib):
-		print ">> MPXDJ Running"
-		ret = self.dialog.run()
-                idv = mpx_playlist.TrackIdVector()
-		if(ret == gtk.RESPONSE_OK):
-			self.callables[self.combo.get_active()](lib, idv)
-		mlib.play_tracks(idv, True)
-		self.dialog.hide()
+    def run(self,lib,mlib):
+        print ">> MPXDJ Running"
+        ret = self.dialog.run()
+        idv = mpx_playlist.TrackIdVector()
+        if(ret == gtk.RESPONSE_OK):
+            self.callables[self.combo.get_active()](lib, idv)
+        if idv:
+            mlib.play_tracks(idv, False)
+        self.dialog.hide()

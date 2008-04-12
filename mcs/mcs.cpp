@@ -240,7 +240,7 @@ namespace Mcs
           std::string domain = (iter->first); 
           MKeys &keys = (iter->second);
 
-          for (MKeys::iterator iter = keys. begin (); iter !=  keys. end (); iter ++)
+          for (MKeys::iterator iter = keys.begin (); iter !=  keys.end(); iter++)
             {
                 KeyType type = iter->second.get_type ();
                 std::string const& key  (iter->first); 
@@ -256,7 +256,7 @@ namespace Mcs
                 xpath << "/" << root_node_name << "/domain[@id='" << domain << "']/key[@id='" << key << "']";
                 xpathObj = xml_execute_xpath_expression (doc,
                               BAD_CAST (xpath. str (). c_str ()),
-                              BAD_CAST ("mcs=http://beep-media-player.org/ns/mcs"));
+                              BAD_CAST ("mcs=http://backtrace.info/ns/0/mcs"));
 
                 if (!xpathObj)
                   {

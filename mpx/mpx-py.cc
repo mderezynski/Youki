@@ -19,10 +19,11 @@
 #include "mpx/paccess.hh"
 #include "mpx/types.hh"
 
-#include "playbacksource-py.hh"
+#include "audio-types.hh"
 #include "lyrics-v2.hh"
 #include "last-fm-xmlrpc.hh"
 #include "mcs/mcs.h"
+#include "playbacksource-py.hh"
 
 using namespace boost::python;
 
@@ -337,7 +338,7 @@ BOOST_PYTHON_MODULE(mpx)
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::Player, boost::noncopyable>("Player", boost::python::no_init)
-		.def("get_metadata", &MPX::Player::get_metadata, return_internal_reference<>()) 
+		.def("get_metadata", &MPX::Player::get_metadata)
 		.def("gobj", &mpxpy::player_get_gobject)
 		.def("play", &MPX::Player::play)
 		.def("pause", &MPX::Player::play)
@@ -415,6 +416,15 @@ BOOST_PYTHON_MODULE(mpx)
 		.value("C_CAN_BOOKMARK", MPX::PlaybackSource::C_CAN_BOOKMARK)	
 		.value("C_PROVIDES_TIMING", MPX::PlaybackSource::C_PROVIDES_TIMING)	
 	;
+
+    enum_<MPX::MPXPlaystatus>("PlayStatus")
+        .value("NONE", MPX::PLAYSTATUS_NONE)
+        .value("STOPPED", MPX::PLAYSTATUS_STOPPED)
+        .value("PLAYING", MPX::PLAYSTATUS_PLAYING)
+        .value("PAUSED", MPX::PLAYSTATUS_PAUSED)
+        .value("SEEKING", MPX::PLAYSTATUS_SEEKING)
+        .value("WAITING", MPX::PLAYSTATUS_WAITING)
+    ;
 
 	class_<MPX::PlaybackSourcePy, boost::noncopyable>("PlaybackSource", boost::python::no_init)
 		.def("getUri", &MPX::PlaybackSourcePy::get_uri)
