@@ -1,6 +1,7 @@
 glade_DATA = 						\
 									\
 	mpx.glade						\
+	preferences.glade				\
 	import-folder.glade				\
 	import-share.glade				\
 									\

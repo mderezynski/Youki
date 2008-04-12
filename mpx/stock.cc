@@ -44,8 +44,9 @@ namespace MPX
 
     StockIconSpec theme_icon_list[] =
     {   
-      { "plugin.png",					MPX_STOCK_PLUGIN            },
       { "lastfm.png",                   MPX_STOCK_LASTFM            },
+      { "plugin.png",                   MPX_STOCK_PLUGIN            },
+      { "plugin-disabled.png",          MPX_STOCK_PLUGIN_DISABLED   },
     };
 
     for (unsigned int n = 0; n < G_N_ELEMENTS (theme_icon_list); ++n)

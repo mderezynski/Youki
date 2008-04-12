@@ -163,6 +163,9 @@ mpx_bin_SOURCES =				\
 	plugin-manager-gui.hh		\
 	plugin-manager-gui.cc		\
 								\
+	preferences.hh				\
+	preferences.cc				\
+								\
 	py-library.hh				\
 	py-library.cc				\
 								\
@@ -210,7 +213,8 @@ built_header_make = \
 	dbus-obj-MPX-glue.h
 
 EXTRA_DIST = \
-	dbus-obj-MPX.xml
+	dbus-obj-MPX.xml \
+	dbus-marshalers.list
 
 dbus-obj-MPX-glue.h: dbus-obj-MPX.xml
 	@echo "* Generating /MPX DBus Glue"
@@ -226,3 +230,15 @@ dbus-obj-MPX-glue.h: dbus-obj-MPX.xml
 	@rm -f dbus-obj-MPX-glue.h.temp
 	@rm -f dbus-obj-MPX-glue.h.temp.1
 	@rm -f dbus-obj-MPX-glue.h.temp.2
+
+dbus-marshalers.c: dbus-marshalers.list 
+	@echo "* Generating dbus-marshalers.c"
+	@glib-genmarshal --prefix=mpx_dbus_marshal --body   $(srcdir)/dbus-marshalers.list > dbus-marshalers.c
+
+dbus-marshalers.h: dbus-marshalers.list
+	@echo "* Generating dbus-marshalers.h"
+	@glib-genmarshal --prefix=mpx_dbus_marshal --header $(srcdir)/dbus-marshalers.list > dbus-marshalers.h
+
+
+BUILT_SOURCES = dbus-marshalers.c dbus-marshalers.h
+mpx_bin_SOURCES += dbus-marshalers.c
