@@ -96,7 +96,7 @@ namespace MPX
         {
         }
 
-        mcs_plugins->register_domain("pyplugs");
+        mcs_plugins->domain_register("pyplugs");
 	}
 
 	void
