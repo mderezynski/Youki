@@ -111,12 +111,10 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
     def RANDOM_lastfm(self, lib, v):
 
         rv = mpx.SQLRowV()
-        lib.getSQL(rv, "SELECT id, artist FROM track_view ORDER BY mpxrand()")
+        lib.getSQL(rv, "SELECT id, artist FROM track_view ORDER BY mpxrand() LIMIT 1")
         artist = rv[0]["artist"].get_string()
 
-        rv = mpx.SQLRowV()
-
-        while not rv:
+        while len(rv) is 1:
 
             uri = u"http://ws.audioscrobbler.com/1.0/artist/%s/similar.xml" % urllib.quote(artist)
             lastfm = NonvalidatingReader.parseUri(uri)
@@ -129,10 +127,19 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
         self.extract_ids(rv, v)
 
 
+    def RANDOM_genre(self, lib, v):
+
+        rv = mpx.SQLRowV()
+        lib.getSQL(rv, "SELECT id, genre FROM track_view WHERE genre IS NOT NULL ORDER BY mpxrand() LIMIT 1")
+        genre = rv[0]["genre"].get_string()
+        lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY mpxrand() LIMIT 9" % genre)
+        self.extract_ids(rv, v)
+
+
     def OPTION_random_mix(self, lib, v):
 
-        random_algos = [ self.RANDOM_lastfm ]
-        random_algos[ random.randint(0,0) ](lib, v)
+        random_algos = [ self.RANDOM_lastfm, self.RANDOM_genre ]
+        random_algos[ random.randint(0,1) ](lib, v)
 
     def OPTION_sounds_of(self, lib, v):
     
