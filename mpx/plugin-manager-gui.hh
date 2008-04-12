@@ -52,10 +52,16 @@ namespace MPX
 			create (PluginManager &);
 
 			void
+			on_selection_changed();
+
+			void
 			on_row_changed(const Gtk::TreeModel::Path&, const Gtk::TreeModel::iterator&);
 
 			void
 			show_dialog();
+
+			void
+			show_options();
 
 			void
 			set_error_text();
@@ -64,7 +70,7 @@ namespace MPX
 
 			PluginManager & m_Manager;
 			PTV * m_PTV;
-			Gtk::Button * buTraceback;
+			Gtk::Button * buTraceback, * buOptions;
 			Gtk::Label * label;
     };
 }

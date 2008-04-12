@@ -43,6 +43,7 @@ namespace MPX
 				public:
 
 					Gtk::TreeModelColumn<bool>				Active;
+					Gtk::TreeModelColumn<bool>				GUI;
 					Gtk::TreeModelColumn<Glib::ustring>		NameDesc;
 					Gtk::TreeModelColumn<Glib::ustring>		Tooltip;
 					Gtk::TreeModelColumn<gint64>			Id;
@@ -51,6 +52,7 @@ namespace MPX
 				ColumnsT ()
 				{
 					add(Active);
+					add(GUI);
 					add(NameDesc);
 					add(Tooltip);
 					add(Id);
@@ -98,12 +100,14 @@ namespace MPX
 																		Glib::Markup::escape_text( i->second->get_copyright() ),
 																		Glib::Markup::escape_text( i->second->get_website() ) );
 					(*iter)[Columns.Active] = i->second->get_active();
+					(*iter)[Columns.GUI] = i->second->get_has_gui();
 					(*iter)[Columns.Id] = i->second->get_id();
 
 				}
 
 				set_model (Store);
-				set_tooltip_column(2);
+				set_tooltip_column(3);
+				signal_row_activated().connect( sigc::mem_fun( *this, &PTV::on_row_activated ) );
 			}
 
 			void
@@ -121,6 +125,37 @@ namespace MPX
 					result = m_Manager.activate(id);
 
 				(*iter)[Columns.Active] = result;
+			}
+
+			void
+			on_row_activated (const TreeModel::Path& path, TreeViewColumn* /*column*/)
+			{
+				TreeIter iter = Store->get_iter(path);
+				bool gui = (*iter)[Columns.GUI];
+				gint64 id = (*iter)[Columns.Id];
+
+				if(gui)
+					m_Manager.show(id);
+			}
+
+			bool
+			is_active(const TreeModel::iterator& iter) const
+			{
+				return (*iter)[Columns.Active];
+			}
+
+			bool
+			has_gui(const TreeModel::iterator& iter) const
+			{
+				return (*iter)[Columns.GUI];
+			}
+
+			void
+			show_gui()
+			{
+				Glib::RefPtr<TreeSelection> sel = get_selection();
+				TreeModel::iterator iter = sel->get_selected();
+				on_row_activated( get_model()->get_path( iter ), NULL );
 			}
 
 			~PTV ()
@@ -141,6 +176,7 @@ namespace MPX
 		, m_Manager(obj_manager)
 		, m_PTV(new PTV(xml, obj_manager))
 		{
+			m_PTV->get_selection()->signal_changed().connect( sigc::mem_fun( *this, &PluginManagerGUI::on_selection_changed ) );
 			m_PTV->get_model()->signal_row_changed().connect( sigc::mem_fun( *this, &PluginManagerGUI::on_row_changed ) );
 
 			xml->get_widget("label", label);
@@ -151,9 +187,16 @@ namespace MPX
 				buTraceback->set_sensitive();
 			}
 
+			Gtk::Label * optionslabel;
+			xml->get_widget("optionslabel", optionslabel);
+			optionslabel->set_text(_("Plugin Options"));
+
 
 			xml->get_widget("traceback", buTraceback);
 			buTraceback->signal_clicked().connect( sigc::mem_fun( *this, &PluginManagerGUI::show_dialog ) );
+
+			xml->get_widget("options", buOptions);
+			buOptions->signal_clicked().connect( sigc::mem_fun( *this, &PluginManagerGUI::show_options ) );
 
 			Gtk::Button * buClose;
 			xml->get_widget("close", buClose);
@@ -176,6 +219,17 @@ namespace MPX
 		}
 
 		void
+		PluginManagerGUI::on_selection_changed()
+		{
+			Glib::RefPtr<TreeSelection> sel = m_PTV->get_selection();
+			TreeModel::iterator iter = sel->get_selected();
+			if( m_PTV->is_active(iter) && m_PTV->has_gui(iter) )
+				buOptions->set_sensitive();
+			else
+				buOptions->set_sensitive(false);
+		}
+
+		void
 		PluginManagerGUI::on_row_changed(const Gtk::TreeModel::Path& /*path*/, const Gtk::TreeModel::iterator& /*iter*/)
 		{
 			if(m_Manager.get_traceback_count())
@@ -193,7 +247,7 @@ namespace MPX
 		void
 		PluginManagerGUI::show_dialog()
 		{
-			Gtk::MessageDialog dialog (_("Failed to activate: ") + m_Manager.get_last_traceback().get_name(), false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_CLOSE);
+			Gtk::MessageDialog dialog (Glib::ustring::compose(_("Failed to %1: %2"), m_Manager.get_last_traceback().get_method(), m_Manager.get_last_traceback().get_name()), false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_CLOSE);
 			dialog.set_title (_("Plugin traceback - MPX"));
 			dialog.set_secondary_text (m_Manager.pull_last_traceback().get_traceback());
 			dialog.run();
@@ -206,11 +260,19 @@ namespace MPX
 				buTraceback->set_sensitive(false);
 			}
 		}
+
+		void
+		PluginManagerGUI::show_options()
+		{
+			m_PTV->show_gui();
+		}
 		
 		void
 		PluginManagerGUI::set_error_text()
 		{
-			Glib::ustring text = _("<b>Failed to activate: ") + m_Manager.get_last_traceback().get_name() + "</b> ";
+			Glib::ustring text = Glib::ustring::compose(_("<b>Failed to %1: %2</b>"),
+											m_Manager.get_last_traceback().get_method(),
+											m_Manager.get_last_traceback().get_name());
 
 			unsigned int n = m_Manager.get_traceback_count();
 			if(n > 1)
