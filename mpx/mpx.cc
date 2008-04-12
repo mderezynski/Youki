@@ -1561,7 +1561,7 @@ namespace MPX
 		pa = PAccess<MPX::Play>(*m_Play);
 	}
 
-	Metadata
+	Metadata const&
 	Player::get_metadata ()
 	{
         if(m_Metadata)
@@ -1879,6 +1879,8 @@ namespace MPX
 		m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
 
 	  reparse_metadata ();
+
+	  g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
 	}
 
 	void
@@ -1988,8 +1990,6 @@ namespace MPX
 
 	  source->send_caps ();
 	  source->send_metadata ();
-
-	  g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
 	}
 
 	void

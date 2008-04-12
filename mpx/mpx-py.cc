@@ -152,15 +152,21 @@ namespace mpxpy
 		self = MPX::Variant();
 	}
 
-	MPX::OVariant
+	MPX::OVariant &
 	track_getitem(MPX::Track &self, int id) 
 	{
+        if(!self.has(id))
+            throw std::runtime_error("Track does not contain attribute");
+
 		return self[id];
 	}
 
-	MPX::OVariant
+	MPX::OVariant &
 	metadata_getitem(MPX::Metadata &self, int id) 
 	{
+        if(!self.has(id))
+            throw std::runtime_error("Metadata does not contain attribute");
+
 		return self[id];
 	}
 
@@ -171,10 +177,22 @@ namespace mpxpy
 	}
 
 	int
-	metadata_len(MPX::Track &self)
+	metadata_len(MPX::Metadata &self)
 	{
 		return MPX::N_ATTRIBUTES_INT;
 	}
+
+    std::string
+    track_repr (MPX::Track &self)
+    {
+        return "mpx.Track";
+    }
+
+    std::string
+    metadata_repr(MPX::Metadata &self)
+    {
+        return "mpx.Metadata";
+    }
 
 }
 
@@ -281,17 +299,19 @@ BOOST_PYTHON_MODULE(mpx)
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::Track >("Track")
-		.def("__getitem__", &mpxpy::track_getitem, return_value_policy<return_by_value>()) 
+		.def("__getitem__", &mpxpy::track_getitem, /*return_value_policy<return_by_value>()*/ return_internal_reference<>()) 
 		.def("__len__", &mpxpy::track_len, return_value_policy<return_by_value>())
+        .def("__repr__", &mpxpy::track_repr, return_value_policy<return_by_value>()) 
 		.def("get", &mpxpy::track_getitem, return_value_policy<return_by_value>()) 
 	;
 
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::Metadata >("Metadata")
-		.def("__getitem__", &mpxpy::metadata_getitem, return_value_policy<return_by_value>()) 
+		.def("__getitem__", &mpxpy::metadata_getitem, /*return_value_policy<return_by_value>()*/ return_internal_reference<>()) 
 		.def("__len__", &mpxpy::metadata_len, return_value_policy<return_by_value>())
-		.def("get", &mpxpy::metadata_getitem, return_value_policy<return_by_value>()) 
+        .def("__repr__", &mpxpy::metadata_repr, return_value_policy<return_by_value>()) 
+		.def("get", &mpxpy::metadata_getitem, /*return_value_policy<return_by_value>()*/ return_internal_reference<>()) 
 		.def("get_image", &MPX::Metadata::get_image)
 	;
 
@@ -338,7 +358,7 @@ BOOST_PYTHON_MODULE(mpx)
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::Player, boost::noncopyable>("Player", boost::python::no_init)
-		.def("get_metadata", &MPX::Player::get_metadata)
+		.def("get_metadata", &MPX::Player::get_metadata, return_internal_reference<>())
 		.def("gobj", &mpxpy::player_get_gobject)
 		.def("play", &MPX::Player::play)
 		.def("pause", &MPX::Player::play)

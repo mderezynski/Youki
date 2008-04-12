@@ -118,9 +118,7 @@ namespace
           {
               g_message (_("Got SIGTERM: Exiting (It's all right!)"));
 
-              gtkLock.lock ();
               bool gtk_running = Gtk::Main::level();
-              gtkLock.unlock ();
 
               if (gtk_running)
                   Gtk::Main::quit (); 

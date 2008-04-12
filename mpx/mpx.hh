@@ -132,7 +132,7 @@ namespace MPX
         void
         get_object (PAccess<MPX::Play>&);
 
-		Metadata // we don't return a reference since it might go away while a plugin processes it (boost::optional)
+		Metadata const& 
 		get_metadata ();
 
 		void

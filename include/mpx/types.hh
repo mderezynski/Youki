@@ -114,7 +114,13 @@ namespace MPX
               return data[index];
           }
 
-          Track () { data.resize( N_ATTRIBUTES_INT ); }
+          Track () { data = DataT (DataT::size_type(N_ATTRIBUTES_INT)); }
+
+          bool
+          has(DataT::size_type index)
+          {
+            return bool(data[index]);
+          }
     };
 
     typedef boost::optional<std::string> ostring;

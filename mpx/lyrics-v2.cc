@@ -213,6 +213,8 @@ namespace MPX
         m_soup_request->add_header("Accept-Charset", "utf-8");
         m_soup_request->add_header("Connection", "close");
 
+        g_message("%s: LyricWiki request: '%s'", G_STRLOC, (ustring(request_url)).c_str());
+
         int code = m_soup_request->run ();
 		if( code != 200)
 			throw LyricsReturnNotOK();
