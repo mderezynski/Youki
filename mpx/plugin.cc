@@ -234,6 +234,7 @@ namespace MPX
 
 			PyObject *pytype = NULL, *pyvalue = NULL, *pytraceback = NULL, *pystring = NULL;
 			PyErr_Fetch (&pytype, &pyvalue, &pytraceback);
+			PyErr_Clear();
 			pystring = PyObject_Str(pyvalue);
 
 			std::string traceback = PyString_AsString (pystring);
