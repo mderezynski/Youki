@@ -182,6 +182,33 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 
         self.extract_ids(rv, v)
 
+    def RANDOM_lastfm3(self, lib, v):
+
+        rv = mpx.SQLRowV()
+        lib.getSQL(rv, "SELECT id, artist, title FROM track_view ORDER BY random() LIMIT 1")
+        artist = rv[0]["artist"].get_string()
+        title = rv[0]["title"].get_string()
+
+        try:
+            uri = u"http://ws.audioscrobbler.com/1.0/artist/%s/toptracks.xml" % (urllib.quote(artist), urllib.quote(title))
+            lastfm = NonvalidatingReader.parseUri(uri)
+            ctx = Context(lastfm)
+
+            tracks_xml = Evaluate("//track/name", context=ctx)
+            tracks = []
+       
+            for track in tracks_xml: 
+                if track.firstChild:
+                    tracks.append(str(track.firstChild.data))
+
+            for track in tracks:
+                lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist LIKE '%s' AND title LIKE '%s' LIMIT 1" % (artist.replace("'","''"), track.replace("'","''"))))
+        except:
+            print "Error fetching Last.fm document"
+
+        random.shuffle(rv)
+        self.extract_ids(rv, v)
+
     def RANDOM_genre(self, lib, v):
 
         rv = mpx.SQLRowV()
@@ -193,8 +220,8 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 
     def OPTION_random_mix(self, lib, v):
 
-        random_algos = [ self.RANDOM_lastfm, self.RANDOM_lastfm2, self.RANDOM_genre ]
-        random_algos[ random.randint(0,1) ](lib, v)
+        random_algos = [ self.RANDOM_lastfm, self.RANDOM_lastfm2, self.RANDOM_lastfm3, self.RANDOM_genre ]
+        random_algos[ random.randint(0,3) ](lib, v)
 
     def OPTION_sounds_of(self, lib, v):
     
