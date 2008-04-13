@@ -108,13 +108,13 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
         rv = mpx.SQLRowV()
         for mbid in mbids:
             if mbid.firstChild:
-                lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY mpxrand() LIMIT 1"))
+                lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY random() LIMIT 1"))
         self.extract_ids(rv, v)
 
     def RANDOM_lastfm(self, lib, v):
 
         rv = mpx.SQLRowV()
-        lib.getSQL(rv, "SELECT id, artist FROM track_view ORDER BY mpxrand() LIMIT 1")
+        lib.getSQL(rv, "SELECT id, artist FROM track_view ORDER BY random() LIMIT 1")
         artist = rv[0]["artist"].get_string()
 
         uri = u"http://ws.audioscrobbler.com/1.0/artist/%s/similar.xml" % urllib.quote(artist)
@@ -137,24 +137,54 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 
         for mbid in mbids:
             if matches[mbids.index(mbid)] > 50:
-                lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid + "' ORDER BY mpxrand() LIMIT 1"))
+                lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid + "' ORDER BY random() LIMIT 1"))
 
         self.extract_ids(rv, v)
 
+    def RANDOM_lastfm2(self, lib, v):
+
+        rv = mpx.SQLRowV()
+        lib.getSQL(rv, "SELECT id, artist, title FROM track_view ORDER BY random() LIMIT 1")
+        artist = rv[0]["artist"].get_string()
+        title = rv[0]["title"].get_string()
+
+        uri = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/similar.xml" % (urllib.quote(artist), urllib.quote(title))
+        lastfm = NonvalidatingReader.parseUri(uri)
+        ctx = Context(lastfm)
+
+        artists_xml = Evaluate("//track/artist/name", context=ctx)
+        artists = []
+   
+        for artist in artists_xml: 
+            if artist.firstChild:
+                artists.append(str(artist.firstChild.data))
+        
+        tracks_xml = Evaluate("//track/name", context=ctx)
+        tracks = []
+   
+        for track in tracks_xml: 
+            if track.firstChild:
+                tracks.append(str(track.firstChild.data))
+
+        for artist in artists:
+            track = tracks[artists.index(artist)]
+            lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist = '%s' AND title = '%s'" % (artist.replace("'","''"), track.replace("'","''"))))
+
+        self.extract_ids(rv, v)
 
     def RANDOM_genre(self, lib, v):
 
         rv = mpx.SQLRowV()
-        lib.getSQL(rv, "SELECT id, genre FROM track_view WHERE genre IS NOT NULL ORDER BY mpxrand() LIMIT 1")
+        lib.getSQL(rv, "SELECT id, genre FROM track_view WHERE genre IS NOT NULL ORDER BY random() LIMIT 1")
         genre = rv[0]["genre"].get_string()
-        lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY mpxrand() LIMIT 9" % genre)
+        lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY random() LIMIT 9" % genre)
         self.extract_ids(rv, v)
 
 
     def OPTION_random_mix(self, lib, v):
 
-        random_algos = [ self.RANDOM_lastfm, self.RANDOM_genre ]
-        random_algos[ random.randint(0,0) ](lib, v)
+        random_algos = [ self.RANDOM_lastfm, self.RANDOM_lastfm2, self.RANDOM_genre ]
+        random_algos[ random.randint(0,1) ](lib, v)
 
     def OPTION_sounds_of(self, lib, v):
     
@@ -171,13 +201,13 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
         
         rv = mpx.SQLRowV()
         for x in range(10):
-            lib.getSQL(rv, "SELECT id FROM track_view WHERE date >= " + str(lower) + " AND date < " + str(upper) + " ORDER BY mpxrand() LIMIT 1")
+            lib.getSQL(rv, "SELECT id FROM track_view WHERE date >= " + str(lower) + " AND date < " + str(upper) + " ORDER BY random() LIMIT 1")
         self.extract_ids(rv, v)
 
     def OPTION_top_tunes(self, lib, v):
     
         rv = mpx.SQLRowV()
-        lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY mpxrand() LIMIT 10")
+        lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY random() LIMIT 10")
         self.extract_ids(rv, v)
 
     def OPTION_play_all(self, lib, v):
@@ -189,7 +219,7 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
     def OPTION_entertain_me(self, lib, v):
 
         rv = mpx.SQLRowV()
-        lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC, rating DESC, mpxrand() LIMIT 10")
+        lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC, rating DESC, random() LIMIT 10")
         self.extract_ids(rv, v)
 
     def get_icon(self):

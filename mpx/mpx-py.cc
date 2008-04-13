@@ -287,10 +287,7 @@ namespace MPX
                 : Request(url, post)
                 , m_signal0(new ::pysigc::sigc3<char const*, guint, guint>(Signals.Callback))
                 {
-                  m_session = soup_session_async_new ();
-                  m_message = soup_message_new (post ? "POST" : "GET", url.c_str());
-                  g_object_ref(G_OBJECT(m_session));
-                  g_object_ref(G_OBJECT(m_message));
+                  g_object_ref(G_OBJECT(gobj()));
                 }
 
                 ::pysigc::sigc3<char const*, guint, guint> &
