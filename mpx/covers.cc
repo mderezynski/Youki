@@ -63,7 +63,7 @@ namespace
     boost::format("http://ec1.images-amazon.com/images/P/%s.01.MZZZZZZZ.jpg"),
   };
 
-  static boost::format mbxml_f ("http://musicbrainz.org/ws/1/release/%s?type=xml&inc=url-rels");
+  static boost::format mbxml_f ("http://www.uk.musicbrainz.org/ws/1/release/%s?type=xml&inc=url-rels");
 
   int
   pixel_size (MPX::CoverSize size)
