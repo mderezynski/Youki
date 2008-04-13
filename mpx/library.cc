@@ -235,7 +235,7 @@ namespace MPX
         static boost::format
           album_table_f ("CREATE TABLE IF NOT EXISTS album "
                           "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
-                          "'%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, UNIQUE "
+                          "'%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, UNIQUE "
                           "('%s', '%s', '%s', '%s', '%s'));");
 
         m_SQL->exec_sql ((album_table_f % attrs[ATTRIBUTE_ALBUM].id
@@ -245,6 +245,7 @@ namespace MPX
 										  % "album_genre" 
 										  % "album_rating"
                                           % "album_artist_j"
+                                          % "album_insert_date"
                                           % attrs[ATTRIBUTE_ALBUM].id
                                           % attrs[ATTRIBUTE_MB_ALBUM_ID].id
                                           % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
@@ -1060,6 +1061,17 @@ namespace MPX
         }
         else
             m_SQL->exec_sql("COMMIT;");
+
+        // Set album insert dates
+        RowV rows;
+        getSQL(rows, "SELECT DISTINCT insert_date, album_j FROM track GROUP BY album_j;");
+
+        for(RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+        {
+            gint64 date = get<gint64>(i->find("insert_date")->second);
+            gint64 album_j = get<gint64>(i->find("album_j")->second);
+            execSQL((boost::format("UPDATE album SET album_insert_date = '%lld' WHERE id = '%lld'") % date % album_j).str());
+        }
 
         Signals.ScanEnd.emit(p->added, p->uptodate, p->updated, p->erroneous, p->collection.size());
         p.reset();

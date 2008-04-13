@@ -135,11 +135,9 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
             if match.firstChild:
                 matches.append(float(match.firstChild.data))
 
-        while len(rv) is 1:
-
-            for mbid in mbids:
-                if matches[mbids.index(mbid)] > 50:
-                    lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid + "' ORDER BY mpxrand() LIMIT 1"))
+        for mbid in mbids:
+            if matches[mbids.index(mbid)] > 50:
+                lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid + "' ORDER BY mpxrand() LIMIT 1"))
 
         self.extract_ids(rv, v)
 

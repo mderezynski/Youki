@@ -80,6 +80,9 @@ namespace
   ""
   "<menubar name='MenubarMain'>"
   "   <placeholder name='placeholder-source'>"
+  "     <menuitem action='musiclib-sort-by-name'/>"
+  "     <menuitem action='musiclib-sort-by-date'/>"
+  "     <separator/>"
   "     <menu action='menu-source-musiclib'>";
   
   char const * ui_mainmerge2 =
@@ -1063,6 +1066,7 @@ namespace MPX
             Gtk::TreeModelColumn<std::string>                           MBID;
 
             Gtk::TreeModelColumn<gint64>                                Date;
+            Gtk::TreeModelColumn<gint64>                                InsertDate;
             Gtk::TreeModelColumn<gint64>                                Rating;
 
             Gtk::TreeModelColumn<Glib::ustring>                         TrackTitle;
@@ -1081,6 +1085,7 @@ namespace MPX
                 add (ArtistSort);
                 add (MBID);
                 add (Date);
+                add (InsertDate);
                 add (Id);
                 add (Rating);
                 add (TrackTitle);
@@ -1348,6 +1353,12 @@ namespace MPX
                     (*iter)[AlbumColumns.Rating] = rating;
                 }
 
+                if(r.count("album_insert_date"))
+                {
+                    gint64 idate = get<gint64>(r["album_insert_date"]);
+                    (*iter)[AlbumColumns.InsertDate] = idate;
+                }
+
                 std::string date; 
                 if(r.count("mb_release_date"))
                 {
@@ -1396,6 +1407,12 @@ namespace MPX
                     {
                         gint64 rating = get<gint64>(r["album_rating"]);
                         (*iter)[AlbumColumns.Rating] = rating;
+                    }
+
+                    if(r.count("album_insert_date"))
+                    {
+                        gint64 idate = get<gint64>(r["album_insert_date"]);
+                        (*iter)[AlbumColumns.InsertDate] = idate;
                     }
 
                     std::string asin;
@@ -1468,6 +1485,10 @@ namespace MPX
 
                 if((rt_a == ROW_ALBUM) && (rt_b == ROW_ALBUM))
                 {
+#if 0
+                  gint64 alb_a = (*iter_a)[AlbumColumns.InsertDate];
+                  gint64 alb_b = (*iter_b)[AlbumColumns.InsertDate];
+#endif
                   gint64 alb_a = (*iter_a)[AlbumColumns.Date];
                   gint64 alb_b = (*iter_b)[AlbumColumns.Date];
                   std::string art_a = (*iter_a)[AlbumColumns.ArtistSort];
@@ -1767,6 +1788,12 @@ namespace Source
         m_PluginManager->load_plugins();
 
         Glib::RefPtr<Gtk::IconFactory> factory = Gtk::IconFactory::create();
+
+        Gtk::RadioButtonGroup gr1;
+        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-date", "Sort Albums By Date"));
+        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-date"))->property_value() = 0;
+        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-name", "Sort Albums By Artist/Album"));
+        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-name"))->property_value() = 1;
 
         m_MergedUI = ui_mainmerge1;
         PlaylistPluginHoldMap const& map = m_PluginManager->get_map();
