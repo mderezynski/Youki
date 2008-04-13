@@ -181,6 +181,9 @@ namespace MPX
 
 			xml->get_widget("label", label);
 
+			xml->get_widget("traceback", buTraceback);
+			buTraceback->signal_clicked().connect( sigc::mem_fun( *this, &PluginManagerGUI::show_dialog ) );
+
 			if(obj_manager.get_traceback_count())
 			{
 				set_error_text();
@@ -190,10 +193,6 @@ namespace MPX
 			Gtk::Label * optionslabel;
 			xml->get_widget("optionslabel", optionslabel);
 			optionslabel->set_text(_("Plugin Options"));
-
-
-			xml->get_widget("traceback", buTraceback);
-			buTraceback->signal_clicked().connect( sigc::mem_fun( *this, &PluginManagerGUI::show_dialog ) );
 
 			xml->get_widget("options", buOptions);
 			buOptions->signal_clicked().connect( sigc::mem_fun( *this, &PluginManagerGUI::show_options ) );
