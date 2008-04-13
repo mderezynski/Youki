@@ -42,10 +42,11 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
         except:
             print "MPXDJ: No Icon"
 
-        options = ["Entertain Me!", "Play All", "Top Tunes", "New Music", "Memory Lane", "Sounds Of...",
-                   "Forgotten Gems", "Deja Vu", "Random Mix", "Last.fm Tag"]
+        options = ["Entertain Me!", "Random Mix", "Play All", "Top Tunes", "New Music", "Memory Lane", "Sounds Of...",
+                   "Forgotten Gems", "Deja Vu", "Last.fm Tag"]
 
         self.callables = [  self.OPTION_entertain_me,
+                            self.OPTION_random_mix,
                             self.OPTION_play_all,   
                             self.OPTION_top_tunes,
                             None,
@@ -53,20 +54,19 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
                             self.OPTION_sounds_of,
                             None,
                             None,
-                            self.OPTION_random_mix,
                             self.OPTION_lastfm_tag
                          ]
 
         self.helptexts = [
                 "Creates a running order composed of the most frequently played tracks.",
-                "Creates a running order that sorts all of the tracks on the player into basic categories.",
-                "Creates a running order composed of a set number of the most frequently played tracks.",
-                "Creates a running order composed of the most recently loaded tracks during a set amount of time.",
-                "Creates a running order composed of the least frequently played tracks during a set amount of time.",
-                "Select to create a running order composed of tracks from a specific decade.",
-                "Select to create a running order composed of the most popular, but least recently played, tracks during a set amount of time.",
-                "Select to create a running order composed of the most popular and most recently played tracks during a set amount of time.",
-                "Select to create a running order composed of all tracks, in random order, on the player.",
+                "Plays random, but similar tracks",
+                "Plays all tracks in the library",
+                "Plays a set number of the most frequently played tracks.",
+                "",
+                "",
+                "Plays tracks from a specific decade.",
+                "",
+                "",
                 "Creates a playlist from your music library based on a Last.fm tag"
         ]   
 
@@ -148,27 +148,37 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
         artist = rv[0]["artist"].get_string()
         title = rv[0]["title"].get_string()
 
-        uri = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/similar.xml" % (urllib.quote(artist), urllib.quote(title))
-        lastfm = NonvalidatingReader.parseUri(uri)
-        ctx = Context(lastfm)
+        try:
+            uri = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/similar.xml" % (urllib.quote(artist), urllib.quote(title))
+            lastfm = NonvalidatingReader.parseUri(uri)
+            ctx = Context(lastfm)
 
-        artists_xml = Evaluate("//track/artist/name", context=ctx)
-        artists = []
-   
-        for artist in artists_xml: 
-            if artist.firstChild:
-                artists.append(str(artist.firstChild.data))
-        
-        tracks_xml = Evaluate("//track/name", context=ctx)
-        tracks = []
-   
-        for track in tracks_xml: 
-            if track.firstChild:
-                tracks.append(str(track.firstChild.data))
+            artists_xml = Evaluate("//track/artist/name", context=ctx)
+            artists = []
+       
+            for artist in artists_xml: 
+                if artist.firstChild:
+                    artists.append(str(artist.firstChild.data))
+            
+            tracks_xml = Evaluate("//track/name", context=ctx)
+            tracks = []
+       
+            for track in tracks_xml: 
+                if track.firstChild:
+                    tracks.append(str(track.firstChild.data))
 
-        for artist in artists:
-            track = tracks[artists.index(artist)]
-            lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist = '%s' AND title = '%s'" % (artist.replace("'","''"), track.replace("'","''"))))
+            matches_xml = Evaluate("//track/match", context=ctx)
+            matches = []
+       
+            for match in matches_xml: 
+                if match.firstChild:
+                    matches.append(float(match.firstChild.data))
+
+            for artist in artists:
+                track = tracks[artists.index(artist)]
+                lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist LIKE '%s' AND title LIKE '%s' LIMIT 1" % (artist.replace("'","''"), track.replace("'","''"))))
+        except:
+            print "Error fetching Last.fm document"
 
         self.extract_ids(rv, v)
 
