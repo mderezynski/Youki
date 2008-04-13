@@ -83,6 +83,7 @@ namespace
   "     <menu action='menu-source-musiclib'>"
   "         <menuitem action='musiclib-sort-by-name'/>"
   "         <menuitem action='musiclib-sort-by-date'/>"
+  "         <menuitem action='musiclib-sort-by-rating'/>"
   "         <separator/>"
   ""; 
 
@@ -1381,7 +1382,8 @@ namespace MPX
                 else
                     ArtistSort = get<std::string>(r["album_artist"]);
 
-                (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+                //(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+                (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
                 (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                 (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
               }
@@ -1452,7 +1454,8 @@ namespace MPX
                     else
                         ArtistSort = get<std::string>(r["album_artist"]);
 
-                    (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+                    //(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+                    (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
                     (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                     (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
                 }
@@ -1483,6 +1486,30 @@ namespace MPX
               }
 
               int
+              slotSortRating(const TreeIter& iter_a, const TreeIter& iter_b)
+              {
+                AlbumRowType rt_a = (*iter_a)[AlbumColumns.RowType];
+                AlbumRowType rt_b = (*iter_b)[AlbumColumns.RowType];
+
+                if((rt_a == ROW_ALBUM) && (rt_b == ROW_ALBUM))
+                {
+                  gint64 alb_a = (*iter_a)[AlbumColumns.Rating];
+                  gint64 alb_b = (*iter_b)[AlbumColumns.Rating];
+
+                  return alb_b - alb_a;
+                }
+                else if((rt_a == ROW_TRACK) && (rt_b == ROW_TRACK))
+                {
+                  gint64 trk_a = (*iter_a)[AlbumColumns.TrackNumber];
+                  gint64 trk_b = (*iter_b)[AlbumColumns.TrackNumber];
+
+                  return trk_a - trk_b;
+                }
+
+                return 0;
+              }
+
+              int
               slotSortAlpha(const TreeIter& iter_a, const TreeIter& iter_b)
               {
                 AlbumRowType rt_a = (*iter_a)[AlbumColumns.RowType];
@@ -1490,10 +1517,6 @@ namespace MPX
 
                 if((rt_a == ROW_ALBUM) && (rt_b == ROW_ALBUM))
                 {
-#if 0
-                  gint64 alb_a = (*iter_a)[AlbumColumns.InsertDate];
-                  gint64 alb_b = (*iter_b)[AlbumColumns.InsertDate];
-#endif
                   gint64 alb_a = (*iter_a)[AlbumColumns.Date];
                   gint64 alb_b = (*iter_b)[AlbumColumns.Date];
                   std::string art_a = (*iter_a)[AlbumColumns.ArtistSort];
@@ -1762,6 +1785,7 @@ namespace MPX
                 set_model(TreeStoreFilter);
                 TreeStore->set_sort_func(0 , sigc::mem_fun( *this, &AlbumTreeView::slotSortAlpha ));
                 TreeStore->set_sort_func(1 , sigc::mem_fun( *this, &AlbumTreeView::slotSortDate ));
+                TreeStore->set_sort_func(2 , sigc::mem_fun( *this, &AlbumTreeView::slotSortRating ));
                 TreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
 
                 m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")));
@@ -1827,6 +1851,9 @@ namespace Source
         m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-date", "Sort Albums By Date"),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-date"))->property_value() = 1;
+        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-rating", "Sort Albums By Rating"),
+                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
+        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-rating"))->property_value() = 2;
 
         m_MergedUI = ui_mainmerge1;
         PlaylistPluginHoldMap const& map = m_PluginManager->get_map();

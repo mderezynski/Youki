@@ -347,7 +347,9 @@ class AudioScrobblerPost:
         self.posturl = None
         self.npurl = None
         self.cv = threading.Condition()
+        self.cvnp = threading.Condition()
         self.cachelock = threading.Lock()
+        self.nplock = threading.Lock()
         
     def auth(self):
         
@@ -507,15 +509,24 @@ class AudioScrobblerPost:
                         'o[%s]': source.encode('utf8'),
                         }
             self.cache.append(track)
-    
-    def nowplaying(self, 
-                  artist_name,
-                  song_title,
-                  length=u'',
-                  tracknumber=u'', 
-                  album=u'',
-                  mbid=u''):
 
+    def nowplaying(self, artist_name, song_title, length=u'', tracknumber=u'', album=u'', mbid=u''):
+
+        self.cvnp.acquire()
+
+        self.npdone = False
+        data = (artist_name, song_title, length, tracknumber, album, mbid,)
+        self.npthread = thread.start_new_thread(self.nowplaying_thread, data)
+
+        while not self.npdone:
+            self.cvnp.wait(0.1)
+
+        self.cvnp.release ()
+    
+    def nowplaying_thread(self, artist_name, song_title, length=u'', tracknumber=u'', album=u'', mbid=u''): 
+
+        self.cvnp.acquire()
+ 
         self.auth()
         
         p = {}
@@ -558,6 +569,10 @@ class AudioScrobblerPost:
         elif response[0].startswith('BADSESSION'):
             self.authenticated = False
         
+        self.npdone = True
+        self.cvnp.notify()
+        self.cvnp.release()
+
     def post(self):
         
         """
@@ -836,12 +851,12 @@ class MPXAudioScrobbler(mpx.Plugin):
 
         print "Posting now-playing with MBID: " + p_mbid + " at date " + str(time.time())
 
-        try:
-            self.post.nowplaying(str(p_artist),
+        #try:
+        self.post.nowplaying(str(p_artist),
                                  str(p_title),
                                  str(p_len),
                                  str(p_tracknumber),
                                  str(p_album),
                                  str(p_mbid))
-        except:
-            print ">> Error while posting"
+        #except:
+        #   print ">> Error while posting"
