@@ -80,11 +80,12 @@ namespace
   ""
   "<menubar name='MenubarMain'>"
   "   <placeholder name='placeholder-source'>"
-  "     <menuitem action='musiclib-sort-by-name'/>"
-  "     <menuitem action='musiclib-sort-by-date'/>"
-  "     <separator/>"
-  "     <menu action='menu-source-musiclib'>";
-  
+  "     <menu action='menu-source-musiclib'>"
+  "         <menuitem action='musiclib-sort-by-name'/>"
+  "         <menuitem action='musiclib-sort-by-date'/>"
+  "         <separator/>"
+  ""; 
+
   char const * ui_mainmerge2 =
   "     </menu>"
   "   </placeholder>"
@@ -1103,10 +1104,14 @@ namespace MPX
               typedef std::map<std::string, IterSet> MBIDIterMap;
               typedef std::map<gint64, TreeIter> IdIterMap; 
 
-              AlbumColumnsT AlbumColumns;
+            public:
+
               Glib::RefPtr<Gtk::TreeStore> TreeStore;
               Glib::RefPtr<Gtk::TreeModelFilter> TreeStoreFilter;
 
+            private:
+
+              AlbumColumnsT AlbumColumns;
               PAccess<MPX::Library> m_Lib;
               PAccess<MPX::Covers> m_Covers;
               MPX::Source::PlaybackSourceMusicLib & m_MLib;
@@ -1478,7 +1483,7 @@ namespace MPX
               }
 
               int
-              slotSort(const TreeIter& iter_a, const TreeIter& iter_b)
+              slotSortAlpha(const TreeIter& iter_a, const TreeIter& iter_b)
               {
                 AlbumRowType rt_a = (*iter_a)[AlbumColumns.RowType];
                 AlbumRowType rt_b = (*iter_b)[AlbumColumns.RowType];
@@ -1509,6 +1514,31 @@ namespace MPX
 
                 return 0;
               }
+
+              int
+              slotSortDate(const TreeIter& iter_a, const TreeIter& iter_b)
+              {
+                AlbumRowType rt_a = (*iter_a)[AlbumColumns.RowType];
+                AlbumRowType rt_b = (*iter_b)[AlbumColumns.RowType];
+
+                if((rt_a == ROW_ALBUM) && (rt_b == ROW_ALBUM))
+                {
+                  gint64 alb_a = (*iter_a)[AlbumColumns.InsertDate];
+                  gint64 alb_b = (*iter_b)[AlbumColumns.InsertDate];
+
+                  return alb_a - alb_b;
+                }
+                else if((rt_a == ROW_TRACK) && (rt_b == ROW_TRACK))
+                {
+                  gint64 trk_a = (*iter_a)[AlbumColumns.TrackNumber];
+                  gint64 trk_b = (*iter_b)[AlbumColumns.TrackNumber];
+
+                  return trk_a - trk_b;
+                }
+
+                return 0;
+              }
+
 
               void
               cellDataFuncCover (CellRenderer * basecell, TreeModel::iterator const &iter)
@@ -1730,8 +1760,9 @@ namespace MPX
                 m_FilterEntry->signal_changed().connect (sigc::mem_fun (TreeStoreFilter.operator->(), &TreeModelFilter::refilter));
 
                 set_model(TreeStoreFilter);
-                TreeStore->set_default_sort_func(sigc::mem_fun( *this, &AlbumTreeView::slotSort ));
-                TreeStore->set_sort_column(GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID, Gtk::SORT_ASCENDING);
+                TreeStore->set_sort_func(0 , sigc::mem_fun( *this, &AlbumTreeView::slotSortAlpha ));
+                TreeStore->set_sort_func(1 , sigc::mem_fun( *this, &AlbumTreeView::slotSortDate ));
+                TreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
 
                 m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")));
                 m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(72,72,Gdk::INTERP_BILINEAR));
@@ -1790,10 +1821,12 @@ namespace Source
         Glib::RefPtr<Gtk::IconFactory> factory = Gtk::IconFactory::create();
 
         Gtk::RadioButtonGroup gr1;
-        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-date", "Sort Albums By Date"));
-        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-date"))->property_value() = 0;
-        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-name", "Sort Albums By Artist/Album"));
-        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-name"))->property_value() = 1;
+        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-name", "Sort Albums By Artist/Album"),
+                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
+        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-name"))->property_value() = 0;
+        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-date", "Sort Albums By Date"),
+                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
+        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-date"))->property_value() = 1;
 
         m_MergedUI = ui_mainmerge1;
         PlaylistPluginHoldMap const& map = m_PluginManager->get_map();
@@ -1837,6 +1870,13 @@ namespace Source
     PlaybackSourceMusicLib::add_menu ()
     {
         return m_MainUIManager->add_ui_from_string(m_MergedUI);
+    }
+
+    void
+    PlaybackSourceMusicLib::on_sort_column_change ()
+    {
+        int value = RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action ("musiclib-sort-by-name"))->get_current_value();
+        m_Private->m_TreeViewAlbums->TreeStore->set_sort_column(value, Gtk::SORT_ASCENDING);    
     }
 
     void

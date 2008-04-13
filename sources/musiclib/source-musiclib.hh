@@ -64,6 +64,9 @@ namespace Source
                 ~PlaybackSourceMusicLib ();
 
                 void
+                on_sort_column_change ();
+
+                void
                 play_album(gint64, bool = false);
 
                 void
