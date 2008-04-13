@@ -199,6 +199,7 @@ namespace MPX
     {
       g_signal_connect (G_OBJECT (m_message), "restarted", G_CALLBACK (restarted), this);
       soup_session_queue_message (m_session, m_message, SoupMessageCallbackFn (got_answer), this);
+      g_message("%s: Running", G_STRLOC);
     }
 
     void
@@ -225,6 +226,7 @@ namespace MPX
     Request::add_request (std::string const& type,
                           std::string const& request)
     {
+      g_message("%s: Adding request: %s", G_STRLOC, request.c_str());
       soup_message_set_request (m_message, type.c_str(), SOUP_BUFFER_SYSTEM_OWNED /* we can't rely on the std::string not being destroyed */,
         g_strdup (const_cast<char*>(request.c_str())), strlen (request.c_str()));
       m_post = true;

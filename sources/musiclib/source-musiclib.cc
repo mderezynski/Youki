@@ -434,7 +434,7 @@ namespace MPX
               }
 
               void          
-              append_trackid_v (TrackIdV const& tid_v)
+              append_trackid_v (TrackIdV const& tid_v, bool order = false)
               {
                 if(tid_v.empty())
                     return;
@@ -451,7 +451,7 @@ namespace MPX
                 }
 
                 SQL::RowV v;
-                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s)") % numbers.str()).str()); 
+                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s) %s") % numbers.str() % (order ? "ORDER BY track_view.track" : "")).str()); 
 
                 TreeIter iter = ListStore->append();
                 m_PlayInitIter = iter;
@@ -1433,7 +1433,7 @@ namespace MPX
                         std::string mbid = get<std::string>(r["mb_album_id"]);
                         IterSet & s = m_MBIDIterMap[mbid];
                         s.insert(iter);
-                        m_Covers.get().cache(mbid, asin);
+                        m_Covers.get().cache(mbid, asin, false /* don't try to fetch from the web */);
                         (*iter)[AlbumColumns.MBID] = mbid; 
                     }
 
@@ -1918,7 +1918,7 @@ namespace Source
             idv.push_back(get<gint64>(r["id"]));
         }
         m_Private->m_TreeViewPlaylist->clear();
-        m_Private->m_TreeViewPlaylist->append_trackid_v(idv);
+        m_Private->m_TreeViewPlaylist->append_trackid_v(idv, true);
         if(play)
           Signals.PlayRequest.emit();
     }
@@ -1927,7 +1927,7 @@ namespace Source
     PlaybackSourceMusicLib::play_tracks(TrackIdV const& idv , bool play)
     {
         m_Private->m_TreeViewPlaylist->clear();
-        m_Private->m_TreeViewPlaylist->append_trackid_v(idv);
+        m_Private->m_TreeViewPlaylist->append_trackid_v(idv, false);
         if(play)
           Signals.PlayRequest.emit();
     }

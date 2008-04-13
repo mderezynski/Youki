@@ -5,8 +5,7 @@ __version__ = "$Revision$"[11:-2]
 __docformat__ = "restructuredtext"
 
 
-import datetime, locale, md5, site, sys, time, urllib, urllib2, os, threading, thread, mpx
-from mpx import AttributeId
+import datetime, locale, md5, site, sys, time, urllib, urllib2, os, mpx
 
 try:
     # Python 2.5, module bundled:
@@ -230,8 +229,8 @@ class AudioScrobblerQuery:
                 message = error.reason.args[1]
                 raise AudioScrobblerConnectionError('network', code, message)
             elemtree = ElementTree.ElementTree(file=response)
-            if response.headers['pragma', None] != 'no-cache':
-                last_modified = response.headers['last-modified', None]
+            if response.headers.get('pragma', None) != 'no-cache':
+                last_modified = response.headers.get('last-modified', None)
             else:
                 last_modified = None
             _self._cache[url] = AudioScrobblerCache(elemtree, last_modified)
@@ -346,10 +345,6 @@ class AudioScrobblerPost:
         self.updateurl = None
         self.posturl = None
         self.npurl = None
-        self.cv = threading.Condition()
-        self.cvnp = threading.Condition()
-        self.cachelock = threading.Lock()
-        self.nplock = threading.Lock()
         
     def auth(self):
         
@@ -509,24 +504,15 @@ class AudioScrobblerPost:
                         'o[%s]': source.encode('utf8'),
                         }
             self.cache.append(track)
-
-    def nowplaying(self, artist_name, song_title, length=u'', tracknumber=u'', album=u'', mbid=u''):
-
-        self.cvnp.acquire()
-
-        self.npdone = False
-        data = (artist_name, song_title, length, tracknumber, album, mbid,)
-        self.npthread = thread.start_new_thread(self.nowplaying_thread, data)
-
-        while not self.npdone:
-            self.cvnp.wait(0.1)
-
-        self.cvnp.release ()
     
-    def nowplaying_thread(self, artist_name, song_title, length=u'', tracknumber=u'', album=u'', mbid=u''): 
+    def nowplaying(self, 
+                  artist_name,
+                  song_title,
+                  length=u'',
+                  tracknumber=u'', 
+                  album=u'',
+                  mbid=u''):
 
-        self.cvnp.acquire()
- 
         self.auth()
         
         p = {}
@@ -569,10 +555,6 @@ class AudioScrobblerPost:
         elif response[0].startswith('BADSESSION'):
             self.authenticated = False
         
-        self.npdone = True
-        self.cvnp.notify()
-        self.cvnp.release()
-
     def post(self):
         
         """
@@ -640,29 +622,11 @@ class AudioScrobblerPost:
             raise AudioScrobblerPostFailed(msg)
         
     def flushcache(self):
-
-        self.cv.acquire()
-
-        self.flushdone = False
-        self.flushthread = thread.start_new_thread(self.flushcache_real, (self,))
-
-        while not self.flushdone:
-            self.cv.wait(0.1)
-
-        self.cv.release ()
-
-    def flushcache_real(self, blah):
         
         """ Post all the tracks in the cache """
-       
-        self.cv.acquire()
- 
+        
         while len(self.cache) > 0:
             self.post()
-
-        self.flushdone = True
-        self.cv.notify()
-        self.cv.release()
     
     def savecache(self, filename):
         
@@ -699,7 +663,7 @@ class AudioScrobblerPost:
         #   track = {}
         #   for key in ['a','t','l','i','b','m','r','n','o']:
         #       if conf.has_option('Track ' + str(count), key + '[%s]'):
-        #           track[key + '[%s]'] = conf['Track ' + str(count), key + '[%s]']
+        #           track[key + '[%s]'] = conf.get('Track ' + str(count), key + '[%s]')
         #   self.cache.append(track)
         #   count += 1
         
@@ -757,7 +721,7 @@ class MPXAudioScrobbler(mpx.Plugin):
 
     def pstate_changed(self, blah, state):
 
-        if state is mpx.PlayStatus.STOPPED:
+        if state == mpx.PlayStatus.STOPPED:
             self.post.flushcache ()
         
     def track_played(self, blah):
@@ -765,28 +729,28 @@ class MPXAudioScrobbler(mpx.Plugin):
         p_date = time.time()
         m = self.player.get_metadata()
 
-        if m[AttributeId.ARTIST].is_initialized() and m[AttributeId.TITLE].is_initialized():
+        if m.get(mpx.AttributeId.ARTIST).is_initialized() and m.get(mpx.AttributeId.TITLE).is_initialized():
 
-            p_artist = m[AttributeId.ARTIST].val().get_string()
-            p_title = m[AttributeId.TITLE].val().get_string()
+            p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
+            p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
 
             p_len = 0
-            m_len = m[AttributeId.TIME]
+            m_len = m.get(mpx.AttributeId.TIME)
             if m_len.is_initialized():
                 p_len = m_len.val().get_int()
 
             p_tracknumber=u''
-            m_tracknumber = m[AttributeId.TRACK]
+            m_tracknumber = m.get(mpx.AttributeId.TRACK)
             if m_tracknumber.is_initialized():
                 p_tracknumber = str(m_tracknumber.val().get_int())
 
             p_album=u''
-            m_album = m[AttributeId.ALBUM]
+            m_album = m.get(mpx.AttributeId.ALBUM)
             if m_album.is_initialized():
                 p_album = m_album.val().get_string()
 
             p_mbid=u''
-            m_mbid = m[AttributeId.MB_TRACK_ID]
+            m_mbid = m.get(mpx.AttributeId.MB_TRACK_ID)
             if m_mbid.is_initialized():
                 p_mbid = m_mbid.val().get_string()
 
@@ -804,59 +768,41 @@ class MPXAudioScrobbler(mpx.Plugin):
 
         m = self.player.get_metadata()
 
-        if not m[AttributeId.ARTIST]:
-            return
-        
-        if not m[AttributeId.TITLE]:
-            return
+        print ">> AS Now-Playing!"
 
-        p_artist = m[AttributeId.ARTIST].val().get_string()
-        p_title = m[AttributeId.TITLE].val().get_string()
+        if m.get(mpx.AttributeId.ARTIST).is_initialized() and m.get(mpx.AttributeId.TITLE).is_initialized():
 
-        p_len = 0
+            print ">> Posting..." 
 
-        try:
-            m_len = m[AttributeId.TIME]
+            p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
+            p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
+
+            p_len = 0
+            m_len = m.get(mpx.AttributeId.TIME)
             if m_len.is_initialized():
                 p_len = m_len.val().get_int()
-        except:
-            print "No Length"
 
-        p_tracknumber=u''
-
-        try:
-            m_tracknumber = m[AttributeId.TRACK]
+            p_tracknumber=u''
+            m_tracknumber = m.get(mpx.AttributeId.TRACK)
             if m_tracknumber.is_initialized():
                 p_tracknumber = str(m_tracknumber.val().get_int())
-        except:
-            print "No Track Number"
 
-        p_album=u''
-
-        try:
-            m_album = m[AttributeId.ALBUM]
+            p_album=u''
+            m_album = m.get(mpx.AttributeId.ALBUM)
             if m_album.is_initialized():
                 p_album = m_album.val().get_string()
-        except:
-            print "No Album"
 
-        p_mbid=u''
-
-        try:
-            m_mbid = m[AttributeId.MB_TRACK_ID]
+            p_mbid=u''
+            m_mbid = m.get(mpx.AttributeId.MB_TRACK_ID)
             if m_mbid.is_initialized():
                 p_mbid = m_mbid.val().get_string()
-        except:
-            print "No MBID"
 
-        print "Posting now-playing with MBID: " + p_mbid + " at date " + str(time.time())
+            print "Posting now-playing with MBID: " + p_mbid + " at date " + str(time.time())
 
-        #try:
-        self.post.nowplaying(str(p_artist),
+            self.post.flushcache ()
+            self.post.nowplaying(str(p_artist),
                                  str(p_title),
                                  str(p_len),
                                  str(p_tracknumber),
                                  str(p_album),
                                  str(p_mbid))
-        #except:
-        #   print ">> Error while posting"

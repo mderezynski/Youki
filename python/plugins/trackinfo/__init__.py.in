@@ -406,7 +406,6 @@ class TrackInfoDispatcher(mpx.Plugin):
         print ">> TrackInfo Plugin deactivated"
 
     def new_track(self, blah):
-        print blah
         m = self.player.get_metadata()
         self.info.run(m)
 

@@ -187,7 +187,7 @@ namespace MPX
     }
 
     void 
-    Covers::cache (std::string const& mbid, std::string const& asin)
+    Covers::cache (std::string const& mbid, std::string const& asin, bool acquire)
     {
         Glib::Mutex::Lock L (RequestKeeperLock);
         if(RequestKeeper.count(mbid))
@@ -202,15 +202,16 @@ namespace MPX
             return; 
         }
 
-		// OK now it's getting serious
+        if(acquire)
+        {
+            CoverFetchData * data = new CoverFetchData(mbid, asin);
+            RequestKeeper.insert(mbid);
 
-        CoverFetchData * data = new CoverFetchData(mbid, asin);
-        RequestKeeper.insert(mbid);
-
-		if(asin.empty())
-			site_fetch_and_save_cover_mbxml(data);
-		else
-	        site_fetch_and_save_cover_amazn(data);
+            if(asin.empty())
+                site_fetch_and_save_cover_mbxml(data);
+            else
+                site_fetch_and_save_cover_amazn(data);
+        }
     }
 
     bool

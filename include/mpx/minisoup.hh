@@ -121,53 +121,68 @@ namespace MPX
     class Request
       : public Glib::Object
     {
-        struct SignalsT
-        {
-          SigRequestCallback Callback;
-        };
+        protected:
 
-        SignalsT Signals;
+            struct SignalsT
+            {
+              SigRequestCallback Callback;
+            };
 
-      public:
+            SignalsT Signals;
 
-        static RequestRefP create (std::string const& url, bool post = false);
-        ~Request ();
+        public:
 
-        void  add_header (std::string const& name,
-                          std::string const& value); 
-        void  add_request (std::string const& type,
-                          std::string const& request);
-        void  run();
-        void  cancel();
-        guint status();
-        guint message_status();
+            static RequestRefP create (std::string const& url, bool post = false);
+            virtual ~Request ();
+        
+            virtual
+            void  add_header (std::string const& name,
+                              std::string const& value); 
 
-        char const*
-        get_data_raw ();
-      
-        guint
-        get_data_size ();
+            virtual
+            void  add_request (std::string const& type,
+                              std::string const& request);
 
-        SigRequestCallback & request_callback() { return Signals.Callback; }
+            virtual
+            void  run();
 
-      private:
+            virtual
+            void  cancel();
 
-        Request (std::string const& url, bool post = false);
+            virtual
+            guint status();
 
-        bool        m_post;
-        std::string m_url;
+            virtual
+            guint message_status();
 
-        SoupSession * m_session;
-        SoupMessage * m_message;
+            virtual
+            char const*
+            get_data_raw ();
+         
+            virtual 
+            guint
+            get_data_size ();
 
-        bool          m_block_reply;
-        Glib::Mutex   m_message_lock;
+            SigRequestCallback & request_callback() { return Signals.Callback; }
 
-        static void
-        restarted (SoupMessage* /*message*/, gpointer /*data*/);
+        protected:
 
-        static void
-        got_answer (SoupMessage* /*message*/, gpointer /*data*/);
+            Request (std::string const& url, bool post = false);
+
+            bool        m_post;
+            std::string m_url;
+
+            SoupSession * m_session;
+            SoupMessage * m_message;
+
+            bool          m_block_reply;
+            Glib::Mutex   m_message_lock;
+
+            static void
+            restarted (SoupMessage* /*message*/, gpointer /*data*/);
+
+            static void
+            got_answer (SoupMessage* /*message*/, gpointer /*data*/);
     };
 
 

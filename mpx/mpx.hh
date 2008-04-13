@@ -375,6 +375,8 @@ namespace MPX
 		void
 		track_played ();
 
+        bool
+        new_track_idle_emit ();
 
 
 

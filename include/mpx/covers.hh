@@ -66,7 +66,7 @@ namespace MPX
 	  fetch (std::string const& mbid, Cairo::RefPtr<Cairo::ImageSurface>&, CoverSize size);
 
 	  void
-	  cache (std::string const& mbid, std::string const& asin = std::string());
+	  cache (std::string const& mbid, std::string const& asin = std::string(), bool acquire = true);
 
 
 	  Covers (NM&);

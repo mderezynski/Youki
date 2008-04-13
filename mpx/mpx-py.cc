@@ -11,6 +11,7 @@
 #include <gdkmm/pixbuf.h>
 #include <libglademm/xml.h>
 #include <Python.h>
+#include "mcs/mcs.h"
 
 #include "mpx.hh"
 #include "mpx-py.hh"
@@ -22,8 +23,9 @@
 #include "audio-types.hh"
 #include "lyrics-v2.hh"
 #include "last-fm-xmlrpc.hh"
-#include "mcs/mcs.h"
 #include "playbacksource-py.hh"
+
+#include "pysigc.hh"
 
 using namespace boost::python;
 
@@ -273,8 +275,64 @@ namespace MPX
 	};
 }
 
+namespace MPX
+{
+    namespace Soup
+    {
+        class PyRequest : public Request
+        {
+            public:
+
+                PyRequest (std::string const& url, bool post = false)
+                : Request(url, post)
+                , m_signal0(new ::pysigc::sigc3<char const*, guint, guint>(Signals.Callback))
+                {
+                  m_session = soup_session_async_new ();
+                  m_message = soup_message_new (post ? "POST" : "GET", url.c_str());
+                  g_object_ref(G_OBJECT(m_session));
+                  g_object_ref(G_OBJECT(m_message));
+                }
+
+                ::pysigc::sigc3<char const*, guint, guint> &
+                pysignal_callback ()
+                {
+                    return *m_signal0;
+                }
+
+                virtual ~PyRequest ()
+                {
+                    delete m_signal0;
+                }
+
+            protected:
+
+                ::pysigc::sigc3<char const*, guint, guint> * m_signal0; 
+        };
+    }
+}
+
 BOOST_PYTHON_MODULE(mpx)
 {
+	/*-------------------------------------------------------------------------------------*/
+
+    class_< ::pysigc::sigc3<char const*, guint, guint>, boost::noncopyable>("Sigc3MiniSoupCallback", boost::python::no_init)
+        .def("connect", &::pysigc::sigc3<char const*, guint, guint>::connect)
+        .def("emit", &::pysigc::sigc3<char const*, guint, guint>::emit)
+        .def("disconnect", &::pysigc::sigc3<char const*, guint, guint>::disconnect)
+    ;
+
+    class_<MPX::Soup::PyRequest, boost::noncopyable>("MPXSoupPyRequest", boost::python::init<std::string, bool>())
+        .def("add_header", &MPX::Soup::PyRequest::add_header)
+        .def("add_request", &MPX::Soup::PyRequest::add_request)
+        .def("run", &MPX::Soup::PyRequest::run)
+        .def("cancel", &MPX::Soup::PyRequest::cancel)
+        .def("status", &MPX::Soup::PyRequest::status)
+        .def("message_status", &MPX::Soup::PyRequest::message_status)
+        .def("get_data_raw", &MPX::Soup::PyRequest::get_data_raw)
+        .def("get_data_size", &MPX::Soup::PyRequest::get_data_size)
+        .def("pysignal_callback", &MPX::Soup::PyRequest::pysignal_callback, return_internal_reference<>())
+    ;
+    
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::OVariant>("Optional")

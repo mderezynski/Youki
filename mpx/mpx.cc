@@ -1370,6 +1370,13 @@ namespace MPX
 		}
 	}
 
+    bool
+    Player::new_track_idle_emit ()
+    {
+	  g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
+      return false;
+    }
+
 	void
 	Player::on_infoarea_uris (Util::FileList const& uris)
 	{
@@ -1881,8 +1888,7 @@ namespace MPX
 		m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
 
 	  reparse_metadata ();
-
-	  g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
+      Glib::signal_idle().connect( sigc::mem_fun( *this, &Player::new_track_idle_emit ));
 	}
 
 	void

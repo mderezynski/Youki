@@ -387,7 +387,10 @@ send_request_and_redirect (MPXJNLHttpSrc * src)
   src->get->addheader ("icy-metadata: 1");
   src->get->addheader ("Accept: audio/mpeg, */*");
   if(src->customheader)
+  {
+    g_message("%s: Adding custom header: '%s'", G_STRLOC, src->customheader);
     src->get->addheader(src->customheader);
+  }
 
   src->get->connect(src->uri);
 
