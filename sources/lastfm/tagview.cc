@@ -195,6 +195,7 @@ namespace MPX
         TagView::clear ()
         {
             m_Layout.Lock.lock ();
+            m_List.clear();
             m_Layout.Scale = 1.;
             m_Layout.Rows.clear();
             m_Layout.RowWidths.clear();
