@@ -1,3 +1,7 @@
+images_DATA = artist-unknown.png
+
+imagesdir = $(pkgdatadir)/images
+
 glade_DATA = 						\
 	source-lastfm.glade				
 

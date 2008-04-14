@@ -49,6 +49,192 @@ using namespace Glib;
 
 namespace MPX
 {
+    // LastFMArtist
+    struct LastFMArtist
+    {
+      ustring name;
+      ustring mbid;
+      ustring url;
+      ustring thumbnail;
+      ustring image;
+      guint64 count;
+      guint64 rank;
+      bool    streamable;
+
+      LastFMArtist () : streamable(false) {}
+    };
+    typedef std::vector <LastFMArtist> LastFMArtistV;
+
+    class ArtistParser
+      : public Glib::Markup::Parser
+    {
+      public:
+        ArtistParser (LastFMArtistV & x) : m_artists (x), m_state (0) {}
+        virtual ~ArtistParser () {}
+      protected:
+        virtual void
+        on_start_element  (Glib::Markup::ParseContext   &context,
+                           Glib::ustring const          &element_name,
+                           AttributeMap const           &attributes);
+        virtual void
+        on_end_element    (Glib::Markup::ParseContext   &context,
+                           Glib::ustring const          &element_name);
+        virtual void
+        on_text	          (Glib::Markup::ParseContext   &context,
+                           Glib::ustring const          &text);
+      private:
+
+        enum Element
+        {
+          E_NONE	      = 0,
+          E_ARTIST      = 1 << 0,
+          E_NAME        = 1 << 1,
+          E_MBID        = 1 << 2,
+          E_COUNT       = 1 << 3,
+          E_RANK        = 1 << 4,
+          E_URL         = 1 << 5,
+          E_THUMBNAIL   = 1 << 6,
+          E_IMAGE       = 1 << 7,
+          E_IMAGE_SMALL = 1 << 8,
+          E_MATCH       = 1 << 9,
+          E_STREAMABLE  = 1 << 10
+        };
+
+        LastFMArtistV & m_artists;
+        LastFMArtist    m_current;
+        int             m_state;
+    };
+
+    enum IdType
+    {
+      ID_TAG,
+      ID_ARTIST,
+      ID_AUTO,
+    };
+
+    class TagInfoViewT
+      : public Gtk::TreeView
+    {
+      public:
+
+        TagInfoViewT (BaseObjectType*            obj,
+                      Glib::RefPtr<Gnome::Glade::Xml> const& xml);
+        virtual ~TagInfoViewT () {};
+
+        void
+        set_ui_manager (Glib::RefPtr<Gtk::UIManager> const &ui_manager);
+
+        void
+        clear ();
+
+        void
+        idSetAuto (Glib::ustring const& id);
+    
+        void
+        idSet (IdType type, Glib::ustring const& id);
+
+        bool
+        isEmpty ();
+
+      public:
+
+        typedef sigc::signal<void, Glib::ustring const&> SignalString;
+
+      private:
+
+        struct SignalsT
+        {
+          SignalString ArtistActivated;
+          SignalString GoToMBID;
+        };
+
+        SignalsT Signals;
+
+      public:
+
+        SignalString&
+        signalArtistActivated()
+        {
+          return Signals.ArtistActivated;
+        }
+
+        SignalString&
+        signalGoToMBID()
+        {
+          return Signals.GoToMBID;
+        }
+
+      private:                    
+
+        class Columns
+          : public Gtk::TreeModel::ColumnRecord
+        {
+          public:
+
+            Gtk::TreeModelColumn< ::Cairo::RefPtr< ::Cairo::ImageSurface> > image;
+            Gtk::TreeModelColumn<LastFMArtist> artist; 
+            Gtk::TreeModelColumn<Glib::ustring>      info; 
+            Gtk::TreeModelColumn<bool>         hasAlbums; 
+
+            Columns ()
+            {
+              add (image);
+              add (artist);
+              add (info);
+              add (hasAlbums);
+            }
+        };
+
+        Columns mColumns;
+        Glib::RefPtr<Gtk::ListStore> mStore;
+
+        ::Cairo::RefPtr< ::Cairo::ImageSurface> mUnknownArtist;
+        Gtk::Notebook        * mNotebook;
+        Gtk::Entry           * mEntry;
+        Gtk::ComboBox        * mCbox;
+        guint             mTopRank;
+        sigc::connection  mProcessIdler;
+        LastFMArtistV::iterator mIterator;
+        Gtk::TreeIter          mTreeIterator;
+        LastFMArtistV     mArtists;
+        Glib::Mutex       mDisplayLock;
+        bool              mEndDisplay;
+        ::Cairo::RefPtr< ::Cairo::ImageSurface > mImage;
+        LastFMArtist      mArtist;
+        Soup::RequestRefP mArtistReq;
+
+        bool
+        on_event_cb (GdkEvent*);
+
+        bool
+        idler ();
+
+        void
+        cellDataFunc (Gtk::CellRenderer* cell, Gtk::TreeIter const& m_iter, int column);
+
+        void
+        displayThread ();
+
+        void
+        showArtist ();
+
+        void  
+        data_cb (char const * data, guint size, guint code);
+
+        void
+        on_selection_changed ();
+
+        void
+        on_view_in_library ();
+
+        void
+        on_play_lastfm ();
+
+        Glib::RefPtr<Gtk::UIManager> m_ui_manager;
+        Glib::RefPtr<Gtk::ActionGroup> m_actions;
+    };
+
+
 namespace Source
 {
     class LastFM
@@ -73,6 +259,7 @@ namespace Source
         Gtk::Button                   * m_Button_Error_Hide;
         //MPX::LastFMTagView            * m_TagView;
         MPX::TagView                  * m_TagView;
+        TagInfoViewT                  * m_TagInfoView;
     
         MPX::LastFMRadio                m_LastFMRadio;
         boost::optional<XSPF::Playlist> m_Playlist;
