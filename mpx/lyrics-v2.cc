@@ -205,7 +205,8 @@ namespace MPX
 	std::string
     TextRequest::run ()
     {
-        boost::format lyrics_url_f ("http://lyricwiki.org/api.php?fmt=xml&artist=%s&song=%s");
+        boost::format lyrics_url_f ("http://lyricwiki.org/api.php?fmt=text&artist=%s&song=%s");
+
         URI request_url ((lyrics_url_f % m_artist.c_str() % m_title.c_str()).str(), true);
         m_soup_request = Soup::RequestSync::create ((ustring(request_url)));
         m_soup_request->add_header("User-Agent", "BMP-2.0");
@@ -219,9 +220,10 @@ namespace MPX
 		if( code != 200)
 			throw LyricsReturnNotOK();
 
-		std::string data, lyrics;
+		std::string data /*, lyrics*/;
 		m_soup_request->get_data(data);
 
+#if 0
 		LyricsParserContext context (lyrics);
 		int rc = xmlSAXUserParseMemory (&LyricsParser, reinterpret_cast<void *>(&context), data.c_str(), data.size()); 
 
@@ -229,6 +231,8 @@ namespace MPX
 			throw LyricsReturnNotOK();
 
 		return lyrics;
+#endif
+        return data;
     }
 
     TextRequest::~TextRequest ()

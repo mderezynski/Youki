@@ -122,8 +122,15 @@ User</property>
 	      <property name="position">0</property>
 
 	      <child>
-		<widget class="GtkDrawingArea" id="tag-area">
+		<widget class="GtkViewport" id="viewport1">
 		  <property name="visible">True</property>
+		  <property name="shadow_type">GTK_SHADOW_IN</property>
+
+		  <child>
+		    <widget class="GtkDrawingArea" id="tag-area">
+		      <property name="visible">True</property>
+		    </widget>
+		  </child>
 		</widget>
 		<packing>
 		  <property name="shrink">True</property>
