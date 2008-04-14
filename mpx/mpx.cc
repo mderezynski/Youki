@@ -1986,6 +1986,7 @@ namespace MPX
 	{
 	  PlaybackSource* source = m_SourceV[source_id];
 
+      m_ActiveSource = source_id;
 	  m_Play->switch_stream (source->get_uri(), source->get_type());
       source->play_post ();
 	  play_post_internal (source_id);

@@ -32,6 +32,7 @@
 #include <glibmm/i18n.h>
 #include <libglademm.h>
 #include <map>
+#include <cmath>
 
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
@@ -66,7 +67,7 @@ namespace
     {
       public:
 
-        TagInserter (MPX::LastFMTagView & view)
+        TagInserter (/*MPX::LastFMTagView & view*/ MPX::TagView & view)
         : m_View(view)
         {
         }
@@ -74,12 +75,14 @@ namespace
         void
         operator()(::tag const& t)
         {
-            m_View.insert_tag( t.name(), t.url(), t.count() );
+/*            m_View.insert_tag( t.name(), t.url(), t.count() ); */
+            m_View.add_tag( t.name(), std::log10(t.count()*2) );
         }
 
       private:
 
-        MPX::LastFMTagView & m_View;
+        // MPX::LastFMTagView & m_View;
+        MPX::TagView & m_View;
     };
 }
 
@@ -114,10 +117,12 @@ namespace Source
 		m_UI = m_ref_xml->get_widget("source-lastfm");
         m_ref_xml->get_widget("cbox-sel", m_CBox_Sel);
         m_ref_xml->get_widget("url-entry", m_URL_Entry);
-        m_ref_xml->get_widget_derived("tagview", m_TagView);
+        //m_ref_xml->get_widget_derived("tagview", m_TagView);
         m_ref_xml->get_widget("hbox-error", m_HBox_Error);
         m_ref_xml->get_widget("label-error", m_Label_Error);
         m_ref_xml->get_widget("button-error-hide", m_Button_Error_Hide);
+
+        m_TagView = new TagView(m_ref_xml, "tag-area");
 
         m_Button_Error_Hide->signal_clicked().connect( sigc::mem_fun( *m_HBox_Error, &Gtk::Widget::hide ));
 
@@ -207,7 +212,9 @@ namespace Source
         g_return_val_if_fail(m_PlaylistIter != m_Playlist.get().Items.end(), std::string());
 
         XSPF::Item const& item = *m_PlaylistIter;
-        return item.location;
+        URI u (item.location);
+        std::string location = "http://play.last.fm" + u.fullpath();
+        return location; 
     }
 
     void
@@ -307,6 +314,8 @@ namespace Source
             MPX::XmlInstance< ::toptags> tags ((ustring(u)));
             if(tags.xml().tag().size())
             {
+                std::random_shuffle( tags.xml().tag().begin(), tags.xml().tag().end()-1 );
+                std::iter_swap( tags.xml().tag().begin()+tags.xml().tag().size()/2, tags.xml().tag().end()-1);
                 std::for_each(tags.xml().tag().begin(), tags.xml().tag().end(), TagInserter(*m_TagView));
             }
         } catch (std::runtime_error & cxe)

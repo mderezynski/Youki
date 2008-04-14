@@ -105,7 +105,7 @@ namespace
     };
 
     g_type_add_interface_static (type, GST_TYPE_URI_HANDLER, &urihandler_info);
-    GST_DEBUG_CATEGORY_INIT (jnlhttpsrc_debug, "bmpjnethttpsrc", 0, "MPX JNET HTTP src");
+    GST_DEBUG_CATEGORY_INIT (jnlhttpsrc_debug, "jnethttpsrc", 0, "MPX JNET HTTP src");
   }
 }
 
@@ -383,7 +383,7 @@ send_request_and_redirect (MPXJNLHttpSrc * src)
   int result;
 
   src->get = new JNL_HTTPGet();
-  src->get->addheader ("User-Agent: Winamp/5.0");
+  src->get->addheader ("User-Agent: Last.fm Client 1.4.2.58240 (X11)");
   src->get->addheader ("icy-metadata: 1");
   src->get->addheader ("Accept: audio/mpeg, */*");
   if(src->customheader)
@@ -392,7 +392,7 @@ send_request_and_redirect (MPXJNLHttpSrc * src)
     src->get->addheader(src->customheader);
   }
 
-  src->get->connect(src->uri);
+  src->get->connect(src->uri, 1);
 
   Glib::Timer timer;
 
