@@ -83,7 +83,7 @@ namespace MPX
                 }
             }
         
-            double heightcorrection = ((get_allocation().get_height() - (m_Layout.Rows.size() * (m_Layout.RowHeight * m_Layout.Scale))) / 2.) * m_Layout.Scale;
+            double heightcorrection = ((get_allocation().get_height() - (m_Layout.Rows.size() * (m_Layout.RowHeight * m_Layout.Scale))) * m_Layout.Scale) / 2.;
             double ry = 0;
             RowWidthsT::const_iterator wi = m_Layout.RowWidths.begin(); 
             for(RowList::iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
