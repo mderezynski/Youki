@@ -35,7 +35,7 @@ class Dummy(mpx.Plugin):
 		n = pynotify.Notification( "MPX", message)
 		n.set_urgency(pynotify.URGENCY_NORMAL)
         image = m.get_image()
-        if(image)
+        if(image):
             n.set_icon_from_pixbuf(image)
 		n.show()
 
