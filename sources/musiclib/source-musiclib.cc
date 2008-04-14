@@ -141,6 +141,37 @@ namespace
 
         return track;
     }
+
+    std::string
+    get_timestr_from_time_t (time_t atime)
+    {
+      struct tm atm, btm;
+      localtime_r (&atime, &atm);
+      time_t curtime = time(NULL);
+      localtime_r (&curtime, &btm);
+
+      static boost::format
+        date_f ("%s, %s");
+
+      if (atm.tm_year == btm.tm_year &&
+      atm.tm_yday == btm.tm_yday)
+      {
+          char btime[64];
+          strftime (btime, 64, "%H:00", &atm); // we just ASSUME that no podcast updates more than once an hour, for cleaner readbility
+
+              return locale_to_utf8 ((date_f % _("Today") % btime).str());
+      }
+      else
+      {
+          char bdate[64];
+          strftime (bdate, 64, "%d %b %Y", &atm);
+
+          char btime[64];
+          strftime (btime, 64, "%H:00", &atm); // we just ASSUME that no podcast updates more than once an hour, for cleaner readbility
+
+              return locale_to_utf8 ((date_f % bdate % btime).str());
+      }
+    }
 }
  
 namespace MPX
@@ -1359,9 +1390,10 @@ namespace MPX
                     (*iter)[AlbumColumns.Rating] = rating;
                 }
 
+                gint64 idate = 0;
                 if(r.count("album_insert_date"))
                 {
-                    gint64 idate = get<gint64>(r["album_insert_date"]);
+                    idate = get<gint64>(r["album_insert_date"]);
                     (*iter)[AlbumColumns.InsertDate] = idate;
                 }
 
@@ -1382,8 +1414,7 @@ namespace MPX
                 else
                     ArtistSort = get<std::string>(r["album_artist"]);
 
-                //(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
-                (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+                (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%, Added: %4%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4) % get_timestr_from_time_t(idate)).str();
                 (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                 (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
               }
@@ -1416,9 +1447,10 @@ namespace MPX
                         (*iter)[AlbumColumns.Rating] = rating;
                     }
 
+                    gint64 idate = 0;
                     if(r.count("album_insert_date"))
                     {
-                        gint64 idate = get<gint64>(r["album_insert_date"]);
+                        idate = get<gint64>(r["album_insert_date"]);
                         (*iter)[AlbumColumns.InsertDate] = idate;
                     }
 
@@ -1454,8 +1486,7 @@ namespace MPX
                     else
                         ArtistSort = get<std::string>(r["album_artist"]);
 
-                    //(*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'>%2%</span>\n<span size='12000'><b>%1%</b></span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
-                    (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4)).str();
+                    (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%, Added: %4%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date.substr(0,4) % get_timestr_from_time_t(idate)).str();
                     (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                     (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
                 }
@@ -1549,7 +1580,7 @@ namespace MPX
                   gint64 alb_a = (*iter_a)[AlbumColumns.InsertDate];
                   gint64 alb_b = (*iter_b)[AlbumColumns.InsertDate];
 
-                  return alb_a - alb_b;
+                  return alb_b - alb_a;
                 }
                 else if((rt_a == ROW_TRACK) && (rt_b == ROW_TRACK))
                 {
