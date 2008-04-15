@@ -742,7 +742,8 @@ class MPXAudioScrobbler(mpx.Plugin):
                 p_len = m_len.val().get_int()
 
             p_tracknumber=u''
-            m_tracknumber = m.get(mpx.AttributeId.TRACK)
+            try:
+                m_tracknumber = m.get(mpx.AttributeId.TRACK)
             if m_tracknumber.is_initialized():
                 p_tracknumber = str(m_tracknumber.val().get_int())
 
@@ -785,7 +786,8 @@ class MPXAudioScrobbler(mpx.Plugin):
                 p_len = m_len.val().get_int()
 
             p_tracknumber=u''
-            m_tracknumber = m.get(mpx.AttributeId.TRACK)
+            try:
+                m_tracknumber = m.get(mpx.AttributeId.TRACK)
             if m_tracknumber.is_initialized():
                 p_tracknumber = str(m_tracknumber.val().get_int())
 
