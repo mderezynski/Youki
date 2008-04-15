@@ -1356,9 +1356,9 @@ namespace MPX
                     (*(*i))[AlbumColumns.Image] = Cover;
                 }
               }
-    
+
               void
-              on_new_album(const std::string& mbid, const std::string& asin, gint64 id, gint64 album_artist_id)
+              append_album (SQL::Row & r, gint64 id, bool acquire_cover = false)
               {
                 TreeIter iter = TreeStore->append();
                 m_AlbumIterMap.insert(std::make_pair(id, iter));
@@ -1367,22 +1367,7 @@ namespace MPX
                 (*iter)[AlbumColumns.RowType] = ROW_ALBUM; 
                 (*iter)[AlbumColumns.HasTracks] = false; 
                 (*iter)[AlbumColumns.Image] = m_DiscDefault; 
-                (*iter)[AlbumColumns.MBID] = mbid; 
                 (*iter)[AlbumColumns.Id] = id; 
-
-                if(!mbid.empty())
-                {
-                    IterSet & s = m_MBIDIterMap[mbid];
-                    s.insert(iter);
-                    m_Covers.get().cache(mbid, asin);
-                }
-
-                SQL::RowV v;
-                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
-
-                g_return_if_fail(!v.empty());
-
-                SQL::Row & r = v[0];
 
                 if(r.count("album_rating"))
                 {
@@ -1395,6 +1380,21 @@ namespace MPX
                 {
                     idate = get<gint64>(r["album_insert_date"]);
                     (*iter)[AlbumColumns.InsertDate] = idate;
+                }
+
+                std::string asin;
+                if(r.count("amazon_asin"))
+                {
+                    asin = get<std::string>(r["amazon_asin"]);
+                }
+
+                if(r.count("mb_album_id"))
+                {
+                    std::string mbid = get<std::string>(r["mb_album_id"]);
+                    IterSet & s = m_MBIDIterMap[mbid];
+                    s.insert(iter);
+                    m_Covers.get().cache( mbid, asin, acquire_cover ); 
+                    (*iter)[AlbumColumns.MBID] = mbid; 
                 }
 
                 std::string date; 
@@ -1421,8 +1421,8 @@ namespace MPX
                 (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%Added: %4%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date % get_timestr_from_time_t(idate)).str();
                 (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                 (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
-              }
-
+              } 
+   
               void
               album_list_load ()
               {
@@ -1432,80 +1432,33 @@ namespace MPX
 
                 SQL::RowV v;
                 m_Lib.get().getSQL(v, "SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id;");
+
                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                 {
                     SQL::Row & r = *i; 
-
-                    TreeIter iter = TreeStore->append ();
-                    TreeStore->append(iter->children()); // create placeholder/dummy row for tracks
-
-                    (*iter)[AlbumColumns.RowType] = ROW_ALBUM; 
-                    (*iter)[AlbumColumns.HasTracks] = false; 
-                    (*iter)[AlbumColumns.Image] = m_DiscDefault; 
-                    (*iter)[AlbumColumns.Id] = get<gint64>(r["id"]); 
-                    m_AlbumIterMap.insert(std::make_pair(get<gint64>(r["id"]), iter));
-      
-                    if(r.count("album_rating"))
-                    {
-                        gint64 rating = get<gint64>(r["album_rating"]);
-                        (*iter)[AlbumColumns.Rating] = rating;
-                    }
-
-                    gint64 idate = 0;
-                    if(r.count("album_insert_date"))
-                    {
-                        idate = get<gint64>(r["album_insert_date"]);
-                        (*iter)[AlbumColumns.InsertDate] = idate;
-                    }
-
-                    std::string asin;
-                    if(r.count("amazon_asin"))
-                    {
-                        asin = get<std::string>(r["amazon_asin"]);
-                    }
-
-                    if(r.count("mb_album_id"))
-                    {
-                        std::string mbid = get<std::string>(r["mb_album_id"]);
-                        IterSet & s = m_MBIDIterMap[mbid];
-                        s.insert(iter);
-                        m_Covers.get().cache(mbid, asin, false /* don't try to fetch from the web */);
-                        (*iter)[AlbumColumns.MBID] = mbid; 
-                    }
-
-                    std::string date;
-                    if(r.count("mb_release_date"))
-                    {
-                        date = get<std::string>(r["mb_release_date"]);
-                        if(date.size())
-                        {
-                            gint64 date_int;
-                            sscanf(date.c_str(), "%04lld", &date_int);
-                            (*iter)[AlbumColumns.Date] = date_int; 
-                            date = date.substr(0,4) + ", ";
-                        }
-                    }
-                    else
-                        (*iter)[AlbumColumns.Date] = 0; 
-
-                    std::string ArtistSort;
-                    if(r.count("album_artist_sortname"))
-                        ArtistSort = get<std::string>(r["album_artist_sortname"]);
-                    else
-                        ArtistSort = get<std::string>(r["album_artist"]);
-
-                    (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%Added: %4%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date % get_timestr_from_time_t(idate)).str();
-                    (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
-                    (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
+                    append_album(r, get<gint64>(r["id"]), false);
                 }
               }
 
               void
-              on_new_track(Track & track, gint64 albumid)
+              on_new_album(gint64 id)
               {
-                if(m_AlbumIterMap.count(albumid))
+                SQL::RowV v;
+                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
+
+                g_return_if_fail(!v.empty());
+
+                SQL::Row & r = v[0];
+
+                place_album (r, id, true); 
+              }
+
+              void
+              on_new_track(Track & track, gint64 album_id)
+              {
+                if(m_AlbumIterMap.count(album_id))
                 {
-                    TreeIter iter = m_AlbumIterMap[albumid];
+                    TreeIter iter = m_AlbumIterMap[album_id];
                     if (((*iter)[AlbumColumns.HasTracks]))
                     {
                         TreeIter child = TreeStore->append(iter->children());
@@ -1522,6 +1475,8 @@ namespace MPX
                         (*child)[AlbumColumns.RowType] = ROW_TRACK; 
                     }
                 }
+                else
+                    g_warning("%s: Got new track without associated album! Consistency error!", G_STRLOC);
               }
 
               int

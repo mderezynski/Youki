@@ -168,6 +168,11 @@ namespace Source
                                              sigc::mem_fun (*this, &LastFM::on_tag_view_play_tag));
         m_ui_manager->insert_action_group (m_actions);
         m_ui_manager->add_ui_from_string (ui_string_tag_view);
+
+        if(m_LastFMRadio.connected())
+        {
+		    m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_PLAY);
+        }
     }
 
     //////
@@ -328,6 +333,8 @@ namespace Source
     void
     LastFM::stop ()
     {
+        m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_GO_NEXT);
+        send_caps();
         m_LastFMRadio.get_xspf_playlist_cancel();
         PAccess<MPX::Play> pa;
         m_Player.get_object(pa);
@@ -706,7 +713,7 @@ namespace Source
           text = dynamic_cast<CellRendererText*>(baseCell);
           LastFMArtist a = ((*i)[mColumns.artist]);
           ustring info = ((*i)[mColumns.info]);
-          text->property_markup() = (boost::format ("<b>%s</b>\n%.2f %%\n%s")
+          text->property_markup() = (boost::format ("<big><b>%s</b></big>\n%.2f %%\n%s")
                                         % Markup::escape_text (a.name).c_str()
                                         % (100. * (double (a.count) / double (mTopRank))) 
                                         % info).str(); // info goes in raw, is escaped above

@@ -610,8 +610,7 @@ namespace MPX
 
           artist_j = m_SQL->last_insert_rowid ();
 
-          Signals.NewArtist.emit(  (track[ATTRIBUTE_MB_ARTIST_ID] ? get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get()) : std::string())
-                                ,   artist_j );
+          Signals.NewArtist.emit( artist_j ); 
         }
         return artist_j;
     }
@@ -715,15 +714,7 @@ namespace MPX
           m_SQL->exec_sql (sql);
           album_j = m_SQL->last_insert_rowid ();
 
-          Signals.NewAlbum.emit(    (track[ATTRIBUTE_MB_ALBUM_ID] ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()) : std::string())
-                                ,   (track[ATTRIBUTE_ASIN] ? get<std::string>(track[ATTRIBUTE_ASIN].get()) : std::string())
-                                ,   album_j
-								,	album_artist_id );
-
-          if(track[ATTRIBUTE_ASIN])
-          {
-            m_Covers->cache(get<std::string>(track[ATTRIBUTE_ASIN].get()));
-          }
+          Signals.NewAlbum.emit( album_j ); 
         }
         return album_j;
     }

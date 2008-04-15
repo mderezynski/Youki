@@ -119,10 +119,9 @@ namespace MPX
 
 
 
-            typedef sigc::signal<void, const std::string& /*mbid*/,
-				const std::string& /*asin*/, gint64/*albumid*/, gint64 /*album artist id*/> SignalNewAlbum;
-            typedef sigc::signal<void, gint64/*albumid*/> SignalAlbumUpdated;
-            typedef sigc::signal<void, const std::string& /*mbid*/, gint64/*artistid*/> SignalNewArtist;
+            typedef sigc::signal<void, gint64 /*album id*/> SignalNewAlbum; 
+            typedef sigc::signal<void, gint64 /*album id*/> SignalAlbumUpdated;
+            typedef sigc::signal<void, gint64 /*artist id*/> SignalNewArtist;
             typedef sigc::signal<void, Track&, gint64/*albumid*/> SignalNewTrack;
 			typedef sigc::signal<void, gint64 /*id*/> SignalTrackUpdated;
 

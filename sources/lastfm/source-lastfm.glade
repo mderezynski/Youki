@@ -144,7 +144,7 @@ User</property>
 		  <property name="can_focus">True</property>
 		  <property name="show_tabs">True</property>
 		  <property name="show_border">True</property>
-		  <property name="tab_pos">GTK_POS_TOP</property>
+		  <property name="tab_pos">GTK_POS_BOTTOM</property>
 		  <property name="scrollable">False</property>
 		  <property name="enable_popup">False</property>
 

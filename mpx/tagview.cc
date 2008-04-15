@@ -2,6 +2,7 @@
 #include <cairomm/cairomm.h>
 #include <boost/shared_ptr.hpp>
 #include "mpx/tagview.hh"
+#include <tr1/cmath>
 
 namespace MPX
 {
@@ -9,7 +10,7 @@ namespace MPX
         TagView::update_global_extents ()
         {
             m_Layout.RowHeight = 0;
-            for(LayoutList::const_iterator i = m_List.begin(); i != m_List.end(); ++i)
+            for(LayoutList::const_iterator i = m_Layout.List.begin(); i != m_Layout.List.end(); ++i)
             {
                 if((*i)->m_Logical.get_height() > m_Layout.RowHeight)    
                 {
@@ -22,7 +23,7 @@ namespace MPX
         TagView::push_back_row (LayoutList const& row, int x)
         {
             m_Layout.Rows.push_back(row);
-            m_Layout.RowWidths.push_back(x - (TAG_SPACING / m_Layout.Scale));
+            m_Layout.Widths.push_back(x - (TAG_SPACING / m_Layout.Scale));
         }
 
         void
@@ -33,9 +34,9 @@ namespace MPX
             retry_pack:
 
             m_Layout.Rows.clear();
-            m_Layout.RowWidths.clear();
+            m_Layout.Widths.clear();
 
-            if(m_List.empty())
+            if(m_Layout.List.empty())
                 return;
 
             if(get_allocation().get_height() < m_Layout.RowHeight)
@@ -44,7 +45,7 @@ namespace MPX
             LayoutList row;
             double x = 0;
 
-            for(LayoutList::const_iterator i = m_List.begin(); i != m_List.end(); ++i)
+            for(LayoutList::const_iterator i = m_Layout.List.begin(); i != m_Layout.List.end(); ++i)
             {
                 LayoutSP sp = *i;
 
@@ -61,7 +62,7 @@ namespace MPX
 
             push_back_row (row, x);
 
-            if((m_Layout.Rows.size() * m_Layout.RowHeight) > (get_allocation().get_height() * (1./m_Layout.Scale))) 
+            if((m_Layout.Rows.size() * m_Layout.RowHeight) > (get_allocation().get_height() / m_Layout.Scale)) 
             {
                 if(m_Layout.Scale >= ACCEPTABLE_MIN_SCALE)
                 {
@@ -69,30 +70,30 @@ namespace MPX
                     goto retry_pack;
                 }
             }
-
-#if 0
             else
-            if((m_Layout.Rows.size() * m_Layout.RowHeight) <= (get_allocation().get_height() * (1./m_Layout.Scale))) 
+            if((m_Layout.Rows.size() * m_Layout.RowHeight) <= (get_allocation().get_height() / m_Layout.Scale)) 
             {
-                double diff = (get_allocation().get_height() * (1./m_Layout.Scale)) - (m_Layout.Rows.size() * m_Layout.RowHeight);
-                if(diff >= (2*m_Layout.RowHeight))
+                double diff = (get_allocation().get_height() / m_Layout.Scale) - (m_Layout.Rows.size() * m_Layout.RowHeight);
+                if(diff >= (2*m_Layout.RowHeight)) // arbitrary?
                 {
                     m_Layout.Scale += SCALE_STEP;
                     goto retry_pack;
                 }
             }
-#endif
         
-            double heightcorrection = ((get_allocation().get_height() - (m_Layout.Rows.size() * (m_Layout.RowHeight * m_Layout.Scale))) * m_Layout.Scale) / 2.;
+            double heightcorrection = (((get_allocation().get_height() - (m_Layout.Rows.size() * (m_Layout.RowHeight * m_Layout.Scale)))) / m_Layout.Scale) / 2.;
             double ry = 0;
-            RowWidthsT::const_iterator wi = m_Layout.RowWidths.begin(); 
-            for(RowList::iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
+            int    rowcounter = 0;
+
+            WidthsT::const_iterator wi = m_Layout.Widths.begin(); 
+
+            for(RowListT::iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
             {
                 LayoutList & l = *i;
 
-                double rx = get_allocation().get_width()/2. - (((*wi) * m_Layout.Scale) /2.); 
-                rx = (rx < 0) ? 0 : rx;
-                rx *= (1./m_Layout.Scale);
+                double rx = (get_allocation().get_width() / 2.) - (((*wi) * m_Layout.Scale) / 2.); // center row 
+                rx = std::tr1::fmax(0, rx);
+                rx /= m_Layout.Scale;
                 for(LayoutList::const_iterator r = l.begin(); r != l.end(); ++r) 
                 {
                     LayoutSP sp = *r;
@@ -103,6 +104,7 @@ namespace MPX
 
                 ry += m_Layout.RowHeight;
                 wi++;
+                rowcounter++;
             }
         }
 
@@ -135,7 +137,8 @@ namespace MPX
             motion_y = y;
 
             m_ActiveTagName = std::string();
-            for(RowList::const_iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
+            int rowcounter = 0;
+            for(RowListT::const_iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
             {
                 LayoutList const& l = *i;
                 for(LayoutList::const_iterator r = l.begin(); r != l.end(); ++r) 
@@ -143,8 +146,17 @@ namespace MPX
                     LayoutSP sp = *r;
 
                     if(((motion_x / m_Layout.Scale) >= sp->x) && ((motion_y / m_Layout.Scale) >= sp->y) && ((motion_x / m_Layout.Scale) < (sp->x + sp->m_Logical.get_width())) && ((motion_y / m_Layout.Scale) < (sp->y + sp->m_Logical.get_height())))
+                    {
+                        sp->active = true;
                         m_ActiveTagName = sp->m_Text;
+                        g_atomic_int_set(&m_ActiveRow, rowcounter);
+                    }
+                    else
+                    {
+                        sp->active = false;
+                    }
                 }
+                rowcounter++;
             }
 
             queue_draw ();
@@ -184,22 +196,17 @@ namespace MPX
             cr->scale( m_Layout.Scale, m_Layout.Scale );
 
             int rowcounter = 0;
-            for(RowList::const_iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
+            for(RowListT::const_iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
             {
                 LayoutList const& l = *i;
                 for(LayoutList::const_iterator r = l.begin(); r != l.end(); ++r) 
                 {
                     LayoutSP sp = *r;
 
-                    if(((motion_x / m_Layout.Scale) >= sp->x) && ((motion_y / m_Layout.Scale) >= sp->y) && ((motion_x / m_Layout.Scale) < (sp->x + sp->m_Logical.get_width())) && ((motion_y / m_Layout.Scale) < (sp->y + sp->m_Logical.get_height())))
-                    {
+                    if(sp->active)
                         cr->set_source_rgb(1., 0., 0.);
-                        g_atomic_int_set(&m_ActiveRow, rowcounter);
-                    }
                     else
-                    {
                         cr->set_source_rgb(0., 0., 1.);
-                    }
 
                     cr->move_to( sp->x , sp->y ); 
                     pango_cairo_show_layout(cr->cobj(), sp->m_Layout->gobj());
@@ -219,10 +226,7 @@ namespace MPX
         void
         TagView::clear ()
         {
-            m_List.clear();
-            m_Layout.Scale = 1.;
-            m_Layout.Rows.clear();
-            m_Layout.RowWidths.clear();
+            m_Layout.reset();
             queue_draw ();
         }
 
@@ -240,7 +244,7 @@ namespace MPX
             sp->m_Layout->set_attributes(list);
 
             sp->m_Layout->get_pixel_extents(sp->m_Ink, sp->m_Logical);
-            m_List.push_back(sp);
+            m_Layout.List.push_back(sp);
 
             update_global_extents ();
             layout ();
@@ -260,6 +264,6 @@ namespace MPX
         }
 
         int TagView::TAG_SPACING = 12;
-        double TagView::ACCEPTABLE_MIN_SCALE = 0.001;
+        double TagView::ACCEPTABLE_MIN_SCALE = 0.0;
         double TagView::SCALE_STEP = 0.01;
 }

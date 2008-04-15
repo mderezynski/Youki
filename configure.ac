@@ -282,7 +282,9 @@ PKG_CHECK_MODULES([GLADEMM], [libglademm-2.4 >= 2.6.0])
 PKG_CHECK_MODULES([CAIROMM], [cairomm-1.0 >= 0.6.0])
 
 #sexymm
-PKG_CHECK_MODULES([SEXYMM], [libsexymm >= 0.1.9])
+#PKG_CHECK_MODULES([SEXYMM], [libsexymm >= 0.1.9])
+SEXYMM_INCLUDES=
+SEXYMM_LIBS=-lsexymm
 
 # Network Manager
 AC_ARG_WITH([nm],

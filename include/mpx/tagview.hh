@@ -24,24 +24,34 @@ class TagView : public WidgetLoader<Gtk::DrawingArea>
             Pango::Rectangle m_Ink, m_Logical;
             double x, y;
             double amplitude;
+            bool active;
             std::string m_Text;
+
+            Layout () : active(false) {}
         };
         
         typedef boost::shared_ptr<Layout> LayoutSP;
         typedef std::vector<LayoutSP> LayoutList;
-        typedef std::vector<LayoutList> RowList;
-        typedef std::vector<double> RowWidthsT;
+        typedef std::vector<LayoutList> RowListT;
+        typedef std::vector<double> WidthsT;
 
         struct MainLayout
         {
-            RowList     Rows;
-            RowWidthsT  RowWidths;
+            RowListT    Rows;
+            WidthsT     Widths;
             double      RowHeight;
             double      Scale;
-            Glib::Mutex Lock;
+            LayoutList  List;
+
+            void reset ()
+            {
+                List.clear();
+                Rows.clear();
+                Widths.clear();
+                Scale = 1.;
+            }
         };
 
-        LayoutList m_List;
         MainLayout m_Layout; 
 
         // Drawing/Events
