@@ -32,14 +32,7 @@
 #include <glibmm.h>
 #include <iostream>
 #include <fstream>
-
-#ifndef LIBSOUP_HAS_EXTERN_C
-G_BEGIN_DECLS
-# include <libsoup/soup.h>
-G_END_DECLS
-#else
-# include <libsoup/soup.h>
-#endif // !LIBSOUP_HAS_EXTERN_C
+#include <libsoup/soup.h>
 
 namespace MPX
 {
