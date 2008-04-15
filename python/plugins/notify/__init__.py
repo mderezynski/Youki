@@ -8,9 +8,12 @@
 
 import mpx
 import pynotify
-#import mpx_playlist
+import gtk
+
+COVER_SIZE = 96
 
 class Notify(mpx.Plugin):
+
 
     def activate(self,player,mcs):
         print ">> Notify Plugin activated"
@@ -34,10 +37,11 @@ class Notify(mpx.Plugin):
             p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
             p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
 
-            message = "<b>" + p_artist + "</b> - " + p_title
-            n = pynotify.Notification( "MPX", message)
+            message = "<big><b>" + p_artist + "</b>\n" + p_title + "</big>"
+            n = pynotify.Notification( "MPX is now playing...", message)
             n.set_urgency(pynotify.URGENCY_NORMAL)
             image = m.get_image()
+            image = image.scale_simple(COVER_SIZE, COVER_SIZE, gtk.gdk.INTERP_NEAREST)
             if(image):
                 n.set_icon_from_pixbuf(image)
             n.show()

@@ -3,6 +3,6 @@ Loader=python
 Module=notify
 IAge=1
 Name=MPX Notification Plugin
-Authors=Davie Le Brun <david@backtrace.info>
+Authors=David Le Brun <david@backtrace.info>
 Copyright=Copyright © 2008 David Le Brun
 Website=http://mpx.backtrace.info/
