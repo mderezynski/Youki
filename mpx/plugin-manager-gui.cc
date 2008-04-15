@@ -94,7 +94,9 @@ namespace MPX
 				{
 					TreeIter iter = Store->append();
 					(*iter)[Columns.Name] = i->second->get_name();
-					(*iter)[Columns.NameDesc] = Glib::ustring::compose("<b>%1</b>\n%2", i->second->get_name(), i->second->get_desc());
+					(*iter)[Columns.NameDesc] = Glib::ustring::compose("<b>%1</b>\n%2", 
+							Glib::Markup::escape_text(i->second->get_name()), 
+							Glib::Markup::escape_text(i->second->get_desc()));
 					(*iter)[Columns.Tooltip] = Glib::ustring::compose(_("<b>Authors:</b> %1\n<b>Copyright:</b> %2\n<b>Website:</b> %3"),
 																		Glib::Markup::escape_text( i->second->get_authors() ),
 																		Glib::Markup::escape_text( i->second->get_copyright() ),
