@@ -41,8 +41,8 @@ class Notify(mpx.Plugin):
             n = pynotify.Notification( "MPX is now playing...", message)
             n.set_urgency(pynotify.URGENCY_NORMAL)
             image = m.get_image()
-            image = image.scale_simple(COVER_SIZE, COVER_SIZE, gtk.gdk.INTERP_NEAREST)
             if(image):
+                image = image.scale_simple(COVER_SIZE, COVER_SIZE, gtk.gdk.INTERP_NEAREST)
                 n.set_icon_from_pixbuf(image)
             n.show()
 
