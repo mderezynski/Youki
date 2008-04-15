@@ -7,7 +7,7 @@ import mpx
 import pynotify
 #import mpx_playlist
 
-class Dummy(mpx.Plugin):
+class Notify(mpx.Plugin):
 
     def activate(self,player,mcs):
         print ">> Notify Plugin activated"
