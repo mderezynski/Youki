@@ -20,7 +20,6 @@
 
   <child>
     <widget class="GtkVBox" id="source-lastfm">
-      <property name="border_width">8</property>
       <property name="visible">True</property>
       <property name="homogeneous">False</property>
       <property name="spacing">4</property>

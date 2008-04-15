@@ -44,16 +44,16 @@ namespace MPX
     
             LayoutList row;
             double x = 0;
-            int MaxWidth = 0;            
+            int mw = 0;            
             for(LayoutList::const_iterator i = m_Layout.List.begin(); i != m_Layout.List.end(); ++i)
             {
                 LayoutSP sp = *i;
 
                 if((x+sp->m_Logical.get_width()) > (get_allocation().get_width() / m_Layout.Scale)) 
                 {
-                    if((x - (TAG_SPACING / m_Layout.Scale)) > MaxWidth)
+                    if((x - (TAG_SPACING / m_Layout.Scale)) > mw)
                     {
-                        MaxWidth = x - (TAG_SPACING / m_Layout.Scale);
+                        mw = x - (TAG_SPACING / m_Layout.Scale);
                     }
                     push_back_row (row, x);
                     row = LayoutList();
@@ -74,18 +74,21 @@ namespace MPX
                     goto retry_pack;
                 }
             }
+
+#if 0
             else
             if((m_Layout.Rows.size() * m_Layout.RowHeight) <= (get_allocation().get_height() / m_Layout.Scale)) 
             {
                 double diff = (get_allocation().get_height() / m_Layout.Scale) - (m_Layout.Rows.size() * m_Layout.RowHeight);
                 if(diff > m_Layout.RowHeight) // arbitrary?
                 {
-                    m_Layout.Scale += SCALE_STEP;
+                    m_Layout.Scale += SCALE_STEP*2.;
                     goto retry_pack;
                 }
             }
+#endif
         
-            if(MaxWidth > (get_allocation().get_width() / m_Layout.Scale)) 
+            if(mw > (get_allocation().get_width() / m_Layout.Scale)) 
             {
                 if(m_Layout.Scale >= ACCEPTABLE_MIN_SCALE)
                 {
@@ -97,7 +100,8 @@ namespace MPX
             double heightcorrection = (((get_allocation().get_height() - (m_Layout.Rows.size() * (m_Layout.RowHeight * m_Layout.Scale)))) / m_Layout.Scale) / 2.;
             double height_for_row = (heightcorrection * 2.) / (m_Layout.Rows.size() - 1);
             double ry = 0;
-            int    rowcounter = 0;
+
+            int rowcounter = 0;
 
             WidthsT::const_iterator wi = m_Layout.Widths.begin(); 
 
@@ -112,7 +116,12 @@ namespace MPX
                 {
                     LayoutSP sp = *r;
                     sp->x = rx;
-                    sp->y = ry + /*heightcorrection*/ height_for_row*rowcounter + ((m_Layout.RowHeight - sp->m_Logical.get_height())/2.); 
+
+                    if(m_Layout.Scale < 1.0)
+                        sp->y = ry + height_for_row*rowcounter + ((m_Layout.RowHeight - sp->m_Logical.get_height())/2.); 
+                    else
+                        sp->y = ry + heightcorrection + ((m_Layout.RowHeight - sp->m_Logical.get_height())/2.); 
+
                     rx += sp->m_Logical.get_width() + (TAG_SPACING / m_Layout.Scale);
                 }
 
@@ -163,7 +172,7 @@ namespace MPX
                     {
                         sp->active = true;
                         m_ActiveTagName = sp->m_Text;
-                        g_atomic_int_set(&m_ActiveRow, rowcounter);
+                        m_ActiveRow = rowcounter;
                     }
                     else
                     {
@@ -203,13 +212,14 @@ namespace MPX
             h = a.get_height();
 
             cr->set_operator(Cairo::OPERATOR_SOURCE);
-            cr->set_source_rgb(1., 1., 1.);
+            cr->set_source_rgb(0., 0., 0.);
             cr->rectangle(x, y, w, h);
             cr->fill();
 
             cr->scale( m_Layout.Scale, m_Layout.Scale );
 
             int rowcounter = 0;
+            int tagcounter = 0;
             for(RowListT::const_iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
             {
                 LayoutList const& l = *i;
@@ -220,10 +230,16 @@ namespace MPX
                     if(sp->active)
                         cr->set_source_rgb(1., 0., 0.);
                     else
-                        cr->set_source_rgb(0., 0., 1.);
+                    {
+                        if((tagcounter % 2) == 0)
+                            cr->set_source_rgb(0.22, 0.66, 0.36);
+                        else
+                            cr->set_source_rgb(0.10, 0.87, 0.30);
+                    }
 
                     cr->move_to( sp->x , sp->y ); 
                     pango_cairo_show_layout(cr->cobj(), sp->m_Layout->gobj());
+                    tagcounter++;
                 }
                 rowcounter++;
             }
