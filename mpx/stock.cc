@@ -22,8 +22,10 @@
 //  MPX is covered by.
 #include "config.h"
 #include <gtkmm.h>
-#include "stock.hh"
 #include <string>
+
+#include "mpx/stock.hh"
+#include "stock-register.hh"
 
 namespace MPX
 {

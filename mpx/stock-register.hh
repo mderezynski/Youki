@@ -21,21 +21,12 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 
-#ifndef MPX_STOCK_HH
-#define MPX_STOCK_HH
-
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif //HAVE_CONFIG_H
-
-// Stock icons
-#  define MPX_STOCK_PLUGIN          "mpx-stock-plugin"
-#  define MPX_STOCK_LASTFM          "mpx-stock-lastfm"
-#  define MPX_STOCK_PLUGIN_DISABLED "mpx-stock-plugin-disabled"
+#ifndef MPX_STOCK_REGISTER_HH
+#define MPX_STOCK_REGISTER_HH
 
 namespace MPX
 {
   void register_stock_icons ();
 }
 
-#endif //MPX_STOCK_HH
+#endif //MPX_STOCK_REGISTER_HH

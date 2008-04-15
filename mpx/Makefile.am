@@ -178,6 +178,8 @@ mpx_bin_SOURCES =				\
 	stock.hh					\
 	stock.cc					\
 								\
+	tagview.cc					\
+								\
 	tasks.hh					\
 	tasks.cc					\
 								\

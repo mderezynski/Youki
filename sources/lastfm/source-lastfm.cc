@@ -41,10 +41,10 @@
 
 #include "mpx/mpx-public.hh"
 #include "mpx/play-public.hh"
-
 #include "mpx/library.hh"
 #include "mpx/main.hh"
 #include "mpx/minisoup.hh"
+#include "mpx/stock.hh"
 #include "mpx/types.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-ui.hh"
@@ -66,6 +66,17 @@ using namespace Gtk;
 
 namespace
 {
+    const char * ui_string_tag_view =
+    "<ui>"
+    ""
+    "<menubar name='popup-lastfm-tag-view'>"
+    "   <menu action='dummy' name='menu-lastfm-tag-view'>"
+    "     <menuitem action='last-fm-action-tag-view-play-lastfm'/>"
+    "   </menu>"
+    "</menubar>"
+    ""
+    "</ui>";
+
     boost::format f1 ("lastfm://artist/%s/similarartists");
     boost::format f2 ("lastfm://globaltags/%s");
     boost::format f3 ("lastfm://user/%s/neighbours");
@@ -83,7 +94,7 @@ namespace
         operator()(::tag const& t)
         {
 /*            m_View.insert_tag( t.name(), t.url(), t.count() ); */
-            m_View.add_tag( t.name(), std::log10(t.count()*2) );
+            m_View.add_tag( t.name(), std::log10(t.count()*5) );
         }
 
       private:
@@ -129,6 +140,7 @@ namespace Source
         m_ref_xml->get_widget("button-error-hide", m_Button_Error_Hide);
         m_ref_xml->get_widget_derived("lastfm-tag-info-view", m_TagInfoView);
         m_TagView = new TagView(m_ref_xml, "tag-area");
+        m_TagView->signal_event().connect( sigc::mem_fun( *this, &LastFM::on_tag_view_event ));
         (dynamic_cast<Gtk::Image*>(m_ref_xml->get_widget("lastfm-artists-throbber")))->set(build_filename(DATA_DIR, "images" G_DIR_SEPARATOR_S "throbber.gif"));
 
         m_Button_Error_Hide->signal_clicked().connect( sigc::mem_fun( *m_HBox_Error, &Gtk::Widget::hide ));
@@ -146,10 +158,51 @@ namespace Source
         m_LastFMRadio.signal_tune_error().connect( sigc::mem_fun( *this, &LastFM::on_tune_error ));
 
         mcs->key_register("lastfm", "discoverymode", true);
+
+        m_ui_manager = Gtk::UIManager::create();
+        m_actions = Gtk::ActionGroup::create ("Actions_UiPartLASTFM");
+        m_actions->add (Gtk::Action::create ("dummy", "dummy"));
+        m_actions->add (Gtk::Action::create ("last-fm-action-tag-view-play-lastfm",
+                                             Gtk::StockID (MPX_STOCK_LASTFM),
+                                             _("Play Tag")),
+                                             sigc::mem_fun (*this, &LastFM::on_tag_view_play_tag));
+        m_ui_manager->insert_action_group (m_actions);
+        m_ui_manager->add_ui_from_string (ui_string_tag_view);
     }
 
     //////
 
+    void
+    LastFM::on_tag_view_play_tag () 
+    {
+        Signals.StopRequest.emit();
+        m_LastFMRadio.playurl((f2 % m_TagView->get_active_tag()).str());
+    }
+
+    bool
+    LastFM::on_tag_view_event (GdkEvent * ev)
+    {
+        if( ev->type == GDK_BUTTON_PRESS )
+        {
+          GdkEventButton * event = reinterpret_cast <GdkEventButton *> (ev);
+          if( event->button == 3 )
+          {
+            bool TagEmpty = m_TagView->get_active_tag().empty();
+            m_actions->get_action("last-fm-action-tag-view-play-lastfm")->set_sensitive(!TagEmpty);
+            if(TagEmpty)
+                m_actions->get_action("last-fm-action-tag-view-play-lastfm")->property_label() = _("(No Tag Selected)"); 
+            else
+                m_actions->get_action("last-fm-action-tag-view-play-lastfm")->property_label() = (boost::format((_("Play Tag '%1%'"))) % m_TagView->get_active_tag()).str();
+            Gtk::Menu * menu = dynamic_cast < Gtk::Menu* > (Util::get_popup (m_ui_manager, "/popup-lastfm-tag-view/menu-lastfm-tag-view"));
+            if (menu) // better safe than screwed
+            {
+              menu->popup (event->button, event->time);
+            }
+          }
+        }
+        return false;
+    }
+ 
     void
     LastFM::on_url_entry_activated()
     {
@@ -280,6 +333,8 @@ namespace Source
         m_Player.get_object(pa);
         pa.get().set_custom_httpheader(NULL);
         m_TagView->clear();
+        m_Playlist.reset();
+        m_PlaylistIter = m_Playlist.get().Items.begin();
     }
 
 	void
@@ -353,7 +408,7 @@ namespace Source
       xml->get_widget ("lastfm-tag-entry", mEntry);
       xml->get_widget ("lastfm-cbox-tag-match", mCbox);
 
-      signal_event().connect( sigc::mem_fun( *this, &TagInfoViewT::on_event_cb ));
+      signal_event().connect( sigc::mem_fun( *this, &TagInfoViewT::on_event ));
 
       mCbox->set_active( 0 );
       mCbox->signal_changed().connect( sigc::compose( sigc::mem_fun( *this, &TagInfoViewT::idSetAuto),
@@ -419,7 +474,7 @@ namespace Source
     }
 
     bool
-    TagInfoViewT::on_event_cb (GdkEvent * ev)
+    TagInfoViewT::on_event (GdkEvent * ev)
     {
 #if 0
       if( ev->type == GDK_BUTTON_PRESS )

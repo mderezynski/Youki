@@ -38,9 +38,9 @@
 #include <boost/variant.hpp>
 
 #include "mcs/mcs.h"
-#include "xspf.hh"
 #include "mpx/minisoup.hh"
 #include "mpx/xml.hh"
+#include "mpx/xspf.hh"
 
 namespace MPX
 {

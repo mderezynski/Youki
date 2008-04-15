@@ -41,9 +41,9 @@
 
 #include "mpx/mpx-public.hh"
 #include "mpx/i-playbacksource.hh"
+#include "mpx/tagview.hh"
 
 #include "lastfm.hh"
-#include "tagview.hh"
 
 using namespace Glib;
 
@@ -204,7 +204,7 @@ namespace MPX
         Soup::RequestRefP mArtistReq;
 
         bool
-        on_event_cb (GdkEvent*);
+        on_event (GdkEvent*);
 
         bool
         idler ();
@@ -270,9 +270,6 @@ namespace Source
         MPX::Player                   & m_Player;
 
         void
-        on_url_entry_activated ();
-
-        void
         on_playlist (XSPF::Playlist const&);
 
         void
@@ -283,6 +280,16 @@ namespace Source
 
         void
         on_tune_error (Glib::ustring const&);
+
+
+        void
+        on_url_entry_activated ();
+
+        bool
+        on_tag_view_event (GdkEvent*);
+
+        void
+        on_tag_view_play_tag ();
 
       protected:
 

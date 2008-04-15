@@ -1,7 +1,7 @@
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
 #include <boost/shared_ptr.hpp>
-#include "tagview.hh"
+#include "mpx/tagview.hh"
 
 namespace MPX
 {
@@ -22,14 +22,12 @@ namespace MPX
         TagView::push_back_row (LayoutList const& row, int x)
         {
             m_Layout.Rows.push_back(row);
-            m_Layout.RowWidths.push_back(x - TAG_SPACING);
+            m_Layout.RowWidths.push_back(x - (TAG_SPACING / m_Layout.Scale));
         }
 
         void
         TagView::layout ()
         {
-            Glib::Mutex::Lock L (m_Layout.Lock);
-
             m_Layout.Scale = 1.;
 
             retry_pack:
@@ -50,15 +48,14 @@ namespace MPX
             {
                 LayoutSP sp = *i;
 
-                if((x+sp->m_Logical.get_width()) > (get_allocation().get_width() * (1./m_Layout.Scale)))
+                if((x+sp->m_Logical.get_width()) > (get_allocation().get_width() / m_Layout.Scale)) 
                 {
                     push_back_row (row, x);
                     row = LayoutList();
                     x = 0;
-
-               }
+                }
    
-                x += sp->m_Logical.get_width() + TAG_SPACING;
+                x += sp->m_Logical.get_width() + (TAG_SPACING / m_Layout.Scale);
                 row.push_back(sp);
             }
 
@@ -72,6 +69,8 @@ namespace MPX
                     goto retry_pack;
                 }
             }
+
+#if 0
             else
             if((m_Layout.Rows.size() * m_Layout.RowHeight) <= (get_allocation().get_height() * (1./m_Layout.Scale))) 
             {
@@ -82,6 +81,7 @@ namespace MPX
                     goto retry_pack;
                 }
             }
+#endif
         
             double heightcorrection = ((get_allocation().get_height() - (m_Layout.Rows.size() * (m_Layout.RowHeight * m_Layout.Scale))) * m_Layout.Scale) / 2.;
             double ry = 0;
@@ -98,12 +98,20 @@ namespace MPX
                     LayoutSP sp = *r;
                     sp->x = rx;
                     sp->y = ry + heightcorrection + ((m_Layout.RowHeight - sp->m_Logical.get_height())/2.); 
-                    rx += sp->m_Logical.get_width() + TAG_SPACING;
+                    rx += sp->m_Logical.get_width() + (TAG_SPACING / m_Layout.Scale);
                 }
 
                 ry += m_Layout.RowHeight;
                 wi++;
             }
+        }
+
+        bool
+        TagView::on_leave_notify_event (GdkEventCrossing * event)
+        {
+            motion_x = -1;
+            motion_y = -1;
+            queue_draw ();
         }
 
         bool
@@ -126,6 +134,19 @@ namespace MPX
             motion_x = x;
             motion_y = y;
 
+            m_ActiveTagName = std::string();
+            for(RowList::const_iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
+            {
+                LayoutList const& l = *i;
+                for(LayoutList::const_iterator r = l.begin(); r != l.end(); ++r) 
+                {
+                    LayoutSP sp = *r;
+
+                    if(((motion_x / m_Layout.Scale) >= sp->x) && ((motion_y / m_Layout.Scale) >= sp->y) && ((motion_x / m_Layout.Scale) < (sp->x + sp->m_Logical.get_width())) && ((motion_y / m_Layout.Scale) < (sp->y + sp->m_Logical.get_height())))
+                        m_ActiveTagName = sp->m_Text;
+                }
+            }
+
             queue_draw ();
 
             return false;
@@ -145,8 +166,6 @@ namespace MPX
         TagView::on_expose_event (GdkEventExpose * event)
         {
             using namespace Gtk;
-
-            Glib::Mutex::Lock L (m_Layout.Lock);
 
             Cairo::RefPtr<Cairo::Context> cr = get_window()->create_cairo_context();
 
@@ -191,15 +210,19 @@ namespace MPX
             return true;
         }
 
+        std::string const&
+        TagView::get_active_tag () const
+        {
+            return m_ActiveTagName;
+        }
+
         void
         TagView::clear ()
         {
-            m_Layout.Lock.lock ();
             m_List.clear();
             m_Layout.Scale = 1.;
             m_Layout.Rows.clear();
             m_Layout.RowWidths.clear();
-            m_Layout.Lock.unlock ();
             queue_draw ();
         }
 
@@ -229,14 +252,14 @@ namespace MPX
         , motion_y(0)
         , m_ActiveRow(0)
         {
-            gtk_widget_add_events(GTK_WIDGET(gobj()), Gdk::POINTER_MOTION_MASK);
+            gtk_widget_add_events(GTK_WIDGET(gobj()), Gdk::POINTER_MOTION_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::LEAVE_NOTIFY_MASK);
         }
 
         TagView::~TagView ()
         {
         }
 
-        int TagView::TAG_SPACING = 8;
+        int TagView::TAG_SPACING = 12;
         double TagView::ACCEPTABLE_MIN_SCALE = 0.001;
         double TagView::SCALE_STEP = 0.01;
 }
