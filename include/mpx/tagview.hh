@@ -14,7 +14,7 @@ namespace MPX
 {
 class TagView : public WidgetLoader<Gtk::DrawingArea>
 {
-        static int TAG_SPACING; 
+        static double TAG_SPACING; 
         static double ACCEPTABLE_MIN_SCALE;
         static double SCALE_STEP; 
 

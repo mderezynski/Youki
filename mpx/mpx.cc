@@ -2074,9 +2074,8 @@ namespace MPX
 
 	  if( (f & PlaybackSource::F_PHONY_PREV) == 0 )
 	  {
-			std::string type = source->get_type ();
-			ustring uri = source->get_uri();
-			m_Play->switch_stream (uri, type);
+			safe_pause_unset();
+			m_Play->switch_stream (source->get_uri(), source->get_type());
 			source->prev_post ();
 			play_post_internal (source_id);
 	  }

@@ -44,13 +44,17 @@ namespace MPX
     
             LayoutList row;
             double x = 0;
-
+            int MaxWidth = 0;            
             for(LayoutList::const_iterator i = m_Layout.List.begin(); i != m_Layout.List.end(); ++i)
             {
                 LayoutSP sp = *i;
 
                 if((x+sp->m_Logical.get_width()) > (get_allocation().get_width() / m_Layout.Scale)) 
                 {
+                    if((x - (TAG_SPACING / m_Layout.Scale)) > MaxWidth)
+                    {
+                        MaxWidth = x - (TAG_SPACING / m_Layout.Scale);
+                    }
                     push_back_row (row, x);
                     row = LayoutList();
                     x = 0;
@@ -74,14 +78,24 @@ namespace MPX
             if((m_Layout.Rows.size() * m_Layout.RowHeight) <= (get_allocation().get_height() / m_Layout.Scale)) 
             {
                 double diff = (get_allocation().get_height() / m_Layout.Scale) - (m_Layout.Rows.size() * m_Layout.RowHeight);
-                if(diff >= (2*m_Layout.RowHeight)) // arbitrary?
+                if(diff > m_Layout.RowHeight) // arbitrary?
                 {
                     m_Layout.Scale += SCALE_STEP;
                     goto retry_pack;
                 }
             }
         
+            if(MaxWidth > (get_allocation().get_width() / m_Layout.Scale)) 
+            {
+                if(m_Layout.Scale >= ACCEPTABLE_MIN_SCALE)
+                {
+                    m_Layout.Scale -= SCALE_STEP;
+                    goto retry_pack;
+                }
+            }
+
             double heightcorrection = (((get_allocation().get_height() - (m_Layout.Rows.size() * (m_Layout.RowHeight * m_Layout.Scale)))) / m_Layout.Scale) / 2.;
+            double height_for_row = (heightcorrection * 2.) / (m_Layout.Rows.size() - 1);
             double ry = 0;
             int    rowcounter = 0;
 
@@ -98,7 +112,7 @@ namespace MPX
                 {
                     LayoutSP sp = *r;
                     sp->x = rx;
-                    sp->y = ry + heightcorrection + ((m_Layout.RowHeight - sp->m_Logical.get_height())/2.); 
+                    sp->y = ry + /*heightcorrection*/ height_for_row*rowcounter + ((m_Layout.RowHeight - sp->m_Logical.get_height())/2.); 
                     rx += sp->m_Logical.get_width() + (TAG_SPACING / m_Layout.Scale);
                 }
 
@@ -263,7 +277,7 @@ namespace MPX
         {
         }
 
-        int TagView::TAG_SPACING = 12;
+        double TagView::TAG_SPACING = 12;
         double TagView::ACCEPTABLE_MIN_SCALE = 0.0;
-        double TagView::SCALE_STEP = 0.01;
+        double TagView::SCALE_STEP = 0.02;
 }
