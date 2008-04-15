@@ -41,7 +41,7 @@
 
 #include "mcs/mcs.h"
 #include "mpx/minisoup.hh"
-#include "xspf.hh"
+#include "mpx/xspf.hh"
 
 using namespace Glib;
 

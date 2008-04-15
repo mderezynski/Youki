@@ -47,6 +47,7 @@ class TagView : public WidgetLoader<Gtk::DrawingArea>
         // Drawing/Events
         double motion_x, motion_y;
         int m_ActiveRow; // contains the currently active item, for drawing optimizations
+        std::string m_ActiveTagName;
         
            
         void
@@ -64,6 +65,9 @@ class TagView : public WidgetLoader<Gtk::DrawingArea>
         on_motion_notify_event (GdkEventMotion * event);
 
         virtual bool
+        on_leave_notify_event (GdkEventCrossing * event);
+
+        virtual bool
         on_configure_event (GdkEventConfigure * event);
 
         virtual bool
@@ -72,15 +76,18 @@ class TagView : public WidgetLoader<Gtk::DrawingArea>
 
     public:
 
+        TagView (const Glib::RefPtr<Gnome::Glade::Xml>& xml, std::string const& widget_name);
+
+        virtual ~TagView ();
+
+        std::string const&
+        get_active_tag () const;
+            
         void
         clear ();
 
         void
         add_tag (std::string const& text, double amplitude);
-
-        TagView (const Glib::RefPtr<Gnome::Glade::Xml>& xml, std::string const& widget_name);
-
-        virtual ~TagView ();
 };
 }
 
