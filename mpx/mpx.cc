@@ -45,24 +45,25 @@
 #include <X11/XF86keysym.h>
 #include <gdk/gdkx.h>
 
-#include "dialog-filebrowser.hh"
-#include "import-share.hh"
-#include "import-folder.hh"
-#include "last-fm-xmlrpc.hh"
-#include "request-value.hh"
-#include "stock.hh"
-#include "xspf.hh"
- 
 #include "mpx.hh"
 #include "mpx-py.hh"
 #include "mpx-sources.hh"
 
+#include "mpx/stock.hh"
+#include "stock-register.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-graphics.hh"
 #include "mpx/util-string.hh"
 #include "mpx/util-ui.hh"
+#include "mpx/xspf.hh"
  
+#include "dialog-filebrowser.hh"
+#include "import-share.hh"
+#include "import-folder.hh"
+#include "last-fm-xmlrpc.hh"
+#include "request-value.hh"
+
 using namespace Glib;
 using namespace Gtk;
 using namespace std;
@@ -92,7 +93,6 @@ namespace
   "   </menu>"
   "   <menu action='MenuEdit'>"
   "         <menuitem action='action-plugins'/>"
-  "         <separator/>"
   "         <menuitem action='action-preferences'/>"
   "   </menu>"
   "   <menu action='MenuView'>"

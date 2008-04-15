@@ -1,4 +1,7 @@
 #
+# -*- coding: utf-8 -*-
+# -*- mode:python ; tab-width:4 -*- ex:set tabstop=4 shiftwidth=4 expandtab: -*-
+#
 # MPX Notification plugin
 # (C) 2008 D. Le Brun
 #
@@ -7,7 +10,7 @@ import mpx
 import pynotify
 #import mpx_playlist
 
-class Dummy(mpx.Plugin):
+class Notify(mpx.Plugin):
 
     def activate(self,player,mcs):
         print ">> Notify Plugin activated"

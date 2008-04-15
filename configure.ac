@@ -253,13 +253,10 @@ PKG_CHECK_MODULES([XML], [libxml-2.0 >= 2.6.1])
 PKG_CHECK_MODULES([EXO], [exo-0.3 >= 0.3.4])
 
 # libsoup
-PKG_CHECK_MODULES([SOUP], [libsoup-2.2 >= 2.2.100])
-BMP_CHECK_SOUP_EXTERN_C
+PKG_CHECK_MODULES([SOUP], [libsoup-2.2 >= 2.2.101])
 
 # sqlite
-PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.3])
-PKG_GET_VARIABLE([SQLITE], [sqlite3], [prefix])
-BMP_CHECK_SQLITE3([3.3.11], [$SQLITE_prefix])
+PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.4])
 
 # glib/glibmm/sigc++
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.10.0 gobject-2.0 gthread-2.0 gmodule-2.0])
@@ -284,6 +281,9 @@ PKG_CHECK_MODULES([GLADEMM], [libglademm-2.4 >= 2.6.0])
 # cairomm
 PKG_CHECK_MODULES([CAIROMM], [cairomm-1.0 >= 0.6.0])
 
+#sexymm
+PKG_CHECK_MODULES([SEXYMM], [libsexymm >= 0.1.9])
+
 # Network Manager
 AC_ARG_WITH([nm],
     [AS_HELP_STRING([--with-nm], [With GNOME NetworkManager])],
@@ -300,51 +300,7 @@ if test "x$have_nm" = "xyes"; then
 fi
 AM_CONDITIONAL([HAVE_NM], [test "x$have_nm" = "xyes"])
 
-# sexymm
-AC_ARG_WITH(sexymm-prefix,
-    AC_HELP_STRING([--with-sexymm-prefix], [path to libsexymm [default=/usr]]),
-    [sexymm_prefix="$withval"],
-    [sexymm_prefix="/usr"]
-)
-
-PKG_CHECK_EXISTS([libsexymm >= 0.1.9],
-                 [have_sexymm_pc="yes"], [have_sexymm_pc="no"])
-
-have_sexymm=yes
-if test "$have_sexymm_pc" = "yes"; then
-    PKG_CHECK_MODULES([SEXYMM], [libsexymm >= 0.1.9])
-else
-    AC_LANG_SAVE
-    AC_LANG_CPLUSPLUS
-    ac_cxxflags_save=$CXXFLAGS
-    CXXFLAGS="$CXXFLAGS -I$sexymm_prefix/include"
-    ac_ldflags_save=$LDFLAGS
-    LDFLAGS="$LDFLAGS -L$sexymm_prefix/lib"
-
-    ac_cppflags_save=$CPPFLAGS
-    CPPFLAGS="$CPPFLAGS -I."
-    AC_CHECK_LIB([sexymm], [_init], [have_sexymm=yes], [AC_MSG_ERROR([libsexymm not found])])
-
-    if test "$have_sexymm" = "yes"; then
-        AC_DEFINE([HAVE_SEXYMM], [1], [have sexymm])
-        SEXYMM_CFLAGS="-I$sexymm_prefix/include"
-        SEXYMM_LIBS="-L$sexymm_prefix/lib -lsexymm"
-    else
-        have_sexymm=no
-    fi
-
-    CPPFLAGS=$ac_cppflags_save
-    CXXFLAGS=$ac_cxxflags_save
-    LDFLAGS=$ac_ldflags_save
-    AC_LANG_RESTORE
-
-    AC_SUBST([SEXYMM_CFLAGS])
-    AC_SUBST([SEXYMM_LIBS])
-fi
-AM_CONDITIONAL([HAVE_SEXYMM], [test "$have_sexymm" = "yes"])
-
 # xerces
-
 AC_ARG_WITH([xerces-prefix],
     [AC_HELP_STRING([--with-xerces-prefix],[xerces prefix [default=/usr]])],
     [xerces_prefix="$withval"],

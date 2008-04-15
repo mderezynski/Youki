@@ -682,7 +682,7 @@ namespace MPX
         }
         else if (!only_if_exists)
         {
-          char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q, %lld);");
+          char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q, %lld, %lld);");
 
           std::string sql = mprintf (set_album_f,
 
@@ -691,6 +691,7 @@ namespace MPX
               attrs[ATTRIBUTE_MB_RELEASE_DATE].id,
               attrs[ATTRIBUTE_ASIN].id,
               "album_artist_j",
+              "album_insert_date",
 
               (track[ATTRIBUTE_ALBUM]
                   ? get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()
@@ -708,7 +709,8 @@ namespace MPX
                   ? get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()
                   : NULL) , 
 
-              album_artist_id);
+              album_artist_id,
+              gint64(time(NULL)));
 
           m_SQL->exec_sql (sql);
           album_j = m_SQL->last_insert_rowid ();
@@ -1061,20 +1063,6 @@ namespace MPX
         }
         else
             m_SQL->exec_sql("COMMIT;");
-
-        // Set album insert dates
-        RowV rows;
-        getSQL(rows, "SELECT DISTINCT insert_date, album_j FROM track GROUP BY album_j;");
-
-        for(RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-        {
-            gint64 date = get<gint64>(i->find("insert_date")->second);
-            gint64 album_j = get<gint64>(i->find("album_j")->second);
-            execSQL((boost::format("UPDATE album SET album_insert_date = '%lld' WHERE id = '%lld'") % date % album_j).str());
-        }
-
-        Signals.ScanEnd.emit(p->added, p->uptodate, p->updated, p->erroneous, p->collection.size());
-        p.reset();
     }
     
 } // namespace MPX

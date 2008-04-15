@@ -51,11 +51,11 @@
 
 //MPX Audio
 #include "mpx/main.hh"
+#include "mpx/stock.hh"
 #include "mpx/util-string.hh"
 
 #include "audio.hh"
 #include "preferences.hh"
-#include "stock.hh"
 
 #include <gdk/gdkx.h>
 

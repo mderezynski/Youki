@@ -67,14 +67,7 @@
 
 #include <bmp/dbus.hh>
 #include <src/paths.hh>
-
-#ifndef LIBSOUP_HAS_EXTERN_C
-G_BEGIN_DECLS
-#endif
 #include <libsoup/soup.h>
-#ifndef LIBSOUP_HAS_EXTERN_C
-G_END_DECLS
-#endif
 
 #define SERVER_NAME "beep-media-player.org"
 
