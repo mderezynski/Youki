@@ -34,6 +34,7 @@ class Notify(mpx.Plugin):
         m = self.player.get_metadata()
 
         if m.get(mpx.AttributeId.ARTIST).is_initialized() and m.get(mpx.AttributeId.TITLE).is_initialized():
+
             p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
             p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
 
