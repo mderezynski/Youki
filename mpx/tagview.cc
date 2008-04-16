@@ -2,12 +2,14 @@
 #include <cairomm/cairomm.h>
 #include <boost/shared_ptr.hpp>
 #include "mpx/tagview.hh"
-#include <math.h>
-/*
-#include <tr1/cmath>
-*/
 #define NO_IMPORT
 #include <pygobject.h>
+
+#ifdef HAVE_TR1
+#include <tr1/cmath>
+#else
+#include <math.h>
+#endif
 
 namespace MPX
 {
@@ -54,7 +56,11 @@ namespace MPX
             {
                 LayoutSP sp = *i;
 
+		#ifdef HAVE_TR1
+                if((x+(std::tr1::round(sp->m_Logical.get_width()-0.5))) > ((get_allocation().get_width()+0.5) / m_Layout.Scale)) 
+		#else
                 if((x+(round(sp->m_Logical.get_width()-0.5))) > ((get_allocation().get_width()+0.5) / m_Layout.Scale)) 
+		#endif
                 {
                     if((x - (TAG_SPACING / m_Layout.Scale)) > mw)
                     {
@@ -113,7 +119,11 @@ namespace MPX
                 LayoutList & l = *i;
 
                 double rx = (get_allocation().get_width() / 2.) - (((*wi) * m_Layout.Scale) / 2.); // center row 
+		#ifdef HAVE_TR1
+                rx = std::tr1::fmax(0, rx);
+		#else
                 rx = fmax(0, rx);
+		#endif
                 rx /= m_Layout.Scale;
                 for(LayoutList::const_iterator r = l.begin(); r != l.end(); ++r) 
                 {
