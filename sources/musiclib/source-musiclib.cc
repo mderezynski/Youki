@@ -1976,11 +1976,14 @@ namespace Source
             std::string device_udi = get<std::string>(t[ATTRIBUTE_HAL_DEVICE_UDI].get());
             std::string vrp = get<std::string>(t[ATTRIBUTE_VOLUME_RELATIVE_PATH].get());
             std::string mount_point = m_HAL.get().get_mount_point_for_volume(volume_udi, device_udi);
-            return build_filename(mount_point, vrp);
-        } catch (HAL::Exception)
+            std::string uri = build_filename(mount_point, vrp);
+            return uri;
+        } catch (HAL::NoMountPathForVolumeError & cxe)
         {
-            return std::string();
+            g_message("%s: Error: What: %s", cxe.what());
         }
+
+        return std::string();
 #else
         return Glib::ustring((*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.Location]);
 #endif // HAVE_HAL

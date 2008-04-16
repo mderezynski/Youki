@@ -3,6 +3,8 @@
 #include <boost/shared_ptr.hpp>
 #include "mpx/tagview.hh"
 #include <tr1/cmath>
+#define NO_IMPORT
+#include <pygobject.h>
 
 namespace MPX
 {
@@ -208,6 +210,8 @@ namespace MPX
         {
             using namespace Gtk;
 
+            PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+
             Cairo::RefPtr<Cairo::Context> cr = get_window()->create_cairo_context();
 
             int x, y, w, h;
@@ -250,6 +254,8 @@ namespace MPX
                 rowcounter++;
             }
 
+            pyg_gil_state_release(state);
+
             return true;
         }
 
@@ -284,6 +290,7 @@ namespace MPX
 
             update_global_extents ();
             layout ();
+            queue_draw ();
         }
 
         TagView::TagView ()

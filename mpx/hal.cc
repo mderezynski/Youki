@@ -375,7 +375,7 @@ namespace MPX
             m = i;
             l1 = l2;
           } 
-	    }
+        }
 
         if (m != m_volumes.end())
           return m->second.first; 
@@ -389,10 +389,15 @@ namespace MPX
         VolumeKey match (volume_udi, device_udi);
         Volumes::const_iterator v_iter = m_volumes.find (match);
 
-        if (v_iter != m_volumes.end())
-          return v_iter->second.first.mount_point; 
- 
-        throw NoMountPathForVolumeError ((boost::format ("No mount path for given volume: device: %s, volume: %s") % device_udi % volume_udi).str());
+        if (v_iter == m_volumes.end())
+        {
+            g_message("%s: Got no volume for %s, %s", G_STRLOC, volume_udi.c_str(), device_udi.c_str());
+            throw NoMountPathForVolumeError ((boost::format ("No mount path for given volume: device: %s, volume: %s") % device_udi % volume_udi).str());
+        }
+        else
+        {
+            return v_iter->second.first.mount_point; 
+        }
       }
 
       void
@@ -409,28 +414,14 @@ namespace MPX
         }
 
         if (!(volume_hal_instance->get_fsusage() == Hal::VOLUME_USAGE_MOUNTABLE_FILESYSTEM))
-          return;
+            return;
 
         Volume volume (m_context, volume_hal_instance);
         VolumeKey volume_key (volume.volume_udi, volume.device_udi);
 
-        VolumesMounted::iterator i (m_volumes_mounted.find (volume_key));
-
-        if (i != m_volumes_mounted.end())
-          m_volumes_mounted.erase (i);
-
-        m_volumes_mounted.insert (make_pair (volume_key, volume_hal_instance->is_mounted()));
-
-        if (volume_hal_instance->is_mounted())
-          signal_volume_added_.emit (volume);
-        else
-          signal_volume_removed_.emit (volume);
-
-        try {
-            Volumes::iterator i (m_volumes.find (volume_key));
-            if (i != m_volumes.end()) return;
-
+        try{
             m_volumes.insert (make_pair (volume_key, StoredVolume (volume, volume_hal_instance)));
+            m_volumes_mounted.insert (make_pair (volume_key, volume_hal_instance->is_mounted()));
 
             if (!volume_hal_instance->is_disc())
             {
@@ -445,6 +436,11 @@ namespace MPX
               (sigc::mem_fun (this, &MPX::HAL::device_property));
 
             signal_volume_added_.emit (volume); 
+
+            if (volume_hal_instance->is_mounted())
+                signal_volume_added_.emit (volume);
+            else
+                signal_volume_removed_.emit (volume);
           }
         catch (...) {}
       }
@@ -497,32 +493,29 @@ namespace MPX
 
         m_SQL = new SQL::SQLDB ("hal", build_filename(g_get_user_data_dir(), "mpx"), SQL::SQLDB_OPEN);
 
-        try {
-
-            static boost::format sql_create_table_f
-              ("CREATE TABLE IF NOT EXISTS %s (%s, PRIMARY KEY ('%s','%s') ON CONFLICT REPLACE);");
+        try{
+            static boost::format sql_create_table_f("CREATE TABLE IF NOT EXISTS %s (%s, PRIMARY KEY ('%s','%s') ON CONFLICT REPLACE);");
             static boost::format sql_attr_f ("'%s'");
   
             std::string attrs;
             for (unsigned int n = 0; n < G_N_ELEMENTS(volume_attributes); ++n)
             {
-              attrs.append((sql_attr_f % volume_attributes[n].id).str());
+                attrs.append((sql_attr_f % volume_attributes[n].id).str());
 
-              switch (volume_attributes[n].type)
-              {
-                case VALUE_TYPE_STRING:
-                    attrs.append (" TEXT ");
-                    break;
+                switch (volume_attributes[n].type)
+                {
+                    case VALUE_TYPE_STRING:
+                        attrs.append (" TEXT ");
+                        break;
 
-                case VALUE_TYPE_INT:
-                    attrs.append (" INTEGER DEFAULT 0 ");
-                    break;
+                    case VALUE_TYPE_INT:
+                        attrs.append (" INTEGER DEFAULT 0 ");
+                        break;
 
-                default: break;
-              }
+                    default: break;
+                }
 
-              if (n < (G_N_ELEMENTS(volume_attributes)-1))
-                attrs.append (", ");
+                if (n < (G_N_ELEMENTS(volume_attributes)-1)) attrs.append (", ");
             }
 
             m_SQL->exec_sql ((sql_create_table_f
@@ -591,7 +584,7 @@ namespace MPX
       }
 
       void
-      HAL::device_property	
+      HAL::device_property  
           (std::string const& udi,
            std::string const& key,
            bool               is_removed,

@@ -33,6 +33,24 @@
 
 using namespace boost::python;
 
+namespace
+{
+    struct PyGILLock
+    {
+        PyGILState_STATE m_state;
+
+        PyGILLock ()
+        {
+            m_state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+        }
+
+        ~PyGILLock ()
+        {
+            pyg_gil_state_release(m_state);
+        }
+    };
+}
+
 namespace MPX
 {
     enum AttributeId
@@ -149,6 +167,7 @@ namespace mpxpy
 	std::string
 	opt_repr(MPX::OVariant &self)
 	{
+        PyGILLock L;
 		return variant_repr(self.get()); 
 	}
 
@@ -161,18 +180,14 @@ namespace mpxpy
 	MPX::OVariant &
 	track_getitem(MPX::Track &self, int id) 
 	{
-        if(!self.has(id))
-            throw std::runtime_error("Track does not contain attribute");
-
+        PyGILLock L;
 		return self[id];
 	}
 
 	MPX::OVariant &
 	metadata_getitem(MPX::Metadata &self, int id) 
 	{
-        if(!self.has(id))
-            throw std::runtime_error("Metadata does not contain attribute");
-
+        PyGILLock L;
 		return self[id];
 	}
 
@@ -207,12 +222,14 @@ namespace mpxpy
 	PyObject*
 	player_get_gobject (MPX::Player & obj)
 	{
+        PyGILLock L;
 		return pygobject_new((GObject*)(obj.gobj()));
 	}
 
 	MPX::Library&
 	player_get_library (MPX::Player & obj)
 	{
+        PyGILLock L;
 		MPX::PAccess<MPX::Library> pa;	
 		obj.get_object(pa);
 		return pa.get();
@@ -222,6 +239,7 @@ namespace mpxpy
 	MPX::HAL&
 	player_get_hal (MPX::Player & obj)
 	{
+        PyGILLock L;
 		MPX::PAccess<MPX::HAL> pa;	
 		obj.get_object(pa);
 		return pa.get();
@@ -231,12 +249,15 @@ namespace mpxpy
 	void
 	player_add_widget (MPX::Player & obj, PyObject * pyobj)
 	{
+        PyGILLock L;
 		obj.add_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false));
 	}
 
 	void
 	player_add_info_widget (MPX::Player & obj, PyObject * pyobj, PyObject * name_py)
 	{
+        PyGILLock L;
+
         const char* name = PyString_AsString (name_py);
 
         g_return_if_fail(name != NULL);
@@ -247,12 +268,14 @@ namespace mpxpy
 	void
 	player_remove_widget (MPX::Player & obj, PyObject * pyobj)
 	{
+        PyGILLock L;
 		obj.remove_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false));
 	}
 
 	PyObject*
 	tag_view_get_gobject (MPX::TagView & obj)
 	{
+        PyGILLock L;
 		return pygobject_new((GObject*)(obj.gobj()));
 	}
 }
@@ -262,18 +285,21 @@ namespace mpxpy
 	MPX::Variant&
 	sql_row_getitem (MPX::SQL::Row & self, std::string const& key)
 	{
+        PyGILLock L;
 		return self[key];
 	}
 
 	void
 	sql_row_setitem (MPX::SQL::Row & self, std::string const& key, MPX::Variant const& value)
 	{
+        PyGILLock L;
 		self[key] = value;
 	}
 	
 	int
 	sql_row_len (MPX::SQL::Row & self)
 	{
+        PyGILLock L;
 		return self.size();
 	}
 }
@@ -523,6 +549,8 @@ BOOST_PYTHON_MODULE(mpx)
         .value("WAITING", MPX::PLAYSTATUS_WAITING)
     ;
 
+	/*-------------------------------------------------------------------------------------*/
+
 	class_<MPX::PlaybackSourcePy, boost::noncopyable>("PlaybackSource", boost::python::no_init)
 		.def("getUri", &MPX::PlaybackSourcePy::get_uri)
 		.def("getType", &MPX::PlaybackSourcePy::get_type)
@@ -547,6 +575,8 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("player", &MPX::PlaybackSourcePy::player, return_internal_reference<>())
 	;
 
+	/*-------------------------------------------------------------------------------------*/
+
 	class_<Mcs::Mcs, boost::noncopyable>("MCS", boost::python::no_init)
 		.def("domain_register", &Mcs::Mcs::domain_register)
 		.def("key_register", &Mcs::Mcs::key_register)
@@ -561,11 +591,35 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("key_get_string", &Mcs::Mcs::key_get<std::string>)
 	;	
 
+	/*-------------------------------------------------------------------------------------*/
+
     class_<MPX::TagView, boost::noncopyable>("TagView")
         .def("get_active_tag", &MPX::TagView::get_active_tag, return_internal_reference<>())
         .def("clear", &MPX::TagView::clear)
         .def("add_tag", &MPX::TagView::add_tag)
         .def("get_widget", &mpxpy::tag_view_get_gobject)
+    ;
+
+	/*-------------------------------------------------------------------------------------*/
+    /* HAL */
+	/*-------------------------------------------------------------------------------------*/
+
+    class_<MPX::HAL::Volume>("MPXHalVolume", boost::python::init<>())   
+        .def_readwrite("volume_udi", &MPX::HAL::Volume::volume_udi)
+        .def_readwrite("device_udi", &MPX::HAL::Volume::device_udi)
+        .def_readwrite("label", &MPX::HAL::Volume::label)
+        .def_readwrite("size", &MPX::HAL::Volume::size)
+        .def_readwrite("mount_point", &MPX::HAL::Volume::mount_point)
+        .def_readwrite("mount_time", &MPX::HAL::Volume::mount_time)
+        .def_readwrite("device_file", &MPX::HAL::Volume::device_file)
+        .def_readwrite("drive_serial", &MPX::HAL::Volume::drive_serial)
+        .def_readwrite("drive_bus", &MPX::HAL::Volume::drive_bus)
+        .def_readwrite("drive_type", &MPX::HAL::Volume::drive_type)
+        .def_readwrite("drive_size", &MPX::HAL::Volume::drive_size)
+        .def_readwrite("disc", &MPX::HAL::Volume::disc)
+    ;
+
+    class_<MPX::HAL>("MPXHal", boost::python::no_init)
     ;
 }
 
