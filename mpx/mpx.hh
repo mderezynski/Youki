@@ -148,6 +148,9 @@ namespace MPX
 
 		void
 		pause ();
+    
+        void
+        pause_ext ();
 
 		void
 		prev ();

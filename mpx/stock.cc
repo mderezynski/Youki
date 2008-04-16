@@ -46,6 +46,11 @@ namespace MPX
 
     StockIconSpec theme_icon_list[] =
     {   
+      { "audio-volume-muted.png",       "audio-volume-muted"        },
+      { "audio-volume-low.png",         "audio-volume-low"          },
+      { "audio-volume-medium.png",      "audio-volume-medium"       },
+      { "audio-volume-high.png",        "audio-volume-high"         },
+
       { "lastfm.png",                   MPX_STOCK_LASTFM            },
       { "plugin.png",                   MPX_STOCK_PLUGIN            },
       { "plugin-disabled.png",          MPX_STOCK_PLUGIN_DISABLED   },

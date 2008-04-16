@@ -1,8 +1,11 @@
-icons_DATA =			\
-	lastfm.png			\
-	plugin.png			\
-	plugin-disabled.png	\
-	volume-knob.png		
+icons_DATA =				\
+	lastfm.png				\
+	plugin.png				\
+	plugin-disabled.png		\
+	audio-volume-high.png	\
+	audio-volume-medium.png	\
+	audio-volume-low.png	\
+	audio-volume-muted.png
 
 iconsdir = $(pkgdatadir)/icons/hicolor/24x24/stock
 

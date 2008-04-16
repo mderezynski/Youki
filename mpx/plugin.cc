@@ -37,9 +37,6 @@
 #endif
 
 #include <boost/python.hpp>
-#include <boost/python/suite/indexing/indexing_suite.hpp>
-#include <boost/python/suite/indexing/map_indexing_suite.hpp>
-#include <boost/python/suite/indexing/vector_indexing_suite.hpp>
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
 #include <boost/lexical_cast.hpp>
@@ -182,8 +179,8 @@ namespace MPX
 						return;	
 					}
 
-					PyObject * mpx = PyImport_ImportModule("mpx");
-					PyObject * mpx_dict = PyModule_GetDict(mpx);
+                    object mpx_cc = boost::python::import ("mpx");
+					PyObject * mpx_dict = PyModule_GetDict(mpx_cc.ptr());
 					PyTypeObject *PyMPXPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "Plugin"); 
 
 					PyObject * main_locals = PyModule_GetDict(main_module);
