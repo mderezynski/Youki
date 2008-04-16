@@ -25,7 +25,7 @@
 #include <glibmm.h>
 #include <glibmm/i18n.h>
 #include <libglademm/xml.h>
-#include <boost/python.hpp>
+#include <boost/format.hpp>
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
 #include "mpx/main.hh"
@@ -44,10 +44,10 @@ namespace MPX
 
 					Gtk::TreeModelColumn<bool>				Active;
 					Gtk::TreeModelColumn<bool>				GUI;
-					Gtk::TreeModelColumn<Glib::ustring>		NameDesc;
-					Gtk::TreeModelColumn<Glib::ustring>		Tooltip;
+					Gtk::TreeModelColumn<std::string>		NameDesc;
+					Gtk::TreeModelColumn<std::string>		Tooltip;
 					Gtk::TreeModelColumn<gint64>			Id;
-					Gtk::TreeModelColumn<Glib::ustring>		Name;
+					Gtk::TreeModelColumn<std::string>		Name;
 	
 				ColumnsT ()
 				{
@@ -94,13 +94,11 @@ namespace MPX
 				{
 					TreeIter iter = Store->append();
 					(*iter)[Columns.Name] = i->second->get_name();
-					(*iter)[Columns.NameDesc] = Glib::ustring::compose("<b>%1</b>\n%2", 
-							Glib::Markup::escape_text(i->second->get_name()), 
-							Glib::Markup::escape_text(i->second->get_desc()));
-					(*iter)[Columns.Tooltip] = Glib::ustring::compose(_("<b>Authors:</b> %1\n<b>Copyright:</b> %2\n<b>Website:</b> %3"),
-																		Glib::Markup::escape_text( i->second->get_authors() ),
-																		Glib::Markup::escape_text( i->second->get_copyright() ),
-																		Glib::Markup::escape_text( i->second->get_website() ) );
+					(*iter)[Columns.NameDesc] = (boost::format("<b>%1%</b>\n%2%") % i->second->get_name() % i->second->get_desc()).str();
+					(*iter)[Columns.Tooltip] = (boost::format(_("<b>Authors:</b> %1%\n<b>Copyright:</b> %2%\n<b>Website:</b> %3%"))
+																		% Glib::Markup::escape_text( i->second->get_authors() ).c_str()
+																		% Glib::Markup::escape_text( i->second->get_copyright() ).c_str()
+																		% Glib::Markup::escape_text( i->second->get_website() ).c_str() ).str();
 					(*iter)[Columns.Active] = i->second->get_active();
 					(*iter)[Columns.GUI] = i->second->get_has_gui();
 					(*iter)[Columns.Id] = i->second->get_id();
@@ -248,7 +246,7 @@ namespace MPX
 		void
 		PluginManagerGUI::show_dialog()
 		{
-			Gtk::MessageDialog dialog (Glib::ustring::compose(_("Failed to %1: %2"), m_Manager.get_last_traceback().get_method(), m_Manager.get_last_traceback().get_name()), false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_CLOSE);
+			Gtk::MessageDialog dialog ((boost::format(_("Failed to %1%: %2%")) % m_Manager.get_last_traceback().get_method() % m_Manager.get_last_traceback().get_name()).str(), false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_CLOSE);
 			dialog.set_title (_("Plugin traceback - MPX"));
 			dialog.set_secondary_text (m_Manager.pull_last_traceback().get_traceback());
 			dialog.run();
@@ -271,13 +269,11 @@ namespace MPX
 		void
 		PluginManagerGUI::set_error_text()
 		{
-			Glib::ustring text = Glib::ustring::compose(_("<b>Failed to %1: %2</b>"),
-											m_Manager.get_last_traceback().get_method(),
-											m_Manager.get_last_traceback().get_name());
+			std::string text = (boost::format(_("<b>Failed to %1%: %2%</b>")) % m_Manager.get_last_traceback().get_method() % m_Manager.get_last_traceback().get_name()).str();
 
 			unsigned int n = m_Manager.get_traceback_count();
 			if(n > 1)
-				text += Glib::ustring::compose(_("(%1 more errors)"), n-1);
+				text += (boost::format(_(" (%d more errors)")) % (n-1)).str();
 
 			label->set_markup(text);
 		}
