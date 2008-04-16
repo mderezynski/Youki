@@ -49,7 +49,7 @@ namespace MPX
             {
                 LayoutSP sp = *i;
 
-                if((x+sp->m_Logical.get_width()) > (get_allocation().get_width() / m_Layout.Scale)) 
+                if((x+(std::tr1::round(sp->m_Logical.get_width()-0.5))) > ((get_allocation().get_width()+0.5) / m_Layout.Scale)) 
                 {
                     if((x - (TAG_SPACING / m_Layout.Scale)) > mw)
                     {
@@ -74,13 +74,11 @@ namespace MPX
                     goto retry_pack;
                 }
             }
-
 #if 0
-            else
-            if((m_Layout.Rows.size() * m_Layout.RowHeight) <= (get_allocation().get_height() / m_Layout.Scale)) 
+            else if((m_Layout.Rows.size() * m_Layout.RowHeight) <= (get_allocation().get_height() / m_Layout.Scale)) 
             {
                 double diff = (get_allocation().get_height() / m_Layout.Scale) - (m_Layout.Rows.size() * m_Layout.RowHeight);
-                if(diff > m_Layout.RowHeight) // arbitrary?
+                if(diff > (2*m_Layout.RowHeight)) // arbitrary?
                 {
                     m_Layout.Scale += SCALE_STEP*2.;
                     goto retry_pack;
@@ -117,9 +115,9 @@ namespace MPX
                     LayoutSP sp = *r;
                     sp->x = rx;
 
-                    if(m_Layout.Scale < 1.0)
-                        sp->y = ry + height_for_row*rowcounter + ((m_Layout.RowHeight - sp->m_Logical.get_height())/2.); 
-                    else
+                    //if(m_Layout.Scale < 1.0)
+                    //    sp->y = ry + height_for_row*rowcounter + ((m_Layout.RowHeight - sp->m_Logical.get_height())/2.); 
+                    //else
                         sp->y = ry + heightcorrection + ((m_Layout.RowHeight - sp->m_Logical.get_height())/2.); 
 
                     rx += sp->m_Logical.get_width() + (TAG_SPACING / m_Layout.Scale);

@@ -150,8 +150,7 @@ namespace
       time_t curtime = time(NULL);
       localtime_r (&curtime, &btm);
 
-      static boost::format
-        date_f ("%s, %s");
+      static boost::format date_f ("%s, %s");
 
       if (atm.tm_year == btm.tm_year &&
       atm.tm_yday == btm.tm_yday)
@@ -1358,7 +1357,7 @@ namespace MPX
               }
 
               void
-              append_album (SQL::Row & r, gint64 id, bool acquire_cover = false)
+              place_album (SQL::Row & r, gint64 id, bool acquire_cover = false)
               {
                 TreeIter iter = TreeStore->append();
                 m_AlbumIterMap.insert(std::make_pair(id, iter));
@@ -1436,7 +1435,7 @@ namespace MPX
                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                 {
                     SQL::Row & r = *i; 
-                    append_album(r, get<gint64>(r["id"]), false);
+                    place_album(r, get<gint64>(r["id"]), false);
                 }
               }
 
