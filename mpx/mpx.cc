@@ -1373,7 +1373,9 @@ namespace MPX
     bool
     Player::new_track_idle_emit ()
     {
+      PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 	  g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
+      pyg_gil_state_release(state);
       return false;
     }
 
@@ -1821,7 +1823,9 @@ namespace MPX
 	void
 	Player::on_cover_clicked ()
 	{
+        PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 		g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_INFOAREA_CLICK], 0);
+        pyg_gil_state_release(state);
 	}
 
 	void
@@ -1990,7 +1994,10 @@ namespace MPX
       {
           gint64 id = get<gint64>(m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID].get());
           m_Library.trackPlayed(id, time(NULL));
+
+          PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
           g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_TRACK_PLAYED], 0);
+          pyg_gil_state_release(state);
       }
 
       m_TrackPlayedSeconds = 0.;
@@ -2241,7 +2248,9 @@ namespace MPX
 	  MPXPlaystatus status = MPXPlaystatus (m_Play->property_status().get_value());
 	  MPX::URI u;
 
+      PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
       g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_STATUS_CHANGED], 0, int(status));
+      pyg_gil_state_release(state);
 
 	  switch (status)
 	  {
@@ -2874,8 +2883,16 @@ namespace MPX
 
           m_mmkeys_dbusproxy = dbus_g_proxy_new_for_name (bus,
               "org.gnome.SettingsDaemon",
-              "/org/gnome/SettingsDaemon",
-              "org.gnome.SettingsDaemon");
+              "/org/gnome/SettingsDaemon/MediaKeys",
+              "org.gnome.SettingsDaemon.MediaKeys");
+
+          if(!m_mmkeys_dbusproxy)
+          {
+              m_mmkeys_dbusproxy = dbus_g_proxy_new_for_name (bus,
+                  "org.gnome.SettingsDaemon",
+                  "/org/gnome/SettingsDaemon",
+                  "org.gnome.SettingsDaemon");
+          }
 
           if (m_mmkeys_dbusproxy)
           {
