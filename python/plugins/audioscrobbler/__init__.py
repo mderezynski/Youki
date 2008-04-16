@@ -731,30 +731,41 @@ class MPXAudioScrobbler(mpx.Plugin):
         p_date = time.time()
         m = self.player.get_metadata()
 
-        if m.get(mpx.AttributeId.ARTIST).is_initialized() and m.get(mpx.AttributeId.TITLE).is_initialized():
+        try:
+            p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
+            p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
+        except:
+            p_artist = None
+            p_title = None
+
+        if p_artist != None and p_title != None: 
 
             p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
             p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
 
-            p_len = 0
-            m_len = m.get(mpx.AttributeId.TIME)
-            if m_len.is_initialized():
+            try:
+                m_len = m.get(mpx.AttributeId.TIME)
                 p_len = m_len.val().get_int()
+            except:
+                p_len = 0
 
-            p_tracknumber=u''
-            m_tracknumber = m.get(mpx.AttributeId.TRACK)
-            if m.get(mpx.AttributeId.TRACK).is_initialized():
-                p_tracknumber = str(m_tracknumber.val().get_int())
-
-            p_album=u''
-            m_album = m.get(mpx.AttributeId.ALBUM)
-            if m_album.is_initialized():
+            try:
+                m_album = m.get(mpx.AttributeId.ALBUM)
                 p_album = m_album.val().get_string()
+            except:
+                p_album=u''
 
-            p_mbid=u''
-            m_mbid = m.get(mpx.AttributeId.MB_TRACK_ID)
-            if m_mbid.is_initialized():
+            try:
+                m_tracknumber = m.get(mpx.AttributeId.TRACK)
+                p_tracknumber = str(m_tracknumber.val().get_int())
+            except:
+                p_tracknumber=u''
+
+            try:
+                m_mbid = m.get(mpx.AttributeId.MB_TRACK_ID)
                 p_mbid = m_mbid.val().get_string()
+            except:
+                p_mbid=u''
 
             print "Posting track with MBID: " + p_mbid + " at date " + str(p_date)
 
@@ -772,32 +783,41 @@ class MPXAudioScrobbler(mpx.Plugin):
 
         print ">> AS Now-Playing!"
 
-        if m.get(mpx.AttributeId.ARTIST).is_initialized() and m.get(mpx.AttributeId.TITLE).is_initialized():
+        try:
+            p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
+            p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
+        except:
+            p_artist = None
+            p_title = None
 
-            print ">> Posting..." 
+        if p_artist != None and p_title != None: 
 
             p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
             p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
 
-            p_len = 0
-            m_len = m.get(mpx.AttributeId.TIME)
-            if m_len.is_initialized():
+            try:
+                m_len = m.get(mpx.AttributeId.TIME)
                 p_len = m_len.val().get_int()
+            except:
+                p_len = 0
 
-            p_tracknumber=u''
-            if m.get(mpx.AttributeId.TRACK).is_initialized():
+            try:
+                m_album = m.get(mpx.AttributeId.ALBUM)
+                p_album = m_album.val().get_string()
+            except:
+                p_album=u''
+
+            try:
                 m_tracknumber = m.get(mpx.AttributeId.TRACK)
                 p_tracknumber = str(m_tracknumber.val().get_int())
+            except:
+                p_tracknumber=u''
 
-            p_album=u''
-            m_album = m.get(mpx.AttributeId.ALBUM)
-            if m_album.is_initialized():
-                p_album = m_album.val().get_string()
-
-            p_mbid=u''
-            m_mbid = m.get(mpx.AttributeId.MB_TRACK_ID)
-            if m_mbid.is_initialized():
+            try:
+                m_mbid = m.get(mpx.AttributeId.MB_TRACK_ID)
                 p_mbid = m_mbid.val().get_string()
+            except:
+                p_mbid=u''
 
             print "Posting now-playing with MBID: " + p_mbid + " at date " + str(time.time())
 

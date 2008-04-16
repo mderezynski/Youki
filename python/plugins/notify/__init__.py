@@ -33,11 +33,14 @@ class Notify(mpx.Plugin):
 
         m = self.player.get_metadata()
 
-        if m.get(mpx.AttributeId.ARTIST).is_initialized() and m.get(mpx.AttributeId.TITLE).is_initialized():
-
+        try:
             p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
             p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
+        except:
+            p_artist = None
+            p_title = None
 
+        if p_artist != None and p_title != None: 
             message = "<big><b>" + p_artist + "</b>\n" + p_title + "</big>"
             n = pynotify.Notification( "MPX is now playing...", message)
             n.set_urgency(pynotify.URGENCY_NORMAL)
