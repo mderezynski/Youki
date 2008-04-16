@@ -3,6 +3,7 @@
 # -*- mode:python ; tab-width:4 -*- ex:set tabstop=4 shiftwidth=4 expandtab: -*-
 #
 # MPX Notification plugin
+# (C) 2008 Jacek Wolszczak
 # (C) 2008 D. Le Brun
 #
 
@@ -16,21 +17,57 @@ class Notification(mpx.Plugin):
 
 
     def activate(self,player,mcs):
-        print ">> Notification Plugin activated"
         self.player = player
+
         self.new_track = self.player.gobj().connect("new-track", self.now_playing)
         pynotify.init("MPX")
+
+        self.next = gtk.StatusIcon()
+        self.next.set_from_stock(gtk.STOCK_MEDIA_NEXT)
+        self.next.connect('activate', self.next_cb)
+        self.next.set_visible(True)
+
+        self.playpause = gtk.StatusIcon()
+        self.playpause.set_from_stock(gtk.STOCK_MEDIA_PLAY)
+        self.playpause.connect('activate', self.playpause_cb)
+        self.player.gobj().connect("play-status-changed", self.on_state_change)
+        self.playpause.set_visible(True)
+
+        self.previous = gtk.StatusIcon()
+        self.previous.set_from_stock(gtk.STOCK_MEDIA_PREVIOUS)
+        self.previous.connect('activate', self.previous_cb)
+        self.previous.set_visible(True)
+
+        print ">> Notification Plugin activated"
         return True
 
     def deactivate(self):
-        print ">> Notification Plugin deactivated"
+        self.next.set_visible(False)
+        self.previous.set_visible(False)
+        self.playpause.set_visible(False)
+
         self.player = None
+        print ">> Notification Plugin deactivated"
 
     def run(self):
         print ">> Notification Plugin running"
 
-    def now_playing(self, blah):
+    def on_state_change(self, player, state):
+        if state == self.mpx.PlayStatus.PLAYING:
+            self.playpause.set_from_stock(gtk.STOCK_MEDIA_PAUSE)
+        else:
+            self.playpause.set_from_stock(gtk.STOCK_MEDIA_PLAY)
 
+    def next_cb(self,widget, data = None):
+        self.player.next()
+
+    def previous_cb(self,widget, data = None):
+        self.player.prev()
+
+    def playpause_cb(self,widget, data = None):
+        self.player.pause()
+
+    def now_playing(self, blah):
         m = self.player.get_metadata()
 
         try:
