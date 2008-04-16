@@ -1236,7 +1236,10 @@ namespace MPX
 		m_Play->property_volume() = mcs->key_get<int>("mpx", "volume"); 
 		m_Volume->signal_value_changed().connect( sigc::mem_fun( *this, &Player::on_volume_value_changed ) );
 		std::vector<Glib::ustring> Icons;
-		Icons.push_back("volume-knob");
+		Icons.push_back("audio-volume-muted");
+		Icons.push_back("audio-volume-low");
+		Icons.push_back("audio-volume-medium");
+		Icons.push_back("audio-volume-high");
 		m_Volume->property_size() = Gtk::ICON_SIZE_SMALL_TOOLBAR;
 		m_Volume->set_icons(Icons);
 
@@ -2102,19 +2105,27 @@ namespace MPX
 	    RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 	}
 
+    void
+    Player::pause_ext ()
+    {
+        bool paused = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->get_active();
+        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(!paused);
+    }
+
 	void
 	Player::pause ()
 	{
-	  bool paused = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->get_active();
-		  
-	  m_InfoArea->set_paused(paused);
+        bool paused = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->get_active();
+        m_InfoArea->set_paused(paused);
 
-	  PlaybackSource::Caps c = m_source_caps[m_ActiveSource];
-	  if( paused && (c & PlaybackSource::C_CAN_PAUSE ))
-		m_Play->request_status (PLAYSTATUS_PAUSED);
-	  else
-	  if( !paused && (m_Play->property_status() == PLAYSTATUS_PAUSED))
-		m_Play->request_status (PLAYSTATUS_PLAYING);
+        PlaybackSource::Caps c = m_source_caps[m_ActiveSource];
+        if(c & PlaybackSource::C_CAN_PAUSE )
+        {
+          if( m_Play->property_status() == PLAYSTATUS_PAUSED)
+              m_Play->request_status (PLAYSTATUS_PLAYING);
+          else
+              m_Play->request_status (PLAYSTATUS_PAUSED);
+        }
 	}
 
 	void
