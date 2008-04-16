@@ -692,7 +692,7 @@ AC_OUTPUT([
 	python/plugins/mpxdj/Makefile
 	python/plugins/mpxdj/__init__.py
 	python/plugins/audioscrobbler/Makefile
-	python/plugins/notify/Makefile
+	python/plugins/notification/Makefile
 	python/plugins/ratings_export/Makefile
 	python/plugins/ratings_export/__init__.py
 

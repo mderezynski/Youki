@@ -1,8 +1,8 @@
 SUBDIRS = 				\
-		audioscrobbler 	\
+		audioscrobbler 		\
 		dummy 			\
 		mpxdj			\
-		ratings_export	\
-		notify			\
+		ratings_export		\
+		notification		\
 		trackinfo		\
 		tracktags

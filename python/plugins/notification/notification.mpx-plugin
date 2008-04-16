@@ -1,6 +1,6 @@
 [MPX Plugin]
 Loader=python
-Module=notify
+Module=notification
 IAge=1
 Name=MPX Notification Plugin
 Authors=David Le Brun <david@backtrace.info>

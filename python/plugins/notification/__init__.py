@@ -12,22 +12,22 @@ import gtk
 
 COVER_SIZE = 96
 
-class Notify(mpx.Plugin):
+class Notification(mpx.Plugin):
 
 
     def activate(self,player,mcs):
-        print ">> Notify Plugin activated"
+        print ">> Notification Plugin activated"
         self.player = player
         self.new_track = self.player.gobj().connect("new-track", self.now_playing)
         pynotify.init("MPX")
         return True
 
     def deactivate(self):
-        print ">> Notify Plugin deactivated"
+        print ">> Notification Plugin deactivated"
         self.player = None
 
     def run(self):
-        print ">> Notify Plugin running"
+        print ">> Notification Plugin running"
 
     def now_playing(self, blah):
 
