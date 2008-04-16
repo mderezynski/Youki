@@ -151,7 +151,7 @@ class TrackInfo:
             self.buf.insert(self.buf.get_end_iter(), "\n")
 
             try:
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics", self.textTagLarge)
+                self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics", self.textTagLarge, self.textTagUnderline)
                 self.buf.insert(self.buf.get_end_iter(), "\n\n")
                 lyricwiki = mpx.LyricWiki(track[mpx.AttributeId.ARTIST].val().get_string(), track[mpx.AttributeId.TITLE].val().get_string())
                 lyrics = lyricwiki.run()
@@ -161,7 +161,7 @@ class TrackInfo:
             
             try:
                 self.buf.insert(self.buf.get_end_iter(), "\n\n")
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track[mpx.AttributeId.ARTIST].val().get_string(), self.textTagLarge)
+                self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track[mpx.AttributeId.ARTIST].val().get_string(), self.textTagLarge, self.textTagUnderline)
                 self.buf.insert(self.buf.get_end_iter(), "\n\n")
                 lastfmartist = mpx.LastFMArtist(track[mpx.AttributeId.ARTIST].val().get_string())
                 artist = lastfmartist.run()
@@ -202,7 +202,7 @@ class TrackInfo:
 
             self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
-            self.buf.insert_with_tags(self.buf.get_end_iter(), "This Track", self.textTagUnderline, self.textTagLarge)
+            self.buf.insert_with_tags(self.buf.get_end_iter(), "This Track", self.textTagLarge, self.textTagUnderline)
             self.buf.insert(self.buf.get_end_iter(), "\n")
             for rel in reldict:
                 if rel in funcdict:

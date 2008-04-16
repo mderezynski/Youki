@@ -3,5 +3,6 @@ SUBDIRS = 				\
 		dummy 			\
 		mpxdj			\
 		ratings_export	\
-		notify		\
-		trackinfo
+		notify			\
+		trackinfo		\
+		tracktags

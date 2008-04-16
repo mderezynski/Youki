@@ -150,6 +150,9 @@ namespace MPX
 		void
 		stop ();
 
+        void
+        play_uri (std::string const&);
+
         virtual ~Player ();
 
       protected:

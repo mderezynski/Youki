@@ -55,6 +55,9 @@ namespace MPX
 		void	
 		get_object (PAccess<MPX::Play>&);
 
+        void
+        play_uri (std::string const&);
+
         virtual ~Player ();
 
       protected:

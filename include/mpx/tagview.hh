@@ -12,7 +12,7 @@ using namespace Gnome::Glade;
 
 namespace MPX
 {
-class TagView : public WidgetLoader<Gtk::DrawingArea>
+class TagView : public Gtk::DrawingArea
 {
         static double TAG_SPACING; 
         static double ACCEPTABLE_MIN_SCALE;
@@ -53,13 +53,12 @@ class TagView : public WidgetLoader<Gtk::DrawingArea>
         };
 
         MainLayout m_Layout; 
-
-        // Drawing/Events
         double motion_x, motion_y;
-        int m_ActiveRow; // contains the currently active item, for drawing optimizations
         std::string m_ActiveTagName;
+        guint m_Signal0; 
+
+    private:
         
-           
         void
         update_global_extents ();
 
@@ -70,6 +69,9 @@ class TagView : public WidgetLoader<Gtk::DrawingArea>
         layout ();
 
     protected:
+
+        virtual bool
+        on_button_press_event (GdkEventButton * event);
 
         virtual bool
         on_motion_notify_event (GdkEventMotion * event);
@@ -83,21 +85,19 @@ class TagView : public WidgetLoader<Gtk::DrawingArea>
         virtual bool
         on_expose_event (GdkEventExpose * event);
 
-
     public:
 
-        TagView (const Glib::RefPtr<Gnome::Glade::Xml>& xml, std::string const& widget_name);
-
+        TagView ();
         virtual ~TagView ();
 
         std::string const&
         get_active_tag () const;
             
         void
-        clear ();
+        add_tag (std::string const& text, double amplitude);
 
         void
-        add_tag (std::string const& text, double amplitude);
+        clear ();
 };
 }
 

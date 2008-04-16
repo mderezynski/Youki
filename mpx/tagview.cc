@@ -130,11 +130,20 @@ namespace MPX
         }
 
         bool
+        TagView::on_button_press_event (GdkEventButton * event)
+        {
+            g_signal_emit (G_OBJECT(gobj()), m_Signal0, 0, m_ActiveTagName.c_str());
+            return false;
+        }
+
+        bool
         TagView::on_leave_notify_event (GdkEventCrossing * event)
         {
             motion_x = -1;
             motion_y = -1;
             queue_draw ();
+
+            return false;
         }
 
         bool
@@ -170,7 +179,6 @@ namespace MPX
                     {
                         sp->active = true;
                         m_ActiveTagName = sp->m_Text;
-                        m_ActiveRow = rowcounter;
                     }
                     else
                     {
@@ -211,7 +219,7 @@ namespace MPX
 
             cr->set_operator(Cairo::OPERATOR_SOURCE);
             cr->set_source_rgb(0., 0., 0.);
-            cr->rectangle(x, y, w, h);
+            cr->rectangle(0, 0, w, h);
             cr->fill();
 
             cr->scale( m_Layout.Scale, m_Layout.Scale );
@@ -278,12 +286,18 @@ namespace MPX
             layout ();
         }
 
-        TagView::TagView (const Glib::RefPtr<Gnome::Glade::Xml>& xml, std::string const& widget_name)
-        : WidgetLoader<Gtk::DrawingArea>(xml, widget_name)
-        , motion_x(0)
+        TagView::TagView ()
+        : motion_x(0)
         , motion_y(0)
-        , m_ActiveRow(0)
         {
+            m_Signal0 = 
+                g_signal_new ("tag-clicked",
+                          G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+                          GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+                          0,
+                          NULL, NULL,
+                          g_cclosure_marshal_VOID__STRING, G_TYPE_NONE, 1, G_TYPE_STRING); 
+
             gtk_widget_add_events(GTK_WIDGET(gobj()), Gdk::POINTER_MOTION_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::LEAVE_NOTIFY_MASK);
         }
 

@@ -257,8 +257,6 @@ namespace Source
         Gtk::HBox                     * m_HBox_Error;
         Gtk::Label                    * m_Label_Error;
         Gtk::Button                   * m_Button_Error_Hide;
-        //MPX::LastFMTagView            * m_TagView;
-        MPX::TagView                  * m_TagView;
         TagInfoViewT                  * m_TagInfoView;
     
         MPX::LastFMRadio                m_LastFMRadio;
@@ -284,12 +282,6 @@ namespace Source
 
         void
         on_url_entry_activated ();
-
-        bool
-        on_tag_view_event (GdkEvent*);
-
-        void
-        on_tag_view_play_tag ();
 
       protected:
 
@@ -334,6 +326,13 @@ namespace Source
 
 		virtual void
 		send_metadata ();
+
+        // UriHandler
+        virtual UriSchemes 
+        Get_Schemes (); 
+
+        virtual void    
+        Process_URI_List (Util::FileList const&);
     };
   }
 }

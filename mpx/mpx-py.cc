@@ -19,6 +19,7 @@
 #include "mpx/library.hh"
 #include "mpx/paccess.hh"
 #include "mpx/types.hh"
+#include "mpx/tagview.hh"
 
 #include "audio-types.hh"
 #include "lyrics-v2.hh"
@@ -235,6 +236,12 @@ namespace mpxpy
 	{
 		obj.remove_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false));
 	}
+
+	PyObject*
+	tag_view_get_gobject (MPX::TagView & obj)
+	{
+		return pygobject_new((GObject*)(obj.gobj()));
+	}
 }
 
 namespace mpxpy
@@ -416,10 +423,11 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("get_metadata", &MPX::Player::get_metadata, return_internal_reference<>())
 		.def("gobj", &mpxpy::player_get_gobject)
 		.def("play", &MPX::Player::play)
-		.def("pause", &MPX::Player::play)
-		.def("prev", &MPX::Player::play)
-		.def("next", &MPX::Player::play)
-		.def("stop", &MPX::Player::play)
+		.def("pause", &MPX::Player::pause)
+		.def("prev", &MPX::Player::prev)
+		.def("next", &MPX::Player::next)
+		.def("stop", &MPX::Player::stop)
+        .def("play_uri", &MPX::Player::play_uri)
 		.def("get_library", &mpxpy::player_get_library, return_internal_reference<>()) 
 		.def("add_widget", &mpxpy::player_add_widget)
         .def("add_info_widget", &mpxpy::player_add_info_widget)
@@ -538,6 +546,13 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("key_get_double", &Mcs::Mcs::key_get<double>)
 		.def("key_get_string", &Mcs::Mcs::key_get<std::string>)
 	;	
+
+    class_<MPX::TagView, boost::noncopyable>("TagView")
+        .def("get_active_tag", &MPX::TagView::get_active_tag, return_internal_reference<>())
+        .def("clear", &MPX::TagView::clear)
+        .def("add_tag", &MPX::TagView::add_tag)
+        .def("get_widget", &mpxpy::tag_view_get_gobject)
+    ;
 }
 
 namespace MPX

@@ -1401,6 +1401,25 @@ namespace MPX
 		}
 	}
 
+    void
+    Player::play_uri (std::string const& uri)
+    {
+        Util::FileList uris;
+        uris.push_back(uri);
+        try{
+            URI u (uris[0]); //TODO/FIXME: We assume all URIs are of the same scheme
+            UriSchemeMap::const_iterator i = m_UriMap.find (u.scheme);
+            if( i != m_UriMap.end ())
+            {
+              m_SourceV[i->second]->Process_URI_List (uris);
+            }
+          }
+        catch (URI::ParseError & cxe)
+          {
+            g_warning (G_STRLOC ": Couldn't parse URI %s", uris[0].c_str());
+          }
+    }
+
 	void
 	Player::on_play_files ()
 	{
@@ -1426,10 +1445,6 @@ namespace MPX
 				catch (URI::ParseError & cxe)
 				  {
 					g_warning (G_STRLOC ": Couldn't parse URI %s", uris[0].c_str());
-				  }
-				catch (bad_cast & cxe)
-				  {
-					g_critical (G_STRLOC ": Source isn't URI handler (dynamic_cast<> failed)");
 				  }
 			}
 		}

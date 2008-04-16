@@ -150,7 +150,7 @@ namespace Source
                 Get_Schemes (); 
 
                 virtual void    
-                                Process_URI_List (Util::FileList const&);
+                Process_URI_List (Util::FileList const&);
 
         }; // end class PlaybackSourceMusicLib 
 } // end namespace Source
