@@ -36,7 +36,7 @@ class Notify(mpx.Plugin):
         try:
             p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
             p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
-        except RuntimeError:
+        except:
             p_artist = None
             p_title = None
 
