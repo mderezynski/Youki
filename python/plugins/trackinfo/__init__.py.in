@@ -169,67 +169,66 @@ class TrackInfo:
             except:
                 print "Couldn't get Last.fm artist info for '" + track[mpx.AttributeId.ARTIST].val().get_string() 
 
-            try:
-                trackId = track.get(mpx.AttributeId.MB_TRACK_ID).val().get_string()
-                mbtrack = self.q.getTrackById(trackId, self.wsinc) 
+            trackId = track.get(mpx.AttributeId.MB_TRACK_ID).val().get_string()
+            mbtrack = self.q.getTrackById(trackId, self.wsinc) 
 
-                rels = mbtrack.getRelations()
-                reldict = {}
+            rels = mbtrack.getRelations()
+            reldict = {}
 
-                for rel in rels:
-                    if rel.getDirection() != "backward":
-                        x,y,reltype = rel.getType().partition("#")
+            for rel in rels:
+                if rel.getDirection() != "backward":
+                    x,y,reltype = rel.getType().partition("#")
 
-                        try:
-                            reldict[reltype].append(rel)
-                        except:
-                            reldict[reltype] = []
-                            reldict[reltype].append(rel)
+                    try:
+                        reldict[reltype].append(rel)
+                    except:
+                        reldict[reltype] = []
+                        reldict[reltype].append(rel)
 
-                funcdict = {"Cover":self.printCover,
-                            "Composer":self.printComposer,
-                            "Instrument":self.printInstrument,
-                            "SamplesMaterial":self.printSamplesMaterial,
-                            "Remixer":self.printRemixer,
-                            "Lyricist":self.printLyricist,
-                            "Producer":self.printProducer }
+            funcdict = {"Cover":self.printCover,
+                        "Composer":self.printComposer,
+                        "Instrument":self.printInstrument,
+                        "SamplesMaterial":self.printSamplesMaterial,
+                        "Remixer":self.printRemixer,
+                        "Lyricist":self.printLyricist,
+                        "Producer":self.printProducer,
+                        "Performer":self.printPerformer }
 
-                self.entities = []
-                self.link_tags = []
+            self.entities = []
+            self.link_tags = []
 
-                if track[mpx.AttributeId.MB_ARTIST_ID].is_initialized():
-                        self.entities.append(track[mpx.AttributeId.MB_ARTIST_ID].val().get_string())
+            if track[mpx.AttributeId.MB_ARTIST_ID].is_initialized():
+                    self.entities.append(track[mpx.AttributeId.MB_ARTIST_ID].val().get_string())
 
-                self.buf.insert(self.buf.get_end_iter(), "\n\n")
+            self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "This Track", self.textTagUnderline, self.textTagLarge)
-                self.buf.insert(self.buf.get_end_iter(), "\n")
-                for rel in reldict:
-                    if rel in funcdict:
-                        rellist = reldict[rel]
-                        for relitem in rellist:
-                            funcdict[rel](relitem)
-                self.buf.insert(self.buf.get_end_iter(), "\n\n")
+            self.buf.insert_with_tags(self.buf.get_end_iter(), "This Track", self.textTagUnderline, self.textTagLarge)
+            self.buf.insert(self.buf.get_end_iter(), "\n")
+            for rel in reldict:
+                if rel in funcdict:
+                    rellist = reldict[rel]
+                    funcdict[rel](rellist)
+                    #for relitem in rellist:
+                    #    funcdict[rel](relitem)
+            self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "Album Links", self.textTagUnderline, self.textTagLarge)
-                self.buf.insert(self.buf.get_end_iter(), "\n")
-                entity = self.q.getReleaseById(track[mpx.AttributeId.MB_ALBUM_ID].val().get_string(), self.wsinc_release)
+            self.buf.insert_with_tags(self.buf.get_end_iter(), "Album Links", self.textTagUnderline, self.textTagLarge)
+            self.buf.insert(self.buf.get_end_iter(), "\n")
+            entity = self.q.getReleaseById(track[mpx.AttributeId.MB_ALBUM_ID].val().get_string(), self.wsinc_release)
+            rels = entity.getRelations()
+            self.display_relations (rels)
+            self.buf.insert(self.buf.get_end_iter(), "\n\n")
+
+            self.buf.insert_with_tags(self.buf.get_end_iter(), "Contributor Links", self.textTagUnderline, self.textTagLarge)
+            self.buf.insert(self.buf.get_end_iter(), "\n")
+            self.entities = dict(zip(self.entities,self.entities)).keys() 
+            for ent in self.entities:
+                entity = self.q.getArtistById(ent, self.wsinc)   
+                self.buf.insert_with_tags(self.buf.get_end_iter(), entity.getName(), self.textTagBold)
+                self.buf.insert(self.buf.get_end_iter(), ": ")
                 rels = entity.getRelations()
                 self.display_relations (rels)
-                self.buf.insert(self.buf.get_end_iter(), "\n\n")
-
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "Contributor Links", self.textTagUnderline, self.textTagLarge)
                 self.buf.insert(self.buf.get_end_iter(), "\n")
-                self.entities = dict(zip(self.entities,self.entities)).keys() 
-                for ent in self.entities:
-                    entity = self.q.getArtistById(ent, self.wsinc)   
-                    self.buf.insert_with_tags(self.buf.get_end_iter(), entity.getName(), self.textTagBold)
-                    self.buf.insert(self.buf.get_end_iter(), ": ")
-                    rels = entity.getRelations()
-                    self.display_relations (rels)
-                    self.buf.insert(self.buf.get_end_iter(), "\n")
-            except:
-                print "No Track ID"
 
             self.Done = True
             #exit()
@@ -272,7 +271,7 @@ class TrackInfo:
         command = "xdg-open \"%s\"" % url
         os.system(command)
 
-    def printCover(self, track, mbtrack, rels):
+    def printCover(self, rels):
 
         for rel in rels:
 
@@ -291,7 +290,7 @@ class TrackInfo:
 
         return True
 
-    def printComposer(self, track, mbtrack, rels):
+    def printComposer(self, rels):
 
         self.buf.insert_with_tags(self.buf.get_end_iter(), "...was composed by ")
 
@@ -306,7 +305,7 @@ class TrackInfo:
         self.buf.insert(self.buf.get_end_iter(), "\n") 
         return True
 
-    def printSamplesMaterial(self, track, mbtrack, rels):
+    def printSamplesMaterial(self, rels):
 
         sampled = []
 
@@ -323,7 +322,7 @@ class TrackInfo:
         self.buf.insert(self.buf.get_end_iter(), "\n") 
         return True
 
-    def printRemixer(self, track, mbtrack, rels):
+    def printRemixer(self, rels):
 
         remixers = []
 
@@ -339,7 +338,7 @@ class TrackInfo:
         self.buf.insert(self.buf.get_end_iter(), "\n") 
         return True
 
-    def printProducer(self, track, mbtrack, rels):
+    def printProducer(self, rels):
 
         producers = []
 
@@ -355,7 +354,7 @@ class TrackInfo:
         self.buf.insert(self.buf.get_end_iter(), "\n") 
         return True
 
-    def printLyricist(self, track, mbtrack, rels):
+    def printLyricist(self, rels):
 
         lyricists = []
 
@@ -369,7 +368,7 @@ class TrackInfo:
         self.buf.insert(self.buf.get_end_iter(), "\n") 
         return True
 
-    def printProducer(self, track, mbtrack, rels):
+    def printProducer(self, rels):
 
         producers = []
 
@@ -383,7 +382,21 @@ class TrackInfo:
         self.buf.insert(self.buf.get_end_iter(), "\n") 
         return True
 
-    def printInstrument(self, track, mbtrack, rels):
+    def printPerformer(self, rels):
+
+        performers = []
+
+        for rel in rels:
+            performer = rel.getTarget() 
+            self.entities.append(rel.getTargetId())
+            performers.append(performer.getName())
+
+        self.buf.insert_with_tags(self.buf.get_end_iter(), "...was performed by ")
+        self.buf.insert_with_tags(self.buf.get_end_iter(), ", ".join(performers), self.textTagBold) 
+        self.buf.insert(self.buf.get_end_iter(), "\n") 
+        return True
+
+    def printInstrument(self, rels):
         return True
 
 class TrackInfoDispatcher(mpx.Plugin):

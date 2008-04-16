@@ -578,8 +578,10 @@ namespace MPX
               g_message("%s: Got new Volume: '%s'", G_STRLOC, udi.c_str());
               process_volume (udi);       
             }
+        } catch (UnableToProbeDeviceError & cxe)
+        {
+            g_message("%s: Device with udi '%s' doesn't exist", G_STRLOC, udi.c_str());
         }
-        catch (...) {}
       }
 
       void

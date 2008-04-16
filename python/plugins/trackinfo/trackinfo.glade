@@ -78,6 +78,8 @@
       <child>
 	<widget class="GtkImage" id="throb">
 	  <property name="visible">True</property>
+	  <property name="stock">gtk-missing-image</property>
+	  <property name="icon_size">4</property>
 	  <property name="xalign">0.5</property>
 	  <property name="yalign">0.5</property>
 	  <property name="xpad">0</property>
@@ -139,10 +141,10 @@
 		  <property name="cursor_visible">False</property>
 		  <property name="pixels_above_lines">0</property>
 		  <property name="pixels_below_lines">0</property>
-		  <property name="pixels_inside_wrap">4</property>
-		  <property name="left_margin">4</property>
-		  <property name="right_margin">4</property>
-		  <property name="indent">4</property>
+		  <property name="pixels_inside_wrap">0</property>
+		  <property name="left_margin">8</property>
+		  <property name="right_margin">8</property>
+		  <property name="indent">0</property>
 		  <property name="text" translatable="yes"></property>
 		</widget>
 	      </child>
