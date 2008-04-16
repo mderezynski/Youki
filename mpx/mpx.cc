@@ -96,7 +96,6 @@ namespace
   "         <menuitem action='action-preferences'/>"
   "   </menu>"
   "   <menu action='MenuView'>"
-  "         <menuitem action='action-show-info'/>"
   "   </menu>"
   "   <menu action='MenuTrack'>"
   "         <menuitem action='action-lastfm-love'/>"
@@ -1179,6 +1178,8 @@ namespace MPX
 										_("Show Details")),
                                         AccelKey("<ctrl>I"),
 										sigc::mem_fun (*this, &Player::on_show_info_toggled ));
+		m_actions->get_action (ACTION_SHOW_INFO)->connect_proxy
+			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("info-toggle"))));
 
 		m_actions->add (Action::create (ACTION_LASTFM_LOVE,
                                         Gtk::StockID(MPX_STOCK_LASTFM),
@@ -2540,7 +2541,7 @@ namespace MPX
     {
       Player & player = *reinterpret_cast<Player*>(data);
 
-      if (strcmp (application, "BMPx"))
+      if (strcmp (application, "MPX"))
         return;
 
       if( player.m_ActiveSource == SOURCE_NONE )

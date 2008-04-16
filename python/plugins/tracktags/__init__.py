@@ -26,61 +26,66 @@ class TrackTags(mpx.Plugin):
     def activate(self,player,mcs):
 
         self.player = player
-        self.player_infoarea_click_id = self.player.gobj().connect("new-track", self.new_track)
-
         self.window = gtk.Window(gtk.WINDOW_TOPLEVEL) # so reparent works, FIXME
-
         self.tagview = mpx.TagView()
-        self.player_tagview_tag_clicked = self.tagview.get_widget().connect("tag-clicked", self.tag_clicked)
-
         self.window.add(self.tagview.get_widget())
-
         self.player.add_info_widget(self.tagview.get_widget(), "Track Tags")
-
         self.tagview.get_widget().show_all()
-        print ">> TrackTags Plugin activated"
+
+        self.player_tagview_tag_handler_id = self.tagview.get_widget().connect("tag-clicked", self.tag_clicked)
+        self.player_new_track_handler_id = self.player.gobj().connect("new-track", self.new_track)
+        self.player_playtstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
+
         return True
 
     def deactivate(self):
-        self.player.gobj().disconnect(self.player_infoarea_click_id)
-        self.tagview.get_widget().disconnect(self.player_tagview_tag_clicked)
+        self.player.gobj().disconnect(self.player_new_track_handler_id)
+        self.player.gobj().disconnect(self.player_playtstatus_changed_handler_id)
+        self.tagview.get_widget().disconnect(self.player_tagview_tag_handler_id)
         self.player = None
-        print ">> TrackTags Plugin deactivated"
 
     def tag_clicked(self, blah, tag):
         
-        if self.player:
-            self.player.play_uri("lastfm://globaltags/%s" % tag)
+        if self.player and len(tag) > 0:
+                self.player.play_uri("lastfm://globaltags/%s" % tag)
+
+    def pstate_changed(self, blah, state):
+
+        if state == mpx.PlayStatus.STOPPED:
+            self.tagview.clear()
 
     def new_track(self, blah):
-        m = self.player.get_metadata()
 
-        if m.get(mpx.AttributeId.ARTIST) and m.get(mpx.AttributeId.TITLE):
-            uri = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(m.get(mpx.AttributeId.ARTIST).val().get_string()), urllib.quote(m.get(mpx.AttributeId.TITLE).val().get_string()))
-            lastfm = NonvalidatingReader.parseUri(uri)
-            ctx = Context(lastfm)
+        self.tagview.clear()
 
-            tags = []
-            names_xml = Evaluate("//name", context=ctx)
-            counts_xml = Evaluate("//count", context=ctx)
+        try:
+            m = self.player.get_metadata()
+            if m.get(mpx.AttributeId.ARTIST) and m.get(mpx.AttributeId.TITLE):
+                uri = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(m.get(mpx.AttributeId.ARTIST).val().get_string()), urllib.quote(m.get(mpx.AttributeId.TITLE).val().get_string()))
+                lastfm = NonvalidatingReader.parseUri(uri)
+                ctx = Context(lastfm)
 
-            counts = []
-            for count in counts_xml:
-                try:
-                    if count.firstChild:
-                        counts.append(float(math.log10((float(count.firstChild.data) * 5)+1)))
-                except:
-                    print "Range Exceeded"
+                tags = []
+                names_xml = Evaluate("//name", context=ctx)
+                counts_xml = Evaluate("//count", context=ctx)
 
-            for name in names_xml:
-                if name.firstChild:
-                    tags.append([str(name.firstChild.data), counts[names_xml.index(name)]])
+                counts = []
+                for count in counts_xml:
+                    try:
+                        if count.firstChild:
+                            counts.append(float(math.log10((float(count.firstChild.data) * 5)+1)))
+                    except:
+                        print "Range Exceeded"
 
-            random.shuffle(tags)
+                for name in names_xml:
+                    if name.firstChild:
+                        tags.append([str(name.firstChild.data), counts[names_xml.index(name)]])
 
-            self.tagview.clear()
-            
-            for lst in tags:
-                self.tagview.add_tag(lst[0], lst[1])
-    
-            self.tagview.get_widget().queue_draw()
+                random.shuffle(tags)
+                
+                for lst in tags:
+                    self.tagview.add_tag(lst[0], lst[1])
+        
+                self.tagview.get_widget().queue_draw()
+        except:
+            print "Error displaying tags"
