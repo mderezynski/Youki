@@ -4,7 +4,7 @@
 #
 # MPX Notification plugin
 # (C) 2008 Jacek Wolszczak
-# (C) 2008 D. Le Brun
+# (C) 2008 David Le Brun
 #
 
 import mpx
@@ -15,12 +15,8 @@ COVER_SIZE = 96
 
 class Notification(mpx.Plugin):
 
-
     def activate(self,player,mcs):
         self.player = player
-
-        self.new_track = self.player.gobj().connect("new-track", self.now_playing)
-        pynotify.init("MPX")
 
         self.next = gtk.StatusIcon()
         self.next.set_from_stock(gtk.STOCK_MEDIA_NEXT)
@@ -37,6 +33,10 @@ class Notification(mpx.Plugin):
         self.previous.set_from_stock(gtk.STOCK_MEDIA_PREVIOUS)
         self.previous.connect('activate', self.previous_cb)
         self.previous.set_visible(True)
+
+        self.new_track = self.player.gobj().connect("new-track", self.now_playing)
+        self.previous_message = u''
+        pynotify.init("MPX")
 
         print ">> Notification Plugin activated"
         return True
@@ -85,5 +85,8 @@ class Notification(mpx.Plugin):
             if(image):
                 image = image.scale_simple(COVER_SIZE, COVER_SIZE, gtk.gdk.INTERP_NEAREST)
                 n.set_icon_from_pixbuf(image)
-            n.show()
+
+            if message != self.previous_message:
+                n.show()
+                self.previous_message = message
 
