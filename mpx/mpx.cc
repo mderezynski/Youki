@@ -1013,9 +1013,16 @@ namespace MPX
 	}
 
 
+#ifdef HAVE_HAL
+    Player::Player(const Glib::RefPtr<Gnome::Glade::Xml>& xml,
+                   MPX::Library & obj_library,
+                   MPX::Covers & obj_amazon,
+                   MPX::HAL & obj_hal)
+#else
     Player::Player(const Glib::RefPtr<Gnome::Glade::Xml>& xml,
                    MPX::Library & obj_library,
                    MPX::Covers & obj_amazon)
+#endif // HAVE_HAL
     : WidgetLoader<Gtk::Window>(xml, "mpx")
     , m_ref_xml(xml)
 	, m_SourceCtr (0)
@@ -1024,6 +1031,9 @@ namespace MPX
 	, m_SourceUI(0)
     , m_Library(obj_library)
     , m_Covers(obj_amazon)
+#ifdef HAVE_HAL
+    , m_HAL(obj_hal)
+#endif // HAVE_HAL
    {
         m_Play = new Play();
 		m_Play->signal_eos().connect( sigc::mem_fun( *this, &MPX::Player::on_play_eos ));
@@ -1588,6 +1598,14 @@ namespace MPX
 		pa = PAccess<MPX::Play>(*m_Play);
 	}
 
+#ifdef HAVE_HAL
+	void
+	Player::get_object (PAccess<MPX::HAL> & pa)
+	{
+		pa = PAccess<MPX::HAL>(m_HAL);
+	}
+#endif // HAVE_HAL
+
 	Metadata const&
 	Player::get_metadata ()
 	{
@@ -1806,6 +1824,15 @@ namespace MPX
 	  }
 	}
 
+#ifdef HAVE_HAL
+    Player*
+    Player::create (MPX::Library & obj_library, MPX::Covers & obj_amazn, MPX::HAL & obj_hal)
+    {
+		const std::string path (build_filename(DATA_DIR, build_filename("glade","mpx.glade")));
+		Player * p = new Player(Gnome::Glade::Xml::create (path), obj_library, obj_amazn, obj_hal); 
+		return p;
+    }
+#else
     Player*
     Player::create (MPX::Library & obj_library, MPX::Covers & obj_amazn)
     {
@@ -1813,6 +1840,7 @@ namespace MPX
 		Player * p = new Player(Gnome::Glade::Xml::create (path), obj_library, obj_amazn); 
 		return p;
     }
+#endif // HAVE_HAL
 
     Player::~Player()
     {

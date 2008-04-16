@@ -425,6 +425,39 @@ namespace MPX
     Library::getMetadata (const std::string& uri, Track & track)
     {
         mReaderTagLib->get(uri, track);
+#ifdef HAVE_HAL
+        try{
+          URI u (uri);
+          if(u.get_protocol() == URI::PROTOCOL_FILE)
+          {
+              try{
+                  if (m_Flags & F_USING_HAL)
+                  {
+                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (uri));
+
+                    track[ATTRIBUTE_HAL_VOLUME_UDI] =
+                                  volume.volume_udi ;
+
+                    track[ATTRIBUTE_HAL_DEVICE_UDI] =
+                                  volume.device_udi ;
+
+                    track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
+                                  filename_from_uri (uri).substr (volume.mount_point.length()) ;
+                  }
+              }
+            catch (HAL::Exception & cxe)
+              {
+                g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+              }
+            catch (Glib::ConvertError & cxe)
+              {
+                g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+              }
+          }
+        } catch (URI::ParseError)
+        {
+        }
+#endif // HAVE_HAL
     }
 
     void

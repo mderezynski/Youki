@@ -308,7 +308,12 @@ main (int argc, char ** argv)
 #else
         MPX::Library * obj_library = new MPX::Library(*obj_amzn, *obj_task_kernel); // don't use HAL
 #endif
+
+#ifdef HAVE_HAL
+        MPX::Player * obj_mpx = MPX::Player::create(*obj_library, *obj_amzn, *obj_hal);
+#else
         MPX::Player * obj_mpx = MPX::Player::create(*obj_library, *obj_amzn);
+#endif // HAVE_HAL
         
         Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
 

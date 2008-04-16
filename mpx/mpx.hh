@@ -32,6 +32,9 @@
 #include <boost/python.hpp>
 
 #include "mpx/covers.hh"
+#ifdef HAVE_HAL
+#include "mpx/hal.hh"
+#endif // HAVE_HAL
 #include "mpx/library.hh"
 #include "mpx/paccess.hh"
 #include "mpx/util-file.hh"
@@ -132,6 +135,11 @@ namespace MPX
         void
         get_object (PAccess<MPX::Play>&);
 
+#ifdef HAVE_HAL
+        void
+        get_object (PAccess<MPX::HAL>&);
+#endif // HAVE_HAL
+
 		Metadata const& 
 		get_metadata ();
 
@@ -157,12 +165,21 @@ namespace MPX
 
       protected:
 
-        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Covers&); //BLEH: We need to pass pointers here for the Python API
+#ifdef HAVE_HAL
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Covers&, MPX::HAL&);
+#else
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Covers&);
+#endif // HAVE_HAL
 
 	  public:
 
+#ifdef HAVE_HAL
+        static Player*
+        create (MPX::Library&, MPX::Covers&, MPX::HAL&);
+#else
         static Player*
         create (MPX::Library&, MPX::Covers&);
+#endif // HAVE_HAL
 
 		class Root; 
 		class DBusMPX; 
@@ -226,6 +243,7 @@ namespace MPX
 		Play *m_Play;
         Library &m_Library;
         Covers &m_Covers;
+        HAL &m_HAL;
 		PluginManager *m_PluginManager;
         Preferences *m_Preferences;
 

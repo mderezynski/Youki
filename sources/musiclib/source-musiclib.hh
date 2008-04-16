@@ -53,6 +53,7 @@ namespace Source
                 Glib::RefPtr<Gtk::ActionGroup> m_MainActionGroup;
                 PlaylistPluginManager *m_PluginManager;
                 PAccess<MPX::Library> m_Lib;
+                PAccess<MPX::HAL> m_HAL;
                 std::string m_MergedUI;
     
                 void

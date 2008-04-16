@@ -40,6 +40,7 @@ namespace MPX
 	class Library;
 	class Covers;
     class Play;
+    class HAL;
 
     class Player
       : public WidgetLoader<Gtk::Window>
@@ -54,6 +55,9 @@ namespace MPX
 
 		void	
 		get_object (PAccess<MPX::Play>&);
+
+		void	
+		get_object (PAccess<MPX::HAL>&);
 
         void
         play_uri (std::string const&);

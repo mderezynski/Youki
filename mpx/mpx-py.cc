@@ -14,8 +14,10 @@
 #include "mcs/mcs.h"
 
 #include "mpx.hh"
-#include "mpx-py.hh"
 #include "mpx/covers.hh"
+#ifdef HAVE_HAL
+#include "mpx/hal.hh"
+#endif // HAVE_HAL
 #include "mpx/library.hh"
 #include "mpx/paccess.hh"
 #include "mpx/types.hh"
@@ -27,6 +29,7 @@
 #include "playbacksource-py.hh"
 
 #include "pysigc.hh"
+#include "mpx-py.hh"
 
 using namespace boost::python;
 
@@ -214,6 +217,16 @@ namespace mpxpy
 		obj.get_object(pa);
 		return pa.get();
 	}
+
+#ifdef HAVE_HAL
+	MPX::HAL&
+	player_get_hal (MPX::Player & obj)
+	{
+		MPX::PAccess<MPX::HAL> pa;	
+		obj.get_object(pa);
+		return pa.get();
+	}
+#endif // HAVE_HAL
 
 	void
 	player_add_widget (MPX::Player & obj, PyObject * pyobj)
@@ -429,6 +442,7 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("stop", &MPX::Player::stop)
         .def("play_uri", &MPX::Player::play_uri)
 		.def("get_library", &mpxpy::player_get_library, return_internal_reference<>()) 
+		.def("get_hal", &mpxpy::player_get_hal, return_internal_reference<>()) 
 		.def("add_widget", &mpxpy::player_add_widget)
         .def("add_info_widget", &mpxpy::player_add_info_widget)
 		.def("remove_widget", &mpxpy::player_remove_widget)

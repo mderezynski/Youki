@@ -33,6 +33,7 @@
 #include "widgets/cell-renderer-vbox.hh"
 #include "widgets/gossip-cell-renderer-expander.h"
 
+#include "mpx/hal.hh"
 #include "mpx/library.hh"
 #include "mpx/types.hh"
 #include "mpx/util-graphics.hh"
@@ -138,6 +139,15 @@ namespace
 
         if (row.count("album_j"))
           track[ATTRIBUTE_MPX_ALBUM_ID] = get<gint64>(row["album_j"]);
+
+        if (row.count("hal_volume_udi"))
+          track[ATTRIBUTE_HAL_VOLUME_UDI] = get<std::string>(row["hal_volume_udi"]);
+
+        if (row.count("hal_device_udi"))
+          track[ATTRIBUTE_HAL_DEVICE_UDI] = get<std::string>(row["hal_device_udi"]);
+
+        if (row.count("hal_vrp"))
+          track[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);
 
         return track;
     }
@@ -1820,6 +1830,7 @@ namespace Source
     , m_MainUIManager(ui_manager)
     {
         player.get_object(m_Lib);
+        player.get_object(m_HAL);
 
         m_Private = new MusicLibPrivate(player,*this);
         m_Private->m_TreeViewPlaylist->signal_row_activated().connect( sigc::mem_fun( *this,
@@ -1958,7 +1969,21 @@ namespace Source
     std::string
     PlaybackSourceMusicLib::get_uri () 
     {
+#ifdef HAVE_HAL
+        try{
+            MPX::Track t ((*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.MPXTrack]);
+            std::string volume_udi = get<std::string>(t[ATTRIBUTE_HAL_VOLUME_UDI].get());
+            std::string device_udi = get<std::string>(t[ATTRIBUTE_HAL_DEVICE_UDI].get());
+            std::string vrp = get<std::string>(t[ATTRIBUTE_VOLUME_RELATIVE_PATH].get());
+            std::string mount_point = m_HAL.get().get_mount_point_for_volume(volume_udi, device_udi);
+            return build_filename(mount_point, vrp);
+        } catch (HAL::Exception)
+        {
+            return std::string();
+        }
+#else
         return Glib::ustring((*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.Location]);
+#endif // HAVE_HAL
     }
 
     std::string
