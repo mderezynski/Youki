@@ -1977,10 +1977,10 @@ namespace Source
             std::string vrp = get<std::string>(t[ATTRIBUTE_VOLUME_RELATIVE_PATH].get());
             std::string mount_point = m_HAL.get().get_mount_point_for_volume(volume_udi, device_udi);
             std::string uri = build_filename(mount_point, vrp);
-            return uri;
+            return filename_to_uri(uri);
         } catch (HAL::NoMountPathForVolumeError & cxe)
         {
-            g_message("%s: Error: What: %s", cxe.what());
+            g_message("%s: Error: What: %s", G_STRLOC, cxe.what());
         }
 
         return std::string();
