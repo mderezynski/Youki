@@ -129,19 +129,21 @@ class TrackInfo:
                 f = ws.TrackFilter(puid=p) 
                 t = self.q.getTracks(f)
 
-                self.track[mpx.AttributeId.MB_TRACK_ID].init()
-                self.track[mpx.AttributeId.MB_TRACK_ID].val().set_string(str(t[0].getTrack().getId()))
+                if len(t) > 0:
 
-                mbtrack = self.q.getTrackById(t[0].getTrack().getId(), self.wsinc) 
-                artist = mbtrack.getArtist()
+                    self.track[mpx.AttributeId.MB_TRACK_ID].init()
+                    self.track[mpx.AttributeId.MB_TRACK_ID].val().set_string(str(t[0].getTrack().getId()))
 
-                self.track[mpx.AttributeId.MB_ARTIST_ID].init()
-                self.track[mpx.AttributeId.MB_ARTIST_ID].val().set_string(str(artist.getId()))
-                
-                self.gotPuid = True
-                self.show([])
-            else
-                self.gotPuid = True
+                    mbtrack = self.q.getTrackById(t[0].getTrack().getId(), self.wsinc) 
+                    artist = mbtrack.getArtist()
+
+                    self.track[mpx.AttributeId.MB_ARTIST_ID].init()
+                    self.track[mpx.AttributeId.MB_ARTIST_ID].val().set_string(str(artist.getId()))
+                    
+                    self.gotPuid = True
+                    self.show([])
+
+            self.gotPuid = True
     
     def clear(self):
 
@@ -209,10 +211,9 @@ class TrackInfo:
                 while gtk.events_pending():
                     gtk.main_iteration()
 
-            self.gotPuid = False
-
             return
 
+        self.gotPuid = False
 
         try:
             self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
