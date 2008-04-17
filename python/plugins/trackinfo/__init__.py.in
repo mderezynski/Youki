@@ -125,20 +125,23 @@ class TrackInfo:
         t = message.type
         if t == gst.MESSAGE_EOS:
             p = self.puid.get_property('puid')
-            f = ws.TrackFilter(puid=p) 
-            t = self.q.getTracks(f)
+            if p and len(p) > 0:
+                f = ws.TrackFilter(puid=p) 
+                t = self.q.getTracks(f)
 
-            self.track[mpx.AttributeId.MB_TRACK_ID].init()
-            self.track[mpx.AttributeId.MB_TRACK_ID].val().set_string(str(t[0].getTrack().getId()))
+                self.track[mpx.AttributeId.MB_TRACK_ID].init()
+                self.track[mpx.AttributeId.MB_TRACK_ID].val().set_string(str(t[0].getTrack().getId()))
 
-            mbtrack = self.q.getTrackById(t[0].getTrack().getId(), self.wsinc) 
-            artist = mbtrack.getArtist()
+                mbtrack = self.q.getTrackById(t[0].getTrack().getId(), self.wsinc) 
+                artist = mbtrack.getArtist()
 
-            self.track[mpx.AttributeId.MB_ARTIST_ID].init()
-            self.track[mpx.AttributeId.MB_ARTIST_ID].val().set_string(str(artist.getId()))
-            
-            self.gotPuid = True
-            self.show([])
+                self.track[mpx.AttributeId.MB_ARTIST_ID].init()
+                self.track[mpx.AttributeId.MB_ARTIST_ID].val().set_string(str(artist.getId()))
+                
+                self.gotPuid = True
+                self.show([])
+            else
+                self.gotPuid = True
     
     def clear(self):
 
