@@ -112,72 +112,77 @@ namespace Source
     }
 
     LastFM::LastFM (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
-    : PlaybackSource(ui_manager, _("LastFM"), C_CAN_PROVIDE_METADATA, F_ASYNC)
+    : PlaybackSource(ui_manager, _("LastFM"), C_CAN_PROVIDE_METADATA | C_CAN_PLAY, F_ASYNC)
     , m_Player(player)
     {
-		m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_PAUSE);
-		m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_GO_PREV);
-
-		const std::string path (build_filename(DATA_DIR, build_filename("glade","source-lastfm.glade")));
-		m_ref_xml = Gnome::Glade::Xml::create (path);
-
-		m_UI = m_ref_xml->get_widget("source-lastfm");
-        m_ref_xml->get_widget("cbox-sel", m_CBox_Sel);
-        m_ref_xml->get_widget("url-entry", m_URL_Entry);
-        m_ref_xml->get_widget("hbox-error", m_HBox_Error);
-        m_ref_xml->get_widget("label-error", m_Label_Error);
-        m_ref_xml->get_widget("button-error-hide", m_Button_Error_Hide);
-        m_ref_xml->get_widget_derived("lastfm-tag-info-view", m_TagInfoView);
-
-        m_Button_Error_Hide->signal_clicked().connect( sigc::mem_fun( *m_HBox_Error, &Gtk::Widget::hide ));
-
-        m_CBox_Sel->set_active(0);
-        m_URL_Entry->signal_activate().connect( sigc::mem_fun( *this, &LastFM::on_url_entry_activated ));
+        mcs->key_register("lastfm", "discoverymode", true);
 
         m_LastFMRadio.handshake();
-        if(m_LastFMRadio.connected())
-    		m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_PLAY);
 
         m_LastFMRadio.signal_playlist().connect( sigc::mem_fun( *this, &LastFM::on_playlist ));
         m_LastFMRadio.signal_no_playlist().connect( sigc::mem_fun( *this, &LastFM::on_no_playlist ));
         m_LastFMRadio.signal_tuned().connect( sigc::mem_fun( *this, &LastFM::on_tuned ));
         m_LastFMRadio.signal_tune_error().connect( sigc::mem_fun( *this, &LastFM::on_tune_error ));
 
-        mcs->key_register("lastfm", "discoverymode", true);
+		const std::string path (build_filename(DATA_DIR, build_filename("glade","source-lastfm.glade")));
+		m_ref_xml = Gnome::Glade::Xml::create (path);
+
+         try{
+			dynamic_cast<Gtk::Image *> (m_ref_xml->get_widget ("lastfm-artists-throbber"))->set (build_filename(build_filename (DATA_DIR,"images"),"throbber.gif"));
+        } catch (Gdk::PixbufError & cxe)
+        {
+            g_message("%s: Error: %s", G_STRLOC, cxe.what().c_str());
+        }
+
+		m_UI = m_ref_xml->get_widget("source-lastfm");
+        m_ref_xml->get_widget("url-entry", m_URL_Entry);
+        m_ref_xml->get_widget("hbox-error", m_HBox_Error);
+        m_ref_xml->get_widget("label-error", m_Label_Error);
+
+        m_ref_xml->get_widget("button-error-hide", m_Button_Error_Hide);
+        m_Button_Error_Hide->signal_clicked().connect( sigc::mem_fun( *m_HBox_Error, &Gtk::Widget::hide ));
+
+        m_ref_xml->get_widget("cbox-sel", m_CBox_Sel);
+        m_CBox_Sel->set_active(0);
+        m_URL_Entry->signal_activate().connect( sigc::mem_fun( *this, &LastFM::on_url_entry_activated ));
+
+        m_ref_xml->get_widget_derived("lastfm-tag-info-view", m_TagInfoView);
+        m_TagInfoView->signal_artist_activated().connect( sigc::mem_fun( *this, &LastFM::on_artist_activated ));
 
         m_ui_manager = Gtk::UIManager::create();
         m_actions = Gtk::ActionGroup::create ("Actions_UiPartLASTFM");
         m_actions->add (Gtk::Action::create ("dummy", "dummy"));
         m_ui_manager->insert_action_group (m_actions);
-
-        if(m_LastFMRadio.connected())
-        {
-		    m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_PLAY);
-        }
     }
 
-    //////
+    void
+    LastFM::on_artist_activated (Glib::ustring const& artist_url)
+    {
+        m_LastFMRadio.playurl(artist_url);
+    }
 
     void
     LastFM::on_url_entry_activated()
     {
         int c = m_CBox_Sel->get_active();
+        URI u;
 
         switch(c)
         {
             case 0:
-                m_LastFMRadio.playurl((f1 % m_URL_Entry->get_text()).str());
+                u = URI ((f1 % m_URL_Entry->get_text()).str());
                 break;
 
             case 1:
-                m_LastFMRadio.playurl((f2 % m_URL_Entry->get_text()).str());
+                u = URI ((f2 % m_URL_Entry->get_text()).str());
                 break;
 
             case 2:
-                m_LastFMRadio.playurl((f3 % m_URL_Entry->get_text()).str());
+                u = URI ((f3 % m_URL_Entry->get_text()).str());
                 break;
         }
 
+        m_LastFMRadio.playurl((ustring(u)));
         m_URL_Entry->set_text("");
     }
 
@@ -371,7 +376,7 @@ namespace Source
       mEntry->signal_changed().connect( sigc::mem_fun( *this, &TagInfoViewT::clear ) );
       mEntry->signal_activate().connect( sigc::compose( sigc::mem_fun( *this, &TagInfoViewT::idSetAuto),
                                                         sigc::mem_fun( *mEntry, &Gtk::Entry::get_text )));
-      mStore = ListStore::create (mColumns);
+      ListStore = ListStore::create (Columns);
 
       TreeViewColumn *column = 0; 
       CellRendererCairoSurface *cell1 = 0; 
@@ -386,7 +391,7 @@ namespace Source
       cell1->property_ypad() = 4;
       cell1->property_yalign() = 0.;
       column->pack_start (*cell1, false);
-      column->set_cell_data_func (*cell1, sigc::bind( sigc::mem_fun( *this, &TagInfoViewT::cellDataFunc ), 0));
+      column->set_cell_data_func (*cell1, sigc::bind( sigc::mem_fun( *this, &TagInfoViewT::cell_data_func ), 0));
        
       cell2 = manage (new CellRendererText ());
       cell2->property_ellipsize() = Pango::ELLIPSIZE_END;
@@ -394,13 +399,13 @@ namespace Source
       cell2->property_yalign() = 0.;
       cell2->property_height() = 58;
       column->pack_start (*cell2, true);
-      column->set_cell_data_func (*cell2, sigc::bind( sigc::mem_fun( *this, &TagInfoViewT::cellDataFunc ), 1));
+      column->set_cell_data_func (*cell2, sigc::bind( sigc::mem_fun( *this, &TagInfoViewT::cell_data_func ), 1));
 
       append_column (*column);
 
       get_selection()->set_mode (SELECTION_BROWSE);
-      get_selection()->signal_changed().connect( sigc::mem_fun( *this, &TagInfoViewT::on_selection_changed ) );
-      set_model (mStore);
+
+      set_model (ListStore);
     }
 
     bool
@@ -410,74 +415,11 @@ namespace Source
     }
 
     void
-    TagInfoViewT::set_ui_manager (RefPtr<Gtk::UIManager> const &ui_manager)
+    TagInfoViewT::on_row_activated (Gtk::TreePath const& path, Gtk::TreeViewColumn* G_GNUC_UNUSED)
     {
-#if 0
-      m_ui_manager = ui_manager;
-      m_actions = Gtk::ActionGroup::create ("Actions_UiPartLASTFM-TagArtistsView");
-      m_actions->add  (Gtk::Action::create ("lastfm-action-tav-view-in-library",
-                                            _("View in Library")),
-                                            sigc::mem_fun (*this, &TagInfoViewT::on_view_in_library));
-      m_actions->add  (Gtk::Action::create ("lastfm-action-tav-play-lastfm",
-                                            Gtk::StockID (BMP_STOCK_LASTFM),
-                                            _("Play on Last.fm")),
-                                            sigc::mem_fun (*this, &TagInfoViewT::on_play_lastfm));
-      m_ui_manager->insert_action_group (m_actions);
-      m_ui_manager->add_ui_from_string (ui_string_tav);
-#endif
-    }
-
-    bool
-    TagInfoViewT::on_event (GdkEvent * ev)
-    {
-#if 0
-      if( ev->type == GDK_BUTTON_PRESS )
-      {
-        GdkEventButton * event = reinterpret_cast <GdkEventButton *> (ev);
-        if( event->button == 3 )
-        {
-          Gtk::Menu * menu = dynamic_cast < Gtk::Menu* > (Util::get_popup (m_ui_manager, "/popup-lastfm-tav/menu-lastfm-tav"));
-          if (menu) // better safe than screwed
-          {
-            menu->popup (event->button, event->time);
-          }
-        }
-      }
-#endif
-      return false;
-    }
-
-    void
-    TagInfoViewT::on_selection_changed ()
-    {
-#if 0 
-      if( get_selection()->count_selected_rows() )
-      {
-        TreeIter iter = get_selection()->get_selected();
-        bool hasAlbums = ((*iter)[mColumns.hasAlbums]);
-        m_actions->get_action("lastfm-action-tav-view-in-library")->set_sensitive( hasAlbums );
-      }
-#endif
-    }
-
-    void
-    TagInfoViewT::on_view_in_library ()
-    {
-#if 0
-        TreeIter iter = get_selection()->get_selected();
-        LastFMArtist a = ((*iter)[mColumns.artist]);
-        Signals.GoToMBID.emit( a.mbid );
-#endif
-    }
-
-    void
-    TagInfoViewT::on_play_lastfm ()
-    {
-#if 0
-        TreeIter iter = get_selection()->get_selected();
-        LastFMArtist a = ((*iter)[mColumns.artist]);
-        Signals.ArtistActivated.emit((f_artist % a.name.c_str()).str());
-#endif
+        TreeIter iter =  ListStore->get_iter(path);
+        XmlArtist a = ((*iter)[Columns.Artist]);
+        Signals.ArtistActivated.emit((f1 % a.name.c_str()).str());
     }
 
     void
@@ -487,7 +429,7 @@ namespace Source
       mEndDisplay = true;
       mDisplayLock.unlock ();
       mProcessIdler.disconnect ();
-      mStore->clear ();
+      ListStore->clear ();
       mEndDisplay = false;
       mNotebook->set_current_page( 0 );
       //m_actions->get_action("lastfm-action-tav-view-in-library")->set_sensitive( false );
@@ -509,40 +451,16 @@ namespace Source
               {
                     mImage = Util::cairo_image_surface_from_pixbuf (image);
                     Util::cairo_image_surface_border (mImage, 1.);
-                    (*mTreeIterator)[mColumns.image] = mImage;
+                    (*mTreeIterator)[Columns.Image] = mImage;
               }
         }
 
-        LastFMArtist a = ((*mTreeIterator)[mColumns.artist]);
-
-#if 0
-        if( !a.mbid.empty() )
-        {
-              DB::RowV v; 
-              Library::Obj()->get (v, (boost::format ("SELECT count(*) AS cnt FROM album JOIN "
-                                                      "album_artist ON album.album_artist_j = album_artist.id WHERE "
-                                                      "mb_album_artist_id ='%s'") % a.mbid).str(), false);  
-              guint64 count = boost::get<guint64>(v[0].find("cnt")->second);
-              if( count > 0 )
-              {
-                    (*mTreeIterator)[mColumns.hasAlbums] = true;
-        
-                    if( count > 1 )
-                      (*mTreeIterator)[mColumns.info] = (boost::format ("<small><b>%llu</b> %s</small>") % count % _("Albums in Library")).str();
-                    else
-                      (*mTreeIterator)[mColumns.info] = (boost::format ("<small><b>%llu</b> %s</small>") % count % _("Album in Library")).str();
-              }
-              else
-              {
-                    (*mTreeIterator)[mColumns.hasAlbums] = false;
-              }
-        }
-#endif
+        XmlArtist a = ((*mTreeIterator)[Columns.Artist]);
 
         ++mTreeIterator;
       }
 
-      return (++mIterator != mArtists.end());
+      return (++mIterator != mXmlArtists.end());
     }
 
     void  
@@ -553,10 +471,10 @@ namespace Source
         std::string chunk;
         chunk.append( data, size );
 
-        mArtists = LastFMArtistV();
+        mXmlArtists = XmlArtistV();
 
         try{
-            ArtistParser p (mArtists);
+            XmlArtistParser p (mXmlArtists);
             Markup::ParseContext context (p);
             context.parse (chunk);
             context.end_parse ();
@@ -572,29 +490,28 @@ namespace Source
             return;
           }
 
-        if( mArtists.empty () )
+        if( mXmlArtists.empty () )
         {
-          g_message("%s: No Artists Parsed", G_STRFUNC); 
+          g_message("%s: No XmlArtists Parsed", G_STRFUNC); 
           mNotebook->set_current_page( 0 );
           return;
         }
 
-        mIterator = mArtists.begin();
+        mIterator = mXmlArtists.begin();
         mTopRank = mIterator->count;
 
-        for(LastFMArtistV::const_iterator i = mArtists.begin(); i != mArtists.end(); ++i)
+        for(XmlArtistV::const_iterator i = mXmlArtists.begin(); i != mXmlArtists.end(); ++i)
         {
           if( i->streamable )
           { 
-            TreeIter iter = mStore->append ();
-            (*iter)[mColumns.artist] = *i;
-            (*iter)[mColumns.image] = mUnknownArtist;
-            (*iter)[mColumns.hasAlbums] = false;
+            TreeIter iter = ListStore->append ();
+            (*iter)[Columns.Artist] = *i;
+            (*iter)[Columns.Image] = mUnknownArtist;
           }
         }
 
         mNotebook->set_current_page( 0 );
-        mTreeIterator = mStore->children().begin();
+        mTreeIterator = ListStore->children().begin();
         mProcessIdler = signal_idle().connect( sigc::mem_fun( *this, &TagInfoViewT::idler ) );
       }
       else
@@ -638,13 +555,13 @@ namespace Source
           break;
       } 
 
-      mArtistReq = Soup::Request::create (uri);
-      mArtistReq->request_callback().connect (sigc::mem_fun (*this, &TagInfoViewT::data_cb));
-      mArtistReq->run ();
+      mXmlArtistReq = Soup::Request::create (uri);
+      mXmlArtistReq->request_callback().connect (sigc::mem_fun (*this, &TagInfoViewT::data_cb));
+      mXmlArtistReq->run ();
     }
 
     void
-    TagInfoViewT::cellDataFunc (CellRenderer * baseCell, TreeModel::iterator const& i, int column)
+    TagInfoViewT::cell_data_func (CellRenderer * baseCell, TreeModel::iterator const& i, int column)
     {
       CellRendererCairoSurface * pix = 0; 
       CellRendererText * text = 0; 
@@ -653,13 +570,13 @@ namespace Source
       {
         case 0:
           pix = dynamic_cast<CellRendererCairoSurface*>(baseCell);
-          pix->property_surface() = (*i)[mColumns.image];
+          pix->property_surface() = (*i)[Columns.Image];
           return;
       
         case 1:
           text = dynamic_cast<CellRendererText*>(baseCell);
-          LastFMArtist a = ((*i)[mColumns.artist]);
-          ustring info = ((*i)[mColumns.info]);
+          XmlArtist a = ((*i)[Columns.Artist]);
+          ustring info = ((*i)[Columns.Info]);
           text->property_markup() = (boost::format ("<big><b>%s</b></big>\n%.2f %%\n%s")
                                         % Markup::escape_text (a.name).c_str()
                                         % (100. * (double (a.count) / double (mTopRank))) 
@@ -669,7 +586,7 @@ namespace Source
     }
 
     void
-    ArtistParser::on_start_element  (Glib::Markup::ParseContext & context,
+    XmlArtistParser::on_start_element  (Glib::Markup::ParseContext & context,
                                      Glib::ustring const& element_name,
                                      AttributeMap const& attributes)
     {
@@ -677,7 +594,7 @@ namespace Source
       {
         SET_STATE(E_ARTIST);
 
-        m_current = LastFMArtist();
+        m_current = XmlArtist();
 
         if (attributes.find ("name") != attributes.end())
         {
@@ -745,7 +662,7 @@ namespace Source
     }
 
     void
-    ArtistParser::on_end_element    (Glib::Markup::ParseContext& context,
+    XmlArtistParser::on_end_element    (Glib::Markup::ParseContext& context,
                                      Glib::ustring const& element_name)
     {
       if (element_name == "artist")
@@ -806,8 +723,8 @@ namespace Source
     }
 
     void
-    ArtistParser::on_text  (Glib::Markup::ParseContext & context,
-                            Glib::ustring const& text)
+    XmlArtistParser::on_text  (Glib::Markup::ParseContext & context,
+                               Glib::ustring const& text)
     {
       if (STATE(E_ARTIST))
       {

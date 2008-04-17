@@ -94,7 +94,7 @@ namespace MPX
 				{
 					TreeIter iter = Store->append();
 					(*iter)[Columns.Name] = i->second->get_name();
-					(*iter)[Columns.NameDesc] = (boost::format("<b>%1%</b>\n%2%") % i->second->get_name() % i->second->get_desc()).str();
+					(*iter)[Columns.NameDesc] = (boost::format("<b>%1%</b>") % i->second->get_name()).str();
 					(*iter)[Columns.Tooltip] = (boost::format(_("<b>Authors:</b> %1%\n<b>Copyright:</b> %2%\n<b>Website:</b> %3%"))
 																		% Glib::Markup::escape_text( i->second->get_authors() ).c_str()
 																		% Glib::Markup::escape_text( i->second->get_copyright() ).c_str()

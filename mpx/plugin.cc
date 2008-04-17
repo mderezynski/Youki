@@ -109,44 +109,30 @@ namespace MPX
 		m_Paths.push_back(path);
 	}
 
-    class PluginActivate
-    {
-      public:
-
-        PluginActivate (Mcs::Mcs & mcs, MPX::Player * player, MPX::PluginManager & manager)
-        : m_mcs(mcs)
-        , m_player(player)
-        , m_manager(manager)
-        {} 
-
-        void
-        operator()(std::pair<const gint64, PluginHolderRefP> & item)
-        {
-            try{
-                bool active = m_mcs.key_get<bool>("pyplugs", item.second->get_name());
-
-                if (active)
-                {
-                    m_manager.activate(item.first);
-                }
-             } catch(...)
-             {
-                g_message("%s: Error getting activation state key from MCS for %lld", G_STRLOC, item.first);
-             }
-         }
-
-      private:
-
-        Mcs::Mcs & m_mcs;
-        MPX::Player * m_player;
-        PluginManager & m_manager;
-    };  
-
-
     void
     PluginManager::activate_plugins ()
     {
-        std::for_each (m_Map.begin(), m_Map.end(), PluginActivate(*mcs_plugins, m_Player, *this));
+        for(PluginHoldMap::iterator i = m_Map.begin(); i != m_Map.end(); ++i)
+        {
+            PluginHolderRefP & item = i->second;
+            try{
+                bool active = mcs->key_get<bool>("pyplugs", item->get_name());
+
+                if (active)
+                {
+                    try{    
+                        object ccinstance = object((handle<>(borrowed(item->m_PluginInstance))));
+                        ccinstance.attr("activate")(boost::ref(m_Player), boost::ref(mcs)); // TODO
+                        item->m_Active = true;
+                        } catch( error_already_set )
+                        {
+                            PyErr_Print();
+                        }
+                }
+             } catch(...)
+             {
+             }
+        }
     }
 
 	void
@@ -172,18 +158,20 @@ namespace MPX
 
 			for(std::vector<std::string>::const_iterator i = strv.begin(); i != strv.end(); ++i)
 			{
-					PyObject * main_module = PyImport_AddModule ("__main__");
-					if(main_module == NULL)
-					{
-						g_message("Couldn't get __main__");
-						return;	
-					}
+                    PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 
-                    object mpx_cc = boost::python::import ("mpx");
-					PyObject * mpx_dict = PyModule_GetDict(mpx_cc.ptr());
-					PyTypeObject *PyMPXPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "Plugin"); 
+                    PyObject * main_module = PyImport_ImportModule ("__main__");
+                    if(main_module == NULL)
+                    {
+                        g_message("Couldn't get __main__");
+                        return;	
+                    }
 
-					PyObject * main_locals = PyModule_GetDict(main_module);
+                    PyObject * mpx = PyImport_ImportModule("mpx"); 
+                    PyObject * mpx_dict = PyModule_GetDict(mpx);
+                    PyTypeObject * PyMPXPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "Plugin"); 
+
+                    PyObject * main_locals = PyModule_GetDict(main_module);
 					PyObject * fromlist = PyTuple_New(0);
 					PyObject * module = PyImport_ImportModuleEx ((char*)i->c_str(), main_locals, main_locals, fromlist);
 					Py_DECREF (fromlist);
@@ -203,8 +191,6 @@ namespace MPX
 
 						if (PyObject_IsSubclass (value, (PyObject*) PyMPXPlugin_Type))
 						{
-							PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-
 							PyObject * instance = PyObject_CallObject(value, NULL);
 							if(instance == NULL)
 							{
@@ -242,18 +228,20 @@ namespace MPX
 
 							ptr->m_Active = false; 
 
+#if 0
                             PyObject * HasGUI = PyObject_GetAttrString(instance, "show");
                             ptr->m_HasGUI = (HasGUI ? true : false);
                             if(HasGUI)
                                 Py_DECREF(HasGUI);
+#endif
 
 							m_Map.insert(std::make_pair(ptr->m_Id, ptr));
-							pyg_gil_state_release(state);
 
 							g_message("%s: >> Loaded: '%s'", G_STRLOC, ptr->m_Name.c_str());
 							break;
 						}
 					}
+                    pyg_gil_state_release(state);
 			}
 		}
         

@@ -38,7 +38,6 @@ class Notification(mpx.Plugin):
         self.previous_message = u''
         pynotify.init("MPX")
 
-        print ">> Notification Plugin activated"
         return True
 
     def deactivate(self):
@@ -47,13 +46,12 @@ class Notification(mpx.Plugin):
         self.playpause.set_visible(False)
 
         self.player = None
-        print ">> Notification Plugin deactivated"
 
     def run(self):
         print ">> Notification Plugin running"
 
     def on_state_change(self, player, state):
-        if state == self.mpx.PlayStatus.PLAYING:
+        if state == mpx.PlayStatus.PLAYING:
             self.playpause.set_from_stock(gtk.STOCK_MEDIA_PAUSE)
         else:
             self.playpause.set_from_stock(gtk.STOCK_MEDIA_PLAY)

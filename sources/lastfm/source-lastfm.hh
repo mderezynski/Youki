@@ -49,8 +49,8 @@ using namespace Glib;
 
 namespace MPX
 {
-    // LastFMArtist
-    struct LastFMArtist
+    // XmlArtist
+    struct XmlArtist
     {
       ustring name;
       ustring mbid;
@@ -61,16 +61,16 @@ namespace MPX
       guint64 rank;
       bool    streamable;
 
-      LastFMArtist () : streamable(false) {}
+      XmlArtist () : streamable(false) {}
     };
-    typedef std::vector <LastFMArtist> LastFMArtistV;
+    typedef std::vector <XmlArtist> XmlArtistV;
 
-    class ArtistParser
+    class XmlArtistParser
       : public Glib::Markup::Parser
     {
       public:
-        ArtistParser (LastFMArtistV & x) : m_artists (x), m_state (0) {}
-        virtual ~ArtistParser () {}
+        XmlArtistParser (XmlArtistV & x) : m_artists (x), m_state (0) {}
+        virtual ~XmlArtistParser () {}
       protected:
         virtual void
         on_start_element  (Glib::Markup::ParseContext   &context,
@@ -100,8 +100,8 @@ namespace MPX
           E_STREAMABLE  = 1 << 10
         };
 
-        LastFMArtistV & m_artists;
-        LastFMArtist    m_current;
+        XmlArtistV & m_artists;
+        XmlArtist    m_current;
         int             m_state;
     };
 
@@ -117,121 +117,95 @@ namespace MPX
     {
       public:
 
-        TagInfoViewT (BaseObjectType*            obj,
-                      Glib::RefPtr<Gnome::Glade::Xml> const& xml);
-        virtual ~TagInfoViewT () {};
+            TagInfoViewT (BaseObjectType *obj,
+                          Glib::RefPtr<Gnome::Glade::Xml> const& xml);
+            virtual ~TagInfoViewT () {};
 
-        void
-        set_ui_manager (Glib::RefPtr<Gtk::UIManager> const &ui_manager);
+            void
+            clear ();
 
-        void
-        clear ();
+            void
+            idSetAuto (Glib::ustring const& id);
+        
+            void
+            idSet (IdType type, Glib::ustring const& id);
 
-        void
-        idSetAuto (Glib::ustring const& id);
-    
-        void
-        idSet (IdType type, Glib::ustring const& id);
-
-        bool
-        isEmpty ();
+            bool
+            isEmpty ();
 
       public:
 
-        typedef sigc::signal<void, Glib::ustring const&> SignalString;
+            typedef sigc::signal<void, Glib::ustring const&> SignalString;
 
       private:
 
-        struct SignalsT
-        {
-          SignalString ArtistActivated;
-          SignalString GoToMBID;
-        };
+            struct SignalsT
+            {
+              SignalString ArtistActivated;
+            };
 
-        SignalsT Signals;
+            SignalsT Signals;
 
       public:
 
-        SignalString&
-        signalArtistActivated()
-        {
-          return Signals.ArtistActivated;
-        }
-
-        SignalString&
-        signalGoToMBID()
-        {
-          return Signals.GoToMBID;
-        }
+            SignalString&
+            signal_artist_activated()
+            {
+              return Signals.ArtistActivated;
+            }
 
       private:                    
 
-        class Columns
-          : public Gtk::TreeModel::ColumnRecord
-        {
-          public:
-
-            Gtk::TreeModelColumn< ::Cairo::RefPtr< ::Cairo::ImageSurface> > image;
-            Gtk::TreeModelColumn<LastFMArtist> artist; 
-            Gtk::TreeModelColumn<Glib::ustring>      info; 
-            Gtk::TreeModelColumn<bool>         hasAlbums; 
-
-            Columns ()
+            class Columns
+              : public Gtk::TreeModel::ColumnRecord
             {
-              add (image);
-              add (artist);
-              add (info);
-              add (hasAlbums);
-            }
-        };
+              public:
 
-        Columns mColumns;
-        Glib::RefPtr<Gtk::ListStore> mStore;
+                Gtk::TreeModelColumn< ::Cairo::RefPtr< ::Cairo::ImageSurface> > Image;
+                Gtk::TreeModelColumn<XmlArtist> Artist; 
+                Gtk::TreeModelColumn<Glib::ustring> Info; 
 
-        ::Cairo::RefPtr< ::Cairo::ImageSurface> mUnknownArtist;
-        Gtk::Notebook        * mNotebook;
-        Gtk::Entry           * mEntry;
-        Gtk::ComboBox        * mCbox;
-        guint             mTopRank;
-        sigc::connection  mProcessIdler;
-        LastFMArtistV::iterator mIterator;
-        Gtk::TreeIter          mTreeIterator;
-        LastFMArtistV     mArtists;
-        Glib::Mutex       mDisplayLock;
-        bool              mEndDisplay;
-        ::Cairo::RefPtr< ::Cairo::ImageSurface > mImage;
-        LastFMArtist      mArtist;
-        Soup::RequestRefP mArtistReq;
+                Columns ()
+                {
+                  add (Image);
+                  add (Artist);
+                  add (Info);
+                }
+            };
 
-        bool
-        on_event (GdkEvent*);
+            Columns Columns;
 
-        bool
-        idler ();
+            Glib::RefPtr<Gtk::ListStore> ListStore;
+            ::Cairo::RefPtr< ::Cairo::ImageSurface> mUnknownArtist;
+            Gtk::Notebook * mNotebook;
+            Gtk::Entry * mEntry;
+            Gtk::ComboBox * mCbox;
+            guint mTopRank;
+            sigc::connection mProcessIdler;
+            XmlArtistV::iterator mIterator;
+            Gtk::TreeIter mTreeIterator;
+            XmlArtistV mXmlArtists;
+            Glib::Mutex mDisplayLock;
+            bool mEndDisplay;
+            ::Cairo::RefPtr< ::Cairo::ImageSurface > mImage;
+            XmlArtist mXmlArtist;
+            Soup::RequestRefP mXmlArtistReq;
 
-        void
-        cellDataFunc (Gtk::CellRenderer* cell, Gtk::TreeIter const& m_iter, int column);
+            void
+            cell_data_func (Gtk::CellRenderer* cell, Gtk::TreeIter const& m_iter, int column);
 
-        void
-        displayThread ();
+            void  
+            data_cb (char const * data, guint size, guint code);
 
-        void
-        showArtist ();
+            bool
+            idler ();
 
-        void  
-        data_cb (char const * data, guint size, guint code);
+            Glib::RefPtr<Gtk::UIManager> m_ui_manager;
+            Glib::RefPtr<Gtk::ActionGroup> m_actions;
 
-        void
-        on_selection_changed ();
+        protected:
 
-        void
-        on_view_in_library ();
-
-        void
-        on_play_lastfm ();
-
-        Glib::RefPtr<Gtk::UIManager> m_ui_manager;
-        Glib::RefPtr<Gtk::ActionGroup> m_actions;
+            virtual void on_row_activated (Gtk::TreePath const&, Gtk::TreeViewColumn*);
     };
 
 
@@ -242,97 +216,100 @@ namespace Source
     {
       public:
 
-        LastFM (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
-        virtual ~LastFM () {}
-  
+            LastFM (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
+            virtual ~LastFM () {}
+      
       private:
 
-		Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
-		Glib::RefPtr<Gtk::ActionGroup>  m_actions;
-		Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
-		Glib::RefPtr<Gtk::UIManager>    m_ui_manager_main;
-		Gtk::Widget					  * m_UI;
-        Gtk::Entry                    * m_URL_Entry;
-        Gtk::ComboBox                 * m_CBox_Sel;
-        Gtk::HBox                     * m_HBox_Error;
-        Gtk::Label                    * m_Label_Error;
-        Gtk::Button                   * m_Button_Error_Hide;
-        TagInfoViewT                  * m_TagInfoView;
-    
-        MPX::LastFMRadio                m_LastFMRadio;
-        boost::optional<XSPF::Playlist> m_Playlist;
-        XSPF::ItemIter                  m_PlaylistIter;
-        Glib::Mutex                     m_PlaylistLock;
+            Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
+            Glib::RefPtr<Gtk::ActionGroup>  m_actions;
+            Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
+            Glib::RefPtr<Gtk::UIManager>    m_ui_manager_main;
+            Gtk::Widget					  * m_UI;
+            Gtk::Entry                    * m_URL_Entry;
+            Gtk::ComboBox                 * m_CBox_Sel;
+            Gtk::HBox                     * m_HBox_Error;
+            Gtk::Label                    * m_Label_Error;
+            Gtk::Button                   * m_Button_Error_Hide;
+            TagInfoViewT                  * m_TagInfoView;
         
+            MPX::LastFMRadio                m_LastFMRadio;
+            boost::optional<XSPF::Playlist> m_Playlist;
+            XSPF::ItemIter                  m_PlaylistIter;
+            Glib::Mutex                     m_PlaylistLock;
+            
 
-        MPX::Player                   & m_Player;
+            MPX::Player                   & m_Player;
 
-        void
-        on_playlist (XSPF::Playlist const&);
+            void
+            on_playlist (XSPF::Playlist const&);
 
-        void
-        on_no_playlist ();
+            void
+            on_no_playlist ();
 
-        void
-        on_tuned ();
+            void
+            on_tuned ();
 
-        void
-        on_tune_error (Glib::ustring const&);
+            void
+            on_tune_error (Glib::ustring const&);
 
 
-        void
-        on_url_entry_activated ();
+            void
+            on_url_entry_activated ();
+
+            void
+            on_artist_activated (Glib::ustring const&);
 
       protected:
 
-	    virtual Glib::RefPtr<Gdk::Pixbuf>
-		get_icon ();
+            virtual Glib::RefPtr<Gdk::Pixbuf>
+            get_icon ();
 
-	    virtual Gtk::Widget*
-		get_ui ();
+            virtual Gtk::Widget*
+            get_ui ();
 
-        virtual std::string
-        get_uri ();
+            virtual std::string
+            get_uri ();
 
-        virtual bool
-        go_next ();
+            virtual bool
+            go_next ();
 
-        virtual void
-        go_next_async ();
+            virtual void
+            go_next_async ();
 
-        virtual bool
-        go_prev ();
+            virtual bool
+            go_prev ();
 
-        virtual void
-        go_prev_async ();
+            virtual void
+            go_prev_async ();
 
-        virtual void
-        stop ();
+            virtual void
+            stop ();
 
-        virtual bool
-        play ();
+            virtual bool
+            play ();
 
-        virtual void
-        play_async ();
+            virtual void
+            play_async ();
 
-        virtual void
-        play_post ();
+            virtual void
+            play_post ();
 
-        virtual void
-        next_post ();
+            virtual void
+            next_post ();
 
-        virtual void
-        restore_context ();
+            virtual void
+            restore_context ();
 
-		virtual void
-		send_metadata ();
+            virtual void
+            send_metadata ();
 
-        // UriHandler
-        virtual UriSchemes 
-        Get_Schemes (); 
+            // UriHandler
+            virtual UriSchemes 
+            Get_Schemes (); 
 
-        virtual void    
-        Process_URI_List (Util::FileList const&);
+            virtual void    
+            Process_URI_List (Util::FileList const&);
     };
   }
 }
