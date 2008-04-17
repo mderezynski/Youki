@@ -211,8 +211,6 @@ class TrackInfo:
                 while gtk.events_pending():
                     gtk.main_iteration()
 
-            return
-
         self.gotPuid = False
 
         try:
@@ -226,7 +224,7 @@ class TrackInfo:
                 lyrics = lyricwiki.run()
                 self.buf.insert(self.buf.get_end_iter(), lyrics)
             except:
-                # No Lyrics 
+                print "No Lyrics" 
             
             try:
                 self.buf.insert(self.buf.get_end_iter(), "\n\n")
@@ -236,7 +234,7 @@ class TrackInfo:
                 artist = lastfmartist.run()
                 self.buf.insert(self.buf.get_end_iter(), artist)
             except:
-                # No Artist info 
+                print "No Last.fm wiki" 
 
             if track[mpx.AttributeId.MB_TRACK_ID] and track[mpx.AttributeId.MB_TRACK_ID].is_initialized():
         
