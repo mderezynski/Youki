@@ -209,6 +209,8 @@ class TrackInfo:
                 while gtk.events_pending():
                     gtk.main_iteration()
 
+            self.gotPuid = False
+
             return
 
 
