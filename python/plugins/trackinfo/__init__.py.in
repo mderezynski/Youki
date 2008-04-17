@@ -139,7 +139,15 @@ class TrackInfo:
 
                     self.track[mpx.AttributeId.MB_ARTIST_ID].init()
                     self.track[mpx.AttributeId.MB_ARTIST_ID].val().set_string(str(artist.getId()))
+
+                    if not track[mpx.AttributeId.ARTIST].is_initialized():
+                        track[mpx.AttributeId.ARTIST].init()
+                        track[mpx.AttributeId.ARTIST].val().set_string(str(artist.getName()))
                     
+                    if not track[mpx.AttributeId.TITLE].is_initialized():
+                        track[mpx.AttributeId.TITLE].init()
+                        track[mpx.AttributeId.TITLE].val().set_string(str(mbtrack.getTitle()))
+
                     self.gotPuid = True
                     self.show([])
 

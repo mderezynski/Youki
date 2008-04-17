@@ -1236,9 +1236,9 @@ namespace MPX
 		m_Play->property_volume() = mcs->key_get<int>("mpx", "volume"); 
 		m_Volume->signal_value_changed().connect( sigc::mem_fun( *this, &Player::on_volume_value_changed ) );
 		std::vector<Glib::ustring> Icons;
-		Icons.push_back("audio-volume-high");
 		Icons.push_back("audio-volume-medium");
 		Icons.push_back("audio-volume-low");
+		Icons.push_back("audio-volume-high");
 		m_Volume->property_size() = Gtk::ICON_SIZE_SMALL_TOOLBAR;
 		m_Volume->set_icons(Icons);
 
