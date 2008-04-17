@@ -135,15 +135,17 @@ namespace mpxpy
 	}
 
 	gint64
-	variant_getint(MPX::Variant  &self)
+	variant_getint(MPX::Variant &self)
 	{
-		return boost::get<gint64>(self);
+		gint64 i = boost::get<gint64>(self);
+        return i;
 	}
 
 	std::string	
-	variant_getstring(MPX::Variant  &self)
+	variant_getstring(MPX::Variant &self)
 	{
-		return boost::get<std::string>(self);
+		std::string s = boost::get<std::string>(self);
+        return s;
 	}
 
 	void
@@ -155,7 +157,8 @@ namespace mpxpy
 	double
 	variant_getdouble(MPX::Variant  &self)
 	{
-		return boost::get<double>(self);
+		double d = boost::get<double>(self);
+        return d;
 	}
 
 	void
@@ -167,7 +170,6 @@ namespace mpxpy
 	std::string
 	opt_repr(MPX::OVariant &self)
 	{
-        PyGILLock L;
 		return variant_repr(self.get()); 
 	}
 
@@ -180,14 +182,12 @@ namespace mpxpy
 	MPX::OVariant &
 	track_getitem(MPX::Track &self, int id) 
 	{
-        PyGILLock L;
 		return self[id];
 	}
 
 	MPX::OVariant &
 	metadata_getitem(MPX::Metadata &self, int id) 
 	{
-        PyGILLock L;
 		return self[id];
 	}
 
@@ -222,14 +222,12 @@ namespace mpxpy
 	PyObject*
 	player_get_gobject (MPX::Player & obj)
 	{
-        PyGILLock L;
 		return pygobject_new((GObject*)(obj.gobj()));
 	}
 
 	MPX::Library&
 	player_get_library (MPX::Player & obj)
 	{
-        PyGILLock L;
 		MPX::PAccess<MPX::Library> pa;	
 		obj.get_object(pa);
 		return pa.get();
@@ -239,7 +237,6 @@ namespace mpxpy
 	MPX::HAL&
 	player_get_hal (MPX::Player & obj)
 	{
-        PyGILLock L;
 		MPX::PAccess<MPX::HAL> pa;	
 		obj.get_object(pa);
 		return pa.get();
@@ -249,15 +246,12 @@ namespace mpxpy
 	void
 	player_add_widget (MPX::Player & obj, PyObject * pyobj)
 	{
-        PyGILLock L;
 		obj.add_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false));
 	}
 
 	void
 	player_add_info_widget (MPX::Player & obj, PyObject * pyobj, PyObject * name_py)
 	{
-        PyGILLock L;
-
         const char* name = PyString_AsString (name_py);
 
         g_return_if_fail(name != NULL);
@@ -268,14 +262,12 @@ namespace mpxpy
 	void
 	player_remove_widget (MPX::Player & obj, PyObject * pyobj)
 	{
-        PyGILLock L;
 		obj.remove_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false));
 	}
 
 	PyObject*
 	tag_view_get_gobject (MPX::TagView & obj)
 	{
-        PyGILLock L;
 		return pygobject_new((GObject*)(obj.gobj()));
 	}
 }
@@ -285,21 +277,18 @@ namespace mpxpy
 	MPX::Variant&
 	sql_row_getitem (MPX::SQL::Row & self, std::string const& key)
 	{
-        PyGILLock L;
 		return self[key];
 	}
 
 	void
 	sql_row_setitem (MPX::SQL::Row & self, std::string const& key, MPX::Variant const& value)
 	{
-        PyGILLock L;
 		self[key] = value;
 	}
 	
 	int
 	sql_row_len (MPX::SQL::Row & self)
 	{
-        PyGILLock L;
 		return self.size();
 	}
 }

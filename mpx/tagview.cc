@@ -235,11 +235,14 @@ namespace MPX
             h = a.get_height();
 
             cr->set_operator(Cairo::OPERATOR_SOURCE);
-            cr->set_source_rgb(0., 0., 0.);
+            cr->set_source_rgba(0., 0., 0., 1.);
             cr->rectangle(0, 0, w, h);
             cr->fill();
 
             cr->scale( m_Layout.Scale, m_Layout.Scale );
+
+            if(m_Layout.List.empty())
+                return true;
 
             int rowcounter = 0;
             int tagcounter = 0;

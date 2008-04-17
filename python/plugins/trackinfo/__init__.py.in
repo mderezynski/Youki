@@ -12,6 +12,9 @@ pygtk.require('2.0')
 import gtk
 import gtk.glade
 import gobject
+import pygst
+pygst.require('0.10')
+import gst
 import pango
 import time
 import os
@@ -94,6 +97,49 @@ class TrackInfo:
 
         self.Hand = False
 
+        self.player = gst.Pipeline("player")
+        self.source = gst.element_factory_make("giosrc", "file-source")
+        self.player.add(self.source)
+        self.demuxer = gst.element_factory_make("decodebin", "demuxer")
+        self.player.add(self.demuxer)
+        self.demuxer.connect("new-decoded-pad", self.demuxer_callback)
+        self.puid = gst.element_factory_make("puid", "puid")
+        self.player.add(self.puid)
+        self.gotPuid = False
+        self.puid.set_property('musicdns-id', '234e8289d5a5fd4b29127bd114309954')
+        self.audiosink = gst.element_factory_make("fakesink", "audio-output")
+        self.player.add(self.audiosink)
+        gst.element_link_many(self.source, self.demuxer)
+        gst.element_link_many(self.puid, self.audiosink)
+        self.bus = self.player.get_bus()
+        self.bus.add_signal_watch()
+        self.bus.connect('message', self.on_message)
+
+    def demuxer_callback(self, demuxer, pad, arg):
+
+        dec_pad = self.puid.get_pad("sink")
+        pad.link(dec_pad)
+
+    def on_message(self, bus, message):    
+
+        t = message.type
+        if t == gst.MESSAGE_EOS:
+            p = self.puid.get_property('puid')
+            f = ws.TrackFilter(puid=p) 
+            t = self.q.getTracks(f)
+
+            self.track[mpx.AttributeId.MB_TRACK_ID].init()
+            self.track[mpx.AttributeId.MB_TRACK_ID].val().set_string(str(t[0].getTrack().getId()))
+
+            mbtrack = self.q.getTrackById(t[0].getTrack().getId(), self.wsinc) 
+            artist = mbtrack.getArtist()
+
+            self.track[mpx.AttributeId.MB_ARTIST_ID].init()
+            self.track[mpx.AttributeId.MB_ARTIST_ID].val().set_string(str(artist.getId()))
+            
+            self.gotPuid = True
+            self.show([])
+    
     def clear(self):
 
         self.buf.set_text('')
@@ -149,8 +195,21 @@ class TrackInfo:
 
     def show(self, blah):
 
+        track = self.track
+
+        if not self.gotPuid and not track[mpx.AttributeId.MB_TRACK_ID].is_initialized():
+
+            self.player.get_by_name("file-source").set_property('location', track.get(mpx.AttributeId.LOCATION).val().get_string())
+            self.player.set_state(gst.STATE_PLAYING)
+
+            while not self.gotPuid: 
+                while gtk.events_pending():
+                    gtk.main_iteration()
+
+            return
+
+
         try:
-            track = self.track
             self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
             self.buf.insert(self.buf.get_end_iter(), "\n")
 
@@ -161,7 +220,7 @@ class TrackInfo:
                 lyrics = lyricwiki.run()
                 self.buf.insert(self.buf.get_end_iter(), lyrics)
             except:
-                print "Couldn't get lyrics for '" + track[mpx.AttributeId.ARTIST].val().get_string() + " / " +  track[mpx.AttributeId.TITLE].val().get_string()+ "'"
+                # No Lyrics 
             
             try:
                 self.buf.insert(self.buf.get_end_iter(), "\n\n")
@@ -171,74 +230,77 @@ class TrackInfo:
                 artist = lastfmartist.run()
                 self.buf.insert(self.buf.get_end_iter(), artist)
             except:
-                print "Couldn't get Last.fm artist info for '" + track[mpx.AttributeId.ARTIST].val().get_string() 
+                # No Artist info 
 
-            trackId = track.get(mpx.AttributeId.MB_TRACK_ID).val().get_string()
-            mbtrack = self.q.getTrackById(trackId, self.wsinc) 
+            if track[mpx.AttributeId.MB_TRACK_ID] and track[mpx.AttributeId.MB_TRACK_ID].is_initialized():
+        
+                trackId = track.get(mpx.AttributeId.MB_TRACK_ID).val().get_string()
+                mbtrack = self.q.getTrackById(trackId, self.wsinc) 
 
-            rels = mbtrack.getRelations()
-            reldict = {}
+                rels = mbtrack.getRelations()
+                reldict = {}
 
-            for rel in rels:
-                if rel.getDirection() != "backward":
-                    x,y,reltype = rel.getType().partition("#")
+                for rel in rels:
+                    if rel.getDirection() != "backward":
+                        x,y,reltype = rel.getType().partition("#")
 
-                    try:
-                        reldict[reltype].append(rel)
-                    except:
-                        reldict[reltype] = []
-                        reldict[reltype].append(rel)
+                        try:
+                            reldict[reltype].append(rel)
+                        except:
+                            reldict[reltype] = []
+                            reldict[reltype].append(rel)
 
-            funcdict = {"Cover":self.printCover,
-                        "Composer":self.printComposer,
-                        "Instrument":self.printInstrument,
-                        "SamplesMaterial":self.printSamplesMaterial,
-                        "Remixer":self.printRemixer,
-                        "Lyricist":self.printLyricist,
-                        "Producer":self.printProducer,
-                        "Performer":self.printPerformer }
+                funcdict = {"Cover":self.printCover,
+                            "Composer":self.printComposer,
+                            "Instrument":self.printInstrument,
+                            "SamplesMaterial":self.printSamplesMaterial,
+                            "Remixer":self.printRemixer,
+                            "Lyricist":self.printLyricist,
+                            "Producer":self.printProducer,
+                            "Performer":self.printPerformer }
 
-            self.entities = []
-            self.link_tags = []
+                self.entities = []
+                self.link_tags = []
 
-            if track[mpx.AttributeId.MB_ARTIST_ID].is_initialized():
-                    self.entities.append(track[mpx.AttributeId.MB_ARTIST_ID].val().get_string())
+                if track[mpx.AttributeId.MB_ARTIST_ID].is_initialized():
+                        self.entities.append(track[mpx.AttributeId.MB_ARTIST_ID].val().get_string())
 
-            self.buf.insert(self.buf.get_end_iter(), "\n\n")
+                self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
-            self.buf.insert_with_tags(self.buf.get_end_iter(), "This Track", self.textTagLarge, self.textTagUnderline)
-            self.buf.insert(self.buf.get_end_iter(), "\n")
-            for rel in reldict:
-                if rel in funcdict:
-                    rellist = reldict[rel]
-                    funcdict[rel](rellist)
-                    #for relitem in rellist:
-                    #    funcdict[rel](relitem)
-            self.buf.insert(self.buf.get_end_iter(), "\n\n")
-
-            self.buf.insert_with_tags(self.buf.get_end_iter(), "Album Links", self.textTagUnderline, self.textTagLarge)
-            self.buf.insert(self.buf.get_end_iter(), "\n")
-            entity = self.q.getReleaseById(track[mpx.AttributeId.MB_ALBUM_ID].val().get_string(), self.wsinc_release)
-            rels = entity.getRelations()
-            self.display_relations (rels)
-            self.buf.insert(self.buf.get_end_iter(), "\n\n")
-
-            self.buf.insert_with_tags(self.buf.get_end_iter(), "Contributor Links", self.textTagUnderline, self.textTagLarge)
-            self.buf.insert(self.buf.get_end_iter(), "\n")
-            self.entities = dict(zip(self.entities,self.entities)).keys() 
-            for ent in self.entities:
-                entity = self.q.getArtistById(ent, self.wsinc)   
-                self.buf.insert_with_tags(self.buf.get_end_iter(), entity.getName(), self.textTagBold)
-                self.buf.insert(self.buf.get_end_iter(), ": ")
-                rels = entity.getRelations()
-                self.display_relations (rels)
+                self.buf.insert_with_tags(self.buf.get_end_iter(), "This Track", self.textTagLarge, self.textTagUnderline)
                 self.buf.insert(self.buf.get_end_iter(), "\n")
+                for rel in reldict:
+                    if rel in funcdict:
+                        rellist = reldict[rel]
+                        funcdict[rel](rellist)
+                        #for relitem in rellist:
+                        #    funcdict[rel](relitem)
+                self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
-            self.Done = True
-            #exit()
+                if track[mpx.AttributeId.MB_ALBUM_ID] and track[mpx.AttributeId.MB_ALBUM_ID].is_initialized(): 
+                    entity = self.q.getReleaseById(track[mpx.AttributeId.MB_ALBUM_ID].val().get_string(), self.wsinc_release)
+                    rels = entity.getRelations()
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), "Album Links", self.textTagUnderline, self.textTagLarge)
+                    self.buf.insert(self.buf.get_end_iter(), "\n")
+                    self.display_relations (rels)
+                    self.buf.insert(self.buf.get_end_iter(), "\n\n")
+
+                self.buf.insert_with_tags(self.buf.get_end_iter(), "Contributor Links", self.textTagUnderline, self.textTagLarge)
+                self.buf.insert(self.buf.get_end_iter(), "\n")
+                self.entities = dict(zip(self.entities,self.entities)).keys() 
+                for ent in self.entities:
+                    entity = self.q.getArtistById(ent, self.wsinc)   
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), entity.getName(), self.textTagBold)
+                    self.buf.insert(self.buf.get_end_iter(), ": ")
+                    rels = entity.getRelations()
+                    self.display_relations (rels)
+                    self.buf.insert(self.buf.get_end_iter(), "\n")
+
+                self.Done = True
+                #exit()
 
         except musicbrainz2.webservice.WebServiceError:
-            
+           
             self.Done = True 
             #exit()
 

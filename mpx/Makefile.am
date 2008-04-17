@@ -20,6 +20,7 @@ mpx_bin_CXXFLAGS = 									\
 		$(GTKMM_CFLAGS)								\
 		$(HAL_CFLAGS)								\
 		$(NM_CFLAGS)								\
+		$(LIBOFA_CFLAGS)							\
 		$(PYGTK_CFLAGS)								\
 		$(PYTHON_CFLAGS)							\
 		$(RSVG_CFLAGS)								\
@@ -54,6 +55,7 @@ mpx_bin_LDADD =										\
 		$(GTKMM_LIBS)								\
 		$(HAL_LIBS)									\
 		$(NM_LIBS)									\
+		$(LIBOFA_LIBS)								\
 		$(PYGTK_LIBS)								\
 		$(PYTHON_LIBS)								\
 		$(RSVG_LIBS)								\
@@ -108,6 +110,9 @@ mpx_bin_SOURCES =				\
 								\
 	base64.h					\
 	base64.c					\
+								\
+	gstpuid.h					\
+	gstpuid.cc					\
 								\
 	mpx-py.hh					\
 	mpx-py.cc					\
