@@ -223,54 +223,55 @@ namespace MPX
         {
             using namespace Gtk;
 
-            PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+            try{
+                Cairo::RefPtr<Cairo::Context> cr = get_window()->create_cairo_context();
 
-            Cairo::RefPtr<Cairo::Context> cr = get_window()->create_cairo_context();
+                int x, y, w, h;
+                Gtk::Allocation a = get_allocation();
+                x = a.get_x();
+                y = a.get_y();
+                w = a.get_width();
+                h = a.get_height();
 
-            int x, y, w, h;
-            Gtk::Allocation a = get_allocation();
-            x = a.get_x();
-            y = a.get_y();
-            w = a.get_width();
-            h = a.get_height();
+                cr->set_operator(Cairo::OPERATOR_SOURCE);
+                cr->set_source_rgba(0., 0., 0., 1.);
+                cr->rectangle(0, 0, w, h);
+                cr->fill();
 
-            cr->set_operator(Cairo::OPERATOR_SOURCE);
-            cr->set_source_rgba(0., 0., 0., 1.);
-            cr->rectangle(0, 0, w, h);
-            cr->fill();
+                cr->scale( m_Layout.Scale, m_Layout.Scale );
 
-            cr->scale( m_Layout.Scale, m_Layout.Scale );
+                if(m_Layout.List.empty())
+                    return true;
 
-            if(m_Layout.List.empty())
-                return true;
-
-            int rowcounter = 0;
-            int tagcounter = 0;
-            for(RowListT::const_iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
-            {
-                LayoutList const& l = *i;
-                for(LayoutList::const_iterator r = l.begin(); r != l.end(); ++r) 
+                int rowcounter = 0;
+                int tagcounter = 0;
+                for(RowListT::const_iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
                 {
-                    LayoutSP sp = *r;
-
-                    if(sp->active)
-                        cr->set_source_rgb(1., 0., 0.);
-                    else
+                    LayoutList const& l = *i;
+                    for(LayoutList::const_iterator r = l.begin(); r != l.end(); ++r) 
                     {
-                        if((tagcounter % 2) == 0)
-                            cr->set_source_rgb(0.22, 0.66, 0.36);
+                        LayoutSP sp = *r;
+
+                        if(sp->active)
+                            cr->set_source_rgb(1., 0., 0.);
                         else
-                            cr->set_source_rgb(0.10, 0.87, 0.30);
+                        {
+                            if((tagcounter % 2) == 0)
+                                cr->set_source_rgb(0.22, 0.66, 0.36);
+                            else
+                                cr->set_source_rgb(0.10, 0.87, 0.30);
+                        }
+
+                        cr->move_to( sp->x , sp->y ); 
+                        pango_cairo_show_layout(cr->cobj(), sp->m_Layout->gobj());
+                        tagcounter++;
                     }
-
-                    cr->move_to( sp->x , sp->y ); 
-                    pango_cairo_show_layout(cr->cobj(), sp->m_Layout->gobj());
-                    tagcounter++;
+                    rowcounter++;
                 }
-                rowcounter++;
+            } catch (...) 
+            {
+                g_message("%s: Error in expose!", G_STRLOC);
             }
-
-            pyg_gil_state_release(state);
 
             return true;
         }

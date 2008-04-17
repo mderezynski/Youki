@@ -124,17 +124,17 @@ class TrackInfo:
 
         t = message.type
         if t == gst.MESSAGE_EOS:
-            p = self.puid.get_property('puid')
-            if p and len(p) > 0:
-                f = ws.TrackFilter(puid=p) 
-                t = self.q.getTracks(f)
+            puid = self.puid.get_property('puid')
+            if puid and len(puid) > 0:
+                result = ws.TrackFilter(puid=puid) 
+                tracks = self.q.getTracks(result)
 
-                if len(t) > 0:
+                if len(tracks) > 0:
 
                     self.track[mpx.AttributeId.MB_TRACK_ID].init()
-                    self.track[mpx.AttributeId.MB_TRACK_ID].val().set_string(str(t[0].getTrack().getId()))
+                    self.track[mpx.AttributeId.MB_TRACK_ID].val().set_string(str(tracks[0].getTrack().getId()))
 
-                    mbtrack = self.q.getTrackById(t[0].getTrack().getId(), self.wsinc) 
+                    mbtrack = self.q.getTrackById(tracks[0].getTrack().getId(), self.wsinc) 
                     artist = mbtrack.getArtist()
 
                     self.track[mpx.AttributeId.MB_ARTIST_ID].init()
@@ -204,12 +204,14 @@ class TrackInfo:
 
         if not self.gotPuid and not track[mpx.AttributeId.MB_TRACK_ID].is_initialized():
 
-            self.player.get_by_name("file-source").set_property('location', track.get(mpx.AttributeId.LOCATION).val().get_string())
-            self.player.set_state(gst.STATE_PLAYING)
+            if track.get(mpx.AttributeId.LOCATION).val().get_string()[:4] == "file":
 
-            while not self.gotPuid: 
-                while gtk.events_pending():
-                    gtk.main_iteration()
+                self.player.get_by_name("file-source").set_property('location', track.get(mpx.AttributeId.LOCATION).val().get_string())
+                self.player.set_state(gst.STATE_PLAYING)
+
+                while not self.gotPuid: 
+                    while gtk.events_pending():
+                        gtk.main_iteration()
 
         self.gotPuid = False
 
