@@ -1,8 +1,0 @@
-[MPX Plugin]
-Loader=python
-Module=dummy
-IAge=1
-Name=Dummy plugin
-Authors=David Le Brun <david@backtrace.info>
-Copyright=Copyright © 2008 David Le Brun
-Website=http://mpx.backtrace.info/

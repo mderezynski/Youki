@@ -26,7 +26,7 @@ class Notification(mpx.Plugin):
         self.playpause = gtk.StatusIcon()
         self.playpause.set_from_stock(gtk.STOCK_MEDIA_PLAY)
         self.playpause.connect('activate', self.playpause_cb)
-        self.player.gobj().connect("play-status-changed", self.on_state_change)
+        self.player_state_change_handler_id = self.player.gobj().connect("play-status-changed", self.on_state_change)
         self.playpause.set_visible(True)
 
         self.previous = gtk.StatusIcon()
@@ -34,7 +34,7 @@ class Notification(mpx.Plugin):
         self.previous.connect('activate', self.previous_cb)
         self.previous.set_visible(True)
 
-        self.new_track = self.player.gobj().connect("new-track", self.now_playing)
+        self.player_new_track_handler_id = self.player.gobj().connect("new-track", self.now_playing)
         self.previous_message = u''
         pynotify.init("MPX")
 
@@ -44,6 +44,8 @@ class Notification(mpx.Plugin):
         self.next.set_visible(False)
         self.previous.set_visible(False)
         self.playpause.set_visible(False)
+        self.player.gobj().disconnect(self.player_new_track_handler_id)
+        self.player.gobj().disconnect(self.player_state_change_handler_id)
 
         self.player = None
 
