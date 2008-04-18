@@ -136,6 +136,11 @@ namespace MPX
                             {
 							    const char* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
 							    ptr->m_Description = doc ? doc : "(No Description given)";
+                                if(PyErr_Occurred())
+                                {
+                                    g_message("%s: Got no __doc__ from plugin", G_STRLOC);
+                                    PyErr_Clear();
+                                }
                             }
                             else
                             {
