@@ -131,9 +131,12 @@ namespace MPX
 
 							PlaylistPluginHolderRefP ptr = PlaylistPluginHolderRefP(new PlaylistPluginHolder);
 							ptr->m_PluginInstance = instance;
+
+#if 0
 							const char* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
 							ptr->m_Description = doc ? doc : "(No Description given)";
 							ptr->m_Id = m_Id++;
+#endif
 
 							try{
 								object ccinstance = object((handle<>(borrowed(ptr->m_PluginInstance))));

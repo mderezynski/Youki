@@ -1063,7 +1063,7 @@ namespace MPX
 		signals[PSIGNAL_NEW_TRACK] =
 			g_signal_new ("new-track",
 					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+					  GSignalFlags (G_SIGNAL_RUN_FIRST),
 					  0,
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
@@ -1071,7 +1071,7 @@ namespace MPX
 		signals[PSIGNAL_TRACK_PLAYED] =
 			g_signal_new ("track-played",
 					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+					  GSignalFlags (G_SIGNAL_RUN_FIRST),
 					  0,
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
@@ -1079,7 +1079,7 @@ namespace MPX
 		signals[PSIGNAL_INFOAREA_CLICK] =
 			g_signal_new ("infoarea-click",
 					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+					  GSignalFlags (G_SIGNAL_RUN_FIRST),
 					  0,
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
@@ -1087,7 +1087,7 @@ namespace MPX
 		signals[PSIGNAL_STATUS_CHANGED] =
 			g_signal_new ("play-status-changed",
 					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+					  GSignalFlags (G_SIGNAL_RUN_FIRST),
 					  0,
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT); 
@@ -2269,9 +2269,7 @@ namespace MPX
 	  MPXPlaystatus status = MPXPlaystatus (m_Play->property_status().get_value());
 	  MPX::URI u;
 
-      PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
       g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_STATUS_CHANGED], 0, int(status));
-      pyg_gil_state_release(state);
 
 	  switch (status)
 	  {

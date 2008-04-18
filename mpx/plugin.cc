@@ -48,6 +48,8 @@
 using namespace Glib;
 using namespace boost::python;
 
+void initmpx (void);
+
 namespace MPX
 {
 	Traceback::Traceback(const std::string& n, const std::string& m, const std::string& t)
@@ -84,11 +86,12 @@ namespace MPX
 	, m_Player(player)
 	{
 		try {
+            PyImport_AppendInittab("mpx", initmpx);
 			Py_Initialize();
+			//mpx_py_init ();	
 			init_pygobject();
 			init_pygtk();
 			pyg_enable_threads ();
-			mpx_py_init ();	
 		} catch( error_already_set ) {
 			g_warning("%s; Python Error:", G_STRFUNC);
 		    PyErr_Print();
@@ -101,6 +104,7 @@ namespace MPX
         }
 
         mcs_plugins->domain_register("pyplugs");
+
 	}
 
 	void
@@ -121,9 +125,11 @@ namespace MPX
                 if (active)
                 {
                     try{    
+                        PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
                         object ccinstance = object((handle<>(borrowed(item->m_PluginInstance))));
                         ccinstance.attr("activate")(boost::ref(m_Player), boost::ref(mcs)); // TODO
                         item->m_Active = true;
+                        pyg_gil_state_release(state);
                         } catch( error_already_set )
                         {
                             PyErr_Print();
@@ -138,7 +144,14 @@ namespace MPX
 	void
 	PluginManager::load_plugins ()
 	{
-		PyObject *sys_path = PySys_GetObject ("path");
+        PyObject * main_module = PyImport_AddModule ("__main__");
+        if(main_module == NULL)
+        {
+            g_message("Couldn't get __main__");
+            return;	
+        }
+
+		PyObject * sys_path = PySys_GetObject ("path");
 		for(Strings::const_iterator i = m_Paths.begin(); i != m_Paths.end(); ++i)
 		{
 			PyObject *path = PyString_FromString ((char*)i->c_str());
@@ -146,6 +159,11 @@ namespace MPX
 				PyList_Insert (sys_path, 0, path);
 			Py_DECREF(path);
 		}
+
+        PyObject * main_locals_orig = PyModule_GetDict(main_module);
+        PyObject * mpx_orig = PyImport_ImportModule("mpx"); 
+        PyObject * mpx_dict = PyModule_GetDict(mpx_orig);
+        PyTypeObject * PyMPXPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "Plugin"); 
 
 		for(Strings::const_iterator p = m_Paths.begin(); p != m_Paths.end(); ++p)
 		{
@@ -160,21 +178,8 @@ namespace MPX
 			{
                     PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 
-                    PyObject * main_module = PyImport_ImportModule ("__main__");
-                    if(main_module == NULL)
-                    {
-                        g_message("Couldn't get __main__");
-                        return;	
-                    }
-
-                    PyObject * mpx = PyImport_ImportModule("mpx"); 
-                    PyObject * mpx_dict = PyModule_GetDict(mpx);
-                    PyTypeObject * PyMPXPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "Plugin"); 
-
-                    PyObject * main_locals = PyModule_GetDict(main_module);
-					PyObject * fromlist = PyTuple_New(0);
-					PyObject * module = PyImport_ImportModuleEx ((char*)i->c_str(), main_locals, main_locals, fromlist);
-					Py_DECREF (fromlist);
+                    PyObject * main_locals = PyDict_Copy(main_locals_orig);
+					PyObject * module = PyImport_ImportModuleEx ((char*)i->c_str(), main_locals, main_locals, Py_None);
 					if (!module) {
 						g_message("%s: Couldn't load module '%s'", G_STRLOC, i->c_str());
 						PyErr_Print ();
@@ -200,8 +205,12 @@ namespace MPX
 
 							PluginHolderRefP ptr = PluginHolderRefP(new PluginHolder);
 							ptr->m_PluginInstance = instance;
+
+#if 0
 							const char* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
 							ptr->m_Description = doc ? doc : "(No Description given)";
+#endif
+
 							ptr->m_Id = m_Id++;
 
 							Glib::KeyFile keyfile;

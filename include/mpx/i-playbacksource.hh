@@ -54,7 +54,10 @@ namespace MPX
 		get_image ()
 		{
 			if(!Image)
-				return NULL;
+            {
+                Py_INCREF(Py_None);
+				return Py_None;
+            }
 
 			PyImage = pygobject_new((GObject*)(Image->gobj()));
 			return PyImage; 

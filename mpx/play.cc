@@ -280,7 +280,6 @@ namespace MPX
         gst_element_set_state (control_pipe (), GST_STATE_NULL);
         gst_element_get_state (control_pipe (), NULL, NULL, GST_CLOCK_TIME_NONE); 
         property_status_ = PLAYSTATUS_STOPPED;
-		g_message("Gone to STOPPED");
       }
       set_custom_httpheader(NULL);
     }
@@ -305,7 +304,6 @@ namespace MPX
       if (statechange != GST_STATE_CHANGE_FAILURE)
       {
         property_status_ = PLAYSTATUS_PLAYING;
-		g_message("Gone to PLAYING");
         return;
       }
 
@@ -496,7 +494,6 @@ namespace MPX
       readify_stream (); 
 
       m_stream_type = type;
-      g_message("%s: Switching to stream with URI: %s", G_STRLOC, stream.c_str());
       property_stream_ = stream;
 	  play_stream ();
 

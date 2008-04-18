@@ -140,13 +140,13 @@ class TrackInfo:
                     self.track[mpx.AttributeId.MB_ARTIST_ID].init()
                     self.track[mpx.AttributeId.MB_ARTIST_ID].val().set_string(str(artist.getId()))
 
-                    if not track[mpx.AttributeId.ARTIST].is_initialized():
-                        track[mpx.AttributeId.ARTIST].init()
-                        track[mpx.AttributeId.ARTIST].val().set_string(str(artist.getName()))
+                    if not self.track[mpx.AttributeId.ARTIST].is_initialized():
+                        self.track[mpx.AttributeId.ARTIST].init()
+                        self.track[mpx.AttributeId.ARTIST].val().set_string(str(artist.getName()))
                     
-                    if not track[mpx.AttributeId.TITLE].is_initialized():
-                        track[mpx.AttributeId.TITLE].init()
-                        track[mpx.AttributeId.TITLE].val().set_string(str(mbtrack.getTitle()))
+                    if not self.track[mpx.AttributeId.TITLE].is_initialized():
+                        self.track[mpx.AttributeId.TITLE].init()
+                        self.track[mpx.AttributeId.TITLE].val().set_string(str(mbtrack.getTitle()))
 
                     self.gotPuid = True
                     self.show([])
@@ -502,12 +502,6 @@ class TrackInfoDispatcher(mpx.Plugin):
         self.info = None
 
     def pstate_changed(self, blah, state):
-
-        try:
-            print mpx.PlayStatus.STOPPED
-            print type(mpx.PlayStatus.STOPPED)
-        except:
-            pass
 
         if state == mpx.PlayStatus.STOPPED:
             self.info.clear()

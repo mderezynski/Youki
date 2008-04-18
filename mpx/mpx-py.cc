@@ -345,6 +345,15 @@ namespace MPX
 
 BOOST_PYTHON_MODULE(mpx)
 {
+    enum_<MPX::MPXPlaystatus>("PlayStatus")
+        .value("NONE", MPX::PLAYSTATUS_NONE)
+        .value("STOPPED", MPX::PLAYSTATUS_STOPPED)
+        .value("PLAYING", MPX::PLAYSTATUS_PLAYING)
+        .value("PAUSED", MPX::PLAYSTATUS_PAUSED)
+        .value("SEEKING", MPX::PLAYSTATUS_SEEKING)
+        .value("WAITING", MPX::PLAYSTATUS_WAITING)
+    ;
+
 	/*-------------------------------------------------------------------------------------*/
 
     class_< ::pysigc::sigc3<char const*, guint, guint>, boost::noncopyable>("Sigc3MiniSoupCallback", boost::python::no_init)
@@ -371,7 +380,6 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("val", (MPX::Variant& (MPX::OVariant::*) ()) &MPX::OVariant::get, return_internal_reference<>() /*return_value_policy<return_by_value>()*/) 
 		.def("is_initialized", (bool (MPX::OVariant::*) ()) &MPX::OVariant::is_initialized, return_value_policy<return_by_value>()) 
 		.def("init", &mpxpy::opt_init)
-		.def("__repr__", &mpxpy::opt_repr, return_value_policy<return_by_value>())
 	;
 
 	/*-------------------------------------------------------------------------------------*/
@@ -383,7 +391,6 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("set_string", &mpxpy::variant_setstring)
 		.def("get_double", &mpxpy::variant_getdouble, return_value_policy<return_by_value>()) 
 		.def("set_double", &mpxpy::variant_setdouble)
-		.def("__repr__", &mpxpy::variant_repr, return_value_policy<return_by_value>())
 	;
 
 	/*-------------------------------------------------------------------------------------*/
@@ -391,7 +398,6 @@ BOOST_PYTHON_MODULE(mpx)
 	class_<MPX::Track >("Track")
 		.def("__getitem__", &mpxpy::track_getitem, /*return_value_policy<return_by_value>()*/ return_internal_reference<>()) 
 		.def("__len__", &mpxpy::track_len, return_value_policy<return_by_value>())
-        .def("__repr__", &mpxpy::track_repr, return_value_policy<return_by_value>()) 
 		.def("get", &mpxpy::track_getitem, return_value_policy<return_by_value>()) 
 	;
 
@@ -400,7 +406,6 @@ BOOST_PYTHON_MODULE(mpx)
 	class_<MPX::Metadata >("Metadata")
 		.def("__getitem__", &mpxpy::metadata_getitem, /*return_value_policy<return_by_value>()*/ return_internal_reference<>()) 
 		.def("__len__", &mpxpy::metadata_len, return_value_policy<return_by_value>())
-        .def("__repr__", &mpxpy::metadata_repr, return_value_policy<return_by_value>()) 
 		.def("get", &mpxpy::metadata_getitem, /*return_value_policy<return_by_value>()*/ return_internal_reference<>()) 
 		.def("get_image", &MPX::Metadata::get_image)
 	;
@@ -528,15 +533,6 @@ BOOST_PYTHON_MODULE(mpx)
 		.value("C_CAN_BOOKMARK", MPX::PlaybackSource::C_CAN_BOOKMARK)	
 		.value("C_PROVIDES_TIMING", MPX::PlaybackSource::C_PROVIDES_TIMING)	
 	;
-
-    enum_<MPX::MPXPlaystatus>("PlayStatus")
-        .value("NONE", MPX::PLAYSTATUS_NONE)
-        .value("STOPPED", MPX::PLAYSTATUS_STOPPED)
-        .value("PLAYING", MPX::PLAYSTATUS_PLAYING)
-        .value("PAUSED", MPX::PLAYSTATUS_PAUSED)
-        .value("SEEKING", MPX::PLAYSTATUS_SEEKING)
-        .value("WAITING", MPX::PLAYSTATUS_WAITING)
-    ;
 
 	/*-------------------------------------------------------------------------------------*/
 
