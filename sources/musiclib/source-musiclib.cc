@@ -2064,7 +2064,6 @@ namespace Source
         {
             m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_NEXT);
             m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_PREV);
-            m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_PLAY);
             return;
         }
 
