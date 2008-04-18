@@ -20,6 +20,7 @@ class OSD(gtk.Window):
         def __init__(self):
 
             gtk.Window.__init__(self, type=gtk.WINDOW_POPUP)
+            self.add_events(gtk.gdk.BUTTON_PRESS_MASK)
             self.INNER_PADDING = 8
             self.cover = None
             self.metadata = None
@@ -27,9 +28,15 @@ class OSD(gtk.Window):
             self.m_title = ""
             self.m_album = ""
             self.set_colormap(gtk.gdk.screen_get_default().get_rgba_colormap())
-            self.set_size_request(self.INNER_PADDING*2 + 128 + self.INNER_PADDING + 300, self.INNER_PADDING*2 + 128)
+            self.set_size_request(1,1)
+
+        def move_center(self, width):
+
+            self.set_size_request(1,1)
+            self.set_size_request(width, self.INNER_PADDING*2 + 128)
             screen = gtk.gdk.screen_get_default()
-            self.move((screen.get_width() - (self.INNER_PADDING*3+428)) / 2, (screen.get_height() - (self.INNER_PADDING*2+128))/2)
+            self.move((screen.get_width() - width) / 2, (screen.get_height() - (self.INNER_PADDING*2+128))/2)
+
     
         def rounded_rect(self, cr, x, y, width, height, radius):
 
@@ -65,7 +72,13 @@ class OSD(gtk.Window):
             else:
                 self.m_album = "(Unknown Album)"
 
-            self.cover = m.get_image().scale_simple(128,128, gtk.gdk.INTERP_HYPER) 
+            i = m.get_image()
+
+            if(i):
+                self.cover = i.scale_simple(128,128, gtk.gdk.INTERP_HYPER) 
+            else:
+                self.cover = None
+
             self.queue_draw()
 
         def clear(self):
@@ -90,32 +103,47 @@ class OSD(gtk.Window):
             cr.set_source_rgba(0., 0., 0., 0.6)
             cr.stroke()
 
+            layouts = [ self.create_pango_layout(self.m_artist),
+                        self.create_pango_layout(self.m_album),
+                        self.create_pango_layout(self.m_title)  ]
+
+            layouts[0].set_font_description(pango.FontDescription("Sans Serif Bold 14"))
+            layouts[1].set_font_description(pango.FontDescription("Sans Serif 14"))
+            layouts[2].set_font_description(pango.FontDescription("Sans Serif 10"))
+
+            max_layout_width = 0
+
+            for layout in layouts:
+                fontw, fonth = layout.get_pixel_size()
+                if max_layout_width < fontw:
+                    max_layout_width = fontw
+
+            x_origin = self.INNER_PADDING
+
             if(self.cover):
             
                 cr.set_source_pixbuf(self.cover, self.INNER_PADDING, self.INNER_PADDING)
                 self.rounded_rect(cr, x + self.INNER_PADDING, y + self.INNER_PADDING, 128, 128, 8.)
                 cr.fill()
+                x_origin = 128 + (2*self.INNER_PADDING)
+                self.move_center(max_layout_width + 128 + (3*self.INNER_PADDING))
+            
+            else:
 
-            layouts = [ self.create_pango_layout(self.m_artist),
-                        self.create_pango_layout(self.m_album),
-                        self.create_pango_layout(self.m_title)  ]
+                self.move_center(max_layout_width + (2*self.INNER_PADDING))
 
-            positions = [ [128+self.INNER_PADDING, self.INNER_PADDING+28],
-                          [128+self.INNER_PADDING, self.INNER_PADDING+24+28],
-                          [128+self.INNER_PADDING, self.INNER_PADDING+48+28] ]
+      
 
-            for layout in layouts:
-                layout.set_font_description(pango.FontDescription("Sans Serif 14"))
+            positions = [ self.INNER_PADDING+28,
+                          self.INNER_PADDING+24+28,
+                          self.INNER_PADDING+48+28 ]
 
             cr.set_source_rgba(0., 0., 0., 1.)
             cr.set_operator(cairo.OPERATOR_SOURCE)
-
-            lwidth = width - (3*self.INNER_PADDING) - 128
-      
             for layout in layouts: 
                 fontw, fonth = layout.get_pixel_size()
                 position = positions[layouts.index(layout)]
-                cr.move_to(position[0] + (lwidth/2 - fontw/2), position[1])
+                cr.move_to(x_origin + ((max_layout_width/2) - (fontw/2)), position)
                 cr.update_layout(layout)
                 cr.show_layout(layout)
     
@@ -141,11 +169,11 @@ class MPXOSD(mpx.Plugin):
         self.player.disconnect(self.player_new_track_handler_id)
         self.player = None
 
-    def on_button_press(self, widget):
+    def on_button_press(self, widget, event):
 
         if(self.timeout_id): 
             gobject.source_remove(self.timeout_id)
-        hide_osd()
+        self.hide_osd()
 
     def hide_osd(self): 
 

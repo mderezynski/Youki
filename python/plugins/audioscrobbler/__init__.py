@@ -393,7 +393,6 @@ class AudioScrobblerPost:
         
         # First we test the best and most likely case
         if response[0].startswith('OK'):
-            print ">> AudioScrobbler: Connected to Audioscrobbler Service"
             answer = response[1].strip()
             self.auth_details['s'] = answer
             self.npurl = response[2].strip()
@@ -697,8 +696,6 @@ class MPXAudioScrobbler(mpx.Plugin):
     
         """ Activate plugin """
 
-        print ">> AudioScrobbler activated"
-
         self.player = player
         self.as = AudioScrobbler()
         self.post = self.as.post(mcs.key_get_string("lastfm", "username"), mcs.key_get_string("lastfm", "password"))
@@ -712,8 +709,6 @@ class MPXAudioScrobbler(mpx.Plugin):
     def deactivate(self):
 
         """ Deactivate plugin """
-
-        print ">> AudioScrobbler de-activated"
 
         self.player.gobj().disconnect(self.hand1)
         self.player.gobj().disconnect(self.hand2)
@@ -780,8 +775,6 @@ class MPXAudioScrobbler(mpx.Plugin):
     def now_playing(self, blah):
 
         m = self.player.get_metadata()
-
-        print ">> AS Now-Playing!"
 
         try:
             p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()

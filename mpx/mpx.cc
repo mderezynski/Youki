@@ -1898,11 +1898,9 @@ namespace MPX
 	Player::reparse_metadata ()
 	{
 		if( !m_Metadata.get().Image )
-		{
-			m_Metadata.get().Image = m_DiscDefault;
-		}
-
-		m_InfoArea->set_image (m_Metadata.get().Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
+		    m_InfoArea->set_image (m_DiscDefault->scale_simple (72, 72, Gdk::INTERP_HYPER));
+        else
+		    m_InfoArea->set_image (m_Metadata.get().Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
 
 		ustring artist, album, title, genre;
 		parse_metadata (m_Metadata.get(), artist, album, title, genre);
@@ -1945,19 +1943,10 @@ namespace MPX
 	void
 	Player::on_source_play_request (int source_id)
 	{
-	  if( (m_ActiveSource != SOURCE_NONE ) && (m_Play->property_status().get_value() != PLAYSTATUS_STOPPED))
+	  if( m_ActiveSource != SOURCE_NONE ) 
 	  {
-			if( m_source_flags[m_ActiveSource] & PlaybackSource::F_HANDLE_LASTFM )
-			{
-					track_played ();	
-			}
-
-			if( m_ActiveSource != source_id)
-			{
-					m_SourceV[m_ActiveSource]->stop ();
-					m_Play->request_status (PLAYSTATUS_STOPPED);
-			}
-	  }
+        stop ();
+      }
 
       safe_pause_unset();
 
@@ -2019,8 +2008,6 @@ namespace MPX
 
       if(!m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID])
           return;
-
-      g_message("Track Played; Seconds: %f, Duration: %f", m_TrackPlayedSeconds, m_TrackDuration); 
 
       if((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_TrackDuration/2))
       {
@@ -2232,17 +2219,11 @@ namespace MPX
 	{
 	  if( m_ActiveSource != SOURCE_NONE )
 	  {
-        g_message("%s: Stopping.", G_STRLOC);
 		track_played();
-		int source_id = m_ActiveSource;
-		PlaybackSource::Flags f = m_source_flags[source_id];
-		if( f & PlaybackSource::F_ASYNC )
-		{
-		  m_SourceV[source_id]->stop ();
-		}
+		m_SourceV[m_ActiveSource]->stop ();
+		m_SourceV[m_ActiveSource]->send_caps();
 		safe_pause_unset ();
 		m_Play->request_status( PLAYSTATUS_STOPPED );
-		m_SourceV[source_id]->send_caps();
         m_ActiveSource = SOURCE_NONE;
 	  }
 	}

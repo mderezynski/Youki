@@ -216,47 +216,6 @@ namespace MPX
         Glib::RefPtr<Gnome::Glade::Xml> m_RefXml;
         Gtk::Widget * m_UI;
 
-        struct PlaylistColumnsT : public Gtk::TreeModel::ColumnRecord 
-        {
-            Gtk::TreeModelColumn<ustring> Artist;
-            Gtk::TreeModelColumn<ustring> Album;
-            Gtk::TreeModelColumn<guint64> Track;
-            Gtk::TreeModelColumn<ustring> Title;
-            Gtk::TreeModelColumn<guint64> Length;
-
-            // These hidden columns are used for sorting
-            // They don't contain sortnames, as one might 
-            // think from their name, but instead the MB
-            // IDs (if not available, then just the plain name)
-            // They are used only for COMPARISON FOR EQUALITY.
-            // Obviously, comparing them with compare() is
-            // useless if they're MB IDs
-
-            Gtk::TreeModelColumn<ustring> ArtistSort;
-            Gtk::TreeModelColumn<ustring> AlbumSort;
-            Gtk::TreeModelColumn<gint64> RowId;
-            Gtk::TreeModelColumn<ustring> Location;
-            Gtk::TreeModelColumn< ::MPX::Track> MPXTrack;
-            Gtk::TreeModelColumn<gint64> Rating;
-            Gtk::TreeModelColumn<bool> IsMPXTrack;
-
-            PlaylistColumnsT ()
-            {
-                add (Artist);
-                add (Album);
-                add (Track);
-                add (Title);
-                add (Length);
-                add (ArtistSort);
-                add (AlbumSort);
-                add (RowId);
-                add (Location);
-                add (MPXTrack);
-                add (Rating);
-                add (IsMPXTrack);
-            };
-        };
-
         class PlaylistTreeView
             :   public WidgetLoader<Gtk::TreeView>
         {

@@ -116,7 +116,7 @@ namespace MPX
         {
             PluginHolderRefP & item = i->second;
             try{
-                bool active = mcs->key_get<bool>("pyplugs", item->get_name());
+                bool active = mcs_plugins->key_get<bool>("pyplugs", item->get_name());
 
                 if (active)
                 {

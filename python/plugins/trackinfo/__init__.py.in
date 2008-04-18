@@ -503,6 +503,12 @@ class TrackInfoDispatcher(mpx.Plugin):
 
     def pstate_changed(self, blah, state):
 
+        try:
+            print mpx.PlayStatus.STOPPED
+            print type(mpx.PlayStatus.STOPPED)
+        except:
+            pass
+
         if state == mpx.PlayStatus.STOPPED:
             self.info.clear()
 

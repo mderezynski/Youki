@@ -85,6 +85,6 @@ class TrackTags(mpx.Plugin):
                 
                 for lst in tags:
                     self.tagview.add_tag(lst[0], lst[1])
-        
+            
         except:
             print "Error displaying tags"
