@@ -1799,10 +1799,10 @@ namespace Source
         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
 
         m_PluginManager = new PlaylistPluginManager();
-        std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"playlist-scripts");
+        std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"playlist-py");
         if(file_test(user_path, FILE_TEST_EXISTS))
             m_PluginManager->append_search_path (user_path);
-        m_PluginManager->append_search_path (build_filename(DATA_DIR,"playlist-scripts"));
+        m_PluginManager->append_search_path (build_filename(DATA_DIR,"playlist-py"));
         m_PluginManager->load_plugins();
 
         Glib::RefPtr<Gtk::IconFactory> factory = Gtk::IconFactory::create();

@@ -1102,10 +1102,10 @@ namespace MPX
 		// This also initializes Python for us and hence it's of utmost importance it is kept
 		// before loading the sources as they might use Python themselves
 		m_PluginManager = new PluginManager(this);
-		std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"scripts");
+		std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"python-plugins");
 		if(file_test(user_path, FILE_TEST_EXISTS))
 			m_PluginManager->append_search_path (user_path);
-		m_PluginManager->append_search_path (build_filename(DATA_DIR,"scripts"));
+		m_PluginManager->append_search_path (build_filename(DATA_DIR,"python-plugins"));
 		m_PluginManager->load_plugins();
 		m_PluginManager->activate_plugins();
 		m_PluginManagerGUI = PluginManagerGUI::create(*m_PluginManager);
