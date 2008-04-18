@@ -3,10 +3,4 @@
 
 extern "C" void initmpx();
 
-namespace MPX
-{
-	void
-	mpx_py_init();
-}
-
 #endif

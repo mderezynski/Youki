@@ -607,12 +607,3 @@ BOOST_PYTHON_MODULE(mpx)
     class_<MPX::HAL>("MPXHal", boost::python::no_init)
     ;
 }
-
-namespace MPX
-{
-	void
-	mpx_py_init ()
-	{
-		initmpx();
-	}
-}
