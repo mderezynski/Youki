@@ -165,7 +165,7 @@ class MPXOSD(mpx.Plugin):
         return True
 
     def deactivate(self):
-        self.player.disconnect(self.player_new_track_handler_id)
+        self.player.gobj().disconnect(self.player_new_track_handler_id)
         self.player = None
 
     def on_button_press(self, widget, event):
