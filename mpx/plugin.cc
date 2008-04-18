@@ -206,10 +206,15 @@ namespace MPX
 							PluginHolderRefP ptr = PluginHolderRefP(new PluginHolder);
 							ptr->m_PluginInstance = instance;
 
-#if 0
-							const char* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
-							ptr->m_Description = doc ? doc : "(No Description given)";
-#endif
+                            if(PyObject_HasAttrString(module, "__doc__"))
+                            {
+							    const char* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
+							    ptr->m_Description = doc ? doc : "(No Description given)";
+                            }
+                            else
+                            {
+							    ptr->m_Description = "(No Description given)";
+                            }
 
 							ptr->m_Id = m_Id++;
 
