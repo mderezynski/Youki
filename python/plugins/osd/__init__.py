@@ -28,12 +28,11 @@ class OSD(gtk.Window):
             self.m_title = ""
             self.m_album = ""
             self.set_colormap(gtk.gdk.screen_get_default().get_rgba_colormap())
-            self.set_size_request(1,1)
+            self.resize(1,1)
 
         def move_center(self, width):
 
-            self.set_size_request(1,1)
-            self.set_size_request(width, self.INNER_PADDING*2 + 128)
+            self.resize(width, self.INNER_PADDING*2 + 128)
             screen = gtk.gdk.screen_get_default()
             self.move((screen.get_width() - width) / 2, (screen.get_height() - (self.INNER_PADDING*2+128))/2)
 
