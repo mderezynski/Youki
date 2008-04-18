@@ -1936,8 +1936,6 @@ namespace MPX
 	  {
 	    if(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
 			m_Covers.fetch(get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()), m_Metadata.get().Image);
-		else
-			m_Metadata.get().Image = m_DiscDefault;
 	  }
 
 	  if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
