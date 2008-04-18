@@ -143,6 +143,9 @@ namespace MPX
 		Metadata const& 
 		get_metadata ();
 
+        MPXPlaystatus
+        get_status ();
+
 		void
 		play ();
 

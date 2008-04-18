@@ -454,6 +454,7 @@ BOOST_PYTHON_MODULE(mpx)
 
 	class_<MPX::Player, boost::noncopyable>("Player", boost::python::no_init)
 		.def("get_metadata", &MPX::Player::get_metadata, return_internal_reference<>())
+		.def("get_status", &MPX::Player::get_status) 
 		.def("gobj", &mpxpy::player_get_gobject)
 		.def("play", &MPX::Player::play)
 		.def("pause", &MPX::Player::pause_ext)

@@ -1,7 +1,8 @@
-SUBDIRS = 				\
+SUBDIRS = 					\
 		audioscrobbler 		\
-		mpxdj			\
+		mpxdj				\
 		ratings_export		\
 		notification		\
-		trackinfo		\
+		osd					\
+		trackinfo			\
 		tracktags

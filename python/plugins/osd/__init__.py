@@ -161,12 +161,19 @@ class MPXOSD(mpx.Plugin):
 
         self.player = player
         self.player_new_track_handler_id = self.player.gobj().connect("new-track", self.new_track)
-        self.player_state_change_handler_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
+        self.player_status_change_handler_id = self.player.gobj().connect("play-status-changed", self.pstatus_changed)
+
+        status = self.player.get_status()
+
+        if (status == mpx.PlayStatus.PLAYING) or (status == mpx.PlayStatus.PAUSED):
+            
+            self.new_track(player.gobj())
+
         return True
 
     def deactivate(self):
         self.player.gobj().disconnect(self.player_new_track_handler_id)
-        self.player.gobj().disconnect(self.player_state_change_handler_id)
+        self.player.gobj().disconnect(self.player_status_change_handler_id)
         self.player = None
 
     def on_button_press(self, widget, event):
@@ -181,9 +188,9 @@ class MPXOSD(mpx.Plugin):
         self.timeout_id = None
         return False
 
-    def pstate_changed(self, playergobj, state): 
+    def pstatus_changed(self, playergobj, status): 
 
-        if state == mpx.PlayStatus.STOPPED:
+        if status == mpx.PlayStatus.STOPPED:
 
             self.osd.clear()
             self.osd.hide()

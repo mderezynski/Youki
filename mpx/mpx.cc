@@ -1609,6 +1609,13 @@ namespace MPX
 	}
 #endif // HAVE_HAL
 
+    MPXPlaystatus
+    Player::get_status ()
+    {
+        return MPXPlaystatus(m_Play->property_status().get_value());
+    }
+
+
 	Metadata const&
 	Player::get_metadata ()
 	{
