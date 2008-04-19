@@ -689,6 +689,7 @@ AC_OUTPUT([
 	python/plugins/trackinfo/__init__.py
 	python/plugins/tracktags/Makefile
 	python/plugins/osd/Makefile
+	python/plugins/pidgin/Makefile
 	python/plugins/mpxdj/Makefile
 	python/plugins/mpxdj/__init__.py
 	python/plugins/audioscrobbler/Makefile
