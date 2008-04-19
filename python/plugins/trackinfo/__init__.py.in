@@ -123,10 +123,12 @@ class TrackInfo:
     def display_pipeline_duration(self):
 
         position, format = self.player.query_position(gst.FORMAT_TIME)
-        if (position > 0) and (duration > 0):
-            self.progress.set_fraction (float(position) / float(135000000000))        
+        frac = float(position) / float(135000000000)
+        if (frac >= 0.) and (frac <= 1.0): 
+            self.progress.set_fraction(frac)
 
         if self.gotPuid:
+            self.progress.set_fraction(0.)
             self.progress.hide()
             return False
         else:
@@ -160,10 +162,8 @@ class TrackInfo:
                         self.track[mpx.AttributeId.TITLE].init()
                         self.track[mpx.AttributeId.TITLE].val().set_string(str(mbtrack.getTitle()))
 
-                    self.gotPuid = True
-                    self.show_real()
-
             self.gotPuid = True
+            self.show_real()
     
     def clear(self):
 
@@ -207,7 +207,6 @@ class TrackInfo:
 
         self.notebook.set_current_page(1)
         self.track = track
-        self.Done = False
         self.show()
 
     def show(self):
@@ -246,6 +245,7 @@ class TrackInfo:
                 self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics", self.textTagLarge, self.textTagUnderline)
                 self.buf.insert(self.buf.get_end_iter(), "\n\n")
                 lyricwiki = mpx.LyricWiki(track[mpx.AttributeId.ARTIST].val().get_string(), track[mpx.AttributeId.TITLE].val().get_string())
+                print "[TI] Getting Lyrics"
                 lyrics = lyricwiki.run()
                 self.buf.insert(self.buf.get_end_iter(), lyrics)
             except:
@@ -256,6 +256,7 @@ class TrackInfo:
                 self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track[mpx.AttributeId.ARTIST].val().get_string(), self.textTagLarge, self.textTagUnderline)
                 self.buf.insert(self.buf.get_end_iter(), "\n\n")
                 lastfmartist = mpx.LastFMArtist(track[mpx.AttributeId.ARTIST].val().get_string())
+                print "[TI] Getting LFM Artist"
                 artist = lastfmartist.run()
                 self.buf.insert(self.buf.get_end_iter(), artist)
             except:
@@ -298,12 +299,11 @@ class TrackInfo:
 
                 self.buf.insert_with_tags(self.buf.get_end_iter(), "This Track", self.textTagLarge, self.textTagUnderline)
                 self.buf.insert(self.buf.get_end_iter(), "\n")
+                print "[TI] Printing Track Rels"
                 for rel in reldict:
                     if rel in funcdict:
                         rellist = reldict[rel]
                         funcdict[rel](rellist)
-                        #for relitem in rellist:
-                        #    funcdict[rel](relitem)
                 self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
                 if track[mpx.AttributeId.MB_ALBUM_ID] and track[mpx.AttributeId.MB_ALBUM_ID].is_initialized(): 
@@ -311,12 +311,14 @@ class TrackInfo:
                     rels = entity.getRelations()
                     self.buf.insert_with_tags(self.buf.get_end_iter(), "Album Links", self.textTagUnderline, self.textTagLarge)
                     self.buf.insert(self.buf.get_end_iter(), "\n")
+                    print "[TI] Printing Album ARs"
                     self.display_relations (rels)
                     self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
                 self.buf.insert_with_tags(self.buf.get_end_iter(), "Contributor Links", self.textTagUnderline, self.textTagLarge)
                 self.buf.insert(self.buf.get_end_iter(), "\n")
                 self.entities = dict(zip(self.entities,self.entities)).keys() 
+                print "[TI] Printing Contributor ARs"
                 for ent in self.entities:
                     entity = self.q.getArtistById(ent, self.wsinc)   
                     self.buf.insert_with_tags(self.buf.get_end_iter(), entity.getName(), self.textTagBold)
@@ -325,11 +327,9 @@ class TrackInfo:
                     self.display_relations (rels)
                     self.buf.insert(self.buf.get_end_iter(), "\n")
 
-                self.Done = True
-
-        except musicbrainz2.webservice.WebServiceError:
-           
-            self.Done = True 
+        except:
+        
+            pass
 
         self.notebook.set_current_page(2)
 
