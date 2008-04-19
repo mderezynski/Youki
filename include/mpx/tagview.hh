@@ -55,6 +55,7 @@ class TagView : public Gtk::DrawingArea
         MainLayout m_Layout; 
         double motion_x, motion_y;
         std::string m_ActiveTagName;
+        int m_ActiveRow;
         guint m_Signal0; 
 
     private:

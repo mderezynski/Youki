@@ -11,6 +11,10 @@
 #include <math.h>
 #endif
 
+#include "mpx/util-graphics.hh"
+
+using namespace Glib;
+
 namespace MPX
 {
         void
@@ -182,6 +186,7 @@ namespace MPX
             motion_y = y;
 
             m_ActiveTagName = std::string();
+            m_ActiveRow = -1;
             int rowcounter = 0;
             for(RowListT::const_iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
             {
@@ -194,6 +199,7 @@ namespace MPX
                     {
                         sp->active = true;
                         m_ActiveTagName = sp->m_Text;
+                        m_ActiveRow = rowcounter;
                     }
                     else
                     {
@@ -267,6 +273,41 @@ namespace MPX
                         tagcounter++;
                     }
                     rowcounter++;
+                }
+
+                if(!m_ActiveTagName.empty())
+                {
+                    int top_space = ((m_ActiveRow-1)*m_Layout.RowHeight);
+                    int bottom_space = ( h - ((m_ActiveRow+1)*m_Layout.RowHeight));
+                    
+                    int y = 0;    
+
+                    if(top_space > bottom_space)
+                        y = (top_space/2 - 10);
+                    else
+                        y = (bottom_space/2 - 10) + ((m_ActiveRow+1)*m_Layout.RowHeight);
+
+                    Glib::RefPtr<Pango::Layout> Layout = create_pango_layout(Markup::escape_text(m_ActiveTagName));
+                    Pango::AttrList list;
+                    Pango::Attribute attr1 = Pango::Attribute::create_attr_size(12000);
+                    Pango::Attribute attr2 = Pango::Attribute::create_attr_weight(Pango::WEIGHT_BOLD);
+                    list.insert(attr1);
+                    list.insert(attr2);
+                    Layout->set_attributes(list);
+
+                    Pango::Rectangle Ink, Logical;
+                    Layout->get_pixel_extents(Ink, Logical);
+
+                    int x = (w/2 - Logical.get_width()/2) - 12;
+
+                    Util::cairo_rounded_rect(cr, x, y, Logical.get_width() + 24, Logical.get_height()+12, 6.);                    
+                    cr->set_operator(Cairo::OPERATOR_ATOP);
+                    cr->set_source_rgba(0.65, 0.65, 0.65, 0.9);
+                    cr->fill();
+
+                    cr->move_to(x + 12, y + 6);
+                    cr->set_source_rgba(1., 1., 1., 1.); 
+                    pango_cairo_show_layout(cr->cobj(), Layout->gobj());
                 }
             } catch (...) 
             {
