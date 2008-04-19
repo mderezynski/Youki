@@ -44,8 +44,10 @@ namespace MPX
 
 					Gtk::TreeModelColumn<bool>				Active;
 					Gtk::TreeModelColumn<bool>				GUI;
-					Gtk::TreeModelColumn<std::string>		NameDesc;
-					Gtk::TreeModelColumn<std::string>		Tooltip;
+					Gtk::TreeModelColumn<std::string>		Desc;
+					Gtk::TreeModelColumn<std::string>		Authors;
+					Gtk::TreeModelColumn<std::string>		Copyright;
+					Gtk::TreeModelColumn<std::string>		Website;
 					Gtk::TreeModelColumn<gint64>			Id;
 					Gtk::TreeModelColumn<std::string>		Name;
 	
@@ -53,8 +55,10 @@ namespace MPX
 				{
 					add(Active);
 					add(GUI);
-					add(NameDesc);
-					add(Tooltip);
+					add(Desc);
+					add(Authors);
+					add(Copyright);
+					add(Website);
 					add(Id);
 					add(Name);
 				};
@@ -74,13 +78,8 @@ namespace MPX
 				Store = Gtk::ListStore::create(Columns);
 
 				append_column_editable(_("Active"), Columns.Active);
+				append_column(_("Name"), Columns.Name);
 
-				Gtk::CellRendererText * cell = manage(new Gtk::CellRendererText);
-				Gtk::TreeViewColumn * col = manage(new Gtk::TreeViewColumn(_("Name/Description")));
-				col->pack_start(*cell);
-				col->add_attribute(*cell, "markup", Columns.NameDesc);
-				append_column(*col);
-		
 				std::vector<Gtk::CellRenderer*> renderers = get_column(0)->get_cell_renderers();
 				renderers[0]->property_sensitive () = true;
 				Gtk::CellRendererToggle * cell_toggle =
@@ -94,11 +93,10 @@ namespace MPX
 				{
 					TreeIter iter = Store->append();
 					(*iter)[Columns.Name] = i->second->get_name();
-					(*iter)[Columns.NameDesc] = (boost::format("<b>%1%</b>") % i->second->get_name()).str();
-					(*iter)[Columns.Tooltip] = (boost::format(_("<b>Authors:</b> %1%\n<b>Copyright:</b> %2%\n<b>Website:</b> %3%"))
-																		% Glib::Markup::escape_text( i->second->get_authors() ).c_str()
-																		% Glib::Markup::escape_text( i->second->get_copyright() ).c_str()
-																		% Glib::Markup::escape_text( i->second->get_website() ).c_str() ).str();
+					(*iter)[Columns.Desc] = i->second->get_desc();
+					(*iter)[Columns.Authors] = i->second->get_authors();
+					(*iter)[Columns.Copyright] = i->second->get_copyright();
+					(*iter)[Columns.Website] = i->second->get_website();
 					(*iter)[Columns.Active] = i->second->get_active();
 					(*iter)[Columns.GUI] = i->second->get_has_gui();
 					(*iter)[Columns.Id] = i->second->get_id();
@@ -106,7 +104,6 @@ namespace MPX
 				}
 
 				set_model (Store);
-				set_tooltip_column(3);
 				signal_row_activated().connect( sigc::mem_fun( *this, &PTV::on_row_activated ) );
 			}
 
@@ -150,6 +147,30 @@ namespace MPX
 				return (*iter)[Columns.GUI];
 			}
 
+			const std::string
+			get_desc(const TreeModel::iterator& iter) const
+			{
+				return (*iter)[Columns.Desc];
+			}
+
+			const std::string
+			get_authors(const TreeModel::iterator& iter) const
+			{
+				return (*iter)[Columns.Authors];
+			}
+
+			const std::string
+			get_copyright(const TreeModel::iterator& iter) const
+			{
+				return (*iter)[Columns.Copyright];
+			}
+
+			const std::string
+			get_website(const TreeModel::iterator& iter) const
+			{
+				return (*iter)[Columns.Website];
+			}
+
 			void
 			show_gui()
 			{
@@ -179,8 +200,12 @@ namespace MPX
 			m_PTV->get_selection()->signal_changed().connect( sigc::mem_fun( *this, &PluginManagerGUI::on_selection_changed ) );
 			m_PTV->get_model()->signal_row_changed().connect( sigc::mem_fun( *this, &PluginManagerGUI::on_row_changed ) );
 
-			xml->get_widget("label", label);
+			xml->get_widget("notebook", notebook);
+			notebook->get_nth_page(1)->hide();
 
+			xml->get_widget("overview", overview);
+			xml->get_widget("options", options);
+			xml->get_widget("error", error);
 			xml->get_widget("traceback", buTraceback);
 			buTraceback->signal_clicked().connect( sigc::mem_fun( *this, &PluginManagerGUI::show_dialog ) );
 
@@ -189,13 +214,6 @@ namespace MPX
 				set_error_text();
 				buTraceback->set_sensitive();
 			}
-
-			Gtk::Label * optionslabel;
-			xml->get_widget("optionslabel", optionslabel);
-			optionslabel->set_text(_("Plugin Options"));
-
-			xml->get_widget("options", buOptions);
-			buOptions->signal_clicked().connect( sigc::mem_fun( *this, &PluginManagerGUI::show_options ) );
 
 			Gtk::Button * buClose;
 			xml->get_widget("close", buClose);
@@ -222,10 +240,16 @@ namespace MPX
 		{
 			Glib::RefPtr<TreeSelection> sel = m_PTV->get_selection();
 			TreeModel::iterator iter = sel->get_selected();
-			if( m_PTV->is_active(iter) && m_PTV->has_gui(iter) )
-				buOptions->set_sensitive();
+			overview->set_markup( (boost::format(_("%1%\n\n<b>Authors:</b> %2%\n<b>Copyright:</b> %3%\n<b>Website:</b> %4%"))
+										% Glib::Markup::escape_text(m_PTV->get_desc(iter)).c_str()
+										% Glib::Markup::escape_text(m_PTV->get_authors(iter)).c_str()
+										% Glib::Markup::escape_text(m_PTV->get_copyright(iter)).c_str()
+										% Glib::Markup::escape_text(m_PTV->get_website(iter)).c_str() ).str() );
+
+			if(m_PTV->has_gui(iter))
+				notebook->get_nth_page(1)->show();
 			else
-				buOptions->set_sensitive(false);
+				notebook->get_nth_page(1)->hide();
 		}
 
 		void
@@ -238,7 +262,7 @@ namespace MPX
 			}
 			else
 			{
-				label->set_markup(" ");
+				error->set_markup(" ");
 				buTraceback->set_sensitive(false);
 			}
 		}
@@ -255,17 +279,11 @@ namespace MPX
 				set_error_text();
 			else
 			{
-				label->set_markup(" ");
+				error->set_markup(" ");
 				buTraceback->set_sensitive(false);
 			}
 		}
 
-		void
-		PluginManagerGUI::show_options()
-		{
-			m_PTV->show_gui();
-		}
-		
 		void
 		PluginManagerGUI::set_error_text()
 		{
@@ -275,7 +293,7 @@ namespace MPX
 			if(n > 1)
 				text += (boost::format(_(" (%d more errors)")) % (n-1)).str();
 
-			label->set_markup(text);
+			error->set_markup(text);
 		}
 
 }

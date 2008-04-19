@@ -70,8 +70,10 @@ namespace MPX
 
 			PluginManager & m_Manager;
 			PTV * m_PTV;
-			Gtk::Button * buTraceback, * buOptions;
-			Gtk::Label * label;
+			Gtk::Notebook * notebook;
+			Gtk::VBox * options;
+			Gtk::Button * buTraceback;
+			Gtk::Label * error, * overview;
     };
 }
 #endif
