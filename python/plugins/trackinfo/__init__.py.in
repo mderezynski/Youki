@@ -122,10 +122,9 @@ class TrackInfo:
     
     def display_pipeline_duration(self):
 
-        duration, format = self.player.query_duration(gst.FORMAT_TIME)
-        position, foramt = self.player.query_position(gst.FORMAT_TIME)
+        position, format = self.player.query_position(gst.FORMAT_TIME)
         if (position > 0) and (duration > 0):
-            self.progress.set_fraction (float(position) / float(duration))        
+            self.progress.set_fraction (float(position) / float(135000000000))        
 
         if self.gotPuid:
             self.progress.hide()
