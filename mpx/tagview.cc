@@ -277,7 +277,7 @@ namespace MPX
 
                 if(!m_ActiveTagName.empty())
                 {
-                    cr->scale( 1.0 , 1.0 ); 
+                    cr->set_identity_matrix ();
 
                     int top_space = ((m_ActiveRow-1)*m_Layout.RowHeight);
                     int bottom_space = ( h - ((m_ActiveRow+1)*m_Layout.RowHeight));
