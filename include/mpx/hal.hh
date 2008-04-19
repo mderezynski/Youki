@@ -30,6 +30,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <ctime>
 
 #include <glib/gtypes.h>
 #include <glibmm/ustring.h>
