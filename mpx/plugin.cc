@@ -32,8 +32,8 @@
 #include <pygobject.h>
 #include "mpx-py.hh"
 
-#ifndef Py_ssize_t
-#define Py_ssize_t int
+#if PY_VERSION_HEX < 0x02050000
+typedef int Py_ssize_t;
 #endif
 
 #include <boost/python.hpp>
