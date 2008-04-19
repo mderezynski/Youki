@@ -124,7 +124,6 @@ namespace
   char const ACTION_PLUGINS [] = "action-plugins";
   char const ACTION_PREFERENCES[] ="action-preferences";
   char const ACTION_SHOW_INFO[] = "action-show-info";
-  char const ACTION_SHOW_SOURCES[] = "action-show-sources";
   char const ACTION_LASTFM_LOVE[] = "action-lastfm-love";
 
   std::string
@@ -1204,20 +1203,12 @@ namespace MPX
 										_("Preferences...")),
 										sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
 
-        Gtk::RadioButtonGroup gr1;
-		m_actions->add (RadioAction::create ( gr1, ACTION_SHOW_INFO,
+		m_actions->add (ToggleAction::create (ACTION_SHOW_INFO,
 										_("Show Details")),
                                         AccelKey("<ctrl>I"),
 										sigc::mem_fun (*this, &Player::on_show_info_toggled ));
 		m_actions->get_action (ACTION_SHOW_INFO)->connect_proxy
 			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("info-toggle"))));
-
-		m_actions->add (RadioAction::create ( gr1, ACTION_SHOW_SOURCES,
-										_("Sources")),
-                                        AccelKey("<ctrl>s"),
-										sigc::mem_fun (*this, &Player::on_sources_toggled ));
-		m_actions->get_action (ACTION_SHOW_SOURCES)->connect_proxy
-			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("sources-toggle"))));
 
 		m_actions->add (Action::create (ACTION_LASTFM_LOVE,
                                         Gtk::StockID(MPX_STOCK_LASTFM),
@@ -1348,6 +1339,7 @@ namespace MPX
 #endif
 
 		m_Sources->sourceChanged().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
+		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
 
 		show_all ();
 		DBusObjects.mpx->startup_complete(DBusObjects.mpx);
@@ -2265,7 +2257,8 @@ namespace MPX
 	void
 	Player::on_sources_toggled ()
 	{
-	    bool active = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_SOURCES))->get_active();
+	    bool active = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_INFO))->set_active(false);
+		bool active = dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->get_active();
 		m_MainNotebook->set_current_page( active ? 0 : m_SourceTabMapping[m_Sources->getSource()] ); 
 	}
 
