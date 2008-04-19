@@ -280,14 +280,14 @@ namespace MPX
                     cr->set_identity_matrix ();
 
                     int top_space = ((m_ActiveRow-1)*m_Layout.RowHeight);
-                    int bottom_space = ( h - ((m_ActiveRow+1)*m_Layout.RowHeight));
+                    int bottom_space = ( h - (m_ActiveRow*m_Layout.RowHeight));
                     
                     int y = 0;    
 
                     if(top_space > bottom_space)
                         y = (top_space/2 - 10);
                     else
-                        y = (bottom_space/2 - 10) + ((m_ActiveRow+1)*m_Layout.RowHeight);
+                        y = (bottom_space/2 - 10) + (m_ActiveRow*m_Layout.RowHeight);
 
                     Glib::RefPtr<Pango::Layout> Layout = create_pango_layout(Markup::escape_text(m_ActiveTagName));
                     Pango::AttrList list;
