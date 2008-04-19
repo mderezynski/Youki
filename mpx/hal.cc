@@ -253,16 +253,22 @@ namespace MPX
           % gint64(volume.mount_time)).str());
       }
 
-      void
-      HAL::volumes (VVolumes & volumes) const
+      Hal::RefPtr<Hal::Context>
+      HAL::get_context ()
       {
-        RowV rows;
-        m_SQL->get ("hal_volumes", rows);
+        return m_context;
+      }
 
-        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+      void
+      HAL::volumes (VolumesV & volumes) const
+      {
+        for(Volumes::const_iterator i = m_volumes.begin(); i != m_volumes.end(); ++i)
         {
-          Volume volume (*i);
-          volumes.push_back (volume);
+            VolumeKey const& key = i->first;
+            if(m_volumes_mounted.find(key)->second)
+            {
+                volumes.push_back(i->second.second);
+            }
         }
       }
 
@@ -333,6 +339,17 @@ namespace MPX
       HAL::get_volume_drive_bus (Volume const& volume) const
       {
         return Glib::ustring (HALBus[volume.drive_bus]);
+      }
+
+      bool
+      HAL::path_is_mount_path (std::string const& path)
+      {
+        std::string path_copy;
+        if(path.substr(path.length() - 1) == "/")
+            path_copy = path.substr(0, path.length() - 1);
+        else
+            path_copy = path;
+        return m_mounted_paths.count(path_copy);
       }
 
       bool
@@ -422,6 +439,11 @@ namespace MPX
         try{
             m_volumes.insert (make_pair (volume_key, StoredVolume (volume, volume_hal_instance)));
             m_volumes_mounted.insert (make_pair (volume_key, volume_hal_instance->is_mounted()));
+
+            if(volume_hal_instance->is_mounted())
+            {
+                m_mounted_paths.insert(volume_hal_instance->get_mount_point());
+            }
 
             if (!volume_hal_instance->is_disc())
             {

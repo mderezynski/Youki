@@ -417,8 +417,8 @@ namespace MPX
           if (idset1.find (*i) == idset1.end())
 			execSQL((delete_f % "album_artist" % (*i)).str());
         }
-
-		Signals.Vacuumized.emit ();
+        
+        reload ();
 	}
 
     void
@@ -742,7 +742,7 @@ namespace MPX
                   : NULL) , 
 
               album_artist_id,
-              gint64(time(NULL)));
+              get<gint64>(track[ATTRIBUTE_MTIME].get()));
 
           m_SQL->exec_sql (sql);
           album_j = m_SQL->last_insert_rowid ();
@@ -756,7 +756,7 @@ namespace MPX
     Library::get_track_mtime (Track& track) const
     {
       RowV rows;
-      if ((m_Flags & F_USING_HAL) == F_USING_HAL)
+      if (m_Flags & F_USING_HAL)
       {
         static boost::format
           select_f ("SELECT %s FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
@@ -871,69 +871,59 @@ namespace MPX
 		}
 	  }
 
-      std::string insert_path_value ; 
-      URI u (uri);
+      try{
+          URI u (uri);
+          if(u.get_protocol() == URI::PROTOCOL_FILE)
+          {
+#ifdef HAVE_HAL
+              try{
+                  if (m_Flags & F_USING_HAL)
+                  {
+                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (uri));
 
-      if(u.get_protocol() == URI::PROTOCOL_FILE)
+                    track[ATTRIBUTE_HAL_VOLUME_UDI] =
+                                  volume.volume_udi ;
+
+                    track[ATTRIBUTE_HAL_DEVICE_UDI] =
+                                  volume.device_udi ;
+
+                    track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
+                                  filename_from_uri (uri).substr (volume.mount_point.length()) ;
+                  }
+              }
+            catch (HAL::Exception & cxe)
+              {
+                g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+                return SCAN_RESULT_ERROR ;
+              }
+            catch (Glib::ConvertError & cxe)
+              {
+                g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+                return SCAN_RESULT_ERROR ;
+              }
+#endif
+ 
+              GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str()); 
+              GFileInfo * info = g_file_query_info(file,
+                                                G_FILE_ATTRIBUTE_TIME_MODIFIED,
+                                                GFileQueryInfoFlags(0),
+                                                NULL,
+                                                NULL);
+
+              track[ATTRIBUTE_MTIME] = gint64 (g_file_info_get_attribute_uint64(info,G_FILE_ATTRIBUTE_TIME_MODIFIED));
+
+              g_object_unref(file);
+              g_object_unref(info);
+
+              time_t mtime = get_track_mtime (track);
+              if ((mtime != 0) && (mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) ) )
+                return SCAN_RESULT_UPTODATE ;
+          }
+      } catch(URI::ParseError)
       {
-#ifdef HAVE_HAL
-          try{
-              if (m_Flags & F_USING_HAL)
-              {
-                HAL::Volume const& volume (m_HAL->get_volume_for_uri (uri));
-
-                track[ATTRIBUTE_HAL_VOLUME_UDI] =
-                              volume.volume_udi ;
-
-                track[ATTRIBUTE_HAL_DEVICE_UDI] =
-                              volume.device_udi ;
-
-                track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
-                              filename_from_uri (uri).substr (volume.mount_point.length()) ;
-
-                insert_path_value = insert_path.substr (volume.mount_point.length()) ;
-              }
-              else
-#endif
-              {
-                insert_path_value = insert_path;
-              }
-#ifdef HAVE_HAL
-          }
-        catch (HAL::Exception & cxe)
-          {
-            g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
-            return SCAN_RESULT_ERROR ;
-          }
-        catch (Glib::ConvertError & cxe)
-          {
-            g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-            return SCAN_RESULT_ERROR ;
-          }
-#endif
-
-          GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str()); 
-          GFileInfo * info = g_file_query_info(file,
-                                            G_FILE_ATTRIBUTE_TIME_MODIFIED,
-                                            GFileQueryInfoFlags(0),
-                                            NULL,
-                                            NULL);
-
-          track[ATTRIBUTE_MTIME] = gint64 (g_file_info_get_attribute_uint64(info,G_FILE_ATTRIBUTE_TIME_MODIFIED));
-
-          g_object_unref(file);
-          g_object_unref(info);
-
-          time_t mtime = get_track_mtime (track);
-          if ((mtime != 0) && (mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) ) )
-            return SCAN_RESULT_UPTODATE ;
       }
-      else
-      {
-        insert_path_value = insert_path;
-      }      
 
-      track[ATTRIBUTE_INSERT_PATH] = insert_path_value;
+      track[ATTRIBUTE_INSERT_PATH] = insert_path;
 	  track[ATTRIBUTE_INSERT_DATE] = gint64(time(NULL));
 
       char const* track_set_f ("INSERT INTO track (%s) VALUES (%s);");
@@ -1008,12 +998,37 @@ namespace MPX
     }
 
     void
-    Library::scanUri (const std::string& uri, const std::string& name)
+    Library::scanURI (const std::string& uri, const std::string& name)
     {
         ScanDataP p (new ScanData);
         
         try{
             p->insert_path = uri; 
+#ifdef HAVE_HAL
+            try{
+                if (m_Flags & F_USING_HAL)
+                {
+                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (uri));
+                    p->insert_path_sql = filename_from_uri(uri).substr (volume.mount_point.length()) ;
+                }
+                else
+#endif
+                {
+                    p->insert_path_sql = uri;
+                }
+#ifdef HAVE_HAL
+            }
+          catch (HAL::Exception & cxe)
+            {
+              g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+              return;
+            }
+          catch (Glib::ConvertError & cxe)
+            {
+              g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+              return;
+            }
+#endif
             p->name = name;
             Util::collect_audio_paths( p->insert_path, p->collection );
         }
@@ -1047,7 +1062,7 @@ namespace MPX
     Library::scanRun (ScanDataP p)
     {
         try{
-            switch(insert( *(p->position) , p->insert_path, p->name ))
+            switch(insert( *(p->position) , p->insert_path_sql, p->name ))
             {
                 case SCAN_RESULT_UPTODATE:
                     ++(p->uptodate) ;
@@ -1087,6 +1102,9 @@ namespace MPX
         }
         else
             m_SQL->exec_sql("COMMIT;");
+
+        Signals.ScanEnd.emit(p->added, p->uptodate, p->updated, p->erroneous, p->collection.size());
+        p.reset();
     }
     
 } // namespace MPX

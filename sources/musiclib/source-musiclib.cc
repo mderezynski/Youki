@@ -1394,6 +1394,8 @@ namespace MPX
               void
               album_list_load ()
               {
+                g_message("%s: Reloading.", G_STRLOC);
+
                 TreeStore->clear ();
                 m_MBIDIterMap.clear();
                 m_AlbumIterMap.clear();
@@ -1679,7 +1681,7 @@ namespace MPX
 
                 m_Lib.get().signal_new_album().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_album ));
                 m_Lib.get().signal_new_track().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_track ));
-                m_Lib.get().signal_vacuumized().connect( sigc::mem_fun( *this, &AlbumTreeView::album_list_load ));
+                m_Lib.get().signal_reload().connect( sigc::mem_fun( *this, &AlbumTreeView::album_list_load ));
                 m_Covers.get().signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
 
                 xml->get_widget("album-filter-entry", m_FilterEntry);

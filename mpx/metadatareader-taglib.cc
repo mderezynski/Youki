@@ -105,7 +105,9 @@ namespace MPX
 
     MetadataReaderTagLib::MetadataReaderTagLib ()
     {
-      Util::dir_for_each_entry (build_filename(PLUGIN_DIR, "taglib"), sigc::mem_fun(*this, &MPX::MetadataReaderTagLib::load_taglib_plugin));  
+      std::string path = build_filename(PLUGIN_DIR, "taglib");
+      if(file_test(path, FILE_TEST_EXISTS) && file_test(path, FILE_TEST_IS_DIR))
+          Util::dir_for_each_entry (path, sigc::mem_fun(*this, &MPX::MetadataReaderTagLib::load_taglib_plugin));  
     }
 
     MetadataReaderTagLib::~MetadataReaderTagLib ()

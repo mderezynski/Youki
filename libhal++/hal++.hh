@@ -1,24 +1,11 @@
 #ifndef _HAL_CC_HH_
 #define _HAL_CC_HH_
 
-#ifdef HAVE_BMP
-
-#  include "context.hh"
-#  include "device.hh"
-#  include "drive.hh"
-#  include "storage.hh"
-#  include "types.hh"
-#  include "volume.hh"
-
-#else
-
-#  include <hal++/context.hh>
-#  include <hal++/device.hh>
-#  include <hal++/drive.hh>
-#  include <hal++/storage.hh>
-#  include <hal++/types.hh>
-#  include <hal++/volume.hh>
-
-#endif //HAVE_BMP
+#  include <libhal++/context.hh>
+#  include <libhal++/device.hh>
+#  include <libhal++/drive.hh>
+#  include <libhal++/storage.hh>
+#  include <libhal++/types.hh>
+#  include <libhal++/volume.hh>
 
 #endif //!_HAL_CC_HH_
