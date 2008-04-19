@@ -2257,7 +2257,7 @@ namespace MPX
 	void
 	Player::on_sources_toggled ()
 	{
-	    bool active = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_INFO))->set_active(false);
+	    RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_INFO))->set_active(false);
 		bool active = dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->get_active();
 		m_MainNotebook->set_current_page( active ? 0 : m_SourceTabMapping[m_Sources->getSource()] ); 
 	}
