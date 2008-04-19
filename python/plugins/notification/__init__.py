@@ -8,7 +8,8 @@
 #
 
 import mpx
-import pynotify
+import dbus
+from dbus.mainloop.glib import DBusGMainLoop
 import gtk
 
 COVER_SIZE = 96
@@ -36,7 +37,13 @@ class Notification(mpx.Plugin):
 
         self.player_new_track_handler_id = self.player.gobj().connect("new-track", self.now_playing)
         self.previous_message = u''
-        pynotify.init("MPX")
+
+        dbus_loop = DBusGMainLoop()
+        bus = dbus.SessionBus(mainloop=dbus_loop)
+        notify_obj = bus.get_object(
+            "org.freedesktop.Notifications", "/org/freedesktop/Notifications")
+        self.notify = dbus.Interface(notify_obj, "org.freedesktop.Notifications")
+        bus.add_signal_receiver(self.onNotifyAction, dbus_interface="org.freedesktop.Notifications", signal_name="ActionInvoked")
 
         return True
 
@@ -47,10 +54,8 @@ class Notification(mpx.Plugin):
         self.player.gobj().disconnect(self.player_new_track_handler_id)
         self.player.gobj().disconnect(self.player_state_change_handler_id)
 
+        self.notify = None
         self.player = None
-
-    def run(self):
-        print ">> Notification Plugin running"
 
     def on_state_change(self, player, state):
         if state == mpx.PlayStatus.PLAYING:
@@ -79,14 +84,16 @@ class Notification(mpx.Plugin):
 
         if p_artist != None and p_title != None: 
             message = "<big><b>" + p_artist + "</b>\n" + p_title + "</big>"
-            n = pynotify.Notification( "MPX is now playing...", message)
-            n.set_urgency(pynotify.URGENCY_NORMAL)
             image = m.get_image()
             if(image):
                 image = image.scale_simple(COVER_SIZE, COVER_SIZE, gtk.gdk.INTERP_NEAREST)
-                n.set_icon_from_pixbuf(image)
+            else:
+                image = ''
 
             if message != self.previous_message:
-                n.show()
                 self.previous_message = message
+                nId = self.notify.Notify("MPX", 0, image, "MPX is now playing...", message, ["skip", "Skip"], {}, 5000)
 
+    def onNotifyAction(self, nId, actKey):
+        if actKey == "skip":
+            self.player.next()
