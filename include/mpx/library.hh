@@ -28,6 +28,7 @@
 #include "mpx/tasks.hh"
 #include "mpx/types.hh"
 #include "mpx/util-file.hh"
+#include "mpx/util-string.hh"
 
 namespace MPX
 {
@@ -42,6 +43,14 @@ namespace MPX
                 SCAN_RESULT_UPDATE,
                 SCAN_RESULT_UPTODATE
             };
+
+            struct ScanStateT
+            {
+                StrV           URIV;
+                StrV::iterator Iter;
+            };
+
+            ScanStateT ScanState;
 
             struct ScanData
             {
@@ -74,6 +83,7 @@ namespace MPX
             scanEnd (bool, ScanDataP);
 
             TID m_ScanTID;
+            TID M_ScanMETATID;
             
 #ifdef HAVE_HAL
             HAL * m_HAL;
@@ -92,30 +102,33 @@ namespace MPX
 
 
             void
-            getMetadata(const std::string& uri, Track & track) ;
+            getMetadata(const std::string&, Track&) ;
 
             void
-            getSQL(SQL::RowV & rows, const std::string& sql) ;
+            getSQL(SQL::RowV&, const std::string&) ;
 
 			void
-			execSQL(const std::string& sql);
+			execSQL(const std::string&);
 
             void
-            scanURI(const std::string& uri, const std::string& name = std::string());
+            initScan (const StrV&, const std::string& = std::string());
+
+            void
+            scanURI(const std::string&);
 
 			void
 			vacuum();
 
 
 			void
-			albumRated(gint64 id, int rating);
+			albumRated(gint64, int);
 
 		
 			void
-			trackRated(gint64 id, int rating);
+			trackRated(gint64, int);
 		
 			void
-			trackPlayed(gint64 id, time_t time_);
+			trackPlayed(gint64, time_t);
 
 
 

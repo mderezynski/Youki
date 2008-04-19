@@ -998,7 +998,16 @@ namespace MPX
     }
 
     void
-    Library::scanURI (const std::string& uri, const std::string& name)
+    Library::initScan (const StrV & uris, const std::string& name)
+    {
+        ScanState.URIV = uris;
+        ScanState.Iter = ScanState.URIV.begin();
+
+        scanURI (*ScanState.Iter);
+    }
+
+    void
+    Library::scanURI (const std::string & uri)
     {
         ScanDataP p (new ScanData);
         
@@ -1029,7 +1038,7 @@ namespace MPX
               return;
             }
 #endif
-            p->name = name;
+            //p->name = name;
             Util::collect_audio_paths( p->insert_path, p->collection );
         }
         catch( Glib::ConvertError & cxe )
@@ -1096,14 +1105,22 @@ namespace MPX
     void
     Library::scanEnd (bool aborted, ScanDataP p)
     {
+        Signals.ScanEnd.emit(p->added, p->uptodate, p->updated, p->erroneous, p->collection.size());
+
         if( aborted )
         {  
             m_SQL->exec_sql("ROLLBACK;");
         }
         else
+        if(ScanState.Iter != ScanState.URIV.end())
+        {
+            ScanState.Iter++;
+            scanURI(*ScanState.Iter);
+            return;
+        }
+        else
             m_SQL->exec_sql("COMMIT;");
 
-        Signals.ScanEnd.emit(p->added, p->uptodate, p->updated, p->erroneous, p->collection.size());
         p.reset();
     }
     

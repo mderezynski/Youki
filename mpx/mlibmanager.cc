@@ -32,6 +32,7 @@
 
 #include "mpx/main.hh"
 #include "mpx/util-file.hh"
+#include "mpx/util-string.hh"
 #include "libhal++/hal++.hh"
 
 #include "mlibmanager.hh"
@@ -90,9 +91,10 @@ namespace MPX
         m_FSTree->set_model(FSTreeStore);
 
         m_ref_xml->get_widget("b-close", m_Close);
-        //m_ref_xml->get_widget("b-apply", m_Apply);
+        m_ref_xml->get_widget("b-rescan", m_Rescan);
 
         m_Close->signal_clicked().connect( sigc::mem_fun( *this, &MLibManager::hide ));
+        m_Rescan->signal_clicked().connect( sigc::mem_fun( *this, &MLibManager::on_rescan_volume ));
     }
 
     /* ------------------------------------------------------------------------------------------------*/
@@ -263,7 +265,7 @@ namespace MPX
             Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
             m_VolumeUDI = Vol->get_udi();
             m_DeviceUDI = Vol->get_storage_device_udi();
-            m_MountPath = Vol->get_mount_point();
+            m_MountPoint = Vol->get_mount_point();
             m_ManagedPaths = StrSetT();
 
             SQL::RowV v;
@@ -271,7 +273,7 @@ namespace MPX
             for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
             {
                 SQL::Row & r = *i;
-                std::string full_path = build_filename(m_MountPath, boost::get<std::string>(r["insert_path"]));
+                std::string full_path = build_filename(m_MountPoint, boost::get<std::string>(r["insert_path"]));
                 m_ManagedPaths.insert(full_path); 
             }
 
@@ -310,7 +312,7 @@ namespace MPX
             MessageDialog dialog ((boost::format ("Are you sure you want to remove path\n\n'%s'\n\nfrom the library?") % Markup::escape_text(filename_to_utf8(full_path)).c_str()).str(), true, MESSAGE_QUESTION, BUTTONS_YES_NO, true);
             if( dialog.run() == GTK_RESPONSE_YES )
             {
-                std::string insert_path = full_path.substr(m_MountPath.length());
+                std::string insert_path = full_path.substr(m_MountPoint.length());
                 m_Library.execSQL((boost::format ("DELETE FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path = '%s'") % m_DeviceUDI % m_VolumeUDI % insert_path).str());
                 m_Library.vacuum();
                 (*iter)[FSTreeColumns.Active] = active;
@@ -327,9 +329,22 @@ namespace MPX
             }
             else
             {
-                m_Library.scanURI(filename_to_uri(full_path));
+                StrV v;
+                v.push_back(filename_to_uri(full_path));
+                m_Library.initScan(v);
                 (*iter)[FSTreeColumns.Active] = active;
             }
         }
+    }
+
+    void
+    MLibManager::on_rescan_volume ()
+    {
+        StrV v;
+        for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
+        {
+            v.push_back(filename_to_uri(build_filename(m_MountPoint, *i)));
+        }
+        m_Library.initScan(v);
     }
 }

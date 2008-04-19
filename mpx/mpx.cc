@@ -2547,7 +2547,9 @@ namespace MPX
 
         }
 
-        m_Library.scanURI( m_Share, m_ShareName );  
+        StrV v;
+        v.push_back(m_Share);
+        m_Library.initScan( v, m_ShareName );  
     }
 
     void

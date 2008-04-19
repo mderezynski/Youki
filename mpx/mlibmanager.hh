@@ -97,6 +97,9 @@ namespace MPX
 
             void
             on_path_toggled (const Glib::ustring &);
+
+            void
+            on_rescan_volume ();
     
 
 
@@ -146,11 +149,11 @@ namespace MPX
             StrSetT m_ManagedPaths;
             std::string m_VolumeUDI;
             std::string m_DeviceUDI;
-            std::string m_MountPath; 
+            std::string m_MountPoint; 
 
 
-            Gtk::Button * m_Apply;
             Gtk::Button * m_Close;
+            Gtk::Button * m_Rescan;
 
 
             MPX::HAL & m_HAL;

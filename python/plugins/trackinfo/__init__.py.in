@@ -18,7 +18,6 @@ import gst
 import pango
 import time
 import os
-import thread
 import musicbrainz2
 import musicbrainz2.webservice as ws
 
@@ -67,6 +66,7 @@ class TrackInfo:
 
         self.xml = xml
         self.notebook = self.xml.get_widget("notebook-track-info-1")
+        self.progress = self.xml.get_widget("progress")
         self.textview = self.xml.get_widget("textview")
         self.textview.connect("motion-notify-event", self.on_view_motion_notify)
         self.throb = self.xml.get_widget("throb")
@@ -119,6 +119,19 @@ class TrackInfo:
 
         dec_pad = self.puid.get_pad("sink")
         pad.link(dec_pad)
+    
+    def display_pipeline_duration(self):
+
+        duration, format = self.player.query_duration(gst.FORMAT_TIME)
+        position, foramt = self.player.query_position(gst.FORMAT_TIME)
+        if (position > 0) and (duration > 0):
+            self.progress.set_fraction (float(position) / float(duration))        
+
+        if self.gotPuid:
+            self.progress.hide()
+            return False
+        else:
+            return True
 
     def on_message(self, bus, message):    
 
@@ -149,7 +162,7 @@ class TrackInfo:
                         self.track[mpx.AttributeId.TITLE].val().set_string(str(mbtrack.getTitle()))
 
                     self.gotPuid = True
-                    self.show([])
+                    self.show_real()
 
             self.gotPuid = True
     
@@ -194,19 +207,11 @@ class TrackInfo:
     def run(self,track):
 
         self.notebook.set_current_page(1)
-
         self.track = track
         self.Done = False
-        self.show([])
-        #self.thread = thread.start_new_thread(self.show, (self,))
+        self.show()
 
-        #while not self.Done:
-        #        while gtk.events_pending():
-        #                gtk.main_iteration()
-
-        self.notebook.set_current_page(2)
-
-    def show(self, blah):
+    def show(self):
 
         track = self.track
 
@@ -216,12 +221,23 @@ class TrackInfo:
 
                 self.player.get_by_name("file-source").set_property('location', track.get(mpx.AttributeId.LOCATION).val().get_string())
                 self.player.set_state(gst.STATE_PLAYING)
+                
+                gobject.timeout_add (500, self.display_pipeline_duration)
+                self.progress.show_all() 
 
                 while not self.gotPuid: 
                     while gtk.events_pending():
                         gtk.main_iteration()
 
-        self.gotPuid = False
+                self.gotPuid = False
+
+        else:
+
+            self.show_real()
+
+    def show_real(self):
+
+        track = self.track
 
         try:
             self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
@@ -311,12 +327,12 @@ class TrackInfo:
                     self.buf.insert(self.buf.get_end_iter(), "\n")
 
                 self.Done = True
-                #exit()
 
         except musicbrainz2.webservice.WebServiceError:
            
             self.Done = True 
-            #exit()
+
+        self.notebook.set_current_page(2)
 
     def display_relations(self, rels): 
 
@@ -484,6 +500,7 @@ class TrackInfoDispatcher(mpx.Plugin):
     def __init__(self):
 
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/trackinfo/trackinfo.glade")
+        self.vbox = self.xml.get_widget("vbox")
         self.notebook = self.xml.get_widget("notebook-track-info-1")
 
     def activate(self,player,mcs):
@@ -491,8 +508,9 @@ class TrackInfoDispatcher(mpx.Plugin):
         self.player_infoarea_click_id = self.player.gobj().connect("infoarea-click", self.new_track)
         self.player_playstatus_changed_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
         self.info = TrackInfo(self.xml)
-        self.player.add_info_widget(self.notebook, "Track Info")
+        self.player.add_info_widget(self.vbox, "Track Info")
         self.notebook.show_all()
+        self.vbox.show()
         return True
 
     def deactivate(self):
