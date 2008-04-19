@@ -114,6 +114,9 @@ mpx_bin_SOURCES =				\
 	gstpuid.h					\
 	gstpuid.cc					\
 								\
+	mlibmanager.hh				\
+	mlibmanager.cc				\
+								\
 	mpx-py.hh					\
 	mpx-py.cc					\
 								\

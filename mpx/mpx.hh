@@ -35,18 +35,13 @@
 #ifdef HAVE_HAL
 #include "mpx/hal.hh"
 #endif // HAVE_HAL
+#include "mpx/i-playbacksource.hh"
 #include "mpx/library.hh"
 #include "mpx/paccess.hh"
 #include "mpx/util-file.hh"
 #include "mpx/widgetloader.h"
 
 #include "audio-types.hh"
-#include "play.hh"
-#include "plugin.hh"
-#include "plugin-manager-gui.hh"
-#include "preferences.hh"
-
-#include "mpx/i-playbacksource.hh"
 
 #include "dbus-marshalers.h"
 
@@ -110,8 +105,14 @@ namespace MPX
     };
 
 
-    class Sources;
     class InfoArea;
+    class MLibManager;
+    class Play;
+    class PluginManager;
+    class PluginManagerGUI;
+    class Preferences;
+    class Sources;
+
     class Player
       : public WidgetLoader<Gtk::Window>
     {
@@ -252,6 +253,7 @@ namespace MPX
         HAL &m_HAL;
 		PluginManager *m_PluginManager;
         Preferences *m_Preferences;
+        MLibManager *m_MLibManager;
 
 		PluginManagerGUI *m_PluginManagerGUI;
         Sources *m_Sources;
@@ -482,8 +484,6 @@ namespace MPX
 
         void
         on_import_share();
-
-
 
 		void
 		init_dbus ();

@@ -47,10 +47,10 @@
 
 #include "mpx.hh"
 #include "mpx-py.hh"
-#include "mpx-sources.hh"
 
 #include "mpx/stock.hh"
 #include "stock-register.hh"
+
 #include "mpx/uri.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-graphics.hh"
@@ -63,6 +63,13 @@
 #include "import-folder.hh"
 #include "last-fm-xmlrpc.hh"
 #include "request-value.hh"
+
+#include "mlibmanager.hh"
+#include "mpx-sources.hh"
+#include "preferences.hh"
+#include "plugin.hh"
+#include "plugin-manager-gui.hh"
+#include "play.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -85,8 +92,11 @@ namespace
   "   <menu action='MenuMusic'>"
   "         <menuitem action='action-play-files'/>"
   "         <separator name='sep00'/>"
+#ifndef HAVE_HAL
   "         <menuitem action='action-import-folder'/>"
   "         <menuitem action='action-import-share'/>"
+#endif // !HAVE_HAL
+  "         <menuitem action='action-mlibmanager'/>"
   "			<menuitem action='action-vacuum-lib'/>"
   "         <separator name='sep01'/>"
   "         <menuitem action='action-quit'/>"
@@ -1043,6 +1053,10 @@ namespace MPX
 			  
         m_Preferences = Preferences::create(*m_Play);
 
+#ifdef HAVE_HAL
+        m_MLibManager = MLibManager::create(obj_hal, obj_library);
+#endif // HAVE_HAL
+
         m_scrolllock_mask = 0;
         m_numlock_mask = 0;
         m_capslock_mask = 0;
@@ -1134,14 +1148,17 @@ namespace MPX
 										_("Import _Folder")),
 										sigc::mem_fun (*this, &Player::on_import_folder));
 
-		m_actions->add (Action::create ("action-vacuum-lib",
-										_("Vacuum Library")),
-										sigc::mem_fun (m_Library, &Library::vacuum));
-
 		m_actions->add (Action::create ("action-import-share",
 										Gtk::Stock::NETWORK,
 										_("Import _Share")),
 										sigc::mem_fun (*this, &Player::on_import_share));
+		m_actions->add (Action::create ("action-mlibmanager",
+										_("Manage Music Library")),
+										sigc::mem_fun (*m_MLibManager, &MLibManager::present));
+
+		m_actions->add (Action::create ("action-vacuum-lib",
+										_("Vacuum Library")),
+										sigc::mem_fun (m_Library, &Library::vacuum));
 
 		m_actions->add (Action::create ("action-quit",
 										Gtk::Stock::QUIT,
@@ -1228,7 +1245,9 @@ namespace MPX
 		/*------------------------ Load Sources --------------------------------------------------*/ 
         m_Sources = new Sources(xml);
         m_ref_xml->get_widget("statusbar", m_Statusbar);
-		Util::dir_for_each_entry (build_filename(PLUGIN_DIR, "sources"), sigc::mem_fun(*this, &MPX::Player::load_source_plugin));  
+        std::string sources_path = build_filename(PLUGIN_DIR, "sources");
+        if(file_test(sources_path, FILE_TEST_EXISTS))
+    		Util::dir_for_each_entry (sources_path, sigc::mem_fun(*this, &MPX::Player::load_source_plugin));  
 
 		//----------------------- Volume ---------------------------------------------------------*/
         m_ref_xml->get_widget("volumebutton", m_Volume);
@@ -2399,7 +2418,7 @@ namespace MPX
             Glib::ustring uri; 
             d->get_folder_infos(uri);
             d->hide();
-            m_Library.scanUri(uri);
+            m_Library.scanURI(uri);
         }
     }
 
@@ -2525,7 +2544,7 @@ namespace MPX
 
         }
 
-        m_Library.scanUri( m_Share, m_ShareName );  
+        m_Library.scanURI( m_Share, m_ShareName );  
     }
 
     void

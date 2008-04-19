@@ -4,6 +4,7 @@ glade_DATA = 						\
 	preferences.glade				\
 	import-folder.glade				\
 	import-share.glade				\
+	mlibmanager.glade				\
 									\
 	request-value.glade				\
 									\

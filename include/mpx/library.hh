@@ -45,9 +45,11 @@ namespace MPX
 
             struct ScanData
             {
+                std::string insert_path ;
+                std::string insert_path_sql ;
+            
                 Util::FileList collection ;
                 Util::FileList::iterator position ;
-                std::string insert_path ;
                 std::string name ;
                 gint64 added ;
                 gint64 erroneous ;
@@ -99,7 +101,7 @@ namespace MPX
 			execSQL(const std::string& sql);
 
             void
-            scanUri(const std::string& uri, const std::string& name = std::string());
+            scanURI(const std::string& uri, const std::string& name = std::string());
 
 			void
 			vacuum();
@@ -128,7 +130,7 @@ namespace MPX
             typedef sigc::signal<void> SignalScanStart;
             typedef sigc::signal<void, gint64,gint64> SignalScanRun;
             typedef sigc::signal<void, gint64,gint64,gint64,gint64,gint64> SignalScanEnd;
-            typedef sigc::signal<void> SignalVacuumized;
+            typedef sigc::signal<void> SignalReload;
 
             struct SignalsT
             {
@@ -140,14 +142,20 @@ namespace MPX
                 SignalScanRun       ScanRun;
                 SignalScanEnd       ScanEnd;
 				SignalAlbumUpdated	AlbumUpdated;
-				SignalVacuumized	Vacuumized;
+				SignalReload        Reload;
             };
 
             SignalsT Signals;
 
-            SignalVacuumized&
-            signal_vacuumized()
-            { return Signals.Vacuumized ; }
+            SignalReload&
+            signal_reload()
+            { return Signals.Reload ; }
+
+            void
+            reload ()
+            {
+                Signals.Reload.emit();
+            }
 
             SignalAlbumUpdated&
             signal_album_updated()

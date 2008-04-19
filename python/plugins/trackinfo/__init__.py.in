@@ -483,7 +483,7 @@ class TrackInfoDispatcher(mpx.Plugin):
 
     def __init__(self):
 
-        self.xml = gtk.glade.XML("@DATA_DIR@" + "/scripts/trackinfo/trackinfo.glade")
+        self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/trackinfo/trackinfo.glade")
         self.notebook = self.xml.get_widget("notebook-track-info-1")
 
     def activate(self,player,mcs):
