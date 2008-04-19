@@ -2,7 +2,7 @@
 Loader=python
 Module=osd
 IAge=1
-Name=MPX OSD
+Name=OSD
 Authors=Milosz Derezynski <milosz@backtrace.info>
 Copyright=Copyright © 2008 Milosz Derezynski 
 Website=http://mpx.backtrace.info/
