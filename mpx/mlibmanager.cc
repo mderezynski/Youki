@@ -307,7 +307,7 @@ namespace MPX
         
         if(!active)
         {
-            MessageDialog dialog ((boost::format ("Are you sure you want to remove path '%s' from the library?") % Markup::escape_text(filename_to_utf8(full_path)).c_str()).str(), true, MESSAGE_QUESTION, BUTTONS_YES_NO, true);
+            MessageDialog dialog ((boost::format ("Are you sure you want to remove path\n\n'%s'\n\nfrom the library?") % Markup::escape_text(filename_to_utf8(full_path)).c_str()).str(), true, MESSAGE_QUESTION, BUTTONS_YES_NO, true);
             if( dialog.run() == GTK_RESPONSE_YES )
             {
                 std::string insert_path = full_path.substr(m_MountPath.length());
@@ -321,7 +321,7 @@ namespace MPX
             if(has_active_parent(iter))
             {
                 std::string full_path_parent = (*iter)[FSTreeColumns.FullPath];
-                MessageDialog dialog ((boost::format ("The path '%s' is a child path of '%s' which is active; please toggle the parent to activate the child path.") % Markup::escape_text(filename_to_utf8(full_path)).c_str() % Markup::escape_text(filename_to_utf8(full_path_parent)).c_str()).str(), true, MESSAGE_INFO, BUTTONS_OK, true);
+                MessageDialog dialog ((boost::format ("The path\n\n'%s'\n\nis a child path of\n\n'%s'\n\nwhich is active; please toggle the parent to activate the child path.") % Markup::escape_text(filename_to_utf8(full_path)).c_str() % Markup::escape_text(filename_to_utf8(full_path_parent)).c_str()).str(), true, MESSAGE_INFO, BUTTONS_OK, true);
                 dialog.run();
                 return;
             }

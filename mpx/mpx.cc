@@ -1143,18 +1143,20 @@ namespace MPX
 										_("_Play Files...")),
 										sigc::mem_fun (*this, &Player::on_play_files));
 
+#ifndef HAVE_HAL
 		m_actions->add (Action::create ("action-import-folder",
 										Gtk::Stock::HARDDISK,
 										_("Import _Folder")),
 										sigc::mem_fun (*this, &Player::on_import_folder));
-
 		m_actions->add (Action::create ("action-import-share",
 										Gtk::Stock::NETWORK,
 										_("Import _Share")),
 										sigc::mem_fun (*this, &Player::on_import_share));
+#else
 		m_actions->add (Action::create ("action-mlibmanager",
 										_("Manage Music Library")),
 										sigc::mem_fun (*m_MLibManager, &MLibManager::present));
+#endif
 
 		m_actions->add (Action::create ("action-vacuum-lib",
 										_("Vacuum Library")),
