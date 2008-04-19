@@ -3,11 +3,11 @@
 <!--*- mode: xml -*-->
 <glade-interface>
   <widget class="GtkWindow" id="window">
+    <property name="height_request">400</property>
     <property name="border_width">8</property>
     <property name="title" translatable="yes">Plugin Manager - MPX</property>
+    <property name="resizable">False</property>
     <property name="window_position">GTK_WIN_POS_CENTER</property>
-    <property name="default_width">500</property>
-    <property name="default_height">400</property>
     <child>
       <widget class="GtkVBox" id="vbox">
         <property name="visible">True</property>
@@ -47,6 +47,7 @@
                         <property name="visible">True</property>
                         <child>
                           <widget class="GtkLabel" id="overview">
+                            <property name="width_request">400</property>
                             <property name="visible">True</property>
                             <property name="wrap">True</property>
                           </widget>
