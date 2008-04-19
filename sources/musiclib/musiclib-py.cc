@@ -35,7 +35,7 @@ using namespace boost::python;
 #include "source-musiclib.hh"
 
 #if PY_VERSION_HEX < 0x02050000
-typedef Py_ssize_t int;
+typedef int Py_ssize_t;
 #endif
 
 using namespace Glib;
