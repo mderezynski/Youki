@@ -1115,12 +1115,14 @@ namespace MPX
         if(ScanState.Iter != ScanState.URIV.end())
         {
             ScanState.Iter++;
-            scanURI(*ScanState.Iter);
-            return;
+            if(ScanState.Iter != ScanState.URIV.end())
+            {
+                scanURI(*ScanState.Iter);
+                return;
+            }
         }
-        else
-            m_SQL->exec_sql("COMMIT;");
 
+        m_SQL->exec_sql("COMMIT;");
         p.reset();
     }
     

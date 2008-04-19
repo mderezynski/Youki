@@ -320,6 +320,7 @@ namespace MPX
         }
         else
         {
+            TreeIter iter_orig = iter;
             if(has_active_parent(iter))
             {
                 std::string full_path_parent = (*iter)[FSTreeColumns.FullPath];
@@ -332,7 +333,7 @@ namespace MPX
                 StrV v;
                 v.push_back(filename_to_uri(full_path));
                 m_Library.initScan(v);
-                (*iter)[FSTreeColumns.Active] = active;
+                (*iter_orig)[FSTreeColumns.Active] = active;
             }
         }
     }

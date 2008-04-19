@@ -1973,6 +1973,8 @@ namespace MPX
 	  {
         stop ();
       }
+      else
+        g_message("%s: No active source upon play request", G_STRLOC);
 
       safe_pause_unset();
 
@@ -2012,8 +2014,6 @@ namespace MPX
 	void
 	Player::on_source_stop (int source_id)
 	{
-	  g_return_if_fail( m_ActiveSource == source_id);
-
       stop ();
 	}
 
@@ -2159,6 +2159,8 @@ namespace MPX
 	void
 	Player::prev ()
 	{
+      m_InfoArea->reset ();
+
 	  int source_id = m_ActiveSource; 
 	  PlaybackSource* source = m_SourceV[source_id];
 	  PlaybackSource::Flags f = m_source_flags[source_id];
@@ -2204,6 +2206,8 @@ namespace MPX
 	void
 	Player::on_play_eos ()
 	{
+      m_InfoArea->reset ();
+
 	  int source_id = m_ActiveSource; 
 	  PlaybackSource* source = m_SourceV[source_id];
 	  PlaybackSource::Flags f = m_source_flags[source_id];
