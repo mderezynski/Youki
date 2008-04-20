@@ -29,6 +29,7 @@ class OSD(gtk.Window):
             self.m_album = ""
             self.set_colormap(gtk.gdk.screen_get_default().get_rgba_colormap())
             self.resize(1,1)
+            self.tiny = gtk.gdk.pixbuf_new_from_file("/usr/share/mpx" + "/python-plugins/osd/mpx-tiny.png")
 
         def move_center(self, width):
 
@@ -148,6 +149,10 @@ class OSD(gtk.Window):
                 cr.move_to(x_origin + ((max_layout_width/2) - (fontw/2)), position)
                 cr.update_layout(layout)
                 cr.show_layout(layout)
+
+            cr.set_source_pixbuf(self.tiny, width - self.tiny.get_width() - 10, 8)
+            cr.rectangle(width - self.tiny.get_width() - 10, 8, self.tiny.get_width(), self.tiny.get_height())
+            cr.fill()
     
             return True
 

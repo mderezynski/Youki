@@ -136,14 +136,6 @@ namespace MPX
         pango_font_description_set_absolute_size (desc.gobj(), 8 * PANGO_SCALE);
         pango_layout_set_font_description (m_layout->gobj(), desc.gobj ()); 
 
-        m_layout->set_text (PACKAGE_VERSION); 
-        m_layout->get_pixel_size (lw, lh);
-
-        m_cr->set_operator( Cairo::OPERATOR_ATOP );
-        m_cr->move_to( get_allocation().get_width()  - lw - 20, get_allocation().get_height() - lh - 8); 
-        m_cr->set_source_rgba( 1., 1., 1., 1.);
-        pango_cairo_show_layout (m_cr->cobj(), m_layout->gobj());
-
         return false;
     }
 } // namespace MPX
