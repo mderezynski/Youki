@@ -231,24 +231,24 @@ namespace MPX
 {
   enum LayoutID
   {
-    L_ARTIST,
-    L_ALBUM,
-    L_TITLE,
-    N_LAYOUTS
+        L_ARTIST,
+        L_ALBUM,
+        L_TITLE,
+        N_LAYOUTS
   };
 
   struct LayoutData
   {
-    double alpha;
-    double target;
-    int    x;
-    int    y;
+        double alpha;
+        double target;
+        int    x;
+        int    y;
   };
 
   LayoutData const layout_info[] = {
-    {-0.8, 1.0,  86,  8},
-    {-1.0, 0.65, 86, 25},
-    {-1.5, 1.0,  86, 52},
+        {-0.8, 1.0,  86,  8},
+        {-1.0, 0.65, 86, 25},
+        {-1.5, 1.0,  86, 52},
   };
 
   // WARNING: If you set the gravity or timescale too high, the cover
@@ -282,18 +282,18 @@ namespace MPX
 
   Color colors[] =
   {
-	{ 0xff, 0xb1, 0x6f },
-	{ 0xff, 0xc8, 0x7f },
-	{ 0xff, 0xcf, 0x7e },
-	{ 0xf6, 0xe6, 0x99 },
-	{ 0xf1, 0xfc, 0xd4 },
-	{ 0xbd, 0xd8, 0xab },
-	{ 0xcd, 0xe6, 0xd0 },
-	{ 0xce, 0xe0, 0xea },
-	{ 0xd5, 0xdd, 0xea },
-	{ 0xee, 0xc1, 0xc8 },
-	{ 0xee, 0xaa, 0xb7 },
-	{ 0xec, 0xce, 0xb6 },
+        { 0xff, 0xb1, 0x6f },
+        { 0xff, 0xc8, 0x7f },
+        { 0xff, 0xcf, 0x7e },
+        { 0xf6, 0xe6, 0x99 },
+        { 0xf1, 0xfc, 0xd4 },
+        { 0xbd, 0xd8, 0xab },
+        { 0xcd, 0xe6, 0xd0 },
+        { 0xce, 0xe0, 0xea },
+        { 0xd5, 0xdd, 0xea },
+        { 0xee, 0xc1, 0xc8 },
+        { 0xee, 0xaa, 0xb7 },
+        { 0xec, 0xce, 0xb6 },
   };
 
   class InfoArea
@@ -301,532 +301,527 @@ namespace MPX
   {
     private:
 
-	  MPX::Play & m_Play;
+          MPX::Play & m_Play;
 
-      Spectrum m_spectrum_data;
+          Spectrum m_spectrum_data;
 
-      struct Text
-      {
-        Text (Gtk::Widget &  widget,
-              ustring const& text,
-              LayoutID       id)
-        : alpha   (layout_info[id].alpha)
-        , target  (layout_info[id].target)
-        , x       (layout_info[id].x)
-        , y       (layout_info[id].y)
-        {
-          layout = widget.create_pango_layout ("");
-          layout->set_markup (text);
-        }
+          struct Text
+          {
+            Text (Gtk::Widget &  widget,
+                  ustring const& text,
+                  LayoutID       id)
+            : alpha   (layout_info[id].alpha)
+            , target  (layout_info[id].target)
+            , x       (layout_info[id].x)
+            , y       (layout_info[id].y)
+            {
+              layout = widget.create_pango_layout ("");
+              layout->set_markup (text);
+            }
 
-        ~Text () {}
+            ~Text () {}
 
-        RefPtr<Pango::Layout> layout;
-        double                alpha;
-        double                target;
-        int                   x, y;
-        sigc::connection      conn;
-      };
+            RefPtr<Pango::Layout> layout;
+            double                alpha;
+            double                target;
+            int                   x, y;
+            sigc::connection      conn;
+          };
 
-      typedef boost::shared_ptr<Text>   TextP;
-      typedef std::map<LayoutID, TextP> Layouts;
+          typedef boost::shared_ptr<Text>   TextP;
+          typedef std::map<LayoutID, TextP> Layouts;
 
-      Layouts m_layouts;
-      ustring m_text[N_LAYOUTS];
+          Layouts m_layouts;
+          ustring m_text[N_LAYOUTS];
 
-      Cairo::RefPtr<Cairo::ImageSurface>  m_cover_surface;
-      Glib::RefPtr<Gdk::Pixbuf>           m_source_icon;
-      double                              m_cover_pos;
-      double                              m_cover_velocity;
-      double                              m_cover_accel;
-      double                              m_cover_alpha;
-	  bool								  m_pressed;
-      sigc::connection                    m_cover_anim_conn;
-      sigc::connection                    m_decay_conn;
+          Cairo::RefPtr<Cairo::ImageSurface>  m_cover_surface;
+          Glib::RefPtr<Gdk::Pixbuf>           m_source_icon;
+          double                              m_cover_pos;
+          double                              m_cover_velocity;
+          double                              m_cover_accel;
+          double                              m_cover_alpha;
+          bool								  m_pressed;
+          sigc::connection                    m_cover_anim_conn;
+          sigc::connection                    m_decay_conn;
 
     public:
 
-      typedef sigc::signal<void> SignalCoverClicked;
-      typedef sigc::signal<void, Util::FileList const&> SignalUris;
+          typedef sigc::signal<void> SignalCoverClicked;
+          typedef sigc::signal<void, Util::FileList const&> SignalUris;
 
-      SignalCoverClicked&
-      signal_cover_clicked()
-      {
-        return m_SignalCoverClicked;
-      }
+          SignalCoverClicked&
+          signal_cover_clicked()
+          {
+            return m_SignalCoverClicked;
+          }
 
-      SignalUris &
-      signal_uris_dropped()
-      {
-        return m_SignalUrisDropped;
-      }
+          SignalUris &
+          signal_uris_dropped()
+          {
+            return m_SignalUrisDropped;
+          }
 
     private:
 
-      SignalUris m_SignalUrisDropped;
-      SignalCoverClicked m_SignalCoverClicked;
+          SignalUris m_SignalUrisDropped;
+          SignalCoverClicked m_SignalCoverClicked;
 
     public:
 
-      InfoArea (MPX::Play & play,
-			    Glib::RefPtr<Gnome::Glade::Xml> const& xml)
-	  : WidgetLoader<Gtk::EventBox>(xml, "infoarea")
-	  , m_Play(play)
-      , m_spectrum_data(SPECT_BANDS, 0)
-      , m_source_icon(Glib::RefPtr<Gdk::Pixbuf>(0))
-      , m_cover_alpha(1.0)
-	  , m_pressed(false)
-      {
-        add_events (Gdk::BUTTON_PRESS_MASK);
+          InfoArea (MPX::Play & play,
+                    Glib::RefPtr<Gnome::Glade::Xml> const& xml)
+          : WidgetLoader<Gtk::EventBox>(xml, "infoarea")
+          , m_Play(play)
+          , m_spectrum_data(SPECT_BANDS, 0)
+          , m_source_icon(Glib::RefPtr<Gdk::Pixbuf>(0))
+          , m_cover_alpha(1.0)
+          , m_pressed(false)
+          {
+            add_events (Gdk::BUTTON_PRESS_MASK);
 
-        /*Gdk::Color const color ("#000000");
-        modify_bg (Gtk::STATUS_NORMAL, color);
-        modify_base (Gtk::STATUS_NORMAL, color);*/
+            /*Gdk::Color const color ("#000000");
+            modify_bg (Gtk::STATUS_NORMAL, color);
+            modify_base (Gtk::STATUS_NORMAL, color);*/
 
-        m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum ));
-		m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
+            m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum ));
+            m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
 
-        enable_drag_dest ();
+            enable_drag_dest ();
 
-		set_tooltip_text(_("Drag and drop files here to play them."));
-      }
+            set_tooltip_text(_("Drag and drop files here to play them."));
+          }
 
-      ~InfoArea ()
-      {}
+          ~InfoArea ()
+          {}
 
     protected:
 
-      bool
-      on_button_press_event (GdkEventButton * event)
-      {
-          int x = int (event->x);
-          int y = int (event->y);
-
-          if ((event->window == get_window()->gobj()) && (x >= 6) && (x <= (m_cover_pos+72)) && (y >= 3) && (y <= 75))
+          bool
+          on_button_press_event (GdkEventButton * event)
           {
-              m_pressed = true;
+              int x = int (event->x);
+              int y = int (event->y);
+
+              if ((event->window == get_window()->gobj()) && (x >= 6) && (x <= (m_cover_pos+72)) && (y >= 3) && (y <= 75))
+              {
+                  m_pressed = true;
+                  queue_draw ();
+              }
+
+              return false;
+          }
+
+          bool
+          on_button_release_event (GdkEventButton * event)
+          {
+              int x = int (event->x);
+              int y = int (event->y);
+
+              m_pressed = false;
+              queue_draw ();
+
+              if ((event->window == get_window()->gobj()) && (x >= 6) && (x <= (m_cover_pos+72)) && (y >= 3) && (y <= 75))
+              {
+                  m_SignalCoverClicked.emit ();
+              }
+
+              return false;
+          }
+
+          bool
+          on_drag_drop (Glib::RefPtr<Gdk::DragContext> const& context,
+                        int                                   x,
+                        int                                   y,
+                        guint                                 time)
+          {
+              ustring target (drag_dest_find_target (context));
+              if( !target.empty() )
+              {
+                drag_get_data (context, target, time);
+                context->drag_finish  (true, false, time);
+                return true;
+              }
+              else
+              {
+                context->drag_finish  (false, false, time);
+                return false;
+              }
+          }
+
+          void
+          on_drag_data_received (Glib::RefPtr<Gdk::DragContext> const& context,
+                                 int                                   x,
+                                 int                                   y,
+                                 Gtk::SelectionData const&             data,
+                                 guint                                 info,
+                                 guint                                 time)
+          {
+              if( data.get_data_type() == "text/uri-list")
+              {
+                Util::FileList u = data.get_uris();
+                m_SignalUrisDropped.emit (u);
+              }
+              else
+              if( data.get_data_type() == "text/plain")
+              {
+                using boost::algorithm::split;
+                using boost::algorithm::is_any_of;
+                using boost::algorithm::replace_all;
+
+                std::string text = data.get_data_as_string ();
+                replace_all (text, "\r", "");
+
+                StrV v;
+                split (v, text, is_any_of ("\n"));
+
+                if( v.empty ()) // we're taking chances here
+                {
+                  v.push_back (text);
+                }
+
+                Util::FileList u;
+
+                for(StrV::const_iterator i = v.begin(); i != v.end(); ++i)
+                {
+                  try{
+                    URI uri (*i);
+                    u.push_back (*i);
+                  }
+                  catch (URI::ParseError & cxe)
+                  {
+                      // seems like not it
+                  }
+                }
+
+                if( !u.empty() )
+                {
+                  m_SignalUrisDropped.emit (u);
+                }
+              }
+          }
+
+    private:
+
+          void
+          enable_drag_dest ()
+          {
+              disable_drag_dest ();
+              std::vector<Gtk::TargetEntry> target_entries;
+              target_entries.push_back (TargetEntry ("text/plain"));
+              drag_dest_set (target_entries, Gtk::DEST_DEFAULT_MOTION);
+              drag_dest_add_uri_targets ();
+          }
+
+          void
+          disable_drag_dest ()
+          {
+              drag_dest_unset ();
+          }
+
+          bool
+          decay_spectrum ()
+          {
+              for (int n = 0; n < SPECT_BANDS; ++n)
+              {
+                m_spectrum_data[n] = (((m_spectrum_data[n] - 5) < 0) ? 0 : (m_spectrum_data[n] - 5));
+              }
+              queue_draw ();
+              return true;
+          }
+
+          void
+          play_update_spectrum (Spectrum const& spectrum)
+          {
+              m_spectrum_data = spectrum;
+              queue_draw ();
+
+          }
+
+          void
+          play_status_changed ()
+          {
+              int status = m_Play.property_status ().get_value ();
+              if( status == PLAYSTATUS_PAUSED )
+              {
+                m_decay_conn = Glib::signal_timeout ().connect (sigc::mem_fun(*this, &InfoArea::decay_spectrum), 50);
+              }
+              else
+              {
+                m_decay_conn.disconnect ();
+              }
+          }
+
+	public:
+
+          void
+          set_source (Glib::RefPtr<Gdk::Pixbuf> const& source_icon)
+          {
+              m_source_icon = source_icon;
               queue_draw ();
           }
 
-          return false;
-      }
-
-      bool
-      on_button_release_event (GdkEventButton * event)
-      {
-          int x = int (event->x);
-          int y = int (event->y);
-
-          m_pressed = false;
-          queue_draw ();
-
-          if ((event->window == get_window()->gobj()) && (x >= 6) && (x <= (m_cover_pos+72)) && (y >= 3) && (y <= 75))
+          void
+          reset ()
           {
-              m_SignalCoverClicked.emit ();
+              std::fill (m_spectrum_data.begin (), m_spectrum_data.end (), 0.);
+
+              remove_layout_if_exists (L_ARTIST);
+              remove_layout_if_exists (L_ALBUM);
+              remove_layout_if_exists (L_TITLE);
+
+              m_cover_anim_conn.disconnect ();
+              m_cover_surface = Cairo::RefPtr<Cairo::ImageSurface> (0);
+
+              m_text[L_ARTIST].clear ();
+              m_text[L_ALBUM].clear ();
+              m_text[L_TITLE].clear ();
+
+              queue_draw ();
           }
 
-          return false;
-      }
-
-      bool
-      on_drag_drop (Glib::RefPtr<Gdk::DragContext> const& context,
-                    int                                   x,
-                    int                                   y,
-                    guint                                 time)
-      {
-          ustring target (drag_dest_find_target (context));
-          if( !target.empty() )
+          void
+          set_text (LayoutID       id,
+                    ustring const& text)
           {
-            drag_get_data (context, target, time);
-            context->drag_finish  (true, false, time);
-            return true;
-          }
-          else
-          {
-            context->drag_finish  (false, false, time);
-            return false;
-          }
-      }
-
-      void
-      on_drag_data_received (Glib::RefPtr<Gdk::DragContext> const& context,
-                             int                                   x,
-                             int                                   y,
-                             Gtk::SelectionData const&             data,
-                             guint                                 info,
-                             guint                                 time)
-      {
-          if( data.get_data_type() == "text/uri-list")
-          {
-            Util::FileList u = data.get_uris();
-            m_SignalUrisDropped.emit (u);
-          }
-          else
-          if( data.get_data_type() == "text/plain")
-          {
-            using boost::algorithm::split;
-            using boost::algorithm::is_any_of;
-            using boost::algorithm::replace_all;
-
-            std::string text = data.get_data_as_string ();
-            replace_all (text, "\r", "");
-
-            StrV v;
-            split (v, text, is_any_of ("\n"));
-
-            if( v.empty ()) // we're taking chances here
-            {
-              v.push_back (text);
-            }
-
-            Util::FileList u;
-
-            for(StrV::const_iterator i = v.begin(); i != v.end(); ++i)
-            {
-              try{
-                URI uri (*i);
-                u.push_back (*i);
-              }
-              catch (URI::ParseError & cxe)
+              if( text != m_text[id] )
               {
-                  // seems like not it
-              }
-            }
+                m_text[id] = text;
 
-            if( !u.empty() )
-            {
-              m_SignalUrisDropped.emit (u);
-            }
+                TextP p (new Text (*this, text, id));
+
+                remove_layout_if_exists (id);
+                insert_layout_and_connect (id, p);
+              }
           }
-      }
+
+          void
+          set_paused (bool paused)
+          {
+              m_cover_alpha = (paused ? 0.5 : 1.0);
+              queue_draw ();
+          }
+
+          void
+          set_image (RefPtr<Gdk::Pixbuf> const& pixbuf)
+          {
+              set_image (Util::cairo_image_surface_round(Util::cairo_image_surface_from_pixbuf (pixbuf), 6.));
+          }
+
+          void
+          set_image (Cairo::RefPtr<Cairo::ImageSurface> const& surface)
+          {
+              m_cover_surface  = Util::cairo_image_surface_round(surface, 6.);
+
+              m_cover_pos      = cover_anim_initial_pos;
+              m_cover_velocity = cover_anim_initial_velocity;
+              m_cover_accel    = cover_anim_gravity;
+
+              m_cover_anim_conn.disconnect ();
+              m_cover_anim_conn = signal_timeout ().connect (sigc::mem_fun (this, &InfoArea::slide_in_cover), cover_anim_interval);
+          }
 
     private:
 
-      void
-      enable_drag_dest ()
-      {
-          disable_drag_dest ();
-          std::vector<Gtk::TargetEntry> target_entries;
-          target_entries.push_back (TargetEntry ("text/plain"));
-          drag_dest_set (target_entries, Gtk::DEST_DEFAULT_MOTION);
-          drag_dest_add_uri_targets ();
-      }
-
-      void
-      disable_drag_dest ()
-      {
-          drag_dest_unset ();
-      }
-
-      bool
-      decay_spectrum ()
-      {
-          for (int n = 0; n < SPECT_BANDS; ++n)
+          void
+          insert_layout_and_connect (LayoutID id,
+                                     TextP &  p)
           {
-            m_spectrum_data[n] = (((m_spectrum_data[n] - 5) < 0) ? 0 : (m_spectrum_data[n] - 5));
+              m_layouts[id] = p;
+              p->conn = signal_timeout().connect (sigc::bind (sigc::mem_fun (this, &InfoArea::fade_in), id), 20);
           }
-          queue_draw ();
-          return true;
-      }
 
-      void
-      play_update_spectrum (Spectrum const& spectrum)
-      {
-          m_spectrum_data = spectrum;
-          queue_draw ();
-
-      }
-
-      void
-      play_status_changed ()
-      {
-          int status = m_Play.property_status ().get_value ();
-          if( status == PLAYSTATUS_PAUSED )
+          void
+          remove_layout_if_exists (LayoutID id)
           {
-            m_decay_conn = Glib::signal_timeout ().connect (sigc::mem_fun(*this, &InfoArea::decay_spectrum), 50);
-          }
-          else
-          {
-            m_decay_conn.disconnect ();
-          }
-      }
-
-	public:
-
-      void
-      set_source (Glib::RefPtr<Gdk::Pixbuf> const& source_icon)
-      {
-          m_source_icon = source_icon;
-          queue_draw ();
-      }
-
-      void
-      reset ()
-      {
-          std::fill (m_spectrum_data.begin (), m_spectrum_data.end (), 0.);
-
-          remove_layout_if_exists (L_ARTIST);
-          remove_layout_if_exists (L_ALBUM);
-          remove_layout_if_exists (L_TITLE);
-
-          m_cover_anim_conn.disconnect ();
-          m_cover_surface = Cairo::RefPtr<Cairo::ImageSurface> (0);
-
-          m_text[L_ARTIST].clear ();
-          m_text[L_ALBUM].clear ();
-          m_text[L_TITLE].clear ();
-
-          queue_draw ();
-      }
-
-      void
-      set_text (LayoutID       id,
-                ustring const& text)
-      {
-          if( text != m_text[id] )
-          {
-            m_text[id] = text;
-
-            TextP p (new Text (*this, text, id));
-
-            remove_layout_if_exists (id);
-            insert_layout_and_connect (id, p);
-          }
-      }
-
-      void
-      set_paused (bool paused)
-      {
-          m_cover_alpha = (paused ? 0.5 : 1.0);
-          queue_draw ();
-      }
-
-      void
-      set_image (RefPtr<Gdk::Pixbuf> const& pixbuf)
-      {
-          set_image (Util::cairo_image_surface_round(Util::cairo_image_surface_from_pixbuf (pixbuf), 6.));
-      }
-
-      void
-      set_image (Cairo::RefPtr<Cairo::ImageSurface> const& surface)
-      {
-          m_cover_surface  = Util::cairo_image_surface_round(surface, 6.);
-
-          m_cover_pos      = cover_anim_initial_pos;
-          m_cover_velocity = cover_anim_initial_velocity;
-          m_cover_accel    = cover_anim_gravity;
-
-          m_cover_anim_conn.disconnect ();
-          m_cover_anim_conn = signal_timeout ().connect (sigc::mem_fun (this, &InfoArea::slide_in_cover), cover_anim_interval);
-      }
-
-    private:
-
-      void
-      insert_layout_and_connect (LayoutID id,
-                                 TextP &  p)
-      {
-          m_layouts[id] = p;
-          p->conn = signal_timeout().connect (sigc::bind (sigc::mem_fun (this, &InfoArea::fade_in), id), 20);
-      }
-
-      void
-      remove_layout_if_exists (LayoutID id)
-      {
-          Layouts::iterator i = m_layouts.find (id);
-          if( i != m_layouts.end() )
-          {
-            TextP & p = i->second;
-
-            p->conn.disconnect ();
-            m_layouts.erase (i);
-          }
-      }
-
-      bool
-      fade_in (LayoutID id)
-      {
-          TextP & p (m_layouts.find (id)->second);
-          p->alpha += 0.1;
-
-          bool r = p->alpha < p->target;
-
-          queue_draw ();
-
-          return r;
-      }
-
-      bool
-      slide_in_cover ()
-      {
-          m_cover_pos      += m_cover_velocity * cover_anim_dt;
-          m_cover_velocity += m_cover_accel    * cover_anim_dt;
-          m_cover_accel     = cover_anim_gravity;
-
-          bool r = true;
-
-          if (m_cover_pos + m_cover_surface->get_width () >= cover_anim_wall)
-          {
-              m_cover_pos       = cover_anim_wall - m_cover_surface->get_width ();
-              m_cover_velocity *= -cover_anim_wall_elasticity;
-
-              // FIXME: Need a better test. This runs into stability problems when
-              // dt or acceleration is too high
-
-              double next_velocity = m_cover_velocity + m_cover_accel * cover_anim_dt;
-
-              if (next_velocity >= 0.0)
+              Layouts::iterator i = m_layouts.find (id);
+              if( i != m_layouts.end() )
               {
-                  m_cover_pos      = cover_anim_wall - m_cover_surface->get_width ();
-                  m_cover_velocity = 0.0;
-                  m_cover_accel    = 0.0;
+                TextP & p = i->second;
 
-                  r = false;
+                p->conn.disconnect ();
+                m_layouts.erase (i);
               }
           }
 
-          queue_draw ();
-
-          return r;
-      }
-
-      void
-      draw_background (Cairo::RefPtr<Cairo::Context> & cr)
-      {
-          Gtk::Allocation allocation = get_allocation ();
-
-          cr->set_source_rgb(0., 0., 0.);
-          Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 4.);
-          cr->fill_preserve ();
-          cr->set_source_rgba(1., 1., 1., .6);
-          cr->set_line_width(2);
-          cr->stroke();
-      }
-
-      void
-      draw_cover (Cairo::RefPtr<Cairo::Context> & cr)
-      {
-          if( m_cover_surface && (m_cover_pos >= cover_anim_area_x0 - m_cover_surface->get_width ()) )
+          bool
+          fade_in (LayoutID id)
           {
-            cr->save ();
+              TextP & p (m_layouts.find (id)->second);
+              p->alpha += 0.1;
 
-            cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
-                           cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-                                                               cover_anim_area_height+(m_pressed?1:0));
-            cr->clip ();
+              bool r = p->alpha < p->target;
 
-            double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface->get_height ()) / 2;
+              queue_draw ();
 
-            draw_cairo_image (cr, m_cover_surface, m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), m_cover_alpha);
-
-            cr->restore ();
-
-            cr->set_source_rgba(1., 1., 1., .6);
-            //cr->set_line_width(2.);
-            //Util::cairo_rounded_rect (cr, cover_anim_area_x0-2, cover_anim_area_y0-2, cover_anim_area_width+4, cover_anim_area_height+4, 6.); 
-            //cr->stroke();
+              return r;
           }
-      }
 
-      void
-      draw_text (Cairo::RefPtr<Cairo::Context> const& cr)
-      {
-          Gtk::Allocation allocation = get_allocation ();
-
-          for (Layouts::const_iterator i = m_layouts.begin(); i != m_layouts.end(); ++i)
+          bool
+          slide_in_cover ()
           {
-            TextP const& p (i->second);
+              m_cover_pos      += m_cover_velocity * cover_anim_dt;
+              m_cover_velocity += m_cover_accel    * cover_anim_dt;
+              m_cover_accel     = cover_anim_gravity;
 
-            if( p->alpha < 0 )
-              continue;
+              bool r = true;
 
-            int w = (allocation.get_width() /*- p->x - 8*SPECT_BANDS - 40*/) * PANGO_SCALE;
+              if (m_cover_pos + m_cover_surface->get_width () >= cover_anim_wall)
+              {
+                  m_cover_pos       = cover_anim_wall - m_cover_surface->get_width ();
+                  m_cover_velocity *= -cover_anim_wall_elasticity;
 
-            cr->set_source_rgba (1.0, 1.0, 1.0, p->alpha);
-            cr->set_operator (Cairo::OPERATOR_ATOP);
-      
-            p->layout->set_single_paragraph_mode (true);
-            p->layout->set_ellipsize (Pango::ELLIPSIZE_MIDDLE);
-            p->layout->set_width (w);
-            p->layout->set_wrap (Pango::WRAP_CHAR);
+                  // FIXME: Need a better test. This runs into stability problems when
+                  // dt or acceleration is too high
 
-            Pango::Rectangle ink, logical;
-            p->layout->get_pixel_extents(ink, logical);
+                  double next_velocity = m_cover_velocity + m_cover_accel * cover_anim_dt;
 
-            cr->move_to (/*p->x*/ + (w/PANGO_SCALE)/2 - logical.get_width()/2, p->y);
-            pango_cairo_show_layout (cr->cobj(), p->layout->gobj());
+                  if (next_velocity >= 0.0)
+                  {
+                      m_cover_pos      = cover_anim_wall - m_cover_surface->get_width ();
+                      m_cover_velocity = 0.0;
+                      m_cover_accel    = 0.0;
+
+                      r = false;
+                  }
+              }
+
+              queue_draw ();
+
+              return r;
           }
-      }
 
-      void
-      draw_spectrum (Cairo::RefPtr<Cairo::Context> & cr)
-      {
-          const int RIGHT_MARGIN = /*24*/ 16;
-          const int TOP_MARGIN = 6;
-          const int WIDTH = 6;
-          const int SPACING = 2;
-          const int HEIGHT = 72;
-          const double ALPHA = 0.3;
-
-          Gtk::Allocation allocation = get_allocation ();
-
-          for (int n = 0; n < SPECT_BANDS; ++n)
+          void
+          draw_background (Cairo::RefPtr<Cairo::Context> & cr)
           {
-            int x = 0, y = 0, w = 0, h = 0;
+              Gtk::Allocation allocation = get_allocation ();
 
-            // Bar
-            x = allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS + (WIDTH+SPACING)*n - RIGHT_MARGIN;
-            y = TOP_MARGIN + (HEIGHT - (m_spectrum_data[n]+HEIGHT)); 
-            w = WIDTH; 
-            h = m_spectrum_data[n]+HEIGHT;
+              cr->set_source_rgb(0., 0., 0.);
+              Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 4.);
+              cr->fill_preserve ();
+              cr->set_source_rgba(1., 1., 1., .6);
+              cr->set_line_width(2);
+              cr->stroke();
+          }
 
-            if( w>0 && h>0)
-            {
-                cr->set_source_rgba (double(colors[n/2].red)/255., double(colors[n/2].green)/255., double(colors[n/2].blue)/255., ALPHA);
-                //cr->rectangle (x,y,w,h);
-                Util::cairo_rounded_rect(cr, x, y, w, h, 1.);
+          void
+          draw_cover (Cairo::RefPtr<Cairo::Context> & cr)
+          {
+              if( m_cover_surface && (m_cover_pos >= cover_anim_area_x0 - m_cover_surface->get_width ()) )
+              {
+                cr->save ();
+
+                cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
+                               cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
+                                                                   cover_anim_area_height+(m_pressed?1:0));
+                cr->clip ();
+
+                double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface->get_height ()) / 2;
+
+                draw_cairo_image (cr, m_cover_surface, m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), m_cover_alpha);
+
+                cr->restore ();
+
+                cr->set_source_rgba(1., 1., 1., .6);
+              }
+          }
+
+          void
+          draw_text (Cairo::RefPtr<Cairo::Context> const& cr)
+          {
+              Gtk::Allocation allocation = get_allocation ();
+
+              for (Layouts::const_iterator i = m_layouts.begin(); i != m_layouts.end(); ++i)
+              {
+                TextP const& p (i->second);
+
+                if( p->alpha < 0 )
+                  continue;
+
+                int w = allocation.get_width() * PANGO_SCALE;
+
+                cr->set_source_rgba (1.0, 1.0, 1.0, p->alpha);
+                cr->set_operator (Cairo::OPERATOR_ATOP);
+          
+                p->layout->set_single_paragraph_mode (true);
+                p->layout->set_ellipsize (Pango::ELLIPSIZE_MIDDLE);
+                p->layout->set_width (w);
+                p->layout->set_wrap (Pango::WRAP_CHAR);
+
+                Pango::Rectangle ink, logical;
+                p->layout->get_pixel_extents(ink, logical);
+
+                cr->move_to ((w/PANGO_SCALE)/2 - logical.get_width()/2, p->y);
+                pango_cairo_show_layout (cr->cobj(), p->layout->gobj());
+              }
+          }
+
+          void
+          draw_spectrum (Cairo::RefPtr<Cairo::Context> & cr)
+          {
+              const int RIGHT_MARGIN = 16; 
+              const int TOP_MARGIN = 6;
+              const int WIDTH = 6;
+              const int SPACING = 2;
+              const int HEIGHT = 72;
+              const double ALPHA = 0.3;
+
+              Gtk::Allocation allocation = get_allocation ();
+
+              for (int n = 0; n < SPECT_BANDS; ++n)
+              {
+                int x = 0, y = 0, w = 0, h = 0;
+
+                // Bar
+                x = allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS + (WIDTH+SPACING)*n - RIGHT_MARGIN;
+                y = TOP_MARGIN + (HEIGHT - (m_spectrum_data[n]+HEIGHT)); 
+                w = WIDTH; 
+                h = m_spectrum_data[n]+HEIGHT;
+
+                if( w>0 && h>0)
+                {
+                    cr->set_source_rgba (double(colors[n/2].red)/255., double(colors[n/2].green)/255., double(colors[n/2].blue)/255., ALPHA);
+                    Util::cairo_rounded_rect(cr, x, y, w, h, 1.);
+                    cr->fill ();
+                }
+              }
+          }
+
+          void
+          draw_source_icon (Cairo::RefPtr<Cairo::Context> const& cr)
+          {
+              if( m_source_icon )
+              {
+                Gtk::Allocation allocation = get_allocation ();
+
+                cr->set_operator (Cairo::OPERATOR_ATOP);
+                Gdk::Cairo::set_source_pixbuf (cr, m_source_icon, allocation.get_width () - 22, 2);
+                cr->rectangle (allocation.get_width () - 22, 2, 20, 20);
                 cr->fill ();
-            }
+              }
           }
-      }
-
-      void
-      draw_source_icon (Cairo::RefPtr<Cairo::Context> const& cr)
-      {
-          if( m_source_icon )
-          {
-            Gtk::Allocation allocation = get_allocation ();
-
-            cr->set_operator (Cairo::OPERATOR_ATOP);
-            Gdk::Cairo::set_source_pixbuf (cr, m_source_icon, allocation.get_width () - 22, 2);
-            cr->rectangle (allocation.get_width () - 22, 2, 20, 20);
-            cr->fill ();
-          }
-      }
 
     protected:
 
-      virtual bool
-      on_expose_event (GdkEventExpose * event)
-      {
-          Widget::on_expose_event (event);
-          Cairo::RefPtr<Cairo::Context> cr = get_window ()->create_cairo_context ();
-          draw_background (cr);
-          draw_cover (cr);
-          draw_spectrum (cr);
-          draw_text (cr);
-          //draw_source_icon (cr);
+          virtual bool
+          on_expose_event (GdkEventExpose * event)
+          {
+              Widget::on_expose_event (event);
+              Cairo::RefPtr<Cairo::Context> cr = get_window ()->create_cairo_context ();
+              draw_background (cr);
+              draw_cover (cr);
+              draw_spectrum (cr);
+              draw_text (cr);
 
-          return true;
-      }
+              return true;
+          }
 
-	public:
+    public:
 
-	  static InfoArea*
-	  create(MPX::Play & play, Glib::RefPtr<Gnome::Glade::Xml> & xml)
-	  {
-           return new InfoArea(play,xml);
-	  } 
+          static InfoArea*
+          create(MPX::Play & play, Glib::RefPtr<Gnome::Glade::Xml> & xml)
+          {
+               return new InfoArea(play,xml);
+          } 
 
   };
 }
@@ -1022,50 +1017,55 @@ namespace MPX
 #define TYPE_DBUS_OBJ_PLAYER (DBusPlayer::get_type ())
 #define DBUS_OBJ_PLAYER(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_DBUS_OBJ_PLAYER, DBusPlayer))
 
-  struct DBusPlayerClass
-  {
-    GObjectClass parent;
-  };
-
-  struct Player::DBusPlayer
-  {
-    GObject parent;
-    Player * player;
-
-    enum
+    struct DBusPlayerClass
     {
-      PLAYER_SIGNAL_CAPS,
-      PLAYER_SIGNAL_STATE,
-      N_SIGNALS,
+        GObjectClass parent;
     };
 
-    static guint signals[N_SIGNALS];
+    struct Player::DBusPlayer
+    {
+        GObject parent;
+        Player * player;
 
-    static gpointer parent_class;
+        enum
+        {
+          PLAYER_SIGNAL_CAPS,
+          PLAYER_SIGNAL_STATE,
+          N_SIGNALS,
+        };
 
-    static GType
-    get_type ();
+        static guint signals[N_SIGNALS];
 
-    static DBusPlayer *
-    create (Player &, DBusGConnection*);
+        static gpointer parent_class;
 
-    static void
-    class_init (gpointer klass,
-                gpointer class_data);
+        static GType
+        get_type ();
 
-    static GObject *
-    constructor (GType                   type,
-                 guint                   n_construct_properties,
-                 GObjectConstructParam * construct_properties);
+        static DBusPlayer *
+        create (Player &, DBusGConnection*);
 
-    static gboolean
-    get_metadata (DBusPlayer* self,
-                  GHashTable** metadata,
-                  GError** error);
-  };
+        static void
+        class_init (gpointer klass,
+                    gpointer class_data);
 
-  gpointer Player::DBusPlayer::parent_class       = 0;
-  guint    Player::DBusPlayer::signals[N_SIGNALS] = { 0 };
+        static GObject *
+        constructor (GType                   type,
+                     guint                   n_construct_properties,
+                     GObjectConstructParam * construct_properties);
+
+        static gboolean
+        get_metadata (DBusPlayer* self,
+                      GHashTable** metadata,
+                      GError** error);
+
+        static gboolean
+        play_tracks (DBusPlayer* self,
+                     char** uris,
+                     GError** error);
+    };
+
+    gpointer Player::DBusPlayer::parent_class       = 0;
+    guint    Player::DBusPlayer::signals[N_SIGNALS] = { 0 };
 
 // HACK: Hackery to rename functions in glue
 #define player_next next 
@@ -1074,6 +1074,7 @@ namespace MPX
 #define player_stop stop
 #define player_play play
 #define player_get_metadata get_metadata
+#define player_play_tracks play_tracks
 
 #include "dbus-obj-PLAYER-glue.h"
 
@@ -1219,7 +1220,23 @@ namespace MPX
         return TRUE;
     }
 
-
+    gboolean
+    Player::DBusPlayer::play_tracks (DBusPlayer* self,
+                                     char** uris,
+                                     GError** error)
+    {
+        Util::FileList list;
+        if( uris )
+        {
+            while( *uris )
+            {
+                list.push_back( *uris );
+                ++uris;
+            }
+        }
+        self->player->play_tracks(list);
+        return TRUE;
+    }
 
 
 #ifdef HAVE_HAL
@@ -1494,7 +1511,7 @@ namespace MPX
 		m_InfoArea->signal_cover_clicked().connect
 		  ( sigc::mem_fun( *this, &Player::on_cover_clicked ));
 		m_InfoArea->signal_uris_dropped().connect
-		  ( sigc::mem_fun( *this, &MPX::Player::on_infoarea_uris ) );
+		  ( sigc::mem_fun( *this, &MPX::Player::play_tracks ) );
 
 #if 0
 		dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-repeat"))
@@ -1684,38 +1701,25 @@ namespace MPX
 		}
 	}
 
-    bool
-    Player::new_track_idle_emit ()
+    void
+    Player::play_tracks (Util::FileList const& uris)
     {
-      PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-	  g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
-      pyg_gil_state_release(state);
-      return false;
+        if( uris.size() )
+        {
+            try{
+                URI u (uris[0]); //TODO/FIXME: We assume all URIs are of the same scheme
+                UriSchemeMap::const_iterator i = m_UriMap.find (u.scheme);
+                if( i != m_UriMap.end ())
+                {
+                  m_SourceV[i->second]->Process_URI_List (uris);
+                }
+              }
+            catch (URI::ParseError & cxe)
+              {
+                g_warning (G_STRLOC ": Couldn't parse URI %s", uris[0].c_str());
+              }
+        }
     }
-
-	void
-	Player::on_infoarea_uris (Util::FileList const& uris)
-	{
-		if( uris.size() ) 
-		{
-			try{
-				URI u (uris[0]); //TODO/FIXME: We assume all URIs are of the same scheme
-				UriSchemeMap::const_iterator i = m_UriMap.find (u.scheme);
-				if( i != m_UriMap.end ())
-				{
-				  m_SourceV[i->second]->Process_URI_List (uris);
-				}
-			  }
-			catch (URI::ParseError & cxe)
-			  {
-				g_warning (G_STRLOC ": Couldn't parse URI %s", uris[0].c_str());
-			  }
-			catch (bad_cast & cxe)
-			  {
-				g_critical (G_STRLOC ": Source isn't URI handler (dynamic_cast<> failed)");
-			  }
-		}
-	}
 
     void
     Player::play_uri (std::string const& uri)
@@ -2167,10 +2171,10 @@ namespace MPX
         if(!album.empty())
     		m_InfoArea->set_text (L_ALBUM, album);
 
-        if(m_Metadata[ATTRIBUTE_TITLE].is_initialized() && m_Metadata[ATTRIBUTE_ARTIST].is_initialized())
+        if(m_Metadata.get()[ATTRIBUTE_TITLE] && m_Metadata.get()[ATTRIBUTE_ARTIST])
         {
-            std::string artist = get<std::string>(m_Metadata[ATTRIBUTE_ARTIST].get());
-            std::string title = get<std::string>(m_Metadata[ATTRIBUTE_TITLE].get());
+            std::string artist = get<std::string>(m_Metadata.get()[ATTRIBUTE_ARTIST].get());
+            std::string title = get<std::string>(m_Metadata.get()[ATTRIBUTE_TITLE].get());
             set_title((boost::format ("%1% - %2% (MPX)") % artist.c_str() % title.c_str()).str());
         }
         else
@@ -2199,7 +2203,10 @@ namespace MPX
 		m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
 
 	  reparse_metadata ();
-      Glib::signal_idle().connect( sigc::mem_fun( *this, &Player::new_track_idle_emit ));
+
+      PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+	  g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
+      pyg_gil_state_release(state);
 	}
 
 	void

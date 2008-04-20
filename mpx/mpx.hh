@@ -195,9 +195,8 @@ namespace MPX
 		class DBusMPX; 
         class DBusPlayer;
 
-      protected:
-
-        virtual bool on_key_press_event (GdkEventKey*);
+		void
+		init_dbus ();
 
       private:
 
@@ -286,9 +285,6 @@ namespace MPX
 		on_cover_clicked ();
 
 		void
-		on_infoarea_uris (Util::FileList const&);
-		
-		void
 		on_show_plugins ();
 
 		void
@@ -365,9 +361,6 @@ namespace MPX
 		on_source_changed (int source_id);
 
 		void
-		install_source (int source_id, int tab);
-
-		void
 		on_source_caps (PlaybackSource::Caps, int);
 
 		void
@@ -406,11 +399,21 @@ namespace MPX
 		void
 		next_async_cb (int);
 
+
+
+		void
+		install_source (int source_id, int tab);
+
+		bool
+		load_source_plugin (std::string const& path);
+
+        void
+        play_tracks (Util::FileList const& uris);
+
 		void
 		track_played ();
 
-        bool
-        new_track_idle_emit ();
+
 
 
 
@@ -490,11 +493,10 @@ namespace MPX
         void
         on_import_share();
 
-		void
-		init_dbus ();
+      protected:
 
-		bool
-		load_source_plugin (std::string const& path);
+        virtual bool
+        on_key_press_event (GdkEventKey*);
     };
 }
 #endif
