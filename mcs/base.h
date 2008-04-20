@@ -48,84 +48,95 @@ namespace Mcs
       {
         public:
 
-          enum VersionIgnore
-          {
-            VERSION_CHECK,      //Checks the version specified in the root node and reports a mismatch
-            VERSION_IGNORE      //Ignores the version and just attempts to load the configuration 'as is'
-          };
+            enum VersionIgnore
+            {
+              VERSION_CHECK,      //Checks the version specified in the root node and reports a mismatch
+              VERSION_IGNORE      //Ignores the version and just attempts to load the configuration 'as is'
+            };
 
-          enum Exceptions
-          {
-            PARSE_ERROR,
-            NO_KEY,
-          };
+            enum Exceptions
+            {
+              PARSE_ERROR,
+              NO_KEY,
+            };
 
-          Mcs (std::string const& xml_filename, std::string const& root_node_name, double version);
-          ~Mcs ();
+            Mcs (std::string const& xml_filename, std::string const& root_node_name, double version);
+            ~Mcs ();
 
-          void load (Mcs::VersionIgnore version_ignore = VERSION_CHECK); 
-          void domain_register (std::string const& domain);
-          bool domain_key_exist (std::string const& domain, std::string const& key);
-          void key_register (std::string const& domain, std::string const& key, KeyVariant const& key_default);
+            void load (Mcs::VersionIgnore version_ignore = VERSION_CHECK); 
+            void domain_register (std::string const& domain);
+            bool domain_key_exist (std::string const& domain, std::string const& key);
+            void key_register (std::string const& domain, std::string const& key, KeyVariant const& key_default);
 
-          template <typename T>
-          void 
-          key_set (std::string const& domain,
-                   std::string const& key, T value) 
-          {
-			g_return_if_fail(domain_key_exist (domain, key));
+            Key&
+            key (std::string const& domain, std::string const& key)
+            {   
+                if(!domain_key_exist(domain, key))
+                    throw NO_KEY;
 
-            MKeys &keys (domains.find (domain)->second);
-            Key &k (keys.find (key)->second);
-            k.set_value<T>(value);
-          }
+              MKeys & keys = domains.find(domain)->second;
+              Key & k = keys.find(key)->second;
+              return k;
+            }
+                
+            template <typename T>
+            void 
+            key_set (std::string const& domain,
+                     std::string const& key, T value) 
+            {
+              g_return_if_fail(domain_key_exist (domain, key));
 
-          template <typename T>
-          T 
-          key_get (std::string const& domain,
-                   std::string const& key)
-          {
-            if(!domain_key_exist(domain,key))
-                throw NO_KEY;
+              MKeys & keys = domains.find(domain)->second;
+              Key & k = keys.find(key)->second;
+              k.set_value<T>(value);
+            }
 
-            return T (domains.find(domain)->second.find(key)->second);
-          }
+            template <typename T>
+            T 
+            key_get (std::string const& domain,
+                     std::string const& key)
+            {
+              if(!domain_key_exist(domain,key))
+                  throw NO_KEY;
 
-          void
-		  key_push (std::string const& domain, std::string const& key)
-          {
-            if(!domain_key_exist(domain,key))
-                throw NO_KEY;
+              return T (domains.find(domain)->second.find(key)->second);
+            }
 
-            MKeys & keys (domains.find (domain)->second);
-            Key & k (keys.find (key)->second);
-            k.push ();
-          }
-          
-          void
-		  key_unset (std::string const& domain,
-                     std::string const& key);
+            void
+            key_push (std::string const& domain, std::string const& key)
+            {
+              if(!domain_key_exist(domain,key))
+                  throw NO_KEY;
 
-          void
-		  subscribe (std::string const& name,   //Must be unique
-                     std::string const& domain, //Must be registered 
-                     std::string const& key,  //Must be registered,
-                     SubscriberNotify const& notify);  
+              MKeys & keys = domains.find (domain)->second;
+              Key & k = keys.find (key)->second;
+              k.push ();
+            }
+            
+            void
+            key_unset (std::string const& domain,
+                       std::string const& key);
 
-          void
-	      unsubscribe (std::string const& name,   //Must be unique
+            void
+            subscribe (std::string const& name,   //Must be unique
                        std::string const& domain, //Must be registered 
-                       std::string const& key); //Must be registered,
+                       std::string const& key,  //Must be registered,
+                       SubscriberNotify const& notify);  
 
-        private:
+            void
+            unsubscribe (std::string const& name,   //Must be unique
+                         std::string const& domain, //Must be registered 
+                         std::string const& key); //Must be registered,
 
-          typedef std::map<std::string /* Key Name */, Key>   MKeys;
-          typedef std::map<std::string /* Domain name */, MKeys>  MDomains;
+          private:
 
-          MDomains domains;
-          std::string xml_filename;
-          std::string root_node_name;
-          double version;
+            typedef std::map<std::string /* Key Name */, Key>   MKeys;
+            typedef std::map<std::string /* Domain name */, MKeys>  MDomains;
+
+            MDomains domains;
+            std::string xml_filename;
+            std::string root_node_name;
+            double version;
       };
 };
 

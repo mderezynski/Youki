@@ -362,7 +362,7 @@ namespace Mcs
                       SubscriberNotify const& notify)
       {
         g_return_if_fail (domain_key_exist(domain, key));
-        return domains.find (domain)->second.find (key)->second.add_subscriber(name, notify);
+        return domains.find (domain)->second.find (key)->second.subscriber_add(name, notify);
       }
 
       void 
@@ -372,6 +372,6 @@ namespace Mcs
                         
       {
         g_return_if_fail (domain_key_exist(domain, key));
-        return domains.find(domain)->second.find(key)->second.remove_subscriber(name);
+        return domains.find(domain)->second.find(key)->second.subscriber_del(name);
       }
 }

@@ -8,11 +8,11 @@ namespace Mcs
               KeyVariant  const& key_default,
               KeyType		     key_type)
 
-	: domain(domain) 
-    , key(key)
-    , key_default(key_default)
-    , key_value(key_default)
-    , key_type(key_type)
+	: m_domain(domain) 
+    , m_key(key)
+    , m_default(key_default)
+    , m_value(key_default)
+    , m_type(key_type)
     {
 	}
 
@@ -25,35 +25,35 @@ namespace Mcs
 	}
 
     void 
-    Key::add_subscriber(std::string const& name, SubscriberNotify const& notify)
+    Key::subscriber_add(std::string const& name, SubscriberNotify const& notify)
     {
-      g_return_if_fail(subscribers.find (name) == subscribers.end());
-      subscribers[name] = Subscriber(notify);
+        g_return_if_fail(m_subscribers.find (name) == m_subscribers.end());
+        m_subscribers[name] = Subscriber(notify);
     }
 
     void 
-    Key::remove_subscriber(std::string const& name)
+    Key::subscriber_del(std::string const& name)
               
     {
-      g_return_if_fail (subscribers.find (name) != subscribers.end());
-      subscribers.erase(name);
+        g_return_if_fail (m_subscribers.find (name) != m_subscribers.end());
+        m_subscribers.erase(name);
     }
 
     KeyVariant 
     Key::get_value () const
     {
-      return key_value;
-    }
-
-    void 
-    Key::unset () 
-    {
-      return set_value (key_default);
+        return m_value;
     }
 
     KeyType
     Key::get_type () const
     {
-      return key_type;
+        return m_type;
+    }
+
+    void 
+    Key::unset () 
+    {
+        m_value = m_default;
     }
 }

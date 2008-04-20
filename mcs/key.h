@@ -15,20 +15,43 @@ namespace Mcs
 
         Key (std::string const& domain,
              std::string const& key,
-             KeyVariant  const& key_default,
-             KeyType key_type);
+             KeyVariant  const& m_default,
+             KeyType m_type);
 
 		Key ();
 		~Key ();
 
-        void add_subscriber (std::string const& name, SubscriberNotify const& notify);  
-        void remove_subscriber (std::string const& name);
+        void subscriber_add (std::string const& name, SubscriberNotify const& notify);  
+        void subscriber_del (std::string const& name);
+
+        template <typename T>
+        class adaptor
+        {
+                adaptor (Key & key)
+                : m_key(key)
+                {
+                }
+
+                operator T ()
+                {
+                    return T(m_key);
+                }
+
+                void operator=(const T & value)
+                {
+                    return m_key.set_value<T>(value);
+                }
+
+            private:
+
+                Key & m_key;
+        };
 
       private: 
 
-        void notify_subscribers ()
+        void notify ()
         {
-          for (Subscribers::iterator iter (subscribers.begin()); iter != subscribers.end(); iter++->second.notify (domain, key, key_value));
+          for (Subscribers::iterator i = m_subscribers.begin(); i != m_subscribers.end(); i++->second.notify (m_domain, m_key, m_value));
         }
 
       public:
@@ -37,20 +60,20 @@ namespace Mcs
         void
         set_value (T const& val)
         {
-          key_value = val; 
-          notify_subscribers ();
+          m_value = val; 
+          notify ();
         }
       
         template <typename T> 
         void
         set_value_silent (T const& val)
         {
-          key_value = val; 
+          m_value = val; 
         }
 
         void push ()
         {
-          notify_subscribers ();
+          notify ();
         }
 
         KeyVariant get_value () const;
@@ -58,24 +81,25 @@ namespace Mcs
 
         void unset ();
 
-        operator bool		 () { return boost::get<bool>(key_value); }
-        operator int		 () { return boost::get<int>(key_value); }
-        operator std::string () { return boost::get<std::string>(key_value); }
-        operator double	     () { return boost::get<double>(key_value); }
+        operator bool		 () { return boost::get<bool>(m_value); }
+        operator int		 () { return boost::get<int>(m_value); }
+        operator std::string () { return boost::get<std::string>(m_value); }
+        operator double	     () { return boost::get<double>(m_value); }
 
       private:
       
         typedef std::map<std::string, Subscriber> Subscribers;
       
-        std::string	domain;
-        std::string	key;
+        std::string	m_domain;
+        std::string	m_key;
 
-        KeyVariant	key_default; 
-        KeyVariant	key_value;
-        KeyType     key_type;
-        Subscribers subscribers;
+        KeyVariant	m_default; 
+        KeyVariant	m_value;
+        KeyType     m_type;
+        Subscribers m_subscribers;
 
     };
+
 };
 
 #endif // MCS_KEY_H
