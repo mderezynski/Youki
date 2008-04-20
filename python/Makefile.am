@@ -1,1 +1,1 @@
-SUBDIRS = plugins modules
+SUBDIRS = plugins

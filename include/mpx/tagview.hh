@@ -14,6 +14,8 @@ namespace MPX
 {
 class TagView : public Gtk::DrawingArea
 {
+        static bool gsignals_initialized; // We need this because we have no class_init in gtkmm
+
         static double TAG_SPACING; 
         static double ACCEPTABLE_MIN_SCALE;
         static double SCALE_STEP; 

@@ -265,6 +265,12 @@ namespace mpxpy
 		obj.remove_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false));
 	}
 
+	void
+	player_remove_info_widget (MPX::Player & obj, PyObject * pyobj)
+	{
+		obj.remove_info_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false));
+	}
+
 	PyObject*
 	tag_view_get_gobject (MPX::TagView & obj)
 	{
@@ -464,8 +470,9 @@ BOOST_PYTHON_MODULE(mpx)
         .def("play_uri", &MPX::Player::play_uri)
 		.def("get_library", &mpxpy::player_get_library, return_internal_reference<>()) 
 		.def("get_hal", &mpxpy::player_get_hal, return_internal_reference<>()) 
-		.def("add_widget", &mpxpy::player_add_widget)
         .def("add_info_widget", &mpxpy::player_add_info_widget)
+        .def("remove_info_widget", &mpxpy::player_remove_info_widget)
+		.def("add_widget", &mpxpy::player_add_widget)
 		.def("remove_widget", &mpxpy::player_remove_widget)
 	;
 

@@ -500,6 +500,7 @@ class TrackInfoDispatcher(mpx.Plugin):
 
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/trackinfo/trackinfo.glade")
         self.vbox = self.xml.get_widget("vbox")
+        self.vbox.unparent()
         self.notebook = self.xml.get_widget("notebook-track-info-1")
 
     def activate(self,player,mcs):
@@ -509,10 +510,10 @@ class TrackInfoDispatcher(mpx.Plugin):
         self.info = TrackInfo(self.xml)
         self.player.add_info_widget(self.vbox, "Track Info")
         self.notebook.show_all()
-        self.vbox.show()
         return True
 
     def deactivate(self):
+        self.player.remove_info_widget(self.vbox)
         self.player.gobj().disconnect(self.player_infoarea_click_id)
         self.player.gobj().disconnect(self.player_playstatus_changed_id)
         self.player = None

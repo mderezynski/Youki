@@ -26,12 +26,8 @@ class TrackTags(mpx.Plugin):
     def activate(self,player,mcs):
 
         self.player = player
-        self.window = gtk.Window(gtk.WINDOW_TOPLEVEL) # so reparent works, FIXME
         self.tagview = mpx.TagView()
-        self.window.add(self.tagview.get_widget())
         self.player.add_info_widget(self.tagview.get_widget(), "Track Tags")
-        self.tagview.get_widget().show_all()
-
         self.player_tagview_tag_handler_id = self.tagview.get_widget().connect("tag-clicked", self.tag_clicked)
         self.player_new_track_handler_id = self.player.gobj().connect("new-track", self.new_track)
         self.player_playtstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
@@ -39,6 +35,7 @@ class TrackTags(mpx.Plugin):
         return True
 
     def deactivate(self):
+        self.player.remove_info_widget(self.tagview.get_widget())
         self.player.gobj().disconnect(self.player_new_track_handler_id)
         self.player.gobj().disconnect(self.player_playtstatus_changed_handler_id)
         self.tagview.get_widget().disconnect(self.player_tagview_tag_handler_id)

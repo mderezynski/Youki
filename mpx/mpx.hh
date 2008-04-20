@@ -128,6 +128,9 @@ namespace MPX
 		remove_widget (Gtk::Widget*);
 
 		void
+		remove_info_widget (Gtk::Widget*);
+
+		void
 		get_object (PAccess<MPX::Library>&);
 
 		void	

@@ -1347,6 +1347,66 @@ namespace MPX
 		on_show_info_toggled();
     }
 
+    bool
+    Player::load_source_plugin (std::string const& path)
+    {
+		enum
+		{
+			LIB_BASENAME,
+			LIB_PLUGNAME,
+			LIB_SUFFIX
+		};
+
+		const std::string type = "mpxsource";
+
+		std::string basename (path_get_basename (path));
+		std::string pathname (path_get_dirname  (path));
+
+		if (!is_module (basename))
+			return false;
+
+		StrV subs; 
+		split (subs, basename, is_any_of ("-."));
+		std::string name  = type + std::string("-") + subs[LIB_PLUGNAME];
+		std::string mpath = Module::build_path (build_filename(PLUGIN_DIR, "sources"), name);
+
+		Module module (mpath, ModuleFlags (0)); 
+		if (!module)
+		{
+			g_message("Source plugin load FAILURE '%s': %s", mpath.c_str (), module.get_last_error().c_str());
+			return false;
+		}
+
+		g_message("LOADING Source plugin: %s", mpath.c_str ());
+
+		module.make_resident();
+
+		SourcePluginPtr plugin = SourcePluginPtr (new SourcePlugin());
+		if (!g_module_symbol (module.gobj(), "get_instance", (gpointer*)(&plugin->get_instance)))
+		{
+          g_message("Source plugin load FAILURE '%s': get_instance hook missing", mpath.c_str ());
+		  return false;
+		}
+
+        if (!g_module_symbol (module.gobj(), "del_instance", (gpointer*)(&plugin->del_instance)))
+		{
+          g_message("Source plugin load FAILURE '%s': del_instance hook missing", mpath.c_str ());
+		  return false;
+		}
+
+		
+        PlaybackSource * p = plugin->get_instance(m_ui_manager, *this); 
+        Gtk::Alignment * a = new Gtk::Alignment;
+        p->get_ui()->reparent(*a);
+        a->show();
+        m_MainNotebook->append_page(*a);
+        m_Sources->addSource( p->get_name(), p->get_icon() );
+		m_SourceV.push_back(p);
+		install_source(m_SourceCtr++, /* tab # */ m_PageCtr++);
+
+		return false;
+    }
+
 	void
 	Player::install_source (int source, int tab)
 	{
@@ -1544,23 +1604,6 @@ namespace MPX
 		g_message("%s: info.backtrace.mpx service registered on session DBus", G_STRLOC);
 	}
 
-	void
-	Player::add_widget (Gtk::Widget *widget)
-	{
-		Gtk::VBox * box;
-		m_ref_xml->get_widget("vbox3", box);
-		box->pack_start(*widget);
-	}
-
-	void
-	Player::add_info_widget (Gtk::Widget *widget, std::string const& name)
-	{
-        Gtk::Alignment * a = Gtk::manage (new Gtk::Alignment());
-        widget->reparent(*a);
-        a->show_all();
-        m_InfoNotebook->append_page(*a, name);
-	}
-   
     void
     Player::on_lastfm_love_track ()
     {
@@ -1595,14 +1638,6 @@ namespace MPX
             m_MainNotebook->show();
         }
     }
-
-	void
-	Player::remove_widget (Gtk::Widget *widget)
-	{
-		Gtk::VBox * box;
-		m_ref_xml->get_widget("vbox3", box);
-		box->remove(*widget);
-	}
 
 	void
 	Player::get_object (PAccess<MPX::Library> & pa)
@@ -1646,64 +1681,33 @@ namespace MPX
             throw std::runtime_error("No Current Metadata");
 	}
 
-    bool
-    Player::load_source_plugin (std::string const& path)
+	void
+	Player::add_widget (Gtk::Widget *widget)
+	{
+		Gtk::VBox * box;
+		m_ref_xml->get_widget("vbox3", box);
+		box->pack_start(*widget);
+	}
+
+	void
+	Player::add_info_widget (Gtk::Widget *widget, std::string const& name)
+	{
+        m_InfoNotebook->append_page(*widget, name);
+        widget->show();
+	}
+   
+	void
+	Player::remove_widget (Gtk::Widget *widget)
+	{
+		Gtk::VBox * box;
+		m_ref_xml->get_widget("vbox-top", box);
+		box->remove(*widget);
+	}
+
+	void
+	Player::remove_info_widget (Gtk::Widget *widget)
     {
-		enum
-		{
-			LIB_BASENAME,
-			LIB_PLUGNAME,
-			LIB_SUFFIX
-		};
-
-		const std::string type = "mpxsource";
-
-		std::string basename (path_get_basename (path));
-		std::string pathname (path_get_dirname  (path));
-
-		if (!is_module (basename))
-			return false;
-
-		StrV subs; 
-		split (subs, basename, is_any_of ("-."));
-		std::string name  = type + std::string("-") + subs[LIB_PLUGNAME];
-		std::string mpath = Module::build_path (build_filename(PLUGIN_DIR, "sources"), name);
-
-		Module module (mpath, ModuleFlags (0)); 
-		if (!module)
-		{
-			g_message("Source plugin load FAILURE '%s': %s", mpath.c_str (), module.get_last_error().c_str());
-			return false;
-		}
-
-		g_message("LOADING Source plugin: %s", mpath.c_str ());
-
-		module.make_resident();
-
-		SourcePluginPtr plugin = SourcePluginPtr (new SourcePlugin());
-		if (!g_module_symbol (module.gobj(), "get_instance", (gpointer*)(&plugin->get_instance)))
-		{
-          g_message("Source plugin load FAILURE '%s': get_instance hook missing", mpath.c_str ());
-		  return false;
-		}
-
-        if (!g_module_symbol (module.gobj(), "del_instance", (gpointer*)(&plugin->del_instance)))
-		{
-          g_message("Source plugin load FAILURE '%s': del_instance hook missing", mpath.c_str ());
-		  return false;
-		}
-
-		
-        PlaybackSource * p = plugin->get_instance(m_ui_manager, *this); 
-        Gtk::Alignment * a = new Gtk::Alignment;
-        p->get_ui()->reparent(*a);
-        a->show();
-        m_MainNotebook->append_page(*a);
-        m_Sources->addSource( p->get_name(), p->get_icon() );
-		m_SourceV.push_back(p);
-		install_source(m_SourceCtr++, /* tab # */ m_PageCtr++);
-
-		return false;
+        m_InfoNotebook->remove(*widget);
     }
 
 	void

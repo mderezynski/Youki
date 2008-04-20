@@ -279,15 +279,12 @@ namespace MPX
                 {
                     cr->set_identity_matrix ();
 
-                    int top_space = ((m_ActiveRow-1)*m_Layout.RowHeight);
-                    int bottom_space = ( h - (m_ActiveRow*m_Layout.RowHeight));
+                    double heightcorrection = (((h - (m_Layout.Rows.size() * (m_Layout.RowHeight * m_Layout.Scale)))) / m_Layout.Scale) / 2.;
+
+                    int top_space = ((m_ActiveRow-1)*m_Layout.RowHeight) + heightcorrection;
+                    int bottom_space = ( h - (m_ActiveRow*m_Layout.RowHeight+heightcorrection));
                     
                     int y = 0;    
-
-                    if(top_space > bottom_space)
-                        y = (top_space/2 - 10);
-                    else
-                        y = (bottom_space/2 - 10) + (m_ActiveRow*m_Layout.RowHeight);
 
                     Glib::RefPtr<Pango::Layout> Layout = create_pango_layout(Markup::escape_text(m_ActiveTagName));
                     Pango::AttrList list;
@@ -301,6 +298,11 @@ namespace MPX
                     Layout->get_pixel_extents(Ink, Logical);
 
                     int x = (w/2 - Logical.get_width()/2) - 12;
+
+                    if(top_space > bottom_space)
+                        y = (h/4) - (Logical.get_height()/2); 
+                    else
+                        y = h - (h/4) - (Logical.get_height()/2); 
 
                     Util::cairo_rounded_rect(cr, x, y, Logical.get_width() + 24, Logical.get_height()+12, 6.);                    
                     cr->set_operator(Cairo::OPERATOR_ATOP);
@@ -357,13 +359,17 @@ namespace MPX
         : motion_x(0)
         , motion_y(0)
         {
-            m_Signal0 = 
-                g_signal_new ("tag-clicked",
-                          G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                          GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
-                          0,
-                          NULL, NULL,
-                          g_cclosure_marshal_VOID__STRING, G_TYPE_NONE, 1, G_TYPE_STRING); 
+            if(!gsignals_initialized)
+            {
+                m_Signal0 = 
+                    g_signal_new ("tag-clicked",
+                              G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+                              GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+                              0,
+                              NULL, NULL,
+                              g_cclosure_marshal_VOID__STRING, G_TYPE_NONE, 1, G_TYPE_STRING); 
+                gsignals_initialized = true;
+            }
 
             gtk_widget_add_events(GTK_WIDGET(gobj()), Gdk::POINTER_MOTION_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::LEAVE_NOTIFY_MASK);
         }
@@ -375,4 +381,5 @@ namespace MPX
         double TagView::TAG_SPACING = 12;
         double TagView::ACCEPTABLE_MIN_SCALE = 0.0;
         double TagView::SCALE_STEP = 0.02;
+        bool TagView::gsignals_initialized = false;
 }
