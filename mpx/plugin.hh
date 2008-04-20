@@ -141,8 +141,8 @@ namespace MPX
 			bool
 			deactivate (gint64 /*id*/);
 
-            bool
-            show (gint64 /*id*/);
+            Gtk::Widget *
+            get_gui (gint64 /*id*/);
 
 
 			void

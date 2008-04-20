@@ -43,7 +43,7 @@ namespace MPX
 				public:
 
 					Gtk::TreeModelColumn<bool>				Active;
-					Gtk::TreeModelColumn<bool>				GUI;
+					Gtk::TreeModelColumn<bool>				HasGUI;
 					Gtk::TreeModelColumn<std::string>		Desc;
 					Gtk::TreeModelColumn<std::string>		Authors;
 					Gtk::TreeModelColumn<std::string>		Copyright;
@@ -54,7 +54,7 @@ namespace MPX
 				ColumnsT ()
 				{
 					add(Active);
-					add(GUI);
+					add(HasGUI);
 					add(Desc);
 					add(Authors);
 					add(Copyright);
@@ -98,7 +98,7 @@ namespace MPX
 					(*iter)[Columns.Copyright] = i->second->get_copyright();
 					(*iter)[Columns.Website] = i->second->get_website();
 					(*iter)[Columns.Active] = i->second->get_active();
-					(*iter)[Columns.GUI] = i->second->get_has_gui();
+					(*iter)[Columns.HasGUI] = i->second->get_has_gui();
 					(*iter)[Columns.Id] = i->second->get_id();
 
 				}
@@ -124,15 +124,15 @@ namespace MPX
 				(*iter)[Columns.Active] = result;
 			}
 
-			void
-			on_row_activated (const TreeModel::Path& path, TreeViewColumn* /*column*/)
+			Gtk::Widget *
+			get_gui (const TreeModel::TreeModel::iterator& iter)
 			{
-				TreeIter iter = Store->get_iter(path);
-				bool gui = (*iter)[Columns.GUI];
 				gint64 id = (*iter)[Columns.Id];
 
-				if(gui)
-					m_Manager.show(id);
+				if((*iter)[Columns.HasGUI])
+					return m_Manager.get_gui(id);
+				else
+					return NULL;
 			}
 
 			bool
@@ -142,9 +142,9 @@ namespace MPX
 			}
 
 			bool
-			has_gui(const TreeModel::iterator& iter) const
+			get_has_gui(const TreeModel::iterator& iter) const
 			{
-				return (*iter)[Columns.GUI];
+				return (*iter)[Columns.HasGUI];
 			}
 
 			const std::string
@@ -169,14 +169,6 @@ namespace MPX
 			get_website(const TreeModel::iterator& iter) const
 			{
 				return (*iter)[Columns.Website];
-			}
-
-			void
-			show_gui()
-			{
-				Glib::RefPtr<TreeSelection> sel = get_selection();
-				TreeModel::iterator iter = sel->get_selected();
-				on_row_activated( get_model()->get_path( iter ), NULL );
 			}
 
 			~PTV ()
@@ -246,8 +238,22 @@ namespace MPX
 										% Glib::Markup::escape_text(m_PTV->get_copyright(iter)).c_str()
 										% Glib::Markup::escape_text(m_PTV->get_website(iter)).c_str() ).str() );
 
-			if(m_PTV->has_gui(iter))
+			if(m_PTV->get_has_gui(iter))
+			{
 				notebook->get_nth_page(1)->show();
+				std::list<Gtk::Widget*> list = options->get_children();
+				if(list.size())
+				{
+					Gtk::Widget * old_widget = *(list.begin());
+					options->remove(*old_widget);
+				}
+				Gtk::Widget * widget = m_PTV->get_gui(iter);
+				if(widget != NULL)
+				{
+					options->pack_start(*widget, Gtk::PACK_SHRINK);
+					widget->show();
+				}
+			}
 			else
 				notebook->get_nth_page(1)->hide();
 		}

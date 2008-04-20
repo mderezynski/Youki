@@ -75,10 +75,18 @@
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkVBox" id="options">
+                  <widget class="GtkHBox" id="hbox_options">
                     <property name="visible">True</property>
                     <child>
-                      <placeholder/>
+                      <widget class="GtkVBox" id="options">
+                        <property name="visible">True</property>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </widget>
+                      <packing>
+                        <property name="expand">False</property>
+                      </packing>
                     </child>
                   </widget>
                   <packing>

@@ -247,12 +247,7 @@ namespace MPX
 
 							ptr->m_Active = false; 
 
-#if 0
-                            PyObject * HasGUI = PyObject_GetAttrString(instance, "show");
-                            ptr->m_HasGUI = (HasGUI ? true : false);
-                            if(HasGUI)
-                                Py_DECREF(HasGUI);
-#endif
+                            ptr->m_HasGUI = PyObject_HasAttrString(instance, "get_gui");
 
 							m_Map.insert(std::make_pair(ptr->m_Id, ptr));
 
@@ -283,10 +278,10 @@ namespace MPX
 		return m_Map;
 	}
 
-	bool
-	PluginManager::show(gint64 id)
+	Gtk::Widget *
+	PluginManager::get_gui(gint64 id)
 	{
-		bool result = false;
+		PyGObject * pygobj;
 		Glib::Mutex::Lock L (m_StateChangeLock);
 
 		PluginHoldMap::iterator i = m_Map.find(id);
@@ -297,11 +292,12 @@ namespace MPX
 
 		try{
 			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			object callable = ccinstance.attr("show");
-			result = boost::python::call<bool>(callable.ptr());
+			object result = ccinstance.attr("get_gui")();
+			pygobj = (PyGObject*)(result.ptr());
 		} catch( error_already_set )
 		{
-			push_traceback (id, "show");
+			push_traceback (id, "get_gui");
+			return NULL;
 		}
 
         try{
@@ -312,7 +308,7 @@ namespace MPX
 
 		pyg_gil_state_release (state);
 
-		return result;
+		return Glib::wrap(((GtkWidget*)(pygobj->obj)), false);
 	}
 
 
