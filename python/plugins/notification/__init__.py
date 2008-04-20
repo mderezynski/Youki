@@ -84,6 +84,6 @@ class Notification(mpx.Plugin):
                     image = image.scale_simple(COVER_SIZE, COVER_SIZE, gtk.gdk.INTERP_NEAREST)
                     n.set_icon_from_pixbuf(image)
 
-                    n.show()
-                    self.previous_message = message
+                n.show()
+                self.previous_message = message
 
