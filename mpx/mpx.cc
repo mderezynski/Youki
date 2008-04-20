@@ -2168,7 +2168,7 @@ namespace MPX
     		m_InfoArea->set_text (L_ALBUM, album);
 
         if(!artist.empty() && !title.empty())
-            set_title((boost::format ("%1% - %2% (MPX)") % artist.c_str() % title.c_str()));
+            set_title((boost::format ("%1% - %2% (MPX)") % artist.c_str() % title.c_str()).str());
         else
             set_title(_("(Unknown Track) - MPX"));
 	}
