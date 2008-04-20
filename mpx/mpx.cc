@@ -2167,10 +2167,16 @@ namespace MPX
         if(!album.empty())
     		m_InfoArea->set_text (L_ALBUM, album);
 
-        if(!artist.empty() && !title.empty())
+        if(m_Metadata[ATTRIBUTE_TITLE].is_initialized() && m_Metadata[ATTRIBUTE_ARTIST].is_initialized())
+        {
+            std::string artist = get<std::string>(m_Metadata[ATTRIBUTE_ARTIST].get());
+            std::string title = get<std::string>(m_Metadata[ATTRIBUTE_TITLE].get());
             set_title((boost::format ("%1% - %2% (MPX)") % artist.c_str() % title.c_str()).str());
+        }
         else
+        {
             set_title(_("(Unknown Track) - MPX"));
+        }
 	}
 
 	void
