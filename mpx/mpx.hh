@@ -191,9 +191,10 @@ namespace MPX
         create (MPX::Library&, MPX::Covers&);
 #endif // HAVE_HAL
 
-		class Root; 
+		class DBusRoot; 
 		class DBusMPX; 
         class DBusPlayer;
+        class DBusTrackList;
 
 		void
 		init_dbus ();
@@ -229,9 +230,10 @@ namespace MPX
 
 		struct DBusObjectsT
 		{
-			Root		*root;
-			DBusMPX		*mpx;
-            DBusPlayer  *player;
+			DBusRoot        *root;
+			DBusMPX		    *mpx;
+            DBusPlayer      *player;
+            DBusTrackList   *tracklist;
 		};
 		DBusObjectsT DBusObjects;
 		DBusGConnection * m_SessionBus;
