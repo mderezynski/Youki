@@ -27,6 +27,8 @@ namespace Mcs
         template <typename T>
         class adaptor
         {
+            public:
+
                 adaptor (Key & key)
                 : m_key(key)
                 {
