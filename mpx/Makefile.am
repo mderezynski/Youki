@@ -222,14 +222,16 @@ if HAVE_HAL
 mpx_bin_SOURCES += hal.hh hal.cc
 endif
 
-built_header_make = \
-	dbus-obj-MPX-glue.h
+built_header_make = 		\
+	dbus-obj-MPX-glue.h		\
+	dbus-obj-PLAYER-glue.h
 
-EXTRA_DIST = \
-	dbus-obj-MPX.xml \
+EXTRA_DIST = 				\
+	dbus-obj-MPX.xml 		\
+	dbus-obj-PLAYER.xml 	\
 	dbus-marshalers.list
 
-dbus-obj-MPX-glue.h: dbus-obj-MPX.xml
+dbus-obj-MPX-glue.h: Makefile.am dbus-obj-MPX.xml
 	@echo "* Generating /MPX DBus Glue"
 	@dbus-binding-tool --mode=glib-server --prefix=Player::DBusMPX::mpx \
     $(abs_top_builddir)/mpx/dbus-obj-MPX.xml > \
@@ -243,6 +245,21 @@ dbus-obj-MPX-glue.h: dbus-obj-MPX.xml
 	@rm -f dbus-obj-MPX-glue.h.temp
 	@rm -f dbus-obj-MPX-glue.h.temp.1
 	@rm -f dbus-obj-MPX-glue.h.temp.2
+
+dbus-obj-PLAYER-glue.h: Makefile.am dbus-obj-PLAYER.xml
+	@echo "* Generating /Player DBus Glue"
+	@dbus-binding-tool --mode=glib-server --prefix=Player::DBusPlayer::player \
+    $(abs_top_builddir)/mpx/dbus-obj-PLAYER.xml > \
+    dbus-obj-PLAYER-glue.h.temp
+	@cat dbus-obj-PLAYER-glue.h.temp   | sed s:G_BEGIN_DECLS:: | sed s:G_END_DECLS:: > \
+    dbus-obj-PLAYER-glue.h.temp.1
+	@cat dbus-obj-PLAYER-glue.h.temp.1 | sed s/dbus_glib_Player\:\:DBusPlayer\:\:player/dbus_glib_player/g > \
+    dbus-obj-PLAYER-glue.h.temp.2
+	@cat dbus-obj-PLAYER-glue.h.temp.2 | sed s/dbus_glib_marshal_Player\:\:DBusPlayer\:\:player/dbus_glib_marshal_player/g > \
+    dbus-obj-PLAYER-glue.h
+	@rm -f dbus-obj-PLAYER-glue.h.temp
+	@rm -f dbus-obj-PLAYER-glue.h.temp.1
+	@rm -f dbus-obj-PLAYER-glue.h.temp.2
 
 dbus-marshalers.c: dbus-marshalers.list 
 	@echo "* Generating dbus-marshalers.c"

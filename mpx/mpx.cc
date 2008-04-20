@@ -399,33 +399,33 @@ namespace MPX
       bool
       on_button_press_event (GdkEventButton * event)
       {
-        int x = int (event->x);
-        int y = int (event->y);
+          int x = int (event->x);
+          int y = int (event->y);
 
-        if ((event->window == get_window()->gobj()) && (x >= 6) && (x <= (m_cover_pos+72)) && (y >= 3) && (y <= 75))
-        {
-			m_pressed = true;
-			queue_draw ();
-        }
+          if ((event->window == get_window()->gobj()) && (x >= 6) && (x <= (m_cover_pos+72)) && (y >= 3) && (y <= 75))
+          {
+              m_pressed = true;
+              queue_draw ();
+          }
 
-        return false;
+          return false;
       }
 
       bool
       on_button_release_event (GdkEventButton * event)
       {
-        int x = int (event->x);
-        int y = int (event->y);
+          int x = int (event->x);
+          int y = int (event->y);
 
-		m_pressed = false;
-		queue_draw ();
+          m_pressed = false;
+          queue_draw ();
 
-        if ((event->window == get_window()->gobj()) && (x >= 6) && (x <= (m_cover_pos+72)) && (y >= 3) && (y <= 75))
-        {
-			m_SignalCoverClicked.emit ();
-        }
+          if ((event->window == get_window()->gobj()) && (x >= 6) && (x <= (m_cover_pos+72)) && (y >= 3) && (y <= 75))
+          {
+              m_SignalCoverClicked.emit ();
+          }
 
-        return false;
+          return false;
       }
 
       bool
@@ -434,18 +434,18 @@ namespace MPX
                     int                                   y,
                     guint                                 time)
       {
-        ustring target (drag_dest_find_target (context));
-        if( !target.empty() )
-        {
-          drag_get_data (context, target, time);
-          context->drag_finish  (true, false, time);
-          return true;
-        }
-        else
-        {
-          context->drag_finish  (false, false, time);
-          return false;
-        }
+          ustring target (drag_dest_find_target (context));
+          if( !target.empty() )
+          {
+            drag_get_data (context, target, time);
+            context->drag_finish  (true, false, time);
+            return true;
+          }
+          else
+          {
+            context->drag_finish  (false, false, time);
+            return false;
+          }
       }
 
       void
@@ -456,48 +456,48 @@ namespace MPX
                              guint                                 info,
                              guint                                 time)
       {
-        if( data.get_data_type() == "text/uri-list")
-        {
-          Util::FileList u = data.get_uris();
-          m_SignalUrisDropped.emit (u);
-        }
-        else
-        if( data.get_data_type() == "text/plain")
-        {
-          using boost::algorithm::split;
-          using boost::algorithm::is_any_of;
-          using boost::algorithm::replace_all;
-
-          std::string text = data.get_data_as_string ();
-          replace_all (text, "\r", "");
-
-          StrV v;
-          split (v, text, is_any_of ("\n"));
-
-          if( v.empty ()) // we're taking chances here
+          if( data.get_data_type() == "text/uri-list")
           {
-            v.push_back (text);
-          }
-
-          Util::FileList u;
-
-          for(StrV::const_iterator i = v.begin(); i != v.end(); ++i)
-          {
-            try{
-              URI uri (*i);
-              u.push_back (*i);
-            }
-            catch (URI::ParseError & cxe)
-            {
-                // seems like not it
-            }
-          }
-
-          if( !u.empty() )
-          {
+            Util::FileList u = data.get_uris();
             m_SignalUrisDropped.emit (u);
           }
-        }
+          else
+          if( data.get_data_type() == "text/plain")
+          {
+            using boost::algorithm::split;
+            using boost::algorithm::is_any_of;
+            using boost::algorithm::replace_all;
+
+            std::string text = data.get_data_as_string ();
+            replace_all (text, "\r", "");
+
+            StrV v;
+            split (v, text, is_any_of ("\n"));
+
+            if( v.empty ()) // we're taking chances here
+            {
+              v.push_back (text);
+            }
+
+            Util::FileList u;
+
+            for(StrV::const_iterator i = v.begin(); i != v.end(); ++i)
+            {
+              try{
+                URI uri (*i);
+                u.push_back (*i);
+              }
+              catch (URI::ParseError & cxe)
+              {
+                  // seems like not it
+              }
+            }
+
+            if( !u.empty() )
+            {
+              m_SignalUrisDropped.emit (u);
+            }
+          }
       }
 
     private:
@@ -505,50 +505,50 @@ namespace MPX
       void
       enable_drag_dest ()
       {
-        disable_drag_dest ();
-        std::vector<Gtk::TargetEntry> target_entries;
-        target_entries.push_back (TargetEntry ("text/plain"));
-        drag_dest_set (target_entries, Gtk::DEST_DEFAULT_MOTION);
-        drag_dest_add_uri_targets ();
+          disable_drag_dest ();
+          std::vector<Gtk::TargetEntry> target_entries;
+          target_entries.push_back (TargetEntry ("text/plain"));
+          drag_dest_set (target_entries, Gtk::DEST_DEFAULT_MOTION);
+          drag_dest_add_uri_targets ();
       }
 
       void
       disable_drag_dest ()
       {
-        drag_dest_unset ();
+          drag_dest_unset ();
       }
 
       bool
       decay_spectrum ()
       {
-        for (int n = 0; n < SPECT_BANDS; ++n)
-        {
-          m_spectrum_data[n] = (((m_spectrum_data[n] - 5) < 0) ? 0 : (m_spectrum_data[n] - 5));
-        }
-        queue_draw ();
-        return true;
+          for (int n = 0; n < SPECT_BANDS; ++n)
+          {
+            m_spectrum_data[n] = (((m_spectrum_data[n] - 5) < 0) ? 0 : (m_spectrum_data[n] - 5));
+          }
+          queue_draw ();
+          return true;
       }
 
       void
       play_update_spectrum (Spectrum const& spectrum)
       {
-		m_spectrum_data = spectrum;
-        queue_draw ();
+          m_spectrum_data = spectrum;
+          queue_draw ();
 
       }
 
       void
       play_status_changed ()
       {
-        int status = m_Play.property_status ().get_value ();
-        if( status == PLAYSTATUS_PAUSED )
-        {
-          m_decay_conn = Glib::signal_timeout ().connect (sigc::mem_fun(*this, &InfoArea::decay_spectrum), 50);
-        }
-        else
-        {
-          m_decay_conn.disconnect ();
-        }
+          int status = m_Play.property_status ().get_value ();
+          if( status == PLAYSTATUS_PAUSED )
+          {
+            m_decay_conn = Glib::signal_timeout ().connect (sigc::mem_fun(*this, &InfoArea::decay_spectrum), 50);
+          }
+          else
+          {
+            m_decay_conn.disconnect ();
+          }
       }
 
 	public:
@@ -556,68 +556,68 @@ namespace MPX
       void
       set_source (Glib::RefPtr<Gdk::Pixbuf> const& source_icon)
       {
-        m_source_icon = source_icon;
-        queue_draw ();
+          m_source_icon = source_icon;
+          queue_draw ();
       }
 
       void
       reset ()
       {
-        std::fill (m_spectrum_data.begin (), m_spectrum_data.end (), 0.);
+          std::fill (m_spectrum_data.begin (), m_spectrum_data.end (), 0.);
 
-        remove_layout_if_exists (L_ARTIST);
-        remove_layout_if_exists (L_ALBUM);
-        remove_layout_if_exists (L_TITLE);
+          remove_layout_if_exists (L_ARTIST);
+          remove_layout_if_exists (L_ALBUM);
+          remove_layout_if_exists (L_TITLE);
 
-        m_cover_anim_conn.disconnect ();
-        m_cover_surface = Cairo::RefPtr<Cairo::ImageSurface> (0);
+          m_cover_anim_conn.disconnect ();
+          m_cover_surface = Cairo::RefPtr<Cairo::ImageSurface> (0);
 
-        m_text[L_ARTIST].clear ();
-        m_text[L_ALBUM].clear ();
-        m_text[L_TITLE].clear ();
+          m_text[L_ARTIST].clear ();
+          m_text[L_ALBUM].clear ();
+          m_text[L_TITLE].clear ();
 
-        queue_draw ();
+          queue_draw ();
       }
 
       void
       set_text (LayoutID       id,
                 ustring const& text)
       {
-        if( text != m_text[id] )
-        {
-          m_text[id] = text;
+          if( text != m_text[id] )
+          {
+            m_text[id] = text;
 
-          TextP p (new Text (*this, text, id));
+            TextP p (new Text (*this, text, id));
 
-          remove_layout_if_exists (id);
-          insert_layout_and_connect (id, p);
-        }
+            remove_layout_if_exists (id);
+            insert_layout_and_connect (id, p);
+          }
       }
 
       void
       set_paused (bool paused)
       {
-        m_cover_alpha = (paused ? 0.5 : 1.0);
-		queue_draw ();
+          m_cover_alpha = (paused ? 0.5 : 1.0);
+          queue_draw ();
       }
 
       void
       set_image (RefPtr<Gdk::Pixbuf> const& pixbuf)
       {
-        set_image (Util::cairo_image_surface_round(Util::cairo_image_surface_from_pixbuf (pixbuf), 6.));
+          set_image (Util::cairo_image_surface_round(Util::cairo_image_surface_from_pixbuf (pixbuf), 6.));
       }
 
       void
       set_image (Cairo::RefPtr<Cairo::ImageSurface> const& surface)
       {
-        m_cover_surface  = Util::cairo_image_surface_round(surface, 6.);
+          m_cover_surface  = Util::cairo_image_surface_round(surface, 6.);
 
-        m_cover_pos      = cover_anim_initial_pos;
-        m_cover_velocity = cover_anim_initial_velocity;
-        m_cover_accel    = cover_anim_gravity;
+          m_cover_pos      = cover_anim_initial_pos;
+          m_cover_velocity = cover_anim_initial_velocity;
+          m_cover_accel    = cover_anim_gravity;
 
-        m_cover_anim_conn.disconnect ();
-        m_cover_anim_conn = signal_timeout ().connect (sigc::mem_fun (this, &InfoArea::slide_in_cover), cover_anim_interval);
+          m_cover_anim_conn.disconnect ();
+          m_cover_anim_conn = signal_timeout ().connect (sigc::mem_fun (this, &InfoArea::slide_in_cover), cover_anim_interval);
       }
 
     private:
@@ -626,182 +626,182 @@ namespace MPX
       insert_layout_and_connect (LayoutID id,
                                  TextP &  p)
       {
-        m_layouts[id] = p;
-        p->conn = signal_timeout().connect (sigc::bind (sigc::mem_fun (this, &InfoArea::fade_in), id), 20);
+          m_layouts[id] = p;
+          p->conn = signal_timeout().connect (sigc::bind (sigc::mem_fun (this, &InfoArea::fade_in), id), 20);
       }
 
       void
       remove_layout_if_exists (LayoutID id)
       {
-        Layouts::iterator i = m_layouts.find (id);
-        if( i != m_layouts.end() )
-        {
-          TextP & p = i->second;
+          Layouts::iterator i = m_layouts.find (id);
+          if( i != m_layouts.end() )
+          {
+            TextP & p = i->second;
 
-          p->conn.disconnect ();
-          m_layouts.erase (i);
-        }
+            p->conn.disconnect ();
+            m_layouts.erase (i);
+          }
       }
 
       bool
       fade_in (LayoutID id)
       {
-        TextP & p (m_layouts.find (id)->second);
-        p->alpha += 0.1;
+          TextP & p (m_layouts.find (id)->second);
+          p->alpha += 0.1;
 
-        bool r = p->alpha < p->target;
+          bool r = p->alpha < p->target;
 
-        queue_draw ();
+          queue_draw ();
 
-        return r;
+          return r;
       }
 
       bool
       slide_in_cover ()
       {
-        m_cover_pos      += m_cover_velocity * cover_anim_dt;
-        m_cover_velocity += m_cover_accel    * cover_anim_dt;
-        m_cover_accel     = cover_anim_gravity;
+          m_cover_pos      += m_cover_velocity * cover_anim_dt;
+          m_cover_velocity += m_cover_accel    * cover_anim_dt;
+          m_cover_accel     = cover_anim_gravity;
 
-        bool r = true;
+          bool r = true;
 
-        if (m_cover_pos + m_cover_surface->get_width () >= cover_anim_wall)
-        {
-            m_cover_pos       = cover_anim_wall - m_cover_surface->get_width ();
-            m_cover_velocity *= -cover_anim_wall_elasticity;
+          if (m_cover_pos + m_cover_surface->get_width () >= cover_anim_wall)
+          {
+              m_cover_pos       = cover_anim_wall - m_cover_surface->get_width ();
+              m_cover_velocity *= -cover_anim_wall_elasticity;
 
-            // FIXME: Need a better test. This runs into stability problems when
-            // dt or acceleration is too high
+              // FIXME: Need a better test. This runs into stability problems when
+              // dt or acceleration is too high
 
-            double next_velocity = m_cover_velocity + m_cover_accel * cover_anim_dt;
+              double next_velocity = m_cover_velocity + m_cover_accel * cover_anim_dt;
 
-            if (next_velocity >= 0.0)
-            {
-                m_cover_pos      = cover_anim_wall - m_cover_surface->get_width ();
-                m_cover_velocity = 0.0;
-                m_cover_accel    = 0.0;
+              if (next_velocity >= 0.0)
+              {
+                  m_cover_pos      = cover_anim_wall - m_cover_surface->get_width ();
+                  m_cover_velocity = 0.0;
+                  m_cover_accel    = 0.0;
 
-                r = false;
-            }
-        }
+                  r = false;
+              }
+          }
 
-        queue_draw ();
+          queue_draw ();
 
-        return r;
+          return r;
       }
 
       void
       draw_background (Cairo::RefPtr<Cairo::Context> & cr)
       {
-        Gtk::Allocation allocation = get_allocation ();
+          Gtk::Allocation allocation = get_allocation ();
 
-        cr->set_source_rgb(0., 0., 0.);
-        Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 4.);
-        cr->fill_preserve ();
-        cr->set_source_rgba(1., 1., 1., .6);
-        cr->set_line_width(2);
-        cr->stroke();
+          cr->set_source_rgb(0., 0., 0.);
+          Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 4.);
+          cr->fill_preserve ();
+          cr->set_source_rgba(1., 1., 1., .6);
+          cr->set_line_width(2);
+          cr->stroke();
       }
 
       void
       draw_cover (Cairo::RefPtr<Cairo::Context> & cr)
       {
-        if( m_cover_surface && (m_cover_pos >= cover_anim_area_x0 - m_cover_surface->get_width ()) )
-        {
-          cr->save ();
+          if( m_cover_surface && (m_cover_pos >= cover_anim_area_x0 - m_cover_surface->get_width ()) )
+          {
+            cr->save ();
 
-          cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
-						 cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-															 cover_anim_area_height+(m_pressed?1:0));
-          cr->clip ();
+            cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
+                           cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
+                                                               cover_anim_area_height+(m_pressed?1:0));
+            cr->clip ();
 
-          double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface->get_height ()) / 2;
+            double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface->get_height ()) / 2;
 
-          draw_cairo_image (cr, m_cover_surface, m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), m_cover_alpha);
+            draw_cairo_image (cr, m_cover_surface, m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), m_cover_alpha);
 
-          cr->restore ();
+            cr->restore ();
 
-          cr->set_source_rgba(1., 1., 1., .6);
-          //cr->set_line_width(2.);
-          //Util::cairo_rounded_rect (cr, cover_anim_area_x0-2, cover_anim_area_y0-2, cover_anim_area_width+4, cover_anim_area_height+4, 6.); 
-          //cr->stroke();
-        }
+            cr->set_source_rgba(1., 1., 1., .6);
+            //cr->set_line_width(2.);
+            //Util::cairo_rounded_rect (cr, cover_anim_area_x0-2, cover_anim_area_y0-2, cover_anim_area_width+4, cover_anim_area_height+4, 6.); 
+            //cr->stroke();
+          }
       }
 
       void
       draw_text (Cairo::RefPtr<Cairo::Context> const& cr)
       {
-        Gtk::Allocation allocation = get_allocation ();
+          Gtk::Allocation allocation = get_allocation ();
 
-        for (Layouts::const_iterator i = m_layouts.begin(); i != m_layouts.end(); ++i)
-        {
-          TextP const& p (i->second);
+          for (Layouts::const_iterator i = m_layouts.begin(); i != m_layouts.end(); ++i)
+          {
+            TextP const& p (i->second);
 
-          if( p->alpha < 0 )
-            continue;
+            if( p->alpha < 0 )
+              continue;
 
-          int w = (allocation.get_width() /*- p->x - 8*SPECT_BANDS - 40*/) * PANGO_SCALE;
+            int w = (allocation.get_width() /*- p->x - 8*SPECT_BANDS - 40*/) * PANGO_SCALE;
 
-          cr->set_source_rgba (1.0, 1.0, 1.0, p->alpha);
-          cr->set_operator (Cairo::OPERATOR_ATOP);
-    
-          p->layout->set_single_paragraph_mode (true);
-          p->layout->set_ellipsize (Pango::ELLIPSIZE_MIDDLE);
-          p->layout->set_width (w);
-          p->layout->set_wrap (Pango::WRAP_CHAR);
+            cr->set_source_rgba (1.0, 1.0, 1.0, p->alpha);
+            cr->set_operator (Cairo::OPERATOR_ATOP);
+      
+            p->layout->set_single_paragraph_mode (true);
+            p->layout->set_ellipsize (Pango::ELLIPSIZE_MIDDLE);
+            p->layout->set_width (w);
+            p->layout->set_wrap (Pango::WRAP_CHAR);
 
-          Pango::Rectangle ink, logical;
-          p->layout->get_pixel_extents(ink, logical);
+            Pango::Rectangle ink, logical;
+            p->layout->get_pixel_extents(ink, logical);
 
-          cr->move_to (/*p->x*/ + (w/PANGO_SCALE)/2 - logical.get_width()/2, p->y);
-          pango_cairo_show_layout (cr->cobj(), p->layout->gobj());
-        }
+            cr->move_to (/*p->x*/ + (w/PANGO_SCALE)/2 - logical.get_width()/2, p->y);
+            pango_cairo_show_layout (cr->cobj(), p->layout->gobj());
+          }
       }
 
       void
       draw_spectrum (Cairo::RefPtr<Cairo::Context> & cr)
       {
-        const int RIGHT_MARGIN = /*24*/ 16;
-        const int TOP_MARGIN = 6;
-        const int WIDTH = 6;
-        const int SPACING = 2;
-        const int HEIGHT = 72;
-        const double ALPHA = 0.3;
+          const int RIGHT_MARGIN = /*24*/ 16;
+          const int TOP_MARGIN = 6;
+          const int WIDTH = 6;
+          const int SPACING = 2;
+          const int HEIGHT = 72;
+          const double ALPHA = 0.3;
 
-        Gtk::Allocation allocation = get_allocation ();
+          Gtk::Allocation allocation = get_allocation ();
 
-        for (int n = 0; n < SPECT_BANDS; ++n)
-        {
-          int x = 0, y = 0, w = 0, h = 0;
-
-          // Bar
-          x = allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS + (WIDTH+SPACING)*n - RIGHT_MARGIN;
-          y = TOP_MARGIN + (HEIGHT - (m_spectrum_data[n]+HEIGHT)); 
-          w = WIDTH; 
-          h = m_spectrum_data[n]+HEIGHT;
-
-          if( w>0 && h>0)
+          for (int n = 0; n < SPECT_BANDS; ++n)
           {
-              cr->set_source_rgba (double(colors[n/2].red)/255., double(colors[n/2].green)/255., double(colors[n/2].blue)/255., ALPHA);
-              //cr->rectangle (x,y,w,h);
-              Util::cairo_rounded_rect(cr, x, y, w, h, 1.);
-              cr->fill ();
+            int x = 0, y = 0, w = 0, h = 0;
+
+            // Bar
+            x = allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS + (WIDTH+SPACING)*n - RIGHT_MARGIN;
+            y = TOP_MARGIN + (HEIGHT - (m_spectrum_data[n]+HEIGHT)); 
+            w = WIDTH; 
+            h = m_spectrum_data[n]+HEIGHT;
+
+            if( w>0 && h>0)
+            {
+                cr->set_source_rgba (double(colors[n/2].red)/255., double(colors[n/2].green)/255., double(colors[n/2].blue)/255., ALPHA);
+                //cr->rectangle (x,y,w,h);
+                Util::cairo_rounded_rect(cr, x, y, w, h, 1.);
+                cr->fill ();
+            }
           }
-        }
       }
 
       void
       draw_source_icon (Cairo::RefPtr<Cairo::Context> const& cr)
       {
-        if( m_source_icon )
-        {
-          Gtk::Allocation allocation = get_allocation ();
+          if( m_source_icon )
+          {
+            Gtk::Allocation allocation = get_allocation ();
 
-          cr->set_operator (Cairo::OPERATOR_ATOP);
-          Gdk::Cairo::set_source_pixbuf (cr, m_source_icon, allocation.get_width () - 22, 2);
-          cr->rectangle (allocation.get_width () - 22, 2, 20, 20);
-          cr->fill ();
-        }
+            cr->set_operator (Cairo::OPERATOR_ATOP);
+            Gdk::Cairo::set_source_pixbuf (cr, m_source_icon, allocation.get_width () - 22, 2);
+            cr->rectangle (allocation.get_width () - 22, 2, 20, 20);
+            cr->fill ();
+          }
       }
 
     protected:
@@ -809,17 +809,15 @@ namespace MPX
       virtual bool
       on_expose_event (GdkEventExpose * event)
       {
-        Widget::on_expose_event (event);
+          Widget::on_expose_event (event);
+          Cairo::RefPtr<Cairo::Context> cr = get_window ()->create_cairo_context ();
+          draw_background (cr);
+          draw_cover (cr);
+          draw_spectrum (cr);
+          draw_text (cr);
+          //draw_source_icon (cr);
 
-        Cairo::RefPtr<Cairo::Context> cr = get_window ()->create_cairo_context ();
-
-        draw_background (cr);
-        draw_cover (cr);
-        draw_spectrum (cr);
-        draw_text (cr);
-        //draw_source_icon (cr);
-
-        return true;
+          return true;
       }
 
 	public:
@@ -827,13 +825,11 @@ namespace MPX
 	  static InfoArea*
 	  create(MPX::Play & play, Glib::RefPtr<Gnome::Glade::Xml> & xml)
 	  {
-		 return new InfoArea(play,xml);
+           return new InfoArea(play,xml);
 	  } 
 
   };
 }
-
-
 
 namespace MPX
 {
@@ -1023,6 +1019,208 @@ namespace MPX
 	  g_signal_emit (self, signals[SIGNAL_QUIT], 0);
 	}
 
+#define TYPE_DBUS_OBJ_PLAYER (DBusPlayer::get_type ())
+#define DBUS_OBJ_PLAYER(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_DBUS_OBJ_PLAYER, DBusPlayer))
+
+  struct DBusPlayerClass
+  {
+    GObjectClass parent;
+  };
+
+  struct Player::DBusPlayer
+  {
+    GObject parent;
+    Player * player;
+
+    enum
+    {
+      PLAYER_SIGNAL_CAPS,
+      PLAYER_SIGNAL_STATE,
+      N_SIGNALS,
+    };
+
+    static guint signals[N_SIGNALS];
+
+    static gpointer parent_class;
+
+    static GType
+    get_type ();
+
+    static DBusPlayer *
+    create (Player &, DBusGConnection*);
+
+    static void
+    class_init (gpointer klass,
+                gpointer class_data);
+
+    static GObject *
+    constructor (GType                   type,
+                 guint                   n_construct_properties,
+                 GObjectConstructParam * construct_properties);
+
+    static gboolean
+    get_metadata (DBusPlayer* self,
+                  GHashTable** metadata,
+                  GError** error);
+  };
+
+  gpointer Player::DBusPlayer::parent_class       = 0;
+  guint    Player::DBusPlayer::signals[N_SIGNALS] = { 0 };
+
+// HACK: Hackery to rename functions in glue
+#define player_next next 
+#define player_prev prev
+#define player_pause pause
+#define player_stop stop
+#define player_play play
+#define player_get_metadata get_metadata
+
+#include "dbus-obj-PLAYER-glue.h"
+
+	void
+	Player::DBusPlayer::class_init (gpointer klass, gpointer class_data)
+	{
+	  parent_class = g_type_class_peek_parent (klass);
+
+	  GObjectClass *gobject_class = reinterpret_cast<GObjectClass*>(klass);
+	  gobject_class->constructor  = &DBusPlayer::constructor;
+	}
+
+	GObject *
+	Player::DBusPlayer::constructor (GType                   type,
+							guint                   n_construct_properties,
+							GObjectConstructParam*  construct_properties)
+	{
+	  GObject *object = G_OBJECT_CLASS (parent_class)->constructor (type, n_construct_properties, construct_properties);
+
+	  return object;
+	}
+
+	Player::DBusPlayer *
+	Player::DBusPlayer::create (Player & player, DBusGConnection * session_bus)
+	{
+		dbus_g_object_type_install_info (TYPE_DBUS_OBJ_PLAYER, &dbus_glib_player_object_info);
+
+		DBusPlayer * self = DBUS_OBJ_PLAYER (g_object_new (TYPE_DBUS_OBJ_PLAYER, NULL));
+		self->player = &player;
+
+	  if(session_bus)
+	  {
+		dbus_g_connection_register_g_object (session_bus, "/Player", G_OBJECT(self));
+		g_message("%s: /Player Object registered on session DBus", G_STRLOC);
+	  }
+
+	  return self;
+	}
+
+	GType
+	Player::DBusPlayer::get_type ()
+	{
+	  static GType type = 0;
+
+	  if (G_UNLIKELY (type == 0))
+		{
+		  static GTypeInfo const type_info =
+			{
+			  sizeof (DBusPlayerClass),
+			  NULL,
+			  NULL,
+			  &class_init,
+			  NULL,
+			  NULL,
+			  sizeof (DBusPlayer),
+			  0,
+			  NULL
+			};
+
+		  type = g_type_register_static (G_TYPE_OBJECT, "Player", &type_info, GTypeFlags (0));
+		}
+
+	  return type;
+	}
+    
+    const char* mpris_attribute_id_str[] =
+    {
+        "location",
+        "title",
+        "genre",
+        "comment",
+        "puid fingerprint",
+        "mpx tag hash",
+        "mb track id",
+        "artist",
+        "mb artist sort name",
+        "mb artist id",
+        "album",
+        "mb album id",
+        "mb release date",
+        "asin",
+        "mb album artist",
+        "mb album artist sort name",
+        "mb album artist id",
+        "mime type",
+        "mpx hal volume udi",
+        "mpx hal device udi",
+        "mpx hal volume relative path",
+        "mpx insert path",
+        "mpx location name",
+    };
+
+    const char* mpris_attribute_id_int[] =
+    {
+        "tracknumber",
+        "rating",
+        "year",
+        "mtime",
+        "audio-bitrate",
+        "audio-samplerate",
+        "mpx play count",
+        "mpx play date",
+        "mpx insert date",
+        "mpx is mb album artist",
+        "mpx active",
+        "mpx track id",
+        "mpx album id",
+    };
+
+    gboolean
+    Player::DBusPlayer::get_metadata (DBusPlayer* self,
+                                      GHashTable** metadata,
+                                      GError** error)
+    {
+        MPX::Metadata m = self->player->get_metadata();
+
+        GHashTable * table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+        GValue* value = 0;
+
+        for(int n = ATTRIBUTE_LOCATION; n < N_ATTRIBUTES_STRING; ++n)
+        {
+            if(m[n].is_initialized())
+            {
+                value = g_new0(GValue,1);
+                g_value_init(value, G_TYPE_STRING);
+                g_value_set_string(value, (boost::get<std::string>(m[n].get())).c_str());
+                g_hash_table_insert(table, g_strdup(mpris_attribute_id_str[n]), value);
+            }
+        }
+
+        for(int n = ATTRIBUTE_TRACK; n < N_ATTRIBUTES_INT; ++n)
+        {
+            if(m[n].is_initialized())
+            {
+                value = g_new0(GValue,1);
+                g_value_init(value, G_TYPE_INT64);
+                g_value_set_int64(value, boost::get<gint64>(m[n].get()));
+                g_hash_table_insert(table, g_strdup(mpris_attribute_id_int[n]), value);
+            }
+        }
+
+        *metadata = table;
+        return TRUE;
+    }
+
+
+
 
 #ifdef HAVE_HAL
     Player::Player(const Glib::RefPtr<Gnome::Glade::Xml>& xml,
@@ -1058,6 +1256,8 @@ namespace MPX
             g_warning("%s: Couldn't set main window icon", G_STRLOC);
         }
 
+        IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
+		register_stock_icons();
 
         splash.set_message(_("Initializing Playback Engine"), 0.2);
 
@@ -1068,7 +1268,6 @@ namespace MPX
 		m_Play->property_status().signal_changed().connect( sigc::mem_fun( *this, &MPX::Player::on_play_status_changed ));
 			  
         m_Preferences = Preferences::create(*m_Play);
-
 #ifdef HAVE_HAL
         m_MLibManager = MLibManager::create(obj_hal, obj_library);
 #endif // HAVE_HAL
@@ -1077,18 +1276,12 @@ namespace MPX
         m_numlock_mask = 0;
         m_capslock_mask = 0;
         mmkeys_get_offending_modifiers ();
-
         on_mm_edit_done (); // bootstraps the settings
         m_Preferences->signal_mm_edit_begin().connect( sigc::mem_fun( *this, &Player::on_mm_edit_begin ) );
         m_Preferences->signal_mm_edit_done().connect( sigc::mem_fun( *this, &Player::on_mm_edit_done ) );
 
-        IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
-		register_stock_icons();
-
         m_ref_xml->get_widget("notebook-info", m_InfoNotebook);
         m_ref_xml->get_widget("notebook-sources", m_MainNotebook);
-
-        m_InfoNotebook->hide();
 
 		signals[PSIGNAL_NEW_TRACK] =
 			g_signal_new ("new-track",
@@ -1129,6 +1322,7 @@ namespace MPX
 
 		init_dbus ();
 		DBusObjects.mpx = DBusMPX::create(*this, m_SessionBus);
+        DBusObjects.player = DBusPlayer::create(*this, m_SessionBus);
 
         splash.set_message(_("Loading Plugins"), 0.6);
 	
@@ -1972,6 +2166,11 @@ namespace MPX
 
         if(!album.empty())
     		m_InfoArea->set_text (L_ALBUM, album);
+
+        if(!artist.empty() && !title.empty())
+            set_title((boost::format ("%1% - %2% (MPX)") % artist.c_str() % title.c_str()));
+        else
+            set_title(_("(Unknown Track) - MPX"));
 	}
 
 	void
@@ -2287,6 +2486,8 @@ namespace MPX
 		m_Play->request_status( PLAYSTATUS_STOPPED );
         m_ActiveSource = SOURCE_NONE;
 	  }
+
+      set_title (_("(Not Playing) - MPX"));
 	}
 
 	void
@@ -2456,7 +2657,9 @@ namespace MPX
             Glib::ustring uri; 
             d->get_folder_infos(uri);
             d->hide();
-            m_Library.scanURI(uri);
+            StrV v;
+            v.push_back(uri);
+            m_Library.initScan(v);
         }
     }
 

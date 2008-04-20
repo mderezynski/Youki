@@ -193,6 +193,7 @@ namespace MPX
 
 		class Root; 
 		class DBusMPX; 
+        class DBusPlayer;
 
       protected:
 
@@ -231,6 +232,7 @@ namespace MPX
 		{
 			Root		*root;
 			DBusMPX		*mpx;
+            DBusPlayer  *player;
 		};
 		DBusObjectsT DBusObjects;
 		DBusGConnection * m_SessionBus;

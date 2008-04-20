@@ -53,7 +53,7 @@
 #endif /* !G_ENABLE_DEBUG */
 
 
-/* BOOLEAN:INT,POINTER (/tmp/dbus-binding-tool-c-marshallers.ZN897T:1) */
+/* BOOLEAN:INT,POINTER (/tmp/dbus-binding-tool-c-marshallers.FGMU9T:1) */
 extern void dbus_glib_marshal_mpx_BOOLEAN__INT_POINTER (GClosure     *closure,
                                                                          GValue       *return_value,
                                                                          guint         n_param_values,
@@ -100,7 +100,7 @@ dbus_glib_marshal_mpx_BOOLEAN__INT_POINTER (GClosure     *closure,
   g_value_set_boolean (return_value, v_return);
 }
 
-/* BOOLEAN:POINTER (/tmp/dbus-binding-tool-c-marshallers.ZN897T:2) */
+/* BOOLEAN:POINTER (/tmp/dbus-binding-tool-c-marshallers.FGMU9T:2) */
 extern void dbus_glib_marshal_mpx_BOOLEAN__POINTER (GClosure     *closure,
                                                                      GValue       *return_value,
                                                                      guint         n_param_values,

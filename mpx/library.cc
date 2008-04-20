@@ -1000,30 +1000,32 @@ namespace MPX
     void
     Library::initScan (const StrV & uris, const std::string& name)
     {
-        ScanState.URIV = uris;
-        ScanState.Iter = ScanState.URIV.begin();
+        ScanDataP p (new ScanData);
+        p->URIV = uris;
+        p->Iter = p->URIV.begin();
 
-        scanURI (*ScanState.Iter);
+        m_SQL->exec_sql("BEGIN;");
+        Signals.ScanStart.emit();
+
+        scanURI (p);
     }
 
     void
-    Library::scanURI (const std::string & uri)
+    Library::scanURI (ScanDataP p)
     {
-        ScanDataP p (new ScanData);
-        
         try{
-            p->insert_path = uri; 
+            p->insert_path = *(p->Iter); 
 #ifdef HAVE_HAL
             try{
                 if (m_Flags & F_USING_HAL)
                 {
-                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (uri));
-                    p->insert_path_sql = filename_from_uri(uri).substr (volume.mount_point.length()) ;
+                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (*(p->Iter)));
+                    p->insert_path_sql = filename_from_uri(*(p->Iter)).substr (volume.mount_point.length()) ;
                 }
                 else
 #endif
                 {
-                    p->insert_path_sql = uri;
+                    p->insert_path_sql = *(p->Iter); 
                 }
 #ifdef HAVE_HAL
             }
@@ -1049,7 +1051,7 @@ namespace MPX
 
         if(p->collection.empty())
         {
-            g_message("%s: Nothing to scan for '%s'", G_STRLOC, uri.c_str());
+            g_message("%s: Nothing to scan for '%s'", G_STRLOC, (*(p->Iter)).c_str());
             return;
         }
 
@@ -1063,8 +1065,6 @@ namespace MPX
     void
     Library::scanInit (ScanDataP p)
     {
-        m_SQL->exec_sql("BEGIN;");
-        Signals.ScanStart.emit();
     }
 
     bool
@@ -1105,24 +1105,24 @@ namespace MPX
     void
     Library::scanEnd (bool aborted, ScanDataP p)
     {
-        Signals.ScanEnd.emit(p->added, p->uptodate, p->updated, p->erroneous, p->collection.size());
-
         if( aborted )
         {  
             m_SQL->exec_sql("ROLLBACK;");
         }
         else
-        if(ScanState.Iter != ScanState.URIV.end())
+        if(p->Iter != p->URIV.end())
         {
-            ScanState.Iter++;
-            if(ScanState.Iter != ScanState.URIV.end())
+            p->Iter++;
+            if(p->Iter != p->URIV.end())
             {
-                scanURI(*ScanState.Iter);
+                scanURI(p);
                 return;
             }
         }
+        else
+            m_SQL->exec_sql("COMMIT;");
 
-        m_SQL->exec_sql("COMMIT;");
+        Signals.ScanEnd.emit(p->added, p->uptodate, p->updated, p->erroneous, p->collection.size());
         p.reset();
     }
     

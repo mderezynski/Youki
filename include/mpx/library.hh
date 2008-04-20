@@ -44,16 +44,11 @@ namespace MPX
                 SCAN_RESULT_UPTODATE
             };
 
-            struct ScanStateT
-            {
-                StrV           URIV;
-                StrV::iterator Iter;
-            };
-
-            ScanStateT ScanState;
-
             struct ScanData
             {
+                StrV URIV;
+                StrV::iterator Iter;
+
                 std::string insert_path ;
                 std::string insert_path_sql ;
             
@@ -81,6 +76,15 @@ namespace MPX
             scanRun (ScanDataP);
             void
             scanEnd (bool, ScanDataP);
+            void
+            scanURI(ScanDataP);
+
+        public:
+
+            void
+            initScan (const StrV&, const std::string& = std::string());
+
+        private:
 
             TID m_ScanTID;
             TID M_ScanMETATID;
@@ -109,12 +113,6 @@ namespace MPX
 
 			void
 			execSQL(const std::string&);
-
-            void
-            initScan (const StrV&, const std::string& = std::string());
-
-            void
-            scanURI(const std::string&);
 
 			void
 			vacuum();
