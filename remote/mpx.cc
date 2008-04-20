@@ -60,7 +60,7 @@ namespace
              PACKAGE,
              VERSION);
 
-    g_print (_("\nCopyright (c) 2008 MPX <http://mpx.backtrace.info>\n\n"));
+    g_print (_("\nAudioSource Player Copyright (c) 2008 MPX Project <http://mpx.backtrace.info>\n\n"));
   }
 
   void
@@ -163,7 +163,6 @@ main (int    argc,
       char **argv)
 {
   GError* error = NULL;
-  DBusError dbus_error;
 
   setup_i18n ();
   g_type_init ();
@@ -185,8 +184,6 @@ main (int    argc,
       print_configure ();
       return EXIT_SUCCESS;
   }
-
-  bool startup_only = (argc == 1);
 
   DBusGConnection* dbus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
 
@@ -284,23 +281,23 @@ main (int    argc,
     error = NULL;
   }
 
-  if (!o_mpx)
+  if (!was_running)
   {
     o_mpx = dbus_g_proxy_new_for_name (dbus,
                                        "info.backtrace.mpx",
                                        "/MPX",
                                        "info.backtrace.mpx");
-  }
 
-  dbus_g_proxy_call (o_mpx, "Startup", &error,
-                     G_TYPE_INT,
-                     int(0), 
-                     G_TYPE_INVALID,
-                     G_TYPE_INVALID);
+    dbus_g_proxy_call (o_mpx, "Startup", &error,
+                       G_TYPE_INT,
+                       int(0), 
+                       G_TYPE_INVALID,
+                       G_TYPE_INVALID);
+  }
 
   if (error)
   {
-      g_message ("Domain: %s, code: %d, message: %s", g_quark_to_string (error->domain), error->code, error->message);
+      g_message ("%s: Domain: %s, code: %d, message: %s", G_STRLOC, g_quark_to_string (error->domain), error->code, error->message);
       g_error_free (error);
       error = NULL;
       display_startup_crash ();
@@ -319,134 +316,36 @@ main (int    argc,
 
   g_main_loop_unref (mainloop);
 
-#if 0
-  // Start Sentinel
-  dbus_error_init (&dbus_error);
-  if (!was_running)
-  {
-      uint32_t reply = 0;
-      dbus_bus_start_service_by_name (c_bus,
-                                      "info.backtrace.sentinel",
-                                      uint32_t (0),
-                                      &reply,
-                                      &dbus_error);
-
-      if (dbus_error_is_set (&dbus_error))
-      {
-          print_error (&dbus_error);
-          dbus_error_free (&dbus_error);
-      }
-  }
-#endif
-
-#if 0
   DBusGProxy* o_player = dbus_g_proxy_new_for_name (dbus,  "info.backtrace.mpx",
-                                                           MPX_DBUS_PATH__MPRIS_PLAYER,
-                                                           MPX_DBUS_INTERFACE__MPRIS);
-
-  // Now MPX is running -> process args
-  if (startup_only)
-  {
-      if (was_running)
-      {
-          if (!dbus_g_proxy_call (o_mpx, "UiRaise", &error,
-                                  G_TYPE_INVALID,
-                                  G_TYPE_INVALID))
-          {
-              if (error)
-                print_g_error (&error);
-
-              goto abort;
-          }
-      }
-      goto end;
-  }
-
-  if (arg_p_pause)
-  {
-      if (!dbus_g_proxy_call (o_player, "Pause", &error,
-                              G_TYPE_INVALID,
-                              G_TYPE_INVALID))
-      {
-          if (error)
-            print_g_error (&error);
-          goto abort;
-      }
-  }
-  else
-  if (arg_p_prev)
-  {
-      if (!dbus_g_proxy_call (o_player, "Prev", &error,
-                              G_TYPE_INVALID,
-                              G_TYPE_INVALID))
-      {
-          if (error)
-            print_g_error (&error);
-          goto abort;
-      }
-  }
-  else
-  if (arg_p_next)
-  {
-      if (!dbus_g_proxy_call (o_player, "Next", &error,
-                              G_TYPE_INVALID,
-                              G_TYPE_INVALID))
-      {
-          if (error)
-            print_g_error (&error);
-          goto abort;
-      }
-  }
-  else if (arg_add_files)
-  {
-      char** uri_list = g_new0 (char*, argc+1);
-
-      int n;
-      for (n = 1; n < argc; n++)
-      {
-          GError* error = NULL;
-
-          std::string filename;
-
-          if (argv[n][0] != G_DIR_SEPARATOR)
-              filename = Glib::build_filename (Glib::getenv ("PWD"), argv[n]);
-          else
-              filename = argv[n];
-
-          char* uri = g_filename_to_uri (filename.c_str (), NULL, &error);
-
-          if (error)
-          {
-              g_error_free (error);
-              error = NULL;
-          }
-
-          uri_list[n-1] = uri;
-      }
-
-      if (!dbus_g_proxy_call (o_player, "PlayUris", &error,
-                              G_TYPE_STRV, uri_list,
-                              G_TYPE_INVALID,
-                              G_TYPE_INVALID))
-      {
-          if (error)
-            print_g_error (&error);
-          goto abort;
-      }
-
-      g_strfreev (uri_list);
-  }
-  else
-  if (arg_add_uris || (argc > 1)) // we assume all remainders passed are URIs
+                                                           "/Player",
+                                                           "org.freedesktop.MediaPlayer");
+  if (argc > 1)
   {
       char** uri_list = g_new0 (char*, argc+1);
 
       for (int n = 1; n < argc; n++)
       {
-          uri_list[n-1] = g_strdup (argv[n]);
+          if(argv[n][0] == '/')
+          {
+            uri_list[n-1] = g_filename_to_uri(argv[n], NULL, NULL);
+          }
+          else
+          if(strncmp(argv[0], "file://", 7))
+          {
+            char path[PATH_MAX];
+            (void)getcwd(path, PATH_MAX);
+            char * full_path = g_build_filename(path, argv[n], NULL);
+            char * uri = g_filename_to_uri(full_path, NULL, NULL);
+            g_free(full_path);
+            uri_list[n-1] = uri;
+          }
+          else
+          {
+            uri_list[n-1] = g_strdup (argv[n]);
+          }
       }
 
-      if (!dbus_g_proxy_call (o_player, "PlayUris", &error,
+      if (!dbus_g_proxy_call (o_player, "PlayTracks", &error,
                               G_TYPE_STRV, uri_list,
                               G_TYPE_INVALID,
                               G_TYPE_INVALID))
@@ -458,14 +357,9 @@ main (int    argc,
 
       g_strfreev (uri_list);
   }
-#endif
 
- end:
-
-#if 0
   if (o_player)
     g_object_unref (o_player);
-#endif
 
   if (o_bus)
     g_object_unref (o_bus);
@@ -477,10 +371,8 @@ main (int    argc,
 
 abort:
 
-#if 0
   if (o_player)
     g_object_unref (o_player);
-#endif
 
   if (o_bus)
     g_object_unref (o_bus);

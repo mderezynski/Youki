@@ -1,10 +1,11 @@
 bin_PROGRAMS = mpx 
 
-dist_bin_SCRIPTS = 
+dist_bin_SCRIPTS =		\
+	mpx-play-uris 
 
-mpx_LDADD =			\
-	$(GLIBMM_LIBS)	\
-	$(GTK_LIBS)		\
+mpx_LDADD =				\
+	$(GLIBMM_LIBS)		\
+	$(GTK_LIBS)			\
 	$(DBUS_LIBS)
 
 mpx_CXXFLAGS =			\
@@ -12,5 +13,5 @@ mpx_CXXFLAGS =			\
 	$(GTK_CFLAGS)		\
 	$(DBUS_CFLAGS)		
 
-mpx_SOURCES =	\
+mpx_SOURCES =			\
     mpx.cc
