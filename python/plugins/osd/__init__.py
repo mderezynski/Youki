@@ -96,7 +96,7 @@ class OSD(gtk.Window):
             cr.fill()
 
             cr.set_operator(cairo.OPERATOR_SOURCE)
-            self.rounded_rect(cr, x, y, width, height, 8.)
+            self.rounded_rect(cr, x, y, width, height, 10.)
             cr.set_source_rgba(1., 1., 1., 0.8)
             cr.fill_preserve()
             cr.set_source_rgba(0., 0., 0., 0.6)

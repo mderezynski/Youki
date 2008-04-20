@@ -74,7 +74,7 @@ namespace Mcs
                 if(!domain_key_exist(domain, key))
                     throw NO_KEY;
 
-              MKeys & keys = domains.find(domain)->second;
+              KeysT & keys = domains.find(domain)->second;
               Key & k = keys.find(key)->second;
               return k;
             }
@@ -86,7 +86,7 @@ namespace Mcs
             {
               g_return_if_fail(domain_key_exist (domain, key));
 
-              MKeys & keys = domains.find(domain)->second;
+              KeysT & keys = domains.find(domain)->second;
               Key & k = keys.find(key)->second;
               k.set_value<T>(value);
             }
@@ -108,7 +108,7 @@ namespace Mcs
               if(!domain_key_exist(domain,key))
                   throw NO_KEY;
 
-              MKeys & keys = domains.find (domain)->second;
+              KeysT & keys = domains.find (domain)->second;
               Key & k = keys.find (key)->second;
               k.push ();
             }
@@ -130,10 +130,10 @@ namespace Mcs
 
           private:
 
-            typedef std::map<std::string /* Key Name */, Key>   MKeys;
-            typedef std::map<std::string /* Domain name */, MKeys>  MDomains;
+            typedef std::map<std::string /* Key Name */, Key>   KeysT;
+            typedef std::map<std::string /* Domain name */, KeysT>  DomainsT;
 
-            MDomains domains;
+            DomainsT domains;
             std::string xml_filename;
             std::string root_node_name;
             double version;

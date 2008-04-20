@@ -1045,6 +1045,16 @@ namespace MPX
     , m_HAL(obj_hal)
 #endif // HAVE_HAL
    {
+        try{
+            std::list<Glib::RefPtr<Gdk::Pixbuf> > icon_list;
+            icon_list.push_back(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "icons" G_DIR_SEPARATOR_S "mpx.png")));
+            set_icon_list(icon_list);
+        } catch (Gdk::PixbufError & cxe)
+        {
+            g_warning("%s: Couldn't set main window icon", G_STRLOC);
+        }
+
+
         m_Play = new Play();
 		m_Play->signal_eos().connect( sigc::mem_fun( *this, &MPX::Player::on_play_eos ));
 		m_Play->signal_position().connect( sigc::mem_fun( *this, &MPX::Player::on_play_position ));
@@ -1341,10 +1351,11 @@ namespace MPX
 		m_Sources->sourceChanged().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
 
-		show_all ();
 		DBusObjects.mpx->startup_complete(DBusObjects.mpx);
 
-		on_show_info_toggled();
+        move( mcs->key_get<int>("mpx", "window-x"), mcs->key_get<int>("mpx", "window-y") );
+        resize( mcs->key_get<int>("mpx", "window-w"), mcs->key_get<int>("mpx", "window-h") );
+		show ();
     }
 
     bool
@@ -1882,6 +1893,8 @@ namespace MPX
 		DBusObjects.mpx->shutdown_complete(DBusObjects.mpx); 
 		g_object_unref(G_OBJECT(DBusObjects.mpx));
 		delete m_PluginManager;
+        Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-y")));
+        Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-h")));
     }
 
 	void
