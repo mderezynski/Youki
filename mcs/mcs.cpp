@@ -1,5 +1,5 @@
 //  MCS
-//  Copyright (C) 2005-2006 M. Derezynski 
+//  Copyright (C) 2005-2006 M.Derezynski 
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License Version 2 as published
@@ -7,7 +7,7 @@
 //
 //  This program is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 //  GNU General Public License for more details.
 //
 //  --
@@ -147,26 +147,25 @@ namespace Mcs
         version_str << this->version;
 
         //root node
-        root_node = xmlNewNode (0, BAD_CAST root_node_name. c_str ());
+        root_node = xmlNewNode (0, BAD_CAST root_node_name.c_str ());
         xmlSetProp (root_node, BAD_CAST "version", BAD_CAST (version_str.str().c_str()));
         xmlDocSetRootElement (doc, root_node);
           
-        for (MDomains::iterator iter = domains. begin (); iter != domains. end (); iter++)
+        for (DomainsT::iterator iter = domains.begin (); iter != domains.end (); iter++)
         {
           std::string domain = (iter->first); 
-          MKeys &keys = (iter->second);
-          xmlNodePtr domain_node;
+          KeysT & keys = (iter->second);
 
-          //domain node
+          xmlNodePtr domain_node;
           domain_node = xmlNewNode (0, BAD_CAST "domain"); 
-          xmlSetProp (domain_node, BAD_CAST("id"), BAD_CAST(domain. c_str ()));
+          xmlSetProp (domain_node, BAD_CAST("id"), BAD_CAST(domain.c_str ()));
           xmlAddChild (root_node, domain_node);
           
-          for (MKeys::iterator iter = keys. begin (); iter !=  keys. end (); iter ++)
+          for (KeysT::iterator iter = keys.begin (); iter !=  keys.end (); iter ++)
           {
                 std::string key = iter->first; 
-                const KeyVariant &variant = (iter->second). get_value ();
-                KeyType type = (iter->second). get_type ();
+                KeyVariant const& variant = (iter->second).get_value ();
+                KeyType type = (iter->second).get_type ();
 
                 xmlNodePtr key_node;
                 std::stringstream value_str;
@@ -206,13 +205,13 @@ namespace Mcs
 
                 key_node = xmlNewTextChild (domain_node, 0,
                                             BAD_CAST ("key"),
-                                            BAD_CAST (value_str. str (). c_str ())); 
+                                            BAD_CAST (value_str.str ().c_str ())); 
 
                 xmlSetProp (key_node, BAD_CAST ("id"),
-                                      BAD_CAST (key. c_str ()));
+                                      BAD_CAST (key.c_str ()));
 
                 xmlSetProp (key_node, BAD_CAST ("type"),
-                                      BAD_CAST (prop. c_str()));
+                                      BAD_CAST (prop.c_str()));
           }
         }
 
@@ -232,15 +231,15 @@ namespace Mcs
           return;
   
         xmlDocPtr doc;
-        doc = xmlParseFile (xml_filename. c_str ());
+        doc = xmlParseFile (xml_filename.c_str ());
       
         //Traverse all registered keys and set the default value
-        for (MDomains::iterator iter = domains. begin (); iter != domains. end (); iter++)
+        for (DomainsT::iterator iter = domains.begin (); iter != domains.end (); iter++)
         {
           std::string domain = (iter->first); 
-          MKeys &keys = (iter->second);
+          KeysT &keys = (iter->second);
 
-          for (MKeys::iterator iter = keys.begin (); iter !=  keys.end(); iter++)
+          for (KeysT::iterator iter = keys.begin (); iter !=  keys.end(); iter++)
             {
                 KeyType type = iter->second.get_type ();
                 std::string const& key  (iter->first); 
@@ -255,7 +254,7 @@ namespace Mcs
                 
                 xpath << "/" << root_node_name << "/domain[@id='" << domain << "']/key[@id='" << key << "']";
                 xpathObj = xml_execute_xpath_expression (doc,
-                              BAD_CAST (xpath. str (). c_str ()),
+                              BAD_CAST (xpath.str ().c_str ()),
                               BAD_CAST ("mcs=http://backtrace.info/ns/0/mcs"));
 
                 if (!xpathObj)
@@ -299,7 +298,7 @@ namespace Mcs
                       break;
 
                   case KEY_TYPE_BOOL:
-                      variant = (!nodeval. compare ("TRUE")) ? true : false;
+                      variant = (!nodeval.compare ("TRUE")) ? true : false;
                       break;
 
                   case KEY_TYPE_STRING:
@@ -335,7 +334,7 @@ namespace Mcs
       Mcs::domain_register (std::string const& domain)
       {
         g_return_if_fail (domains.find (domain) == domains.end());
-		domains[domain] = MKeys();
+		domains[domain] = KeysT();
       }
 
       void

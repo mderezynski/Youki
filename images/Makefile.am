@@ -1,6 +1,7 @@
 images_DATA =				\
 		disc-default.png 	\
 		play.png			\
+		splash.png			\
 		stars0.png			\
 		stars1.png			\
 		stars2.png			\

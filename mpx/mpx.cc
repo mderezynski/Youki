@@ -46,11 +46,10 @@
 #include <gdk/gdkx.h>
 
 #include "mpx.hh"
+
 #include "mpx-py.hh"
 
 #include "mpx/stock.hh"
-#include "stock-register.hh"
-
 #include "mpx/uri.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-graphics.hh"
@@ -70,6 +69,8 @@
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
 #include "play.hh"
+#include "splash-screen.hh"
+#include "stock-register.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -1045,6 +1046,21 @@ namespace MPX
     , m_HAL(obj_hal)
 #endif // HAVE_HAL
    {
+        Splashscreen splash;
+        splash.set_message(_("Startup..."), 0.);
+
+        try{
+            std::list<Glib::RefPtr<Gdk::Pixbuf> > icon_list;
+            icon_list.push_back(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "icons" G_DIR_SEPARATOR_S "mpx.png")));
+            set_icon_list(icon_list);
+        } catch (Gdk::PixbufError & cxe)
+        {
+            g_warning("%s: Couldn't set main window icon", G_STRLOC);
+        }
+
+
+        splash.set_message(_("Initializing Playback Engine"), 0.2);
+
         m_Play = new Play();
 		m_Play->signal_eos().connect( sigc::mem_fun( *this, &MPX::Player::on_play_eos ));
 		m_Play->signal_position().connect( sigc::mem_fun( *this, &MPX::Player::on_play_position ));
@@ -1109,8 +1125,12 @@ namespace MPX
 		m_DiscDefault = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR,
 			build_filename("images","disc-default.png")))->scale_simple(64,64,Gdk::INTERP_BILINEAR);
 
+        splash.set_message(_("Setting up DBus"), 0.4);
+
 		init_dbus ();
 		DBusObjects.mpx = DBusMPX::create(*this, m_SessionBus);
+
+        splash.set_message(_("Loading Plugins"), 0.6);
 	
 		/*------------------------ Load Plugins -------------------------------------------------*/
 		// This also initializes Python for us and hence it's of utmost importance it is kept
@@ -1244,6 +1264,8 @@ namespace MPX
 
         add_accel_group (m_ui_manager->get_accel_group());
 
+        splash.set_message(_("Loading Sources"), 0.8);
+
 		/*------------------------ Load Sources --------------------------------------------------*/ 
         m_Sources = new Sources(xml);
         m_ref_xml->get_widget("statusbar", m_Statusbar);
@@ -1341,10 +1363,13 @@ namespace MPX
 		m_Sources->sourceChanged().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
 
-		show_all ();
+        splash.set_message(_("Startup Complete"), 1.0);
+
 		DBusObjects.mpx->startup_complete(DBusObjects.mpx);
 
-		on_show_info_toggled();
+        resize( mcs->key_get<int>("mpx", "window-w"), mcs->key_get<int>("mpx", "window-h") );
+        move( mcs->key_get<int>("mpx", "window-x"), mcs->key_get<int>("mpx", "window-y") );
+		show ();
     }
 
     bool
@@ -1879,6 +1904,8 @@ namespace MPX
 
     Player::~Player()
     {
+        Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-y")));
+        Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-h")));
 		DBusObjects.mpx->shutdown_complete(DBusObjects.mpx); 
 		g_object_unref(G_OBJECT(DBusObjects.mpx));
 		delete m_PluginManager;

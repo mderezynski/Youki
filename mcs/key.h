@@ -34,7 +34,12 @@ namespace Mcs
                 {
                 }
 
-                operator T ()
+                operator T& ()
+                {
+                    return boost::get<T>(m_key.m_value);
+                }
+
+                operator T () const
                 {
                     return T(m_key);
                 }

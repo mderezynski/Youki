@@ -180,6 +180,9 @@ mpx_bin_SOURCES =				\
 	request-value.hh			\
 	request-value.cc			\
 								\
+	splash-screen.hh			\
+	splash-screen.cc			\
+								\
 	sql.hh						\
 	sql.cc						\
 								\

@@ -96,7 +96,7 @@ class OSD(gtk.Window):
             cr.fill()
 
             cr.set_operator(cairo.OPERATOR_SOURCE)
-            self.rounded_rect(cr, x, y, width, height, 8.)
+            self.rounded_rect(cr, x+2, y+2, width-4, height-4, 10.)
             cr.set_source_rgba(1., 1., 1., 0.8)
             cr.fill_preserve()
             cr.set_source_rgba(0., 0., 0., 0.6)
@@ -116,6 +116,9 @@ class OSD(gtk.Window):
                 fontw, fonth = layout.get_pixel_size()
                 if max_layout_width < fontw:
                     max_layout_width = fontw
+
+            if max_layout_width < 300:
+                max_layout_width = 300
 
             x_origin = self.INNER_PADDING
 

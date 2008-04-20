@@ -186,6 +186,10 @@ namespace
 	  mcs->key_register ("mpx", "repeat", false);
 	  mcs->key_register ("mpx", "enable-autoplay", false);
 	  mcs->key_register ("mpx", "spm-listen", false);
+      mcs->key_register ("mpx", "window-x", 20);
+      mcs->key_register ("mpx", "window-y", 20);
+      mcs->key_register ("mpx", "window-w", 400);
+      mcs->key_register ("mpx", "window-h", 5000);
 
 	  mcs->domain_register ("audio");
 	  mcs->key_register ("audio", "band0", 0.0);
