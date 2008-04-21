@@ -1792,15 +1792,15 @@ namespace Source
     {
         player.get_object(m_Lib);
         player.get_object(m_HAL);
+        player.get_object(m_Covers);
 
         m_Private = new MusicLibPrivate(player,*this);
-        m_Private->m_TreeViewPlaylist->signal_row_activated().connect( sigc::mem_fun( *this,
-            &PlaybackSourceMusicLib::on_plist_row_activated ) );
+        m_Private->m_TreeViewPlaylist->signal_row_activated().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_row_activated ) );
 
         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
 
-        m_PluginManager = new PlaylistPluginManager();
+        m_PluginManager = new PlaylistPluginManager( m_Lib.get(), m_Covers.get(), this );
         std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"playlist-py");
         if(file_test(user_path, FILE_TEST_EXISTS))
             m_PluginManager->append_search_path (user_path);
@@ -1909,7 +1909,7 @@ namespace Source
     PlaybackSourceMusicLib::action_cb_run_plugin (gint64 id)
     {
         TrackIdV v;
-        m_PluginManager->run( id, m_Lib.get(), this );
+        m_PluginManager->run( id ); 
     }
 
     void

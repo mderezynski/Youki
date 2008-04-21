@@ -293,11 +293,25 @@ namespace mpxpy
 	{
 		obj.remove_info_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false));
 	}
+}
 
+namespace mpxpy
+{
 	PyObject*
 	tag_view_get_gobject (MPX::TagView & obj)
 	{
 		return pygobject_new((GObject*)(obj.gobj()));
+	}
+}
+
+namespace mpxpy
+{
+    Glib::RefPtr<Gdk::Pixbuf>
+	covers_fetch (MPX::Covers & obj, std::string const& mbid)
+	{
+        Glib::RefPtr<Gdk::Pixbuf> cover (0);
+        obj.fetch(mbid, cover);
+        return cover; // if it stays 0, the converter takes care of it
 	}
 }
 
@@ -432,6 +446,46 @@ BOOST_PYTHON_MODULE(mpx)
 	;
 
 	/*-------------------------------------------------------------------------------------*/
+
+#if 0
+	enum_<MPX::SQLID>("SQLID")
+      .value("LOCATION", "location") 
+      .value("TITLE", "title") 
+      .value("GENRE", "genre") 
+      .value("COMMENT", "comment")
+      .value("MUSICIP_PUID", "musicip_puid") 
+      .value("HASH", "hash") 
+      .value("MB_TRACK_ID", "mb_track_id") 
+      .value("ARTIST", "artist") 
+      .value("ARTIST_SORTNAME", "artist_sortname") 
+      .value("MB_ARTIST_ID", "mb_artist_id") 
+      .value("ALBUM", "album")
+      .value("MB_ALBUM_ID", "mb_album_id")
+      .value("MB_RELEASE_DATE", "mb_release_date") 
+      .value("ASIN", "amazon_asin") 
+      .value("ALBUM_ARTIST", "album_artist") 
+      .value("ALBUM_ARTIST_SORTNAME", "album_artist_sortname") 
+      .value("MB_ALBUM_ARTIST_ID", "mb_album_artist_id")
+      .value("TYPE", "type")
+      .value("HAL_VOLUME_UDI", "hal_volume_udi")
+      .value("HAL_DEVICE_UDI", "hal_device_udi")
+      .value("VOLUME_RELATIVE_PATH", "hal_vrp")
+      .value("INSERT_PATH", "insert_path")
+      .value("LOCATION_NAME", "location_name")
+      .value("TRACK", "track")
+      .value("TIME", "time")
+      .value("RATING", "rating")
+      .value("DATE", "date")
+      .value("MTIME", "mtime")
+      .value("BITRATE", "bitrate")
+      .value("SAMPLERATE", "samplerate")
+      .value("PLAYCOUNT", "pcount")
+      .value("PLAYDATE", "pdate")
+      .value("IS_MB_ALBUM_ARTIST", "is_mb_album_artist")
+      .value("ACTIVE", "active")
+      .value("MPX_ID", "id")
+	;
+#endif
 
 	enum_<MPX::AttributeId>("AttributeId")
       .value("LOCATION", MPX::MPX_ATTRIBUTE_LOCATION)
@@ -664,6 +718,6 @@ BOOST_PYTHON_MODULE(mpx)
     /*-------------------------------------------------------------------------------------*/
 
     class_<MPX::Covers, boost::noncopyable>("Covers", boost::python::no_init)
-        .def("fetch", (MPX::Covers::FetchFunc) &MPX::Covers::fetch)
+        .def("fetch", &mpxpy::covers_fetch)
     ;
 }

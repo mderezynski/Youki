@@ -17,7 +17,11 @@ import csv
 import time
 
 class Ratings(mpx_playlist.PlaylistPlugin):
-	def __init__(self):
+	def __init__(self, lib, covers, mlib):
+
+        self.lib = lib
+        self.mlib = mlib
+        self.covers = covers
 
 		self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-py/ratings_export/ratings_export.glade")
 		self.dialog = self.xml.get_widget("dialog")
@@ -110,7 +114,7 @@ class Ratings(mpx_playlist.PlaylistPlugin):
 			return
 
 		rv = mpx.SQLRowV()
-		lib.getSQL(rv, "SELECT mb_album_id, album_rating FROM album WHERE mb_album_id AND album_rating IS NOT NULL")
+		self.lib.getSQL(rv, "SELECT mb_album_id, album_rating FROM album WHERE mb_album_id AND album_rating IS NOT NULL")
 
 		for row in rv:
 
@@ -136,14 +140,14 @@ class Ratings(mpx_playlist.PlaylistPlugin):
 			csvreader = csv.reader(open(path, "rb"))
 			line = 0
 			for row in csvreader:
-				lib.execSQL("UPDATE track SET rating = '" + row[1] + "' WHERE mb_track_id = '" + row[0] + "'")
+				self.lib.execSQL("UPDATE track SET rating = '" + row[1] + "' WHERE mb_track_id = '" + row[0] + "'")
 				line = line + 1
 			print ">> " + str(line) + " tracks updated"
 		except IOError:
 			print ">> Cannot open file or is not parsable" + file
 			return False
 
-	def run(self,lib,mlib):
+	def run(self):
 		print ">> Ratings Import/Export Plugin running"
 		ret = self.dialog.run()
 		self.dialog.hide()

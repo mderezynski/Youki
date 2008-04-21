@@ -44,9 +44,10 @@ using namespace Glib;
 
 namespace MPX
 {
-	PlaylistPluginManager::PlaylistPluginManager (MPX::Library & obj_library, MPX::Source::PlaybackSourceMusicLib * obj_musiclib)
+	PlaylistPluginManager::PlaylistPluginManager (MPX::Library & obj_library, MPX::Covers & obj_covers, MPX::Source::PlaybackSourceMusicLib * obj_musiclib)
 	: m_Id(1)
     , m_Lib(obj_library)
+    , m_Covers(obj_covers)
     , m_MusicLib(obj_musiclib)
 	{
 		try {
@@ -124,12 +125,19 @@ namespace MPX
 						{
 							PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 
-                            object instance = boost::python::call<object>(value, boost::ref(m_Lib), boost::ref(m_MusicLib)); 
-							if(!instance)
-							{
-								PyErr_Print();
-								continue;
-							}
+                            object instance;
+                            try{
+                                instance = boost::python::call<object>(value, boost::ref(m_Lib), boost::ref(m_Covers), boost::ref(m_MusicLib)); 
+                                if(!instance)
+                                {
+                                    PyErr_Print();
+                                    continue;
+                                }
+                            } catch( error_already_set )
+                            {
+                                    PyErr_Print();
+                                    continue;
+                            }
 
 							PlaylistPluginHolderRefP ptr = PlaylistPluginHolderRefP(new PlaylistPluginHolder);
 							ptr->m_PluginInstance = instance.ptr();
@@ -209,7 +217,7 @@ namespace MPX
 
 		try{
 			object instance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			instance.attr("run");
+			instance.attr("run")();
 		} catch( error_already_set ) 
 		{
 			PyErr_Print();

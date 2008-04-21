@@ -1,0 +1,142 @@
+#
+# -*- coding: utf-8 -*-
+# -*- mode:python ; tab-width:4 -*- ex:set tabstop=4 shiftwidth=4 expandtab: -*-
+#
+# MPX Trackinfo
+# (C) 2008 M. Derezynski
+#
+
+import mpx
+import mpx_playlist
+import time
+import pygtk
+pygtk.require('2.0')
+import gtk
+import gobject
+import gtk.glade
+import urllib
+import random
+import struct
+import math
+from Ft.Xml.XPath.Context import Context
+from Ft.Xml.XPath import Evaluate
+from Ft.Xml.Domlette import NonvalidatingReader
+from Ft.Xml import EMPTY_NAMESPACE
+#import musicbrainz2
+#import musicbrainz2.webservice as ws
+
+class LastFMVis(mpx_playlist.PlaylistPlugin):
+
+    def __init__(self,lib,covers,mlib):
+
+        self.lib = lib
+        self.covers = covers
+        self.mlib = mlib
+
+        self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-py/lastfmvis/lastfmvis.glade")
+        self.window = self.xml.get_widget("window")
+        self.treeview = self.xml.get_widget("treeview")
+        self.alignment = self.xml.get_widget("alignment")
+        self.clear = self.xml.get_widget("clear")
+        self.clear.connect("clicked", self.on_clear)
+        self.tagview = mpx.TagView()
+        self.alignment.add(self.tagview.get_widget())
+        self.tagview.get_widget().show()
+
+        # Setup TreeView
+        tgts = [('mpx-album', 0, 0)]
+        self.treeview.drag_dest_set(gtk.DEST_DEFAULT_ALL, tgts, gtk.gdk.ACTION_COPY)
+        cell1 = gtk.CellRendererPixbuf()
+        cell2 = gtk.CellRendererText()
+        cell2.set_property("yalign", 0.)
+        col = gtk.TreeViewColumn('')
+        col.pack_start(cell1, False)
+        col.pack_start(cell2, True)
+        col.add_attribute(cell1, "pixbuf", 0)
+        col.add_attribute(cell2, "markup", 1)
+        self.treeview.append_column(col)
+        self.model = gtk.ListStore(gtk.gdk.Pixbuf, str)
+        self.treeview.set_model(self.model)
+        self.treeview.connect("drag-data-received", self.on_treeview_ddr)
+
+        self.tags = None
+
+    def on_clear(self, button):
+
+        self.model.clear()
+        self.tags = None
+
+    def intersect(self, new_tags):
+
+        tag_hash1 = {}
+        tag_hash2 = {}
+        for tag in self.tags:
+                tag_hash1[tag[0]] = tag[1]
+        
+        for tag in new_tags:
+                tag_hash2[tag[0]] = tag[1]
+
+        tag_result = []
+        for name, ampl in tag_hash1.items():
+            if name in tag_hash2:
+                tag_result.append([name, ampl])
+        
+        return tag_result
+
+    def get_album_tlst(self, artist, album):
+
+        uri = u"http://ws.audioscrobbler.com/1.0/artist/%s/toptags.xml" % (urllib.quote(artist))
+        print uri
+        lastfm = NonvalidatingReader.parseUri(uri)
+        ctx = Context(lastfm)
+
+        tlst = [] 
+        cnts = []
+        n_xml = Evaluate("//name", context=ctx)
+        c_xml = Evaluate("//count", context=ctx)
+
+        for cnt in c_xml:
+            if cnt.firstChild:
+                cnts.append(float(math.log10((float(cnt.firstChild.data) * 5)+1)))
+
+        for nam in n_xml:
+            if nam.firstChild:
+                tlst.append([str(nam.firstChild.data), cnts[n_xml.index(nam)]])
+
+        return tlst
+
+    def on_treeview_ddr(self, widget, context, x, y, seldata, info, timestamp):
+       
+        self.tagview.clear()
+ 
+        album_id = struct.unpack("q", seldata.data)[0]
+        context.finish(True, False, timestamp)
+
+        rv = mpx.SQLRowV()
+        self.lib.getSQL(rv, "SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %d" % album_id)
+        row = rv[0]
+
+        if "mb_album_id" in row:
+        
+            mbid  = row["mb_album_id"].get_string()
+            cover = self.covers.fetch(mbid).scale_simple(72, 72, gtk.gdk.INTERP_BILINEAR)
+            album = row["album"].get_string()
+            self.model.append([cover, "<b>%s</b>" % album])
+
+            tlst = self.get_album_tlst(row["album_artist"].get_string(), album)
+
+            if self.tags:
+                self.tags = self.intersect(tlst) 
+            else:
+                self.tags = tlst
+
+            random.shuffle(self.tags)
+            for lst in self.tags:
+                self.tagview.add_tag(lst[0], lst[1])
+
+        return True
+
+    def run(self):
+
+        self.window.show()
+        self.window.present()

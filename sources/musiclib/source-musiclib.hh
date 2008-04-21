@@ -89,13 +89,16 @@ namespace Source
         class PlaybackSourceMusicLib
             :   public PlaybackSource
         {
-                MusicLibPrivate * m_Private;
                 Glib::RefPtr<Gtk::UIManager> m_MainUIManager;
                 Glib::RefPtr<Gtk::ActionGroup> m_MainActionGroup;
+                std::string m_MergedUI;
+
+                MusicLibPrivate * m_Private;
                 PlaylistPluginManager *m_PluginManager;
+
                 PAccess<MPX::Library> m_Lib;
                 PAccess<MPX::HAL> m_HAL;
-                std::string m_MergedUI;
+                PAccess<MPX::Covers> m_Covers;
     
                 void
                 on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);

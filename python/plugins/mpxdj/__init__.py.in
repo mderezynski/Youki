@@ -28,7 +28,11 @@ MATCH_NODE_XPATH = u'//match'
 
 
 class MPXDJ(mpx_playlist.PlaylistPlugin):
-    def __init__(self):
+    def __init__(self,lib,covers,mlib):
+        
+        self.lib = lib
+        self.mlib = mlib
+        self.covers = covers
 
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-py/mpxdj/mpxdj.glade")
         self.dialog = self.xml.get_widget("dialog")
@@ -269,12 +273,12 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 
         return self.icon
 
-    def run(self,lib,mlib):
+    def run(self):
         print ">> MPXDJ Running"
         ret = self.dialog.run()
         idv = mpx_playlist.TrackIdVector()
         if(ret == gtk.RESPONSE_OK):
-            self.callables[self.combo.get_active()](lib, idv)
+            self.callables[self.combo.get_active()](self.lib, idv)
         if idv:
-            mlib.play_tracks(idv, self.play.get_active())
+            self.mlib.play_tracks(idv, self.play.get_active())
         self.dialog.hide()
