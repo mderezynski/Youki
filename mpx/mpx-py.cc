@@ -641,7 +641,7 @@ BOOST_PYTHON_MODULE(mpx)
     /* HAL */
 	/*-------------------------------------------------------------------------------------*/
 
-    class_<MPX::HAL::Volume>("MPXHalVolume", boost::python::init<>())   
+    class_<MPX::HAL::Volume>("HalVolume", boost::python::init<>())   
         .def_readwrite("volume_udi", &MPX::HAL::Volume::volume_udi)
         .def_readwrite("device_udi", &MPX::HAL::Volume::device_udi)
         .def_readwrite("label", &MPX::HAL::Volume::label)
@@ -663,7 +663,7 @@ BOOST_PYTHON_MODULE(mpx)
     /* Covers */
     /*-------------------------------------------------------------------------------------*/
 
-    class_<MPX::Covers, boost::noncopyable>("MPXCovers", boost::python::no_init)
+    class_<MPX::Covers, boost::noncopyable>("Covers", boost::python::no_init)
         .def("fetch", (MPX::Covers::FetchFunc) &MPX::Covers::fetch)
     ;
 }

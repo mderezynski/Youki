@@ -44,8 +44,10 @@ using namespace Glib;
 
 namespace MPX
 {
-	PlaylistPluginManager::PlaylistPluginManager ()
+	PlaylistPluginManager::PlaylistPluginManager (MPX::Library & obj_library, MPX::Source::PlaybackSourceMusicLib * obj_musiclib)
 	: m_Id(1)
+    , m_Lib(obj_library)
+    , m_MusicLib(obj_musiclib)
 	{
 		try {
 			mpx_playlist_py_init();
@@ -122,15 +124,16 @@ namespace MPX
 						{
 							PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 
-							PyObject * instance = PyObject_CallObject(value, NULL);
-							if(instance == NULL)
+                            object instance = boost::python::call<object>(value, boost::ref(m_Lib), boost::ref(m_MusicLib)); 
+							if(!instance)
 							{
 								PyErr_Print();
 								continue;
 							}
 
 							PlaylistPluginHolderRefP ptr = PlaylistPluginHolderRefP(new PlaylistPluginHolder);
-							ptr->m_PluginInstance = instance;
+							ptr->m_PluginInstance = instance.ptr();
+                            Py_INCREF(instance.ptr());
 
                             if(PyObject_HasAttrString(module, "__doc__"))
                             {
@@ -148,11 +151,10 @@ namespace MPX
                             }
 
 							try{
-								object ccinstance = object((handle<>(borrowed(ptr->m_PluginInstance))));
-								object ccicon =	ccinstance.attr("icon");
-								if(ccicon.ptr())
+								object icon = instance.attr("icon");
+								if(icon.ptr())
 								{
-									ptr->m_Icon = Glib::wrap(((GdkPixbuf*)(pygobject_get(ccicon.ptr()))), true);
+									ptr->m_Icon = Glib::wrap(((GdkPixbuf*)(pygobject_get(icon.ptr()))), true);
 								}
 							} catch( error_already_set )
 							{
@@ -200,14 +202,14 @@ namespace MPX
 	}
 
 	void
-	PlaylistPluginManager::run(gint64 id, MPX::Library & lib, MPX::Source::PlaybackSourceMusicLib * mlib)
+	PlaylistPluginManager::run(gint64 id)
 	{
 		PlaylistPluginHoldMap::iterator i = m_Map.find(id);
 		g_return_if_fail(i != m_Map.end());
 
 		try{
-			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			ccinstance.attr("run")(boost::ref(lib), boost::ref(*mlib));
+			object instance = object((handle<>(borrowed(i->second->m_PluginInstance))));
+			instance.attr("run");
 		} catch( error_already_set ) 
 		{
 			PyErr_Print();

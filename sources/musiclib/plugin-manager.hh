@@ -91,7 +91,7 @@ namespace MPX
     {
 		public:
 	
-			PlaylistPluginManager ();
+			PlaylistPluginManager (MPX::Library&, MPX::Source::PlaybackSourceMusicLib*); 
 			~PlaylistPluginManager ();
 	
 			void
@@ -104,13 +104,15 @@ namespace MPX
 			get_map () const;
 		
 			void	
-			run (gint64 /*id*/, MPX::Library&, MPX::Source::PlaybackSourceMusicLib*); 
+			run (gint64 /*id*/);
 	
 		private:
 
 			PlaylistPluginHoldMap m_Map;	
 			std::vector<std::string> m_Paths;
 			gint64 m_Id;
+			MPX::Library & m_Lib;
+			MPX::Source::PlaybackSourceMusicLib * m_MusicLib; 
     };
 }
 #endif

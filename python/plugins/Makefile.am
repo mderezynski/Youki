@@ -1,9 +1,10 @@
-SUBDIRS = 				\
-		audioscrobbler 		\
-		mpxdj			\
+SUBDIRS =			        \
+		audioscrobbler		\
+        lastfmvis           \
+		mpxdj			    \
 		ratings_export		\
 		notification		\
-		osd			\
-		pidgin			\
-		trackinfo		\
+		osd			        \
+		pidgin			    \
+		trackinfo		    \
 		tracktags

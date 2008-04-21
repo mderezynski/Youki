@@ -126,8 +126,8 @@ namespace MPX
                 {
                     try{    
                         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-                        object ccinstance = object((handle<>(borrowed(item->m_PluginInstance))));
-                        ccinstance.attr("activate")(boost::ref(m_Player), boost::ref(mcs)); // TODO
+                        object instance = object((handle<>(borrowed(item->m_PluginInstance))));
+                        instance.attr("activate")(boost::ref(m_Player), boost::ref(mcs)); // TODO
                         item->m_Active = true;
                         pyg_gil_state_release(state);
                         } catch( error_already_set )
@@ -196,15 +196,18 @@ namespace MPX
 
 						if (PyObject_IsSubclass (value, (PyObject*) PyMPXPlugin_Type))
 						{
-							PyObject * instance = PyObject_CallObject(value, NULL);
-							if(instance == NULL)
+                            object instance = boost::python::call<object>(value);
+
+							if(!instance)
 							{
 								PyErr_Print();
 								continue;
 							}
 
 							PluginHolderRefP ptr = PluginHolderRefP(new PluginHolder);
-							ptr->m_PluginInstance = instance;
+
+							ptr->m_PluginInstance = instance.ptr();
+                            Py_INCREF(instance.ptr());
 
                             if(PyObject_HasAttrString(module, "__doc__"))
                             {
@@ -246,8 +249,12 @@ namespace MPX
                             mcs_plugins->key_register("pyplugs", ptr->m_Name, false);
 
 							ptr->m_Active = false; 
-
-                            ptr->m_HasGUI = PyObject_HasAttrString(instance, "get_gui");
+                            ptr->m_HasGUI = PyObject_HasAttrString(instance.ptr(), "get_gui");
+                            if(PyErr_Occurred())
+                            {
+                                g_message("%s: No get_gui in plugin", G_STRLOC);
+                                PyErr_Clear();
+                            }
 
 							m_Map.insert(std::make_pair(ptr->m_Id, ptr));
 
@@ -291,8 +298,8 @@ namespace MPX
 		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 
 		try{
-			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			object result = ccinstance.attr("get_gui")();
+			object instance = object((handle<>(borrowed(i->second->m_PluginInstance))));
+			object result = instance.attr("get_gui")();
 			pygobj = (PyGObject*)(result.ptr());
 		} catch( error_already_set )
 		{
@@ -330,8 +337,8 @@ namespace MPX
 		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 
 		try{
-			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			object callable = ccinstance.attr("activate");
+			object instance = object((handle<>(borrowed(i->second->m_PluginInstance))));
+			object callable = instance.attr("activate");
 			result = boost::python::call<bool>(callable.ptr(), boost::ref(*m_Player), boost::ref(*mcs));
 			i->second->m_Active = true;
             signal_.emit(id);
@@ -370,8 +377,8 @@ namespace MPX
 		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 
 		try{
-			object ccinstance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			object callable = ccinstance.attr("deactivate");
+			object instance = object((handle<>(borrowed(i->second->m_PluginInstance))));
+			object callable = instance.attr("deactivate");
 			result = boost::python::call<bool>(callable.ptr());
 			i->second->m_Active = false;
 		} catch( error_already_set ) 
