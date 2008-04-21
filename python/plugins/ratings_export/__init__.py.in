@@ -19,7 +19,7 @@ import time
 class Ratings(mpx_playlist.PlaylistPlugin):
 	def __init__(self):
 
-		self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-scripts/ratings_export/ratings_export.glade")
+		self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-py/ratings_export/ratings_export.glade")
 		self.dialog = self.xml.get_widget("dialog")
 		self.combo = self.xml.get_widget("combobox")
 		self.label = self.xml.get_widget("label")
@@ -28,7 +28,7 @@ class Ratings(mpx_playlist.PlaylistPlugin):
 		self.go.set_sensitive(False)
 		
 		try:
-			self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/playlist-scripts/ratings_export/rexp-icon.png")
+			self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/playlist-py/ratings_export/rexp-icon.png")
 		except:
 			print "MPXDJ: No Icon"
 
