@@ -53,6 +53,20 @@ namespace
 
 namespace MPX
 {
+    struct Plugin
+    {
+        bool
+        activate (MPX::Player&, Mcs::Mcs&)
+        {
+            return false;
+        }
+
+        void
+        deactivate ()
+        {
+        }
+    };
+
     enum AttributeId
     {
       MPX_ATTRIBUTE_LOCATION,
@@ -233,6 +247,15 @@ namespace mpxpy
 		return pa.get();
 	}
 
+	MPX::Covers&
+	player_get_covers (MPX::Player & obj)
+	{
+		MPX::PAccess<MPX::Covers> pa;	
+		obj.get_object(pa);
+		return pa.get();
+	}
+
+
 #ifdef HAVE_HAL
 	MPX::HAL&
 	player_get_hal (MPX::Player & obj)
@@ -301,23 +324,6 @@ namespace mpxpy
 
 namespace MPX
 {
-	struct Plugin
-	{
-		bool
-		activate (MPX::Player&, Mcs::Mcs&)
-		{
-			return false;
-		}
-
-		void
-		deactivate ()
-		{
-		}
-	};
-}
-
-namespace MPX
-{
     namespace Soup
     {
         class PyRequest : public Request
@@ -349,8 +355,46 @@ namespace MPX
     }
 }
 
+// Glib::RefPtr<Gdk::Pixbuf> to gtk.gdk.Pixbuf converter
+
+struct pixbufreptr_to_pixbuf
+{
+    static
+    PyObject*
+    convert(Glib::RefPtr<Gdk::Pixbuf> const& p)
+    {
+        if(!p)
+        {
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+
+        PyObject * p_py = pygobject_new((GObject*)(p->gobj()));
+        return p_py;
+    }
+
+    static
+    PyTypeObject const*
+    get_pytype()
+    {
+        return pygobject_lookup_class(GDK_TYPE_PIXBUF);
+    }
+};
+
+
+
+
 BOOST_PYTHON_MODULE(mpx)
 {
+    to_python_converter<Glib::RefPtr<Gdk::Pixbuf>, pixbufreptr_to_pixbuf, true>();
+
+	class_<MPX::Plugin>("Plugin")	
+		.def("activate", &MPX::Plugin::activate)
+		.def("deactivate", &MPX::Plugin::deactivate)
+	;
+
+	/*-------------------------------------------------------------------------------------*/
+
     enum_<MPX::MPXPlaystatus>("PlayStatus")
         .value("NONE", MPX::PLAYSTATUS_NONE)
         .value("STOPPED", MPX::PLAYSTATUS_STOPPED)
@@ -359,6 +403,99 @@ BOOST_PYTHON_MODULE(mpx)
         .value("SEEKING", MPX::PLAYSTATUS_SEEKING)
         .value("WAITING", MPX::PLAYSTATUS_WAITING)
     ;
+
+	/*-------------------------------------------------------------------------------------*/
+
+	enum_<MPX::PlaybackSource::Flags>("PlaybackSourceFlags")
+		.value("F_NONE", MPX::PlaybackSource::F_NONE)	
+		.value("F_ASYNC", MPX::PlaybackSource::F_ASYNC)	
+		.value("F_HANDLE_STREAMINFO", MPX::PlaybackSource::F_HANDLE_STREAMINFO)	
+		.value("F_PHONY_NEXT", MPX::PlaybackSource::F_PHONY_NEXT)	
+		.value("F_PHONY_PREV", MPX::PlaybackSource::F_PHONY_PREV)	
+		.value("F_HANDLE_LASTFM", MPX::PlaybackSource::F_HANDLE_LASTFM)	
+		.value("F_HANDLE_LASTFM_ACTIONS", MPX::PlaybackSource::F_HANDLE_LASTFM_ACTIONS)	
+		.value("F_USES_REPEAT", MPX::PlaybackSource::F_USES_REPEAT)	
+		.value("F_USES_SHUFFLE", MPX::PlaybackSource::F_USES_SHUFFLE)	
+	;
+
+	enum_<MPX::PlaybackSource::Caps>("PlaybackSourceCaps")
+		.value("C_NONE", MPX::PlaybackSource::C_NONE)	
+		.value("C_CAN_GO_NEXT", MPX::PlaybackSource::C_CAN_GO_NEXT)	
+		.value("C_CAN_GO_PREV", MPX::PlaybackSource::C_CAN_GO_PREV)	
+		.value("C_CAN_PAUSE", MPX::PlaybackSource::C_CAN_PAUSE)	
+		.value("C_CAN_PLAY", MPX::PlaybackSource::C_CAN_PLAY)	
+		.value("C_CAN_SEEK", MPX::PlaybackSource::C_CAN_SEEK)	
+		.value("C_CAN_RESTORE_CONTEXT", MPX::PlaybackSource::C_CAN_RESTORE_CONTEXT)	
+		.value("C_CAN_PROVIDE_METADATA", MPX::PlaybackSource::C_CAN_PROVIDE_METADATA)	
+		.value("C_CAN_BOOKMARK", MPX::PlaybackSource::C_CAN_BOOKMARK)	
+		.value("C_PROVIDES_TIMING", MPX::PlaybackSource::C_PROVIDES_TIMING)	
+	;
+
+	/*-------------------------------------------------------------------------------------*/
+
+	enum_<MPX::AttributeId>("AttributeId")
+      .value("LOCATION", MPX::MPX_ATTRIBUTE_LOCATION)
+      .value("TITLE", MPX::MPX_ATTRIBUTE_TITLE)
+      .value("GENRE", MPX::MPX_ATTRIBUTE_GENRE)
+      .value("COMMENT", MPX::MPX_ATTRIBUTE_COMMENT)
+      .value("MUSICIP_PUID", MPX::MPX_ATTRIBUTE_MUSICIP_PUID)
+      .value("HASH", MPX::MPX_ATTRIBUTE_HASH)     
+      .value("MB_TRACK_ID", MPX::MPX_ATTRIBUTE_MB_TRACK_ID)
+      .value("ARTIST", MPX::MPX_ATTRIBUTE_ARTIST)
+      .value("ARTIST_SORTNAME", MPX::MPX_ATTRIBUTE_ARTIST_SORTNAME)
+      .value("MB_ARTIST_ID", MPX::MPX_ATTRIBUTE_MB_ARTIST_ID)
+      .value("ALBUM", MPX::MPX_ATTRIBUTE_ALBUM)
+      .value("MB_ALBUM_ID", MPX::MPX_ATTRIBUTE_MB_ALBUM_ID)
+      .value("MB_RELEASE_DATE", MPX::MPX_ATTRIBUTE_MB_RELEASE_DATE)
+      .value("ASIN", MPX::MPX_ATTRIBUTE_ASIN)
+      .value("ALBUM_ARTIST", MPX::MPX_ATTRIBUTE_ALBUM_ARTIST)
+      .value("ALBUM_ARTIST_SORTNAME", MPX::MPX_ATTRIBUTE_ALBUM_ARTIST_SORTNAME)
+      .value("MB_ALBUM_ARTIST_ID", MPX::MPX_ATTRIBUTE_MB_ALBUM_ARTIST_ID)
+      .value("TYPE", MPX::MPX_ATTRIBUTE_TYPE)
+      .value("HAL_VOLUME_UDI", MPX::MPX_ATTRIBUTE_HAL_VOLUME_UDI)
+      .value("HAL_DEVICE_UDI", MPX::MPX_ATTRIBUTE_HAL_DEVICE_UDI)
+      .value("VOLUME_RELATIVE_PATH", MPX::MPX_ATTRIBUTE_VOLUME_RELATIVE_PATH)
+      .value("INSERT_PATH", MPX::MPX_ATTRIBUTE_INSERT_PATH)
+      .value("LOCATION_NAME", MPX::MPX_ATTRIBUTE_LOCATION_NAME)
+      .value("TRACK", MPX::MPX_ATTRIBUTE_TRACK)
+      .value("TIME", MPX::MPX_ATTRIBUTE_TIME)
+      .value("RATING", MPX::MPX_ATTRIBUTE_RATING)
+      .value("DATE", MPX::MPX_ATTRIBUTE_DATE)
+      .value("MTIME", MPX::MPX_ATTRIBUTE_MTIME)
+      .value("BITRATE", MPX::MPX_ATTRIBUTE_BITRATE)
+      .value("SAMPLERATE", MPX::MPX_ATTRIBUTE_SAMPLERATE)
+      .value("PLAYCOUNT", MPX::MPX_ATTRIBUTE_COUNT)
+      .value("PLAYDATE", MPX::MPX_ATTRIBUTE_PLAYDATE)
+      .value("IS_MB_ALBUM_ARTIST", MPX::MPX_ATTRIBUTE_IS_MB_ALBUM_ARTIST)
+      .value("ACTIVE", MPX::MPX_ATTRIBUTE_ACTIVE)
+      .value("MPX_TRACK_ID", MPX::MPX_ATTRIBUTE_MPX_TRACK_ID)
+	;
+
+	/*-------------------------------------------------------------------------------------*/
+
+	class_<MPX::Player, boost::noncopyable>("Player", boost::python::no_init)
+		.def("get_metadata", &MPX::Player::get_metadata, return_internal_reference<>())
+		.def("get_status", &MPX::Player::get_status) 
+
+		.def("gobj", &mpxpy::player_get_gobject)
+
+		.def("get_library", &mpxpy::player_get_library, return_internal_reference<>()) 
+		.def("get_hal", &mpxpy::player_get_hal, return_internal_reference<>()) 
+        .def("get_covers", &mpxpy::player_get_covers, return_internal_reference<>())
+
+		.def("play", &MPX::Player::play)
+		.def("pause", &MPX::Player::pause_ext)
+		.def("prev", &MPX::Player::prev)
+		.def("next", &MPX::Player::next)
+		.def("stop", &MPX::Player::stop)
+        .def("play_uri", &MPX::Player::play_uri)
+
+        .def("add_info_widget", &mpxpy::player_add_info_widget)
+        .def("remove_info_widget", &mpxpy::player_remove_info_widget)
+
+		.def("add_widget", &mpxpy::player_add_widget)
+		.def("remove_widget", &mpxpy::player_remove_widget)
+	;
 
 	/*-------------------------------------------------------------------------------------*/
 
@@ -414,66 +551,7 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("__len__", &mpxpy::metadata_len, return_value_policy<return_by_value>())
 		.def("get", &mpxpy::metadata_getitem, /*return_value_policy<return_by_value>()*/ return_internal_reference<>()) 
 		.def("get_image", &MPX::Metadata::get_image)
-	;
-
-	/*-------------------------------------------------------------------------------------*/
-
-	enum_<MPX::AttributeId>("AttributeId")
-      .value("LOCATION", MPX::MPX_ATTRIBUTE_LOCATION)
-      .value("TITLE", MPX::MPX_ATTRIBUTE_TITLE)
-      .value("GENRE", MPX::MPX_ATTRIBUTE_GENRE)
-      .value("COMMENT", MPX::MPX_ATTRIBUTE_COMMENT)
-      .value("MUSICIP_PUID", MPX::MPX_ATTRIBUTE_MUSICIP_PUID)
-      .value("HASH", MPX::MPX_ATTRIBUTE_HASH)     
-      .value("MB_TRACK_ID", MPX::MPX_ATTRIBUTE_MB_TRACK_ID)
-      .value("ARTIST", MPX::MPX_ATTRIBUTE_ARTIST)
-      .value("ARTIST_SORTNAME", MPX::MPX_ATTRIBUTE_ARTIST_SORTNAME)
-      .value("MB_ARTIST_ID", MPX::MPX_ATTRIBUTE_MB_ARTIST_ID)
-      .value("ALBUM", MPX::MPX_ATTRIBUTE_ALBUM)
-      .value("MB_ALBUM_ID", MPX::MPX_ATTRIBUTE_MB_ALBUM_ID)
-      .value("MB_RELEASE_DATE", MPX::MPX_ATTRIBUTE_MB_RELEASE_DATE)
-      .value("ASIN", MPX::MPX_ATTRIBUTE_ASIN)
-      .value("ALBUM_ARTIST", MPX::MPX_ATTRIBUTE_ALBUM_ARTIST)
-      .value("ALBUM_ARTIST_SORTNAME", MPX::MPX_ATTRIBUTE_ALBUM_ARTIST_SORTNAME)
-      .value("MB_ALBUM_ARTIST_ID", MPX::MPX_ATTRIBUTE_MB_ALBUM_ARTIST_ID)
-      .value("TYPE", MPX::MPX_ATTRIBUTE_TYPE)
-      .value("HAL_VOLUME_UDI", MPX::MPX_ATTRIBUTE_HAL_VOLUME_UDI)
-      .value("HAL_DEVICE_UDI", MPX::MPX_ATTRIBUTE_HAL_DEVICE_UDI)
-      .value("VOLUME_RELATIVE_PATH", MPX::MPX_ATTRIBUTE_VOLUME_RELATIVE_PATH)
-      .value("INSERT_PATH", MPX::MPX_ATTRIBUTE_INSERT_PATH)
-      .value("LOCATION_NAME", MPX::MPX_ATTRIBUTE_LOCATION_NAME)
-      .value("TRACK", MPX::MPX_ATTRIBUTE_TRACK)
-      .value("TIME", MPX::MPX_ATTRIBUTE_TIME)
-      .value("RATING", MPX::MPX_ATTRIBUTE_RATING)
-      .value("DATE", MPX::MPX_ATTRIBUTE_DATE)
-      .value("MTIME", MPX::MPX_ATTRIBUTE_MTIME)
-      .value("BITRATE", MPX::MPX_ATTRIBUTE_BITRATE)
-      .value("SAMPLERATE", MPX::MPX_ATTRIBUTE_SAMPLERATE)
-      .value("PLAYCOUNT", MPX::MPX_ATTRIBUTE_COUNT)
-      .value("PLAYDATE", MPX::MPX_ATTRIBUTE_PLAYDATE)
-      .value("IS_MB_ALBUM_ARTIST", MPX::MPX_ATTRIBUTE_IS_MB_ALBUM_ARTIST)
-      .value("ACTIVE", MPX::MPX_ATTRIBUTE_ACTIVE)
-      .value("MPX_TRACK_ID", MPX::MPX_ATTRIBUTE_MPX_TRACK_ID)
-	;
-
-	/*-------------------------------------------------------------------------------------*/
-
-	class_<MPX::Player, boost::noncopyable>("Player", boost::python::no_init)
-		.def("get_metadata", &MPX::Player::get_metadata, return_internal_reference<>())
-		.def("get_status", &MPX::Player::get_status) 
-		.def("gobj", &mpxpy::player_get_gobject)
-		.def("play", &MPX::Player::play)
-		.def("pause", &MPX::Player::pause_ext)
-		.def("prev", &MPX::Player::prev)
-		.def("next", &MPX::Player::next)
-		.def("stop", &MPX::Player::stop)
-        .def("play_uri", &MPX::Player::play_uri)
-		.def("get_library", &mpxpy::player_get_library, return_internal_reference<>()) 
-		.def("get_hal", &mpxpy::player_get_hal, return_internal_reference<>()) 
-        .def("add_info_widget", &mpxpy::player_add_info_widget)
-        .def("remove_info_widget", &mpxpy::player_remove_info_widget)
-		.def("add_widget", &mpxpy::player_add_widget)
-		.def("remove_widget", &mpxpy::player_remove_widget)
+		//.def_readonly("image", &MPX::Metadata::Image)
 	;
 
 	/*-------------------------------------------------------------------------------------*/
@@ -486,13 +564,6 @@ BOOST_PYTHON_MODULE(mpx)
 
 	class_<MPX::LastFM::ArtistMetadataRequestSync, boost::noncopyable>("LastFMArtist", boost::python::init<std::string>())
 		.def("run", &MPX::LastFM::ArtistMetadataRequestSync::run)
-	;
-
-	/*-------------------------------------------------------------------------------------*/
-
-	class_<MPX::Plugin>("Plugin")	
-		.def("activate", &MPX::Plugin::activate)
-		.def("deactivate", &MPX::Plugin::deactivate)
 	;
 
 	/*-------------------------------------------------------------------------------------*/
@@ -513,33 +584,6 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("getSQL", &MPX::Library::getSQL)
 		.def("execSQL", &MPX::Library::execSQL)
 		.def("getMetadata", &MPX::Library::getMetadata)
-	;
-
-	/*-------------------------------------------------------------------------------------*/
-
-	enum_<MPX::PlaybackSource::Flags>("PlaybackSourceFlags")
-		.value("F_NONE", MPX::PlaybackSource::F_NONE)	
-		.value("F_ASYNC", MPX::PlaybackSource::F_ASYNC)	
-		.value("F_HANDLE_STREAMINFO", MPX::PlaybackSource::F_HANDLE_STREAMINFO)	
-		.value("F_PHONY_NEXT", MPX::PlaybackSource::F_PHONY_NEXT)	
-		.value("F_PHONY_PREV", MPX::PlaybackSource::F_PHONY_PREV)	
-		.value("F_HANDLE_LASTFM", MPX::PlaybackSource::F_HANDLE_LASTFM)	
-		.value("F_HANDLE_LASTFM_ACTIONS", MPX::PlaybackSource::F_HANDLE_LASTFM_ACTIONS)	
-		.value("F_USES_REPEAT", MPX::PlaybackSource::F_USES_REPEAT)	
-		.value("F_USES_SHUFFLE", MPX::PlaybackSource::F_USES_SHUFFLE)	
-	;
-
-	enum_<MPX::PlaybackSource::Caps>("PlaybackSourceCaps")
-		.value("C_NONE", MPX::PlaybackSource::C_NONE)	
-		.value("C_CAN_GO_NEXT", MPX::PlaybackSource::C_CAN_GO_NEXT)	
-		.value("C_CAN_GO_PREV", MPX::PlaybackSource::C_CAN_GO_PREV)	
-		.value("C_CAN_PAUSE", MPX::PlaybackSource::C_CAN_PAUSE)	
-		.value("C_CAN_PLAY", MPX::PlaybackSource::C_CAN_PLAY)	
-		.value("C_CAN_SEEK", MPX::PlaybackSource::C_CAN_SEEK)	
-		.value("C_CAN_RESTORE_CONTEXT", MPX::PlaybackSource::C_CAN_RESTORE_CONTEXT)	
-		.value("C_CAN_PROVIDE_METADATA", MPX::PlaybackSource::C_CAN_PROVIDE_METADATA)	
-		.value("C_CAN_BOOKMARK", MPX::PlaybackSource::C_CAN_BOOKMARK)	
-		.value("C_PROVIDES_TIMING", MPX::PlaybackSource::C_PROVIDES_TIMING)	
 	;
 
 	/*-------------------------------------------------------------------------------------*/
@@ -613,5 +657,13 @@ BOOST_PYTHON_MODULE(mpx)
     ;
 
     class_<MPX::HAL>("MPXHal", boost::python::no_init)
+    ;
+
+    /*-------------------------------------------------------------------------------------*/
+    /* Covers */
+    /*-------------------------------------------------------------------------------------*/
+
+    class_<MPX::Covers, boost::noncopyable>("MPXCovers", boost::python::no_init)
+        .def("fetch", (MPX::Covers::FetchFunc) &MPX::Covers::fetch)
     ;
 }

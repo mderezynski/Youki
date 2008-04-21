@@ -59,6 +59,8 @@ namespace MPX
 	  SignalGotCover&
 	  signal_got_cover(){ return Signals.GotCover ; }
 
+      typedef bool (Covers::*FetchFunc) (std::string const&, Glib::RefPtr<Gdk::Pixbuf>&);
+
 	  bool
 	  fetch (std::string const& mbid, Glib::RefPtr<Gdk::Pixbuf>&);
 
@@ -67,7 +69,6 @@ namespace MPX
 
 	  void
 	  cache (std::string const& mbid, std::string const& asin = std::string(), bool acquire = true);
-
 
 	  Covers (NM&);
 

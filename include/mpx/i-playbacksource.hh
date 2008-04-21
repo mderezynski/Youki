@@ -48,19 +48,11 @@ namespace MPX
     :   public Track
     {
         Glib::RefPtr<Gdk::Pixbuf> Image;
-		PyObject *PyImage;
 
-		PyObject*	
+        Glib::RefPtr<Gdk::Pixbuf>
 		get_image ()
 		{
-			if(!Image)
-            {
-                Py_INCREF(Py_None);
-				return Py_None;
-            }
-
-			PyImage = pygobject_new((GObject*)(Image->gobj()));
-			return PyImage; 
+            return Image;
 		}
 
 		Metadata ()

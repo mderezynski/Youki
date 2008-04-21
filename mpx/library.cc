@@ -746,7 +746,7 @@ namespace MPX
 
           m_SQL->exec_sql (sql);
           album_j = m_SQL->last_insert_rowid ();
-
+          g_message("%s: New Album: %lld", G_STRLOC, album_j);
           Signals.NewAlbum.emit( album_j ); 
         }
         return album_j;
@@ -1004,7 +1004,7 @@ namespace MPX
         p->URIV = uris;
         p->Iter = p->URIV.begin();
 
-        m_SQL->exec_sql("BEGIN;");
+        //m_SQL->exec_sql("BEGIN;");
         Signals.ScanStart.emit();
 
         scanURI (p);
