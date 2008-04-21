@@ -64,6 +64,7 @@ class LastFMVis(mpx_playlist.PlaylistPlugin):
     def on_clear(self, button):
 
         self.model.clear()
+        self.tagview.clear()
         self.tags = None
 
     def intersect(self, new_tags):
@@ -77,8 +78,8 @@ class LastFMVis(mpx_playlist.PlaylistPlugin):
                 tag_hash2[tag[0]] = tag[1]
 
         tag_result = []
-        for name, ampl in tag_hash1.items():
-            if name in tag_hash2:
+        for name, ampl in tag_hash2.items():
+            if name in tag_hash1:
                 tag_result.append([name, ampl])
         
         return tag_result
