@@ -34,32 +34,57 @@ class LastFMVis(mpx_playlist.PlaylistPlugin):
         self.mlib = mlib
 
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-py/lastfmvis/lastfmvis.glade")
+
         self.window = self.xml.get_widget("window")
+        self.window.connect("delete-event", self.on_window_delete)
+
         self.treeview = self.xml.get_widget("treeview")
-        self.alignment = self.xml.get_widget("alignment")
+        self.treeview.set_reorderable(True)
+
         self.clear = self.xml.get_widget("clear")
         self.clear.connect("clicked", self.on_clear)
+
         self.tagview = mpx.TagView()
+
+        self.alignment = self.xml.get_widget("alignment")
         self.alignment.add(self.tagview.get_widget())
+
         self.tagview.get_widget().show()
 
         # Setup TreeView
         tgts = [('mpx-album', 0, 0)]
         self.treeview.drag_dest_set(gtk.DEST_DEFAULT_ALL, tgts, gtk.gdk.ACTION_COPY)
-        cell1 = gtk.CellRendererPixbuf()
-        cell2 = gtk.CellRendererText()
-        cell2.set_property("yalign", 0.)
+        cell1 = gtk.CellRendererToggle()
+        cell1.connect("toggled", self.on_cell_toggled)
+        cell2 = gtk.CellRendererPixbuf()
+        cell3 = gtk.CellRendererText()
+        cell3.set_property("yalign", 0.)
         col = gtk.TreeViewColumn('')
         col.pack_start(cell1, False)
-        col.pack_start(cell2, True)
-        col.add_attribute(cell1, "pixbuf", 0)
-        col.add_attribute(cell2, "markup", 1)
+        col.pack_start(cell2, False)
+        col.pack_start(cell3, True)
+        col.add_attribute(cell1, "active", 0)
+        col.add_attribute(cell2, "pixbuf", 1)
+        col.add_attribute(cell3, "markup", 2)
         self.treeview.append_column(col)
-        self.model = gtk.ListStore(gtk.gdk.Pixbuf, str)
+        self.model = gtk.ListStore(bool, gtk.gdk.Pixbuf, str, object)
         self.treeview.set_model(self.model)
         self.treeview.connect("drag-data-received", self.on_treeview_ddr)
 
         self.tags = None
+
+    def on_cell_toggled(self, cell, path):
+
+        iter = self.model.get_iter(path)
+        active = self.model.get(iter, 0)[0]
+        self.model.set(iter, 0, not active)
+        self.traverse_model_and_intersect()
+        self.display_tags()
+
+    def on_window_delete(self, window, event):
+
+        window.hide()
+        return True
 
     def on_clear(self, button):
 
@@ -67,22 +92,50 @@ class LastFMVis(mpx_playlist.PlaylistPlugin):
         self.tagview.clear()
         self.tags = None
 
-    def intersect(self, new_tags):
+    def traverse_model_and_intersect(self):
+   
+        self.tags = None 
+        iter = self.model.get_iter_first() 
+        if(iter):
+            active = self.model.get(iter, 0)[0]
+            if(active):
+                self.tags = self.model.get(iter, 3)[0]
+            iter = self.model.iter_next(iter)
+            while iter:
+                active = self.model.get(iter, 0)[0]
+                if(active):
+                    tags = self.model.get(iter, 3)[0]
+                    self.tags = self.intersect(self.tags, tags)
+                iter = self.model.iter_next(iter) 
+
+    def display_tags(self):
+
+        self.tagview.clear()
+        #random.shuffle(self.tags)
+
+        for lst in self.tags:
+            self.tagview.add_tag(lst[0], lst[1])
+
+    def intersect(self, tags_a, tags_b):
+
+        if(not tags_a):
+
+            return tags_b
 
         tag_hash1 = {}
         tag_hash2 = {}
-        for tag in self.tags:
+        for tag in tags_a: 
                 tag_hash1[tag[0]] = tag[1]
         
-        for tag in new_tags:
+        for tag in tags_b:
                 tag_hash2[tag[0]] = tag[1]
 
-        tag_result = []
+        result = []
         for name, ampl in tag_hash2.items():
             if name in tag_hash1:
-                tag_result.append([name, ampl])
+                result.append([name, (tag_hash1[name]+ampl)/2.])
         
-        return tag_result
+        return result 
 
     def get_album_tlst(self, artist, album):
 
@@ -108,8 +161,6 @@ class LastFMVis(mpx_playlist.PlaylistPlugin):
 
     def on_treeview_ddr(self, widget, context, x, y, seldata, info, timestamp):
        
-        self.tagview.clear()
- 
         album_id = struct.unpack("q", seldata.data)[0]
         context.finish(True, False, timestamp)
 
@@ -118,22 +169,19 @@ class LastFMVis(mpx_playlist.PlaylistPlugin):
         row = rv[0]
 
         if "mb_album_id" in row:
-        
             mbid  = row["mb_album_id"].get_string()
-            cover = self.covers.fetch(mbid).scale_simple(72, 72, gtk.gdk.INTERP_BILINEAR)
-            album = row["album"].get_string()
-            self.model.append([cover, "<b>%s</b>" % album])
+            cover = self.covers.fetch(mbid)
+            if(cover):
+                cover = cover.scale_simple(72, 72, gtk.gdk.INTERP_BILINEAR)
+        else:
+            cover = None
 
-            tlst = self.get_album_tlst(row["album_artist"].get_string(), album)
+        album = row["album"].get_string()
+        artist = row["album_artist"].get_string()
+        self.model.append([True, cover, "<span size='12000'><b>%s</b></span>\n<span size='12000'>%s</span>" % (artist, album), self.get_album_tlst(artist, album)])
 
-            if self.tags:
-                self.tags = self.intersect(tlst) 
-            else:
-                self.tags = tlst
-
-            random.shuffle(self.tags)
-            for lst in self.tags:
-                self.tagview.add_tag(lst[0], lst[1])
+        self.traverse_model_and_intersect()
+        self.display_tags()
 
         return True
 

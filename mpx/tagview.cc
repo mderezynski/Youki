@@ -229,35 +229,35 @@ namespace MPX
         {
             using namespace Gtk;
 
-            try{
-                Cairo::RefPtr<Cairo::Context> cr = get_window()->create_cairo_context();
+            Cairo::RefPtr<Cairo::Context> cr = get_window()->create_cairo_context();
 
-                int x, y, w, h;
-                Gtk::Allocation a = get_allocation();
-                x = a.get_x();
-                y = a.get_y();
-                w = a.get_width();
-                h = a.get_height();
+            int x, y, w, h;
+            Gtk::Allocation a = get_allocation();
+            x = a.get_x();
+            y = a.get_y();
+            w = a.get_width();
+            h = a.get_height();
 
-                cr->set_operator(Cairo::OPERATOR_SOURCE);
-                cr->set_source_rgba(0., 0., 0., 1.);
-                cr->rectangle(0, 0, w, h);
-                cr->fill();
+            cr->set_operator(Cairo::OPERATOR_SOURCE);
+            cr->set_source_rgba(0., 0., 0., 1.);
+            cr->rectangle(0, 0, w, h);
+            cr->fill();
 
-                cr->scale( m_Layout.Scale, m_Layout.Scale );
+            cr->scale( m_Layout.Scale, m_Layout.Scale );
 
-                if(m_Layout.List.empty())
-                    return true;
+            if(m_Layout.List.empty())
+                return true;
 
-                int rowcounter = 0;
-                int tagcounter = 0;
-                for(RowListT::const_iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
+            int rowcounter = 0;
+            int tagcounter = 0;
+            for(RowListT::const_iterator i = m_Layout.Rows.begin(); i != m_Layout.Rows.end(); ++i)
+            {
+                LayoutList const& l = *i;
+                for(LayoutList::const_iterator r = l.begin(); r != l.end(); ++r) 
                 {
-                    LayoutList const& l = *i;
-                    for(LayoutList::const_iterator r = l.begin(); r != l.end(); ++r) 
-                    {
-                        LayoutSP sp = *r;
+                    LayoutSP sp = *r;
 
+                    try{
                         if(sp->active)
                             cr->set_source_rgb(1., 0., 0.);
                         else
@@ -270,11 +270,14 @@ namespace MPX
 
                         cr->move_to( sp->x , sp->y ); 
                         pango_cairo_show_layout(cr->cobj(), sp->m_Layout->gobj());
-                        tagcounter++;
-                    }
-                    rowcounter++;
-                }
+                    } catch (...) {}
 
+                    tagcounter++;
+                }
+                rowcounter++;
+            }
+
+            try{
                 if(!m_ActiveTagName.empty())
                 {
                     cr->set_identity_matrix ();
@@ -313,10 +316,7 @@ namespace MPX
                     cr->set_source_rgba(1., 1., 1., 1.); 
                     pango_cairo_show_layout(cr->cobj(), Layout->gobj());
                 }
-            } catch (...) 
-            {
-                g_message("%s: Error in expose!", G_STRLOC);
-            }
+            } catch (...) {}
 
             return true;
         }

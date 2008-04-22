@@ -8,6 +8,7 @@
 #include <boost/cstdint.hpp>
 #include <pygobject.h>
 #include <pygtk/pygtk.h>
+#include <pycairo/pycairo.h>
 #include <gdkmm/pixbuf.h>
 #include <libglademm/xml.h>
 #include <Python.h>
@@ -22,16 +23,22 @@
 #include "mpx/paccess.hh"
 #include "mpx/types.hh"
 #include "mpx/tagview.hh"
+#include "mpx/util-graphics.hh"
 
 #include "audio-types.hh"
+
 #include "lyrics-v2.hh"
+
 #include "last-fm-xmlrpc.hh"
-#include "playbacksource-py.hh"
 
 #include "pysigc.hh"
+
+
 #include "mpx-py.hh"
 
 using namespace boost::python;
+
+Pycairo_CAPI_t* Pycairo_IMPORT;
 
 namespace
 {
@@ -371,6 +378,37 @@ namespace MPX
 
 // Glib::RefPtr<Gdk::Pixbuf> to gtk.gdk.Pixbuf converter
 
+inline void*
+extract_cairo (PyObject *obj)
+{
+    Cairo::RefPtr<Cairo::Context>* ctx = new Cairo::RefPtr<Cairo::Context> (new Cairo::Context( ((PycairoContext*)(obj))->ctx, true));
+    return ctx;
+}
+
+struct cairorefptr_to_cairo
+{
+    static
+    PyObject*
+    convert(Cairo::RefPtr<Cairo::Context> const& p)
+    {
+        if(!p)
+        {
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+
+        PyObject * p_py = PycairoContext_FromContext(p->cobj(), &PycairoContext_Type, NULL);
+        return p_py;
+    }
+
+    static
+    PyTypeObject const*
+    get_pytype()
+    {
+        return &PycairoContext_Type; 
+    }
+};
+
 struct pixbufreptr_to_pixbuf
 {
     static
@@ -396,11 +434,13 @@ struct pixbufreptr_to_pixbuf
 };
 
 
-
-
 BOOST_PYTHON_MODULE(mpx)
 {
     to_python_converter<Glib::RefPtr<Gdk::Pixbuf>, pixbufreptr_to_pixbuf, true>();
+    to_python_converter<Cairo::RefPtr<Cairo::Context>, cairorefptr_to_cairo, true>();
+    converter::registry::insert(&extract_cairo, type_id<Cairo::RefPtr<Cairo::Context> >());
+
+    def("util_cairo_rounded_rect", &MPX::Util::cairo_rounded_rect);
 
 	class_<MPX::Plugin>("Plugin")	
 		.def("activate", &MPX::Plugin::activate)
@@ -638,32 +678,6 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("getSQL", &MPX::Library::getSQL)
 		.def("execSQL", &MPX::Library::execSQL)
 		.def("getMetadata", &MPX::Library::getMetadata)
-	;
-
-	/*-------------------------------------------------------------------------------------*/
-
-	class_<MPX::PlaybackSourcePy, boost::noncopyable>("PlaybackSource", boost::python::no_init)
-		.def("getUri", &MPX::PlaybackSourcePy::get_uri)
-		.def("getType", &MPX::PlaybackSourcePy::get_type)
-		.def("play", &MPX::PlaybackSourcePy::play)
-		.def("goNext", &MPX::PlaybackSourcePy::go_next)
-		.def("goPrev", &MPX::PlaybackSourcePy::go_prev)
-		.def("stop", &MPX::PlaybackSourcePy::stop)
-		.def("playAsync", &MPX::PlaybackSourcePy::play_async)
-		.def("goNextAsync", &MPX::PlaybackSourcePy::go_next_async)
-		.def("goPrevAsync", &MPX::PlaybackSourcePy::go_prev_async)
-		.def("playPost", &MPX::PlaybackSourcePy::play_post)
-		.def("nextPost", &MPX::PlaybackSourcePy::next_post)
-		.def("prevPost", &MPX::PlaybackSourcePy::prev_post)
-		.def("restoreContext", &MPX::PlaybackSourcePy::restore_context)
-		.def("skipped", &MPX::PlaybackSourcePy::skipped)
-		.def("segment", &MPX::PlaybackSourcePy::segment)
-		.def("bufferingDone", &MPX::PlaybackSourcePy::buffering_done)
-		.def("sendCaps", &MPX::PlaybackSourcePy::send_caps)
-		.def("sendFlags", &MPX::PlaybackSourcePy::send_flags)
-		.def("getName", &MPX::PlaybackSourcePy::get_name)
-		.def("getUi", &MPX::PlaybackSourcePy::get_ui, return_internal_reference<>())
-		.def("player", &MPX::PlaybackSourcePy::player, return_internal_reference<>())
 	;
 
 	/*-------------------------------------------------------------------------------------*/
