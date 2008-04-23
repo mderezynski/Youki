@@ -38,8 +38,6 @@
 
 using namespace boost::python;
 
-Pycairo_CAPI_t* Pycairo_IMPORT;
-
 namespace
 {
     struct PyGILLock
@@ -378,37 +376,6 @@ namespace MPX
 
 // Glib::RefPtr<Gdk::Pixbuf> to gtk.gdk.Pixbuf converter
 
-inline void*
-extract_cairo (PyObject *obj)
-{
-    Cairo::RefPtr<Cairo::Context>* ctx = new Cairo::RefPtr<Cairo::Context> (new Cairo::Context( ((PycairoContext*)(obj))->ctx, true));
-    return ctx;
-}
-
-struct cairorefptr_to_cairo
-{
-    static
-    PyObject*
-    convert(Cairo::RefPtr<Cairo::Context> const& p)
-    {
-        if(!p)
-        {
-            Py_INCREF(Py_None);
-            return Py_None;
-        }
-
-        PyObject * p_py = PycairoContext_FromContext(p->cobj(), &PycairoContext_Type, NULL);
-        return p_py;
-    }
-
-    static
-    PyTypeObject const*
-    get_pytype()
-    {
-        return &PycairoContext_Type; 
-    }
-};
-
 struct pixbufreptr_to_pixbuf
 {
     static
@@ -437,8 +404,6 @@ struct pixbufreptr_to_pixbuf
 BOOST_PYTHON_MODULE(mpx)
 {
     to_python_converter<Glib::RefPtr<Gdk::Pixbuf>, pixbufreptr_to_pixbuf, true>();
-    to_python_converter<Cairo::RefPtr<Cairo::Context>, cairorefptr_to_cairo, true>();
-    converter::registry::insert(&extract_cairo, type_id<Cairo::RefPtr<Cairo::Context> >());
 
     def("util_cairo_rounded_rect", &MPX::Util::cairo_rounded_rect);
 

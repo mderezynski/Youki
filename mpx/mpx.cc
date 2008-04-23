@@ -246,9 +246,9 @@ namespace MPX
   };
 
   LayoutData const layout_info[] = {
-        {-0.8, 1.0,  86,  8},
-        {-1.0, 0.65, 86, 25},
-        {-1.5, 1.0,  86, 52},
+        {-0.8, 1.0,  86, 12},
+        {-1.0, 0.65, 86, 29},
+        {-1.5, 1.0,  86, 48},
   };
 
   // WARNING: If you set the gravity or timescale too high, the cover
