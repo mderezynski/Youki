@@ -196,6 +196,8 @@ namespace MPX
         class DBusPlayer;
         class DBusTrackList;
 
+        friend class DBusMPX;
+
 		void
 		init_dbus ();
 
@@ -237,6 +239,7 @@ namespace MPX
 		};
 		DBusObjectsT DBusObjects;
 		DBusGConnection * m_SessionBus;
+        bool m_startup_complete;
 
 
 		int m_Seeking;

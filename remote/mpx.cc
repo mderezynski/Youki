@@ -281,19 +281,14 @@ main (int    argc,
     error = NULL;
   }
 
-  if (!was_running)
-  {
-    o_mpx = dbus_g_proxy_new_for_name (dbus,
-                                       "info.backtrace.mpx",
-                                       "/MPX",
-                                       "info.backtrace.mpx");
+  o_mpx = dbus_g_proxy_new_for_name (dbus,
+                                     "info.backtrace.mpx",
+                                     "/MPX",
+                                     "info.backtrace.mpx");
 
-    dbus_g_proxy_call (o_mpx, "Startup", &error,
-                       G_TYPE_INT,
-                       int(0), 
+  dbus_g_proxy_call (o_mpx, "Startup", &error,
                        G_TYPE_INVALID,
                        G_TYPE_INVALID);
-  }
 
   if (error)
   {

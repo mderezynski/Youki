@@ -53,54 +53,7 @@
 #endif /* !G_ENABLE_DEBUG */
 
 
-/* BOOLEAN:INT,POINTER (/tmp/dbus-binding-tool-c-marshallers.FGMU9T:1) */
-extern void dbus_glib_marshal_mpx_BOOLEAN__INT_POINTER (GClosure     *closure,
-                                                                         GValue       *return_value,
-                                                                         guint         n_param_values,
-                                                                         const GValue *param_values,
-                                                                         gpointer      invocation_hint,
-                                                                         gpointer      marshal_data);
-void
-dbus_glib_marshal_mpx_BOOLEAN__INT_POINTER (GClosure     *closure,
-                                                             GValue       *return_value G_GNUC_UNUSED,
-                                                             guint         n_param_values,
-                                                             const GValue *param_values,
-                                                             gpointer      invocation_hint G_GNUC_UNUSED,
-                                                             gpointer      marshal_data)
-{
-  typedef gboolean (*GMarshalFunc_BOOLEAN__INT_POINTER) (gpointer     data1,
-                                                         gint         arg_1,
-                                                         gpointer     arg_2,
-                                                         gpointer     data2);
-  register GMarshalFunc_BOOLEAN__INT_POINTER callback;
-  register GCClosure *cc = (GCClosure*) closure;
-  register gpointer data1, data2;
-  gboolean v_return;
-
-  g_return_if_fail (return_value != NULL);
-  g_return_if_fail (n_param_values == 3);
-
-  if (G_CCLOSURE_SWAP_DATA (closure))
-    {
-      data1 = closure->data;
-      data2 = g_value_peek_pointer (param_values + 0);
-    }
-  else
-    {
-      data1 = g_value_peek_pointer (param_values + 0);
-      data2 = closure->data;
-    }
-  callback = (GMarshalFunc_BOOLEAN__INT_POINTER) (marshal_data ? marshal_data : cc->callback);
-
-  v_return = callback (data1,
-                       g_marshal_value_peek_int (param_values + 1),
-                       g_marshal_value_peek_pointer (param_values + 2),
-                       data2);
-
-  g_value_set_boolean (return_value, v_return);
-}
-
-/* BOOLEAN:POINTER (/tmp/dbus-binding-tool-c-marshallers.FGMU9T:2) */
+/* BOOLEAN:POINTER (/tmp/dbus-binding-tool-c-marshallers.DEOR9T:1) */
 extern void dbus_glib_marshal_mpx_BOOLEAN__POINTER (GClosure     *closure,
                                                                      GValue       *return_value,
                                                                      guint         n_param_values,
@@ -151,15 +104,14 @@ dbus_glib_marshal_mpx_BOOLEAN__POINTER (GClosure     *closure,
 
 #include <dbus/dbus-glib.h>
 static const DBusGMethodInfo dbus_glib_mpx_methods[] = {
-  { (GCallback) Player::DBusMPX::mpx_startup, dbus_glib_marshal_mpx_BOOLEAN__INT_POINTER, 0 },
-  { (GCallback) Player::DBusMPX::mpx_ui_raise, dbus_glib_marshal_mpx_BOOLEAN__POINTER, 39 },
+  { (GCallback) Player::DBusMPX::mpx_startup, dbus_glib_marshal_mpx_BOOLEAN__POINTER, 0 },
 };
 
 const DBusGObjectInfo dbus_glib_mpx_object_info = {
   0,
   dbus_glib_mpx_methods,
-  2,
-"info.backtrace.mpx\0Startup\0S\0arg0\0I\0i\0\0info.backtrace.mpx\0UiRaise\0S\0\0\0",
+  1,
+"info.backtrace.mpx\0Startup\0S\0\0\0",
 "info.backtrace.mpx\0StartupComplete\0info.backtrace.mpx\0ShutdownComplete\0info.backtrace.mpx\0Quit\0\0",
 "\0"
 };

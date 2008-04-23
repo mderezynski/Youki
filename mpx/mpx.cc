@@ -874,7 +874,6 @@ namespace MPX
 
     static gboolean
     startup (DBusMPX * self,
-             int            no_network,
              GError **      error);
 
     static void
@@ -983,15 +982,15 @@ namespace MPX
 	}
 
 	gboolean
-	Player::DBusMPX::ui_raise (DBusMPX* self, GError** error)
+	Player::DBusMPX::ui_raise (DBusMPX* self,
+                               GError** error)
 	{
 	  return TRUE;
 	}
 
 	gboolean
-	Player::DBusMPX::startup  (DBusMPX*   self,
-						 int      no_network, 
-						 GError** error)
+	Player::DBusMPX::startup  (DBusMPX* self,
+						       GError** error)
 	{
 	  return TRUE;
 	}
@@ -999,7 +998,15 @@ namespace MPX
 	void
 	Player::DBusMPX::startup_complete (DBusMPX* self)
 	{
-	  g_signal_emit (self, signals[SIGNAL_STARTUP_COMPLETE], 0);
+      if(self->player->m_startup_complete)
+      {
+        self->player->present();
+      }
+      else
+      {
+        self->player->m_startup_complete = true;
+	    g_signal_emit (self, signals[SIGNAL_STARTUP_COMPLETE], 0);
+      }
 	}
 
 	void
@@ -1251,6 +1258,7 @@ namespace MPX
 #endif // HAVE_HAL
     : WidgetLoader<Gtk::Window>(xml, "mpx")
     , m_ref_xml(xml)
+    , m_startup_complete(false)
 	, m_SourceCtr (0)
 	, m_PageCtr(1)
     , m_ActiveSource(SOURCE_NONE)

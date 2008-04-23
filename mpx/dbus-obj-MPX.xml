@@ -7,11 +7,7 @@
   <signal name="StartupComplete" />
   <signal name="ShutdownComplete" />
   <signal name="Quit" />
-  <method name="Startup">
-    <arg type="i"/>
-  </method>
-
-  <method name="UiRaise" />
+  <method name="Startup"/>
 
   </interface>
 </node>
