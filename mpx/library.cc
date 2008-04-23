@@ -1052,6 +1052,7 @@ namespace MPX
         if(p->collection.empty())
         {
             g_message("%s: Nothing to scan for '%s'", G_STRLOC, (*(p->Iter)).c_str());
+            Signals.ScanEnd.emit(p->added, p->uptodate, p->updated, p->erroneous, p->collection.size());
             return;
         }
 

@@ -282,7 +282,7 @@ namespace MPX
 
             build_fstree(Vol->get_mount_point());
             TreePath path (1);
-            m_FSTree->expand_row(path);
+            m_FSTree->expand_row(path, false);
         }
     }
 
@@ -357,14 +357,6 @@ namespace MPX
 
         TreeIter iter_copy = iter;
 
-        if(has_active_parent(iter_copy))
-        {
-            cell.property_visible() = false;
-            return;
-        }
-
-        cell.property_visible() = true;
-
         std::string full_path = (*iter)[FSTreeColumns.FullPath];
         if(m_ManagedPaths.count(full_path))
             cell.property_active() = true; 
@@ -392,7 +384,7 @@ namespace MPX
                 std::string const& frag = frags[path.size()-1];
                 if( frag == segName ) 
                 {
-                    cell.property_markup() = (boost::format("<b><i>%s</i></b>") % Markup::escape_text(segName)).str();
+                    cell.property_markup() = (boost::format("<span foreground='#0000ff'><b>%s</b></span>") % Markup::escape_text(segName)).str();
                     return;
                 }
             }
@@ -400,7 +392,7 @@ namespace MPX
 
         TreeIter iter_copy = iter;
         if(has_active_parent(iter_copy))
-            cell.property_markup() = (boost::format("<span foreground='#a0a0a0'><i>%s</i></span>") % Markup::escape_text(segName)).str();
+            cell.property_markup() = (boost::format("<span foreground='#a0a0a0'>%s</span>") % Markup::escape_text(segName)).str();
         else
             cell.property_text() = segName; 
     }
