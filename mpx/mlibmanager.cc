@@ -81,13 +81,15 @@ namespace MPX
         Gtk::TreeViewColumn * col = manage (new Gtk::TreeViewColumn());
         col->pack_start(*cell2, false);
         col->pack_start(*cell, false);
-        col->add_attribute(*cell2, "active", FSTreeColumns.Active);
-        col->add_attribute(*cell, "text", FSTreeColumns.SegName);
+        col->set_cell_data_func(*cell2, sigc::mem_fun( *this, &MLibManager::cell_data_func_active ));
+        col->set_cell_data_func(*cell, sigc::mem_fun( *this, &MLibManager::cell_data_func_text ));
         m_FSTree->append_column(*col);
         FSTreeStore = Gtk::TreeStore::create(FSTreeColumns);
         FSTreeStore->set_default_sort_func( sigc::mem_fun( *this, &MLibManager::fstree_sort ));
         FSTreeStore->set_sort_column( -1, Gtk::SORT_ASCENDING ); 
         m_FSTree->signal_row_expanded().connect( sigc::mem_fun( *this, &MLibManager::on_fstree_row_expanded )); 
+        m_FSTree->get_selection()->set_select_function( sigc::mem_fun( *this, &MLibManager::slot_select ));
+
         m_FSTree->set_model(FSTreeStore);
 
         m_ref_xml->get_widget("b-close", m_Close);
@@ -210,12 +212,6 @@ namespace MPX
                             (*iter)[FSTreeColumns.SegName] = *i; 
                             (*iter)[FSTreeColumns.FullPath] = path;
                             (*iter)[FSTreeColumns.WasExpanded] = false;
-
-                            if(m_ManagedPaths.count(path))
-                            {
-                                (*iter)[FSTreeColumns.Active] = true;
-                            }
-
                             prescan_path (path, iter);
                         }
                     }
@@ -225,10 +221,6 @@ namespace MPX
         }
 
         (*root_iter)[FSTreeColumns.WasExpanded] = true;
-        if(m_ManagedPaths.count(root_path))
-        {
-            (*root_iter)[FSTreeColumns.Active] = true;
-        }
     }
 
     void
@@ -249,10 +241,10 @@ namespace MPX
         while(path.up())
         {
             iter = FSTreeStore->get_iter(path);
-            if((*iter)[FSTreeColumns.Active])
+            std::string full_path = ((*iter)[FSTreeColumns.FullPath]);
+            if(m_ManagedPaths.count(full_path))
                 return true;
         }
-
         return false;
     }
 
@@ -267,6 +259,7 @@ namespace MPX
             m_DeviceUDI = Vol->get_storage_device_udi();
             m_MountPoint = Vol->get_mount_point();
             m_ManagedPaths = StrSetT();
+            m_ManagedPathFrags = PathFragsV();
 
             SQL::RowV v;
             m_Library.getSQL(v, (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'") % m_DeviceUDI % m_VolumeUDI).str());
@@ -275,15 +268,30 @@ namespace MPX
                 SQL::Row & r = *i;
                 std::string full_path = build_filename(m_MountPoint, boost::get<std::string>(r["insert_path"]));
                 m_ManagedPaths.insert(full_path); 
+                char ** path_frags = g_strsplit(full_path.c_str(), "/", -1);
+                char ** path_frags_p = path_frags;
+                m_ManagedPathFrags.resize(m_ManagedPathFrags.size()+1);
+                PathFrags & frags = m_ManagedPathFrags.back();
+                while (*path_frags)
+                {
+                    frags.push_back(*path_frags);
+                    ++path_frags;
+                }
+                g_strfreev(path_frags_p);
             }
 
             build_fstree(Vol->get_mount_point());
+            TreePath path (1);
+            FSTree->expand_row(path);
         }
     }
 
     void
     MLibManager::on_fstree_row_expanded (const Gtk::TreeIter & iter, const Gtk::TreePath & path)
     {
+        if( (*iter)[FSTreeColumns.WasExpanded] )
+            return;
+
         GtkTreeIter children;
         bool has_children = (gtk_tree_model_iter_children(GTK_TREE_MODEL(FSTreeStore->gobj()), &children, const_cast<GtkTreeIter*>(iter->gobj())));
 
@@ -304,10 +312,12 @@ namespace MPX
     MLibManager::on_path_toggled (const Glib::ustring & path_str)
     {
         TreeIter iter = FSTreeStore->get_iter(path_str);
-        bool active = ! bool((*iter)[FSTreeColumns.Active]);
         std::string full_path = (*iter)[FSTreeColumns.FullPath];
+
+        if(has_active_parent(iter))
+            return;
         
-        if(!active)
+        if(m_ManagedPaths.count(full_path))
         {
             MessageDialog dialog ((boost::format ("Are you sure you want to remove path\n\n'%s'\n\nfrom the library?") % Markup::escape_text(filename_to_utf8(full_path)).c_str()).str(), true, MESSAGE_QUESTION, BUTTONS_YES_NO, true);
             if( dialog.run() == GTK_RESPONSE_YES )
@@ -315,26 +325,15 @@ namespace MPX
                 std::string insert_path = full_path.substr(m_MountPoint.length());
                 m_Library.execSQL((boost::format ("DELETE FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path = '%s'") % m_DeviceUDI % m_VolumeUDI % insert_path).str());
                 m_Library.vacuum();
-                (*iter)[FSTreeColumns.Active] = active;
+                m_ManagedPaths.erase(full_path);
             }
         }
         else
         {
-            TreeIter iter_orig = iter;
-            if(has_active_parent(iter))
-            {
-                std::string full_path_parent = (*iter)[FSTreeColumns.FullPath];
-                MessageDialog dialog ((boost::format ("The path\n\n'%s'\n\nis a child path of\n\n'%s'\n\nwhich is active; please toggle the parent to activate the child path.") % Markup::escape_text(filename_to_utf8(full_path)).c_str() % Markup::escape_text(filename_to_utf8(full_path_parent)).c_str()).str(), true, MESSAGE_INFO, BUTTONS_OK, true);
-                dialog.run();
-                return;
-            }
-            else
-            {
-                StrV v;
-                v.push_back(filename_to_uri(full_path));
-                m_Library.initScan(v);
-                (*iter_orig)[FSTreeColumns.Active] = active;
-            }
+            m_ManagedPaths.insert(full_path);
+            StrV v;
+            v.push_back(filename_to_uri(full_path));
+            m_Library.initScan(v);
         }
     }
 
@@ -347,5 +346,69 @@ namespace MPX
             v.push_back(filename_to_uri(build_filename(m_MountPoint, *i)));
         }
         m_Library.initScan(v);
+    }
+
+
+
+    void
+    MLibManager::cell_data_func_active (CellRenderer * basecell, TreeIter const& iter)
+    {
+        CellRendererToggle & cell = *(dynamic_cast<CellRendererToggle*>(basecell));
+
+        TreeIter iter_copy = iter;
+
+        if(has_active_parent(iter_copy))
+        {
+            cell.property_visible() = false;
+            return;
+        }
+
+        cell.property_visible() = true;
+
+        std::string full_path = (*iter)[FSTreeColumns.FullPath];
+        if(m_ManagedPaths.count(full_path))
+            cell.property_active() = true; 
+        else
+            cell.property_active() = false; 
+    }
+
+    void
+    MLibManager::cell_data_func_text (CellRenderer * basecell, TreeIter const& iter)
+    {
+        CellRendererText & cell = *(dynamic_cast<CellRendererText*>(basecell));
+
+        TreePath path = FSTreeStore->get_path(iter); 
+        if(path.size() < 1)
+            return;
+
+        Glib::ustring segName = (*iter)[FSTreeColumns.SegName];
+
+        for(PathFragsV::const_iterator i = m_ManagedPathFrags.begin(); i != m_ManagedPathFrags.end(); ++i)
+        {
+            PathFrags const& frags = *i;
+
+            if(!(frags.size() < path.size()))
+            {
+                std::string const& frag = frags[path.size()-1];
+                if( frag == segName ) 
+                {
+                    cell.property_markup() = (boost::format("<b><i>%s</i></b>") % Markup::escape_text(segName)).str();
+                    return;
+                }
+            }
+        }
+
+        TreeIter iter_copy = iter;
+        if(has_active_parent(iter_copy))
+            cell.property_markup() = (boost::format("<span foreground='#a0a0a0'><i>%s</i></span>") % Markup::escape_text(segName)).str();
+        else
+            cell.property_text() = segName; 
+    }
+
+    bool
+    MLibManager::slot_select (const Glib::RefPtr<Gtk::TreeModel>&model, const Gtk::TreePath &path, bool was_selected)
+    {
+        TreeIter iter = FSTreeStore->get_iter(path);
+        return !(has_active_parent(iter));
     }
 }

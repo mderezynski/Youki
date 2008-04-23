@@ -737,6 +737,12 @@ namespace MPX
 
           case GST_MESSAGE_ERROR:
           {
+            g_message("%s: GST Error, details follow.", G_STRLOC);
+            GError * error = NULL;
+            Glib::ScopedPtr<char> debug;
+            gst_message_parse_error(message, &error, debug.addr());
+            g_message("%s: Error message: '%s'", G_STRLOC, error->message);
+            g_message("%s: Debug........: '%s'", G_STRLOC, debug.get());
             break;
           }
 

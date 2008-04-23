@@ -2116,8 +2116,6 @@ namespace MPX
 	{
 	  Mutex::Lock L (m_SourceCFLock);
 
-      g_message("%s: Source: %d, Caps: %d", G_STRLOC, source_id, int(caps));
-
 	  m_source_caps[source_id] = caps;
 
 	  if( (source_id == m_ActiveSource) || (m_MainNotebook->get_current_page() == m_SourceTabMapping[m_ActiveSource]) || (m_ActiveSource == SOURCE_NONE))
@@ -2206,8 +2204,11 @@ namespace MPX
 	void
 	Player::on_source_play_request (int source_id)
 	{
+      g_message("%s: Active source: %d, Requesting src: %d", G_STRLOC,m_ActiveSource,source_id);
+
 	  if( m_ActiveSource != SOURCE_NONE ) 
 	  {
+        g_message("%s: Stopping in preparation for play-req", G_STRLOC);
         stop ();
       }
       else
@@ -2227,6 +2228,9 @@ namespace MPX
 	  {
 			  if( source->play () )
 			  {
+                      g_message("%s: Playing", G_STRLOC);
+					  std::string uri = source->get_uri();
+                      g_message("%s: URI: %s", G_STRLOC, uri.c_str());
 					  m_Play->switch_stream (source->get_uri(), source->get_type());
 					  source->play_post ();
 					  play_post_internal (source_id);
@@ -2268,6 +2272,9 @@ namespace MPX
 	Player::track_played ()
 	{
       Glib::Mutex::Lock L (m_MetadataLock);
+
+      if(!m_Metadata)
+          return;
 
       if(!m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID])
           return;

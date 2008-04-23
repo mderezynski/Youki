@@ -1900,9 +1900,10 @@ namespace Source
     void
     PlaybackSourceMusicLib::action_cb_play ()
     {
-      m_Private->m_TreeViewPlaylist->m_CurrentIter = boost::optional<Gtk::TreeIter>(); 
-      m_Private->m_TreeViewPlaylist->m_CurrentId = boost::optional<gint64>();
-      Signals.PlayRequest.emit();
+        g_message(G_STRFUNC);
+        m_Private->m_TreeViewPlaylist->m_CurrentIter = boost::optional<Gtk::TreeIter>(); 
+        m_Private->m_TreeViewPlaylist->m_CurrentId = boost::optional<gint64>();
+        Signals.PlayRequest.emit();
     }
 
     void
@@ -1921,10 +1922,11 @@ namespace Source
     void
     PlaybackSourceMusicLib::on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column)
     {
-      m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter( path );
-      m_Private->m_TreeViewPlaylist->m_CurrentId = (*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.RowId];
-      m_Private->m_TreeViewPlaylist->queue_draw();
-      Signals.PlayRequest.emit();
+        g_message(G_STRFUNC);
+        m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter( path );
+        m_Private->m_TreeViewPlaylist->m_CurrentId = (*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.RowId];
+        m_Private->m_TreeViewPlaylist->queue_draw();
+        Signals.PlayRequest.emit();
     }
 
     std::string
@@ -1965,6 +1967,7 @@ namespace Source
     bool
     PlaybackSourceMusicLib::play ()
     {
+        g_message(G_STRFUNC);
         std::vector<Gtk::TreePath> rows = m_Private->m_TreeViewPlaylist->get_selection()->get_selected_rows();
 
         if(m_Private->m_TreeViewPlaylist->m_PlayInitIter)
@@ -2039,6 +2042,7 @@ namespace Source
     void
     PlaybackSourceMusicLib::stop () 
     {
+        g_message(G_STRFUNC);
         m_Private->m_TreeViewPlaylist->m_CurrentIter = boost::optional<Gtk::TreeIter>();
         m_Private->m_TreeViewPlaylist->m_CurrentId = boost::optional<gint64>(); 
         m_Private->m_TreeViewPlaylist->queue_draw();

@@ -126,16 +126,14 @@ namespace MPX
 
             struct FSTreeColumnsT : public Gtk::TreeModel::ColumnRecord
             {
-                Gtk::TreeModelColumn<Glib::ustring>             SegName;
-                Gtk::TreeModelColumn<std::string>               FullPath;
-                Gtk::TreeModelColumn<bool>                      Active;
-                Gtk::TreeModelColumn<bool>                      WasExpanded;
+                Gtk::TreeModelColumn<Glib::ustring>   SegName;
+                Gtk::TreeModelColumn<std::string>     FullPath;
+                Gtk::TreeModelColumn<bool>            WasExpanded;
 
                 FSTreeColumnsT ()
                 {
                     add (SegName);
                     add (FullPath);
-                    add (Active);
                     add (WasExpanded);
                 };
             };
@@ -143,10 +141,22 @@ namespace MPX
             FSTreeColumnsT FSTreeColumns;
             Glib::RefPtr<Gtk::TreeStore> FSTreeStore;
 
+            void
+            cell_data_func_active (Gtk::CellRenderer * basecell, Gtk::TreeIter const& iter);
+
+            void
+            cell_data_func_text (Gtk::CellRenderer * basecell, Gtk::TreeIter const& iter);
+
+            bool
+            slot_select (const Glib::RefPtr<Gtk::TreeModel>&model, const Gtk::TreePath &path, bool was_selected);
+
 
             typedef std::set<std::string> StrSetT;
+            typedef std::vector<std::string> PathFrags;
+            typedef std::vector<PathFrags> PathFragsV;
 
             StrSetT m_ManagedPaths;
+            PathFragsV m_ManagedPathFrags;
             std::string m_VolumeUDI;
             std::string m_DeviceUDI;
             std::string m_MountPoint; 
