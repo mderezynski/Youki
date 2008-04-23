@@ -831,63 +831,59 @@ namespace MPX
 #define TYPE_DBUS_OBJ_MPX (DBusMPX::get_type ())
 #define DBUS_OBJ_MPX(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_DBUS_OBJ_MPX, DBusMPX))
 
-  struct DBusMPXClass
-  {
-    GObjectClass parent;
-  };
-
-  struct Player::DBusMPX
-  {
-    GObject parent;
-    Player * player;
-
-    enum
+    struct DBusMPXClass
     {
-      SIGNAL_STARTUP_COMPLETE,
-      SIGNAL_SHUTDOWN_COMPLETE,
-      SIGNAL_QUIT,
-      N_SIGNALS,
+        GObjectClass parent;
     };
 
-    static guint signals[N_SIGNALS];
+    struct Player::DBusMPX
+    {
+        GObject parent;
+        Player * player;
 
-    static gpointer parent_class;
+        enum
+        {
+          SIGNAL_STARTUP_COMPLETE,
+          SIGNAL_SHUTDOWN_COMPLETE,
+          SIGNAL_QUIT,
+          N_SIGNALS,
+        };
 
-    static GType
-    get_type ();
+        static guint signals[N_SIGNALS];
 
-    static DBusMPX *
-    create (Player &, DBusGConnection*);
+        static gpointer parent_class;
 
-    static void
-    class_init (gpointer klass,
-                gpointer class_data);
+        static GType
+        get_type ();
 
-    static GObject *
-    constructor (GType                   type,
-                 guint                   n_construct_properties,
-                 GObjectConstructParam * construct_properties);
+        static DBusMPX *
+        create (Player &, DBusGConnection*);
 
-    static gboolean
-    ui_raise (DBusMPX * self,
-              GError **      error);
+        static void
+        class_init (gpointer klass,
+                    gpointer class_data);
 
-    static gboolean
-    startup (DBusMPX * self,
-             GError **      error);
+        static GObject *
+        constructor (GType                   type,
+                     guint                   n_construct_properties,
+                     GObjectConstructParam * construct_properties);
 
-    static void
-    startup_complete (DBusMPX * self);
-  
-    static void
-    shutdown_complete (DBusMPX * self);
+        static gboolean
+        startup (DBusMPX * self,
+                 GError ** error);
 
-    static void
-    quit (DBusMPX * self);
-  };
+        static void
+        startup_complete (DBusMPX * self);
+      
+        static void
+        shutdown_complete (DBusMPX * self);
 
-  gpointer Player::DBusMPX::parent_class       = 0;
-  guint    Player::DBusMPX::signals[N_SIGNALS] = { 0 };
+        static void
+        quit (DBusMPX * self);
+    };
+
+    gpointer Player::DBusMPX::parent_class       = 0;
+    guint    Player::DBusMPX::signals[N_SIGNALS] = { 0 };
 
 // HACK: Hackery to rename functions in glue
 #define mpx_startup     startup
@@ -898,34 +894,34 @@ namespace MPX
 	void
 	Player::DBusMPX::class_init (gpointer klass, gpointer class_data)
 	{
-	  parent_class = g_type_class_peek_parent (klass);
+        parent_class = g_type_class_peek_parent (klass);
 
-	  GObjectClass *gobject_class = reinterpret_cast<GObjectClass*>(klass);
-	  gobject_class->constructor  = &DBusMPX::constructor;
+        GObjectClass *gobject_class = reinterpret_cast<GObjectClass*>(klass);
+        gobject_class->constructor  = &DBusMPX::constructor;
 
-	  signals[SIGNAL_STARTUP_COMPLETE] =
-		g_signal_new ("startup-complete",
-					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
-					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
-					  0,
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+        signals[SIGNAL_STARTUP_COMPLETE] =
+          g_signal_new ("startup-complete",
+                        G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
+                        GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+                        0,
+                        NULL, NULL,
+                        g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 
-	  signals[SIGNAL_SHUTDOWN_COMPLETE] =
-		g_signal_new ("shutdown-complete",
-					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
-					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
-					  0,
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+        signals[SIGNAL_SHUTDOWN_COMPLETE] =
+          g_signal_new ("shutdown-complete",
+                        G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
+                        GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+                        0,
+                        NULL, NULL,
+                        g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 
-	  signals[SIGNAL_QUIT] =
-		g_signal_new ("quit",
-					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
-					  GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
-					  0,
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+        signals[SIGNAL_QUIT] =
+          g_signal_new ("quit",
+                        G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
+                        GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+                        0,
+                        NULL, NULL,
+                        g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 	}
 
 	GObject *
@@ -933,9 +929,8 @@ namespace MPX
 							guint                   n_construct_properties,
 							GObjectConstructParam*  construct_properties)
 	{
-	  GObject *object = G_OBJECT_CLASS (parent_class)->constructor (type, n_construct_properties, construct_properties);
-
-	  return object;
+        GObject *object = G_OBJECT_CLASS (parent_class)->constructor (type, n_construct_properties, construct_properties);
+        return object;
 	}
 
 	Player::DBusMPX *
@@ -946,79 +941,70 @@ namespace MPX
 		DBusMPX * self = DBUS_OBJ_MPX (g_object_new (TYPE_DBUS_OBJ_MPX, NULL));
 		self->player = &player;
 
-	  if(session_bus)
-	  {
-		dbus_g_connection_register_g_object (session_bus, "/MPX", G_OBJECT(self));
-		g_message("%s: /MPX Object registered on session DBus", G_STRLOC);
-	  }
+        if(session_bus)
+	    {
+		    dbus_g_connection_register_g_object (session_bus, "/MPX", G_OBJECT(self));
+		    g_message("%s: /MPX Object registered on session DBus", G_STRLOC);
+        }
 
-	  return self;
+        return self;
 	}
 
 	GType
 	Player::DBusMPX::get_type ()
 	{
-	  static GType type = 0;
+        static GType type = 0;
 
-	  if (G_UNLIKELY (type == 0))
-		{
-		  static GTypeInfo const type_info =
-			{
-			  sizeof (DBusMPXClass),
-			  NULL,
-			  NULL,
-			  &class_init,
-			  NULL,
-			  NULL,
-			  sizeof (DBusMPX),
-			  0,
-			  NULL
-			};
+        if (G_UNLIKELY (type == 0))
+          {
+            static GTypeInfo const type_info =
+              {
+                sizeof (DBusMPXClass),
+                NULL,
+                NULL,
+                &class_init,
+                NULL,
+                NULL,
+                sizeof (DBusMPX),
+                0,
+                NULL
+              };
 
-		  type = g_type_register_static (G_TYPE_OBJECT, "MPX", &type_info, GTypeFlags (0));
-		}
+            type = g_type_register_static (G_TYPE_OBJECT, "MPX", &type_info, GTypeFlags (0));
+          }
 
-	  return type;
-	}
-
-	gboolean
-	Player::DBusMPX::ui_raise (DBusMPX* self,
-                               GError** error)
-	{
-	  return TRUE;
+        return type;
 	}
 
 	gboolean
 	Player::DBusMPX::startup  (DBusMPX* self,
 						       GError** error)
 	{
-	  return TRUE;
+        if(self->player->m_startup_complete)
+        {
+            self->player->present();
+        }
+
+	    return TRUE;
 	}
 
 	void
 	Player::DBusMPX::startup_complete (DBusMPX* self)
 	{
-      if(self->player->m_startup_complete)
-      {
-        self->player->present();
-      }
-      else
-      {
-        self->player->m_startup_complete = true;
 	    g_signal_emit (self, signals[SIGNAL_STARTUP_COMPLETE], 0);
-      }
+        self->player->m_startup_complete = true;
 	}
 
 	void
 	Player::DBusMPX::shutdown_complete (DBusMPX* self)
 	{
-	  g_signal_emit (self, signals[SIGNAL_SHUTDOWN_COMPLETE], 0);
+        g_signal_emit (self, signals[SIGNAL_SHUTDOWN_COMPLETE], 0);
 	}
 
 	void
 	Player::DBusMPX::quit (DBusMPX *self)
 	{
-	  g_signal_emit (self, signals[SIGNAL_QUIT], 0);
+        g_signal_emit (self, signals[SIGNAL_QUIT], 0);
 	}
 
 #define TYPE_DBUS_OBJ_PLAYER (DBusPlayer::get_type ())
@@ -1584,11 +1570,11 @@ namespace MPX
 
         splash.set_message(_("Startup Complete"), 1.0);
 
-		DBusObjects.mpx->startup_complete(DBusObjects.mpx);
-
         resize( mcs->key_get<int>("mpx", "window-w"), mcs->key_get<int>("mpx", "window-h") );
         move( mcs->key_get<int>("mpx", "window-x"), mcs->key_get<int>("mpx", "window-y") );
 		show ();
+
+		DBusObjects.mpx->startup_complete(DBusObjects.mpx);
     }
 
     bool

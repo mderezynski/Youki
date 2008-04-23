@@ -281,6 +281,7 @@ main (int    argc,
     error = NULL;
   }
 
+  g_message("%s: Calling 'Startup'", G_STRLOC);
   o_mpx = dbus_g_proxy_new_for_name (dbus,
                                      "info.backtrace.mpx",
                                      "/MPX",
