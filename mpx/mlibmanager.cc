@@ -282,7 +282,7 @@ namespace MPX
 
             build_fstree(Vol->get_mount_point());
             TreePath path (1);
-            FSTree->expand_row(path);
+            m_FSTree->expand_row(path);
         }
     }
 
