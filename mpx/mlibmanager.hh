@@ -150,6 +150,8 @@ namespace MPX
             bool
             slot_select (const Glib::RefPtr<Gtk::TreeModel>&model, const Gtk::TreePath &path, bool was_selected);
 
+            void
+            recreate_path_frags ();
 
             typedef std::set<std::string> StrSetT;
             typedef std::vector<std::string> PathFrags;

@@ -249,6 +249,25 @@ namespace MPX
     }
 
     void
+    MLibManager::recreate_path_frags ()
+    {
+        m_ManagedPathFrags = PathFragsV();
+        for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
+        {
+            char ** path_frags = g_strsplit((*i).c_str(), "/", -1);
+            char ** path_frags_p = path_frags;
+            m_ManagedPathFrags.resize(m_ManagedPathFrags.size()+1);
+            PathFrags & frags = m_ManagedPathFrags.back();
+            while (*path_frags)
+            {
+                frags.push_back(*path_frags);
+                ++path_frags;
+            }
+            g_strfreev(path_frags_p);
+        }
+    }
+
+    void
     MLibManager::on_volumes_cbox_changed ()
     {
         if(m_VolumesCBox->get_active_row_number() >= 0)
@@ -259,7 +278,6 @@ namespace MPX
             m_DeviceUDI = Vol->get_storage_device_udi();
             m_MountPoint = Vol->get_mount_point();
             m_ManagedPaths = StrSetT();
-            m_ManagedPathFrags = PathFragsV();
 
             SQL::RowV v;
             m_Library.getSQL(v, (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'") % m_DeviceUDI % m_VolumeUDI).str());
@@ -268,18 +286,9 @@ namespace MPX
                 SQL::Row & r = *i;
                 std::string full_path = build_filename(m_MountPoint, boost::get<std::string>(r["insert_path"]));
                 m_ManagedPaths.insert(full_path); 
-                char ** path_frags = g_strsplit(full_path.c_str(), "/", -1);
-                char ** path_frags_p = path_frags;
-                m_ManagedPathFrags.resize(m_ManagedPathFrags.size()+1);
-                PathFrags & frags = m_ManagedPathFrags.back();
-                while (*path_frags)
-                {
-                    frags.push_back(*path_frags);
-                    ++path_frags;
-                }
-                g_strfreev(path_frags_p);
             }
 
+            recreate_path_frags ();
             build_fstree(Vol->get_mount_point());
             TreePath path (1);
             m_FSTree->expand_row(path, false);
@@ -312,6 +321,7 @@ namespace MPX
     MLibManager::on_path_toggled (const Glib::ustring & path_str)
     {
         TreeIter iter = FSTreeStore->get_iter(path_str);
+        TreeIter iter_copy = iter;
         std::string full_path = (*iter)[FSTreeColumns.FullPath];
 
         if(has_active_parent(iter))
@@ -326,11 +336,17 @@ namespace MPX
                 m_Library.execSQL((boost::format ("DELETE FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path = '%s'") % m_DeviceUDI % m_VolumeUDI % insert_path).str());
                 m_Library.vacuum();
                 m_ManagedPaths.erase(full_path);
+                recreate_path_frags ();
+                TreePath path = FSTreeStore->get_path(iter_copy); 
+                FSTreeStore->row_changed(path, iter_copy);
             }
         }
         else
         {
             m_ManagedPaths.insert(full_path);
+            recreate_path_frags ();
+            TreePath path = FSTreeStore->get_path(iter_copy); 
+            FSTreeStore->row_changed(path, iter_copy);
             StrV v;
             v.push_back(filename_to_uri(full_path));
             m_Library.initScan(v);
