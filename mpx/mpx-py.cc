@@ -403,7 +403,11 @@ struct pixbufreptr_to_pixbuf
 
 BOOST_PYTHON_MODULE(mpx)
 {
-    to_python_converter<Glib::RefPtr<Gdk::Pixbuf>, pixbufreptr_to_pixbuf, true>();
+    to_python_converter<Glib::RefPtr<Gdk::Pixbuf>, pixbufreptr_to_pixbuf 
+#if defined BOOST_PYTHON_SUPPORTS_PY_SIGNATURES
+	    , true
+#endif
+		    >();
 
     def("util_cairo_rounded_rect", &MPX::Util::cairo_rounded_rect);
 
