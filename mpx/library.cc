@@ -252,6 +252,22 @@ namespace MPX
                                           % attrs[ATTRIBUTE_ASIN].id
                                           % "album_artist_j").str());
 
+        static boost::format
+          tag_table_f ("CREATE TABLE IF NOT EXISTS tag "
+                            "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, " 
+                            "UNIQUE ('%s'));");
+
+        m_SQL->exec_sql ((tag_table_f  % "tag" % "tag").str()); 
+
+
+        static boost::format
+          tags_table_f ("CREATE TABLE IF NOT EXISTS tags "
+                            "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' INTEGER NOT NULL, '%s' INTEGER NOT NULL, " 
+                            "UNIQUE ('%s', '%s'));");
+
+        m_SQL->exec_sql ((tags_table_f  % "tagid" % "trackid" % "tagid" % "trackid" ).str()); 
+
+
         StrV columns;
         for (unsigned int n = 0; n < G_N_ELEMENTS(attrs); ++n)
         {

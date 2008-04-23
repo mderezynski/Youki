@@ -88,7 +88,7 @@ namespace MPX
         FSTreeStore->set_default_sort_func( sigc::mem_fun( *this, &MLibManager::fstree_sort ));
         FSTreeStore->set_sort_column( -1, Gtk::SORT_ASCENDING ); 
         m_FSTree->signal_row_expanded().connect( sigc::mem_fun( *this, &MLibManager::on_fstree_row_expanded )); 
-        m_FSTree->get_selection()->set_select_function( sigc::mem_fun( *this, &MLibManager::slot_select ));
+        m_FSTree->get_selection()->set_mode( Gtk::SELECTION_NONE ); 
 
         m_FSTree->set_model(FSTreeStore);
 
