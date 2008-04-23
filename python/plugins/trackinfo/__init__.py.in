@@ -525,7 +525,9 @@ class TrackInfoDispatcher(mpx.Plugin):
             self.info.clear()
 
     def new_track(self, blah):
-        m = self.player.get_metadata()
-        self.info.run(m)
-
+        try:
+            m = self.player.get_metadata()
+            self.info.run(m)
+        except:
+            return
 
