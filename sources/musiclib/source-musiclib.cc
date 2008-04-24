@@ -55,6 +55,7 @@ namespace
 {
   const char ACTION_CLEAR [] = "action-clear";
   const char ACTION_REMOVE_ITEMS [] = "action-remove-items";
+  const char ACTION_REMOVE_REMAINING [] = "action-remove-remaining";
   const char ACTION_PLAY [] = "action-play";
   const char ACTION_GO_TO_ALBUM [] = "action-go-to-album";
   
@@ -69,6 +70,7 @@ namespace
   "       <menuitem action='action-go-to-album'/>"
   "     <separator/>"
   "       <menuitem action='action-remove-items'/>"
+  "       <menuitem action='action-remove-remaining'/>"
   "       <menuitem action='action-clear'/>"
   "   </menu>"
   ""
@@ -344,17 +346,22 @@ namespace MPX
                 m_ActionGroup->add  (Gtk::Action::create (ACTION_CLEAR,
                                     Gtk::StockID (GTK_STOCK_CLEAR),
                                     _("Clear Playlist")),
-                                    sigc::mem_fun (*this, &PlaylistTreeView::clear));
+                                    sigc::mem_fun( *this, &PlaylistTreeView::clear ));
 
                 m_ActionGroup->add  (Gtk::Action::create (ACTION_REMOVE_ITEMS,
                                 Gtk::StockID (GTK_STOCK_REMOVE),
                                 _("Remove Selected Tracks")),
-                                sigc::mem_fun (*this, &PlaylistTreeView::action_cb_playlist_remove_items));
+                                sigc::mem_fun( *this, &PlaylistTreeView::action_cb_playlist_remove_items ));
+
+                m_ActionGroup->add  (Gtk::Action::create (ACTION_REMOVE_REMAINING,
+                                Gtk::StockID (GTK_STOCK_REMOVE),
+                                _("Remove Remaining Tracks")),
+                                sigc::mem_fun( *this, &PlaylistTreeView::action_cb_playlist_remove_remaining ));
 
                 m_ActionGroup->add  (Gtk::Action::create (ACTION_GO_TO_ALBUM,
                                 Gtk::StockID (GTK_STOCK_GO_FORWARD),
                                 _("Go to selected Album")),
-                                sigc::mem_fun (*this, &PlaylistTreeView::action_cb_go_selected_album));
+                                sigc::mem_fun( *this, &PlaylistTreeView::action_cb_go_selected_album ));
 
                 m_UIManager->insert_action_group (m_ActionGroup);
                 m_UIManager->add_ui_from_string (ui_playlist_popup);
@@ -423,628 +430,658 @@ namespace MPX
                   m_MusicLib.send_caps ();
               }
 
+              virtual void
+              action_cb_playlist_remove_remaining ()
+              {
+                  PathV p; 
+                  TreePath path = ListStore->get_path(m_CurrentIter.get());
+                  path.next();
+        
+                  while( path.get_indices().data()[0] < ListStore->children().size() )
+                  {
+                    p.push_back(path);
+                    path.next ();
+                  }
+
+                  ReferenceV v;
+                  std::for_each (p.begin(), p.end(), ReferenceCollect (ListStore, v));
+
+                  ReferenceVIter i;
+                  for (i = v.begin() ; !v.empty() ; )
+                  {
+                    TreeIter iter = ListStore->get_iter (i->get_path());
+                    ListStore->erase (iter);
+                    i = v.erase (i);
+                  }
+
+                  m_MusicLib.check_caps();
+                  m_MusicLib.send_caps ();
+              }
+
               void
               on_selection_changed ()
               {
-                if(get_selection()->count_selected_rows() == 1)
-                    m_MusicLib.set_play();
-                else
-                    m_MusicLib.clear_play();
+                  if(get_selection()->count_selected_rows() == 1)
+                      m_MusicLib.set_play();
+                  else
+                      m_MusicLib.clear_play();
               }
 
               void          
               append_trackid_v (TrackIdV const& tid_v, bool order = false)
               {
-                if(tid_v.empty())
-                    return;
+                  if(tid_v.empty())
+                      return;
 
-                std::stringstream numbers;
-                TrackIdV::const_iterator end = tid_v.end();
-                end--;
+                  std::stringstream numbers;
+                  TrackIdV::const_iterator end = tid_v.end();
+                  end--;
 
-                for(TrackIdV::const_iterator i = tid_v.begin(); i != tid_v.end(); ++i)
-                {
-                    numbers << *i;
-                    if(i != end)
-                        numbers << ",";
-                }
+                  for(TrackIdV::const_iterator i = tid_v.begin(); i != tid_v.end(); ++i)
+                  {
+                      numbers << *i;
+                      if(i != end)
+                          numbers << ",";
+                  }
 
-                SQL::RowV v;
-                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s) %s") % numbers.str() % (order ? "ORDER BY track_view.track" : "")).str()); 
+                  SQL::RowV v;
+                  m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s) %s") % numbers.str() % (order ? "ORDER BY track_view.track" : "")).str()); 
 
-                TreeIter iter = ListStore->append();
-                m_PlayInitIter = iter;
+                  TreeIter iter = ListStore->append();
+                  m_PlayInitIter = iter;
 
-                for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
-                {
-                        SQL::Row & r = *i;
-                        
-                        if(i != v.begin())
-                            iter = ListStore->insert_after(iter);
+                  for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                  {
+                          SQL::Row & r = *i;
+                          
+                          if(i != v.begin())
+                              iter = ListStore->insert_after(iter);
 
-                        if(r.count("artist"))
-                            (*iter)[PlaylistColumns.Artist] = get<std::string>(r["artist"]); 
-                        if(r.count("album"))
-                            (*iter)[PlaylistColumns.Album] = get<std::string>(r["album"]); 
-                        if(r.count("track"))
-                            (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(r["track"]));
-                        if(r.count("title"))
-                            (*iter)[PlaylistColumns.Title] = get<std::string>(r["title"]);
-                        if(r.count("time"))
-                            (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(r["time"]));
-                        if(r.count("mb_artist_id"))
-                            (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(r["mb_artist_id"]);
-                        if(r.count("mb_album_id"))
-                            (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(r["mb_album_id"]);
+                          if(r.count("artist"))
+                              (*iter)[PlaylistColumns.Artist] = get<std::string>(r["artist"]); 
+                          if(r.count("album"))
+                              (*iter)[PlaylistColumns.Album] = get<std::string>(r["album"]); 
+                          if(r.count("track"))
+                              (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(r["track"]));
+                          if(r.count("title"))
+                              (*iter)[PlaylistColumns.Title] = get<std::string>(r["title"]);
+                          if(r.count("time"))
+                              (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(r["time"]));
+                          if(r.count("mb_artist_id"))
+                              (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(r["mb_artist_id"]);
+                          if(r.count("mb_album_id"))
+                              (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(r["mb_album_id"]);
 
-                        if(r.count("id"))
-                        {
-                            (*iter)[PlaylistColumns.RowId] = get<gint64>(r["id"]); 
-                            if(!m_CurrentIter && m_CurrentId && get<gint64>(r["id"]) == m_CurrentId.get())
-                            {
-                                m_CurrentIter = iter; 
-                                queue_draw();
-                            }
-                        }
-                        else
-                            g_critical("Track with no id; this should never happen.");
+                          if(r.count("id"))
+                          {
+                              (*iter)[PlaylistColumns.RowId] = get<gint64>(r["id"]); 
+                              if(!m_CurrentIter && m_CurrentId && get<gint64>(r["id"]) == m_CurrentId.get())
+                              {
+                                  m_CurrentIter = iter; 
+                                  queue_draw();
+                              }
+                          }
+                          else
+                              g_critical("Track with no id; this should never happen.");
 
-                        if(r.count("rating"))
-                            (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
+                          if(r.count("rating"))
+                              (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
 
-                        (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
-                        (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
-                        (*iter)[PlaylistColumns.IsMPXTrack] = true; 
-                }
+                          (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
+                          (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
+                          (*iter)[PlaylistColumns.IsMPXTrack] = true; 
+                  }
               } 
 
               void
               append_uris (const Util::FileList& uris, Gtk::TreeIter & iter, bool & begin)
               {
-                    Util::FileList dirs;
+                  Util::FileList dirs;
 
-                    for(Util::FileList::const_iterator i = uris.begin(); i != uris.end(); ++i)
-                    {
-                        if(file_test(filename_from_uri(*i), FILE_TEST_IS_DIR))
-                        {
-                            dirs.push_back(*i);
-                            continue;
-                        }
+                  for(Util::FileList::const_iterator i = uris.begin(); i != uris.end(); ++i)
+                  {
+                      if(file_test(filename_from_uri(*i), FILE_TEST_IS_DIR))
+                      {
+                          dirs.push_back(*i);
+                          continue;
+                      }
 
-                        // Check for playlist types
-                        if(Util::str_has_suffix_nocase(*i, "xspf"))
-                        {
-                            PlaylistParserXSPF p;
-                            Util::FileList xspf_uris;
-                            p.read(*i, xspf_uris); 
-                            append_uris(xspf_uris, iter, begin);
-                        }
+                      // Check for playlist types
+                      if(Util::str_has_suffix_nocase(*i, "xspf"))
+                      {
+                          PlaylistParserXSPF p;
+                          Util::FileList xspf_uris;
+                          p.read(*i, xspf_uris); 
+                          append_uris(xspf_uris, iter, begin);
+                      }
 
 
-                        Track track;
-                        m_Lib.get().getMetadata(*i, track);
+                      Track track;
+                      m_Lib.get().getMetadata(*i, track);
 
-                        if(!begin)
-                          iter = ListStore->insert_after(iter);
+                      if(!begin)
+                        iter = ListStore->insert_after(iter);
 
-                        begin = false;
+                      begin = false;
 
-                        if(track[ATTRIBUTE_ARTIST])
-                            (*iter)[PlaylistColumns.Artist] = get<std::string>(track[ATTRIBUTE_ARTIST].get()); 
+                      if(track[ATTRIBUTE_ARTIST])
+                          (*iter)[PlaylistColumns.Artist] = get<std::string>(track[ATTRIBUTE_ARTIST].get()); 
 
-                        if(track[ATTRIBUTE_ALBUM])
-                            (*iter)[PlaylistColumns.Album] = get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
+                      if(track[ATTRIBUTE_ALBUM])
+                          (*iter)[PlaylistColumns.Album] = get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
 
-                        if(track[ATTRIBUTE_TRACK])
-                            (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(track[ATTRIBUTE_TRACK].get()));
+                      if(track[ATTRIBUTE_TRACK])
+                          (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(track[ATTRIBUTE_TRACK].get()));
 
-                        if(track[ATTRIBUTE_TITLE])
-                            (*iter)[PlaylistColumns.Title] = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
+                      if(track[ATTRIBUTE_TITLE])
+                          (*iter)[PlaylistColumns.Title] = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
 
-                        if(track[ATTRIBUTE_TIME])
-                            (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(track[ATTRIBUTE_TIME].get()));
+                      if(track[ATTRIBUTE_TIME])
+                          (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(track[ATTRIBUTE_TIME].get()));
 
-                        if(track[ATTRIBUTE_MB_ARTIST_ID])
-                            (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get());
+                      if(track[ATTRIBUTE_MB_ARTIST_ID])
+                          (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get());
 
-                        if(track[ATTRIBUTE_MB_ALBUM_ID])
-                            (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get());
+                      if(track[ATTRIBUTE_MB_ALBUM_ID])
+                          (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get());
 
-                        if(track[ATTRIBUTE_RATING])
-                            (*iter)[PlaylistColumns.Rating] = get<gint64>(track[ATTRIBUTE_RATING].get());
+                      if(track[ATTRIBUTE_RATING])
+                          (*iter)[PlaylistColumns.Rating] = get<gint64>(track[ATTRIBUTE_RATING].get());
 
-                        if(track[ATTRIBUTE_MPX_TRACK_ID])
-                        {
-                            (*iter)[PlaylistColumns.RowId] = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()); 
-                            if(!m_CurrentIter && m_CurrentId && get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) == m_CurrentId.get())
-                            {
-                                  m_CurrentIter = iter; 
-                                  queue_draw();
-                            }
-                        }
+                      if(track[ATTRIBUTE_MPX_TRACK_ID])
+                      {
+                          (*iter)[PlaylistColumns.RowId] = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()); 
+                          if(!m_CurrentIter && m_CurrentId && get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) == m_CurrentId.get())
+                          {
+                                m_CurrentIter = iter; 
+                                queue_draw();
+                          }
+                      }
 
-                        if(track[ATTRIBUTE_LOCATION])
-                            (*iter)[PlaylistColumns.Location] = get<std::string>(track[ATTRIBUTE_LOCATION].get());
-                        else
-                            g_warning("Warning, no location given for track; this is totally wrong and should never happen.");
+                      if(track[ATTRIBUTE_LOCATION])
+                          (*iter)[PlaylistColumns.Location] = get<std::string>(track[ATTRIBUTE_LOCATION].get());
+                      else
+                          g_warning("Warning, no location given for track; this is totally wrong and should never happen.");
 
-                        (*iter)[PlaylistColumns.MPXTrack] = track; 
-                        (*iter)[PlaylistColumns.IsMPXTrack] = track[ATTRIBUTE_MPX_TRACK_ID] ? true : false; 
-                    }
+                      (*iter)[PlaylistColumns.MPXTrack] = track; 
+                      (*iter)[PlaylistColumns.IsMPXTrack] = track[ATTRIBUTE_MPX_TRACK_ID] ? true : false; 
+                  }
 
-                    if(!dirs.empty())
-                        for(Util::FileList::const_iterator i = dirs.begin(); i != dirs.end(); ++i)
-                        {
-                                                Util::FileList files;
-                                                Util::collect_audio_paths(*i, files);
-                                                append_uris(files,iter,begin);
-                        }
+                  if(!dirs.empty())
+                      for(Util::FileList::const_iterator i = dirs.begin(); i != dirs.end(); ++i)
+                      {
+                                              Util::FileList files;
+                                              Util::collect_audio_paths(*i, files);
+                                              append_uris(files,iter,begin);
+                      }
               }
 
               virtual void
               on_drag_data_received (const Glib::RefPtr<Gdk::DragContext>&, int x, int y,
                   const SelectionData& data, guint, guint)
               {
-                ListStore->set_sort_column(GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID, Gtk::SORT_ASCENDING);
+                  ListStore->set_sort_column(GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID, Gtk::SORT_ASCENDING);
 
-                TreePath path;
-                TreeViewDropPosition pos;
-                TreeIter iter;
+                  TreePath path;
+                  TreeViewDropPosition pos;
+                  TreeIter iter;
 
-                if( !get_dest_row_at_pos (x, y, path, pos) )
-                {
-                  int cell_x, cell_y;
-                  TreeViewColumn * col;
-                  if(get_path_at_pos (x, y, path, col, cell_x, cell_y))
-                    iter = ListStore->insert (ListStore->get_iter (path));
-                  else
-                    iter = ListStore->append ();
-                }
-                else
-                {
-                  switch (pos)
+                  if( !get_dest_row_at_pos (x, y, path, pos) )
                   {
-                    case TREE_VIEW_DROP_BEFORE:
-                    case TREE_VIEW_DROP_INTO_OR_BEFORE:
+                    int cell_x, cell_y;
+                    TreeViewColumn * col;
+                    if(get_path_at_pos (x, y, path, col, cell_x, cell_y))
                       iter = ListStore->insert (ListStore->get_iter (path));
-                      break;
-
-                    case TREE_VIEW_DROP_AFTER:
-                    case TREE_VIEW_DROP_INTO_OR_AFTER:
-                      iter = ListStore->insert_after (ListStore->get_iter (path));
-                      break;
+                    else
+                      iter = ListStore->append ();
                   }
-                }
-
-                if(data.get_data_type() == "mpx-album")
-                {
-                    gint64 id = *(reinterpret_cast<const gint64*>(data.get_data()));
-
-                    SQL::RowV v;
-                    m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = %lld ORDER BY track;") % id).str()); 
-                    for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                  else
+                  {
+                    switch (pos)
                     {
-                        SQL::Row & r = *i;
-                        
-                        if(i != v.begin())
-                            iter = ListStore->insert_after(iter);
+                      case TREE_VIEW_DROP_BEFORE:
+                      case TREE_VIEW_DROP_INTO_OR_BEFORE:
+                        iter = ListStore->insert (ListStore->get_iter (path));
+                        break;
 
-                        if(r.count("artist"))
-                            (*iter)[PlaylistColumns.Artist] = get<std::string>(r["artist"]); 
-                        if(r.count("album"))
-                            (*iter)[PlaylistColumns.Album] = get<std::string>(r["album"]); 
-                        if(r.count("track"))
-                            (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(r["track"]));
-                        if(r.count("title"))
-                            (*iter)[PlaylistColumns.Title] = get<std::string>(r["title"]);
-                        if(r.count("time"))
-                            (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(r["time"]));
-                        if(r.count("mb_artist_id"))
-                            (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(r["mb_artist_id"]);
-                        if(r.count("mb_album_id"))
-                            (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(r["mb_album_id"]);
-
-                        if(r.count("id"))
-                        {
-                            (*iter)[PlaylistColumns.RowId] = get<gint64>(r["id"]); 
-                            if(!m_CurrentIter && m_CurrentId && get<gint64>(r["id"]) == m_CurrentId.get())
-                            {
-                                m_CurrentIter = iter; 
-                                queue_draw();
-                            }
-                        }
-                        else
-                            g_critical("Track with no id; this should never happen.");
-
-                        if(r.count("rating"))
-                            (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
-
-                        (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
-                        (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
-                        (*iter)[PlaylistColumns.IsMPXTrack] = true; 
+                      case TREE_VIEW_DROP_AFTER:
+                      case TREE_VIEW_DROP_INTO_OR_AFTER:
+                        iter = ListStore->insert_after (ListStore->get_iter (path));
+                        break;
                     }
-                }
-                if(data.get_data_type() == "mpx-track")
-                {
-                    gint64 id = *(reinterpret_cast<const gint64*>(data.get_data()));
+                  }
 
-                    SQL::RowV v;
-                    m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = %lld;") % id).str()); 
-                    for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
-                    {
-                        SQL::Row & r = *i;
+                  if(data.get_data_type() == "mpx-album")
+                  {
+                      gint64 id = *(reinterpret_cast<const gint64*>(data.get_data()));
 
-                        if(i != v.begin())
-                            iter = ListStore->insert_after(iter);
+                      SQL::RowV v;
+                      m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = %lld ORDER BY track;") % id).str()); 
+                      for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                      {
+                          SQL::Row & r = *i;
+                          
+                          if(i != v.begin())
+                              iter = ListStore->insert_after(iter);
 
-                        if(r.count("artist"))
-                            (*iter)[PlaylistColumns.Artist] = get<std::string>(r["artist"]); 
-                        if(r.count("album"))
-                            (*iter)[PlaylistColumns.Album] = get<std::string>(r["album"]); 
-                        if(r.count("track"))
-                            (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(r["track"]));
-                        if(r.count("title"))
-                            (*iter)[PlaylistColumns.Title] = get<std::string>(r["title"]);
-                        if(r.count("time"))
-                            (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(r["time"]));
-                        if(r.count("mb_artist_id"))
-                            (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(r["mb_artist_id"]);
-                        if(r.count("mb_album_id"))
-                            (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(r["mb_album_id"]);
+                          if(r.count("artist"))
+                              (*iter)[PlaylistColumns.Artist] = get<std::string>(r["artist"]); 
+                          if(r.count("album"))
+                              (*iter)[PlaylistColumns.Album] = get<std::string>(r["album"]); 
+                          if(r.count("track"))
+                              (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(r["track"]));
+                          if(r.count("title"))
+                              (*iter)[PlaylistColumns.Title] = get<std::string>(r["title"]);
+                          if(r.count("time"))
+                              (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(r["time"]));
+                          if(r.count("mb_artist_id"))
+                              (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(r["mb_artist_id"]);
+                          if(r.count("mb_album_id"))
+                              (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(r["mb_album_id"]);
 
-                        if(r.count("id"))
-                        {
-                            (*iter)[PlaylistColumns.RowId] = get<gint64>(r["id"]); 
-                            if(!m_CurrentIter && m_CurrentId && get<gint64>(r["id"]) == m_CurrentId.get())
-                            {
-                                m_CurrentIter = iter; 
-                                queue_draw();
-                            }
-                        }
+                          if(r.count("id"))
+                          {
+                              (*iter)[PlaylistColumns.RowId] = get<gint64>(r["id"]); 
+                              if(!m_CurrentIter && m_CurrentId && get<gint64>(r["id"]) == m_CurrentId.get())
+                              {
+                                  m_CurrentIter = iter; 
+                                  queue_draw();
+                              }
+                          }
+                          else
+                              g_critical("Track with no id; this should never happen.");
 
-                        if(r.count("rating"))
-                            (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
+                          if(r.count("rating"))
+                              (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
 
-                        (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
-                        (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
-                        (*iter)[PlaylistColumns.IsMPXTrack] = true; 
-                    }
-                }
-                else
-                {
-                    bool begin = true;
-                    Util::FileList uris = data.get_uris();
-                    append_uris (uris, iter, begin);
-                }
+                          (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
+                          (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
+                          (*iter)[PlaylistColumns.IsMPXTrack] = true; 
+                      }
+                  }
+                  if(data.get_data_type() == "mpx-track")
+                  {
+                      gint64 id = *(reinterpret_cast<const gint64*>(data.get_data()));
 
-                m_MusicLib.check_caps ();
-                m_MusicLib.send_caps ();
+                      SQL::RowV v;
+                      m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = %lld;") % id).str()); 
+                      for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                      {
+                          SQL::Row & r = *i;
+
+                          if(i != v.begin())
+                              iter = ListStore->insert_after(iter);
+
+                          if(r.count("artist"))
+                              (*iter)[PlaylistColumns.Artist] = get<std::string>(r["artist"]); 
+                          if(r.count("album"))
+                              (*iter)[PlaylistColumns.Album] = get<std::string>(r["album"]); 
+                          if(r.count("track"))
+                              (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(r["track"]));
+                          if(r.count("title"))
+                              (*iter)[PlaylistColumns.Title] = get<std::string>(r["title"]);
+                          if(r.count("time"))
+                              (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(r["time"]));
+                          if(r.count("mb_artist_id"))
+                              (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(r["mb_artist_id"]);
+                          if(r.count("mb_album_id"))
+                              (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(r["mb_album_id"]);
+
+                          if(r.count("id"))
+                          {
+                              (*iter)[PlaylistColumns.RowId] = get<gint64>(r["id"]); 
+                              if(!m_CurrentIter && m_CurrentId && get<gint64>(r["id"]) == m_CurrentId.get())
+                              {
+                                  m_CurrentIter = iter; 
+                                  queue_draw();
+                              }
+                          }
+
+                          if(r.count("rating"))
+                              (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
+
+                          (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
+                          (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
+                          (*iter)[PlaylistColumns.IsMPXTrack] = true; 
+                      }
+                  }
+                  else
+                  {
+                      bool begin = true;
+                      Util::FileList uris = data.get_uris();
+                      append_uris (uris, iter, begin);
+                  }
+
+                  m_MusicLib.check_caps ();
+                  m_MusicLib.send_caps ();
               }
 
               virtual bool
               on_button_press_event (GdkEventButton* event)
               {
-                int cell_x, cell_y ;
-                TreeViewColumn *col ;
-                TreePath path;
+                  int cell_x, cell_y ;
+                  TreeViewColumn *col ;
+                  TreePath path;
 
-                if(get_path_at_pos (event->x, event->y, path, col, cell_x, cell_y))
-                {
-                    if(col == get_column(3))
-                    {
-                        int rating = (cell_x + 7) / 12;
-                        g_return_val_if_fail(((rating >= 0) && (rating <= 5)), false);
-                        TreeIter iter = ListStore->get_iter(path);
-                        (*iter)[PlaylistColumns.Rating] = rating;   
-                        m_Lib.get().trackRated(gint64((*iter)[PlaylistColumns.RowId]), rating);
-                    }
-                }
-                TreeView::on_button_press_event(event);
-                return false;
+                  if(get_path_at_pos (event->x, event->y, path, col, cell_x, cell_y))
+                  {
+                      if(col == get_column(3))
+                      {
+                          int rating = (cell_x + 7) / 12;
+                          g_return_val_if_fail(((rating >= 0) && (rating <= 5)), false);
+                          TreeIter iter = ListStore->get_iter(path);
+                          (*iter)[PlaylistColumns.Rating] = rating;   
+                          m_Lib.get().trackRated(gint64((*iter)[PlaylistColumns.RowId]), rating);
+                      }
+                  }
+                  TreeView::on_button_press_event(event);
+                  return false;
               }
-
 
               bool
               on_drag_motion (RefPtr<Gdk::DragContext> const& context, int x, int y, guint time)
               {
-                TreeModel::Path path;
-                TreeViewDropPosition pos;
+                  TreeModel::Path path;
+                  TreeViewDropPosition pos;
 
-                if( get_dest_row_at_pos (x, y, path, pos) )
-                {
-                  switch (pos)
+                  if( get_dest_row_at_pos (x, y, path, pos) )
                   {
-                      case TREE_VIEW_DROP_INTO_OR_BEFORE:
-                      case TREE_VIEW_DROP_BEFORE:
-                        set_drag_dest_row (path, TREE_VIEW_DROP_BEFORE);
-                        break;
+                    switch (pos)
+                    {
+                        case TREE_VIEW_DROP_INTO_OR_BEFORE:
+                        case TREE_VIEW_DROP_BEFORE:
+                          set_drag_dest_row (path, TREE_VIEW_DROP_BEFORE);
+                          break;
 
-                      case TREE_VIEW_DROP_INTO_OR_AFTER:
-                      case TREE_VIEW_DROP_AFTER:
-                        set_drag_dest_row (path, TREE_VIEW_DROP_AFTER);
-                        break;
+                        case TREE_VIEW_DROP_INTO_OR_AFTER:
+                        case TREE_VIEW_DROP_AFTER:
+                          set_drag_dest_row (path, TREE_VIEW_DROP_AFTER);
+                          break;
+                    }
                   }
-                }
-                
-                return true;
+                  
+                  return true;
               }
 
               virtual bool
               on_event (GdkEvent * ev)
               {
-                if ((ev->type == GDK_BUTTON_RELEASE) ||
-                    (ev->type == GDK_2BUTTON_PRESS) ||
-                    (ev->type == GDK_3BUTTON_PRESS))
-                {
-                  m_ButtonDepressed = false;
-                  return false;
-                }
-                else
-                if( ev->type == GDK_BUTTON_PRESS )
-                {
-                  GdkEventButton * event = reinterpret_cast <GdkEventButton *> (ev);
-
-                  if( event->button == 1 && (event->window == get_bin_window()->gobj()))
+                  if ((ev->type == GDK_BUTTON_RELEASE) ||
+                      (ev->type == GDK_2BUTTON_PRESS) ||
+                      (ev->type == GDK_3BUTTON_PRESS))
                   {
-                    TreeViewColumn      * column;
-                    int                   cell_x,
-                                          cell_y;
-                    int                   tree_x,
-                                          tree_y;
-                    TreePath              path;
-
-                    tree_x = event->x; tree_y = event->y;
-                    m_ButtonDepressed  = get_path_at_pos (tree_x, tree_y, path, column, cell_x, cell_y) ;
-                    if(m_ButtonDepressed)
-                        m_PathButtonPress = path;  
+                    m_ButtonDepressed = false;
+                    return false;
                   }
                   else
-                  if( event->button == 3 )
+                  if( ev->type == GDK_BUTTON_PRESS )
                   {
-                    m_ActionGroup->get_action (ACTION_CLEAR)->set_sensitive
-                      (ListStore->children().size());
+                    GdkEventButton * event = reinterpret_cast <GdkEventButton *> (ev);
 
-                    m_ActionGroup->get_action (ACTION_REMOVE_ITEMS)->set_sensitive
-                      (get_selection()->count_selected_rows());
-
-                    m_ActionGroup->get_action (ACTION_PLAY)->set_sensitive
-                      (get_selection()->count_selected_rows());
-
-                    m_ActionGroup->get_action (ACTION_GO_TO_ALBUM)->set_sensitive
-                      (get_selection()->count_selected_rows() == 1);
-
-                    Gtk::Menu * menu = dynamic_cast < Gtk::Menu* > (Util::get_popup (m_UIManager, "/popup-playlist-list/menu-playlist-list"));
-                    if (menu) // better safe than screwed
+                    if( event->button == 1 && (event->window == get_bin_window()->gobj()))
                     {
-                      menu->popup (event->button, event->time);
+                      TreeViewColumn      * column;
+                      int                   cell_x,
+                                            cell_y;
+                      int                   tree_x,
+                                            tree_y;
+                      TreePath              path;
+
+                      tree_x = event->x; tree_y = event->y;
+                      m_ButtonDepressed  = get_path_at_pos (tree_x, tree_y, path, column, cell_x, cell_y) ;
+                      if(m_ButtonDepressed)
+                          m_PathButtonPress = path;  
                     }
-                    return true;
+                    else
+                    if( event->button == 3 )
+                    {
+                      m_ActionGroup->get_action (ACTION_CLEAR)->set_sensitive
+                        (ListStore->children().size());
+
+                      m_ActionGroup->get_action (ACTION_REMOVE_ITEMS)->set_sensitive
+                        (get_selection()->count_selected_rows());
+
+                      m_ActionGroup->get_action (ACTION_REMOVE_REMAINING)->set_sensitive
+                        (m_CurrentIter);
+
+                      m_ActionGroup->get_action (ACTION_PLAY)->set_sensitive
+                        (get_selection()->count_selected_rows());
+
+                      m_ActionGroup->get_action (ACTION_GO_TO_ALBUM)->set_sensitive
+                        (get_selection()->count_selected_rows() == 1);
+
+                      Gtk::Menu * menu = dynamic_cast < Gtk::Menu* > (Util::get_popup (m_UIManager, "/popup-playlist-list/menu-playlist-list"));
+                      if (menu) // better safe than screwed
+                      {
+                        menu->popup (event->button, event->time);
+                      }
+                      return true;
+                    }
                   }
-                }
-                return false;
+                  return false;
               }
 
               virtual bool
               on_motion_notify_event (GdkEventMotion * event)
               {
-                TreeView::on_motion_notify_event (event);
+                  TreeView::on_motion_notify_event (event);
 
-                if( m_ButtonDepressed && event->window == get_bin_window()->gobj())
-                {
-                  TreeViewColumn    * column;
-                  TreeModel::Path     path;
-
-                  int                 cell_x,
-                                      cell_y;
-
-                  int                 tree_x,
-                                      tree_y;
-
-                  tree_x = event->x;
-                  tree_y = event->y;
-                  if( get_path_at_pos (tree_x, tree_y, path, column, cell_x, cell_y) )
+                  if( m_ButtonDepressed && event->window == get_bin_window()->gobj())
                   {
-                    if( path != m_PathButtonPress )
-                    {
-                      if( path < m_PathButtonPress )
-                        move_selected_rows_up ();
-                      else
-                      if( path > m_PathButtonPress )
-                        move_selected_rows_down ();
+                    TreeViewColumn    * column;
+                    TreeModel::Path     path;
 
-                      m_PathButtonPress = path;
+                    int                 cell_x,
+                                        cell_y;
+
+                    int                 tree_x,
+                                        tree_y;
+
+                    tree_x = event->x;
+                    tree_y = event->y;
+                    if( get_path_at_pos (tree_x, tree_y, path, column, cell_x, cell_y) )
+                    {
+                      if( path != m_PathButtonPress )
+                      {
+                        if( path < m_PathButtonPress )
+                          move_selected_rows_up ();
+                        else
+                        if( path > m_PathButtonPress )
+                          move_selected_rows_down ();
+
+                        m_PathButtonPress = path;
+                      }
                     }
                   }
-                }
-                return false;
+                  return false;
               }
 
               void
               move_selected_rows_up ()
               {
-                PathV p = get_selection()->get_selected_rows();
+                  PathV p = get_selection()->get_selected_rows();
 
-                if( p.empty() )
-                  return;
+                  if( p.empty() )
+                    return;
 
-                if( p[0].get_indices().data()[0] < 1 )
-                  return; // we don't move rows if the uppermost would be pushed out of the list
+                  if( p[0].get_indices().data()[0] < 1 )
+                    return; // we don't move rows if the uppermost would be pushed out of the list
 
-                ReferenceV r;
-                std::for_each (p.begin(), p.end(), ReferenceCollect (ListStore, r));
-                ReferenceVIter i = r.begin();
+                  ReferenceV r;
+                  std::for_each (p.begin(), p.end(), ReferenceCollect (ListStore, r));
+                  ReferenceVIter i = r.begin();
 
-                ListStore->set_sort_column(GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID, Gtk::SORT_ASCENDING);
+                  ListStore->set_sort_column(GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID, Gtk::SORT_ASCENDING);
 
-                for ( ; !r.empty() ; )
-                {
-                  TreeModel::Path path_a (i->get_path());
-                  TreeModel::Path path_b (i->get_path());
-                  path_a.prev();
-                  path_b.next();
-                  TreeModel::iterator iter_a (ListStore->get_iter (path_a));
-                  TreeModel::iterator iter_b (ListStore->get_iter (path_b));
-
-                  if( G_UNLIKELY( TreeNodeChildren::size_type( path_b.get_indices().data()[0] ) == ListStore->children().size()) )
+                  for ( ; !r.empty() ; )
                   {
-                    ListStore->iter_swap (iter_a, ListStore->get_iter (i->get_path()));
-                  }
-                  else
-                  {
-                    ListStore->move (iter_a, iter_b);
-                  }
+                    TreeModel::Path path_a (i->get_path());
+                    TreeModel::Path path_b (i->get_path());
+                    path_a.prev();
+                    path_b.next();
+                    TreeModel::iterator iter_a (ListStore->get_iter (path_a));
+                    TreeModel::iterator iter_b (ListStore->get_iter (path_b));
 
-                  i = r.erase (i);
-                }
+                    if( G_UNLIKELY( TreeNodeChildren::size_type( path_b.get_indices().data()[0] ) == ListStore->children().size()) )
+                    {
+                      ListStore->iter_swap (iter_a, ListStore->get_iter (i->get_path()));
+                    }
+                    else
+                    {
+                      ListStore->move (iter_a, iter_b);
+                    }
+
+                    i = r.erase (i);
+                  }
               }
 
               void
               move_selected_rows_down ()
               {
-                PathV p = get_selection()->get_selected_rows();
-              
-                if( p.empty() )
-                  return;
+                  PathV p = get_selection()->get_selected_rows();
+                
+                  if( p.empty() )
+                    return;
 
-                if( TreeNodeChildren::size_type( p[p.size()-1].get_indices().data()[0] + 1 ) == (ListStore->children().size()) )
-                  return; // we don't move rows if the LOWER-most would be pushed out of the list, either
+                  if( TreeNodeChildren::size_type( p[p.size()-1].get_indices().data()[0] + 1 ) == (ListStore->children().size()) )
+                    return; // we don't move rows if the LOWER-most would be pushed out of the list, either
 
-                ReferenceV r;
-                std::for_each (p.begin(), p.end(), ReferenceCollect (ListStore, r));
-                ReferenceVIter i = r.begin();
+                  ReferenceV r;
+                  std::for_each (p.begin(), p.end(), ReferenceCollect (ListStore, r));
+                  ReferenceVIter i = r.begin();
 
-                ListStore->set_sort_column(GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID, Gtk::SORT_ASCENDING);
+                  ListStore->set_sort_column(GTK_TREE_SORTABLE_UNSORTED_SORT_COLUMN_ID, Gtk::SORT_ASCENDING);
 
-                for ( ; !r.empty() ; )
-                {
-                  TreeModel::Path path_a (i->get_path());
-                  TreeModel::Path path_b (i->get_path());
-                  path_b.next();
-                  TreeModel::iterator iter_a (ListStore->get_iter (path_a));
-                  TreeModel::iterator iter_b (ListStore->get_iter (path_b));
+                  for ( ; !r.empty() ; )
+                  {
+                    TreeModel::Path path_a (i->get_path());
+                    TreeModel::Path path_b (i->get_path());
+                    path_b.next();
+                    TreeModel::iterator iter_a (ListStore->get_iter (path_a));
+                    TreeModel::iterator iter_b (ListStore->get_iter (path_b));
 
-                  ListStore->move (iter_b, iter_a);
-                  i = r.erase (i);
-                }
+                    ListStore->move (iter_b, iter_a);
+                    i = r.erase (i);
+                  }
               }
 
               void
               on_drag_leave (RefPtr<Gdk::DragContext> const& context, guint time)
               {
-                gtk_tree_view_set_drag_dest_row (gobj(), NULL, GTK_TREE_VIEW_DROP_BEFORE);
+                  gtk_tree_view_set_drag_dest_row (gobj(), NULL, GTK_TREE_VIEW_DROP_BEFORE);
               }
 
               bool
               on_drag_drop (RefPtr<Gdk::DragContext> const& context, int x, int y, guint time)
               {
-                ustring target (drag_dest_find_target (context));
+                  ustring target (drag_dest_find_target (context));
 
-                if( !target.empty() )
-                {
-                  drag_get_data (context, target, time);
-                  context->drag_finish  (true, false, time);
-                  return true;
-                }
-                else
-                {
-                  context->drag_finish  (false, false, time);
-                  return false;
-                }
+                  if( !target.empty() )
+                  {
+                    drag_get_data (context, target, time);
+                    context->drag_finish  (true, false, time);
+                    return true;
+                  }
+                  else
+                  {
+                    context->drag_finish  (false, false, time);
+                    return false;
+                  }
               }
 
               void
               cellDataFunc (CellRenderer * basecell, TreeModel::iterator const &iter)
               {
-                CellRendererText *cell_t = dynamic_cast<CellRendererText*>(basecell);
-                guint64 Length = (*iter)[PlaylistColumns.Length]; 
-                g_object_set(G_OBJECT(cell_t->gobj()), "xalign", 1.0f, NULL);
-                cell_t->property_text() = (boost::format ("%d:%02d") % (Length / 60) % (Length % 60)).str();
+                  CellRendererText *cell_t = dynamic_cast<CellRendererText*>(basecell);
+                  guint64 Length = (*iter)[PlaylistColumns.Length]; 
+                  g_object_set(G_OBJECT(cell_t->gobj()), "xalign", 1.0f, NULL);
+                  cell_t->property_text() = (boost::format ("%d:%02d") % (Length / 60) % (Length % 60)).str();
               }
 
               void
               cellDataFuncPlaying (CellRenderer * basecell, TreeModel::iterator const &iter)
               {
-                CellRendererPixbuf *cell_p = dynamic_cast<CellRendererPixbuf*>(basecell);
-                if(m_CurrentIter && m_CurrentIter.get() == iter)
-                    cell_p->property_pixbuf() = m_Playing;
-                else
-                    cell_p->property_pixbuf() = Glib::RefPtr<Gdk::Pixbuf>(0);
+                  CellRendererPixbuf *cell_p = dynamic_cast<CellRendererPixbuf*>(basecell);
+                  if(m_CurrentIter && m_CurrentIter.get() == iter)
+                      cell_p->property_pixbuf() = m_Playing;
+                  else
+                      cell_p->property_pixbuf() = Glib::RefPtr<Gdk::Pixbuf>(0);
               }
-
 
               void
               cellDataFuncRating (CellRenderer * basecell, TreeModel::iterator const &iter)
               {
-                CellRendererPixbuf *cell_p = dynamic_cast<CellRendererPixbuf*>(basecell);
-                if(!(*iter)[PlaylistColumns.IsMPXTrack])
-                {
-                    cell_p->property_sensitive() = false; 
-                    cell_p->property_pixbuf() = Glib::RefPtr<Gdk::Pixbuf>(0);
-                }
-                else
-                {
-                    cell_p->property_sensitive() = true; 
-                    gint64 i = ((*iter)[PlaylistColumns.Rating]);
-                    g_return_if_fail((i >= 0) && (i <= 5));
-                    cell_p->property_pixbuf() = m_Stars[i];
-                }
+                  CellRendererPixbuf *cell_p = dynamic_cast<CellRendererPixbuf*>(basecell);
+                  if(!(*iter)[PlaylistColumns.IsMPXTrack])
+                  {
+                      cell_p->property_sensitive() = false; 
+                      cell_p->property_pixbuf() = Glib::RefPtr<Gdk::Pixbuf>(0);
+                  }
+                  else
+                  {
+                      cell_p->property_sensitive() = true; 
+                      gint64 i = ((*iter)[PlaylistColumns.Rating]);
+                      g_return_if_fail((i >= 0) && (i <= 5));
+                      cell_p->property_pixbuf() = m_Stars[i];
+                  }
               }
 
               int
               slotSortById(const TreeIter& iter_a, const TreeIter& iter_b)
               {
-                guint64 id_a = (*iter_a)[PlaylistColumns.RowId];
-                guint64 id_b = (*iter_b)[PlaylistColumns.RowId];
-    
-                return (id_a - id_b); // FIXME: int overflow
+                  guint64 id_a = (*iter_a)[PlaylistColumns.RowId];
+                  guint64 id_b = (*iter_b)[PlaylistColumns.RowId];
+      
+                  return (id_a - id_b); // FIXME: int overflow
               }
 
               int
               slotSortByTrack(const TreeIter& iter_a, const TreeIter& iter_b)
               {
-                ustring alb_a = (*iter_a)[PlaylistColumns.AlbumSort];
-                ustring alb_b = (*iter_b)[PlaylistColumns.AlbumSort];
-                guint64 trk_a = (*iter_a)[PlaylistColumns.Track];
-                guint64 trk_b = (*iter_b)[PlaylistColumns.Track];
+                  ustring alb_a = (*iter_a)[PlaylistColumns.AlbumSort];
+                  ustring alb_b = (*iter_b)[PlaylistColumns.AlbumSort];
+                  guint64 trk_a = (*iter_a)[PlaylistColumns.Track];
+                  guint64 trk_b = (*iter_b)[PlaylistColumns.Track];
 
-                if(alb_a != alb_b)
-                    return 0;
+                  if(alb_a != alb_b)
+                      return 0;
 
-                return (trk_a - trk_b); // FIXME: int overflow
+                  return (trk_a - trk_b); // FIXME: int overflow
               }
 
               int
               slotSortByAlbum(const TreeIter& iter_a, const TreeIter& iter_b)
               {
-                ustring arts_a = (*iter_a)[PlaylistColumns.ArtistSort];
-                ustring arts_b = (*iter_b)[PlaylistColumns.ArtistSort];
-                ustring alb_a = (*iter_a)[PlaylistColumns.Album];
-                ustring alb_b = (*iter_b)[PlaylistColumns.Album];
+                  ustring arts_a = (*iter_a)[PlaylistColumns.ArtistSort];
+                  ustring arts_b = (*iter_b)[PlaylistColumns.ArtistSort];
+                  ustring alb_a = (*iter_a)[PlaylistColumns.Album];
+                  ustring alb_b = (*iter_b)[PlaylistColumns.Album];
 
-                return alb_a.compare(alb_b); 
+                  return alb_a.compare(alb_b); 
               }
 
               int
               slotSortByArtist(const TreeIter& iter_a, const TreeIter& iter_b)
               {
-                ustring art_a = (*iter_a)[PlaylistColumns.Artist];
-                ustring art_b = (*iter_b)[PlaylistColumns.Artist];
+                  ustring art_a = (*iter_a)[PlaylistColumns.Artist];
+                  ustring art_b = (*iter_b)[PlaylistColumns.Artist];
 
-                return art_a.compare(art_b); 
+                  return art_a.compare(art_b); 
               }
 
               void
               prepare_uris (Util::FileList const& uris)
               {
-                bool begin = true;
-                TreeIter iter = ListStore->append();
-                m_PlayInitIter = iter;
-                append_uris (uris, iter, begin);
-                m_MusicLib.check_caps();
-                m_MusicLib.send_caps ();
+                  bool begin = true;
+                  TreeIter iter = ListStore->append();
+                  m_PlayInitIter = iter;
+                  append_uris (uris, iter, begin);
+                  m_MusicLib.check_caps();
+                  m_MusicLib.send_caps ();
               }
-
         };
+
+
 
         enum AlbumRowType
         {
