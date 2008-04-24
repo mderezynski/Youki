@@ -3,5 +3,5 @@ python_DATA = 					\
 		lastfmvis.mpx-plugin 	\
 		lastfmvis.glade			
 
-pythondir = $(pkgdatadir)/playlist-py/lastfmvis
+pythondir = $(pkgdatadir)/playlist-python-plugins/lastfmvis
 BUILT_SOURCES = __init__.py

@@ -30,6 +30,7 @@
 #include <pygobject.h>
 #include <boost/python.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
+#include "mpx/python.hh"
 using namespace boost::python;
 
 #include "source-musiclib.hh"
@@ -61,18 +62,19 @@ BOOST_PYTHON_MODULE(mpx_playlist)
 		.def(vector_indexing_suite<MPX::TrackIdV>());
 	;
 
-        class_<MPX::Source::PlaybackSourceMusicLib, boost::noncopyable>("MusicLib", boost::python::no_init)
-                .def("play_tracks", &MPX::Source::PlaybackSourceMusicLib::play_tracks)
-                .def("play_album", &MPX::Source::PlaybackSourceMusicLib::play_album)
-        ;
+    class_<MPX::Source::PlaybackSourceMusicLib, boost::noncopyable>("MusicLib", boost::python::no_init)
+            .def("play_tracks", &MPX::Source::PlaybackSourceMusicLib::play_tracks)
+            .def("play_album", &MPX::Source::PlaybackSourceMusicLib::play_album)
+            .def("gobj", &mpxpy::get_gobject<MPX::Source::PlaybackSourceMusicLib>)
+    ;
 }
 
 
 namespace MPX
 {
-        void
-        mpx_playlist_py_init ()
-        {
-                initmpx_playlist();
-        }
+    void
+    mpx_playlist_py_init ()
+    {
+            initmpx_playlist();
+    }
 }

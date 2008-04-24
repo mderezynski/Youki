@@ -30,7 +30,6 @@
 #include <iostream>
 #include <pygtk/pygtk.h>
 #include <pygobject.h>
-#include "mpx-py.hh"
 
 #if PY_VERSION_HEX < 0x02050000
 typedef int Py_ssize_t;
@@ -44,11 +43,10 @@ typedef int Py_ssize_t;
 #include <Python.h>
 
 #include "mpx/mpx-public.hh"
+#include "mpx/python.hh"
 
 using namespace Glib;
 using namespace boost::python;
-
-void initmpx (void);
 
 namespace MPX
 {
@@ -85,18 +83,7 @@ namespace MPX
 	: m_Id(1)
 	, m_Player(player)
 	{
-		try {
-            PyImport_AppendInittab("mpx", initmpx);
-			Py_Initialize();
-			//mpx_py_init ();	
-			init_pygobject();
-			init_pygtk();
-			pyg_enable_threads ();
-		} catch( error_already_set ) {
-			g_warning("%s; Python Error:", G_STRFUNC);
-		    PyErr_Print();
-		}
-
+        mpx_py_init ();
         try{
             mcs_plugins = new Mcs::Mcs (Glib::build_filename (Glib::build_filename (Glib::get_user_config_dir (), "mpx"), "plugins.xml"), "mpx", 0.01);
         } catch (Mcs::Mcs::Exceptions & cxe)

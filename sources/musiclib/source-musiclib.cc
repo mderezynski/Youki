@@ -45,6 +45,8 @@
 #include "source-musiclib.hh"
 #include "plugin-manager.hh"
 
+#include "glib-marshalers.h"
+
 using namespace Gtk;
 using namespace Glib;
 using namespace Gnome::Glade;
@@ -246,7 +248,7 @@ namespace MPX
                 C_PLAYING,
                 C_TITLE,
                 C_LENGTH,
-            C_RATING,
+                C_RATING,
                 C_ARTIST,
                 C_ALBUM,
                 C_TRACK,
@@ -255,10 +257,12 @@ namespace MPX
               PlaylistTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml, PAccess<MPX::Library> const& lib, MPX::Source::PlaybackSourceMusicLib & mlib)
               : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-playlist")
               , m_Lib(lib)
-          , m_MusicLib(mlib)
+              , m_MusicLib(mlib)
               , m_RowId(0)
-          , m_ButtonDepressed(0)
+              , m_ButtonDepressed(0)
               {
+                set_has_tooltip();
+
                 m_Playing = Gdk::Pixbuf::create_from_file(Glib::build_filename(Glib::build_filename(DATA_DIR,"images"),"play.png"));
                 for(int n = 0; n < 6; ++n)
                 {
@@ -341,7 +345,7 @@ namespace MPX
                 m_ActionGroup->add  (Gtk::Action::create (ACTION_PLAY,
                                     Gtk::StockID (GTK_STOCK_MEDIA_PLAY),
                                     _("Play")),
-                                    sigc::mem_fun (mlib, &MPX::Source::PlaybackSourceMusicLib::action_cb_play));
+                                    sigc::mem_fun(mlib, &MPX::Source::PlaybackSourceMusicLib::action_cb_play));
 
                 m_ActionGroup->add  (Gtk::Action::create (ACTION_CLEAR,
                                     Gtk::StockID (GTK_STOCK_CLEAR),
@@ -370,7 +374,7 @@ namespace MPX
                 Gtk::Label * label = dynamic_cast<Gtk::Label*>(dynamic_cast<Gtk::Bin*>(item)->get_child());
                 label->set_markup(_("<b>Play</b>"));
 
-				set_tooltip_text(_("Drag and drop albums, tracks and files here to add them to the playlist."));
+				//set_tooltip_text(_("Drag and drop albums, tracks and files here to add them to the playlist."));
               }
 
               virtual void
@@ -1823,25 +1827,41 @@ namespace MPX
 {
 namespace Source
 {
+    bool PlaybackSourceMusicLib::m_signals_installed = false;
+
     PlaybackSourceMusicLib::PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
     : PlaybackSource(ui_manager, _("Music"), C_CAN_SEEK)
     , m_MainUIManager(ui_manager)
     {
+        if(!m_signals_installed)
+        {
+            signals[PSM_SIGNAL_PLAYLIST_TOOLTIP] =
+              g_signal_new ("playlist-tooltip",
+                            G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+                            GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+                            0,
+                            NULL, NULL,
+                            psm_glib_marshal_OBJECT__OBJECT_BOXED, G_TYPE_OBJECT, 2, G_TYPE_OBJECT, GTK_TYPE_TREE_ITER);
+            m_signals_installed = true;
+        }
+
         player.get_object(m_Lib);
         player.get_object(m_HAL);
         player.get_object(m_Covers);
 
         m_Private = new MusicLibPrivate(player,*this);
         m_Private->m_TreeViewPlaylist->signal_row_activated().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_row_activated ) );
+        m_Private->m_TreeViewPlaylist->signal_query_tooltip().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_query_tooltip ) );
+
 
         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
 
         m_PluginManager = new PlaylistPluginManager( m_Lib.get(), m_Covers.get(), this );
-        std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"playlist-py");
+        std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"playlist-python-plugins");
         if(file_test(user_path, FILE_TEST_EXISTS))
             m_PluginManager->append_search_path (user_path);
-        m_PluginManager->append_search_path (build_filename(DATA_DIR,"playlist-py"));
+        m_PluginManager->append_search_path (build_filename(DATA_DIR,"playlist-python-plugins"));
         m_PluginManager->load_plugins();
 
         Glib::RefPtr<Gtk::IconFactory> factory = Gtk::IconFactory::create();
@@ -1902,10 +1922,42 @@ namespace Source
     }
 
     void
+    PlaybackSourceMusicLib::on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column)
+    {
+        g_message(G_STRFUNC);
+        m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter( path );
+        m_Private->m_TreeViewPlaylist->m_CurrentId = (*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.RowId];
+        m_Private->m_TreeViewPlaylist->queue_draw();
+        Signals.PlayRequest.emit();
+    }
+
+    void
     PlaybackSourceMusicLib::on_sort_column_change ()
     {
         int value = RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action ("musiclib-sort-by-name"))->get_current_value();
         m_Private->m_TreeViewAlbums->TreeStore->set_sort_column(value, Gtk::SORT_ASCENDING);    
+    }
+
+    bool
+    PlaybackSourceMusicLib::on_plist_query_tooltip(int x,int y, bool kbd, const Glib::RefPtr<Gtk::Tooltip> & tooltip)
+    {
+        GtkWidget * tooltip_widget = 0;
+        int cell_x, cell_y;
+        TreePath path;
+        TreeViewColumn *col;
+        if(m_Private->m_TreeViewPlaylist->get_path_at_pos (x, y, path, col, cell_x, cell_y))
+        {
+            TreeIter iter = m_Private->m_TreeViewPlaylist->ListStore->get_iter(path);
+            GtkTreeIter const* iter_c = iter->gobj();
+            g_signal_emit(G_OBJECT(gobj()), signals[PSM_SIGNAL_PLAYLIST_TOOLTIP], 0, G_OBJECT(m_Private->m_TreeViewPlaylist->ListStore->gobj()), iter_c, &tooltip_widget);
+            if( tooltip_widget )
+            {
+                tooltip->set_custom(*Glib::wrap(tooltip_widget, true)); 
+                return true;
+            }
+        }
+
+        return false;        
     }
 
     void
@@ -1954,16 +2006,6 @@ namespace Source
     PlaybackSourceMusicLib::action_cb_go_to_album(gint64 id)
     {
         m_Private->m_TreeViewAlbums->go_to_album(id);
-    }
-
-    void
-    PlaybackSourceMusicLib::on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column)
-    {
-        g_message(G_STRFUNC);
-        m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter( path );
-        m_Private->m_TreeViewPlaylist->m_CurrentId = (*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.RowId];
-        m_Private->m_TreeViewPlaylist->queue_draw();
-        Signals.PlayRequest.emit();
     }
 
     std::string

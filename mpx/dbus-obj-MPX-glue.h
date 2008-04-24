@@ -53,7 +53,7 @@
 #endif /* !G_ENABLE_DEBUG */
 
 
-/* BOOLEAN:POINTER (/tmp/dbus-binding-tool-c-marshallers.DEOR9T:1) */
+/* BOOLEAN:POINTER (/tmp/dbus-binding-tool-c-marshallers.55G59T:1) */
 extern void dbus_glib_marshal_mpx_BOOLEAN__POINTER (GClosure     *closure,
                                                                      GValue       *return_value,
                                                                      guint         n_param_values,

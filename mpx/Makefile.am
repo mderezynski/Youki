@@ -73,7 +73,7 @@ mpx_bin_LDADD =										\
 		$(top_builddir)/widgets/libmpx-widgets.la	\
 		$(top_builddir)/xmlcpp/libmpx-parsers.la	\
 		$(top_builddir)/mcs/libmconfig.la			\
-		$(top_builddir)/mpx/parser/libmpxparser.la
+		$(top_builddir)/mpx/parser/libmpxparser.la	
 
 mpx_bin_CFLAGS =				\
     $(GLIB_CFLAGS) $(GST_CFLAGS) -I$(top_srcdir)/include
@@ -114,11 +114,15 @@ mpx_bin_SOURCES =				\
 	gstpuid.h					\
 	gstpuid.cc					\
 								\
+	gtkmmmodule.h				\
+	gtkmmmodule.cc				\
+	gtkmm.cc					\
+								\
 	mlibmanager.hh				\
 	mlibmanager.cc				\
 								\
-	mpx-py.hh					\
-	mpx-py.cc					\
+	python.hh					\
+	python.cc					\
 								\
 	import-share.hh				\
 	import-share.cc				\

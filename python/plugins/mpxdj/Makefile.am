@@ -5,5 +5,5 @@ python_DATA = 				\
 		mpxdj.png			\
 		mpxdj-icon.png
 
-pythondir = $(pkgdatadir)/playlist-py/mpxdj
+pythondir = $(pkgdatadir)/playlist-python-plugins/mpxdj
 BUILT_SOURCES = __init__.py

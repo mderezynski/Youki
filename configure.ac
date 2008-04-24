@@ -243,8 +243,30 @@ PYTHON_LIBS=`python-config --libs`
 AC_SUBST(PYTHON_CFLAGS)
 AC_SUBST(PYTHON_LIBS)
 
-# pygtk
+# check for pygtk
 PKG_CHECK_MODULES([PYGTK], [pygtk-2.0 >= 2.12.0])
+AC_SUBST(PYGTK_CFLAGS)
+AC_PATH_PROG(PYGTK_CODEGEN, pygtk-codegen-2.0, no)
+if test "x$PYGTK_CODEGEN" = xno; then
+  AC_MSG_ERROR(could not find pygtk-codegen-2.0 script)
+fi
+
+AC_MSG_CHECKING([for conflicting pygtk versions])
+pygtk_version=`$PKG_CONFIG --modversion pygtk-2.0`
+case $pygtk_version in
+     2.9.0|2.9.1)
+        AC_MSG_RESULT([found $pygtk_version])
+        AC_MSG_ERROR([invalid pygtk version found; please upgrade])
+        ;;
+     *)
+        AC_MSG_RESULT([none])
+        ;;
+esac
+
+AC_MSG_CHECKING(for pygtk defs)
+PYGTK_DEFSDIR=`$PKG_CONFIG --variable=defsdir pygtk-2.0`
+AC_SUBST(PYGTK_DEFSDIR)
+AC_MSG_RESULT($PYGTK_DEFSDIR)
 
 # Libxml
 PKG_CHECK_MODULES([XML], [libxml-2.0 >= 2.6.1])
@@ -692,6 +714,7 @@ AC_OUTPUT([
 	python/plugins/pidgin/Makefile
 	python/plugins/mpxdj/Makefile
 	python/plugins/mpxdj/__init__.py
+    python/plugins/pltd/Makefile
 	python/plugins/lastfmvis/Makefile
 	python/plugins/lastfmvis/__init__.py
 	python/plugins/audioscrobbler/Makefile

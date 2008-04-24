@@ -26,17 +26,19 @@
 #include "mpx/util-graphics.hh"
 
 #include "audio-types.hh"
-
 #include "lyrics-v2.hh"
-
 #include "last-fm-xmlrpc.hh"
-
 #include "pysigc.hh"
 
-
-#include "mpx-py.hh"
+#include "mpx/python.hh"
+#include "gtkmmpy/gtkmmmodule.h"
 
 using namespace boost::python;
+
+namespace
+{
+    bool py_initialized = false;
+}
 
 namespace
 {
@@ -238,12 +240,6 @@ namespace mpxpy
 
 namespace mpxpy
 {
-	PyObject*
-	player_get_gobject (MPX::Player & obj)
-	{
-		return pygobject_new((GObject*)(obj.gobj()));
-	}
-
 	MPX::Library&
 	player_get_library (MPX::Player & obj)
 	{
@@ -374,42 +370,32 @@ namespace MPX
     }
 }
 
-// Glib::RefPtr<Gdk::Pixbuf> to gtk.gdk.Pixbuf converter
-
-struct pixbufreptr_to_pixbuf
+namespace mpxpy
 {
-    static
-    PyObject*
-    convert(Glib::RefPtr<Gdk::Pixbuf> const& p)
+    template <typename T>
+    T
+    unwrap_boxed (PyObject * obj)
     {
-        if(!p)
-        {
-            Py_INCREF(Py_None);
-            return Py_None;
-        }
-
-        PyObject * p_py = pygobject_new((GObject*)(p->gobj()));
-        return p_py;
+        PyGBoxed * boxed = ((PyGBoxed*)(obj));
+        return *(reinterpret_cast<T*>(boxed->boxed));
     }
-
-    static
-    PyTypeObject const*
-    get_pytype()
-    {
-        return pygobject_lookup_class(GDK_TYPE_PIXBUF);
-    }
-};
-
+}
 
 BOOST_PYTHON_MODULE(mpx)
 {
-    to_python_converter<Glib::RefPtr<Gdk::Pixbuf>, pixbufreptr_to_pixbuf 
+    to_python_converter<Glib::RefPtr<Gdk::Pixbuf>, mpxpy::refptr_to_gobject<Gdk::Pixbuf> 
 #if defined BOOST_PYTHON_SUPPORTS_PY_SIGNATURES
 	    , true
 #endif
 		    >();
 
-    def("util_cairo_rounded_rect", &MPX::Util::cairo_rounded_rect);
+    to_python_converter<Glib::RefPtr<Gtk::ListStore>, mpxpy::refptr_to_gobject<Gtk::ListStore>
+#if defined BOOST_PYTHON_SUPPORTS_PY_SIGNATURES
+	    , true
+#endif
+		    >();
+
+    def("unwrap_boxed_mpxtrack", &mpxpy::unwrap_boxed<MPX::Track>, return_value_policy<return_by_value>());
 
 	class_<MPX::Plugin>("Plugin")	
 		.def("activate", &MPX::Plugin::activate)
@@ -540,7 +526,7 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("get_metadata", &MPX::Player::get_metadata, return_internal_reference<>())
 		.def("get_status", &MPX::Player::get_status) 
 
-		.def("gobj", &mpxpy::player_get_gobject)
+		.def("gobj", &mpxpy::get_gobject<MPX::Player>)
 
 		.def("get_library", &mpxpy::player_get_library, return_internal_reference<>()) 
 		.def("get_hal", &mpxpy::player_get_hal, return_internal_reference<>()) 
@@ -703,4 +689,29 @@ BOOST_PYTHON_MODULE(mpx)
     class_<MPX::Covers, boost::noncopyable>("Covers", boost::python::no_init)
         .def("fetch", &mpxpy::covers_fetch)
     ;
+}
+
+namespace MPX
+{
+    void
+    mpx_py_init ()
+    {
+        if(!py_initialized)
+        {
+            try {
+                PyImport_AppendInittab("gtkmm", initgtkmm);
+                PyImport_AppendInittab("mpx", initmpx);
+                Py_Initialize();
+                init_pygobject();
+                init_pygtk();
+                pyg_enable_threads ();
+                py_initialized = true;
+            } catch( error_already_set ) {
+                g_warning("%s; Python Error:", G_STRFUNC);
+                PyErr_Print();
+            }
+        }
+        else
+            g_warning("%s: mpx_py_init called, but is already initialized!", G_STRLOC);
+    }
 }

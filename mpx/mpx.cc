@@ -46,9 +46,6 @@
 #include <gdk/gdkx.h>
 
 #include "mpx.hh"
-
-#include "mpx-py.hh"
-
 #include "mpx/stock.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-file.hh"

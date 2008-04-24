@@ -87,8 +87,17 @@ namespace MPX
 namespace Source
 {
         class PlaybackSourceMusicLib
-            :   public PlaybackSource
+            :  public Glib::Object, public PlaybackSource
         {
+                enum CSignals
+                {
+                    PSM_SIGNAL_PLAYLIST_TOOLTIP,
+                    N_SIGNALS
+                };
+
+        	    guint signals[N_SIGNALS];
+                static bool m_signals_installed;
+
                 Glib::RefPtr<Gtk::UIManager> m_MainUIManager;
                 Glib::RefPtr<Gtk::ActionGroup> m_MainActionGroup;
                 std::string m_MergedUI;
@@ -100,16 +109,20 @@ namespace Source
                 PAccess<MPX::HAL> m_HAL;
                 PAccess<MPX::Covers> m_Covers;
     
+
+                void
+                on_sort_column_change ();
+
                 void
                 on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
+
+                bool
+                on_plist_query_tooltip(int,int,bool,const Glib::RefPtr<Gtk::Tooltip>&);
 
             public:
 
                 PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
                 ~PlaybackSourceMusicLib ();
-
-                void
-                on_sort_column_change ();
 
                 void
                 play_album(gint64, bool = false);
@@ -134,6 +147,9 @@ namespace Source
 
                 void
                 clear_play ();
+
+
+
 
                 virtual void
                 send_metadata ();
@@ -179,7 +195,6 @@ namespace Source
 
                 virtual void
                 buffering_done (); 
-
 
                 virtual Glib::RefPtr<Gdk::Pixbuf>
                 get_icon ();

@@ -33,6 +33,7 @@ libmpxsource_musiclib_la_LIBADD =  	\
 
 
 libmpxsource_musiclib_la_SOURCES = 	\
+		glib-marshalers.c			\
 		plugin.cc					\
 		plugin-manager.hh			\
 		plugin-manager.cc			\
@@ -42,3 +43,13 @@ libmpxsource_musiclib_la_SOURCES = 	\
 		source-musiclib.cc
 
 libmpxsource_musiclibdir = $(PLUGIN_DIR)/sources
+
+EXTRA_DIST = glib-marshalers.list
+
+glib-marshalers.c: glib-marshalers.list 
+	@echo "* Generating glib-marshalers.c"
+	@glib-genmarshal --prefix=psm_glib_marshal --body   $(srcdir)/glib-marshalers.list > glib-marshalers.c
+
+glib-marshalers.h: glib-marshalers.list
+	@echo "* Generating glib-marshalers.h"
+	@glib-genmarshal --prefix=psm_glib_marshal --header $(srcdir)/glib-marshalers.list > glib-marshalers.h

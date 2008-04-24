@@ -6,5 +6,6 @@ SUBDIRS =			        \
 		notification		\
 		osd			        \
 		pidgin			    \
+		pltd				\
 		trackinfo		    \
 		tracktags

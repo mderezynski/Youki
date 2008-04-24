@@ -4,5 +4,5 @@ python_DATA = 						\
 		ratings_export.glade		\
 		rexp-icon.png
 
-pythondir = $(pkgdatadir)/playlist-py/ratings_export
+pythondir = $(pkgdatadir)/playlist-python-plugins/ratings_export
 BUILT_SOURCES = __init__.py
