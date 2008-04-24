@@ -48,30 +48,35 @@ class PlaylistDefaultTooltip(mpx_playlist.PlaylistPlugin):
     
         box.pack_start(image)
         box.pack_start(vbox)
-       
-        label1 = gtk.Label() 
-        label2 = gtk.Label() 
-        label3 = gtk.Label() 
-
-        label1.set_property("xalign", 0.0)
-        label2.set_property("xalign", 0.0)
-        label3.set_property("xalign", 0.0)
-
-        vbox.pack_start(label1)
-        vbox.pack_start(label2)
-        vbox.pack_start(label3)
-
+      
+        labels = []
+        for r in range(5):
+            labels.append(gtk.Label())
+            labels[r].set_property("xalign", 0.0)
+ 
         box.set_spacing(4)
         vbox.set_spacing(4)
 
         if mpxtrack[mpx.AttributeId.ARTIST].is_initialized():
-            label1.set_markup("<b>Artist:</b>\t%s" % xml.sax.saxutils.escape(mpxtrack[mpx.AttributeId.ARTIST].val().get_string()))
+            vbox.pack_start(labels[0], False, False)
+            labels[0].set_markup("<b>Artist:</b>\t%s" % xml.sax.saxutils.escape(mpxtrack[mpx.AttributeId.ARTIST].val().get_string()))
 
         if mpxtrack[mpx.AttributeId.ALBUM].is_initialized():
-            label2.set_markup("<b>Album:</b>\t%s" % xml.sax.saxutils.escape(mpxtrack[mpx.AttributeId.ALBUM].val().get_string()))
+            vbox.pack_start(labels[1], False, False)
+            labels[1].set_markup("<b>Album:</b>\t%s" % xml.sax.saxutils.escape(mpxtrack[mpx.AttributeId.ALBUM].val().get_string()))
 
         if mpxtrack[mpx.AttributeId.TITLE].is_initialized():
-            label3.set_markup("<b>Title:</b>\t%s" % xml.sax.saxutils.escape(mpxtrack[mpx.AttributeId.TITLE].val().get_string()))
+            vbox.pack_start(labels[2], False, False)
+            labels[2].set_markup("<b>Title:</b>\t%s" % xml.sax.saxutils.escape(mpxtrack[mpx.AttributeId.TITLE].val().get_string()))
+
+        #if mpxtrack[mpx.AttributeId.BITRATE].is_initialized():
+        #    vbox.pack_start(labels[3], False, False)
+        #    labels[3].set_markup("<b>Bitrate:</b>\t%s" % str(mpxtrack[mpx.AttributeId.BITRATE].val().get_int()))
+
+        #if mpxtrack[mpx.AttributeId.SAMPLERATE].is_initialized():
+        #    vbox.pack_start(labels[4], False, False)
+        #    labels[4].set_markup("<b>Samplerate:</b>\t%s" % str(mpxtrack[mpx.AttributeId.SAMPLERATE].val().get_int()))
+
 
         if mpxtrack[mpx.AttributeId.MB_ALBUM_ID].is_initialized():
             mbid = mpxtrack[mpx.AttributeId.MB_ALBUM_ID].val().get_string()
