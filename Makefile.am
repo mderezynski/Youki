@@ -31,6 +31,7 @@ SUBDIRS =		\
 	po		\
 	python		\
 	widgets		\
+	remote		\
 	sources		\
 	taglib		\
 	xmlcpp		
