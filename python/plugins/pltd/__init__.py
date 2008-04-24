@@ -17,6 +17,7 @@ import gobject
 import gtk.glade
 import urllib
 import random
+import xml
 from Ft.Xml.XPath.Context import Context
 from Ft.Xml.XPath import Evaluate
 from Ft.Xml.Domlette import NonvalidatingReader
@@ -64,13 +65,13 @@ class PlaylistDefaultTooltip(mpx_playlist.PlaylistPlugin):
         vbox.set_spacing(4)
 
         if mpxtrack[mpx.AttributeId.ARTIST].is_initialized():
-            label1.set_markup("<b>Artist:</b>\t%s" % mpxtrack[mpx.AttributeId.ARTIST].val().get_string())
+            label1.set_markup("<b>Artist:</b>\t%s" % xml.sax.saxutils.escape(mpxtrack[mpx.AttributeId.ARTIST].val().get_string()))
 
         if mpxtrack[mpx.AttributeId.ALBUM].is_initialized():
-            label2.set_markup("<b>Album:</b>\t%s" % mpxtrack[mpx.AttributeId.ALBUM].val().get_string())
+            label2.set_markup("<b>Album:</b>\t%s" % xml.sax.saxutils.escape(mpxtrack[mpx.AttributeId.ALBUM].val().get_string()))
 
         if mpxtrack[mpx.AttributeId.TITLE].is_initialized():
-            label3.set_markup("<b>Title:</b>\t%s" % mpxtrack[mpx.AttributeId.TITLE].val().get_string())
+            label3.set_markup("<b>Title:</b>\t%s" % xml.sax.saxutils.escape(mpxtrack[mpx.AttributeId.TITLE].val().get_string()))
 
         if mpxtrack[mpx.AttributeId.MB_ALBUM_ID].is_initialized():
             mbid = mpxtrack[mpx.AttributeId.MB_ALBUM_ID].val().get_string()

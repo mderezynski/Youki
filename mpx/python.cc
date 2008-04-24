@@ -31,7 +31,7 @@
 #include "pysigc.hh"
 
 #include "mpx/python.hh"
-#include "gtkmmpy/gtkmmmodule.h"
+#include "gtkmmmodule.h"
 
 using namespace boost::python;
 
