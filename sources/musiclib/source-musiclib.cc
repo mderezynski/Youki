@@ -1946,7 +1946,7 @@ namespace Source
         TreePath path;
         TreeViewColumn *col;
         int x2, y2;
-        m_Private->m_TreeViewPlaylist->convert_widget_to_tree_coords(x, y, x2, y2);
+        m_Private->m_TreeViewPlaylist->convert_widget_to_bin_window_coords(x, y, x2, y2);
         if(m_Private->m_TreeViewPlaylist->get_path_at_pos (x2, y2, path, col, cell_x, cell_y))
         {
             TreeIter iter = m_Private->m_TreeViewPlaylist->ListStore->get_iter(path);
