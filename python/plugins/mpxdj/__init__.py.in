@@ -34,7 +34,7 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
         self.mlib = mlib
         self.covers = covers
 
-        self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-py/mpxdj/mpxdj.glade")
+        self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-python-plugins/mpxdj/mpxdj.glade")
         self.dialog = self.xml.get_widget("dialog")
         self.combo = self.xml.get_widget("combobox")
         self.play = self.xml.get_widget("cb-play")
@@ -42,10 +42,10 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
         self.go = self.xml.get_widget("button-go")
         self.go.set_sensitive(False)
         self.header_image = self.xml.get_widget("header-image")
-        self.header_image.set_from_file("@DATA_DIR@" + "/playlist-py/mpxdj/mpxdj.png")
+        self.header_image.set_from_file("@DATA_DIR@" + "/playlist-python-plugins/mpxdj/mpxdj.png")
 
         try:
-            self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/playlist-py/mpxdj/mpxdj-icon.png")
+            self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/playlist-python-plugins/mpxdj/mpxdj-icon.png")
         except:
             print "MPXDJ: No Icon"
 

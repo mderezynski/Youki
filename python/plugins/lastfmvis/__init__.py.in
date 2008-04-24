@@ -33,7 +33,7 @@ class LastFMVis(mpx_playlist.PlaylistPlugin):
         self.covers = covers
         self.mlib = mlib
 
-        self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-py/lastfmvis/lastfmvis.glade")
+        self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-python-plugins/lastfmvis/lastfmvis.glade")
 
         self.window = self.xml.get_widget("window")
         self.window.connect("delete-event", self.on_window_delete)
