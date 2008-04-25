@@ -715,6 +715,7 @@ AC_OUTPUT([
 	python/plugins/mpxdj/Makefile
 	python/plugins/mpxdj/__init__.py
     python/plugins/pltd/Makefile
+    python/plugins/pltd/__init__.py
 	python/plugins/lastfmvis/Makefile
 	python/plugins/lastfmvis/__init__.py
 	python/plugins/audioscrobbler/Makefile

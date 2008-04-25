@@ -459,6 +459,11 @@ namespace MPX
 
                     track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
                                   filename_from_uri (uri).substr (volume.mount_point.length()) ;
+
+                    std::string mount_point = m_HAL->get_mount_point_for_volume(volume.volume_udi, volume.device_udi);
+                    std::string path = build_filename(mount_point, get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()));
+
+                    track[ATTRIBUTE_LOCATION] = std::string(filename_to_uri(path));
                   }
               }
             catch (HAL::Exception & cxe)

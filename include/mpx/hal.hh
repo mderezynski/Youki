@@ -31,9 +31,7 @@
 #include <vector>
 #include <map>
 #include <set>
-#ifdef HAVE_TR1
 #include <tr1/unordered_map>
-#endif //HAVE_TR1
 #include <ctime>
 
 #include <glib/gtypes.h>
@@ -45,6 +43,8 @@
 
 #include <libhal.h>
 #include <libhal-storage.h>
+
+#include <boost/functional/hash.hpp>
 
 #include "sql.hh"
 #include "hal++.hh"
@@ -87,14 +87,12 @@ namespace MPX
                   Hal::RefPtr<Hal::Volume>  const& volume) throw ();
         };
 
-        typedef std::vector < Hal::RefPtr<Hal::Volume> > VolumesV;
-
-        typedef std::pair < std::string, std::string >              VolumeKey;
-        typedef std::pair < Volume, Hal::RefPtr<Hal::Volume> >      StoredVolume;
-
-        typedef std::map  < VolumeKey , StoredVolume >              Volumes;
-        typedef std::map  < VolumeKey , bool >                      VolumesMounted;
-        typedef std::set  < std::string >                           MountedPaths;
+        typedef std::vector<Hal::RefPtr<Hal::Volume> >                                      VolumesV;
+        typedef std::pair<std::string, std::string >                                        VolumeKey;
+        typedef std::pair<Volume, Hal::RefPtr<Hal::Volume> >                                StoredVolume;
+        typedef std::tr1::unordered_map<VolumeKey , StoredVolume, boost::hash<VolumeKey> >  Volumes;
+        typedef std::tr1::unordered_map<VolumeKey , bool, boost::hash<VolumeKey> >          VolumesMounted;
+        typedef std::set<std::string>                                                       MountedPaths;
 
         typedef sigc::signal  <void, Volume const&>                 SignalVolume;
         typedef sigc::signal  <void, std::string, std::string >     SignalCDDAInserted;

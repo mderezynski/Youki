@@ -101,7 +101,11 @@ namespace
   "";
 
   Track
+#ifdef HAVE_HAL
+  sql_to_track (SQL::Row & row, const MPX::HAL & hal)
+#else
   sql_to_track (SQL::Row & row)
+#endif
   {
         Track track;
 
@@ -152,6 +156,30 @@ namespace
 
         if (row.count("hal_vrp"))
           track[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);
+
+#ifndef HAVE_HAL
+        if (row.count("location"))
+          track[ATTRIBUTE_LOCATION] = get<std::string>(row["location"]);
+#else
+        try{
+            std::string volume_udi = get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get());
+            std::string device_udi = get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get());
+            std::string vrp = get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get());
+            std::string mount_point = hal.get_mount_point_for_volume(volume_udi, device_udi);
+            std::string path = build_filename(mount_point, vrp);
+            track[ATTRIBUTE_LOCATION] = std::string(filename_to_uri(path));
+        } catch( boost::bad_get )
+        {
+        } catch( HAL::Exception )
+        {
+        }
+#endif
+
+        if (row.count("bitrate"))
+          track[ATTRIBUTE_BITRATE] = get<gint64>(row["bitrate"]);
+
+        if (row.count("samplerate"))
+          track[ATTRIBUTE_SAMPLERATE] = get<gint64>(row["samplerate"]);
 
         return track;
     }
@@ -225,6 +253,8 @@ namespace MPX
         {
               PAccess<MPX::Library> m_Lib;
               MPX::Source::PlaybackSourceMusicLib & m_MusicLib;
+              PAccess<MPX::HAL> m_HAL;
+
               Glib::RefPtr<Gdk::Pixbuf> m_Playing;
               gint64 m_RowId;
 
@@ -254,10 +284,11 @@ namespace MPX
                 C_TRACK,
               };
 
-              PlaylistTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml, PAccess<MPX::Library> const& lib, MPX::Source::PlaybackSourceMusicLib & mlib)
+              PlaylistTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml, PAccess<MPX::Library> const& lib, PAccess<MPX::HAL> const& hal, MPX::Source::PlaybackSourceMusicLib & mlib)
               : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-playlist")
               , m_Lib(lib)
               , m_MusicLib(mlib)
+              , m_HAL(hal)
               , m_RowId(0)
               , m_ButtonDepressed(0)
               {
@@ -532,7 +563,11 @@ namespace MPX
                               (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
 
                           (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
+#ifndef HAVE_HAL
                           (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
+#else
+                          (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r, m_HAL.get()); 
+#endif
                           (*iter)[PlaylistColumns.IsMPXTrack] = true; 
                   }
               } 
@@ -699,7 +734,11 @@ namespace MPX
                               (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
 
                           (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
+#ifndef HAVE_HAL
                           (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
+#else
+                          (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r, m_HAL.get()); 
+#endif
                           (*iter)[PlaylistColumns.IsMPXTrack] = true; 
                       }
                   }
@@ -745,7 +784,11 @@ namespace MPX
                               (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
 
                           (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
+#ifndef HAVE_HAL
                           (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
+#else
+                          (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r, m_HAL.get()); 
+#endif
                           (*iter)[PlaylistColumns.IsMPXTrack] = true; 
                       }
                   }
@@ -1809,6 +1852,7 @@ namespace MPX
         AlbumTreeView *m_TreeViewAlbums;
         PAccess<MPX::Library> m_Lib;
         PAccess<MPX::Covers> m_Covers;
+        PAccess<MPX::HAL> m_HAL;
 
         MusicLibPrivate (MPX::Player & player, MPX::Source::PlaybackSourceMusicLib & mlib)
         {
@@ -1817,7 +1861,8 @@ namespace MPX
             m_UI = m_RefXml->get_widget("source-musiclib");
             player.get_object(m_Lib);
             player.get_object(m_Covers);
-            m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, m_Lib, mlib);
+            player.get_object(m_HAL);
+            m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, m_Lib, m_HAL, mlib);
             m_TreeViewAlbums = new AlbumTreeView(m_RefXml, m_Lib, m_Covers, mlib);
         }
     };
@@ -1954,7 +1999,9 @@ namespace Source
             g_signal_emit(G_OBJECT(gobj()), signals[PSM_SIGNAL_PLAYLIST_TOOLTIP], 0, G_OBJECT(m_Private->m_TreeViewPlaylist->ListStore->gobj()), iter_c, &tooltip_widget);
             if( tooltip_widget )
             {
-                tooltip->set_custom(*Glib::wrap(tooltip_widget, true)); 
+                g_object_ref(G_OBJECT(tooltip_widget));
+                gtk_widget_show_all(GTK_WIDGET(tooltip_widget));
+                tooltip->set_custom(*Glib::wrap(tooltip_widget, false)); 
                 return true;
             }
         }
