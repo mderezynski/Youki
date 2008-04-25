@@ -651,7 +651,7 @@ GST_PLUGIN_DEFINE_STATIC (GST_VERSION_MAJOR,
                           GST_VERSION_MINOR,
                           "jnethttpsrc",
                           "jnethttp client src",
-                           plugin_init, VERSION, "LGPL", "MPX", "http://beep-media-player.org/")
+                           plugin_init, VERSION, "LGPL", "MPX", "http://mpx.backtrace.info")
 
 
 /*** GSTURIHANDLER INTERFACE *************************************************/

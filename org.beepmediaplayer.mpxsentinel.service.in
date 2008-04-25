@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=org.beepmediaplayer.sentinel
-Exec=@libexecdir@/beep-media-player-2-sentinel

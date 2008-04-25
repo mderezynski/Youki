@@ -69,7 +69,7 @@
 #include <src/paths.hh>
 #include <libsoup/soup.h>
 
-#define SERVER_NAME "beep-media-player.org"
+#define SERVER_NAME "stats.backtrace.info"
 
 namespace
 {
@@ -82,7 +82,7 @@ namespace
   void
   send_crash ()
   {
-    static boost::format uri_f ("http://beep-media-player.org/stats.php?version=%s&svnrev=%s&system=%s&action=%s");
+    static boost::format uri_f ("http://stats.backtrace.info/stats.php?version=%s&svnrev=%s&system=%s&action=%s");
     std::string uri = (uri_f % VERSION % RV_REVISION % BUILD_ARCH % "crash").str ();
 
     SoupSession * session = soup_session_sync_new ();
@@ -163,7 +163,7 @@ main (int    argc,
 
   unsigned int request_name_result = 0;
   if (!dbus_g_proxy_call (o_bus, "RequestName", &error,
-                          G_TYPE_STRING, "org.beepmediaplayer.sentinel",
+                          G_TYPE_STRING, "info.backtrace.sentinel",
                           G_TYPE_UINT, 0,
                           G_TYPE_INVALID,
                           G_TYPE_UINT, &request_name_result,
