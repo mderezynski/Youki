@@ -46,6 +46,9 @@ libmpxsource_musiclibdir = $(PLUGIN_DIR)/sources
 
 EXTRA_DIST = glib-marshalers.list
 
+built_header_make = 	\
+		glib-marshalers.h
+
 glib-marshalers.c: glib-marshalers.list 
 	@echo "* Generating glib-marshalers.c"
 	@glib-genmarshal --prefix=psm_glib_marshal --body   $(srcdir)/glib-marshalers.list > glib-marshalers.c
