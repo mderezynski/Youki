@@ -137,7 +137,8 @@ namespace MPX
         }
         else
         {
-            cache_inline(mbxml_data->mbid, mbxml_data->uri);
+            if(mbxml_data->uri.length())
+                cache_inline(mbxml_data->mbid, mbxml_data->uri);
 			delete mbxml_data;
         }
     }
@@ -173,7 +174,8 @@ namespace MPX
             ++(amzn_data->n);
             if(amzn_data->n > 5)
             {
-                cache_inline(amzn_data->mbid, amzn_data->uri);
+                if(amzn_data->uri.length())
+                    cache_inline(amzn_data->mbid, amzn_data->uri);
                 delete amzn_data;
                 return; // no more hosts to try
             }

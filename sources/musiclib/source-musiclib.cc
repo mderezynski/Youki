@@ -1349,7 +1349,7 @@ namespace MPX
                     std::string mbid = get<std::string>(r["mb_album_id"]);
                     IterSet & s = m_MBIDIterMap[mbid];
                     s.insert(iter);
-                    m_Covers.get().cache( mbid, asin, true ); 
+                    m_Covers.get().cache( mbid, asin, "", true ); 
                     (*iter)[AlbumColumns.MBID] = mbid; 
                 }
 
