@@ -34,6 +34,7 @@
 
 #include "mpx/md5.h"
 #include "mpx/util-string.hh"
+#include <uuid++.hh>
 
 using namespace Glib;
 
@@ -90,6 +91,19 @@ namespace MPX
         return hex_string (md5pword, sizeof (md5pword));
     }
 
+    std::string
+    gen_uuid ()
+    {
+        uuid_t *uuid = 0;
+        uuid_rc_t u_rc = uuid_create(&uuid);
+        u_rc = uuid_make(uuid, UUID_MAKE_V4);
+        void* str = 0;
+        u_rc = uuid_export(uuid, UUID_FMT_STR, &str, NULL);
+        std::string uuid_cc = static_cast<char*>(str);
+        uuid_destroy(uuid);
+        return uuid_cc;
+    }
+
     bool
     str_has_prefix_nocase (std::string const& str,
                            std::string const& prefix)
@@ -99,6 +113,7 @@ namespace MPX
 
       return (g_ascii_strncasecmp (str.c_str (), prefix.c_str (), prefix.length ()) == 0);
     }
+    
 
     bool
     str_has_suffix_nocase (std::string const& str,
@@ -232,7 +247,6 @@ namespace MPX
       }
       return out; 
     }
-
   }
 }
 

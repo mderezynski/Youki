@@ -34,6 +34,7 @@
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
 #include "libhal++/hal++.hh"
+#include "mpx/sql.hh"
 
 #include "mlibmanager.hh"
 
@@ -333,7 +334,7 @@ namespace MPX
             if( dialog.run() == GTK_RESPONSE_YES )
             {
                 std::string insert_path = full_path.substr(m_MountPoint.length());
-                m_Library.execSQL((boost::format ("DELETE FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path = '%s'") % m_DeviceUDI % m_VolumeUDI % insert_path).str());
+                m_Library.execSQL(mprintf("DELETE FROM track WHERE hal_device_udi = '%q' AND hal_volume_udi = '%q' AND insert_path = '%q'", m_DeviceUDI.c_str(), m_VolumeUDI.c_str(), insert_path.c_str()));
                 m_Library.vacuum();
                 m_ManagedPaths.erase(full_path);
                 recreate_path_frags ();

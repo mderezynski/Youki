@@ -133,16 +133,6 @@ namespace MPX
 
 namespace mpxpy
 {
-    MPX::Variant&
-    ovariant_val (MPX::OVariant &self)
-    {
-        if(!self.is_initialized())
-            throw std::runtime_error("Variant not initialized");
-
-
-        return self.get();
-    }
-
     PyObject*
     ovariant_get (MPX::OVariant &self)
     {
@@ -608,10 +598,9 @@ BOOST_PYTHON_MODULE(mpx)
 
 	class_<MPX::OVariant>("Optional")
         .def("__nonzero__", (bool (MPX::OVariant::*) ()) &MPX::OVariant::is_initialized, return_value_policy<return_by_value>()) 
-		.def("val", &mpxpy::ovariant_val, return_internal_reference<>() /*return_value_policy<return_by_value>()*/) 
         .def("get", &mpxpy::ovariant_get, return_value_policy<return_by_value>())
 		.def("init", &mpxpy::ovariant_init)
-		.def("is_initialized", (bool (MPX::OVariant::*) ()) &MPX::OVariant::is_initialized, return_value_policy<return_by_value>()) 
+        .def("val", (MPX::Variant& (MPX::OVariant::*) ()) &MPX::OVariant::get, return_internal_reference<>() /*return_value_policy<return_by_value>()*/)
 	;
 
 	/*-------------------------------------------------------------------------------------*/

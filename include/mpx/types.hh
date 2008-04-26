@@ -98,7 +98,51 @@ namespace MPX
       N_ATTRIBUTES_INT
     };
 
-    typedef boost::variant<gint64, gdouble, std::string> Variant;
+    class Blob
+    {
+        private:
+
+            void* mdata;
+            size_t mdata_size;
+
+        public:
+
+            Blob (void const* d, size_t s)
+            {
+                mdata = g_memdup(d, s); 
+                mdata_size = s;
+            };
+
+            Blob (Blob const& other)
+            {
+                mdata = g_memdup(other.mdata, other.mdata_size);
+                mdata_size = other.mdata_size;
+            }
+
+            ~Blob ()
+            {
+                g_free(mdata);
+            }
+
+            void* const&
+            data () const
+            {
+                return mdata;
+            }
+
+            size_t
+            size () const
+            {
+                return mdata_size;
+            }
+
+            bool operator==(Blob const& other) const
+            {
+                return mdata == other.mdata;
+            }
+    };
+
+    typedef boost::variant<gint64, gdouble, std::string, Blob> Variant;
     typedef boost::optional<Variant> OVariant;
 
     class Track
@@ -134,17 +178,14 @@ namespace MPX
           VALUE_TYPE_STRING  
       }; 
 
-      typedef boost::variant< gint64, double, std::string > Variant;
-
-  #ifdef HAVE_TR1
-      typedef std::tr1::unordered_map < std::string, Variant > Row;
-  #else //!HAVE_TR1
-      typedef std::map < std::string, Variant > Row;
-  #endif //HAVE_TR1
-      typedef Row::value_type             VariantPair;
-
-      typedef std::vector < Row >           RowV;
-      typedef std::vector < std::string >   ColumnV;
+#ifdef HAVE_TR1
+      typedef std::tr1::unordered_map< std::string, Variant >  Row;
+#else //!HAVE_TR1
+      typedef std::map< std::string, Variant >                 Row;
+#endif //HAVE_TR1
+      typedef Row::value_type                                  VariantPair;
+      typedef std::vector< Row >                               RowV;
+      typedef std::vector< std::string >                       ColumnV;
 
     } // namespace SQL
 } //namespace MPX 

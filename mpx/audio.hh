@@ -34,6 +34,7 @@
 #include <glibmm/object.h>
 #include <glibmm/property.h>
 #include <glibmm/propertyproxy.h>
+#include <gtkmm.h>
 #include <sigc++/signal.h>
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
@@ -52,9 +53,12 @@ namespace MPX
   namespace Audio
   {
     MPX_API bool
-    typefind (std::string const& filename, std::string & type);
+    typefind (std::string const& uri, std::string & type);
 
 #ifndef MPX_PLUGIN_BUILD
+
+    Glib::RefPtr<Gdk::Pixbuf>
+    get_inline_image (std::string const& uri); 
 
     /** Determine whether a stream/file specified by uri is a playable file or not 
      *

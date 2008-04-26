@@ -42,6 +42,8 @@
 #include "mpx/uri.hh"
 #include "mpx/util-string.hh"
 
+using namespace Glib;
+
 namespace MPX
 {
   namespace Audio
@@ -61,7 +63,6 @@ namespace MPX
         template <typename T>
         void operator() (T const& value) const
         {
-          static boost::format msg_fmt ("Setting property '%1%' to '%2%'");
           g_object_set (G_OBJECT (m_element), m_attr.name.c_str (), value);
         }
 
@@ -246,18 +247,65 @@ namespace MPX
 
     GstElement*
     create_pipeline (GstElement*    src,
+                     GstElement*    sink)
+    {
+      g_return_val_if_fail(GST_IS_ELEMENT(src), 0);
+      g_return_val_if_fail(GST_IS_ELEMENT(sink), 0);
+
+      GstElement* pipeline = 0;
+      GstElement* e[N_ELEMENTS];
+
+      e[SOURCE]  = src;
+      e[SINK]    = sink; 
+      e[DECODER] = gst_element_factory_make ("decodebin",    ElementNames[DECODER].c_str ());
+      e[CONVERT] = gst_element_factory_make ("audioconvert", ElementNames[CONVERT].c_str ());
+      //e[VOLUME]  = gst_element_factory_make ("volume",       ElementNames[VOLUME].c_str ());
+      //e[TEE]     = gst_element_factory_make ("tee",          ElementNames[TEE].c_str ());
+      //e[QUEUE]   = gst_element_factory_make ("queue",        ElementNames[QUEUE].c_str ());
+
+      pipeline = gst_pipeline_new ("pipeline_file");
+
+      gst_bin_add_many (GST_BIN (pipeline),
+                        e[SOURCE],
+                        e[DECODER],
+      //                  e[TEE],
+      //                  e[QUEUE],
+                        e[CONVERT],
+      //                  e[VOLUME],
+                        e[SINK],
+                        NULL);
+
+      gst_element_link_many (e[SOURCE],
+                             e[DECODER],
+                             NULL);
+
+      gst_element_link_many (/*e[TEE],
+                             e[QUEUE],*/
+                             e[CONVERT],
+                             /*e[VOLUME],*/
+                             e[SINK],
+                             NULL);
+
+      g_signal_connect (G_OBJECT (e[DECODER]),
+                        "new-decoded-pad",
+                        G_CALLBACK (link_pad),
+                        gst_element_get_static_pad (e[/*TEE*/CONVERT], "sink"));
+
+      return pipeline;
+    }
+
+
+    GstElement*
+    create_pipeline (GstElement*    src,
                      Element const& sink)
     {
+      g_return_val_if_fail(GST_IS_ELEMENT(src), 0);
+
       GstElement* pipeline = 0;
       GstElement* e[N_ELEMENTS];
 
       e[SOURCE] = src;
-
-      //create sink
       e[SINK] = gst_element_factory_make (sink.name.c_str (), ElementNames[SINK].c_str ());
-
-      if (!e[SINK])
-        throw PipelineError ((boost::format ("Pipeline could not be created: Unable to create sink element '%s'") % sink.name).str ());
 
       outfit_element (e[SINK], sink.attrs);
 
@@ -305,12 +353,7 @@ namespace MPX
       GstElement* e_source = 0;
 
       e_source = gst_element_factory_make (source. name. c_str (), ElementNames[SOURCE].c_str ());
-      if (!e_source)
-        {
-          throw PipelineError ((boost::format
-                                ("Pipeline could not be created: Unable to create source element '%s'")
-                                % ElementNames[SOURCE].c_str ()).str());
-        }
+      g_return_val_if_fail(GST_IS_ELEMENT(e_source), 0);
       outfit_element (e_source, source.attrs);
       return create_pipeline (e_source, sink);
     }
@@ -398,6 +441,121 @@ namespace MPX
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    struct GetData
+    {
+        Glib::RefPtr<Gdk::Pixbuf> pb;
+        int eos;
+    };
+
+
+    namespace II 
+    {
+
+        void
+        for_each_tag (GstTagList const* list,
+                      gchar const*      tag,
+                      GetData*          data)
+        {
+            int count = gst_tag_list_get_tag_size (list, tag);
+            for (int i = 0; i < count; ++i)
+            {
+                if (!std::strcmp (tag, GST_TAG_IMAGE))
+                {
+                    GstBuffer * buffer = gst_value_get_buffer (gst_tag_list_get_value_index (list, tag, i));
+                    if(buffer)
+                    {
+                        RefPtr<Gdk::PixbufLoader> loader (Gdk::PixbufLoader::create ());
+                        try{
+                          loader->write (GST_BUFFER_DATA (buffer), GST_BUFFER_SIZE (buffer));
+                          loader->close ();
+                          data->pb = loader->get_pixbuf();
+                          return;
+                        }
+                        catch (Gdk::PixbufError & cxe)
+                        {
+                          return;
+                        }
+                    }
+                }
+            }
+        }
+
+        void
+        bus_watch (GstBus*     bus,
+                   GstMessage* message,
+                   GetData*    data)
+        {
+            switch (GST_MESSAGE_TYPE (message))
+            {
+                case GST_MESSAGE_EOS:
+                    g_atomic_int_set(&(data->eos), 1);
+                    break;
+
+                case GST_MESSAGE_TAG:
+                {
+                    GstTagList *list = 0;
+                    gst_message_parse_tag (message, &list);
+
+                    if (list)
+                    {
+                      gst_tag_list_foreach (list, GstTagForeachFunc (for_each_tag), data);
+                      gst_tag_list_free (list);
+                    }
+
+                    g_atomic_int_set(&(data->eos), 1);
+                    break;
+                }
+
+                default: break;
+            }
+          }
+    }
+
+    Glib::RefPtr<Gdk::Pixbuf>
+    get_inline_image (std::string const& uri) 
+    {
+        GetData    * data = new GetData();
+        GstElement * src = gst_element_factory_make("giosrc", NULL);
+        GstElement * sink = gst_element_factory_make("fakesink", NULL);
+        GstElement * pipeline = MPX::Audio::create_pipeline(src, sink);
+
+        g_object_set(G_OBJECT(src), "location", uri.c_str(), NULL);
+        g_atomic_int_set(&data->eos, 0);
+
+        GstBus * bus = gst_pipeline_get_bus (GST_PIPELINE (pipeline));
+        gst_bus_add_signal_watch (bus);
+        g_signal_connect (G_OBJECT (bus), "message", GCallback (II::bus_watch), data);
+        gst_object_unref (bus);
+
+        gst_element_set_state(pipeline, GST_STATE_PLAYING);
+        gst_element_get_state(pipeline, NULL, NULL, 3 * GST_SECOND);
+
+        Glib::Timer timer;
+
+        while (!((timer.elapsed() > 3) || g_atomic_int_get(&(data->eos))))
+            while (g_main_context_pending(NULL))
+                g_main_context_iteration(NULL, TRUE);
+
+        gst_element_set_state(pipeline, GST_STATE_NULL);
+        gst_element_get_state(pipeline, NULL, NULL, 3 * GST_SECOND);
+
+        gst_object_unref(GST_OBJECT(pipeline));
+
+        if(data->pb)
+        {
+            Glib::RefPtr<Gdk::Pixbuf> rpb = data->pb->copy(); 
+            delete data;
+            return rpb;
+        }
+        else
+        {
+            delete data;
+            return Glib::RefPtr<Gdk::Pixbuf>(0);
+        }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     ProcessorBase::ProcessorBase ()
       : Glib::ObjectBase                  (typeid (this)),
         pipeline                          (0),
@@ -471,14 +629,14 @@ namespace MPX
       ProcessorBase* processor = static_cast<ProcessorBase*> (data);
 
       switch (GST_MESSAGE_TYPE (message))
-        {
+      {
         case GST_MESSAGE_TAG:
-          {
+        {
             break;
-          }
+        }
 
         case GST_MESSAGE_STATE_CHANGED:
-          {
+        {
             GstState old_state, new_state, pending_state;
 
             gst_message_parse_state_changed (message,
@@ -487,19 +645,19 @@ namespace MPX
                                              &pending_state);
 
             if ((new_state == GST_STATE_PLAYING) && !processor->conn_position.connected())
-              {
+            {
                 processor->position_send_stop ();
                 processor->position_send_start ();
-              }
+            }
             else if ((old_state >= GST_STATE_PAUSED) && (new_state < GST_STATE_PAUSED))
-              {
+            {
                 processor->position_send_stop ();
-              }
+            }
             break;
-          }
+        }
 
         case GST_MESSAGE_ERROR:
-          {
+        {
             std::string location;
 
             GstElement* element = GST_ELEMENT (GST_MESSAGE_SRC (message));
@@ -578,8 +736,8 @@ namespace MPX
             }
             else if (error->domain == GST_RESOURCE_ERROR)
             {
-                switch (error->code)
-                {
+              switch (error->code)
+              {
 
                   case GST_RESOURCE_ERROR_SEEK:
                   {
@@ -599,8 +757,8 @@ namespace MPX
             }
             else if (error->domain == GST_STREAM_ERROR)
             {
-                switch (error->code)
-                {
+              switch (error->code)
+              {
                   case GST_STREAM_ERROR_CODEC_NOT_FOUND:
                   {
                       message_str += "(E301) There is no codec installed to handle "
@@ -629,7 +787,7 @@ namespace MPX
                   }
 
                   default: break;
-               }
+              }
             }
 
             g_error_free (error);
@@ -871,7 +1029,7 @@ namespace MPX
       return false;
     }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////
 
     ProcessorURISink::ProcessorURISink  ()
       : Glib::ObjectBase (typeid (this))
@@ -979,7 +1137,7 @@ namespace MPX
       }
     }
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////
 
     void
     ProcessorPUID::stream_eos ()

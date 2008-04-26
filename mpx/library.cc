@@ -761,7 +761,7 @@ namespace MPX
 
         if( track[ATTRIBUTE_MB_ALBUM_ID] )
         {
-          char const* select_album_f ("SELECT album, id FROM album WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
+          char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
 
           sql = mprintf (select_album_f,
 
@@ -791,7 +791,7 @@ namespace MPX
         }
         else
         {
-          char const* select_album_f ("SELECT album, id FROM album WHERE (%s %s) AND (%s %s) AND (%s = %lld);"); 
+          char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s = %lld);"); 
 
           sql = mprintf (select_album_f,
 
@@ -810,14 +810,29 @@ namespace MPX
           );
         }
 
+        OVariant mbid;
         m_SQL->get (rows, sql); 
 
-        if (!rows.empty())
+        if(!rows.empty())
         {
             album_j = get <gint64> (rows[0].find ("id")->second);
+
+            if(rows[0].count("mb_album_id"))
+                track[ATTRIBUTE_MB_ALBUM_ID] = get<std::string> (rows[0].find ("mb_album_id")->second);
         }
-        else if (!only_if_exists)
+        else
+        if(!only_if_exists)
         {
+          bool custom_id = false;
+
+          if(!track[ATTRIBUTE_MB_ALBUM_ID])
+          {
+            track[ATTRIBUTE_MB_ALBUM_ID] = "mpx-" + get<std::string>(track[ATTRIBUTE_ARTIST].get())
+                                                  + "-"
+                                                  + get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
+            custom_id = true;
+          }
+
           char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q, %lld, %lld);");
 
           std::string sql = mprintf (set_album_f,
@@ -850,8 +865,24 @@ namespace MPX
 
           m_SQL->exec_sql (sql);
           album_j = m_SQL->last_insert_rowid ();
-          g_message("%s: New Album: %lld", G_STRLOC, album_j);
           Signals.NewAlbum.emit( album_j ); 
+
+          if(!custom_id)
+          {
+              g_message("Fetching normal");
+              m_Covers->cache( get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get())
+                             , (track[ATTRIBUTE_ASIN]
+                               ? get<std::string>(track[ATTRIBUTE_ASIN].get())
+                               : std::string())
+                             , get<std::string>(track[ATTRIBUTE_LOCATION].get())
+                             , true );
+          }
+          else
+          {
+              g_message("Fetching custom");
+              m_Covers->cache_inline( get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()),
+                                     get<std::string>(track[ATTRIBUTE_LOCATION].get()) );
+          }
         }
         return album_j;
     }

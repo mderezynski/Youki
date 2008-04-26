@@ -532,7 +532,7 @@ namespace MPX
 
       void
       SQLDB::assemble_row (sqlite3_stmt* stmt,
-                               RowV & rows) const
+                           RowV & rows) const
       {
         unsigned int columns = sqlite3_column_count (stmt);
     
@@ -571,8 +571,18 @@ namespace MPX
                         }
                         break;
                       }
-                    }
 
+                      case SQLITE_BLOB:
+                      {
+                        void const* blob = reinterpret_cast<void const*> (sqlite3_column_blob (stmt, n));
+                        if (blob)
+                        {
+                          int bytes = sqlite3_column_bytes(stmt, n);
+                          row.insert (std::make_pair (name, Blob(blob, bytes))); 
+                        }
+                        break;
+                      }
+                    }
               }
         }
         rows.push_back (row);
@@ -587,6 +597,43 @@ namespace MPX
       }
 
       unsigned int
+      SQLDB::exec_sql_bind_blob (string const& sql, Blob const& b)
+      {
+        int            status = 0;
+        sqlite3_stmt  *stmt   = 0;
+        unsigned int   rows   = 0;
+
+        statement_prepare(&stmt, sql);
+        sqlite3_bind_blob(stmt, 1, b.data(), b.size(), SQLITE_STATIC);
+
+        for( ; status != SQLITE_DONE ; )
+        {
+            status = sqlite3_step (stmt);
+
+            if( status == SQLITE_BUSY )
+              continue;
+
+            if( status == SQLITE_DONE )
+              break;
+
+            if( status == SQLITE_ROW )
+            {
+              rows++;
+              continue;
+            }
+
+            if( status != SQLITE_OK )
+            {
+              sqlite3_finalize (stmt);
+              THROW_SQL_ERROR(sql, status)
+            }
+        }
+
+        sqlite3_finalize (stmt);
+        return rows;
+      }
+
+      unsigned int
       SQLDB::exec_sql (string const& sql)
       {
         int            status = 0;
@@ -597,25 +644,25 @@ namespace MPX
 
         for ( ; status != SQLITE_DONE ; )
         {
-          status = sqlite3_step (stmt);
+            status = sqlite3_step (stmt);
 
-          if (status == SQLITE_BUSY)
-            continue;
+            if (status == SQLITE_BUSY)
+              continue;
 
-          if (status == SQLITE_DONE)
-            break;
+            if (status == SQLITE_DONE)
+              break;
 
-          if (status == SQLITE_ROW)
-          {
-            rows++;
-            continue;
-          }
+            if (status == SQLITE_ROW)
+            {
+              rows++;
+              continue;
+            }
 
-          if (status != SQLITE_OK)
-          {
-            sqlite3_finalize (stmt);
-            THROW_SQL_ERROR(sql, status)
-          }
+            if (status != SQLITE_OK)
+            {
+              sqlite3_finalize (stmt);
+              THROW_SQL_ERROR(sql, status)
+            }
         }
 
         sqlite3_finalize (stmt);
@@ -664,9 +711,9 @@ namespace MPX
 
       void
       SQLDB::set     (std::string  const& name,
-                         std::string  const& pkey,
-                         std::string  const& pkey_value,
-                         AttributeV   const& attributes)
+                      std::string  const& pkey,
+                      std::string  const& pkey_value,
+                      AttributeV   const& attributes)
       {
         std::string sql;
         sql.reserve (0x400);
@@ -685,8 +732,8 @@ namespace MPX
 
       void
       SQLDB::set (std::string    const& name,
-                     string  const& where_clause,
-                     AttributeV    const& attributes)
+                  std::string    const& where_clause,
+                  AttributeV     const& attributes)
       {
         std::string sql;
         sql.reserve (0x400);
@@ -834,6 +881,5 @@ namespace MPX
         gint64 rand = db.m_rand.get_int(); 
         sqlite3_result_int64(ctx, rand);
       }
-
   } // SQL
 } // MPX

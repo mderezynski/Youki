@@ -298,6 +298,9 @@ namespace MPX
         unsigned int
         exec_sql (std::string const& sql);
 
+        unsigned int
+        exec_sql_bind_blob (std::string const& sql, Blob const& b);
+
         int64_t
         last_insert_rowid ()
         {

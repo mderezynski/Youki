@@ -484,6 +484,9 @@ AM_CONDITIONAL([HAVE_ZIP], [test "x$ZIP" != "x"])
 # libofa
 PKG_CHECK_MODULES([LIBOFA], [libofa >= 0.9.3])
 
+# ossp
+PKG_CHECK_MODULES([OSSP], [ossp-uuid])
+
 #########################################
 ######### PLATFORM SPECIFITIES ##########
 #########################################
@@ -667,7 +670,7 @@ AC_SUBST(MPX_DBUS_INTERFACE__MPRIS_)
 AC_SUBST(MPX_DBUS_INTERFACE__MPX_)
 AC_SUBST(MPX_DBUS_SERVICE_)
 
-AC_DEFINE([PLUGIN_VERSION], [6], [Plugin Version])
+AC_DEFINE([PLUGIN_VERSION], [10], [Plugin Version])
 
 # MCS stubs
 AC_DEFINE([HAVE_BMP], [1], [Defined when having BMP])

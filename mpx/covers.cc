@@ -41,6 +41,8 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include "audio.hh"
+
 #include "mpx/covers.hh"
 #include "mpx/minisoup.hh"
 #include "mpx/network.hh"
@@ -116,7 +118,7 @@ namespace MPX
     }
 
     void
-    Covers::reply_cb_mbxml (char const* data, guint size, guint code, CoverFetchData* amzn_data)
+    Covers::reply_cb_mbxml (char const* data, guint size, guint code, CoverFetchData* mbxml_data)
     {
         if (code == 200)
         {
@@ -126,17 +128,17 @@ namespace MPX
 					"/metadata/release/relation-list//relation[@type='CoverArtLink']/@target", "mb=http://musicbrainz.org/ns/mmd-1.0#"); 
 			} catch (std::runtime_error & cxe)
 			{
-				delete amzn_data;
+				delete mbxml_data;
 				return;
 			}
-			g_message("Image URL: %s", image_url.c_str());
-	        amzn_data->request = Soup::Request::create (image_url);
-		    amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_amazn ), amzn_data ));
-			amzn_data->request->run();
+	        mbxml_data->request = Soup::Request::create (image_url);
+		    mbxml_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_amazn ), mbxml_data ));
+			mbxml_data->request->run();
         }
         else
         {
-			delete amzn_data;
+            cache_inline(mbxml_data->mbid, mbxml_data->uri);
+			delete mbxml_data;
         }
     }
 
@@ -171,6 +173,7 @@ namespace MPX
             ++(amzn_data->n);
             if(amzn_data->n > 5)
             {
+                cache_inline(amzn_data->mbid, amzn_data->uri);
                 delete amzn_data;
                 return; // no more hosts to try
             }
@@ -187,7 +190,7 @@ namespace MPX
     }
 
     void 
-    Covers::cache (std::string const& mbid, std::string const& asin, bool acquire)
+    Covers::cache (std::string const& mbid, std::string const& uri, std::string const& asin, bool acquire)
     {
         Glib::Mutex::Lock L (RequestKeeperLock);
         if(RequestKeeper.count(mbid))
@@ -204,13 +207,32 @@ namespace MPX
 
         if(acquire)
         {
-            CoverFetchData * data = new CoverFetchData(mbid, asin);
+            CoverFetchData * data = new CoverFetchData(mbid, asin, uri);
             RequestKeeper.insert(mbid);
 
             if(asin.empty())
                 site_fetch_and_save_cover_mbxml(data);
             else
                 site_fetch_and_save_cover_amazn(data);
+        }
+    }
+
+    void
+    Covers::cache_inline (std::string const& mbid, std::string const& uri)
+    {
+        std::string thumb_path = get_thumb_path (mbid);
+        if (file_test (thumb_path, FILE_TEST_EXISTS))
+        {
+            Signals.GotCover.emit(mbid);
+            return; 
+        }
+
+        Glib::RefPtr<Gdk::Pixbuf> cover = Audio::get_inline_image(uri); 
+        if(cover)
+        {
+            cover->save (get_thumb_path(mbid), "png");
+            m_pixbuf_cache.insert (std::make_pair (mbid, cover));
+            Signals.GotCover.emit(mbid);
         }
     }
 

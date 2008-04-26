@@ -980,6 +980,7 @@ namespace MPX
         if(self->player->m_startup_complete)
         {
             self->player->present();
+            self->player->raise();
         }
 
 	    return TRUE;

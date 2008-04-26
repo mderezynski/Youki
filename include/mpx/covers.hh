@@ -68,7 +68,10 @@ namespace MPX
 	  fetch (std::string const& mbid, Cairo::RefPtr<Cairo::ImageSurface>&, CoverSize size);
 
 	  void
-	  cache (std::string const& mbid, std::string const& asin = std::string(), bool acquire = true);
+	  cache (std::string const& mbid, std::string const& uri, std::string const& asin = std::string(), bool acquire = true);
+
+      void
+      cache_inline (std::string const& mbid, std::string const& uri);
 
 	  Covers (NM&);
 
@@ -79,11 +82,13 @@ namespace MPX
 		  Soup::RequestRefP request;
 		  std::string mbid;
 		  std::string asin;
+          std::string uri;
 		  int n;
 
-		  CoverFetchData (const std::string& mbid_, const std::string& asin_)
+		  CoverFetchData (const std::string& mbid_, const std::string& asin_, const std::string& uri_)
 		  : mbid(mbid_)
 		  , asin(asin_)
+          , uri(uri_)
 		  , n (0)
 		  {
 		  }
