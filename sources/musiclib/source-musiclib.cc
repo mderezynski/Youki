@@ -1139,9 +1139,9 @@ namespace MPX
                 }
               }
 
-              virtual void
-              on_row_expanded (const TreeIter &iter_filter,
-                               const TreePath &path) 
+              virtual bool
+              on_test_expand_row (const TreeIter &iter_filter,
+                                  const TreePath &path) 
               {
                 TreeIter iter = TreeStoreFilter->convert_iter_to_child_iter(iter_filter);
                 if(!(*iter)[AlbumColumns.HasTracks])
@@ -1164,14 +1164,19 @@ namespace MPX
                         (*child)[AlbumColumns.RowType] = ROW_TRACK; 
                     }
 
-                    (*iter)[AlbumColumns.HasTracks] = true;
-
-                    if(has_children)
+                    if(v.size())
                     {
-                        gtk_tree_store_remove(GTK_TREE_STORE(TreeStore->gobj()), &children);
-                    } 
-                    else
-                        g_warning("%s:%d : No placeholder row present, state seems corrupted.", __FILE__, __LINE__);
+                        (*iter)[AlbumColumns.HasTracks] = true;
+                        if(has_children)
+                        {
+                            gtk_tree_store_remove(GTK_TREE_STORE(TreeStore->gobj()), &children);
+                        } 
+                        else
+                            g_warning("%s:%d : No placeholder row present, state seems corrupted.", __FILE__, __LINE__);
+                        return true;
+                    }
+                    
+                    return false;
 
                 }
 
