@@ -727,38 +727,38 @@ class MPXAudioScrobbler(mpx.Plugin):
         m = self.player.get_metadata()
 
         try:
-            p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
-            p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
+            p_artist = m.get(mpx.AttributeId.ARTIST).get()
+            p_title = m.get(mpx.AttributeId.TITLE).get()
         except:
             p_artist = None
             p_title = None
 
         if p_artist != None and p_title != None: 
 
-            p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
-            p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
+            p_artist = m.get(mpx.AttributeId.ARTIST).get()
+            p_title = m.get(mpx.AttributeId.TITLE).get()
 
             try:
                 m_len = m.get(mpx.AttributeId.TIME)
-                p_len = m_len.val().get_int()
+                p_len = m_len.get()
             except:
                 p_len = 0
 
             try:
                 m_album = m.get(mpx.AttributeId.ALBUM)
-                p_album = m_album.val().get_string()
+                p_album = m_album.get()
             except:
                 p_album=u''
 
             try:
                 m_tracknumber = m.get(mpx.AttributeId.TRACK)
-                p_tracknumber = str(m_tracknumber.val().get_int())
+                p_tracknumber = str(m_tracknumber.get())
             except:
                 p_tracknumber=u''
 
             try:
                 m_mbid = m.get(mpx.AttributeId.MB_TRACK_ID)
-                p_mbid = m_mbid.val().get_string()
+                p_mbid = m_mbid.get()
             except:
                 p_mbid=u''
 
@@ -776,48 +776,40 @@ class MPXAudioScrobbler(mpx.Plugin):
 
         m = self.player.get_metadata()
 
-        try:
-            p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
-            p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
-        except:
-            p_artist = None
-            p_title = None
+        attrs = [mpx.AttributeId.ARTIST,
+                 mpx.AttributeId.TITLE,
+                 mpx.AttributeId.TIME ]
 
-        if p_artist != None and p_title != None: 
 
-            p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
-            p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
+        for attr in attrs:
+            if not m[attr]:
+                return
+                
+        p_artist = m[mpx.AttributeId.ARTIST].get()
+        p_title = m[mpx.AttributeId.TITLE].get()
+        p_len = u'' 
+        p_album = u''
+        p_tracknumber = u''
+        p_mbid = u''
 
-            try:
-                m_len = m.get(mpx.AttributeId.TIME)
-                p_len = m_len.val().get_int()
-            except:
-                p_len = 0
+        if m[mpx.AttributeId.TIME]: 
+            p_len = str(m[mpx.AttributeId.TIME].get())
 
-            try:
-                m_album = m.get(mpx.AttributeId.ALBUM)
-                p_album = m_album.val().get_string()
-            except:
-                p_album=u''
+        if m[mpx.AttributeId.ALBUM]: 
+            p_album = m[mpx.AttributeId.ALBUM].get()
 
-            try:
-                m_tracknumber = m.get(mpx.AttributeId.TRACK)
-                p_tracknumber = str(m_tracknumber.val().get_int())
-            except:
-                p_tracknumber=u''
+        if m[mpx.AttributeId.TRACK]: 
+            p_tracknumber = str(m[mpx.AttributeId.TRACK].get())
 
-            try:
-                m_mbid = m.get(mpx.AttributeId.MB_TRACK_ID)
-                p_mbid = m_mbid.val().get_string()
-            except:
-                p_mbid=u''
+        if m[mpx.AttributeId.MB_TRACK_ID]: 
+            p_mbid = m[mpx.AttributeId.MB_TRACK_ID].get()
 
-            print "Posting now-playing with MBID: " + p_mbid + " at date " + str(time.time())
+        print "Posting now-playing with MBID: " + p_mbid + " at date " + str(time.time())
 
-            self.post.flushcache ()
-            self.post.nowplaying(str(p_artist),
-                                 str(p_title),
-                                 str(p_len),
-                                 str(p_tracknumber),
-                                 str(p_album),
-                                 str(p_mbid))
+        self.post.flushcache ()
+        self.post.nowplaying(str(p_artist),
+                             str(p_title),
+                             str(p_len),
+                             str(p_tracknumber),
+                             str(p_album),
+                             str(p_mbid))

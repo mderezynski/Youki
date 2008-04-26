@@ -154,11 +154,11 @@ class TrackInfo:
                     self.track[mpx.AttributeId.MB_ARTIST_ID].init()
                     self.track[mpx.AttributeId.MB_ARTIST_ID].val().set_string(str(artist.getId()))
 
-                    if not self.track[mpx.AttributeId.ARTIST].is_initialized():
+                    if not self.track[mpx.AttributeId.ARTIST]:
                         self.track[mpx.AttributeId.ARTIST].init()
                         self.track[mpx.AttributeId.ARTIST].val().set_string(str(artist.getName()))
                     
-                    if not self.track[mpx.AttributeId.TITLE].is_initialized():
+                    if not self.track[mpx.AttributeId.TITLE]:
                         self.track[mpx.AttributeId.TITLE].init()
                         self.track[mpx.AttributeId.TITLE].val().set_string(str(mbtrack.getTitle()))
 
@@ -213,9 +213,9 @@ class TrackInfo:
 
         track = self.track
 
-        if not self.gotPuid and not track[mpx.AttributeId.MB_TRACK_ID].is_initialized() and track.get(mpx.AttributeId.LOCATION).val().get_string()[:7] == "file://":
+        if not self.gotPuid and not track[mpx.AttributeId.MB_TRACK_ID] and track.get(mpx.AttributeId.LOCATION).get()[:7] == "file://":
 
-            self.player.get_by_name("file-source").set_property('location', track.get(mpx.AttributeId.LOCATION).val().get_string())
+            self.player.get_by_name("file-source").set_property('location', track.get(mpx.AttributeId.LOCATION).get())
             self.player.set_state(gst.STATE_PLAYING)
             
             gobject.timeout_add (500, self.display_pipeline_duration)
@@ -240,7 +240,7 @@ class TrackInfo:
             self.buf.insert(self.buf.get_end_iter(), "\n\n\n")
 
             try:
-                lyricwiki = mpx.LyricWiki(track[mpx.AttributeId.ARTIST].val().get_string(), track[mpx.AttributeId.TITLE].val().get_string())
+                lyricwiki = mpx.LyricWiki(track[mpx.AttributeId.ARTIST].get(), track[mpx.AttributeId.TITLE].get())
                 lyrics = lyricwiki.run()
                 if lyrics != "Not found":
                     self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics\n", self.textTagLarge, self.textTagUnderline)
@@ -251,17 +251,17 @@ class TrackInfo:
 
 
             try:
-                lastfmartist = mpx.LastFMArtist(track[mpx.AttributeId.ARTIST].val().get_string())
+                lastfmartist = mpx.LastFMArtist(track[mpx.AttributeId.ARTIST].get())
                 artist = lastfmartist.run()
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track[mpx.AttributeId.ARTIST].val().get_string() + "\n", self.textTagLarge, self.textTagUnderline)
+                self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track[mpx.AttributeId.ARTIST].get() + "\n", self.textTagLarge, self.textTagUnderline)
                 self.buf.insert(self.buf.get_end_iter(), artist)
                 self.buf.insert(self.buf.get_end_iter(), "\n\n")
             except:
                 pass 
 
-            if track[mpx.AttributeId.MB_TRACK_ID] and track[mpx.AttributeId.MB_TRACK_ID].is_initialized():
+            if track[mpx.AttributeId.MB_TRACK_ID] and track[mpx.AttributeId.MB_TRACK_ID]:
         
-                trackId = track.get(mpx.AttributeId.MB_TRACK_ID).val().get_string()
+                trackId = track.get(mpx.AttributeId.MB_TRACK_ID).get()
                 mbtrack = self.q.getTrackById(trackId, self.wsinc) 
 
                 rels = mbtrack.getRelations()
@@ -289,8 +289,8 @@ class TrackInfo:
                 self.entities = []
                 self.link_tags = []
 
-                if track[mpx.AttributeId.MB_ARTIST_ID].is_initialized():
-                        self.entities.append(track[mpx.AttributeId.MB_ARTIST_ID].val().get_string())
+                if track[mpx.AttributeId.MB_ARTIST_ID]:
+                        self.entities.append(track[mpx.AttributeId.MB_ARTIST_ID].get())
 
                 rellists = []
                 for rel in reldict:
@@ -303,8 +303,8 @@ class TrackInfo:
                         funcdict[rel](rellist)
                     self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
-                if track[mpx.AttributeId.MB_ALBUM_ID] and track[mpx.AttributeId.MB_ALBUM_ID].is_initialized(): 
-                    entity = self.q.getReleaseById(track[mpx.AttributeId.MB_ALBUM_ID].val().get_string(), self.wsinc_release)
+                if track[mpx.AttributeId.MB_ALBUM_ID] and track[mpx.AttributeId.MB_ALBUM_ID]: 
+                    entity = self.q.getReleaseById(track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release)
                     rels = entity.getRelations()
                     if len(rels) > 0:
                         self.buf.insert_with_tags(self.buf.get_end_iter(), "Album Links\n", self.textTagUnderline, self.textTagLarge)

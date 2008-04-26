@@ -57,18 +57,18 @@ class OSD(gtk.Window):
 
             self.metadata = m
 
-            if m[mpx.AttributeId.TITLE].is_initialized():
-                self.m_title = m[mpx.AttributeId.TITLE].val().get_string()
+            if m[mpx.AttributeId.TITLE]:
+                self.m_title = m[mpx.AttributeId.TITLE].get()
             else:
                 self.m_title = "(No Title)"
 
-            if m[mpx.AttributeId.ARTIST].is_initialized():
-                self.m_artist = m[mpx.AttributeId.ARTIST].val().get_string()
+            if m[mpx.AttributeId.ARTIST]:
+                self.m_artist = m[mpx.AttributeId.ARTIST].get()
             else:
                 self.m_artist = "(Unknown Artist)"
 
-            if m[mpx.AttributeId.ALBUM].is_initialized():
-                self.m_album = m[mpx.AttributeId.ALBUM].val().get_string()
+            if m[mpx.AttributeId.ALBUM]:
+                self.m_album = m[mpx.AttributeId.ALBUM].get()
             else:
                 self.m_album = "(Unknown Album)"
 

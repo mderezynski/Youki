@@ -51,27 +51,27 @@ class PlaylistDefaultTooltip(mpx_playlist.PlaylistPlugin):
         mpxtrack_boxed = treemodel.get(iter, 9)[0]
         mpxtrack = mpx.unwrap_boxed_mpxtrack(mpxtrack_boxed)
 
-        if mpxtrack[mpx.AttributeId.ARTIST].is_initialized():
-            self.labels[0].set_text(mpxtrack[mpx.AttributeId.ARTIST].val().get_string())
+        if mpxtrack[mpx.AttributeId.ARTIST]:
+            self.labels[0].set_text(mpxtrack[mpx.AttributeId.ARTIST].get())
 
-        if mpxtrack[mpx.AttributeId.ALBUM].is_initialized():
-            self.labels[1].set_text(mpxtrack[mpx.AttributeId.ALBUM].val().get_string())
+        if mpxtrack[mpx.AttributeId.ALBUM]:
+            self.labels[1].set_text(mpxtrack[mpx.AttributeId.ALBUM].get())
 
-        if mpxtrack[mpx.AttributeId.TITLE].is_initialized():
-            self.labels[2].set_text(mpxtrack[mpx.AttributeId.TITLE].val().get_string())
+        if mpxtrack[mpx.AttributeId.TITLE]:
+            self.labels[2].set_text(mpxtrack[mpx.AttributeId.TITLE].get())
 
-        if mpxtrack[mpx.AttributeId.BITRATE].is_initialized():
-            self.labels[3].set_text(str(mpxtrack[mpx.AttributeId.BITRATE].val().get_int())+ " kbit/s")
+        if mpxtrack[mpx.AttributeId.BITRATE]:
+            self.labels[3].set_text(str(mpxtrack[mpx.AttributeId.BITRATE].get())+ " kbit/s")
 
-        if mpxtrack[mpx.AttributeId.SAMPLERATE].is_initialized():
-            self.labels[4].set_text(str(mpxtrack[mpx.AttributeId.SAMPLERATE].val().get_int()/1000.)+ " KHz")
+        if mpxtrack[mpx.AttributeId.SAMPLERATE]:
+            self.labels[4].set_text(str(mpxtrack[mpx.AttributeId.SAMPLERATE].get()/1000.)+ " KHz")
 
-        if mpxtrack[mpx.AttributeId.TYPE].is_initialized():
-            self.labels[5].set_text(mpxtrack[mpx.AttributeId.TYPE].val().get_string())
+        if mpxtrack[mpx.AttributeId.TYPE]:
+            self.labels[5].set_text(mpxtrack[mpx.AttributeId.TYPE].get())
 
         self.image.hide()
-        if mpxtrack[mpx.AttributeId.MB_ALBUM_ID].is_initialized():
-            mbid = mpxtrack[mpx.AttributeId.MB_ALBUM_ID].val().get_string()
+        if mpxtrack[mpx.AttributeId.MB_ALBUM_ID]:
+            mbid = mpxtrack[mpx.AttributeId.MB_ALBUM_ID].get()
             cover = self.covers.fetch(mbid) 
             if cover:
                 self.image.set_from_pixbuf(cover.scale_simple(112, 112, gtk.gdk.INTERP_BILINEAR))

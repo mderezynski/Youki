@@ -133,6 +133,46 @@ namespace MPX
 
 namespace mpxpy
 {
+    MPX::Variant&
+    ovariant_val (MPX::OVariant &self)
+    {
+        if(!self.is_initialized())
+            throw std::runtime_error("Variant not initialized");
+
+
+        return self.get();
+    }
+
+    PyObject*
+    ovariant_get (MPX::OVariant &self)
+    {
+        if(!self.is_initialized())
+        {
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+
+        PyObject * obj = 0;
+
+		switch(self.get().which())
+		{
+			case 0:
+				obj = PyLong_FromLongLong((boost::get<gint64>(self.get())));
+                break;
+			case 1:
+				obj = PyFloat_FromDouble((boost::get<double>(self.get())));
+                break;
+			case 2:
+				obj = PyString_FromString((boost::get<std::string>(self.get())).c_str());
+                break;
+		}
+
+        return obj;
+    }
+}
+
+namespace mpxpy
+{
 	std::string
 	variant_repr(MPX::Variant &self)
 	{
@@ -149,18 +189,19 @@ namespace mpxpy
 		return std::string();
 	}
 	
-	void
-	variant_setint(MPX::Variant  &self, gint64 value)
-	{
-		self = value;
-	}
-
 	gint64
 	variant_getint(MPX::Variant &self)
 	{
 		gint64 i = boost::get<gint64>(self);
         return i;
 	}
+
+	void
+	variant_setint(MPX::Variant  &self, gint64 value)
+	{
+		self = value;
+	}
+
 
 	std::string	
 	variant_getstring(MPX::Variant &self)
@@ -188,18 +229,15 @@ namespace mpxpy
 		self = value;
 	}
 
-	std::string
-	opt_repr(MPX::OVariant &self)
-	{
-		return variant_repr(self.get()); 
-	}
-
 	void
-	opt_init(MPX::OVariant &self)
+	ovariant_init(MPX::OVariant &self)
 	{
 		self = MPX::Variant();
 	}
+}
 
+namespace mpxpy
+{
 	MPX::OVariant &
 	track_getitem(MPX::Track &self, int id) 
 	{
@@ -569,9 +607,11 @@ BOOST_PYTHON_MODULE(mpx)
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::OVariant>("Optional")
-		.def("val", (MPX::Variant& (MPX::OVariant::*) ()) &MPX::OVariant::get, return_internal_reference<>() /*return_value_policy<return_by_value>()*/) 
+        .def("__nonzero__", (bool (MPX::OVariant::*) ()) &MPX::OVariant::is_initialized, return_value_policy<return_by_value>()) 
+		.def("val", &mpxpy::ovariant_val, return_internal_reference<>() /*return_value_policy<return_by_value>()*/) 
+        .def("get", &mpxpy::ovariant_get, return_value_policy<return_by_value>())
+		.def("init", &mpxpy::ovariant_init)
 		.def("is_initialized", (bool (MPX::OVariant::*) ()) &MPX::OVariant::is_initialized, return_value_policy<return_by_value>()) 
-		.def("init", &mpxpy::opt_init)
 	;
 
 	/*-------------------------------------------------------------------------------------*/

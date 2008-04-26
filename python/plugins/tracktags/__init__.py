@@ -57,8 +57,9 @@ class TrackTags(mpx.Plugin):
 
         try:
             m = self.player.get_metadata()
-            if m.get(mpx.AttributeId.ARTIST) and m.get(mpx.AttributeId.TITLE):
-                uri = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(m.get(mpx.AttributeId.ARTIST).val().get_string()), urllib.quote(m.get(mpx.AttributeId.TITLE).val().get_string()))
+
+            if m[mpx.AttributeId.ARTIST] and m[mpx.AttributeId.TITLE]:
+                uri = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(m.get(mpx.AttributeId.ARTIST).get()), urllib.quote(m[mpx.AttributeId.TITLE].get()))
                 lastfm = NonvalidatingReader.parseUri(uri)
                 ctx = Context(lastfm)
 

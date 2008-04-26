@@ -122,7 +122,8 @@ namespace MPX
             {
                 LayoutList & l = *i;
 
-                double rx = (get_allocation().get_width() / 2.) - (((*wi) * m_Layout.Scale) / 2.); // center row 
+                double rx = (get_allocation().get_width() / 2.) - (((*wi) * m_Layout.Scale) / 2.); // center row
+                //double spacing = (get_allocation().get_width() - ((*wi) * m_Layout.Scale)) / (l.size() - 1);
 		#ifdef HAVE_TR1
                 rx = std::tr1::fmax(0, rx);
 		#else
@@ -139,7 +140,7 @@ namespace MPX
                     //else
                         sp->y = ry + heightcorrection + ((m_Layout.RowHeight - sp->m_Logical.get_height())/2.); 
 
-                    rx += sp->m_Logical.get_width() + (TAG_SPACING / m_Layout.Scale);
+                    rx += sp->m_Logical.get_width() + (TAG_SPACING / m_Layout.Scale); 
                 }
 
                 ry += m_Layout.RowHeight;
