@@ -1314,7 +1314,7 @@ namespace MPX
               }
 
               void
-              place_album (SQL::Row & r, gint64 id, bool acquire_cover = false)
+              place_album (SQL::Row & r, gint64 id)
               {
                 TreeIter iter = TreeStore->append();
                 m_AlbumIterMap.insert(std::make_pair(id, iter));
@@ -1349,7 +1349,7 @@ namespace MPX
                     std::string mbid = get<std::string>(r["mb_album_id"]);
                     IterSet & s = m_MBIDIterMap[mbid];
                     s.insert(iter);
-                    //m_Covers.get().cache( mbid, asin, acquire_cover ); 
+                    m_Covers.get().cache( mbid, asin, true ); 
                     (*iter)[AlbumColumns.MBID] = mbid; 
                 }
 
@@ -1394,7 +1394,7 @@ namespace MPX
                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                 {
                     SQL::Row & r = *i; 
-                    place_album(r, get<gint64>(r["id"]), false);
+                    place_album(r, get<gint64>(r["id"]));
                 }
               }
 
@@ -1408,7 +1408,7 @@ namespace MPX
 
                 SQL::Row & r = v[0];
 
-                place_album (r, id, true); 
+                place_album (r, id); 
               }
 
               void
