@@ -1173,10 +1173,10 @@ namespace MPX
                         } 
                         else
                             g_warning("%s:%d : No placeholder row present, state seems corrupted.", __FILE__, __LINE__);
-                        return true;
+                        return false;
                     }
                     
-                    return false;
+                    return true;
 
                 }
 
