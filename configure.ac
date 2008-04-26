@@ -484,9 +484,6 @@ AM_CONDITIONAL([HAVE_ZIP], [test "x$ZIP" != "x"])
 # libofa
 PKG_CHECK_MODULES([LIBOFA], [libofa >= 0.9.3])
 
-# ossp
-PKG_CHECK_MODULES([OSSP], [ossp-uuid])
-
 #########################################
 ######### PLATFORM SPECIFITIES ##########
 #########################################

@@ -46,9 +46,6 @@ namespace MPX
     md5_hex_string (void const* data,
                     std::size_t len);
 
-    std::string
-    gen_uuid ();
- 
     bool str_has_prefix_nocase    (std::string const& str, std::string const& prefix);
     bool str_has_suffix_nocase    (std::string const& str, std::string const& suffix);
     bool str_has_suffixes_nocase  (std::string const& str, char const**       suffixes);

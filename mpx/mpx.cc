@@ -244,7 +244,7 @@ namespace MPX
 
   LayoutData const layout_info[] = {
         {-0.8, 1.0,  86, 12},
-        {-1.0, 0.65, 86, 29},
+        {-1.0, 0.65, 86, 31},
         {-1.5, 1.0,  86, 48},
   };
 
@@ -1570,7 +1570,7 @@ namespace MPX
 		m_Sources->sourceChanged().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
 
-        splash.set_message(_("Startup Complete"), 1.0);
+        splash.set_message(_("Ready"), 1.0);
 
         resize( mcs->key_get<int>("mpx", "window-w"), mcs->key_get<int>("mpx", "window-h") );
         move( mcs->key_get<int>("mpx", "window-x"), mcs->key_get<int>("mpx", "window-y") );

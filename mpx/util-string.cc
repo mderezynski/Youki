@@ -34,7 +34,6 @@
 
 #include "mpx/md5.h"
 #include "mpx/util-string.hh"
-#include <uuid++.hh>
 
 using namespace Glib;
 
@@ -89,19 +88,6 @@ namespace MPX
         md5_finish (&md5state, md5pword);
 
         return hex_string (md5pword, sizeof (md5pword));
-    }
-
-    std::string
-    gen_uuid ()
-    {
-        uuid_t *uuid = 0;
-        uuid_rc_t u_rc = uuid_create(&uuid);
-        u_rc = uuid_make(uuid, UUID_MAKE_V4);
-        void* str = 0;
-        u_rc = uuid_export(uuid, UUID_FMT_STR, &str, NULL);
-        std::string uuid_cc = static_cast<char*>(str);
-        uuid_destroy(uuid);
-        return uuid_cc;
     }
 
     bool

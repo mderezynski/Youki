@@ -21,7 +21,6 @@ mpx_bin_CXXFLAGS = 									\
 		$(HAL_CFLAGS)								\
 		$(NM_CFLAGS)								\
 		$(LIBOFA_CFLAGS)							\
-		$(OSSP_CFLAGS)								\
 		$(PYGTK_CFLAGS)								\
 		$(PYTHON_CFLAGS)							\
 		$(RSVG_CFLAGS)								\
@@ -57,7 +56,6 @@ mpx_bin_LDADD =										\
 		$(HAL_LIBS)									\
 		$(NM_LIBS)									\
 		$(LIBOFA_LIBS)								\
-		$(OSSP_LIBS)								\
 		$(PYGTK_LIBS)								\
 		$(PYTHON_LIBS)								\
 		$(RSVG_LIBS)								\
