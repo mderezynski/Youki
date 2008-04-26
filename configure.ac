@@ -1,7 +1,7 @@
 #libxml (C) 2003-2007 MPX developers, see AUTHORS
 
 AC_PREREQ([2.60])
-AC_INIT([mpx], [0.1], [mpx-bugs@beep-media-player.org])
+AC_INIT([mpx], [0.1], [http://mpx.backtrace.info/report])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -656,7 +656,7 @@ MPX_DBUS_PATH__MPRIS_ROOT_="\"/\""
 MPX_DBUS_PATH__MPRIS_PLAYER_="\"/Player\""
 MPX_DBUS_PATH__MPRIS_TRACKLIST_="\"/TrackList\""
 
-MPX_DBUS_INTERFACE__MPX_="\"org.beepmediaplayer.mpx\""
+MPX_DBUS_INTERFACE__MPX_="\"info.backtrace.mpx\""
 MPX_DBUS_PATH__MPX_="\"/MPX\""
 
 AC_SUBST(MPX_DBUS_PATH__MPRIS_ROOT_)

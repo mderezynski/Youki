@@ -117,7 +117,7 @@ namespace
         GtkWidget *dialog = gtk_message_dialog_new_with_markup (NULL, GtkDialogFlags (0), GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
                                   "MPX tried to start up, but crashed.\n\n"
                                   "Please file a bug at:\n\n"
-                                  "http://bugs.beep-media-player.org");
+                                  "http://mpx.backtrace.info/newticket");
 
         gtk_window_set_title (GTK_WINDOW (dialog), _("MPX Crashed"));
         gtk_dialog_run (GTK_DIALOG (dialog));

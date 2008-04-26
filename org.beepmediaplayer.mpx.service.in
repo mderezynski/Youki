@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=org.mpris.bmp
-Exec=@libexecdir@/beep-media-player-2-bin
