@@ -1258,6 +1258,10 @@ namespace MPX
         try{
             std::list<Glib::RefPtr<Gdk::Pixbuf> > icon_list;
             icon_list.push_back(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "icons" G_DIR_SEPARATOR_S "mpx.png")));
+            icon_list.push_back(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "icons" G_DIR_SEPARATOR_S "mpx_128.png")));
+            icon_list.push_back(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "icons" G_DIR_SEPARATOR_S "mpx_64.png")));
+            icon_list.push_back(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "icons" G_DIR_SEPARATOR_S "mpx_48.png")));
+            icon_list.push_back(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "icons" G_DIR_SEPARATOR_S "mpx_16.png")));
             set_icon_list(icon_list);
         } catch (Gdk::PixbufError & cxe)
         {

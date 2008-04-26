@@ -213,21 +213,19 @@ class TrackInfo:
 
         track = self.track
 
-        if not self.gotPuid and not track[mpx.AttributeId.MB_TRACK_ID].is_initialized():
+        if not self.gotPuid and not track[mpx.AttributeId.MB_TRACK_ID].is_initialized() and track.get(mpx.AttributeId.LOCATION).val().get_string()[:7] == "file://":
 
-            if track.get(mpx.AttributeId.LOCATION).val().get_string()[:4] == "file":
+            self.player.get_by_name("file-source").set_property('location', track.get(mpx.AttributeId.LOCATION).val().get_string())
+            self.player.set_state(gst.STATE_PLAYING)
+            
+            gobject.timeout_add (500, self.display_pipeline_duration)
+            self.progress.show_all() 
 
-                self.player.get_by_name("file-source").set_property('location', track.get(mpx.AttributeId.LOCATION).val().get_string())
-                self.player.set_state(gst.STATE_PLAYING)
-                
-                gobject.timeout_add (500, self.display_pipeline_duration)
-                self.progress.show_all() 
+            while not self.gotPuid: 
+                while gtk.events_pending():
+                    gtk.main_iteration()
 
-                while not self.gotPuid: 
-                    while gtk.events_pending():
-                        gtk.main_iteration()
-
-                self.gotPuid = False
+            self.gotPuid = False
 
         else:
 
@@ -242,25 +240,24 @@ class TrackInfo:
             self.buf.insert(self.buf.get_end_iter(), "\n")
 
             try:
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics", self.textTagLarge, self.textTagUnderline)
-                self.buf.insert(self.buf.get_end_iter(), "\n\n")
                 lyricwiki = mpx.LyricWiki(track[mpx.AttributeId.ARTIST].val().get_string(), track[mpx.AttributeId.TITLE].val().get_string())
-                print "[TI] Getting Lyrics"
                 lyrics = lyricwiki.run()
-                self.buf.insert(self.buf.get_end_iter(), lyrics)
+                if lyrics != "Not found":
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics", self.textTagLarge, self.textTagUnderline)
+                    self.buf.insert(self.buf.get_end_iter(), "\n\n")
+                    self.buf.insert(self.buf.get_end_iter(), lyrics)
             except:
-                print "No Lyrics" 
+                pass 
             
             try:
+                lastfmartist = mpx.LastFMArtist(track[mpx.AttributeId.ARTIST].val().get_string())
+                artist = lastfmartist.run()
                 self.buf.insert(self.buf.get_end_iter(), "\n\n")
                 self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track[mpx.AttributeId.ARTIST].val().get_string(), self.textTagLarge, self.textTagUnderline)
                 self.buf.insert(self.buf.get_end_iter(), "\n\n")
-                lastfmartist = mpx.LastFMArtist(track[mpx.AttributeId.ARTIST].val().get_string())
-                print "[TI] Getting LFM Artist"
-                artist = lastfmartist.run()
                 self.buf.insert(self.buf.get_end_iter(), artist)
             except:
-                print "No Last.fm wiki" 
+                pass 
 
             if track[mpx.AttributeId.MB_TRACK_ID] and track[mpx.AttributeId.MB_TRACK_ID].is_initialized():
         
@@ -295,37 +292,39 @@ class TrackInfo:
                 if track[mpx.AttributeId.MB_ARTIST_ID].is_initialized():
                         self.entities.append(track[mpx.AttributeId.MB_ARTIST_ID].val().get_string())
 
-                self.buf.insert(self.buf.get_end_iter(), "\n\n")
-
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "This Track", self.textTagLarge, self.textTagUnderline)
-                self.buf.insert(self.buf.get_end_iter(), "\n")
-                print "[TI] Printing Track Rels"
+                rellists = []
                 for rel in reldict:
                     if rel in funcdict:
-                        rellist = reldict[rel]
+                        rellists.append(reldict[rel])
+
+                if len(rellists) > 0:
+                    self.buf.insert(self.buf.get_end_iter(), "\n\n")
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), "This Track", self.textTagLarge, self.textTagUnderline)
+                    self.buf.insert(self.buf.get_end_iter(), "\n")
+                    for rellist in rellists:
                         funcdict[rel](rellist)
-                self.buf.insert(self.buf.get_end_iter(), "\n\n")
+                    self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
                 if track[mpx.AttributeId.MB_ALBUM_ID] and track[mpx.AttributeId.MB_ALBUM_ID].is_initialized(): 
                     entity = self.q.getReleaseById(track[mpx.AttributeId.MB_ALBUM_ID].val().get_string(), self.wsinc_release)
                     rels = entity.getRelations()
-                    self.buf.insert_with_tags(self.buf.get_end_iter(), "Album Links", self.textTagUnderline, self.textTagLarge)
-                    self.buf.insert(self.buf.get_end_iter(), "\n")
-                    print "[TI] Printing Album ARs"
-                    self.display_relations (rels)
-                    self.buf.insert(self.buf.get_end_iter(), "\n\n")
+                    if len(rels) > 0:
+                        self.buf.insert_with_tags(self.buf.get_end_iter(), "Album Links", self.textTagUnderline, self.textTagLarge)
+                        self.buf.insert(self.buf.get_end_iter(), "\n")
+                        self.display_relations (rels)
+                        self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "Contributor Links", self.textTagUnderline, self.textTagLarge)
-                self.buf.insert(self.buf.get_end_iter(), "\n")
                 self.entities = dict(zip(self.entities,self.entities)).keys() 
-                print "[TI] Printing Contributor ARs"
-                for ent in self.entities:
-                    entity = self.q.getArtistById(ent, self.wsinc)   
-                    self.buf.insert_with_tags(self.buf.get_end_iter(), entity.getName(), self.textTagBold)
-                    self.buf.insert(self.buf.get_end_iter(), ": ")
-                    rels = entity.getRelations()
-                    self.display_relations (rels)
+                if len(self.entities) > 0:
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), "Contributor Links", self.textTagUnderline, self.textTagLarge)
                     self.buf.insert(self.buf.get_end_iter(), "\n")
+                    for ent in self.entities:
+                        entity = self.q.getArtistById(ent, self.wsinc)   
+                        self.buf.insert_with_tags(self.buf.get_end_iter(), entity.getName(), self.textTagBold)
+                        self.buf.insert(self.buf.get_end_iter(), ": ")
+                        rels = entity.getRelations()
+                        self.display_relations (rels)
+                        self.buf.insert(self.buf.get_end_iter(), "\n")
 
         except:
         

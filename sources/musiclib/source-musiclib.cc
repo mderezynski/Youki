@@ -55,134 +55,50 @@ using boost::get;
 
 namespace
 {
-  const char ACTION_CLEAR [] = "action-clear";
-  const char ACTION_REMOVE_ITEMS [] = "action-remove-items";
-  const char ACTION_REMOVE_REMAINING [] = "action-remove-remaining";
-  const char ACTION_PLAY [] = "action-play";
-  const char ACTION_GO_TO_ALBUM [] = "action-go-to-album";
-  
-  const char ui_playlist_popup [] =
-  "<ui>"
-  ""
-  "<menubar name='popup-playlist-list'>"
-  ""
-  "   <menu action='dummy' name='menu-playlist-list'>"
-  "       <menuitem action='action-play' name='action-play'/>"
-  "     <separator/>"
-  "       <menuitem action='action-go-to-album'/>"
-  "     <separator/>"
-  "       <menuitem action='action-remove-items'/>"
-  "       <menuitem action='action-remove-remaining'/>"
-  "       <menuitem action='action-clear'/>"
-  "   </menu>"
-  ""
-  "</menubar>"
-  ""
-  "</ui>";
+    const char ACTION_CLEAR [] = "action-clear";
+    const char ACTION_REMOVE_ITEMS [] = "action-remove-items";
+    const char ACTION_REMOVE_REMAINING [] = "action-remove-remaining";
+    const char ACTION_PLAY [] = "action-play";
+    const char ACTION_GO_TO_ALBUM [] = "action-go-to-album";
+    
+    const char ui_playlist_popup [] =
+    "<ui>"
+    ""
+    "<menubar name='popup-playlist-list'>"
+    ""
+    "   <menu action='dummy' name='menu-playlist-list'>"
+    "       <menuitem action='action-play' name='action-play'/>"
+    "     <separator/>"
+    "       <menuitem action='action-go-to-album'/>"
+    "     <separator/>"
+    "       <menuitem action='action-remove-items'/>"
+    "       <menuitem action='action-remove-remaining'/>"
+    "       <menuitem action='action-clear'/>"
+    "   </menu>"
+    ""
+    "</menubar>"
+    ""
+    "</ui>";
 
-  char const * ui_mainmerge1 =
-  "<ui>"
-  ""
-  "<menubar name='MenubarMain'>"
-  "   <placeholder name='placeholder-source'>"
-  "     <menu action='menu-source-musiclib'>"
-  "         <menuitem action='musiclib-sort-by-name'/>"
-  "         <menuitem action='musiclib-sort-by-date'/>"
-  "         <menuitem action='musiclib-sort-by-rating'/>"
-  "         <separator/>"
-  ""; 
+    char const * ui_mainmerge1 =
+    "<ui>"
+    ""
+    "<menubar name='MenubarMain'>"
+    "   <placeholder name='placeholder-source'>"
+    "     <menu action='menu-source-musiclib'>"
+    "         <menuitem action='musiclib-sort-by-name'/>"
+    "         <menuitem action='musiclib-sort-by-date'/>"
+    "         <menuitem action='musiclib-sort-by-rating'/>"
+    "         <separator/>"
+    ""; 
 
-  char const * ui_mainmerge2 =
-  "     </menu>"
-  "   </placeholder>"
-  "</menubar>"
-  ""
-  "</ui>"
-  "";
-
-  Track
-#ifdef HAVE_HAL
-  sql_to_track (SQL::Row & row, const MPX::HAL & hal)
-#else
-  sql_to_track (SQL::Row & row)
-#endif
-  {
-        Track track;
-
-        if (row.count("album_artist"))
-          track[ATTRIBUTE_ALBUM_ARTIST] = get<std::string>(row["album_artist"]);
-
-        if (row.count("artist"))
-          track[ATTRIBUTE_ARTIST] = get<std::string>(row["artist"]);
-
-        if (row.count("album"))
-          track[ATTRIBUTE_ALBUM] = get<std::string>(row["album"]);
-
-        if (row.count("track"))
-          track[ATTRIBUTE_TRACK] = gint64(get<gint64>(row["track"]));
-
-        if (row.count("title"))
-          track[ATTRIBUTE_TITLE] = get<std::string>(row["title"]);
-
-        if (row.count("time"))
-          track[ATTRIBUTE_TIME] = gint64(get<gint64>(row["time"]));
-
-        if (row.count("mb_artist_id"))
-          track[ATTRIBUTE_MB_ARTIST_ID] = get<std::string>(row["mb_artist_id"]);
-
-        if (row.count("mb_album_id"))
-          track[ATTRIBUTE_MB_ALBUM_ID] = get<std::string>(row["mb_album_id"]);
-
-        if (row.count("mb_track_id"))
-          track[ATTRIBUTE_MB_TRACK_ID] = get<std::string>(row["mb_track_id"]);
-
-        if (row.count("mb_album_artist_id"))
-          track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = get<std::string>(row["mb_album_artist_id"]);
-
-        if (row.count("amazon_asin"))
-          track[ATTRIBUTE_ASIN] = get<std::string>(row["amazon_asin"]);
-
-        if (row.count("id"))
-          track[ATTRIBUTE_MPX_TRACK_ID] = get<gint64>(row["id"]);
-
-        if (row.count("album_j"))
-          track[ATTRIBUTE_MPX_ALBUM_ID] = get<gint64>(row["album_j"]);
-
-        if (row.count("hal_volume_udi"))
-          track[ATTRIBUTE_HAL_VOLUME_UDI] = get<std::string>(row["hal_volume_udi"]);
-
-        if (row.count("hal_device_udi"))
-          track[ATTRIBUTE_HAL_DEVICE_UDI] = get<std::string>(row["hal_device_udi"]);
-
-        if (row.count("hal_vrp"))
-          track[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);
-
-#ifndef HAVE_HAL
-        if (row.count("location"))
-          track[ATTRIBUTE_LOCATION] = get<std::string>(row["location"]);
-#else
-        try{
-            std::string volume_udi = get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get());
-            std::string device_udi = get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get());
-            std::string vrp = get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get());
-            std::string mount_point = hal.get_mount_point_for_volume(volume_udi, device_udi);
-            std::string path = build_filename(mount_point, vrp);
-            track[ATTRIBUTE_LOCATION] = std::string(filename_to_uri(path));
-        } catch( boost::bad_get )
-        {
-        } catch( HAL::Exception )
-        {
-        }
-#endif
-
-        if (row.count("bitrate"))
-          track[ATTRIBUTE_BITRATE] = get<gint64>(row["bitrate"]);
-
-        if (row.count("samplerate"))
-          track[ATTRIBUTE_SAMPLERATE] = get<gint64>(row["samplerate"]);
-
-        return track;
-    }
+    char const * ui_mainmerge2 =
+    "     </menu>"
+    "   </placeholder>"
+    "</menubar>"
+    ""
+    "</ui>"
+    "";
 
     std::string
     get_timestr_from_time_t (time_t atime)
@@ -389,7 +305,7 @@ namespace MPX
                                 sigc::mem_fun( *this, &PlaylistTreeView::action_cb_playlist_remove_items ));
 
                 m_ActionGroup->add  (Gtk::Action::create (ACTION_REMOVE_REMAINING,
-                                Gtk::StockID (GTK_STOCK_REMOVE),
+                                Gtk::StockID (GTK_STOCK_CLEAR),
                                 _("Remove Remaining Tracks")),
                                 sigc::mem_fun( *this, &PlaylistTreeView::action_cb_playlist_remove_remaining ));
 
@@ -563,11 +479,7 @@ namespace MPX
                               (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
 
                           (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
-#ifndef HAVE_HAL
-                          (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
-#else
-                          (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r, m_HAL.get()); 
-#endif
+                          (*iter)[PlaylistColumns.MPXTrack] = m_Lib.get().sqlToTrack(r); 
                           (*iter)[PlaylistColumns.IsMPXTrack] = true; 
                   }
               } 
@@ -734,11 +646,7 @@ namespace MPX
                               (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
 
                           (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
-#ifndef HAVE_HAL
-                          (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
-#else
-                          (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r, m_HAL.get()); 
-#endif
+                          (*iter)[PlaylistColumns.MPXTrack] = m_Lib.get().sqlToTrack(r); 
                           (*iter)[PlaylistColumns.IsMPXTrack] = true; 
                       }
                   }
@@ -784,11 +692,7 @@ namespace MPX
                               (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
 
                           (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
-#ifndef HAVE_HAL
-                          (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r); 
-#else
-                          (*iter)[PlaylistColumns.MPXTrack] = sql_to_track(r, m_HAL.get()); 
-#endif
+                          (*iter)[PlaylistColumns.MPXTrack] = m_Lib.get().sqlToTrack(r); 
                           (*iter)[PlaylistColumns.IsMPXTrack] = true; 
                       }
                   }

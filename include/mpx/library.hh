@@ -114,21 +114,21 @@ namespace MPX
 			void
 			execSQL(const std::string&);
 
+            Track
+            sqlToTrack (SQL::Row & row);
+
 			void
 			vacuum();
 
 
 			void
 			albumRated(gint64, int);
-
 		
 			void
 			trackRated(gint64, int);
 		
 			void
 			trackPlayed(gint64, time_t);
-
-
 
 
 

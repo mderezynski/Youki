@@ -515,6 +515,89 @@ namespace MPX
 		Signals.TrackUpdated.emit(id);
 	}
 
+    Track
+    Library::sqlToTrack (SQL::Row & row)
+    {
+        Track track;
+
+        if (row.count("album_artist"))
+          track[ATTRIBUTE_ALBUM_ARTIST] = get<std::string>(row["album_artist"]);
+
+        if (row.count("artist"))
+          track[ATTRIBUTE_ARTIST] = get<std::string>(row["artist"]);
+
+        if (row.count("album"))
+          track[ATTRIBUTE_ALBUM] = get<std::string>(row["album"]);
+
+        if (row.count("track"))
+          track[ATTRIBUTE_TRACK] = gint64(get<gint64>(row["track"]));
+
+        if (row.count("title"))
+          track[ATTRIBUTE_TITLE] = get<std::string>(row["title"]);
+
+        if (row.count("time"))
+          track[ATTRIBUTE_TIME] = gint64(get<gint64>(row["time"]));
+
+        if (row.count("mb_artist_id"))
+          track[ATTRIBUTE_MB_ARTIST_ID] = get<std::string>(row["mb_artist_id"]);
+
+        if (row.count("mb_album_id"))
+          track[ATTRIBUTE_MB_ALBUM_ID] = get<std::string>(row["mb_album_id"]);
+
+        if (row.count("mb_track_id"))
+          track[ATTRIBUTE_MB_TRACK_ID] = get<std::string>(row["mb_track_id"]);
+
+        if (row.count("mb_album_artist_id"))
+          track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = get<std::string>(row["mb_album_artist_id"]);
+
+        if (row.count("amazon_asin"))
+          track[ATTRIBUTE_ASIN] = get<std::string>(row["amazon_asin"]);
+
+        if (row.count("id"))
+          track[ATTRIBUTE_MPX_TRACK_ID] = get<gint64>(row["id"]);
+
+        if (row.count("album_j"))
+          track[ATTRIBUTE_MPX_ALBUM_ID] = get<gint64>(row["album_j"]);
+
+        if (row.count("hal_volume_udi"))
+          track[ATTRIBUTE_HAL_VOLUME_UDI] = get<std::string>(row["hal_volume_udi"]);
+
+        if (row.count("hal_device_udi"))
+          track[ATTRIBUTE_HAL_DEVICE_UDI] = get<std::string>(row["hal_device_udi"]);
+
+        if (row.count("hal_vrp"))
+          track[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);
+
+        if (row.count("type"))
+          track[ATTRIBUTE_TYPE] = get<std::string>(row["type"]);
+
+#ifndef HAVE_HAL
+        if (row.count("location"))
+          track[ATTRIBUTE_LOCATION] = get<std::string>(row["location"]);
+#else
+        try{
+            std::string volume_udi = get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get());
+            std::string device_udi = get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get());
+            std::string vrp = get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get());
+            std::string mount_point = m_HAL->get_mount_point_for_volume(volume_udi, device_udi);
+            std::string path = build_filename(mount_point, vrp);
+            track[ATTRIBUTE_LOCATION] = std::string(filename_to_uri(path));
+        } catch( boost::bad_get )
+        {
+        } catch( HAL::Exception )
+        {
+        }
+#endif
+
+        if (row.count("bitrate"))
+          track[ATTRIBUTE_BITRATE] = get<gint64>(row["bitrate"]);
+
+        if (row.count("samplerate"))
+          track[ATTRIBUTE_SAMPLERATE] = get<gint64>(row["samplerate"]);
+
+        return track;
+    }
+
     gint64
     Library::get_track_artist_id (Track &track, bool only_if_exists)
     {
