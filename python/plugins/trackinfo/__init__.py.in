@@ -237,25 +237,25 @@ class TrackInfo:
 
         try:
             self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
-            self.buf.insert(self.buf.get_end_iter(), "\n")
+            self.buf.insert(self.buf.get_end_iter(), "\n\n\n")
 
             try:
                 lyricwiki = mpx.LyricWiki(track[mpx.AttributeId.ARTIST].val().get_string(), track[mpx.AttributeId.TITLE].val().get_string())
                 lyrics = lyricwiki.run()
                 if lyrics != "Not found":
-                    self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics", self.textTagLarge, self.textTagUnderline)
-                    self.buf.insert(self.buf.get_end_iter(), "\n\n")
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics\n", self.textTagLarge, self.textTagUnderline)
                     self.buf.insert(self.buf.get_end_iter(), lyrics)
+                    self.buf.insert(self.buf.get_end_iter(), "\n\n")
             except:
                 pass 
-            
+
+
             try:
                 lastfmartist = mpx.LastFMArtist(track[mpx.AttributeId.ARTIST].val().get_string())
                 artist = lastfmartist.run()
-                self.buf.insert(self.buf.get_end_iter(), "\n\n")
-                self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track[mpx.AttributeId.ARTIST].val().get_string(), self.textTagLarge, self.textTagUnderline)
-                self.buf.insert(self.buf.get_end_iter(), "\n\n")
+                self.buf.insert_with_tags(self.buf.get_end_iter(), "About " + track[mpx.AttributeId.ARTIST].val().get_string() + "\n", self.textTagLarge, self.textTagUnderline)
                 self.buf.insert(self.buf.get_end_iter(), artist)
+                self.buf.insert(self.buf.get_end_iter(), "\n\n")
             except:
                 pass 
 
@@ -298,9 +298,7 @@ class TrackInfo:
                         rellists.append(reldict[rel])
 
                 if len(rellists) > 0:
-                    self.buf.insert(self.buf.get_end_iter(), "\n\n")
-                    self.buf.insert_with_tags(self.buf.get_end_iter(), "This Track", self.textTagLarge, self.textTagUnderline)
-                    self.buf.insert(self.buf.get_end_iter(), "\n")
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), "This Track\n", self.textTagLarge, self.textTagUnderline)
                     for rellist in rellists:
                         funcdict[rel](rellist)
                     self.buf.insert(self.buf.get_end_iter(), "\n\n")
@@ -309,22 +307,19 @@ class TrackInfo:
                     entity = self.q.getReleaseById(track[mpx.AttributeId.MB_ALBUM_ID].val().get_string(), self.wsinc_release)
                     rels = entity.getRelations()
                     if len(rels) > 0:
-                        self.buf.insert_with_tags(self.buf.get_end_iter(), "Album Links", self.textTagUnderline, self.textTagLarge)
-                        self.buf.insert(self.buf.get_end_iter(), "\n")
+                        self.buf.insert_with_tags(self.buf.get_end_iter(), "Album Links\n", self.textTagUnderline, self.textTagLarge)
                         self.display_relations (rels)
                         self.buf.insert(self.buf.get_end_iter(), "\n\n")
 
                 self.entities = dict(zip(self.entities,self.entities)).keys() 
                 if len(self.entities) > 0:
-                    self.buf.insert_with_tags(self.buf.get_end_iter(), "Contributor Links", self.textTagUnderline, self.textTagLarge)
-                    self.buf.insert(self.buf.get_end_iter(), "\n")
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), "Contributor Links\n", self.textTagUnderline, self.textTagLarge)
                     for ent in self.entities:
                         entity = self.q.getArtistById(ent, self.wsinc)   
                         self.buf.insert_with_tags(self.buf.get_end_iter(), entity.getName(), self.textTagBold)
                         self.buf.insert(self.buf.get_end_iter(), ": ")
                         rels = entity.getRelations()
                         self.display_relations (rels)
-                        self.buf.insert(self.buf.get_end_iter(), "\n")
 
         except:
         
