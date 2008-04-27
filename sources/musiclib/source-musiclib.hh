@@ -92,6 +92,7 @@ namespace Source
                 enum CSignals
                 {
                     PSM_SIGNAL_PLAYLIST_TOOLTIP,
+                    PSM_SIGNAL_PLAYLIST_END,
                     N_SIGNALS
                 };
 
@@ -124,11 +125,28 @@ namespace Source
                 PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
                 ~PlaybackSourceMusicLib ();
 
-                void
-                play_album(gint64, bool = false);
+
+                PyObject*
+                get_playlist_model ();
+
+                PyObject*
+                get_playlist_current_iter ();
+
 
                 void
-                play_tracks(TrackIdV const&, bool = false);
+                play_album(gint64);
+
+                void
+                append_album(gint64);
+
+
+                void
+                play_tracks(TrackIdV const&);
+
+                void
+                append_tracks(TrackIdV const&);
+
+
 
                 void
                 action_cb_run_plugin (gint64);

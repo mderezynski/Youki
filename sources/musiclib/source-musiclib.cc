@@ -44,8 +44,11 @@
 
 #include "source-musiclib.hh"
 #include "plugin-manager.hh"
-
 #include "glib-marshalers.h"
+
+#include <Python.h>
+#define NO_IMPORT
+#include <pygobject.h>
 
 using namespace Gtk;
 using namespace Glib;
@@ -129,6 +132,12 @@ namespace
               return locale_to_utf8 ((date_f % bdate % btime).str());
       }
     }
+
+    enum Order
+    {
+        NO_ORDER,
+        ORDER
+    };
 }
  
 namespace MPX
@@ -418,8 +427,107 @@ namespace MPX
                       m_MusicLib.clear_play();
               }
 
+
+              void
+              place_track(SQL::Row & r, Gtk::TreeIter const& iter)
+              {
+
+                  if(r.count("artist"))
+                      (*iter)[PlaylistColumns.Artist] = get<std::string>(r["artist"]); 
+                  if(r.count("album"))
+                      (*iter)[PlaylistColumns.Album] = get<std::string>(r["album"]); 
+                  if(r.count("track"))
+                      (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(r["track"]));
+                  if(r.count("title"))
+                      (*iter)[PlaylistColumns.Title] = get<std::string>(r["title"]);
+                  if(r.count("time"))
+                      (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(r["time"]));
+                  if(r.count("mb_artist_id"))
+                      (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(r["mb_artist_id"]);
+                  if(r.count("mb_album_id"))
+                      (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(r["mb_album_id"]);
+
+                  if(r.count("id"))
+                  {
+                      (*iter)[PlaylistColumns.RowId] = get<gint64>(r["id"]); 
+                      if(!m_CurrentIter && m_CurrentId && get<gint64>(r["id"]) == m_CurrentId.get())
+                      {
+                          m_CurrentIter = iter; 
+                          queue_draw();
+                      }
+                  }
+
+                  if(r.count("rating"))
+                      (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
+
+                  (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
+                  (*iter)[PlaylistColumns.MPXTrack] = m_Lib.get().sqlToTrack(r); 
+                  (*iter)[PlaylistColumns.IsMPXTrack] = true; 
+              }
+
+              void
+              place_track(MPX::Track & track, Gtk::TreeIter const& iter)
+              {
+                  if(track[ATTRIBUTE_ARTIST])
+                      (*iter)[PlaylistColumns.Artist] = get<std::string>(track[ATTRIBUTE_ARTIST].get()); 
+
+                  if(track[ATTRIBUTE_ALBUM])
+                      (*iter)[PlaylistColumns.Album] = get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
+
+                  if(track[ATTRIBUTE_TRACK])
+                      (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(track[ATTRIBUTE_TRACK].get()));
+
+                  if(track[ATTRIBUTE_TITLE])
+                      (*iter)[PlaylistColumns.Title] = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
+
+                  if(track[ATTRIBUTE_TIME])
+                      (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(track[ATTRIBUTE_TIME].get()));
+
+                  if(track[ATTRIBUTE_MB_ARTIST_ID])
+                      (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get());
+
+                  if(track[ATTRIBUTE_MB_ALBUM_ID])
+                      (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get());
+
+                  if(track[ATTRIBUTE_RATING])
+                      (*iter)[PlaylistColumns.Rating] = get<gint64>(track[ATTRIBUTE_RATING].get());
+
+                  if(track[ATTRIBUTE_MPX_TRACK_ID])
+                  {
+                      (*iter)[PlaylistColumns.RowId] = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()); 
+                      if(!m_CurrentIter && m_CurrentId && get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) == m_CurrentId.get())
+                      {
+                            m_CurrentIter = iter; 
+                            queue_draw();
+                      }
+                  }
+
+                  if(track[ATTRIBUTE_LOCATION])
+                      (*iter)[PlaylistColumns.Location] = get<std::string>(track[ATTRIBUTE_LOCATION].get());
+                  else
+                      g_warning("Warning, no location given for track; this is totally wrong and should never happen.");
+
+                  (*iter)[PlaylistColumns.MPXTrack] = track; 
+                  (*iter)[PlaylistColumns.IsMPXTrack] = track[ATTRIBUTE_MPX_TRACK_ID] ? true : false; 
+              }
+
+              void
+              append_album (gint64 id)
+              {
+                  SQL::RowV v;
+                  m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = '%lld'") % id).str()); 
+                  TreeIter iter = ListStore->append();
+                  for(SQL::RowV::const_iterator i = v.begin(); i != v.end(); ++i)
+                  {
+                      SQL::Row r = *i;
+                      if(i != v.begin())
+                        iter = ListStore->insert_after(iter);
+                      place_track(r, iter); 
+                  }
+              }
+
               void          
-              append_trackid_v (TrackIdV const& tid_v, bool order = false)
+              append_tracks (TrackIdV const& tid_v, Order order = NO_ORDER)
               {
                   if(tid_v.empty())
                       return;
@@ -436,10 +544,12 @@ namespace MPX
                   }
 
                   SQL::RowV v;
-                  m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s) %s") % numbers.str() % (order ? "ORDER BY track_view.track" : "")).str()); 
+                  m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s) %s") % numbers.str() % ((order == ORDER) ? "ORDER BY track_view.track" : "")).str()); 
 
                   TreeIter iter = ListStore->append();
-                  m_PlayInitIter = iter;
+
+                  if(!m_CurrentIter)
+                    m_PlayInitIter = iter;
 
                   for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                   {
@@ -448,39 +558,7 @@ namespace MPX
                           if(i != v.begin())
                               iter = ListStore->insert_after(iter);
 
-                          if(r.count("artist"))
-                              (*iter)[PlaylistColumns.Artist] = get<std::string>(r["artist"]); 
-                          if(r.count("album"))
-                              (*iter)[PlaylistColumns.Album] = get<std::string>(r["album"]); 
-                          if(r.count("track"))
-                              (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(r["track"]));
-                          if(r.count("title"))
-                              (*iter)[PlaylistColumns.Title] = get<std::string>(r["title"]);
-                          if(r.count("time"))
-                              (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(r["time"]));
-                          if(r.count("mb_artist_id"))
-                              (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(r["mb_artist_id"]);
-                          if(r.count("mb_album_id"))
-                              (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(r["mb_album_id"]);
-
-                          if(r.count("id"))
-                          {
-                              (*iter)[PlaylistColumns.RowId] = get<gint64>(r["id"]); 
-                              if(!m_CurrentIter && m_CurrentId && get<gint64>(r["id"]) == m_CurrentId.get())
-                              {
-                                  m_CurrentIter = iter; 
-                                  queue_draw();
-                              }
-                          }
-                          else
-                              g_critical("Track with no id; this should never happen.");
-
-                          if(r.count("rating"))
-                              (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
-
-                          (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
-                          (*iter)[PlaylistColumns.MPXTrack] = m_Lib.get().sqlToTrack(r); 
-                          (*iter)[PlaylistColumns.IsMPXTrack] = true; 
+                          place_track(r, iter);
                   }
               } 
 
@@ -515,47 +593,7 @@ namespace MPX
 
                       begin = false;
 
-                      if(track[ATTRIBUTE_ARTIST])
-                          (*iter)[PlaylistColumns.Artist] = get<std::string>(track[ATTRIBUTE_ARTIST].get()); 
-
-                      if(track[ATTRIBUTE_ALBUM])
-                          (*iter)[PlaylistColumns.Album] = get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
-
-                      if(track[ATTRIBUTE_TRACK])
-                          (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(track[ATTRIBUTE_TRACK].get()));
-
-                      if(track[ATTRIBUTE_TITLE])
-                          (*iter)[PlaylistColumns.Title] = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
-
-                      if(track[ATTRIBUTE_TIME])
-                          (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(track[ATTRIBUTE_TIME].get()));
-
-                      if(track[ATTRIBUTE_MB_ARTIST_ID])
-                          (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get());
-
-                      if(track[ATTRIBUTE_MB_ALBUM_ID])
-                          (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get());
-
-                      if(track[ATTRIBUTE_RATING])
-                          (*iter)[PlaylistColumns.Rating] = get<gint64>(track[ATTRIBUTE_RATING].get());
-
-                      if(track[ATTRIBUTE_MPX_TRACK_ID])
-                      {
-                          (*iter)[PlaylistColumns.RowId] = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()); 
-                          if(!m_CurrentIter && m_CurrentId && get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) == m_CurrentId.get())
-                          {
-                                m_CurrentIter = iter; 
-                                queue_draw();
-                          }
-                      }
-
-                      if(track[ATTRIBUTE_LOCATION])
-                          (*iter)[PlaylistColumns.Location] = get<std::string>(track[ATTRIBUTE_LOCATION].get());
-                      else
-                          g_warning("Warning, no location given for track; this is totally wrong and should never happen.");
-
-                      (*iter)[PlaylistColumns.MPXTrack] = track; 
-                      (*iter)[PlaylistColumns.IsMPXTrack] = track[ATTRIBUTE_MPX_TRACK_ID] ? true : false; 
+                      place_track(track, iter);
                   }
 
                   if(!dirs.empty())
@@ -615,40 +653,8 @@ namespace MPX
                           if(i != v.begin())
                               iter = ListStore->insert_after(iter);
 
-                          if(r.count("artist"))
-                              (*iter)[PlaylistColumns.Artist] = get<std::string>(r["artist"]); 
-                          if(r.count("album"))
-                              (*iter)[PlaylistColumns.Album] = get<std::string>(r["album"]); 
-                          if(r.count("track"))
-                              (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(r["track"]));
-                          if(r.count("title"))
-                              (*iter)[PlaylistColumns.Title] = get<std::string>(r["title"]);
-                          if(r.count("time"))
-                              (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(r["time"]));
-                          if(r.count("mb_artist_id"))
-                              (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(r["mb_artist_id"]);
-                          if(r.count("mb_album_id"))
-                              (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(r["mb_album_id"]);
-
-                          if(r.count("id"))
-                          {
-                              (*iter)[PlaylistColumns.RowId] = get<gint64>(r["id"]); 
-                              if(!m_CurrentIter && m_CurrentId && get<gint64>(r["id"]) == m_CurrentId.get())
-                              {
-                                  m_CurrentIter = iter; 
-                                  queue_draw();
-                              }
-                          }
-                          else
-                              g_critical("Track with no id; this should never happen.");
-
-                          if(r.count("rating"))
-                              (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
-
-                          (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
-                          (*iter)[PlaylistColumns.MPXTrack] = m_Lib.get().sqlToTrack(r); 
-                          (*iter)[PlaylistColumns.IsMPXTrack] = true; 
-                      }
+                          place_track(r, iter);
+                     }
                   }
                   if(data.get_data_type() == "mpx-track")
                   {
@@ -663,37 +669,7 @@ namespace MPX
                           if(i != v.begin())
                               iter = ListStore->insert_after(iter);
 
-                          if(r.count("artist"))
-                              (*iter)[PlaylistColumns.Artist] = get<std::string>(r["artist"]); 
-                          if(r.count("album"))
-                              (*iter)[PlaylistColumns.Album] = get<std::string>(r["album"]); 
-                          if(r.count("track"))
-                              (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(r["track"]));
-                          if(r.count("title"))
-                              (*iter)[PlaylistColumns.Title] = get<std::string>(r["title"]);
-                          if(r.count("time"))
-                              (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(r["time"]));
-                          if(r.count("mb_artist_id"))
-                              (*iter)[PlaylistColumns.ArtistSort] = get<std::string>(r["mb_artist_id"]);
-                          if(r.count("mb_album_id"))
-                              (*iter)[PlaylistColumns.AlbumSort] = get<std::string>(r["mb_album_id"]);
-
-                          if(r.count("id"))
-                          {
-                              (*iter)[PlaylistColumns.RowId] = get<gint64>(r["id"]); 
-                              if(!m_CurrentIter && m_CurrentId && get<gint64>(r["id"]) == m_CurrentId.get())
-                              {
-                                  m_CurrentIter = iter; 
-                                  queue_draw();
-                              }
-                          }
-
-                          if(r.count("rating"))
-                              (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
-
-                          (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
-                          (*iter)[PlaylistColumns.MPXTrack] = m_Lib.get().sqlToTrack(r); 
-                          (*iter)[PlaylistColumns.IsMPXTrack] = true; 
+                          place_track(r, iter);
                       }
                   }
                   else
@@ -1128,14 +1104,14 @@ namespace MPX
                 if(path.get_depth() == ROW_ALBUM)
                 {
                         gint64 id = (*iter)[AlbumColumns.Id];
-                        m_MLib.play_album(id, true);
+                        m_MLib.play_album(id);
                 }
                 else
                 {
                         gint64 id = (*iter)[AlbumColumns.TrackId];
                         TrackIdV v;
                         v.push_back(id);
-                        m_MLib.play_tracks(v, true);
+                        m_MLib.play_tracks(v);
                 }
               }
 
@@ -1315,7 +1291,7 @@ namespace MPX
               }
 
               void
-              place_album (SQL::Row & r, gint64 id)
+              place_album (SQL::Row & r, gint64 id, bool acquire = false)
               {
                 TreeIter iter = TreeStore->append();
                 m_AlbumIterMap.insert(std::make_pair(id, iter));
@@ -1350,7 +1326,7 @@ namespace MPX
                     std::string mbid = get<std::string>(r["mb_album_id"]);
                     IterSet & s = m_MBIDIterMap[mbid];
                     s.insert(iter);
-                    m_Covers.get().cache( mbid, asin, "", true ); 
+                    m_Covers.get().cache( mbid, asin, "", acquire ); 
                     (*iter)[AlbumColumns.MBID] = mbid; 
                 }
 
@@ -1409,7 +1385,7 @@ namespace MPX
 
                 SQL::Row & r = v[0];
 
-                place_album (r, id); 
+                place_album (r, id, true); 
               }
 
               void
@@ -1792,6 +1768,15 @@ namespace Source
                             0,
                             NULL, NULL,
                             psm_glib_marshal_OBJECT__OBJECT_BOXED, G_TYPE_OBJECT, 2, G_TYPE_OBJECT, GTK_TYPE_TREE_ITER);
+
+            signals[PSM_SIGNAL_PLAYLIST_END] = 
+              g_signal_new ("playlist-end",
+                            G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+                            GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+                            0,
+                            NULL, NULL,
+                            g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+
             m_signals_installed = true;
         }
 
@@ -1874,7 +1859,6 @@ namespace Source
     void
     PlaybackSourceMusicLib::on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column)
     {
-        g_message(G_STRFUNC);
         m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter( path );
         m_Private->m_TreeViewPlaylist->m_CurrentId = (*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.RowId];
         m_Private->m_TreeViewPlaylist->queue_draw();
@@ -1914,30 +1898,52 @@ namespace Source
         return false;        
     }
 
-    void
-    PlaybackSourceMusicLib::play_album(gint64 id, bool play)
+    PyObject*
+    PlaybackSourceMusicLib::get_playlist_model ()
     {
-        SQL::RowV v;
-        m_Lib.get().getSQL(v, (boost::format("SELECT id, track FROM track_view WHERE album_j = '%lld'") % id).str()); 
-        TrackIdV idv;
-        for(SQL::RowV::const_iterator i = v.begin(); i != v.end(); ++i)
+        GtkListStore * store = GTK_LIST_STORE(m_Private->m_TreeViewPlaylist->ListStore->gobj());
+        return pygobject_new((GObject*)store);
+    }
+
+    PyObject*
+    PlaybackSourceMusicLib::get_playlist_current_iter ()
+    {
+        if(!m_Private->m_TreeViewPlaylist->m_CurrentIter)
         {
-            SQL::Row r = *i;
-            idv.push_back(get<gint64>(r["id"]));
+            Py_INCREF(Py_None);
+            return Py_None;
         }
-        m_Private->m_TreeViewPlaylist->clear();
-        m_Private->m_TreeViewPlaylist->append_trackid_v(idv, true);
-        if(play)
-          Signals.PlayRequest.emit();
+
+        GtkTreeIter  * iter = m_Private->m_TreeViewPlaylist->m_CurrentIter.get().gobj();
+        return pyg_boxed_new(GTK_TYPE_TREE_ITER, iter, TRUE, FALSE);
     }
 
     void
-    PlaybackSourceMusicLib::play_tracks(TrackIdV const& idv , bool play)
+    PlaybackSourceMusicLib::play_album(gint64 id)
     {
         m_Private->m_TreeViewPlaylist->clear();
-        m_Private->m_TreeViewPlaylist->append_trackid_v(idv, false);
-        if(play)
-          Signals.PlayRequest.emit();
+        m_Private->m_TreeViewPlaylist->append_album(id);
+        Signals.PlayRequest.emit();
+    }
+
+    void
+    PlaybackSourceMusicLib::append_album(gint64 id)
+    {
+        m_Private->m_TreeViewPlaylist->append_album(id);
+    }
+
+    void
+    PlaybackSourceMusicLib::play_tracks(TrackIdV const& idv)
+    {
+        m_Private->m_TreeViewPlaylist->clear();
+        m_Private->m_TreeViewPlaylist->append_tracks(idv, NO_ORDER);
+        Signals.PlayRequest.emit();
+    }
+
+    void
+    PlaybackSourceMusicLib::append_tracks(TrackIdV const& idv)
+    {
+        m_Private->m_TreeViewPlaylist->append_tracks(idv, NO_ORDER);
     }
 
     void
@@ -1965,6 +1971,8 @@ namespace Source
     std::string
     PlaybackSourceMusicLib::get_uri () 
     {
+        g_return_val_if_fail(m_Private->m_TreeViewPlaylist->m_CurrentIter, std::string());
+        
 #ifdef HAVE_HAL
         try{
             MPX::Track t ((*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.MPXTrack]);
@@ -2000,16 +2008,14 @@ namespace Source
     bool
     PlaybackSourceMusicLib::play ()
     {
-        g_message(G_STRFUNC);
         std::vector<Gtk::TreePath> rows = m_Private->m_TreeViewPlaylist->get_selection()->get_selected_rows();
 
         if(m_Private->m_TreeViewPlaylist->m_PlayInitIter)
         {
             m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->m_PlayInitIter.get();
             m_Private->m_TreeViewPlaylist->m_PlayInitIter.reset ();
-            return true;
         }
-
+        // NO else so we fall through to the last check
         if(!rows.empty() && !m_Private->m_TreeViewPlaylist->m_CurrentIter)
         {
             m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter (rows[0]); 
@@ -2020,14 +2026,24 @@ namespace Source
         else
         if(rows.empty() && !m_Private->m_TreeViewPlaylist->m_CurrentIter)
         {
-                        TreePath path;
-                        path.append_index(0);
-                        m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter(path);
-                        return true;
+            TreePath path;
+            path.append_index(0);
+            m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter(path);
+            return true;
         }
         else
         if(m_Private->m_TreeViewPlaylist->m_CurrentIter)
+        {
+            TreeIter &iter = m_Private->m_TreeViewPlaylist->m_CurrentIter.get();
+            TreePath path1 = m_Private->m_TreeViewPlaylist->ListStore->get_path(iter);
+            TreePath path2 = m_Private->m_TreeViewPlaylist->ListStore->get_path(--m_Private->m_TreeViewPlaylist->ListStore->children().end());
+
+            if(path1[0] == path2[0])
+            {
+                g_signal_emit(G_OBJECT(gobj()), signals[PSM_SIGNAL_PLAYLIST_END], 0);
+            }
             return true;
+        }
 
         check_caps ();
     
@@ -2037,16 +2053,17 @@ namespace Source
     bool
     PlaybackSourceMusicLib::go_next ()
     {
-        g_return_val_if_fail(bool(m_Private->m_TreeViewPlaylist->m_CurrentIter), false);
-
-        TreeIter & iter = m_Private->m_TreeViewPlaylist->m_CurrentIter.get();
-
+        TreeIter &iter = m_Private->m_TreeViewPlaylist->m_CurrentIter.get();
         TreePath path1 = m_Private->m_TreeViewPlaylist->ListStore->get_path(iter);
-        TreePath path3 = m_Private->m_TreeViewPlaylist->ListStore->get_path(--m_Private->m_TreeViewPlaylist->ListStore->children().end());
+        TreePath path2 = m_Private->m_TreeViewPlaylist->ListStore->get_path(--m_Private->m_TreeViewPlaylist->ListStore->children().end());
 
-        if (path1[0] < path3[0]) 
+        if (path1[0] < path2[0]) 
         {
             iter++;
+            if((path1[0]+1) == path2[0])
+            {
+                g_signal_emit(G_OBJECT(gobj()), signals[PSM_SIGNAL_PLAYLIST_END], 0);
+            }
             return true;
         }
     

@@ -33,14 +33,26 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
         self.lib = lib
         self.mlib = mlib
         self.covers = covers
-
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-python-plugins/mpxdj/mpxdj.glade")
-        self.dialog = self.xml.get_widget("dialog")
+
+        self.window = self.xml.get_widget("window")
+
         self.combo = self.xml.get_widget("combobox")
+
         self.play = self.xml.get_widget("cb-play")
+
         self.label = self.xml.get_widget("label")
+
+        self.append = self.xml.get_widget("cb-append")
+        self.append.connect("toggled", self.on_append_toggled)
+
         self.go = self.xml.get_widget("button-go")
         self.go.set_sensitive(False)
+        self.go.connect("clicked", self.on_button_go)
+
+        self.close = self.xml.get_widget("button-close")
+        self.close.connect("clicked", self.on_button_close)
+
         self.header_image = self.xml.get_widget("header-image")
         self.header_image.set_from_file("@DATA_DIR@" + "/playlist-python-plugins/mpxdj/mpxdj.png")
 
@@ -93,6 +105,15 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
         # Finally:
         self.combo.connect("changed", self.cbox_changed)
         self.combo.set_active(0)
+
+    def on_append_toggled(self, cb):
+
+        active = cb.get_active()
+
+        if active:
+            self.conn_playlist_end = self.mlib.gobj().connect("playlist-end", self.on_playlist_end)
+        else:
+            self.mlib.gobj().disconnect(self.conn_playlist_end)
 
     def cbox_changed(self, cbox):
 
@@ -273,12 +294,31 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 
         return self.icon
 
-    def run(self):
-        print ">> MPXDJ Running"
-        ret = self.dialog.run()
+    def on_playlist_end(self, object):
+
         idv = mpx_playlist.TrackIdVector()
-        if(ret == gtk.RESPONSE_OK):
-            self.callables[self.combo.get_active()](self.lib, idv)
-        if idv:
-            self.mlib.play_tracks(idv, self.play.get_active())
-        self.dialog.hide()
+        callable = self.callables[self.combo.get_active()]
+        if(callable):
+            callable(self.lib, idv)
+            if idv:
+                self.mlib.append_tracks(idv) 
+
+    def on_button_close(self, object):
+
+        self.window.hide()
+
+    def on_button_go(self, object):
+
+        idv = mpx_playlist.TrackIdVector()
+        callable = self.callables[self.combo.get_active()]
+        if(callable):
+            callable(self.lib, idv)
+            if idv:
+                if self.play.get_active():
+                    self.mlib.play_tracks(idv)
+                else:
+                    self.mlib.append_tracks(idv) 
+
+
+    def run(self):
+        self.window.present()

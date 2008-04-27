@@ -65,6 +65,9 @@ BOOST_PYTHON_MODULE(mpx_playlist)
     class_<MPX::Source::PlaybackSourceMusicLib, boost::noncopyable>("MusicLib", boost::python::no_init)
             .def("play_tracks", &MPX::Source::PlaybackSourceMusicLib::play_tracks)
             .def("play_album", &MPX::Source::PlaybackSourceMusicLib::play_album)
+            .def("append_tracks", &MPX::Source::PlaybackSourceMusicLib::append_tracks)
+            .def("get_playlist_model", &MPX::Source::PlaybackSourceMusicLib::get_playlist_model)
+            .def("get_playlist_current_iter", &MPX::Source::PlaybackSourceMusicLib::get_playlist_current_iter)
             .def("gobj", &mpxpy::get_gobject<MPX::Source::PlaybackSourceMusicLib>)
     ;
 }
