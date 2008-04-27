@@ -101,7 +101,7 @@ namespace Source
 
                 Glib::RefPtr<Gtk::UIManager> m_MainUIManager;
                 Glib::RefPtr<Gtk::ActionGroup> m_MainActionGroup;
-                std::string m_MergedUI;
+                guint m_UIID;
 
                 MusicLibPrivate * m_Private;
                 PlaylistPluginManager *m_PluginManager;
@@ -222,6 +222,9 @@ namespace Source
 
                 virtual guint
                 add_menu ();
+
+                virtual std::string
+                get_guid ();
 
                 // UriHandler
                 virtual UriSchemes 

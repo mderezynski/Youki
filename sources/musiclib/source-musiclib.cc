@@ -71,11 +71,11 @@ namespace
     ""
     "   <menu action='dummy' name='menu-playlist-list'>"
     "       <menuitem action='action-play' name='action-play'/>"
+    "       <menuitem action='action-remove-remaining'/>"
     "     <separator/>"
     "       <menuitem action='action-go-to-album'/>"
     "     <separator/>"
     "       <menuitem action='action-remove-items'/>"
-    "       <menuitem action='action-remove-remaining'/>"
     "       <menuitem action='action-clear'/>"
     "   </menu>"
     ""
@@ -83,7 +83,7 @@ namespace
     ""
     "</ui>";
 
-    char const * ui_mainmerge1 =
+    char const * ui_source =
     "<ui>"
     ""
     "<menubar name='MenubarMain'>"
@@ -93,9 +93,6 @@ namespace
     "         <menuitem action='musiclib-sort-by-date'/>"
     "         <menuitem action='musiclib-sort-by-rating'/>"
     "         <separator/>"
-    ""; 
-
-    char const * ui_mainmerge2 =
     "     </menu>"
     "   </placeholder>"
     "</menubar>"
@@ -310,12 +307,11 @@ namespace MPX
 
                 m_ActionGroup->add  (Gtk::Action::create (ACTION_REMOVE_ITEMS,
                                 Gtk::StockID (GTK_STOCK_REMOVE),
-                                _("Remove Selected Tracks")),
+                                _("Remove selected Tracks")),
                                 sigc::mem_fun( *this, &PlaylistTreeView::action_cb_playlist_remove_items ));
 
                 m_ActionGroup->add  (Gtk::Action::create (ACTION_REMOVE_REMAINING,
-                                Gtk::StockID (GTK_STOCK_CLEAR),
-                                _("Remove Remaining Tracks")),
+                                _("Remove remaining Tracks")),
                                 sigc::mem_fun( *this, &PlaylistTreeView::action_cb_playlist_remove_remaining ));
 
                 m_ActionGroup->add  (Gtk::Action::create (ACTION_GO_TO_ALBUM,
@@ -1799,8 +1795,6 @@ namespace Source
         m_PluginManager->append_search_path (build_filename(DATA_DIR,"playlist-python-plugins"));
         m_PluginManager->load_plugins();
 
-        Glib::RefPtr<Gtk::IconFactory> factory = Gtk::IconFactory::create();
-
         Gtk::RadioButtonGroup gr1;
         m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-name", "Sort Albums By Artist/Album"),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
@@ -1812,36 +1806,21 @@ namespace Source
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-rating"))->property_value() = 2;
 
-        m_MergedUI = ui_mainmerge1;
         PlaylistPluginHoldMap const& map = m_PluginManager->get_map();
         for(PlaylistPluginHoldMap::const_iterator i = map.begin(); i != map.end(); ++i)
         {
             PlaylistPluginHolderRefP const& p = i->second;
-            static boost::format menuitem_f ("<menuitem action='plugin-%lld'/>");
             static boost::format name_f ("plugin-%lld");
-            static boost::format stock_f ("stock-mpx-playlist-plugin-%lld");
 
             ustring name = (name_f % p->get_id()).str();
 
-            if(p->get_icon())
-            {
-                factory->add(StockID ((stock_f % p->get_id()).str()), Gtk::IconSet(p->get_icon())); 
-                m_MainActionGroup->add (Action::create( name, StockID((stock_f % p->get_id()).str()), p->get_name()),
-                                        sigc::bind( sigc::mem_fun (*this, &PlaybackSourceMusicLib::action_cb_run_plugin),
-                                        p->get_id()));
-            }
-            else
-            {
-                m_MainActionGroup->add (Action::create( name, p->get_name()),
-                                        sigc::bind( sigc::mem_fun (*this, &PlaybackSourceMusicLib::action_cb_run_plugin),
-                                        p->get_id()));
-            }
-            m_MergedUI += (menuitem_f % p->get_id()).str();
+            m_MainActionGroup->add (Action::create( name, p->get_name() ),
+                                    sigc::bind( sigc::mem_fun (*this, &PlaybackSourceMusicLib::action_cb_run_plugin),
+                                    p->get_id()));
         }
-        m_MergedUI += ui_mainmerge2;
-        factory->add_default();
 
         m_MainUIManager->insert_action_group(m_MainActionGroup);
+
     }
 
     PlaybackSourceMusicLib::~PlaybackSourceMusicLib ()
@@ -1850,10 +1829,48 @@ namespace Source
         delete m_PluginManager;
     }
 
+    std::string
+    PlaybackSourceMusicLib::get_guid ()
+    {
+        return "36068e19-dfb3-49cd-85b4-52cea16fe0fd";
+    }
+
     guint
     PlaybackSourceMusicLib::add_menu ()
     {
-        return m_MainUIManager->add_ui_from_string(m_MergedUI);
+        guint id = m_MainUIManager->add_ui_from_string(ui_source);
+        Gtk::Menu * menu = dynamic_cast < Gtk::MenuItem * > (m_MainUIManager->get_widget("/ui/MenubarMain/placeholder-source/menu-source-musiclib"))->get_submenu();
+
+        Gtk::SeparatorMenuItem * separator_item = manage(new Gtk::SeparatorMenuItem());
+        separator_item->show_all();
+        menu->append(*separator_item);
+ 
+        PlaylistPluginHoldMap const& map = m_PluginManager->get_map();
+        for(PlaylistPluginHoldMap::const_iterator i = map.begin(); i != map.end(); ++i)
+        {
+            PlaylistPluginHolderRefP const& p = i->second;
+            static boost::format name_f ("plugin-%lld");
+
+            ustring name = (name_f % p->get_id()).str();
+
+            if(p->get_icon())
+            {
+                Gtk::ImageMenuItem * item = manage(new Gtk::ImageMenuItem(p->get_name()));
+                Gtk::Image * image = manage(new Gtk::Image(p->get_icon()->scale_simple(16, 16, Gdk::INTERP_BILINEAR)));
+                item->set_image(*image);
+                item->show_all();
+                m_MainActionGroup->get_action(name)->connect_proxy(*item);
+                menu->append(*item);
+            }
+            else
+            {
+                Gtk::MenuItem * item = manage(new Gtk::ImageMenuItem(p->get_name()));
+                item->show_all();
+                m_MainActionGroup->get_action(name)->connect_proxy(*item);
+                menu->append(*item);
+            }
+        }
+        return id;
     }
 
     void

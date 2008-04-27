@@ -97,10 +97,14 @@ namespace Source
 
         void
         on_shoutcast_list_updated (RadioDirectory::StreamListT const& list);
+
         void
         on_icecast_list_updated ();
 
       protected:
+
+        virtual std::string
+        get_guid ();
 
 	    virtual Glib::RefPtr<Gdk::Pixbuf>
 		get_icon ();

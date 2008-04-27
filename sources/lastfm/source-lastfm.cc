@@ -155,6 +155,12 @@ namespace Source
         m_ui_manager->insert_action_group (m_actions);
     }
 
+    std::string
+    LastFM::get_guid ()
+    {
+        return "dafcb8ac-d9ff-4405-8a35-861ccdff66b5";
+    }
+
     void
     LastFM::on_artist_activated (Glib::ustring const& artist_url)
     {

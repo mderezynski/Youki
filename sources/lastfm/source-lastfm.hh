@@ -262,6 +262,9 @@ namespace Source
 
       protected:
 
+            virtual std::string
+            get_guid ();
+
             virtual Glib::RefPtr<Gdk::Pixbuf>
             get_icon ();
 
