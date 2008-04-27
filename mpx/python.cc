@@ -416,8 +416,6 @@ BOOST_PYTHON_MODULE(mpx)
     def("unwrap_boxed_mpxtrack", &mpxpy::unwrap_boxed<MPX::Track>, return_value_policy<return_by_value>());
 
 	class_<MPX::Plugin>("Plugin")	
-		.def("activate", &MPX::Plugin::activate)
-		.def("deactivate", &MPX::Plugin::deactivate)
 	;
 
 	/*-------------------------------------------------------------------------------------*/
