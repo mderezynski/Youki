@@ -243,6 +243,13 @@ namespace MPX
                                     PyErr_Clear();
                                 }
 
+                                ptr->m_CanActivate = PyObject_HasAttrString(instance.ptr(), "activate");
+                                if(PyErr_Occurred())
+                                {
+                                    g_message("%s: No activate in plugin", G_STRLOC);
+                                    PyErr_Clear();
+                                }
+
                                 m_Map.insert(std::make_pair(ptr->m_Id, ptr));
 
                                 g_message("%s: >> Loaded: '%s'", G_STRLOC, ptr->m_Name.c_str());

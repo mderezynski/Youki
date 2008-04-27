@@ -44,6 +44,7 @@ namespace MPX
 
 					Gtk::TreeModelColumn<bool>				Active;
 					Gtk::TreeModelColumn<bool>				HasGUI;
+					Gtk::TreeModelColumn<bool>				CanActivate;
 					Gtk::TreeModelColumn<std::string>		Desc;
 					Gtk::TreeModelColumn<std::string>		Authors;
 					Gtk::TreeModelColumn<std::string>		Copyright;
@@ -55,6 +56,7 @@ namespace MPX
 				{
 					add(Active);
 					add(HasGUI);
+					add(CanActivate);
 					add(Desc);
 					add(Authors);
 					add(Copyright);
@@ -99,6 +101,7 @@ namespace MPX
 					(*iter)[Columns.Website] = i->second->get_website();
 					(*iter)[Columns.Active] = i->second->get_active();
 					(*iter)[Columns.HasGUI] = i->second->get_has_gui();
+					(*iter)[Columns.CanActivate] = i->second->get_can_activate();
 					(*iter)[Columns.Id] = i->second->get_id();
 
 				}
@@ -121,11 +124,15 @@ namespace MPX
 			void
 			on_cell_toggled (const Glib::ustring& p_string)
 			{
-				bool result = false;
 				TreePath path (p_string);
 				TreeIter iter = Store->get_iter(path);
+        
+                if(!bool((*iter)[Columns.CanActivate]))
+                    return;
+
 				gint64 id = (*iter)[Columns.Id];
 				bool active = (*iter)[Columns.Active];
+				bool result = false;
 
 				if(active)
 					m_Manager.deactivate(id);

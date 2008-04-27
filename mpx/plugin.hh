@@ -47,6 +47,7 @@ namespace MPX
 			std::string		m_Website;
 			bool			m_Active;
             bool            m_HasGUI;
+            bool            m_CanActivate;
 			gint64			m_Id;
 
 		public:
@@ -71,6 +72,9 @@ namespace MPX
 
             bool
             get_has_gui ()      const   { return m_HasGUI; }
+
+            bool
+            get_can_activate () const   { return m_CanActivate; }
 
 			gint64
 			get_id ()			const	{ return m_Id; }
