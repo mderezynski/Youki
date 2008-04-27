@@ -114,7 +114,7 @@ namespace MPX
                     try{    
                         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
                         object instance = object((handle<>(borrowed(item->m_PluginInstance))));
-                        instance.attr("activate");
+                        instance.attr("activate")();
                         item->m_Active = true;
                         pyg_gil_state_release(state);
                         } catch( error_already_set )
@@ -331,7 +331,7 @@ namespace MPX
 		try{
 			object instance = object((handle<>(borrowed(i->second->m_PluginInstance))));
 			object callable = instance.attr("activate");
-			result = boost::python::call<bool>(callable.ptr(), boost::ref(*m_Player), boost::ref(*mcs));
+			result = boost::python::call<bool>(callable.ptr());
 			i->second->m_Active = true;
             signal_.emit(id);
 		} catch( error_already_set )
