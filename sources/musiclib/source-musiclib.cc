@@ -1139,9 +1139,9 @@ namespace MPX
                 }
               }
 
-              virtual bool
-              on_test_expand_row (const TreeIter &iter_filter,
-                                  const TreePath &path) 
+              virtual void
+              on_row_expanded (const TreeIter &iter_filter,
+                               const TreePath &path) 
               {
                 TreeIter iter = TreeStoreFilter->convert_iter_to_child_iter(iter_filter);
                 if(!(*iter)[AlbumColumns.HasTracks])
@@ -1173,13 +1173,9 @@ namespace MPX
                         } 
                         else
                             g_warning("%s:%d : No placeholder row present, state seems corrupted.", __FILE__, __LINE__);
-                        return false;
                     }
-                    
-                    return true;
 
                 }
-
                 scroll_to_row (path, 0.);
               }
 

@@ -624,7 +624,7 @@ namespace MPX
                                      TextP &  p)
           {
               m_layouts[id] = p;
-              p->conn = signal_timeout().connect (sigc::bind (sigc::mem_fun (this, &InfoArea::fade_in), id), 20);
+              p->conn = signal_timeout().connect (sigc::bind (sigc::mem_fun (this, &InfoArea::fade_in), id), 10);
           }
 
           void
