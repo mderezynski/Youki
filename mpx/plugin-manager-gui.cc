@@ -104,7 +104,7 @@ namespace MPX
 				}
 
                 Store->set_default_sort_func( sigc::mem_fun( *this, &PTV::plugin_sort_func ));
-                Store->set_sort_column(-1);
+                Store->set_sort_column(-1, Gtk::SORT_ASCENDING);
 				set_model (Store);
 				signal_row_activated().connect( sigc::mem_fun( *this, &PTV::on_row_activated ) );
 			}
