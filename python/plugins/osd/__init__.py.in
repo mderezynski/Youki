@@ -159,8 +159,9 @@ class OSD(gtk.Window):
 
 class MPXOSD(mpx.Plugin):
 
-    def __init__(self):
-   
+    def __init__(self,id):
+  
+        self.id = id 
         gobject.type_register(OSD)
         self.osd = OSD()
         self.osd.connect("button-press-event", self.on_button_press)

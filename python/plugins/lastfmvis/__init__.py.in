@@ -27,11 +27,14 @@ from Ft.Xml import EMPTY_NAMESPACE
 
 class LastFMVis(mpx_playlist.PlaylistPlugin):
 
-    def __init__(self,lib,covers,mlib):
+    def __init__(self,id,lib,covers,mlib):
 
+        self.id = id
         self.lib = lib
         self.covers = covers
         self.mlib = mlib
+
+        self.mlib.add_plugin(id, None, "LastFM Visualizer")
 
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-python-plugins/lastfmvis/lastfmvis.glade")
 

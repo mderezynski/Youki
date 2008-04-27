@@ -1858,6 +1858,13 @@ namespace MPX
         }
     }
 
+    PyObject*
+    Player::get_source(std::string const& uuid)
+    {
+        Py_INCREF(Py_None);
+        return Py_None;
+    }
+
 	void
 	Player::get_object (PAccess<MPX::Library> & pa)
 	{

@@ -28,8 +28,9 @@ MATCH_NODE_XPATH = u'//match'
 
 
 class MPXDJ(mpx_playlist.PlaylistPlugin):
-    def __init__(self,lib,covers,mlib):
-        
+    def __init__(self,id,lib,covers,mlib):
+       
+        self.id = id 
         self.lib = lib
         self.mlib = mlib
         self.covers = covers
@@ -58,8 +59,9 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 
         try:
             self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/playlist-python-plugins/mpxdj/mpxdj-icon.png")
+            self.mlib.add_plugin(id, self.icon, "MPXDJ")
         except:
-            print "MPXDJ: No Icon"
+            self.mlib.add_plugin(id, None, "MPXDJ")
 
         options = ["Entertain Me!", "Random Mix", "Play All", "Top Tunes", "New Music", "Memory Lane", "Sounds Of...",
                    "Forgotten Gems", "Deja Vu", "Last.fm Tag"]

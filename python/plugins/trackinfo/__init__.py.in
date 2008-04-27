@@ -490,8 +490,9 @@ class TrackInfo:
 
 class TrackInfoDispatcher(mpx.Plugin):
 
-    def __init__(self):
-
+    def __init__(self,id):
+    
+        self.id = id
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/trackinfo/trackinfo.glade")
         self.vbox = self.xml.get_widget("vbox")
         self.vbox.unparent()

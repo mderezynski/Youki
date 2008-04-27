@@ -30,8 +30,9 @@ MATCH_NODE_XPATH = u'//match'
 
 class PlaylistDefaultTooltip(mpx_playlist.PlaylistPlugin):
 
-    def __init__(self,lib,covers,mlib):
+    def __init__(self,id,lib,covers,mlib):
 
+        self.id = id
         f = open("@DATA_DIR@" + "/playlist-python-plugins/pltd/pltd.glade")
         self.xmldata = f.read() 
         f.close()

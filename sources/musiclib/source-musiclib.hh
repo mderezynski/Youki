@@ -30,6 +30,10 @@
 #include <sigc++/signal.h>
 #include <boost/format.hpp>
 
+#define NO_IMPORT
+#include <pygobject.h>
+#include <pygtk/pygtk.h>
+
 #include "mpx/covers.hh"
 #include "mpx/library.hh"
 #include "mpx/mpx-public.hh"
@@ -84,6 +88,15 @@ namespace MPX
             };
         };
 
+        struct PluginMenuData
+        {
+            Glib::RefPtr<Gdk::Pixbuf> m_Icon;
+            gint64                    m_Id;
+            std::string               m_Name;
+        };
+
+        typedef std::vector<PluginMenuData> VisiblePlugsT;
+        
 namespace Source
 {
         class PlaybackSourceMusicLib
@@ -105,6 +118,7 @@ namespace Source
 
                 MusicLibPrivate * m_Private;
                 PlaylistPluginManager *m_PluginManager;
+                VisiblePlugsT m_VisiblePlugs; 
 
                 PAccess<MPX::Library> m_Lib;
                 PAccess<MPX::HAL> m_HAL;
@@ -125,6 +139,8 @@ namespace Source
                 PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
                 ~PlaybackSourceMusicLib ();
 
+                void
+                add_plugin(gint64, PyObject*, std::string const&);
 
                 PyObject*
                 get_playlist_model ();

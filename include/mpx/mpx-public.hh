@@ -48,19 +48,30 @@ namespace MPX
       public:
 
 		void
+		add_widget (Gtk::Widget*);
+
+        void
+        add_info_widget(Gtk::Widget*, std::string const&);
+
+		void
+		remove_widget (Gtk::Widget*);
+
+		void
+		remove_info_widget (Gtk::Widget*);
+
+		void
 		get_object (PAccess<MPX::Library>&);
 
 		void	
 		get_object (PAccess<MPX::Covers>&);
 
-		void	
-		get_object (PAccess<MPX::Play>&);
-
-		void	
-		get_object (PAccess<MPX::HAL>&);
-
         void
-        play_uri (std::string const&);
+        get_object (PAccess<MPX::Play>&);
+
+#ifdef HAVE_HAL
+        void
+        get_object (PAccess<MPX::HAL>&);
+#endif // HAVE_HAL
 
         virtual ~Player ();
 

@@ -1,6 +1,11 @@
 #ifndef MPX_PY_HH
 #define MPX_PY_HH
 
+#define NO_IMPORT
+#include <Python.h>
+#include <pygobject.h>
+#include <glib-object.h>
+
 namespace MPX
 {
     void mpx_py_init ();

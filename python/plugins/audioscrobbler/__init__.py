@@ -692,6 +692,10 @@ class AudioScrobblerPost:
 
 class MPXAudioScrobbler(mpx.Plugin):
 
+    def __init__(self,id):
+
+        self.id = id
+
     def activate(self,player,mcs):
     
         """ Activate plugin """

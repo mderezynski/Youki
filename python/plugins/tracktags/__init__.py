@@ -23,6 +23,10 @@ from Ft.Xml import EMPTY_NAMESPACE
 
 class TrackTags(mpx.Plugin):
 
+    def __init__(self, id):
+
+        self.id = id
+
     def activate(self,player,mcs):
 
         self.player = player

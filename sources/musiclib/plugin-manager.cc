@@ -127,7 +127,7 @@ namespace MPX
 
                             object instance;
                             try{
-                                instance = boost::python::call<object>(value, boost::ref(m_Lib), boost::ref(m_Covers), boost::ref(m_MusicLib)); 
+                                instance = boost::python::call<object>(value, m_Id, boost::ref(m_Lib), boost::ref(m_Covers), boost::ref(m_MusicLib)); 
                                 if(!instance)
                                 {
                                     PyErr_Print();
@@ -143,6 +143,8 @@ namespace MPX
 							ptr->m_PluginInstance = instance.ptr();
                             Py_INCREF(instance.ptr());
 
+                            ptr->m_Id = m_Id++;
+
                             if(PyObject_HasAttrString(module, "__doc__"))
                             {
 							    const char* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
@@ -157,17 +159,6 @@ namespace MPX
                             {
 							    ptr->m_Description = "(No Description given)";
                             }
-
-							try{
-								object icon = instance.attr("icon");
-								if(icon.ptr())
-								{
-									ptr->m_Icon = Glib::wrap(((GdkPixbuf*)(pygobject_get(icon.ptr()))), true);
-								}
-							} catch( error_already_set )
-							{
-								PyErr_Print();
-							}
 
 							Glib::KeyFile keyfile;
 							std::string key_filename = build_filename(*p, build_filename(*i, (*i)+".mpx-plugin"));

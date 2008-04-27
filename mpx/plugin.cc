@@ -183,69 +183,76 @@ namespace MPX
 
 						if (PyObject_IsSubclass (value, (PyObject*) PyMPXPlugin_Type))
 						{
-                            object instance = boost::python::call<object>(value);
+                            g_message(i->c_str());
 
-							if(!instance)
-							{
-								PyErr_Print();
-								continue;
-							}
+                            try{
+                                object instance = boost::python::call<object>(value, m_Id);
 
-							PluginHolderRefP ptr = PluginHolderRefP(new PluginHolder);
+                                if(!instance)
+                                {
+                                    PyErr_Print();
+                                    continue;
+                                }
 
-							ptr->m_PluginInstance = instance.ptr();
-                            Py_INCREF(instance.ptr());
+                                PluginHolderRefP ptr = PluginHolderRefP(new PluginHolder);
 
-                            if(PyObject_HasAttrString(module, "__doc__"))
-                            {
-							    const char* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
-							    ptr->m_Description = doc ? doc : "(No Description given)";
+                                ptr->m_PluginInstance = instance.ptr();
+                                Py_INCREF(instance.ptr());
+
+                                if(PyObject_HasAttrString(module, "__doc__"))
+                                {
+                                    const char* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
+                                    ptr->m_Description = doc ? doc : "(No Description given)";
+                                    if(PyErr_Occurred())
+                                    {
+                                        g_message("%s: Got no __doc__ from plugin", G_STRLOC);
+                                        PyErr_Clear();
+                                    }
+                                }
+                                else
+                                {
+                                    ptr->m_Description = "(No Description given)";
+                                }
+
+                                ptr->m_Id = m_Id++;
+
+                                Glib::KeyFile keyfile;
+                                std::string key_filename = build_filename(*p, build_filename(*i, (*i)+".mpx-plugin"));
+                                if(file_test(key_filename, FILE_TEST_EXISTS))
+                                {
+                                    try{
+                                        keyfile.load_from_file(build_filename(*p, build_filename(*i, (*i)+".mpx-plugin")));
+                                        ptr->m_Name = keyfile.get_string("MPX Plugin", "Name"); 
+                                        ptr->m_Authors = keyfile.get_string("MPX Plugin", "Authors"); 
+                                        ptr->m_Copyright = keyfile.get_string("MPX Plugin", "Copyright"); 
+                                        ptr->m_IAge = keyfile.get_integer("MPX Plugin", "IAge");
+                                        ptr->m_Website = keyfile.get_string("MPX Plugin", "Website");
+                                    } catch (Glib::KeyFileError) {
+                                    }
+                                }
+
+                                if(ptr->m_Name.empty())
+                                    ptr->m_Name = PyString_AsString (PyObject_GetAttrString (module, "__name__")); 
+
+                                /* TODO: Query MCS for active state */
+
+                                mcs_plugins->key_register("pyplugs", ptr->m_Name, false);
+
+                                ptr->m_Active = false; 
+                                ptr->m_HasGUI = PyObject_HasAttrString(instance.ptr(), "get_gui");
                                 if(PyErr_Occurred())
                                 {
-                                    g_message("%s: Got no __doc__ from plugin", G_STRLOC);
+                                    g_message("%s: No get_gui in plugin", G_STRLOC);
                                     PyErr_Clear();
                                 }
-                            }
-                            else
+
+                                m_Map.insert(std::make_pair(ptr->m_Id, ptr));
+
+                                g_message("%s: >> Loaded: '%s'", G_STRLOC, ptr->m_Name.c_str());
+                            } catch( error_already_set )
                             {
-							    ptr->m_Description = "(No Description given)";
+			                    push_traceback (m_Id++, "__init__");
                             }
-
-							ptr->m_Id = m_Id++;
-
-							Glib::KeyFile keyfile;
-							std::string key_filename = build_filename(*p, build_filename(*i, (*i)+".mpx-plugin"));
-							if(file_test(key_filename, FILE_TEST_EXISTS))
-							{
-								try{
-									keyfile.load_from_file(build_filename(*p, build_filename(*i, (*i)+".mpx-plugin")));
-									ptr->m_Name = keyfile.get_string("MPX Plugin", "Name"); 
-									ptr->m_Authors = keyfile.get_string("MPX Plugin", "Authors"); 
-									ptr->m_Copyright = keyfile.get_string("MPX Plugin", "Copyright"); 
-									ptr->m_IAge = keyfile.get_integer("MPX Plugin", "IAge");
-									ptr->m_Website = keyfile.get_string("MPX Plugin", "Website");
-								} catch (Glib::KeyFileError) {
-								}
-							}
-
-							if(ptr->m_Name.empty())
-								ptr->m_Name = PyString_AsString (PyObject_GetAttrString (module, "__name__")); 
-
-							/* TODO: Query MCS for active state */
-
-                            mcs_plugins->key_register("pyplugs", ptr->m_Name, false);
-
-							ptr->m_Active = false; 
-                            ptr->m_HasGUI = PyObject_HasAttrString(instance.ptr(), "get_gui");
-                            if(PyErr_Occurred())
-                            {
-                                g_message("%s: No get_gui in plugin", G_STRLOC);
-                                PyErr_Clear();
-                            }
-
-							m_Map.insert(std::make_pair(ptr->m_Id, ptr));
-
-							g_message("%s: >> Loaded: '%s'", G_STRLOC, ptr->m_Name.c_str());
 							break;
 						}
 					}

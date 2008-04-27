@@ -17,11 +17,12 @@ import csv
 import time
 
 class Ratings(mpx_playlist.PlaylistPlugin):
-	def __init__(self, lib, covers, mlib):
+	def __init__(self, id, lib, covers, mlib):
 
+        self.id = id
         self.lib = lib
-        self.mlib = mlib
         self.covers = covers
+        self.mlib = mlib
 
 		self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-python-plugins/ratings_export/ratings_export.glade")
 		self.dialog = self.xml.get_widget("dialog")
@@ -33,8 +34,9 @@ class Ratings(mpx_playlist.PlaylistPlugin):
 		
 		try:
 			self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/playlist-python-plugins/ratings_export/rexp-icon.png")
+            self.mlib.add_plugin(id, self.icon, "Ratings Export")
 		except:
-			print "MPXDJ: No Icon"
+            self.mlib.add_plugin(id, None, "Ratings Export")
 
 		operations = [
 				"Export ratings to file", 

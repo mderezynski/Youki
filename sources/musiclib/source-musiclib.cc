@@ -1806,19 +1806,6 @@ namespace Source
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-rating"))->property_value() = 2;
 
-        PlaylistPluginHoldMap const& map = m_PluginManager->get_map();
-        for(PlaylistPluginHoldMap::const_iterator i = map.begin(); i != map.end(); ++i)
-        {
-            PlaylistPluginHolderRefP const& p = i->second;
-            static boost::format name_f ("plugin-%lld");
-
-            ustring name = (name_f % p->get_id()).str();
-
-            m_MainActionGroup->add (Action::create( name, p->get_name() ),
-                                    sigc::bind( sigc::mem_fun (*this, &PlaybackSourceMusicLib::action_cb_run_plugin),
-                                    p->get_id()));
-        }
-
         m_MainUIManager->insert_action_group(m_MainActionGroup);
 
     }
@@ -1835,6 +1822,31 @@ namespace Source
         return "36068e19-dfb3-49cd-85b4-52cea16fe0fd";
     }
 
+    void
+    PlaybackSourceMusicLib::add_plugin (gint64 id, PyObject* pixbuf, std::string const& name)
+    {
+        PluginMenuData p;
+
+        p.m_Name = name;
+        p.m_Id = id;
+
+        if(pixbuf != Py_None)
+        {
+            g_message("%s: Plugin '%s' has icon.", G_STRLOC, name.c_str());
+            GdkPixbuf * pixbuf_gobj = ((GdkPixbuf*)(((PyGObject*)pixbuf)->obj));
+            p.m_Icon = Glib::wrap(pixbuf_gobj, false)->copy();
+        }
+        else
+            g_message("%s: Plugin '%s' has NO icon.", G_STRLOC, name.c_str());
+
+        static boost::format name_f ("plugin-%lld");
+        ustring action_name = (name_f % id).str();
+        m_MainActionGroup->add (Action::create( action_name, name ),
+                                sigc::bind( sigc::mem_fun( *this, &PlaybackSourceMusicLib::action_cb_run_plugin ),
+                                id));
+        m_VisiblePlugs.push_back(p);
+    }
+
     guint
     PlaybackSourceMusicLib::add_menu ()
     {
@@ -1845,18 +1857,18 @@ namespace Source
         separator_item->show_all();
         menu->append(*separator_item);
  
-        PlaylistPluginHoldMap const& map = m_PluginManager->get_map();
-        for(PlaylistPluginHoldMap::const_iterator i = map.begin(); i != map.end(); ++i)
+        for(VisiblePlugsT::const_iterator i = m_VisiblePlugs.begin(); i != m_VisiblePlugs.end(); ++i)
         {
-            PlaylistPluginHolderRefP const& p = i->second;
+            PluginMenuData const& p = *i; 
+
             static boost::format name_f ("plugin-%lld");
 
-            ustring name = (name_f % p->get_id()).str();
+            ustring name = (name_f % p.m_Id).str();
 
-            if(p->get_icon())
+            if(p.m_Icon)
             {
-                Gtk::ImageMenuItem * item = manage(new Gtk::ImageMenuItem(p->get_name()));
-                Gtk::Image * image = manage(new Gtk::Image(p->get_icon()->scale_simple(16, 16, Gdk::INTERP_BILINEAR)));
+                Gtk::ImageMenuItem * item = manage(new Gtk::ImageMenuItem(p.m_Name));
+                Gtk::Image * image = manage(new Gtk::Image(p.m_Icon->scale_simple(16, 16, Gdk::INTERP_BILINEAR)));
                 item->set_image(*image);
                 item->show_all();
                 m_MainActionGroup->get_action(name)->connect_proxy(*item);
@@ -1864,7 +1876,7 @@ namespace Source
             }
             else
             {
-                Gtk::MenuItem * item = manage(new Gtk::ImageMenuItem(p->get_name()));
+                Gtk::MenuItem * item = manage(new Gtk::ImageMenuItem(p.m_Name));
                 item->show_all();
                 m_MainActionGroup->get_action(name)->connect_proxy(*item);
                 menu->append(*item);
