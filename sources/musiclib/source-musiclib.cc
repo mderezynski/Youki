@@ -49,6 +49,7 @@
 #include <Python.h>
 #define NO_IMPORT
 #include <pygobject.h>
+#include "musiclib-py.hh"
 
 using namespace Gtk;
 using namespace Glib;
@@ -1755,6 +1756,8 @@ namespace Source
     : PlaybackSource(ui_manager, _("Music"), C_CAN_SEEK)
     , m_MainUIManager(ui_manager)
     {
+        mpx_musiclib_py_init();
+
         if(!m_signals_installed)
         {
             signals[PSM_SIGNAL_PLAYLIST_TOOLTIP] =
@@ -1788,13 +1791,6 @@ namespace Source
         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
 
-        m_PluginManager = new PlaylistPluginManager( m_Lib.get(), m_Covers.get(), this );
-        std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"playlist-python-plugins");
-        if(file_test(user_path, FILE_TEST_EXISTS))
-            m_PluginManager->append_search_path (user_path);
-        m_PluginManager->append_search_path (build_filename(DATA_DIR,"playlist-python-plugins"));
-        m_PluginManager->load_plugins();
-
         Gtk::RadioButtonGroup gr1;
         m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-name", "Sort Albums By Artist/Album"),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
@@ -1813,7 +1809,15 @@ namespace Source
     PlaybackSourceMusicLib::~PlaybackSourceMusicLib ()
     {
         delete m_Private;
-        delete m_PluginManager;
+    }
+
+    PyObject*
+    PlaybackSourceMusicLib::get_py_obj ()
+    {
+        using namespace boost::python;
+        object obj(boost::ref(this));
+        Py_INCREF(obj.ptr());
+        return obj.ptr();
     }
 
     std::string
@@ -1822,66 +1826,10 @@ namespace Source
         return "36068e19-dfb3-49cd-85b4-52cea16fe0fd";
     }
 
-    void
-    PlaybackSourceMusicLib::add_plugin (gint64 id, PyObject* pixbuf, std::string const& name)
-    {
-        PluginMenuData p;
-
-        p.m_Name = name;
-        p.m_Id = id;
-
-        if(pixbuf != Py_None)
-        {
-            g_message("%s: Plugin '%s' has icon.", G_STRLOC, name.c_str());
-            GdkPixbuf * pixbuf_gobj = ((GdkPixbuf*)(((PyGObject*)pixbuf)->obj));
-            p.m_Icon = Glib::wrap(pixbuf_gobj, false)->copy();
-        }
-        else
-            g_message("%s: Plugin '%s' has NO icon.", G_STRLOC, name.c_str());
-
-        static boost::format name_f ("plugin-%lld");
-        ustring action_name = (name_f % id).str();
-        m_MainActionGroup->add (Action::create( action_name, name ),
-                                sigc::bind( sigc::mem_fun( *this, &PlaybackSourceMusicLib::action_cb_run_plugin ),
-                                id));
-        m_VisiblePlugs.push_back(p);
-    }
-
     guint
     PlaybackSourceMusicLib::add_menu ()
     {
         guint id = m_MainUIManager->add_ui_from_string(ui_source);
-        Gtk::Menu * menu = dynamic_cast < Gtk::MenuItem * > (m_MainUIManager->get_widget("/ui/MenubarMain/placeholder-source/menu-source-musiclib"))->get_submenu();
-
-        Gtk::SeparatorMenuItem * separator_item = manage(new Gtk::SeparatorMenuItem());
-        separator_item->show_all();
-        menu->append(*separator_item);
- 
-        for(VisiblePlugsT::const_iterator i = m_VisiblePlugs.begin(); i != m_VisiblePlugs.end(); ++i)
-        {
-            PluginMenuData const& p = *i; 
-
-            static boost::format name_f ("plugin-%lld");
-
-            ustring name = (name_f % p.m_Id).str();
-
-            if(p.m_Icon)
-            {
-                Gtk::ImageMenuItem * item = manage(new Gtk::ImageMenuItem(p.m_Name));
-                Gtk::Image * image = manage(new Gtk::Image(p.m_Icon->scale_simple(16, 16, Gdk::INTERP_BILINEAR)));
-                item->set_image(*image);
-                item->show_all();
-                m_MainActionGroup->get_action(name)->connect_proxy(*item);
-                menu->append(*item);
-            }
-            else
-            {
-                Gtk::MenuItem * item = manage(new Gtk::ImageMenuItem(p.m_Name));
-                item->show_all();
-                m_MainActionGroup->get_action(name)->connect_proxy(*item);
-                menu->append(*item);
-            }
-        }
         return id;
     }
 
@@ -1982,13 +1930,6 @@ namespace Source
         m_Private->m_TreeViewPlaylist->m_CurrentIter = boost::optional<Gtk::TreeIter>(); 
         m_Private->m_TreeViewPlaylist->m_CurrentId = boost::optional<gint64>();
         Signals.PlayRequest.emit();
-    }
-
-    void
-    PlaybackSourceMusicLib::action_cb_run_plugin (gint64 id)
-    {
-        TrackIdV v;
-        m_PluginManager->run( id ); 
     }
 
     void

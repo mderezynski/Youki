@@ -7,7 +7,7 @@
 #
 
 import mpx
-import mpx_playlist
+import mpx_musiclib
 import time
 import pygtk
 pygtk.require('2.0')
@@ -27,16 +27,19 @@ MBID_NODE_XPATH = u'//mbid'
 MATCH_NODE_XPATH = u'//match'
 
 
-class MPXDJ(mpx_playlist.PlaylistPlugin):
-    def __init__(self,id,lib,covers,mlib):
+class MPXDJ(mpx.Plugin):
+
+    def __init__(self,id,player,mcs):
        
         self.id = id 
-        self.lib = lib
-        self.mlib = mlib
-        self.covers = covers
-        self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-python-plugins/mpxdj/mpxdj.glade")
+        self.lib = player.get_library()
+        self.covers = player.get_covers()
+        self.mlib = player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd")
 
-        self.window = self.xml.get_widget("window")
+        self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj.glade")
+
+        self.widget = self.xml.get_widget("widget")
+        self.widget.unparent()
 
         self.combo = self.xml.get_widget("combobox")
 
@@ -51,18 +54,14 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
         self.go.set_sensitive(False)
         self.go.connect("clicked", self.on_button_go)
 
-        self.close = self.xml.get_widget("button-close")
-        self.close.connect("clicked", self.on_button_close)
-
         self.header_image = self.xml.get_widget("header-image")
-        self.header_image.set_from_file("@DATA_DIR@" + "/playlist-python-plugins/mpxdj/mpxdj.png")
+        self.header_image.set_from_file("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj.png")
 
         try:
-            self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/playlist-python-plugins/mpxdj/mpxdj-icon.png")
-            self.mlib.add_plugin(id, self.icon, "MPXDJ")
+            self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj-icon.png")
         except:
-            self.mlib.add_plugin(id, None, "MPXDJ")
-
+            self.icon = None
+            
         options = ["Entertain Me!", "Random Mix", "Play All", "Top Tunes", "New Music", "Memory Lane", "Sounds Of...",
                    "Forgotten Gems", "Deja Vu", "Last.fm Tag"]
 
@@ -298,20 +297,16 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
 
     def on_playlist_end(self, object):
 
-        idv = mpx_playlist.TrackIdVector()
+        idv = mpx_musiclib.TrackIdVector()
         callable = self.callables[self.combo.get_active()]
         if(callable):
             callable(self.lib, idv)
             if idv:
                 self.mlib.append_tracks(idv) 
 
-    def on_button_close(self, object):
-
-        self.window.hide()
-
     def on_button_go(self, object):
 
-        idv = mpx_playlist.TrackIdVector()
+        idv = mpx_musiclib.TrackIdVector()
         callable = self.callables[self.combo.get_active()]
         if(callable):
             callable(self.lib, idv)
@@ -322,5 +317,5 @@ class MPXDJ(mpx_playlist.PlaylistPlugin):
                     self.mlib.append_tracks(idv) 
 
 
-    def run(self):
-        self.window.present()
+    def get_gui(self):
+        return self.widget

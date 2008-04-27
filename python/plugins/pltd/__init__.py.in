@@ -7,7 +7,7 @@
 
 
 import mpx
-import mpx_playlist
+import mpx_musiclib
 import gtkmm
 import time
 import pygtk
@@ -28,18 +28,18 @@ from Ft.Xml import EMPTY_NAMESPACE
 MBID_NODE_XPATH = u'//mbid'
 MATCH_NODE_XPATH = u'//match'
 
-class PlaylistDefaultTooltip(mpx_playlist.PlaylistPlugin):
+class PlaylistDefaultTooltip(mpx.Plugin):
 
-    def __init__(self,id,lib,covers,mlib):
+    def __init__(self,id,player,mcs):
 
         self.id = id
-        f = open("@DATA_DIR@" + "/playlist-python-plugins/pltd/pltd.glade")
+        f = open("@DATA_DIR@" + "/python-plugins/pltd/pltd.glade")
         self.xmldata = f.read() 
         f.close()
         
-        self.lib = lib
-        self.covers = covers
-        self.mlib = mlib
+        self.lib = player.get_library()
+        self.covers = player.get_covers()
+        self.mlib = player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd")
         self.mlib.gobj().connect("playlist-tooltip", self.on_playlist_tooltip)
 
     def on_playlist_tooltip(self, object, treemodel, iter):
@@ -83,6 +83,3 @@ class PlaylistDefaultTooltip(mpx_playlist.PlaylistPlugin):
                 self.image.show()
 
         return self.widget
-
-    def run(self):
-        print ">> Tooltip Running"

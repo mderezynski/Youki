@@ -144,7 +144,7 @@ namespace MPX
         get_object (PAccess<MPX::HAL>&);
 #endif // HAVE_HAL
 
-        MPX::PlaybackSource*
+        PyObject* 
         get_source(std::string const& uuid);
 
 		Metadata const& 

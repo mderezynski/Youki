@@ -200,6 +200,9 @@ namespace MPX
         std::string
         get_name ();
 
+        virtual PyObject*
+        get_py_obj ();
+
         virtual std::string
         get_guid () = 0;
 

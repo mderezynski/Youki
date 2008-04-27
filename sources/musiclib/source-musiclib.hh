@@ -117,7 +117,6 @@ namespace Source
                 guint m_UIID;
 
                 MusicLibPrivate * m_Private;
-                PlaylistPluginManager *m_PluginManager;
                 VisiblePlugsT m_VisiblePlugs; 
 
                 PAccess<MPX::Library> m_Lib;
@@ -139,8 +138,6 @@ namespace Source
                 PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
                 ~PlaybackSourceMusicLib ();
 
-                void
-                add_plugin(gint64, PyObject*, std::string const&);
 
                 PyObject*
                 get_playlist_model ();
@@ -238,6 +235,9 @@ namespace Source
 
                 virtual guint
                 add_menu ();
+
+                virtual PyObject*
+                get_py_obj ();
 
                 virtual std::string
                 get_guid ();

@@ -692,17 +692,18 @@ class AudioScrobblerPost:
 
 class MPXAudioScrobbler(mpx.Plugin):
 
-    def __init__(self,id):
+    def __init__(self,id,player,mcs):
 
         self.id = id
+        self.player = player
+        self.mcs = mcs
 
-    def activate(self,player,mcs):
+    def activate(self):
     
         """ Activate plugin """
 
-        self.player = player
         self.as = AudioScrobbler()
-        self.post = self.as.post(mcs.key_get_string("lastfm", "username"), mcs.key_get_string("lastfm", "password"))
+        self.post = self.as.post(self.mcs.key_get_string("lastfm", "username"), self.mcs.key_get_string("lastfm", "password"))
         self.post.auth()
         self.hand1 = self.player.gobj().connect("track-played", self.track_played)
         self.hand2 = self.player.gobj().connect("new-track", self.now_playing)
@@ -716,7 +717,6 @@ class MPXAudioScrobbler(mpx.Plugin):
 
         self.player.gobj().disconnect(self.hand1)
         self.player.gobj().disconnect(self.hand2)
-        self.player = None
         self.as = None
         self.post = None
 

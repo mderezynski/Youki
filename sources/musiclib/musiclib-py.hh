@@ -27,7 +27,7 @@
 
 namespace MPX
 {
-        void mpx_playlist_py_init ();
+        void mpx_musiclib_py_init ();
 }
 
 #endif

@@ -1,11 +1,11 @@
 SUBDIRS =			        \
 		audioscrobbler		\
-        lastfmvis           \
+		lastfmvis			\
 		mpxdj			    \
-		ratings_export		\
 		notification		\
 		osd			        \
 		pidgin			    \
 		pltd				\
+		ratings_export		\
 		trackinfo		    \
 		tracktags

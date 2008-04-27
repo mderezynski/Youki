@@ -114,7 +114,7 @@ namespace MPX
                     try{    
                         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
                         object instance = object((handle<>(borrowed(item->m_PluginInstance))));
-                        instance.attr("activate")(boost::ref(m_Player), boost::ref(mcs)); // TODO
+                        instance.attr("activate");
                         item->m_Active = true;
                         pyg_gil_state_release(state);
                         } catch( error_already_set )
@@ -183,11 +183,8 @@ namespace MPX
 
 						if (PyObject_IsSubclass (value, (PyObject*) PyMPXPlugin_Type))
 						{
-                            g_message(i->c_str());
-
                             try{
-                                object instance = boost::python::call<object>(value, m_Id);
-
+                                object instance = boost::python::call<object>(value, m_Id, boost::ref(m_Player), boost::ref(mcs));
                                 if(!instance)
                                 {
                                     PyErr_Print();
@@ -251,7 +248,8 @@ namespace MPX
                                 g_message("%s: >> Loaded: '%s'", G_STRLOC, ptr->m_Name.c_str());
                             } catch( error_already_set )
                             {
-			                    push_traceback (m_Id++, "__init__");
+                                g_message("Plugin: %s", i->c_str());
+                                PyErr_Print();
                             }
 							break;
 						}

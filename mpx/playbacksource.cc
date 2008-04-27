@@ -184,4 +184,12 @@ namespace MPX
 		{
 			return 0;
 		}
+
+        PyObject*
+        PlaybackSource::get_py_obj ()
+        {
+            Py_INCREF(Py_None);
+            return Py_None;
+        }
+
 } // end namespace MPX 

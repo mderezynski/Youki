@@ -1,6 +1,6 @@
-[MPX PlaylistPlugin]
+[MPX Plugin]
 Loader=python
-Module=enqueuefavs
+Module=mpxdj
 IAge=1
 Name=MPX DJ
 Authors=Milosz Derezynski <milosz@backtrace.info>

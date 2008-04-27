@@ -41,23 +41,8 @@ typedef int Py_ssize_t;
 
 using namespace Glib;
 
-namespace MPX
+BOOST_PYTHON_MODULE(mpx_musiclib)
 {
-	struct PlaylistPlugin
-	{
-		void
-		run (MPX::Library& G_GNUC_UNUSED, MPX::Source::PlaybackSourceMusicLib& G_GNUC_UNUSED)
-		{
-		}
-	};
-}
-
-BOOST_PYTHON_MODULE(mpx_playlist)
-{
-	class_<MPX::PlaylistPlugin>("PlaylistPlugin")	
-		.def("run", &MPX::PlaylistPlugin::run)
-	;
-
 	class_<MPX::TrackIdV>("TrackIdVector")
 		.def(vector_indexing_suite<MPX::TrackIdV>());
 	;
@@ -68,17 +53,15 @@ BOOST_PYTHON_MODULE(mpx_playlist)
             .def("append_tracks", &MPX::Source::PlaybackSourceMusicLib::append_tracks)
             .def("get_playlist_model", &MPX::Source::PlaybackSourceMusicLib::get_playlist_model)
             .def("get_playlist_current_iter", &MPX::Source::PlaybackSourceMusicLib::get_playlist_current_iter)
-            .def("add_plugin", &MPX::Source::PlaybackSourceMusicLib::add_plugin)
             .def("gobj", &mpxpy::get_gobject<MPX::Source::PlaybackSourceMusicLib>)
     ;
 }
 
-
 namespace MPX
 {
     void
-    mpx_playlist_py_init ()
+    mpx_musiclib_py_init ()
     {
-            initmpx_playlist();
+            initmpx_musiclib();
     }
 }

@@ -1,4 +1,4 @@
-[MPX PlaylistPlugin]
+[MPX Plugin]
 Loader=python
 Module=lastfmvis
 IAge=1

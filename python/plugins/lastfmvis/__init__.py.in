@@ -7,7 +7,7 @@
 #
 
 import mpx
-import mpx_playlist
+import mpx_musiclib
 import time
 import pygtk
 pygtk.require('2.0')
@@ -25,18 +25,16 @@ from Ft.Xml import EMPTY_NAMESPACE
 #import musicbrainz2
 #import musicbrainz2.webservice as ws
 
-class LastFMVis(mpx_playlist.PlaylistPlugin):
+class LastFMVis(mpx.Plugin):
 
-    def __init__(self,id,lib,covers,mlib):
+    def __init__(self,id,player,mcs):
 
         self.id = id
-        self.lib = lib
-        self.covers = covers
-        self.mlib = mlib
+        self.lib = player.get_library()
+        self.covers = player.get_covers()
+        self.mlib = player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd")
 
-        self.mlib.add_plugin(id, None, "LastFM Visualizer")
-
-        self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-python-plugins/lastfmvis/lastfmvis.glade")
+        self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/lastfmvis/lastfmvis.glade")
 
         self.window = self.xml.get_widget("window")
         self.window.connect("delete-event", self.on_window_delete)

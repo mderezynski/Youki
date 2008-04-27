@@ -1256,6 +1256,8 @@ namespace MPX
         Splashscreen splash;
         splash.set_message(_("Startup..."), 0.);
 
+		m_PluginManager = new PluginManager(this);
+
         try{
             std::list<Glib::RefPtr<Gdk::Pixbuf> > icon_list;
             icon_list.push_back(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "icons" G_DIR_SEPARATOR_S "mpx.png")));
@@ -1339,18 +1341,6 @@ namespace MPX
 
         splash.set_message(_("Loading Plugins"), 0.6);
 	
-		/*------------------------ Load Plugins -------------------------------------------------*/
-		// This also initializes Python for us and hence it's of utmost importance it is kept
-		// before loading the sources as they might use Python themselves
-		m_PluginManager = new PluginManager(this);
-		std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"python-plugins");
-		if(file_test(user_path, FILE_TEST_EXISTS))
-			m_PluginManager->append_search_path (user_path);
-		m_PluginManager->append_search_path (build_filename(DATA_DIR,"python-plugins"));
-		m_PluginManager->load_plugins();
-		m_PluginManager->activate_plugins();
-		m_PluginManagerGUI = PluginManagerGUI::create(*m_PluginManager);
-
 		/*------------------------ Connect Library -----------------------------------------------*/ 
         m_Library.signal_scan_start().connect( sigc::mem_fun( *this, &Player::on_library_scan_start ) );
         m_Library.signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
@@ -1569,6 +1559,17 @@ namespace MPX
 
 		m_Sources->sourceChanged().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
 		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
+
+		/*------------------------ Load Plugins -------------------------------------------------*/
+		// This also initializes Python for us and hence it's of utmost importance it is kept
+		// before loading the sources as they might use Python themselves
+		std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"python-plugins");
+		if(file_test(user_path, FILE_TEST_EXISTS))
+			m_PluginManager->append_search_path (user_path);
+		m_PluginManager->append_search_path (build_filename(DATA_DIR,"python-plugins"));
+		m_PluginManager->load_plugins();
+		m_PluginManager->activate_plugins();
+		m_PluginManagerGUI = PluginManagerGUI::create(*m_PluginManager);
 
         splash.set_message(_("Ready"), 1.0);
 
@@ -1861,6 +1862,14 @@ namespace MPX
     PyObject*
     Player::get_source(std::string const& uuid)
     {
+        for(VectorSources::iterator i = m_SourceV.begin(); i != m_SourceV.end(); ++i)
+        {
+            if((*i)->get_guid() == uuid)
+            {
+                return (*i)->get_py_obj();
+            }
+        }
+
         Py_INCREF(Py_None);
         return Py_None;
     }

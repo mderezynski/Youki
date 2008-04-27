@@ -11,12 +11,12 @@ import dbus
 
 class Pidgin(mpx.Plugin):
 
-    def __init__(self,id):
+    def __init__(self,id,player,mcs):
 
         self.id = id
-
-    def activate(self,player,mcs):
         self.player = player
+
+    def activate(self):
 
         self.player_state_change_handler_id = self.player.gobj().connect("play-status-changed", self.on_state_change)
         self.player_new_track_handler_id = self.player.gobj().connect("new-track", self.now_playing)
@@ -36,7 +36,6 @@ class Pidgin(mpx.Plugin):
         self.player.gobj().disconnect(self.player_new_track_handler_id)
         self.player.gobj().disconnect(self.player_state_change_handler_id)
         self.purple = None
-        self.player = None
 
     def on_state_change(self, player, state):
         if state == mpx.PlayStatus.STOPPED:

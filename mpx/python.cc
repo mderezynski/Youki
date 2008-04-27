@@ -559,6 +559,7 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("get_library", &mpxpy::player_get_library, return_internal_reference<>()) 
 		.def("get_hal", &mpxpy::player_get_hal, return_internal_reference<>()) 
         .def("get_covers", &mpxpy::player_get_covers, return_internal_reference<>())
+        .def("get_source", &MPX::Player::get_source)
 
 		.def("play", &MPX::Player::play)
 		.def("pause", &MPX::Player::pause_ext)

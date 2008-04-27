@@ -15,12 +15,12 @@ COVER_SIZE = 96
 
 class Notification(mpx.Plugin):
 
-    def __init__(self,id):
+    def __init__(self,id,player,mcs):
 
         self.id = id
+        self.player = player
 
     def activate(self,player,mcs):
-        self.player = player
 
         self.next = gtk.StatusIcon()
         self.next.set_from_stock(gtk.STOCK_MEDIA_NEXT)
@@ -50,7 +50,6 @@ class Notification(mpx.Plugin):
         self.playpause.set_visible(False)
         self.player.gobj().disconnect(self.player_new_track_handler_id)
         self.player.gobj().disconnect(self.player_state_change_handler_id)
-        self.player = None
 
     def on_state_change(self, player, state):
         if state == mpx.PlayStatus.PLAYING:

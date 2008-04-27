@@ -23,13 +23,13 @@ from Ft.Xml import EMPTY_NAMESPACE
 
 class TrackTags(mpx.Plugin):
 
-    def __init__(self, id):
+    def __init__(self, id, player, mcs):
 
         self.id = id
-
-    def activate(self,player,mcs):
-
         self.player = player
+
+    def activate(self):
+
         self.tagview = mpx.TagView()
         self.player.add_info_widget(self.tagview.get_widget(), "Track Tags")
         self.player_tagview_tag_handler_id = self.tagview.get_widget().connect("tag-clicked", self.tag_clicked)
@@ -43,7 +43,6 @@ class TrackTags(mpx.Plugin):
         self.player.gobj().disconnect(self.player_new_track_handler_id)
         self.player.gobj().disconnect(self.player_playtstatus_changed_handler_id)
         self.tagview.get_widget().disconnect(self.player_tagview_tag_handler_id)
-        self.player = None
 
     def tag_clicked(self, blah, tag):
         

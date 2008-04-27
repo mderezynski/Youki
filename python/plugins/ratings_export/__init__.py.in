@@ -7,7 +7,7 @@
 #
 
 import mpx
-import mpx_playlist
+import mpx_musiclib
 import pygtk
 pygtk.require('2.0')
 import gtk
@@ -16,15 +16,16 @@ import gobject
 import csv
 import time
 
-class Ratings(mpx_playlist.PlaylistPlugin):
-	def __init__(self, id, lib, covers, mlib):
+class Ratings(mpx.Plugin):
+
+	def __init__(self, id, player, mcs): 
 
         self.id = id
-        self.lib = lib
-        self.covers = covers
-        self.mlib = mlib
+        self.lib = player.get_library()
+        self.covers = player.get_covers()
+        self.mlib = player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd")
 
-		self.xml = gtk.glade.XML("@DATA_DIR@" + "/playlist-python-plugins/ratings_export/ratings_export.glade")
+		self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/ratings_export/ratings_export.glade")
 		self.dialog = self.xml.get_widget("dialog")
 		self.combo = self.xml.get_widget("combobox")
 		self.label = self.xml.get_widget("label")
@@ -33,10 +34,9 @@ class Ratings(mpx_playlist.PlaylistPlugin):
 		self.go.set_sensitive(False)
 		
 		try:
-			self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/playlist-python-plugins/ratings_export/rexp-icon.png")
-            self.mlib.add_plugin(id, self.icon, "Ratings Export")
+			self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/python-plugins/ratings_export/rexp-icon.png")
 		except:
-            self.mlib.add_plugin(id, None, "Ratings Export")
+            self.icon = None
 
 		operations = [
 				"Export ratings to file", 
