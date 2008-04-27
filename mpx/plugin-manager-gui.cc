@@ -244,7 +244,7 @@ namespace MPX
                 Gtk::Widget* child = options->get_child();
 				if(child)
 				{
-					options->remove(*child);
+					options->remove();
 				}
 				Gtk::Widget * widget = m_PTV->get_gui(iter);
 				if(widget != 0)
