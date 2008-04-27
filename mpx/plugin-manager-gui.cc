@@ -103,9 +103,20 @@ namespace MPX
 
 				}
 
+                Store->set_default_sort_func( sigc::mem_fun( *this, &PTV::plugin_sort_func ));
+                Store->set_sort_column(-1);
 				set_model (Store);
 				signal_row_activated().connect( sigc::mem_fun( *this, &PTV::on_row_activated ) );
 			}
+
+            int
+            plugin_sort_func(const TreeIter& iter_a, const TreeIter& iter_b)
+            {
+                Glib::ustring a = std::string((*iter_a)[Columns.Name]);
+                Glib::ustring b = std::string((*iter_b)[Columns.Name]);
+
+                return a.compare(b);
+            }
 
 			void
 			on_cell_toggled (const Glib::ustring& p_string)
