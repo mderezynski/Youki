@@ -20,7 +20,7 @@ class Notification(mpx.Plugin):
         self.id = id
         self.player = player
 
-    def activate(self,player,mcs):
+    def activate(self):
 
         self.next = gtk.StatusIcon()
         self.next.set_from_stock(gtk.STOCK_MEDIA_NEXT)
