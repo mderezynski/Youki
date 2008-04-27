@@ -24,9 +24,7 @@ config.sub
 configure
 depcomp
 install-sh
-intltool-extract
-intltool-merge
-intltool-update
+intltool-*
 libtool
 ltmain.sh
 missing
