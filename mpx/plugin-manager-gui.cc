@@ -241,16 +241,15 @@ namespace MPX
 			if(m_PTV->get_has_gui(iter))
 			{
 				notebook->get_nth_page(1)->show();
-				std::list<Gtk::Widget*> list = options->get_children();
-				if(list.size())
+                Gtk::Widget* child = options->get_child();
+				if(child)
 				{
-					Gtk::Widget * old_widget = *(list.begin());
-					options->remove(*old_widget);
+					options->remove(*child);
 				}
 				Gtk::Widget * widget = m_PTV->get_gui(iter);
-				if(widget != NULL)
+				if(widget != 0)
 				{
-					options->pack_start(*widget, Gtk::PACK_SHRINK);
+					options->add(*widget);
 					widget->show();
 				}
 			}
