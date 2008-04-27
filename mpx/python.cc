@@ -62,16 +62,6 @@ namespace MPX
 {
     struct Plugin
     {
-        bool
-        activate (MPX::Player&, Mcs::Mcs&)
-        {
-            return false;
-        }
-
-        void
-        deactivate ()
-        {
-        }
     };
 
     enum AttributeId
