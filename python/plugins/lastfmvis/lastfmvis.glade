@@ -23,7 +23,7 @@
   <signal name="delete_event" handler="gtk_widget_hide" object="window" last_modification_time="Mon, 21 Apr 2008 19:05:12 GMT"/>
 
   <child>
-    <widget class="GtkVBox" id="vbox11">
+    <widget class="GtkVBox" id="widget">
       <property name="visible">True</property>
       <property name="homogeneous">False</property>
       <property name="spacing">4</property>

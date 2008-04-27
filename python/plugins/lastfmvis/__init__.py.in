@@ -36,8 +36,8 @@ class LastFMVis(mpx.Plugin):
 
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/lastfmvis/lastfmvis.glade")
 
-        self.window = self.xml.get_widget("window")
-        self.window.connect("delete-event", self.on_window_delete)
+        self.widget = self.xml.get_widget("widget")
+        self.widget.unparent()
 
         self.treeview = self.xml.get_widget("treeview")
         self.treeview.set_reorderable(True)
@@ -81,11 +81,6 @@ class LastFMVis(mpx.Plugin):
         self.model.set(iter, 0, not active)
         self.traverse_model_and_intersect()
         self.display_tags()
-
-    def on_window_delete(self, window, event):
-
-        window.hide()
-        return True
 
     def on_clear(self, button):
 
@@ -186,7 +181,6 @@ class LastFMVis(mpx.Plugin):
 
         return True
 
-    def run(self):
+    def get_gui(self):
 
-        self.window.show()
-        self.window.present()
+        return self.widget
