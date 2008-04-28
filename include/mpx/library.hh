@@ -123,6 +123,13 @@ namespace MPX
 			void
 			vacuum();
 
+            void
+            reload ()
+            {
+                Signals.Reload.emit();
+            }
+
+
 
 			void
 			albumRated(gint64, int);
@@ -166,20 +173,6 @@ namespace MPX
 
             SignalsT Signals;
 
-            SignalReload&
-            signal_reload()
-            { return Signals.Reload ; }
-
-            void
-            reload ()
-            {
-                Signals.Reload.emit();
-            }
-
-            SignalAlbumUpdated&
-            signal_album_updated()
-            { return Signals.AlbumUpdated ; }
-
             SignalNewAlbum&
             signal_new_album()
             { return Signals.NewAlbum ; }
@@ -188,6 +181,10 @@ namespace MPX
             signal_new_artist()
             { return Signals.NewArtist ; }
             
+            SignalNewTrack&
+            signal_new_track()
+            { return Signals.NewTrack ; }
+
             SignalTrackUpdated&
             signal_track_updated()
             { return Signals.TrackUpdated ; }
@@ -195,10 +192,6 @@ namespace MPX
             SignalTrackTagged&
             signal_track_tagged()
             { return Signals.TrackTagged ; }
-
-            SignalNewTrack&
-            signal_new_track()
-            { return Signals.NewTrack ; }
 
             SignalScanStart&
             signal_scan_start()
@@ -211,6 +204,14 @@ namespace MPX
             SignalScanEnd&
             signal_scan_end()
             { return Signals.ScanEnd ; }
+
+            SignalAlbumUpdated&
+            signal_album_updated()
+            { return Signals.AlbumUpdated ; }
+
+            SignalReload&
+            signal_reload()
+            { return Signals.Reload ; }
 
         private:
 

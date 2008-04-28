@@ -6,6 +6,7 @@
 #include <boost/variant.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/cstdint.hpp>
+#include <boost/bind.hpp>
 #include <pygobject.h>
 #include <pygtk/pygtk.h>
 #include <pycairo/pycairo.h>
@@ -355,39 +356,6 @@ namespace mpxpy
 	}
 }
 
-namespace MPX
-{
-    namespace Soup
-    {
-        class PyRequest : public Request
-        {
-            public:
-
-                PyRequest (std::string const& url, bool post = false)
-                : Request(url, post)
-                , m_signal0(new ::pysigc::sigc3<char const*, guint, guint>(Signals.Callback))
-                {
-                  g_object_ref(G_OBJECT(gobj()));
-                }
-
-                ::pysigc::sigc3<char const*, guint, guint> &
-                pysignal_callback ()
-                {
-                    return *m_signal0;
-                }
-
-                virtual ~PyRequest ()
-                {
-                    delete m_signal0;
-                }
-
-            protected:
-
-                ::pysigc::sigc3<char const*, guint, guint> * m_signal0; 
-        };
-    }
-}
-
 namespace mpxpy
 {
     template <typename T>
@@ -397,6 +365,126 @@ namespace mpxpy
         PyGBoxed * boxed = ((PyGBoxed*)(obj));
         return *(reinterpret_cast<T*>(boxed->boxed));
     }
+}
+
+
+namespace pysigc
+{
+    struct sigc0_to_pysigc 
+    {
+        static PyObject* 
+        convert(sigc::signal<void> const& signal)
+        {
+            object obj ((pysigc::sigc0(signal)));
+            Py_INCREF(obj.ptr());
+            return obj.ptr();
+        }
+    };
+
+    template <typename T1>
+    struct sigc1_to_pysigc
+    {
+        static PyObject* 
+        convert(sigc::signal<void, T1> const& signal)
+        {
+            object obj ((pysigc::sigc1<T1>(signal)));
+            Py_INCREF(obj.ptr());
+            return obj.ptr();
+        }
+    };
+
+    template <typename T1, typename T2> 
+    struct sigc2_to_pysigc
+    {
+        static PyObject* 
+        convert(sigc::signal<void, T1, T2> const& signal)
+        {
+            object obj ((pysigc::sigc2<T1, T2>(signal)));
+            Py_INCREF(obj.ptr());
+            return obj.ptr();
+        }
+    };
+
+    template <typename T1, typename T2, typename T3> 
+    struct sigc3_to_pysigc
+    {
+        static PyObject* 
+        convert(sigc::signal<void, T1, T2, T3> const& signal)
+        {
+            object obj ((pysigc::sigc3<T1, T2, T3>(signal)));
+            Py_INCREF(obj.ptr());
+            return obj.ptr();
+        }
+    };
+
+    void wrap_signal0()
+    {
+        class_< pysigc::sigc0 >(typeid(pysigc::sigc0).name(), boost::python::no_init)
+        .def("connect",     &pysigc::sigc0::connect)
+        .def("emit",        &pysigc::sigc0::emit)
+        .def("disconnect",  &pysigc::sigc0::disconnect)
+        ;
+
+        to_python_converter<sigc::signal<void>, sigc0_to_pysigc, false>(); 
+    }
+
+    template <typename T1>
+    void wrap_signal1()
+    {
+        typedef sigc::signal<void, T1>   signal_sigc;
+        typedef pysigc::sigc1<T1>        signal_pysigc;
+
+        class_< signal_pysigc >(typeid(signal_pysigc).name(), boost::python::no_init)
+        .def("connect",     &signal_pysigc::connect)
+        .def("emit",        &signal_pysigc::emit)
+        .def("disconnect",  &signal_pysigc::disconnect)
+        ;
+
+        to_python_converter<signal_sigc, sigc1_to_pysigc<T1>, false>(); 
+    }
+
+    template <typename T1, typename T2> 
+    void wrap_signal2()
+    {
+        typedef sigc::signal<void, T1, T2>   signal_sigc;
+        typedef pysigc::sigc2<T1, T2>        signal_pysigc;
+
+        class_< signal_pysigc >(typeid(signal_pysigc).name(), boost::python::no_init)
+        .def("connect",     &signal_pysigc::connect)
+        .def("emit",        &signal_pysigc::emit)
+        .def("disconnect",  &signal_pysigc::disconnect)
+        ;
+
+        to_python_converter<signal_sigc, sigc2_to_pysigc<T1, T2>, false>(); 
+    }
+
+    template <typename T1, typename T2, typename T3> 
+    void wrap_signal3()
+    {
+        typedef sigc::signal<void, T1, T2, T3>   signal_sigc;
+        typedef pysigc::sigc3<T1, T2, T3>        signal_pysigc;
+
+        class_< signal_pysigc >(typeid(signal_pysigc).name(), boost::python::no_init)
+        .def("connect",     &signal_pysigc::connect)
+        .def("emit",        &signal_pysigc::emit)
+        .def("disconnect",  &signal_pysigc::disconnect)
+        ;
+
+        to_python_converter<signal_sigc, sigc3<T1, T2, T3>, false>(); 
+    }
+}
+
+
+namespace mpxpy
+{
+    struct LibrarySignals
+    {
+        pysigc::sigc1<gint64> 
+        signal_new_album(MPX::Library & self)
+        {
+            return pysigc::sigc1<gint64>(self.signal_new_album());
+        }
+    };
 }
 
 BOOST_PYTHON_MODULE(mpx)
@@ -565,26 +653,6 @@ BOOST_PYTHON_MODULE(mpx)
 
 	/*-------------------------------------------------------------------------------------*/
 
-    class_< ::pysigc::sigc3<char const*, guint, guint>, boost::noncopyable>("Sigc3MiniSoupCallback", boost::python::no_init)
-        .def("connect", &::pysigc::sigc3<char const*, guint, guint>::connect)
-        .def("emit", &::pysigc::sigc3<char const*, guint, guint>::emit)
-        .def("disconnect", &::pysigc::sigc3<char const*, guint, guint>::disconnect)
-    ;
-
-    class_<MPX::Soup::PyRequest, boost::noncopyable>("MPXSoupPyRequest", boost::python::init<std::string, bool>())
-        .def("add_header", &MPX::Soup::PyRequest::add_header)
-        .def("add_request", &MPX::Soup::PyRequest::add_request)
-        .def("run", &MPX::Soup::PyRequest::run)
-        .def("cancel", &MPX::Soup::PyRequest::cancel)
-        .def("status", &MPX::Soup::PyRequest::status)
-        .def("message_status", &MPX::Soup::PyRequest::message_status)
-        .def("get_data_raw", &MPX::Soup::PyRequest::get_data_raw)
-        .def("get_data_size", &MPX::Soup::PyRequest::get_data_size)
-        .def("pysignal_callback", &MPX::Soup::PyRequest::pysignal_callback, return_internal_reference<>())
-    ;
-    
-	/*-------------------------------------------------------------------------------------*/
-
 	class_<MPX::OVariant>("Optional")
         .def("__nonzero__", (bool (MPX::OVariant::*) ()) &MPX::OVariant::is_initialized, return_value_policy<return_by_value>()) 
         .def("get", &mpxpy::ovariant_get, return_value_policy<return_by_value>())
@@ -647,10 +715,24 @@ BOOST_PYTHON_MODULE(mpx)
 
 	/*-------------------------------------------------------------------------------------*/
 
+    pysigc::wrap_signal1<gint64>();
+
 	class_<MPX::Library, boost::noncopyable>("Library", boost::python::no_init)
+
 		.def("getSQL", &MPX::Library::getSQL)
 		.def("execSQL", &MPX::Library::execSQL)
 		.def("getMetadata", &MPX::Library::getMetadata)
+        .def("sqlToTrack", &MPX::Library::sqlToTrack)
+        .def("getTrackTags", &MPX::Library::getTrackTags)
+        .def("albumRated", &MPX::Library::albumRated)
+        .def("trackRated", &MPX::Library::trackRated)
+        .def("trackPlayed", &MPX::Library::trackPlayed) // can't see how plugins could possibly need this
+        .def("trackTagged", &MPX::Library::trackTagged)
+
+        .def("signal_new_album", &MPX::Library::signal_new_album, return_internal_reference<>())
+        .def("signal_new_artist", &MPX::Library::signal_new_artist, return_internal_reference<>())
+        .def("signal_new_track", &MPX::Library::signal_new_track, return_internal_reference<>())
+        .def("signal_track_updated", &MPX::Library::signal_track_updated, return_internal_reference<>())
 	;
 
 	/*-------------------------------------------------------------------------------------*/

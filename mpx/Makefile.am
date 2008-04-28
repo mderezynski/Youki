@@ -178,9 +178,6 @@ mpx_bin_SOURCES =				\
 	preferences.hh				\
 	preferences.cc				\
 								\
-	py-library.hh				\
-	py-library.cc				\
-								\
 	request-value.hh			\
 	request-value.cc			\
 								\
