@@ -263,9 +263,11 @@ namespace MPX
         static boost::format
           tags_table_f ("CREATE TABLE IF NOT EXISTS tags "
                             "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' INTEGER NOT NULL, '%s' INTEGER NOT NULL, " 
+                            " '%s' INTEGER DEFAULT 1, "
                             "UNIQUE ('%s', '%s'));");
 
-        m_SQL->exec_sql ((tags_table_f  % "tagid" % "trackid" % "tagid" % "trackid" ).str()); 
+        m_SQL->exec_sql ((tags_table_f  % "tagid" % "trackid" % "amplitude" 
+                                        % "tagid" % "trackid").str()); 
 
 
         StrV columns;
@@ -437,6 +439,18 @@ namespace MPX
         reload ();
 	}
 
+    RowV
+    Library::getTrackTags (gint64 id)
+    {
+        RowV rows ;
+
+        char const get_f[] = "SELECT tagid, amplitude FROM tags WHERE trackid = %lld;" ;
+
+        getSQL(rows, mprintf(get_f, id)) ; 
+
+        return rows ;
+    }
+
     void
     Library::getMetadata (const std::string& uri, Track & track)
     {
@@ -514,6 +528,21 @@ namespace MPX
 		execSQL((boost::format ("UPDATE track SET pcount = ifnull(pcount,0) + 1 WHERE Id =%lld") % id).str());
 		Signals.TrackUpdated.emit(id);
 	}
+
+    void
+    Library::trackTagged(gint64 id, std::string const& tag)
+    {
+        gint64 tag_id = get_tag_id( tag );
+
+        char const insert_f[] = "INSERT INTO tags (tagid, trackid) VALUES (%lld, %lld);";
+        char const update_f[] = "UPDATE tags SET amplitude = amplitude + 1 WHERE trackid = %lld AND tagid = %lld;";
+        try{
+           execSQL(mprintf(insert_f, id, tag_id)); 
+        } catch( SqlConstraintError & cxe )
+        {
+           execSQL(mprintf(update_f, id, tag_id));
+        }
+    }
 
     Track
     Library::sqlToTrack (SQL::Row & row)
@@ -745,12 +774,42 @@ namespace MPX
               ? "1"
               : NULL))) ;
 
-          artist_j = m_SQL->last_insert_rowid ();
+          artist_j = m_SQL->last_insert_rowid (); //FIXME: not threadsafe, see get_tag_id
 
           Signals.NewArtist.emit( artist_j ); 
         }
         return artist_j;
     }
+
+    gint64
+    Library::get_tag_id (std::string const& tag)
+    {
+        gint64 tag_id = 0;
+        RowV rows;
+        std::string sql;
+
+        get_tag_id:
+
+        char const* select_tag_f ("SELECT id FROM tag WHERE tag = '%q';"); 
+        sql = mprintf(select_tag_f, tag.c_str());
+        m_SQL->get (rows, sql); 
+
+        if(!rows.empty())
+        {
+            tag_id = get <gint64> (rows[0].find ("id")->second);
+        }
+        else
+        {
+          char const* set_tag_f ("INSERT INTO tag (tag) VALUES (%q);");
+
+          sql = mprintf(set_tag_f, tag.c_str());
+          m_SQL->exec_sql (sql);
+          goto get_tag_id; // threadsafe, as opposed to getting last insert rowid
+        }
+        g_assert(tag_id != 0);
+        return tag_id;
+    }
+
 
     gint64
     Library::get_album_id (Track& track, gint64 album_artist_id, bool only_if_exists)
@@ -864,7 +923,7 @@ namespace MPX
               get<gint64>(track[ATTRIBUTE_MTIME].get()));
 
           m_SQL->exec_sql (sql);
-          album_j = m_SQL->last_insert_rowid ();
+          album_j = m_SQL->last_insert_rowid (); //FIXME: not threadsafe, see get_tag_id
           Signals.NewAlbum.emit( album_j ); 
 
           if(!custom_id)

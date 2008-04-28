@@ -115,7 +115,10 @@ namespace MPX
 			execSQL(const std::string&);
 
             Track
-            sqlToTrack (SQL::Row & row);
+            sqlToTrack (SQL::Row&);
+
+            SQL::RowV
+            getTrackTags (gint64);
 
 			void
 			vacuum();
@@ -130,6 +133,9 @@ namespace MPX
 			void
 			trackPlayed(gint64, time_t);
 
+            void
+            trackTagged(gint64, std::string const&);
+
 
 
             typedef sigc::signal<void, gint64 /*album id*/> SignalNewAlbum; 
@@ -137,6 +143,7 @@ namespace MPX
             typedef sigc::signal<void, gint64 /*artist id*/> SignalNewArtist;
             typedef sigc::signal<void, Track&, gint64/*albumid*/> SignalNewTrack;
 			typedef sigc::signal<void, gint64 /*id*/> SignalTrackUpdated;
+			typedef sigc::signal<void, gint64 /*id*/, gint64 /* tag id*/> SignalTrackTagged;
 
             typedef sigc::signal<void> SignalScanStart;
             typedef sigc::signal<void, gint64,gint64> SignalScanRun;
@@ -149,6 +156,7 @@ namespace MPX
                 SignalNewArtist     NewArtist;
                 SignalNewTrack      NewTrack;
 				SignalTrackUpdated	TrackUpdated;
+                SignalTrackTagged   TrackTagged;
                 SignalScanStart     ScanStart;  
                 SignalScanRun       ScanRun;
                 SignalScanEnd       ScanEnd;
@@ -183,6 +191,10 @@ namespace MPX
             SignalTrackUpdated&
             signal_track_updated()
             { return Signals.TrackUpdated ; }
+
+            SignalTrackTagged&
+            signal_track_tagged()
+            { return Signals.TrackTagged ; }
 
             SignalNewTrack&
             signal_new_track()
@@ -228,6 +240,9 @@ namespace MPX
 
             gint64
             get_track_id (Track& track) const;
+
+            gint64
+            get_tag_id (std::string const&);
 
 			void
 			mean_genre_for_album (gint64 id);

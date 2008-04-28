@@ -184,8 +184,10 @@ namespace MPX
       typedef std::map< std::string, Variant >                 Row;
 #endif //HAVE_TR1
       typedef Row::value_type                                  VariantPair;
+
       typedef std::vector< Row >                               RowV;
       typedef std::vector< std::string >                       ColumnV;
+      typedef std::vector< gint64 >                            IdV;
 
     } // namespace SQL
 } //namespace MPX 
