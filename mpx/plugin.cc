@@ -196,9 +196,9 @@ namespace MPX
                                 ptr->m_PluginInstance = instance.ptr();
                                 Py_INCREF(instance.ptr());
 
-                                if(PyObject_HasAttrString(module, "__doc__"))
+                                if(PyObject_HasAttrString(instance.ptr(), "__doc__"))
                                 {
-                                    const char* doc = PyString_AsString (PyObject_GetAttrString (module, "__doc__")); 
+                                    const char* doc = PyString_AsString (PyObject_GetAttrString (instance.ptr(), "__doc__")); 
                                     ptr->m_Description = doc ? doc : "(No Description given)";
                                     if(PyErr_Occurred())
                                     {

@@ -15,6 +15,8 @@ COVER_SIZE = 96
 
 class Notification(mpx.Plugin):
 
+    """The Notification plugin displays a notification bubble with the currently played track."""
+
     def __init__(self,id,player,mcs):
 
         self.id = id

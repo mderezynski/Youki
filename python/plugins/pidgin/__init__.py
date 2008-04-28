@@ -11,6 +11,8 @@ import dbus
 
 class Pidgin(mpx.Plugin):
 
+    """The Pidgin plugin updates your Pidgin status with the currently playing song from MPX"""
+
     def __init__(self,id,player,mcs):
 
         self.id = id

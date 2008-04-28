@@ -27,6 +27,8 @@ from Ft.Xml import EMPTY_NAMESPACE
 
 class LastFMVis(mpx.Plugin):
 
+    """This plugin serves as a visualizer of Last.fm data belonging to library items (tracks, albums)."""
+
     def __init__(self,id,player,mcs):
 
         self.id = id

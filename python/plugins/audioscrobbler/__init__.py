@@ -692,6 +692,8 @@ class AudioScrobblerPost:
 
 class MPXAudioScrobbler(mpx.Plugin):
 
+    """This plugin provides song submissions to the Last.fm Audioscrobbler service. MPX Audioscrobbler is based on Sonata Audioscrobbler, (C) Andy Theyers"""
+
     def __init__(self,id,player,mcs):
 
         self.id = id

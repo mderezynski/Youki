@@ -884,7 +884,6 @@ namespace MPX
 
 // HACK: Hackery to rename functions in glue
 #define mpx_startup     startup
-#define mpx_ui_raise    ui_raise
 
 #include "dbus-obj-MPX-glue.h"
 
