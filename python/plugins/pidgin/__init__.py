@@ -31,6 +31,10 @@ class Pidgin(mpx.Plugin):
             "im.pidgin.purple.PurpleService", "/im/pidgin/purple/PurpleObject")
         self.purple = dbus.Interface(obj, "im.pidgin.purple.PurpleInterface")
 
+        status = self.player.get_status()
+        if (status == mpx.PlayStatus.PLAYING) or (status == mpx.PlayStatus.PAUSED):
+            self.now_playing(player.gobj())
+
         return True
 
     def deactivate(self):
@@ -44,6 +48,7 @@ class Pidgin(mpx.Plugin):
             self.set_message("")
 
     def now_playing(self, blah):
+
         m = self.player.get_metadata()
 
         try:
