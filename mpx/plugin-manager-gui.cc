@@ -73,6 +73,8 @@ namespace MPX
 
 			PluginManager & m_Manager;
 
+            Gtk::CellRendererPixbuf * m_pRendererPixbuf;
+
 		public:
 
 			PTV (const Glib::RefPtr<Gnome::Glade::Xml> &xml, PluginManager & manager)
@@ -83,11 +85,15 @@ namespace MPX
 
 				Glib::RefPtr<Gtk::IconTheme> Theme = Gtk::IconTheme::get_default();
 
-                append_column("", Columns.Pixbuf);
 				append_column_editable(_("Active"), Columns.Active);
 				append_column(_("Name"), Columns.Name);
 
-				Gtk::TreeViewColumn* pColumn = get_column(1);
+				Gtk::TreeViewColumn* pColumn = get_column(0);
+
+                m_pRendererPixbuf = Gtk::manage(new Gtk::CellRendererPixbuf());
+                pColumn->pack_start(*m_pRendererPixbuf, true);
+                pColumn->add_attribute(m_pRendererPixbuf->property_pixbuf(), Columns.Pixbuf);
+
 				std::vector<Gtk::CellRenderer*> renderers = pColumn->get_cell_renderers();
 				Gtk::CellRendererToggle * cell_toggle =	dynamic_cast<Gtk::CellRendererToggle*>(renderers[0]);
 				cell_toggle->signal_toggled().connect( sigc::mem_fun( *this, &PTV::on_cell_toggled ) );
@@ -135,10 +141,12 @@ namespace MPX
                 if(!bool((*iter)[Columns.CanActivate]))
                 {
                     cell.property_visible() = false;
+                    m_pRendererPixbuf->property_visible() = true;
                     return;
                 }
 
                 cell.property_visible() = true;
+                m_pRendererPixbuf->property_visible() = false;
                 cell.property_active() = (*iter)[Columns.Active];
             }
 
