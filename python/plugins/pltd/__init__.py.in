@@ -29,6 +29,8 @@ MBID_NODE_XPATH = u'//mbid'
 MATCH_NODE_XPATH = u'//match'
 
 class PlaylistDefaultTooltip(mpx.Plugin):
+        
+    """PLTD provides a tooltip for the playlist in the 'Music' component."""
 
     def __init__(self,id,player,mcs):
 

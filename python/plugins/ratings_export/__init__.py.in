@@ -18,6 +18,8 @@ import time
 
 class Ratings(mpx.Plugin):
 
+    """This Plugin allows you to save your ratings and playcounts out of the library so you can restore them in case you ever need to reload the library."""
+
 	def __init__(self, id, player, mcs): 
 
         self.id = id

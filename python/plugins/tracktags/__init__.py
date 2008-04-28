@@ -23,6 +23,8 @@ from Ft.Xml import EMPTY_NAMESPACE
 
 class TrackTags(mpx.Plugin):
 
+    """The TrackTags Plugin displays Last.fm tags for the currently played track, and allows you to start playing on Last.fm off of one of the tags!"""
+
     def __init__(self, id, player, mcs):
 
         self.id = id

@@ -490,6 +490,8 @@ class TrackInfo:
 
 class TrackInfoDispatcher(mpx.Plugin):
 
+    """The Trackinfo Plugin provides a Last.fm/Musicbrainz based track info for the currently played track."""
+
     def __init__(self,id,player,mcs):
     
         self.id = id

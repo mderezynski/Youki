@@ -73,6 +73,8 @@ namespace MPX
 
 			PluginManager & m_Manager;
 
+            Gtk::CellRendererPixbuf * m_pRendererPixbuf;
+
 		public:
 
 			PTV (const Glib::RefPtr<Gnome::Glade::Xml> &xml, PluginManager & manager)
@@ -87,15 +89,15 @@ namespace MPX
 				append_column(_("Name"), Columns.Name);
 
 				Gtk::TreeViewColumn* pColumn = get_column(0);
-				Gtk::CellRendererPixbuf* pRendererPixbuf = Gtk::manage(new Gtk::CellRendererPixbuf());
-				pColumn->pack_start(*pRendererPixbuf, false);
-				pColumn->add_attribute(pRendererPixbuf->property_pixbuf(), Columns.Pixbuf);
-				std::vector<Gtk::CellRenderer*> renderers = pColumn->get_cell_renderers();
-				renderers[0]->property_sensitive () = true;
-				Gtk::CellRendererToggle * cell_toggle =
-					dynamic_cast<Gtk::CellRendererToggle*>(renderers[0]);
 
+                m_pRendererPixbuf = Gtk::manage(new Gtk::CellRendererPixbuf());
+                pColumn->pack_start(*m_pRendererPixbuf, true);
+                pColumn->add_attribute(m_pRendererPixbuf->property_pixbuf(), Columns.Pixbuf);
+
+				std::vector<Gtk::CellRenderer*> renderers = pColumn->get_cell_renderers();
+				Gtk::CellRendererToggle * cell_toggle =	dynamic_cast<Gtk::CellRendererToggle*>(renderers[0]);
 				cell_toggle->signal_toggled().connect( sigc::mem_fun( *this, &PTV::on_cell_toggled ) );
+                pColumn->set_cell_data_func(*renderers[0], sigc::mem_fun( *this, &PTV::cell_data_func_active ));
 
 				PluginHoldMap const& map = m_Manager.get_map();	
 
@@ -129,6 +131,23 @@ namespace MPX
                 Glib::ustring b = std::string((*iter_b)[Columns.Name]);
 
                 return a.compare(b);
+            }
+
+            void
+            cell_data_func_active (CellRenderer * basecell, TreeIter const& iter)
+            {
+                CellRendererToggle & cell = *(dynamic_cast<CellRendererToggle*>(basecell));
+
+                if(!bool((*iter)[Columns.CanActivate]))
+                {
+                    cell.property_visible() = false;
+                    m_pRendererPixbuf->property_visible() = true;
+                    return;
+                }
+
+                cell.property_visible() = true;
+                m_pRendererPixbuf->property_visible() = false;
+                cell.property_active() = (*iter)[Columns.Active];
             }
 
 			void

@@ -29,6 +29,8 @@ MATCH_NODE_XPATH = u'//match'
 
 class MPXDJ(mpx.Plugin):
 
+    """MPXDJ DJs your music library for you!"""
+
     def __init__(self,id,player,mcs):
        
         self.id = id 

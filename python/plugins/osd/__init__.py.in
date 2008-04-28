@@ -159,6 +159,8 @@ class OSD(gtk.Window):
 
 class MPXOSD(mpx.Plugin):
 
+    """The OSD Plugin displays an 'on-screen display' of the current playing track. Nice!"""
+
     def __init__(self,id,player,mcs):
   
         self.id = id 
