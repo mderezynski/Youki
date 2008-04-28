@@ -237,7 +237,7 @@ EXTRA_DIST = 				\
 
 dbus-obj-MPX-glue.h: Makefile.am dbus-obj-MPX.xml
 	@echo "* Generating /MPX DBus Glue"
-	@dbus-binding-tool --mode=glib-server --prefix=Player::DBusMPX::mpx \
+	@$(DBUSBINDINGTOOL) --mode=glib-server --prefix=Player::DBusMPX::mpx \
     $(abs_top_builddir)/mpx/dbus-obj-MPX.xml > \
     dbus-obj-MPX-glue.h.temp
 	@cat dbus-obj-MPX-glue.h.temp   | sed s:G_BEGIN_DECLS:: | sed s:G_END_DECLS:: > \
@@ -252,7 +252,7 @@ dbus-obj-MPX-glue.h: Makefile.am dbus-obj-MPX.xml
 
 dbus-obj-PLAYER-glue.h: Makefile.am dbus-obj-PLAYER.xml
 	@echo "* Generating /Player DBus Glue"
-	@dbus-binding-tool --mode=glib-server --prefix=Player::DBusPlayer::player \
+	@$(DBUSBINDINGTOOL) --mode=glib-server --prefix=Player::DBusPlayer::player \
     $(abs_top_builddir)/mpx/dbus-obj-PLAYER.xml > \
     dbus-obj-PLAYER-glue.h.temp
 	@cat dbus-obj-PLAYER-glue.h.temp   | sed s:G_BEGIN_DECLS:: | sed s:G_END_DECLS:: > \
@@ -267,11 +267,11 @@ dbus-obj-PLAYER-glue.h: Makefile.am dbus-obj-PLAYER.xml
 
 dbus-marshalers.c: dbus-marshalers.list 
 	@echo "* Generating dbus-marshalers.c"
-	@glib-genmarshal --prefix=mpx_dbus_marshal --body   $(srcdir)/dbus-marshalers.list > dbus-marshalers.c
+	@$(GLIB_GENMARSHAL) --prefix=mpx_dbus_marshal --body   $(srcdir)/dbus-marshalers.list > dbus-marshalers.c
 
 dbus-marshalers.h: dbus-marshalers.list
 	@echo "* Generating dbus-marshalers.h"
-	@glib-genmarshal --prefix=mpx_dbus_marshal --header $(srcdir)/dbus-marshalers.list > dbus-marshalers.h
+	@$(GLIB_GENMARSHAL) --prefix=mpx_dbus_marshal --header $(srcdir)/dbus-marshalers.list > dbus-marshalers.h
 
 
 BUILT_SOURCES = dbus-marshalers.c dbus-marshalers.h

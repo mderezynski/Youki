@@ -349,6 +349,12 @@ PKG_CHECK_MODULES([GST_PLUGINS_BASE], [gstreamer-plugins-base-0.10 >= 0.10.9])
 PKG_CHECK_MODULES([DBUS], [dbus-1 >= 0.93 dbus-glib-1 >= 0.61])
 DEFAULT_DBUS_PREFIX=`pkg-config --variable=prefix dbus-1` 
 
+AC_PATH_PROG(DBUSBINDINGTOOL, dbus-binding-tool)
+AC_SUBST(DBUSBINDINGTOOL)
+
+GLIB_GENMARSHAL=`$PKG_CONFIG glib-2.0 --variable=glib_genmarshal`
+AC_SUBST(GLIB_GENMARSHAL)
+
 AC_ARG_WITH([dbus-services-dir],
     [AS_HELP_STRING([--with-dbus-services-dir@<:@=PATH@:>@], [D-BUS services file destination dir])],
     [DBUS_SERVICES_DIR="$withval"],
