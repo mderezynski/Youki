@@ -45,6 +45,7 @@ namespace MPX
 					Gtk::TreeModelColumn<bool>				Active;
 					Gtk::TreeModelColumn<bool>				HasGUI;
 					Gtk::TreeModelColumn<bool>				CanActivate;
+					Gtk::TreeModelColumn< Glib::RefPtr<Gdk::Pixbuf> >	Pixbuf;
 					Gtk::TreeModelColumn<std::string>		Desc;
 					Gtk::TreeModelColumn<std::string>		Authors;
 					Gtk::TreeModelColumn<std::string>		Copyright;
@@ -57,6 +58,7 @@ namespace MPX
 					add(Active);
 					add(HasGUI);
 					add(CanActivate);
+					add(Pixbuf);
 					add(Desc);
 					add(Authors);
 					add(Copyright);
@@ -79,10 +81,16 @@ namespace MPX
 			{
 				Store = Gtk::ListStore::create(Columns);
 
+				Glib::RefPtr<Gtk::IconTheme> Theme = Gtk::IconTheme::get_default();
+
 				append_column_editable(_("Active"), Columns.Active);
 				append_column(_("Name"), Columns.Name);
 
-				std::vector<Gtk::CellRenderer*> renderers = get_column(0)->get_cell_renderers();
+				Gtk::TreeViewColumn* pColumn = get_column(0);
+				Gtk::CellRendererPixbuf* pRendererPixbuf = Gtk::manage(new Gtk::CellRendererPixbuf());
+				pColumn->pack_start(*pRendererPixbuf, false);
+				pColumn->add_attribute(pRendererPixbuf->property_pixbuf(), Columns.Pixbuf);
+				std::vector<Gtk::CellRenderer*> renderers = pColumn->get_cell_renderers();
 				renderers[0]->property_sensitive () = true;
 				Gtk::CellRendererToggle * cell_toggle =
 					dynamic_cast<Gtk::CellRendererToggle*>(renderers[0]);
@@ -102,6 +110,8 @@ namespace MPX
 					(*iter)[Columns.Active] = i->second->get_active();
 					(*iter)[Columns.HasGUI] = i->second->get_has_gui();
 					(*iter)[Columns.CanActivate] = i->second->get_can_activate();
+					if(!i->second->get_can_activate())
+						(*iter)[Columns.Pixbuf] = Theme->load_icon("emblem-readonly", 16, Gtk::ICON_LOOKUP_NO_SVG);
 					(*iter)[Columns.Id] = i->second->get_id();
 
 				}
