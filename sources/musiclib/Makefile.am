@@ -49,8 +49,8 @@ built_header_make = 	\
 
 glib-marshalers.c: glib-marshalers.list 
 	@echo "* Generating glib-marshalers.c"
-	@glib-genmarshal --prefix=psm_glib_marshal --body   $(srcdir)/glib-marshalers.list > glib-marshalers.c
+	@$(GLIB_GENMARSHAL) --prefix=psm_glib_marshal --body   $(srcdir)/glib-marshalers.list > glib-marshalers.c
 
 glib-marshalers.h: glib-marshalers.list
 	@echo "* Generating glib-marshalers.h"
-	@glib-genmarshal --prefix=psm_glib_marshal --header $(srcdir)/glib-marshalers.list > glib-marshalers.h
+	@$(GLIB_GENMARSHAL) --prefix=psm_glib_marshal --header $(srcdir)/glib-marshalers.list > glib-marshalers.h
