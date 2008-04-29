@@ -38,6 +38,9 @@ namespace MPX
 
   namespace Util
   {
+    time_t
+    parseRFC822Date (const char * date);
+
     std::string
     hex_string (void const* data,
                 std::size_t len);

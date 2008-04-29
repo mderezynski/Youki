@@ -50,12 +50,129 @@ namespace
      { "(\\[\\/[^\\]]+\\])",
        "(?1)"},
   };
+
+  // This table of RFC822 timezones is from gmime-utils.c of the gmime API */
+  const struct {
+    char *name;
+    int   offset;
+  } tz_offsets [] = {
+    { "UT", 0 },
+    { "GMT", 0 },
+    { "EST", -500 },        // These are all US timezones.  Bloody Yanks!!
+    { "EDT", -400 },
+    { "CST", -600 },
+    { "CDT", -500 },
+    { "MST", -700 },
+    { "MDT", -600 },
+    { "PST", -800 },
+    { "PDT", -700 },
+    { "Z", 0 },
+    { "A", -100 },
+    { "M", -1200 },
+    { "N", 100 },
+    { "Y", 1200 }
+  };
+
+  // Returns timezone offset in seconds
+  // Code (C) Liferea Developers
+  time_t common_parse_rfc822_tz (char *token)
+  {
+    int offset = 0;
+    const char *inptr = token;
+
+    if (*inptr == '+' || *inptr == '-')
+    {
+      offset = atoi (inptr);
+    }
+    else
+    {
+      int t;
+
+      if (*inptr == '(') inptr++;
+
+      for (t = 0; t < 15; t++)
+      {
+        if (!strncmp (inptr, tz_offsets[t].name, strlen (tz_offsets[t].name))) offset = tz_offsets[t].offset;
+      }
+    }
+    return 60 * ((offset / 100) * 60 + (offset % 100));
+  }
 }
 
 namespace MPX
 {
   namespace Util
   {
+    // Converts a RFC822 time string to a time_t value
+    // Code (C) Liferea Developers
+    time_t parseRFC822Date (const char * date)
+    {
+      struct tm	tm;
+      time_t t, t2;
+      char 	 *oldlocale;
+      char	 *pos;
+      gboolean	success = FALSE;
+
+      memset (&tm, 0, sizeof(struct tm));
+
+      // We expect at least something like "03 Dec 12 01:38:34"
+      // and don't require a day of week or the timezone.
+      //
+      // The most specific format we expect:  "Fri, 03 Dec 12 01:38:34 CET"
+
+      // Skip day of week
+      if (NULL != (pos = g_utf8_strchr(date, -1, ','))) date = ++pos;
+
+      // We expect English month names, so we set the locale
+      oldlocale = g_strdup (setlocale (LC_TIME, NULL));
+      setlocale (LC_TIME, "C");
+
+      // Standard format with seconds and 4 digit year
+      if (0 != (pos = strptime((const char *)date, " %d %b %Y %T", &tm)))
+        success = TRUE;
+      // Non-standard format without seconds and 4 digit year
+      else if (0 != (pos = strptime((const char *)date, " %d %b %Y %H:%M", &tm)))
+        success = TRUE;
+      // Non-standard format with seconds and 2 digit year
+      else if (0 != (pos = strptime((const char *)date, " %d %b %y %T", &tm)))
+        success = TRUE;
+      // Non-standard format without seconds 2 digit year
+      else if (0 != (pos = strptime((const char *)date, " %d %b %y %H:%M", &tm)))
+        success = TRUE;
+
+      while (pos != 0 && *pos != '\0' && isspace((int)*pos)) pos++; // skip whitespaces before timezone
+
+      if (0 != oldlocale)
+      {
+        setlocale (LC_TIME, oldlocale);	// Reset Locale
+        g_free (oldlocale);
+      }
+
+      if (TRUE == success)
+      {
+        if((time_t)(-1) != (t = mktime(&tm)))
+        {
+
+          //
+          // GMT time, with no daylight savings time
+          // correction. (Usually, there is no daylight savings
+          // time since the input is GMT.)
+          //
+
+          t = t - common_parse_rfc822_tz (pos);
+          t2 = mktime (gmtime(&t));
+          t = t - (t2 - t);
+          return t;
+        }
+        else
+        {
+          g_warning ("Internal error! time conversion error! mktime failed!\n");
+        }
+      }
+
+      return 0;
+    }
+
     std::string
     hex_string (void const* data,
                 std::size_t len)

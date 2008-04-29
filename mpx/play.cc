@@ -726,7 +726,6 @@ namespace MPX
             gst_message_parse_error(message, &error, debug.addr());
             g_message("%s: Error message: '%s'", G_STRLOC, error->message);
             g_message("%s: Debug........: '%s'", G_STRLOC, debug.get());
-            play.property_sane() = false;
             break;
           }
 

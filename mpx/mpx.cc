@@ -2613,6 +2613,8 @@ namespace MPX
 	      m_Seek->set_range(0., 1.);
 		  m_Seek->set_value(0.);
 	 	  m_Seek->set_sensitive(false);
+          m_VideoWindow->property_playing() = false; 
+          m_VideoWindow->queue_draw();
 		  break;
 		}
 
@@ -3371,6 +3373,7 @@ namespace MPX
     Player::on_gst_set_window_id ()
     {
       m_VideoWindow->property_playing() = true; //FIXME: This does not really belong here.
+      m_VideoWindow->queue_draw();
       return m_VideoWindow->get_video_xid(); 
     }
 

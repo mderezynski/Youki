@@ -1,1 +1,6 @@
-SUBDIRS = musiclib radio lastfm
+SUBDIRS =		\
+				\
+	lastfm		\
+	musiclib 	\
+	podcasts	\
+	radio		
