@@ -1875,11 +1875,19 @@ namespace Source
         return false;        
     }
 
+#if 0
     PyObject*
     PlaybackSourceMusicLib::get_playlist_model ()
     {
         GtkListStore * store = GTK_LIST_STORE(m_Private->m_TreeViewPlaylist->ListStore->gobj());
         return pygobject_new((GObject*)store);
+    }
+#endif
+
+    Glib::RefPtr<Gtk::ListStore>
+    PlaybackSourceMusicLib::get_playlist_model ()
+    {
+        return m_Private->m_TreeViewPlaylist->ListStore;
     }
 
     PyObject*

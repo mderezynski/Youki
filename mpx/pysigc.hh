@@ -37,9 +37,13 @@ class sigc0
 
         sigc0 (sigc0 const& other)
         : m_signal(other.m_signal)
+        , m_callable(0)
         {
-            Py_INCREF(other.m_callable);
-            m_callable = other.m_callable;
+            if(other.m_callable)
+            {
+                Py_INCREF(other.m_callable);
+                m_callable = other.m_callable;
+            }
         }
 
         sigc0 (sigc::signal<void> const& signal)
@@ -108,9 +112,13 @@ class sigc1
 
         sigc1 (sigc1 const& other)
         : m_signal(other.m_signal)
+        , m_callable(0)
         {
-            Py_INCREF(other.m_callable);
-            m_callable = other.m_callable;
+            if(other.m_callable)
+            {
+                Py_INCREF(other.m_callable);
+                m_callable = other.m_callable;
+            }
         }
 
         sigc1 (sigc::signal<void, T1> const& signal)
@@ -179,9 +187,13 @@ class sigc2
 
         sigc2 (sigc2 const& other)
         : m_signal(other.m_signal)
+        , m_callable(0)
         {
-            Py_INCREF(other.m_callable);
-            m_callable = other.m_callable;
+            if(other.m_callable)
+            {
+                Py_INCREF(other.m_callable);
+                m_callable = other.m_callable;
+            }
         }
 
         sigc2 (sigc::signal<void, T1, T2> const& signal)
@@ -249,9 +261,13 @@ class sigc3
 
         sigc3 (sigc3 const& other)
         : m_signal(other.m_signal)
+        , m_callable(0)
         {
-            Py_INCREF(other.m_callable);
-            m_callable = other.m_callable;
+            if(other.m_callable)
+            {
+                Py_INCREF(other.m_callable);
+                m_callable = other.m_callable;
+            }
         }
 
         sigc3 (sigc::signal<void, T1, T2, T3> const& signal)

@@ -431,8 +431,8 @@ namespace pysigc
     template <typename T1>
     void wrap_signal1()
     {
-        typedef sigc::signal<void, T1>   signal_sigc;
-        typedef pysigc::sigc1<T1>        signal_pysigc;
+        typedef typename sigc::signal<void, T1>   signal_sigc;
+        typedef typename pysigc::sigc1<T1>        signal_pysigc;
 
         class_< signal_pysigc >(typeid(signal_pysigc).name(), boost::python::no_init)
         .def("connect",     &signal_pysigc::connect)
@@ -446,8 +446,8 @@ namespace pysigc
     template <typename T1, typename T2> 
     void wrap_signal2()
     {
-        typedef sigc::signal<void, T1, T2>   signal_sigc;
-        typedef pysigc::sigc2<T1, T2>        signal_pysigc;
+        typedef typename sigc::signal<void, T1, T2>   signal_sigc;
+        typedef typename pysigc::sigc2<T1, T2>        signal_pysigc;
 
         class_< signal_pysigc >(typeid(signal_pysigc).name(), boost::python::no_init)
         .def("connect",     &signal_pysigc::connect)
@@ -461,8 +461,8 @@ namespace pysigc
     template <typename T1, typename T2, typename T3> 
     void wrap_signal3()
     {
-        typedef sigc::signal<void, T1, T2, T3>   signal_sigc;
-        typedef pysigc::sigc3<T1, T2, T3>        signal_pysigc;
+        typedef typename sigc::signal<void, T1, T2, T3>   signal_sigc;
+        typedef typename pysigc::sigc3<T1, T2, T3>        signal_pysigc;
 
         class_< signal_pysigc >(typeid(signal_pysigc).name(), boost::python::no_init)
         .def("connect",     &signal_pysigc::connect)
@@ -474,18 +474,6 @@ namespace pysigc
     }
 }
 
-
-namespace mpxpy
-{
-    struct LibrarySignals
-    {
-        pysigc::sigc1<gint64> 
-        signal_new_album(MPX::Library & self)
-        {
-            return pysigc::sigc1<gint64>(self.signal_new_album());
-        }
-    };
-}
 
 BOOST_PYTHON_MODULE(mpx)
 {
@@ -627,66 +615,87 @@ BOOST_PYTHON_MODULE(mpx)
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::Player, boost::noncopyable>("Player", boost::python::no_init)
-		.def("get_metadata", &MPX::Player::get_metadata, return_internal_reference<>())
-		.def("get_status", &MPX::Player::get_status) 
 
-		.def("gobj", &mpxpy::get_gobject<MPX::Player>)
+		.def("gobj",                &mpxpy::get_gobject<MPX::Player>)
 
-		.def("get_library", &mpxpy::player_get_library, return_internal_reference<>()) 
-		.def("get_hal", &mpxpy::player_get_hal, return_internal_reference<>()) 
-        .def("get_covers", &mpxpy::player_get_covers, return_internal_reference<>())
-        .def("get_source", &MPX::Player::get_source)
+		.def("get_status",          &MPX::Player::get_status) 
+        .def("get_source",          &MPX::Player::get_source)
 
-		.def("play", &MPX::Player::play)
-		.def("pause", &MPX::Player::pause_ext)
-		.def("prev", &MPX::Player::prev)
-		.def("next", &MPX::Player::next)
-		.def("stop", &MPX::Player::stop)
-        .def("play_uri", &MPX::Player::play_uri)
+		.def("get_metadata",        &MPX::Player::get_metadata,
+                                    return_internal_reference<>())
 
-        .def("add_info_widget", &mpxpy::player_add_info_widget)
-        .def("remove_info_widget", &mpxpy::player_remove_info_widget)
+		.def("get_library",         &mpxpy::player_get_library,
+                                    return_internal_reference<>()) 
 
-		.def("add_widget", &mpxpy::player_add_widget)
-		.def("remove_widget", &mpxpy::player_remove_widget)
+		.def("get_hal",             &mpxpy::player_get_hal,
+                                    return_internal_reference<>()) 
+
+        .def("get_covers",          &mpxpy::player_get_covers,
+                                    return_internal_reference<>())
+
+		.def("play",                &MPX::Player::play)
+		.def("pause",               &MPX::Player::pause_ext)
+		.def("prev",                &MPX::Player::prev)
+		.def("next",                &MPX::Player::next)
+		.def("stop",                &MPX::Player::stop)
+        .def("play_uri",            &MPX::Player::play_uri)
+
+        .def("add_info_widget",     &mpxpy::player_add_info_widget)
+        .def("remove_info_widget",  &mpxpy::player_remove_info_widget)
+
+		.def("add_widget",          &mpxpy::player_add_widget)
+		.def("remove_widget",       &mpxpy::player_remove_widget)
 	;
 
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::OVariant>("Optional")
-        .def("__nonzero__", (bool (MPX::OVariant::*) ()) &MPX::OVariant::is_initialized, return_value_policy<return_by_value>()) 
-        .def("get", &mpxpy::ovariant_get, return_value_policy<return_by_value>())
-		.def("init", &mpxpy::ovariant_init)
-        .def("val", (MPX::Variant& (MPX::OVariant::*) ()) &MPX::OVariant::get, return_internal_reference<>() /*return_value_policy<return_by_value>()*/)
+
+        .def("__nonzero__", (bool (MPX::OVariant::*) ()) &MPX::OVariant::is_initialized,
+                            return_value_policy<return_by_value>()) 
+
+        .def("val",         (MPX::Variant& (MPX::OVariant::*) ()) &MPX::OVariant::get,
+                            return_internal_reference<>())
+
+        .def("get",         &mpxpy::ovariant_get,
+                            return_value_policy<return_by_value>())
+
+		.def("init",        &mpxpy::ovariant_init)
 	;
 
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::Variant >("Variant")
-		.def("get_int", &mpxpy::variant_getint, return_value_policy<return_by_value>()) 
-		.def("set_int", &mpxpy::variant_setint)
-		.def("get_string", &mpxpy::variant_getstring, return_value_policy<return_by_value>()) 
-		.def("set_string", &mpxpy::variant_setstring)
-		.def("get_double", &mpxpy::variant_getdouble, return_value_policy<return_by_value>()) 
-		.def("set_double", &mpxpy::variant_setdouble)
+
+		.def("set_int",     &mpxpy::variant_setint)
+		.def("set_string",  &mpxpy::variant_setstring)
+		.def("set_double",  &mpxpy::variant_setdouble)
+
+		.def("get_int",     &mpxpy::variant_getint,
+                            return_value_policy<return_by_value>()) 
+
+		.def("get_string",  &mpxpy::variant_getstring,
+                            return_value_policy<return_by_value>()) 
+
+		.def("get_double",  &mpxpy::variant_getdouble,
+                            return_value_policy<return_by_value>()) 
 	;
 
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::Track >("Track")
-		.def("__getitem__", &mpxpy::track_getitem, /*return_value_policy<return_by_value>()*/ return_internal_reference<>()) 
-		.def("__len__", &mpxpy::track_len, return_value_policy<return_by_value>())
-		.def("get", &mpxpy::track_getitem, return_value_policy<return_by_value>()) 
+		.def("__getitem__", &mpxpy::track_getitem,  return_internal_reference<>()) 
+		.def("__len__",     &mpxpy::track_len,      return_value_policy<return_by_value>())
+		.def("get",         &mpxpy::track_getitem,  return_value_policy<return_by_value>()) 
 	;
 
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::Metadata >("Metadata")
-		.def("__getitem__", &mpxpy::metadata_getitem, /*return_value_policy<return_by_value>()*/ return_internal_reference<>()) 
-		.def("__len__", &mpxpy::metadata_len, return_value_policy<return_by_value>())
-		.def("get", &mpxpy::metadata_getitem, /*return_value_policy<return_by_value>()*/ return_internal_reference<>()) 
-		.def("get_image", &MPX::Metadata::get_image)
-		//.def_readonly("image", &MPX::Metadata::Image)
+		.def("__getitem__", &mpxpy::metadata_getitem,   return_internal_reference<>()) 
+		.def("__len__",     &mpxpy::metadata_len,       return_value_policy<return_by_value>())
+		.def("get",         &mpxpy::metadata_getitem,   return_internal_reference<>()) 
+		.def("get_image",   &MPX::Metadata::get_image)
 	;
 
 	/*-------------------------------------------------------------------------------------*/
@@ -729,10 +738,10 @@ BOOST_PYTHON_MODULE(mpx)
         .def("trackPlayed", &MPX::Library::trackPlayed) // can't see how plugins could possibly need this
         .def("trackTagged", &MPX::Library::trackTagged)
 
-        .def("signal_new_album", &MPX::Library::signal_new_album, return_internal_reference<>())
-        .def("signal_new_artist", &MPX::Library::signal_new_artist, return_internal_reference<>())
-        .def("signal_new_track", &MPX::Library::signal_new_track, return_internal_reference<>())
-        .def("signal_track_updated", &MPX::Library::signal_track_updated, return_internal_reference<>())
+        .def("signal_new_album", &MPX::Library::signal_new_album, return_value_policy<return_by_value>())
+        .def("signal_new_artist", &MPX::Library::signal_new_artist, return_value_policy<return_by_value>())
+        .def("signal_new_track", &MPX::Library::signal_new_track, return_value_policy<return_by_value>())
+        .def("signal_track_updated", &MPX::Library::signal_track_updated, return_value_policy<return_by_value>())
 	;
 
 	/*-------------------------------------------------------------------------------------*/

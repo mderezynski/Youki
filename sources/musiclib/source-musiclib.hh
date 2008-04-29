@@ -139,7 +139,7 @@ namespace Source
                 ~PlaybackSourceMusicLib ();
 
 
-                PyObject*
+                Glib::RefPtr<Gtk::ListStore> 
                 get_playlist_model ();
 
                 PyObject*
