@@ -1879,13 +1879,13 @@ namespace MPX
 
         if(active)
         {
-            m_MainNotebook->hide();
+            m_OuterNotebook->hide();
             m_InfoNotebook->show();
         }
         else
         {
             m_InfoNotebook->hide();
-            m_MainNotebook->show();
+            m_OuterNotebook->show();
         }
     }
 
