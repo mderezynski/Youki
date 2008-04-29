@@ -100,7 +100,7 @@ namespace MPX
     Play::Play()
     : ObjectBase              ("MPXPlaybackEngine")
     , property_stream_        (*this, "stream", "")
-    , property_stream_type    (*this, "stream-type", "")
+    , property_stream_type_   (*this, "stream-type", "")
     , property_volume_        (*this, "volume", 50)
     , property_status_        (*this, "playstatus", PLAYSTATUS_STOPPED)
     , property_sane_          (*this, "sane", false)
@@ -469,11 +469,11 @@ namespace MPX
 
       set_custom_httpheader(NULL);
 	  m_metadata.reset();
+
+      property_stream_type_ = type;
       readify_stream (); 
 
       property_stream_ = stream;
-      property_stream_type_ = type;
-
 	  play_stream ();
     }
 
@@ -726,6 +726,7 @@ namespace MPX
             gst_message_parse_error(message, &error, debug.addr());
             g_message("%s: Error message: '%s'", G_STRLOC, error->message);
             g_message("%s: Debug........: '%s'", G_STRLOC, debug.get());
+            play.property_sane() = false;
             break;
           }
 
@@ -1115,13 +1116,13 @@ namespace MPX
 
       if(m_bin[BIN_HTTP])
       {
-        GstElement* e = gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP]), "src");
+        GstElement *e = gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP]), "src");
         g_object_set(G_OBJECT(e), "customheader", header, NULL);
       }
 
-      if(m_bin[BIN_HTTP])
+      if(m_bin[BIN_HTTP_MP3])
       {
-        e = gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP_MP3]), "src");
+        GstElement *e = gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP_MP3]), "src");
         g_object_set(G_OBJECT(e), "customheader", header, NULL);
       }
     }

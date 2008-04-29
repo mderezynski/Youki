@@ -72,7 +72,7 @@ class Notification(mpx.Plugin):
 
         m = self.player.get_metadata()
 
-        if m[mpx.AttributeId.ARTIST} and m[mpx.AttributeId.TITLE]: 
+        if m[mpx.AttributeId.ARTIST] and m[mpx.AttributeId.TITLE]: 
             message = "<big><b>%s</b>\n%s</big>" % (m[mpx.AttributeId.ARTIST].get(), m[mpx.AttributeId.TITLE].get())
 
             if message != self.previous_message:
