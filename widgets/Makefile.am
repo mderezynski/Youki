@@ -15,10 +15,8 @@ libmpx_widgets_la_SOURCES = 			\
 										\
 	    widget-marshalers.c   			\
 										\
-		cell-renderer-count.hh			\
 		cell-renderer-count.cc			\
 										\
-		gossip-cell-renderer-expander.h	\
 		gossip-cell-renderer-expander.c	\
 										\
 		bmp_status_icon.c     			\
@@ -27,16 +25,12 @@ libmpx_widgets_la_SOURCES = 			\
     	bmp_tray_icon.c       			\
 	    bmp_tray_icon.h	      			\
 										\
-		taskdialog.hh					\
 		taskdialog.cc					\
 										\
-		cell-renderer-cairo-surface.hh	\
 		cell-renderer-cairo-surface.cc	\
 										\
-		cell-renderer-vbox.hh			\
 		cell-renderer-vbox.cc			\
 										\
-		dialog-simple-entry.hh			\
 		dialog-simple-entry.cc			
 
 widget-marshalers.c: widget-marshalers.list 

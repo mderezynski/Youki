@@ -105,7 +105,6 @@ mpx_bin_SOURCES =				\
 								\
 	covers.cc					\
 								\
-	audio.hh					\
 	audio.cc					\
 								\
 	base64.h					\
