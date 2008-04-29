@@ -26,6 +26,7 @@
 #include <glibmm/i18n.h>
 #include <gio/gio.h>
 
+#include "mpx/audio.hh"
 #ifdef HAVE_HAL
 #include "mpx/hal.hh"
 #endif // HAVE_HAL
@@ -33,8 +34,6 @@
 #include "mpx/sql.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-string.hh"
-
-#include "audio.hh"
 #include "metadatareader-taglib.hh"
 
 using namespace Glib;

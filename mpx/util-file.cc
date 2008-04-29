@@ -39,7 +39,7 @@
 #include <glibmm.h>
 #include <gio/gio.h>
 
-#include "audio.hh"
+#include "mpx/audio.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-file.hh"
 

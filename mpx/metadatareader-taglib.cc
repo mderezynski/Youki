@@ -5,8 +5,7 @@
 #include <glibmm.h>
 #include <gmodule.h>
 
-#include "audio.hh"
-
+#include "mpx/audio.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
 #include "mpx/metadatareader-taglib.hh"

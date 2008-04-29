@@ -38,7 +38,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 
-#include "audio.hh"
+#include "mpx/audio.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-string.hh"
 

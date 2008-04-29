@@ -41,8 +41,7 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "audio.hh"
-
+#include "mpx/audio.hh"
 #include "mpx/covers.hh"
 #include "mpx/minisoup.hh"
 #include "mpx/network.hh"

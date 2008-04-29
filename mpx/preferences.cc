@@ -31,6 +31,7 @@
 
 #include <glibmm.h>
 #include <glib/gi18n.h>
+#include <gdk/gdkx.h>
 #include <gtkmm.h>
 #include <libglademm.h>
 
@@ -49,15 +50,12 @@
 
 #include <mcs/mcs.h>
 
-//MPX Audio
+#include "mpx/audio.hh"
 #include "mpx/main.hh"
 #include "mpx/stock.hh"
 #include "mpx/util-string.hh"
 
-#include "audio.hh"
 #include "preferences.hh"
-
-#include <gdk/gdkx.h>
 
 using namespace Glib;
 using namespace Gtk;

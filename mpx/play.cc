@@ -40,10 +40,9 @@
 
 #include "mcs/mcs.h"
 
+#include "mpx/audio.hh"
 #include "mpx/main.hh"
 #include "mpx/uri.hh"
-
-#include "audio.hh"
 #include "play.hh"
 
 

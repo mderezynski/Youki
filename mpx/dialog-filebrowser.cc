@@ -29,13 +29,12 @@
 #include <gtk/gtk.h>
 #include <glibmm/i18n.h>
 
-#include "audio.hh"
-#include "play.hh"
-
+#include "mpx/audio.hh"
 #include "mpx/main.hh"
 #include "mpx/util-file.hh"
 
 #include "dialog-filebrowser.hh"
+#include "play.hh"
 
 using namespace Glib;
 using namespace Gtk;

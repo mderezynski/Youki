@@ -40,9 +40,9 @@
 #include <libglademm/xml.h>
 #include <mcs/mcs.h>
 
-#include "audio.hh"
-#include "play.hh"
+#include "mpx/audio.hh"
 #include "mpx/widgetloader.h"
+#include "play.hh"
 
 namespace MPX
 {
