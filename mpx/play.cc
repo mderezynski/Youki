@@ -1,5 +1,5 @@
-//  BMPx - The Dumb Music Player
-//  Copyright (C) 2005-2007 BMPx development team.
+//  MPX - The Dumb Music Player
+//  Copyright (C) 2005-2007 MPX development team.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License Version 2
@@ -16,10 +16,10 @@
 //
 //  --
 //
-//  The BMPx project hereby grants permission for non-GPL compatible GStreamer
-//  plugins to be used and distributed together with GStreamer and BMPx. This
+//  The MPX project hereby grants permission for non-GPL compatible GStreamer
+//  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
-//  BMPx is covered by.
+//  MPX is covered by.
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -703,16 +703,7 @@ namespace MPX
                            gst_structure_get_int (structure, "height", &height)))
                       {
                         const GValue * par = gst_structure_get_value (structure, "pixel-aspect-ratio");
-                        GValue * target = 0; 
-
-                        if (par)
-                        {
-                          target = g_new0 (GValue, 1);
-                          g_value_init (target, G_VALUE_TYPE(par));
-                          g_value_copy (par, target);
-                        }
-
-                        play.signal_video_geom_.emit (width, height, target);
+                        play.signal_video_geom_.emit (width, height, par);
                       }
                       gst_caps_unref (caps);
                   }
@@ -1076,7 +1067,7 @@ namespace MPX
         }
 
       // Main Pipeline
-      m_pipeline = gst_pipeline_new ("BMPx_Pipeline_Main");
+      m_pipeline = gst_pipeline_new ("MPX_Pipeline_Main");
       m_pipeline_id = PIPELINE_NONE;
       GstBus * bus = gst_pipeline_get_bus (GST_PIPELINE (m_pipeline));
       gst_bus_add_signal_watch (bus);

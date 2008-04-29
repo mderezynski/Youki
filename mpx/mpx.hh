@@ -42,6 +42,8 @@
 #include "mpx/widgetloader.h"
 
 #include "audio-types.hh"
+#include "video-widget.hh"
+#include <gdk/gdkx.h>
 
 #include "dbus-marshalers.h"
 
@@ -264,14 +266,17 @@ namespace MPX
         Covers &m_Covers;
         HAL &m_HAL;
 		PluginManager *m_PluginManager;
+
         Preferences *m_Preferences;
         MLibManager *m_MLibManager;
-
 		PluginManagerGUI *m_PluginManagerGUI;
         Sources *m_Sources;
         InfoArea *m_InfoArea;
+        VideoWindow *m_VideoWindow; 
+
         Gtk::Statusbar *m_Statusbar;
 		Gtk::Notebook *m_MainNotebook;
+        Gtk::Notebook *m_OuterNotebook;
 		Gtk::VolumeButton *m_Volume;
 		Gtk::HScale *m_Seek;
 		Gtk::Label *m_TimeLabel;
@@ -406,6 +411,14 @@ namespace MPX
 
 		void
 		next_async_cb (int);
+
+
+
+        ::Window
+        on_gst_set_window_id ();
+
+        void
+        on_gst_set_window_geom (int width, int height, GValue const* par);
 
 
 

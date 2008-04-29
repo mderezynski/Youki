@@ -421,7 +421,6 @@ namespace pysigc
     {
         class_< pysigc::sigc0 >(typeid(pysigc::sigc0).name(), boost::python::no_init)
         .def("connect",     &pysigc::sigc0::connect)
-        .def("emit",        &pysigc::sigc0::emit)
         .def("disconnect",  &pysigc::sigc0::disconnect)
         ;
 
@@ -436,7 +435,6 @@ namespace pysigc
 
         class_< signal_pysigc >(typeid(signal_pysigc).name(), boost::python::no_init)
         .def("connect",     &signal_pysigc::connect)
-        .def("emit",        &signal_pysigc::emit)
         .def("disconnect",  &signal_pysigc::disconnect)
         ;
 
@@ -451,7 +449,6 @@ namespace pysigc
 
         class_< signal_pysigc >(typeid(signal_pysigc).name(), boost::python::no_init)
         .def("connect",     &signal_pysigc::connect)
-        .def("emit",        &signal_pysigc::emit)
         .def("disconnect",  &signal_pysigc::disconnect)
         ;
 
@@ -466,7 +463,6 @@ namespace pysigc
 
         class_< signal_pysigc >(typeid(signal_pysigc).name(), boost::python::no_init)
         .def("connect",     &signal_pysigc::connect)
-        .def("emit",        &signal_pysigc::emit)
         .def("disconnect",  &signal_pysigc::disconnect)
         ;
 

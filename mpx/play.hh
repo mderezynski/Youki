@@ -141,7 +141,7 @@ namespace MPX
         typedef sigc::signal<void, GstState>          SignalPipelineState;
         typedef sigc::signal<void, MPXPlaystatus>     SignalMPXPlaystatus;
         typedef sigc::signal<void, Spectrum const&>   SignalSpectrum;
-        typedef sigc::signal<void, int, int, GValue*> SignalVideoGeom;
+        typedef sigc::signal<void, int, int, GValue const*> SignalVideoGeom;
 
         typedef sigc::signal<void, Glib::ustring const&   /* element name */
                                  , Glib::ustring const&   /* location     */

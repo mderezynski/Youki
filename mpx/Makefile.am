@@ -213,6 +213,9 @@ mpx_bin_SOURCES =				\
 	video-playback.hh			\
 	video-playback.cc			\
 								\
+	video-widget.hh				\
+	video-widget.cc				\
+								\
 	xml.cc						\
 								\
 	xspf.hh						\

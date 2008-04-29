@@ -51,15 +51,8 @@ class Pidgin(mpx.Plugin):
 
         m = self.player.get_metadata()
 
-        try:
-            p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
-            p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
-        except:
-            p_artist = None
-            p_title = None
-
-        if p_artist != None and p_title != None: 
-            self.set_message("Listening to " + p_title + " - " + p_artist)
+        if m[mpx.AttributeId.ARTIST] and m[mpx.AttributeId.TITLE]: 
+            self.set_message("Listening to %s - %s", (m[mpx.AttributeId.TITLE].get(), m[mpx.AttributeId.ARTIST].get()))
 
     def set_message(self, message):
         # Get current status type (Available/Away/etc.)

@@ -1280,6 +1280,21 @@ namespace MPX
 		m_Play->signal_position().connect( sigc::mem_fun( *this, &MPX::Player::on_play_position ));
 		m_Play->signal_metadata().connect( sigc::mem_fun( *this, &MPX::Player::on_play_metadata ));
 		m_Play->property_status().signal_changed().connect( sigc::mem_fun( *this, &MPX::Player::on_play_status_changed ));
+
+        m_VideoWindow = manage(new VideoWindow(m_Play));
+        dynamic_cast<Gtk::Alignment*>(m_ref_xml->get_widget ("alignment-video"))->add( * m_VideoWindow );
+        m_VideoWindow->show ();
+        gtk_widget_realize (GTK_WIDGET (m_VideoWindow->gobj()));
+
+        m_ref_xml->get_widget("notebook-outer", m_OuterNotebook);
+
+        if( m_Play->has_video() )
+        {
+            m_Play->signal_request_window_id ().connect
+                    (sigc::mem_fun( *this, &Player::on_gst_set_window_id ));
+            m_Play->signal_video_geom ().connect
+                    (sigc::mem_fun( *this, &Player::on_gst_set_window_geom ));
+        }
 			  
         m_Preferences = Preferences::create(*m_Play);
 #ifdef HAVE_HAL
@@ -3329,4 +3344,17 @@ namespace MPX
       }
     }
 
+    ::Window
+    Player::on_gst_set_window_id ()
+    {
+      m_VideoWindow->property_playing() = true; //FIXME: This does not really belong here.
+      return m_VideoWindow->get_video_xid(); 
+    }
+
+    void
+    Player::on_gst_set_window_geom (int width, int height, GValue const* par)
+    {
+      m_VideoWindow->property_geometry() = Geometry( width, height );
+      m_VideoWindow->set_par( par );
+    }
 }

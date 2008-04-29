@@ -35,26 +35,66 @@
             <property name="visible">True</property>
             <property name="border_width">4</property>
             <child>
-              <widget class="GtkNotebook" id="notebook-sources">
+              <widget class="GtkNotebook" id="notebook-outer">
                 <property name="visible">True</property>
+                <property name="can_focus">True</property>
                 <property name="show_tabs">False</property>
                 <property name="show_border">False</property>
                 <child>
-                  <widget class="GtkScrolledWindow" id="scrolledwindow-sources">
+                  <widget class="GtkNotebook" id="notebook-sources">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                    <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                    <property name="shadow_type">GTK_SHADOW_IN</property>
+                    <property name="show_tabs">False</property>
+                    <property name="show_border">False</property>
+                    <child>
+                      <widget class="GtkScrolledWindow" id="scrolledwindow-sources">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                        <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                        <property name="shadow_type">GTK_SHADOW_IN</property>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </widget>
+                    </child>
                     <child>
                       <placeholder/>
+                      <packing>
+                        <property name="type">tab</property>
+                      </packing>
                     </child>
                   </widget>
                 </child>
                 <child>
-                  <placeholder/>
+                  <widget class="GtkLabel" id="label2">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">page 1</property>
+                  </widget>
                   <packing>
                     <property name="type">tab</property>
+                    <property name="tab_fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkAlignment" id="alignment-video">
+                    <property name="visible">True</property>
+                    <child>
+                      <placeholder/>
+                    </child>
+                  </widget>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkLabel" id="label3">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">page 2</property>
+                  </widget>
+                  <packing>
+                    <property name="type">tab</property>
+                    <property name="position">1</property>
+                    <property name="tab_fill">False</property>
                   </packing>
                 </child>
               </widget>
@@ -283,6 +323,18 @@
                           </widget>
                           <packing>
                             <property name="position">2</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <widget class="GtkToggleButton" id="video-toggle">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="label" translatable="yes">Video</property>
+                            <property name="response_id">0</property>
+                          </widget>
+                          <packing>
+                            <property name="position">3</property>
                           </packing>
                         </child>
                       </widget>
