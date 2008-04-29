@@ -251,7 +251,6 @@ namespace MPX
 
         void
         eq_band_changed (MCS_CB_DEFAULT_SIGNATURE, unsigned int band);
-        GstElement * m_elmtEqualizer;
 
         static void
         queue_underrun (GstElement *element,
@@ -293,12 +292,11 @@ namespace MPX
         PropInt     property_duration_;
 
         ustring             m_stream_type;
+        URI::Protocol       m_current_protocol;
 
         GstElement        * m_pipeline;
         GstElement        * m_bin[N_BINS];
-        URI::Protocol       m_current_protocol;
-
-        GstElement        * m_http_elmt;
+        GstElement        * m_Equalizer;
         GstElement        * m_play_elmt;
         VideoPipe         * m_video_pipe;
 

@@ -178,7 +178,7 @@ namespace mpxpy
 	}
 
 	void
-	variant_setint(MPX::Variant  &self, gint64 value)
+	variant_setint(MPX::Variant &self, gint64 value)
 	{
 		self = value;
 	}
@@ -192,28 +192,40 @@ namespace mpxpy
 	}
 
 	void
-	variant_setstring(MPX::Variant  &self, std::string const& value)
+	variant_setstring(MPX::Variant &self, std::string const& value)
 	{
 		self = value;
 	}
 
 	double
-	variant_getdouble(MPX::Variant  &self)
+	variant_getdouble(MPX::Variant &self)
 	{
 		double d = boost::get<double>(self);
         return d;
 	}
 
 	void
-	variant_setdouble(MPX::Variant  &self, double const& value)
+	variant_setdouble(MPX::Variant &self, double const& value)
 	{
 		self = value;
 	}
 
 	void
-	ovariant_init(MPX::OVariant &self)
+	ovariant_setint(MPX::OVariant & self, gint64 value)
 	{
-		self = MPX::Variant();
+		self = value;
+	}
+
+	void
+	ovariant_setstring(MPX::OVariant &self, std::string const& value)
+	{
+		self = value;
+	}
+
+	void
+	ovariant_setdouble(MPX::OVariant &self, double const& value)
+	{
+		self = value;
 	}
 }
 
@@ -650,13 +662,12 @@ BOOST_PYTHON_MODULE(mpx)
         .def("__nonzero__", (bool (MPX::OVariant::*) ()) &MPX::OVariant::is_initialized,
                             return_value_policy<return_by_value>()) 
 
-        .def("val",         (MPX::Variant& (MPX::OVariant::*) ()) &MPX::OVariant::get,
-                            return_internal_reference<>())
-
         .def("get",         &mpxpy::ovariant_get,
                             return_value_policy<return_by_value>())
 
-		.def("init",        &mpxpy::ovariant_init)
+		.def("set_int",     &mpxpy::ovariant_setint)
+		.def("set_string",  &mpxpy::ovariant_setstring)
+		.def("set_double",  &mpxpy::ovariant_setdouble)
 	;
 
 	/*-------------------------------------------------------------------------------------*/

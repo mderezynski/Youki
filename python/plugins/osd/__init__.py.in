@@ -179,7 +179,7 @@ class MPXOSD(mpx.Plugin):
 
         if (status == mpx.PlayStatus.PLAYING) or (status == mpx.PlayStatus.PAUSED):
             
-            self.new_track(player.gobj())
+            self.new_track(self.player.gobj())
 
         return True
 

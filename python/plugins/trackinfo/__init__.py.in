@@ -145,22 +145,18 @@ class TrackInfo:
 
                 if len(tracks) > 0:
 
-                    self.track[mpx.AttributeId.MB_TRACK_ID].init()
-                    self.track[mpx.AttributeId.MB_TRACK_ID].val().set_string(str(tracks[0].getTrack().getId()))
+                    self.track[mpx.AttributeId.MB_TRACK_ID].set_string(str(tracks[0].getTrack().getId()))
 
                     mbtrack = self.q.getTrackById(tracks[0].getTrack().getId(), self.wsinc) 
                     artist = mbtrack.getArtist()
 
-                    self.track[mpx.AttributeId.MB_ARTIST_ID].init()
-                    self.track[mpx.AttributeId.MB_ARTIST_ID].val().set_string(str(artist.getId()))
+                    self.track[mpx.AttributeId.MB_ARTIST_ID].set_string(str(artist.getId()))
 
                     if not self.track[mpx.AttributeId.ARTIST]:
-                        self.track[mpx.AttributeId.ARTIST].init()
-                        self.track[mpx.AttributeId.ARTIST].val().set_string(str(artist.getName()))
+                        self.track[mpx.AttributeId.ARTIST].set_string(str(artist.getName()))
                     
                     if not self.track[mpx.AttributeId.TITLE]:
-                        self.track[mpx.AttributeId.TITLE].init()
-                        self.track[mpx.AttributeId.TITLE].val().set_string(str(mbtrack.getTitle()))
+                        self.track[mpx.AttributeId.TITLE].set_string(str(mbtrack.getTitle()))
 
             self.gotPuid = True
             self.show_real()

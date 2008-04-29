@@ -304,12 +304,16 @@ namespace MPX
 		on_play_files ();
 
         void
-        on_show_info_toggled();
+        on_info_toggled();
+
+		void
+		on_sources_toggled ();
+
+        void
+        on_video_toggled ();
 
 		void
 		on_volume_value_changed(double);
-
-
 
         void
         on_lastfm_love_track ();
@@ -367,9 +371,6 @@ namespace MPX
 
 
 		
-		void
-		on_sources_toggled ();
-
 		void
 		on_source_changed (int source_id);
 

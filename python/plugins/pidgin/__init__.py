@@ -33,7 +33,7 @@ class Pidgin(mpx.Plugin):
 
         status = self.player.get_status()
         if (status == mpx.PlayStatus.PLAYING) or (status == mpx.PlayStatus.PAUSED):
-            self.now_playing(player.gobj())
+            self.now_playing(self.player.gobj())
 
         return True
 

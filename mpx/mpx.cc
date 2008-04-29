@@ -122,6 +122,8 @@ namespace
   char const ACTION_PLUGINS [] = "action-plugins";
   char const ACTION_PREFERENCES[] ="action-preferences";
   char const ACTION_SHOW_INFO[] = "action-show-info";
+  char const ACTION_SHOW_VIDEO[] = "action-show-video";
+  char const ACTION_SHOW_SOURCES[] = "action-show-sources";
   char const ACTION_LASTFM_LOVE[] = "action-lastfm-love";
 
   std::string
@@ -1437,9 +1439,24 @@ namespace MPX
 		m_actions->add (ToggleAction::create (ACTION_SHOW_INFO,
 										_("Show Details")),
                                         AccelKey("<ctrl>I"),
-										sigc::mem_fun (*this, &Player::on_show_info_toggled ));
+										sigc::mem_fun (*this, &Player::on_info_toggled ));
 		m_actions->get_action (ACTION_SHOW_INFO)->connect_proxy
 			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("info-toggle"))));
+
+		m_actions->add (ToggleAction::create (ACTION_SHOW_SOURCES,
+										_("Show Sources")),
+                                        AccelKey("<ctrl>s"),
+										sigc::mem_fun( *this, &Player::on_sources_toggled ));
+		m_actions->get_action (ACTION_SHOW_SOURCES)->connect_proxy
+			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("sources-toggle"))));
+
+		m_actions->add (ToggleAction::create (ACTION_SHOW_VIDEO,
+										_("Show Video")),
+                                        AccelKey("<ctrl>v"),
+										sigc::mem_fun( *this, &Player::on_video_toggled ));
+		m_actions->get_action (ACTION_SHOW_VIDEO)->connect_proxy
+			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("video-toggle"))));
+
 
 		m_actions->add (Action::create (ACTION_LASTFM_LOVE,
                                         Gtk::StockID(MPX_STOCK_LASTFM),
@@ -1572,7 +1589,6 @@ namespace MPX
 #endif
 
 		m_Sources->sourceChanged().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
-		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->signal_toggled().connect( sigc::mem_fun( *this, &Player::on_sources_toggled ) );
 
 		/*------------------------ Load Plugins -------------------------------------------------*/
 		// This also initializes Python for us and hence it's of utmost importance it is kept
@@ -1593,6 +1609,57 @@ namespace MPX
 
 		DBusObjects.mpx->startup_complete(DBusObjects.mpx);
     }
+
+	void
+	Player::init_dbus ()
+	{
+		DBusGProxy * m_SessionBus_proxy;
+		guint dbus_request_name_result;
+		GError * error = NULL;
+
+		m_SessionBus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+		if (!m_SessionBus)
+		{
+		  g_error_free (error);
+		  return;
+		}
+
+		m_SessionBus_proxy = dbus_g_proxy_new_for_name (m_SessionBus,
+													   "org.freedesktop.DBus",
+													   "/org/freedesktop/DBus",
+													   "org.freedesktop.DBus");
+
+		if (!dbus_g_proxy_call (m_SessionBus_proxy, "RequestName", &error,
+								G_TYPE_STRING, "info.backtrace.mpx",
+								G_TYPE_UINT, 0,
+								G_TYPE_INVALID,
+								G_TYPE_UINT, &dbus_request_name_result,
+								G_TYPE_INVALID))
+		{
+		  g_critical ("%s: RequestName Request Failed: %s", G_STRFUNC, error->message);
+		  g_error_free (error);
+		  error = NULL;
+		}
+		else
+		{
+		  switch (dbus_request_name_result)
+		  {
+			case DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER:
+			{
+			  break;
+			}
+
+			case DBUS_REQUEST_NAME_REPLY_EXISTS:
+			{
+			  g_object_unref(m_SessionBus);
+			  m_SessionBus = NULL;
+			  return;
+			}
+		  }
+		}
+
+		g_message("%s: info.backtrace.mpx service registered on session DBus", G_STRLOC);
+	}
 
     bool
     Player::load_source_plugin (std::string const& path)
@@ -1787,57 +1854,6 @@ namespace MPX
 		m_PluginManagerGUI->present ();
 	}
 
-	void
-	Player::init_dbus ()
-	{
-		DBusGProxy * m_SessionBus_proxy;
-		guint dbus_request_name_result;
-		GError * error = NULL;
-
-		m_SessionBus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
-		if (!m_SessionBus)
-		{
-		  g_error_free (error);
-		  return;
-		}
-
-		m_SessionBus_proxy = dbus_g_proxy_new_for_name (m_SessionBus,
-													   "org.freedesktop.DBus",
-													   "/org/freedesktop/DBus",
-													   "org.freedesktop.DBus");
-
-		if (!dbus_g_proxy_call (m_SessionBus_proxy, "RequestName", &error,
-								G_TYPE_STRING, "info.backtrace.mpx",
-								G_TYPE_UINT, 0,
-								G_TYPE_INVALID,
-								G_TYPE_UINT, &dbus_request_name_result,
-								G_TYPE_INVALID))
-		{
-		  g_critical ("%s: RequestName Request Failed: %s", G_STRFUNC, error->message);
-		  g_error_free (error);
-		  error = NULL;
-		}
-		else
-		{
-		  switch (dbus_request_name_result)
-		  {
-			case DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER:
-			{
-			  break;
-			}
-
-			case DBUS_REQUEST_NAME_REPLY_EXISTS:
-			{
-			  g_object_unref(m_SessionBus);
-			  m_SessionBus = NULL;
-			  return;
-			}
-		  }
-		}
-
-		g_message("%s: info.backtrace.mpx service registered on session DBus", G_STRLOC);
-	}
-
     void
     Player::on_lastfm_love_track ()
     {
@@ -1857,7 +1873,7 @@ namespace MPX
     }
 
     void 
-    Player::on_show_info_toggled ()
+    Player::on_info_toggled ()
     {
 	    bool active = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_INFO))->get_active();
 
@@ -1872,6 +1888,21 @@ namespace MPX
             m_MainNotebook->show();
         }
     }
+
+	void
+	Player::on_sources_toggled ()
+	{
+	    RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_INFO))->set_active(false);
+	    bool active = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_SOURCES))->get_active();
+		m_MainNotebook->set_current_page( active ? 0 : m_SourceTabMapping[m_Sources->getSource()] ); 
+	}
+
+	void
+	Player::on_video_toggled ()
+	{
+	    bool active = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_VIDEO))->get_active();
+		m_OuterNotebook->set_current_page( active ? 1 : 0 ); 
+	}
 
     PyObject*
     Player::get_source(std::string const& uuid)
@@ -2534,14 +2565,6 @@ namespace MPX
 	  }
 
       set_title (_("(Not Playing) - MPX"));
-	}
-
-	void
-	Player::on_sources_toggled ()
-	{
-	    RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_INFO))->set_active(false);
-		bool active = dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->get_active();
-		m_MainNotebook->set_current_page( active ? 0 : m_SourceTabMapping[m_Sources->getSource()] ); 
 	}
 
 	void

@@ -455,6 +455,13 @@ namespace MPX
     Library::getMetadata (const std::string& uri, Track & track)
     {
         mReaderTagLib->get(uri, track);
+
+        std::string type;
+        if(Audio::typefind(uri, type))
+        {
+            track[ATTRIBUTE_TYPE] = type; 
+        }
+
 #ifdef HAVE_HAL
         try{
           URI u (uri);

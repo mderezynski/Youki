@@ -1974,7 +1974,12 @@ namespace Source
     std::string
     PlaybackSourceMusicLib::get_type ()
     {
-        return Glib::ustring();
+        g_return_val_if_fail(m_Private->m_TreeViewPlaylist->m_CurrentIter, std::string());
+        MPX::Track t ((*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.MPXTrack]);
+        if(t[ATTRIBUTE_TYPE])
+            return get<std::string>(t[ATTRIBUTE_TYPE].get());
+        else
+            return std::string();
     }
 
     GHashTable *

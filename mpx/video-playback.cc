@@ -137,8 +137,8 @@ namespace MPX
       videoscale = 0;
 
       try{
-          filesrc = element ("filesrc"); 
-          decodebin = element ("decodebin");
+          filesrc = element ("filesrc", "Filesrc VIDEO"); 
+          decodebin = element ("decodebin", "Decoder VIDEO");
           queue = element ("queue");
           ffmpegcolorspace = element ("ffmpegcolorspace");
 

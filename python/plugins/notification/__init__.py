@@ -69,17 +69,11 @@ class Notification(mpx.Plugin):
         self.player.pause()
 
     def now_playing(self, blah):
+
         m = self.player.get_metadata()
 
-        try:
-            p_artist = m.get(mpx.AttributeId.ARTIST).val().get_string()
-            p_title = m.get(mpx.AttributeId.TITLE).val().get_string()
-        except:
-            p_artist = None
-            p_title = None
-
-        if p_artist != None and p_title != None: 
-            message = "<big><b>" + p_artist + "</b>\n" + p_title + "</big>"
+        if m[mpx.AttributeId.ARTIST} and m[mpx.AttributeId.TITLE]: 
+            message = "<big><b>%s</b>\n%s</big>" % (m[mpx.AttributeId.ARTIST].get(), m[mpx.AttributeId.TITLE].get())
 
             if message != self.previous_message:
                 n = pynotify.Notification( "MPX is now playing...", message)

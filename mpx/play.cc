@@ -56,14 +56,12 @@ namespace
 {
   static boost::format band_f ("band%d");
 
-  char const* NAME_DECODER    = N_("Stream Decoder");
   char const* NAME_CONVERT    = N_("Raw Audio Format Converter");
   char const* NAME_QUEUE      = N_("Data Buffer (Queue)");
   char const* NAME_VOLUME     = N_("Volume Adjustment");
   char const* NAME_RESAMPLE   = N_("Resampler");
   char const* NAME_EQUALIZER  = N_("Equalizer");
   char const* NAME_SPECTRUM   = N_("Spectrum");
-  char const* NAME_IDENTITY   = N_("Identity");
 
   char const* m_pipeline_names[] =
   {
@@ -107,7 +105,6 @@ namespace MPX
     , property_sane_          (*this, "sane", false)
     , property_position_      (*this, "position", 0)
     , property_duration_      (*this, "duration", 0)
-    , m_http_elmt             (0)
     , m_play_elmt             (0)
     , m_seeking               (false)
     {
@@ -354,7 +351,7 @@ namespace MPX
           m_play_elmt = 0;
         }
         else
-        if ((m_pipeline_id == PIPELINE_VIDEO) && m_video_pipe)
+        if (m_pipeline_id == PIPELINE_VIDEO && m_video_pipe)
         {
           m_video_pipe->rem_audio_elmt ();
         } 
@@ -364,7 +361,7 @@ namespace MPX
         gst_element_get_state (m_pipeline, NULL, NULL, GST_CLOCK_TIME_NONE); 
         gst_element_set_name (m_pipeline, m_pipeline_names[id]);
 
-        if ((m_pipeline_id == PIPELINE_VIDEO) && m_video_pipe)
+        if (m_pipeline_id == PIPELINE_VIDEO && m_video_pipe)
         {
           m_video_pipe->set_audio_elmt (m_bin[BIN_OUTPUT]);
           m_play_elmt = 0;
@@ -402,32 +399,22 @@ namespace MPX
 
           case URI::PROTOCOL_FILE:
           {
-            if (video_type (m_stream_type))
+            if (video_type( m_stream_type ) && m_video_pipe)
             {
-              if (m_video_pipe)
-              {
                 g_object_set (m_video_pipe->operator[]("filesrc"), "location", filename_from_uri (property_stream_.get_value()).c_str(), NULL);
                 pipeline_configure (PIPELINE_VIDEO);
-              }
-              else
-              {
-                goto configure_default_file_pipe;
-              }
             }
             else
             {
-              configure_default_file_pipe:
-              try
-                {
+              try{
                   GstElement* src = gst_bin_get_by_name (GST_BIN (m_bin[BIN_FILE]), "src");
                   g_object_set (src, "location", filename_from_uri (property_stream().get_value()).c_str(), NULL);
                   gst_object_unref (src);
                   pipeline_configure (PIPELINE_FILE);
-                }
-              catch (ConvertError& cxe)
-                {
-                    // FIXME
-                }
+              } catch( ConvertError& cxe )
+              {
+                // FIXME
+              }
             }
             break;
           }
@@ -450,9 +437,7 @@ namespace MPX
             else
               pipeline_configure (PIPELINE_HTTP);
 
-            m_http_elmt = m_play_elmt;
-
-            GstElement* src = gst_bin_get_by_name (GST_BIN (m_http_elmt), "src");
+            GstElement* src = gst_bin_get_by_name (GST_BIN (m_play_elmt), "src");
             g_object_set (src, "location", property_stream().get_value().c_str(), NULL);
             g_object_set (src, "prebuffer", TRUE, NULL);
             gst_object_unref (src);
@@ -613,6 +598,27 @@ namespace MPX
                     gpointer    data)
     {
       GstPad * pad2 = gst_element_get_static_pad (GST_ELEMENT (data), "sink"); 
+
+      char *pad1_name = gst_pad_get_name(pad);
+      char *pad2_name = gst_pad_get_name(pad2);
+
+      GstObject * parent1 = gst_pad_get_parent(pad); 
+      GstObject * parent2 = gst_pad_get_parent(pad2); 
+
+      char *pad1_parent_name = gst_object_get_name(parent1);
+      char *pad2_parent_name = gst_object_get_name(parent2);
+
+      gst_object_unref(parent1);
+      gst_object_unref(parent2);
+
+      g_message("Pad 1: %s of %s", pad1_name, pad1_parent_name);
+      g_message("Pad 2: %s of %s", pad2_name, pad2_parent_name);
+
+      g_free(pad1_name);
+      g_free(pad2_name);
+      g_free(pad1_parent_name);
+      g_free(pad2_parent_name);
+
       switch (gst_pad_link (pad, pad2))
       {
           case GST_PAD_LINK_OK: 
@@ -759,7 +765,7 @@ namespace MPX
     Play::eq_band_changed (MCS_CB_DEFAULT_SIGNATURE, unsigned int band)
                           
     {
-      g_object_set (G_OBJECT (m_elmtEqualizer), (band_f % band).str().c_str (), boost::get<double> (value), NULL);
+      g_object_set (G_OBJECT (m_Equalizer), (band_f % band).str().c_str (), boost::get<double> (value), NULL);
     }
 
     void
@@ -873,19 +879,19 @@ namespace MPX
 
         if (Audio::test_element ("equalizer-10bands") && mcs->key_get<bool>("audio","enable-eq"))
         {
-          m_elmtEqualizer = gst_element_factory_make ("equalizer-10bands", (NAME_EQUALIZER));
+          m_Equalizer = gst_element_factory_make ("equalizer-10bands", (NAME_EQUALIZER));
 
           if (GST_IS_ELEMENT (spectrum))
           {
             GstElement* tee = gst_element_factory_make ("tee", "tee1"); 
-            gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, m_elmtEqualizer, tee, spectrum, volume, sink_element, NULL);
-            gst_element_link_many (convert, resample, m_elmtEqualizer, tee, volume, sink_element, NULL);
+            gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, m_Equalizer, tee, spectrum, volume, sink_element, NULL);
+            gst_element_link_many (convert, resample, m_Equalizer, tee, volume, sink_element, NULL);
             gst_element_link_many (tee, spectrum, NULL);
           }
           else
           {
-            gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, m_elmtEqualizer, volume, sink_element, NULL);
-            gst_element_link_many (convert, resample, m_elmtEqualizer, volume, sink_element, NULL);
+            gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, m_Equalizer, volume, sink_element, NULL);
+            gst_element_link_many (convert, resample, m_Equalizer, volume, sink_element, NULL);
           }
 
           // Connect MCS to Equalizer Bands
@@ -893,7 +899,7 @@ namespace MPX
           {
             mcs->subscribe ("PlaybackEngine", "audio",
                 (band_f % n).str(), sigc::bind (sigc::mem_fun (*this, &Play::eq_band_changed), n));
-            g_object_set (G_OBJECT (m_elmtEqualizer),
+            g_object_set (G_OBJECT (m_Equalizer),
                 (band_f % n).str().c_str(), mcs->key_get <double> ("audio", (band_f % n).str()), NULL);
           }
         }
@@ -927,8 +933,8 @@ namespace MPX
       ////////////////// FILE BIN
       {
         GstElement  * source    = gst_element_factory_make ("filesrc", "src");
-        GstElement  * decoder   = gst_element_factory_make ("decodebin", (NAME_DECODER));
-        GstElement  * identity  = gst_element_factory_make ("identity", (NAME_IDENTITY));
+        GstElement  * decoder   = gst_element_factory_make ("decodebin", "Decoder File"); 
+        GstElement  * identity  = gst_element_factory_make ("identity", "Identity File"); 
 
         if (source && decoder && identity)
         {
@@ -953,8 +959,8 @@ namespace MPX
       ////////////////// HTTP BIN
       {
         GstElement  * source    = gst_element_factory_make ("jnethttpsrc", "src");
-        GstElement  * decoder   = gst_element_factory_make ("decodebin", (NAME_DECODER));
-        GstElement  * identity  = gst_element_factory_make ("identity", (NAME_IDENTITY));
+        GstElement  * decoder   = gst_element_factory_make ("decodebin", "Decoder HTTP"); 
+        GstElement  * identity  = gst_element_factory_make ("identity", "Identity HTTP"); 
 
         if (source && decoder && identity)
         {
@@ -982,12 +988,12 @@ namespace MPX
       ////////////////// HTTP MAD/FLUMP3 BIN
       {
         GstElement *  source    = gst_element_factory_make ("jnethttpsrc", "src");
-        GstElement *  decoder   = gst_element_factory_make ("mad", (NAME_DECODER));
-        GstElement  * identity  = gst_element_factory_make ("identity", (NAME_IDENTITY));
+        GstElement *  decoder   = gst_element_factory_make ("mad", "Decoder MAD"); 
+        GstElement  * identity  = gst_element_factory_make ("identity", "Identity MAD"); 
 
         if (!decoder)
         {
-          decoder = gst_element_factory_make ("flump3dec", (NAME_DECODER));
+          decoder = gst_element_factory_make ("flump3dec", "Decoder FluMP3"); 
         }
 
         if (source && decoder && identity)
@@ -1011,8 +1017,8 @@ namespace MPX
       ////////////////// MMS* BIN
       {
         GstElement * source   = gst_element_factory_make ("mmssrc", "src");
-        GstElement * decoder  = gst_element_factory_make ("decodebin", (NAME_DECODER));
-        GstElement * identity = gst_element_factory_make ("identity", (NAME_IDENTITY));
+        GstElement * decoder  = gst_element_factory_make ("decodebin", "Decoder MMSX"); 
+        GstElement * identity = gst_element_factory_make ("identity", "Identity MMSX"); 
 
         if (source && decoder && identity)
         {
