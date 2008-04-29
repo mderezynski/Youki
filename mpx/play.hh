@@ -77,7 +77,7 @@ namespace MPX
         {
           PIPELINE_NONE = 0,
           PIPELINE_HTTP,
-          PIPELINE_HTTP_MAD,
+          PIPELINE_HTTP_MP3,
           PIPELINE_MMSX,
           PIPELINE_FILE,
           PIPELINE_CDDA,
@@ -88,7 +88,7 @@ namespace MPX
         {
           BIN_OUTPUT = 0,
           BIN_HTTP,
-          BIN_HTTP_MAD,
+          BIN_HTTP_MP3,
           BIN_MMSX,
           BIN_FILE,
           BIN_CDDA,
@@ -113,18 +113,8 @@ namespace MPX
         Play ();
         ~Play ();
 
-        MPXGstMetadata const&        
-        get_metadata ();
-
-        void  request_status (MPXPlaystatus status);
-        void  switch_stream (Glib::ustring const& stream, Glib::ustring const& type = Glib::ustring());
-        void  set_custom_httpheader (char const*);
-        void  seek (gint64 position);
-        void  set_window_id ( ::Window id);
-
-        void  reset ();
-
         ProxyOf<PropString>::ReadWrite  property_stream ();
+        ProxyOf<PropString>::ReadWrite  property_stream_type ();
         ProxyOf<PropInt>::ReadWrite     property_volume ();
 
         ProxyOf<PropInt>::ReadOnly      property_status() const;
@@ -151,10 +141,6 @@ namespace MPX
                                                   
         typedef sigc::signal<void, MPXGstMetadataField> SignalMetadata;
 
-        bool has_video ();
-        void video_expose ();
-        GstElement * x_overlay ();
-      
         /** Signal emitted when video output requests a window ID
           *
           */ 
@@ -221,13 +207,42 @@ namespace MPX
         SignalVideoGeom &
         signal_video_geom ();
 
-        //////////// METADATA SIGNALS
-
         /** Signal on new metadata 
          *
          */
         SignalMetadata &
         signal_metadata();
+
+
+        MPXGstMetadata const&
+        get_metadata ();
+                            
+        void
+        request_status (MPXPlaystatus status);
+
+        void
+        switch_stream (Glib::ustring const& stream, Glib::ustring const& type = Glib::ustring());
+
+        void
+        set_custom_httpheader (char const*);
+
+        void
+        seek (gint64 position);
+
+        void
+        reset ();
+
+        bool
+        has_video ();
+
+        void
+        video_expose ();
+
+        void
+        set_window_id (::Window id);
+
+        GstElement*
+        x_overlay ();
 
       private:
 
@@ -284,14 +299,14 @@ namespace MPX
 
         // Properties
         
-        PropString  property_stream_;
-        PropInt     property_volume_;
-        PropInt     property_status_;
-        PropBool    property_sane_;
-        PropInt     property_position_;
-        PropInt     property_duration_;
+        PropString          property_stream_;
+        PropString          property_stream_type;
+        PropInt             property_volume_;
+        PropInt             property_status_;
+        PropBool            property_sane_;
+        PropInt             property_position_;
+        PropInt             property_duration_;
 
-        ustring             m_stream_type;
         URI::Protocol       m_current_protocol;
 
         GstElement        * m_pipeline;
@@ -301,7 +316,7 @@ namespace MPX
         VideoPipe         * m_video_pipe;
 
         sigc::connection    m_conn_stream_position;
-        bool                m_seeking;
+
 
         void  destroy_bins ();
         void  create_bins ();

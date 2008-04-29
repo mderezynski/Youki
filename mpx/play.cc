@@ -100,13 +100,13 @@ namespace MPX
     Play::Play()
     : ObjectBase              ("MPXPlaybackEngine")
     , property_stream_        (*this, "stream", "")
+    , property_stream_type    (*this, "stream-type", "")
     , property_volume_        (*this, "volume", 50)
     , property_status_        (*this, "playstatus", PLAYSTATUS_STOPPED)
     , property_sane_          (*this, "sane", false)
     , property_position_      (*this, "position", 0)
     , property_duration_      (*this, "duration", 0)
     , m_play_elmt             (0)
-    , m_seeking               (false)
     {
 	  m_MessageQueue = g_async_queue_new ();
 
@@ -124,7 +124,7 @@ namespace MPX
 
       m_bin[BIN_FILE]     = 0;
       m_bin[BIN_HTTP]     = 0;
-      m_bin[BIN_HTTP_MAD] = 0;
+      m_bin[BIN_HTTP_MP3] = 0;
       m_bin[BIN_MMSX]     = 0;
       m_bin[BIN_CDDA]     = 0;
       m_bin[BIN_OUTPUT]   = 0;
@@ -141,16 +141,10 @@ namespace MPX
       destroy_bins ();
     }
 
-    GstElement*
+    inline GstElement*
     Play::control_pipe () const
     {
-      GstElement * control_pipe = 0;
-      if (m_pipeline_id == PIPELINE_VIDEO)
-        control_pipe = m_video_pipe->pipe ();
-      else
-        control_pipe = m_pipeline;
-  
-      return control_pipe;
+      return (m_pipeline_id == PIPELINE_VIDEO) ? m_video_pipe->pipe() : m_pipeline;
     }
 
     void
@@ -167,7 +161,7 @@ namespace MPX
         if (!std::strcmp (tag, GST_TAG_TITLE))
         {
           if (play.m_pipeline_id == PIPELINE_HTTP ||
-              play.m_pipeline_id == PIPELINE_HTTP_MAD ||
+              play.m_pipeline_id == PIPELINE_HTTP_MP3 ||
               play.m_pipeline_id == PIPELINE_MMSX)
           {
 			Glib::ScopedPtr<char> w;
@@ -186,7 +180,7 @@ namespace MPX
         if (!std::strcmp (tag, GST_TAG_ALBUM))
         {
           if (play.m_pipeline_id == PIPELINE_HTTP ||
-              play.m_pipeline_id == PIPELINE_HTTP_MAD ||
+              play.m_pipeline_id == PIPELINE_HTTP_MP3 ||
               play.m_pipeline_id == PIPELINE_MMSX)
           {
 			Glib::ScopedPtr<char> w;
@@ -399,7 +393,7 @@ namespace MPX
 
           case URI::PROTOCOL_FILE:
           {
-            if (video_type( m_stream_type ) && m_video_pipe)
+            if (video_type( property_stream_type_.get_value() ) && m_video_pipe)
             {
                 g_object_set (m_video_pipe->operator[]("filesrc"), "location", filename_from_uri (property_stream_.get_value()).c_str(), NULL);
                 pipeline_configure (PIPELINE_VIDEO);
@@ -432,8 +426,8 @@ namespace MPX
 
           case URI::PROTOCOL_HTTP:
           {
-            if (m_stream_type == "audio/mpeg")
-              pipeline_configure (PIPELINE_HTTP_MAD);
+            if (property_stream_type_.get_value() == "audio/mpeg")
+              pipeline_configure (PIPELINE_HTTP_MP3);
             else
               pipeline_configure (PIPELINE_HTTP);
 
@@ -473,16 +467,14 @@ namespace MPX
     {
       Glib::Mutex::Lock L (m_stream_lock);
 
+      set_custom_httpheader(NULL);
 	  m_metadata.reset();
-	  m_stream_type = ustring();
-
       readify_stream (); 
 
-      m_stream_type = type;
       property_stream_ = stream;
-	  play_stream ();
+      property_stream_type_ = type;
 
-      m_stream_lock.unlock ();
+	  play_stream ();
     }
 
     void
@@ -525,21 +517,21 @@ namespace MPX
                           TRUE, NULL); 
           }
           else
-          if (BinId (m_pipeline_id) == BIN_HTTP_MAD)
+          if (BinId (m_pipeline_id) == BIN_HTTP_MP3)
           {
-            g_object_set (G_OBJECT (gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP_MAD]), "src")),
+            g_object_set (G_OBJECT (gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP_MP3]), "src")),
                           "abort",
                           TRUE, NULL); 
           }
 
           m_metadata.reset();
-          m_stream_type = ustring();
+          property_stream_type_ = ustring();
           stop_stream ();
           break;
 
         case PLAYSTATUS_WAITING:
           m_metadata.reset();
-          m_stream_type = ustring();
+          property_stream_type_ = ustring();
           readify_stream (); 
           break;
 
@@ -566,8 +558,8 @@ namespace MPX
     Play::seek (gint64 position)
     {
       m_conn_stream_position.disconnect ();
-      m_seeking = (gst_element_seek_simple (GST_ELEMENT (control_pipe ()), GST_FORMAT_TIME,
-                   GstSeekFlags (GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT), gint64 (position * GST_SECOND)));
+      gst_element_seek_simple (GST_ELEMENT (control_pipe ()), GST_FORMAT_TIME,
+                   GstSeekFlags (GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT), gint64 (position * GST_SECOND));
     }
 
     void
@@ -713,12 +705,6 @@ namespace MPX
                       }
                       gst_caps_unref (caps);
                   }
-                }
-
-                if (play.m_seeking)
-                {
-                  play.signal_seek_.emit (play.property_position().get_value());
-                  play.m_seeking = false;
                 }
 
                 if (!play.m_conn_stream_position.connected())
@@ -998,8 +984,8 @@ namespace MPX
 
         if (source && decoder && identity)
         {
-          m_bin[BIN_HTTP_MAD] = gst_bin_new ("bin-http-mad");
-          gst_bin_add_many (GST_BIN (m_bin[BIN_HTTP_MAD]), source, decoder, identity, NULL);
+          m_bin[BIN_HTTP_MP3] = gst_bin_new ("bin-http-mad");
+          gst_bin_add_many (GST_BIN (m_bin[BIN_HTTP_MP3]), source, decoder, identity, NULL);
           gst_element_link_many (source, decoder, identity, NULL);
 
           g_object_set (G_OBJECT (source),
@@ -1007,10 +993,10 @@ namespace MPX
                         NULL);
 
           GstPad * pad = gst_element_get_static_pad (identity, "src");
-          gst_element_add_pad (m_bin[BIN_HTTP_MAD], gst_ghost_pad_new ("src", pad));
+          gst_element_add_pad (m_bin[BIN_HTTP_MP3], gst_ghost_pad_new ("src", pad));
           gst_object_unref (pad);
 
-          gst_object_ref (m_bin[BIN_HTTP_MAD]);
+          gst_object_ref (m_bin[BIN_HTTP_MP3]);
         }
       }
 
@@ -1122,18 +1108,33 @@ namespace MPX
     void
     Play::set_custom_httpheader( char const* header ) 
     {
-      if(!m_bin[BIN_HTTP] && !m_bin[BIN_HTTP_MAD])
+      if(!m_bin[BIN_HTTP] && !m_bin[BIN_HTTP_MP3])
         return;
 
-      GstElement* e = gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP]), "src");
-      g_object_set(G_OBJECT(e), "customheader", header, NULL);
-      e = gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP_MAD]), "src");
-      g_object_set(G_OBJECT(e), "customheader", header, NULL);
+      // FIXME: seems a little brash
+
+      if(m_bin[BIN_HTTP])
+      {
+        GstElement* e = gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP]), "src");
+        g_object_set(G_OBJECT(e), "customheader", header, NULL);
+      }
+
+      if(m_bin[BIN_HTTP])
+      {
+        e = gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP_MP3]), "src");
+        g_object_set(G_OBJECT(e), "customheader", header, NULL);
+      }
     }
 
     ///////////////////////////////////////////////
     /// Object Properties
     ///////////////////////////////////////////////
+
+    ProxyOf<PropString>::ReadWrite
+    Play::property_stream_type()
+    {
+      return ProxyOf<PropString>::ReadWrite (this, "stream-type");
+    }
 
     ProxyOf<PropString>::ReadWrite
     Play::property_stream()
