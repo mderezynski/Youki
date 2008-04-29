@@ -30,8 +30,7 @@
 #include "config.h"
 
 #include <gtk/gtktreeview.h>
-
-#include "gossip-cell-renderer-expander.h"
+#include "mpx/widgets/gossip-cell-renderer-expander.h"
 
 #define GET_PRIV(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), GOSSIP_TYPE_CELL_RENDERER_EXPANDER, GossipCellRendererExpanderPriv))
 

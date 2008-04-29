@@ -1,5 +1,5 @@
-//  BMP
-//  Copyright (C) 2005-2007 BMP development.
+//  MPX
+//  Copyright (C) 2005-2007 MPX development.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License Version 2
@@ -16,10 +16,10 @@
 //
 //  --
 //
-//  The BMPx project hereby grants permission for non-GPL compatible GStreamer
-//  plugins to be used and distributed together with GStreamer and BMPx. This
+//  The MPX project hereby grants permission for non-GPL compatible GStreamer
+//  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
-//  BMPx is covered by.
+//  MPX is covered by.
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -30,9 +30,9 @@
 #include <gtkmm/stock.h>
 #include <sigc++/bind.h>
 
-#include "taskdialog.hh"
+#include "mpx/widgets/taskdialog.hh"
 
-namespace Bmp
+namespace MPX
 {
   bool
   TaskButton::on_focus_in_event (GdkEventFocus* event)

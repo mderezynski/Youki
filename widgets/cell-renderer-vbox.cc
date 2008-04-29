@@ -28,8 +28,7 @@
 #include <glibmm.h>
 #include <gtkmm.h>
 #include <algorithm>
-
-#include "cell-renderer-vbox.hh"
+#include "mpx/widgets/cell-renderer-vbox.hh"
 
 using namespace Gtk;
 

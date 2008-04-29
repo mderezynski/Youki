@@ -28,8 +28,8 @@
 #include <glibmm.h>
 #include <gtkmm.h>
 
-#include "cairoextensions.hh"
-#include "cell-renderer-count.hh"
+#include "mpx/widgets/cairoextensions.hh"
+#include "mpx/widgets/cell-renderer-count.hh"
 
 using namespace Gtk;
 

@@ -33,7 +33,7 @@
 #include <string>
 
 #include "mpx/util-ui.hh"
-#include "dialog-simple-entry.hh"
+#include "mpx/widgets/dialog-simple-entry.hh"
 using namespace Gtk;
 using namespace Glib;
 

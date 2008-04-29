@@ -1,10 +1,10 @@
 noinst_LTLIBRARIES = libmpx-widgets.la
 
 libmpx_widgets_la_CFLAGS = 	\
-	$(GLIB_CFLAGS) $(GTK_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include
+	$(GLIB_CFLAGS) $(GTK_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
 
 libmpx_widgets_la_CXXFLAGS = \
-	$(GLADEMM_CFLAGS) $(GLIBMM_CFLAGS) $(GTKMM_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include
+	$(GLADEMM_CFLAGS) $(GLIBMM_CFLAGS) $(GTKMM_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
 
 libmpx_widgets_la_LIBADD =	\
 	$(GLIBMM_LIBS)			\

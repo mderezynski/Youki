@@ -54,7 +54,7 @@
 #include "lastfm-extra-widgets.hh"
 #include "xsd-track-toptags.hxx"
 
-#include "widgets/cell-renderer-cairo-surface.hh"
+#include "mpx/widgets/cell-renderer-cairo-surface.hh"
 #include "mpx/util-graphics.hh"
 
 #define STATE(e) ((m_state & e) != 0)

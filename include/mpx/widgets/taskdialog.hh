@@ -1,5 +1,5 @@
-//  BMP
-//  Copyright (C) 2005-2007 BMP development.
+//  MPX
+//  Copyright (C) 2005-2007 MPX development.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License Version 2
@@ -16,13 +16,13 @@
 //
 //  --
 //
-//  The BMPx project hereby grants permission for non-GPL compatible GStreamer
-//  plugins to be used and distributed together with GStreamer and BMPx. This
+//  The MPX project hereby grants permission for non-GPL compatible GStreamer
+//  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
-//  BMPx is covered by.
+//  MPX is covered by.
 
-#ifndef BMP_TASK_DIALOG_HH
-#define BMP_TASK_DIALOG_HH
+#ifndef MPX_TASK_DIALOG_HH
+#define MPX_TASK_DIALOG_HH
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -42,7 +42,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-namespace Bmp
+namespace MPX
 {
   class TaskButton
     : public Gtk::Button
@@ -124,5 +124,5 @@ namespace Bmp
 
         Glib::RefPtr <Glib::MainLoop> m_mainloop;
   };
-} // namespace Bmp
-#endif //!BMP_TASK_DIALOG_HH
+} // namespace MPX
+#endif //!MPX_TASK_DIALOG_HH

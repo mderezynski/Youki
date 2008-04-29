@@ -38,7 +38,7 @@
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
 #include <sigc++/sigc++.h>
-#include "widgets/dialog-simple-entry.hh"
+#include "mpx/widgets/dialog-simple-entry.hh"
 #include "mpx/uri.hh"
 #include "mpx/xml.hh"
 #include "streams-shoutcast.hh"

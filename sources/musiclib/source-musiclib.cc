@@ -29,9 +29,9 @@
 #include <glib.h>
 #include <libglademm.h>
 
-#include "widgets/cell-renderer-cairo-surface.hh"
-#include "widgets/cell-renderer-vbox.hh"
-#include "widgets/gossip-cell-renderer-expander.h"
+#include "mpx/widgets/cell-renderer-cairo-surface.hh"
+#include "mpx/widgets/cell-renderer-vbox.hh"
+#include "mpx/widgets/gossip-cell-renderer-expander.h"
 
 #include "mpx/hal.hh"
 #include "mpx/library.hh"

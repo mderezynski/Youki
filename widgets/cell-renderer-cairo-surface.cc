@@ -28,7 +28,7 @@
 #include <glibmm.h>
 #include <gtkmm.h>
 
-#include "cell-renderer-cairo-surface.hh"
+#include "mpx/widgets/cell-renderer-cairo-surface.hh"
 
 using namespace Gtk;
 
