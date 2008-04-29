@@ -15,6 +15,9 @@ libmpx_widgets_la_SOURCES = 			\
 										\
 	    widget-marshalers.c   			\
 										\
+		cell-renderer-count.hh			\
+		cell-renderer-count.cc			\
+										\
 		gossip-cell-renderer-expander.h	\
 		gossip-cell-renderer-expander.c	\
 										\
