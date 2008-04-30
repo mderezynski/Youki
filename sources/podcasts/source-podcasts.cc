@@ -40,6 +40,7 @@
 
 #include "mpx/mpx-public.hh"
 #include "mpx/library.hh"
+#include "mpx/stock.hh"
 #include "mpx/types.hh"
 #include "mpx/minisoup.hh"
 #include "source-podcasts.hh"
