@@ -42,3 +42,7 @@ libmpxsource_radio_la_SOURCES =  		\
 	plugin.cc
 
 libmpxsource_radiodir = $(PLUGIN_DIR)/sources
+
+glade_DATA = 						\
+	source-radio.glade				
+gladedir = $(pkgdatadir)/glade

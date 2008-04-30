@@ -490,6 +490,9 @@ AM_CONDITIONAL([HAVE_ZIP], [test "x$ZIP" != "x"])
 # libofa
 PKG_CHECK_MODULES([LIBOFA], [libofa >= 0.9.3])
 
+# GDL
+PKG_CHECK_MODULES([GDL], [gdl-1.0])
+
 #########################################
 ######### PLATFORM SPECIFITIES ##########
 #########################################
