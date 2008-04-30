@@ -68,7 +68,6 @@
 #include "plugin-manager-gui.hh"
 #include "play.hh"
 #include "splash-screen.hh"
-#include "stock-register.hh"
 
 using namespace Glib;
 using namespace Gtk;

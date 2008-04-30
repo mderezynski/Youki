@@ -25,7 +25,6 @@
 #include <string>
 
 #include "mpx/stock.hh"
-#include "stock-register.hh"
 
 namespace MPX
 {
