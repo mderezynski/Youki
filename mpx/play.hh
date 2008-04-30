@@ -300,7 +300,7 @@ namespace MPX
         // Properties
         
         PropString          property_stream_;
-        PropString          property_stream_type;
+        PropString          property_stream_type_;
         PropInt             property_volume_;
         PropInt             property_status_;
         PropBool            property_sane_;
