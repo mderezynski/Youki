@@ -436,7 +436,11 @@ namespace pysigc
         .def("disconnect",  &pysigc::sigc0::disconnect)
         ;
 
-        to_python_converter<sigc::signal<void>, sigc0_to_pysigc, false>(); 
+        to_python_converter<sigc::signal<void>, sigc0_to_pysigc
+#if defined BOOST_PYTHON_SUPPORTS_PY_SIGNATURES
+		, false
+#endif
+		>(); 
     }
 
     template <typename T1>
@@ -450,7 +454,11 @@ namespace pysigc
         .def("disconnect",  &signal_pysigc::disconnect)
         ;
 
-        to_python_converter<signal_sigc, sigc1_to_pysigc<T1>, false>(); 
+        to_python_converter<signal_sigc, sigc1_to_pysigc<T1>
+#if defined BOOST_PYTHON_SUPPORTS_PY_SIGNATURES
+		, false
+#endif
+		>(); 
     }
 
     template <typename T1, typename T2> 
@@ -464,7 +472,11 @@ namespace pysigc
         .def("disconnect",  &signal_pysigc::disconnect)
         ;
 
-        to_python_converter<signal_sigc, sigc2_to_pysigc<T1, T2>, false>(); 
+        to_python_converter<signal_sigc, sigc2_to_pysigc<T1, T2>
+#if defined BOOST_PYTHON_SUPPORTS_PY_SIGNATURES
+		, false
+#endif
+		>(); 
     }
 
     template <typename T1, typename T2, typename T3> 
@@ -478,7 +490,11 @@ namespace pysigc
         .def("disconnect",  &signal_pysigc::disconnect)
         ;
 
-        to_python_converter<signal_sigc, sigc3<T1, T2, T3>, false>(); 
+        to_python_converter<signal_sigc, sigc3<T1, T2, T3>
+#if defined BOOST_PYTHON_SUPPORTS_PY_SIGNATURES
+		, false
+#endif
+		>(); 
     }
 }
 
