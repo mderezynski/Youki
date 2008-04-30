@@ -44,6 +44,7 @@
 #include <X11/Xlib.h>
 #include <X11/XF86keysym.h>
 #include <gdk/gdkx.h>
+#include <gdl/gdl.h>
 
 #include "mpx.hh"
 #include "mpx/stock.hh"
@@ -245,9 +246,9 @@ namespace MPX
   };
 
   LayoutData const layout_info[] = {
-        {-0.8, 1.0,  86, 12},
-        {-1.0, 0.65, 86, 31},
-        {-1.5, 1.0,  86, 48},
+        {-0.8, 1.0,  84, 6},
+        {-1.0, 0.65, 84, 20},
+        {-1.5, 1.0,  84, 54},
   };
 
   // WARNING: If you set the gravity or timescale too high, the cover
@@ -742,14 +743,15 @@ namespace MPX
                 cr->set_operator (Cairo::OPERATOR_ATOP);
           
                 p->layout->set_single_paragraph_mode (true);
-                p->layout->set_ellipsize (Pango::ELLIPSIZE_MIDDLE);
+                //p->layout->set_ellipsize (Pango::ELLIPSIZE_MIDDLE);
                 p->layout->set_width (w);
                 p->layout->set_wrap (Pango::WRAP_CHAR);
 
-                Pango::Rectangle ink, logical;
-                p->layout->get_pixel_extents(ink, logical);
+                //Pango::Rectangle ink, logical;
+                //p->layout->get_pixel_extents(ink, logical);
 
-                cr->move_to ((w/PANGO_SCALE)/2 - logical.get_width()/2, p->y);
+                //cr->move_to ((w/PANGO_SCALE)/2 - logical.get_width()/2, p->y);
+                cr->move_to(p->x, p->y);
                 pango_cairo_show_layout (cr->cobj(), p->layout->gobj());
               }
           }
@@ -1972,8 +1974,17 @@ namespace MPX
 	void
 	Player::add_info_widget (Gtk::Widget *widget, std::string const& name)
 	{
-        m_InfoNotebook->append_page(*widget, name);
+        GtkWidget * dock = gdl_dock_new ();
+        GdlDockLayout* dock_layout = gdl_dock_layout_new(GDL_DOCK(dock));
+        GtkWidget * item = gdl_dock_item_new_with_stock( name.c_str(), name.c_str(), NULL,
+                    GdlDockItemBehavior(GDL_DOCK_ITEM_BEH_CANT_CLOSE | GDL_DOCK_ITEM_BEH_CANT_ICONIFY) );
+        gtk_container_add( GTK_CONTAINER( item ), GTK_WIDGET(widget->gobj()) );
+        gdl_dock_add_item( GDL_DOCK( dock ), GDL_DOCK_ITEM( item ), GDL_DOCK_CENTER );
+        Gtk::Widget * wrapped = Glib::wrap(dock, true);
+        m_InfoNotebook->append_page(*wrapped, name);
         widget->show();
+        gtk_widget_show (dock);
+        gtk_widget_show (item);
 	}
    
 	void

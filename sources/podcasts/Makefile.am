@@ -33,29 +33,15 @@ libmpxsource_podcasts_la_LIBADD =  	\
 
 
 libmpxsource_podcasts_la_SOURCES = 	\
-	podcast-libxml2-sax.cc			\
-	podcast-libxml2-sax.hh			\
-	podcast-utils.cc				\
-	podcast-utils.hh				\
-	podcast-v2-types.cc				\
-	podcast-v2-types.hh				\
-	podcast-cache-libxml2-sax.cc	\
-	podcast-cache-libxml2-sax.hh	\
-	podcast.cc						\
-	podcast.hh
+		plugin.cc					\
+		rss.hxx						\
+		rss.cxx						\
+		podcast-types.hh			\
+		source-podcasts.hh			\
+		source-podcasts.cc
 
 libmpxsource_podcastsdir = $(PLUGIN_DIR)/sources
 
-EXTRA_DIST = glib-marshalers.list
-
-built_header_make = 	\
-		glib-marshalers.h
-
-glib-marshalers.c: glib-marshalers.list 
-	@echo "* Generating glib-marshalers.c"
-	@$(GLIB_GENMARSHAL) --prefix=psm_glib_marshal --body   $(srcdir)/glib-marshalers.list > glib-marshalers.c
-
-glib-marshalers.h: glib-marshalers.list
-	@echo "* Generating glib-marshalers.h"
-	@$(GLIB_GENMARSHAL) --prefix=psm_glib_marshal --header $(srcdir)/glib-marshalers.list > glib-marshalers.h
-
+glade_DATA = 						\
+	source-podcasts.glade				
+gladedir = $(pkgdatadir)/glade

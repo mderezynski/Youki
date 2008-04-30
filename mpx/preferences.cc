@@ -31,7 +31,6 @@
 
 #include <glibmm.h>
 #include <glib/gi18n.h>
-#include <gdk/gdkx.h>
 #include <gtkmm.h>
 #include <libglademm.h>
 
