@@ -42,6 +42,9 @@ libmpxsource_podcasts_la_SOURCES = 	\
 
 libmpxsource_podcastsdir = $(PLUGIN_DIR)/sources
 
+stock_DATA = stock-feed-add.png
+stockdir = $(pkgdatadir)/icons/hicolor/24x24/stock 
+
 glade_DATA = 						\
 	source-podcasts.glade				
 gladedir = $(pkgdatadir)/glade

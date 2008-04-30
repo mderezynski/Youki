@@ -34,38 +34,41 @@ namespace MPX
   using namespace Gtk;
 
   void
-  register_stock_icons ()
+  register_stock_icons (StockIconSpecV const& icons, std::string const& base_path)
   {
     RefPtr<Gtk::IconFactory> factory = IconFactory::create ();
-
-    struct StockIconSpec
+    for (StockIconSpecV::const_iterator i = icons.begin(); i != icons.end(); ++i)
     {
-      char const* filename;
-      char const* stock_id;
-    };
-
-    StockIconSpec theme_icon_list[] =
-    {   
-      { "audio-volume-muted.png",       "audio-volume-muted"        },
-      { "audio-volume-low.png",         "audio-volume-low"          },
-      { "audio-volume-medium.png",      "audio-volume-medium"       },
-      { "audio-volume-high.png",        "audio-volume-high"         },
-
-      { "lastfm.png",                   MPX_STOCK_LASTFM            },
-      { "plugin.png",                   MPX_STOCK_PLUGIN            },
-      { "plugin-disabled.png",          MPX_STOCK_PLUGIN_DISABLED   },
-    };
-
-    for (unsigned int n = 0; n < G_N_ELEMENTS (theme_icon_list); ++n)
-    {
-      std::string filename = build_filename(build_filename (DATA_DIR, G_DIR_SEPARATOR_S "icons"
-																 G_DIR_SEPARATOR_S "hicolor"
-																 G_DIR_SEPARATOR_S "24x24"
-																 G_DIR_SEPARATOR_S "stock"), theme_icon_list[n].filename);
-      RefPtr<Pixbuf> pixbuf = Pixbuf::create_from_file (filename);
-      factory->add (StockID (theme_icon_list[n].stock_id), IconSet(pixbuf));
+      StockIconSpec const& icon = *i;
+      std::string filename = build_filename( base_path, icon.filename );
+      RefPtr<Pixbuf> pixbuf = Pixbuf::create_from_file( filename );
+      factory->add( StockID( icon.stock_id.c_str() ), IconSet( pixbuf ) );
     }
-
     factory->add_default ();
+  }
+
+  std::string
+  default_stock_path ()
+  {
+   return build_filename (DATA_DIR, G_DIR_SEPARATOR_S "icons"
+						            G_DIR_SEPARATOR_S "hicolor"
+									G_DIR_SEPARATOR_S "24x24"
+									G_DIR_SEPARATOR_S "stock");
+  }
+
+  void
+  register_default_stock_icons ()
+  {
+    StockIconSpecV v; 
+
+    v.push_back(StockIconSpec( "audio-volume-muted.png",       "audio-volume-muted"        ));
+    v.push_back(StockIconSpec( "audio-volume-low.png",         "audio-volume-low"          ));
+    v.push_back(StockIconSpec( "audio-volume-medium.png",      "audio-volume-medium"       ));
+    v.push_back(StockIconSpec( "audio-volume-high.png",        "audio-volume-high"         ));
+    v.push_back(StockIconSpec( "lastfm.png",                   MPX_STOCK_LASTFM            ));
+    v.push_back(StockIconSpec( "plugin.png",                   MPX_STOCK_PLUGIN            ));
+    v.push_back(StockIconSpec( "plugin-disabled.png",          MPX_STOCK_PLUGIN_DISABLED   ));
+
+    register_stock_icons (v, default_stock_path()); 
   }
 }

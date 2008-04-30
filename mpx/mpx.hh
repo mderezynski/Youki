@@ -230,6 +230,7 @@ namespace MPX
 		typedef std::vector<PlaybackSource*> VectorSources;
 		typedef std::map<std::string, int> UriSchemeMap;
 		typedef std::vector<int> SourceTabMapping;
+        typedef std::map<Gtk::Widget*, Gtk::Widget*> WidgetWidgetMap;
 
         Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
         Glib::RefPtr<Gtk::ActionGroup>  m_actions;
@@ -282,6 +283,7 @@ namespace MPX
 		Gtk::Label *m_TimeLabel;
         Gtk::Notebook *m_InfoNotebook;
         Gtk::Expander *m_InfoExpander;
+        WidgetWidgetMap m_InfoWidgetMap;
 
 		VectorSources m_SourceV;
 		PlaybackSource::Flags m_source_flags[16];

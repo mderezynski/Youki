@@ -27,10 +27,36 @@
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif //HAVE_CONFIG_H
+#include <vector>
 
-// Stock icons
+// Default stock icons
 #  define MPX_STOCK_PLUGIN          "mpx-stock-plugin"
 #  define MPX_STOCK_LASTFM          "mpx-stock-lastfm"
 #  define MPX_STOCK_PLUGIN_DISABLED "mpx-stock-plugin-disabled"
+
+namespace MPX
+{
+    struct StockIconSpec
+    {
+        std::string     filename;
+        std::string     stock_id;
+
+        StockIconSpec(std::string const& filename_, std::string const& stock_id_)
+        : filename(filename_)
+        , stock_id(stock_id_)
+        {
+        }
+    };
+    typedef std::vector<StockIconSpec> StockIconSpecV;
+
+    void
+    register_stock_icons (StockIconSpecV const& icons, std::string const& base_path);
+
+    void
+    register_default_stock_icons ();
+
+    std::string
+    default_stock_path ();
+}
 
 #endif //MPX_STOCK_HH

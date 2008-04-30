@@ -1275,7 +1275,7 @@ namespace MPX
         }
 
         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
-		register_stock_icons();
+		register_default_stock_icons();
 
         splash.set_message(_("Initializing Playback Engine"), 0.2);
 
@@ -1975,16 +1975,21 @@ namespace MPX
 	Player::add_info_widget (Gtk::Widget *widget, std::string const& name)
 	{
         GtkWidget * dock = gdl_dock_new ();
-        GdlDockLayout* dock_layout = gdl_dock_layout_new(GDL_DOCK(dock));
+
         GtkWidget * item = gdl_dock_item_new_with_stock( name.c_str(), name.c_str(), NULL,
-                    GdlDockItemBehavior(GDL_DOCK_ITEM_BEH_CANT_CLOSE | GDL_DOCK_ITEM_BEH_CANT_ICONIFY) );
+                            GdlDockItemBehavior(GDL_DOCK_ITEM_BEH_CANT_CLOSE | GDL_DOCK_ITEM_BEH_CANT_ICONIFY) );
+
         gtk_container_add( GTK_CONTAINER( item ), GTK_WIDGET(widget->gobj()) );
+
         gdl_dock_add_item( GDL_DOCK( dock ), GDL_DOCK_ITEM( item ), GDL_DOCK_CENTER );
-        Gtk::Widget * wrapped = Glib::wrap(dock, true);
+
+        Gtk::Widget * wrapped = Glib::wrap(dock, false);
         m_InfoNotebook->append_page(*wrapped, name);
-        widget->show();
+        m_InfoWidgetMap.insert(std::make_pair(widget, wrapped));
+
         gtk_widget_show (dock);
         gtk_widget_show (item);
+        widget->show();
 	}
    
 	void
@@ -1998,7 +2003,11 @@ namespace MPX
 	void
 	Player::remove_info_widget (Gtk::Widget *widget)
     {
-        m_InfoNotebook->remove(*widget);
+        WidgetWidgetMap::iterator i = m_InfoWidgetMap.find(widget);
+        if( i != m_InfoWidgetMap.end() )
+        {
+            m_InfoNotebook->remove(*((*i).second));
+        }
     }
 
 	void
