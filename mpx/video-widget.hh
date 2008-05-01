@@ -46,14 +46,14 @@ namespace MPX
   typedef Glib::Property<AspectRatio> PropAspectRatio;
 
   class Play;
-  class VideoWindow
+  class VideoWidget
     : public Gtk::Widget
   {
 
     public:
 
-      VideoWindow (Play*);
-      virtual ~VideoWindow ();
+      VideoWidget (Play*);
+      virtual ~VideoWidget ();
 
       ProxyOf<PropBool>::ReadWrite property_playing();
       ProxyOf<PropGeom>::ReadWrite property_geometry();
@@ -82,6 +82,9 @@ namespace MPX
 
       bool
       on_toplevel_configure_event (GdkEventConfigure *);
+
+      void
+      on_playing_changed ();
 
       void
       get_media_size (int & width, int & height);
@@ -116,6 +119,7 @@ namespace MPX
     private:
 
       Glib::RefPtr<Gdk::Window> mWindow, mVideo;
+      Glib::RefPtr<Gdk::Pixbuf> mEmblem;
 
       PropBool        property_playing_;
       PropGeom        property_geometry_;
@@ -124,6 +128,7 @@ namespace MPX
                       m_video_height_pixels;
       GValue        * m_PAR;
       Play          * m_Play;
+      bool            m_Mapped;
   };
 }
 

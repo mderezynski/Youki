@@ -273,7 +273,7 @@ namespace MPX
 		PluginManagerGUI *m_PluginManagerGUI;
         Sidebar *m_Sidebar;
         InfoArea *m_InfoArea;
-        VideoWindow *m_VideoWindow; 
+        VideoWidget *m_VideoWidget; 
 
         Gtk::Statusbar *m_Statusbar;
 		Gtk::Notebook *m_MainNotebook;

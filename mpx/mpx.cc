@@ -1336,12 +1336,10 @@ namespace MPX
 		m_Play->signal_metadata().connect( sigc::mem_fun( *this, &MPX::Player::on_play_metadata ));
 		m_Play->property_status().signal_changed().connect( sigc::mem_fun( *this, &MPX::Player::on_play_status_changed ));
 
-        m_VideoWindow = manage(new VideoWindow(m_Play));
-        dynamic_cast<Gtk::Alignment*>(m_ref_xml->get_widget ("alignment-video"))->add( * m_VideoWindow );
-        m_VideoWindow->show ();
-        gtk_widget_realize (GTK_WIDGET (m_VideoWindow->gobj()));
-
-        //m_ref_xml->get_widget("notebook-outer", m_OuterNotebook);
+        m_VideoWidget = manage(new VideoWidget(m_Play));
+        dynamic_cast<Gtk::Alignment*>(m_ref_xml->get_widget ("alignment-video"))->add( * m_VideoWidget );
+        m_VideoWidget->show ();
+        gtk_widget_realize (GTK_WIDGET (m_VideoWidget->gobj()));
 
         if( m_Play->has_video() )
         {
@@ -2665,8 +2663,8 @@ namespace MPX
 	      m_Seek->set_range(0., 1.);
 		  m_Seek->set_value(0.);
 	 	  m_Seek->set_sensitive(false);
-          m_VideoWindow->property_playing() = false; 
-          m_VideoWindow->queue_draw();
+          m_VideoWidget->property_playing() = false; 
+          m_VideoWidget->queue_draw();
 		  break;
 		}
 
@@ -3424,15 +3422,15 @@ namespace MPX
     ::Window
     Player::on_gst_set_window_id ()
     {
-      m_VideoWindow->property_playing() = true; //FIXME: This does not really belong here.
-      m_VideoWindow->queue_draw();
-      return m_VideoWindow->get_video_xid(); 
+      m_VideoWidget->property_playing() = true; //FIXME: This does not really belong here.
+      m_VideoWidget->queue_draw();
+      return m_VideoWidget->get_video_xid(); 
     }
 
     void
     Player::on_gst_set_window_geom (int width, int height, GValue const* par)
     {
-      m_VideoWindow->property_geometry() = Geometry( width, height );
-      m_VideoWindow->set_par( par );
+      m_VideoWidget->property_geometry() = Geometry( width, height );
+      m_VideoWidget->set_par( par );
     }
 }
