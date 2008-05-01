@@ -216,10 +216,10 @@ namespace MPX
 		add_menu ();
 
         virtual UriSchemes 
-        Get_Schemes ();
+        get_uri_schemes ();
 
         virtual void    
-        Process_URI_List (Util::FileList const&);
+        process_uri_list (Util::FileList const&, bool play);
 
       protected:
 

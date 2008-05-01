@@ -113,7 +113,7 @@ namespace MPX
     class PluginManager;
     class PluginManagerGUI;
     class Preferences;
-    class Sources;
+    class Sidebar;
 
     class Player
       : public WidgetLoader<Gtk::Window>
@@ -271,7 +271,7 @@ namespace MPX
         Preferences *m_Preferences;
         MLibManager *m_MLibManager;
 		PluginManagerGUI *m_PluginManagerGUI;
-        Sources *m_Sources;
+        Sidebar *m_Sidebar;
         InfoArea *m_InfoArea;
         VideoWindow *m_VideoWindow; 
 
@@ -305,6 +305,7 @@ namespace MPX
 		void
 		on_play_files ();
 
+#if 0 
         void
         on_info_toggled();
 
@@ -313,6 +314,7 @@ namespace MPX
 
         void
         on_video_toggled ();
+#endif
 
 		void
 		on_volume_value_changed(double);
@@ -374,7 +376,7 @@ namespace MPX
 
 		
 		void
-		on_source_changed (int source_id);
+		on_source_changed (gint64 id);
 
 		void
 		on_source_caps (PlaybackSource::Caps, int);

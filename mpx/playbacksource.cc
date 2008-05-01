@@ -169,13 +169,13 @@ namespace MPX
 		}
 
         UriSchemes
-        PlaybackSource::Get_Schemes ()
+        PlaybackSource::get_uri_schemes ()
         {
             return UriSchemes();
         }
 
         void
-        PlaybackSource::Process_URI_List (Util::FileList const&)
+        PlaybackSource::process_uri_list (Util::FileList const&, bool play)
         {
         }
 

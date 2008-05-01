@@ -170,8 +170,11 @@ namespace MPX
     }
 
     GtkWidget * widget = GTK_WIDGET(gobj());
-    gdk_draw_rectangle (widget->window, widget->style->black_gc, TRUE, 0, 0,
+    gdk_draw_rectangle (mWindow->gobj(), widget->style->black_gc, TRUE, 0, 0,
       widget->allocation.width, widget->allocation.height);
+    gdk_draw_rectangle (mVideo->gobj(), widget->style->black_gc, TRUE, 0, 0,
+      widget->allocation.width, widget->allocation.height);
+
 
     if( property_playing() == true )
     {
