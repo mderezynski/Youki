@@ -24,12 +24,14 @@
 #ifndef MPX_HH
 #define MPX_HH
 #include "config.h"
+#include <boost/python.hpp>
+#include <dbus/dbus-glib.h>
+#include <gdk/gdkx.h>
 #include <giomm.h>
 #include <gtkmm.h>
 #include <gtkmm/volumebutton.h>
 #include <libglademm/xml.h>
-#include <dbus/dbus-glib.h>
-#include <boost/python.hpp>
+#include <sigx/sigx.h>
 
 #include "mpx/covers.hh"
 #ifdef HAVE_HAL
@@ -42,10 +44,8 @@
 #include "mpx/widgetloader.h"
 
 #include "audio-types.hh"
-#include "video-widget.hh"
-#include <gdk/gdkx.h>
-
 #include "dbus-marshalers.h"
+#include "video-widget.hh"
 
 using namespace Gnome::Glade;
 
@@ -117,6 +117,7 @@ namespace MPX
 
     class Player
       : public WidgetLoader<Gtk::Window>
+      , public sigx::glib_auto_dispatchable
     {
       public:
 

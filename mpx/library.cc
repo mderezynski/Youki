@@ -161,16 +161,24 @@ namespace
 namespace MPX
 {
 #ifdef HAVE_HAL
-    Library::Library (Covers &covers, HAL &hal, TaskKernel &kernel, bool use_hal)
-    : m_HAL (&hal)
-    , m_TaskKernel (&kernel)
+
+    Library::Library(Covers &covers, HAL &hal, TaskKernel &kernel, bool use_hal)
+    : m_HAL(&hal)
+    , m_TaskKernel(&kernel)
+
 #else
-    Library::Library (Covers &covers, TaskKernel & kernel)
-    : m_TaskKernel (&kernel)
+
+    Library::Library(Covers &covers, TaskKernel & kernel)
+    : m_TaskKernel(&kernel)
+
 #endif
-    , m_Covers (&covers)
+
+    , m_Covers(&covers)
+    , m_ScannerThread(new LibraryScannerThread(this))
     , m_Flags (0)
     {
+        m_ScannerThread->run();
+
 		mReaderTagLib = new MetadataReaderTagLib();
 
         const int MLIB_VERSION_CUR = 1;
@@ -1033,7 +1041,7 @@ namespace MPX
 		execSQL((boost::format ("UPDATE album SET album_genre = '%s' WHERE id = '%lld'") % get<std::string>(rows[0]["genre"]) % id).str());
 	}
 
-    Library::ScanResult
+    ScanResult
     Library::insert (const std::string& uri, const std::string& insert_path, const std::string& name)
     {
       std::string type;        
@@ -1200,32 +1208,27 @@ namespace MPX
     void
     Library::initScan (const StrV & uris, const std::string& name)
     {
-        ScanDataP p (new ScanData);
-        p->URIV = uris;
-        p->Iter = p->URIV.begin();
+        ScanData p; 
+        p.URIV = uris;
+        p.Iter = p.URIV.begin();
 
         //m_SQL->exec_sql("BEGIN;");
+
         Signals.ScanStart.emit();
 
-        scanURI (p);
-    }
-
-    void
-    Library::scanURI (ScanDataP p)
-    {
         try{
-            p->insert_path = *(p->Iter); 
+            p.insert_path = *(p.Iter); 
 #ifdef HAVE_HAL
             try{
                 if (m_Flags & F_USING_HAL)
                 {
-                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (*(p->Iter)));
-                    p->insert_path_sql = filename_from_uri(*(p->Iter)).substr (volume.mount_point.length()) ;
+                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (*(p.Iter)));
+                    p.insert_path_sql = filename_from_uri(*(p.Iter)).substr (volume.mount_point.length()) ;
                 }
                 else
 #endif
                 {
-                    p->insert_path_sql = *(p->Iter); 
+                    p.insert_path_sql = *(p.Iter); 
                 }
 #ifdef HAVE_HAL
             }
@@ -1240,8 +1243,8 @@ namespace MPX
               return;
             }
 #endif
-            //p->name = name;
-            Util::collect_audio_paths( p->insert_path, p->collection );
+            p.name = name;
+            Util::collect_audio_paths( p.insert_path, p.collection );
         }
         catch( Glib::ConvertError & cxe )
         {
@@ -1249,60 +1252,19 @@ namespace MPX
             return;
         }
 
-        if(p->collection.empty())
+        if(p.collection.empty())
         {
-            g_message("%s: Nothing to scan for '%s'", G_STRLOC, (*(p->Iter)).c_str());
-            Signals.ScanEnd.emit(p->added, p->uptodate, p->updated, p->erroneous, p->collection.size());
+            g_message("%s: Nothing to scan for '%s'", G_STRLOC, (*(p.Iter)).c_str());
+            Signals.ScanEnd.emit(p.added, p.uptodate, p.updated, p.erroneous, p.collection.size());
             return;
         }
 
-        p->position = p->collection.begin();
-        m_ScanTID = m_TaskKernel->newTask( _("Library Rescan"),
-            sigc::bind( sigc::mem_fun (*this, &Library::scanInit), p ),
-            sigc::bind( sigc::mem_fun (*this, &Library::scanRun), p ),
-            sigc::bind( sigc::mem_fun (*this, &Library::scanEnd), p ));
+        p.position = p.collection.begin();
+
+        m_ScannerThread->scan(p);
     }
 
-    void
-    Library::scanInit (ScanDataP p)
-    {
-    }
-
-    bool
-    Library::scanRun (ScanDataP p)
-    {
-        try{
-            switch(insert( *(p->position) , p->insert_path_sql, p->name ))
-            {
-                case SCAN_RESULT_UPTODATE:
-                    ++(p->uptodate) ;
-                    break;
-
-                case SCAN_RESULT_OK:
-                    ++(p->added) ;
-                    break;
-
-                case SCAN_RESULT_ERROR:
-                    ++(p->erroneous) ;
-                    break;
-
-                case SCAN_RESULT_UPDATE:
-                    ++(p->updated) ;
-                    break;
-            }
-              
-        }
-        catch( Glib::ConvertError & cxe )
-        {
-            g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-        }
-
-        ++(p->position);
-        Signals.ScanRun.emit(std::distance(p->collection.begin(), p->position), p->collection.size());
-
-        return p->position != p->collection.end();
-    }
-
+#if 0
     void
     Library::scanEnd (bool aborted, ScanDataP p)
     {
@@ -1311,10 +1273,10 @@ namespace MPX
             m_SQL->exec_sql("ROLLBACK;");
         }
         else
-        if(p->Iter != p->URIV.end())
+        if(p.Iter != p.URIV.end())
         {
-            p->Iter++;
-            if(p->Iter != p->URIV.end())
+            p.Iter++;
+            if(p.Iter != p.URIV.end())
             {
                 scanURI(p);
                 return;
@@ -1323,8 +1285,9 @@ namespace MPX
         else
             m_SQL->exec_sql("COMMIT;");
 
-        Signals.ScanEnd.emit(p->added, p->uptodate, p->updated, p->erroneous, p->collection.size());
+        Signals.ScanEnd.emit(p.added, p.uptodate, p.updated, p.erroneous, p.collection.size());
         p.reset();
     }
+#endif
     
 } // namespace MPX

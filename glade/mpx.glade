@@ -47,6 +47,7 @@
                         <property name="can_focus">True</property>
                         <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
                         <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
+                        <property name="shadow_type">GTK_SHADOW_IN</property>
                         <child>
                           <widget class="GtkTreeView" id="sidebar">
                             <property name="visible">True</property>
@@ -252,11 +253,18 @@
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkHScale" id="scale-seek">
+                  <widget class="GtkAlignment" id="alignment1">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="adjustment">0 0 0 0 0 0</property>
-                    <property name="draw_value">False</property>
+                    <property name="left_padding">4</property>
+                    <property name="right_padding">4</property>
+                    <child>
+                      <widget class="GtkHScale" id="scale-seek">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="adjustment">0 0 0 0 0 0</property>
+                        <property name="draw_value">False</property>
+                      </widget>
+                    </child>
                   </widget>
                   <packing>
                     <property name="position">1</property>
@@ -266,6 +274,7 @@
                   <widget class="GtkLabel" id="label-time">
                     <property name="width_request">110</property>
                     <property name="visible">True</property>
+                    <property name="justify">GTK_JUSTIFY_CENTER</property>
                   </widget>
                   <packing>
                     <property name="expand">False</property>
@@ -276,7 +285,6 @@
                 <child>
                   <widget class="GtkAlignment" id="alignment2">
                     <property name="visible">True</property>
-                    <property name="left_padding">8</property>
                     <child>
                       <widget class="GtkHBox" id="hbox4">
                         <property name="visible">True</property>

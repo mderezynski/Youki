@@ -316,6 +316,7 @@ class TrackInfo:
                         self.buf.insert(self.buf.get_end_iter(), ": ")
                         rels = entity.getRelations()
                         self.display_relations (rels)
+                        self.buf.insert("\n")
 
         except:
         

@@ -493,6 +493,9 @@ PKG_CHECK_MODULES([LIBOFA], [libofa >= 0.9.3])
 # GDL
 PKG_CHECK_MODULES([GDL], [gdl-1.0])
 
+# SIGX
+PKG_CHECK_MODULES([SIGX], [sigx-2.0])
+
 #########################################
 ######### PLATFORM SPECIFITIES ##########
 #########################################

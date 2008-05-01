@@ -25,6 +25,7 @@
 #define MPX_HH
 #include "config.h"
 #include <gtkmm.h>
+#include <sigx/sigx.h>
 #include "widgetloader.h"
 #include "mpx/paccess.hh"
 
@@ -44,6 +45,7 @@ namespace MPX
 
     class Player
       : public WidgetLoader<Gtk::Window>
+      , public sigx::glib_auto_dispatchable
     {
       public:
 

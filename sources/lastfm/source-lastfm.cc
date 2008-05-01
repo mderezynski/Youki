@@ -358,7 +358,7 @@ namespace Source
         if(play)
             m_LastFMRadio.playurl(uris[0]);
         else
-            g_message("%s: Non-play processing of URIs is not supported");
+            g_message("%s: Non-play processing of URIs is not supported", G_STRLOC);
     }
   } // Source
 

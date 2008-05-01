@@ -26,6 +26,7 @@ mpx_bin_CXXFLAGS = 									\
 		$(PYTHON_CFLAGS)							\
 		$(RSVG_CFLAGS)								\
 		$(SEXYMM_CFLAGS)							\
+		$(SIGX_CFLAGS)								\
 		$(SOUP_CFLAGS)								\
 		$(SQLITE_CFLAGS)							\
 		$(STARTUP_NOTIFY_CFLAGS)					\
@@ -62,6 +63,7 @@ mpx_bin_LDADD =										\
 		$(PYTHON_LIBS)								\
 		$(RSVG_LIBS)								\
 		$(SEXYMM_LIBS)								\
+		$(SIGX_LIBS)								\
 		$(SM_LIBS)									\
 		$(SOUP_LIBS)								\
 		$(SQLITE_LIBS)								\
@@ -140,6 +142,8 @@ mpx_bin_SOURCES =				\
 	last-fm-xmlrpc.cc			\
 								\
 	library.cc					\
+	library-scanner-thread.hh	\
+	library-scanner-thread.cc	\
 								\
 	lyrics-v2.hh				\
 	lyrics-v2.cc				\

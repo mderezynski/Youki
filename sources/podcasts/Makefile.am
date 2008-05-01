@@ -9,6 +9,7 @@ INCLUDES = 							\
 		$(PYTHON_CFLAGS)			\
 		$(PYGTK_CFLAGS)				\
 		$(SEXYMM_CFLAGS)			\
+		$(SIGX_CFLAGS)				\
 		$(SOUP_CFLAGS)				\
 		-I$(top_srcdir)/include		\
 		-I$(top_srcdir)/libhal++
@@ -43,7 +44,7 @@ libmpxsource_podcasts_la_SOURCES = 	\
 libmpxsource_podcastsdir = $(PLUGIN_DIR)/sources
 
 stock_DATA = stock-feed-add.png
-stockdir = $(pkgdatadir)/icons/hicolor/24x24/stock 
+stockdir = $(pkgdatadir)/icons/hicolor/24x24/stock
 
 glade_DATA = 						\
 	source-podcasts.glade				

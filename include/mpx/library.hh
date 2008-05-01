@@ -29,6 +29,7 @@
 #include "mpx/types.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
+#include "mpx/library-scanner-thread.hh"
 
 namespace MPX
 {
@@ -36,48 +37,7 @@ namespace MPX
   class MetadataReaderTagLib;
   class Library
   {
-            enum ScanResult
-            {
-                SCAN_RESULT_OK,
-                SCAN_RESULT_ERROR,
-                SCAN_RESULT_UPDATE,
-                SCAN_RESULT_UPTODATE
-            };
-
-            struct ScanData
-            {
-                StrV URIV;
-                StrV::iterator Iter;
-
-                std::string insert_path ;
-                std::string insert_path_sql ;
-            
-                Util::FileList collection ;
-                Util::FileList::iterator position ;
-                std::string name ;
-                gint64 added ;
-                gint64 erroneous ;
-                gint64 uptodate ;
-                gint64 updated ;
-
-                ScanData ()
-                : added(0)
-                , erroneous(0)
-                , uptodate(0)
-                , updated(0)
-                {}
-            };
-
-            typedef boost::shared_ptr<ScanData> ScanDataP;
-
-            void
-            scanInit (ScanDataP);
-            bool
-            scanRun (ScanDataP);
-            void
-            scanEnd (bool, ScanDataP);
-            void
-            scanURI(ScanDataP);
+        friend class LibraryScannerThread;
 
         public:
 
@@ -86,14 +46,12 @@ namespace MPX
 
         private:
 
-            TID m_ScanTID;
-            TID M_ScanMETATID;
-            
 #ifdef HAVE_HAL
             HAL * m_HAL;
 #endif
             TaskKernel * m_TaskKernel;
             Covers * m_Covers;
+            LibraryScannerThread * m_ScannerThread;
 
         public:
 #ifdef HAVE_HAL
@@ -103,7 +61,11 @@ namespace MPX
 #endif
             ~Library () ;
 
-
+            LibraryScannerThread::ScannerConnectable&
+            scanner()
+            {
+                return m_ScannerThread->connect();
+            }
 
             void
             getMetadata(const std::string&, Track&) ;
@@ -114,12 +76,6 @@ namespace MPX
 			void
 			execSQL(const std::string&);
 
-            Track
-            sqlToTrack (SQL::Row&);
-
-            SQL::RowV
-            getTrackTags (gint64);
-
 			void
 			vacuum();
 
@@ -129,6 +85,12 @@ namespace MPX
                 Signals.Reload.emit();
             }
 
+
+            Track
+            sqlToTrack (SQL::Row&);
+
+            SQL::RowV
+            getTrackTags (gint64);
 
 
 			void
@@ -142,7 +104,6 @@ namespace MPX
 
             void
             trackTagged(gint64, std::string const&);
-
 
 
             typedef sigc::signal<void, gint64 /*album id*/> SignalNewAlbum; 

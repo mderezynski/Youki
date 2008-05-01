@@ -1300,6 +1300,7 @@ namespace MPX
                    MPX::Covers & obj_amazon)
 #endif // HAVE_HAL
     : WidgetLoader<Gtk::Window>(xml, "mpx")
+    , sigx::glib_auto_dispatchable()
     , m_ref_xml(xml)
     , m_startup_complete(false)
 	, m_SourceCtr (0)
@@ -1414,9 +1415,9 @@ namespace MPX
         splash.set_message(_("Loading Plugins"), 0.6);
 	
 		/*------------------------ Connect Library -----------------------------------------------*/ 
-        m_Library.signal_scan_start().connect( sigc::mem_fun( *this, &Player::on_library_scan_start ) );
-        m_Library.signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
-        m_Library.signal_scan_end().connect( sigc::mem_fun( *this, &Player::on_library_scan_end ) );
+        m_Library.scanner().signal_scan_start().connect( sigc::mem_fun( *this, &Player::on_library_scan_start ) );
+        m_Library.scanner().signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
+        m_Library.scanner().signal_scan_end().connect( sigc::mem_fun( *this, &Player::on_library_scan_end ) );
 
         /*---------------------- UIManager + Menus + Proxy Widgets --------------------------------*/
 		m_ui_manager = UIManager::create ();
@@ -2298,8 +2299,6 @@ namespace MPX
 	void
 	Player::on_source_track_metadata (Metadata const& metadata, int source_id)
 	{
-	  //g_return_if_fail( m_ActiveSource == source_id );
-
       Glib::Mutex::Lock L (m_MetadataLock);
 
       m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive(true);

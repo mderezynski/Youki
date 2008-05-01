@@ -18,6 +18,7 @@ INCLUDES =							\
 		$(PYTHON_CFLAGS)			\
 		$(PYGTK_CFLAGS)				\
 		$(SEXYMM_CFLAGS)			\
+		$(SIGX_CFLAGS)				\
 		$(SOUP_CFLAGS)				\
 		-I$(top_srcdir)/include	
 
