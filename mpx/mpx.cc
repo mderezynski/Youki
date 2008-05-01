@@ -1,5 +1,10 @@
-//  MPX
-//  Copyright (C) 2007 MPX Project 
+//
+//  mpx.cc
+//
+//  Authors:
+//      Milosz Derezynski <milosz@backtrace.info>
+//
+//  (C) 2008 MPX Project
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -1552,8 +1557,8 @@ namespace MPX
         m_ref_xml->get_widget_derived("sidebar", m_Sidebar);
 		m_Sidebar->signal_id_changed().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
 
-        m_Sidebar->addItem(_("Now Playing"), render_icon (Gtk::StockID (GTK_STOCK_MEDIA_PLAY), Gtk::ICON_SIZE_DIALOG)->scale_simple(16,16,Gdk::INTERP_BILINEAR), 0);
-        m_Sidebar->addItem(_("Info Plugins"), render_icon (Gtk::StockID (MPX_STOCK_PLUGIN), Gtk::ICON_SIZE_DIALOG)->scale_simple(16,16,Gdk::INTERP_BILINEAR), 1);
+        m_Sidebar->addItem(_("Now Playing"), render_icon (Gtk::StockID (GTK_STOCK_MEDIA_PLAY), Gtk::ICON_SIZE_DIALOG)->scale_simple(24,24,Gdk::INTERP_BILINEAR), 0);
+        m_Sidebar->addItem(_("Info Plugins"), render_icon (Gtk::StockID (MPX_STOCK_PLUGIN), Gtk::ICON_SIZE_DIALOG)->scale_simple(24,24,Gdk::INTERP_BILINEAR), 1);
        
         m_ref_xml->get_widget("statusbar", m_Statusbar);
         std::string sources_path = build_filename(PLUGIN_DIR, "sources");
@@ -1773,7 +1778,7 @@ namespace MPX
         p->get_ui()->reparent(*a);
         a->show();
         m_MainNotebook->append_page(*a);
-        m_Sidebar->addItem( p->get_name(), p->get_icon()->scale_simple(16,16,Gdk::INTERP_BILINEAR), m_PageCtr );
+        m_Sidebar->addItem( p->get_name(), p->get_icon()->scale_simple(24,24,Gdk::INTERP_BILINEAR), m_PageCtr );
 		m_SourceV.push_back(p);
 		install_source(m_SourceCtr++, /* tab # */ (m_PageCtr-1));
         m_PageCtr++;
@@ -2423,12 +2428,14 @@ namespace MPX
 
 	  source->send_caps ();
 	  source->send_metadata ();
+
+      m_Sidebar->setActiveId(source_id + 2);
 	}
 
 	void
 	Player::play ()
 	{
-	  int source_id = m_Sidebar->getActiveId() - 2; 
+	  int source_id = m_Sidebar->getVisibleId() - 2; 
 
       if( source_id >= 0 )
       {
@@ -2613,6 +2620,7 @@ namespace MPX
 	  }
 
       set_title (_("(Not Playing) - MPX"));
+      m_Sidebar->clearActiveId();
 	}
 
 	void

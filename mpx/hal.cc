@@ -1,5 +1,9 @@
-//  MPX
-//  Copyright (C) 2005-2007 MPX development.
+//  hal.cc
+//
+//  Authors:
+//      Milosz Derezynski <milosz@backtrace.info>
+//
+//  (C) 2008 MPX Project
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License Version 2

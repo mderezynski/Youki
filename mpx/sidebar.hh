@@ -28,6 +28,7 @@
 #include <set>
 #include <gtkmm.h>
 #include <libglademm/xml.h>
+#include <boost/optional.hpp>
 
 namespace MPX
 {
@@ -75,7 +76,8 @@ namespace MPX
                                gpointer           data) ;
 
         void on_selection_changed ();
-        gint64 m_active_id;
+        boost::optional<gint64> m_active_id;
+        gint64 m_visible_id;
 
     public:
 
@@ -99,6 +101,15 @@ namespace MPX
 
         gint64
         getActiveId ();
+
+        gint64
+        getVisibleId ();
+
+        void
+        setActiveId (gint64);
+
+        void
+        clearActiveId ();
 
         void
         addItem (const Glib::ustring& name, const Glib::RefPtr<Gdk::Pixbuf>& icon, gint64 id);

@@ -85,14 +85,41 @@ namespace MPX
     {
         TreeIter iter = get_selection()->get_selected();
         gint64 id = (*iter)[m_SourceColumns.id];
-        m_active_id = id;
+        m_visible_id = id;
         signal_id_changed_.emit(id);
+    }
+
+    gint64
+    Sidebar::getVisibleId ()
+    {
+        return m_visible_id;
     }
 
     gint64
     Sidebar::getActiveId ()
     {
-        return m_active_id;
+        if(m_active_id)
+        {
+            return m_active_id.get();
+        }
+        else
+        {
+            throw std::runtime_error(_("No active Id"));
+        }
+    }
+
+    void 
+    Sidebar::setActiveId (gint64 id)
+    {
+        m_active_id = id;
+        queue_draw ();
+    }
+
+    void
+    Sidebar::clearActiveId ()
+    {
+        m_active_id.reset();
+        queue_draw ();
     }
 
     void
@@ -102,6 +129,16 @@ namespace MPX
         {
             Gtk::CellRendererText & cell = *(dynamic_cast<Gtk::CellRendererText*>(basecell));
             cell.property_markup() = (*iter)[m_SourceColumns.name];
+            if(m_active_id)
+            {
+                if(m_active_id.get() == (*iter)[m_SourceColumns.id])
+                {
+                    cell.property_weight() = Pango::WEIGHT_BOLD;
+                    return;
+                }
+            }
+
+            cell.property_weight() = Pango::WEIGHT_NORMAL;
         }
         else if(cellid == 0)
         {

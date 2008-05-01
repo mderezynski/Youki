@@ -1,6 +1,29 @@
+//  main.cc
 //
-// MPX (C) MPX Project 2007
+//  Authors:
+//      Milosz Derezynski <milosz@backtrace.info>
 //
+//  (C) 2008 MPX Project
+//
+//  This program is free software; you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License Version 2
+//  as published by the Free Software Foundation.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program; if not, write to the Free Software
+//  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+//
+//  --
+//
+//  The MPX project hereby grants permission for non-GPL compatible GStreamer
+//  plugins to be used and distributed together with GStreamer and MPX. This
+//  permission is above and beyond the permissions granted by the GPL license
+//  MPX is covered by.
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
@@ -32,7 +55,7 @@ using namespace MPX;
 
 namespace MPX
 {
-	Mcs::Mcs * mcs = 0;
+	Mcs::Mcs  * mcs = 0;
     Mcs::Bind * mcs_bind = 0;
 }
 
@@ -147,14 +170,13 @@ namespace
 	setup_mcs ()
 	{
 	  try{
-		MPX::mcs = new Mcs::Mcs (Glib::build_filename (Glib::build_filename (Glib::get_user_config_dir (), "mpx"), "config.xml"), "mpx", 0.01);
-	  }
-	  catch (Mcs::Mcs::Exceptions & cxe)
+            MPX::mcs = new Mcs::Mcs (Glib::build_filename (Glib::build_filename (Glib::get_user_config_dir (), "mpx"), "config.xml"), "mpx", 0.01);
+	  } catch( Mcs::Mcs::Exceptions & cxe )
 	  {
-		if (cxe == Mcs::Mcs::PARSE_ERROR)
-		{
-		  g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, _("Unable to parse configuration file!"));
-		}
+            if (cxe == Mcs::Mcs::PARSE_ERROR)
+            {
+                g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, _("Unable to parse configuration file!"));
+            }
 	  }
 
       mcs_bind = new Mcs::Bind(mcs);
@@ -296,27 +318,39 @@ main (int argc, char ** argv)
     g_mkdir(build_filename(g_get_user_cache_dir(), "mpx").c_str(), 0700);
     g_mkdir(build_filename(g_get_user_config_dir(), "mpx").c_str(), 0700);
 
+    GOptionContext * context_c = g_option_context_new (_(" - run AudioSource Player"));
+    //g_option_context_add_main_entries (context_c, options, "mpx");
+    g_option_context_add_group (context_c, gst_init_get_option_group ());
+    OptionContext context (context_c, true);
+
+    try{
+        gtk = new Gtk::Main (argc, argv, context);
+    } catch( OptionError & cxe )
+    {
+        g_warning("%s: %s", G_STRLOC, cxe.what().c_str());
+        std::exit(EXIT_FAILURE);
+    }
+
     gst_init(&argc, &argv);
 	clutter_init(&argc, &argv);
-    gtk = new Gtk::Main (argc, argv);
 
 #ifdef HAVE_HAL
     try{
-        MPX::HAL * obj_hal = new MPX::HAL;
+        MPX::HAL        * obj_hal = new MPX::HAL;
 #endif
         MPX::TaskKernel * obj_task_kernel = new MPX::TaskKernel;
-        MPX::NM * obj_netman = new MPX::NM;
-        MPX::Covers * obj_amzn = new MPX::Covers(*obj_netman);
+        MPX::NM         * obj_netman = new MPX::NM;
+        MPX::Covers     * obj_amzn = new MPX::Covers(*obj_netman);
 #ifdef HAVE_HAL
-        MPX::Library * obj_library = new MPX::Library(*obj_amzn, *obj_hal, *obj_task_kernel, true); // use HAL
+        MPX::Library    * obj_library = new MPX::Library(*obj_amzn, *obj_hal, *obj_task_kernel, true); // use HAL
 #else
-        MPX::Library * obj_library = new MPX::Library(*obj_amzn, *obj_task_kernel); // don't use HAL
+        MPX::Library    * obj_library = new MPX::Library(*obj_amzn, *obj_task_kernel); // don't use HAL
 #endif
 
 #ifdef HAVE_HAL
-        MPX::Player * obj_mpx = MPX::Player::create(*obj_library, *obj_amzn, *obj_hal);
+        MPX::Player     * obj_mpx = MPX::Player::create(*obj_library, *obj_amzn, *obj_hal);
 #else
-        MPX::Player * obj_mpx = MPX::Player::create(*obj_library, *obj_amzn);
+        MPX::Player     * obj_mpx = MPX::Player::create(*obj_library, *obj_amzn);
 #endif // HAVE_HAL
         
         Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
@@ -332,7 +366,7 @@ main (int argc, char ** argv)
 #ifdef HAVE_HAL
         delete obj_hal;
       }
-    catch (HAL::NotInitializedError)
+    catch( HAL::NotInitializedError )
       {
       }
 #endif
