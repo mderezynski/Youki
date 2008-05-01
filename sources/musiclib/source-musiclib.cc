@@ -994,18 +994,18 @@ namespace MPX
               }
 
               void
-              prepare_uris (Util::FileList const& uris)
+              prepare_uris (Util::FileList const& uris, bool init_iter)
               {
                   bool begin = true;
                   TreeIter iter = ListStore->append();
-                  m_PlayInitIter = iter;
+                  if(init_iter)
+                      m_PlayInitIter = iter;
                   append_uris (uris, iter, begin);
                   m_MusicLib.check_caps();
                   m_MusicLib.send_caps ();
               }
+
         };
-
-
 
         enum AlbumRowType
         {
@@ -2190,7 +2190,7 @@ namespace Source
     }
 
     UriSchemes 
-    PlaybackSourceMusicLib::Get_Schemes ()
+    PlaybackSourceMusicLib::get_uri_schemes ()
     {
         UriSchemes s;
         s.push_back("file");
@@ -2198,10 +2198,13 @@ namespace Source
     }
 
     void    
-    PlaybackSourceMusicLib::Process_URI_List (Util::FileList const& uris)
+    PlaybackSourceMusicLib::process_uri_list (Util::FileList const& uris, bool play)
     {
-        m_Private->m_TreeViewPlaylist->prepare_uris (uris);
-        Signals.PlayRequest.emit();
+        m_Private->m_TreeViewPlaylist->prepare_uris (uris, play);
+        if(play)
+        {
+            Signals.PlayRequest.emit();
+        }
     }
 
 } // end namespace Source

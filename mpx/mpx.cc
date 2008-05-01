@@ -59,14 +59,13 @@
 #include "import-share.hh"
 #include "import-folder.hh"
 #include "last-fm-xmlrpc.hh"
-#include "request-value.hh"
-
 #include "mlibmanager.hh"
-#include "mpx-sources.hh"
-#include "preferences.hh"
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
 #include "play.hh"
+#include "preferences.hh"
+#include "request-value.hh"
+#include "sidebar.hh"
 #include "splash-screen.hh"
 
 using namespace Glib;
@@ -228,26 +227,18 @@ namespace
 
 namespace MPX
 {
-  enum LayoutID
-  {
-        L_ARTIST,
-        L_ALBUM,
-        L_TITLE,
-        N_LAYOUTS
-  };
-
   struct LayoutData
   {
-        double alpha;
-        double target;
-        int    x;
-        int    y;
+    double amod;
+    int    x;
+    int    y;
   };
 
-  LayoutData const layout_info[] = {
-        {-0.8, 1.0,  84, 6},
-        {-1.0, 0.65, 84, 20},
-        {-1.5, 1.0,  84, 54},
+  LayoutData const layout_info[] =
+  {
+    {1.  , 84,  6},
+    {0.65, 84, 20},
+    {1.  , 84, 54},
   };
 
   // WARNING: If you set the gravity or timescale too high, the cover
@@ -295,53 +286,40 @@ namespace MPX
         { 0xec, 0xce, 0xb6 },
   };
 
+  struct TextSet
+  {
+    std::string     Artist;
+    std::string     Album;
+    std::string     Title;
+  };
+
   class InfoArea
     : public WidgetLoader<EventBox>
   {
     private:
 
-          MPX::Play & m_Play;
+          MPX::Play&                            m_Play;
+          Spectrum                              m_spectrum_data;
 
-          Spectrum m_spectrum_data;
+          boost::optional<TextSet>              m_text_cur;
+          boost::optional<TextSet>              m_text_new;
+          double                                m_layout_alpha;
+          sigc::connection                      m_fade_conn;
 
-          struct Text
-          {
-            Text (Gtk::Widget &  widget,
-                  ustring const& text,
-                  LayoutID       id)
-            : alpha   (layout_info[id].alpha)
-            , target  (layout_info[id].target)
-            , x       (layout_info[id].x)
-            , y       (layout_info[id].y)
-            {
-              layout = widget.create_pango_layout ("");
-              layout->set_markup (text);
-            }
+          boost::optional<Cairo::RefPtr<Cairo::ImageSurface> >   m_cover_surface_cur;
+          boost::optional<Cairo::RefPtr<Cairo::ImageSurface> >   m_cover_surface_new;
+          double                                m_cover_pos;
+          double                                m_cover_velocity;
+          double                                m_cover_accel;
+          double                                m_cover_alpha;
+          sigc::connection                      m_cover_anim_conn_fade;
+          sigc::connection                      m_cover_anim_conn_slide;
+          sigc::connection                      m_decay_conn;
 
-            ~Text () {}
+          bool								    m_pressed;
 
-            RefPtr<Pango::Layout> layout;
-            double                alpha;
-            double                target;
-            int                   x, y;
-            sigc::connection      conn;
-          };
-
-          typedef boost::shared_ptr<Text>   TextP;
-          typedef std::map<LayoutID, TextP> Layouts;
-
-          Layouts m_layouts;
-          ustring m_text[N_LAYOUTS];
-
-          Cairo::RefPtr<Cairo::ImageSurface>  m_cover_surface;
-          Glib::RefPtr<Gdk::Pixbuf>           m_source_icon;
-          double                              m_cover_pos;
-          double                              m_cover_velocity;
-          double                              m_cover_accel;
-          double                              m_cover_alpha;
-          bool								  m_pressed;
-          sigc::connection                    m_cover_anim_conn;
-          sigc::connection                    m_decay_conn;
+          Glib::Mutex                           m_surface_lock;
+          Glib::Mutex                           m_layout_lock;
 
     public:
 
@@ -362,8 +340,8 @@ namespace MPX
 
     private:
 
-          SignalUris m_SignalUrisDropped;
-          SignalCoverClicked m_SignalCoverClicked;
+          SignalUris            m_SignalUrisDropped;
+          SignalCoverClicked    m_SignalCoverClicked;
 
     public:
 
@@ -372,15 +350,11 @@ namespace MPX
           : WidgetLoader<Gtk::EventBox>(xml, "infoarea")
           , m_Play(play)
           , m_spectrum_data(SPECT_BANDS, 0)
-          , m_source_icon(Glib::RefPtr<Gdk::Pixbuf>(0))
-          , m_cover_alpha(1.0)
+          , m_layout_alpha(0.)
+          , m_cover_alpha(0.)
           , m_pressed(false)
           {
             add_events (Gdk::BUTTON_PRESS_MASK);
-
-            /*Gdk::Color const color ("#000000");
-            modify_bg (Gtk::STATUS_NORMAL, color);
-            modify_base (Gtk::STATUS_NORMAL, color);*/
 
             m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum ));
             m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
@@ -539,8 +513,7 @@ namespace MPX
           void
           play_status_changed ()
           {
-              int status = m_Play.property_status ().get_value ();
-              if( status == PLAYSTATUS_PAUSED )
+              if( m_Play.property_status ().get_value() == PLAYSTATUS_PAUSED )
               {
                 m_decay_conn = Glib::signal_timeout ().connect (sigc::mem_fun(*this, &InfoArea::decay_spectrum), 50);
               }
@@ -553,206 +526,299 @@ namespace MPX
 	public:
 
           void
-          set_source (Glib::RefPtr<Gdk::Pixbuf> const& source_icon)
-          {
-              m_source_icon = source_icon;
-              queue_draw ();
-          }
-
-          void
           reset ()
           {
-              std::fill (m_spectrum_data.begin (), m_spectrum_data.end (), 0.);
+            Mutex::Lock L1 (m_surface_lock);
+            Mutex::Lock L2 (m_layout_lock);
 
-              remove_layout_if_exists (L_ARTIST);
-              remove_layout_if_exists (L_ALBUM);
-              remove_layout_if_exists (L_TITLE);
-
-              m_cover_anim_conn.disconnect ();
-              m_cover_surface = Cairo::RefPtr<Cairo::ImageSurface> (0);
-
-              m_text[L_ARTIST].clear ();
-              m_text[L_ALBUM].clear ();
-              m_text[L_TITLE].clear ();
-
-              queue_draw ();
+            std::fill (m_spectrum_data.begin (), m_spectrum_data.end (), 0.);
+            m_cover_anim_conn_fade.disconnect ();
+            m_cover_anim_conn_slide.disconnect ();
+            m_fade_conn.disconnect();
+            m_cover_surface_cur.reset();
+            m_cover_surface_new.reset();
+            m_text_cur.reset();
+            m_text_new.reset();
+            m_layout_alpha = 0.;
+            m_cover_alpha = 0.;
+            queue_draw ();
           }
 
           void
-          set_text (LayoutID       id,
-                    ustring const& text)
+          set_text (TextSet const& set)
+                    
           {
-              if( text != m_text[id] )
-              {
-                m_text[id] = text;
+            Mutex::Lock L (m_layout_lock);
 
-                TextP p (new Text (*this, text, id));
-
-                remove_layout_if_exists (id);
-                insert_layout_and_connect (id, p);
-              }
+            if(m_text_cur)
+            {
+                m_text_new = set;
+                m_fade_conn = signal_timeout().connect( sigc::mem_fun( *this, &InfoArea::fade_out_layout ), 15 );
+            }
+            else
+            {
+                m_text_cur = set;
+                m_layout_alpha = 1.;
+                queue_draw();
+            }
           }
 
           void
-          set_paused (bool paused)
+          set_cover (RefPtr<Gdk::Pixbuf> const& pixbuf)
           {
-              m_cover_alpha = (paused ? 0.5 : 1.0);
-              queue_draw ();
+            set_cover (Util::cairo_image_surface_round(Util::cairo_image_surface_from_pixbuf (pixbuf), 6.));
           }
 
           void
-          set_image (RefPtr<Gdk::Pixbuf> const& pixbuf)
+          set_cover (Cairo::RefPtr<Cairo::ImageSurface> const& surface)
           {
-              set_image (Util::cairo_image_surface_round(Util::cairo_image_surface_from_pixbuf (pixbuf), 6.));
-          }
+            Mutex::Lock L (m_surface_lock);
 
-          void
-          set_image (Cairo::RefPtr<Cairo::ImageSurface> const& surface)
-          {
-              m_cover_surface  = Util::cairo_image_surface_round(surface, 6.);
+            m_cover_pos           = cover_anim_initial_pos;
+            m_cover_velocity      = cover_anim_initial_velocity;
+            m_cover_accel         = cover_anim_gravity;
+            m_cover_alpha         = 1.;
 
-              m_cover_pos      = cover_anim_initial_pos;
-              m_cover_velocity = cover_anim_initial_velocity;
-              m_cover_accel    = cover_anim_gravity;
-
-              m_cover_anim_conn.disconnect ();
-              m_cover_anim_conn = signal_timeout ().connect (sigc::mem_fun (this, &InfoArea::slide_in_cover), cover_anim_interval);
+            if(!m_cover_surface_cur)
+            {
+                m_cover_surface_cur   = surface; 
+                m_cover_anim_conn_slide.disconnect ();
+                m_cover_anim_conn_slide = signal_timeout ().connect( sigc::mem_fun( *this, &InfoArea::slide_in_cover ), cover_anim_interval );
+            }
+            else
+            {
+                m_cover_surface_new   = surface;
+                m_cover_anim_conn_slide.disconnect ();
+                m_cover_anim_conn_slide = signal_timeout ().connect( sigc::mem_fun( *this, &InfoArea::slide_in_cover ), cover_anim_interval );
+                m_cover_anim_conn_fade.disconnect ();
+                m_cover_anim_conn_fade = signal_timeout ().connect( sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 10 );
+            }
           }
 
     private:
 
-          void
-          insert_layout_and_connect (LayoutID id,
-                                     TextP &  p)
+          bool
+          fade_out_layout ()
           {
-              m_layouts[id] = p;
-              p->conn = signal_timeout().connect (sigc::bind (sigc::mem_fun (this, &InfoArea::fade_in), id), 10);
+            Mutex::Lock L (m_layout_lock);
+
+            m_layout_alpha = fmax(m_layout_alpha - 0.1, 0.);
+            bool cond = m_layout_alpha > 0;
+            if(!cond && m_text_new)
+            {
+                m_text_cur = m_text_new.get();
+                m_fade_conn.disconnect();
+                m_layout_alpha = 1.;
+            }
+            queue_draw ();
+            return cond;
           }
 
-          void
-          remove_layout_if_exists (LayoutID id)
+#if 0
+          bool
+          fade_in ()
           {
-              Layouts::iterator i = m_layouts.find (id);
-              if( i != m_layouts.end() )
-              {
-                TextP & p = i->second;
+            Mutex::Lock L (m_layout_lock);
 
-                p->conn.disconnect ();
-                m_layouts.erase (i);
-              }
+            m_layout_alpha = fmin(m_layout_alpha + 0.1, 1.);
+            queue_draw ();
+            return m_layout_alpha < 1;
           }
+#endif
 
           bool
-          fade_in (LayoutID id)
+          fade_out_cover ()
           {
-              TextP & p (m_layouts.find (id)->second);
-              p->alpha += 0.1;
+            Mutex::Lock L (m_surface_lock);
 
-              bool r = p->alpha < p->target;
+            m_cover_alpha = fmax(m_cover_alpha - 0.1, 0.);
+            bool cond = m_cover_alpha > 0;
+            if(m_cover_alpha < 0.8 && m_cover_surface_new)
+            {
+                if(!m_cover_anim_conn_slide.connected())
+                {
+                    m_cover_pos = cover_anim_initial_pos;
+                    m_cover_velocity = cover_anim_initial_velocity;
+                    m_cover_accel = cover_anim_gravity;
+                    m_cover_anim_conn_slide.disconnect ();
+                    m_cover_anim_conn_slide = signal_timeout ().connect( sigc::mem_fun( *this, &InfoArea::slide_in_cover ), cover_anim_interval );
+                }
+            }
+            if(!cond)
+            {
+                m_cover_surface_cur = m_cover_surface_new.get(); 
+                m_cover_surface_new.reset();
+                m_cover_alpha = 1.;
+            }
+            queue_draw ();
+            return cond;
 
-              queue_draw ();
-
-              return r;
           }
 
           bool
           slide_in_cover ()
           {
-              m_cover_pos      += m_cover_velocity * cover_anim_dt;
-              m_cover_velocity += m_cover_accel    * cover_anim_dt;
-              m_cover_accel     = cover_anim_gravity;
+            Mutex::Lock L (m_surface_lock);
 
-              bool r = true;
+            if(!m_cover_surface_cur)
+              return false;
 
-              if (m_cover_pos + m_cover_surface->get_width () >= cover_anim_wall)
-              {
-                  m_cover_pos       = cover_anim_wall - m_cover_surface->get_width ();
-                  m_cover_velocity *= -cover_anim_wall_elasticity;
+            m_cover_pos      += m_cover_velocity * cover_anim_dt;
+            m_cover_velocity += m_cover_accel    * cover_anim_dt;
+            m_cover_accel     = cover_anim_gravity;
 
-                  // FIXME: Need a better test. This runs into stability problems when
-                  // dt or acceleration is too high
+            bool r = true;
 
-                  double next_velocity = m_cover_velocity + m_cover_accel * cover_anim_dt;
+            if (m_cover_pos + m_cover_surface_cur.get()->get_width () >= cover_anim_wall)
+            {
+                m_cover_pos       = cover_anim_wall - m_cover_surface_cur.get()->get_width ();
+                m_cover_velocity *= -cover_anim_wall_elasticity;
 
-                  if (next_velocity >= 0.0)
-                  {
-                      m_cover_pos      = cover_anim_wall - m_cover_surface->get_width ();
-                      m_cover_velocity = 0.0;
-                      m_cover_accel    = 0.0;
+                // FIXME: Need a better test. This runs into stability problems when
+                // dt or acceleration is too high
 
-                      r = false;
-                  }
-              }
+                double next_velocity = m_cover_velocity + m_cover_accel * cover_anim_dt;
 
-              queue_draw ();
+                if (next_velocity >= 0.0)
+                {
+                    m_cover_pos      = cover_anim_wall - m_cover_surface_cur.get()->get_width ();
+                    m_cover_velocity = 0.0;
+                    m_cover_accel    = 0.0;
 
-              return r;
+                    r = false;
+                }
+            }
+
+            queue_draw ();
+
+            if(!r)
+            {
+                m_cover_surface_new.reset();
+            }
+
+            return r;
           }
 
           void
           draw_background (Cairo::RefPtr<Cairo::Context> & cr)
           {
-              Gtk::Allocation allocation = get_allocation ();
-
-              cr->set_source_rgb(0., 0., 0.);
-              Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 4.);
-              cr->fill_preserve ();
-              cr->set_source_rgba(1., 1., 1., .6);
-              cr->set_line_width(2);
-              cr->stroke();
+            Gtk::Allocation allocation = get_allocation ();
+            cr->set_source_rgb(0., 0., 0.);
+            Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 4.);
+            cr->fill_preserve ();
+            cr->set_source_rgba(1., 1., 1., .6);
+            cr->set_line_width(2);
+            cr->stroke();
           }
 
           void
           draw_cover (Cairo::RefPtr<Cairo::Context> & cr)
           {
-              if( m_cover_surface && (m_cover_pos >= cover_anim_area_x0 - m_cover_surface->get_width ()) )
-              {
+            Mutex::Lock L (m_surface_lock);
+
+            if( m_cover_surface_new && m_cover_surface_cur )
+            {
+                if( m_cover_pos >= cover_anim_area_x0 - m_cover_surface_new.get()->get_width ())
+                {
+                  cr->save ();
+                  cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
+                                 cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
+                                                                     cover_anim_area_height+(m_pressed?1:0));
+                  cr->clip ();
+                  double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface_new.get()->get_height ()) / 2;
+                  draw_cairo_image (cr, m_cover_surface_new.get(), m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), 1.);
+                  cr->restore ();
+                }
                 cr->save ();
-
-                cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
-                               cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-                                                                   cover_anim_area_height+(m_pressed?1:0));
+                cr->rectangle (cover_anim_area_x0,
+                               cover_anim_area_y0,
+                               cover_anim_area_width,
+                               cover_anim_area_height);
                 cr->clip ();
-
-                double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface->get_height ()) / 2;
-
-                draw_cairo_image (cr, m_cover_surface, m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), m_cover_alpha);
-
+                double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface_cur.get()->get_height ()) / 2;
+                draw_cairo_image (cr, m_cover_surface_cur.get(), cover_anim_area_x0, y, sqrt(m_cover_alpha));
                 cr->restore ();
+            }
+            else
+            if( m_cover_surface_cur && (m_cover_pos >= cover_anim_area_x0 - m_cover_surface_cur.get()->get_width ()) )
+            {
+                  cr->save ();
 
-                cr->set_source_rgba(1., 1., 1., .6);
-              }
+                  cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
+                                 cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
+                                                                     cover_anim_area_height+(m_pressed?1:0));
+                  cr->clip ();
+
+                  double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface_cur.get()->get_height ()) / 2;
+
+                  draw_cairo_image (cr, m_cover_surface_cur.get(), m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), 1.);
+
+                  cr->restore ();
+            }
           }
 
           void
           draw_text (Cairo::RefPtr<Cairo::Context> const& cr)
           {
-              Gtk::Allocation allocation = get_allocation ();
+            Mutex::Lock L (m_layout_lock);
 
-              for (Layouts::const_iterator i = m_layouts.begin(); i != m_layouts.end(); ++i)
+            if(!m_text_cur)
+              return;
+
+            Gtk::Allocation allocation = get_allocation ();
+
+            for( int n = 0; n < 3; ++n )
+            {
+              std::string text_cur;
+              std::string text_new;
+
+              switch(n)
               {
-                TextP const& p (i->second);
-
-                if( p->alpha < 0 )
-                  continue;
-
-                int w = allocation.get_width() * PANGO_SCALE;
-
-                cr->set_source_rgba (1.0, 1.0, 1.0, p->alpha);
-                cr->set_operator (Cairo::OPERATOR_ATOP);
-          
-                p->layout->set_single_paragraph_mode (true);
-                //p->layout->set_ellipsize (Pango::ELLIPSIZE_MIDDLE);
-                p->layout->set_width (w);
-                p->layout->set_wrap (Pango::WRAP_CHAR);
-
-                //Pango::Rectangle ink, logical;
-                //p->layout->get_pixel_extents(ink, logical);
-
-                //cr->move_to ((w/PANGO_SCALE)/2 - logical.get_width()/2, p->y);
-                cr->move_to(p->x, p->y);
-                pango_cairo_show_layout (cr->cobj(), p->layout->gobj());
+                  case 0:
+                      text_cur = m_text_cur.get().Artist; 
+                      break;
+                  case 1:
+                      text_cur = m_text_cur.get().Album; 
+                      break;
+                  case 2:
+                      text_cur = m_text_cur.get().Title; 
+                      break;
               }
+
+              if(m_text_new)
+              {
+                  switch(n)
+                  {
+                      case 0:
+                          text_new = m_text_new.get().Artist; 
+                          break;
+                      case 1:
+                          text_new = m_text_new.get().Album; 
+                          break;
+                      case 2:
+                          text_new = m_text_new.get().Title; 
+                          break;
+                  }
+              }
+
+              if( text_new == text_cur )
+              {
+                  cr->set_source_rgba (1.0, 1.0, 1.0, 1. * layout_info[n].amod); 
+              }
+              else    
+              {
+                  cr->set_source_rgba (1.0, 1.0, 1.0, m_layout_alpha * layout_info[n].amod); 
+              }
+
+              cr->set_operator (Cairo::OPERATOR_ATOP);
+        
+              Glib::RefPtr<Pango::Layout> layout = create_pango_layout ("");
+              layout->set_markup(text_cur);
+              layout->set_single_paragraph_mode (true);
+              layout->set_wrap(Pango::WRAP_CHAR);
+              cr->move_to(layout_info[n].x, layout_info[n].y);
+              pango_cairo_show_layout (cr->cobj(), layout->gobj());
+            }
           }
 
           void
@@ -783,20 +849,6 @@ namespace MPX
                     Util::cairo_rounded_rect(cr, x, y, w, h, 1.);
                     cr->fill ();
                 }
-              }
-          }
-
-          void
-          draw_source_icon (Cairo::RefPtr<Cairo::Context> const& cr)
-          {
-              if( m_source_icon )
-              {
-                Gtk::Allocation allocation = get_allocation ();
-
-                cr->set_operator (Cairo::OPERATOR_ATOP);
-                Gdk::Cairo::set_source_pixbuf (cr, m_source_icon, allocation.get_width () - 22, 2);
-                cr->rectangle (allocation.get_width () - 22, 2, 20, 20);
-                cr->fill ();
               }
           }
 
@@ -1246,7 +1298,7 @@ namespace MPX
     , m_ref_xml(xml)
     , m_startup_complete(false)
 	, m_SourceCtr (0)
-	, m_PageCtr(1)
+	, m_PageCtr(2) /* starting at 2 since 0, 1 are now playing, plugins */
     , m_ActiveSource(SOURCE_NONE)
 	, m_SourceUI(0)
     , m_Library(obj_library)
@@ -1289,7 +1341,7 @@ namespace MPX
         m_VideoWindow->show ();
         gtk_widget_realize (GTK_WIDGET (m_VideoWindow->gobj()));
 
-        m_ref_xml->get_widget("notebook-outer", m_OuterNotebook);
+        //m_ref_xml->get_widget("notebook-outer", m_OuterNotebook);
 
         if( m_Play->has_video() )
         {
@@ -1437,6 +1489,7 @@ namespace MPX
 										_("Preferences...")),
 										sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
 
+#if 0
 		m_actions->add (ToggleAction::create (ACTION_SHOW_INFO,
 										_("Show Details")),
                                         AccelKey("<ctrl>I"),
@@ -1457,6 +1510,7 @@ namespace MPX
 										sigc::mem_fun( *this, &Player::on_video_toggled ));
 		m_actions->get_action (ACTION_SHOW_VIDEO)->connect_proxy
 			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("video-toggle"))));
+#endif
 
 
 		m_actions->add (Action::create (ACTION_LASTFM_LOVE,
@@ -1495,14 +1549,22 @@ namespace MPX
 
         splash.set_message(_("Loading Sources"), 0.8);
 
-		/*------------------------ Load Sources --------------------------------------------------*/ 
-        m_Sources = new Sources(xml);
+		/*- Load Sources --------------------------------------------------*/ 
+
+        m_ref_xml->get_widget_derived("sidebar", m_Sidebar);
+		m_Sidebar->signal_id_changed().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
+
+        m_Sidebar->addItem(_("Now Playing"), render_icon (Gtk::StockID (GTK_STOCK_MEDIA_PLAY), Gtk::ICON_SIZE_DIALOG)->scale_simple(16,16,Gdk::INTERP_BILINEAR), 0);
+        m_Sidebar->addItem(_("Info Plugins"), render_icon (Gtk::StockID (MPX_STOCK_PLUGIN), Gtk::ICON_SIZE_DIALOG)->scale_simple(16,16,Gdk::INTERP_BILINEAR), 1);
+       
         m_ref_xml->get_widget("statusbar", m_Statusbar);
         std::string sources_path = build_filename(PLUGIN_DIR, "sources");
         if(file_test(sources_path, FILE_TEST_EXISTS))
+        {
     		Util::dir_for_each_entry (sources_path, sigc::mem_fun(*this, &MPX::Player::load_source_plugin));  
+        }
 
-		//----------------------- Volume ---------------------------------------------------------*/
+		/*- Volume ---------------------------------------------------------*/
         m_ref_xml->get_widget("volumebutton", m_Volume);
         m_Volume->set_value(double(mcs->key_get<int>("mpx", "volume")));
 		m_Play->property_volume() = mcs->key_get<int>("mpx", "volume"); 
@@ -1588,8 +1650,6 @@ namespace MPX
                             NULL);
         }
 #endif
-
-		m_Sources->sourceChanged().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
 
 		/*------------------------ Load Plugins -------------------------------------------------*/
 		// This also initializes Python for us and hence it's of utmost importance it is kept
@@ -1715,9 +1775,10 @@ namespace MPX
         p->get_ui()->reparent(*a);
         a->show();
         m_MainNotebook->append_page(*a);
-        m_Sources->addSource( p->get_name(), p->get_icon() );
+        m_Sidebar->addItem( p->get_name(), p->get_icon()->scale_simple(16,16,Gdk::INTERP_BILINEAR), m_PageCtr );
 		m_SourceV.push_back(p);
-		install_source(m_SourceCtr++, /* tab # */ m_PageCtr++);
+		install_source(m_SourceCtr++, /* tab # */ (m_PageCtr-1));
+        m_PageCtr++;
 
 		return false;
     }
@@ -1761,7 +1822,7 @@ namespace MPX
 		m_SourceV[source]->send_caps();
 		m_SourceV[source]->send_flags();
 
-		UriSchemes v = m_SourceV[source]->Get_Schemes ();
+		UriSchemes v = m_SourceV[source]->get_uri_schemes ();
 		if(v.size())
 		{
 		  for(UriSchemes::const_iterator i = v.begin(); i != v.end(); ++i)
@@ -1790,7 +1851,7 @@ namespace MPX
                 UriSchemeMap::const_iterator i = m_UriMap.find (u.scheme);
                 if( i != m_UriMap.end ())
                 {
-                  m_SourceV[i->second]->Process_URI_List (uris);
+                  m_SourceV[i->second]->process_uri_list( uris, true );
                 }
               }
             catch (URI::ParseError & cxe)
@@ -1810,8 +1871,11 @@ namespace MPX
             UriSchemeMap::const_iterator i = m_UriMap.find (u.scheme);
             if( i != m_UriMap.end ())
             {
-              m_SourceV[i->second]->Process_URI_List (uris);
+              g_message("%s: Passing URI '%s' to source '%s'", G_STRLOC, uri.c_str(), m_SourceV[i->second]->get_name().c_str());
+              m_SourceV[i->second]->process_uri_list( uris, true );
             }
+            else
+                g_message("%s: No handler for URI '%s' found", G_STRLOC, uri.c_str());
           }
         catch (URI::ParseError & cxe)
           {
@@ -1838,7 +1902,7 @@ namespace MPX
 					UriSchemeMap::const_iterator i = m_UriMap.find (u.scheme);
 					if( i != m_UriMap.end ())
 					{
-					  m_SourceV[i->second]->Process_URI_List (uris);
+					  m_SourceV[i->second]->process_uri_list( uris, true );
 					}
 				  }
 				catch (URI::ParseError & cxe)
@@ -1872,38 +1936,6 @@ namespace MPX
             LastFM::TrackAction ("loveTrack", item, username, password).run();
         }
     }
-
-    void 
-    Player::on_info_toggled ()
-    {
-	    bool active = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_INFO))->get_active();
-
-        if(active)
-        {
-            m_OuterNotebook->hide();
-            m_InfoNotebook->show();
-        }
-        else
-        {
-            m_InfoNotebook->hide();
-            m_OuterNotebook->show();
-        }
-    }
-
-	void
-	Player::on_sources_toggled ()
-	{
-	    RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_INFO))->set_active(false);
-	    bool active = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_SOURCES))->get_active();
-		m_MainNotebook->set_current_page( active ? 0 : m_SourceTabMapping[m_Sources->getSource()] ); 
-	}
-
-	void
-	Player::on_video_toggled ()
-	{
-	    bool active = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_SHOW_VIDEO))->get_active();
-		m_OuterNotebook->set_current_page( active ? 1 : 0 ); 
-	}
 
     PyObject*
     Player::get_source(std::string const& uuid)
@@ -1973,6 +2005,7 @@ namespace MPX
 	void
 	Player::add_info_widget (Gtk::Widget *widget, std::string const& name)
 	{
+#if 0
         GtkWidget * dock = gdl_dock_new ();
 
         GtkWidget * item = gdl_dock_item_new_with_stock( name.c_str(), name.c_str(), NULL,
@@ -1989,6 +2022,10 @@ namespace MPX
         gtk_widget_show (dock);
         gtk_widget_show (item);
         widget->show();
+#endif
+        widget->show();
+        m_InfoNotebook->append_page(*widget, name);
+        m_InfoWidgetMap.insert(std::make_pair(widget, widget));
 	}
    
 	void
@@ -2088,7 +2125,7 @@ namespace MPX
 		{
 		  case FIELD_IMAGE:
 			m_Metadata.get().Image = m.m_image.get();
-			m_InfoArea->set_image (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
+			m_InfoArea->set_cover (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
 			return;
 	
 		  case FIELD_TITLE:
@@ -2229,21 +2266,19 @@ namespace MPX
 	Player::reparse_metadata ()
 	{
 		if( !m_Metadata.get().Image )
-		    m_InfoArea->set_image (m_DiscDefault->scale_simple (72, 72, Gdk::INTERP_HYPER));
+		    m_InfoArea->set_cover (m_DiscDefault->scale_simple (72, 72, Gdk::INTERP_HYPER));
         else
-		    m_InfoArea->set_image (m_Metadata.get().Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
+		    m_InfoArea->set_cover (m_Metadata.get().Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
 
 		ustring artist, album, title, genre;
 		parse_metadata (m_Metadata.get(), artist, album, title, genre);
 
-        if(!title.empty())
-    		m_InfoArea->set_text (L_TITLE, title);
+        TextSet set;
+        set.Artist = artist;
+        set.Title = title;
+        set.Album = album;
 
-        if(!artist.empty())
-    		m_InfoArea->set_text (L_ARTIST, artist);
-
-        if(!album.empty())
-    		m_InfoArea->set_text (L_ALBUM, album);
+        m_InfoArea->set_text(set);
 
         if(m_Metadata.get()[ATTRIBUTE_TITLE] && m_Metadata.get()[ATTRIBUTE_ARTIST])
         {
@@ -2329,8 +2364,6 @@ namespace MPX
 	Player::on_source_segment (int source_id)
 	{
 	  g_return_if_fail( m_ActiveSource == source_id);
-
-      m_InfoArea->reset ();
 	  m_SourceV[source_id]->segment ();
 	}
 
@@ -2397,45 +2430,49 @@ namespace MPX
 	void
 	Player::play ()
 	{
-	  int source_id = m_Sources->getSource(); 
-	  PlaybackSource::Caps c = m_source_caps[source_id];
+	  int source_id = m_Sidebar->getActiveId() - 2; 
 
-	  if( c & PlaybackSource::C_CAN_PLAY )
-	  {
-		if( (m_ActiveSource != SOURCE_NONE ) && (m_Play->property_status().get_value() != PLAYSTATUS_STOPPED))
-		{
-			  track_played ();
-			  m_SourceV[m_ActiveSource]->stop ();
-			  if( m_ActiveSource != source_id)
-			  {
-					m_Play->request_status (PLAYSTATUS_STOPPED);
-			  }
-		}
+      if( source_id >= 0 )
+      {
+          PlaybackSource::Caps c = m_source_caps[source_id];
 
-        safe_pause_unset();
+          if( c & PlaybackSource::C_CAN_PLAY )
+          {
+            if( (m_ActiveSource != SOURCE_NONE ) && (m_Play->property_status().get_value() != PLAYSTATUS_STOPPED))
+            {
+                  track_played ();
+                  m_SourceV[m_ActiveSource]->stop ();
+                  if( m_ActiveSource != source_id)
+                  {
+                        m_Play->request_status (PLAYSTATUS_STOPPED);
+                  }
+            }
 
-		PlaybackSource* source = m_SourceV[source_id];
-        m_ActiveSource = source_id;
-		
-		if( m_source_flags[source_id] & PlaybackSource::F_ASYNC)
-		{
-				source->play_async ();
-				m_actions->get_action( ACTION_STOP )->set_sensitive (true);
-				return;
-		}
-		else
-		{
-				if( source->play() )
-				{
-					  m_Play->switch_stream (source->get_uri(), source->get_type());
-					  source->play_post ();
-					  play_post_internal (source_id);
-					  return;
-				}
-		}
-	  }
+            safe_pause_unset();
 
-	  stop ();
+            PlaybackSource* source = m_SourceV[source_id];
+            m_ActiveSource = source_id;
+            
+            if( m_source_flags[source_id] & PlaybackSource::F_ASYNC)
+            {
+                    source->play_async ();
+                    m_actions->get_action( ACTION_STOP )->set_sensitive (true);
+                    return;
+            }
+            else
+            {
+                    if( source->play() )
+                    {
+                          m_Play->switch_stream (source->get_uri(), source->get_type());
+                          source->play_post ();
+                          play_post_internal (source_id);
+                          return;
+                    }
+            }
+          }
+
+          stop ();
+      }
 	}
 
 	void
@@ -2455,8 +2492,6 @@ namespace MPX
 	Player::pause ()
 	{
         bool paused = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->get_active();
-        m_InfoArea->set_paused(paused);
-
         PlaybackSource::Caps c = m_source_caps[m_ActiveSource];
         if(c & PlaybackSource::C_CAN_PAUSE )
         {
@@ -2485,8 +2520,6 @@ namespace MPX
 	void
 	Player::prev ()
 	{
-      m_InfoArea->reset ();
-
 	  int source_id = m_ActiveSource; 
 	  PlaybackSource* source = m_SourceV[source_id];
 	  PlaybackSource::Flags f = m_source_flags[source_id];
@@ -2532,8 +2565,6 @@ namespace MPX
 	void
 	Player::on_play_eos ()
 	{
-      m_InfoArea->reset ();
-
 	  int source_id = m_ActiveSource; 
 	  PlaybackSource* source = m_SourceV[source_id];
 	  PlaybackSource::Flags f = m_source_flags[source_id];
@@ -2587,30 +2618,32 @@ namespace MPX
 	}
 
 	void
-	Player::on_source_changed (int source_id)
+	Player::on_source_changed (gint64 id)
 	{
-		if(m_SourceUI)
-		{
-			m_ui_manager->remove_ui (m_SourceUI);
-		}
+        m_MainNotebook->set_current_page( id );
 
-		m_MainNotebook->set_current_page( m_SourceTabMapping[source_id] );
-		dynamic_cast<Gtk::ToggleButton*>(m_ref_xml->get_widget("sources-toggle"))->set_active(false);
-
-		m_SourceUI = m_SourceV[source_id]->add_menu();
-        m_InfoArea->set_source(m_SourceV[source_id]->get_icon()->scale_simple(20, 20, Gdk::INTERP_BILINEAR));
-
-        if( source_id == m_ActiveSource ) 
+        gint64 source_id = id - 2;
+        if( source_id >= 0 )
         {
-          PlaybackSource::Caps caps = m_source_caps[source_id];
-          m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
-          m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
-          m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
+            if(m_SourceUI)
+            {
+                m_ui_manager->remove_ui (m_SourceUI);
+            }
 
-          if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
-            m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
-          else
-            m_actions->get_action (ACTION_PAUSE)->set_sensitive (false);
+            m_SourceUI = m_SourceV[source_id]->add_menu();
+
+            if( source_id == m_ActiveSource ) 
+            {
+              PlaybackSource::Caps caps = m_source_caps[source_id];
+              m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
+              m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
+              m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
+
+              if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
+                m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
+              else
+                m_actions->get_action (ACTION_PAUSE)->set_sensitive (false);
+            }
         }
 	}
 

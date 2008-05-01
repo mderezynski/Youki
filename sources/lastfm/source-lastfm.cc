@@ -344,7 +344,7 @@ namespace Source
     }
 
     UriSchemes 
-    LastFM::Get_Schemes ()
+    LastFM::get_uri_schemes ()
     {
         UriSchemes s;
         s.push_back("lastfm");
@@ -352,10 +352,13 @@ namespace Source
     }
 
     void    
-    LastFM::Process_URI_List (Util::FileList const& uris)
+    LastFM::process_uri_list (Util::FileList const& uris, bool play)
     {
         g_return_if_fail (!uris.empty());
-        m_LastFMRadio.playurl(uris[0]);
+        if(play)
+            m_LastFMRadio.playurl(uris[0]);
+        else
+            g_message("%s: Non-play processing of URIs is not supported");
     }
   } // Source
 

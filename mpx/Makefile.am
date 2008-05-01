@@ -185,6 +185,9 @@ mpx_bin_SOURCES =				\
 	splash-screen.hh			\
 	splash-screen.cc			\
 								\
+	sidebar.hh					\
+	sidebar.cc					\
+								\
 	sql.hh						\
 	sql.cc						\
 								\

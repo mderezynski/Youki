@@ -49,7 +49,10 @@ class TrackTags(mpx.Plugin):
     def tag_clicked(self, blah, tag):
         
         if self.player and len(tag) > 0:
+                print "Asking to play Tag '%s'" % tag
                 self.player.play_uri("lastfm://globaltags/%s" % tag)
+        else:
+                print "No player obj or tag length is 0"
 
     def pstate_changed(self, blah, state):
 
