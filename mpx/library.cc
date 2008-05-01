@@ -160,49 +160,44 @@ namespace
 
 namespace MPX
 {
-#ifdef HAVE_HAL
 
     Library::Library(Covers &covers, HAL &hal, TaskKernel &kernel, bool use_hal)
-    : m_HAL(&hal)
-    , m_TaskKernel(&kernel)
-
+    : sigx::glib_auto_dispatchable()
+#ifdef HAVE_HAL
+    , m_HAL(&hal)
 #else
-
-    Library::Library(Covers &covers, TaskKernel & kernel)
-    : m_TaskKernel(&kernel)
-
+    , m_TaskKernel(&kernel)
 #endif
-
     , m_Covers(&covers)
     , m_ScannerThread(new LibraryScannerThread(this))
     , m_Flags (0)
     {
-        m_ScannerThread->run();
-
 		mReaderTagLib = new MetadataReaderTagLib();
+
+        m_ScannerThread->run();
+        m_ScannerThread->connect().signal_track().connect( sigc::mem_fun( *this, &Library::insert ));
 
         const int MLIB_VERSION_CUR = 1;
         const int MLIB_VERSION_REV = 0;
         const int MLIB_VERSION_AGE = 0;
 
         try{
-          m_SQL = new SQL::SQLDB ((boost::format ("mpxdb-%d-%d-%d") % MLIB_VERSION_CUR 
-                                     % MLIB_VERSION_REV
-                                     % MLIB_VERSION_AGE).str(), build_filename(g_get_user_data_dir(),"mpx"), SQLDB_OPEN);
+          m_SQL = new SQL::SQLDB ((boost::format ("mpxdb-%d-%d-%d")
+                                   % MLIB_VERSION_CUR 
+                                   % MLIB_VERSION_REV
+                                   % MLIB_VERSION_AGE).str(), build_filename(g_get_user_data_dir(),"mpx"), SQLDB_OPEN);
           }
         catch (DbInitError & cxe)
           {
             g_message("%s: Error Opening the DB", G_STRLOC);
-            // FIXME: ?
           }
 
         if(!m_SQL->table_exists("meta"))
         {
             m_SQL->exec_sql ("CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0);");
+            m_Flags = 0;
 #ifdef HAVE_HAL
             m_Flags |= (use_hal ? F_USING_HAL : 0); 
-#else
-            m_Flags = 0;
 #endif
             m_SQL->exec_sql ((boost::format ("INSERT INTO meta (flags) VALUES(%lld);") % m_Flags).str());
         }
@@ -1029,7 +1024,7 @@ namespace MPX
     }
 
 	void
-	Library::mean_genre_for_album (gint64 id)
+	Library::set_mean_genre_for_album (gint64 id)
 	{
 		static boost::format select_f ("SELECT DISTINCT genre FROM track WHERE album_j = %lld AND genre IS NOT NULL;"); 
 		RowV rows;
@@ -1042,30 +1037,10 @@ namespace MPX
 	}
 
     ScanResult
-    Library::insert (const std::string& uri, const std::string& insert_path, const std::string& name)
+    Library::insert (Track & track, const std::string& uri, const std::string& insert_path)
     {
-      std::string type;        
-
       g_return_val_if_fail(!uri.empty(), SCAN_RESULT_ERROR);
    
-      try{ 
-          if (!Audio::typefind (uri, type))
-            return SCAN_RESULT_ERROR ;
-        }  
-      catch (Glib::ConvertError & cxe)
-        {
-            return SCAN_RESULT_ERROR ;
-        }
-
-      Track track;
-
-      track[ATTRIBUTE_TYPE] = type ;
-      track[ATTRIBUTE_LOCATION] = uri ;
-      track[ATTRIBUTE_LOCATION_NAME] = name; 
-
-      if( !mReaderTagLib->get( uri, track ) )
-        return SCAN_RESULT_ERROR ; // no play for us
-
       if( !(track[ATTRIBUTE_ALBUM] && track[ATTRIBUTE_ARTIST] && track[ATTRIBUTE_TITLE]) )
         return SCAN_RESULT_ERROR ;
 
@@ -1175,7 +1150,6 @@ namespace MPX
           column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
           m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
           track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->last_insert_rowid ();
-		  //mean_genre_for_album(album_j);
           Signals.NewTrack.emit( track, album_j ); 
       }
       catch (SqlConstraintError & cxe)

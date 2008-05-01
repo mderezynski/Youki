@@ -1,5 +1,8 @@
 #include "mpx/library-scanner-thread.hh"
 #include "mpx/library.hh"
+#include "mpx/types.hh"
+#include "mpx/audio.hh"
+#include "metadatareader-taglib.hh"
 #include <queue>
 
 MPX::ScanData::ScanData ()
@@ -16,6 +19,7 @@ struct MPX::LibraryScannerThread::ThreadData
     LibraryScannerThread::SignalScanRun_t   ScanRun ;
     LibraryScannerThread::SignalScanEnd_t   ScanEnd ;
     LibraryScannerThread::SignalReload_t    Reload ;
+    LibraryScannerThread::SignalTrack_t     Track ;
 
     int m_ScanStop;
 };
@@ -28,9 +32,10 @@ MPX::LibraryScannerThread::LibraryScannerThread (MPX::Library* obj_library)
 , signal_scan_run(*this, m_ThreadData, &ThreadData::ScanRun)
 , signal_scan_end(*this, m_ThreadData, &ThreadData::ScanEnd)
 , signal_reload(*this, m_ThreadData, &ThreadData::Reload)
+, signal_track(*this, m_ThreadData, &ThreadData::Track)
 , m_Library(obj_library)
 {
-    m_Connectable = new ScannerConnectable(signal_scan_start, signal_scan_run, signal_scan_end, signal_reload);
+    m_Connectable = new ScannerConnectable(signal_scan_start, signal_scan_run, signal_scan_end, signal_reload, signal_track);
 }
 
 MPX::LibraryScannerThread::~LibraryScannerThread ()
@@ -66,8 +71,32 @@ MPX::LibraryScannerThread::on_scan (ScanData const& scan_data_)
 
     for(Util::FileList::iterator i = scan_data.collection.begin(); i != scan_data.collection.end(); ++i)
     {
+        Track track;
+        std::string type;
+
+        try{ 
+            if (!Audio::typefind(*i, type))  
+              ++(scan_data.erroneous) ;
+              continue;
+          }  
+        catch (Glib::ConvertError & cxe)
+          {
+              ++(scan_data.erroneous) ;
+              continue;
+          }   
+
+        track[ATTRIBUTE_TYPE] = type ;
+        track[ATTRIBUTE_LOCATION] = *i ;
+        track[ATTRIBUTE_LOCATION_NAME] = scan_data.name;
+
+        if( !m_Library->mReaderTagLib->get( *i, track ) )
+        {
+           ++(scan_data.erroneous) ;
+           continue;
+        }
+
         try{
-            switch(m_Library->insert( *i , scan_data.insert_path_sql, scan_data.name ))
+            switch(pthreaddata->Track.emit( track, *i , scan_data.insert_path_sql ))
             {
                 case SCAN_RESULT_UPTODATE:
                     ++(scan_data.uptodate) ;

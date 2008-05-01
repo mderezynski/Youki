@@ -29,6 +29,7 @@
 #include <sigx/sigx.h>
 #include <sigx/signal_f.h>
 #include <sigx/request_f.h>
+#include "mpx/types.hh"
 #include "mpx/util-string.hh"
 #include "mpx/util-file.hh"
 
@@ -67,21 +68,18 @@ namespace MPX
 	{
         public:
 
-            typedef sigc::slot<void>                                       SlotScanStart_t ;
-            typedef sigc::slot<void, gint64,gint64>                        SlotScanRun_t ;
-            typedef sigc::slot<void, gint64,gint64,gint64,gint64,gint64>   SlotScanEnd_t ;
-            typedef sigc::slot<void>                                       SlotReload_t ;
-
             typedef sigc::signal<void>                                     SignalScanStart_t ;
             typedef sigc::signal<void, gint64,gint64>                      SignalScanRun_t ;
             typedef sigc::signal<void, gint64,gint64,gint64,gint64,gint64> SignalScanEnd_t ;
             typedef sigc::signal<void>                                     SignalReload_t ;
+            typedef sigc::signal<ScanResult, Track&, std::string const&, std::string const&> SignalTrack_t ;
 
             
             typedef sigx::signal_f<SignalScanStart_t>   signal_scan_start_x ;
             typedef sigx::signal_f<SignalScanRun_t>     signal_scan_run_x ; 
             typedef sigx::signal_f<SignalScanEnd_t>     signal_scan_end_x ;
             typedef sigx::signal_f<SignalReload_t>      signal_reload_x ;
+            typedef sigx::signal_f<SignalTrack_t>       signal_track_x ;
 
 
             struct ScannerConnectable
@@ -89,18 +87,21 @@ namespace MPX
                 ScannerConnectable(signal_scan_start_x & start_x,
                                    signal_scan_run_x & run_x,
                                    signal_scan_end_x & end_x,
-                                   signal_reload_x & reload_x) :
+                                   signal_reload_x & reload_x,
+                                   signal_track_x & track_x) :
                 signal_scan_start(start_x),
                 signal_scan_run(run_x),
                 signal_scan_end(end_x),
-                signal_reload(reload_x)
+                signal_reload(reload_x),
+                signal_track(track_x)
                 {
                 }
 
-                signal_scan_start_x signal_scan_start ;
-                signal_scan_run_x   signal_scan_run ; 
-                signal_scan_end_x   signal_scan_end ;
-                signal_reload_x     signal_reload ;
+                signal_scan_start_x & signal_scan_start ;
+                signal_scan_run_x   & signal_scan_run ; 
+                signal_scan_end_x   & signal_scan_end ;
+                signal_reload_x     & signal_reload ;
+                signal_track_x      & signal_track ;
             };
 
 
@@ -113,6 +114,7 @@ namespace MPX
             signal_scan_run_x   signal_scan_run ; 
             signal_scan_end_x   signal_scan_end ;
             signal_reload_x     signal_reload ;
+            signal_track_x      signal_track ;
 
         public:	
 

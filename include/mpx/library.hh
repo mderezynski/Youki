@@ -23,6 +23,8 @@
 #ifndef MPX_LIBRARY_CLASS_HH
 #define MPX_LIBRARY_CLASS_HH
 
+#include <sigx/sigx.h>
+
 #include "mpx/covers.hh"
 #include "mpx/sql.hh"
 #include "mpx/tasks.hh"
@@ -35,7 +37,7 @@ namespace MPX
 {
   class HAL;
   class MetadataReaderTagLib;
-  class Library
+  class Library : public sigx::glib_auto_dispatchable
   {
         friend class LibraryScannerThread;
 
@@ -67,14 +69,15 @@ namespace MPX
                 return m_ScannerThread->connect();
             }
 
-            void
-            getMetadata(const std::string&, Track&) ;
+
 
             void
             getSQL(SQL::RowV&, const std::string&) ;
 
 			void
 			execSQL(const std::string&);
+
+
 
 			void
 			vacuum();
@@ -86,11 +89,16 @@ namespace MPX
             }
 
 
+
             Track
             sqlToTrack (SQL::Row&);
 
             SQL::RowV
             getTrackTags (gint64);
+
+            void
+            getMetadata(const std::string&, Track&) ;
+
 
 
 			void
@@ -177,7 +185,7 @@ namespace MPX
         private:
 
             SQL::SQLDB * m_SQL;
-            MetadataReaderTagLib * mReaderTagLib ; // TODO: Modularize out 
+            MetadataReaderTagLib * mReaderTagLib ;
 
             enum Flags
             {
@@ -185,7 +193,6 @@ namespace MPX
             };
 
             gint64 m_Flags;
-
             const std::string column_names;
 
             gint64
@@ -206,11 +213,11 @@ namespace MPX
             gint64
             get_tag_id (std::string const&);
 
-			void
-			mean_genre_for_album (gint64 id);
-
             ScanResult
-            insert (const std::string& uri, const std::string& insert_path, const std::string& name = std::string());
+            insert (Track&, const std::string& uri, const std::string& insert_path);
+
+			void
+			set_mean_genre_for_album (gint64 id);
     };
 
 } // namespace MPX
