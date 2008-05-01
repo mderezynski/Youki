@@ -76,12 +76,16 @@ MPX::LibraryScannerThread::on_scan (ScanData const& scan_data_)
 
         try{ 
             if (!Audio::typefind(*i, type))  
+            {
               ++(scan_data.erroneous) ;
+              g_message("%s: No type for URI '%s'", G_STRLOC, (*i).c_str());
               continue;
+            }
           }  
         catch (Glib::ConvertError & cxe)
           {
               ++(scan_data.erroneous) ;
+              g_message("%s: Convert error for '%s'", G_STRLOC, (*i).c_str());
               continue;
           }   
 
@@ -92,6 +96,7 @@ MPX::LibraryScannerThread::on_scan (ScanData const& scan_data_)
         if( !m_Library->mReaderTagLib->get( *i, track ) )
         {
            ++(scan_data.erroneous) ;
+           g_message("%s: Couldn't read metadata off '%s'", G_STRLOC, (*i).c_str());
            continue;
         }
 

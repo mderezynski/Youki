@@ -371,7 +371,10 @@ namespace MPX
       GstState    state;
 
       if(uri.empty())
+      {
+        g_message("%s: Empty URI in typefind", G_STRLOC);
         return false;
+      }
 
       pipeline  = gst_pipeline_new ("pipeline");
       source    = gst_element_factory_make ("giosrc", "source");
@@ -392,8 +395,7 @@ namespace MPX
       {
         case GST_STATE_CHANGE_FAILURE:
           {
-            //GstBus* bus = gst_pipeline_get_bus (GST_PIPELINE (pipeline));
-            //gst_object_unref (bus);
+            g_message("%s: State change failure in typefind", G_STRLOC);
             break;
           }
 
@@ -425,6 +427,7 @@ namespace MPX
               }
             else
               {
+                g_message("%s: No caps in typefind", G_STRLOC);
                 gst_element_set_state (pipeline, GST_STATE_NULL);
                 gst_object_unref (pipeline);
                 return false;
