@@ -25,7 +25,7 @@ struct MPX::LibraryScannerThread::ThreadData
     int m_ScanStop;
 };
 
-MPX::LibraryScannerThread::LibraryScannerThread (MPX::Library* obj_library)
+MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::MetadataReaderTagLib* obj_tagreader)
 : sigx::glib_threadable()
 , scan(sigc::mem_fun(*this, &LibraryScannerThread::on_scan))
 , scan_stop(sigc::mem_fun(*this, &LibraryScannerThread::on_scan_stop))
@@ -34,7 +34,8 @@ MPX::LibraryScannerThread::LibraryScannerThread (MPX::Library* obj_library)
 , signal_scan_end(*this, m_ThreadData, &ThreadData::ScanEnd)
 , signal_reload(*this, m_ThreadData, &ThreadData::Reload)
 , signal_track(*this, m_ThreadData, &ThreadData::Track)
-, m_Library(obj_library)
+, m_SQL(obj_sql)
+, m_MetadataReaderTagLib(obj_tagreader)
 {
     m_Connectable = new ScannerConnectable(signal_scan_start, signal_scan_run, signal_scan_end, signal_reload, signal_track);
 }
@@ -94,7 +95,7 @@ MPX::LibraryScannerThread::on_scan (ScanData const& scan_data_)
         track[ATTRIBUTE_LOCATION] = *i ;
         track[ATTRIBUTE_LOCATION_NAME] = scan_data.name;
 
-        if( !m_Library->mReaderTagLib->get( *i, track ) )
+        if( !m_MetadataReaderTagLib->get( *i, track ) )
         {
            ++(scan_data.erroneous) ;
            g_message("%s: Couldn't read metadata off '%s'", G_STRLOC, (*i).c_str());

@@ -175,14 +175,10 @@ namespace MPX
 #endif
 
     , m_Covers(&covers)
-    , m_ScannerThread(new LibraryScannerThread(this))
     , m_Flags (0)
 
     {
-		mReaderTagLib = new MetadataReaderTagLib();
-
-        m_ScannerThread->run();
-        m_ScannerThread->connect().signal_track().connect( sigc::mem_fun( *this, &Library::insert ));
+		m_MetadataReaderTagLib = new MetadataReaderTagLib();
 
         const int MLIB_VERSION_CUR = 1;
         const int MLIB_VERSION_REV = 0;
@@ -198,6 +194,10 @@ namespace MPX
           {
             g_message("%s: Error Opening the DB", G_STRLOC);
           }
+
+        m_ScannerThread = (new LibraryScannerThread(new SQL::SQLDB(*m_SQL), m_MetadataReaderTagLib));
+        m_ScannerThread->run();
+        m_ScannerThread->connect().signal_track().connect( sigc::mem_fun( *this, &Library::insert ));
 
         if(!m_SQL->table_exists("meta"))
         {
@@ -331,7 +331,7 @@ namespace MPX
 
     Library::~Library ()
     {
-		delete mReaderTagLib;
+		delete m_MetadataReaderTagLib;
     }
 
 	void
@@ -463,7 +463,7 @@ namespace MPX
     void
     Library::getMetadata (const std::string& uri, Track & track)
     {
-        mReaderTagLib->get(uri, track);
+        m_MetadataReaderTagLib->get(uri, track);
 
         std::string type;
         if(Audio::typefind(uri, type))

@@ -46,8 +46,9 @@ namespace MPX
           set (std::string const& uri, Track & track);
 
         private:
-            bool
-            load_taglib_plugin (std::string const& path);
+
+          bool
+          load_taglib_plugin (std::string const& path);
     };
 }
 

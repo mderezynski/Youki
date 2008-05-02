@@ -63,7 +63,8 @@ namespace MPX
         SCAN_RESULT_UPTODATE
     };
 
-    class Library;
+    class MetadataReaderTagLib;
+    class SQL::SQLDB;
 	class LibraryScannerThread : public sigx::glib_threadable
 	{
         public:
@@ -118,7 +119,7 @@ namespace MPX
 
         public:	
 
-            LibraryScannerThread (MPX::Library*) ;
+            LibraryScannerThread (MPX::SQL::SQLDB*,MPX::MetadataReaderTagLib*) ;
             ~LibraryScannerThread () ;
 
             ScannerConnectable&
@@ -134,10 +135,12 @@ namespace MPX
 
         private:
 
-            MPX::Library            * m_Library ;
             struct ThreadData;
-            Glib::Private<ThreadData> m_ThreadData ;
-            ScannerConnectable      * m_Connectable ; 
+
+            MPX::SQL::SQLDB             * m_SQL ;
+            MetadataReaderTagLib        * m_MetadataReaderTagLib;
+            ScannerConnectable          * m_Connectable ; 
+            Glib::Private<ThreadData>     m_ThreadData ;
             
 	};
 }

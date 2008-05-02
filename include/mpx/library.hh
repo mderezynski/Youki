@@ -60,6 +60,7 @@ namespace MPX
 #else //!HAVE_HAL
             Library (Covers&) ;
 #endif //HAVE_HAL
+            Library (const Library& other);
             ~Library () ;
 
             LibraryScannerThread::ScannerConnectable&
@@ -176,7 +177,7 @@ namespace MPX
         private:
 
             SQL::SQLDB * m_SQL;
-            MetadataReaderTagLib * mReaderTagLib ;
+            MetadataReaderTagLib * m_MetadataReaderTagLib ;
 
             enum Flags
             {
