@@ -1386,7 +1386,7 @@ namespace MPX
               }
 
               void
-              on_new_track(Track & track, gint64 album_id)
+              on_new_track(Track & track, gint64 album_id, gint64 artist_id)
               {
                 if(m_AlbumIterMap.count(album_id))
                 {

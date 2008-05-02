@@ -1,4 +1,5 @@
 #include "mpx/audio.hh"
+#include "mpx/hal.hh"
 #include "mpx/library-scanner-thread.hh"
 #include "mpx/library.hh"
 #include "mpx/sql.hh"
@@ -7,6 +8,7 @@
 #include <queue>
 #include <boost/ref.hpp>
 #include <boost/format.hpp>
+#include <gio/gio.h>
 
 using boost::get;
 using namespace MPX;
@@ -147,11 +149,12 @@ struct MPX::LibraryScannerThread::ThreadData
     LibraryScannerThread::SignalNewArtist_t         NewArtist ;
     LibraryScannerThread::SignalCacheCover_t        CacheCover ;
     LibraryScannerThread::SignalCacheCoverInline_t  CacheCoverInline ;
+    LibraryScannerThread::SignalTrack_t             NewTrack ;
 
     int m_ScanStop;
 };
 
-MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::MetadataReaderTagLib* obj_tagreader,gint64 flags)
+MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::MetadataReaderTagLib* obj_tagreader, MPX::HAL* obj_hal, gint64 flags)
 : sigx::glib_threadable()
 , scan(sigc::mem_fun(*this, &LibraryScannerThread::on_scan))
 , scan_stop(sigc::mem_fun(*this, &LibraryScannerThread::on_scan_stop))
@@ -163,8 +166,10 @@ MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::
 , signal_new_artist(*this, m_ThreadData, &ThreadData::NewArtist)
 , signal_cache_cover(*this, m_ThreadData, &ThreadData::CacheCover)
 , signal_cache_cover_inline(*this, m_ThreadData, &ThreadData::CacheCoverInline)
+, signal_track(*this, m_ThreadData, &ThreadData::NewTrack)
 , m_SQL(obj_sql)
 , m_MetadataReaderTagLib(obj_tagreader)
+, m_HAL(obj_hal)
 , m_Flags(flags)
 {
     m_Connectable = new ScannerConnectable(
@@ -175,7 +180,8 @@ MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::
             signal_new_album,
             signal_new_artist,
             signal_cache_cover,
-            signal_cache_cover_inline
+            signal_cache_cover_inline,
+            signal_track
     );
 }
 
@@ -212,6 +218,12 @@ MPX::LibraryScannerThread::on_scan (ScanData const& scan_data_)
 
     for(Util::FileList::iterator i = scan_data.collection.begin(); i != scan_data.collection.end(); ++i)
     {
+        if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
+        {
+            pthreaddata->ScanEnd.emit();
+            return;
+        }
+
         Track track;
         std::string type;
 
@@ -242,8 +254,7 @@ MPX::LibraryScannerThread::on_scan (ScanData const& scan_data_)
         }
 
         try{
-            ScanResult status;
-            //pthreaddata->Track.emit( track, *i , scan_data.insert_path_sql, boost::ref(status) );
+            ScanResult status = insert( track, *i, scan_data.insert_path_sql );
 
             switch(status)
             {
@@ -281,6 +292,8 @@ MPX::LibraryScannerThread::on_scan (ScanData const& scan_data_)
 void
 MPX::LibraryScannerThread::on_scan_stop ()
 {
+    ThreadData * pthreaddata = m_ThreadData.get();
+    g_atomic_int_set(&pthreaddata->m_ScanStop, 1);
 }
 
 gint64
@@ -581,7 +594,7 @@ gint64
 MPX::LibraryScannerThread::get_track_mtime (Track& track) const
 {
   RowV rows;
-  if (m_Flags & Library::F_USING_HAL)
+  if (m_Flags & Library::Library::F_USING_HAL)
   {
     static boost::format
       select_f ("SELECT %s FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
@@ -611,4 +624,188 @@ MPX::LibraryScannerThread::get_track_mtime (Track& track) const
 
   return 0;
 }
+
+gint64
+MPX::LibraryScannerThread::get_track_id (Track& track) const
+{
+  RowV rows;
+  if ((m_Flags & Library::F_USING_HAL) == Library::F_USING_HAL)
+  {
+    static boost::format
+      select_f ("SELECT id FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
+
+    m_SQL->get (rows, (select_f % attrs[ATTRIBUTE_HAL_VOLUME_UDI].id 
+                                % get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get())
+                                % attrs[ATTRIBUTE_HAL_DEVICE_UDI].id
+                                % get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get())
+                                % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id
+                                % mprintf ("%q", get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()).c_str())).str());
+  }
+  else
+  {
+    static boost::format
+      select_f ("SELECT id FROM track WHERE %s='%s';");
+
+    m_SQL->get (rows, (select_f % attrs[ATTRIBUTE_LOCATION].id 
+                                % mprintf ("%q", get<std::string>(track[ATTRIBUTE_LOCATION].get()).c_str())).str());
+  }
+
+  if (rows.size() && (rows[0].count("id") != 0))
+  {
+    return boost::get<gint64>( rows[0].find("id")->second ) ;
+  }
+
+  return 0;
+}
+
+ScanResult
+MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const std::string& insert_path)
+{
+  g_return_val_if_fail(!uri.empty(), SCAN_RESULT_ERROR);
+
+  ThreadData * pthreaddata = m_ThreadData.get();
+
+  if( !(track[ATTRIBUTE_ALBUM] && track[ATTRIBUTE_ARTIST] && track[ATTRIBUTE_TITLE]) )
+  {
+    return SCAN_RESULT_ERROR ;
+  }
+
+  if( (!track[ATTRIBUTE_DATE]) && (track[ATTRIBUTE_MB_RELEASE_DATE]))
+  {
+    std::string mb_date = get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get());
+    int mb_date_int = 0;
+    if (sscanf(mb_date.c_str(), "%04d", &mb_date_int) == 1)
+    {
+        track[ATTRIBUTE_DATE] = gint64(mb_date_int);
+    }
+  }
+
+  try{
+      URI u (uri);
+      if(u.get_protocol() == URI::PROTOCOL_FILE)
+      {
+#ifdef HAVE_HAL
+          try{
+              if (m_Flags & Library::F_USING_HAL)
+              {
+                HAL::Volume const& volume (m_HAL->get_volume_for_uri (uri));
+
+                track[ATTRIBUTE_HAL_VOLUME_UDI] =
+                              volume.volume_udi ;
+
+                track[ATTRIBUTE_HAL_DEVICE_UDI] =
+                              volume.device_udi ;
+
+                track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
+                              filename_from_uri (uri).substr (volume.mount_point.length()) ;
+              }
+          }
+        catch (HAL::Exception & cxe)
+          {
+            g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+            return SCAN_RESULT_ERROR ;
+          }
+        catch (Glib::ConvertError & cxe)
+          {
+            g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+            return SCAN_RESULT_ERROR ;
+          }
+#endif
+
+          GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str()); 
+          GFileInfo * info = g_file_query_info(file,
+                                            G_FILE_ATTRIBUTE_TIME_MODIFIED,
+                                            GFileQueryInfoFlags(0),
+                                            NULL,
+                                            NULL);
+
+          track[ATTRIBUTE_MTIME] = gint64 (g_file_info_get_attribute_uint64(info,G_FILE_ATTRIBUTE_TIME_MODIFIED));
+
+          g_object_unref(file);
+          g_object_unref(info);
+
+          time_t mtime = get_track_mtime (track);
+          if (mtime != 0 && mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()))
+          {
+            return SCAN_RESULT_UPTODATE ;
+          }
+      }
+  } catch(URI::ParseError)
+  {
+  }
+
+  track[ATTRIBUTE_INSERT_PATH] = insert_path;
+  track[ATTRIBUTE_INSERT_DATE] = gint64(time(NULL));
+
+  char const* track_set_f ("INSERT INTO track (%s) VALUES (%s);");
+
+  /* Now let's prepare the SQL */
+  std::string column_names;
+  column_names.reserve (0x400);
+
+  std::string column_values;
+  column_values.reserve (0x400);
+
+  try{
+      gint64 artist_j = get_track_artist_id (track);
+      gint64 album_j = get_album_id (track, get_album_artist_id (track));
+
+      for (unsigned int n = 0; n < N_ATTRIBUTES_INT; ++n)
+      {
+          if(track[n])
+          {
+              switch (attrs[n].type)
+              {
+                case VALUE_TYPE_STRING:
+                  column_values += mprintf ("'%q'", get <std::string> (track[n].get()).c_str());
+                  break;
+
+                case VALUE_TYPE_INT:
+                  column_values += mprintf ("'%lld'", get <gint64> (track[n].get()));
+                  break;
+
+                case VALUE_TYPE_REAL:
+                  column_values += mprintf ("'%f'", get <double> (track[n].get()));
+                  break;
+              }
+
+              column_names += std::string (attrs[n].id) + ",";
+              column_values += ",";
+          }
+      }
+
+      column_names += "artist_j, album_j";
+      column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
+      m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
+      track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->last_insert_rowid ();
+      pthreaddata->NewTrack.emit( track, album_j, artist_j ); 
+  }
+  catch (SqlConstraintError & cxe)
+  {
+      gint64 id = get_track_id (track);
+      if( id != 0 )
+      {
+          static boost::format delete_track_f ("DELETE FROM track WHERE id='%lld';");
+          m_SQL->exec_sql ((delete_track_f % id).str()); 
+          m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
+          gint64 new_id = m_SQL->last_insert_rowid ();
+          m_SQL->exec_sql (mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));
+          return SCAN_RESULT_UPDATE ;
+      }
+      else
+      {
+          g_warning("%s: Got track ID 0 for internal track! Highly supicious! Please report!", G_STRLOC);
+          return SCAN_RESULT_ERROR ;
+      }
+  }
+  catch (SqlExceptionC & cxe)
+  {
+      g_message("%s: SQL Error: %s", G_STRFUNC, cxe.what());
+      return SCAN_RESULT_ERROR ;
+  }
+
+  return SCAN_RESULT_OK ; 
+}
+
+
 

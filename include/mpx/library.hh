@@ -107,7 +107,7 @@ namespace MPX
             typedef sigc::signal<void, gint64 /*album id*/> SignalNewAlbum; 
             typedef sigc::signal<void, gint64 /*album id*/> SignalAlbumUpdated;
             typedef sigc::signal<void, gint64 /*artist id*/> SignalNewArtist;
-            typedef sigc::signal<void, Track&, gint64/*albumid*/> SignalNewTrack;
+            typedef sigc::signal<void, Track&, gint64/*albumid*/, gint64/*artistid*/> SignalNewTrack;
 			typedef sigc::signal<void, gint64 /*id*/> SignalTrackUpdated;
 			typedef sigc::signal<void, gint64 /*id*/, gint64 /* tag id*/> SignalTrackTagged;
             typedef sigc::signal<void> SignalScanStart;
@@ -202,9 +202,6 @@ namespace MPX
             gint64
             get_tag_id (std::string const&);
 
-            void
-            insert (Track&, const std::string& uri, const std::string& insert_path, ScanResult&);
-
 			void
 			set_mean_genre_for_album (gint64 id);
 
@@ -213,6 +210,9 @@ namespace MPX
 
             void
             on_new_artist (gint64);
+
+            void
+            on_new_track (Track&,gint64,gint64);
     };
 
 } // namespace MPX
