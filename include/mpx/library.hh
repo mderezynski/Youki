@@ -79,10 +79,7 @@ namespace MPX
 			vacuum();
 
             void
-            reload ()
-            {
-                Signals.Reload.emit();
-            }
+            reload ();
 
             Track
             sqlToTrack (SQL::Row&);
@@ -105,6 +102,7 @@ namespace MPX
             void
             trackTagged(gint64, std::string const&);
 
+        public:
 
             typedef sigc::signal<void, gint64 /*album id*/> SignalNewAlbum; 
             typedef sigc::signal<void, gint64 /*album id*/> SignalAlbumUpdated;
@@ -112,7 +110,6 @@ namespace MPX
             typedef sigc::signal<void, Track&, gint64/*albumid*/> SignalNewTrack;
 			typedef sigc::signal<void, gint64 /*id*/> SignalTrackUpdated;
 			typedef sigc::signal<void, gint64 /*id*/, gint64 /* tag id*/> SignalTrackTagged;
-
             typedef sigc::signal<void> SignalScanStart;
             typedef sigc::signal<void, gint64,gint64> SignalScanRun;
             typedef sigc::signal<void, gint64,gint64,gint64,gint64,gint64> SignalScanEnd;
@@ -176,16 +173,16 @@ namespace MPX
 
         private:
 
-            SQL::SQLDB * m_SQL;
-            MetadataReaderTagLib * m_MetadataReaderTagLib ;
-
             enum Flags
             {
-                F_USING_HAL     = (1<<0),
+                F_USING_HAL = (1<<0),
             };
 
-            gint64 m_Flags;
-            const std::string column_names;
+            SQL::SQLDB              * m_SQL;
+            MetadataReaderTagLib    * m_MetadataReaderTagLib ;
+            gint64                    m_Flags;
+
+        protected:
 
             gint64
             get_track_artist_id (Track& row, bool only_if_exists = false);
@@ -210,6 +207,12 @@ namespace MPX
 
 			void
 			set_mean_genre_for_album (gint64 id);
+
+            void
+            on_new_album (gint64);
+
+            void
+            on_new_artist (gint64);
     };
 
 } // namespace MPX

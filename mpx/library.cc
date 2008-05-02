@@ -213,7 +213,16 @@ namespace MPX
 
         m_ScannerThread = (new LibraryScannerThread(new SQL::SQLDB(*m_SQL), m_MetadataReaderTagLib, m_Flags));
         m_ScannerThread->run();
-        m_ScannerThread->connect().signal_track().connect( sigc::mem_fun( *this, &Library::insert ));
+
+        m_ScannerThread->connect().signal_new_album().connect(
+            sigc::mem_fun( *this, &Library::on_new_album ));
+        m_ScannerThread->connect().signal_new_artist().connect(
+            sigc::mem_fun( *this, &Library::on_new_artist ));
+
+        m_ScannerThread->connect().signal_cache_cover().connect(
+            sigc::bind(sigc::mem_fun( m_Covers, &Covers::cache ), true));
+        m_ScannerThread->connect().signal_cache_cover_inline().connect(
+            sigc::mem_fun( m_Covers, &Covers::cache_inline ));
  
         static boost::format
           artist_table_f ("CREATE TABLE IF NOT EXISTS artist "
@@ -332,6 +341,24 @@ namespace MPX
     Library::~Library ()
     {
 		delete m_MetadataReaderTagLib;
+    }
+
+    void
+    Library::reload ()
+    {
+        Signals.Reload.emit();
+    }
+
+    void
+    Library::on_new_album (gint64 album_id)
+    {
+        Signals.NewAlbum.emit(album_id);
+    }
+
+    void
+    Library::on_new_artist (gint64 artist_id)
+    {
+        Signals.NewArtist.emit(artist_id);
     }
 
 	void

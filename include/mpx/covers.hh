@@ -31,6 +31,7 @@
 #include <glibmm/ustring.h>
 #include <gdkmm/pixbuf.h> // bleh!
 #include <cairomm/cairomm.h>
+#include <sigx/sigx.h>
 
 #include "mpx/network.hh"
 #include "mpx/minisoup.hh"
@@ -46,7 +47,7 @@ namespace MPX
     N_COVER_SIZES
   };
 
-  class Covers
+  class Covers : public sigx::glib_auto_dispatchable
   {
 	public:
 

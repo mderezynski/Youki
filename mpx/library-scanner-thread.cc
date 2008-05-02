@@ -139,13 +139,14 @@ MPX::ScanData::ScanData ()
 
 struct MPX::LibraryScannerThread::ThreadData
 {
-    LibraryScannerThread::SignalScanStart_t ScanStart ;
-    LibraryScannerThread::SignalScanRun_t   ScanRun ;
-    LibraryScannerThread::SignalScanEnd_t   ScanEnd ;
-    LibraryScannerThread::SignalReload_t    Reload ;
-    LibraryScannerThread::SignalTrack_t     Track ;
-    LibraryScannerThread::SignalNewAlbum_t  NewAlbum ;
-    LibraryScannerThread::SignalNewArtist_t NewArtist ;
+    LibraryScannerThread::SignalScanStart_t         ScanStart ;
+    LibraryScannerThread::SignalScanRun_t           ScanRun ;
+    LibraryScannerThread::SignalScanEnd_t           ScanEnd ;
+    LibraryScannerThread::SignalReload_t            Reload ;
+    LibraryScannerThread::SignalNewAlbum_t          NewAlbum ;
+    LibraryScannerThread::SignalNewArtist_t         NewArtist ;
+    LibraryScannerThread::SignalCacheCover_t        CacheCover ;
+    LibraryScannerThread::SignalCacheCoverInline_t  CacheCoverInline ;
 
     int m_ScanStop;
 };
@@ -158,9 +159,10 @@ MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::
 , signal_scan_run(*this, m_ThreadData, &ThreadData::ScanRun)
 , signal_scan_end(*this, m_ThreadData, &ThreadData::ScanEnd)
 , signal_reload(*this, m_ThreadData, &ThreadData::Reload)
-, signal_track(*this, m_ThreadData, &ThreadData::Track)
 , signal_new_album(*this, m_ThreadData, &ThreadData::NewAlbum)
 , signal_new_artist(*this, m_ThreadData, &ThreadData::NewArtist)
+, signal_cache_cover(*this, m_ThreadData, &ThreadData::CacheCover)
+, signal_cache_cover_inline(*this, m_ThreadData, &ThreadData::CacheCoverInline)
 , m_SQL(obj_sql)
 , m_MetadataReaderTagLib(obj_tagreader)
 , m_Flags(flags)
@@ -170,9 +172,10 @@ MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::
             signal_scan_run,
             signal_scan_end,
             signal_reload,
-            signal_track,
             signal_new_album,
-            signal_new_artist
+            signal_new_artist,
+            signal_cache_cover,
+            signal_cache_cover_inline
     );
 }
 
@@ -240,7 +243,7 @@ MPX::LibraryScannerThread::on_scan (ScanData const& scan_data_)
 
         try{
             ScanResult status;
-            pthreaddata->Track.emit( track, *i , scan_data.insert_path_sql, boost::ref(status) );
+            //pthreaddata->Track.emit( track, *i , scan_data.insert_path_sql, boost::ref(status) );
 
             switch(status)
             {
@@ -553,24 +556,23 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
       album_j = m_SQL->last_insert_rowid ();
       pthreaddata->NewAlbum.emit( album_j ); 
 
-#if 0
       if(!custom_id)
       {
           g_message("Fetching normal");
-          m_Covers->cache( get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get())
-                         , (track[ATTRIBUTE_ASIN]
-                           ? get<std::string>(track[ATTRIBUTE_ASIN].get())
-                           : std::string())
-                         , get<std::string>(track[ATTRIBUTE_LOCATION].get())
-                         , true );
+          pthreaddata->CacheCover(
+                           get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get())
+                         , ((track[ATTRIBUTE_ASIN]
+                             ? get<std::string>(track[ATTRIBUTE_ASIN].get())
+                             : std::string()))
+                         , get<std::string>(track[ATTRIBUTE_LOCATION].get()));
       }
       else
       {
           g_message("Fetching custom");
-          m_Covers->cache_inline( get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()),
-                                 get<std::string>(track[ATTRIBUTE_LOCATION].get()) );
+          pthreaddata->CacheCoverInline(
+                            get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()),
+                            get<std::string>(track[ATTRIBUTE_LOCATION].get()) );
       }
-#endif
     }
     return album_j;
 }

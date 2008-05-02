@@ -94,7 +94,8 @@ namespace
 namespace MPX
 {
     Covers::Covers (NM & nm)
-    : m_NM (nm)
+    : sigx::glib_auto_dispatchable()
+    , m_NM (nm)
     {
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", NULL));
         g_mkdir(path.get(), 0700);
