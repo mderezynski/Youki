@@ -492,39 +492,38 @@ namespace MPX
       }
 
       int
-      SQLDB::statement_prepare (sqlite3_statement **statement,
-                                string const &sql) const
-      
+      SQLDB::statement_prepare (SQLite3Statement  &statement,
+                                std::string const &sql) const
       {
         char const* tail;
         int status = sqlite3_prepare_v2 (m_sqlite,
                                          sql.c_str(),
                                          std::strlen (sql.c_str ()),
-                                         statement,
+                                         &statement,
                                          &tail);
 
         if (status == SQLITE_SCHEMA)
         {
-          sqlite3_reset (*statement);
+          sqlite3_reset (statement);
 
           status = sqlite3_prepare (m_sqlite,
                                     sql.c_str(),
                                     std::strlen (sql.c_str()),
-                                    statement,
+                                    &statement,
                                     &tail);
         }
 
         if (status)
         {
           g_warning ("SQL Error: '%s', SQL Statement: '%s'", sqlite3_errmsg (m_sqlite), sql.c_str ());
-          sqlite3_reset (*statement);
+          sqlite3_reset (statement);
         }
 
         return status;
       }
 
       void
-      SQLDB::assemble_row (sqlite3_statement* statement,
+      SQLDB::assemble_row (SQLite3Statement &statement,
                            RowV & rows) const
       {
         unsigned int columns = sqlite3_column_count (statement);
@@ -584,11 +583,11 @@ namespace MPX
       unsigned int
       SQLDB::exec_sql_bind_blob (string const& sql, Blob const& b)
       {
-        int            status = 0;
-        sqlite3_statement  *statement   = 0;
-        unsigned int   rows   = 0;
+        int              status     = 0;
+        SQLite3Statement statement  = 0;
+        unsigned int     rows       = 0;
 
-        statement_prepare(&statement, sql);
+        statement_prepare(statement, sql);
         sqlite3_bind_blob(statement, 1, b.data(), b.size(), SQLITE_STATIC);
 
         for( ; status != SQLITE_DONE ; )
@@ -621,11 +620,11 @@ namespace MPX
       unsigned int
       SQLDB::exec_sql (string const& sql)
       {
-        int            status = 0;
-        sqlite3_statement  *statement   = 0;
-        unsigned int   rows   = 0;
+        int              status     = 0;
+        SQLite3Statement statement  = 0;
+        unsigned int     rows       = 0;
 
-        statement_prepare (&statement, sql);
+        statement_prepare (statement, sql);
 
         for ( ; status != SQLITE_DONE ; )
         {
@@ -652,6 +651,22 @@ namespace MPX
 
         sqlite3_finalize (statement);
         return rows;
+      }
+
+      SQLDB::SQLDB (const SQLDB& other)
+      : m_name(other.m_name)
+      , m_path(other.m_path)
+      {
+        m_rand.set_seed(time(NULL));
+        m_filename = other.m_filename; 
+
+        if (sqlite3_open (m_filename.c_str(), &m_sqlite))
+        {
+          throw DbInitError ((boost::format("Unable to open database at '%s'") % m_filename).str());
+        }
+
+		sqlite3_create_function(m_sqlite, "abs_rating", 2, SQLITE_ANY, this, absRatingFunc, 0, 0);
+		sqlite3_create_function(m_sqlite, "mpxrand", 0, SQLITE_ANY, this, SQLDB::randFunc, 0, 0);
       }
 
       SQLDB::SQLDB (std::string const& name, std::string const& path, DbOpenMode openmode)
@@ -738,12 +753,12 @@ namespace MPX
       void
       SQLDB::get (RowV & rows, string const& sql) const
       {
-        sqlite3_statement * statement = 0;
+        SQLite3Statement statement = 0;
 
         int status = SQLITE_OK;
 
         do{
-            status = statement_prepare (&statement, sql, sql_local);
+            status = statement_prepare (statement, sql);
 
             if (status != SQLITE_OK)
             {
@@ -781,9 +796,8 @@ namespace MPX
 
       void
       SQLDB::get ( std::string const& name,
-                      RowV             & rows,
-                      Query       const& query,
-                      bool               reopen_db) const
+                      RowV          & rows,
+                      Query    const& query) const
       {
         char const* 
           sql_select_where_f ("SELECT %s %s FROM %s WHERE %s %s;");
@@ -811,12 +825,12 @@ namespace MPX
                                   query.m_suffix.c_str()));
           }
 
-        sqlite3_statement * statement = 0;
+        SQLite3Statement statement = 0;
 
         int status = SQLITE_OK;
 
         do{
-            status = statement_prepare (&statement, sql);
+            status = statement_prepare (statement, sql);
 
             if (status != SQLITE_OK)
             {

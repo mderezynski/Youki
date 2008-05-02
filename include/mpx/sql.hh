@@ -264,6 +264,7 @@ namespace MPX
       public:
 
         SQLDB (std::string const& name, std::string const& path, DbOpenMode mode = SQLDB_TRUNCATE);
+        SQLDB (const SQLDB& other);
         ~SQLDB ();
 
         bool
@@ -307,6 +308,8 @@ namespace MPX
 
       private:
 
+        typedef sqlite3_stmt* SQLite3Statement;
+
         std::string
         list_columns_simple (ColumnV const& columns) const;
 
@@ -322,12 +325,11 @@ namespace MPX
         attributes_serialize (Query const& query) const;
 
         int
-        statement_prepare (sqlite3_stmt **stmt,
-                           std::string const &sql,
-                           sqlite3 * db = 0) const;
+        statement_prepare (SQLite3Statement  &stmt,
+                           std::string const &sql) const;
 
         void
-        assemble_row (sqlite3_stmt* stmt,
+        assemble_row (SQLite3Statement &stmt,
                       RowV & rows) const;
 
         static void
@@ -336,9 +338,8 @@ namespace MPX
         std::string     m_name;
         std::string     m_path; //sqlite3 filename = path+name+".mlib";
         std::string     m_filename; 
-
-        sqlite3       * m_sqlite;
         Glib::Rand      m_rand;
+        sqlite3       * m_sqlite;
     };
   } // namespace SQL
 }; // namespace MPX
