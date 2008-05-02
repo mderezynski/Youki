@@ -41,11 +41,6 @@ namespace MPX
   {
         friend class LibraryScannerThread;
 
-        public:
-
-            void
-            initScan (const StrV&, const std::string& = std::string());
-
         private:
 
 #ifdef HAVE_HAL
@@ -68,6 +63,9 @@ namespace MPX
             {
                 return m_ScannerThread->connect();
             }
+
+            void
+            initScan (const Util::FileList& list); 
 
             void
             getSQL(SQL::RowV&, const std::string&) ;

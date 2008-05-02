@@ -2913,9 +2913,8 @@ namespace MPX
 
         }
 
-        StrV v;
-        v.push_back(m_Share);
-        m_Library.initScan( v, m_ShareName );  
+        Util::FileList v (1, m_Share);
+        m_Library.initScan(v);
     }
 
     void

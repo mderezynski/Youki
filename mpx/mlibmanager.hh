@@ -35,6 +35,7 @@
 #include <gtkmm/filefilter.h>
 #include <gtkmm/window.h>
 #include <libglademm/xml.h>
+#include <sigx/sigx.h>
 
 #include "mpx/widgetloader.h"
 #include "mpx/hal.hh"
@@ -48,6 +49,7 @@ namespace MPX
 {
     class MLibManager
       : public WidgetLoader<Gtk::Window>
+      , public sigx::glib_auto_dispatchable
     {
         public:
 

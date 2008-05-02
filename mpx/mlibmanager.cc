@@ -58,13 +58,14 @@ namespace MPX
     MLibManager::MLibManager (RefPtr<Gnome::Glade::Xml> const& xml,
                               MPX::HAL & obj_hal, MPX::Library & obj_library)
     : WidgetLoader<Gtk::Window>(xml, "window")
+    , sigx::glib_auto_dispatchable()
     , m_HAL(obj_hal)
     , m_Library(obj_library)
     , m_ref_xml(xml)
     {
 
-        m_Library.signal_scan_start().connect( sigc::mem_fun( *this, &MLibManager::scan_start ));
-        m_Library.signal_scan_end().connect( sigc::mem_fun( *this, &MLibManager::scan_end ));
+        m_Library.scanner().signal_scan_start().connect( sigc::mem_fun( *this, &MLibManager::scan_start ));
+        m_Library.scanner().signal_scan_end().connect( sigc::mem_fun( *this, &MLibManager::scan_end ));
 
         m_ref_xml->get_widget("volumes-cbox", m_VolumesCBox);
         Gtk::CellRendererText * cell = manage (new Gtk::CellRendererText());

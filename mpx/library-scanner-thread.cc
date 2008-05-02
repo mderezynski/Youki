@@ -131,14 +131,6 @@ namespace
     };
 }
 
-MPX::ScanData::ScanData ()
-: added(0)
-, erroneous(0)
-, uptodate(0)
-, updated(0)
-{
-}
-
 struct MPX::LibraryScannerThread::ThreadData
 {
     LibraryScannerThread::SignalScanStart_t         ScanStart ;
@@ -208,84 +200,133 @@ MPX::LibraryScannerThread::on_cleanup ()
 }
 
 void
-MPX::LibraryScannerThread::on_scan (ScanData const& scan_data_)
+MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
 {
-    ScanData scan_data = scan_data_;
     ThreadData * pthreaddata = m_ThreadData.get();
     g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
 
     pthreaddata->ScanStart.emit();
 
-    for(Util::FileList::iterator i = scan_data.collection.begin(); i != scan_data.collection.end(); ++i)
-    {
-        if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
-        {
-            pthreaddata->ScanEnd.emit();
-            return;
-        }
+    gint64 added = 0, erroneous = 0, uptodate = 0, updated = 0, total = 0;
 
-        Track track;
-        std::string type;
-
-        try{ 
-            if (!Audio::typefind(*i, type))  
-            {
-              ++(scan_data.erroneous) ;
-              g_message("%s: No type for URI '%s'", G_STRLOC, (*i).c_str());
-              continue;
-            }
-          }  
-        catch (Glib::ConvertError & cxe)
-          {
-              ++(scan_data.erroneous) ;
-              g_message("%s: Convert error for '%s'", G_STRLOC, (*i).c_str());
-              continue;
-          }   
-
-        track[ATTRIBUTE_TYPE] = type ;
-        track[ATTRIBUTE_LOCATION] = *i ;
-        track[ATTRIBUTE_LOCATION_NAME] = scan_data.name;
-
-        if( !m_MetadataReaderTagLib->get( *i, track ) )
-        {
-           ++(scan_data.erroneous) ;
-           g_message("%s: Couldn't read metadata off '%s'", G_STRLOC, (*i).c_str());
-           continue;
-        }
+    for(Util::FileList::const_iterator i = list.begin(); i != list.end(); ++i)
+    {  
+        std::string insert_path ;
+        std::string insert_path_sql ;
+        Util::FileList collection;
 
         try{
-            ScanResult status = insert( track, *i, scan_data.insert_path_sql );
-
-            switch(status)
-            {
-                case SCAN_RESULT_UPTODATE:
-                    ++(scan_data.uptodate) ;
-                    break;
-
-                case SCAN_RESULT_OK:
-                    ++(scan_data.added) ;
-                    break;
-
-                case SCAN_RESULT_ERROR:
-                    ++(scan_data.erroneous) ;
-                    break;
-
-                case SCAN_RESULT_UPDATE:
-                    ++(scan_data.updated) ;
-                    break;
+            insert_path = *i; 
+#ifdef HAVE_HAL
+            try{
+                if (m_Flags & Library::F_USING_HAL)
+                {
+                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (*i));
+                    insert_path_sql = filename_from_uri(*i).substr (volume.mount_point.length()) ;
+                }
+                else
+#endif
+                {
+                    insert_path_sql = *i; 
+                }
+#ifdef HAVE_HAL
             }
+          catch (HAL::Exception & cxe)
+            {
+              g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+              return;
+            }
+          catch (Glib::ConvertError & cxe)
+            {
+              g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+              return;
+            }
+#endif // HAVE_HAL
+            collection.clear();
+            Util::collect_audio_paths( insert_path, collection );
+            total += collection.size();
         }
         catch( Glib::ConvertError & cxe )
         {
-            g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+            g_warning("%s: %s", G_STRLOC, cxe.what().c_str());
+            return;
         }
 
-        ++(scan_data.position);
-        pthreaddata->ScanRun.emit(std::distance(scan_data.collection.begin(), i), scan_data.collection.size());
+        if(collection.empty())
+        {
+            pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, collection.size());
+        }
+
+        for(Util::FileList::iterator i = collection.begin(); i != collection.end(); ++i)
+        {
+            if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
+            {
+                m_SQL->exec_sql("ROLLBACK");
+                pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, collection.size());
+                pthreaddata->Reload.emit();
+                return;
+            }
+
+            Track track;
+            std::string type;
+
+            try{ 
+                if (!Audio::typefind(*i, type))  
+                {
+                  ++(erroneous) ;
+                  g_message("%s: No type for URI '%s'", G_STRLOC, (*i).c_str());
+                  continue;
+                }
+              }  
+            catch (Glib::ConvertError & cxe)
+              {
+                  ++(erroneous) ;
+                  g_message("%s: Convert error for '%s'", G_STRLOC, (*i).c_str());
+                  continue;
+              }   
+
+            track[ATTRIBUTE_TYPE] = type ;
+            track[ATTRIBUTE_LOCATION] = *i ;
+
+            if( !m_MetadataReaderTagLib->get( *i, track ) )
+            {
+               ++(erroneous) ;
+               g_message("%s: Couldn't read metadata off '%s'", G_STRLOC, (*i).c_str());
+               continue;
+            }
+
+            try{
+                ScanResult status = insert( track, *i, insert_path_sql );
+
+                switch(status)
+                {
+                    case SCAN_RESULT_UPTODATE:
+                        ++(uptodate) ;
+                        break;
+
+                    case SCAN_RESULT_OK:
+                        ++(added) ;
+                        break;
+
+                    case SCAN_RESULT_ERROR:
+                        ++(erroneous) ;
+                        break;
+
+                    case SCAN_RESULT_UPDATE:
+                        ++(updated) ;
+                        break;
+                }
+            }
+            catch( Glib::ConvertError & cxe )
+            {
+                g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+            }
+
+            pthreaddata->ScanRun.emit(std::distance(collection.begin(), i), collection.size());
+        }
     }
 
-    pthreaddata->ScanEnd.emit(scan_data.added, scan_data.uptodate, scan_data.updated, scan_data.erroneous, scan_data.collection.size());
-
+    pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, total);
     
 }
 
@@ -567,6 +608,7 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
       m_SQL->exec_sql (sql);
       album_j = m_SQL->last_insert_rowid ();
+      g_message("%s: New album %lld", G_STRLOC, album_j);
       pthreaddata->NewAlbum.emit( album_j ); 
 
       if(!custom_id)

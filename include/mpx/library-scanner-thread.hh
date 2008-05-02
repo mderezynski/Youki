@@ -36,28 +36,7 @@
 
 namespace MPX
 {
-    struct ScanData
-    {
-        ScanData ();
-
-        StrV           URIV;
-        StrV::iterator Iter;
-
-        std::string insert_path ;
-        std::string insert_path_sql ;
-    
-        Util::FileList collection ;
-        Util::FileList::iterator position ;
-
-        std::string name ;
-
-        gint64 added ;
-        gint64 erroneous ;
-        gint64 uptodate ;
-        gint64 updated ;
-    };
-
-    enum ScanResult {
+   enum ScanResult {
         SCAN_RESULT_OK,
         SCAN_RESULT_ERROR,
         SCAN_RESULT_UPDATE,
@@ -130,7 +109,7 @@ namespace MPX
 
         public:
 
-            sigx::request_f<ScanData const&> scan ;
+            sigx::request_f<Util::FileList const&> scan ;
             sigx::request_f<> scan_stop ;
 
             signal_scan_start_x         signal_scan_start ;
@@ -156,7 +135,7 @@ namespace MPX
             virtual void on_startup () ; 
             virtual void on_cleanup () ;
 
-            void on_scan (ScanData const&) ;
+            void on_scan (Util::FileList const&) ;
             void on_scan_stop () ;
 
             gint64
