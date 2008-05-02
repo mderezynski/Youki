@@ -2,9 +2,10 @@ images_DATA = artist-unknown.png
 
 imagesdir = $(pkgdatadir)/images
 
-glade_DATA = 							\
-	source-lastfm.glade					\
-	lastfm-component-top-albums.glade
+glade_DATA = 								\
+	source-lastfm.glade						\
+	lastfm-component-top-albums.glade		\
+	lastfm-component-user-top-albums.glade
 
 gladedir = $(pkgdatadir)/glade
 
@@ -43,23 +44,29 @@ libmpxsource_lastfm_la_LIBADD =		\
 		$(top_builddir)/widgets/libmpx-widgets.la
 
 
-libmpxsource_lastfm_la_SOURCES =	\
-		component-base.hh			\
-		component-base.cc			\
-		component-top-albums.hh		\
-		component-top-albums.cc		\
-		component-slot-artist.hh	\
-		component-slot-artist.cc	\
-		plugin.cc					\
-		lastfm.hh					\
-		lastfm.cc					\
-		source-lastfm.hh			\
-		source-lastfm.cc			\
-		top-albums-fetch-thread.hh	\
-		top-albums-fetch-thread.cc	\
-		xsd-track-toptags.hxx		\
-		xsd-track-toptags.cxx		\
-		xsd-top-albums.hxx			\
-		xsd-top-albums.cxx
+libmpxsource_lastfm_la_SOURCES =			\
+		component-base.hh					\
+		component-base.cc					\
+		component-top-albums.hh				\
+		component-top-albums.cc				\
+		component-user-top-albums.hh		\
+		component-user-top-albums.cc		\
+		component-slot-artist.hh			\
+		component-slot-artist.cc			\
+		plugin.cc							\
+		lastfm.hh							\
+		lastfm.cc							\
+		source-lastfm.hh					\
+		source-lastfm.cc					\
+		top-albums-fetch-thread.hh			\
+		top-albums-fetch-thread.cc			\
+		user-top-albums-fetch-thread.hh		\
+		user-top-albums-fetch-thread.cc		\
+		xsd-track-toptags.hxx				\
+		xsd-track-toptags.cxx				\
+		xsd-top-albums.hxx					\
+		xsd-top-albums.cxx					\
+		xsd-user-top-albums.hxx				\
+		xsd-user-top-albums.cxx
 
 libmpxsource_lastfmdir = $(PLUGIN_DIR)/sources

@@ -58,6 +58,7 @@
 #include "mpx/util-graphics.hh"
 
 #include "component-top-albums.hh"
+#include "component-user-top-albums.hh"
 
 #define STATE(e) ((m_state & e) != 0)
 #define SET_STATE(e) ((m_state |= e))
@@ -157,6 +158,7 @@ namespace Source
         dynamic_cast<Alignment*>(m_ref_xml->get_widget("alignment_dock"))->add(*Glib::wrap(m_Dock,false));
 
         ComponentTopAlbums * c = new ComponentTopAlbums;
+        ComponentUserTopAlbums * c2 = new ComponentUserTopAlbums;
 
         GtkWidget * item = gdl_dock_item_new_with_stock(
             "TopAlbums",
@@ -165,17 +167,19 @@ namespace Source
             GdlDockItemBehavior(GDL_DOCK_ITEM_BEH_CANT_CLOSE | GDL_DOCK_ITEM_BEH_CANT_ICONIFY)
         );
 
-#if 0
-        gtk_container_add(
-            GTK_CONTAINER( item ),
-            GTK_WIDGET(c->get_UI().gobj())
-        );
-#endif
-
         gtk_widget_reparent(c->get_UI().gobj(), item);
-
         gdl_dock_add_item( GDL_DOCK( m_Dock ), GDL_DOCK_ITEM( item ), GDL_DOCK_CENTER );
+        gtk_widget_show (item);
 
+        item = gdl_dock_item_new_with_stock(
+            "TopUserAlbums",
+            "Top User Albums",
+            NULL,
+            GdlDockItemBehavior(GDL_DOCK_ITEM_BEH_CANT_CLOSE | GDL_DOCK_ITEM_BEH_CANT_ICONIFY)
+        );
+
+        gtk_widget_reparent(c2->get_UI().gobj(), item);
+        gdl_dock_add_item( GDL_DOCK( m_Dock ), GDL_DOCK_ITEM( item ), GDL_DOCK_CENTER );
         gtk_widget_show (item);
     }
 

@@ -9,9 +9,12 @@ elementFormDefault="qualified" targetNamespace="LastFM">
     <xsd:element name="album" minOccurs="0" maxOccurs="unbounded">
     <xsd:complexType>
       <xsd:sequence>
+
+        <xsd:element name="artist" type="xsd:string"/>
         <xsd:element name="name" type="xsd:string"/>
         <xsd:element name="mbid" type="xsd:string"/>
-        <xsd:element name="reach" type="xsd:integer"/>
+        <xsd:element name="playcount" type="xsd:integer"/>
+        <xsd:element name="rank" type="xsd:integer"/>
         <xsd:element name="url" type="xsd:string"/>
 
         <xsd:element name="image">
@@ -29,7 +32,8 @@ elementFormDefault="qualified" targetNamespace="LastFM">
     </xsd:element>
     </xsd:sequence>
 
-    <xsd:attribute name="artist" type="xsd:string"/>
+    <xsd:attribute name="user" type="xsd:string"/>
+    <xsd:attribute name="type" type="xsd:string"/>
 
 </xsd:complexType>
 </xsd:element>
