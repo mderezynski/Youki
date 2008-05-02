@@ -161,16 +161,23 @@ namespace
 namespace MPX
 {
 
-    Library::Library(Covers &covers, HAL &hal, TaskKernel &kernel, bool use_hal)
-    : sigx::glib_auto_dispatchable()
 #ifdef HAVE_HAL
+
+    Library::Library(Covers &covers, HAL &hal, bool use_hal)
+    : sigx::glib_auto_dispatchable()
     , m_HAL(&hal)
+
 #else
-    , m_TaskKernel(&kernel)
+
+    Library::Library(Covers &covers)
+    : sigx::glib_auto_dispatchable()
+
 #endif
+
     , m_Covers(&covers)
     , m_ScannerThread(new LibraryScannerThread(this))
     , m_Flags (0)
+
     {
 		mReaderTagLib = new MetadataReaderTagLib();
 
@@ -1036,13 +1043,16 @@ namespace MPX
 		execSQL((boost::format ("UPDATE album SET album_genre = '%s' WHERE id = '%lld'") % get<std::string>(rows[0]["genre"]) % id).str());
 	}
 
-    ScanResult
-    Library::insert (Track & track, const std::string& uri, const std::string& insert_path)
+    void
+    Library::insert (Track & track, const std::string& uri, const std::string& insert_path, ScanResult & result)
     {
-      g_return_val_if_fail(!uri.empty(), SCAN_RESULT_ERROR);
+      g_return_if_fail(!uri.empty());
    
       if( !(track[ATTRIBUTE_ALBUM] && track[ATTRIBUTE_ARTIST] && track[ATTRIBUTE_TITLE]) )
-        return SCAN_RESULT_ERROR ;
+      {
+        result = SCAN_RESULT_ERROR ;
+        return;
+      }
 
 	  if( (!track[ATTRIBUTE_DATE]) && (track[ATTRIBUTE_MB_RELEASE_DATE]))
 	  {
@@ -1077,12 +1087,14 @@ namespace MPX
             catch (HAL::Exception & cxe)
               {
                 g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
-                return SCAN_RESULT_ERROR ;
+                result = SCAN_RESULT_ERROR ;
+                return;
               }
             catch (Glib::ConvertError & cxe)
               {
                 g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-                return SCAN_RESULT_ERROR ;
+                result = SCAN_RESULT_ERROR ;
+                return;
               }
 #endif
  
@@ -1100,7 +1112,11 @@ namespace MPX
 
               time_t mtime = get_track_mtime (track);
               if ((mtime != 0) && (mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) ) )
-                return SCAN_RESULT_UPTODATE ;
+              {
+                g_message("UptoDate");
+                result = SCAN_RESULT_UPTODATE ;
+                return;
+              }
           }
       } catch(URI::ParseError)
       {
@@ -1162,21 +1178,25 @@ namespace MPX
               m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
               gint64 new_id = m_SQL->last_insert_rowid ();
               m_SQL->exec_sql (mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));
-              return SCAN_RESULT_UPDATE ;
+              result = SCAN_RESULT_UPDATE ;
+              return;
           }
           else
           {
               g_warning("%s: Got track ID 0 for internal track! Highly supicious! Please report!", G_STRLOC);
-              return SCAN_RESULT_ERROR ;
+              result = SCAN_RESULT_ERROR ;
+              return;
           }
       }
       catch (SqlExceptionC & cxe)
       {
           g_message("%s: SQL Error: %s", G_STRFUNC, cxe.what());
-          return SCAN_RESULT_ERROR ;
+          result = SCAN_RESULT_ERROR ;
+          return;
       }
 
-      return SCAN_RESULT_OK ; 
+      result = SCAN_RESULT_OK ; 
+      return;
     }
 
     void

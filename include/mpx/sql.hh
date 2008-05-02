@@ -272,13 +272,11 @@ namespace MPX
         void
         get (std::string  const& name,
              RowV              & rows,
-             Query        const& query = Query(),
-             bool                reopen_db = false) const;
+             Query        const& query = Query()) const;
 
         void
         get (RowV               & rows,
-             std::string   const& sql,
-             bool                reopen_db = false) const;
+             std::string   const& sql) const;
             
         void
         set (std::string const& name,

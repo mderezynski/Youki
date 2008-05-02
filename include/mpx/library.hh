@@ -49,18 +49,17 @@ namespace MPX
         private:
 
 #ifdef HAVE_HAL
-            HAL * m_HAL;
-#endif
-            TaskKernel * m_TaskKernel;
-            Covers * m_Covers;
-            LibraryScannerThread * m_ScannerThread;
+            HAL                     * m_HAL;
+#endif //HAVE_HAL 
+            Covers                  * m_Covers;
+            LibraryScannerThread    * m_ScannerThread;
 
         public:
 #ifdef HAVE_HAL
-            Library (Covers&, HAL&, TaskKernel&, bool use_hal) ;
-#else
-            Library (Covers&, TaskKernel&) ;
-#endif
+            Library (Covers&, HAL&, bool use_hal) ;
+#else //!HAVE_HAL
+            Library (Covers&) ;
+#endif //HAVE_HAL
             ~Library () ;
 
             LibraryScannerThread::ScannerConnectable&
@@ -69,15 +68,11 @@ namespace MPX
                 return m_ScannerThread->connect();
             }
 
-
-
             void
             getSQL(SQL::RowV&, const std::string&) ;
 
 			void
 			execSQL(const std::string&);
-
-
 
 			void
 			vacuum();
@@ -88,8 +83,6 @@ namespace MPX
                 Signals.Reload.emit();
             }
 
-
-
             Track
             sqlToTrack (SQL::Row&);
 
@@ -98,8 +91,6 @@ namespace MPX
 
             void
             getMetadata(const std::string&, Track&) ;
-
-
 
 			void
 			albumRated(gint64, int);
@@ -213,8 +204,8 @@ namespace MPX
             gint64
             get_tag_id (std::string const&);
 
-            ScanResult
-            insert (Track&, const std::string& uri, const std::string& insert_path);
+            void
+            insert (Track&, const std::string& uri, const std::string& insert_path, ScanResult&);
 
 			void
 			set_mean_genre_for_album (gint64 id);

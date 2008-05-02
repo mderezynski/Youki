@@ -492,57 +492,50 @@ namespace MPX
       }
 
       int
-      SQLDB::statement_prepare (sqlite3_stmt **stmt,
-                                   string const &sql,
-                                   sqlite3 * sql_local) const //LIES!
+      SQLDB::statement_prepare (sqlite3_statement **statement,
+                                string const &sql) const
       
       {
-        sqlite3 * sql_use = 0;
-
-        if (sql_local)
-          sql_use = sql_local;
-        else
-          sql_use = m_sqlite;
-
         char const* tail;
-        int status = sqlite3_prepare_v2 (sql_use,
+        int status = sqlite3_prepare_v2 (m_sqlite,
                                          sql.c_str(),
                                          std::strlen (sql.c_str ()),
-                                         stmt,
+                                         statement,
                                          &tail);
 
         if (status == SQLITE_SCHEMA)
         {
-          sqlite3_reset (*stmt);
-          status = sqlite3_prepare (sql_use,
+          sqlite3_reset (*statement);
+
+          status = sqlite3_prepare (m_sqlite,
                                     sql.c_str(),
                                     std::strlen (sql.c_str()),
-                                    stmt,
+                                    statement,
                                     &tail);
         }
 
         if (status)
         {
           g_warning ("SQL Error: '%s', SQL Statement: '%s'", sqlite3_errmsg (m_sqlite), sql.c_str ());
-          sqlite3_reset (*stmt);
+          sqlite3_reset (*statement);
         }
 
         return status;
       }
 
       void
-      SQLDB::assemble_row (sqlite3_stmt* stmt,
+      SQLDB::assemble_row (sqlite3_statement* statement,
                            RowV & rows) const
       {
-        unsigned int columns = sqlite3_column_count (stmt);
+        unsigned int columns = sqlite3_column_count (statement);
     
         Row row;
         for (unsigned int n = 0 ; n < columns; ++n)
         {
-              const char * name = sqlite3_column_name (stmt, n);
+              const char * name = sqlite3_column_name (statement, n);
               if (name)
               {
-                    switch (sqlite3_column_type (stmt, n))
+                    switch (sqlite3_column_type (statement, n))
                     {
                       case SQLITE_NULL:
                       {
@@ -552,19 +545,19 @@ namespace MPX
 
                       case SQLITE_INTEGER:
                       {
-                        row.insert (std::make_pair (name, gint64 (sqlite3_column_int64 (stmt, n))));
+                        row.insert (std::make_pair (name, gint64 (sqlite3_column_int64 (statement, n))));
                         break;
                       }
 
                       case SQLITE_FLOAT:
                       {
-                        row.insert (std::make_pair (name, double (sqlite3_column_double (stmt, n))));
+                        row.insert (std::make_pair (name, double (sqlite3_column_double (statement, n))));
                         break;
                       }
 
                       case SQLITE_TEXT:
                       {
-                        char const* value = reinterpret_cast<char const*> (sqlite3_column_text (stmt, n));
+                        char const* value = reinterpret_cast<char const*> (sqlite3_column_text (statement, n));
                         if (value)
                         {
                           row.insert (std::make_pair (name, string (value)));
@@ -574,10 +567,10 @@ namespace MPX
 
                       case SQLITE_BLOB:
                       {
-                        void const* blob = reinterpret_cast<void const*> (sqlite3_column_blob (stmt, n));
+                        void const* blob = reinterpret_cast<void const*> (sqlite3_column_blob (statement, n));
                         if (blob)
                         {
-                          int bytes = sqlite3_column_bytes(stmt, n);
+                          int bytes = sqlite3_column_bytes(statement, n);
                           row.insert (std::make_pair (name, Blob(blob, bytes))); 
                         }
                         break;
@@ -588,27 +581,19 @@ namespace MPX
         rows.push_back (row);
       }
 
-      void print_compiled_statement (sqlite3_stmt *stmt)
-      {
-        int count = sqlite3_bind_parameter_count (stmt);
-        for (int n = 0; n < count; ++n)
-        {
-        }
-      }
-
       unsigned int
       SQLDB::exec_sql_bind_blob (string const& sql, Blob const& b)
       {
         int            status = 0;
-        sqlite3_stmt  *stmt   = 0;
+        sqlite3_statement  *statement   = 0;
         unsigned int   rows   = 0;
 
-        statement_prepare(&stmt, sql);
-        sqlite3_bind_blob(stmt, 1, b.data(), b.size(), SQLITE_STATIC);
+        statement_prepare(&statement, sql);
+        sqlite3_bind_blob(statement, 1, b.data(), b.size(), SQLITE_STATIC);
 
         for( ; status != SQLITE_DONE ; )
         {
-            status = sqlite3_step (stmt);
+            status = sqlite3_step (statement);
 
             if( status == SQLITE_BUSY )
               continue;
@@ -624,12 +609,12 @@ namespace MPX
 
             if( status != SQLITE_OK )
             {
-              sqlite3_finalize (stmt);
+              sqlite3_finalize (statement);
               THROW_SQL_ERROR(sql, status)
             }
         }
 
-        sqlite3_finalize (stmt);
+        sqlite3_finalize (statement);
         return rows;
       }
 
@@ -637,14 +622,14 @@ namespace MPX
       SQLDB::exec_sql (string const& sql)
       {
         int            status = 0;
-        sqlite3_stmt  *stmt   = 0;
+        sqlite3_statement  *statement   = 0;
         unsigned int   rows   = 0;
 
-        statement_prepare (&stmt, sql);
+        statement_prepare (&statement, sql);
 
         for ( ; status != SQLITE_DONE ; )
         {
-            status = sqlite3_step (stmt);
+            status = sqlite3_step (statement);
 
             if (status == SQLITE_BUSY)
               continue;
@@ -660,12 +645,12 @@ namespace MPX
 
             if (status != SQLITE_OK)
             {
-              sqlite3_finalize (stmt);
+              sqlite3_finalize (statement);
               THROW_SQL_ERROR(sql, status)
             }
         }
 
-        sqlite3_finalize (stmt);
+        sqlite3_finalize (statement);
         return rows;
       }
 
@@ -751,47 +736,47 @@ namespace MPX
       }
 
       void
-      SQLDB::get (RowV & rows, string const& sql, bool reopen_db) const
+      SQLDB::get (RowV & rows, string const& sql) const
       {
-        // Re-open the db if neccessary
-        sqlite3 * sql_local = 0;
-        if (reopen_db)
-        {
-          sqlite3_open (m_filename.c_str(), &sql_local);
-        }
+        sqlite3_statement * statement = 0;
 
-        sqlite3_stmt * stmt = 0;
         int status = SQLITE_OK;
+
         do{
-          status = statement_prepare (&stmt, sql, sql_local);
-          if (status != SQLITE_OK)
-          {
-            THROW_SQL_ERROR(sql, status)
-          }
-          do{
-            status = sqlite3_step (stmt);
-            switch (status)
-            {
-              case SQLITE_BUSY:
-                continue;
-              case SQLITE_ROW:
-              {
-                assemble_row (stmt, rows);
-                break;
-              }
-            }
+            status = statement_prepare (&statement, sql, sql_local);
+
             if (status != SQLITE_OK)
             {
-              if (sql_local)
-                sqlite3_close (sql_local);
               THROW_SQL_ERROR(sql, status)
             }
-          } while (status != SQLITE_DONE);
-          status = sqlite3_finalize (stmt);
+
+            do{
+                status = sqlite3_step (statement);
+
+                switch (status)
+                {
+                  case SQLITE_BUSY:
+                  {
+                    continue;
+                  }
+
+                  case SQLITE_ROW:
+                  {
+                    assemble_row (statement, rows);
+                    break;
+                  }
+                }
+
+                if (status != SQLITE_OK)
+                {
+                  THROW_SQL_ERROR(sql, status)
+                }
+
+            } while (status != SQLITE_DONE);
+
+            status = sqlite3_finalize (statement);
+
         } while (status == SQLITE_SCHEMA);
-      
-        if (sql_local)
-          sqlite3_close (sql_local);
       }
 
       void
@@ -826,45 +811,46 @@ namespace MPX
                                   query.m_suffix.c_str()));
           }
 
-        // Re-open the db if neccessary
-        sqlite3 * sql_local = 0;
-        if (reopen_db)
-        {
-          sqlite3_open (m_filename.c_str(), &sql_local);
-        }
+        sqlite3_statement * statement = 0;
 
-        sqlite3_stmt * stmt = 0;
         int status = SQLITE_OK;
+
         do{
-          status = statement_prepare (&stmt, sql, sql_local);
-          if (status != SQLITE_OK)
-          {
-            THROW_SQL_ERROR(sql, status)
-          }
-          do{
-            status = sqlite3_step (stmt);
-            switch (status)
-            {
-              case SQLITE_BUSY:
-                continue;
-              case SQLITE_ROW:
-              {
-                assemble_row (stmt, rows);
-                break;
-              }
-            }
+            status = statement_prepare (&statement, sql);
+
             if (status != SQLITE_OK)
             {
-              if (sql_local)
-                sqlite3_close (sql_local);
               THROW_SQL_ERROR(sql, status)
             }
-          } while (status != SQLITE_DONE);
-          status = sqlite3_finalize (stmt);
-        } while (status == SQLITE_SCHEMA);
 
-        if (sql_local)
-          sqlite3_close (sql_local);
+            do{
+
+                status = sqlite3_step (statement);
+
+                switch (status)
+                {
+                  case SQLITE_BUSY:
+                  {
+                    continue;
+                  }
+
+                  case SQLITE_ROW:
+                  {
+                    assemble_row (statement, rows);
+                    break;
+                  }
+                }
+
+                if (status != SQLITE_OK)
+                {
+                  THROW_SQL_ERROR(sql, status)
+                }
+
+            } while (status != SQLITE_DONE);
+
+          status = sqlite3_finalize (statement);
+
+        } while (status == SQLITE_SCHEMA);
       }
 
       bool

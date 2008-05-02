@@ -4,6 +4,7 @@
 #include "mpx/audio.hh"
 #include "metadatareader-taglib.hh"
 #include <queue>
+#include <boost/ref.hpp>
 
 MPX::ScanData::ScanData ()
 : added(0)
@@ -101,7 +102,10 @@ MPX::LibraryScannerThread::on_scan (ScanData const& scan_data_)
         }
 
         try{
-            switch(pthreaddata->Track.emit( track, *i , scan_data.insert_path_sql ))
+            ScanResult status;
+            pthreaddata->Track.emit( track, *i , scan_data.insert_path_sql, boost::ref(status) );
+
+            switch(status)
             {
                 case SCAN_RESULT_UPTODATE:
                     ++(scan_data.uptodate) ;
