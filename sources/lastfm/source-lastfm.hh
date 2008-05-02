@@ -38,6 +38,7 @@
 #include <gtkmm/treeview.h>
 #include <gtkmm/uimanager.h>
 #include <libglademm/xml.h>
+#include <gdl/gdl.h>
 
 #include "mpx/mpx-public.hh"
 #include "mpx/i-playbacksource.hh"
@@ -49,6 +50,7 @@ using namespace Glib;
 
 namespace MPX
 {
+#if 0
     // XmlArtist
     struct XmlArtist
     {
@@ -207,6 +209,7 @@ namespace MPX
 
             virtual void on_row_activated (Gtk::TreePath const&, Gtk::TreeViewColumn*);
     };
+#endif
 
 
 namespace Source
@@ -231,7 +234,7 @@ namespace Source
             Gtk::HBox                     * m_HBox_Error;
             Gtk::Label                    * m_Label_Error;
             Gtk::Button                   * m_Button_Error_Hide;
-            TagInfoViewT                  * m_TagInfoView;
+            GtkWidget                     * m_Dock;
         
             MPX::LastFMRadio                m_LastFMRadio;
             boost::optional<XSPF::Playlist> m_Playlist;

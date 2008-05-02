@@ -202,6 +202,12 @@ MPX::LibraryScannerThread::on_cleanup ()
 void
 MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
 {
+    if(list.empty())
+    {
+        g_message(G_STRLOC ": empty list");
+        return;
+    }
+
     ThreadData * pthreaddata = m_ThreadData.get();
     g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
 
@@ -243,8 +249,10 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
             }
 #endif // HAVE_HAL
             collection.clear();
+            g_message("%s: Scanning path %s", G_STRLOC, (*i).c_str());
             Util::collect_audio_paths( insert_path, collection );
             total += collection.size();
+            g_message("%s: Got %lld files", G_STRLOC, gint64(collection.size()));
         }
         catch( Glib::ConvertError & cxe )
         {
@@ -255,17 +263,20 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
         if(collection.empty())
         {
             pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, collection.size());
+            return;
         }
 
         for(Util::FileList::iterator i = collection.begin(); i != collection.end(); ++i)
         {
+
+#if 0
             if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
             {
-                m_SQL->exec_sql("ROLLBACK");
                 pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, collection.size());
                 pthreaddata->Reload.emit();
                 return;
             }
+#endif
 
             Track track;
             std::string type;

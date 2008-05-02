@@ -681,10 +681,12 @@ namespace MPX
           g_string_sprintfa (buffer, "[%s]", hostname.c_str());
       }
 
+#if 0
       if (port)
       {
         g_string_sprintfa (buffer, ":%d", port);
       }
+#endif
 
       if (!path.empty())
       {

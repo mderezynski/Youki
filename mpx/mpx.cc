@@ -533,20 +533,15 @@ namespace MPX
           void
           reset ()
           {
-            Mutex::Lock L1 (m_surface_lock);
-            Mutex::Lock L2 (m_layout_lock);
-
             std::fill (m_spectrum_data.begin (), m_spectrum_data.end (), 0.);
-            m_cover_anim_conn_fade.disconnect ();
-            m_cover_anim_conn_slide.disconnect ();
-            m_fade_conn.disconnect();
-            m_cover_surface_cur.reset();
+
             m_cover_surface_new.reset();
-            m_text_cur.reset();
             m_text_new.reset();
-            m_layout_alpha = 0.;
-            m_cover_alpha = 0.;
-            queue_draw ();
+
+            m_fade_conn.disconnect();
+            m_fade_conn = signal_timeout().connect( sigc::mem_fun( *this, &InfoArea::fade_out_layout ), 15 );
+            m_cover_anim_conn_fade.disconnect ();
+            m_cover_anim_conn_fade = signal_timeout ().connect( sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 10 );
           }
 
           void
@@ -612,24 +607,17 @@ namespace MPX
             if(!cond && m_text_new)
             {
                 m_text_cur = m_text_new.get();
-                m_fade_conn.disconnect();
+                m_layout_alpha = 1.;
+            }
+            else
+            if(!cond && !m_text_new)
+            {
+                m_text_cur.reset();
                 m_layout_alpha = 1.;
             }
             queue_draw ();
             return cond;
           }
-
-#if 0
-          bool
-          fade_in ()
-          {
-            Mutex::Lock L (m_layout_lock);
-
-            m_layout_alpha = fmin(m_layout_alpha + 0.1, 1.);
-            queue_draw ();
-            return m_layout_alpha < 1;
-          }
-#endif
 
           bool
           fade_out_cover ()
@@ -649,10 +637,16 @@ namespace MPX
                     m_cover_anim_conn_slide = signal_timeout ().connect( sigc::mem_fun( *this, &InfoArea::slide_in_cover ), cover_anim_interval );
                 }
             }
-            if(!cond)
+            if(!cond && m_cover_surface_new)
             {
                 m_cover_surface_cur = m_cover_surface_new.get(); 
                 m_cover_surface_new.reset();
+                m_cover_alpha = 1.;
+            }
+            else
+            if(!cond && !m_cover_surface_new)
+            {
+                m_cover_surface_cur.reset();
                 m_cover_alpha = 1.;
             }
             queue_draw ();
@@ -756,7 +750,7 @@ namespace MPX
 
                   double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface_cur.get()->get_height ()) / 2;
 
-                  draw_cairo_image (cr, m_cover_surface_cur.get(), m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), 1.);
+                  draw_cairo_image (cr, m_cover_surface_cur.get(), m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), m_cover_alpha);
 
                   cr->restore ();
             }

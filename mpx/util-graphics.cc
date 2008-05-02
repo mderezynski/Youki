@@ -246,6 +246,17 @@ namespace MPX
       cr->stroke ();
     }
 
+    void 
+    cairo_image_surface_rounded_border (Cairo::RefPtr<Cairo::ImageSurface> & source, double width, double radius)
+    {
+      Cairo::RefPtr< ::Cairo::Context> cr = Cairo::Context::create (source);
+      cairo_rounded_rect(cr, 0, 0, source->get_width(), source->get_height(), radius);
+      cr->set_source_rgba (0., 0., 0., 1.);
+      cr->set_line_width (width);
+      cr->stroke ();
+    }
+
+
     void
     draw_cairo_image (Cairo::RefPtr<Cairo::Context> const&      cr,
                       Cairo::RefPtr<Cairo::ImageSurface> const& image,

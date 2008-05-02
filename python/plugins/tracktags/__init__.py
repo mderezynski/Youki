@@ -33,7 +33,7 @@ class TrackTags(mpx.Plugin):
     def activate(self):
 
         self.tagview = mpx.TagView()
-        self.player.add_info_widget(self.tagview.get_widget(), "Track Tags")
+        self.player.add_info_widget(self.tagview.get_widget(), "Last.fm Tags")
         self.player_tagview_tag_handler_id = self.tagview.get_widget().connect("tag-clicked", self.tag_clicked)
         self.player_new_track_handler_id = self.player.gobj().connect("new-track", self.new_track)
         self.player_playtstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
