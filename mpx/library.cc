@@ -195,11 +195,7 @@ namespace MPX
             g_message("%s: Error Opening the DB", G_STRLOC);
           }
 
-        m_ScannerThread = (new LibraryScannerThread(new SQL::SQLDB(*m_SQL), m_MetadataReaderTagLib));
-        m_ScannerThread->run();
-        m_ScannerThread->connect().signal_track().connect( sigc::mem_fun( *this, &Library::insert ));
-
-        if(!m_SQL->table_exists("meta"))
+       if(!m_SQL->table_exists("meta"))
         {
             m_SQL->exec_sql ("CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0);");
             m_Flags = 0;
@@ -215,6 +211,10 @@ namespace MPX
             m_Flags |= get<gint64>(rows[0].find("flags")->second); 
         }
 
+        m_ScannerThread = (new LibraryScannerThread(new SQL::SQLDB(*m_SQL), m_MetadataReaderTagLib, m_Flags));
+        m_ScannerThread->run();
+        m_ScannerThread->connect().signal_track().connect( sigc::mem_fun( *this, &Library::insert ));
+ 
         static boost::format
           artist_table_f ("CREATE TABLE IF NOT EXISTS artist "
                             "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, '%s' TEXT, "

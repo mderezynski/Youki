@@ -29,6 +29,7 @@
 #include <sigx/sigx.h>
 #include <sigx/signal_f.h>
 #include <sigx/request_f.h>
+#include "mpx/sql.hh"
 #include "mpx/types.hh"
 #include "mpx/util-string.hh"
 #include "mpx/util-file.hh"
@@ -64,7 +65,6 @@ namespace MPX
     };
 
     class MetadataReaderTagLib;
-    class SQL::SQLDB;
 	class LibraryScannerThread : public sigx::glib_threadable
 	{
         public:
@@ -74,6 +74,9 @@ namespace MPX
             typedef sigc::signal<void, gint64,gint64,gint64,gint64,gint64> SignalScanEnd_t ;
             typedef sigc::signal<void>                                     SignalReload_t ;
             typedef sigc::signal<void, Track&, std::string const&, std::string const&, ScanResult&> SignalTrack_t ;
+            typedef sigc::signal<void, gint64>                             SignalNewAlbum_t ;
+            typedef sigc::signal<void, gint64>                             SignalNewArtist_t ;
+        
 
             
             typedef sigx::signal_f<SignalScanStart_t>   signal_scan_start_x ;
@@ -81,6 +84,8 @@ namespace MPX
             typedef sigx::signal_f<SignalScanEnd_t>     signal_scan_end_x ;
             typedef sigx::signal_f<SignalReload_t>      signal_reload_x ;
             typedef sigx::signal_f<SignalTrack_t>       signal_track_x ;
+            typedef sigx::signal_f<SignalNewAlbum_t>    signal_new_album_x ;
+            typedef sigx::signal_f<SignalNewArtist_t>   signal_new_artist_x ;
 
 
             struct ScannerConnectable
@@ -89,12 +94,16 @@ namespace MPX
                                    signal_scan_run_x & run_x,
                                    signal_scan_end_x & end_x,
                                    signal_reload_x & reload_x,
-                                   signal_track_x & track_x) :
+                                   signal_track_x & track_x,
+                                   signal_new_album_x & album_x,
+                                   signal_new_artist_x & artist_x) :
                 signal_scan_start(start_x),
                 signal_scan_run(run_x),
                 signal_scan_end(end_x),
                 signal_reload(reload_x),
-                signal_track(track_x)
+                signal_track(track_x),
+                signal_new_album(album_x),
+                signal_new_artist(artist_x)
                 {
                 }
 
@@ -103,6 +112,8 @@ namespace MPX
                 signal_scan_end_x   & signal_scan_end ;
                 signal_reload_x     & signal_reload ;
                 signal_track_x      & signal_track ;
+                signal_new_album_x  & signal_new_album ;
+                signal_new_artist_x & signal_new_artist ;
             };
 
 
@@ -116,10 +127,12 @@ namespace MPX
             signal_scan_end_x   signal_scan_end ;
             signal_reload_x     signal_reload ;
             signal_track_x      signal_track ;
+            signal_new_album_x  signal_new_album ;
+            signal_new_artist_x signal_new_artist ;
 
         public:	
 
-            LibraryScannerThread (MPX::SQL::SQLDB*,MPX::MetadataReaderTagLib*) ;
+            LibraryScannerThread (MPX::SQL::SQLDB*,MPX::MetadataReaderTagLib*,gint64) ;
             ~LibraryScannerThread () ;
 
             ScannerConnectable&
@@ -133,6 +146,18 @@ namespace MPX
             void on_scan (ScanData const&) ;
             void on_scan_stop () ;
 
+            gint64
+            get_track_artist_id (Track& row, bool only_if_exists = false);
+
+            gint64
+            get_album_artist_id (Track& row, bool only_if_exists = false);
+
+            gint64
+            get_album_id (Track& row, gint64 album_artist_id, bool only_if_exists = false);
+
+            gint64
+            get_track_mtime (Track& track) const;
+
         private:
 
             struct ThreadData;
@@ -141,6 +166,7 @@ namespace MPX
             MetadataReaderTagLib        * m_MetadataReaderTagLib;
             ScannerConnectable          * m_Connectable ; 
             Glib::Private<ThreadData>     m_ThreadData ;
+            gint64                        m_Flags;
             
 	};
 }
