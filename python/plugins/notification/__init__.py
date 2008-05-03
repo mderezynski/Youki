@@ -44,6 +44,12 @@ class Notification(mpx.Plugin):
         self.previous_message = u''
         pynotify.init("MPX")
 
+        status = self.player.get_status()
+        if (status == mpx.PlayStatus.PLAYING) or (status == mpx.PlayStatus.PAUSED):
+            self.now_playing(self.player.gobj())
+
+
+
         return True
 
     def deactivate(self):
