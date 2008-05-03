@@ -23,19 +23,22 @@ class Pidgin(mpx.Plugin):
         self.player_state_change_handler_id = self.player.gobj().connect("play-status-changed", self.on_state_change)
         self.player_new_track_handler_id = self.player.gobj().connect("new-track", self.now_playing)
 
-        # Initiate a connection to the Session Bus
-        bus = dbus.SessionBus()
+        try:
+            # Initiate a connection to the Session Bus
+            bus = dbus.SessionBus()
 
-        # Associate Pidgin's D-Bus interface with Python objects
-        obj = bus.get_object(
-            "im.pidgin.purple.PurpleService", "/im/pidgin/purple/PurpleObject")
-        self.purple = dbus.Interface(obj, "im.pidgin.purple.PurpleInterface")
+            # Associate Pidgin's D-Bus interface with Python objects
+            obj = bus.get_object(
+                "im.pidgin.purple.PurpleService", "/im/pidgin/purple/PurpleObject")
+            self.purple = dbus.Interface(obj, "im.pidgin.purple.PurpleInterface")
 
-        status = self.player.get_status()
-        if (status == mpx.PlayStatus.PLAYING) or (status == mpx.PlayStatus.PAUSED):
-            self.now_playing(self.player.gobj())
+            status = self.player.get_status()
+            if (status == mpx.PlayStatus.PLAYING) or (status == mpx.PlayStatus.PAUSED):
+                self.now_playing(self.player.gobj())
 
-        return True
+            return True
+        except:
+            return False
 
     def deactivate(self):
         self.set_message("")
@@ -52,7 +55,10 @@ class Pidgin(mpx.Plugin):
         m = self.player.get_metadata()
 
         if m[mpx.AttributeId.ARTIST] and m[mpx.AttributeId.TITLE]: 
-            self.set_message("Listening to %s - %s", (m[mpx.AttributeId.TITLE].get(), m[mpx.AttributeId.ARTIST].get()))
+            try:
+                self.set_message("Listening to " + m[mpx.AttributeId.TITLE].get() + " - " + m[mpx.AttributeId.ARTIST].get())
+            except:
+                pass
 
     def set_message(self, message):
         # Get current status type (Available/Away/etc.)
