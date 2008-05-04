@@ -23,6 +23,8 @@ class Pidgin(mpx.Plugin):
         self.player_state_change_handler_id = self.player.gobj().connect("play-status-changed", self.on_state_change)
         self.player_new_track_handler_id = self.player.gobj().connect("new-track", self.now_playing)
 
+        error = ""
+
         try:
             # Initiate a connection to the Session Bus
             bus = dbus.SessionBus()
@@ -38,13 +40,18 @@ class Pidgin(mpx.Plugin):
 
             return True
         except:
+            raise error, "Pidgin can not be found or has no dbus support"
             return False
 
     def deactivate(self):
-        self.set_message("")
         self.player.gobj().disconnect(self.player_new_track_handler_id)
         self.player.gobj().disconnect(self.player_state_change_handler_id)
-        self.purple = None
+
+        try:
+            self.set_message("")
+            self.purple = None
+        except:
+            pass
 
     def on_state_change(self, player, state):
         if state == mpx.PlayStatus.STOPPED:
