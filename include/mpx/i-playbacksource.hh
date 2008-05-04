@@ -222,8 +222,11 @@ namespace MPX
             virtual void    
             process_uri_list (Util::FileList const&, bool play);
 
-            ItemKey const&
+            ItemKey const& //nonvirtual by design
             get_key ();
+
+            virtual void
+            post_install ();
 
         private:
 

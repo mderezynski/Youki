@@ -7,7 +7,7 @@
 #
 
 import mpx
-import mpx_musiclib
+import mpx_playlist
 import time
 import pygtk
 pygtk.require('2.0')
@@ -299,7 +299,7 @@ class MPXDJ(mpx.Plugin):
 
     def on_playlist_end(self, object):
 
-        idv = mpx_musiclib.IdVector()
+        idv = mpx_playlist.IdVector()
         callable = self.callables[self.combo.get_active()]
         if(callable):
             callable(self.lib, idv)
@@ -308,7 +308,7 @@ class MPXDJ(mpx.Plugin):
 
     def on_button_go(self, object):
 
-        idv = mpx_musiclib.IdVector()
+        idv = mpx_playlist.IdVector()
         callable = self.callables[self.combo.get_active()]
         if(callable):
             callable(self.lib, idv)

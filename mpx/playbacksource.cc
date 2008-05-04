@@ -203,4 +203,10 @@ namespace MPX
         {
             m_OwnKey = key;
         }
+
+        void
+        PlaybackSource::post_install ()
+        {
+        }
+
 } // end namespace MPX 

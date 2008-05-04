@@ -29,6 +29,7 @@
 #include <gtkmm/widget.h>
 #include <sigc++/signal.h>
 #include <boost/format.hpp>
+#include "mpx/source-playlist.hh"
 
 #define NO_IMPORT
 #include <pygobject.h>
@@ -45,91 +46,24 @@ namespace MPX
 {
         class MusicLibPrivate;
 
-        struct PlaylistColumnsT : public Gtk::TreeModel::ColumnRecord 
-        {
-            Gtk::TreeModelColumn<Glib::ustring> Artist;
-            Gtk::TreeModelColumn<Glib::ustring> Album;
-            Gtk::TreeModelColumn<guint64> Track;
-            Gtk::TreeModelColumn<Glib::ustring> Title;
-            Gtk::TreeModelColumn<guint64> Length;
-
-            // These hidden columns are used for sorting
-            // They don't contain sortnames, as one might 
-            // think from their name, but instead the MB
-            // IDs (if not available, then just the plain name)
-            // They are used only for COMPARISON FOR EQUALITY.
-            // Obviously, comparing them with compare() is
-            // useless if they're MB IDs
-
-            Gtk::TreeModelColumn<Glib::ustring> ArtistSort;
-            Gtk::TreeModelColumn<Glib::ustring> AlbumSort;
-            Gtk::TreeModelColumn<gint64> RowId;
-            Gtk::TreeModelColumn<Glib::ustring> Location;
-            Gtk::TreeModelColumn< ::MPX::Track> MPXTrack;
-            Gtk::TreeModelColumn<gint64> Rating;
-            Gtk::TreeModelColumn<bool> IsMPXTrack;
-
-            PlaylistColumnsT ()
-            {
-                add (Artist);
-                add (Album);
-                add (Track);
-                add (Title);
-                add (Length);
-                add (ArtistSort);
-                add (AlbumSort);
-                add (RowId);
-                add (Location);
-                add (MPXTrack);
-                add (Rating);
-                add (IsMPXTrack);
-            };
-        };
-
-        struct PluginMenuData
-        {
-            Glib::RefPtr<Gdk::Pixbuf> m_Icon;
-            gint64                    m_Id;
-            std::string               m_Name;
-        };
-
-        typedef std::vector<PluginMenuData> VisiblePlugsT;
-        
 namespace Source
 {
         class PlaybackSourceMusicLib
             :  public Glib::Object, public PlaybackSource
         {
-                enum CSignals
-                {
-                    PSM_SIGNAL_PLAYLIST_TOOLTIP,
-                    PSM_SIGNAL_PLAYLIST_END,
-                    N_SIGNALS
-                };
-
-        	    guint signals[N_SIGNALS];
-                static bool m_signals_installed;
-
-                Glib::RefPtr<Gtk::UIManager> m_MainUIManager;
-                Glib::RefPtr<Gtk::ActionGroup> m_MainActionGroup;
-                guint m_UIID;
-
-                MusicLibPrivate * m_Private;
-                VisiblePlugsT m_VisiblePlugs; 
-
-                PAccess<MPX::Library> m_Lib;
-                PAccess<MPX::HAL> m_HAL;
-                PAccess<MPX::Covers> m_Covers;
+                Glib::RefPtr<Gtk::UIManager>        m_MainUIManager;
+                Glib::RefPtr<Gtk::ActionGroup>      m_MainActionGroup;
+                guint                               m_UIID;
+                MusicLibPrivate                   * m_Private;
+                PAccess<MPX::Library>               m_Lib;
+                PAccess<MPX::HAL>                   m_HAL;
+                PAccess<MPX::Covers>                m_Covers;
+                MPX::Player                       & m_Player;
+                PlaybackSourcePlaylist            * m_DefaultPlaylist;
     
 
                 void
                 on_sort_column_change ();
-
-                void
-                on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
-
-                bool
-                on_plist_query_tooltip(int,int,bool,const Glib::RefPtr<Gtk::Tooltip>&);
 
             public:
 
@@ -137,46 +71,8 @@ namespace Source
                 ~PlaybackSourceMusicLib ();
 
 
-                Glib::RefPtr<Gtk::ListStore> 
-                get_playlist_model ();
-
-                PyObject*
-                get_playlist_current_iter ();
-
-
-                void
-                play_album(gint64);
-
-                void
-                append_album(gint64);
-
-
-                void
-                play_tracks(IdV const&);
-
-                void
-                append_tracks(IdV const&);
-
-
-
-                void
-                action_cb_run_plugin (gint64);
-
-                void
-                action_cb_play ();
-
-                void
-                action_cb_go_to_album(gint64);
-
                 void
                 check_caps ();
-
-                void
-                set_play ();
-
-                void
-                clear_play ();
-
 
 
 
@@ -243,6 +139,9 @@ namespace Source
 
                 virtual void    
                 process_uri_list (Util::FileList const&, bool);
+
+                virtual void
+                post_install (); 
 
         }; // end class PlaybackSourceMusicLib 
 } // end namespace Source
