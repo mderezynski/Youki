@@ -192,6 +192,13 @@ namespace MPX
             return Py_None;
         }
 
+        void
+        PlaybackSource::set_name(std::string const& name)
+        {
+            m_Name = name;
+            Signals.NameChanged.emit();
+        }
+
         ItemKey const&
         PlaybackSource::get_key ()
         {

@@ -107,6 +107,7 @@ namespace MPX
             typedef sigc::signal<void>                          SignalPlayAsync;
             typedef sigc::signal<void>                          SignalNextAsync;
             typedef sigc::signal<void>                          SignalPrevAsync;
+            typedef sigc::signal<void>                          SignalNameChanged;
 
             PlaybackSource (const Glib::RefPtr<Gtk::UIManager>&, const std::string&, Caps = C_NONE, Flags = F_NONE);
             virtual ~PlaybackSource ();
@@ -140,6 +141,9 @@ namespace MPX
 
             SignalPlayAsync&
             signal_play_async ();
+
+            SignalNameChanged&
+            signal_name_changed ();
 
             virtual std::string
             get_uri () = 0; 
@@ -222,6 +226,9 @@ namespace MPX
             virtual void    
             process_uri_list (Util::FileList const&, bool play);
 
+            void
+            set_name(std::string const&);
+
             ItemKey const& //nonvirtual by design
             get_key ();
 
@@ -251,6 +258,7 @@ namespace MPX
               SignalPlayAsync                 PlayAsync;
               SignalNextAsync                 NextAsync;
               SignalPrevAsync                 PrevAsync;
+              SignalNameChanged               NameChanged;
             };
 
             SignalsT        Signals;

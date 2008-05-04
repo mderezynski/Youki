@@ -1014,7 +1014,7 @@ namespace Source
     bool PlaybackSourcePlaylist::m_signals_installed = false;
 
     PlaybackSourcePlaylist::PlaybackSourcePlaylist (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
-    : PlaybackSource(ui_manager, _("Playlist"), C_CAN_SEEK)
+    : PlaybackSource(ui_manager, _("Default Playlist"), C_CAN_SEEK)
     {
         mpx_playlist_py_init ();
 
