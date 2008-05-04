@@ -13,27 +13,19 @@ libmpx_widgets_la_LIBADD =	\
 
 libmpx_widgets_la_SOURCES = 			\
 										\
-	    widget-marshalers.c   			\
-										\
-		cairoextensions.cc				\
-										\
-		cell-renderer-count.cc			\
-										\
-		gossip-cell-renderer-expander.c	\
-										\
 		bmp_status_icon.c     			\
 		bmp_status_icon.h	    		\
-										\
     	bmp_tray_icon.c       			\
 	    bmp_tray_icon.h	      			\
-										\
-		taskdialog.cc					\
-										\
+		cairoextensions.cc				\
 		cell-renderer-cairo-surface.cc	\
-										\
+		cell-renderer-count.cc			\
+		cell-renderer-source.cc			\
 		cell-renderer-vbox.cc			\
-										\
-		dialog-simple-entry.cc			
+		dialog-simple-entry.cc			\	
+		gossip-cell-renderer-expander.c	\
+		taskdialog.cc					\
+	    widget-marshalers.c   			
 
 widget-marshalers.c: widget-marshalers.list 
 	@echo "* Generating widget-marshalers.c"
