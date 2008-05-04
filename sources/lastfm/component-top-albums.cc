@@ -1,4 +1,5 @@
 #include "config.h"
+#include <boost/format.hpp>
 #include "component-top-albums.hh"
 #include "mpx/util-graphics.hh"
 
@@ -19,6 +20,7 @@ MPX::ComponentTopAlbums::ComponentTopAlbums ()
     m_UI  = m_XML->get_widget("lastfm_com_top_albums");
     m_XML->get_widget("entry", m_Entry);
     m_XML->get_widget("view", m_View);
+    m_XML->get_widget("label", m_Label);
     
     setup_view ();
 
@@ -26,10 +28,19 @@ MPX::ComponentTopAlbums::ComponentTopAlbums ()
         sigc::mem_fun( *this, &ComponentTopAlbums::on_entry_activated
     ));
 
+    m_Entry->signal_changed().connect(
+        sigc::mem_fun( *this, &ComponentTopAlbums::on_entry_changed
+    ));
+
     m_Thread = new TopAlbumsFetchThread;
     m_Thread->run();
+
     m_Thread->SignalAlbum().connect(
         sigc::mem_fun(*this, &ComponentTopAlbums::on_new_album
+    ));
+
+    m_Thread->SignalStopped().connect(
+        sigc::mem_fun(*this, &ComponentTopAlbums::on_stopped
     ));
 }
 
@@ -63,11 +74,24 @@ MPX::ComponentTopAlbums::setup_view ()
 }
 
 void
+MPX::ComponentTopAlbums::on_entry_changed ()
+{
+    m_Thread->RequestStop();
+}
+
+void
 MPX::ComponentTopAlbums::on_entry_activated ()
 {
     m_Thread->RequestStop();
     m_Model->clear();
+    m_Label->set_markup((boost::format ("<b>%s</b>") % Markup::escape_text(m_Entry->get_text())).str());
     m_Thread->RequestLoad(m_Entry->get_text());
+}
+
+void
+MPX::ComponentTopAlbums::on_stopped ()
+{
+    m_Model->clear();
 }
 
 void

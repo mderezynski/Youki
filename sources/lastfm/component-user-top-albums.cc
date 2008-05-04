@@ -1,11 +1,29 @@
 #include "config.h"
+#include <boost/format.hpp>
+#include <glibmm/i18n.h>
 #include "mpx/util-graphics.hh"
 #include "component-user-top-albums.hh"
 
 using namespace Glib;
 using namespace Gtk;
 
-MPX::ComponentUserTopAlbums::ComponentUserTopAlbums ()
+namespace
+{
+    using namespace MPX;
+
+    inline std::string
+    text_from_album (TopAlbum const& a)
+    {
+        return (boost::format("<b>%s</b>\n%s\n<small>%s: %lld</small>")
+                    % Markup::escape_text(a.Artist)
+                    % Markup::escape_text(a.Album)
+                    % _("Playcount")
+                    % a.Playcount
+        ).str();
+    }
+}
+
+MPX::ComponentUserTopAlbums::ComponentUserTopAlbums (MPX::Player* obj_player)
 : ComponentBase()
 {
     m_XML = Gnome::Glade::Xml::create(
@@ -19,6 +37,7 @@ MPX::ComponentUserTopAlbums::ComponentUserTopAlbums ()
     m_UI  = m_XML->get_widget("lastfm_com_user_top_albums");
     m_XML->get_widget("entry", m_Entry);
     m_XML->get_widget("view", m_View);
+    m_XML->get_widget("label", m_Label);
     
     setup_view ();
 
@@ -26,11 +45,22 @@ MPX::ComponentUserTopAlbums::ComponentUserTopAlbums ()
         sigc::mem_fun( *this, &ComponentUserTopAlbums::on_entry_activated
     ));
 
+    m_Entry->signal_changed().connect(
+        sigc::mem_fun( *this, &ComponentUserTopAlbums::on_entry_changed
+    ));
+
+
     m_Thread = new UserTopAlbumsFetchThread;
     m_Thread->run();
+
     m_Thread->SignalAlbum().connect(
         sigc::mem_fun(*this, &ComponentUserTopAlbums::on_new_album
     ));
+
+    m_Thread->SignalStopped().connect(
+        sigc::mem_fun(*this, &ComponentUserTopAlbums::on_stopped
+    ));
+
 }
 
 MPX::ComponentUserTopAlbums::~ComponentUserTopAlbums ()
@@ -48,13 +78,12 @@ MPX::ComponentUserTopAlbums::setup_view ()
     cell1->property_ypad() = 4;
 
     cell2->property_yalign() = 0.0;
-    cell2->property_weight() = Pango::WEIGHT_BOLD;
     cell2->property_size() = 12 * PANGO_SCALE;
 
     column->pack_start(*cell1, false );
     column->pack_start(*cell2, true );
     column->add_attribute(*cell1, "pixbuf", Columns.Pixbuf); 
-    column->add_attribute(*cell2, "text", Columns.Text);
+    column->add_attribute(*cell2, "markup", Columns.Text);
 
     m_View->append_column(*column);
 
@@ -63,29 +92,42 @@ MPX::ComponentUserTopAlbums::setup_view ()
 }
 
 void
+MPX::ComponentUserTopAlbums::on_entry_changed ()
+{
+    m_Thread->RequestStop();
+}
+
+void
+MPX::ComponentUserTopAlbums::on_stopped ()
+{
+    m_Model->clear();
+}
+
+void
 MPX::ComponentUserTopAlbums::on_entry_activated ()
 {
     m_Thread->RequestStop();
     m_Model->clear();
+    m_Label->set_markup((boost::format ("<b>%s</b>") % Markup::escape_text(m_Entry->get_text())).str());
     m_Thread->RequestLoad(m_Entry->get_text());
 }
 
 void
-MPX::ComponentUserTopAlbums::on_new_album(Glib::RefPtr<Gdk::Pixbuf> icon, std::string const& album)
+MPX::ComponentUserTopAlbums::on_new_album(TopAlbum const& a)
 {
-    if(icon)
+    if(a.Cover)
     {
         TreeIter iter = m_Model->append();
 
         Cairo::RefPtr<Cairo::ImageSurface> srfc =
             Util::cairo_image_surface_from_pixbuf(
-                icon->scale_simple(64,64,Gdk::INTERP_BILINEAR
+                a.Cover->scale_simple(64,64,Gdk::INTERP_BILINEAR
             ));
 
         srfc = Util::cairo_image_surface_round(srfc, 6.);
         Util::cairo_image_surface_rounded_border(srfc, 1., 6.);
 
         (*iter)[Columns.Pixbuf] = Util::cairo_image_surface_to_pixbuf(srfc);
-        (*iter)[Columns.Text] = album;
+        (*iter)[Columns.Text] = text_from_album(a);
     }
 }

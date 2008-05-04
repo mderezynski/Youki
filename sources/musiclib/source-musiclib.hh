@@ -41,8 +41,6 @@
 #include "mpx/i-playbacksource.hh"
 #include "mpx/paccess.hh"
 
-#include "plugin-manager.hh"
-
 namespace MPX
 {
         class MusicLibPrivate;
@@ -154,10 +152,10 @@ namespace Source
 
 
                 void
-                play_tracks(TrackIdV const&);
+                play_tracks(IdV const&);
 
                 void
-                append_tracks(TrackIdV const&);
+                append_tracks(IdV const&);
 
 
 
@@ -190,9 +188,6 @@ namespace Source
             
                 virtual std::string
                 get_type ();
-
-                virtual GHashTable *
-                get_metadata ();
 
                 virtual bool
                 play ();

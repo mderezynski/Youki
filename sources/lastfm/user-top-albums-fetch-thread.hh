@@ -33,21 +33,33 @@
 
 namespace MPX
 {
+    struct TopAlbum
+    {
+        Glib::RefPtr<Gdk::Pixbuf>       Cover;
+        std::string                     Artist;
+        std::string                     Album;
+        std::string                     MBID;
+        gint64                          Playcount;
+    };
+
 	class UserTopAlbumsFetchThread : public sigx::glib_threadable
 	{
 		public:
 			UserTopAlbumsFetchThread ();
 			~UserTopAlbumsFetchThread ();
 
-            typedef sigx::request_f<std::string const&> RequestLoad_t;
-            typedef sigx::request_f<>                   RequestStop_t;
+            typedef sigx::request_f<std::string const&>  RequestLoad_t;
+            typedef sigx::request_f<>                    RequestStop_t;
 
-            typedef sigc::signal< void, Glib::RefPtr<Gdk::Pixbuf>, std::string const& > SignalAlbum_t;
-            typedef sigx::signal_f< SignalAlbum_t >                                     SignalAlbum_x;
+            typedef sigc::signal< void, TopAlbum const&> SignalAlbum_t;
+            typedef sigc::signal< void >                 SignalStopped_t;
+            typedef sigx::signal_f< SignalAlbum_t >      SignalAlbum_x;
+            typedef sigx::signal_f< SignalStopped_t >    SignalStopped_x;
 
             RequestLoad_t           RequestLoad;
             RequestStop_t           RequestStop;
             SignalAlbum_x           SignalAlbum;
+            SignalStopped_x         SignalStopped;
 
         protected:
 
@@ -59,6 +71,9 @@ namespace MPX
     
             void
             on_stop();
+
+            bool 
+            idle_loader ();
         
             struct ThreadData;
             Glib::Private<ThreadData> m_ThreadData;

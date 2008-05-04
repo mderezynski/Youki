@@ -28,10 +28,10 @@
 #include <gtkmm.h>
 #include <glib.h>
 #include <libglademm.h>
+#include <Python.h>
+#define NO_IMPORT
+#include <pygobject.h>
 
-#include "mpx/widgets/cell-renderer-cairo-surface.hh"
-#include "mpx/widgets/cell-renderer-vbox.hh"
-#include "mpx/widgets/gossip-cell-renderer-expander.h"
 
 #include "mpx/hal.hh"
 #include "mpx/library.hh"
@@ -41,14 +41,12 @@
 #include "mpx/util-string.hh"
 #include "mpx/widgetloader.h"
 #include "mpx/playlistparser-xspf.hh"
+#include "mpx/widgets/cell-renderer-cairo-surface.hh"
+#include "mpx/widgets/cell-renderer-vbox.hh"
+#include "mpx/widgets/gossip-cell-renderer-expander.h"
 
 #include "source-musiclib.hh"
-#include "plugin-manager.hh"
 #include "glib-marshalers.h"
-
-#include <Python.h>
-#define NO_IMPORT
-#include <pygobject.h>
 #include "musiclib-py.hh"
 
 using namespace Gtk;
@@ -207,7 +205,12 @@ namespace MPX
                 C_TRACK,
               };
 
-              PlaylistTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml, PAccess<MPX::Library> const& lib, PAccess<MPX::HAL> const& hal, MPX::Source::PlaybackSourceMusicLib & mlib)
+              PlaylistTreeView(
+                    Glib::RefPtr<Gnome::Glade::Xml> const& xml,
+                    PAccess<MPX::Library>           const& lib,
+                    PAccess<MPX::HAL>               const& hal,
+                    MPX::Source::PlaybackSourceMusicLib  & mlib
+              )
               : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-playlist")
               , m_Lib(lib)
               , m_MusicLib(mlib)
@@ -215,6 +218,9 @@ namespace MPX
               , m_RowId(0)
               , m_ButtonDepressed(0)
               {
+                g_message(G_OBJECT_TYPE_NAME(gobj()));    
+                g_message(G_OBJECT_CLASS_NAME((G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj()))))));
+
                 set_has_tooltip();
 
                 m_Playing = Gdk::Pixbuf::create_from_file(Glib::build_filename(Glib::build_filename(DATA_DIR,"images"),"play.png"));
@@ -524,16 +530,16 @@ namespace MPX
               }
 
               void          
-              append_tracks (TrackIdV const& tid_v, Order order = NO_ORDER)
+              append_tracks (IdV const& tid_v, Order order = NO_ORDER)
               {
                   if(tid_v.empty())
                       return;
 
                   std::stringstream numbers;
-                  TrackIdV::const_iterator end = tid_v.end();
+                  IdV::const_iterator end = tid_v.end();
                   end--;
 
-                  for(TrackIdV::const_iterator i = tid_v.begin(); i != tid_v.end(); ++i)
+                  for(IdV::const_iterator i = tid_v.begin(); i != tid_v.end(); ++i)
                   {
                       numbers << *i;
                       if(i != end)
@@ -1106,7 +1112,7 @@ namespace MPX
                 else
                 {
                         gint64 id = (*iter)[AlbumColumns.TrackId];
-                        TrackIdV v;
+                        IdV v;
                         v.push_back(id);
                         m_MLib.play_tracks(v);
                 }
@@ -1156,9 +1162,15 @@ namespace MPX
               on_drag_data_get (const Glib::RefPtr<Gdk::DragContext>& context, SelectionData& selection_data, guint info, guint time)
               {
                 if(m_DragAlbumId)
-                    selection_data.set("mpx-album", 8, reinterpret_cast<const guint8*>(&m_DragAlbumId.get()), 8);
+                {
+                    gint64 * id = new gint64(m_DragAlbumId.get());
+                    selection_data.set("mpx-album", 8, reinterpret_cast<const guint8*>(id), 8);
+                }
                 else if(m_DragTrackId)
-                    selection_data.set("mpx-track", 8, reinterpret_cast<const guint8*>(&m_DragTrackId.get()), 8);
+                {
+                    gint64 * id = new gint64(m_DragTrackId.get());
+                    selection_data.set("mpx-track", 8, reinterpret_cast<const guint8*>(id), 8);
+                }
 
                 m_DragMBID.reset();
                 m_DragAlbumId.reset();
@@ -1918,7 +1930,7 @@ namespace Source
     }
 
     void
-    PlaybackSourceMusicLib::play_tracks(TrackIdV const& idv)
+    PlaybackSourceMusicLib::play_tracks(IdV const& idv)
     {
         m_Private->m_TreeViewPlaylist->clear();
         m_Private->m_TreeViewPlaylist->append_tracks(idv, NO_ORDER);
@@ -1926,7 +1938,7 @@ namespace Source
     }
 
     void
-    PlaybackSourceMusicLib::append_tracks(TrackIdV const& idv)
+    PlaybackSourceMusicLib::append_tracks(IdV const& idv)
     {
         m_Private->m_TreeViewPlaylist->append_tracks(idv, NO_ORDER);
     }
@@ -1980,12 +1992,6 @@ namespace Source
             return get<std::string>(t[ATTRIBUTE_TYPE].get());
         else
             return std::string();
-    }
-
-    GHashTable *
-    PlaybackSourceMusicLib::get_metadata ()
-    {
-        return 0;
     }
 
     bool

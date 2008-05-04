@@ -45,7 +45,7 @@ namespace MPX
 	typedef std::vector<std::string> UriSchemes;
 
     struct Metadata
-    :   public Track
+    : public Track
     {
         Glib::RefPtr<Gdk::Pixbuf> Image;
 
@@ -65,193 +65,203 @@ namespace MPX
 		}
     };
 
+    class Player;
     class PlaybackSource
     {
-      public:
+        public:
 
-        enum Flags
-        {
-          F_NONE                    = 0,
-          F_ASYNC                   = 1 << 0,
-          F_HANDLE_STREAMINFO       = 1 << 1,
-          F_PHONY_NEXT              = 1 << 2,
-          F_PHONY_PREV              = 1 << 3,
-          F_HANDLE_LASTFM           = 1 << 5,
-          F_HANDLE_LASTFM_ACTIONS   = 1 << 6,
-          F_USES_REPEAT             = 1 << 7,
-          F_USES_SHUFFLE            = 1 << 8,
-        };
+            enum Flags
+            {
+              F_NONE                    = 0,
+              F_ASYNC                   = 1 << 0,
+              F_HANDLE_STREAMINFO       = 1 << 1,
+              F_PHONY_NEXT              = 1 << 2,
+              F_PHONY_PREV              = 1 << 3,
+              F_HANDLE_LASTFM           = 1 << 5,
+              F_HANDLE_LASTFM_ACTIONS   = 1 << 6,
+              F_USES_REPEAT             = 1 << 7,
+              F_USES_SHUFFLE            = 1 << 8,
+            };
 
-        enum Caps
-        {
-          C_NONE                    = 0,
-          C_CAN_GO_NEXT             = 1 << 0,
-          C_CAN_GO_PREV             = 1 << 1,
-          C_CAN_PAUSE               = 1 << 2,
-          C_CAN_PLAY                = 1 << 3,
-          C_CAN_SEEK                = 1 << 4,
-          C_CAN_RESTORE_CONTEXT     = 1 << 5, 
-          C_CAN_PROVIDE_METADATA    = 1 << 6,
-          C_CAN_BOOKMARK            = 1 << 7,
-          C_PROVIDES_TIMING         = 1 << 8,
-        };
+            enum Caps
+            {
+              C_NONE                    = 0,
+              C_CAN_GO_NEXT             = 1 << 0,
+              C_CAN_GO_PREV             = 1 << 1,
+              C_CAN_PAUSE               = 1 << 2,
+              C_CAN_PLAY                = 1 << 3,
+              C_CAN_SEEK                = 1 << 4,
+              C_CAN_RESTORE_CONTEXT     = 1 << 5, 
+              C_CAN_PROVIDE_METADATA    = 1 << 6,
+              C_CAN_BOOKMARK            = 1 << 7,
+              C_PROVIDES_TIMING         = 1 << 8,
+            };
 
-        typedef sigc::signal<void, Caps>                    SignalCaps;
-        typedef sigc::signal<void, Flags>                   SignalFlags;
-        typedef sigc::signal<void, const Metadata&>         SignalTrackMetadata;
-        typedef sigc::signal<void>                          SignalSegment;
-        typedef sigc::signal<void>                          SignalPlaybackRequest;
-        typedef sigc::signal<void>                          SignalStopRequest;
-        typedef sigc::signal<void>                          SignalNextRequest;
-        typedef sigc::signal<void>                          SignalPlayAsync;
-        typedef sigc::signal<void>                          SignalNextAsync;
-        typedef sigc::signal<void>                          SignalPrevAsync;
+            typedef sigc::signal<void, Caps>                    SignalCaps;
+            typedef sigc::signal<void, Flags>                   SignalFlags;
+            typedef sigc::signal<void, const Metadata&>         SignalTrackMetadata;
+            typedef sigc::signal<void>                          SignalSegment;
+            typedef sigc::signal<void>                          SignalPlaybackRequest;
+            typedef sigc::signal<void>                          SignalStopRequest;
+            typedef sigc::signal<void>                          SignalNextRequest;
+            typedef sigc::signal<void>                          SignalPlayAsync;
+            typedef sigc::signal<void>                          SignalNextAsync;
+            typedef sigc::signal<void>                          SignalPrevAsync;
 
-        PlaybackSource (const Glib::RefPtr<Gtk::UIManager>&, const std::string&, Caps = C_NONE, Flags = F_NONE);
-		virtual ~PlaybackSource ();
+            PlaybackSource (const Glib::RefPtr<Gtk::UIManager>&, const std::string&, Caps = C_NONE, Flags = F_NONE);
+            virtual ~PlaybackSource ();
 
-        SignalCaps&
-        signal_caps ();
+            SignalCaps&
+            signal_caps ();
 
-        SignalFlags&
-        signal_flags ();
+            SignalFlags&
+            signal_flags ();
 
-        SignalTrackMetadata&
-        signal_track_metadata ();
+            SignalTrackMetadata&
+            signal_track_metadata ();
 
-        SignalPlaybackRequest&
-        signal_playback_request ();
+            SignalPlaybackRequest&
+            signal_playback_request ();
 
-        SignalStopRequest&
-        signal_stop_request ();
+            SignalStopRequest&
+            signal_stop_request ();
 
-        SignalNextRequest&
-        signal_next_request ();
+            SignalNextRequest&
+            signal_next_request ();
 
-        SignalSegment&
-        signal_segment ();
+            SignalSegment&
+            signal_segment ();
 
-        SignalNextAsync&
-        signal_next_async ();
+            SignalNextAsync&
+            signal_next_async ();
 
-        SignalPrevAsync&
-        signal_prev_async ();
+            SignalPrevAsync&
+            signal_prev_async ();
 
-        SignalPlayAsync&
-        signal_play_async ();
+            SignalPlayAsync&
+            signal_play_async ();
 
-        virtual std::string
-        get_uri () = 0; 
-    
-        virtual std::string
-        get_type ();
+            virtual std::string
+            get_uri () = 0; 
+        
+            virtual std::string
+            get_type ();
 
-        virtual bool
-        play () = 0;
+            virtual bool
+            play () = 0;
 
-        virtual bool
-        go_next () = 0;
+            virtual bool
+            go_next () = 0;
 
-        virtual bool
-        go_prev () = 0; 
+            virtual bool
+            go_prev () = 0; 
 
-        virtual void
-        stop () = 0;
-  
-        virtual void
-        play_async ();
+            virtual void
+            stop () = 0;
+      
+            virtual void
+            play_async ();
 
-        virtual void
-        go_next_async ();
-  
-        virtual void
-        go_prev_async (); 
+            virtual void
+            go_next_async ();
+      
+            virtual void
+            go_prev_async (); 
 
-        virtual void
-        play_post () = 0;
+            virtual void
+            play_post () = 0;
 
-        virtual void
-        next_post (); 
+            virtual void
+            next_post (); 
 
-        virtual void
-        prev_post ();
+            virtual void
+            prev_post ();
 
-        virtual void
-        restore_context () = 0;
+            virtual void
+            restore_context () = 0;
 
-        virtual void
-        skipped (); 
+            virtual void
+            skipped (); 
 
-        virtual void
-        segment (); 
+            virtual void
+            segment (); 
 
-        virtual void
-        buffering_done (); 
+            virtual void
+            buffering_done (); 
 
-        virtual void
-        send_caps ();
+            virtual void
+            send_caps ();
 
-        virtual void
-        send_flags ();
+            virtual void
+            send_flags ();
 
-		virtual void
-		send_metadata () = 0;
+            virtual void
+            send_metadata () = 0;
 
-        std::string
-        get_name ();
+            std::string
+            get_name ();
 
-        virtual PyObject*
-        get_py_obj ();
+            virtual PyObject*
+            get_py_obj ();
 
-        virtual std::string
-        get_guid () = 0;
+            virtual std::string
+            get_guid () = 0;
 
-        virtual Glib::RefPtr<Gdk::Pixbuf>
-        get_icon () = 0;
+            virtual Glib::RefPtr<Gdk::Pixbuf>
+            get_icon () = 0;
 
-        virtual Gtk::Widget*
-        get_ui () = 0;
+            virtual Gtk::Widget*
+            get_ui () = 0;
 
-		virtual guint
-		add_menu ();
+            virtual guint
+            add_menu ();
 
-        virtual UriSchemes 
-        get_uri_schemes ();
+            virtual UriSchemes 
+            get_uri_schemes ();
 
-        virtual void    
-        process_uri_list (Util::FileList const&, bool play);
+            virtual void    
+            process_uri_list (Util::FileList const&, bool play);
 
-      protected:
+            ItemKey const&
+            get_key ();
 
-        struct SignalsT
-        {
-          SignalCaps                      Caps;
-          SignalFlags                     Flags;
-          SignalTrackMetadata             Metadata;
-          SignalSegment                   Segment;
-          SignalPlaybackRequest           PlayRequest;
-          SignalStopRequest               StopRequest;
-          SignalNextRequest               NextRequest;
-          SignalPlayAsync                 PlayAsync;
-          SignalNextAsync                 NextAsync;
-          SignalPrevAsync                 PrevAsync;
-        };
+        private:
 
-        SignalsT        Signals;
-        Caps            m_Caps;
-        Flags           m_Flags;
-        std::string     m_Name;
+            friend class ::MPX::Player;
+
+            void
+            set_key (ItemKey const& key);
+
+            ItemKey m_OwnKey;
+
+        protected:
+
+            struct SignalsT
+            {
+              SignalCaps                      Caps;
+              SignalFlags                     Flags;
+              SignalTrackMetadata             Metadata;
+              SignalSegment                   Segment;
+              SignalPlaybackRequest           PlayRequest;
+              SignalStopRequest               StopRequest;
+              SignalNextRequest               NextRequest;
+              SignalPlayAsync                 PlayAsync;
+              SignalNextAsync                 NextAsync;
+              SignalPrevAsync                 PrevAsync;
+            };
+
+            SignalsT        Signals;
+            Caps            m_Caps;
+            Flags           m_Flags;
+            std::string     m_Name;
 
     }; // end class PlaybackSource 
 
-    typedef PlaybackSource::Caps SourceCaps;
-    typedef PlaybackSource::Flags SourceFlags;
+    inline PlaybackSource::Caps operator|(PlaybackSource::Caps lhs, PlaybackSource::Caps rhs)
+      { return static_cast<PlaybackSource::Caps>(static_cast<unsigned>(lhs) | static_cast<unsigned>(rhs)); }
 
-    inline SourceCaps operator|(SourceCaps lhs, SourceCaps rhs)
-      { return static_cast<SourceCaps>(static_cast<unsigned>(lhs) | static_cast<unsigned>(rhs)); }
-
-    inline SourceFlags operator|(SourceFlags lhs, SourceFlags rhs)
-      { return static_cast<SourceFlags>(static_cast<unsigned>(lhs) | static_cast<unsigned>(rhs)); }
+    inline PlaybackSource::Flags operator|(PlaybackSource::Flags lhs, PlaybackSource::Flags rhs)
+      { return static_cast<PlaybackSource::Flags>(static_cast<unsigned>(lhs) | static_cast<unsigned>(rhs)); }
 
 } // end namespace MPX 
   

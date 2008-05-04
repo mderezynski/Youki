@@ -48,6 +48,12 @@ namespace MPX
                 delete m_Xml;
                 delete m_ConfigFileParser;
             }
+
+            explicit XmlInstance ()
+            : m_Xml (0)
+            , m_ConfigFileParser (0)
+            {
+            }
  
             explicit XmlInstance (const std::string& url) 
             : m_Xml (0)
@@ -86,6 +92,9 @@ namespace MPX
 
             T& xml ()
             {
+                if(!m_Xml)
+                    throw std::runtime_error ("No instance");
+
                 return *m_Xml;
             };
     };

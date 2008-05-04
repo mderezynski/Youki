@@ -43,8 +43,8 @@ using namespace Glib;
 
 BOOST_PYTHON_MODULE(mpx_musiclib)
 {
-	class_<MPX::TrackIdV>("TrackIdVector")
-		.def(vector_indexing_suite<MPX::TrackIdV>());
+	class_<MPX::IdV>("IdVector")
+		.def(vector_indexing_suite<MPX::IdV>());
 	;
 
     class_<MPX::Source::PlaybackSourceMusicLib, boost::noncopyable>("MusicLib", boost::python::no_init)

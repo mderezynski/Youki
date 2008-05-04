@@ -29,90 +29,120 @@
 #include <gtkmm.h>
 #include <libglademm/xml.h>
 #include <boost/optional.hpp>
+#include "mpx/types.hh"
 
 namespace MPX
 {
   class Sidebar
     : public Gtk::TreeView
   {
-    private:
-
-        Glib::RefPtr<Gnome::Glade::Xml>   m_ref_xml;
-        struct SourceColumns : public Gtk::TreeModel::ColumnRecord
-        {
-            Gtk::TreeModelColumn<Glib::ustring> name;  
-            Gtk::TreeModelColumn<Glib::RefPtr<Gdk::Pixbuf> > icon;
-            Gtk::TreeModelColumn<gint64> id;
-
-            SourceColumns()
-            {
-                add (name);
-                add (icon);
-                add (id);
-            };
-        };
-
-        SourceColumns m_SourceColumns;
-        Glib::RefPtr<Gtk::TreeStore> m_Store;
-
-        typedef std::map<gint64, Gtk::TreeIter> IdIterMapT;
-        typedef std::set<gint64>              ActiveIdT;
-        IdIterMapT m_IdIterMap;
-        ActiveIdT m_ActiveIds;
-
-
-        void cell_data_func( Gtk::CellRenderer*, const Gtk::TreeIter&, int );
-
-        bool
-        slot_select (Glib::RefPtr <Gtk::TreeModel> const& model,
-                     Gtk::TreeModel::Path const& path,
-                     bool was_selected);
-
-        static void
-        rb_sourcelist_expander_cell_data_func (GtkTreeViewColumn *column,
-                               GtkCellRenderer   *cell,
-                               GtkTreeModel      *model,
-                               GtkTreeIter       *iter,
-                               gpointer           data) ;
-
-        void on_selection_changed ();
-        boost::optional<gint64> m_active_id;
-        gint64 m_visible_id;
 
     public:
 
-        typedef sigc::signal<void, gint64> SignalIdChanged;
-
-    private:
-
-        SignalIdChanged signal_id_changed_;
-
-    public:
+        typedef sigc::signal<void, ItemKey>                SignalIdChanged;
 
         Sidebar (BaseObjectType                       * obj,
                  Glib::RefPtr<Gnome::Glade::Xml> const& xml);
         virtual ~Sidebar ();
 
-        SignalIdChanged&
-        signal_id_changed()
-        {
-            return signal_id_changed_;
-        }
-
-        gint64
+        ItemKey const&
         getActiveId ();
 
-        gint64
+        ItemKey const&
         getVisibleId ();
 
         void
-        setActiveId (gint64);
+        setActiveId (ItemKey const&);
 
         void
         clearActiveId ();
 
         void
-        addItem (const Glib::ustring& name, const Glib::RefPtr<Gdk::Pixbuf>& icon, gint64 id);
+        addItem(
+            const Glib::ustring& name,
+            Gtk::Widget* ui,
+            const Glib::RefPtr<Gdk::Pixbuf> & icon,
+            gint64 id
+        );
+
+        void
+        addSubItem(
+            const Glib::ustring& name,
+            Gtk::Widget* ui,
+            const Glib::RefPtr<Gdk::Pixbuf> & icon,
+            gint64 parent,
+            gint64 id
+        );
+
+        SignalIdChanged&
+        signal_id_changed();
+
+    private:
+
+        void
+        cell_data_func(
+            Gtk::CellRenderer*,
+            const Gtk::TreeIter&,
+            int
+        );
+
+
+        bool
+        slot_select(
+            Glib::RefPtr <Gtk::TreeModel>   const& model,
+            Gtk::TreeModel::Path            const& path,
+            bool                                   was_selected
+        );
+
+        static void
+        rb_sourcelist_expander_cell_data_func(
+            GtkTreeViewColumn *column,
+            GtkCellRenderer   *cell,
+            GtkTreeModel      *model,
+            GtkTreeIter       *iter,
+            gpointer           data
+        );
+
+        void
+        on_selection_changed ();
+
+        bool
+        on_drag_motion (Glib::RefPtr<Gdk::DragContext> const& context, int x, int y, guint time);
+
+    private:
+
+        struct SourceColumns : public Gtk::TreeModel::ColumnRecord
+        {
+            Gtk::TreeModelColumn<Glib::ustring> name;  
+            Gtk::TreeModelColumn<Glib::RefPtr<Gdk::Pixbuf> > icon;
+            Gtk::TreeModelColumn<ItemKey> key;
+            Gtk::TreeModelColumn<gint64>  page;
+
+            SourceColumns()
+            {
+                add (name);
+                add (icon);
+                add (key);
+                add (page);
+            };
+        };
+
+        SourceColumns                Columns;
+        Glib::RefPtr<Gtk::TreeStore> Store;
+
+        typedef std::map<ItemKey, Gtk::TreeIter> IdIterMapT;
+        typedef std::set<gint64>                 ActiveIdT;
+
+        IdIterMapT m_IdIterMap;
+        ActiveIdT  m_ActiveIds;
+
+        boost::optional<ItemKey> m_active_id;
+        ItemKey                  m_visible_id;
+        Gtk::Notebook          * m_Notebook;
+
+        Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
+
+        SignalIdChanged signal_id_changed_;
   };
 }
 #endif

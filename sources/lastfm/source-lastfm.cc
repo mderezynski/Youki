@@ -158,7 +158,7 @@ namespace Source
         dynamic_cast<Alignment*>(m_ref_xml->get_widget("alignment_dock"))->add(*Glib::wrap(m_Dock,false));
 
         ComponentTopAlbums * c = new ComponentTopAlbums;
-        ComponentUserTopAlbums * c2 = new ComponentUserTopAlbums;
+        ComponentUserTopAlbums * c2 = new ComponentUserTopAlbums(&player);
 
         GtkWidget * item = gdl_dock_item_new_with_stock(
             "TopAlbums",

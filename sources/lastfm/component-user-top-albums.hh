@@ -30,6 +30,9 @@
 #include <glibmm.h>
 #include <gtkmm.h>
 #include <sigx/sigx.h>
+#include "mpx/library.hh"
+#include "mpx/mpx-public.hh"
+#include "mpx/paccess.hh"
 #include "component-base.hh"
 #include "user-top-albums-fetch-thread.hh"
 
@@ -38,7 +41,7 @@ namespace MPX
 	class ComponentUserTopAlbums : public ComponentBase
 	{
         public:
-            ComponentUserTopAlbums ();
+            ComponentUserTopAlbums (MPX::Player*);
             virtual ~ComponentUserTopAlbums ();
 
         protected:
@@ -59,16 +62,25 @@ namespace MPX
             on_entry_activated ();
 
             void
-            on_new_album (Glib::RefPtr<Gdk::Pixbuf>, std::string const&);
+            on_entry_changed ();
+
+            void
+            on_new_album (TopAlbum const&);
+
+            void
+            on_stopped ();
 
             void
             setup_view ();
 
             Columns_t                         Columns;
             Gtk::Entry                      * m_Entry;
+            Gtk::Label                      * m_Label;
             Gtk::TreeView                   * m_View;
             Glib::RefPtr<Gtk::ListStore>      m_Model;
             UserTopAlbumsFetchThread        * m_Thread;
+            MPX::Player                     * m_Player;
+            PAccess<MPX::Library>             m_Library;
 	};
 }
 

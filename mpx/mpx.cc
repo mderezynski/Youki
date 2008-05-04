@@ -82,9 +82,6 @@ using boost::get;
 using boost::algorithm::is_any_of;
 using namespace boost::python;
 
-// TODO: Saner API for sources
-#define SOURCE_NONE (-1)
-
 namespace
 {
   char const * MenubarMain =
@@ -1297,29 +1294,60 @@ namespace MPX
     , sigx::glib_auto_dispatchable()
     , m_ref_xml(xml)
     , m_startup_complete(false)
-	, m_SourceCtr (0)
-	, m_PageCtr(2) /* starting at 2 since 0, 1 are now playing, plugins */
-    , m_ActiveSource(SOURCE_NONE)
+	, m_NextSourceId(0)
 	, m_SourceUI(0)
-    , m_Library(obj_library)
     , m_Covers(obj_amazon)
 #ifdef HAVE_HAL
     , m_HAL(obj_hal)
 #endif // HAVE_HAL
+    , m_Library(obj_library)
    {
         Splashscreen splash;
         splash.set_message(_("Startup..."), 0.);
 
+        m_ref_xml->get_widget_derived("sidebar", m_Sidebar);
+        m_ref_xml->get_widget("statusbar", m_Statusbar);
+        m_ref_xml->get_widget("notebook-info", m_InfoNotebook);
+        m_ref_xml->get_widget("volumebutton", m_Volume);
+
 		m_PluginManager = new PluginManager(this);
 
         try{
+
             std::list<Glib::RefPtr<Gdk::Pixbuf> > icon_list;
-            icon_list.push_back(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "icons" G_DIR_SEPARATOR_S "mpx.png")));
-            icon_list.push_back(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "icons" G_DIR_SEPARATOR_S "mpx_128.png")));
-            icon_list.push_back(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "icons" G_DIR_SEPARATOR_S "mpx_64.png")));
-            icon_list.push_back(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "icons" G_DIR_SEPARATOR_S "mpx_48.png")));
-            icon_list.push_back(Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "icons" G_DIR_SEPARATOR_S "mpx_16.png")));
+
+            icon_list.push_back(Gdk::Pixbuf::create_from_file(
+                build_filename(
+                DATA_DIR,
+                "icons" G_DIR_SEPARATOR_S "mpx.png"
+            )));
+
+            icon_list.push_back(Gdk::Pixbuf::create_from_file(
+                build_filename(
+                DATA_DIR,
+                "icons" G_DIR_SEPARATOR_S "mpx_128.png"
+            )));
+
+            icon_list.push_back(Gdk::Pixbuf::create_from_file(
+                build_filename(
+                DATA_DIR,
+                "icons" G_DIR_SEPARATOR_S "mpx_64.png"
+            )));
+
+            icon_list.push_back(Gdk::Pixbuf::create_from_file(
+                build_filename(
+                DATA_DIR,
+                "icons" G_DIR_SEPARATOR_S "mpx_48.png"
+            )));
+
+            icon_list.push_back(Gdk::Pixbuf::create_from_file(
+                build_filename(
+                DATA_DIR,
+                 "icons" G_DIR_SEPARATOR_S "mpx_16.png"
+            )));
+
             set_icon_list(icon_list);
+
         } catch (Gdk::PixbufError & cxe)
         {
             g_warning("%s: Couldn't set main window icon", G_STRLOC);
@@ -1331,13 +1359,24 @@ namespace MPX
         splash.set_message(_("Initializing Playback Engine"), 0.2);
 
         m_Play = new Play();
-		m_Play->signal_eos().connect( sigc::mem_fun( *this, &MPX::Player::on_play_eos ));
-		m_Play->signal_position().connect( sigc::mem_fun( *this, &MPX::Player::on_play_position ));
-		m_Play->signal_metadata().connect( sigc::mem_fun( *this, &MPX::Player::on_play_metadata ));
-		m_Play->property_status().signal_changed().connect( sigc::mem_fun( *this, &MPX::Player::on_play_status_changed ));
+
+		m_Play->signal_eos().connect(
+            sigc::mem_fun( *this, &MPX::Player::on_play_eos
+        ));
+
+		m_Play->signal_position().connect(
+            sigc::mem_fun( *this, &MPX::Player::on_play_position
+        ));
+
+		m_Play->signal_metadata().connect(
+            sigc::mem_fun( *this, &MPX::Player::on_play_metadata
+        ));
+
+		m_Play->property_status().signal_changed().connect(
+            sigc::mem_fun( *this, &MPX::Player::on_play_status_changed
+        ));
 
         m_VideoWidget = manage(new VideoWidget(m_Play));
-        dynamic_cast<Gtk::Alignment*>(m_ref_xml->get_widget ("alignment-video"))->add( * m_VideoWidget );
         m_VideoWidget->show ();
         gtk_widget_realize (GTK_WIDGET (m_VideoWidget->gobj()));
 
@@ -1350,20 +1389,24 @@ namespace MPX
         }
 			  
         m_Preferences = Preferences::create(*m_Play);
+
 #ifdef HAVE_HAL
         m_MLibManager = MLibManager::create(obj_hal, obj_library);
 #endif // HAVE_HAL
 
-        m_scrolllock_mask = 0;
-        m_numlock_mask = 0;
-        m_capslock_mask = 0;
+        m_scrolllock_mask   = 0;
+        m_numlock_mask      = 0;
+        m_capslock_mask     = 0;
         mmkeys_get_offending_modifiers ();
         on_mm_edit_done (); // bootstraps the settings
-        m_Preferences->signal_mm_edit_begin().connect( sigc::mem_fun( *this, &Player::on_mm_edit_begin ) );
-        m_Preferences->signal_mm_edit_done().connect( sigc::mem_fun( *this, &Player::on_mm_edit_done ) );
 
-        m_ref_xml->get_widget("notebook-info", m_InfoNotebook);
-        m_ref_xml->get_widget("notebook-sources", m_MainNotebook);
+        m_Preferences->signal_mm_edit_begin().connect(
+            sigc::mem_fun( *this, &Player::on_mm_edit_begin
+        ));
+
+        m_Preferences->signal_mm_edit_done().connect(
+            sigc::mem_fun( *this, &Player::on_mm_edit_done
+        ));
 
 		signals[PSIGNAL_NEW_TRACK] =
 			g_signal_new ("new-track",
@@ -1397,8 +1440,15 @@ namespace MPX
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT); 
 
-		m_DiscDefault = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR,
-			build_filename("images","disc-default.png")))->scale_simple(64,64,Gdk::INTERP_BILINEAR);
+		m_DiscDefault = Gdk::Pixbuf::create_from_file(
+            build_filename(
+                DATA_DIR,
+			    build_filename(
+                    "images",
+                    "disc-default.png"
+                )
+            )
+        )->scale_simple(64,64,Gdk::INTERP_BILINEAR);
 
         splash.set_message(_("Setting up DBus"), 0.4);
 
@@ -1408,110 +1458,114 @@ namespace MPX
 
         splash.set_message(_("Loading Plugins"), 0.6);
 	
-		/*------------------------ Connect Library -----------------------------------------------*/ 
-        m_Library.scanner().signal_scan_start().connect( sigc::mem_fun( *this, &Player::on_library_scan_start ) );
-        m_Library.scanner().signal_scan_run().connect( sigc::mem_fun( *this, &Player::on_library_scan_run ) );
-        m_Library.scanner().signal_scan_end().connect( sigc::mem_fun( *this, &Player::on_library_scan_end ) );
+		/*- Connect Library -----------------------------------------------*/ 
 
-        /*---------------------- UIManager + Menus + Proxy Widgets --------------------------------*/
+        m_Library.scanner().signal_scan_start().connect(
+            sigc::mem_fun( *this, &Player::on_library_scan_start
+        ));
+
+        m_Library.scanner().signal_scan_run().connect(
+            sigc::mem_fun( *this, &Player::on_library_scan_run
+        ));
+
+        m_Library.scanner().signal_scan_end().connect(
+            sigc::mem_fun( *this, &Player::on_library_scan_end
+        ));
+
+        /*- UIManager + Menus + Proxy Widgets -----------------------------*/
+
 		m_ui_manager = UIManager::create ();
+
 		m_actions = ActionGroup::create ("Actions_Player");
 
-		m_actions->add (Action::create("MenuMusic", _("_Music")));
-		m_actions->add (Action::create("MenuEdit", _("_Edit")));
-		m_actions->add (Action::create("MenuView", _("_View")));
-		m_actions->add (Action::create("MenuTrack", _("_Track")));
+		m_actions->add(Action::create(
+            "MenuMusic",
+             _("_Music")
+        ));
+
+		m_actions->add(Action::create(
+            "MenuEdit",
+            _("_Edit")
+        ));
+
+		m_actions->add(Action::create(
+            "MenuView",
+            _("_View")
+        ));
+
+		m_actions->add(Action::create(
+            "MenuTrack",
+            _("_Track")
+        ));
 
 		m_actions->add (Action::create ("action-play-files",
 										Gtk::Stock::OPEN,
 										_("_Play Files...")),
-										sigc::mem_fun (*this, &Player::on_play_files));
+        sigc::mem_fun (*this, &Player::on_play_files));
 
 #ifndef HAVE_HAL
 		m_actions->add (Action::create ("action-import-folder",
 										Gtk::Stock::HARDDISK,
 										_("Import _Folder")),
-										sigc::mem_fun (*this, &Player::on_import_folder));
+		sigc::mem_fun (*this, &Player::on_import_folder));
+
 		m_actions->add (Action::create ("action-import-share",
 										Gtk::Stock::NETWORK,
 										_("Import _Share")),
-										sigc::mem_fun (*this, &Player::on_import_share));
+        sigc::mem_fun (*this, &Player::on_import_share));
 #else
+
 		m_actions->add (Action::create ("action-mlibmanager",
 										_("Manage Music Library")),
-										sigc::mem_fun (*m_MLibManager, &MLibManager::present));
+	    sigc::mem_fun (*m_MLibManager, &MLibManager::present));
 #endif
 
 		m_actions->add (Action::create ("action-vacuum-lib",
 										_("Vacuum Library")),
-										sigc::mem_fun (m_Library, &Library::vacuum));
+	    sigc::mem_fun (m_Library, &Library::vacuum));
 
 		m_actions->add (Action::create ("action-quit",
 										Gtk::Stock::QUIT,
 										_("_Quit")),
 										AccelKey("<ctrl>Q"),
-										sigc::ptr_fun ( &Gtk::Main::quit ));
+		sigc::ptr_fun ( &Gtk::Main::quit ));
 
 		m_actions->add (Action::create (ACTION_PLAY,
 										Gtk::Stock::MEDIA_PLAY,
 										_("Play")),
-										sigc::mem_fun (*this, &Player::on_controls_play ));
+		sigc::mem_fun (*this, &Player::on_controls_play ));
 
 		m_actions->add (ToggleAction::create (ACTION_PAUSE,
 										Gtk::Stock::MEDIA_PAUSE,
 										_("Pause")),
-										sigc::mem_fun (*this, &Player::on_controls_pause ));
+		sigc::mem_fun (*this, &Player::on_controls_pause ));
 
 		m_actions->add (Action::create (ACTION_STOP,
 										Gtk::Stock::MEDIA_STOP,
 										_("Stop")),
-										sigc::mem_fun (*this, &Player::stop ));
+        sigc::mem_fun (*this, &Player::stop ));
 
 		m_actions->add (Action::create (ACTION_NEXT,
 										Gtk::Stock::MEDIA_NEXT,
 										_("Next")),
-										sigc::mem_fun (*this, &Player::on_controls_next ));
+	    sigc::mem_fun (*this, &Player::on_controls_next ));
 
 		m_actions->add (Action::create (ACTION_PREV,
 										Gtk::Stock::MEDIA_PREVIOUS,
 										_("Prev")),
-										sigc::mem_fun (*this, &Player::on_controls_prev ));
+        sigc::mem_fun (*this, &Player::on_controls_prev ));
 
 		m_actions->add (Action::create (ACTION_PLUGINS,
 										Gtk::StockID(MPX_STOCK_PLUGIN),
 										_("Plugins...")),
-										sigc::mem_fun (*this, &Player::on_show_plugins ));
+	    sigc::mem_fun (*this, &Player::on_show_plugins ));
 
 		m_actions->add (Action::create (ACTION_PREFERENCES,
 										Gtk::Stock::EXECUTE,
 										_("Preferences...")),
-										sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
+	    sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
 
-#if 0
-		m_actions->add (ToggleAction::create (ACTION_SHOW_INFO,
-										_("Show Details")),
-                                        AccelKey("<ctrl>I"),
-										sigc::mem_fun (*this, &Player::on_info_toggled ));
-		m_actions->get_action (ACTION_SHOW_INFO)->connect_proxy
-			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("info-toggle"))));
-
-		m_actions->add (ToggleAction::create (ACTION_SHOW_SOURCES,
-										_("Show Sources")),
-                                        AccelKey("<ctrl>s"),
-										sigc::mem_fun( *this, &Player::on_sources_toggled ));
-		m_actions->get_action (ACTION_SHOW_SOURCES)->connect_proxy
-			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("sources-toggle"))));
-
-		m_actions->add (ToggleAction::create (ACTION_SHOW_VIDEO,
-										_("Show Video")),
-                                        AccelKey("<ctrl>v"),
-										sigc::mem_fun( *this, &Player::on_video_toggled ));
-		m_actions->get_action (ACTION_SHOW_VIDEO)->connect_proxy
-			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("video-toggle"))));
-#endif
-
-
-		m_actions->add (Action::create (ACTION_LASTFM_LOVE,
+    	m_actions->add (Action::create (ACTION_LASTFM_LOVE,
                                         Gtk::StockID(MPX_STOCK_LASTFM),
 										_("I Love this Track!")),
                                         AccelKey("<ctrl>L"),
@@ -1521,10 +1575,15 @@ namespace MPX
 
 		if(Util::ui_manager_add_ui(m_ui_manager, MenubarMain, *this, _("Main Menubar")))
 		{
-			dynamic_cast<Alignment*>(m_ref_xml->get_widget("alignment-menu"))->add (*(m_ui_manager->get_widget ("/MenubarMain")));
+			dynamic_cast<Alignment*>(
+                m_ref_xml->get_widget("alignment-menu")
+            )->add(
+                *(m_ui_manager->get_widget ("/MenubarMain"))
+            );
 		}
 
-        // Playback Proxies
+		/*- Playback Controls ---------------------------------------------*/ 
+
 		m_actions->get_action (ACTION_PLAY)->connect_proxy
 			  (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-play"))));
 		m_actions->get_action (ACTION_PREV)->connect_proxy
@@ -1549,24 +1608,42 @@ namespace MPX
 
 		/*- Load Sources --------------------------------------------------*/ 
 
-        m_ref_xml->get_widget_derived("sidebar", m_Sidebar);
 		m_Sidebar->signal_id_changed().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
 
-        m_Sidebar->addItem(_("Now Playing"), render_icon (Gtk::StockID (GTK_STOCK_MEDIA_PLAY), Gtk::ICON_SIZE_DIALOG)->scale_simple(20,20,Gdk::INTERP_BILINEAR), 0);
-        m_Sidebar->addItem(_("Info Plugins"), render_icon (Gtk::StockID (MPX_STOCK_PLUGIN), Gtk::ICON_SIZE_DIALOG)->scale_simple(20,20,Gdk::INTERP_BILINEAR), 1);
+        m_Sidebar->addItem(
+            _("Now Playing"),
+            m_VideoWidget,
+            render_icon(
+                Gtk::StockID(GTK_STOCK_MEDIA_PLAY),
+                Gtk::ICON_SIZE_DIALOG
+                )->scale_simple(20,20,Gdk::INTERP_BILINEAR),
+            0 
+        );
+
+        m_Sidebar->addItem(
+            _("Info Plugins"),
+            m_InfoNotebook,
+            render_icon(
+                Gtk::StockID(GTK_STOCK_INFO),
+                Gtk::ICON_SIZE_DIALOG
+                )->scale_simple(20,20,Gdk::INTERP_BILINEAR),
+            1 
+        );
+
+        m_NextSourceId = 2;
        
-        m_ref_xml->get_widget("statusbar", m_Statusbar);
+
         std::string sources_path = build_filename(PLUGIN_DIR, "sources");
         if(file_test(sources_path, FILE_TEST_EXISTS))
         {
-    		Util::dir_for_each_entry (sources_path, sigc::mem_fun(*this, &MPX::Player::load_source_plugin));  
+    		Util::dir_for_each_entry(
+                sources_path,
+                sigc::mem_fun(*this, &MPX::Player::load_source_plugin)
+            );  
         }
 
 		/*- Volume ---------------------------------------------------------*/
-        m_ref_xml->get_widget("volumebutton", m_Volume);
-        m_Volume->set_value(double(mcs->key_get<int>("mpx", "volume")));
-		m_Play->property_volume() = mcs->key_get<int>("mpx", "volume"); 
-		m_Volume->signal_value_changed().connect( sigc::mem_fun( *this, &Player::on_volume_value_changed ) );
+
 		std::vector<Glib::ustring> Icons;
 		Icons.push_back("audio-volume-muted");
 		Icons.push_back("audio-volume-high");
@@ -1575,95 +1652,77 @@ namespace MPX
 		m_Volume->property_size() = Gtk::ICON_SIZE_SMALL_TOOLBAR;
 		m_Volume->set_icons(Icons);
 
-		//----------------------- Time Display ---------------------------------------------------*/
+		m_Volume->signal_value_changed().connect(
+            sigc::mem_fun( *this, &Player::on_volume_value_changed
+        ));
+
+        m_Volume->set_value(double(mcs->key_get<int>("mpx", "volume")));
+
+
+		/*- Time -----------------------------------------------------------*/
+
         m_ref_xml->get_widget("label-time", m_TimeLabel);
 
-		//---------------------- Seek ------------------------------------------------------------*/
+		/*- Seek -----------------------------------------------------------*/
+
         m_ref_xml->get_widget("scale-seek", m_Seek);
-		m_Seek->signal_event().connect( sigc::mem_fun( *this, &Player::on_seek_event ) );
+
+		m_Seek->signal_event().connect(
+            sigc::mem_fun( *this, &Player::on_seek_event
+        ));
+
 		m_Seek->set_sensitive(false);
 		g_atomic_int_set(&m_Seeking,0);
 
-        //---------------------- Infoarea --------------------------------------------------------*/
+        /*- Infoarea--------------------------------------------------------*/
+
         m_InfoArea = InfoArea::create(*m_Play, m_ref_xml);
+
 		m_InfoArea->signal_cover_clicked().connect
-		  ( sigc::mem_fun( *this, &Player::on_cover_clicked ));
+		  (sigc::mem_fun( *this, &Player::on_cover_clicked
+        ));
+
 		m_InfoArea->signal_uris_dropped().connect
-		  ( sigc::mem_fun( *this, &MPX::Player::play_tracks ) );
+		  (sigc::mem_fun( *this, &MPX::Player::play_tracks
+        ));
 
-#if 0
-		dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-repeat"))
-		  ->set (render_icon (Gtk::StockID (MPX_STOCK_REPEAT), Gtk::ICON_SIZE_BUTTON));
-		dynamic_cast<Gtk::Image *>(m_ref_xml->get_widget ("image-button-shuffle"))
-		  ->set (render_icon (Gtk::StockID (MPX_STOCK_SHUFFLE), Gtk::ICON_SIZE_BUTTON));
-		m_actions->get_action (ACTION_REPEAT)->connect_proxy
-			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-repeat"))));
-		m_actions->get_action (ACTION_SHUFFLE)->connect_proxy
-			  (*(dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("button-shuffle"))));
-		mcs_bind->bind_toggle_action
-		  (RefPtr<ToggleAction>::cast_static (m_actions->get_action (ACTION_SHUFFLE)), "mpx", "shuffle");
-		mcs_bind->bind_toggle_action
-		  (RefPtr<ToggleAction>::cast_static (m_actions->get_action (ACTION_REPEAT)), "mpx", "repeat");
-#endif
+		/*- Load Plugins -------------------------------------------------*/
 
-#if 0
-        // Tray icon
-        {
-          m_status_icon_image_default =
-            Gdk::Pixbuf::create_from_file (MPX_TRAY_ICON_DIR G_DIR_SEPARATOR_S "tray-icon-default.png");
-          m_status_icon_image_paused =
-            Gdk::Pixbuf::create_from_file (MPX_TRAY_ICON_DIR G_DIR_SEPARATOR_S "tray-icon-paused.png");
-          m_status_icon_image_playing =
-            Gdk::Pixbuf::create_from_file (MPX_TRAY_ICON_DIR G_DIR_SEPARATOR_S "tray-icon-playing.png");
+		std::string const user_path =
+            build_filename(
+                build_filename(
+                    g_get_user_data_dir(),
+                    "mpx"),
+                "python-plugins"
+            );
 
-          m_status_icon = bmp_status_icon_new_from_pixbuf (m_status_icon_image_default->gobj());
-          bmp_status_icon_set_visible (m_status_icon, TRUE);
-
-          g_object_connect (G_OBJECT (m_status_icon),
-                            "signal::click",
-                            G_CALLBACK(Player::status_icon_click),
-                            this,
-                            "signal::popup-menu",
-                            G_CALLBACK(Player::status_icon_popup_menu),
-                            this,
-                            "signal::scroll-up",
-                            G_CALLBACK(Player::status_icon_scroll_up),
-                            this,
-                            "signal::scroll-down",
-                            G_CALLBACK(Player::status_icon_scroll_down),
-                            this,
-                            NULL);
-
-          GtkWidget *tray_icon = bmp_status_icon_get_tray_icon (m_status_icon);
-          gtk_widget_realize (GTK_WIDGET (tray_icon));
-          g_object_connect (G_OBJECT (tray_icon),
-                            "signal::embedded",
-                            G_CALLBACK (MPX::Player::on_tray_embedded),
-                            this,
-                            NULL);
-          g_object_connect (G_OBJECT (tray_icon),
-                            "signal::destroyed",
-                            G_CALLBACK (MPX::Player::on_tray_destroyed),
-                            this,
-                            NULL);
-        }
-#endif
-
-		/*------------------------ Load Plugins -------------------------------------------------*/
-		// This also initializes Python for us and hence it's of utmost importance it is kept
-		// before loading the sources as they might use Python themselves
-		std::string const user_path = build_filename(build_filename(g_get_user_data_dir(), "mpx"),"python-plugins");
 		if(file_test(user_path, FILE_TEST_EXISTS))
+        {
 			m_PluginManager->append_search_path (user_path);
-		m_PluginManager->append_search_path (build_filename(DATA_DIR,"python-plugins"));
+        }
+
+		m_PluginManager->append_search_path
+            (build_filename(
+                DATA_DIR,
+                "python-plugins"
+        ));
+
 		m_PluginManager->load_plugins();
 		m_PluginManager->activate_plugins();
 		m_PluginManagerGUI = PluginManagerGUI::create(*m_PluginManager);
 
         splash.set_message(_("Ready"), 1.0);
 
-        resize( mcs->key_get<int>("mpx", "window-w"), mcs->key_get<int>("mpx", "window-h") );
-        move( mcs->key_get<int>("mpx", "window-x"), mcs->key_get<int>("mpx", "window-y") );
+        resize(
+            mcs->key_get<int>("mpx","window-w"),
+            mcs->key_get<int>("mpx","window-h")
+        );
+
+        move(
+            mcs->key_get<int>("mpx","window-x"),
+            mcs->key_get<int>("mpx","window-y")
+        );
+
 		show ();
 
 		DBusObjects.mpx->startup_complete(DBusObjects.mpx);
@@ -1770,57 +1829,70 @@ namespace MPX
 		
         PlaybackSource * p = plugin->get_instance(m_ui_manager, *this); 
         Gtk::Alignment * a = new Gtk::Alignment;
-        p->get_ui()->reparent(*a);
+
+        if(p->get_ui()->get_parent())
+            p->get_ui()->reparent(*a);
+        else
+            a->add(*p->get_ui());
         a->show();
-        m_MainNotebook->append_page(*a);
-        m_Sidebar->addItem( p->get_name(), p->get_icon()->scale_simple(20,20,Gdk::INTERP_BILINEAR), m_PageCtr );
-		m_SourceV.push_back(p);
-		install_source(m_SourceCtr++, /* tab # */ (m_PageCtr-1));
-        m_PageCtr++;
+
+        m_Sidebar->addItem(
+            p->get_name(),
+            a,  
+            p->get_icon()->scale_simple(
+                    20,
+                    20,
+                    Gdk::INTERP_BILINEAR
+            ),
+            m_NextSourceId
+        );
+
+        ItemKey key (boost::optional<gint64>(), m_NextSourceId++);
+		m_Sources[key] = p;
+		install_source(key);
 
 		return false;
     }
 
 	void
-	Player::install_source (int source, int tab)
+	Player::install_source (ItemKey const& source_id)
 	{
-		m_SourceTabMapping.push_back(SourceTabMapping::value_type());
-		m_SourceTabMapping[source] = tab;
+        m_Sources[source_id]->set_key(source_id);
 
-		m_SourceV[source]->signal_caps().connect
-		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_caps), source));
+		m_Sources[source_id]->signal_caps().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_caps), source_id));
 
-		m_SourceV[source]->signal_flags().connect
-		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_flags), source));
+		m_Sources[source_id]->signal_flags().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_flags), source_id));
 
-		m_SourceV[source]->signal_track_metadata().connect
-		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_track_metadata), source));
+		m_Sources[source_id]->signal_track_metadata().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_track_metadata), source_id));
 
-		m_SourceV[source]->signal_playback_request().connect
-		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_play_request), source));
+		m_Sources[source_id]->signal_playback_request().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_play_request), source_id));
 
-		m_SourceV[source]->signal_segment().connect
-		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_segment), source));
+		m_Sources[source_id]->signal_segment().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_segment), source_id));
 
-		m_SourceV[source]->signal_stop_request().connect
-		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_stop), source));
+		m_Sources[source_id]->signal_stop_request().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_stop), source_id));
 
-		m_SourceV[source]->signal_next_request().connect
-		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_next), source));
+		m_Sources[source_id]->signal_next_request().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_next), source_id));
 
-		m_SourceV[source]->signal_play_async().connect
-		  (sigc::bind (sigc::mem_fun (*this, &Player::play_async_cb), source));
+		m_Sources[source_id]->signal_play_async().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::play_async_cb), source_id));
 
-		m_SourceV[source]->signal_next_async().connect
-		  (sigc::bind (sigc::mem_fun (*this, &Player::next_async_cb), source));
+		m_Sources[source_id]->signal_next_async().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::next_async_cb), source_id));
 
-		m_SourceV[source]->signal_prev_async().connect
-		  (sigc::bind (sigc::mem_fun (*this, &Player::prev_async_cb), source));
+		m_Sources[source_id]->signal_prev_async().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::prev_async_cb), source_id));
 
-		m_SourceV[source]->send_caps();
-		m_SourceV[source]->send_flags();
+		m_Sources[source_id]->send_caps();
+		m_Sources[source_id]->send_flags();
 
-		UriSchemes v = m_SourceV[source]->get_uri_schemes ();
+		UriSchemes v = m_Sources[source_id]->get_uri_schemes ();
 		if(v.size())
 		{
 		  for(UriSchemes::const_iterator i = v.begin(); i != v.end(); ++i)
@@ -1829,12 +1901,12 @@ namespace MPX
 				{
 				  g_warning("%s: Source '%s' tried to override URI handler for scheme '%s'!",
 					  G_STRLOC,
-					  m_SourceV[source]->get_name().c_str(),
+					  m_Sources[source_id]->get_name().c_str(),
 					  i->c_str());	
 				  continue;
 				}
-				g_message("%s: Source '%s' registers for URI scheme '%s'", G_STRLOC, m_SourceV[source]->get_name().c_str(), i->c_str()); 
-				m_UriMap.insert (std::make_pair (std::string(*i), source));
+				g_message("%s: Source '%s' registers for URI scheme '%s'", G_STRLOC, m_Sources[source_id]->get_name().c_str(), i->c_str()); 
+				m_UriMap.insert (std::make_pair (std::string(*i), source_id));
 		  }
 		}
 	}
@@ -1849,7 +1921,7 @@ namespace MPX
                 UriSchemeMap::const_iterator i = m_UriMap.find (u.scheme);
                 if( i != m_UriMap.end ())
                 {
-                  m_SourceV[i->second]->process_uri_list( uris, true );
+                  m_Sources[i->second]->process_uri_list( uris, true );
                 }
               }
             catch (URI::ParseError & cxe)
@@ -1869,11 +1941,8 @@ namespace MPX
             UriSchemeMap::const_iterator i = m_UriMap.find (u.scheme);
             if( i != m_UriMap.end ())
             {
-              g_message("%s: Passing URI '%s' to source '%s'", G_STRLOC, uri.c_str(), m_SourceV[i->second]->get_name().c_str());
-              m_SourceV[i->second]->process_uri_list( uris, true );
+              m_Sources[i->second]->process_uri_list( uris, true );
             }
-            else
-                g_message("%s: No handler for URI '%s' found", G_STRLOC, uri.c_str());
           }
         catch (URI::ParseError & cxe)
           {
@@ -1900,7 +1969,7 @@ namespace MPX
 					UriSchemeMap::const_iterator i = m_UriMap.find (u.scheme);
 					if( i != m_UriMap.end ())
 					{
-					  m_SourceV[i->second]->process_uri_list( uris, true );
+					  m_Sources[i->second]->process_uri_list( uris, true );
 					}
 				  }
 				catch (URI::ParseError & cxe)
@@ -1938,11 +2007,11 @@ namespace MPX
     PyObject*
     Player::get_source(std::string const& uuid)
     {
-        for(VectorSources::iterator i = m_SourceV.begin(); i != m_SourceV.end(); ++i)
+        for(SourcesMap::iterator i = m_Sources.begin(); i != m_Sources.end(); ++i)
         {
-            if((*i)->get_guid() == uuid)
+            if((*i).second->get_guid() == uuid)
             {
-                return (*i)->get_py_obj();
+                return (*i).second->get_py_obj();
             }
         }
 
@@ -2229,20 +2298,20 @@ namespace MPX
 	}
 
 	void
-	Player::on_source_caps (PlaybackSource::Caps caps, int source_id)
+	Player::on_source_caps (PlaybackSource::Caps caps, ItemKey const& source_id)
 	{
 	  Mutex::Lock L (m_SourceCFLock);
 
-	  m_source_caps[source_id] = caps;
+	  m_source_c[source_id] = caps;
 
-	  if( (source_id == m_ActiveSource) || (m_MainNotebook->get_current_page() == m_SourceTabMapping[m_ActiveSource]) || (m_ActiveSource == SOURCE_NONE))
+	  if( (m_ActiveSource && ((source_id == m_ActiveSource) || (m_Sidebar->getVisibleId() == m_ActiveSource))) || (!m_ActiveSource))
 	  {
 		m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
 		m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
 		m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
 	  }
 
-	  if( (source_id == m_ActiveSource) || (m_ActiveSource == SOURCE_NONE))
+	  if( (m_ActiveSource && (source_id == m_ActiveSource)) || (!m_ActiveSource))
 	  {
 			if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
 			{
@@ -2252,87 +2321,58 @@ namespace MPX
 	}
 
 	void
-	Player::on_source_flags (PlaybackSource::Flags flags, int source)
+	Player::on_source_flags (PlaybackSource::Flags flags, ItemKey const& source_id)
 	{
 	  Mutex::Lock L (m_SourceCFLock);
-	  m_source_flags[source] = flags;
-	  //m_actions->get_action (ACTION_REPEAT)->set_sensitive (flags & PlaybackSource::F_USES_REPEAT);
-	  //m_actions->get_action (ACTION_SHUFFLE)->set_sensitive (flags & PlaybackSource::F_USES_SHUFFLE);
+	  m_source_f[source_id] = flags;
 	}
 
 	void
-	Player::reparse_metadata ()
+	Player::on_source_track_metadata (Metadata const& metadata, ItemKey const& source_id)
 	{
-		if( !m_Metadata.get().Image )
-		    m_InfoArea->set_cover (m_DiscDefault->scale_simple (72, 72, Gdk::INTERP_HYPER));
-        else
-		    m_InfoArea->set_cover (m_Metadata.get().Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
+        Glib::Mutex::Lock L (m_MetadataLock);
 
-		ustring artist, album, title, genre;
-		parse_metadata (m_Metadata.get(), artist, album, title, genre);
+        m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive(true);
 
-        TextSet set;
-        set.Artist = artist;
-        set.Title = title;
-        set.Album = album;
+        m_Metadata = metadata;
 
-        m_InfoArea->set_text(set);
-
-        if(m_Metadata.get()[ATTRIBUTE_TITLE] && m_Metadata.get()[ATTRIBUTE_ARTIST])
+        if(!m_Metadata.get().Image)
         {
-            std::string artist = get<std::string>(m_Metadata.get()[ATTRIBUTE_ARTIST].get());
-            std::string title = get<std::string>(m_Metadata.get()[ATTRIBUTE_TITLE].get());
-            set_title((boost::format ("%1% - %2% (MPX)") % artist.c_str() % title.c_str()).str());
+            if(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
+            {
+                m_Covers.fetch(
+                    get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()),
+                    m_Metadata.get().Image
+                );
+            }
         }
-        else
+
+        if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
         {
-            set_title(_("(Unknown Track) - MPX"));
+            m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
         }
+
+        reparse_metadata ();
+
+        PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
+        pyg_gil_state_release(state);
 	}
 
 	void
-	Player::on_source_track_metadata (Metadata const& metadata, int source_id)
+	Player::on_source_play_request (ItemKey const& source_id)
 	{
-      Glib::Mutex::Lock L (m_MetadataLock);
-
-      m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive(true);
-
-	  m_Metadata = metadata;
-	  if(!m_Metadata.get().Image)
+	  if( m_ActiveSource ) 
 	  {
-	    if(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
-			m_Covers.fetch(get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()), m_Metadata.get().Image);
-	  }
-
-	  if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
-		m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
-
-	  reparse_metadata ();
-
-      PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-	  g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
-      pyg_gil_state_release(state);
-	}
-
-	void
-	Player::on_source_play_request (int source_id)
-	{
-      g_message("%s: Active source: %d, Requesting src: %d", G_STRLOC,m_ActiveSource,source_id);
-
-	  if( m_ActiveSource != SOURCE_NONE ) 
-	  {
-        g_message("%s: Stopping in preparation for play-req", G_STRLOC);
         stop ();
       }
-      else
-        g_message("%s: No active source upon play request", G_STRLOC);
 
       safe_pause_unset();
 
-	  PlaybackSource* source = m_SourceV[source_id];
+	  PlaybackSource* source = m_Sources[source_id];
       m_ActiveSource = source_id;
 
-	  if( m_source_flags[source_id] & PlaybackSource::F_ASYNC)
+	  if( m_source_f[source_id] & PlaybackSource::F_ASYNC)
 	  {
 			m_actions->get_action( ACTION_STOP )->set_sensitive (true);
 			source->play_async ();
@@ -2357,23 +2397,22 @@ namespace MPX
 	}
 
 	void
-	Player::on_source_segment (int source_id)
+	Player::on_source_segment (ItemKey const& source_id)
 	{
-	  g_return_if_fail( m_ActiveSource == source_id);
-	  m_SourceV[source_id]->segment ();
+	  g_return_if_fail( m_ActiveSource == source_id );
+	  m_Sources[source_id]->segment ();
 	}
 
 	void
-	Player::on_source_stop (int source_id)
+	Player::on_source_stop (ItemKey const& source_id)
 	{
       stop ();
 	}
 
 	void
-	Player::on_source_next (int source_id)
+	Player::on_source_next (ItemKey const& source_id)
 	{
-	  g_return_if_fail( m_ActiveSource == source_id);
-
+	  g_return_if_fail( m_ActiveSource == source_id );
 	  next ();
 	}
 
@@ -2404,42 +2443,42 @@ namespace MPX
 	}
 
 	void
-	Player::play_async_cb (int source_id)
+	Player::play_async_cb (ItemKey const& source_id)
 	{
-	  PlaybackSource* source = m_SourceV[source_id];
+	  PlaybackSource* source = m_Sources[source_id];
 
       m_ActiveSource = source_id;
 	  m_Play->switch_stream (source->get_uri(), source->get_type());
       source->play_post ();
-	  play_post_internal (source_id);
+	  play_post_internal(source_id);
 	}
 
 	void
-	Player::play_post_internal (int source_id)
+	Player::play_post_internal (ItemKey const& source_id)
 	{
-	  PlaybackSource* source = m_SourceV[source_id];
+	  PlaybackSource* source = m_Sources[source_id];
 
 	  source->send_caps ();
 	  source->send_metadata ();
 
-      m_Sidebar->setActiveId(source_id + 2);
+      m_Sidebar->setActiveId(source_id);
 	}
 
 	void
 	Player::play ()
 	{
-	  int source_id = m_Sidebar->getVisibleId() - 2; 
+	  ItemKey const& source_id = m_Sidebar->getVisibleId(); 
 
-      if( source_id >= 0 )
+      if( m_Sources.count(source_id) ) 
       {
-          PlaybackSource::Caps c = m_source_caps[source_id];
+          PlaybackSource::Caps c = m_source_c[source_id];
 
           if( c & PlaybackSource::C_CAN_PLAY )
           {
-            if( (m_ActiveSource != SOURCE_NONE ) && (m_Play->property_status().get_value() != PLAYSTATUS_STOPPED))
+            if( m_ActiveSource && (m_Play->property_status().get_value() != PLAYSTATUS_STOPPED))
             {
                   track_played ();
-                  m_SourceV[m_ActiveSource]->stop ();
+                  m_Sources[m_ActiveSource.get()]->stop ();
                   if( m_ActiveSource != source_id)
                   {
                         m_Play->request_status (PLAYSTATUS_STOPPED);
@@ -2448,10 +2487,10 @@ namespace MPX
 
             safe_pause_unset();
 
-            PlaybackSource* source = m_SourceV[source_id];
+            PlaybackSource* source = m_Sources[source_id];
             m_ActiveSource = source_id;
             
-            if( m_source_flags[source_id] & PlaybackSource::F_ASYNC)
+            if( m_source_f[source_id] & PlaybackSource::F_ASYNC)
             {
                     source->play_async ();
                     m_actions->get_action( ACTION_STOP )->set_sensitive (true);
@@ -2489,8 +2528,10 @@ namespace MPX
 	void
 	Player::pause ()
 	{
+        g_return_if_fail(m_ActiveSource);
+
         bool paused = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->get_active();
-        PlaybackSource::Caps c = m_source_caps[m_ActiveSource];
+        PlaybackSource::Caps c = m_source_c[m_ActiveSource.get()];
         if(c & PlaybackSource::C_CAN_PAUSE )
         {
           if( m_Play->property_status() == PLAYSTATUS_PAUSED)
@@ -2501,10 +2542,10 @@ namespace MPX
 	}
 
 	void
-	Player::prev_async_cb (int source_id)
+	Player::prev_async_cb (ItemKey const& source_id)
 	{
-	  PlaybackSource* source = m_SourceV[source_id];
-	  PlaybackSource::Flags f = m_source_flags[source_id];
+	  PlaybackSource* source = m_Sources[source_id];
+	  PlaybackSource::Flags f = m_source_f[source_id];
 
 	  if( (f & PlaybackSource::F_PHONY_PREV) == 0 )
 	  {
@@ -2518,10 +2559,11 @@ namespace MPX
 	void
 	Player::prev ()
 	{
-	  int source_id = m_ActiveSource; 
-	  PlaybackSource* source = m_SourceV[source_id];
-	  PlaybackSource::Flags f = m_source_flags[source_id];
-	  PlaybackSource::Caps c = m_source_caps[source_id];
+	  ItemKey const& source_id = m_ActiveSource.get(); 
+
+	  PlaybackSource*           source = m_Sources[source_id];
+	  PlaybackSource::Flags          f = m_source_f[source_id];
+	  PlaybackSource::Caps           c = m_source_c[source_id];
 
 	  if( c & PlaybackSource::C_CAN_GO_PREV )
 	  {
@@ -2546,10 +2588,10 @@ namespace MPX
 	}
 
 	void
-	Player::next_async_cb (int source_id)
+	Player::next_async_cb (ItemKey const& source_id)
 	{
-	  PlaybackSource* source = m_SourceV[source_id];
-	  PlaybackSource::Flags f = m_source_flags[source_id];
+	  PlaybackSource* source = m_Sources[source_id];
+	  PlaybackSource::Flags f = m_source_f[source_id];
 
 	  if( (f & PlaybackSource::F_PHONY_NEXT) == 0 )
 	  {
@@ -2563,10 +2605,11 @@ namespace MPX
 	void
 	Player::on_play_eos ()
 	{
-	  int source_id = m_ActiveSource; 
-	  PlaybackSource* source = m_SourceV[source_id];
-	  PlaybackSource::Flags f = m_source_flags[source_id];
-	  PlaybackSource::Caps c = m_source_caps[source_id];
+	  ItemKey const& source_id = m_ActiveSource.get(); 
+
+	  PlaybackSource           *source = m_Sources[source_id];
+	  PlaybackSource::Flags     f      = m_source_f[source_id];
+	  PlaybackSource::Caps      c      = m_source_c[source_id];
 
 	  if( c & PlaybackSource::C_CAN_GO_NEXT )
 	  {
@@ -2580,7 +2623,7 @@ namespace MPX
 			else
 			if( source->go_next () )
 			{
-				next_async_cb (m_ActiveSource);
+				next_async_cb (m_ActiveSource.get());
 				return;
 			}
 	  }
@@ -2591,49 +2634,40 @@ namespace MPX
 	void
 	Player::next ()
 	{
-	  if( m_ActiveSource != SOURCE_NONE )
-	  {
-		m_SourceV[m_ActiveSource]->skipped();
-	  }
-
+      g_return_if_fail(m_ActiveSource);
+      m_Sources[m_ActiveSource.get()]->skipped();
 	  on_play_eos ();
 	}
 
 	void
 	Player::stop ()
 	{
-	  if( m_ActiveSource != SOURCE_NONE )
-	  {
-		track_played();
-		m_SourceV[m_ActiveSource]->stop ();
-		m_SourceV[m_ActiveSource]->send_caps();
-		safe_pause_unset ();
-		m_Play->request_status( PLAYSTATUS_STOPPED );
-        m_ActiveSource = SOURCE_NONE;
-	  }
-
+      g_return_if_fail(m_ActiveSource);
+      track_played();
+	  m_Sources[m_ActiveSource.get()]->stop ();
+	  m_Sources[m_ActiveSource.get()]->send_caps();
+	  safe_pause_unset ();
+	  m_Play->request_status( PLAYSTATUS_STOPPED );
+      m_ActiveSource.reset();
       set_title (_("(Not Playing) - MPX"));
       m_Sidebar->clearActiveId();
 	}
 
 	void
-	Player::on_source_changed (gint64 id)
+	Player::on_source_changed (ItemKey const& source_id)
 	{
-        m_MainNotebook->set_current_page( id );
-
-        gint64 source_id = id - 2;
-        if( source_id >= 0 )
+        if(m_SourceUI)
         {
-            if(m_SourceUI)
-            {
-                m_ui_manager->remove_ui (m_SourceUI);
-            }
+            m_ui_manager->remove_ui(m_SourceUI);
+        }
 
-            m_SourceUI = m_SourceV[source_id]->add_menu();
+        if( m_Sources.count(source_id) ) 
+        {
+            m_SourceUI = m_Sources[source_id]->add_menu();
 
             if( source_id == m_ActiveSource ) 
             {
-              PlaybackSource::Caps caps = m_source_caps[source_id];
+              PlaybackSource::Caps caps = m_source_c[source_id];
               m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
               m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
               m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
@@ -2672,7 +2706,7 @@ namespace MPX
 		case PLAYSTATUS_PLAYING:
 		{
 		  g_atomic_int_set(&m_Seeking,0);
-	 	  m_Seek->set_sensitive(m_source_caps[m_ActiveSource] & PlaybackSource::C_CAN_SEEK);
+	 	  m_Seek->set_sensitive(m_source_c[m_ActiveSource.get()] & PlaybackSource::C_CAN_SEEK);
 		  m_actions->get_action( ACTION_STOP )->set_sensitive (true);
 		  break;
 		}
@@ -2694,10 +2728,10 @@ namespace MPX
 		  {
             Glib::Mutex::Lock L (m_MetadataLock);
 
-			if( m_ActiveSource != SOURCE_NONE )
+			if( m_ActiveSource ) 
 			{
-			  m_SourceV[m_ActiveSource]->stop ();
-			  m_SourceV[m_ActiveSource]->send_caps ();
+			  m_Sources[m_ActiveSource.get()]->stop ();
+			  m_Sources[m_ActiveSource.get()]->send_caps ();
 			}
 
 			m_TimeLabel->set_text("      …      ");
@@ -2710,8 +2744,9 @@ namespace MPX
 			m_actions->get_action (ACTION_PREV)->set_sensitive( false );
 			m_actions->get_action (ACTION_PAUSE)->set_sensitive( false );
 
-			m_InfoArea->reset ();
-		    m_Metadata.reset ();	
+			m_InfoArea->reset();
+		    m_Metadata.reset();	
+            m_ActiveSource.reset();
 
 			break;
 		  }
@@ -2947,13 +2982,13 @@ namespace MPX
     {
       Player & player = *reinterpret_cast<Player*>(data);
 
-      if (strcmp (application, "MPX"))
+      if( strcmp (application, "MPX"))
         return;
 
-      if( player.m_ActiveSource == SOURCE_NONE )
+      if( !player.m_ActiveSource )
         return;
 
-      PlaybackSource::Caps c = player.m_source_caps[player.m_ActiveSource];
+      PlaybackSource::Caps c = player.m_source_c[player.m_ActiveSource.get()];
 
       if (strcmp (key, "Play") == 0) {
         if( player.m_Play->property_status() == PLAYSTATUS_PAUSED)
@@ -3155,10 +3190,10 @@ namespace MPX
     {
       Player & player = *reinterpret_cast<Player*>(data);
 
-      if( player.m_ActiveSource == SOURCE_NONE )
+      if( !player.m_ActiveSource ) 
         return GDK_FILTER_CONTINUE;
 
-      PlaybackSource::Caps c = player.m_source_caps[player.m_ActiveSource];
+      PlaybackSource::Caps c = player.m_source_c[player.m_ActiveSource.get()];
 
       XEvent * xev = (XEvent *) xevent;
 
@@ -3433,4 +3468,34 @@ namespace MPX
       m_VideoWidget->property_geometry() = Geometry( width, height );
       m_VideoWidget->set_par( par );
     }
+
+	void
+	Player::reparse_metadata ()
+	{
+		if( !m_Metadata.get().Image )
+		    m_InfoArea->set_cover (m_DiscDefault->scale_simple (72, 72, Gdk::INTERP_HYPER));
+        else
+		    m_InfoArea->set_cover (m_Metadata.get().Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
+
+		ustring artist, album, title, genre;
+		parse_metadata (m_Metadata.get(), artist, album, title, genre);
+
+        TextSet set;
+        set.Artist = artist;
+        set.Title = title;
+        set.Album = album;
+
+        m_InfoArea->set_text(set);
+
+        if(m_Metadata.get()[ATTRIBUTE_TITLE] && m_Metadata.get()[ATTRIBUTE_ARTIST])
+        {
+            std::string artist = get<std::string>(m_Metadata.get()[ATTRIBUTE_ARTIST].get());
+            std::string title = get<std::string>(m_Metadata.get()[ATTRIBUTE_TITLE].get());
+            set_title((boost::format ("%1% - %2% (MPX)") % artist.c_str() % title.c_str()).str());
+        }
+        else
+        {
+            set_title(_("(Unknown Track) - MPX"));
+        }
+	}
 }

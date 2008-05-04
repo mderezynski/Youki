@@ -748,6 +748,7 @@ AC_OUTPUT([
     sources/radio/Makefile
     sources/lastfm/Makefile
     sources/podcasts/Makefile
+    sources/playlist/Makefile
 
     taglib/Makefile
     taglib/id3v2/Makefile

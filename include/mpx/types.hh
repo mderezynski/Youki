@@ -36,6 +36,8 @@
 
 namespace MPX
 {
+    typedef std::pair<boost::optional<gint64>, gint64> ItemKey;
+
     enum AttributeIdString
     {
       ATTRIBUTE_LOCATION,
@@ -168,6 +170,7 @@ namespace MPX
     };
 
     typedef boost::optional<std::string> ostring;
+    typedef std::vector< gint64 > IdV;
 
     namespace SQL
     {
@@ -184,10 +187,8 @@ namespace MPX
       typedef std::map< std::string, Variant >                 Row;
 #endif //HAVE_TR1
       typedef Row::value_type                                  VariantPair;
-
       typedef std::vector< Row >                               RowV;
       typedef std::vector< std::string >                       ColumnV;
-      typedef std::vector< gint64 >                            IdV;
 
     } // namespace SQL
 } //namespace MPX 

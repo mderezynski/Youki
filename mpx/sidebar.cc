@@ -38,6 +38,8 @@ namespace MPX
     : TreeView  (obj)
     , m_ref_xml (xml)
     {
+        m_ref_xml->get_widget("notebook-sources", m_Notebook);
+
         TreeViewColumn * column = manage (new TreeViewColumn);
 
         CellRendererPixbuf * cell1 = manage (new CellRendererPixbuf);
@@ -72,30 +74,58 @@ namespace MPX
         get_selection()->set_mode( SELECTION_BROWSE );
         get_selection()->signal_changed().connect( sigc::mem_fun( *this, &Sidebar::on_selection_changed )); 
 
-        m_Store = TreeStore::create( m_SourceColumns );
-        set_model( m_Store );
+        Store = TreeStore::create( Columns );
+        set_model( Store );
+
+        std::vector<TargetEntry> Entries;
+        Entries.push_back(TargetEntry("mpx-album"));
+        Entries.push_back(TargetEntry("mpx-track"));
+        drag_dest_set(Entries, DEST_DEFAULT_MOTION);
+        drag_dest_add_uri_targets();
     }
 
     Sidebar::~Sidebar()
     {
     }
 
+    bool
+    Sidebar::on_drag_motion (RefPtr<Gdk::DragContext> const& context, int x, int y, guint time)
+    {
+        TreeModel::Path path;
+        TreeViewDropPosition pos;
+
+        if( get_dest_row_at_pos (x, y, path, pos) )
+        {
+            get_selection()->select(path);
+        }
+
+        return true;
+    }
+
     void
     Sidebar::on_selection_changed ()
     {
-        TreeIter iter = get_selection()->get_selected();
-        gint64 id = (*iter)[m_SourceColumns.id];
-        m_visible_id = id;
-        signal_id_changed_.emit(id);
+        if(get_selection()->count_selected_rows())
+        {
+            TreeIter iter = get_selection()->get_selected();
+
+            ItemKey key = (*iter)[Columns.key];
+            gint64 page = (*iter)[Columns.page];
+
+            m_Notebook->set_current_page( page );
+            m_visible_id = key;
+
+            signal_id_changed_.emit(key);
+        }
     }
 
-    gint64
+    ItemKey const&
     Sidebar::getVisibleId ()
     {
         return m_visible_id;
     }
 
-    gint64
+    ItemKey const&
     Sidebar::getActiveId ()
     {
         if(m_active_id)
@@ -109,9 +139,9 @@ namespace MPX
     }
 
     void 
-    Sidebar::setActiveId (gint64 id)
+    Sidebar::setActiveId(ItemKey const& key)
     {
-        m_active_id = id;
+        m_active_id = key;
         queue_draw ();
     }
 
@@ -128,10 +158,10 @@ namespace MPX
         if(cellid == 1)
         {
             Gtk::CellRendererText & cell = *(dynamic_cast<Gtk::CellRendererText*>(basecell));
-            cell.property_markup() = (*iter)[m_SourceColumns.name];
+            cell.property_markup() = (*iter)[Columns.name];
             if(m_active_id)
             {
-                if(m_active_id.get() == (*iter)[m_SourceColumns.id])
+                if(m_active_id.get() == ItemKey((*iter)[Columns.key]))
                 {
                     cell.property_weight() = Pango::WEIGHT_BOLD;
                     return;
@@ -143,20 +173,51 @@ namespace MPX
         else if(cellid == 0)
         {
             Gtk::CellRendererPixbuf & cell = *(dynamic_cast<Gtk::CellRendererPixbuf*>(basecell));
-            cell.property_pixbuf() = (*iter)[m_SourceColumns.icon];
+            cell.property_pixbuf() = (*iter)[Columns.icon];
         }
     }
 
     void
-    Sidebar::addItem (const Glib::ustring& name, const Glib::RefPtr<Gdk::Pixbuf>& icon, gint64 id)
+    Sidebar::addItem(
+            const Glib::ustring             & name,
+            Gtk::Widget                     * ui,
+            const Glib::RefPtr<Gdk::Pixbuf> & icon,
+            gint64 id
+    )
     {
-        TreeIter iter = m_Store->append();
-        (*iter)[m_SourceColumns.name] = name;
-        (*iter)[m_SourceColumns.icon] = icon;
-        (*iter)[m_SourceColumns.id] = id;
-
-        m_IdIterMap.insert(std::make_pair(id, iter));
+        TreeIter iter = Store->append();
+        (*iter)[Columns.name] = name;
+        (*iter)[Columns.icon] = icon;
+        (*iter)[Columns.key]  = ItemKey(boost::optional<gint64>(), id);
+        (*iter)[Columns.page] = m_Notebook->append_page(*ui);
+        m_IdIterMap.insert(std::make_pair(ItemKey(boost::optional<gint64>(),id), iter));
     }
+
+    void
+    Sidebar::addSubItem(
+            const Glib::ustring             & name,
+            Gtk::Widget                     * ui,
+            const Glib::RefPtr<Gdk::Pixbuf> & icon,
+            gint64 parent,
+            gint64 id
+    )
+    {
+        if(!m_IdIterMap.count(ItemKey(boost::optional<gint64>(),parent)))
+        {
+            // throw std::runtime_error ("Parent id doesn't exist");
+            return;
+        }
+
+        TreeIter parent_iter = m_IdIterMap.find(ItemKey(boost::optional<gint64>(),parent))->second;
+        TreeIter iter = Store->append(parent_iter->children());
+
+        (*iter)[Columns.name] = name;
+        (*iter)[Columns.icon] = icon;
+        (*iter)[Columns.key]  = ItemKey(parent,id); 
+        (*iter)[Columns.page] = m_Notebook->append_page(*ui);
+        m_IdIterMap.insert(std::make_pair(ItemKey(parent,id), iter));
+    }
+
 
     bool
     Sidebar::slot_select (Glib::RefPtr <Gtk::TreeModel> const& model,
@@ -192,5 +253,11 @@ namespace MPX
         Gtk::CellRenderer * r = Glib::wrap(cell,false);
         Sidebar * w = reinterpret_cast<Sidebar*>(data);
         r->property_cell_background_gdk() = w->get_style()->get_bg(STATE_INSENSITIVE);
+    }
+
+    Sidebar::SignalIdChanged&
+    Sidebar::signal_id_changed()
+    {
+        return signal_id_changed_;
     }
 }

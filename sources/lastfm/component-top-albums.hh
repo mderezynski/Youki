@@ -60,13 +60,20 @@ namespace MPX
             on_entry_activated ();
 
             void
+            on_entry_changed ();
+
+            void
             on_new_album (Glib::RefPtr<Gdk::Pixbuf>, std::string const&);
+
+            void
+            on_stopped ();
 
             void
             setup_view ();
 
             Columns_t                         Columns;
             Gtk::Entry                      * m_Entry;
+            Gtk::Label                      * m_Label;
             Gtk::TreeView                   * m_View;
             Glib::RefPtr<Gtk::ListStore>      m_Model;
             TopAlbumsFetchThread            * m_Thread;

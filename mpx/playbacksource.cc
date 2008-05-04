@@ -192,4 +192,15 @@ namespace MPX
             return Py_None;
         }
 
+        ItemKey const&
+        PlaybackSource::get_key ()
+        {
+            return m_OwnKey;
+        }
+
+        void
+        PlaybackSource::set_key (ItemKey const& key)
+        {
+            m_OwnKey = key;
+        }
 } // end namespace MPX 

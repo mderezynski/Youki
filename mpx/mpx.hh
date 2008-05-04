@@ -45,6 +45,7 @@
 
 #include "audio-types.hh"
 #include "dbus-marshalers.h"
+#include "sidebar.hh"
 #include "video-widget.hh"
 
 using namespace Gnome::Glade;
@@ -113,7 +114,6 @@ namespace MPX
     class PluginManager;
     class PluginManagerGUI;
     class Preferences;
-    class Sidebar;
 
     class Player
       : public WidgetLoader<Gtk::Window>
@@ -226,12 +226,13 @@ namespace MPX
 			void			(*del_instance)       (MPX::PlaybackSource*);
         };
 
-        typedef boost::shared_ptr<SourcePlugin> SourcePluginPtr;
-        typedef std::vector<SourcePluginPtr> SourcePluginsKeeper;
-		typedef std::vector<PlaybackSource*> VectorSources;
-		typedef std::map<std::string, int> UriSchemeMap;
-		typedef std::vector<int> SourceTabMapping;
-        typedef std::map<Gtk::Widget*, Gtk::Widget*> WidgetWidgetMap;
+        typedef boost::shared_ptr<SourcePlugin>          SourcePluginPtr;
+        typedef std::vector<SourcePluginPtr>             SourcePluginsKeeper;
+		typedef std::map<ItemKey, PlaybackSource*>       SourcesMap;
+		typedef std::map<std::string, ItemKey>           UriSchemeMap;
+        typedef std::map<Gtk::Widget*, Gtk::Widget*>     WidgetWidgetMap;
+        typedef std::map<ItemKey, PlaybackSource::Flags> FlagsMap_t;
+        typedef std::map<ItemKey, PlaybackSource::Caps>  CapsMap_t;
 
         Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
         Glib::RefPtr<Gtk::ActionGroup>  m_actions;
@@ -244,58 +245,53 @@ namespace MPX
             DBusPlayer      *player;
             DBusTrackList   *tracklist;
 		};
-		DBusObjectsT DBusObjects;
+
+		DBusObjectsT      DBusObjects;
 		DBusGConnection * m_SessionBus;
-        bool m_startup_complete;
+        bool              m_startup_complete;
 
-
-		int m_Seeking;
+		int     m_Seeking;
 		gdouble m_TrackPlayedSeconds;
 		gdouble m_PreSeekPosition;
 		gdouble m_TrackDuration;
 
-		int m_SourceCtr;
-		int m_PageCtr;
-        int m_ActiveSource;
-		Glib::Mutex m_SourceCFLock;
-        SourceTabMapping m_SourceTabMapping;
-		guint m_SourceUI;
-		UriSchemeMap m_UriMap;
-        SourcePluginsKeeper m_SourcePlugins;
+        gint64                      m_NextSourceId;
+        boost::optional<ItemKey>    m_ActiveSource;
+		Glib::Mutex                 m_SourceCFLock;
+		guint                       m_SourceUI;
+		UriSchemeMap                m_UriMap;
+        SourcePluginsKeeper         m_SourcePlugins;
 
-		Play *m_Play;
-        Library &m_Library;
-        Covers &m_Covers;
-        HAL &m_HAL;
-		PluginManager *m_PluginManager;
+        Covers        & m_Covers;
+        HAL           & m_HAL;
+        Library       & m_Library;
+		PluginManager * m_PluginManager;
+		Play          * m_Play;
 
-        Preferences *m_Preferences;
-        MLibManager *m_MLibManager;
-		PluginManagerGUI *m_PluginManagerGUI;
-        Sidebar *m_Sidebar;
-        InfoArea *m_InfoArea;
-        VideoWidget *m_VideoWidget; 
+        Preferences         * m_Preferences;
+        MLibManager         * m_MLibManager;
+		PluginManagerGUI    * m_PluginManagerGUI;
+        Sidebar             * m_Sidebar;
+        InfoArea            * m_InfoArea;
+        VideoWidget         * m_VideoWidget; 
 
-        Gtk::Statusbar *m_Statusbar;
-		Gtk::Notebook *m_MainNotebook;
-        Gtk::Notebook *m_OuterNotebook;
-		Gtk::VolumeButton *m_Volume;
-		Gtk::HScale *m_Seek;
-		Gtk::Label *m_TimeLabel;
-        Gtk::Notebook *m_InfoNotebook;
-        Gtk::Expander *m_InfoExpander;
-        WidgetWidgetMap m_InfoWidgetMap;
+        Gtk::Statusbar      * m_Statusbar;
+		Gtk::Notebook       * m_MainNotebook;
+        Gtk::Notebook       * m_OuterNotebook;
+		Gtk::VolumeButton   * m_Volume;
+		Gtk::HScale         * m_Seek;
+		Gtk::Label          * m_TimeLabel;
+        Gtk::Notebook       * m_InfoNotebook;
+        Gtk::Expander       * m_InfoExpander;
+        WidgetWidgetMap       m_InfoWidgetMap;
 
-		VectorSources m_SourceV;
-		PlaybackSource::Flags m_source_flags[16];
-		PlaybackSource::Caps m_source_caps[16];
+		SourcesMap            m_Sources;
+        FlagsMap_t            m_source_f;
+        CapsMap_t             m_source_c;
 
-		boost::optional<Metadata> m_Metadata;
-        Glib::Mutex m_MetadataLock;
-		Glib::RefPtr<Gdk::Pixbuf> m_DiscDefault;
-
-        ActionSet * m_StopActions;
-        ActionSet * m_ControlActions; 
+		boost::optional<Metadata>   m_Metadata;
+        Glib::Mutex                 m_MetadataLock;
+		Glib::RefPtr<Gdk::Pixbuf>   m_DiscDefault;
 
 		void
 		on_cover_clicked ();
@@ -305,17 +301,6 @@ namespace MPX
 
 		void
 		on_play_files ();
-
-#if 0 
-        void
-        on_info_toggled();
-
-		void
-		on_sources_toggled ();
-
-        void
-        on_video_toggled ();
-#endif
 
 		void
 		on_volume_value_changed(double);
@@ -357,8 +342,7 @@ namespace MPX
 		on_play_metadata (MPXGstMetadataField);
 
 		void
-		reparse_metadata ();
-
+		on_play_eos ();
 
 
 
@@ -377,46 +361,40 @@ namespace MPX
 
 		
 		void
-		on_source_changed (gint64 id);
+		on_source_changed (ItemKey const&);
 
 		void
-		on_source_caps (PlaybackSource::Caps, int);
+		on_source_caps (PlaybackSource::Caps, ItemKey const&);
 
 		void
-		on_source_flags (PlaybackSource::Flags, int);
+		on_source_flags (PlaybackSource::Flags, ItemKey const&);
 
 		void
-		on_source_track_metadata (Metadata const&, int);
+		on_source_track_metadata (Metadata const&, ItemKey const&);
 
 		void
-		on_source_play_request (int);
+		on_source_play_request (ItemKey const&);
 
 		void
-		on_source_segment (int);
+		on_source_segment (ItemKey const&);
 
 		void
-		on_source_stop (int);
+		on_source_stop (ItemKey const&);
 
 		void
-		on_source_next (int);
+		on_source_next (ItemKey const&);
 
 		void
-		play_async_cb (int);
+		play_async_cb (ItemKey const&);
 
 		void
-		play_post_internal (int);
+		prev_async_cb (ItemKey const&);
 
 		void
-		safe_pause_unset ();
+		next_async_cb (ItemKey const&);
 
 		void
-		on_play_eos ();
-
-		void
-		prev_async_cb (int);
-
-		void
-		next_async_cb (int);
+		play_post_internal (ItemKey const&);
 
 
 
@@ -429,7 +407,7 @@ namespace MPX
 
 
 		void
-		install_source (int source_id, int tab);
+		install_source (ItemKey const& source_id);
 
 		bool
 		load_source_plugin (std::string const& path);
@@ -440,6 +418,11 @@ namespace MPX
 		void
 		track_played ();
 
+		void
+		safe_pause_unset ();
+
+		void
+		reparse_metadata ();
 
 
 

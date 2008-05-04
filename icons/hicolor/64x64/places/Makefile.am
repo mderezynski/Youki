@@ -5,6 +5,7 @@ icons_DATA =			\
 	source-radio.png	\
 	source-jamendo.png  \
 	source-podcasts.png	\
+	source-playlist.png	\
 	source-video.png
 
 iconsdir = $(pkgdatadir)/icons/hicolor/64x64/places
