@@ -83,17 +83,40 @@ if test "$ac_cv_boost_python" = "yes"; then
   if test x$PYTHON_LIB != x; then
      LDFLAGS="$LDFLAGS -l$PYTHON_LIB"
   fi
+  LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
+  CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
+
+  BN_BOOST_PYTHON="boost_python"
   ax_python_lib=boost_python
   AC_ARG_WITH([boost-python],AS_HELP_STRING([--with-boost-python],[specify the boost python library or suffix to use]),
   [if test "x$with_boost_python" != "xno"; then
      ax_python_lib=$with_boost_python
-     ax_boost_python_lib=boost_python-$with_boost_python
+     ax_boost_python_lib=${BN_BOOST_PYTHON}-$with_boost_python
    fi])
-  for ax_lib in $ax_python_lib $ax_boost_python_lib boost_python; do
-    AC_CHECK_LIB($ax_lib, exit, [BOOST_PYTHON_LIB="-l$ax_lib" break])
+
+  link_python="no"
+  BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
+  for libextension in `ls $BOOSTLIBDIR/libboost_python*.so* | sed 's,.*/,,' | sed -e 's;^libboost_python;;' -e 's;\(.*\)\.so.*$;\1;'`; do
+       ax_lib=${BN_BOOST_PYTHON}${libextension}
+       AC_CHECK_LIB($ax_lib, exit,
+           [BOOST_PYTHON_LIB="-l$ax_lib"; AC_SUBST(BOOST_PYTHON_LIB) link_python="yes"; break],
+           [ax_lib=""; link_python="no"])
   done
+
+  if test "$link_python" = "no"; then
+    for ax_lib in $ax_python_lib $ax_boost_python_lib ${BN_BOOST_PYTHON}; do
+      AC_CHECK_LIB($ax_lib, exit, 
+      	  [BOOST_PYTHON_LIB="-l$ax_lib"; AC_SUBST(BOOST_PYTHON_LIB) link_python="yes"; break],
+	  [ax_lib=""; link_python="no"])
+    done
+  fi
+
+  if test "$link_python" = "no"; then
+    AC_MSG_ERROR([Could not find the boost python bindings])
+  fi
+
   LDFLAGS=$LDFLAGS_SAVE
-  AC_SUBST(BOOST_PYTHON_LIB)
+  CPPFLAGS=$CPPFLAGS_SAVE
 else
   AC_MSG_ERROR([Could not find the boost python bindings])
 fi
