@@ -1,3 +1,6 @@
-python_DATA = __init__.py notification.mpx-plugin
+python_DATA = 				\
+		__init__.py		\
+		notification.glade	\
+		notification.mpx-plugin
 pythondir = $(pkgdatadir)/python-plugins/notification
-EXTRA_DIST = __init__.py
+BUILT_SOURCES = __init__.py
