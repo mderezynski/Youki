@@ -97,7 +97,12 @@ endif
   
 mpx_bin_SOURCES =				\
 								\
-	widgetloader.h				\
+	audio.cc					\
+								\
+	base64.h					\
+	base64.c					\
+								\
+	covers.cc					\
 								\
 	dialog-filebrowser.hh		\
 	dialog-filebrowser.cc		\
@@ -105,14 +110,7 @@ mpx_bin_SOURCES =				\
 	exception.hh				\
 	exception-db.hh				\
 								\
-	main.cc						\
-								\
-	covers.cc					\
-								\
-	audio.cc					\
-								\
-	base64.h					\
-	base64.c					\
+	glib-marshalers.c			\
 								\
 	gstpuid.h					\
 	gstpuid.cc					\
@@ -120,12 +118,6 @@ mpx_bin_SOURCES =				\
 	gtkmmmodule.h				\
 	gtkmmmodule.cc				\
 	gtkmm.cc					\
-								\
-	mlibmanager.hh				\
-	mlibmanager.cc				\
-								\
-	python.hh					\
-	python.cc					\
 								\
 	import-share.hh				\
 	import-share.cc				\
@@ -157,11 +149,13 @@ mpx_bin_SOURCES =				\
 	md5.h						\
 	md5.c						\
 								\
+	main.cc						\
+								\
+	mlibmanager.hh				\
+	mlibmanager.cc				\
+								\
 	mpx.hh						\
 	mpx.cc						\
-								\
-	mpx-sources.hh				\
-	mpx-sources.cc				\
 								\
 	network.hh					\
 	network.cc					\
@@ -175,6 +169,7 @@ mpx_bin_SOURCES =				\
 	playlistparser-xspf.hh		\
 	playlistparser-xspf.cc		\
 								\
+								\
 	plugin.hh					\
 	plugin.cc					\
 	plugin-manager-gui.hh		\
@@ -183,14 +178,22 @@ mpx_bin_SOURCES =				\
 	preferences.hh				\
 	preferences.cc				\
 								\
+	python.hh					\
+	python.cc					\
+								\
+	python-playlist.hh			\
+	python-playlist.cc			\
+								\
 	request-value.hh			\
 	request-value.cc			\
 								\
-	splash-screen.hh			\
-	splash-screen.cc			\
-								\
 	sidebar.hh					\
 	sidebar.cc					\
+								\
+	source-playlist.cc			\
+								\
+	splash-screen.hh			\
+	splash-screen.cc			\
 								\
 	sql.hh						\
 	sql.cc						\
@@ -284,3 +287,16 @@ dbus-marshalers.h: dbus-marshalers.list
 
 BUILT_SOURCES = dbus-marshalers.c dbus-marshalers.h
 mpx_bin_SOURCES += dbus-marshalers.c
+
+EXTRA_DIST += glib-marshalers.list
+
+built_header_make += 	\
+		glib-marshalers.h
+
+glib-marshalers.c: glib-marshalers.list 
+	@echo "* Generating glib-marshalers.c"
+	@$(GLIB_GENMARSHAL) --prefix=psm_glib_marshal --body   $(srcdir)/glib-marshalers.list > glib-marshalers.c
+
+glib-marshalers.h: glib-marshalers.list
+	@echo "* Generating glib-marshalers.h"
+	@$(GLIB_GENMARSHAL) --prefix=psm_glib_marshal --header $(srcdir)/glib-marshalers.list > glib-marshalers.h

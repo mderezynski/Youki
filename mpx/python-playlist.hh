@@ -22,12 +22,12 @@
 //  permission is above and beyond the permissions granted by the GPlaylist license
 //  MPX is covered by.
 
-#ifndef MPX_MUSICLIB_PY_INIT
-#define MPX_MUSICLIB_PY_INIT
+#ifndef MPX_PLAYLIST_PY_INIT
+#define MPX_PLAYLIST_PY_INIT
 
 namespace MPX
 {
-        void mpx_musiclib_py_init ();
+        void mpx_playlist_py_init ();
 }
 
 #endif

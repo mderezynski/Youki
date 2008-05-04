@@ -94,15 +94,6 @@ namespace MPX
             bool                                   was_selected
         );
 
-        static void
-        rb_sourcelist_expander_cell_data_func(
-            GtkTreeViewColumn *column,
-            GtkCellRenderer   *cell,
-            GtkTreeModel      *model,
-            GtkTreeIter       *iter,
-            gpointer           data
-        );
-
         void
         on_selection_changed ();
 

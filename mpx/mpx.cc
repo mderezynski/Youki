@@ -1909,6 +1909,8 @@ namespace MPX
 				m_UriMap.insert (std::make_pair (std::string(*i), source_id));
 		  }
 		}
+
+        m_Sources[source_id]->post_install();
 	}
 
     void
@@ -2095,6 +2097,33 @@ namespace MPX
         m_InfoWidgetMap.insert(std::make_pair(widget, widget));
 	}
    
+    void
+    Player::add_subsource(PlaybackSource* p, ItemKey const& parent, gint64 id)
+    {
+        Gtk::Alignment * a = new Gtk::Alignment;
+
+        if(p->get_ui()->get_parent())
+            p->get_ui()->reparent(*a);
+        else
+            a->add(*p->get_ui());
+        a->show();
+
+        m_Sidebar->addSubItem(
+            p->get_name(),
+            a,  
+            p->get_icon()->scale_simple(
+                    20,
+                    20,
+                    Gdk::INTERP_BILINEAR
+            ),
+            parent.second,
+            id
+        );
+        ItemKey key (parent.second, id);
+		m_Sources[key] = p;
+		install_source(key);
+    }
+
 	void
 	Player::remove_widget (Gtk::Widget *widget)
 	{

@@ -58,16 +58,6 @@ namespace MPX
         column->pack_start( *cell2, true );
         column->set_cell_data_func( *cell2, sigc::bind( sigc::mem_fun( *this, &Sidebar::cell_data_func ), 1));
 
-        set_show_expanders( false );
-
-        GtkCellRenderer * renderer = gossip_cell_renderer_expander_new ();
-        gtk_tree_view_column_pack_end (column->gobj(), renderer, FALSE);
-        gtk_tree_view_column_set_cell_data_func (column->gobj(),
-                             renderer,
-                             GtkTreeCellDataFunc(rb_sourcelist_expander_cell_data_func),
-                             this,
-                             NULL);
-
         append_column( *column );
 
         get_selection()->set_select_function( sigc::mem_fun( *this, &Sidebar::slot_select ));
@@ -224,35 +214,6 @@ namespace MPX
                 Gtk::TreeModel::Path const& path, bool was_selected)
     {
         return true; 
-    }
-
-    void
-    Sidebar::rb_sourcelist_expander_cell_data_func (GtkTreeViewColumn *column,
-                           GtkCellRenderer   *cell,
-                           GtkTreeModel      *model,
-                           GtkTreeIter       *iter,
-                           gpointer           data) 
-    {
-        if (gtk_tree_model_iter_has_child (model, iter))
-        {
-            GtkTreePath *path;
-            gboolean     row_expanded;
-
-            path = gtk_tree_model_get_path (model, iter);
-            row_expanded = gtk_tree_view_row_expanded (GTK_TREE_VIEW (column->tree_view), path);
-            gtk_tree_path_free (path);
-
-            g_object_set (cell,
-                      "visible", TRUE,
-                      "expander-style", row_expanded ? GTK_EXPANDER_EXPANDED : GTK_EXPANDER_COLLAPSED,
-                      NULL);
-        } else {
-            g_object_set (cell, "visible", FALSE, NULL);
-        }
-
-        Gtk::CellRenderer * r = Glib::wrap(cell,false);
-        Sidebar * w = reinterpret_cast<Sidebar*>(data);
-        r->property_cell_background_gdk() = w->get_style()->get_bg(STATE_INSENSITIVE);
     }
 
     Sidebar::SignalIdChanged&

@@ -127,6 +127,9 @@ namespace MPX
         void
         add_info_widget(Gtk::Widget*, std::string const&);
 
+        void
+        add_subsource(PlaybackSource*, ItemKey const&, gint64 id);
+
 		void
 		remove_widget (Gtk::Widget*);
 

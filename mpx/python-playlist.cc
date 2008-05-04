@@ -33,7 +33,7 @@
 #include "mpx/python.hh"
 using namespace boost::python;
 
-#include "source-musiclib.hh"
+#include "mpx/source-playlist.hh"
 
 #if PY_VERSION_HEX < 0x02050000
 typedef int Py_ssize_t;
@@ -41,27 +41,27 @@ typedef int Py_ssize_t;
 
 using namespace Glib;
 
-BOOST_PYTHON_MODULE(mpx_musiclib)
+BOOST_PYTHON_MODULE(mpx_playlist)
 {
 	class_<MPX::IdV>("IdVector")
 		.def(vector_indexing_suite<MPX::IdV>());
 	;
 
-    class_<MPX::Source::PlaybackSourceMusicLib, boost::noncopyable>("MusicLib", boost::python::no_init)
-            .def("play_tracks", &MPX::Source::PlaybackSourceMusicLib::play_tracks)
-            .def("play_album", &MPX::Source::PlaybackSourceMusicLib::play_album)
-            .def("append_tracks", &MPX::Source::PlaybackSourceMusicLib::append_tracks)
-            .def("get_playlist_model", &MPX::Source::PlaybackSourceMusicLib::get_playlist_model)
-            .def("get_playlist_current_iter", &MPX::Source::PlaybackSourceMusicLib::get_playlist_current_iter)
-            .def("gobj", &mpxpy::get_gobject<MPX::Source::PlaybackSourceMusicLib>)
+    class_<MPX::Source::PlaybackSourcePlaylist, boost::noncopyable>("Playlist", boost::python::no_init)
+            .def("play_tracks", &MPX::Source::PlaybackSourcePlaylist::play_tracks)
+            .def("play_album", &MPX::Source::PlaybackSourcePlaylist::play_album)
+            .def("append_tracks", &MPX::Source::PlaybackSourcePlaylist::append_tracks)
+            .def("get_playlist_model", &MPX::Source::PlaybackSourcePlaylist::get_playlist_model)
+            .def("get_playlist_current_iter", &MPX::Source::PlaybackSourcePlaylist::get_playlist_current_iter)
+            .def("gobj", &mpxpy::get_gobject<MPX::Source::PlaybackSourcePlaylist>)
     ;
 }
 
 namespace MPX
 {
     void
-    mpx_musiclib_py_init ()
+    mpx_playlist_py_init ()
     {
-            initmpx_musiclib();
+            initmpx_playlist();
     }
 }

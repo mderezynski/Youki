@@ -28,6 +28,7 @@
 #include <sigx/sigx.h>
 #include "widgetloader.h"
 #include "mpx/paccess.hh"
+#include "mpx/i-playbacksource.hh"
 
 using namespace Gnome::Glade;
 
@@ -54,6 +55,9 @@ namespace MPX
 
         void
         add_info_widget(Gtk::Widget*, std::string const&);
+
+        void
+        add_subsource(PlaybackSource*, ItemKey const&, gint64 id);
 
 		void
 		remove_widget (Gtk::Widget*);
