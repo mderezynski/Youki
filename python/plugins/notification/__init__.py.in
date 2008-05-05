@@ -14,6 +14,7 @@ pygtk.require('2.0')
 import gtk
 import gtk.glade
 
+APPLICATION="MPX"
 COVER_SIZE = 96
 ICON_SIZE = 48
 
@@ -82,6 +83,7 @@ class Notification(mpx.Plugin):
                 self.statusicon.set_blinking(True)
             if state == mpx.PlayStatus.STOPPED:
                 self.statusicon.set_from_file("@DATA_DIR@" + "/icons/mpx_48.png")
+                self.statusicon.set_tooltip(APPLICATION)
 
     def next_cb(self,widget, data = None):
         self.player.next()
@@ -101,7 +103,7 @@ class Notification(mpx.Plugin):
             if m[mpx.AttributeId.ARTIST] and m[mpx.AttributeId.TITLE]: 
                 message = "<big><b>%s</b>\n%s</big>" % (m[mpx.AttributeId.ARTIST].get(), m[mpx.AttributeId.TITLE].get())
                 if message != self.previous_message:
-                    n = pynotify.Notification( "MPX is now playing...", message)
+                    n = pynotify.Notification(APPLICATION + " is now playing...", message)
                     n.set_urgency(pynotify.URGENCY_LOW)
                     if(image):
                         image = image.scale_simple(COVER_SIZE, COVER_SIZE, gtk.gdk.INTERP_NEAREST)
@@ -116,6 +118,9 @@ class Notification(mpx.Plugin):
                 self.statusicon.set_from_pixbuf(image)
             else:
                 self.statusicon.set_from_file("@DATA_DIR@" + "/icons/mpx_48.png")
+            if m[mpx.AttributeId.ARTIST] and m[mpx.AttributeId.TITLE]: 
+                tooltip = "%s - %s" % (m[mpx.AttributeId.ARTIST].get(), m[mpx.AttributeId.TITLE].get())
+                self.statusicon.set_tooltip(tooltip)
 
 
     def on_icon_toggled(self, cb):
@@ -123,6 +128,7 @@ class Notification(mpx.Plugin):
             self.statusicon = gtk.StatusIcon()
             self.statusicon.set_from_file("@DATA_DIR@" + "/icons/mpx_48.png")
             self.statusicon.set_visible(True)
+            self.statusicon.set_tooltip(APPLICATION)
 
             status = self.player.get_status()
             if (status == mpx.PlayStatus.PLAYING) or (status == mpx.PlayStatus.PAUSED):
@@ -160,7 +166,7 @@ class Notification(mpx.Plugin):
     def on_notification_toggled(self, cb):
         if cb.get_active():
             self.previous_message = u''
-            pynotify.init("MPX")
+            pynotify.init(APPLICATION)
 
             status = self.player.get_status()
             if (status == mpx.PlayStatus.PLAYING) or (status == mpx.PlayStatus.PAUSED):
