@@ -30,7 +30,6 @@
 #include <libglademm/xml.h>
 #include <boost/optional.hpp>
 #include "mpx/types.hh"
-#include "mpx/widgets/cell-renderer-source.hh"
 
 namespace MPX
 {
@@ -40,7 +39,7 @@ namespace MPX
 
     public:
 
-        typedef sigc::signal<void, ItemKey> SignalIdChanged;
+        typedef sigc::signal<void, ItemKey>                SignalIdChanged;
 
         Sidebar (BaseObjectType                       * obj,
                  Glib::RefPtr<Gnome::Glade::Xml> const& xml);
@@ -83,7 +82,8 @@ namespace MPX
         void
         cell_data_func(
             Gtk::CellRenderer*,
-            const Gtk::TreeIter&
+            const Gtk::TreeIter&,
+            int
         );
 
 
@@ -105,9 +105,9 @@ namespace MPX
         struct SourceColumns : public Gtk::TreeModel::ColumnRecord
         {
             Gtk::TreeModelColumn<Glib::ustring> name;  
-            Gtk::TreeModelColumn<RefSurface>    icon;
-            Gtk::TreeModelColumn<ItemKey>       key;
-            Gtk::TreeModelColumn<gint64>        page;
+            Gtk::TreeModelColumn<Glib::RefPtr<Gdk::Pixbuf> > icon;
+            Gtk::TreeModelColumn<ItemKey> key;
+            Gtk::TreeModelColumn<gint64>  page;
 
             SourceColumns()
             {

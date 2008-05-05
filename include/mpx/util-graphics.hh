@@ -71,6 +71,24 @@ namespace MPX
                    double&           b,
                    double&           a);
 
+    Gdk::Color
+    color_adjust_brightness(Gdk::Color const& base, double br);
+
+    Gdk::Color
+    color_shade(Gdk::Color const& base, double ratio);
+
+    Gdk::Color
+    color_from_hsb(double hue, double saturation, double brightness);
+
+    void
+    color_to_hsb(
+        Gdk::Color const& color,
+        double & hue,
+        double & saturation,
+        double & brightness
+    );
+
+
     Cairo::RefPtr<Cairo::ImageSurface>
     cairo_image_surface_from_pixbuf (Glib::RefPtr<Gdk::Pixbuf>);
 

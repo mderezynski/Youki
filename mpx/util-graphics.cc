@@ -137,6 +137,129 @@ namespace MPX
       a = 1.0;
     }
 
+    void color_to_hsb(
+            Gdk::Color const& color,
+            double & hue,
+            double & saturation,
+            double & brightness
+    )
+    {
+        double min, max, delta;
+        double red = color.get_red()/65535.;
+        double green = color.get_green()/65535.;
+        double blue = color.get_blue()/65535.;
+
+        hue = 0;
+        saturation = 0;
+        brightness = 0;
+
+        if(red > green) {
+            max = fmax(red, blue);
+            min = fmin(green, blue);
+        } else {
+            max = fmax(green, blue);
+            min = fmin(red, blue);
+        }
+
+        brightness = (max + min) / 2;
+
+        if(fabs(max - min) < 0.0001) {
+            hue = 0;
+            saturation = 0;
+        } else {
+            saturation = brightness <= 0.5
+                ? (max - min) / (max + min)
+                : (max - min) / (2 - max - min);
+
+            delta = max - min;
+
+            if(red == max) {
+                hue = (green - blue) / delta;
+            } else if(green == max) {
+                hue = 2 + (blue - red) / delta;
+            } else if(blue == max) {
+                hue = 4 + (red - green) / delta;
+            }
+
+            hue *= 60;
+            if(hue < 0) {
+                hue += 360;
+            }
+        }
+    }
+
+    Gdk::Color
+    color_from_hsb(double hue, double saturation, double brightness)
+    {
+        int i;
+        double hue_shift[] = { 0, 0, 0 };
+        double color_shift[] = { 0, 0, 0 };
+        double m1, m2, m3;
+
+        m2 = brightness <= 0.5
+            ? brightness * (1 + saturation)
+            : brightness + saturation - brightness * saturation;
+
+        m1 = 2 * brightness - m2;
+
+        hue_shift[0] = hue + 120;
+        hue_shift[1] = hue;
+        hue_shift[2] = hue - 120;
+
+        color_shift[0] = color_shift[1] = color_shift[2] = brightness;
+
+        i = saturation == 0 ? 3 : 0;
+
+        for(; i < 3; i++) {
+            m3 = hue_shift[i];
+
+            if(m3 > 360) {
+                m3 = fmod(m3, 360);
+            } else if(m3 < 0) {
+                m3 = 360 - fmod(fabs(m3), 360);
+            }
+
+            if(m3 < 60) {
+                color_shift[i] = m1 + (m2 - m1) * m3 / 60;
+            } else if(m3 < 180) {
+                color_shift[i] = m2;
+            } else if(m3 < 240) {
+                color_shift[i] = m1 + (m2 - m1) * (240 - m3) / 60;
+            } else {
+                color_shift[i] = m1;
+            }
+        }
+
+        Gdk::Color color;
+        color.set_red(color_shift[0]*65535);
+        color.set_green(color_shift[1]*65535);
+        color.set_blue(color_shift[2]*65535);
+
+        return color;
+    }
+
+    Gdk::Color
+    color_shade(Gdk::Color const& base, double ratio)
+    {
+        double h, s, b;
+
+        color_to_hsb(base, h, s, b);
+
+        b = fmax(fmin(b * ratio, 1), 0);
+        s = fmax(fmin(s * ratio, 1), 0);
+
+        return color_from_hsb(h, s, b);
+    }
+
+    Gdk::Color
+    color_adjust_brightness(Gdk::Color const& base, double br)
+    {
+        double h, s, b;
+        color_to_hsb(base, h, s, b);
+        b = fmax(fmin(br, 1), 0);
+        return color_from_hsb(h, s, b);
+    }
+
     double
     screen_get_resolution (Glib::RefPtr<Gdk::Screen> const& screen)
     {
