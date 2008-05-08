@@ -515,6 +515,9 @@ namespace MPX
                 (*iter)[AlbumColumns.Text] = (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%Added: %4%</span>") % Markup::escape_text(get<std::string>(r["album"])).c_str() % Markup::escape_text(ArtistSort).c_str() % date % get_timestr_from_time_t(idate)).str();
                 (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
                 (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
+
+                gint count = gtk_tree_model_iter_n_children(GTK_TREE_MODEL(TreeStore->gobj()), NULL);
+                m_MLib.Signals.Items.emit(count);
               } 
    
               void
@@ -1045,18 +1048,6 @@ namespace Source
     PlaybackSourceMusicLib::restore_context ()
     {}
 
-    void
-    PlaybackSourceMusicLib::skipped () 
-    {}
-
-    void
-    PlaybackSourceMusicLib::segment () 
-    {}
-
-    void
-    PlaybackSourceMusicLib::buffering_done () 
-    {}
-
     Glib::RefPtr<Gdk::Pixbuf>
     PlaybackSourceMusicLib::get_icon ()
     {
@@ -1074,6 +1065,7 @@ namespace Source
     UriSchemes 
     PlaybackSourceMusicLib::get_uri_schemes ()
     {
+        return UriSchemes();
     }
 
     void    

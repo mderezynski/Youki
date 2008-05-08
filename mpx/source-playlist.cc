@@ -1326,28 +1326,32 @@ namespace Source
     void
     PlaybackSourcePlaylist::check_caps ()
     {
-        if (!m_Private->m_TreeViewPlaylist->m_CurrentIter)
+        if (m_Private->m_TreeViewPlaylist->m_CurrentIter)
+        {
+            TreeIter & iter = m_Private->m_TreeViewPlaylist->m_CurrentIter.get();
+
+            TreePath path1 = m_Private->m_TreeViewPlaylist->ListStore->get_path(iter);
+            TreePath path2 = m_Private->m_TreeViewPlaylist->ListStore->get_path(m_Private->m_TreeViewPlaylist->ListStore->children().begin());
+            TreePath path3 = m_Private->m_TreeViewPlaylist->ListStore->get_path(--m_Private->m_TreeViewPlaylist->ListStore->children().end());
+
+            if(path1[0] > path2[0])
+                m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_GO_PREV);
+            else
+                m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_PREV);
+
+            if(path1[0] < path3[0])
+                m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_GO_NEXT);
+            else
+                m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_NEXT);
+        }
+        else
         {
             m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_NEXT);
             m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_PREV);
-            return;
         }
 
-        TreeIter & iter = m_Private->m_TreeViewPlaylist->m_CurrentIter.get();
-
-        TreePath path1 = m_Private->m_TreeViewPlaylist->ListStore->get_path(iter);
-        TreePath path2 = m_Private->m_TreeViewPlaylist->ListStore->get_path(m_Private->m_TreeViewPlaylist->ListStore->children().begin());
-        TreePath path3 = m_Private->m_TreeViewPlaylist->ListStore->get_path(--m_Private->m_TreeViewPlaylist->ListStore->children().end());
-
-        if(path1[0] > path2[0])
-            m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_GO_PREV);
-        else
-            m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_PREV);
-
-        if(path1[0] < path3[0])
-            m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_GO_NEXT);
-        else
-            m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_NEXT);
+        gint count = gtk_tree_model_iter_n_children(GTK_TREE_MODEL(m_Private->m_TreeViewPlaylist->ListStore->gobj()), NULL);
+        Signals.Items.emit(count);
     }
 
     void

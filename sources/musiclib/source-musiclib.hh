@@ -44,7 +44,7 @@
 
 namespace MPX
 {
-        class MusicLibPrivate;
+        struct MusicLibPrivate;
 
 namespace Source
 {
@@ -74,7 +74,8 @@ namespace Source
                 void
                 check_caps ();
 
-
+        
+                // i-playbacksource
 
                 virtual void
                 send_metadata ();
@@ -108,15 +109,6 @@ namespace Source
 
                 virtual void
                 restore_context ();
-
-                virtual void
-                skipped (); 
-
-                virtual void
-                segment (); 
-
-                virtual void
-                buffering_done (); 
 
                 virtual Glib::RefPtr<Gdk::Pixbuf>
                 get_icon ();

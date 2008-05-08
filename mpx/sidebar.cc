@@ -26,6 +26,7 @@
 #include <gtkmm.h>
 #include <gtk/gtktreeview.h>
 #include <cairomm/cairomm.h>
+#include <boost/format.hpp>
 #include "mpx/widgets/gossip-cell-renderer-expander.h"
 #include "sidebar.hh"
 using namespace Glib;
@@ -44,18 +45,26 @@ namespace MPX
 
         CellRendererPixbuf * cell1 = manage (new CellRendererPixbuf);
         CellRendererText * cell2 = manage (new CellRendererText);
+        CellRendererText * cell3 = manage (new CellRendererText);
 
         cell1->property_xalign() = 0.5;
         cell1->property_ypad() = 1;
+        cell1->property_width() = 24;
 
         cell2->property_xalign() = 0.0;
         cell2->property_ypad() = 1;
+
+        cell3->property_xalign() = 1.0;
+        cell3->property_ypad() = 1;
 
         column->pack_start( *cell1, false );
         column->set_cell_data_func( *cell1, sigc::bind( sigc::mem_fun( *this, &Sidebar::cell_data_func ), 0)); 
 
         column->pack_start( *cell2, true );
         column->set_cell_data_func( *cell2, sigc::bind( sigc::mem_fun( *this, &Sidebar::cell_data_func ), 1));
+        column->pack_start( *cell3, false );
+        column->set_cell_data_func( *cell3, sigc::bind( sigc::mem_fun( *this, &Sidebar::cell_data_func ), 2));
+
 
         append_column( *column );
 
@@ -135,6 +144,19 @@ namespace MPX
     }
 
     void
+    Sidebar::setItemCount(ItemKey const& key, gint64 count)
+    {
+        ItemCountMap::iterator i = m_ItemCounts.find(key);
+        if(i != m_ItemCounts.end())
+        {
+            m_ItemCounts.erase(i);
+        }
+
+        m_ItemCounts[key] = count;
+        queue_draw ();
+    }
+
+    void
     Sidebar::clearActiveId ()
     {
         m_active_id.reset();
@@ -144,6 +166,20 @@ namespace MPX
     void
     Sidebar::cell_data_func( CellRenderer * basecell, const TreeModel::iterator& iter, int cellid )
     {
+        if(cellid == 2)
+        {
+            Gtk::CellRendererText & cell = *(dynamic_cast<Gtk::CellRendererText*>(basecell));
+            ItemKey key = ((*iter)[Columns.key]);
+            if(m_ItemCounts.count(key))
+            {
+                cell.property_markup() = (boost::format("<small>(%lld)</small>") % m_ItemCounts[key]).str();
+            }
+            else
+            {
+                cell.property_markup() = ""; 
+            } 
+        }
+        else
         if(cellid == 1)
         {
             Gtk::CellRendererText & cell = *(dynamic_cast<Gtk::CellRendererText*>(basecell));

@@ -92,16 +92,16 @@ namespace MPX
           return Signals.StopRequest;
         }
 
-        PlaybackSource::SignalNextRequest &
-        PlaybackSource::signal_next_request ()
-        {
-          return Signals.NextRequest;
-        }
-
         PlaybackSource::SignalSegment &
         PlaybackSource::signal_segment ()
         {
           return Signals.Segment;
+        }
+
+        PlaybackSource::SignalItems &
+        PlaybackSource::signal_items ()
+        {
+          return Signals.Items;
         }
 
 		std::string

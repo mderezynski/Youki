@@ -218,6 +218,7 @@ namespace MPX
 			PSIGNAL_TRACK_PLAYED,
 			PSIGNAL_INFOAREA_CLICK,
             PSIGNAL_STATUS_CHANGED,
+            PSIGNAL_METADATA_UPDATED,
 			N_SIGNALS
 		};
 
@@ -375,6 +376,9 @@ namespace MPX
 		void
 		on_source_track_metadata (Metadata const&, ItemKey const&);
 
+        void
+        on_source_items(gint64 count, ItemKey const& key);
+
 		void
 		on_source_play_request (ItemKey const&);
 
@@ -383,9 +387,6 @@ namespace MPX
 
 		void
 		on_source_stop (ItemKey const&);
-
-		void
-		on_source_next (ItemKey const&);
 
 		void
 		play_async_cb (ItemKey const&);
@@ -398,6 +399,13 @@ namespace MPX
 
 		void
 		play_post_internal (ItemKey const&);
+
+        void
+        play_tracks (Util::FileList const& uris);
+
+		void
+		track_played ();
+
 
 
 
@@ -414,12 +422,6 @@ namespace MPX
 
 		bool
 		load_source_plugin (std::string const& path);
-
-        void
-        play_tracks (Util::FileList const& uris);
-
-		void
-		track_played ();
 
 		void
 		safe_pause_unset ();

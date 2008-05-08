@@ -103,13 +103,19 @@ namespace MPX
             typedef sigc::signal<void>                          SignalSegment;
             typedef sigc::signal<void>                          SignalPlaybackRequest;
             typedef sigc::signal<void>                          SignalStopRequest;
-            typedef sigc::signal<void>                          SignalNextRequest;
             typedef sigc::signal<void>                          SignalPlayAsync;
             typedef sigc::signal<void>                          SignalNextAsync;
             typedef sigc::signal<void>                          SignalPrevAsync;
             typedef sigc::signal<void>                          SignalNameChanged;
+            typedef sigc::signal<void, gint64>                  SignalItems;
 
-            PlaybackSource (const Glib::RefPtr<Gtk::UIManager>&, const std::string&, Caps = C_NONE, Flags = F_NONE);
+            PlaybackSource(
+                const Glib::RefPtr<Gtk::UIManager>&,
+                const std::string&,
+                Caps = C_NONE,
+                Flags = F_NONE
+            );
+
             virtual ~PlaybackSource ();
 
             SignalCaps&
@@ -127,9 +133,6 @@ namespace MPX
             SignalStopRequest&
             signal_stop_request ();
 
-            SignalNextRequest&
-            signal_next_request ();
-
             SignalSegment&
             signal_segment ();
 
@@ -145,6 +148,10 @@ namespace MPX
             SignalNameChanged&
             signal_name_changed ();
 
+            SignalItems&
+            signal_items ();
+
+        public:
             virtual std::string
             get_uri () = 0; 
         
@@ -244,7 +251,7 @@ namespace MPX
 
             ItemKey m_OwnKey;
 
-        protected:
+        public:
 
             struct SignalsT
             {
@@ -254,14 +261,17 @@ namespace MPX
               SignalSegment                   Segment;
               SignalPlaybackRequest           PlayRequest;
               SignalStopRequest               StopRequest;
-              SignalNextRequest               NextRequest;
               SignalPlayAsync                 PlayAsync;
               SignalNextAsync                 NextAsync;
               SignalPrevAsync                 PrevAsync;
               SignalNameChanged               NameChanged;
+              SignalItems                     Items;
             };
 
             SignalsT        Signals;
+
+        protected:
+
             Caps            m_Caps;
             Flags           m_Flags;
             std::string     m_Name;

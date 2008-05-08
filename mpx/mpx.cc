@@ -1440,15 +1440,30 @@ namespace MPX
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT); 
 
+		signals[PSIGNAL_STATUS_CHANGED] =
+			g_signal_new ("play-status-changed",
+					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+					  GSignalFlags (G_SIGNAL_RUN_FIRST),
+					  0,
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT); 
+
+
+		signals[PSIGNAL_METADATA_UPDATED] =
+			g_signal_new ("metadata-updated",
+					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+					  GSignalFlags (G_SIGNAL_RUN_FIRST),
+					  0,
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
 		m_DiscDefault = Gdk::Pixbuf::create_from_file(
             build_filename(
                 DATA_DIR,
 			    build_filename(
                     "images",
                     "disc-default.png"
-                )
-            )
-        )->scale_simple(64,64,Gdk::INTERP_BILINEAR);
+        )))->scale_simple(64,64,Gdk::INTERP_BILINEAR);
 
         splash.set_message(_("Setting up DBus"), 0.4);
 
@@ -1865,20 +1880,11 @@ namespace MPX
 		m_Sources[source_id]->signal_flags().connect
 		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_flags), source_id));
 
-		m_Sources[source_id]->signal_track_metadata().connect
-		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_track_metadata), source_id));
-
 		m_Sources[source_id]->signal_playback_request().connect
 		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_play_request), source_id));
 
-		m_Sources[source_id]->signal_segment().connect
-		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_segment), source_id));
-
 		m_Sources[source_id]->signal_stop_request().connect
 		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_stop), source_id));
-
-		m_Sources[source_id]->signal_next_request().connect
-		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_next), source_id));
 
 		m_Sources[source_id]->signal_play_async().connect
 		  (sigc::bind (sigc::mem_fun (*this, &Player::play_async_cb), source_id));
@@ -1888,6 +1894,15 @@ namespace MPX
 
 		m_Sources[source_id]->signal_prev_async().connect
 		  (sigc::bind (sigc::mem_fun (*this, &Player::prev_async_cb), source_id));
+
+		m_Sources[source_id]->signal_segment().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_segment), source_id));
+
+		m_Sources[source_id]->signal_track_metadata().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_track_metadata), source_id));
+
+		m_Sources[source_id]->signal_items().connect
+		  (sigc::bind (sigc::mem_fun (*this, &Player::on_source_items), source_id));
 
 		m_Sources[source_id]->send_caps();
 		m_Sources[source_id]->send_flags();
@@ -1950,6 +1965,12 @@ namespace MPX
           {
             g_warning (G_STRLOC ": Couldn't parse URI %s", uris[0].c_str());
           }
+    }
+
+    void
+    Player::on_source_items(gint64 count, ItemKey const& key)
+    {
+        m_Sidebar->setItemCount(key, count);
     }
 
 	void
@@ -2382,10 +2403,6 @@ namespace MPX
         }
 
         reparse_metadata ();
-
-        PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
-        pyg_gil_state_release(state);
 	}
 
 	void
@@ -2435,14 +2452,8 @@ namespace MPX
 	void
 	Player::on_source_stop (ItemKey const& source_id)
 	{
-      stop ();
-	}
-
-	void
-	Player::on_source_next (ItemKey const& source_id)
-	{
 	  g_return_if_fail( m_ActiveSource == source_id );
-	  next ();
+      stop ();
 	}
 
 	//////////////////////////////// Internal Playback Control
@@ -2491,6 +2502,10 @@ namespace MPX
 	  source->send_metadata ();
 
       m_Sidebar->setActiveId(source_id);
+
+      PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+      g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
+      pyg_gil_state_release(state);
 	}
 
 	void
@@ -3526,5 +3541,9 @@ namespace MPX
         {
             set_title(_("(Unknown Track) - MPX"));
         }
+
+        PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_UPDATED], 0);
+        pyg_gil_state_release(state);
 	}
 }

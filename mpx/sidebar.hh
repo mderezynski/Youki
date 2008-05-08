@@ -58,6 +58,9 @@ namespace MPX
         clearActiveId ();
 
         void
+        setItemCount (ItemKey const&, gint64 count);
+
+        void
         addItem(
             const Glib::ustring& name,
             Gtk::Widget* ui,
@@ -123,9 +126,11 @@ namespace MPX
 
         typedef std::map<ItemKey, Gtk::TreeIter> IdIterMapT;
         typedef std::set<gint64>                 ActiveIdT;
+        typedef std::map<ItemKey, gint64>        ItemCountMap;
 
-        IdIterMapT m_IdIterMap;
-        ActiveIdT  m_ActiveIds;
+        IdIterMapT      m_IdIterMap;
+        ActiveIdT       m_ActiveIds;
+        ItemCountMap    m_ItemCounts;
 
         boost::optional<ItemKey> m_active_id;
         ItemKey                  m_visible_id;
