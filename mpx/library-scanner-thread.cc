@@ -2,9 +2,9 @@
 #include "mpx/hal.hh"
 #include "mpx/library-scanner-thread.hh"
 #include "mpx/library.hh"
+#include "mpx/metadatareader-taglib.hh"
 #include "mpx/sql.hh"
 #include "mpx/types.hh"
-#include "metadatareader-taglib.hh"
 #include <queue>
 #include <boost/ref.hpp>
 #include <boost/format.hpp>
@@ -146,7 +146,7 @@ struct MPX::LibraryScannerThread::ThreadData
     int m_ScanStop;
 };
 
-MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::MetadataReaderTagLib* obj_tagreader, MPX::HAL* obj_hal, gint64 flags)
+MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::MetadataReaderTagLib & obj_tagreader, MPX::HAL & obj_hal, gint64 flags)
 : sigx::glib_threadable()
 , scan(sigc::mem_fun(*this, &LibraryScannerThread::on_scan))
 , scan_stop(sigc::mem_fun(*this, &LibraryScannerThread::on_scan_stop))
@@ -227,7 +227,7 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
             try{
                 if (m_Flags & Library::F_USING_HAL)
                 {
-                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (*i));
+                    HAL::Volume const& volume (m_HAL.get_volume_for_uri (*i));
                     insert_path_sql = filename_from_uri(*i).substr (volume.mount_point.length()) ;
                 }
                 else
@@ -299,7 +299,7 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
             track[ATTRIBUTE_TYPE] = type ;
             track[ATTRIBUTE_LOCATION] = *i ;
 
-            if( !m_MetadataReaderTagLib->get( *i, track ) )
+            if( !m_MetadataReaderTagLib.get( *i, track ) )
             {
                ++(erroneous) ;
                g_message("%s: Couldn't read metadata off '%s'", G_STRLOC, (*i).c_str());
@@ -741,7 +741,7 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
           try{
               if (m_Flags & Library::F_USING_HAL)
               {
-                HAL::Volume const& volume (m_HAL->get_volume_for_uri (uri));
+                HAL::Volume const& volume (m_HAL.get_volume_for_uri (uri));
 
                 track[ATTRIBUTE_HAL_VOLUME_UDI] =
                               volume.volume_udi ;

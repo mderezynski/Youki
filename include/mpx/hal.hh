@@ -135,9 +135,6 @@ namespace MPX
         SignalVolume&
         signal_volume_added ();
 
-        SignalDeviceRemoved&
-        signal_device_removed ();
-
         SignalCDDAInserted&
         signal_cdda_inserted ();
 
@@ -159,13 +156,16 @@ namespace MPX
         cdrom_policy (Hal::RefPtr<Hal::Volume> const& volume);
 
         void
-        register_update_volume (Volume const& volume);
+        volume_register (Volume const& volume);
 
         void
-        process_udi (std::string const& udi);
+        volume_insert (std::string const& udi);
 
         void
-        process_volume (std::string const& udi);
+        volume_remove (std::string const& udi);
+
+        void
+        volume_process (std::string const& udi);
 
         void
         device_condition (std::string const& udi,
@@ -185,7 +185,6 @@ namespace MPX
 
         SignalVolume                    signal_volume_removed_;
         SignalVolume                    signal_volume_added_;
-        SignalDeviceRemoved             signal_device_removed_;
         SignalCDDAInserted              signal_cdda_inserted_;
         SignalEjected                   signal_ejected_;
 

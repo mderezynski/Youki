@@ -18,6 +18,7 @@ mpx_bin_CXXFLAGS = 									\
 		$(GLADEMM_CFLAGS)							\
 		$(GLIBMM_CFLAGS)							\
 		$(GST_CFLAGS)								\
+		$(GTKGLEXT_CFLAGS)							\
 		$(GTKMM_CFLAGS)								\
 		$(HAL_CFLAGS)								\
 		$(NM_CFLAGS)								\
@@ -55,6 +56,7 @@ mpx_bin_LDADD =										\
 		$(GLADEMM_LIBS)								\
 		$(GLIBMM_LIBS)								\
 		$(GST_LIBS)									\
+		$(GTKGLEXT_LIBS)							\
 		$(GTKMM_LIBS)								\
 		$(HAL_LIBS)									\
 		$(NM_LIBS)									\
@@ -109,6 +111,11 @@ mpx_bin_SOURCES =				\
 								\
 	exception.hh				\
 	exception-db.hh				\
+								\
+	flow_engine.hh				\
+	flow_engine.cc				\
+	flow_widget.hh				\
+	flow_widget.cc				\
 								\
 	glib-marshalers.c			\
 								\

@@ -36,6 +36,7 @@
 #include <glibmm/miscutils.h>
 #include <gst/gst.h>
 #include <gtkmm/main.h>
+#include <gtkglmm.h>
 #include <clutter/clutter.h>
 
 #include "mpx.hh"
@@ -46,8 +47,8 @@
 #endif // HAVE_HAL
 #include "mpx/library.hh"
 #include "mpx/main.hh"
+#include "mpx/metadatareader-taglib.hh"
 #include "mpx/network.hh"
-#include "mpx/tasks.hh"
 #include "mpx/types.hh"
 #include "mpx/util-file.hh"
 
@@ -333,24 +334,25 @@ main (int argc, char ** argv)
 
     gst_init(&argc, &argv);
 	clutter_init(&argc, &argv);
+    Gtk::GL::init(argc, argv);
 
 #ifdef HAVE_HAL
     try{
-        MPX::HAL        * obj_hal = new MPX::HAL;
+        MPX::HAL                    * obj_hal               = new MPX::HAL;
 #endif
-        MPX::TaskKernel * obj_task_kernel = new MPX::TaskKernel;
-        MPX::NM         * obj_netman = new MPX::NM;
-        MPX::Covers     * obj_amzn = new MPX::Covers(*obj_netman);
+        MPX::NM                     * obj_netman            = new MPX::NM;
+		MPX::MetadataReaderTagLib   * obj_reader            = new MPX::MetadataReaderTagLib;
+        MPX::Covers                 * obj_amzn              = new MPX::Covers(*obj_reader, *obj_netman);
 #ifdef HAVE_HAL
-        MPX::Library    * obj_library = new MPX::Library(*obj_amzn, *obj_hal, true);
+        MPX::Library                * obj_library           = new MPX::Library(*obj_reader, *obj_amzn, *obj_hal, true);
 #else
-        MPX::Library    * obj_library = new MPX::Library(*obj_amzn); 
+        MPX::Library                * obj_library           = new MPX::Library(*obj_reader, *obj_amzn); 
 #endif
 
 #ifdef HAVE_HAL
-        MPX::Player     * obj_mpx = MPX::Player::create(*obj_library, *obj_amzn, *obj_hal);
+        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *obj_amzn, *obj_hal);
 #else
-        MPX::Player     * obj_mpx = MPX::Player::create(*obj_library, *obj_amzn);
+        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *obj_amzn);
 #endif // HAVE_HAL
         
         Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
@@ -361,8 +363,8 @@ main (int argc, char ** argv)
         delete obj_mpx;
         delete obj_library;
         delete obj_amzn;
+        delete obj_reader;
         delete obj_netman;
-        delete obj_task_kernel;
 #ifdef HAVE_HAL
         delete obj_hal;
       }

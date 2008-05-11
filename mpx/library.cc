@@ -31,10 +31,10 @@
 #include "mpx/hal.hh"
 #endif // HAVE_HAL
 #include "mpx/library.hh"
+#include "mpx/metadatareader-taglib.hh"
 #include "mpx/sql.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-string.hh"
-#include "metadatareader-taglib.hh"
 
 using namespace Glib;
 using boost::get;
@@ -163,23 +163,29 @@ namespace MPX
 
 #ifdef HAVE_HAL
 
-    Library::Library(Covers &covers, HAL &hal, bool use_hal)
+    Library::Library(
+        MetadataReaderTagLib    & obj_reader,
+        Covers                  & obj_covers,
+        HAL                     & obj_hal,
+        bool use_hal
+    )
     : sigx::glib_auto_dispatchable()
-    , m_HAL(&hal)
+    , m_HAL(obj_hal)
 
 #else
 
-    Library::Library(Covers &covers)
+    Library::Library(
+        Covers                  & covers
+    )
     : sigx::glib_auto_dispatchable()
 
 #endif
 
-    , m_Covers(&covers)
+    , m_Covers(obj_covers)
+    , m_MetadataReaderTagLib(obj_reader)
     , m_Flags (0)
 
     {
-		m_MetadataReaderTagLib = new MetadataReaderTagLib();
-
         const int MLIB_VERSION_CUR = 1;
         const int MLIB_VERSION_REV = 0;
         const int MLIB_VERSION_AGE = 0;
@@ -343,7 +349,6 @@ namespace MPX
 
     Library::~Library ()
     {
-		delete m_MetadataReaderTagLib;
     }
 
     void
@@ -399,7 +404,7 @@ namespace MPX
 		  if(i == m.end())
 		  {
 			  try{		
-				  std::string mount_point = m_HAL->get_mount_point_for_volume (volume_udi, device_udi);
+				  std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
 				  m[key] = mount_point;
 				  uri = filename_to_uri(build_filename(mount_point, hal_vrp));
 			  } catch (...) {
@@ -500,7 +505,7 @@ namespace MPX
     void
     Library::getMetadata (const std::string& uri, Track & track)
     {
-        m_MetadataReaderTagLib->get(uri, track);
+        m_MetadataReaderTagLib.get(uri, track);
 
         std::string type;
         if(Audio::typefind(uri, type))
@@ -516,7 +521,7 @@ namespace MPX
               try{
                   if (m_Flags & F_USING_HAL)
                   {
-                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (uri));
+                    HAL::Volume const& volume (m_HAL.get_volume_for_uri (uri));
 
                     track[ATTRIBUTE_HAL_VOLUME_UDI] =
                                   volume.volume_udi ;
@@ -527,7 +532,7 @@ namespace MPX
                     track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
                                   filename_from_uri (uri).substr (volume.mount_point.length()) ;
 
-                    std::string mount_point = m_HAL->get_mount_point_for_volume(volume.volume_udi, volume.device_udi);
+                    std::string mount_point = m_HAL.get_mount_point_for_volume(volume.volume_udi, volume.device_udi);
                     std::string path = build_filename(mount_point, get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()));
 
                     track[ATTRIBUTE_LOCATION] = std::string(filename_to_uri(path));
@@ -661,7 +666,7 @@ namespace MPX
             std::string volume_udi = get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get());
             std::string device_udi = get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get());
             std::string vrp = get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get());
-            std::string mount_point = m_HAL->get_mount_point_for_volume(volume_udi, device_udi);
+            std::string mount_point = m_HAL.get_mount_point_for_volume(volume_udi, device_udi);
             std::string path = build_filename(mount_point, vrp);
             track[ATTRIBUTE_LOCATION] = std::string(filename_to_uri(path));
         } catch( boost::bad_get )
@@ -982,7 +987,7 @@ namespace MPX
           if(!custom_id)
           {
               g_message("Fetching normal");
-              m_Covers->cache( get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get())
+              m_Covers.cache( get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get())
                              , (track[ATTRIBUTE_ASIN]
                                ? get<std::string>(track[ATTRIBUTE_ASIN].get())
                                : std::string())
@@ -992,7 +997,7 @@ namespace MPX
           else
           {
               g_message("Fetching custom");
-              m_Covers->cache_inline( get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()),
+              m_Covers.cache_inline( get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()),
                                      get<std::string>(track[ATTRIBUTE_LOCATION].get()) );
           }
         }

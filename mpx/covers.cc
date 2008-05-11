@@ -93,9 +93,10 @@ namespace
 
 namespace MPX
 {
-    Covers::Covers (NM & nm)
+    Covers::Covers (MetadataReaderTagLib & obj_reader, NM & obj_nm)
     : sigx::glib_auto_dispatchable()
-    , m_NM (nm)
+    , m_NM(obj_nm)
+    , m_Reader(obj_reader)
     {
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", NULL));
         g_mkdir(path.get(), 0700);

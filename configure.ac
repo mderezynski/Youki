@@ -496,6 +496,9 @@ PKG_CHECK_MODULES([GDL], [gdl-1.0])
 # SIGX
 PKG_CHECK_MODULES([SIGX], [sigx-2.0])
 
+# GTKGLEXT
+PKG_CHECK_MODULES([GTKGLEXT], [gtkglextmm-1.2])
+
 #########################################
 ######### PLATFORM SPECIFITIES ##########
 #########################################

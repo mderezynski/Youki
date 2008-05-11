@@ -55,6 +55,7 @@ namespace Gtk
     class Statusbar;
 }
 
+class CoverFlowWidget;
 namespace MPX
 {
     class ActionState
@@ -106,7 +107,6 @@ namespace MPX
             std::vector<std::string> m_ActionNames;
             Glib::RefPtr<Gtk::UIManager> & m_Manager;
     };
-
 
     class InfoArea;
     class MLibManager;
@@ -266,11 +266,11 @@ namespace MPX
 		UriSchemeMap                m_UriMap;
         SourcePluginsKeeper         m_SourcePlugins;
 
-        Covers        & m_Covers;
-        HAL           & m_HAL;
-        Library       & m_Library;
-		PluginManager * m_PluginManager;
-		Play          * m_Play;
+        Covers              & m_Covers;
+        HAL                 & m_HAL;
+        Library             & m_Library;
+		PluginManager       * m_PluginManager;
+		Play                * m_Play;
 
         Preferences         * m_Preferences;
         MLibManager         * m_MLibManager;
@@ -278,6 +278,7 @@ namespace MPX
         Sidebar             * m_Sidebar;
         InfoArea            * m_InfoArea;
         VideoWidget         * m_VideoWidget; 
+        CoverFlowWidget     * m_CoverFlow;
 
         Gtk::Statusbar      * m_Statusbar;
 		Gtk::Notebook       * m_MainNotebook;

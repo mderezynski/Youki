@@ -52,7 +52,9 @@
 #include <gdl/gdl.h>
 
 #include "mpx.hh"
+#include "mpx/library.hh"
 #include "mpx/stock.hh"
+#include "mpx/sql.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-graphics.hh"
@@ -72,6 +74,9 @@
 #include "request-value.hh"
 #include "sidebar.hh"
 #include "splash-screen.hh"
+
+#include "flow_widget.hh"
+#include "flow_engine.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -358,8 +363,13 @@ namespace MPX
           {
             add_events (Gdk::BUTTON_PRESS_MASK);
 
-            m_Play.signal_spectrum().connect( sigc::mem_fun( *this, &InfoArea::play_update_spectrum ));
-            m_Play.property_status().signal_changed().connect( sigc::mem_fun( *this, &InfoArea::play_status_changed));
+            m_Play.signal_spectrum().connect(
+                sigc::mem_fun( *this, &InfoArea::play_update_spectrum )
+            );
+
+            m_Play.property_status().signal_changed().connect(
+                sigc::mem_fun( *this, &InfoArea::play_status_changed)
+            );
 
             enable_drag_dest ();
 
@@ -517,7 +527,9 @@ namespace MPX
           {
               if( m_Play.property_status ().get_value() == PLAYSTATUS_PAUSED )
               {
-                m_decay_conn = Glib::signal_timeout ().connect (sigc::mem_fun(*this, &InfoArea::decay_spectrum), 50);
+                m_decay_conn = Glib::signal_timeout ().connect(
+                    sigc::mem_fun(*this, &InfoArea::decay_spectrum), 50
+                );
               }
               else
               {
@@ -536,9 +548,14 @@ namespace MPX
             m_text_new.reset();
 
             m_fade_conn.disconnect();
-            m_fade_conn = signal_timeout().connect( sigc::mem_fun( *this, &InfoArea::fade_out_layout ), 15 );
+            m_fade_conn = signal_timeout().connect(
+                sigc::mem_fun( *this, &InfoArea::fade_out_layout ), 15
+            );
+
             m_cover_anim_conn_fade.disconnect ();
-            m_cover_anim_conn_fade = signal_timeout ().connect( sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 10 );
+            m_cover_anim_conn_fade = signal_timeout ().connect(
+                sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 10
+            );
           }
 
           void
@@ -550,7 +567,9 @@ namespace MPX
             if(m_text_cur)
             {
                 m_text_new = set;
-                m_fade_conn = signal_timeout().connect( sigc::mem_fun( *this, &InfoArea::fade_out_layout ), 15 );
+                m_fade_conn = signal_timeout().connect(
+                    sigc::mem_fun( *this, &InfoArea::fade_out_layout ), 15
+                );
             }
             else
             {
@@ -578,17 +597,26 @@ namespace MPX
 
             if(!m_cover_surface_cur)
             {
-                m_cover_surface_cur   = surface; 
+                m_cover_surface_cur = surface; 
+
                 m_cover_anim_conn_slide.disconnect ();
-                m_cover_anim_conn_slide = signal_timeout ().connect( sigc::mem_fun( *this, &InfoArea::slide_in_cover ), cover_anim_interval );
+                m_cover_anim_conn_slide = signal_timeout ().connect(
+                    sigc::mem_fun( *this, &InfoArea::slide_in_cover ), cover_anim_interval
+                );
             }
             else
             {
-                m_cover_surface_new   = surface;
+                m_cover_surface_new = surface;
+
                 m_cover_anim_conn_slide.disconnect ();
-                m_cover_anim_conn_slide = signal_timeout ().connect( sigc::mem_fun( *this, &InfoArea::slide_in_cover ), cover_anim_interval );
+                m_cover_anim_conn_slide = signal_timeout ().connect(
+                    sigc::mem_fun( *this, &InfoArea::slide_in_cover ), cover_anim_interval
+                );
+
                 m_cover_anim_conn_fade.disconnect ();
-                m_cover_anim_conn_fade = signal_timeout ().connect( sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 10 );
+                m_cover_anim_conn_fade = signal_timeout ().connect(
+                    sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 10
+                );
             }
           }
 
@@ -631,7 +659,9 @@ namespace MPX
                     m_cover_velocity = cover_anim_initial_velocity;
                     m_cover_accel = cover_anim_gravity;
                     m_cover_anim_conn_slide.disconnect ();
-                    m_cover_anim_conn_slide = signal_timeout ().connect( sigc::mem_fun( *this, &InfoArea::slide_in_cover ), cover_anim_interval );
+                    m_cover_anim_conn_slide = signal_timeout ().connect(
+                        sigc::mem_fun( *this, &InfoArea::slide_in_cover ), cover_anim_interval
+                    );
                 }
             }
             if(!cond && m_cover_surface_new)
@@ -1440,15 +1470,6 @@ namespace MPX
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT); 
 
-		signals[PSIGNAL_STATUS_CHANGED] =
-			g_signal_new ("play-status-changed",
-					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-					  GSignalFlags (G_SIGNAL_RUN_FIRST),
-					  0,
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT); 
-
-
 		signals[PSIGNAL_METADATA_UPDATED] =
 			g_signal_new ("metadata-updated",
 					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
@@ -1737,6 +1758,21 @@ namespace MPX
             mcs->key_get<int>("mpx","window-x"),
             mcs->key_get<int>("mpx","window-y")
         );
+
+
+        m_CoverFlow = new CoverFlowWidget;
+        CoverFlowEngine::SongList songs;
+
+        SQL::RowV v;
+        obj_library.getSQL(v, "SELECT DISTINCT amazon_asin FROM album WHERE amazon_asin IS NOT NULL;");
+        for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+        {
+            std::string asin = boost::get<std::string>((*i)["amazon_asin"]);
+            songs.push_back(std::make_pair(asin, asin));
+        }
+        m_CoverFlow->load_covers(songs);
+        m_CoverFlow->show ();
+        add_widget(m_CoverFlow);
 
 		show ();
 
@@ -2087,32 +2123,12 @@ namespace MPX
 	void
 	Player::add_widget (Gtk::Widget *widget)
 	{
-		Gtk::VBox * box;
-		m_ref_xml->get_widget("vbox3", box);
-		box->pack_start(*widget);
+		dynamic_cast<Gtk::Box*>(m_ref_xml->get_widget("vbox3"))->pack_start(*widget);
 	}
 
 	void
 	Player::add_info_widget (Gtk::Widget *widget, std::string const& name)
 	{
-#if 0
-        GtkWidget * dock = gdl_dock_new ();
-
-        GtkWidget * item = gdl_dock_item_new_with_stock( name.c_str(), name.c_str(), NULL,
-                            GdlDockItemBehavior(GDL_DOCK_ITEM_BEH_CANT_CLOSE | GDL_DOCK_ITEM_BEH_CANT_ICONIFY) );
-
-        gtk_container_add( GTK_CONTAINER( item ), GTK_WIDGET(widget->gobj()) );
-
-        gdl_dock_add_item( GDL_DOCK( dock ), GDL_DOCK_ITEM( item ), GDL_DOCK_CENTER );
-
-        Gtk::Widget * wrapped = Glib::wrap(dock, false);
-        m_InfoNotebook->append_page(*wrapped, name);
-        m_InfoWidgetMap.insert(std::make_pair(widget, wrapped));
-
-        gtk_widget_show (dock);
-        gtk_widget_show (item);
-        widget->show();
-#endif
         widget->show();
         m_InfoNotebook->append_page(*widget, name);
         m_InfoWidgetMap.insert(std::make_pair(widget, widget));
@@ -2397,6 +2413,12 @@ namespace MPX
             }
         }
 
+        if(m_Metadata.get()[ATTRIBUTE_ASIN]) 
+        {
+            std::string const& asin = get<std::string>(m_Metadata.get()[ATTRIBUTE_ASIN].get());
+            m_CoverFlow->go_to(asin);
+        }
+
         if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
         {
             m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
@@ -2574,8 +2596,8 @@ namespace MPX
 	{
         g_return_if_fail(m_ActiveSource);
 
-        bool paused = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->get_active();
         PlaybackSource::Caps c = m_source_c[m_ActiveSource.get()];
+
         if(c & PlaybackSource::C_CAN_PAUSE )
         {
           if( m_Play->property_status() == PLAYSTATUS_PAUSED)

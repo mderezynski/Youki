@@ -124,7 +124,7 @@ namespace MPX
 
         public:	
 
-            LibraryScannerThread (MPX::SQL::SQLDB*,MPX::MetadataReaderTagLib*,MPX::HAL*,gint64) ;
+            LibraryScannerThread (MPX::SQL::SQLDB*,MPX::MetadataReaderTagLib&,MPX::HAL&,gint64) ;
             ~LibraryScannerThread () ;
 
             ScannerConnectable&
@@ -161,8 +161,8 @@ namespace MPX
             struct ThreadData;
 
             MPX::SQL::SQLDB             * m_SQL ;
-            MetadataReaderTagLib        * m_MetadataReaderTagLib;
-            MPX::HAL                    * m_HAL ;
+            MetadataReaderTagLib        & m_MetadataReaderTagLib;
+            MPX::HAL                    & m_HAL ;
             ScannerConnectable          * m_Connectable ; 
             Glib::Private<ThreadData>     m_ThreadData ;
             gint64                        m_Flags;

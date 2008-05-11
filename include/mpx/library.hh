@@ -41,19 +41,11 @@ namespace MPX
   {
         friend class LibraryScannerThread;
 
-        private:
-
-#ifdef HAVE_HAL
-            HAL                     * m_HAL;
-#endif //HAVE_HAL 
-            Covers                  * m_Covers;
-            LibraryScannerThread    * m_ScannerThread;
-
         public:
 #ifdef HAVE_HAL
-            Library (Covers&, HAL&, bool use_hal) ;
+            Library (MetadataReaderTagLib&, Covers&, HAL&, bool use_hal) ;
 #else //!HAVE_HAL
-            Library (Covers&) ;
+            Library (MetadataReaderTagLib&, Covers&) ;
 #endif //HAVE_HAL
             Library (const Library& other);
             ~Library () ;
@@ -173,11 +165,18 @@ namespace MPX
 
             enum Flags
             {
-                F_USING_HAL = (1<<0),
+                F_NONE      =       0,
+                F_USING_HAL =       1 << 0,
             };
 
+#ifdef HAVE_HAL
+            HAL                     & m_HAL;
+#endif //HAVE_HAL 
+
+            Covers                  & m_Covers;
+            LibraryScannerThread    * m_ScannerThread;
             SQL::SQLDB              * m_SQL;
-            MetadataReaderTagLib    * m_MetadataReaderTagLib ;
+            MetadataReaderTagLib    & m_MetadataReaderTagLib ;
             gint64                    m_Flags;
 
         protected:

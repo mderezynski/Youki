@@ -34,6 +34,7 @@
 #include <sigx/sigx.h>
 
 #include "mpx/network.hh"
+#include "mpx/metadatareader-taglib.hh"
 #include "mpx/minisoup.hh"
 
 namespace MPX
@@ -52,13 +53,19 @@ namespace MPX
 	public:
 
 	  typedef sigc::signal<void, const std::string&> SignalGotCover;
+
 	  struct SignalsT
 	  {
 		  SignalGotCover GotCover;
 	  };
+
 	  SignalsT Signals;
+
 	  SignalGotCover&
-	  signal_got_cover(){ return Signals.GotCover ; }
+	  signal_got_cover()
+      {
+        return Signals.GotCover ;
+      }
 
       typedef bool (Covers::*FetchFunc) (std::string const&, Glib::RefPtr<Gdk::Pixbuf>&);
 
@@ -74,7 +81,7 @@ namespace MPX
       void
       cache_inline (std::string const& mbid, std::string const& uri);
 
-	  Covers (NM&);
+	  Covers (MetadataReaderTagLib&, NM&);
 
 	private:
 
@@ -113,11 +120,14 @@ namespace MPX
 	  reply_cb_mbxml (char const*, guint, guint, CoverFetchData*);
 
 
-	  NM &m_NM;
-	  RequestKeeperT RequestKeeper;
-	  Glib::Mutex RequestKeeperLock;
-	  MPixbufCache m_pixbuf_cache;
-	  MSurfaceCache m_surface_cache[N_COVER_SIZES];
+	  NM                        & m_NM;
+      MetadataReaderTagLib      & m_Reader;
+
+	  RequestKeeperT              RequestKeeper;
+	  Glib::Mutex                 RequestKeeperLock;
+
+	  MPixbufCache                m_pixbuf_cache;
+	  MSurfaceCache               m_surface_cache[N_COVER_SIZES];
   };
 }
 

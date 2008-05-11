@@ -227,7 +227,7 @@ namespace MPX
       ///////////////////////////////////////////////////////
 
       void
-      HAL::register_update_volume (Volume const& volume)
+      HAL::volume_register (Volume const& volume)
       {
         static boost::format insert_volume_f
         ("INSERT INTO hal_volumes (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%lld', '%lld', '%lld', '%lld', '%lld');");
@@ -263,29 +263,104 @@ namespace MPX
         return m_context;
       }
 
+      HAL::HAL ()
+      {
+        if (!hal_init())
+        {
+          throw NotInitializedError();
+        }
+      }
+
+      bool
+      HAL::hal_init ()
+      {
+        DBusError error;
+        dbus_error_init (&error);
+
+        DBusConnection * c = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
+
+        if (dbus_error_is_set (&error))
+        {
+          dbus_error_free (&error);
+          return false;
+        }
+
+        dbus_connection_setup_with_g_main (c, NULL);
+        dbus_connection_set_exit_on_disconnect (c, FALSE);
+
+        try{
+          m_context = Hal::Context::create (c);
+          m_context->signal_device_added().connect
+            (sigc::mem_fun (this, &MPX::HAL::device_added));
+          m_context->signal_device_removed().connect
+            (sigc::mem_fun (this, &MPX::HAL::device_removed));
+          m_SQL = new SQL::SQLDB ("hal", build_filename(g_get_user_data_dir(), "mpx"), SQL::SQLDB_OPEN);
+
+          try{
+              static boost::format sql_create_table_f("CREATE TABLE IF NOT EXISTS %s (%s, PRIMARY KEY ('%s','%s') ON CONFLICT REPLACE);");
+              static boost::format sql_attr_f ("'%s'");
+    
+              std::string attrs;
+              for (unsigned int n = 0; n < G_N_ELEMENTS(volume_attributes); ++n)
+              {
+                  attrs.append((sql_attr_f % volume_attributes[n].id).str());
+
+                  switch (volume_attributes[n].type)
+                  {
+                      case VALUE_TYPE_STRING:
+                          attrs.append (" TEXT ");
+                          break;
+
+                      case VALUE_TYPE_INT:
+                          attrs.append (" INTEGER DEFAULT 0 ");
+                          break;
+
+                      default: break;
+                  }
+
+                  if (n < (G_N_ELEMENTS(volume_attributes)-1)) attrs.append (", ");
+              }
+
+              m_SQL->exec_sql ((sql_create_table_f
+                                            % "hal_volumes"
+                                            % attrs
+                                            % volume_attributes[VATTR_DEVICE_UDI].id
+                                            % volume_attributes[VATTR_VOLUME_UDI].id).str());
+          }
+          catch (MPX::SQL::SqlExceptionC & cxe)
+          {
+              return false;
+          }
+
+          Hal::StrV list = m_context->find_device_by_capability ("volume");
+          for (Hal::StrV::const_iterator n = list.begin(); n != list.end(); ++n) 
+          {
+            volume_insert (*n);
+          }
+        }
+        catch (...)
+        {
+            return false;
+        }
+
+        return true;
+      }
+
+      HAL::~HAL ()
+      {
+        delete m_SQL;
+      }
+
       void
       HAL::volumes (VolumesV & volumes) const
       {
         for(Volumes::const_iterator i = m_volumes.begin(); i != m_volumes.end(); ++i)
         {
             VolumeKey const& key = i->first;
-            if(m_volumes_mounted.find(key)->second)
+            if(m_volumes_mounted.count(key) && m_volumes_mounted.find(key)->second)
             {
                 volumes.push_back(i->second.second);
             }
-        }
-      }
-
-      HAL::HAL ()
-      {
-        m_initialized = hal_init ();
-        if (!m_initialized)
-        {
-          MessageDialog dialog (_("HAL could not be accessed from MPX. This is a fatal error: MPX can not run "
-                                  "without HAL accessible; exiting now."), false, MESSAGE_ERROR, BUTTONS_OK, true);
-          dialog.run();
-          dialog.hide();
-          throw NotInitializedError();
         }
       }
 
@@ -315,28 +390,6 @@ namespace MPX
         catch (Hal::UnableToProbeDeviceError)
           {
           }
-      }
-
-      void
-      HAL::process_volume (std::string const &udi)
-      {
-        try{
-          Hal::RefPtr<Hal::Volume> volume = Hal::Volume::create_from_udi (m_context, udi);
-          if (volume->is_disc())
-          {
-            cdrom_policy (volume);
-          }
-          else
-          if (volume->is_pmp())
-          {
-            /* pmp_policy (volume); */
-            g_message("%s: Got a media player: %s", G_STRLOC, udi.c_str());
-          }
-        }
-        catch (DeviceDoesNotExistError)
-        {}
-        catch (UnableToProbeDeviceError)
-        {}
       }
 
       Glib::ustring
@@ -412,7 +465,7 @@ namespace MPX
 
         if (v_iter == m_volumes.end())
         {
-            g_message("%s: Got no volume for %s, %s", G_STRLOC, volume_udi.c_str(), device_udi.c_str());
+            g_message("%s: Got no volume for %s, %s", G_STRFUNC, volume_udi.c_str(), device_udi.c_str());
             throw NoMountPathForVolumeError ((boost::format ("No mount path for given volume: device: %s, volume: %s") % device_udi % volume_udi).str());
         }
         else
@@ -422,7 +475,29 @@ namespace MPX
       }
 
       void
-      HAL::process_udi (std::string const& udi)
+      HAL::volume_process (std::string const &udi)
+      {
+        try{
+          Hal::RefPtr<Hal::Volume> volume = Hal::Volume::create_from_udi (m_context, udi);
+          if (volume->is_disc())
+          {
+            cdrom_policy (volume);
+          }
+          else
+          if (volume->is_pmp())
+          {
+            /* pmp_policy (volume); */
+            g_message("%s: Got a media player: %s", G_STRFUNC, udi.c_str());
+          }
+        }
+        catch (DeviceDoesNotExistError)
+        {}
+        catch (UnableToProbeDeviceError)
+        {}
+      }
+
+      void
+      HAL::volume_remove (std::string const& udi)
       {
         Hal::RefPtr <Hal::Volume> volume_hal_instance;
 
@@ -431,150 +506,97 @@ namespace MPX
         }
         catch (...)
         {
+          g_message("%s: Couldn't create HAL Volume from UDI", G_STRFUNC);
           return;
         }
 
+        // Now we know it's a volume
+
         if (!(volume_hal_instance->get_fsusage() == Hal::VOLUME_USAGE_MOUNTABLE_FILESYSTEM))
+        {
+            g_message("%s: Got volume UDI, but is not mountable", G_STRFUNC);
             return;
+        }
 
         Volume volume (m_context, volume_hal_instance);
         VolumeKey volume_key (volume.volume_udi, volume.device_udi);
 
         try{
+            m_mounted_paths.erase( volume_hal_instance->get_mount_point() );
+
+            Volumes::iterator i1 = m_volumes.find(volume_key);
+            if(i1 != m_volumes.end())
+                m_volumes.erase(i1);
+
+            VolumesMounted::iterator i2 = m_volumes_mounted.find(volume_key);
+            if(i2 != m_volumes_mounted.end())
+                m_volumes_mounted.erase(i2);
+
+            g_message("%s: Volume removed: %s", G_STRFUNC,udi.c_str());
+
+            signal_volume_removed_.emit (volume); 
+          }
+        catch (...) 
+          {
+            g_message("%s: Unknown error", G_STRFUNC);
+          }
+      }
+
+
+      void
+      HAL::volume_insert (std::string const& udi)
+      {
+        Hal::RefPtr <Hal::Volume> volume_hal_instance;
+
+        try{
+          volume_hal_instance = Hal::Volume::create_from_udi (m_context, udi);
+        }
+        catch (...)
+        {
+          g_message("%s: Couldn't create HAL Volume from UDI", G_STRFUNC);
+          return;
+        }
+
+        // Now we know it's a volume
+
+        if (!(volume_hal_instance->get_fsusage() == Hal::VOLUME_USAGE_MOUNTABLE_FILESYSTEM))
+        {
+            g_message("%s: Got volume UDI, but is not mountable", G_STRFUNC);
+            return;
+        }
+
+        Volume volume (m_context, volume_hal_instance);
+        VolumeKey volume_key (volume.volume_udi, volume.device_udi);
+
+        try{
+
             m_volumes.insert (make_pair (volume_key, StoredVolume (volume, volume_hal_instance)));
-            m_volumes_mounted.insert (make_pair (volume_key, volume_hal_instance->is_mounted()));
-
-            if(volume_hal_instance->is_mounted())
-            {
-                m_mounted_paths.insert(volume_hal_instance->get_mount_point());
-            }
-
-            if (!volume_hal_instance->is_disc())
-            {
-              register_update_volume (volume);  // we don't store information for discs permanently
-            }
-
             Hal::RefPtr<Hal::Volume> const& vol (m_volumes.find (volume_key)->second.second);
-
             vol->signal_condition().connect
               (sigc::mem_fun (this, &MPX::HAL::device_condition));
             vol->signal_property_modified().connect
               (sigc::mem_fun (this, &MPX::HAL::device_property));
 
+            g_message("%s: Volume added: %s", G_STRFUNC,udi.c_str());
+ 
+            if(volume_hal_instance->is_mounted())
+            {
+                m_mounted_paths.insert(volume_hal_instance->get_mount_point());
+                m_volumes_mounted.insert (make_pair (volume_key, volume_hal_instance->is_mounted()));
+            }
+
+            if (!volume_hal_instance->is_disc())
+            {
+                volume_register( volume );  // we don't store information for discs permanently
+                volume_process( udi );
+            }
+
             signal_volume_added_.emit (volume); 
-
-            if (volume_hal_instance->is_mounted())
-                signal_volume_added_.emit (volume);
-            else
-                signal_volume_removed_.emit (volume);
-          }
-        catch (...) {}
-      }
-
-      bool
-      HAL::hal_init ()
-      {
-        DBusError error;
-        dbus_error_init (&error);
-
-        DBusConnection * c = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
-
-        if (dbus_error_is_set (&error))
-        {
-          dbus_error_free (&error);
-          return false;
-        }
-
-        dbus_connection_setup_with_g_main (c, NULL);
-        dbus_connection_set_exit_on_disconnect (c, FALSE);
-
-        try{
-          m_context = Hal::Context::create (c);
           }
         catch (...) 
           {
-            return false;
+            g_message("%s: Unknown error", G_STRFUNC);
           }
-
-        try{
-          m_context->signal_device_added().connect
-            (sigc::mem_fun (this, &MPX::HAL::device_added));
-          m_context->signal_device_removed().connect
-            (sigc::mem_fun (this, &MPX::HAL::device_removed));
-          }
-        catch (...)
-          {
-            m_context.clear();
-            return false;
-          }
-
-        Hal::StrV list;
-        try{
-            list = m_context->find_device_by_capability ("volume");
-          }
-        catch (...)
-          {
-            return false;
-          }
-
-        m_SQL = new SQL::SQLDB ("hal", build_filename(g_get_user_data_dir(), "mpx"), SQL::SQLDB_OPEN);
-
-        try{
-            static boost::format sql_create_table_f("CREATE TABLE IF NOT EXISTS %s (%s, PRIMARY KEY ('%s','%s') ON CONFLICT REPLACE);");
-            static boost::format sql_attr_f ("'%s'");
-  
-            std::string attrs;
-            for (unsigned int n = 0; n < G_N_ELEMENTS(volume_attributes); ++n)
-            {
-                attrs.append((sql_attr_f % volume_attributes[n].id).str());
-
-                switch (volume_attributes[n].type)
-                {
-                    case VALUE_TYPE_STRING:
-                        attrs.append (" TEXT ");
-                        break;
-
-                    case VALUE_TYPE_INT:
-                        attrs.append (" INTEGER DEFAULT 0 ");
-                        break;
-
-                    default: break;
-                }
-
-                if (n < (G_N_ELEMENTS(volume_attributes)-1)) attrs.append (", ");
-            }
-
-            m_SQL->exec_sql ((sql_create_table_f
-                                          % "hal_volumes"
-                                          % attrs
-                                          % volume_attributes[VATTR_DEVICE_UDI].id
-                                          % volume_attributes[VATTR_VOLUME_UDI].id).str());
-        }
-        catch (MPX::SQL::SqlExceptionC & cxe)
-        {
-            m_initialized = false;
-            return false;
-        }
-
-        RowV rows;
-        m_SQL->get ("hal_volumes", rows);
-        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-        {
-          Volume const& volume = *i;
-          process_udi (volume.volume_udi);
-        }
-
-        for (Hal::StrV::const_iterator n = list.begin(); n != list.end(); ++n) 
-        {
-          process_udi (*n);
-        }
-
-        return true;
-      }
-
-      HAL::~HAL ()
-      {
-        delete m_SQL;
       }
 
       void
@@ -594,19 +616,28 @@ namespace MPX
         try{
             if (m_context->device_query_capability (udi, "volume"))
             {
-              g_message("%s: Got new Volume: '%s'", G_STRLOC, udi.c_str());
-              process_volume (udi);       
+              g_message("%s: Got new Volume: '%s'", G_STRFUNC, udi.c_str());
+              volume_insert (udi);       
             }
         } catch (UnableToProbeDeviceError & cxe)
         {
-            g_message("%s: Device with udi '%s' doesn't exist", G_STRLOC, udi.c_str());
+            g_message("%s: Device with udi '%s' doesn't exist", G_STRFUNC, udi.c_str());
         }
       }
 
       void
       HAL::device_removed (std::string const& udi) 
       {
-        signal_device_removed_.emit (udi);
+        try{
+            if (m_context->device_query_capability (udi, "volume"))
+            {
+              g_message("%s: Got Volume removed: %s", G_STRFUNC, udi.c_str());
+              volume_remove (udi);       
+            }
+        } catch (UnableToProbeDeviceError & cxe)
+        {
+            g_message("%s: Device with udi '%s' doesn't exist", G_STRFUNC, udi.c_str());
+        }
       }
 
       void
@@ -616,15 +647,6 @@ namespace MPX
            bool               is_removed,
            bool               is_added)
       {
-        if (!m_context->device_query_capability (udi, "volume"))
-        {
-          return;
-        }
-
-        try{
-          Hal::RefPtr<Hal::Volume> volume = Hal::Volume::create_from_udi (m_context, udi);
-          process_udi (udi);
-        } catch (...) {}
       }
 
       HAL::SignalVolume&
@@ -637,12 +659,6 @@ namespace MPX
       HAL::signal_volume_added ()
       {
         return signal_volume_added_;
-      }
-
-      HAL::SignalDeviceRemoved&
-      HAL::signal_device_removed ()
-      {
-        return signal_device_removed_;
       }
 
       HAL::SignalCDDAInserted&
