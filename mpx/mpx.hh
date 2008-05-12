@@ -153,6 +153,9 @@ namespace MPX
         PyObject* 
         get_source(std::string const& uuid);
 
+        PyObject*
+        get_sources_by_class(std::string const& uuid);
+
 		Metadata const& 
 		get_metadata ();
 

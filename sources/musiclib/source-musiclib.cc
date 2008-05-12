@@ -90,6 +90,7 @@ namespace
     "         <menuitem action='musiclib-sort-by-date'/>"
     "         <menuitem action='musiclib-sort-by-rating'/>"
     "         <separator/>"
+    "         <menuitem action='musiclib-new-playlist'/>"
     "     </menu>"
     "   </placeholder>"
     "</menubar>"
@@ -915,29 +916,50 @@ namespace MPX
 {
 namespace Source
 {
-    PlaybackSourceMusicLib::PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
+    PlaybackSourceMusicLib::PlaybackSourceMusicLib (
+            Glib::RefPtr<Gtk::UIManager>  const& ui_manager,
+            MPX::Player                        & obj_player
+    )
     : PlaybackSource(ui_manager, _("Music"), C_CAN_SEEK)
     , m_MainUIManager(ui_manager)
-    , m_Player(player)
+    , m_Player(obj_player)
+    , m_PlaylistID(0)
     {
-        player.get_object(m_Lib);
-        player.get_object(m_HAL);
-        player.get_object(m_Covers);
+        m_Player.get_object(m_Lib);
+        m_Player.get_object(m_HAL);
+        m_Player.get_object(m_Covers);
 
-        m_Private = new MusicLibPrivate(player,*this);
+        m_Private = new MusicLibPrivate(m_Player,*this);
 
         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
 
         Gtk::RadioButtonGroup gr1;
-        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-name", "Sort Albums By Artist/Album"),
-                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
+        m_MainActionGroup->add(RadioAction::create(
+                gr1,
+                "musiclib-sort-by-name",
+                "Sort Albums By Artist/Album"
+            ),
+            sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change
+        ));
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-name"))->property_value() = 0;
-        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-date", "Sort Albums By Date"),
-                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
+
+        m_MainActionGroup->add(RadioAction::create(
+                gr1,
+                "musiclib-sort-by-date",
+                "Sort Albums By Date"
+            ),
+            sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change
+        ));
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-date"))->property_value() = 1;
-        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-rating", "Sort Albums By Rating"),
-                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
+
+        m_MainActionGroup->add(RadioAction::create(
+                gr1,
+                "musiclib-sort-by-rating",
+                "Sort Albums By Rating"
+            ),
+            sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change
+        ));
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-rating"))->property_value() = 2;
 
         m_MainUIManager->insert_action_group(m_MainActionGroup);
@@ -946,8 +968,10 @@ namespace Source
     void
     PlaybackSourceMusicLib::post_install ()
     {
+#if 0
         m_DefaultPlaylist = new PlaybackSourcePlaylist(m_MainUIManager, m_Player);
         m_Player.add_subsource(m_DefaultPlaylist, get_key(), 0);
+#endif
     }
 
     PlaybackSourceMusicLib::~PlaybackSourceMusicLib ()
@@ -968,6 +992,12 @@ namespace Source
     PlaybackSourceMusicLib::get_guid ()
     {
         return "8a98a167-3bf4-44af-859b-079efd6797b5";
+    }
+
+    std::string
+    PlaybackSourceMusicLib::get_class_guid ()
+    {
+        return "ecd01fd1-9b4d-4fef-8e85-6c4b16965ef8";
     }
 
     guint

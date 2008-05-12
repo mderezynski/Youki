@@ -103,7 +103,11 @@ namespace Source
         return "bb8b9a8e-e534-4192-bfce-5ff7f9262643";
     }
 
-
+    std::string
+    Podcasts::get_class_guid ()
+    {
+        return "c799bfdd-a92d-497f-8fe3-85b54fab22b2";
+    }
 
     std::string
     Podcasts::get_uri ()

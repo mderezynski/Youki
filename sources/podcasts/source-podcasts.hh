@@ -65,6 +65,9 @@ namespace Source
         virtual std::string
         get_guid ();
 
+        virtual std::string
+        get_class_guid ();
+
 	    virtual Glib::RefPtr<Gdk::Pixbuf>
 		get_icon ();
 

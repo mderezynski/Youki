@@ -59,11 +59,12 @@ namespace Source
                 PAccess<MPX::HAL>                   m_HAL;
                 PAccess<MPX::Covers>                m_Covers;
                 MPX::Player                       & m_Player;
-                PlaybackSourcePlaylist            * m_DefaultPlaylist;
-    
+   
+                typedef int PlaylistID; 
+                typedef std::map<PlaylistID, PlaybackSourcePlaylist*> PlaylistMap;
 
-                void
-                on_sort_column_change ();
+                PlaylistID                          m_PlaylistID;
+                PlaylistMap                         m_Playlists;
 
             public:
 
@@ -76,7 +77,6 @@ namespace Source
 
         
                 // i-playbacksource
-
                 virtual void
                 send_metadata ();
 
@@ -124,6 +124,9 @@ namespace Source
 
                 virtual std::string
                 get_guid ();
+    
+                virtual std::string
+                get_class_guid ();
 
                 // UriHandler
                 virtual UriSchemes 
@@ -135,6 +138,10 @@ namespace Source
                 virtual void
                 post_install (); 
 
+            private:
+
+                void
+                on_sort_column_change ();
         }; // end class PlaybackSourceMusicLib 
 } // end namespace Source
 } // end namespace MPX 

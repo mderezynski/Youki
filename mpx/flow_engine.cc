@@ -117,7 +117,7 @@ CoverFlowEngine::CoverFlowEngine ()
 
     //Python: self.font_renderer = glFreeType.font_data (os.path.join(os.path.dirname(__file__), 'monospace.ttf'), 20)
 
-    std::string path = Glib::build_filename (Glib::path_get_dirname (__FILE__), "gnome.png");
+    std::string path = Glib::build_filename (DATA_DIR, "images" G_DIR_SEPARATOR_S "disc-default.png");
 
     TextureId texture_id;
     glGenTextures (1, &texture_id);

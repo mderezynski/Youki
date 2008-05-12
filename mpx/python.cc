@@ -644,6 +644,7 @@ BOOST_PYTHON_MODULE(mpx)
 
 		.def("get_status",          &MPX::Player::get_status) 
         .def("get_source",          &MPX::Player::get_source)
+        .def("get_sources_by_class",&MPX::Player::get_sources_by_class)
 
 		.def("get_metadata",        &MPX::Player::get_metadata,
                                     return_internal_reference<>())

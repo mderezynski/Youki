@@ -2078,6 +2078,23 @@ namespace MPX
         return Py_None;
     }
 
+    PyObject*
+    Player::get_sources_by_class(std::string const& uuid)
+    {
+        using namespace boost::python;
+        boost::python::list l;
+        for(SourcesMap::iterator i = m_Sources.begin(); i != m_Sources.end(); ++i)
+        {
+            if((*i).second->get_class_guid() == uuid)
+            {
+                l.append(object(handle<>(borrowed((*i).second->get_py_obj()))));
+            }
+        }
+
+        Py_INCREF(l.ptr());
+        return l.ptr();
+    }
+
 	void
 	Player::get_object (PAccess<MPX::Library> & pa)
 	{

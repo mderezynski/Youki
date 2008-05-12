@@ -218,6 +218,9 @@ namespace MPX
             virtual std::string
             get_guid () = 0;
 
+            virtual std::string
+            get_class_guid () = 0;
+
             virtual Glib::RefPtr<Gdk::Pixbuf>
             get_icon () = 0;
 

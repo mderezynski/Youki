@@ -123,8 +123,8 @@ namespace Source
         m_LastFMRadio.handshake();
 
         m_LastFMRadio.signal_playlist().connect( sigc::mem_fun( *this, &LastFM::on_playlist ));
-        m_LastFMRadio.signal_no_playlist().connect( sigc::mem_fun( *this, &LastFM::on_no_playlist ));
-        m_LastFMRadio.signal_tuned().connect( sigc::mem_fun( *this, &LastFM::on_tuned ));
+        m_LastFMRadio.signal_no_playlist().connect( sigc::mem_fun( *this, &LastFM::on_playlist_cancel ));
+        m_LastFMRadio.signal_tuned().connect( sigc::mem_fun( *this, &LastFM::on_tune_ok ));
         m_LastFMRadio.signal_tune_error().connect( sigc::mem_fun( *this, &LastFM::on_tune_error ));
 
 		const std::string path (build_filename(DATA_DIR, build_filename("glade","source-lastfm.glade")));
@@ -189,10 +189,10 @@ namespace Source
         return "dafcb8ac-d9ff-4405-8a35-861ccdff66b5";
     }
 
-    void
-    LastFM::on_artist_activated (Glib::ustring const& artist_url)
+    std::string
+    LastFM::get_class_guid ()
     {
-        m_LastFMRadio.playurl(artist_url);
+        return "51be6e23-11e0-4fc7-ac7c-d9d13461a105";
     }
 
     void
@@ -239,13 +239,13 @@ namespace Source
     }
 
     void
-    LastFM::on_no_playlist ()
+    LastFM::on_playlist_cancel ()
     {
         Signals.StopRequest.emit();
     }
 
     void
-    LastFM::on_tuned ()
+    LastFM::on_tune_ok ()
     {
         m_LastFMRadio.get_xspf_playlist();
     }

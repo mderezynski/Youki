@@ -245,6 +245,12 @@ namespace Source
         return "724e3e0c-3ea9-43b5-a039-aaf8034f131f";
     }
 
+    std::string
+    Radio::get_class_guid ()
+    {
+        return "d0bc877c-376a-46d9-a196-3710147fc44a";
+    }
+
     void
     Radio::on_set_notebook_page ()
     {
