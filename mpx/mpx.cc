@@ -54,6 +54,7 @@
 #include "mpx.hh"
 #include "mpx/library.hh"
 #include "mpx/stock.hh"
+#include "mpx/python.hh"
 #include "mpx/sql.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-file.hh"
@@ -65,15 +66,17 @@
 #include "dialog-filebrowser.hh"
 #include "import-share.hh"
 #include "import-folder.hh"
+#include "request-value.hh"
+#include "sidebar.hh"
+#include "splash-screen.hh"
+
 #include "last-fm-xmlrpc.hh"
+
 #include "mlibmanager.hh"
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
 #include "play.hh"
 #include "preferences.hh"
-#include "request-value.hh"
-#include "sidebar.hh"
-#include "splash-screen.hh"
 
 #include "flow_widget.hh"
 #include "flow_engine.hh"
@@ -1335,6 +1338,8 @@ namespace MPX
         Splashscreen splash;
         splash.set_message(_("Startup..."), 0.);
 
+        mpx_py_init ();
+
         m_ref_xml->get_widget_derived("sidebar", m_Sidebar);
         m_ref_xml->get_widget("statusbar", m_Statusbar);
         m_ref_xml->get_widget("notebook-info", m_InfoNotebook);
@@ -1477,6 +1482,14 @@ namespace MPX
 					  0,
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
+		signals[PSIGNAL_NEW_SOURCE] =
+			g_signal_new ("new-source",
+					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+					  GSignalFlags (G_SIGNAL_RUN_FIRST),
+					  0,
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE, 1, g_type_from_name("PyObject")); 
 
 		m_DiscDefault = Gdk::Pixbuf::create_from_file(
             build_filename(
@@ -1764,10 +1777,10 @@ namespace MPX
         CoverFlowEngine::SongList songs;
 
         SQL::RowV v;
-        obj_library.getSQL(v, "SELECT DISTINCT amazon_asin FROM album WHERE amazon_asin IS NOT NULL;");
+        obj_library.getSQL(v, "SELECT DISTINCT mb_album_id FROM album WHERE mb_album_id IS NOT NULL;");
         for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
         {
-            std::string asin = boost::get<std::string>((*i)["amazon_asin"]);
+            std::string asin = boost::get<std::string>((*i)["mb_album_id"]);
             songs.push_back(std::make_pair(asin, asin));
         }
         m_CoverFlow->load_covers(songs);
@@ -1908,6 +1921,8 @@ namespace MPX
 	void
 	Player::install_source (ItemKey const& source_id)
 	{
+        g_message("%s: Installing Source '%s'", G_STRLOC, m_Sources[source_id]->get_name().c_str());
+
         m_Sources[source_id]->set_key(source_id);
 
 		m_Sources[source_id]->signal_caps().connect
@@ -1962,6 +1977,17 @@ namespace MPX
 		}
 
         m_Sources[source_id]->post_install();
+
+        PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+        try{
+            using namespace boost::python;
+            object obj(boost::ref(m_Sources[source_id]));
+    		g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_SOURCE], 0, obj.ptr());
+        } catch( boost::python::error_already_set )
+        {
+            PyErr_Print();
+        }
+        pyg_gil_state_release(state);
 	}
 
     void

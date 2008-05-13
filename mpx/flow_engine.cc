@@ -58,7 +58,7 @@ TextureId texture_from_path (std::string const& path, TextureId texture_id)
     glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
 
-    glTexImage2D (GL_TEXTURE_2D, 0, 3, pixbuf->get_width (), pixbuf->get_height (), 0, GL_RGBA, GL_UNSIGNED_BYTE, pixbuf->get_pixels ());
+    glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, pixbuf->get_width (), pixbuf->get_height (), 0, GL_RGBA, GL_UNSIGNED_BYTE, pixbuf->get_pixels ());
 
     return texture_id;
 }
@@ -78,13 +78,15 @@ TextureCache::~TextureCache ()
 
 int TextureCache::get (std::string const& asin) const
 {
-    std::string path = Glib::build_filename (m_cover_dir, asin);
+    std::string path = Glib::build_filename (m_cover_dir, asin) + ".png";
 
     NameTable::const_iterator match = m_name_table.find (asin);
     if (match != m_name_table.end ())
     {
         return match->second;
     }
+
+    g_message(path.c_str());
 
     if (!Glib::file_test (path, Glib::FILE_TEST_EXISTS))
     {
