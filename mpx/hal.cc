@@ -156,28 +156,33 @@ namespace MPX
       HAL::Volume::Volume ( Hal::RefPtr<Hal::Context> const& context,
                             Hal::RefPtr<Hal::Volume>  const& volume) throw ()
       {
-        Hal::RefPtr<Hal::Drive> drive = Hal::Drive::create_from_udi (context, volume->get_storage_device_udi());
+        try{
+            Hal::RefPtr<Hal::Drive> drive = Hal::Drive::create_from_udi (context, volume->get_storage_device_udi());
 
-        volume_udi      = volume->get_udi();
-        device_udi      = volume->get_storage_device_udi(); 
+            volume_udi      = volume->get_udi();
+            device_udi      = volume->get_storage_device_udi(); 
 
-        size            = volume->get_size ();
-        label           = volume->get_label(); 
+            size            = volume->get_size ();
+            label           = volume->get_label(); 
 
-        mount_time      = time( NULL ); 
-        mount_point     = volume->get_mount_point(); 
+            mount_time      = time( NULL ); 
+            mount_point     = volume->get_mount_point(); 
 
-        drive_bus       = drive->get_bus();
-        drive_type      = drive->get_type();
+            drive_bus       = drive->get_bus();
+            drive_type      = drive->get_type();
 
-#ifdef HAVE_HAL_058
-        drive_size      = drive->get_size(); 
-#else
-        drive_size      = 0; 
-#endif //HAVE_HAL_058
+    #ifdef HAVE_HAL_058
+            drive_size      = drive->get_size(); 
+    #else
+            drive_size      = 0; 
+    #endif //HAVE_HAL_058
 
-        drive_serial    = drive->get_serial(); 
-        device_file     = volume->get_device_file(); 
+            drive_serial    = drive->get_serial(); 
+            device_file     = volume->get_device_file(); 
+        } catch(...)
+        {
+            throw;
+        }
       }
 
 
@@ -290,10 +295,15 @@ namespace MPX
 
         try{
           m_context = Hal::Context::create (c);
-          m_context->signal_device_added().connect
-            (sigc::mem_fun (this, &MPX::HAL::device_added));
-          m_context->signal_device_removed().connect
-            (sigc::mem_fun (this, &MPX::HAL::device_removed));
+
+          m_context->signal_device_added().connect(
+            sigc::mem_fun(*this, &MPX::HAL::device_added
+          ));
+
+          m_context->signal_device_removed().connect(
+            sigc::mem_fun (this, &MPX::HAL::device_removed
+          ));
+
           m_SQL = new SQL::SQLDB ("hal", build_filename(g_get_user_data_dir(), "mpx"), SQL::SQLDB_OPEN);
 
           try{
@@ -413,7 +423,7 @@ namespace MPX
       HAL::volume_is_mounted  (VolumeKey const& volume_key) const
       {
         try{
-            return (m_volumes_mounted.find (volume_key)->second);
+            return m_volumes_mounted.find (volume_key)->second;
           }
         catch (...)
           {
@@ -559,16 +569,15 @@ namespace MPX
 
         // Now we know it's a volume
 
-        if (!(volume_hal_instance->get_fsusage() == Hal::VOLUME_USAGE_MOUNTABLE_FILESYSTEM))
+        if (volume_hal_instance->get_fsusage() != Hal::VOLUME_USAGE_MOUNTABLE_FILESYSTEM)
         {
             g_message("%s: Got volume UDI, but is not mountable", G_STRFUNC);
             return;
         }
 
-        Volume volume (m_context, volume_hal_instance);
-        VolumeKey volume_key (volume.volume_udi, volume.device_udi);
-
         try{
+            Volume volume (m_context, volume_hal_instance);
+            VolumeKey volume_key (volume.volume_udi, volume.device_udi);
 
             m_volumes.insert (make_pair (volume_key, StoredVolume (volume, volume_hal_instance)));
             Hal::RefPtr<Hal::Volume> const& vol (m_volumes.find (volume_key)->second.second);

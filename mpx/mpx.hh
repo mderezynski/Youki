@@ -58,56 +58,6 @@ namespace Gtk
 class CoverFlowWidget;
 namespace MPX
 {
-    class ActionState
-    {
-      public:
-
-        ActionState(Glib::RefPtr<Gtk::UIManager> & manager, bool state)
-        : m_Manager(manager)
-        , m_State(state)
-        {
-        }
-
-        void
-        operator()(std::string const& action)
-        {
-            m_Manager->get_action(action)->set_sensitive(m_State);
-        }
-
-      private:
-
-        Glib::RefPtr<Gtk::UIManager> & m_Manager;
-        bool m_State;
-    };
-
-
-    class ActionSet
-    {
-        public:
-
-            ActionSet(Glib::RefPtr<Gtk::UIManager> & manager)
-            : m_Manager(manager)
-            {
-            }
-
-            void
-            add (std::string const& name)
-            {
-                m_ActionNames.push_back(name);
-            }
-
-            void
-            set_sensitive(bool state)
-            {
-               std::for_each(m_ActionNames.begin(), m_ActionNames.end(), ActionState(m_Manager, state)); 
-            }
-
-        private:
-
-            std::vector<std::string> m_ActionNames;
-            Glib::RefPtr<Gtk::UIManager> & m_Manager;
-    };
-
     class InfoArea;
     class MLibManager;
     class Play;
@@ -222,6 +172,7 @@ namespace MPX
 			PSIGNAL_INFOAREA_CLICK,
             PSIGNAL_STATUS_CHANGED,
             PSIGNAL_METADATA_UPDATED,
+            PSIGNAL_NEW_SOURCE,
 			N_SIGNALS
 		};
 

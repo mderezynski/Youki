@@ -188,9 +188,6 @@ mpx_bin_SOURCES =				\
 	python.hh					\
 	python.cc					\
 								\
-	python-playlist.hh			\
-	python-playlist.cc			\
-								\
 	request-value.hh			\
 	request-value.cc			\
 								\
@@ -212,6 +209,9 @@ mpx_bin_SOURCES =				\
 								\
 	tasks.hh					\
 	tasks.cc					\
+								\
+	treeview-popup.hh			\
+	treeview-popup.cc			\
 								\
 	uri.hh						\
 	uri.cc						\

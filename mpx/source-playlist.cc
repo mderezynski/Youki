@@ -35,6 +35,8 @@
 
 #include "mpx/hal.hh"
 #include "mpx/library.hh"
+#include "mpx/playlistparser-xspf.hh"
+#include "mpx/source-playlist.hh"
 #include "mpx/types.hh"
 #include "mpx/util-graphics.hh"
 #include "mpx/util-ui.hh"
@@ -44,10 +46,6 @@
 #include "mpx/widgets/cell-renderer-vbox.hh"
 #include "mpx/widgets/gossip-cell-renderer-expander.h"
 
-#include "mpx/playlistparser-xspf.hh"
-
-#include "mpx/source-playlist.hh"
-#include "python-playlist.hh"
 #include "glib-marshalers.h"
 
 using namespace Gtk;
@@ -686,9 +684,12 @@ namespace MPX
                       TreePath              path;
 
                       tree_x = event->x; tree_y = event->y;
+
                       m_ButtonDepressed  = get_path_at_pos (tree_x, tree_y, path, column, cell_x, cell_y) ;
                       if(m_ButtonDepressed)
+                      {
                           m_PathButtonPress = path;  
+                      }
                     }
                     else
                     if( event->button == 3 )
@@ -1013,11 +1014,13 @@ namespace Source
 {
     bool PlaybackSourcePlaylist::m_signals_installed = false;
 
-    PlaybackSourcePlaylist::PlaybackSourcePlaylist (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
-    : PlaybackSource(ui_manager, _("Default Playlist"), C_CAN_SEEK)
+    PlaybackSourcePlaylist::PlaybackSourcePlaylist(
+            Glib::RefPtr<Gtk::UIManager>    const& ui_manager,
+            MPX::Player                          & player,
+            std::string                     const& name
+    )
+    : PlaybackSource(ui_manager, name, C_CAN_SEEK)
     {
-        mpx_playlist_py_init ();
-
         if(!m_signals_installed)
         {
             signals[PSM_SIGNAL_PLAYLIST_TOOLTIP] =
@@ -1037,6 +1040,11 @@ namespace Source
                             g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 
             m_signals_installed = true;
+        }
+        else
+        {
+            signals[PSM_SIGNAL_PLAYLIST_TOOLTIP] = g_signal_lookup("playlist-tooltip", Glib::Object::get_type() );
+            signals[PSM_SIGNAL_PLAYLIST_END] = g_signal_lookup("playlist-end", Glib::Object::get_type() );
         }
 
         player.get_object(m_Lib);
@@ -1064,7 +1072,13 @@ namespace Source
     std::string
     PlaybackSourcePlaylist::get_guid ()
     {
-        return "36068e19-dfb3-49cd-85b4-52cea16fe0fd";
+        return "";
+    }
+
+    std::string
+    PlaybackSourcePlaylist::get_class_guid ()
+    {
+        return "b20e4d5f-ebc5-4db7-be8a-cfacce153d64";
     }
 
     guint
@@ -1423,9 +1437,7 @@ namespace Source
     UriSchemes 
     PlaybackSourcePlaylist::get_uri_schemes ()
     {
-        UriSchemes s;
-        s.push_back("file");
-        return s;
+        return UriSchemes();
     }
 
     void    

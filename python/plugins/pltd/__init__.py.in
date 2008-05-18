@@ -7,7 +7,6 @@
 
 
 import mpx
-import mpx_playlist
 import gtkmm
 import time
 import pygtk
@@ -18,15 +17,6 @@ import gtk.glade
 import urllib
 import random
 import xml
-from Ft.Xml.XPath.Context import Context
-from Ft.Xml.XPath import Evaluate
-from Ft.Xml.Domlette import NonvalidatingReader
-from Ft.Xml import EMPTY_NAMESPACE
-#import musicbrainz2
-#import musicbrainz2.webservice as ws
-
-MBID_NODE_XPATH = u'//mbid'
-MATCH_NODE_XPATH = u'//match'
 
 class PlaylistDefaultTooltip(mpx.Plugin):
         
@@ -41,9 +31,22 @@ class PlaylistDefaultTooltip(mpx.Plugin):
         
         self.lib = player.get_library()
         self.covers = player.get_covers()
-        self.mlib = player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd")
-        self.mlib.gobj().connect("playlist-tooltip", self.on_playlist_tooltip)
+        
+        player.gobj().connect("new-source", self.on_new_source)
 
+        sources = player.get_sources_by_class("b20e4d5f-ebc5-4db7-be8a-cfacce153d64")
+        self.sources = []
+
+        for source in sources:
+            conn = [source, source.gobj().connect("playlist-tooltip", self.on_playlist_tooltip)]
+            self.sources.append(conn)
+
+    def on_new_source(self, obj, source):
+
+        if source.get_class_guid() == "b20e4d5f-ebc5-4db7-be8a-cfacce153d64":
+            conn = [source, source.gobj().connect("playlist-tooltip", self.on_playlist_tooltip)]
+            self.sources.append(conn)
+        
     def on_playlist_tooltip(self, object, treemodel, iter):
 
         self.xml = gtk.glade.xml_new_from_buffer(self.xmldata, len(self.xmldata))
@@ -81,7 +84,7 @@ class PlaylistDefaultTooltip(mpx.Plugin):
             mbid = mpxtrack[mpx.AttributeId.MB_ALBUM_ID].get()
             cover = self.covers.fetch(mbid) 
             if cover:
-                self.image.set_from_pixbuf(cover.scale_simple(112, 112, gtk.gdk.INTERP_BILINEAR))
+                self.image.set_from_pixbuf(cover.scale_simple(192, 192, gtk.gdk.INTERP_BILINEAR))
                 self.image.show()
 
         return self.widget

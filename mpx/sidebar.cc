@@ -27,18 +27,43 @@
 #include <gtk/gtktreeview.h>
 #include <cairomm/cairomm.h>
 #include <boost/format.hpp>
+#include "mpx/i-playbacksource.hh"
+#include "mpx/util-ui.hh"
 #include "mpx/widgets/gossip-cell-renderer-expander.h"
+#include "plugin.hh"
 #include "sidebar.hh"
 using namespace Glib;
 using namespace Gtk;
 
+namespace
+{
+    const char ACTION_ATTACH_PLUGIN [] = "action-attach-plugin";
+    
+    const char ui_sidebar_popup [] =
+    "<ui>"
+    ""
+    "<menubar name='popup-sidebar'>"
+    ""
+    "   <menu action='dummy' name='menu-sidebar'>"
+    "       <menuitem action='action-attach-plugin' name='action-attach-plugin'/>"
+    "   </menu>"
+    ""
+    "</menubar>"
+    ""
+    "</ui>";
+}
+
 namespace MPX
 {
-    Sidebar::Sidebar (BaseObjectType                 *  obj,
-                      RefPtr<Gnome::Glade::Xml> const&  xml)
-    : TreeView  (obj)
-    , m_ref_xml (xml)
+    Sidebar::Sidebar (RefPtr<Gnome::Glade::Xml> const& xml,
+                      PluginManager                  & obj_plugin_manager)
+                      
+    : Gnome::Glade::WidgetLoader<MPX::TreeViewPopup>(xml, "sidebar") 
+    , m_ref_xml(xml)
+    , m_PluginManager(obj_plugin_manager)
     {
+        m_default_path = "/popup-sidebar/menu-sidebar";
+
         m_ref_xml->get_widget("notebook-sources", m_Notebook);
 
         TreeViewColumn * column = manage (new TreeViewColumn);
@@ -81,9 +106,36 @@ namespace MPX
         Entries.push_back(TargetEntry("mpx-track"));
         drag_dest_set(Entries, DEST_DEFAULT_MOTION);
         drag_dest_add_uri_targets();
+
+        m_actions->add(
+            Gtk::Action::create(
+                "dummy"
+                "dummy"
+        ));
+
+        m_actions->add(
+            Gtk::Action::create(
+                "action-attach-plugin",
+                _("Attach Plugin")
+            ),
+            sigc::mem_fun(*this, &Sidebar::on_attach_plugin)
+        );
+
+        m_ui_manager->insert_action_group(m_actions);
+        Util::ui_manager_add_ui(m_ui_manager, ui_sidebar_popup, dynamic_cast<Gtk::Window&>(*get_toplevel()), _("Sidebar"));
     }
 
     Sidebar::~Sidebar()
+    {
+    }
+
+    void
+    Sidebar::popup_prepare_actions(Gtk::TreePath const&, bool)
+    {
+    }
+
+    void
+    Sidebar::on_attach_plugin ()
     {
     }
 
@@ -112,24 +164,24 @@ namespace MPX
             gint64 page = (*iter)[Columns.page];
 
             m_Notebook->set_current_page( page );
-            m_visible_id = key;
+            m_VisibleId = key;
 
-            signal_id_changed_.emit(key);
+            Signals.IdChanged.emit(key);
         }
     }
 
     ItemKey const&
     Sidebar::getVisibleId ()
     {
-        return m_visible_id;
+        return m_VisibleId;
     }
 
     ItemKey const&
     Sidebar::getActiveId ()
     {
-        if(m_active_id)
+        if(m_ActiveId)
         {
-            return m_active_id.get();
+            return m_ActiveId.get();
         }
         else
         {
@@ -140,7 +192,7 @@ namespace MPX
     void 
     Sidebar::setActiveId(ItemKey const& key)
     {
-        m_active_id = key;
+        m_ActiveId = key;
         queue_draw ();
     }
 
@@ -160,7 +212,7 @@ namespace MPX
     void
     Sidebar::clearActiveId ()
     {
-        m_active_id.reset();
+        m_ActiveId.reset();
         queue_draw ();
     }
 
@@ -185,9 +237,9 @@ namespace MPX
         {
             Gtk::CellRendererText & cell = *(dynamic_cast<Gtk::CellRendererText*>(basecell));
             cell.property_markup() = (*iter)[Columns.name];
-            if(m_active_id)
+            if(m_ActiveId)
             {
-                if(m_active_id.get() == ItemKey((*iter)[Columns.key]))
+                if(m_ActiveId.get() == ItemKey((*iter)[Columns.key]))
                 {
                     cell.property_weight() = Pango::WEIGHT_BOLD;
                     return;
@@ -207,6 +259,7 @@ namespace MPX
     Sidebar::addItem(
             const Glib::ustring             & name,
             Gtk::Widget                     * ui,
+            PlaybackSource                  * source,
             const Glib::RefPtr<Gdk::Pixbuf> & icon,
             gint64 id
     )
@@ -223,6 +276,7 @@ namespace MPX
     Sidebar::addSubItem(
             const Glib::ustring             & name,
             Gtk::Widget                     * ui,
+            PlaybackSource                  * source,
             const Glib::RefPtr<Gdk::Pixbuf> & icon,
             gint64 parent,
             gint64 id
@@ -255,6 +309,6 @@ namespace MPX
     Sidebar::SignalIdChanged&
     Sidebar::signal_id_changed()
     {
-        return signal_id_changed_;
+        return Signals.IdChanged;
     }
 }

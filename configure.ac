@@ -271,9 +271,6 @@ AC_MSG_RESULT($PYGTK_DEFSDIR)
 # Libxml
 PKG_CHECK_MODULES([XML], [libxml-2.0 >= 2.6.1])
 
-# libexo
-PKG_CHECK_MODULES([EXO], [exo-0.3 >= 0.3.4])
-
 # libsoup
 PKG_CHECK_MODULES([SOUP], [libsoup-2.2 >= 2.2.101])
 

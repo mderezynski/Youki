@@ -83,15 +83,12 @@ namespace MPX
 	: m_Id(1)
 	, m_Player(player)
 	{
-        mpx_py_init ();
         try{
             mcs_plugins = new Mcs::Mcs (Glib::build_filename (Glib::build_filename (Glib::get_user_config_dir (), "mpx"), "plugins.xml"), "mpx", 0.01);
         } catch (Mcs::Mcs::Exceptions & cxe)
         {
         }
-
         mcs_plugins->domain_register("pyplugs");
-
 	}
 
 	void
@@ -168,7 +165,7 @@ namespace MPX
                     PyObject * main_locals = PyDict_Copy(main_locals_orig);
 					PyObject * module = PyImport_ImportModuleEx ((char*)i->c_str(), main_locals, main_locals, Py_None);
 					if (!module) {
-						g_message("%s: Couldn't load module '%s'", G_STRLOC, i->c_str());
+						g_message(gettext("%s: Couldn't load module '%s'"), G_STRLOC, i->c_str());
 						PyErr_Print ();
 						continue;	
 					}
@@ -184,7 +181,14 @@ namespace MPX
 						if (PyObject_IsSubclass (value, (PyObject*) PyMPXPlugin_Type))
 						{
                             try{
-                                object instance = boost::python::call<object>(value, m_Id, boost::ref(m_Player), boost::ref(mcs));
+                                object instance =
+                                    boost::python::call<object>(
+                                        value,
+                                        m_Id,
+                                        boost::ref(m_Player),
+                                        boost::ref(mcs)
+                                    );
+
                                 if(!instance)
                                 {
                                     PyErr_Print();
@@ -198,8 +202,14 @@ namespace MPX
 
                                 if(PyObject_HasAttrString(instance.ptr(), "__doc__"))
                                 {
-                                    const char* doc = PyString_AsString (PyObject_GetAttrString (instance.ptr(), "__doc__")); 
-                                    ptr->m_Description = doc ? doc : "(No Description given)";
+                                    const char* doc =
+                                        PyString_AsString(
+                                            PyObject_GetAttrString(
+                                                instance.ptr(),
+                                                "__doc__"
+                                        ));
+
+                                    ptr->m_Description = doc ? doc : gettext("(No Description given)");
                                     if(PyErr_Occurred())
                                     {
                                         g_message("%s: Got no __doc__ from plugin", G_STRLOC);
@@ -208,7 +218,7 @@ namespace MPX
                                 }
                                 else
                                 {
-                                    ptr->m_Description = "(No Description given)";
+                                    ptr->m_Description = gettext("(No Description given)");
                                 }
 
                                 ptr->m_Id = m_Id++;
@@ -229,30 +239,73 @@ namespace MPX
                                 }
 
                                 if(ptr->m_Name.empty())
+                                {
                                     ptr->m_Name = PyString_AsString (PyObject_GetAttrString (module, "__name__")); 
+                                }
 
-                                /* TODO: Query MCS for active state */
 
                                 mcs_plugins->key_register("pyplugs", ptr->m_Name, false);
 
                                 ptr->m_Active = false; 
+
                                 ptr->m_HasGUI = PyObject_HasAttrString(instance.ptr(), "get_gui");
                                 if(PyErr_Occurred())
                                 {
-                                    g_message("%s: No get_gui in plugin", G_STRLOC);
+                                    g_message(gettext("%s: No get_gui in plugin"), G_STRLOC);
                                     PyErr_Clear();
                                 }
 
                                 ptr->m_CanActivate = PyObject_HasAttrString(instance.ptr(), "activate");
                                 if(PyErr_Occurred())
                                 {
-                                    g_message("%s: No activate in plugin", G_STRLOC);
+                                    g_message(gettext("%s: No activate in plugin"), G_STRLOC);
                                     PyErr_Clear();
+                                }
+
+                                ptr->m_CanBind = PyObject_HasAttrString(instance.ptr(), "bind");
+                                if(PyErr_Occurred())
+                                {
+                                    g_message(gettext("%s: No bind in plugin"), G_STRLOC);
+                                    PyErr_Clear();
+                                }
+
+                                g_message(
+                                    gettext("%s: >> Loaded: '%s'"),
+                                    G_STRLOC,
+                                    ptr->m_Name.c_str()
+                                );
+
+                                if(ptr->m_CanBind)
+                                {
+                                    if(PyObject_HasAttrString(instance.ptr(), "bindable_guid"))
+                                    {
+                                        try{
+                                			object instance = object((handle<>(borrowed(ptr->m_PluginInstance))));
+                                			object callable = instance.attr("bindable_guid");
+                                			ptr->m_Bindable = boost::python::call<std::string>(callable.ptr());
+                                            g_message(
+                                                gettext("%s: Plugin can bind to class %s"),
+                                                G_STRLOC,
+                                                ptr->m_Bindable.c_str()
+                                            );
+                                        } catch( error_already_set )
+                                        {
+                                            PyErr_Print();
+                                        }
+                                    }
+
+                                    if(PyErr_Occurred())
+                                    {
+                                        g_message(
+                                            gettext("%s: No bindable_guid in plugin"),
+                                            G_STRLOC
+                                        );
+                                        PyErr_Clear();
+                                    }
                                 }
 
                                 m_Map.insert(std::make_pair(ptr->m_Id, ptr));
 
-                                g_message("%s: >> Loaded: '%s'", G_STRLOC, ptr->m_Name.c_str());
                             } catch( error_already_set )
                             {
                                 g_message("Plugin: %s", i->c_str());
@@ -340,7 +393,6 @@ namespace MPX
 			object callable = instance.attr("activate");
 			result = boost::python::call<bool>(callable.ptr());
 			i->second->m_Active = true;
-            signal_.emit(id);
 		} catch( error_already_set )
 		{
 			push_traceback (id, "activate");

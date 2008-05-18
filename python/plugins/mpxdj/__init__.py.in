@@ -7,7 +7,6 @@
 #
 
 import mpx
-import mpx_playlist
 import time
 import pygtk
 pygtk.require('2.0')
@@ -36,7 +35,7 @@ class MPXDJ(mpx.Plugin):
         self.id = id 
         self.lib = player.get_library()
         self.covers = player.get_covers()
-        self.mlib = player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd")
+        self.mlib = None 
 
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj.glade")
 
@@ -108,6 +107,15 @@ class MPXDJ(mpx.Plugin):
         # Finally:
         self.combo.connect("changed", self.cbox_changed)
         self.combo.set_active(0)
+    
+    def bind(self, source):
+
+         if source.get_class_guid() == "b20e4d5f-ebc5-4db7-be8a-cfacce153d64":
+            self.mlib = source
+
+    def bindable_guid(self):
+
+        return "b20e4d5f-ebc5-4db7-be8a-cfacce153d64";
 
     def on_append_toggled(self, cb):
 

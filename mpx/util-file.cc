@@ -92,6 +92,7 @@ namespace MPX
         if(f)
         {
             std::string full_path (uri + G_DIR_SEPARATOR_S + g_file_info_get_name(f));
+            g_message("%s: Full Path: %s", G_STRLOC, full_path.c_str());
             GFileType t = g_file_info_get_file_type(f);
             g_object_unref(f);
             if (t == G_FILE_TYPE_REGULAR)

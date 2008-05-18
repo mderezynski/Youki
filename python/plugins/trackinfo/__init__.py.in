@@ -245,7 +245,6 @@ class TrackInfo:
             except:
                 pass 
 
-
             try:
                 lastfmartist = mpx.LastFMArtist(track[mpx.AttributeId.ARTIST].get())
                 artist = lastfmartist.run()
@@ -254,6 +253,9 @@ class TrackInfo:
                 self.buf.insert(self.buf.get_end_iter(), "\n\n")
             except:
                 pass 
+        
+            self.notebook.set_current_page(2)
+            return
 
             if track[mpx.AttributeId.MB_TRACK_ID] and track[mpx.AttributeId.MB_TRACK_ID]:
         

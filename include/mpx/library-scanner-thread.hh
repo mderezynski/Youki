@@ -136,6 +136,7 @@ namespace MPX
             virtual void on_cleanup () ;
 
             void on_scan (Util::FileList const&) ;
+            bool on_scan_idle (Util::FileList const&) ;
             void on_scan_stop () ;
 
             gint64

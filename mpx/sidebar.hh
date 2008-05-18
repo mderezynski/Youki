@@ -29,20 +29,22 @@
 #include <gtkmm.h>
 #include <libglademm/xml.h>
 #include <boost/optional.hpp>
+#include "plugin.hh"
+#include "mpx/treeview-popup.hh"
 #include "mpx/types.hh"
+#include "mpx/widgetloader.h"
 
 namespace MPX
 {
+  class PlaybackSource;
   class Sidebar
-    : public Gtk::TreeView
+    : public Gnome::Glade::WidgetLoader<MPX::TreeViewPopup>
   {
 
     public:
 
-        typedef sigc::signal<void, ItemKey>                SignalIdChanged;
-
-        Sidebar (BaseObjectType                       * obj,
-                 Glib::RefPtr<Gnome::Glade::Xml> const& xml);
+        Sidebar (Glib::RefPtr<Gnome::Glade::Xml> const& xml,
+                 MPX::PluginManager&);
         virtual ~Sidebar ();
 
         ItemKey const&
@@ -62,23 +64,32 @@ namespace MPX
 
         void
         addItem(
-            const Glib::ustring& name,
-            Gtk::Widget* ui,
-            const Glib::RefPtr<Gdk::Pixbuf> & icon,
-            gint64 id
+            const Glib::ustring& /*name*/,
+            Gtk::Widget* /*ui*/,
+            PlaybackSource* /*source*/,
+            const Glib::RefPtr<Gdk::Pixbuf>& /*icon*/,
+            gint64 /*id*/
         );
 
         void
         addSubItem(
-            const Glib::ustring& name,
-            Gtk::Widget* ui,
-            const Glib::RefPtr<Gdk::Pixbuf> & icon,
-            gint64 parent,
-            gint64 id
+            const Glib::ustring& /*name*/,
+            Gtk::Widget* /*ui*/,
+            PlaybackSource* /*source*/,
+            const Glib::RefPtr<Gdk::Pixbuf>& /*icon*/,
+            gint64 /*parent*/,
+            gint64 /*id*/
         );
+
+        typedef sigc::signal<void, ItemKey> SignalIdChanged;
 
         SignalIdChanged&
         signal_id_changed();
+
+    protected:
+
+        virtual void
+        popup_prepare_actions(Gtk::TreePath const&, bool);
 
     private:
 
@@ -89,13 +100,15 @@ namespace MPX
             int
         );
 
-
         bool
         slot_select(
-            Glib::RefPtr <Gtk::TreeModel>   const& model,
-            Gtk::TreeModel::Path            const& path,
-            bool                                   was_selected
+            Glib::RefPtr <Gtk::TreeModel> const&,
+            Gtk::TreeModel::Path const&,
+            bool 
         );
+
+        void
+        on_attach_plugin ();
 
         void
         on_selection_changed ();
@@ -104,6 +117,8 @@ namespace MPX
         on_drag_motion (Glib::RefPtr<Gdk::DragContext> const& context, int x, int y, guint time);
 
     private:
+
+        Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
 
         struct SourceColumns : public Gtk::TreeModel::ColumnRecord
         {
@@ -124,21 +139,26 @@ namespace MPX
         SourceColumns                Columns;
         Glib::RefPtr<Gtk::TreeStore> Store;
 
-        typedef std::map<ItemKey, Gtk::TreeIter> IdIterMapT;
-        typedef std::set<gint64>                 ActiveIdT;
-        typedef std::map<ItemKey, gint64>        ItemCountMap;
+        typedef std::map<ItemKey, Gtk::TreeIter>        IdIterMapT;
+        typedef std::map<ItemKey, gint64>               ItemCountMap;
+        typedef std::map<std::string, PlaybackSource*>  SourcesByGUID;
+        typedef std::map<std::string, PlaybackSource*>  SourcesByClass;
 
-        IdIterMapT      m_IdIterMap;
-        ActiveIdT       m_ActiveIds;
-        ItemCountMap    m_ItemCounts;
-
-        boost::optional<ItemKey> m_active_id;
-        ItemKey                  m_visible_id;
+        IdIterMapT               m_IdIterMap;
+        ItemCountMap             m_ItemCounts;
+        SourcesByGUID            m_SourcesByGUID;
+        SourcesByClass           m_SourecsByClass;
+        boost::optional<ItemKey> m_ActiveId;
+        ItemKey                  m_VisibleId;
         Gtk::Notebook          * m_Notebook;
+        PluginManager          & m_PluginManager;
 
-        Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
+        struct Signals_T
+        {
+            SignalIdChanged     IdChanged;          
+        };
 
-        SignalIdChanged signal_id_changed_;
+        Signals_T Signals;
   };
 }
 #endif

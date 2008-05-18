@@ -29,12 +29,13 @@ class OSD(gtk.Window):
             self.m_album = ""
             self.set_colormap(gtk.gdk.screen_get_default().get_rgba_colormap())
             self.resize(1,1)
+            self.rect_side = 256 
 
         def move_center(self, width):
 
-            self.resize(width, self.INNER_PADDING*2 + 128)
+            self.resize(width, self.INNER_PADDING*2 + self.rect_side)
             screen = gtk.gdk.screen_get_default()
-            self.move((screen.get_width() - width) / 2, (screen.get_height() - (self.INNER_PADDING*2+128))/2)
+            self.move((screen.get_width() - width) / 2, (screen.get_height() - (self.INNER_PADDING*2+self.rect_side))/2)
 
     
         def rounded_rect(self, cr, x, y, width, height, radius):
@@ -74,7 +75,7 @@ class OSD(gtk.Window):
             i = m.get_image()
 
             if(i):
-                self.cover = i.scale_simple(128,128, gtk.gdk.INTERP_HYPER) 
+                self.cover = i.scale_simple(self.rect_side,self.rect_side, gtk.gdk.INTERP_HYPER) 
             else:
                 self.cover = None
 
@@ -125,20 +126,18 @@ class OSD(gtk.Window):
             if(self.cover):
             
                 cr.set_source_pixbuf(self.cover, self.INNER_PADDING, self.INNER_PADDING)
-                self.rounded_rect(cr, x + self.INNER_PADDING, y + self.INNER_PADDING, 128, 128, 8.)
+                self.rounded_rect(cr, x + self.INNER_PADDING, y + self.INNER_PADDING, self.rect_side, self.rect_side, 8.)
                 cr.fill()
-                x_origin = 128 + (2*self.INNER_PADDING)
-                self.move_center(max_layout_width + 128 + (3*self.INNER_PADDING))
+                x_origin = self.rect_side + (2*self.INNER_PADDING)
+                self.move_center(max_layout_width + self.rect_side + (3*self.INNER_PADDING))
             
             else:
 
                 self.move_center(max_layout_width + (2*self.INNER_PADDING))
 
-      
-
-            positions = [ self.INNER_PADDING+28,
-                          self.INNER_PADDING+24+28,
-                          self.INNER_PADDING+48+28 ]
+            positions = [ self.INNER_PADDING+156,
+                          self.INNER_PADDING+156+24,
+                          self.INNER_PADDING+156+48 ]
 
             cr.set_source_rgba(0., 0., 0., 1.)
             cr.set_operator(cairo.OPERATOR_SOURCE)

@@ -32,6 +32,7 @@
 #include "pysigc.hh"
 
 #include "mpx/python.hh"
+#include "mpx/source-playlist.hh"
 #include "gtkmmmodule.h"
 
 using namespace boost::python;
@@ -498,6 +499,9 @@ namespace pysigc
     }
 }
 
+namespace mpxpy
+{
+}
 
 BOOST_PYTHON_MODULE(mpx)
 {
@@ -555,6 +559,24 @@ BOOST_PYTHON_MODULE(mpx)
 		.value("C_CAN_BOOKMARK", MPX::PlaybackSource::C_CAN_BOOKMARK)	
 		.value("C_PROVIDES_TIMING", MPX::PlaybackSource::C_PROVIDES_TIMING)	
 	;
+
+	class_<MPX::IdV>("IdVector")
+		.def(vector_indexing_suite<MPX::IdV>());
+	;
+
+    class_<MPX::PlaybackSource, boost::noncopyable>("PlaybackSourceAPI", boost::python::no_init)
+            .def("get_guid", &MPX::PlaybackSource::get_guid)
+            .def("get_class_guid", &MPX::PlaybackSource::get_class_guid)
+    ;
+
+    class_<MPX::Source::PlaybackSourcePlaylist, bases<MPX::PlaybackSource>, boost::noncopyable>("Playlist", boost::python::no_init)
+            .def("play_tracks", &MPX::Source::PlaybackSourcePlaylist::play_tracks)
+            .def("play_album", &MPX::Source::PlaybackSourcePlaylist::play_album)
+            .def("append_tracks", &MPX::Source::PlaybackSourcePlaylist::append_tracks)
+            .def("get_playlist_model", &MPX::Source::PlaybackSourcePlaylist::get_playlist_model)
+            .def("get_playlist_current_iter", &MPX::Source::PlaybackSourcePlaylist::get_playlist_current_iter)
+            .def("gobj", &mpxpy::get_gobject<MPX::Source::PlaybackSourcePlaylist>)
+    ;
 
 	/*-------------------------------------------------------------------------------------*/
 
@@ -824,6 +846,22 @@ BOOST_PYTHON_MODULE(mpx)
     ;
 }
 
+namespace
+{
+    gpointer
+    boxed_copy(gpointer boxed)
+    {
+        Py_INCREF(static_cast<PyObject*>(boxed));
+        return boxed;
+    }
+
+    void 
+    boxed_free(gpointer boxed)
+    {
+        Py_DECREF(static_cast<PyObject*>(boxed));
+    }
+}
+
 namespace MPX
 {
     void
@@ -837,7 +875,7 @@ namespace MPX
                 Py_Initialize();
                 init_pygobject();
                 init_pygtk();
-                pyg_enable_threads ();
+                //pyg_enable_threads ();
                 py_initialized = true;
             } catch( error_already_set ) {
                 g_warning("%s; Python Error:", G_STRFUNC);

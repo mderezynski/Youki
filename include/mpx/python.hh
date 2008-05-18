@@ -5,6 +5,7 @@
 #include <Python.h>
 #include <pygobject.h>
 #include <glib-object.h>
+#include "mpx/types.hh"
 
 namespace MPX
 {

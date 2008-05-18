@@ -279,7 +279,7 @@ namespace MPX
     {
       if (control_pipe())
       {
-        gst_element_set_state (control_pipe (), GST_STATE_READY);
+        gst_element_set_state (control_pipe (), GST_STATE_NULL);
         gst_element_get_state (control_pipe (), NULL, NULL, GST_CLOCK_TIME_NONE); 
         property_status_ = PLAYSTATUS_WAITING;
       }

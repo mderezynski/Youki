@@ -71,10 +71,8 @@ namespace Source
                 PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
                 ~PlaybackSourceMusicLib ();
 
-
                 void
                 check_caps ();
-
         
                 // i-playbacksource
                 virtual void
@@ -142,6 +140,10 @@ namespace Source
 
                 void
                 on_sort_column_change ();
+
+                void
+                on_new_playlist ();
+
         }; // end class PlaybackSourceMusicLib 
 } // end namespace Source
 } // end namespace MPX 

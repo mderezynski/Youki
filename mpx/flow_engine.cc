@@ -58,7 +58,7 @@ TextureId texture_from_path (std::string const& path, TextureId texture_id)
     glTexParameterf (GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glPixelStorei (GL_UNPACK_ALIGNMENT, 1);
 
-    glTexImage2D (GL_TEXTURE_2D, 0, GL_RGBA, pixbuf->get_width (), pixbuf->get_height (), 0, GL_RGBA, GL_UNSIGNED_BYTE, pixbuf->get_pixels ());
+    glTexImage2D (GL_TEXTURE_2D, 0, GL_RGB, pixbuf->get_width (), pixbuf->get_height (), 0, GL_RGBA, GL_UNSIGNED_BYTE, pixbuf->get_pixels ());
 
     return texture_id;
 }
@@ -85,8 +85,6 @@ int TextureCache::get (std::string const& asin) const
     {
         return match->second;
     }
-
-    g_message(path.c_str());
 
     if (!Glib::file_test (path, Glib::FILE_TEST_EXISTS))
     {
@@ -118,6 +116,8 @@ CoverFlowEngine::CoverFlowEngine ()
     //Python: self.songs_center = None
 
     //Python: self.font_renderer = glFreeType.font_data (os.path.join(os.path.dirname(__file__), 'monospace.ttf'), 20)
+
+    glEnable (GL_TEXTURE_2D);
 
     std::string path = Glib::build_filename (DATA_DIR, "images" G_DIR_SEPARATOR_S "disc-default.png");
 

@@ -118,7 +118,7 @@ namespace Source
 
             public:
 
-                PlaybackSourcePlaylist (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
+                PlaybackSourcePlaylist (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&, std::string const&);
                 ~PlaybackSourcePlaylist ();
 
 
@@ -221,6 +221,9 @@ namespace Source
 
                 virtual std::string
                 get_guid ();
+
+                virtual std::string
+                get_class_guid ();
 
                 // UriHandler
                 virtual UriSchemes 

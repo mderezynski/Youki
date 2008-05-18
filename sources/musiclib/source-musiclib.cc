@@ -31,7 +31,7 @@
 #include <Python.h>
 #define NO_IMPORT
 #include <pygobject.h>
-
+#include <boost/format.hpp>
 
 #include "mpx/hal.hh"
 #include "mpx/library.hh"
@@ -488,7 +488,7 @@ namespace MPX
                     std::string mbid = get<std::string>(r["mb_album_id"]);
                     IterSet & s = m_MBIDIterMap[mbid];
                     s.insert(iter);
-                    m_Covers.get().cache( mbid, asin, "", acquire ); 
+                    m_Covers.get().cache( mbid, "", asin, true ); 
                     (*iter)[AlbumColumns.MBID] = mbid; 
                 }
 
@@ -797,8 +797,12 @@ namespace MPX
               }
 
 
-              AlbumTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml,    
-                         PAccess<MPX::Library> const& lib, PAccess<MPX::Covers> const& amzn, MPX::Source::PlaybackSourceMusicLib & mlib)
+              AlbumTreeView (
+                    Glib::RefPtr<Gnome::Glade::Xml> const& xml,    
+                    PAccess<MPX::Library>           const& lib,
+                    PAccess<MPX::Covers>            const& amzn,
+                    MPX::Source::PlaybackSourceMusicLib  & mlib
+              )
               : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-albums")
               , m_Lib(lib)
               , m_Covers(amzn)
@@ -806,15 +810,40 @@ namespace MPX
               , m_ButtonPressed(false)
               {
                 for(int n = 0; n < 6; ++n)
-                    m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename(DATA_DIR,"images"),
-                        (boost::format("stars%d.png") % n).str()));
+                {
+                    m_Stars[n] =
 
-                m_Lib.get().signal_new_album().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_album ));
-                m_Lib.get().signal_new_track().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_track ));
-                m_Lib.get().signal_reload().connect( sigc::mem_fun( *this, &AlbumTreeView::album_list_load ));
-                m_Covers.get().signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
+                    Gdk::Pixbuf::create_from_file(
+                        build_filename(
+                            build_filename(
+                                DATA_DIR,
+                                "images"
+                            ),
+                            (boost::format("stars%d.png") % n).str()
+                        )
+                    );
 
-                xml->get_widget("album-filter-entry", m_FilterEntry);
+                }
+
+                m_Lib.get().signal_new_album().connect(
+                    sigc::mem_fun(
+                        *this, &AlbumTreeView::on_new_album
+                ));
+
+                m_Lib.get().signal_new_track().connect(
+                    sigc::mem_fun(
+                        *this, &AlbumTreeView::on_new_track
+                ));
+
+                m_Lib.get().signal_reload().connect(
+                    sigc::mem_fun(
+                        *this, &AlbumTreeView::album_list_load
+                ));
+
+                m_Covers.get().signal_got_cover().connect(
+                    sigc::mem_fun(
+                        *this, &AlbumTreeView::on_got_cover
+                ));
 
                 set_show_expanders( false );
                 set_level_indentation( 32 );
@@ -867,30 +896,55 @@ namespace MPX
 
                 celltext = manage (new CellRendererText);
                 col->pack_start(*celltext, false);
-                col->set_cell_data_func(*celltext, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncText4 ));
+                col->set_cell_data_func(*celltext,
+                    sigc::mem_fun(
+                        *this, &AlbumTreeView::cellDataFuncText4
+                ));
 
                 append_column(*col);
 
                 TreeStore = Gtk::TreeStore::create(AlbumColumns);
                 TreeStoreFilter = Gtk::TreeModelFilter::create(TreeStore);
-                TreeStoreFilter->set_visible_func (sigc::mem_fun (*this, &AlbumTreeView::albumVisibleFunc));
-                m_FilterEntry->signal_changed().connect (sigc::mem_fun (TreeStoreFilter.operator->(), &TreeModelFilter::refilter));
+                TreeStoreFilter->set_visible_func(
+                    sigc::mem_fun(
+                        *this, &AlbumTreeView::albumVisibleFunc
+                ));
 
                 set_model(TreeStoreFilter);
-                TreeStore->set_sort_func(0 , sigc::mem_fun( *this, &AlbumTreeView::slotSortAlpha ));
-                TreeStore->set_sort_func(1 , sigc::mem_fun( *this, &AlbumTreeView::slotSortDate ));
-                TreeStore->set_sort_func(2 , sigc::mem_fun( *this, &AlbumTreeView::slotSortRating ));
+                TreeStore->set_sort_func(0, sigc::mem_fun( *this, &AlbumTreeView::slotSortAlpha ));
+                TreeStore->set_sort_func(1, sigc::mem_fun( *this, &AlbumTreeView::slotSortDate ));
+                TreeStore->set_sort_func(2, sigc::mem_fun( *this, &AlbumTreeView::slotSortRating ));
                 TreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
 
-                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")));
-                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(72,72,Gdk::INTERP_BILINEAR));
+                xml->get_widget("album-filter-entry", m_FilterEntry);
+                m_FilterEntry->signal_changed().connect(
+                    sigc::mem_fun(TreeStoreFilter.operator->(), &TreeModelFilter::refilter
+                ));
 
-                album_list_load ();
+                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(
+                        build_filename(
+                            DATA_DIR,
+                            build_filename(
+                                "images",
+                                "disc-default.png"
+                            )
+                        )
+                );
+
+                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(
+                        m_DiscDefault_Pixbuf->scale_simple(
+                            72,
+                            72,
+                            Gdk::INTERP_BILINEAR
+                        )
+                );
 
                 std::vector<TargetEntry> Entries;
                 Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
                 Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
                 drag_source_set(Entries); 
+
+                album_list_load ();
               }
         };
 
@@ -934,33 +988,63 @@ namespace Source
         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
 
-        Gtk::RadioButtonGroup gr1;
-        m_MainActionGroup->add(RadioAction::create(
-                gr1,
+        Gtk::RadioButtonGroup group;
+
+        m_MainActionGroup->add(
+
+            RadioAction::create(
+                group,
                 "musiclib-sort-by-name",
                 "Sort Albums By Artist/Album"
             ),
-            sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change
-        ));
-        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-name"))->property_value() = 0;
 
-        m_MainActionGroup->add(RadioAction::create(
-                gr1,
+            sigc::mem_fun(
+                *this, &PlaybackSourceMusicLib::on_sort_column_change
+            )
+        );
+
+        m_MainActionGroup->add(
+
+            RadioAction::create(
+                group,
                 "musiclib-sort-by-date",
                 "Sort Albums By Date"
             ),
-            sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change
-        ));
-        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-date"))->property_value() = 1;
 
-        m_MainActionGroup->add(RadioAction::create(
-                gr1,
+            sigc::mem_fun(
+                *this, &PlaybackSourceMusicLib::on_sort_column_change
+            )
+        );
+
+        m_MainActionGroup->add(
+
+            RadioAction::create(
+                group,
                 "musiclib-sort-by-rating",
                 "Sort Albums By Rating"
             ),
-            sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change
-        ));
-        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-rating"))->property_value() = 2;
+
+            sigc::mem_fun(
+                *this, &PlaybackSourceMusicLib::on_sort_column_change
+            )
+        );
+
+        RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-sort-by-name"))->property_value() = 0;
+        RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-sort-by-date"))->property_value() = 1;
+        RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-sort-by-rating"))->property_value() = 2;
+
+        m_MainActionGroup->add(
+
+            Action::create(
+                "musiclib-new-playlist",
+                Gtk::Stock::NEW,
+                _("New Playlist")
+            ),
+
+            sigc::mem_fun(
+                *this, &PlaybackSourceMusicLib::on_new_playlist
+            )
+        );
 
         m_MainUIManager->insert_action_group(m_MainActionGroup);
     }
@@ -968,10 +1052,6 @@ namespace Source
     void
     PlaybackSourceMusicLib::post_install ()
     {
-#if 0
-        m_DefaultPlaylist = new PlaybackSourcePlaylist(m_MainUIManager, m_Player);
-        m_Player.add_subsource(m_DefaultPlaylist, get_key(), 0);
-#endif
     }
 
     PlaybackSourceMusicLib::~PlaybackSourceMusicLib ()
@@ -1012,6 +1092,23 @@ namespace Source
     {
         int value = RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action ("musiclib-sort-by-name"))->get_current_value();
         m_Private->m_TreeViewAlbums->TreeStore->set_sort_column(value, Gtk::SORT_ASCENDING);    
+    }
+
+    void
+    PlaybackSourceMusicLib::on_new_playlist ()
+    {
+        static boost::format format ("%s (%lld)"); 
+
+        PlaybackSourcePlaylist * pl =
+            new PlaybackSourcePlaylist(
+                m_MainUIManager,
+                m_Player,
+                (format % (_("New Playlist")) % (m_PlaylistID+1)).str()
+            );
+
+        m_Playlists[m_PlaylistID] = pl;
+        m_Player.add_subsource(pl, get_key(), m_PlaylistID);
+        m_PlaylistID++;
     }
 
     std::string

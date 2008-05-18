@@ -152,8 +152,7 @@ namespace MPX
         bool
         TagView::on_button_press_event (GdkEventButton * event)
         {
-            g_message("%s: Emitting m_Signal0 with tag Name: '%s'", G_STRLOC, m_ActiveTagName.c_str());
-            g_signal_emit (G_OBJECT(gobj()), m_Signal0, 0, m_ActiveTagName.c_str());
+            g_signal_emit (G_OBJECT(gobj()), m_GSignalTagClicked, 0, m_ActiveTagName.c_str());
             return false;
         }
 
@@ -363,7 +362,7 @@ namespace MPX
         {
             if(!gsignals_initialized)
             {
-                m_Signal0 = 
+                m_GSignalTagClicked = 
                     g_signal_new ("tag-clicked",
                               G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
                               GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
@@ -374,7 +373,7 @@ namespace MPX
             }
             else
             {
-                m_Signal0 = g_signal_lookup("tag-clicked", get_type() );
+                m_GSignalTagClicked = g_signal_lookup("tag-clicked", get_type() );
             }
 
             gtk_widget_add_events(GTK_WIDGET(gobj()), Gdk::POINTER_MOTION_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::LEAVE_NOTIFY_MASK);

@@ -199,15 +199,9 @@ MPX::LibraryScannerThread::on_cleanup ()
 {
 }
 
-void
-MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
+bool
+MPX::LibraryScannerThread::on_scan_idle (Util::FileList const& list)
 {
-    if(list.empty())
-    {
-        g_message(G_STRLOC ": empty list");
-        return;
-    }
-
     ThreadData * pthreaddata = m_ThreadData.get();
     g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
 
@@ -240,35 +234,32 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
           catch (HAL::Exception & cxe)
             {
               g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
-              return;
+              return false;
             }
           catch (Glib::ConvertError & cxe)
             {
               g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-              return;
+              return false;
             }
 #endif // HAVE_HAL
             collection.clear();
-            g_message("%s: Scanning path %s", G_STRLOC, (*i).c_str());
             Util::collect_audio_paths( insert_path, collection );
             total += collection.size();
-            g_message("%s: Got %lld files", G_STRLOC, gint64(collection.size()));
         }
         catch( Glib::ConvertError & cxe )
         {
             g_warning("%s: %s", G_STRLOC, cxe.what().c_str());
-            return;
+            return false;
         }
 
         if(collection.empty())
         {
             pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, collection.size());
-            return;
+            return false;
         }
 
         for(Util::FileList::iterator i = collection.begin(); i != collection.end(); ++i)
         {
-
 #if 0
             if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
             {
@@ -277,7 +268,6 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
                 return;
             }
 #endif
-
             Track track;
             std::string type;
 
@@ -285,14 +275,12 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
                 if (!Audio::typefind(*i, type))  
                 {
                   ++(erroneous) ;
-                  g_message("%s: No type for URI '%s'", G_STRLOC, (*i).c_str());
                   continue;
                 }
               }  
             catch (Glib::ConvertError & cxe)
               {
                   ++(erroneous) ;
-                  g_message("%s: Convert error for '%s'", G_STRLOC, (*i).c_str());
                   continue;
               }   
 
@@ -302,7 +290,6 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
             if( !m_MetadataReaderTagLib.get( *i, track ) )
             {
                ++(erroneous) ;
-               g_message("%s: Couldn't read metadata off '%s'", G_STRLOC, (*i).c_str());
                continue;
             }
 
@@ -339,6 +326,18 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
 
     pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, total);
     
+    return false;
+}
+
+void
+MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
+{
+    if(list.empty())
+    {
+        return;
+    }
+
+    maincontext()->signal_idle().connect( sigc::bind( sigc::mem_fun( *this, &LibraryScannerThread::on_scan_idle ), list ));
 }
 
 void
@@ -619,12 +618,10 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
       m_SQL->exec_sql (sql);
       album_j = m_SQL->last_insert_rowid ();
-      g_message("%s: New album %lld", G_STRLOC, album_j);
       pthreaddata->NewAlbum.emit( album_j ); 
 
       if(!custom_id)
       {
-          g_message("Fetching normal");
           pthreaddata->CacheCover(
                            get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get())
                          , ((track[ATTRIBUTE_ASIN]
@@ -634,7 +631,6 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
       }
       else
       {
-          g_message("Fetching custom");
           pthreaddata->CacheCoverInline(
                             get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()),
                             get<std::string>(track[ATTRIBUTE_LOCATION].get()) );

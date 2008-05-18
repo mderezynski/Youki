@@ -29,6 +29,7 @@
 #include <boost/shared_ptr.hpp>
 #include <map>
 #include <string>
+#include <vector>
 #include <mcs/mcs.h>
 
 namespace MPX
@@ -48,6 +49,8 @@ namespace MPX
 			bool			m_Active;
             bool            m_HasGUI;
             bool            m_CanActivate;
+            bool            m_CanBind;
+            std::string     m_Bindable;
 			gint64			m_Id;
 
 		public:
@@ -76,11 +79,16 @@ namespace MPX
             bool
             get_can_activate () const   { return m_CanActivate; }
 
+            bool
+            get_can_bind ()     const   { return m_CanBind; }
+
+            std::string 
+            get_bindable ()     const   { return m_Bindable; }
+
 			gint64
 			get_id ()			const	{ return m_Id; }
 
 		friend class PluginManager;
-        friend class PluginActivate;
 	};
 
 	typedef boost::shared_ptr<PluginHolder>	PluginHolderRefP;
@@ -107,23 +115,13 @@ namespace MPX
 			get_traceback() const;
 	};
 
-    typedef sigc::signal<void, gint64> SignalPluginActivated;
-
-
 	class Player;
     class PluginManager
     {
-        friend class PluginActivate;
-
-        SignalPluginActivated signal_;
-
 		public:
 	
 			PluginManager (MPX::Player* /*player*/);
 			~PluginManager ();
-
-            SignalPluginActivated&	
-            signal_plugin_activated() { return signal_; }
 
 			void
 			append_search_path (std::string const& /*path*/);
@@ -134,11 +132,9 @@ namespace MPX
             void
             activate_plugins ();
 
-
 			PluginHoldMap const&
 			get_map () const;
 		
-
 			bool	
 			activate (gint64 /*id*/);
 	
@@ -147,7 +143,6 @@ namespace MPX
 
             Gtk::Widget *
             get_gui (gint64 /*id*/);
-
 
 			void
 			push_traceback(gint64 id, const std::string& /*method*/);
@@ -160,7 +155,6 @@ namespace MPX
 
 			Traceback
 			pull_last_traceback();
-
 
 		private:
 

@@ -146,84 +146,6 @@ namespace
     g_free (v);
     return r; 
   }
-
-  void
-  parse_metadata (MPX::Metadata & metadata,
-                  ustring       & artist,
-                  ustring       & album,
-                  ustring       & title,
-                  ustring       & genre)
-  {
-    using namespace MPX;
-
-    static char const *
-      text_b_f ("<span size='12500'><b>%s</b></span>");
-
-    static char const *
-      text_i_f ("<span size='12500'><i>%s</i></span>");
-
-    static char const *
-      text_b_f2 ("<span size='12500'><b>%s</b> (%s)</span>");
-
-    static char const *
-      text_big_f ("<span size='15000'><b>%s</b></span>");
-
-    static char const *
-      text_album_artist_f ("<span size='12500'><b>%s</b> (%s)</span>");
-
-    static char const *
-      text_album_f ("<span size='12500'><b>%s</b></span>");
-
-    static char const *
-      text_artist_f ("<span size='12500'>(%s)</span>");
-
-    if( (metadata[ATTRIBUTE_MB_ALBUM_ARTIST_ID] != metadata[ATTRIBUTE_MB_ARTIST_ID]) && metadata[ATTRIBUTE_ALBUM_ARTIST] )
-    {
-        if( metadata[ATTRIBUTE_ALBUM] )
-        {
-          album = gprintf (text_album_artist_f,
-                               Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM].get())).c_str(),
-                               Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM_ARTIST].get())).c_str());
-        }
-        else
-        {
-          album = gprintf (text_artist_f,
-                               Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM_ARTIST].get())).c_str());
-        }
-    }
-    else
-    {
-        if( metadata[ATTRIBUTE_ALBUM] )
-        {
-          album = gprintf (text_album_f,
-                               Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM].get())).c_str());
-        }
-    }
-
-    if ((metadata[ATTRIBUTE_ARTIST_SORTNAME] && metadata[ATTRIBUTE_ARTIST]) &&
-        (metadata[ATTRIBUTE_ARTIST_SORTNAME] != metadata[ATTRIBUTE_ARTIST])) /* let's display the artist if it's not identical to the sortname */
-    {
-      std::string a = get<std::string>(metadata[ATTRIBUTE_ARTIST_SORTNAME].get());
-      artist = gprintf (text_b_f2,
-                            Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST_SORTNAME].get())).c_str(),
-                            Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str());
-    }
-    else
-    if( metadata[ATTRIBUTE_ARTIST] )
-    {
-      artist = gprintf (text_b_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str());
-    }
-
-    if( metadata[ATTRIBUTE_TITLE] )
-    {
-      title = gprintf (text_big_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_TITLE].get())).c_str());
-    }
-
-    if( metadata[ATTRIBUTE_GENRE] )
-    {
-      genre = gprintf (text_i_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_GENRE].get())).c_str());
-    }
-  }
 }
 
 namespace
@@ -301,6 +223,7 @@ namespace MPX
     std::string     Artist;
     std::string     Album;
     std::string     Title;
+    std::string     Genre;
   };
 
   class InfoArea
@@ -491,6 +414,88 @@ namespace MPX
     private:
 
           void
+          parse_metadata (MPX::Metadata & metadata,
+                          TextSet       & set)
+          {
+            using namespace MPX;
+
+            static char const *
+              text_b_f ("<span size='12500'><b>%s</b></span>");
+
+            static char const *
+              text_i_f ("<span size='12500'><i>%s</i></span>");
+
+            static char const *
+              text_b_f2 ("<span size='12500'><b>%s</b> (%s)</span>");
+
+            static char const *
+              text_big_f ("<span size='15000'><b>%s</b></span>");
+
+            static char const *
+              text_album_artist_f ("<span size='12500'><b>%s</b> (%s)</span>");
+
+            static char const *
+              text_album_f ("<span size='12500'><b>%s</b></span>");
+
+            static char const *
+              text_artist_f ("<span size='12500'>(%s)</span>");
+
+            if( (metadata[ATTRIBUTE_MB_ALBUM_ARTIST_ID] != metadata[ATTRIBUTE_MB_ARTIST_ID]) && metadata[ATTRIBUTE_ALBUM_ARTIST] )
+            {
+                if( metadata[ATTRIBUTE_ALBUM] )
+                {
+                  set.Album = gprintf(
+                    text_album_artist_f,
+                    Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM].get())).c_str(),
+                    Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM_ARTIST].get())).c_str()
+                  );
+                }
+                else
+                {
+                  set.Album = gprintf(
+                    text_artist_f,
+                    Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM_ARTIST].get())).c_str()
+                  );
+                }
+            }
+            else
+            {
+                if( metadata[ATTRIBUTE_ALBUM] )
+                {
+                  set.Album = gprintf(
+                    text_album_f,
+                    Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM].get())).c_str()
+                  );
+                }
+            }
+
+            if ((metadata[ATTRIBUTE_ARTIST_SORTNAME] && metadata[ATTRIBUTE_ARTIST]) &&
+                (metadata[ATTRIBUTE_ARTIST_SORTNAME] != metadata[ATTRIBUTE_ARTIST])) /* let's display the artist if it's not identical to the sortname */
+            {
+              set.Artist = gprintf(
+                text_b_f2,
+                Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST_SORTNAME].get())).c_str(),
+                Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str()
+              );
+            }
+            else
+            if( metadata[ATTRIBUTE_ARTIST] )
+            {
+              set.Artist = gprintf (text_b_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str());
+            }
+
+            if( metadata[ATTRIBUTE_TITLE] )
+            {
+              set.Title = gprintf (text_big_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_TITLE].get())).c_str());
+            }
+
+            if( metadata[ATTRIBUTE_GENRE] )
+            {
+              set.Genre = gprintf (text_i_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_GENRE].get())).c_str());
+            }
+          }
+
+          void
           enable_drag_dest ()
           {
               disable_drag_dest ();
@@ -562,12 +567,19 @@ namespace MPX
           }
 
           void
-          set_text (TextSet const& set)
-                    
+          set_metadata( Metadata & metadata )
           {
             Mutex::Lock L (m_layout_lock);
 
-            if(m_text_cur)
+		    if( !metadata.Image )
+                clear_cover (); 
+            else
+		        set_cover (metadata.Image->scale_simple (72, 72, Gdk::INTERP_BILINEAR));
+
+            TextSet set;
+		    parse_metadata( metadata, set ); 
+
+            if( m_text_cur )
             {
                 m_text_new = set;
                 m_fade_conn = signal_timeout().connect(
@@ -621,6 +633,16 @@ namespace MPX
                     sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 10
                 );
             }
+          }
+
+          void
+          clear_cover ()
+          {
+                m_cover_surface_new.reset();
+                m_cover_anim_conn_fade.disconnect ();
+                m_cover_anim_conn_fade = signal_timeout ().connect(
+                    sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 10
+                );
           }
 
     private:
@@ -1340,12 +1362,12 @@ namespace MPX
 
         mpx_py_init ();
 
-        m_ref_xml->get_widget_derived("sidebar", m_Sidebar);
         m_ref_xml->get_widget("statusbar", m_Statusbar);
         m_ref_xml->get_widget("notebook-info", m_InfoNotebook);
         m_ref_xml->get_widget("volumebutton", m_Volume);
 
 		m_PluginManager = new PluginManager(this);
+        m_Sidebar = new Sidebar(m_ref_xml, *m_PluginManager);
 
         try{
 
@@ -1662,6 +1684,7 @@ namespace MPX
         m_Sidebar->addItem(
             _("Now Playing"),
             m_VideoWidget,
+            0,
             render_icon(
                 Gtk::StockID(GTK_STOCK_MEDIA_PLAY),
                 Gtk::ICON_SIZE_DIALOG
@@ -1672,6 +1695,7 @@ namespace MPX
         m_Sidebar->addItem(
             _("Info Plugins"),
             m_InfoNotebook,
+            0,
             render_icon(
                 Gtk::StockID(GTK_STOCK_INFO),
                 Gtk::ICON_SIZE_DIALOG
@@ -1772,7 +1796,7 @@ namespace MPX
             mcs->key_get<int>("mpx","window-y")
         );
 
-
+#if 0
         m_CoverFlow = new CoverFlowWidget;
         CoverFlowEngine::SongList songs;
 
@@ -1786,6 +1810,7 @@ namespace MPX
         m_CoverFlow->load_covers(songs);
         m_CoverFlow->show ();
         add_widget(m_CoverFlow);
+#endif
 
 		show ();
 
@@ -1903,6 +1928,7 @@ namespace MPX
         m_Sidebar->addItem(
             p->get_name(),
             a,  
+            p,
             p->get_icon()->scale_simple(
                     20,
                     20,
@@ -2079,12 +2105,22 @@ namespace MPX
         std::string username = mcs->key_get<std::string>("lastfm", "username");
         std::string password = mcs->key_get<std::string>("lastfm", "password");
 
-        if((!username.empty() && !password.empty()) && m_Metadata.get()[ATTRIBUTE_ARTIST] && m_Metadata.get()[ATTRIBUTE_TITLE])
+        if(
+            username.size()
+                &&
+            password.size()
+                &&
+            m_Metadata.get()[ATTRIBUTE_ARTIST]
+                &&
+            m_Metadata.get()[ATTRIBUTE_TITLE]
+        )
         {
+            m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
+
             XSPF::Item item;
             item.creator = get<std::string>(m_Metadata.get()[ATTRIBUTE_ARTIST].get());
             item.title = get<std::string>(m_Metadata.get()[ATTRIBUTE_TITLE].get());
-            m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive(false);
+
             LastFM::TrackAction ("loveTrack", item, username, password).run();
         }
     }
@@ -2191,6 +2227,7 @@ namespace MPX
         m_Sidebar->addSubItem(
             p->get_name(),
             a,  
+            p,
             p->get_icon()->scale_simple(
                     20,
                     20,
@@ -2441,26 +2478,25 @@ namespace MPX
 	{
         Glib::Mutex::Lock L (m_MetadataLock);
 
-        m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive(true);
+        m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( true ); //FIXME: This implies we get metadata only once during one track, but there is just no such design guarantee
 
         m_Metadata = metadata;
 
-        if(!m_Metadata.get().Image)
+        if( !m_Metadata.get().Image && m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
         {
-            if(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
-            {
-                m_Covers.fetch(
-                    get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()),
-                    m_Metadata.get().Image
-                );
-            }
+            m_Covers.fetch(
+                get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()),
+                m_Metadata.get().Image
+            );
         }
 
+#if 0
         if(m_Metadata.get()[ATTRIBUTE_ASIN]) 
         {
             std::string const& asin = get<std::string>(m_Metadata.get()[ATTRIBUTE_ASIN].get());
             m_CoverFlow->go_to(asin);
         }
+#endif
 
         if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
         {
@@ -3581,30 +3617,20 @@ namespace MPX
 	void
 	Player::reparse_metadata ()
 	{
-		if( !m_Metadata.get().Image )
-		    m_InfoArea->set_cover (m_DiscDefault->scale_simple (72, 72, Gdk::INTERP_HYPER));
-        else
-		    m_InfoArea->set_cover (m_Metadata.get().Image->scale_simple (72, 72, Gdk::INTERP_HYPER));
-
-		ustring artist, album, title, genre;
-		parse_metadata (m_Metadata.get(), artist, album, title, genre);
-
-        TextSet set;
-        set.Artist = artist;
-        set.Title = title;
-        set.Album = album;
-
-        m_InfoArea->set_text(set);
+        m_InfoArea->set_metadata(m_Metadata.get());
 
         if(m_Metadata.get()[ATTRIBUTE_TITLE] && m_Metadata.get()[ATTRIBUTE_ARTIST])
         {
-            std::string artist = get<std::string>(m_Metadata.get()[ATTRIBUTE_ARTIST].get());
-            std::string title = get<std::string>(m_Metadata.get()[ATTRIBUTE_TITLE].get());
-            set_title((boost::format ("%1% - %2% (MPX)") % artist.c_str() % title.c_str()).str());
+            set_title(
+                (boost::format ("%1% - %2% (MPX)") 
+                        % get<std::string>(m_Metadata.get()[ATTRIBUTE_ARTIST].get())
+                        % get<std::string>(m_Metadata.get()[ATTRIBUTE_TITLE].get())
+                ).str()
+            );
         }
         else
         {
-            set_title(_("(Unknown Track) - MPX"));
+            set_title(_("(Untitled Track) - (MPX)"));
         }
 
         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
