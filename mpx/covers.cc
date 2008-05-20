@@ -131,17 +131,27 @@ namespace MPX
     void
     Covers::reply_cb_mbxml (char const* data, guint size, guint code, CoverFetchData* mbxml_data)
     {
-        if (code == 200)
+        RequestKeeper.erase(mbxml_data->mbid);
+
+        if( code == 200 )
         {
 			std::string image_url;
+
 			try{
-				image_url = xpath_get_text (data, size,
-					"/metadata/release/relation-list//relation[@type='CoverArtLink']/@target", "mb=http://musicbrainz.org/ns/mmd-1.0#"); 
+
+				image_url = xpath_get_text(
+                    data,
+                    size,
+					"/metadata/release/relation-list//relation[@type='CoverArtLink']/@target", "mb=http://musicbrainz.org/ns/mmd-1.0#"
+                ); 
+
 			} catch (std::runtime_error & cxe)
 			{
 				delete mbxml_data;
 				return;
 			}
+
+            RequestKeeper.insert(mbxml_data->mbid);
 	        mbxml_data->request = Soup::Request::create (image_url);
 		    mbxml_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_amazn ), mbxml_data ));
 			mbxml_data->request->run();
@@ -149,7 +159,9 @@ namespace MPX
         else
         {
             if(mbxml_data->uri.length())
-                cache_inline(mbxml_data->mbid, mbxml_data->uri);
+            {
+                cache_inline( mbxml_data->mbid, mbxml_data->uri );
+            }
 			delete mbxml_data;
         }
     }
@@ -157,6 +169,8 @@ namespace MPX
     void
     Covers::reply_cb_amazn (char const* data, guint size, guint code, CoverFetchData* amzn_data)
     {
+        RequestKeeper.erase(amzn_data->mbid);
+
         if (code == 200)
         {
             RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
@@ -167,26 +181,26 @@ namespace MPX
 
             if (cover->get_width() == 1 && cover->get_height() == 1)
             {
-              /*DO NOTHING*/
+                /*DO NOTHING*/
             }
             else
             { 
-                Glib::Mutex::Lock L (RequestKeeperLock);
-                cover->save (get_thumb_path(amzn_data->mbid), "png");
-                m_pixbuf_cache.insert (std::make_pair (amzn_data->mbid, cover));
-                Signals.GotCover.emit(amzn_data->mbid);
-                RequestKeeper.erase(amzn_data->mbid);
+                Glib::Mutex::Lock L( RequestKeeperLock );
+                cover->save( get_thumb_path( amzn_data->mbid ), "png" );
+                m_pixbuf_cache.insert( std::make_pair( amzn_data->mbid, cover ));
+                Signals.GotCover.emit( amzn_data->mbid );
             }
             delete amzn_data;
-            return;
         }
         else
         {
             ++(amzn_data->n);
             if(amzn_data->n > 5)
             {
-                if(amzn_data->uri.length())
-                    cache_inline(amzn_data->mbid, amzn_data->uri);
+                if( amzn_data->uri.length() )
+                {
+                    cache_inline( amzn_data->mbid, amzn_data->uri );
+                }
                 delete amzn_data;
                 return; // no more hosts to try
             }
@@ -206,13 +220,13 @@ namespace MPX
     Covers::cache (std::string const& mbid, std::string const& uri, std::string const& asin, bool acquire)
     {
         Glib::Mutex::Lock L (RequestKeeperLock);
-        if(RequestKeeper.count(mbid))
+        if( RequestKeeper.count(mbid) )
         {
             return;
         }
 
         std::string thumb_path = get_thumb_path (mbid);
-        if (file_test( thumb_path, FILE_TEST_EXISTS ))
+        if( file_test( thumb_path, FILE_TEST_EXISTS ))
         {
             Signals.GotCover.emit(mbid);
             return; 
@@ -220,7 +234,7 @@ namespace MPX
 
         if( acquire )
         {
-            if(mbid.substr(0,4) == "mpx-")
+            if( mbid.substr(0,4) == "mpx-" )
             {
                 cache_inline( mbid, uri );
             }
@@ -289,16 +303,20 @@ namespace MPX
         MPixbufCache::const_iterator i = m_pixbuf_cache.find(mbid);
         if (i != m_pixbuf_cache.end())
         {
-          cover = i->second; 
-          return true;
+            cover = (*i).second; 
+            return true;
         }
 
         std::string thumb_path = get_thumb_path (mbid);
-        if (file_test (thumb_path, FILE_TEST_EXISTS))
+        if (file_test( thumb_path, FILE_TEST_EXISTS ))
         {
-          cover = Gdk::Pixbuf::create_from_file (thumb_path); 
-          m_pixbuf_cache.insert (std::make_pair(mbid, cover));
-          return true;
+            try{
+              cover = Gdk::Pixbuf::create_from_file( thumb_path ); 
+              m_pixbuf_cache.insert (std::make_pair(mbid, cover));
+              return true;
+            } catch( Gdk::PixbufError )
+            {
+            }
         }
 
         return false;
@@ -310,18 +328,27 @@ namespace MPX
         MSurfaceCache::const_iterator i = m_surface_cache[size].find (mbid);
         if (i != m_surface_cache[size].end())
         {
-          surface = i->second; 
-          return true;
+            surface = (*i).second; 
+            return true;
         }
 
         std::string thumb_path = get_thumb_path (mbid);
         if (file_test (thumb_path, FILE_TEST_EXISTS))
         {
-          int px = pixel_size (size);
-          surface = Util::cairo_image_surface_from_pixbuf
-			(Gdk::Pixbuf::create_from_file (thumb_path)->scale_simple (px, px, Gdk::INTERP_BILINEAR));
-          m_surface_cache[size].insert (std::make_pair (mbid, surface));
-          return true;
+            int px = pixel_size (size);
+            
+            try{
+                surface = Util::cairo_image_surface_from_pixbuf(
+                              Gdk::Pixbuf::create_from_file(thumb_path)->scale_simple(
+                                                                            px,
+                                                                            px,
+                                                                            Gdk::INTERP_BILINEAR
+                ));
+                m_surface_cache[size].insert( std::make_pair( mbid, surface ));
+                return true;
+            } catch( Gdk::PixbufError )
+            {
+            }
         }
 
         return false;
