@@ -41,6 +41,17 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
+#include <taglib-gio/taglib-gio.h>
+#include <taglib-gio/fileref.h>
+#include <taglib-gio/tfile.h>
+#include <taglib-gio/tag.h>
+#include <taglib-gio/id3v2tag.h>
+#include <taglib-gio/mpegfile.h>
+#include <taglib-gio/id3v2framefactory.h>
+#include <taglib-gio/textidentificationframe.h>
+#include <taglib-gio/uniquefileidentifierframe.h>
+#include <taglib-gio/attachedpictureframe.h>
+
 #include "mpx/audio.hh"
 #include "mpx/covers.hh"
 #include "mpx/minisoup.hh"
@@ -51,6 +62,7 @@
 #include "mpx/xml.hh"
 
 using namespace Glib;
+using namespace TagLib;
 
 namespace
 {
@@ -93,10 +105,8 @@ namespace
 
 namespace MPX
 {
-    Covers::Covers (MetadataReaderTagLib & obj_reader, NM & obj_nm)
+    Covers::Covers ()
     : sigx::glib_auto_dispatchable()
-    , m_NM(obj_nm)
-    , m_Reader(obj_reader)
     {
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", NULL));
         g_mkdir(path.get(), 0700);
@@ -202,36 +212,70 @@ namespace MPX
         }
 
         std::string thumb_path = get_thumb_path (mbid);
-        if (file_test (thumb_path, FILE_TEST_EXISTS))
+        if (file_test( thumb_path, FILE_TEST_EXISTS ))
         {
             Signals.GotCover.emit(mbid);
             return; 
         }
 
-        if(acquire)
+        if( acquire )
         {
-            CoverFetchData * data = new CoverFetchData(mbid, asin, uri);
-            RequestKeeper.insert(mbid);
-
-            if(asin.empty())
-                site_fetch_and_save_cover_mbxml(data);
+            if(mbid.substr(0,4) == "mpx-")
+            {
+                cache_inline( mbid, uri );
+            }
             else
-                site_fetch_and_save_cover_amazn(data);
+            {
+                CoverFetchData * data = new CoverFetchData(mbid, asin, uri);
+                RequestKeeper.insert(mbid);
+
+                if(asin.empty())
+                    site_fetch_and_save_cover_mbxml(data);
+                else
+                    site_fetch_and_save_cover_amazn(data);
+            }
         }
     }
 
     void
     Covers::cache_inline (std::string const& mbid, std::string const& uri)
     {
-        std::string thumb_path = get_thumb_path (mbid);
-        if (file_test (thumb_path, FILE_TEST_EXISTS))
+        Glib::RefPtr<Gdk::Pixbuf> cover;
+
+        try{
+            MPEG::File opfile (uri.c_str());
+            if(opfile.isOpen() && opfile.isValid())
+            {
+                using TagLib::ID3v2::FrameList;
+                ID3v2::Tag * tag = opfile.ID3v2Tag (false);
+                if( tag )
+                {
+                    FrameList const& list = tag->frameList();
+                    for(FrameList::ConstIterator i = list.begin(); i != list.end(); ++i)
+                    {
+                        TagLib::ID3v2::Frame const* frame = *i;
+                        if( frame )
+                        {
+                            TagLib::ID3v2::AttachedPictureFrame const* picture =
+                                dynamic_cast<TagLib::ID3v2::AttachedPictureFrame const*>(frame);
+
+                            if( picture && picture->type() == TagLib::ID3v2::AttachedPictureFrame::FrontCover )
+                            {
+                                RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
+                                ByteVector picdata = picture->picture();
+                                loader->write (reinterpret_cast<const guint8*>(picdata.data()), picdata.size());
+                                loader->close ();
+                                cover = loader->get_pixbuf();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch( ... )
         {
-            Signals.GotCover.emit(mbid);
-            return; 
         }
 
-        Glib::RefPtr<Gdk::Pixbuf> cover = Audio::get_inline_image(uri); 
-        if(cover)
+        if( cover )
         {
             cover->save (get_thumb_path(mbid), "png");
             m_pixbuf_cache.insert (std::make_pair (mbid, cover));

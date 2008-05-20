@@ -65,16 +65,6 @@ namespace MPX
         using boost::iterator_range;
         using TagLib::ID3v2::FrameList;
 
-        FrameList const& list = tag->frameList();
-        g_message("Listing Frames");
-        for(FrameList::ConstIterator i = list.begin(); i != list.end(); ++i)
-        {
-            TagLib::ID3v2::Frame const* f = *i;
-            TagLib::ID3v2::AttachedPictureFrame const* pf = dynamic_cast<TagLib::ID3v2::AttachedPictureFrame const*>(f);
-            if(pf)
-                g_message(G_STRLOC ": Got Picture");
-        }
-
         struct {
             int         datum;
             std::string id;

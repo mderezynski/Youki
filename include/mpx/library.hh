@@ -42,12 +42,20 @@ namespace MPX
         friend class LibraryScannerThread;
 
         public:
+
+            Library(
 #ifdef HAVE_HAL
-            Library (MetadataReaderTagLib&, Covers&, HAL&, bool use_hal) ;
-#else //!HAVE_HAL
-            Library (MetadataReaderTagLib&, Covers&) ;
+                HAL&,
 #endif //HAVE_HAL
+                Covers&,
+                MetadataReaderTagLib&,
+#ifdef HAVE_HAL
+                bool
+#endif //HAVE_HAL
+            );
+
             Library (const Library& other);
+
             ~Library () ;
 
             LibraryScannerThread::ScannerConnectable&
@@ -180,21 +188,6 @@ namespace MPX
             gint64                    m_Flags;
 
         protected:
-
-            gint64
-            get_track_artist_id (Track& row, bool only_if_exists = false);
-
-            gint64
-            get_album_artist_id (Track& row, bool only_if_exists = false);
-
-            gint64
-            get_album_id (Track& row, gint64 album_artist_id, bool only_if_exists = false);
-
-            gint64
-            get_track_mtime (Track& track) const;
-
-            gint64
-            get_track_id (Track& track) const;
 
             gint64
             get_tag_id (std::string const&);

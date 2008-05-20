@@ -103,14 +103,16 @@ namespace
   "         <menuitem action='action-import-folder'/>"
   "         <menuitem action='action-import-share'/>"
 #endif // !HAVE_HAL
-  "         <menuitem action='action-mlibmanager'/>"
-  "			<menuitem action='action-vacuum-lib'/>"
-  "         <separator name='sep01'/>"
   "         <menuitem action='action-quit'/>"
   "   </menu>"
   "   <menu action='MenuEdit'>"
-  "         <menuitem action='action-plugins'/>"
   "         <menuitem action='action-preferences'/>"
+  "         <menuitem action='action-plugins'/>"
+  "         <separator name='separator-menubar-main-01'/>"
+#ifdef HAVE_HAL
+  "         <menuitem action='action-mlibmanager'/>"
+#endif // HAVE_HAL
+  "			<menuitem action='action-vacuum-lib'/>"
   "   </menu>"
   "   <menu action='MenuView'>"
   "   </menu>"

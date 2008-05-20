@@ -162,29 +162,24 @@ namespace MPX
 {
 
 #ifdef HAVE_HAL
-
     Library::Library(
-        MetadataReaderTagLib    & obj_reader,
-        Covers                  & obj_covers,
         HAL                     & obj_hal,
-        bool use_hal
+        Covers                  & obj_covers,
+        MetadataReaderTagLib    & obj_reader,
+        bool                      use_hal
     )
     : sigx::glib_auto_dispatchable()
     , m_HAL(obj_hal)
-
 #else
-
     Library::Library(
-        Covers                  & covers
+        Covers                  & obj_covers
+        MetadataReaderTagLib    & obj_reader,
     )
     : sigx::glib_auto_dispatchable()
-
 #endif
-
     , m_Covers(obj_covers)
     , m_MetadataReaderTagLib(obj_reader)
     , m_Flags (0)
-
     {
         const int MLIB_VERSION_CUR = 1;
         const int MLIB_VERSION_REV = 0;
@@ -224,12 +219,8 @@ namespace MPX
             sigc::mem_fun( *this, &Library::on_new_album ));
         m_ScannerThread->connect().signal_new_artist().connect(
             sigc::mem_fun( *this, &Library::on_new_artist ));
-
         m_ScannerThread->connect().signal_cache_cover().connect(
-            sigc::bind(sigc::mem_fun( m_Covers, &Covers::cache ), true));
-        m_ScannerThread->connect().signal_cache_cover_inline().connect(
-            sigc::mem_fun( m_Covers, &Covers::cache_inline ));
-
+            sigc::bind( sigc::mem_fun( m_Covers, &Covers::cache ), true ));
         m_ScannerThread->connect().signal_reload().connect(
             sigc::mem_fun( *this, &Library::reload ));
  
@@ -360,7 +351,6 @@ namespace MPX
     void
     Library::on_new_album (gint64 album_id)
     {
-        g_message("%s: New album %lld", G_STRLOC, album_id);
         Signals.NewAlbum.emit(album_id);
     }
 
@@ -391,7 +381,7 @@ namespace MPX
 
 		  std::string uri;
 
-  #ifdef HAVE_HAL
+#ifdef HAVE_HAL
 		  std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
 		  std::string device_udi = get<std::string>(r["hal_device_udi"]); 
 		  std::string hal_vrp	 = get<std::string>(r["hal_vrp"]);
@@ -686,160 +676,6 @@ namespace MPX
     }
 
     gint64
-    Library::get_track_artist_id (Track &track, bool only_if_exists)
-    {
-      RowV rows; 
-
-      char const* select_artist_f ("SELECT id FROM artist WHERE %s %s AND %s %s AND %s %s;"); 
-      m_SQL->get (rows, mprintf (select_artist_f,
-
-             attrs[ATTRIBUTE_ARTIST].id,
-            (track[ATTRIBUTE_ARTIST]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ARTIST].get()).c_str()).c_str()
-                : "IS NULL"),
-
-             attrs[ATTRIBUTE_MB_ARTIST_ID].id,
-            (track[ATTRIBUTE_MB_ARTIST_ID]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get()).c_str()).c_str()
-                : "IS NULL"),
-
-             attrs[ATTRIBUTE_ARTIST_SORTNAME].id,
-            (track[ATTRIBUTE_ARTIST_SORTNAME]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ARTIST_SORTNAME].get()).c_str()).c_str()
-                : "IS NULL")));
-
-      gint64 artist_j = 0;
-
-      if (rows.size ())
-      {
-        artist_j = get <gint64> (rows[0].find ("id")->second);
-      }
-      else
-      if (!only_if_exists)
-      {
-        char const* set_artist_f ("INSERT INTO artist (%s, %s, %s) VALUES (%Q, %Q, %Q);");
-
-        m_SQL->exec_sql (mprintf (set_artist_f,
-
-             attrs[ATTRIBUTE_ARTIST].id,
-             attrs[ATTRIBUTE_ARTIST_SORTNAME].id,
-             attrs[ATTRIBUTE_MB_ARTIST_ID].id,
-
-            (track[ATTRIBUTE_ARTIST]
-                ? get<std::string>(track[ATTRIBUTE_ARTIST].get()).c_str()
-                : NULL) ,
-
-            (track[ATTRIBUTE_ARTIST_SORTNAME]
-                ? get<std::string>(track[ATTRIBUTE_ARTIST_SORTNAME].get()).c_str()
-                : NULL) ,
-
-            (track[ATTRIBUTE_MB_ARTIST_ID]
-                ? get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get()).c_str()
-                : NULL))) ;
-
-        artist_j = m_SQL->last_insert_rowid ();
-      }
-      return artist_j;
-    }
-
-    gint64
-    Library::get_album_artist_id (Track& track, bool only_if_exists)
-    {
-        if (track[ATTRIBUTE_ALBUM_ARTIST] && track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]) 
-        {
-          track[ATTRIBUTE_IS_MB_ALBUM_ARTIST] = gint64(1); 
-        }
-        else
-        {
-          track[ATTRIBUTE_IS_MB_ALBUM_ARTIST] = gint64(0); 
-          track[ATTRIBUTE_ALBUM_ARTIST] = track[ATTRIBUTE_ARTIST];
-        }
-
-        RowV rows;
-
-        if( track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] )   
-        {
-          char const* select_artist_f ("SELECT id FROM album_artist WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s %s);"); 
-          m_SQL->get (rows, (mprintf (select_artist_f, 
-
-             attrs[ATTRIBUTE_ALBUM_ARTIST].id,
-            (track[ATTRIBUTE_ALBUM_ARTIST]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str()).c_str()
-                : "IS NULL"), 
-
-             attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
-            (track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()).c_str()
-                : "IS NULL"), 
-
-             attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id,
-            (track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()).c_str()).c_str()
-                : "IS NULL"), 
-
-             attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id,
-            (get<gint64>(track[ATTRIBUTE_IS_MB_ALBUM_ARTIST].get())
-                ? "= '1'"
-                : "IS NULL")))
-          );
-        }
-        else // TODO: MB lookup to fix sortname, etc, for a given ID (and possibly even retag files on the fly?)
-        {
-          char const* select_artist_f ("SELECT id FROM album_artist WHERE (%s %s) AND (%s %s);"); 
-          m_SQL->get (rows, (mprintf (select_artist_f, 
-
-             attrs[ATTRIBUTE_ALBUM_ARTIST].id,
-            (track[ATTRIBUTE_ALBUM_ARTIST]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str()).c_str()
-                : "IS NULL"), 
-
-             attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
-            (track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()).c_str()
-                : "IS NULL")))) ; 
-        }
-
-        gint64 artist_j = 0;
-
-        if (!rows.empty())
-        {
-          artist_j = get <gint64> (rows[0].find ("id")->second);
-        }
-        else if (!only_if_exists)
-        {
-          char const* set_artist_f ("INSERT INTO album_artist (%s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q);");
-
-          m_SQL->exec_sql (mprintf (set_artist_f,
-
-            attrs[ATTRIBUTE_ALBUM_ARTIST].id,
-            attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id,
-            attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
-            attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id,
-
-          (track[ATTRIBUTE_ALBUM_ARTIST]
-              ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str() 
-              : NULL) , 
-
-          (track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] 
-              ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()).c_str()
-              : NULL) , 
-
-          (track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]
-              ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()
-              : NULL) ,
-
-          (get<gint64>(track[ATTRIBUTE_IS_MB_ALBUM_ARTIST].get())
-              ? "1"
-              : NULL))) ;
-
-          artist_j = m_SQL->last_insert_rowid (); //FIXME: not threadsafe, see get_tag_id
-
-          Signals.NewArtist.emit( artist_j ); 
-        }
-        return artist_j;
-    }
-
-    gint64
     Library::get_tag_id (std::string const& tag)
     {
         gint64 tag_id = 0;
@@ -868,210 +704,6 @@ namespace MPX
         return tag_id;
     }
 
-
-    gint64
-    Library::get_album_id (Track& track, gint64 album_artist_id, bool only_if_exists)
-    {
-        gint64 album_j = 0;
-        RowV rows;
-        std::string sql;
-
-        if( track[ATTRIBUTE_MB_ALBUM_ID] )
-        {
-          char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
-
-          sql = mprintf (select_album_f,
-
-                 attrs[ATTRIBUTE_ALBUM].id,
-                (track[ATTRIBUTE_ALBUM]
-                    ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()).c_str()
-                    : "IS NULL"), 
-
-                 attrs[ATTRIBUTE_MB_ALBUM_ID].id,
-                (track[ATTRIBUTE_MB_ALBUM_ID]
-                    ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()).c_str()).c_str()
-                    : "IS NULL"), 
-
-                 attrs[ATTRIBUTE_MB_RELEASE_DATE].id,
-                (track[ATTRIBUTE_MB_RELEASE_DATE]
-                    ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()).c_str()
-                    : "IS NULL"), 
-
-                attrs[ATTRIBUTE_ASIN].id,
-                (track[ATTRIBUTE_ASIN]
-                    ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()).c_str()
-                    : "IS NULL"), 
-
-                "album_artist_j",
-                album_artist_id
-          );
-        }
-        else
-        {
-          char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s = %lld);"); 
-
-          sql = mprintf (select_album_f,
-
-                 attrs[ATTRIBUTE_ALBUM].id,
-                (track[ATTRIBUTE_ALBUM]
-                    ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()).c_str()
-                    : "IS NULL"), 
-
-                attrs[ATTRIBUTE_ASIN].id,
-                (track[ATTRIBUTE_ASIN]
-                    ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()).c_str()
-                    : "IS NULL"), 
-
-                "album_artist_j",
-                album_artist_id
-          );
-        }
-
-        OVariant mbid;
-        m_SQL->get (rows, sql); 
-
-        if(!rows.empty())
-        {
-            album_j = get <gint64> (rows[0].find ("id")->second);
-
-            if(rows[0].count("mb_album_id"))
-                track[ATTRIBUTE_MB_ALBUM_ID] = get<std::string> (rows[0].find ("mb_album_id")->second);
-        }
-        else
-        if(!only_if_exists)
-        {
-          bool custom_id = false;
-
-          if(!track[ATTRIBUTE_MB_ALBUM_ID])
-          {
-            track[ATTRIBUTE_MB_ALBUM_ID] = "mpx-" + get<std::string>(track[ATTRIBUTE_ARTIST].get())
-                                                  + "-"
-                                                  + get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
-            custom_id = true;
-          }
-
-          char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q, %lld, %lld);");
-
-          std::string sql = mprintf (set_album_f,
-
-              attrs[ATTRIBUTE_ALBUM].id,
-              attrs[ATTRIBUTE_MB_ALBUM_ID].id,
-              attrs[ATTRIBUTE_MB_RELEASE_DATE].id,
-              attrs[ATTRIBUTE_ASIN].id,
-              "album_artist_j",
-              "album_insert_date",
-
-              (track[ATTRIBUTE_ALBUM]
-                  ? get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()
-                  : NULL) , 
-
-              (track[ATTRIBUTE_MB_ALBUM_ID]
-                  ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()).c_str()
-                  : NULL) , 
-
-              (track[ATTRIBUTE_MB_RELEASE_DATE]
-                  ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()
-                  : NULL) , 
-
-              (track[ATTRIBUTE_ASIN]
-                  ? get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()
-                  : NULL) , 
-
-              album_artist_id,
-              get<gint64>(track[ATTRIBUTE_MTIME].get()));
-
-          m_SQL->exec_sql (sql);
-          album_j = m_SQL->last_insert_rowid (); //FIXME: not threadsafe, see get_tag_id
-          Signals.NewAlbum.emit( album_j ); 
-
-          if(!custom_id)
-          {
-              g_message("Fetching normal");
-              m_Covers.cache( get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get())
-                             , (track[ATTRIBUTE_ASIN]
-                               ? get<std::string>(track[ATTRIBUTE_ASIN].get())
-                               : std::string())
-                             , get<std::string>(track[ATTRIBUTE_LOCATION].get())
-                             , true );
-          }
-          else
-          {
-              g_message("Fetching custom");
-              m_Covers.cache_inline( get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()),
-                                     get<std::string>(track[ATTRIBUTE_LOCATION].get()) );
-          }
-        }
-        return album_j;
-    }
-
-    gint64
-    Library::get_track_mtime (Track& track) const
-    {
-      RowV rows;
-      if (m_Flags & F_USING_HAL)
-      {
-        static boost::format
-          select_f ("SELECT %s FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
-
-        m_SQL->get (rows, (select_f  % attrs[ATTRIBUTE_MTIME].id
-                                    % attrs[ATTRIBUTE_HAL_VOLUME_UDI].id
-                                    % get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get())
-                                    % attrs[ATTRIBUTE_HAL_DEVICE_UDI].id
-                                    % get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get())
-                                    % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id
-                                    % mprintf ("%q", get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()).c_str())).str());
-      }
-      else
-      {
-        static boost::format
-          select_f ("SELECT %s FROM track WHERE %s='%s';");
-
-        m_SQL->get (rows, (select_f  % attrs[ATTRIBUTE_MTIME].id
-                                    % attrs[ATTRIBUTE_LOCATION].id
-                                    % mprintf ("%q", get<std::string>(track[ATTRIBUTE_LOCATION].get()).c_str())).str());
-      }
-
-      if (rows.size() && (rows[0].count (attrs[ATTRIBUTE_MTIME].id) != 0))
-      {
-        return boost::get<gint64>( rows[0].find (attrs[ATTRIBUTE_MTIME].id)->second ) ;
-      }
-
-      return 0;
-    }
- 
-    gint64
-    Library::get_track_id (Track& track) const
-    {
-      RowV rows;
-      if ((m_Flags & F_USING_HAL) == F_USING_HAL)
-      {
-        static boost::format
-          select_f ("SELECT id FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
-
-        m_SQL->get (rows, (select_f % attrs[ATTRIBUTE_HAL_VOLUME_UDI].id 
-                                    % get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get())
-                                    % attrs[ATTRIBUTE_HAL_DEVICE_UDI].id
-                                    % get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get())
-                                    % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id
-                                    % mprintf ("%q", get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()).c_str())).str());
-      }
-      else
-      {
-        static boost::format
-          select_f ("SELECT id FROM track WHERE %s='%s';");
-
-        m_SQL->get (rows, (select_f % attrs[ATTRIBUTE_LOCATION].id 
-                                    % mprintf ("%q", get<std::string>(track[ATTRIBUTE_LOCATION].get()).c_str())).str());
-      }
-
-      if (rows.size() && (rows[0].count("id") != 0))
-      {
-        return boost::get<gint64>( rows[0].find("id")->second ) ;
-      }
-
-      return 0;
-    }
-
 	void
 	Library::set_mean_genre_for_album (gint64 id)
 	{
@@ -1080,7 +712,9 @@ namespace MPX
 		m_SQL->get (rows, (select_f % id).str()); 
 
 		if(rows.empty())
+        {
 			return;
+        }
 
 		execSQL((boost::format ("UPDATE album SET album_genre = '%s' WHERE id = '%lld'") % get<std::string>(rows[0]["genre"]) % id).str());
 	}

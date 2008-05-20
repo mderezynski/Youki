@@ -56,7 +56,6 @@ namespace MPX
             typedef sigc::signal<void, gint64>                             SignalNewAlbum_t ;
             typedef sigc::signal<void, gint64>                             SignalNewArtist_t ;
             typedef sigc::signal<void, std::string const&, std::string const&, std::string const&> SignalCacheCover_t ;
-            typedef sigc::signal<void, std::string const&, std::string const&> SignalCacheCoverInline_t ;
             typedef sigc::signal<void, Track&, gint64, gint64>  SignalTrack_t ;
         
 
@@ -68,7 +67,6 @@ namespace MPX
             typedef sigx::signal_f<SignalNewAlbum_t>            signal_new_album_x ;
             typedef sigx::signal_f<SignalNewArtist_t>           signal_new_artist_x ;
             typedef sigx::signal_f<SignalCacheCover_t>          signal_cache_cover_x ;
-            typedef sigx::signal_f<SignalCacheCoverInline_t>    signal_cache_cover_inline_x ;
             typedef sigx::signal_f<SignalTrack_t>               signal_track_x ;
 
 
@@ -81,7 +79,6 @@ namespace MPX
                                    signal_new_album_x & album_x,
                                    signal_new_artist_x & artist_x,
                                    signal_cache_cover_x & cover_x,
-                                   signal_cache_cover_inline_x & cover_inline_x,
                                    signal_track_x & track_x) :
                 signal_scan_start(start_x),
                 signal_scan_run(run_x),
@@ -90,7 +87,6 @@ namespace MPX
                 signal_new_album(album_x),
                 signal_new_artist(artist_x),
                 signal_cache_cover(cover_x),
-                signal_cache_cover_inline(cover_inline_x),
                 signal_track(track_x)
                 {
                 }
@@ -102,7 +98,6 @@ namespace MPX
                 signal_new_album_x          & signal_new_album ;
                 signal_new_artist_x         & signal_new_artist ;
                 signal_cache_cover_x        & signal_cache_cover ;
-                signal_cache_cover_inline_x & signal_cache_cover_inline ;
                 signal_track_x              & signal_track ;
             };
 
@@ -119,7 +114,6 @@ namespace MPX
             signal_new_album_x          signal_new_album ;
             signal_new_artist_x         signal_new_artist ;
             signal_cache_cover_x        signal_cache_cover ;
-            signal_cache_cover_inline_x signal_cache_cover_inline ;
             signal_track_x              signal_track ;
 
         public:	
@@ -136,7 +130,6 @@ namespace MPX
             virtual void on_cleanup () ;
 
             void on_scan (Util::FileList const&) ;
-            bool on_scan_idle (Util::FileList const&) ;
             void on_scan_stop () ;
 
             gint64

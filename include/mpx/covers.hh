@@ -69,6 +69,8 @@ namespace MPX
 
       typedef bool (Covers::*FetchFunc) (std::string const&, Glib::RefPtr<Gdk::Pixbuf>&);
 
+	  Covers ();
+
 	  bool
 	  fetch (std::string const& mbid, Glib::RefPtr<Gdk::Pixbuf>&);
 
@@ -77,11 +79,6 @@ namespace MPX
 
 	  void
 	  cache (std::string const& mbid, std::string const& uri, std::string const& asin = std::string(), bool acquire = true);
-
-      void
-      cache_inline (std::string const& mbid, std::string const& uri);
-
-	  Covers (MetadataReaderTagLib&, NM&);
 
 	private:
 
@@ -119,9 +116,8 @@ namespace MPX
 	  void
 	  reply_cb_mbxml (char const*, guint, guint, CoverFetchData*);
 
-
-	  NM                        & m_NM;
-      MetadataReaderTagLib      & m_Reader;
+      void
+      cache_inline (std::string const& mbid, std::string const& uri);
 
 	  RequestKeeperT              RequestKeeper;
 	  Glib::Mutex                 RequestKeeperLock;

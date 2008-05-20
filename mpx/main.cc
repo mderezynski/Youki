@@ -342,17 +342,17 @@ main (int argc, char ** argv)
 #endif
         MPX::NM                     * obj_netman            = new MPX::NM;
 		MPX::MetadataReaderTagLib   * obj_reader            = new MPX::MetadataReaderTagLib;
-        MPX::Covers                 * obj_amzn              = new MPX::Covers(*obj_reader, *obj_netman);
+        MPX::Covers                 * obj_covers            = new MPX::Covers;
 #ifdef HAVE_HAL
-        MPX::Library                * obj_library           = new MPX::Library(*obj_reader, *obj_amzn, *obj_hal, true);
+        MPX::Library                * obj_library           = new MPX::Library(*obj_hal, *obj_covers, *obj_reader, true);
 #else
-        MPX::Library                * obj_library           = new MPX::Library(*obj_reader, *obj_amzn); 
+        MPX::Library                * obj_library           = new MPX::Library(*obj_covers, *obj_reader); 
 #endif
 
 #ifdef HAVE_HAL
-        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *obj_amzn, *obj_hal);
+        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *obj_covers, *obj_hal);
 #else
-        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *obj_amzn);
+        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *obj_covers);
 #endif // HAVE_HAL
         
         Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
@@ -362,7 +362,7 @@ main (int argc, char ** argv)
 
         delete obj_mpx;
         delete obj_library;
-        delete obj_amzn;
+        delete obj_covers;
         delete obj_reader;
         delete obj_netman;
 #ifdef HAVE_HAL

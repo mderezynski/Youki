@@ -140,7 +140,6 @@ struct MPX::LibraryScannerThread::ThreadData
     LibraryScannerThread::SignalNewAlbum_t          NewAlbum ;
     LibraryScannerThread::SignalNewArtist_t         NewArtist ;
     LibraryScannerThread::SignalCacheCover_t        CacheCover ;
-    LibraryScannerThread::SignalCacheCoverInline_t  CacheCoverInline ;
     LibraryScannerThread::SignalTrack_t             NewTrack ;
 
     int m_ScanStop;
@@ -157,7 +156,6 @@ MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::
 , signal_new_album(*this, m_ThreadData, &ThreadData::NewAlbum)
 , signal_new_artist(*this, m_ThreadData, &ThreadData::NewArtist)
 , signal_cache_cover(*this, m_ThreadData, &ThreadData::CacheCover)
-, signal_cache_cover_inline(*this, m_ThreadData, &ThreadData::CacheCoverInline)
 , signal_track(*this, m_ThreadData, &ThreadData::NewTrack)
 , m_SQL(obj_sql)
 , m_MetadataReaderTagLib(obj_tagreader)
@@ -172,7 +170,6 @@ MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::
             signal_new_album,
             signal_new_artist,
             signal_cache_cover,
-            signal_cache_cover_inline,
             signal_track
     );
 }
@@ -199,9 +196,14 @@ MPX::LibraryScannerThread::on_cleanup ()
 {
 }
 
-bool
-MPX::LibraryScannerThread::on_scan_idle (Util::FileList const& list)
+void
+MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
 {
+    if(list.empty())
+    {
+        return;
+    }
+
     ThreadData * pthreaddata = m_ThreadData.get();
     g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
 
@@ -234,12 +236,12 @@ MPX::LibraryScannerThread::on_scan_idle (Util::FileList const& list)
           catch (HAL::Exception & cxe)
             {
               g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
-              return false;
+              return;
             }
           catch (Glib::ConvertError & cxe)
             {
               g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-              return false;
+              return;
             }
 #endif // HAVE_HAL
             collection.clear();
@@ -249,25 +251,24 @@ MPX::LibraryScannerThread::on_scan_idle (Util::FileList const& list)
         catch( Glib::ConvertError & cxe )
         {
             g_warning("%s: %s", G_STRLOC, cxe.what().c_str());
-            return false;
+            return;
         }
 
         if(collection.empty())
         {
             pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, collection.size());
-            return false;
+            return;
         }
 
         for(Util::FileList::iterator i = collection.begin(); i != collection.end(); ++i)
         {
-#if 0
             if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
             {
                 pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, collection.size());
                 pthreaddata->Reload.emit();
                 return;
             }
-#endif
+
             Track track;
             std::string type;
 
@@ -325,19 +326,6 @@ MPX::LibraryScannerThread::on_scan_idle (Util::FileList const& list)
     }
 
     pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, total);
-    
-    return false;
-}
-
-void
-MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
-{
-    if(list.empty())
-    {
-        return;
-    }
-
-    maincontext()->signal_idle().connect( sigc::bind( sigc::mem_fun( *this, &LibraryScannerThread::on_scan_idle ), list ));
 }
 
 void
@@ -620,21 +608,12 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
       album_j = m_SQL->last_insert_rowid ();
       pthreaddata->NewAlbum.emit( album_j ); 
 
-      if(!custom_id)
-      {
-          pthreaddata->CacheCover(
-                           get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get())
-                         , ((track[ATTRIBUTE_ASIN]
-                             ? get<std::string>(track[ATTRIBUTE_ASIN].get())
-                             : std::string()))
-                         , get<std::string>(track[ATTRIBUTE_LOCATION].get()));
-      }
-      else
-      {
-          pthreaddata->CacheCoverInline(
-                            get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()),
-                            get<std::string>(track[ATTRIBUTE_LOCATION].get()) );
-      }
+      pthreaddata->CacheCover(
+                       get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get())
+                     , ((track[ATTRIBUTE_ASIN]
+                         ? get<std::string>(track[ATTRIBUTE_ASIN].get())
+                         : std::string()))
+                     , get<std::string>(track[ATTRIBUTE_LOCATION].get()));
     }
     return album_j;
 }
