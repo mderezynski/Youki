@@ -569,6 +569,7 @@ BOOST_PYTHON_MODULE(mpx)
             .def("get_class_guid", &MPX::PlaybackSource::get_class_guid)
     ;
 
+#if 0
     class_<MPX::Source::PlaybackSourcePlaylist, bases<MPX::PlaybackSource>, boost::noncopyable>("Playlist", boost::python::no_init)
             .def("play_tracks", &MPX::Source::PlaybackSourcePlaylist::play_tracks)
             .def("play_album", &MPX::Source::PlaybackSourcePlaylist::play_album)
@@ -577,6 +578,7 @@ BOOST_PYTHON_MODULE(mpx)
             .def("get_playlist_current_iter", &MPX::Source::PlaybackSourcePlaylist::get_playlist_current_iter)
             .def("gobj", &mpxpy::get_gobject<MPX::Source::PlaybackSourcePlaylist>)
     ;
+#endif
 
 	/*-------------------------------------------------------------------------------------*/
 

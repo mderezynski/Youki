@@ -60,11 +60,13 @@ namespace Source
                 PAccess<MPX::Covers>                m_Covers;
                 MPX::Player                       & m_Player;
    
+#if 0
                 typedef int PlaylistID; 
                 typedef std::map<PlaylistID, PlaybackSourcePlaylist*> PlaylistMap;
 
                 PlaylistID                          m_PlaylistID;
                 PlaylistMap                         m_Playlists;
+#endif
 
             public:
 

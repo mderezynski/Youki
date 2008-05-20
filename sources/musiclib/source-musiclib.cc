@@ -89,8 +89,10 @@ namespace
     "         <menuitem action='musiclib-sort-by-name'/>"
     "         <menuitem action='musiclib-sort-by-date'/>"
     "         <menuitem action='musiclib-sort-by-rating'/>"
+    /*
     "         <separator/>"
     "         <menuitem action='musiclib-new-playlist'/>"
+    */
     "     </menu>"
     "   </placeholder>"
     "</menubar>"
@@ -488,7 +490,7 @@ namespace MPX
                     std::string mbid = get<std::string>(r["mb_album_id"]);
                     IterSet & s = m_MBIDIterMap[mbid];
                     s.insert(iter);
-                    m_Covers.get().cache( mbid, "", asin, true ); 
+                    m_Covers.get().cache( mbid, "", asin, false ); 
                     (*iter)[AlbumColumns.MBID] = mbid; 
                 }
 
@@ -977,7 +979,9 @@ namespace Source
     : PlaybackSource(ui_manager, _("Music"), C_CAN_SEEK)
     , m_MainUIManager(ui_manager)
     , m_Player(obj_player)
+/*
     , m_PlaylistID(0)
+*/
     {
         m_Player.get_object(m_Lib);
         m_Player.get_object(m_HAL);
@@ -1033,6 +1037,7 @@ namespace Source
         RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-sort-by-date"))->property_value() = 1;
         RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-sort-by-rating"))->property_value() = 2;
 
+#if 0
         m_MainActionGroup->add(
 
             Action::create(
@@ -1045,6 +1050,7 @@ namespace Source
                 *this, &PlaybackSourceMusicLib::on_new_playlist
             )
         );
+#endif
 
         m_MainUIManager->insert_action_group(m_MainActionGroup);
     }
@@ -1097,6 +1103,7 @@ namespace Source
     void
     PlaybackSourceMusicLib::on_new_playlist ()
     {
+#if 0
         static boost::format format ("%s (%lld)"); 
 
         PlaybackSourcePlaylist * pl =
@@ -1109,6 +1116,7 @@ namespace Source
         m_Playlists[m_PlaylistID] = pl;
         m_Player.add_subsource(pl, get_key(), m_PlaylistID);
         m_PlaylistID++;
+#endif
     }
 
     std::string

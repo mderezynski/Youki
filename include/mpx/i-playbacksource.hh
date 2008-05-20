@@ -236,6 +236,10 @@ namespace MPX
             virtual void    
             process_uri_list (Util::FileList const&, bool play);
 
+            virtual void
+            drag_data (const Glib::RefPtr<Gdk::DragContext>&,
+                       const Gtk::SelectionData&, guint, guint);
+
             void
             set_name(std::string const&);
 

@@ -113,8 +113,13 @@ namespace MPX
         void
         on_selection_changed ();
 
-        bool
+    protected:
+
+        virtual bool
         on_drag_motion (Glib::RefPtr<Gdk::DragContext> const& context, int x, int y, guint time);
+
+        virtual void
+        on_drag_data_received (Glib::RefPtr<Gdk::DragContext> const& context, int x, int y, const Gtk::SelectionData& data, guint, guint);
 
     private:
 
@@ -143,11 +148,13 @@ namespace MPX
         typedef std::map<ItemKey, gint64>               ItemCountMap;
         typedef std::map<std::string, PlaybackSource*>  SourcesByGUID;
         typedef std::map<std::string, PlaybackSource*>  SourcesByClass;
+        typedef std::map<ItemKey, PlaybackSource*>      SourcesByKey;
 
         IdIterMapT               m_IdIterMap;
         ItemCountMap             m_ItemCounts;
         SourcesByGUID            m_SourcesByGUID;
-        SourcesByClass           m_SourecsByClass;
+        SourcesByClass           m_SourcesByClass;
+        SourcesByKey             m_SourcesByKey;
         boost::optional<ItemKey> m_ActiveId;
         ItemKey                  m_VisibleId;
         Gtk::Notebook          * m_Notebook;

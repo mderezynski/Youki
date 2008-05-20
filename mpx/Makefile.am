@@ -194,8 +194,6 @@ mpx_bin_SOURCES =				\
 	sidebar.hh					\
 	sidebar.cc					\
 								\
-	source-playlist.cc			\
-								\
 	splash-screen.hh			\
 	splash-screen.cc			\
 								\

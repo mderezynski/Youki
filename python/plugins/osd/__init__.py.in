@@ -29,9 +29,9 @@ class OSD(gtk.Window):
             self.m_album = ""
             self.set_colormap(gtk.gdk.screen_get_default().get_rgba_colormap())
             self.resize(1,1)
-            self.rect_side = 256 
+            self.rect_side = 128 
 
-        def move_center(self, width):
+        def move_and_resize(self, width):
 
             self.resize(width, self.INNER_PADDING*2 + self.rect_side)
             screen = gtk.gdk.screen_get_default()
@@ -61,6 +61,10 @@ class OSD(gtk.Window):
                 self.m_title = m[mpx.AttributeId.TITLE].get()
             else:
                 self.m_title = "(No Title)"
+
+            if m[mpx.AttributeId.TIME]:
+                ttime = m[mpx.AttributeId.TIME].get()
+                self.m_title += " (%d:%02d)" % (ttime / 60, ttime % 60)
 
             if m[mpx.AttributeId.ARTIST]:
                 self.m_artist = m[mpx.AttributeId.ARTIST].get()
@@ -92,20 +96,25 @@ class OSD(gtk.Window):
             x, y, width, height = self.allocation
 
             cr = self.window.cairo_create()
+
             cr.set_operator(cairo.OPERATOR_CLEAR)
             cr.rectangle(x, y, width, height) 
             cr.fill()
 
             cr.set_operator(cairo.OPERATOR_SOURCE)
+            gradient = cairo.LinearGradient(x+(width/2), y, x+(width/2), y + height)
+            gradient.add_color_stop_rgba(0.00, 0.70, 0.70, 0.70, 1.00)
+            gradient.add_color_stop_rgba(1.00, 0.33, 0.33, 0.33, 1.00)
+            cr.set_source(gradient)
             self.rounded_rect(cr, x+2, y+2, width-4, height-4, 10.)
-            cr.set_source_rgba(1., 1., 1., 0.8)
             cr.fill_preserve()
-            cr.set_source_rgba(0., 0., 0., 0.6)
+
+            cr.set_source_rgba(0.00, 0.00, 0.00, 1.00)
             cr.stroke()
 
-            layouts = [ self.create_pango_layout(self.m_artist),
-                        self.create_pango_layout(self.m_album),
-                        self.create_pango_layout(self.m_title)  ]
+            layouts = [ self.create_pango_layout(self.m_title),
+                        self.create_pango_layout(self.m_artist),
+                        self.create_pango_layout(self.m_album)  ]
 
             layouts[0].set_font_description(pango.FontDescription("Sans Serif Bold 14"))
             layouts[1].set_font_description(pango.FontDescription("Sans Serif 14"))
@@ -121,33 +130,43 @@ class OSD(gtk.Window):
             if max_layout_width < 300:
                 max_layout_width = 300
 
-            x_origin = self.INNER_PADDING
-
             if(self.cover):
             
+                x_origin = self.rect_side + (2*self.INNER_PADDING)
+                self.move_and_resize(max_layout_width + self.rect_side + (3*self.INNER_PADDING))
+
                 cr.set_source_pixbuf(self.cover, self.INNER_PADDING, self.INNER_PADDING)
                 self.rounded_rect(cr, x + self.INNER_PADDING, y + self.INNER_PADDING, self.rect_side, self.rect_side, 8.)
-                cr.fill()
-                x_origin = self.rect_side + (2*self.INNER_PADDING)
-                self.move_center(max_layout_width + self.rect_side + (3*self.INNER_PADDING))
+                cr.fill_preserve()
+                cr.set_source_rgba(1.00, 1.00, 1.00, 1.00)
+                cr.stroke()
             
             else:
 
-                self.move_center(max_layout_width + (2*self.INNER_PADDING))
+                x_origin = self.INNER_PADDING
+                self.move_and_resize(max_layout_width + (2*self.INNER_PADDING))
 
-            positions = [ self.INNER_PADDING+156,
-                          self.INNER_PADDING+156+24,
-                          self.INNER_PADDING+156+48 ]
+            y_pos = [ self.INNER_PADDING+64,
+                      self.INNER_PADDING+64+24,
+                      self.INNER_PADDING+64+48 ]
 
-            cr.set_source_rgba(0., 0., 0., 1.)
             cr.set_operator(cairo.OPERATOR_SOURCE)
+
             for layout in layouts: 
+
                 fontw, fonth = layout.get_pixel_size()
-                position = positions[layouts.index(layout)]
-                cr.move_to(x_origin + ((max_layout_width/2) - (fontw/2)), position)
+                y = y_pos[layouts.index(layout)]
+
+                cr.move_to(x_origin + ((max_layout_width/2) - (fontw/2)) + 1, y + 1)
+                cr.set_source_rgba(0.00, 0.00, 0.00, 1.)
                 cr.update_layout(layout)
                 cr.show_layout(layout)
     
+                cr.move_to(x_origin + ((max_layout_width/2) - (fontw/2)), y)
+                cr.set_source_rgba(1.00, 1.00, 1.00, 1.)
+                cr.update_layout(layout)
+                cr.show_layout(layout)
+
             return True
 
 class MPXOSD(mpx.Plugin):

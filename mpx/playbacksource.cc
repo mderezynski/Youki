@@ -179,6 +179,12 @@ namespace MPX
         {
         }
 
+        void
+        PlaybackSource::drag_data (const Glib::RefPtr<Gdk::DragContext>&,
+                       const Gtk::SelectionData&, guint, guint)
+        {
+        }
+
 		guint
 		PlaybackSource::add_menu ()
 		{
