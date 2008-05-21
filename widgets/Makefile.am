@@ -22,7 +22,7 @@ libmpx_widgets_la_SOURCES = 			\
 		cell-renderer-count.cc			\
 		cell-renderer-source.cc			\
 		cell-renderer-vbox.cc			\
-		dialog-simple-entry.cc			\	
+		dialog-simple-entry.cc			\
 		gossip-cell-renderer-expander.c	\
 		taskdialog.cc					\
 	    widget-marshalers.c   			
