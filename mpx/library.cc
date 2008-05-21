@@ -230,11 +230,11 @@ namespace MPX
                             "UNIQUE ('%s', '%s', '%s'));");
 
         m_SQL->exec_sql ((artist_table_f  % attrs[ATTRIBUTE_ARTIST].id
-                                              % attrs[ATTRIBUTE_MB_ARTIST_ID].id
-                                              % attrs[ATTRIBUTE_ARTIST_SORTNAME].id
-                                              % attrs[ATTRIBUTE_ARTIST].id
-                                              % attrs[ATTRIBUTE_MB_ARTIST_ID].id
-                                              % attrs[ATTRIBUTE_ARTIST_SORTNAME].id).str());
+                                          % attrs[ATTRIBUTE_MB_ARTIST_ID].id
+                                          % attrs[ATTRIBUTE_ARTIST_SORTNAME].id
+                                          % attrs[ATTRIBUTE_ARTIST].id
+                                          % attrs[ATTRIBUTE_MB_ARTIST_ID].id
+                                          % attrs[ATTRIBUTE_ARTIST_SORTNAME].id).str());
 
         static boost::format
           album_artist_table_f ("CREATE TABLE IF NOT EXISTS album_artist "
@@ -242,33 +242,35 @@ namespace MPX
                                   "'%s' TEXT, '%s' INTEGER, UNIQUE ('%s', '%s', '%s', '%s'));");
 
         m_SQL->exec_sql ((album_artist_table_f  % attrs[ATTRIBUTE_ALBUM_ARTIST].id
-                                                    % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id
-                                                    % attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id
-                                                    % attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id
-                                                    % attrs[ATTRIBUTE_ALBUM_ARTIST].id
-                                                    % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id
-                                                    % attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id
-                                                    % attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id).str());
+                                                % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id
+                                                % attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id
+                                                % attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id
+                                                % attrs[ATTRIBUTE_ALBUM_ARTIST].id
+                                                % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id
+                                                % attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id
+                                                % attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id).str());
 
         static boost::format
           album_table_f ("CREATE TABLE IF NOT EXISTS album "
                           "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
-                          "'%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, UNIQUE "
+                          "'%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, "
+                          "'%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, UNIQUE "
                           "('%s', '%s', '%s', '%s', '%s'));");
 
         m_SQL->exec_sql ((album_table_f % attrs[ATTRIBUTE_ALBUM].id
-                                          % attrs[ATTRIBUTE_MB_ALBUM_ID].id
-                                          % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
-                                          % attrs[ATTRIBUTE_ASIN].id
-										  % "album_genre" 
-										  % "album_rating"
-                                          % "album_artist_j"
-                                          % "album_insert_date"
-                                          % attrs[ATTRIBUTE_ALBUM].id
-                                          % attrs[ATTRIBUTE_MB_ALBUM_ID].id
-                                          % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
-                                          % attrs[ATTRIBUTE_ASIN].id
-                                          % "album_artist_j").str());
+                                        % attrs[ATTRIBUTE_MB_ALBUM_ID].id
+                                        % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
+                                        % attrs[ATTRIBUTE_ASIN].id
+										% "album_genre" 
+										% "album_rating"
+                                        % "album_artist_j"
+                                        % "album_insert_date"
+                                        % "album_new"
+                                        % attrs[ATTRIBUTE_ALBUM].id
+                                        % attrs[ATTRIBUTE_MB_ALBUM_ID].id
+                                        % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
+                                        % attrs[ATTRIBUTE_ASIN].id
+                                        % "album_artist_j").str());
 
         static boost::format
           tag_table_f ("CREATE TABLE IF NOT EXISTS tag "
@@ -722,6 +724,7 @@ namespace MPX
     void
     Library::initScan (const Util::FileList & list)
     {
+        execSQL("UPDATE album SET album_new = 0;");
         m_ScannerThread->scan(list);
     }
 
