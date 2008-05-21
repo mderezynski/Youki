@@ -28,6 +28,7 @@
 
 #define NO_IMPORT
 #include <iostream>
+#include <glibmm/i18n.h>
 #include <pygtk/pygtk.h>
 #include <pygobject.h>
 
