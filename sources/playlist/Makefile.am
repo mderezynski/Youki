@@ -35,14 +35,18 @@ libmpxsource_playlist_la_LIBADD =  	\
 
 libmpxsource_playlist_la_SOURCES = 	\
 		glib-marshalers.c			\
-		plugin.cc					\
+		glib-marshalers.h			\
+		plugin.cc				\
 		source-playlist.hh			\
 		source-playlist.cc
 
 libmpxsource_playlistdir = $(PLUGIN_DIR)/sources
 
+BUILT_SOURCES = glib-marshalers.c glib-marshalers.h
+
+CLEANFILES = glib-marshalers.c glib-marshalers.h
+
 EXTRA_DIST = glib-marshalers.list
-built_header_make = glib-marshalers.h
 
 glib-marshalers.c: glib-marshalers.list 
 	@echo "* Generating glib-marshalers.c"
