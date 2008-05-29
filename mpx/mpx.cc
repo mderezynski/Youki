@@ -27,6 +27,7 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 
+// PyGTK NO_IMPORT
 #define NO_IMPORT
 
 #include "config.h"
