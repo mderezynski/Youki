@@ -20,7 +20,7 @@
  ***************************************************************************/
 
 #include <taglib-gio/tbytevectorlist.h>
-#include <tstring.h>
+#include <taglib-gio/tstring.h>
 #include "asffile.h"
 #include "asftag.h"
 #include "asfproperties.h"

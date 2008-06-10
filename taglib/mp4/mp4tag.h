@@ -22,11 +22,11 @@
 #ifndef TAGLIB_MP4TAG_H
 #define TAGLIB_MP4TAG_H
 
-#include <tag.h>
-#include <tbytevectorlist.h>
-#include <tfile.h>
-#include <tmap.h>
-#include <tstringlist.h>
+#include <taglib-gio/tag.h>
+#include <taglib-gio/tbytevectorlist.h>
+#include <taglib-gio/tfile.h>
+#include <taglib-gio/tmap.h>
+#include <taglib-gio/tstringlist.h>
 #include "mp4atom.h"
 #include "mp4item.h"
 

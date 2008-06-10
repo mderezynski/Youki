@@ -80,16 +80,29 @@ namespace MPX
 		return traceback;
 	}
 
-	PluginManager::PluginManager (MPX::Player *player)
-	: m_Id(1)
-	, m_Player(player)
+	PluginManager::PluginManager (MPX::Player* player)
+	: m_Player(player)
+	, m_NextId(1)
 	{
         try{
-            mcs_plugins = new Mcs::Mcs (Glib::build_filename (Glib::build_filename (Glib::get_user_config_dir (), "mpx"), "plugins.xml"), "mpx", 0.01);
+            m_McsPlugins = new Mcs::Mcs (Glib::build_filename (Glib::build_filename (Glib::get_user_config_dir (), "mpx"), "plugins.xml"), "mpx", 0.01);
         } catch (Mcs::Mcs::Exceptions & cxe)
         {
         }
-        mcs_plugins->domain_register("pyplugs");
+        m_McsPlugins->domain_register("pyplugs");
+
+        m_MainModule = PyImport_AddModule ("__main__");
+        if(m_MainModule == NULL)
+        {
+            g_message("Couldn't get __main__");
+            return;	
+        }
+
+        m_MainLocalsOrig = PyModule_GetDict(m_MainModule);
+        m_MPXOrig = PyImport_ImportModule("mpx"); 
+        m_MPXDict = PyModule_GetDict(m_MPXOrig);
+        m_PyMPXPlugin_Type = (PyTypeObject *) PyDict_GetItemString(m_MPXDict, "Plugin"); 
+        m_PyMPXBindable_Type = (PyTypeObject *) PyDict_GetItemString(m_MPXDict, "Bindable"); 
 	}
 
 	void
@@ -101,11 +114,11 @@ namespace MPX
     void
     PluginManager::activate_plugins ()
     {
-        for(PluginHoldMap::iterator i = m_Map.begin(); i != m_Map.end(); ++i)
+        for(PluginHoldMap_t::iterator i = m_Map.begin(); i != m_Map.end(); ++i)
         {
             PluginHolderRefP & item = i->second;
             try{
-                bool active = mcs_plugins->key_get<bool>("pyplugs", item->get_name());
+                bool active = m_McsPlugins->key_get<bool>("pyplugs", item->get_name());
 
                 if (active)
                 {
@@ -126,18 +139,140 @@ namespace MPX
         }
     }
 
+    bool
+    PluginManager::create_plug_instance (PyObject* obj, std::string const& path, std::string const& module, PluginHolderRefP & ptr)
+    {
+        try{
+            object instance =
+                boost::python::call<object>(
+                    obj,
+                    m_NextId,
+                    boost::ref(m_Player),
+                    boost::ref(mcs)
+                );
+
+            if(!instance)
+            {
+                PyErr_Print();
+                return false; 
+            }
+
+            ptr = PluginHolderRefP(new PluginHolder);
+            ptr->m_PluginInstance = instance.ptr();
+            Py_INCREF(instance.ptr());
+
+            if(PyObject_HasAttrString(instance.ptr(), "__doc__"))
+            {
+                const char* doc =
+                    PyString_AsString(
+                        PyObject_GetAttrString(
+                            instance.ptr(),
+                            "__doc__"
+                    ));
+
+                ptr->m_Description = doc ? doc : gettext("(No Description given)");
+                if(PyErr_Occurred())
+                {
+                    g_message("%s: Got no __doc__ from plugin", G_STRLOC);
+                    PyErr_Clear();
+                }
+            }
+            else
+            {
+                ptr->m_Description = gettext("(No Description given)");
+            }
+
+            ptr->m_NextId = m_NextId;
+
+            Glib::KeyFile keyfile;
+            std::string keyfile_name = build_filename(path, build_filename(module, module+".mpx-plugin"));
+            if( file_test( keyfile_name, FILE_TEST_EXISTS ))
+            {
+                try{
+                    keyfile.load_from_file( keyfile_name );
+                    ptr->m_Name = keyfile.get_string("MPX Plugin", "Name"); 
+                    ptr->m_Authors = keyfile.get_string("MPX Plugin", "Authors"); 
+                    ptr->m_Copyright = keyfile.get_string("MPX Plugin", "Copyright"); 
+                    ptr->m_IAge = keyfile.get_integer("MPX Plugin", "IAge");
+                    ptr->m_Website = keyfile.get_string("MPX Plugin", "Website");
+                } catch (Glib::KeyFileError) {
+                }
+            }
+
+            if(ptr->m_Name.empty())
+            {
+                ptr->m_Name = PyString_AsString (PyObject_GetAttrString( obj, "__name__" )); 
+            }
+
+            m_McsPlugins->key_register("pyplugs", ptr->m_Name, false);
+            ptr->m_Active = false; 
+
+            ptr->m_HasGUI = PyObject_HasAttrString(instance.ptr(), "get_gui");
+            if(PyErr_Occurred())
+            {
+                g_message(gettext("%s: No get_gui in plugin"), G_STRLOC);
+                PyErr_Clear();
+            }
+
+            ptr->m_CanActivate = PyObject_HasAttrString(instance.ptr(), "activate");
+            if(PyErr_Occurred())
+            {
+                g_message(gettext("%s: No activate in plugin"), G_STRLOC);
+                PyErr_Clear();
+            }
+
+            ptr->m_CanBind = PyObject_HasAttrString(instance.ptr(), "bind");
+            if(PyErr_Occurred())
+            {
+                g_message(gettext("%s: No bind in plugin"), G_STRLOC);
+                PyErr_Clear();
+            }
+
+            if(ptr->m_CanBind)
+            {
+                if(PyObject_HasAttrString(instance.ptr(), "bindable_guid"))
+                {
+                    try{
+                        object instance = object((handle<>(borrowed(ptr->m_PluginInstance))));
+                        object callable = instance.attr("bindable_guid");
+                        ptr->m_Bindable = boost::python::call<std::string>(callable.ptr());
+                        g_message(
+                            gettext("%s: Plugin can bind to class %s"),
+                            G_STRLOC,
+                            ptr->m_Bindable.c_str()
+                        );
+                    } catch( error_already_set )
+                    {
+                        PyErr_Print();
+                    }
+                }
+
+                if(PyErr_Occurred())
+                {
+                    g_message(
+                        gettext("%s: No bindable_guid in plugin"),
+                        G_STRLOC
+                    );
+                    PyErr_Clear();
+                }
+            }
+
+            return true;
+
+        } catch( error_already_set )
+        {
+            g_message("Plugin Error: %s: ", module.c_str());
+            PyErr_Print();
+        }
+
+        return false;
+    }
+
 	void
 	PluginManager::load_plugins ()
 	{
-        PyObject * main_module = PyImport_AddModule ("__main__");
-        if(main_module == NULL)
-        {
-            g_message("Couldn't get __main__");
-            return;	
-        }
-
-		PyObject * sys_path = PySys_GetObject ("path");
-		for(Strings::const_iterator i = m_Paths.begin(); i != m_Paths.end(); ++i)
+		PyObject * sys_path = PySys_GetObject ((char*)"path");
+		for(Strings_t::const_iterator i = m_Paths.begin(); i != m_Paths.end(); ++i)
 		{
 			PyObject *path = PyString_FromString ((char*)i->c_str());
 			if (PySequence_Contains(sys_path, path) == 0)
@@ -145,12 +280,7 @@ namespace MPX
 			Py_DECREF(path);
 		}
 
-        PyObject * main_locals_orig = PyModule_GetDict(main_module);
-        PyObject * mpx_orig = PyImport_ImportModule("mpx"); 
-        PyObject * mpx_dict = PyModule_GetDict(mpx_orig);
-        PyTypeObject * PyMPXPlugin_Type = (PyTypeObject *) PyDict_GetItemString(mpx_dict, "Plugin"); 
-
-		for(Strings::const_iterator p = m_Paths.begin(); p != m_Paths.end(); ++p)
+		for(Strings_t::const_iterator p = m_Paths.begin(); p != m_Paths.end(); ++p)
 		{
 			if(!file_test(*p, FILE_TEST_EXISTS))
 				continue;
@@ -163,156 +293,53 @@ namespace MPX
 			{
                     PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 
-                    PyObject * main_locals = PyDict_Copy(main_locals_orig);
-					PyObject * module = PyImport_ImportModuleEx ((char*)i->c_str(), main_locals, main_locals, Py_None);
+                    PyObject * main_locals_copy = PyDict_Copy(m_MainLocalsOrig);
+                    Py_INCREF(Py_None);
+					PyObject * module = PyImport_ImportModuleEx ((char*)i->c_str(), main_locals_copy, main_locals_copy, Py_None);
 					if (!module) {
 						g_message(gettext("%s: Couldn't load module '%s'"), G_STRLOC, i->c_str());
 						PyErr_Print ();
 						continue;	
 					}
 
-					PyObject *locals = PyModule_GetDict (module);
+					PyObject *locals = PyModule_GetDict( module );
 					Py_ssize_t pos = 0;
 					PyObject *key, *value;
-					while (PyDict_Next (locals, &pos, &key, &value))
+					while (PyDict_Next( locals, &pos, &key, &value ))
 					{
 						if(!PyType_Check(value))
 							continue;
 
-						if (PyObject_IsSubclass (value, (PyObject*) PyMPXPlugin_Type))
+						if (PyObject_IsSubclass( value, (PyObject*) m_PyMPXBindable_Type ))
+                        {
+                            Glib::KeyFile keyfile;
+                            std::string keyfile_name = build_filename(*p, build_filename(*i, (*i)+".mpx-plugin"));
+                            if( file_test( keyfile_name, FILE_TEST_EXISTS ))
+                            {
+                                try{
+                                    keyfile.load_from_file( keyfile_name );
+                                    std::string bindable_guid = keyfile.get_string("MPX BindablePlugin", "BindableGUID"); 
+                                    Py_INCREF(value);
+                                    m_BindablePlugins.insert(std::make_pair(bindable_guid, value));
+                                } catch (Glib::KeyFileError) {
+                                }
+                            }
+                        }
+                        else
+						if (PyObject_IsSubclass( value, (PyObject*) m_PyMPXPlugin_Type ))
 						{
-                            try{
-                                object instance =
-                                    boost::python::call<object>(
-                                        value,
-                                        m_Id,
-                                        boost::ref(m_Player),
-                                        boost::ref(mcs)
+                            PluginHolderRefP ptr; 
+
+                            if( create_plug_instance( value, *p, *i, ptr ))
+                            {
+                                    g_message(
+                                        gettext("%s: >> Loaded: '%s'"),
+                                        G_STRLOC,
+                                        ptr->m_Name.c_str()
                                     );
 
-                                if(!instance)
-                                {
-                                    PyErr_Print();
-                                    continue;
-                                }
-
-                                PluginHolderRefP ptr = PluginHolderRefP(new PluginHolder);
-
-                                ptr->m_PluginInstance = instance.ptr();
-                                Py_INCREF(instance.ptr());
-
-                                if(PyObject_HasAttrString(instance.ptr(), "__doc__"))
-                                {
-                                    const char* doc =
-                                        PyString_AsString(
-                                            PyObject_GetAttrString(
-                                                instance.ptr(),
-                                                "__doc__"
-                                        ));
-
-                                    ptr->m_Description = doc ? doc : gettext("(No Description given)");
-                                    if(PyErr_Occurred())
-                                    {
-                                        g_message("%s: Got no __doc__ from plugin", G_STRLOC);
-                                        PyErr_Clear();
-                                    }
-                                }
-                                else
-                                {
-                                    ptr->m_Description = gettext("(No Description given)");
-                                }
-
-                                ptr->m_Id = m_Id++;
-
-                                Glib::KeyFile keyfile;
-                                std::string key_filename = build_filename(*p, build_filename(*i, (*i)+".mpx-plugin"));
-                                if(file_test(key_filename, FILE_TEST_EXISTS))
-                                {
-                                    try{
-                                        keyfile.load_from_file(build_filename(*p, build_filename(*i, (*i)+".mpx-plugin")));
-                                        ptr->m_Name = keyfile.get_string("MPX Plugin", "Name"); 
-                                        ptr->m_Authors = keyfile.get_string("MPX Plugin", "Authors"); 
-                                        ptr->m_Copyright = keyfile.get_string("MPX Plugin", "Copyright"); 
-                                        ptr->m_IAge = keyfile.get_integer("MPX Plugin", "IAge");
-                                        ptr->m_Website = keyfile.get_string("MPX Plugin", "Website");
-                                    } catch (Glib::KeyFileError) {
-                                    }
-                                }
-
-                                if(ptr->m_Name.empty())
-                                {
-                                    ptr->m_Name = PyString_AsString (PyObject_GetAttrString (module, "__name__")); 
-                                }
-
-
-                                mcs_plugins->key_register("pyplugs", ptr->m_Name, false);
-
-                                ptr->m_Active = false; 
-
-                                ptr->m_HasGUI = PyObject_HasAttrString(instance.ptr(), "get_gui");
-                                if(PyErr_Occurred())
-                                {
-                                    g_message(gettext("%s: No get_gui in plugin"), G_STRLOC);
-                                    PyErr_Clear();
-                                }
-
-                                ptr->m_CanActivate = PyObject_HasAttrString(instance.ptr(), "activate");
-                                if(PyErr_Occurred())
-                                {
-                                    g_message(gettext("%s: No activate in plugin"), G_STRLOC);
-                                    PyErr_Clear();
-                                }
-
-                                ptr->m_CanBind = PyObject_HasAttrString(instance.ptr(), "bind");
-                                if(PyErr_Occurred())
-                                {
-                                    g_message(gettext("%s: No bind in plugin"), G_STRLOC);
-                                    PyErr_Clear();
-                                }
-
-                                g_message(
-                                    gettext("%s: >> Loaded: '%s'"),
-                                    G_STRLOC,
-                                    ptr->m_Name.c_str()
-                                );
-
-                                if(ptr->m_CanBind)
-                                {
-                                    if(PyObject_HasAttrString(instance.ptr(), "bindable_guid"))
-                                    {
-                                        try{
-                                			object instance = object((handle<>(borrowed(ptr->m_PluginInstance))));
-                                			object callable = instance.attr("bindable_guid");
-                                			ptr->m_Bindable = boost::python::call<std::string>(callable.ptr());
-                                            g_message(
-                                                gettext("%s: Plugin can bind to class %s"),
-                                                G_STRLOC,
-                                                ptr->m_Bindable.c_str()
-                                            );
-                                        } catch( error_already_set )
-                                        {
-                                            PyErr_Print();
-                                        }
-                                    }
-
-                                    if(PyErr_Occurred())
-                                    {
-                                        g_message(
-                                            gettext("%s: No bindable_guid in plugin"),
-                                            G_STRLOC
-                                        );
-                                        PyErr_Clear();
-                                    }
-                                }
-
-                                m_Map.insert(std::make_pair(ptr->m_Id, ptr));
-
-                            } catch( error_already_set )
-                            {
-                                g_message("Plugin: %s", i->c_str());
-                                PyErr_Print();
+                                    m_Map.insert(std::make_pair(ptr->m_NextId++, ptr));
                             }
-							break;
 						}
 					}
                     pyg_gil_state_release(state);
@@ -320,7 +347,7 @@ namespace MPX
 		}
         
         try{
-            mcs_plugins->load();
+            m_McsPlugins->load();
         } catch(...)
         {
             g_message("%s: Couldn't load plugin activation states", G_STRLOC);
@@ -329,10 +356,10 @@ namespace MPX
 
 	PluginManager::~PluginManager ()
 	{
-        delete mcs_plugins;
+        delete m_McsPlugins;
 	}
 
-	PluginHoldMap const&
+	PluginHoldMap_t const&
 	PluginManager::get_map () const
 	{
 		return m_Map;
@@ -344,7 +371,7 @@ namespace MPX
 		PyGObject * pygobj;
 		Glib::Mutex::Lock L (m_StateChangeLock);
 
-		PluginHoldMap::iterator i = m_Map.find(id);
+		PluginHoldMap_t::iterator i = m_Map.find(id);
 		g_return_val_if_fail(i != m_Map.end(), false);
         g_return_val_if_fail(m_Map.find(id)->second->get_has_gui(), false);
 
@@ -361,7 +388,7 @@ namespace MPX
 		}
 
         try{
-            mcs_plugins->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
+            m_McsPlugins->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
         } catch(...) {
             g_message("%s: Failed saving plugin state for '%s'", G_STRLOC, i->second->get_name().c_str());
         }
@@ -378,7 +405,7 @@ namespace MPX
 		bool result = false;
 		Glib::Mutex::Lock L (m_StateChangeLock);
 
-		PluginHoldMap::iterator i = m_Map.find(id);
+		PluginHoldMap_t::iterator i = m_Map.find(id);
 		g_return_val_if_fail(i != m_Map.end(), false);
 
 		if(i->second->m_Active)
@@ -400,7 +427,7 @@ namespace MPX
 		}
 
         try{
-            mcs_plugins->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
+            m_McsPlugins->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
         } catch(...) {
             g_message("%s: Failed saving plugin state for '%s'", G_STRLOC, i->second->get_name().c_str());
         }
@@ -415,7 +442,7 @@ namespace MPX
 	{
 		Glib::Mutex::Lock L (m_StateChangeLock);
 
-		PluginHoldMap::iterator i = m_Map.find(id);
+		PluginHoldMap_t::iterator i = m_Map.find(id);
 		g_return_val_if_fail(i != m_Map.end(), false);
 
         bool result = false;
@@ -441,7 +468,7 @@ namespace MPX
 		pyg_gil_state_release (state);
 
         try{
-            mcs_plugins->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
+            m_McsPlugins->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
         } catch(...) {
             g_message("%s: Failed saving plugin state for '%s'", G_STRLOC, i->second->get_name().c_str());
         }

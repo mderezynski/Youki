@@ -574,10 +574,15 @@ namespace MPX
           {
             Mutex::Lock L (m_layout_lock);
 
+#if 0
 		    if( !metadata.Image )
                 clear_cover (); 
             else
+#endif
+            if( metadata.Image )
+            {
 		        set_cover (metadata.Image->scale_simple (72, 72, Gdk::INTERP_BILINEAR));
+            }
 
             TextSet set;
 		    parse_metadata( metadata, set ); 

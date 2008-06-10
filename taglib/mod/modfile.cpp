@@ -19,7 +19,7 @@
  *   USA                                                                   *
  ***************************************************************************/
 
-#include <tstring.h>
+#include <taglib-gio/tstring.h>
 #include "modfile.h"
 #include "modtag.h"
 #include "modproperties.h"

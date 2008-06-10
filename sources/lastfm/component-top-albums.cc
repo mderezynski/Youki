@@ -1,14 +1,34 @@
 #include "config.h"
 #include <boost/format.hpp>
-#include "component-top-albums.hh"
+#include <glibmm/i18n.h>
+
+#include "mpx/ld.hh"
 #include "mpx/util-graphics.hh"
+#include "mpx/sql.hh"
+
+#include "component-top-albums.hh"
 
 using namespace Glib;
 using namespace Gtk;
 
-MPX::ComponentTopAlbums::ComponentTopAlbums ()
-: ComponentBase()
+namespace
 {
+    std::string
+    push_artist(MPX::SQL::Row & row)
+    {
+        return boost::get<std::string>((*row.find("artist")).second);
+    }
+}
+
+MPX::ComponentTopAlbums::ComponentTopAlbums (PAccess<MPX::Library> & obj_pa_library)
+: ComponentBase()
+, m_Library(obj_pa_library)
+{
+    SQL::RowV v; 
+    m_Library.get().getSQL(v, "SELECT DISTINCT artist FROM artist");
+
+    std::transform(v.begin(), v.end(), std::inserter(m_Artists, m_Artists.end()), push_artist); 
+
     m_XML = Gnome::Glade::Xml::create(
             DATA_DIR
             G_DIR_SEPARATOR_S
@@ -21,6 +41,7 @@ MPX::ComponentTopAlbums::ComponentTopAlbums ()
     m_XML->get_widget("entry", m_Entry);
     m_XML->get_widget("view", m_View);
     m_XML->get_widget("label", m_Label);
+    m_XML->get_widget("label-suggest", m_LabelSuggest);
     
     setup_view ();
 
@@ -73,6 +94,30 @@ MPX::ComponentTopAlbums::setup_view ()
     m_View->set_model(m_Model);
 }
 
+std::string
+MPX::ComponentTopAlbums::find_nearest_artist(std::string const& input)
+{
+    Artists_T::const_iterator o = m_Artists.end();
+    std::string::size_type    t = std::string::npos;
+
+    for(Artists_T::const_iterator i = m_Artists.begin(); i != m_Artists.end(); ++i)
+    {
+        std::string::size_type match = MPX::ld_distance(input, *i);
+        if( match < t )
+        {
+           o = i; 
+           t = match;
+        }
+    }
+
+    if(o == m_Artists.end())
+    {
+        return _("(No match)");
+    }
+
+    return *o;
+}
+
 void
 MPX::ComponentTopAlbums::on_entry_changed ()
 {
@@ -84,8 +129,10 @@ MPX::ComponentTopAlbums::on_entry_activated ()
 {
     m_Thread->RequestStop();
     m_Model->clear();
-    m_Label->set_markup((boost::format ("<b>%s</b>") % Markup::escape_text(m_Entry->get_text())).str());
-    m_Thread->RequestLoad(m_Entry->get_text());
+    m_Label->set_markup((boost::format ("Showing '<b>%s</b>'") % Markup::escape_text(m_Entry->get_text())).str());
+    std::string text = m_Entry->get_text();
+    m_LabelSuggest->set_markup((boost::format ("'<b>%s</b>'") % find_nearest_artist(text)).str());
+    m_Thread->RequestLoad(text);
 }
 
 void

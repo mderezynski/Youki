@@ -157,7 +157,10 @@ namespace Source
         gtk_widget_show(m_Dock);
         dynamic_cast<Alignment*>(m_ref_xml->get_widget("alignment_dock"))->add(*Glib::wrap(m_Dock,false));
 
-        ComponentTopAlbums * c = new ComponentTopAlbums;
+        PAccess<MPX::Library> pa_lib;
+        player.get_object(pa_lib);
+
+        ComponentTopAlbums * c = new ComponentTopAlbums(pa_lib);
         ComponentUserTopAlbums * c2 = new ComponentUserTopAlbums(&player);
 
         GtkWidget * item = gdl_dock_item_new_with_stock(

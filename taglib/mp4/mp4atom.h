@@ -26,8 +26,8 @@
 #ifndef TAGLIB_MP4ATOM_H
 #define TAGLIB_MP4ATOM_H
 
-#include <tfile.h>
-#include <tlist.h>
+#include <taglib-gio/tfile.h>
+#include <taglib-gio/tlist.h>
 
 namespace TagLib {
 

@@ -235,15 +235,15 @@ class TrackInfo:
             self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
             self.buf.insert(self.buf.get_end_iter(), "\n\n\n")
 
-            try:
-                lyricwiki = mpx.LyricWiki(track[mpx.AttributeId.ARTIST].get(), track[mpx.AttributeId.TITLE].get())
-                lyrics = lyricwiki.run()
-                if lyrics != "Not found":
-                    self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics\n", self.textTagLarge, self.textTagUnderline)
-                    self.buf.insert(self.buf.get_end_iter(), lyrics)
-                    self.buf.insert(self.buf.get_end_iter(), "\n\n")
-            except:
-                pass 
+            #try:
+            #    lyricwiki = mpx.LyricWiki(track[mpx.AttributeId.ARTIST].get(), track[mpx.AttributeId.TITLE].get())
+            #    lyrics = lyricwiki.run()
+            #    if lyrics != "Not found":
+            #        self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics\n", self.textTagLarge, self.textTagUnderline)
+            #        self.buf.insert(self.buf.get_end_iter(), lyrics)
+            #        self.buf.insert(self.buf.get_end_iter(), "\n\n")
+            #except:
+            #    pass 
 
             try:
                 lastfmartist = mpx.LastFMArtist(track[mpx.AttributeId.ARTIST].get())

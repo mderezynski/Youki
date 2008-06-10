@@ -66,6 +66,10 @@ namespace MPX
     {
     };
 
+    struct Bindable
+    {
+    };
+
     enum AttributeId
     {
       MPX_ATTRIBUTE_LOCATION,
@@ -521,6 +525,9 @@ BOOST_PYTHON_MODULE(mpx)
 
 	class_<MPX::Plugin>("Plugin")	
 	;
+
+    class_<MPX::Bindable>("Bindable")
+    ;
 
 	/*-------------------------------------------------------------------------------------*/
 

@@ -31,7 +31,7 @@
 #include <taglib-gio.h>
 #include <id3v1tag.h>
 #include <id3v2tag.h>
-#include <tfile.h>
+#include <taglib-gio/tfile.h>
 #include <fileref.h>
 #include <iostream>
 
