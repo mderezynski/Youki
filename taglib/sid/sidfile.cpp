@@ -19,7 +19,7 @@
  *   USA                                                                   *
  ***************************************************************************/
 
-#include <tstring.h>
+#include <taglib-gio/tstring.h>
 #include "sidfile.h"
 #include "sidtag.h"
 #include "sidproperties.h"

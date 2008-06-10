@@ -5,8 +5,8 @@
 
 #include <sidplay/sidtune.h>
 
-#include <tfile.h>
-#include <tag.h>
+#include <taglib-gio/tfile.h>
+#include <taglib-gio/tag.h>
 #include "sidproperties.h"
 #include "sidtag.h"
 

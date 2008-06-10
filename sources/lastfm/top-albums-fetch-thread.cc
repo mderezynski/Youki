@@ -104,8 +104,10 @@ MPX::TopAlbumsFetchThread::on_load (std::string const& artist)
             delete pthreaddata->Xml;
         pthreaddata->Xml = new MPX::XmlInstance<LastFM::topalbums>((ustring(u)));
         pthreaddata->Position = 0; 
-        g_message("Going to idler");
-        maincontext()->signal_idle().connect(sigc::mem_fun(*this, &TopAlbumsFetchThread::idle_loader));
+        if(pthreaddata->Xml->xml().album().size())
+        {
+            maincontext()->signal_idle().connect(sigc::mem_fun(*this, &TopAlbumsFetchThread::idle_loader));
+        }
     } catch( std::runtime_error & cxe)
     {
         g_message(G_STRLOC ": Caught runtime error: %s", cxe.what());

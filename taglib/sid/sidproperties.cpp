@@ -1,6 +1,6 @@
 // (C) 2006 M. Derezynski
 
-#include <tstring.h>
+#include <taglib-gio/tstring.h>
 #include "sidproperties.h"
   
 using namespace TagLib;

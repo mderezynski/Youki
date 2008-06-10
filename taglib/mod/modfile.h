@@ -5,8 +5,8 @@
 
 #include <modplug.h>
 
-#include <tfile.h>
-#include <tag.h>
+#include <taglib-gio/tfile.h>
+#include <taglib-gio/tag.h>
 #include "modproperties.h"
 #include "modtag.h"
 

@@ -22,7 +22,7 @@
 #ifndef TAGLIB_MP4ITEM_H
 #define TAGLIB_MP4ITEM_H
 
-#include <tstringlist.h>
+#include <taglib-gio/tstringlist.h>
 
 namespace TagLib {
 

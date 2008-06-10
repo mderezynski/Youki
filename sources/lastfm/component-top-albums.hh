@@ -27,19 +27,29 @@
 //  MPX is covered by.
 #ifndef MPX_COMPONENT_TOP_ALBUMS_HH
 #define MPX_COMPONENT_TOP_ALBUMS_HH
+#include "config.h"
 #include <glibmm.h>
 #include <gtkmm.h>
 #include <sigx/sigx.h>
+#include <set>
+#include <string>
+
+#include "mpx/library.hh"
+#include "mpx/paccess.hh"
+
 #include "component-base.hh"
 #include "component-slot-artist.hh"
+
 #include "top-albums-fetch-thread.hh"
 
 namespace MPX
 {
 	class ComponentTopAlbums : public ComponentBase
 	{
+            typedef std::set<std::string> Artists_T;
+
         public:
-            ComponentTopAlbums ();
+            ComponentTopAlbums (PAccess<MPX::Library> &);
             virtual ~ComponentTopAlbums ();
 
         protected:
@@ -71,12 +81,23 @@ namespace MPX
             void
             setup_view ();
 
+            std::string
+            find_nearest_artist (std::string const&);
+
             Columns_t                         Columns;
+
             Gtk::Entry                      * m_Entry;
             Gtk::Label                      * m_Label;
+            Gtk::Label                      * m_LabelSuggest;
             Gtk::TreeView                   * m_View;
+
             Glib::RefPtr<Gtk::ListStore>      m_Model;
+
             TopAlbumsFetchThread            * m_Thread;
+
+            Artists_T                         m_Artists;
+
+            PAccess<MPX::Library>             m_Library;
 	};
 }
 

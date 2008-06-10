@@ -1126,7 +1126,7 @@ namespace Source
     std::string
     PlaybackSourcePlaylist::get_guid ()
     {
-        return "";
+        return "b20e4d5f-ebc5-4db7-be8a-cfacce153d64";
     }
 
     std::string

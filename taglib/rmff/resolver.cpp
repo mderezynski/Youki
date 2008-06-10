@@ -21,7 +21,7 @@
  *                                                                         *
  ***************************************************************************/
 
-#include <tfile.h>
+#include <taglib-gio/tfile.h>
 #include <audioproperties.h>
 #include <id3v1tag.h>
 

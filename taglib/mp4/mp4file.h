@@ -22,8 +22,8 @@
 #ifndef TAGLIB_MP4FILE_H
 #define TAGLIB_MP4FILE_H
 
-#include <tag.h>
-#include <tfile.h>
+#include <taglib-gio/tag.h>
+#include <taglib-gio/tfile.h>
 #include "mp4properties.h"
 #include "mp4tag.h"
 
