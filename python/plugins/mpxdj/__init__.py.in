@@ -7,6 +7,7 @@
 #
 
 import mpx
+import mpx_playlist
 import time
 import pygtk
 pygtk.require('2.0')
@@ -108,15 +109,6 @@ class MPXDJ(mpx.Plugin):
         self.combo.connect("changed", self.cbox_changed)
         self.combo.set_active(0)
     
-    def bind(self, source):
-
-         if source.get_class_guid() == "b20e4d5f-ebc5-4db7-be8a-cfacce153d64":
-            self.mlib = source
-
-    def bindable_guid(self):
-
-        return "b20e4d5f-ebc5-4db7-be8a-cfacce153d64";
-
     def on_append_toggled(self, cb):
 
         active = cb.get_active()
@@ -307,7 +299,7 @@ class MPXDJ(mpx.Plugin):
 
     def on_playlist_end(self, object):
 
-        idv = mpx_playlist.IdVector()
+        idv = mpx.IdVector()
         callable = self.callables[self.combo.get_active()]
         if(callable):
             callable(self.lib, idv)
@@ -316,7 +308,7 @@ class MPXDJ(mpx.Plugin):
 
     def on_button_go(self, object):
 
-        idv = mpx_playlist.IdVector()
+        idv = mpx.IdVector()
         callable = self.callables[self.combo.get_active()]
         if(callable):
             callable(self.lib, idv)

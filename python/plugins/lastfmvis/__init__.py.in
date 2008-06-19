@@ -7,7 +7,6 @@
 #
 
 import mpx
-import mpx_playlist
 import time
 import pygtk
 pygtk.require('2.0')

@@ -97,10 +97,27 @@ namespace MPX
         };
 
         PipelineId m_pipeline_id;
-
 		GAsyncQueue *m_MessageQueue;
 		Glib::Mutex m_QueueLock;
 		Glib::Mutex m_BusLock;
+        int m_FadeStop;
+        double m_FadeVolume;
+        Glib::Mutex m_FadeLock;
+        sigc::connection m_FadeConn;
+
+    private:
+
+        bool
+        fade_timeout ();
+
+        void
+        fade_init ();
+
+        void
+        fade_stop ();
+
+        void
+        update_fade_volume ();
 
 		void
 		process_queue ();

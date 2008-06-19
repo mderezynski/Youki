@@ -188,10 +188,10 @@ namespace MPX
   double const cover_anim_area_y1          = cover_anim_area_y0 + cover_anim_area_height;
 
   double const cover_anim_initial_pos      = 6.0 - 72.0;
-  double /*const*/ cover_anim_initial_velocity = 223.3; 
+  double /*const*/ cover_anim_initial_velocity = 323.3; 
   double /*const*/ cover_anim_gravity          = 359.1; 
   double const cover_anim_wall             = cover_anim_area_x1;
-  double /*const*/ cover_anim_wall_elasticity  = 0.074;
+  double /*const*/ cover_anim_wall_elasticity  = 0.120; //0.074;
   double const cover_anim_time_scale       = 1.0;
 
   int    const cover_anim_fps              = 25;
@@ -731,7 +731,7 @@ namespace MPX
             if (m_cover_pos + m_cover_surface_cur.get()->get_width () >= cover_anim_wall)
             {
                 m_cover_pos       = cover_anim_wall - m_cover_surface_cur.get()->get_width ();
-                m_cover_velocity *= -cover_anim_wall_elasticity;
+                m_cover_velocity *= - (cover_anim_wall_elasticity + g_random_double_range(0.0, 0.05));
 
                 // FIXME: Need a better test. This runs into stability problems when
                 // dt or acceleration is too high
@@ -1701,7 +1701,7 @@ namespace MPX
         );
 
         m_Sidebar->addItem(
-            _("Info Plugins"),
+            _("Track Details"),
             m_InfoNotebook,
             0,
             render_icon(
@@ -2012,6 +2012,7 @@ namespace MPX
 
         m_Sources[source_id]->post_install();
 
+#if 0
         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
         try{
             using namespace boost::python;
@@ -2022,6 +2023,7 @@ namespace MPX
             PyErr_Print();
         }
         pyg_gil_state_release(state);
+#endif
 	}
 
     void

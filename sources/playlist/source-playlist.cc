@@ -46,6 +46,7 @@
 
 #include "source-playlist.hh"
 #include "glib-marshalers.h"
+#include "python.hh"
 
 using namespace Gtk;
 using namespace Glib;
@@ -1075,6 +1076,8 @@ namespace Source
     )
     : PlaybackSource(ui_manager, name, C_CAN_SEEK)
     {
+        mpx_playlist_py_init ();
+
         if(!m_signals_installed)
         {
             signals[PSM_SIGNAL_PLAYLIST_TOOLTIP] =
@@ -1118,7 +1121,7 @@ namespace Source
     PlaybackSourcePlaylist::get_py_obj ()
     {
         using namespace boost::python;
-        object obj(boost::ref(this));
+        object obj(boost::ref(*this));
         Py_INCREF(obj.ptr());
         return obj.ptr();
     }

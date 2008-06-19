@@ -29,7 +29,6 @@
 #include <boost/shared_ptr.hpp>
 #include <map>
 #include <string>
-#include <vector>
 #include <mcs/mcs.h>
 
 namespace MPX
@@ -49,9 +48,7 @@ namespace MPX
 			bool			m_Active;
             bool            m_HasGUI;
             bool            m_CanActivate;
-            bool            m_CanBind;
-            std::string     m_Bindable;
-			gint64			m_NextId;
+			gint64			m_Id;
 
 		public:
 
@@ -79,22 +76,16 @@ namespace MPX
             bool
             get_can_activate () const   { return m_CanActivate; }
 
-            bool
-            get_can_bind ()     const   { return m_CanBind; }
-
-            std::string 
-            get_bindable ()     const   { return m_Bindable; }
-
 			gint64
-			get_id ()			const	{ return m_NextId; }
+			get_id ()			const	{ return m_Id; }
 
 		friend class PluginManager;
+        friend class PluginActivate;
 	};
 
 	typedef boost::shared_ptr<PluginHolder>	PluginHolderRefP;
-	typedef std::map<gint64, PluginHolderRefP> PluginHoldMap_t; 
-	typedef std::vector<std::string> Strings_t;
-    typedef std::map<std::string, PyObject*> BindablePlugins_t;
+	typedef std::map<gint64, PluginHolderRefP> PluginHoldMap; 
+	typedef std::vector<std::string> Strings;
 
     class Traceback
 	{
@@ -116,16 +107,26 @@ namespace MPX
 			get_traceback() const;
 	};
 
+    typedef sigc::signal<void, gint64> SignalPluginActivated;
+
+
 	class Player;
     class PluginManager
     {
+        friend class PluginActivate;
+
+        SignalPluginActivated signal_;
+
 		public:
 	
-			PluginManager (MPX::Player*);
+			PluginManager (MPX::Player* /*player*/);
 			~PluginManager ();
 
+            SignalPluginActivated&	
+            signal_plugin_activated() { return signal_; }
+
 			void
-			append_search_path (std::string const&);
+			append_search_path (std::string const& /*path*/);
 
 			void
 			load_plugins ();
@@ -133,22 +134,23 @@ namespace MPX
             void
             activate_plugins ();
 
-			bool	
-			activate (gint64);
-	
-			bool
-			deactivate (gint64);
 
-
-            Gtk::Widget *
-            get_gui (gint64);
-
-			PluginHoldMap_t const&
+			PluginHoldMap const&
 			get_map () const;
 		
 
+			bool	
+			activate (gint64 /*id*/);
+	
+			bool
+			deactivate (gint64 /*id*/);
+
+            Gtk::Widget *
+            get_gui (gint64 /*id*/);
+
+
 			void
-			push_traceback(gint64, const std::string&);
+			push_traceback(gint64 id, const std::string& /*method*/);
 
 			unsigned int
 			get_traceback_count() const;
@@ -160,31 +162,15 @@ namespace MPX
 			pull_last_traceback();
 
 
-        private:
-
-            bool
-            create_plug_instance (PyObject*, std::string const&, std::string const&, PluginHolderRefP&);
-
 		private:
 
-            PyObject            * m_MainModule;
-            PyObject            * m_MainLocalsOrig; 
-            PyObject            * m_MPXOrig;
-            PyObject            * m_MPXDict;
-            PyTypeObject        * m_PyMPXPlugin_Type;
-            PyTypeObject        * m_PyMPXBindable_Type;
-
+			PluginHoldMap	      m_Map;	
+			Strings		          m_Paths;
+			gint64			      m_Id;
 			Player		        * m_Player;
-            Mcs::Mcs            * m_McsPlugins;
-
-			PluginHoldMap_t	      m_Map;	
-            BindablePlugins_t     m_BindablePlugins;
-
-			Strings_t	          m_Paths;
-
-			gint64			      m_NextId;
 			Glib::Mutex		      m_StateChangeLock;
 			std::list<Traceback>  m_TracebackList;
+            Mcs::Mcs            * mcs_plugins;
     };
 }
 #endif

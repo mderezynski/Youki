@@ -32,7 +32,6 @@
 #include "pysigc.hh"
 
 #include "mpx/python.hh"
-#include "mpx/source-playlist.hh"
 #include "gtkmmmodule.h"
 
 using namespace boost::python;
@@ -576,17 +575,6 @@ BOOST_PYTHON_MODULE(mpx)
             .def("get_class_guid", &MPX::PlaybackSource::get_class_guid)
     ;
 
-#if 0
-    class_<MPX::Source::PlaybackSourcePlaylist, bases<MPX::PlaybackSource>, boost::noncopyable>("Playlist", boost::python::no_init)
-            .def("play_tracks", &MPX::Source::PlaybackSourcePlaylist::play_tracks)
-            .def("play_album", &MPX::Source::PlaybackSourcePlaylist::play_album)
-            .def("append_tracks", &MPX::Source::PlaybackSourcePlaylist::append_tracks)
-            .def("get_playlist_model", &MPX::Source::PlaybackSourcePlaylist::get_playlist_model)
-            .def("get_playlist_current_iter", &MPX::Source::PlaybackSourcePlaylist::get_playlist_current_iter)
-            .def("gobj", &mpxpy::get_gobject<MPX::Source::PlaybackSourcePlaylist>)
-    ;
-#endif
-
 	/*-------------------------------------------------------------------------------------*/
 
 #if 0
@@ -674,7 +662,9 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("gobj",                &mpxpy::get_gobject<MPX::Player>)
 
 		.def("get_status",          &MPX::Player::get_status) 
+
         .def("get_source",          &MPX::Player::get_source)
+
         .def("get_sources_by_class",&MPX::Player::get_sources_by_class)
 
 		.def("get_metadata",        &MPX::Player::get_metadata,

@@ -99,9 +99,9 @@ namespace MPX
 				cell_toggle->signal_toggled().connect( sigc::mem_fun( *this, &PTV::on_cell_toggled ) );
                 pColumn->set_cell_data_func(*renderers[0], sigc::mem_fun( *this, &PTV::cell_data_func_active ));
 
-				PluginHoldMap_t const& map = m_Manager.get_map();	
+				PluginHoldMap const& map = m_Manager.get_map();	
 
-				for(PluginHoldMap_t::const_iterator i = map.begin(); i != map.end(); ++i)
+				for(PluginHoldMap::const_iterator i = map.begin(); i != map.end(); ++i)
 				{
 					TreeIter iter = Store->append();
 					(*iter)[Columns.Name] = i->second->get_name();

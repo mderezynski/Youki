@@ -7,6 +7,7 @@
 
 
 import mpx
+from mpx_playlist import *
 import gtkmm
 import time
 import pygtk
@@ -34,8 +35,8 @@ class PlaylistDefaultTooltip(mpx.Plugin):
         
         player.gobj().connect("new-source", self.on_new_source)
 
-        sources = player.get_sources_by_class("b20e4d5f-ebc5-4db7-be8a-cfacce153d64")
         self.sources = []
+        self.sources.append(player.get_source("b20e4d5f-ebc5-4db7-be8a-cfacce153d64"))
 
         for source in sources:
             conn = [source, source.gobj().connect("playlist-tooltip", self.on_playlist_tooltip)]

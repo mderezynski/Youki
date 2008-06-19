@@ -21,6 +21,7 @@ libmpxsource_playlist_la_LIBADD =  	\
 		$(BOOST_REGEX_LIB)			\
 		$(BOOST_FILESYSTEM_LIB)		\
 		$(BOOST_IOSTREAMS_LIB)		\
+		$(BOOST_PYTHON_LIB)			\
 		$(EXO_LIBS)					\
 		$(GLADEMM_LIBS)				\
 		$(GLIBMM_LIBS)				\
@@ -36,7 +37,8 @@ libmpxsource_playlist_la_LIBADD =  	\
 libmpxsource_playlist_la_SOURCES = 	\
 		glib-marshalers.c			\
 		glib-marshalers.h			\
-		plugin.cc				\
+		plugin.cc					\
+		python.cc					\
 		source-playlist.hh			\
 		source-playlist.cc
 

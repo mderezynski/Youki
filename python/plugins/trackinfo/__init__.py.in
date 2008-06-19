@@ -55,6 +55,10 @@ class LinkTag(gtk.TextTag):
              if event.button == 1:
                 self.emit("url-clicked", self.link)
 
+    def get_url(self):
+
+        return self.link
+
 class TrackInfo:
 
     def __init__(self, xml):
@@ -93,10 +97,10 @@ class TrackInfo:
 
         self.textTagUnderline = gtk.TextTag()
         self.textTagUnderline.set_property("underline", pango.UNDERLINE_SINGLE) 
+        self.textTagUnderline.set_property("weight", pango.WEIGHT_BOLD)
         self.buf.get_tag_table().add(self.textTagUnderline)
 
         self.Hand = False
-
         self.player = gst.Pipeline("player")
         self.source = gst.element_factory_make("giosrc", "file-source")
         self.player.add(self.source)
@@ -181,21 +185,31 @@ class TrackInfo:
         iter = self.textview.get_iter_at_location(xb, yb)
         tags = iter.get_tags() 
 
-        for tag in tags:
 
+        for tag in tags:
             if isinstance(tag, LinkTag):
-                window = self.textview.get_window(gtk.TEXT_WINDOW_TEXT)                
+
                 cursor = gtk.gdk.cursor_new_from_name(gtk.gdk.display_get_default(), "hand2")
+                window = self.textview.get_window(gtk.TEXT_WINDOW_TEXT)                
                 window.set_cursor(cursor)
+
                 self.Hand = True
+
+                self.textview.set_property("has-tooltip", True)
+                self.textview.set_tooltip_text(tag.get_url())
+
                 return False
+
 
         if self.Hand:
 
-            window = self.textview.get_window(gtk.TEXT_WINDOW_TEXT)                
             cursor = gtk.gdk.cursor_new_from_name(gtk.gdk.display_get_default(), "xterm")
+            window = self.textview.get_window(gtk.TEXT_WINDOW_TEXT)                
             window.set_cursor(cursor)
+
             self.Hand = False
+
+            self.textview.set_property("has-tooltip", False)
 
         return False
 
@@ -235,16 +249,6 @@ class TrackInfo:
             self.buf.delete(self.buf.get_start_iter(), self.buf.get_end_iter())
             self.buf.insert(self.buf.get_end_iter(), "\n\n\n")
 
-            #try:
-            #    lyricwiki = mpx.LyricWiki(track[mpx.AttributeId.ARTIST].get(), track[mpx.AttributeId.TITLE].get())
-            #    lyrics = lyricwiki.run()
-            #    if lyrics != "Not found":
-            #        self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics\n", self.textTagLarge, self.textTagUnderline)
-            #        self.buf.insert(self.buf.get_end_iter(), lyrics)
-            #        self.buf.insert(self.buf.get_end_iter(), "\n\n")
-            #except:
-            #    pass 
-
             try:
                 lastfmartist = mpx.LastFMArtist(track[mpx.AttributeId.ARTIST].get())
                 artist = lastfmartist.run()
@@ -254,8 +258,15 @@ class TrackInfo:
             except:
                 pass 
         
-            self.notebook.set_current_page(2)
-            return
+            try:
+                lyricwiki = mpx.LyricWiki(track[mpx.AttributeId.ARTIST].get(), track[mpx.AttributeId.TITLE].get())
+                lyrics = lyricwiki.run()
+                if lyrics != "Not found":
+                    self.buf.insert_with_tags(self.buf.get_end_iter(), "Lyrics\n", self.textTagLarge, self.textTagUnderline)
+                    self.buf.insert(self.buf.get_end_iter(), lyrics)
+                    self.buf.insert(self.buf.get_end_iter(), "\n\n\n")
+            except:
+                pass 
 
             if track[mpx.AttributeId.MB_TRACK_ID] and track[mpx.AttributeId.MB_TRACK_ID]:
         
@@ -299,15 +310,15 @@ class TrackInfo:
                     self.buf.insert_with_tags(self.buf.get_end_iter(), "This Track\n", self.textTagLarge, self.textTagUnderline)
                     for rellist in rellists:
                         funcdict[rel](rellist)
-                    self.buf.insert(self.buf.get_end_iter(), "\n\n")
+                    self.buf.insert(self.buf.get_end_iter(), "\n\n\n")
 
                 if track[mpx.AttributeId.MB_ALBUM_ID] and track[mpx.AttributeId.MB_ALBUM_ID]: 
                     entity = self.q.getReleaseById(track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release)
                     rels = entity.getRelations()
                     if len(rels) > 0:
-                        self.buf.insert_with_tags(self.buf.get_end_iter(), "Album Links\n", self.textTagUnderline, self.textTagLarge)
+                        self.buf.insert_with_tags(self.buf.get_end_iter(), "Album Links\n", self.textTagLarge, self.textTagUnderline)
                         self.display_relations (rels)
-                        self.buf.insert(self.buf.get_end_iter(), "\n\n")
+                        self.buf.insert(self.buf.get_end_iter(), "\n\n\n")
 
                 self.entities = dict(zip(self.entities,self.entities)).keys() 
                 if len(self.entities) > 0:
@@ -318,12 +329,11 @@ class TrackInfo:
                         self.buf.insert(self.buf.get_end_iter(), ": ")
                         rels = entity.getRelations()
                         self.display_relations (rels)
-                        self.buf.insert("\n")
-
         except:
         
             pass
 
+        self.buf.insert(self.buf.get_end_iter(), "\n\n\n")
         self.notebook.set_current_page(2)
 
     def display_relations(self, rels): 
