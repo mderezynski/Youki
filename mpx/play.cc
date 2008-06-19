@@ -525,7 +525,7 @@ namespace MPX
 
             m_metadata.reset();
             property_stream_type_ = ustring();
-            fade_init ();
+            stop_stream ();
             break;
 
           case PLAYSTATUS_WAITING:
