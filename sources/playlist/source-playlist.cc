@@ -147,10 +147,10 @@ namespace MPX
                 C_PLAYING,
                 C_TITLE,
                 C_LENGTH,
-                C_RATING,
                 C_ARTIST,
                 C_ALBUM,
                 C_TRACK,
+                C_RATING,
               };
 
               PlaylistTreeView(
@@ -183,7 +183,7 @@ namespace MPX
                 col->set_cell_data_func(*cell, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncPlaying ));
                 append_column(*col);
 
-                append_column(_("Title"), PlaylistColumns.Title);
+                append_column(_("Name"), PlaylistColumns.Name);
 
                 col = manage (new TreeViewColumn(_("Time")));
                 CellRendererText * cell2 = manage (new CellRendererText);
@@ -194,27 +194,32 @@ namespace MPX
                 g_object_set(G_OBJECT(cell2->gobj()), "xalign", 1.0f, NULL);
                 append_column(*col);
 
-                col = manage (new TreeViewColumn(_("Rating")));
+                append_column(_("Artist"), PlaylistColumns.Artist);
+                append_column(_("Album"), PlaylistColumns.Album);
+                append_column(_("Track"), PlaylistColumns.Track);
+
+                col = manage (new TreeViewColumn(_("My Rating")));
                 cell = manage (new CellRendererPixbuf);
-                col->pack_start(*cell, true);
+                col->pack_start(*cell, false);
                 col->set_min_width(66);
                 col->set_max_width(66);
                 col->set_cell_data_func(*cell, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncRating ));
                 append_column(*col);
 
-                append_column(_("Artist"), PlaylistColumns.Artist);
-                append_column(_("Album"), PlaylistColumns.Album);
-                append_column(_("Track"), PlaylistColumns.Track);
-
+                get_column(C_TITLE)->set_sort_column_id(PlaylistColumns.Name);
+                get_column(C_LENGTH)->set_sort_column_id(PlaylistColumns.Length);
                 get_column(C_ARTIST)->set_sort_column_id(PlaylistColumns.Artist);
-                get_column(C_TITLE)->set_sort_column_id(PlaylistColumns.Title);
                 get_column(C_ALBUM)->set_sort_column_id(PlaylistColumns.Album);
                 get_column(C_TRACK)->set_sort_column_id(PlaylistColumns.Track);
+                get_column(C_RATING)->set_sort_column_id(PlaylistColumns.Rating);
 
-
-                for(int c = C_TITLE; c < C_TRACK; get_column(c++)->set_resizable(true));
-
+                get_column(0)->set_resizable(false);
+                get_column(1)->set_resizable(true);
                 get_column(2)->set_resizable(false);
+                get_column(3)->set_resizable(true);
+                get_column(4)->set_resizable(true);
+                get_column(5)->set_resizable(false);
+                get_column(6)->set_resizable(false);
 
                 ListStore = Gtk::ListStore::create(PlaylistColumns);
                 ListStore->set_sort_func(PlaylistColumns.Artist,
@@ -368,7 +373,7 @@ namespace MPX
                   if(r.count("track"))
                       (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(r["track"]));
                   if(r.count("title"))
-                      (*iter)[PlaylistColumns.Title] = get<std::string>(r["title"]);
+                      (*iter)[PlaylistColumns.Name] = get<std::string>(r["title"]);
                   if(r.count("time"))
                       (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(r["time"]));
                   if(r.count("mb_artist_id"))
@@ -407,7 +412,7 @@ namespace MPX
                       (*iter)[PlaylistColumns.Track] = guint64(get<gint64>(track[ATTRIBUTE_TRACK].get()));
 
                   if(track[ATTRIBUTE_TITLE])
-                      (*iter)[PlaylistColumns.Title] = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
+                      (*iter)[PlaylistColumns.Name] = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
 
                   if(track[ATTRIBUTE_TIME])
                       (*iter)[PlaylistColumns.Length] = guint64(get<gint64>(track[ATTRIBUTE_TIME].get()));
@@ -689,7 +694,7 @@ namespace MPX
 
                   if(get_path_at_pos (event->x, event->y, path, col, cell_x, cell_y))
                   {
-                      if(col == get_column(3))
+                      if(col == get_column(6))
                       {
                           int rating = (cell_x + 7) / 12;
                           g_return_val_if_fail(((rating >= 0) && (rating <= 5)), false);
@@ -1120,8 +1125,9 @@ namespace Source
     PyObject*
     PlaybackSourcePlaylist::get_py_obj ()
     {
+        static PlaybackSource * src = dynamic_cast<PlaybackSource*>(this);
         using namespace boost::python;
-        object obj(boost::ref(*this));
+        object obj(boost::ref(*src));
         Py_INCREF(obj.ptr());
         return obj.ptr();
     }

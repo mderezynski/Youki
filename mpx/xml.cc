@@ -64,7 +64,7 @@ namespace
       if (next == NULL) 
       {
           g_warning (G_STRLOC ": invalid namespaces list format");
-          xmlFree (nsListDup);
+          //xmlFree (nsListDup);
           return(-1); 
       }
       *(next++) = '\0';   
@@ -81,11 +81,11 @@ namespace
       if(xmlXPathRegisterNs(xpathCtx, prefix, href) != 0)
       {
           g_warning (G_STRLOC ": unable to register NS with prefix=\"%s\" and href=\"%s\"", prefix, href);
-          xmlFree(nsListDup);
+          //xmlFree(nsListDup);
           return(-1); 
       }
     }
-    xmlFree(nsListDup);
+    //xmlFree(nsListDup);
     return(0);
   }
 }
@@ -116,14 +116,14 @@ namespace MPX
 	xpathObj = xmlXPathEvalExpression (xpathExpr, xpathCtx);
     if (xpathObj == NULL)
     {
-		xmlXPathFreeContext (xpathCtx);
+		//xmlXPathFreeContext (xpathCtx);
 		return NULL;
     }
 
     /*
      * Cleanup
      */
-    xmlXPathFreeContext (xpathCtx);
+    //xmlXPathFreeContext (xpathCtx);
 
     return xpathObj;
   }
@@ -141,7 +141,7 @@ namespace MPX
           throw std::runtime_error(_("Couldn't parse document"));
         }
 
-        xpathobj = xpath_query (doc, (xmlChar*)xpathExpr, NULL);
+        xpathobj = xpath_query (doc, (xmlChar*)xpathExpr, (xmlChar*)nsList);
         if (!xpathobj)
         {
           throw std::runtime_error(_("Invalid XPath"));
@@ -150,22 +150,22 @@ namespace MPX
         nv = xpathobj->nodesetval;
         if (!nv || !nv->nodeNr)
         {
-          xmlXPathFreeObject (xpathobj);
+          //xmlXPathFreeObject (xpathobj);
           throw std::runtime_error(_("No nodes in XPath result"));
         }
 
         xmlNodePtr node = nv->nodeTab[0];
         if (!node || !node->children)
         {
-          xmlXPathFreeObject (xpathobj);
+          //xmlXPathFreeObject (xpathobj);
           throw std::runtime_error(_("No nodes in XPath result"));
         }
 
         xmlChar * pcdata = XML_GET_CONTENT (node->children);
 		std::string pcdata_cc = (char*)pcdata;
-		xmlFree(pcdata);
-		xmlXPathFreeObject(xpathobj);	
-		xmlFreeDoc(doc);
+		//xmlFree(pcdata);
+		//xmlXPathFreeObject(xpathobj);	
+		//xmlFreeDoc(doc);
 		return pcdata_cc;
 	}
 }

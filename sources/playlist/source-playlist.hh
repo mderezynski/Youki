@@ -49,9 +49,9 @@ namespace MPX
         {
             Gtk::TreeModelColumn<Glib::ustring> Artist;
             Gtk::TreeModelColumn<Glib::ustring> Album;
-            Gtk::TreeModelColumn<guint64> Track;
-            Gtk::TreeModelColumn<Glib::ustring> Title;
-            Gtk::TreeModelColumn<guint64> Length;
+            Gtk::TreeModelColumn<guint64>       Track;
+            Gtk::TreeModelColumn<Glib::ustring> Name;
+            Gtk::TreeModelColumn<guint64>       Length;
 
             // These hidden columns are used for sorting
             // They don't contain sortnames, as one might 
@@ -61,28 +61,28 @@ namespace MPX
             // Obviously, comparing them with compare() is
             // useless if they're MB IDs
 
+            Gtk::TreeModelColumn<gint64>        RowId;
             Gtk::TreeModelColumn<Glib::ustring> ArtistSort;
             Gtk::TreeModelColumn<Glib::ustring> AlbumSort;
-            Gtk::TreeModelColumn<gint64> RowId;
             Gtk::TreeModelColumn<Glib::ustring> Location;
+            Gtk::TreeModelColumn<gint64>        Rating;
+            Gtk::TreeModelColumn<bool>          IsMPXTrack;
             Gtk::TreeModelColumn< ::MPX::Track> MPXTrack;
-            Gtk::TreeModelColumn<gint64> Rating;
-            Gtk::TreeModelColumn<bool> IsMPXTrack;
 
             PlaylistColumnsT ()
             {
                 add (Artist);
                 add (Album);
                 add (Track);
-                add (Title);
+                add (Name);
                 add (Length);
+                add (RowId);
                 add (ArtistSort);
                 add (AlbumSort);
-                add (RowId);
                 add (Location);
-                add (MPXTrack);
                 add (Rating);
                 add (IsMPXTrack);
+                add (MPXTrack);
             };
         };
         

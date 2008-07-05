@@ -81,6 +81,9 @@ namespace MPX
             gint64 /*id*/
         );
 
+        void
+        addSeparator ();
+
         typedef sigc::signal<void, ItemKey> SignalIdChanged;
 
         SignalIdChanged&
@@ -107,6 +110,12 @@ namespace MPX
             bool 
         );
 
+        bool
+        slot_separator(
+            Glib::RefPtr <Gtk::TreeModel> const&,
+            Gtk::TreeIter const&
+        );
+            
         void
         on_attach_plugin ();
 
@@ -131,6 +140,7 @@ namespace MPX
             Gtk::TreeModelColumn<Glib::RefPtr<Gdk::Pixbuf> > icon;
             Gtk::TreeModelColumn<ItemKey> key;
             Gtk::TreeModelColumn<gint64>  page;
+            Gtk::TreeModelColumn<bool>    separator;
 
             SourceColumns()
             {
@@ -138,6 +148,7 @@ namespace MPX
                 add (icon);
                 add (key);
                 add (page);
+                add (separator);
             };
         };
 

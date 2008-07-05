@@ -340,6 +340,36 @@ namespace MPX
         m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS devices (id INTEGER PRIMARY KEY AUTOINCREMENT, device_udi TEXT, volume_udi TEXT);");
     }
 
+#ifdef HAVE_HAL
+    Library::Library(
+        Library const& other
+    )
+    : sigx::glib_auto_dispatchable()
+    , m_HAL(other.m_HAL)
+#else
+    Library::Library(
+        Library const& other
+    )
+    : sigx::glib_auto_dispatchable()
+#endif
+    , m_Covers(other.m_Covers)
+    , m_MetadataReaderTagLib(other.m_MetadataReaderTagLib)
+    , m_Flags(0)
+    {
+        const int MLIB_VERSION_CUR = 1;
+        const int MLIB_VERSION_REV = 0;
+        const int MLIB_VERSION_AGE = 0;
+
+        try{
+          m_SQL = new SQL::SQLDB (*other.m_SQL);
+        }
+        catch (DbInitError & cxe)
+        {
+            g_message("%s: Error Opening the DB", G_STRLOC);
+        }
+    }
+
+
     Library::~Library ()
     {
     }
@@ -351,19 +381,27 @@ namespace MPX
     }
 
     void
-    Library::on_new_album (gint64 album_id)
+    Library::on_new_album(
+        gint64 album_id
+    )
     {
         Signals.NewAlbum.emit(album_id);
     }
 
     void
-    Library::on_new_artist (gint64 artist_id)
+    Library::on_new_artist(
+        gint64 artist_id
+    )
     {
         Signals.NewArtist.emit(artist_id);
     }
 
     void
-    Library::on_new_track (Track & track, gint64 album_id, gint64 artist_id)
+    Library::on_new_track(
+        Track& track,
+        gint64 album_id,
+        gint64 artist_id
+    )
     {
         Signals.NewTrack.emit(track, album_id, artist_id);
     }

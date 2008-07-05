@@ -1,6 +1,7 @@
 images_DATA =					\
 		audiosource-emblem.png	\
 		disc-default.png 		\
+		now-playing.png			\
 		play.png				\
 		splash.png				\
 		stars0.png				\
@@ -9,6 +10,7 @@ images_DATA =					\
 		stars3.png				\
 		stars4.png				\
 		stars5.png				\
-		throbber.gif
+		throbber.gif			\
+		trackdetails.png
 
 imagesdir = $(pkgdatadir)/images

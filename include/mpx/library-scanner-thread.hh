@@ -55,8 +55,15 @@ namespace MPX
             typedef sigc::signal<void>                                     SignalReload_t ;
             typedef sigc::signal<void, gint64>                             SignalNewAlbum_t ;
             typedef sigc::signal<void, gint64>                             SignalNewArtist_t ;
-            typedef sigc::signal<void, std::string const&, std::string const&, std::string const&> SignalCacheCover_t ;
-            typedef sigc::signal<void, Track&, gint64, gint64>  SignalTrack_t ;
+
+            typedef sigc::signal<void,
+                std::string const&,
+                std::string const&,
+                std::string const&,
+                std::string const&,
+                std::string const&>                                         SignalCacheCover_t ;
+
+            typedef sigc::signal<void, Track&, gint64, gint64>              SignalTrack_t ;
         
 
             

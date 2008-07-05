@@ -1693,10 +1693,7 @@ namespace MPX
             _("Now Playing"),
             m_VideoWidget,
             0,
-            render_icon(
-                Gtk::StockID(GTK_STOCK_MEDIA_PLAY),
-                Gtk::ICON_SIZE_DIALOG
-                )->scale_simple(20,20,Gdk::INTERP_BILINEAR),
+            Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "images" G_DIR_SEPARATOR_S "now-playing.png"))->scale_simple(20,20,Gdk::INTERP_BILINEAR),
             0 
         );
 
@@ -1704,15 +1701,11 @@ namespace MPX
             _("Track Details"),
             m_InfoNotebook,
             0,
-            render_icon(
-                Gtk::StockID(GTK_STOCK_INFO),
-                Gtk::ICON_SIZE_DIALOG
-                )->scale_simple(20,20,Gdk::INTERP_BILINEAR),
+            Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "images" G_DIR_SEPARATOR_S "trackdetails.png"))->scale_simple(20,20,Gdk::INTERP_BILINEAR),
             1 
         );
 
         m_NextSourceId = 2;
-       
 
         std::string sources_path = build_filename(PLUGIN_DIR, "sources");
         if(file_test(sources_path, FILE_TEST_EXISTS))
@@ -2798,14 +2791,15 @@ namespace MPX
 	Player::stop ()
 	{
       g_return_if_fail(m_ActiveSource);
+
       track_played();
 	  m_Sources[m_ActiveSource.get()]->stop ();
-	  m_Sources[m_ActiveSource.get()]->send_caps();
 	  safe_pause_unset ();
 	  m_Play->request_status( PLAYSTATUS_STOPPED );
+	  m_Sources[m_ActiveSource.get()]->send_caps();
       m_ActiveSource.reset();
-      set_title (_("(Not Playing) - MPX"));
       m_Sidebar->clearActiveId();
+      set_title (_("(Not Playing) - MPX"));
 	}
 
 	void

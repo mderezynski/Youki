@@ -94,6 +94,8 @@ namespace MPX
         column->set_cell_data_func( *cell3, sigc::bind( sigc::mem_fun( *this, &Sidebar::cell_data_func ), 2));
         append_column( *column );
 
+        set_row_separator_func( sigc::mem_fun( *this, &Sidebar::slot_separator ));
+
         get_selection()->set_select_function( sigc::mem_fun( *this, &Sidebar::slot_select ));
         get_selection()->set_mode( SELECTION_BROWSE );
         get_selection()->signal_changed().connect( sigc::mem_fun( *this, &Sidebar::on_selection_changed )); 
@@ -176,6 +178,13 @@ namespace MPX
     }
 
     void
+    Sidebar::addSeparator()
+    {
+        TreeIter iter = Store->append();
+        (*iter)[Columns.separator] = true;
+    }
+
+    void
     Sidebar::addItem(
             const Glib::ustring             & name,
             Gtk::Widget                     * ui,
@@ -185,12 +194,30 @@ namespace MPX
     )
     {
         TreeIter iter = Store->append();
+
         (*iter)[Columns.name] = name;
         (*iter)[Columns.icon] = icon;
         (*iter)[Columns.key]  = ItemKey(boost::optional<gint64>(), id);
         (*iter)[Columns.page] = m_Notebook->append_page(*ui);
-        m_IdIterMap.insert(std::make_pair(ItemKey(boost::optional<gint64>(),id), iter));
-        m_SourcesByKey.insert(std::make_pair(ItemKey(boost::optional<gint64>(),id), source));
+        (*iter)[Columns.separator] = false;
+
+        m_IdIterMap.insert(
+            std::make_pair(
+                ItemKey(
+                    boost::optional<gint64>(),
+                    id
+                ),
+                iter
+        ));
+
+        m_SourcesByKey.insert(
+            std::make_pair(
+                ItemKey(
+                    boost::optional<gint64>(),
+                    id
+                ),
+                source
+        ));
     }
 
     void
@@ -216,6 +243,8 @@ namespace MPX
         (*iter)[Columns.icon] = icon;
         (*iter)[Columns.key]  = ItemKey(parent,id); 
         (*iter)[Columns.page] = m_Notebook->append_page(*ui);
+        (*iter)[Columns.separator] = false;
+
         m_IdIterMap.insert(std::make_pair(ItemKey(parent,id), iter));
         m_SourcesByKey.insert(std::make_pair(ItemKey(boost::optional<gint64>(),id), source));
     }
@@ -317,10 +346,22 @@ namespace MPX
     }
 
     bool
-    Sidebar::slot_select (Glib::RefPtr <Gtk::TreeModel> const& model,
-                Gtk::TreeModel::Path const& path, bool was_selected)
+    Sidebar::slot_select(
+        const Glib::RefPtr <Gtk::TreeModel>&    model,
+        const Gtk::TreeModel::Path&             path,
+        bool                                    was_selected
+    )
     {
         return true; 
+    }
+
+    bool
+    Sidebar::slot_separator(
+        const Glib::RefPtr <Gtk::TreeModel>&    model,
+        const Gtk::TreeIter&                    iter
+    )
+    {
+        return bool((*iter)[Columns.separator]);
     }
 
     Sidebar::SignalIdChanged&

@@ -56,6 +56,7 @@
                             <property name="headers_visible">False</property>
                             <property name="enable_search">False</property>
                             <property name="search_column">0</property>
+			                <property name="rules_hint">True</property>
                           </widget>
                         </child>
                       </widget>

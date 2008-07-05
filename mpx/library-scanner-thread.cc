@@ -606,14 +606,26 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
       m_SQL->exec_sql (sql);
       album_j = m_SQL->last_insert_rowid ();
-      pthreaddata->NewAlbum.emit( album_j ); 
+
+      pthreaddata->NewAlbum.emit( album_j );
 
       pthreaddata->CacheCover(
+
                        get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get())
-                     , ((track[ATTRIBUTE_ASIN]
-                         ? get<std::string>(track[ATTRIBUTE_ASIN].get())
-                         : std::string()))
-                     , get<std::string>(track[ATTRIBUTE_LOCATION].get()));
+
+                     , track[ATTRIBUTE_ASIN]
+                            ? get<std::string>(track[ATTRIBUTE_ASIN].get())
+                            : ""
+
+                     , get<std::string>(track[ATTRIBUTE_LOCATION].get())
+
+                     , track[ATTRIBUTE_ALBUM_ARTIST]
+                            ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get())
+                            : get<std::string>(track[ATTRIBUTE_ARTIST].get())
+
+                     , get<std::string>(track[ATTRIBUTE_ALBUM].get()) 
+      );
+
     }
     return album_j;
 }

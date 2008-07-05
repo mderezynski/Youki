@@ -102,16 +102,41 @@ namespace MPX
 
         public:
 
-            typedef sigc::signal<void, gint64 /*album id*/> SignalNewAlbum; 
-            typedef sigc::signal<void, gint64 /*album id*/> SignalAlbumUpdated;
-            typedef sigc::signal<void, gint64 /*artist id*/> SignalNewArtist;
-            typedef sigc::signal<void, Track&, gint64/*albumid*/, gint64/*artistid*/> SignalNewTrack;
-			typedef sigc::signal<void, gint64 /*id*/> SignalTrackUpdated;
-			typedef sigc::signal<void, gint64 /*id*/, gint64 /* tag id*/> SignalTrackTagged;
-            typedef sigc::signal<void> SignalScanStart;
-            typedef sigc::signal<void, gint64,gint64> SignalScanRun;
-            typedef sigc::signal<void, gint64,gint64,gint64,gint64,gint64> SignalScanEnd;
-            typedef sigc::signal<void> SignalReload;
+            typedef sigc::signal<void,
+                gint64 /*album id*/>                            SignalNewAlbum; 
+
+            typedef sigc::signal<void,
+                gint64 /*album id*/>                            SignalAlbumUpdated;
+
+            typedef sigc::signal<void,
+                gint64 /*artist id*/>                           SignalNewArtist;
+
+            typedef sigc::signal<void,
+                Track&,
+                gint64 /*albumid*/,
+                gint64/*artistid*/>                             SignalNewTrack;
+
+			typedef sigc::signal<void,
+                gint64 /*id*/>                                  SignalTrackUpdated;
+
+			typedef sigc::signal<void,
+                gint64 /*id*/,
+                gint64 /*tagid*/>                               SignalTrackTagged;
+
+            typedef sigc::signal<void>                          SignalScanStart;
+
+            typedef sigc::signal<void,
+                gint64,
+                gint64>                                         SignalScanRun;
+
+            typedef sigc::signal<void,
+                gint64,
+                gint64,
+                gint64,
+                gint64,
+                gint64>                                         SignalScanEnd;
+
+            typedef sigc::signal<void>                          SignalReload;
 
             struct SignalsT
             {

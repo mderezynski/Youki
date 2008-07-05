@@ -54,6 +54,7 @@
 
 #include "mpx/audio.hh"
 #include "mpx/covers.hh"
+#include "mpx/ld.hh"
 #include "mpx/minisoup.hh"
 #include "mpx/network.hh"
 #include "mpx/uri.hh"
@@ -77,9 +78,12 @@ namespace
   };
 
   static boost::format mbxml_f ("http://www.uk.musicbrainz.org/ws/1/release/%s?type=xml&inc=url-rels");
+  static boost::format amapi_f ("http://webservices.amazon.com/onca/xml?Service=AWSECommerceService&SubscriptionId=1E90RVC80K4MVNTCHG02&Operation=ItemSearch&Artist=%s&Title=%s&SearchIndex=Music&ResponseGroup=Images&Version=2005-03-23");
 
   int
-  pixel_size (MPX::CoverSize size)
+  pixel_size(
+        MPX::CoverSize size
+  )
   {
     int pixel_size = 0;
     switch (size)
@@ -113,23 +117,48 @@ namespace MPX
     }
 
     void
-    Covers::site_fetch_and_save_cover_amazn (CoverFetchData * amzn_data)
+    Covers::site_fetch_and_save_cover_amazn(
+        CoverFetchData * amzn_data
+    )
     {
+        RequestKeeper.insert(amzn_data->mbid);
+        std::string url = ((amazon_f[amzn_data->n] % amzn_data->asin).str());
+        g_message("Amazon URL: %s",url.c_str());
         amzn_data->request = Soup::Request::create ((amazon_f[amzn_data->n] % amzn_data->asin).str());
         amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_amazn ), amzn_data ));
         amzn_data->request->run();
     }
 
     void
-    Covers::site_fetch_and_save_cover_mbxml (CoverFetchData * amzn_data)
+    Covers::site_fetch_and_save_cover_amapi(
+        CoverFetchData * amzn_data
+    )
     {
-        amzn_data->request = Soup::Request::create ((mbxml_f % amzn_data->mbid).str());
-        amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_mbxml ), amzn_data ));
+        RequestKeeper.insert(amzn_data->mbid);
+        amzn_data->amapi = true;
+        amzn_data->request = Soup::Request::create ((amapi_f % amzn_data->artist % amzn_data->album).str());
+        amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_amapi ), amzn_data ));
         amzn_data->request->run();
     }
 
     void
-    Covers::reply_cb_mbxml (char const* data, guint size, guint code, CoverFetchData* mbxml_data)
+    Covers::site_fetch_and_save_cover_mbxml(
+        CoverFetchData * mbxml_data
+    )
+    {
+        RequestKeeper.insert(mbxml_data->mbid);
+        mbxml_data->request = Soup::Request::create ((mbxml_f % mbxml_data->mbid).str());
+        mbxml_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_mbxml ), mbxml_data ));
+        mbxml_data->request->run();
+    }
+
+    void
+    Covers::reply_cb_mbxml(
+        char const*     data,
+        guint           size,
+        guint           code,
+        CoverFetchData* mbxml_data
+    )
     {
         RequestKeeper.erase(mbxml_data->mbid);
 
@@ -142,17 +171,21 @@ namespace MPX
 				image_url = xpath_get_text(
                     data,
                     size,
-					"/metadata/release/relation-list//relation[@type='CoverArtLink']/@target", "mb=http://musicbrainz.org/ns/mmd-1.0#"
+					"/metadata/release/relation-list//relation[@type='CoverArtLink']/@target",
+                    "mb=http://musicbrainz.org/ns/mmd-1.0#"
                 ); 
 
 			} catch (std::runtime_error & cxe)
 			{
-				delete mbxml_data;
+                if(!mbxml_data->amapi)
+                {
+                    site_fetch_and_save_cover_amapi(mbxml_data);
+                }
 				return;
 			}
 
             RequestKeeper.insert(mbxml_data->mbid);
-	        mbxml_data->request = Soup::Request::create (image_url);
+	        mbxml_data->request = Soup::Request::create(image_url);
 		    mbxml_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_amazn ), mbxml_data ));
 			mbxml_data->request->run();
         }
@@ -160,15 +193,141 @@ namespace MPX
         {
             if(mbxml_data->uri.length())
             {
-                cache_inline( mbxml_data->mbid, mbxml_data->uri );
+                if( cache_inline( mbxml_data->mbid, mbxml_data->uri ) )
+                {
+                    delete mbxml_data;
+                    return;
+                }
             }
-			delete mbxml_data;
+
+            if(!mbxml_data->amapi)
+            {
+                site_fetch_and_save_cover_amapi(mbxml_data);
+            }
         }
     }
 
     void
-    Covers::reply_cb_amazn (char const* data, guint size, guint code, CoverFetchData* amzn_data)
+    Covers::reply_cb_amapi(
+        char const*     data,
+        guint           size,
+        guint           code,
+        CoverFetchData* amzn_data
+    )
     {
+        RequestKeeper.erase(amzn_data->mbid);
+
+        if( code == 200 )
+        {
+			try{
+
+                std::string album;
+
+                album = xpath_get_text(
+                    data,
+                    size,
+					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item/amazon:ItemAttributes/amazon:Title",
+                    "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
+                ); 
+
+                if( ld_distance<std::string>(album, amzn_data->album) > 3 )
+                {
+                    delete amzn_data;
+                    return;
+                }
+
+			} catch (std::runtime_error & cxe)
+			{
+			}
+
+            std::string image_url;
+            bool got_image = false;
+
+			try{
+
+                image_url = xpath_get_text(
+                    data,
+                    size,
+					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item//amazon:LargeImage//amazon:URL",
+                    "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
+                ); 
+
+                got_image = true;
+
+			} catch (std::runtime_error & cxe)
+			{
+			}
+
+            if( !got_image) try{
+
+                image_url = xpath_get_text(
+                    data,
+                    size,
+					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item//amazon:MediumImage//amazon:URL",
+                    "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
+                ); 
+
+                got_image = true;
+
+			} catch (std::runtime_error & cxe)
+			{
+			}
+
+            if( !got_image) try{
+
+                image_url = xpath_get_text(
+                    data,
+                    size,
+					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item//amazon:SmallImage//amazon:URL",
+                    "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
+                ); 
+
+                got_image = true;
+
+			} catch (std::runtime_error & cxe)
+			{
+			}
+
+            if( got_image && image_url.length() )
+            {
+                RequestKeeper.insert(amzn_data->mbid);
+    	        amzn_data->request = Soup::Request::create(image_url);
+	    	    amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_amazn ), amzn_data ));
+		    	amzn_data->request->run();
+                return;
+            }
+
+			try{
+
+				amzn_data->asin = xpath_get_text(
+                    data,
+                    size,
+					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item//amazon:ASIN",
+                    "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
+                ); 
+
+                amzn_data->n = 0;
+                site_fetch_and_save_cover_amazn(amzn_data);
+
+			} catch (std::runtime_error & cxe)
+			{
+                g_message("Runtime error during AMAPI XPath: %s", cxe.what());
+				delete amzn_data;
+				return;
+			}
+        }
+    }
+
+    void
+    Covers::reply_cb_amazn(
+        char const*     data,
+        guint           size,
+        guint           code,
+        CoverFetchData* amzn_data
+    )
+    {
+        g_message( G_STRFUNC );
+
         RequestKeeper.erase(amzn_data->mbid);
 
         if (code == 200)
@@ -181,7 +340,7 @@ namespace MPX
 
             if (cover->get_width() == 1 && cover->get_height() == 1)
             {
-                /*DO NOTHING*/
+                goto next_image;
             }
             else
             { 
@@ -189,27 +348,41 @@ namespace MPX
                 cover->save( get_thumb_path( amzn_data->mbid ), "png" );
                 m_pixbuf_cache.insert( std::make_pair( amzn_data->mbid, cover ));
                 Signals.GotCover.emit( amzn_data->mbid );
+                delete amzn_data;
             }
-            delete amzn_data;
         }
         else
         {
+            next_image:
+
             ++(amzn_data->n);
             if(amzn_data->n > 5)
             {
                 if( amzn_data->uri.length() )
                 {
-                    cache_inline( amzn_data->mbid, amzn_data->uri );
+                    if( cache_inline( amzn_data->mbid, amzn_data->uri ) )
+                    {
+                        delete amzn_data;
+                        return;
+                    }
                 }
-                delete amzn_data;
-                return; // no more hosts to try
+
+                if(!amzn_data->amapi)
+                {
+                    site_fetch_and_save_cover_amapi(amzn_data);
+                }
             }
-            site_fetch_and_save_cover_amazn(amzn_data);
+            else
+            {
+                site_fetch_and_save_cover_amazn(amzn_data);
+            }
         }
     }
     
     std::string
-    Covers::get_thumb_path (std::string const& mbid)
+    Covers::get_thumb_path(
+        const std::string& mbid
+    )
     {
         std::string basename = (boost::format ("%s.png") % mbid).str ();
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", basename.c_str(), NULL));
@@ -217,7 +390,14 @@ namespace MPX
     }
 
     void 
-    Covers::cache (std::string const& mbid, std::string const& uri, std::string const& asin, bool acquire)
+    Covers::cache(
+        const std::string& mbid,
+        const std::string& asin,
+        const std::string& uri,
+        const std::string& artist,
+        const std::string& album,
+        bool               acquire
+    )
     {
         Glib::Mutex::Lock L (RequestKeeperLock);
         if( RequestKeeper.count(mbid) )
@@ -240,19 +420,21 @@ namespace MPX
             }
             else
             {
-                CoverFetchData * data = new CoverFetchData(mbid, asin, uri);
-                RequestKeeper.insert(mbid);
+                CoverFetchData * data = new CoverFetchData( asin, mbid, uri, artist, album );
 
                 if(asin.empty())
-                    site_fetch_and_save_cover_mbxml(data);
+                    site_fetch_and_save_cover_mbxml( data );
                 else
-                    site_fetch_and_save_cover_amazn(data);
+                    site_fetch_and_save_cover_amazn( data );
             }
         }
     }
 
-    void
-    Covers::cache_inline (std::string const& mbid, std::string const& uri)
+    bool
+    Covers::cache_inline(
+        const std::string& mbid,
+        const std::string& uri
+    )
     {
         Glib::RefPtr<Gdk::Pixbuf> cover;
 
@@ -294,11 +476,17 @@ namespace MPX
             cover->save (get_thumb_path(mbid), "png");
             m_pixbuf_cache.insert (std::make_pair (mbid, cover));
             Signals.GotCover.emit(mbid);
+            return true;
         }
+
+        return false;
     }
 
     bool
-    Covers::fetch (std::string const& mbid, RefPtr<Gdk::Pixbuf>& cover)
+    Covers::fetch(
+        const std::string&      mbid,
+        RefPtr<Gdk::Pixbuf>&    cover
+    )
     {
         MPixbufCache::const_iterator i = m_pixbuf_cache.find(mbid);
         if (i != m_pixbuf_cache.end())
@@ -323,7 +511,11 @@ namespace MPX
     }
 
     bool
-    Covers::fetch (std::string const& mbid, Cairo::RefPtr<Cairo::ImageSurface>& surface, CoverSize size)
+    Covers::fetch(
+        const std::string&                  mbid,
+        Cairo::RefPtr<Cairo::ImageSurface>& surface,
+        CoverSize                           size
+    )
     {
         MSurfaceCache::const_iterator i = m_surface_cache[size].find (mbid);
         if (i != m_surface_cache[size].end())

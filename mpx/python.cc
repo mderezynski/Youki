@@ -25,6 +25,7 @@
 #include "mpx/types.hh"
 #include "mpx/tagview.hh"
 #include "mpx/util-graphics.hh"
+#include "sources/playlist/source-playlist.hh"
 
 #include "audio-types.hh"
 #include "lyrics-v2.hh"
@@ -575,7 +576,7 @@ BOOST_PYTHON_MODULE(mpx)
             .def("get_class_guid", &MPX::PlaybackSource::get_class_guid)
     ;
 
-	/*-------------------------------------------------------------------------------------*/
+ 	/*-------------------------------------------------------------------------------------*/
 
 #if 0
 	enum_<MPX::SQLID>("SQLID")

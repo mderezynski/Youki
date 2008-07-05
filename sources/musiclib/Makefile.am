@@ -37,7 +37,7 @@ libmpxsource_musiclib_la_SOURCES = 	\
 		glib-marshalers.c			\
 		plugin.cc					\
 		source-musiclib.hh			\
-		source-musiclib.cc
+		source-musiclib.cc			
 
 libmpxsource_musiclibdir = $(PLUGIN_DIR)/sources
 

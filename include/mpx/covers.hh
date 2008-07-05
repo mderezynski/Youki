@@ -67,34 +67,60 @@ namespace MPX
         return Signals.GotCover ;
       }
 
-      typedef bool (Covers::*FetchFunc) (std::string const&, Glib::RefPtr<Gdk::Pixbuf>&);
+      typedef bool (Covers::*FetchFunc) (const std::string&, Glib::RefPtr<Gdk::Pixbuf>&);
 
 	  Covers ();
 
 	  bool
-	  fetch (std::string const& mbid, Glib::RefPtr<Gdk::Pixbuf>&);
+	  fetch(
+        const std::string&                      /*mbid*/,
+        Glib::RefPtr<Gdk::Pixbuf>&              /*cover*/
+      );
 
 	  bool
-	  fetch (std::string const& mbid, Cairo::RefPtr<Cairo::ImageSurface>&, CoverSize size);
+	  fetch(
+        const std::string&                      /*mbid*/,
+        Cairo::RefPtr<Cairo::ImageSurface>&     /*cover*/,
+        CoverSize                               /*size*/
+      );
 
 	  void
-	  cache (std::string const& mbid, std::string const& uri, std::string const& asin = std::string(), bool acquire = true);
+	  cache(
+        const std::string& /*mbid*/,
+        const std::string& /*uri*/      = std::string(),
+        const std::string& /*asin*/     = std::string(),
+        const std::string& /*artist*/   = std::string(),
+        const std::string& /*album*/    = std::string(),
+        bool               /*acquire*/  = false
+     );
 
 	private:
 
 	  struct CoverFetchData
 	  {
 		  Soup::RequestRefP request;
-		  std::string mbid;
 		  std::string asin;
+		  std::string mbid;
           std::string uri;
+          std::string artist;
+          std::string album;
 		  int n;
+          bool amapi;
 
-		  CoverFetchData (const std::string& mbid_, const std::string& asin_, const std::string& uri_)
-		  : mbid(mbid_)
-		  , asin(asin_)
+		  CoverFetchData(
+                const std::string& asin_    = std::string(),
+                const std::string& mbid_    = std::string(),
+                const std::string& uri_     = std::string(),
+                const std::string& artist_  = std::string(),
+                const std::string& album_   = std::string()
+          )
+		  : asin(asin_)
+          , mbid(mbid_)
           , uri(uri_)
-		  , n (0)
+          , artist(artist_)
+          , album(album_)
+		  , n(0)
+          , amapi(false)
 		  {
 		  }
 	  };
@@ -104,24 +130,27 @@ namespace MPX
 	  typedef std::map <std::string, Cairo::RefPtr<Cairo::ImageSurface> > MSurfaceCache;
 
 	  std::string
-	  get_thumb_path (std::string const& /*mbid*/);
+	  get_thumb_path (const std::string& /*mbid*/);
 
 	  void 
 	  site_fetch_and_save_cover_mbxml (CoverFetchData*);
 	  void 
 	  site_fetch_and_save_cover_amazn (CoverFetchData*);
+	  void 
+	  site_fetch_and_save_cover_amapi (CoverFetchData*);
 
 	  void
 	  reply_cb_amazn (char const*, guint, guint, CoverFetchData*);
 	  void
 	  reply_cb_mbxml (char const*, guint, guint, CoverFetchData*);
-
       void
-      cache_inline (std::string const& mbid, std::string const& uri);
+      reply_cb_amapi (char const*, guint, guint, CoverFetchData*);
+
+      bool
+      cache_inline (const std::string& mbid, const std::string& uri);
 
 	  RequestKeeperT              RequestKeeper;
 	  Glib::Mutex                 RequestKeeperLock;
-
 	  MPixbufCache                m_pixbuf_cache;
 	  MSurfaceCache               m_surface_cache[N_COVER_SIZES];
   };
