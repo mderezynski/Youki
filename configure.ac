@@ -721,6 +721,7 @@ AC_OUTPUT([
 	python/plugins/trackinfo/Makefile
 	python/plugins/trackinfo/__init__.py
 	python/plugins/tracktags/Makefile
+	python/plugins/trackcover/Makefile
 	python/plugins/osd/Makefile
 	python/plugins/osd/__init__.py
 	python/plugins/pidgin/Makefile

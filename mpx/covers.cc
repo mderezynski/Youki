@@ -226,7 +226,7 @@ namespace MPX
                 album = xpath_get_text(
                     data,
                     size,
-					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item/amazon:ItemAttributes/amazon:Title",
+					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item//amazon:ItemAttributes//amazon:Title",
                     "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
                 ); 
 
