@@ -42,6 +42,7 @@
 #include "mpx/widgetloader.h"
 #include "mpx/playlistparser-xspf.hh"
 #include "mpx/widgets/cell-renderer-cairo-surface.hh"
+#include "mpx/widgets/cell-renderer-count.hh"
 #include "mpx/widgets/cell-renderer-vbox.hh"
 #include "mpx/widgets/gossip-cell-renderer-expander.h"
 
@@ -1540,12 +1541,25 @@ namespace MPX
               void
               cellDataFuncText2 (CellRenderer * basecell, TreeModel::iterator const &iter)
               {
+#if 0
                 TreePath path (iter);
                 CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);
                 if(path.get_depth() == ROW_TRACK)
                 {
                     cell->property_visible() = true; 
                     cell->property_markup() = (boost::format("%lld.") % (*iter)[AlbumColumns.TrackNumber]).str();
+                }
+                else
+                {
+                    cell->property_visible() = false; 
+                }
+#endif
+                TreePath path (iter);
+                CellRendererCount *cell = dynamic_cast<CellRendererCount*>(basecell);
+                if(path.get_depth() == ROW_TRACK)
+                {
+                    cell->property_visible() = true; 
+                    cell->property_text() = (boost::format("%lld") % (*iter)[AlbumColumns.TrackNumber]).str();
                 }
                 else
                 {
@@ -1655,7 +1669,7 @@ namespace MPX
                 xml->get_widget("album-filter-entry", m_FilterEntry);
 
                 set_show_expanders( false );
-                set_level_indentation( 32 );
+                set_level_indentation( 100 );
 
                 TreeViewColumn * col = manage (new TreeViewColumn());
 
@@ -1693,11 +1707,16 @@ namespace MPX
                 col->pack_start(*cvbox, true);
                 col->set_cell_data_func(*cvbox, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncText1 ));
 
-
+#if 0
                 celltext = manage (new CellRendererText);
                 col->pack_start(*celltext, false);
                 col->set_cell_data_func(*celltext, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncText2 ));
                 celltext->property_xalign() = 1.;
+#endif
+                CellRendererCount *cellcount = manage (new CellRendererCount);
+                col->pack_start(*cellcount, false);
+                col->set_cell_data_func(*cellcount, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncText2 ));
+                cellcount->property_box() = BOX_NORMAL;
 
                 celltext = manage (new CellRendererText);
                 col->pack_start(*celltext, false);

@@ -40,8 +40,7 @@ libmpxsource_lastfm_la_LIBADD =		\
 		$(PYTHON_LIBS)				\
 		$(PYGTK_LIBS)				\
 		$(SEXYMM_LIBS)				\
-		$(SOUP_LIBS)				\
-		$(top_builddir)/widgets/libmpx-widgets.la
+		$(SOUP_LIBS)				
 
 
 libmpxsource_lastfm_la_SOURCES =			\

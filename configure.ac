@@ -720,6 +720,8 @@ AC_OUTPUT([
 	python/plugins/Makefile
 	python/plugins/trackinfo/Makefile
 	python/plugins/trackinfo/__init__.py
+	python/plugins/trackinfo-webkit/Makefile
+	python/plugins/trackinfo-webkit/__init__.py
 	python/plugins/tracktags/Makefile
 	python/plugins/trackcover/Makefile
 	python/plugins/osd/Makefile
