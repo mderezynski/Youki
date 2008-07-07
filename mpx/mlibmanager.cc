@@ -331,7 +331,16 @@ namespace MPX
         
         if(m_ManagedPaths.count(full_path))
         {
-            MessageDialog dialog ((boost::format ("Are you sure you want to remove path\n\n'%s'\n\nfrom the library?") % Markup::escape_text(filename_to_utf8(full_path)).c_str()).str(), true, MESSAGE_QUESTION, BUTTONS_YES_NO, true);
+            MessageDialog dialog(
+                (boost::format ("Are you sure you want to <b>remove</b> Music from the path\n\n'<b>%s</b>'\n\n<b>from the library</b>?")
+                    % Markup::escape_text(filename_to_utf8(full_path)).c_str()
+                ).str(),
+                true,
+                MESSAGE_QUESTION,
+                BUTTONS_YES_NO,
+                true
+            );
+
             if( dialog.run() == GTK_RESPONSE_YES )
             {
                 std::string insert_path = full_path.substr(m_MountPoint.length());

@@ -78,7 +78,8 @@ namespace
   };
 
   static boost::format mbxml_f ("http://www.uk.musicbrainz.org/ws/1/release/%s?type=xml&inc=url-rels");
-  static boost::format amapi_f ("http://webservices.amazon.com/onca/xml?Service=AWSECommerceService&SubscriptionId=1E90RVC80K4MVNTCHG02&Operation=ItemSearch&Artist=%s&Title=%s&SearchIndex=Music&ResponseGroup=Images&Version=2005-03-23");
+  static boost::format amapi1_f ("http://webservices.amazon.com/onca/xml?Service=AWSECommerceService&SubscriptionId=1E90RVC80K4MVNTCHG02&Operation=ItemLookup&ItemId=%s&ResponseGroup=Images&Version=2005-03-23");
+  static boost::format amapi2_f ("http://webservices.amazon.com/onca/xml?Service=AWSECommerceService&SubscriptionId=1E90RVC80K4MVNTCHG02&Operation=ItemSearch&Artist=%s&Title=%s&SearchIndex=Music&ResponseGroup=Images&Version=2005-03-23");
 
   int
   pixel_size(
@@ -135,8 +136,18 @@ namespace MPX
     )
     {
         RequestKeeper.insert(amzn_data->mbid);
+
         amzn_data->amapi = true;
-        amzn_data->request = Soup::Request::create ((amapi_f % amzn_data->artist % amzn_data->album).str());
+
+        if( amzn_data->asin.length() )
+        {
+            amzn_data->request = Soup::Request::create ((amapi1_f % amzn_data->asin).str());
+        }
+        else
+        {
+            amzn_data->request = Soup::Request::create ((amapi2_f % amzn_data->artist % amzn_data->album).str());
+        }
+
         amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_amapi ), amzn_data ));
         amzn_data->request->run();
     }

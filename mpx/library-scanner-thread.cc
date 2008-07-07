@@ -208,6 +208,7 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
     g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
 
     pthreaddata->ScanStart.emit();
+    m_SQL->exec_sql( "UPDATE album SET album_new = 0" );
 
     gint64 added = 0, erroneous = 0, uptodate = 0, updated = 0, total = 0;
 
@@ -574,7 +575,7 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
         custom_id = true;
       }
 
-      char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q, %lld, %lld);");
+      char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s, %s, album_new) VALUES (%Q, %Q, %Q, %Q, %lld, %lld, 1);");
 
       std::string sql = mprintf (set_album_f,
 
@@ -602,7 +603,10 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
               : NULL) , 
 
           album_artist_id,
-          get<gint64>(track[ATTRIBUTE_MTIME].get()));
+
+          get<gint64>(track[ATTRIBUTE_MTIME].get())
+
+      );
 
       m_SQL->exec_sql (sql);
       album_j = m_SQL->last_insert_rowid ();

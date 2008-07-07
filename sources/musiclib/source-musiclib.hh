@@ -124,6 +124,9 @@ namespace Source
 
                 void
                 on_sort_column_change ();
+    
+                void
+                on_show_new_albums ();
 
                 void
                 on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);

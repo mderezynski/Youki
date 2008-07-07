@@ -89,23 +89,11 @@ namespace MPX
         }
         else
         {
-            Cairo::RefPtr<Cairo::LinearGradient> gradient =
-                Cairo::LinearGradient::create(
-                    xoff,
-                    yoff+cell_area.get_height()/2,
-                    xoff+cell_area.get_width(),
-                    yoff+cell_area.get_height()/2
-                );
-            gradient->add_color_stop_rgb(0., 0.00, 0.00, 0.00);
-            gradient->add_color_stop_rgb(1., 0.35, 0.35, 0.35);
-            cr->set_source(gradient);
-            cr->fill_preserve();
-
-            Gdk::Cairo::set_source_color(cr, widget.get_style()->get_text (Gtk::STATE_NORMAL));
-            cr->stroke();
+            cr->set_source_rgba(0., 0., 0., 1.);
+            cr->fill();
         }
 
-        cr->move_to (xoff + XPAD + 1 + ((cell_area.get_width()-2*XPAD) - text_width)/2, yoff + YPAD + ((cell_area.get_height()-2*YPAD) - text_height)/2);
+        cr->move_to (xoff + XPAD + 1 + ((cell_area.get_width()-2*XPAD-2) - text_width), yoff + YPAD + 2 + ((cell_area.get_height()-2*YPAD-2) - text_height)/2);
 
         if( state & Gtk::CELL_RENDERER_SELECTED )
             Gdk::Cairo::set_source_color(cr, widget.get_style()->get_text (Gtk::STATE_NORMAL));
