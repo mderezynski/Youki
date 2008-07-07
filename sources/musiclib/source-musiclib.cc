@@ -48,7 +48,7 @@
 
 #include "source-musiclib.hh"
 #include "glib-marshalers.h"
-//#include "musiclib-py.hh"
+#include "musiclib-py.hh"
 
 using namespace Gtk;
 using namespace Glib;
@@ -1887,7 +1887,7 @@ namespace Source
     : PlaybackSource(ui_manager, _("Music"), C_CAN_SEEK)
     , m_MainUIManager(ui_manager)
     {
-        //mpx_musiclib_py_init();
+        mpx_musiclib_py_init();
 
         if(!m_signals_installed)
         {

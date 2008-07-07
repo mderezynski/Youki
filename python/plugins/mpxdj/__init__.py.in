@@ -7,7 +7,6 @@
 #
 
 import mpx
-import mpx_playlist
 import time
 import pygtk
 pygtk.require('2.0')
@@ -36,7 +35,7 @@ class MPXDJ(mpx.Plugin):
         self.id = id 
         self.lib = player.get_library()
         self.covers = player.get_covers()
-        self.mlib = player.get_source("b20e4d5f-ebc5-4db7-be8a-cfacce153d64"); 
+        self.mlib = player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd"); 
 
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj.glade")
 

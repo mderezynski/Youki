@@ -259,7 +259,7 @@ namespace MPX
                 image_url = xpath_get_text(
                     data,
                     size,
-					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item//amazon:LargeImage//amazon:URL",
+					"//amazon:Items//amazon:Item//amazon:LargeImage//amazon:URL",
                     "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
                 ); 
 
@@ -274,7 +274,7 @@ namespace MPX
                 image_url = xpath_get_text(
                     data,
                     size,
-					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item//amazon:MediumImage//amazon:URL",
+					"//amazon:Items//amazon:Item//amazon:MediumImage//amazon:URL",
                     "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
                 ); 
 
@@ -289,7 +289,7 @@ namespace MPX
                 image_url = xpath_get_text(
                     data,
                     size,
-					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item//amazon:SmallImage//amazon:URL",
+					"//amazon:Items//amazon:Item//amazon:SmallImage//amazon:URL",
                     "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
                 ); 
 

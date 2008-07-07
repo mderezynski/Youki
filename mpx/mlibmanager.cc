@@ -332,7 +332,7 @@ namespace MPX
         if(m_ManagedPaths.count(full_path))
         {
             MessageDialog dialog(
-                (boost::format ("Are you sure you want to <b>remove</b> Music from the path\n\n'<b>%s</b>'\n\n<b>from the library</b>?")
+                (boost::format ("Are you sure you want <b>remove</b> Music from this path from the Library:\n\n'<b>%s</b>'")
                     % Markup::escape_text(filename_to_utf8(full_path)).c_str()
                 ).str(),
                 true,

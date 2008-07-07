@@ -36,6 +36,8 @@ libmpxsource_musiclib_la_LIBADD =  	\
 libmpxsource_musiclib_la_SOURCES = 	\
 		glib-marshalers.c			\
 		plugin.cc					\
+		musiclib-py.cc				\
+		musiclib-py.hh				\
 		source-musiclib.hh			\
 		source-musiclib.cc			
 

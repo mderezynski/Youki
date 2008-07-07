@@ -7,7 +7,6 @@
 
 
 import mpx
-from mpx_playlist import *
 import gtkmm
 import time
 import pygtk
@@ -33,21 +32,8 @@ class PlaylistDefaultTooltip(mpx.Plugin):
         self.lib = player.get_library()
         self.covers = player.get_covers()
         
-        player.gobj().connect("new-source", self.on_new_source)
+        player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd").gobj().connect("playlist-tooltip", self.on_playlist_tooltip)
 
-        self.sources = []
-        self.sources.append(player.get_source("b20e4d5f-ebc5-4db7-be8a-cfacce153d64"))
-
-        for source in sources:
-            conn = [source, source.gobj().connect("playlist-tooltip", self.on_playlist_tooltip)]
-            self.sources.append(conn)
-
-    def on_new_source(self, obj, source):
-
-        if source.get_class_guid() == "b20e4d5f-ebc5-4db7-be8a-cfacce153d64":
-            conn = [source, source.gobj().connect("playlist-tooltip", self.on_playlist_tooltip)]
-            self.sources.append(conn)
-        
     def on_playlist_tooltip(self, object, treemodel, iter):
 
         self.xml = gtk.glade.xml_new_from_buffer(self.xmldata, len(self.xmldata))
