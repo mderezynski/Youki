@@ -1,0 +1,410 @@
+
+# -*- coding: utf-8 -*-
+# -*- mode:python ; tab-width:4 -*- ex:set tabstop=4 shiftwidth=4 expandtab: -*-
+#
+# MPX Trackinfo
+# (C) 2008 M. Derezynski
+#
+
+import mpx
+import pygtk
+pygtk.require('2.0')
+import gtk
+import gtk.glade
+import gobject
+import pygst
+pygst.require('0.10')
+import gst
+import pango
+import time
+import os
+import webkit
+import musicbrainz2
+import musicbrainz2.webservice as ws
+
+class WaitSecond:
+
+        def __init__(self):
+
+                self.initialtime = time.time()
+
+        def waitsecond(self):
+
+                return        
+                t = time.time() # Only to do something in the loop
+                while (t - self.initialtime) < 2: 
+                        t = time.time()
+
+                self.initialtime = time.time()
+
+
+class TrackInfo:
+
+    def __init__(self, xml):
+
+        self.wait = WaitSecond()
+        self.q = ws.Query(musicbrainz2.webservice.WebService("www.uk.musicbrainz.org"))
+        self.wsinc = musicbrainz2.webservice.TrackIncludes(trackRelations=True,artist=True,puids=True,releases=True,artistRelations=True,releaseRelations=True,urlRelations=True)
+        self.wsinc_release = musicbrainz2.webservice.ReleaseIncludes(releaseEvents=True,releaseRelations=True,urlRelations=True)
+
+        self.xml = xml
+        self.notebook = self.xml.get_widget("notebook-track-info-1")
+        self.progress = self.xml.get_widget("progress")
+        self.alignment = self.xml.get_widget("alignment")
+        self.textview = webkit.WebView()
+        self.textview.show_all()
+        self.alignment.add(self.textview)
+        self.throb = self.xml.get_widget("throb")
+        self.throb.set_from_file("@DATA_DIR@" + "/images/throbber.gif")
+        self.notebook.set_current_page(0)
+        self.Hand = False
+        self.player = gst.Pipeline("player")
+        self.source = gst.element_factory_make("giosrc", "file-source")
+        self.player.add(self.source)
+        self.demuxer = gst.element_factory_make("decodebin", "demuxer")
+        self.player.add(self.demuxer)
+        self.demuxer.connect("new-decoded-pad", self.demuxer_callback)
+        self.puid = gst.element_factory_make("puid", "puid")
+        self.player.add(self.puid)
+        self.gotPuid = False
+        self.puid.set_property('musicdns-id', '234e8289d5a5fd4b29127bd114309954')
+        self.audiosink = gst.element_factory_make("fakesink", "audio-output")
+        self.player.add(self.audiosink)
+        gst.element_link_many(self.source, self.demuxer)
+        gst.element_link_many(self.puid, self.audiosink)
+        self.bus = self.player.get_bus()
+        self.bus.add_signal_watch()
+        self.bus.connect('message', self.on_message)
+
+    def demuxer_callback(self, demuxer, pad, arg):
+
+        dec_pad = self.puid.get_pad("sink")
+        pad.link(dec_pad)
+    
+    def display_pipeline_duration(self):
+
+        position, format = self.player.query_position(gst.FORMAT_TIME)
+        frac = float(position) / float(135000000000)
+        if (frac >= 0.) and (frac <= 1.0): 
+            self.progress.set_fraction(frac)
+
+        if self.gotPuid:
+            self.progress.set_fraction(0.)
+            self.progress.hide()
+            return False
+        else:
+            return True
+
+    def on_message(self, bus, message):    
+
+        t = message.type
+        if t == gst.MESSAGE_EOS:
+            puid = self.puid.get_property('puid')
+            if puid and len(puid) > 0:
+                result = ws.TrackFilter(puid=puid) 
+                tracks = self.q.getTracks(result)
+
+                if len(tracks) > 0:
+
+                    self.track[mpx.AttributeId.MB_TRACK_ID].set_string(str(tracks[0].getTrack().getId()))
+
+                    mbtrack = self.q.getTrackById(tracks[0].getTrack().getId(), self.wsinc) 
+                    artist = mbtrack.getArtist()
+
+                    self.track[mpx.AttributeId.MB_ARTIST_ID].set_string(str(artist.getId()))
+
+                    if not self.track[mpx.AttributeId.ARTIST]:
+                        self.track[mpx.AttributeId.ARTIST].set_string(str(artist.getName()))
+                    
+                    if not self.track[mpx.AttributeId.TITLE]:
+                        self.track[mpx.AttributeId.TITLE].set_string(str(mbtrack.getTitle()))
+
+            self.gotPuid = True
+            self.show_real()
+    
+    def run(self,track):
+
+        self.notebook.set_current_page(1)
+        self.track = track
+        self.show()
+
+    def show(self):
+
+        track = self.track
+
+        if not self.gotPuid and not track[mpx.AttributeId.MB_TRACK_ID] and track.get(mpx.AttributeId.LOCATION).get()[:7] == "file://":
+
+            self.player.get_by_name("file-source").set_property('location', track.get(mpx.AttributeId.LOCATION).get())
+            self.player.set_state(gst.STATE_PLAYING)
+            
+            gobject.timeout_add (500, self.display_pipeline_duration)
+            self.progress.show_all() 
+
+            while not self.gotPuid: 
+                while gtk.events_pending():
+                    gtk.main_iteration()
+
+            self.gotPuid = False
+
+        else:
+
+            self.show_real()
+
+    def show_real(self):
+
+        track = self.track
+        self.html = "" 
+
+        try:
+            try:
+                req = mpx.LastFMArtist(track[mpx.AttributeId.ARTIST].get())
+                artist = req.run()
+                self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % track[mpx.AttributeId.ARTIST].get()
+                self.html += artist
+            except:
+                pass 
+        
+            try:
+                req = mpx.LyricWiki(track[mpx.AttributeId.ARTIST].get(), track[mpx.AttributeId.TITLE].get())
+                lyrics = req.run()
+                if lyrics != "Not found":
+                    self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Lyrics</p></div>"
+                    self.html += lyrics.replace("\n","<br/>")
+            except:
+                pass 
+
+            if track[mpx.AttributeId.MB_TRACK_ID] and track[mpx.AttributeId.MB_TRACK_ID]:
+        
+                trackId = track.get(mpx.AttributeId.MB_TRACK_ID).get()
+                mbtrack = self.q.getTrackById(trackId, self.wsinc) 
+
+                rels = mbtrack.getRelations()
+                reldict = {}
+
+                for rel in rels:
+                    if rel.getDirection() != "backward":
+                        x,y,reltype = rel.getType().partition("#")
+
+                        try:
+                            reldict[reltype].append(rel)
+                        except:
+                            reldict[reltype] = []
+                            reldict[reltype].append(rel)
+
+                funcdict = {"Cover":self.printCover,
+                            "Composer":self.printComposer,
+                            "Instrument":self.printInstrument,
+                            "SamplesMaterial":self.printSamplesMaterial,
+                            "Remixer":self.printRemixer,
+                            "Lyricist":self.printLyricist,
+                            "Producer":self.printProducer,
+                            "Performer":self.printPerformer }
+
+                self.entities = []
+                self.link_tags = []
+
+                if track[mpx.AttributeId.MB_ARTIST_ID]:
+                        self.entities.append(track[mpx.AttributeId.MB_ARTIST_ID].get())
+
+                rellists = []
+                for rel in reldict:
+                    if rel in funcdict:
+                        rellists.append(reldict[rel])
+
+                if len(rellists) > 0:
+                    self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>This Track...</p></div>"
+                    for rellist in rellists:
+                        funcdict[rel](rellist)
+
+                if track[mpx.AttributeId.MB_ALBUM_ID] and track[mpx.AttributeId.MB_ALBUM_ID]: 
+                    entity = self.q.getReleaseById(track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release)
+                    rels = entity.getRelations()
+                    if len(rels) > 0:
+                        self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Album Links</p></div>"
+                        self.display_relations (rels)
+
+                self.entities = dict(zip(self.entities,self.entities)).keys() 
+                if len(self.entities) > 0:
+                    self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
+                    for id in self.entities:
+                        entity = self.q.getArtistById(id, self.wsinc)   
+                        self.html += "<b>%s</b>(%s): " % (entity.getName(), id)
+                        self.display_relations (entity.getRelations())
+
+        except:
+        
+            pass
+
+        self.textview.load_html_string(self.html, "") 
+        self.notebook.set_current_page(2)
+
+    def display_relations(self, rels): 
+
+            translit = {"Discogs":"Discogs Link", "Wikipedia":"Wikipedia Link", "Myspace":"Myspace Website", "OfficialHomepage":"Band Homepage"}
+            ar = {}
+
+            for rel in rels:
+
+                mbns, hash, reltype = rel.getType().partition("#")
+                try:
+                    ar[reltype].append(rel)
+                except:
+                    ar[reltype] = []
+                    ar[reltype].append(rel)
+
+            for a in ar:
+
+                if a in translit: 
+
+                    rls = ar[a]
+                    for rel in rls:
+                        if len(rls) > 1:
+                            self.html += "<a href='%s'>%s</a>(%s)" % (rel.getTargetId(), translit[a], str(rls.index(rel)+1))
+                        else:
+                            self.html += "<a href='%s'>%s</a>" % (rel.getTargetId(), translit[a])
+
+                        self.html += "  "
+
+    def on_url_clicked(self, obj, url):
+        
+        command = "xdg-open \"%s\"" % url
+        os.system(command)
+
+    def printCover(self, rels):
+
+        for rel in rels:
+
+            # Workaround for buggy pymusicbrainz; getTarget() on this rel returns None
+            url = rel.getTargetId()
+            id = url[url.rindex("/")+1:]
+            cover = self.q.getTrackById(id, self.wsinc)  
+            coverartist = cover.getArtist()
+
+            self.html += "...is a cover of <b>%s</b> by <b>%s</b><br/>" % (cover.getTitle(), coverartist.getName())
+
+        return True
+
+    def printComposer(self, rels):
+
+        composers = []
+
+        for rel in rels:
+
+            composer = rel.getTarget()
+            self.entities.append(rel.getTargetId())
+            composers.append(composer.getName())
+            self.html += "...was composed by <b>%s</b><br/>" (", ".join(composers))
+
+        return True
+
+    def printSamplesMaterial(self, rels):
+
+        sampled = []
+
+        for rel in rels:
+
+            url = rel.getTargetId()
+            id = url[url.rindex("/")+1:]
+            trk = self.q.getTrackById(id, self.wsinc)
+            sampledartist = trk.getArtist()
+            self.entities.append(rel.getArtistId())
+            sampled.append(trk.getTitle() + " by " + sampledartist.getName())
+
+        self.html += "...contains samples from <b>%s</b><br/>" (", ".join(sampled))
+        return True
+
+    def printRemixer(self, rels):
+
+        remixers = []
+
+        for rel in rels:
+            url = rel.getTargetId()
+            id = url[url.rindex("/")+1:]
+            remixer = self.q.getArtistById(id, self.wsinc)
+            self.entities.append(id)
+            remixers.append(remixer.getName())
+
+        self.html += "...was remixed by <b>%s</b><br/>" (", ".join(remixers))
+        return True
+
+    def printProducer(self, rels):
+
+        producers = []
+
+        for rel in rels:
+            url = rel.getTargetId()
+            id = url[url.rindex("/")+1:]
+            producer = self.q.getArtistById(id, self.wsinc)
+            self.entities.append(id)
+            producers.append(producer.getName())
+            
+        self.html += "...was produced by <b>%s</b><br/>" (", ".join(producers))
+        return True
+
+    def printLyricist(self, rels):
+
+        lyricists = []
+
+        for rel in rels:
+            lyricist = rel.getTarget() 
+            self.entities.append(rel.getTargetId())
+            lyricists.append(lyricist.getName())
+
+        self.html += "...has lyrics by <b>%s</b><br/>" (", ".join(lyricists))
+        return True
+
+    def printPerformer(self, rels):
+
+        performers = []
+
+        for rel in rels:
+            performer = rel.getTarget() 
+            self.entities.append(rel.getTargetId())
+            performers.append(performer.getName())
+
+        self.html += "...was performed by <b>%s</b><br/>" (", ".join(performers))
+        return True
+
+    def printInstrument(self, rels):
+        return True
+
+class TrackInfoDispatcher(mpx.Plugin):
+
+    """The Trackinfo Plugin provides a Last.fm/Musicbrainz based track info for the currently played track."""
+
+    def __init__(self,id,player,mcs):
+    
+        self.id = id
+        self.player = player
+        self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/trackinfo-webkit/trackinfo-webkit.glade")
+        self.vbox = self.xml.get_widget("vbox")
+        self.vbox.unparent()
+        self.notebook = self.xml.get_widget("notebook-track-info-1")
+
+    def activate(self):
+
+        self.player_infoarea_click_id = self.player.gobj().connect("infoarea-click", self.new_track)
+        self.player_playstatus_changed_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
+        self.info = TrackInfo(self.xml)
+        self.player.add_info_widget(self.vbox, "Track Info")
+        self.notebook.show_all()
+        return True
+
+    def deactivate(self):
+        self.player.remove_info_widget(self.vbox)
+        self.player.gobj().disconnect(self.player_infoarea_click_id)
+        self.player.gobj().disconnect(self.player_playstatus_changed_id)
+        self.info = None
+
+    def pstate_changed(self, blah, state):
+
+        if state == mpx.PlayStatus.STOPPED:
+            self.info.clear()
+
+    def new_track(self, blah):
+        try:
+            m = self.player.get_metadata()
+            self.info.run(m)
+        except:
+            return
+
