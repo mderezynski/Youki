@@ -121,6 +121,7 @@ class ThreadLooper (threading.Thread):
                     entity = self.q.getArtistById(id, self.wsinc)   
                     self.html += "<b>%s</b>(%s): " % (entity.getName(), id)
                     self.display_relations (entity.getRelations())
+                    self.html += "<br/>"
 
         self.finished.set()
 
@@ -161,8 +162,7 @@ class ThreadLooper (threading.Thread):
             cover = self.q.getTrackById(id, self.wsinc)  
             coverartist = cover.getArtist()
 
-            self.html += "...is a cover of <b>%s</b> by <b>%s</b><br/>" % (cover.getTitle(), coverartist.getName())
-
+        self.html += "...is a cover of <b>%s</b> by <b>%s</b><br/>" % (cover.getTitle(), coverartist.getName())
         return True
 
     def printComposer(self, rels):
@@ -174,8 +174,8 @@ class ThreadLooper (threading.Thread):
             composer = rel.getTarget()
             self.entities.append(rel.getTargetId())
             composers.append(composer.getName())
-            self.html += "...was composed by <b>%s</b><br/>" (", ".join(composers))
 
+        self.html += "...was composed by <b>%s</b><br/>" % (", ".join(composers))
         return True
 
     def printSamplesMaterial(self, rels):
@@ -191,7 +191,7 @@ class ThreadLooper (threading.Thread):
             self.entities.append(rel.getArtistId())
             sampled.append(trk.getTitle() + " by " + sampledartist.getName())
 
-        self.html += "...contains samples from <b>%s</b><br/>" (", ".join(sampled))
+        self.html += "...contains samples from <b>%s</b><br/>" % (", ".join(sampled))
         return True
 
     def printRemixer(self, rels):
@@ -205,7 +205,7 @@ class ThreadLooper (threading.Thread):
             self.entities.append(id)
             remixers.append(remixer.getName())
 
-        self.html += "...was remixed by <b>%s</b><br/>" (", ".join(remixers))
+        self.html += "...was remixed by <b>%s</b><br/>" % (", ".join(remixers))
         return True
 
     def printProducer(self, rels):
@@ -219,7 +219,7 @@ class ThreadLooper (threading.Thread):
             self.entities.append(id)
             producers.append(producer.getName())
             
-        self.html += "...was produced by <b>%s</b><br/>" (", ".join(producers))
+        self.html += "...was produced by <b>%s</b><br/>" % (", ".join(producers))
         return True
 
     def printLyricist(self, rels):
@@ -231,7 +231,7 @@ class ThreadLooper (threading.Thread):
             self.entities.append(rel.getTargetId())
             lyricists.append(lyricist.getName())
 
-        self.html += "...has lyrics by <b>%s</b><br/>" (", ".join(lyricists))
+        self.html += "...has lyrics by <b>%s</b><br/>" % (", ".join(lyricists))
         return True
 
     def printPerformer(self, rels):
@@ -243,7 +243,7 @@ class ThreadLooper (threading.Thread):
             self.entities.append(rel.getTargetId())
             performers.append(performer.getName())
 
-        self.html += "...was performed by <b>%s</b><br/>" (", ".join(performers))
+        self.html += "...was performed by <b>%s</b><br/>" % (", ".join(performers))
         return True
 
     def printInstrument(self, rels):
