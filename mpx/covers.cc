@@ -243,6 +243,10 @@ namespace MPX
 
                 if( ld_distance<std::string>(album, amzn_data->album) > 3 )
                 {
+                    if(amzn_data->uri.length())
+                    {
+                        cache_inline( amzn_data->mbid, amzn_data->uri );
+                    }
                     delete amzn_data;
                     return;
                 }
@@ -323,8 +327,11 @@ namespace MPX
 			} catch (std::runtime_error & cxe)
 			{
                 g_message("Runtime error during AMAPI XPath: %s", cxe.what());
-				delete amzn_data;
-				return;
+                if(amzn_data->uri.length())
+                {
+                    cache_inline( amzn_data->mbid, amzn_data->uri );
+                }
+                delete amzn_data;
 			}
         }
     }

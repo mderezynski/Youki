@@ -110,16 +110,16 @@ namespace Source
         	    guint signals[N_SIGNALS];
                 static bool m_signals_installed;
 
-                Glib::RefPtr<Gtk::UIManager> m_MainUIManager;
-                Glib::RefPtr<Gtk::ActionGroup> m_MainActionGroup;
-                guint m_UIID;
+                Glib::RefPtr<Gtk::UIManager>        m_MainUIManager;
+                Glib::RefPtr<Gtk::ActionGroup>      m_MainActionGroup;
+                guint                               m_UIID;
 
-                MusicLibPrivate * m_Private;
-                VisiblePlugsT m_VisiblePlugs; 
+                MusicLibPrivate                   * m_Private;
+                VisiblePlugsT                       m_VisiblePlugs;
 
-                PAccess<MPX::Library> m_Lib;
-                PAccess<MPX::HAL> m_HAL;
-                PAccess<MPX::Covers> m_Covers;
+                PAccess<MPX::Library>               m_Lib;
+                PAccess<MPX::HAL>                   m_HAL;
+                PAccess<MPX::Covers>                m_Covers;
     
 
                 void

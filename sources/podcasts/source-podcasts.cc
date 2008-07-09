@@ -71,6 +71,37 @@ namespace MPX
 {
 namespace Source
 {
+    void
+    Podcasts::add_podcast ()
+    {
+    }
+
+    Podcasts::Podcasts (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
+    : PlaybackSource(ui_manager, _("Podcasts"))
+    , m_MainUIManager(ui_manager)
+    {
+		const std::string path (build_filename(DATA_DIR, build_filename("glade","source-podcasts.glade")));
+		m_ref_xml = Gnome::Glade::Xml::create (path);
+
+        StockIconSpecV v;
+        v.push_back(StockIconSpec("stock-feed-add.png", "mpx-stock-feed-add"));
+        register_stock_icons(v, default_stock_path());
+
+        m_MainActionGroup = Gtk::ActionGroup::create ("Actions_UiPartPodcasts-Podcasts");
+
+        m_MainActionGroup->add  (Gtk::Action::create("dummy","dummy"));
+        m_MainActionGroup->add  (Gtk::Action::create("menu-source-podcasts",_("Podcasts")));
+
+        m_MainActionGroup->add  (Gtk::Action::create (ACTION_ADD_PODCAST,
+                            Gtk::StockID ("mpx-stock-feed-add"),
+                            _("_Add Podcast")),
+                            sigc::mem_fun( *this, &MPX::Source::Podcasts::add_podcast ));
+        m_MainUIManager->insert_action_group(m_MainActionGroup);
+
+		m_UI = m_ref_xml->get_widget("source-podcasts");
+        m_UI->show_all();
+    }
+
     Glib::RefPtr<Gdk::Pixbuf>
     Podcasts::get_icon ()
     {
@@ -85,16 +116,10 @@ namespace Source
         return m_UI;
     }
 
-    Podcasts::Podcasts (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
-    : PlaybackSource(ui_manager, _("Podcasts"))
+    guint
+    Podcasts::add_menu ()
     {
-		const std::string path (build_filename(DATA_DIR, build_filename("glade","source-podcasts.glade")));
-		m_ref_xml = Gnome::Glade::Xml::create (path);
-		m_UI = m_ref_xml->get_widget("source-podcasts");
-
-        StockIconSpecV v;
-        v.push_back(StockIconSpec("stock-feed-add.png", "mpx-stock-feed-add"));
-        register_stock_icons(v, default_stock_path());
+        return m_MainUIManager->add_ui_from_string(ui_source);
     }
 
     std::string

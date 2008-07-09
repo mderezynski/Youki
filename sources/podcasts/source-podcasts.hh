@@ -45,6 +45,8 @@ using namespace Glib;
 
 namespace MPX
 {
+    class PodcastsPrivate;
+
 namespace Source
 {
     class Podcasts
@@ -57,8 +59,14 @@ namespace Source
 
       private:
 
-        Gtk::Widget *m_UI;
-        Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
+        Gtk::Widget                       * m_UI;
+        Glib::RefPtr<Gnome::Glade::Xml>     m_ref_xml;
+        Glib::RefPtr<Gtk::UIManager>        m_MainUIManager;
+        Glib::RefPtr<Gtk::ActionGroup>      m_MainActionGroup;
+        PodcastsPrivate                   * m_Private;
+
+        void
+        add_podcast ();
   
       protected:
 
@@ -73,6 +81,9 @@ namespace Source
 
 	    virtual Gtk::Widget*
 		get_ui ();
+
+        virtual guint
+        add_menu ();
 
         virtual std::string
         get_uri ();
