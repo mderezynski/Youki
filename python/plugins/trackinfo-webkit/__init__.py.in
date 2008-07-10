@@ -188,7 +188,7 @@ class ThreadLooper (threading.Thread):
             id = url[url.rindex("/")+1:]
             trk = self.q.getTrackById(id, self.wsinc)
             sampledartist = trk.getArtist()
-            self.entities.append(rel.getArtistId())
+            self.entities.append(sampledartist.getId())
             sampled.append(trk.getTitle() + " by " + sampledartist.getName())
 
         self.html += "...contains samples from <b>%s</b><br/>" % (", ".join(sampled))
