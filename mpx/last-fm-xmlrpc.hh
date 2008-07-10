@@ -135,6 +135,9 @@ namespace MPX
           std::string run ();
       };
 
+      std::string
+      ArtistMetadataRequestString(std::string const& artist);
+
       class TrackAction
         : public RequestBase
       {

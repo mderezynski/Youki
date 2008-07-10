@@ -53,24 +53,24 @@ namespace
 
   // This table of RFC822 timezones is from gmime-utils.c of the gmime API */
   const struct {
-    char *name;
+    char const* name;
     int   offset;
   } tz_offsets [] = {
-    { "UT", 0 },
-    { "GMT", 0 },
-    { "EST", -500 },        // These are all US timezones.  Bloody Yanks!!
-    { "EDT", -400 },
-    { "CST", -600 },
-    { "CDT", -500 },
-    { "MST", -700 },
-    { "MDT", -600 },
-    { "PST", -800 },
-    { "PDT", -700 },
-    { "Z", 0 },
-    { "A", -100 },
-    { "M", -1200 },
-    { "N", 100 },
-    { "Y", 1200 }
+    { "UT",      0 },
+    { "GMT",     0 },
+    { "EST", - 500 },        // These are all US timezones.  Bloody Yanks!!
+    { "EDT", - 400 },
+    { "CST", - 600 },
+    { "CDT", - 500 },
+    { "MST", - 700 },
+    { "MDT", - 600 },
+    { "PST", - 800 },
+    { "PDT", - 700 },
+    { "Z",       0 },
+    { "A",   - 100 },
+    { "M",   -1200 },
+    { "N",     100 },
+    { "Y",    1200 }
   };
 
   // Returns timezone offset in seconds
@@ -332,8 +332,8 @@ namespace MPX
         return true;
     }
 
-    ustring
-    sanitize_lastfm (ustring const& in)
+    std::string
+    sanitize_lastfm (std::string const& in)
     {
       std::string out = in;
       try {

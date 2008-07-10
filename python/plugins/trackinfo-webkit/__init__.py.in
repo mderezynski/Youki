@@ -11,6 +11,7 @@ import gobject
 import gst
 import gtk
 import gtk.glade
+import httplib
 import mpx
 import musicbrainz2
 import musicbrainz2.webservice as ws
@@ -18,13 +19,131 @@ import os
 import pango
 import pygst
 import pygtk
+import re
+import string
 import threading
 import time
+import urllib
 import webkit
+from Ft.Xml.XPath.Context import Context
+from Ft.Xml.XPath import Evaluate
+from Ft.Xml.Domlette import NonvalidatingReader
+from Ft.Xml import EMPTY_NAMESPACE
 
-class ThreadLooper (threading.Thread):
+def getLastFMArtistInfo(artistname):
 
-    def __init__ (self, track): 
+        request = mpx.LastFMArtistMetadataRequestString(artistname)
+        headers = {"Content-Type"   :"text/xml",
+                   "Accept"         :"text/utf-8",
+                   "User-Agent"     :"MPX-1.0"}
+        conn = httplib.HTTPConnection("ws.audioscrobbler.com:80")
+        conn.request("POST", "/1.0/rw/xmlrpc.php", request, headers)
+        response = conn.getresponse()
+        data = response.read()
+        conn.close()
+
+        artist = ""
+
+        try:
+                reader = NonvalidatingReader.parseString(data)
+                context = Context(reader)
+                wikitext = Evaluate("//member[name = 'wikiText']/value/string", context=context)
+    
+                if wikitext and len(wikitext):
+
+                        artist = wikitext[0].firstChild.data
+                        re1 = re.compile("(\\[[^\\]]+\\])")
+                        re2 = re.compile("(\\[\\/[^\\]]+\\])")
+                        artist = re1.sub("",artist)
+                        artist = re2.sub("",artist)
+        except:
+                artist = "No artist data on Last.fm"
+
+        return artist
+
+def displayRelations(rels): 
+
+    html = ""
+    translit = {"Discogs":"Discogs Link", "Wikipedia":"Wikipedia Link", "Myspace":"Myspace Website", "OfficialHomepage":"Band Homepage"}
+    ar = {}
+
+    for rel in rels:
+
+        mbns, hash, reltype = rel.getType().partition("#")
+        try:
+            ar[reltype].append(rel)
+        except:
+            ar[reltype] = []
+            ar[reltype].append(rel)
+
+    for a in ar:
+
+        if a in translit: 
+
+            rls = ar[a]
+            for rel in rls:
+                if len(rls) > 1:
+                    html += "<a href='%s'>%s</a>(%s)" % (rel.getTargetId(), translit[a], str(rls.index(rel)+1))
+                else:
+                    html += "<a href='%s'>%s</a>" % (rel.getTargetId(), translit[a])
+
+                html += "  "
+
+    return html
+
+class ArtistInfoQuery (threading.Thread):
+
+    def __init__ (self, artistid, artistname, query, wsinc, wsinc_release): 
+
+        self.query = query 
+        self.wsinc = wsinc 
+        self.wsinc_release = wsinc_release 
+
+        threading.Thread.__init__(self)
+        self.finished = threading.Event()
+        self.artistid = artistid
+        self.artistname = artistname
+        self.html = ""
+
+    def is_done(self):
+
+        return self.finished
+
+    def get_html(self):
+
+        return self.html
+
+    def stop (self):
+
+        self.finished.set()
+        self.join()
+
+    def run (self):
+
+        artist = getLastFMArtistInfo(self.artistname)
+
+        self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % self.artistname 
+        self.html += artist
+
+        self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
+
+        try:
+                entity = self.query.getArtistById(self.artistid, self.wsinc)   
+                self.html += "<b>%s</b>(%s): " % (entity.getName(), self.artistid)
+                self.html += displayRelations(entity.getRelations())
+                self.html += "<br/>"
+        except:
+                pass
+
+        self.finished.set()
+
+class TrackInfoQuery (threading.Thread):
+
+    def __init__ (self, track, query, wsinc, wsinc_release): 
+
+        self.query = query
+        self.wsinc = wsinc 
+        self.wsinc_release = wsinc_release 
 
         threading.Thread.__init__(self)
         self.finished = threading.Event()
@@ -46,12 +165,8 @@ class ThreadLooper (threading.Thread):
 
     def run (self):
 
-        self.q = ws.Query(musicbrainz2.webservice.WebService("www.uk.musicbrainz.org"))
-        self.wsinc = musicbrainz2.webservice.TrackIncludes(trackRelations=True,artist=True,puids=True,releases=True,artistRelations=True,releaseRelations=True,urlRelations=True)
-        self.wsinc_release = musicbrainz2.webservice.ReleaseIncludes(releaseEvents=True,releaseRelations=True,urlRelations=True)
+        artist = getLastFMArtistInfo(self.track[mpx.AttributeId.ARTIST].get())
 
-        req = mpx.LastFMArtist(self.track[mpx.AttributeId.ARTIST].get())
-        artist = req.run()
         self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % self.track[mpx.AttributeId.ARTIST].get()
         self.html += artist
 
@@ -61,208 +176,177 @@ class ThreadLooper (threading.Thread):
             self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Lyrics</p></div>"
             self.html += lyrics.replace("\n","<br/>")
 
-        if self.track[mpx.AttributeId.MB_TRACK_ID] and self.track[mpx.AttributeId.MB_TRACK_ID]:
+        if self.track[mpx.AttributeId.MB_TRACK_ID]:
 
-            trackId = self.track.get(mpx.AttributeId.MB_TRACK_ID).get()
-            mbtrack = self.q.getTrackById(trackId, self.wsinc) 
+            Relations = {}
+            self.Entities = []
 
-            rels = mbtrack.getRelations()
-            reldict = {}
+            TrackId = self.track.get(mpx.AttributeId.MB_TRACK_ID).get()
+            MbTrack = self.query.getTrackById(TrackId, self.wsinc) 
 
-            for rel in rels:
-                if rel.getDirection() != "backward":
+            MbRelations = MbTrack.getRelations()
+
+            for Relation in MbRelations:
+
+                if Relation.getDirection() != "backward":
     
-                    print "Appending Relation"
-
-                    x,y,reltype = rel.getType().partition("#")
+                    x,y,relation_type = Relation.getType().partition("#")
 
                     try:
-                        reldict[reltype].append(rel)
+                        Relations[relation_type].append(Relation)
                     except:
-                        reldict[reltype] = []
-                        reldict[reltype].append(rel)
+                        Relations[relation_type] = [Relation]
 
-            funcdict = {"Cover":self.printCover,
-                        "Composer":self.printComposer,
-                        "Instrument":self.printInstrument,
-                        "SamplesMaterial":self.printSamplesMaterial,
-                        "Remixer":self.printRemixer,
-                        "Lyricist":self.printLyricist,
-                        "Producer":self.printProducer,
-                        "Performer":self.printPerformer }
 
-            self.entities = []
-            self.link_tags = []
+            CallTable = {"Cover"             :   [self.write_Cover],
+                         "Instrument"        :   [self.write_Instrument],
+                         "SamplesMaterial"   :   [self.write_SamplesMaterial],
+                         "Composer"          :   [self.write_Relations, "was composed by"],
+                         "Remixer"           :   [self.write_Relations, "was remixed by"],
+                         "Lyricist"          :   [self.write_Relations, "has lyrics by"],
+                         "Producer"          :   [self.write_Relations, "was produced by"],
+                         "Performer"         :   [self.write_Relations, "was performed by"],
+                         "Vocal"             :   [self.write_Relations, "has vocals performed by"] }
 
             if self.track[mpx.AttributeId.MB_ARTIST_ID]:
-                    self.entities.append(self.track[mpx.AttributeId.MB_ARTIST_ID].get())
+                self.Entities.append(self.track[mpx.AttributeId.MB_ARTIST_ID].get())
 
-            rellists = []
-            for rel in reldict:
-                if rel in funcdict:
-                    rellists.append(reldict[rel])
+            self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>This Track...</p></div>"
+            for rel in Relations:
+                if rel in CallTable:
+                    CallInfo = CallTable[rel] 
+                    if len(CallInfo) == 2:
+                        CallInfo[0](Relations[rel], CallInfo[1])
+                    else:
+                        CallInfo[0](Relations[rel])
+                    self.html += "<br/>"
 
-            if len(rellists) > 0:
-                self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>This Track...</p></div>"
-                for rellist in rellists:
-                    funcdict[rel](rellist)
+                else:
+                    print "Unhandled AR of type: " + rel
 
             if self.track[mpx.AttributeId.MB_ALBUM_ID] and self.track[mpx.AttributeId.MB_ALBUM_ID]: 
-                entity = self.q.getReleaseById(self.track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release)
+                entity = self.query.getReleaseById(self.track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release)
                 rels = entity.getRelations()
                 if len(rels) > 0:
                     self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Album Links</p></div>"
-                    self.display_relations (rels)
+                    self.html += displayRelations(rels)
 
-            self.entities = dict(zip(self.entities,self.entities)).keys() 
-            if len(self.entities) > 0:
+            self.Entities = dict(zip(self.Entities,self.Entities)).keys() 
+            if len(self.Entities) > 0:
                 self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
-                for id in self.entities:
-                    entity = self.q.getArtistById(id, self.wsinc)   
+                for id in self.Entities:
+                    entity = self.query.getArtistById(id, self.wsinc)   
                     self.html += "<b>%s</b>(%s): " % (entity.getName(), id)
-                    self.display_relations (entity.getRelations())
+                    self.html += displayRelations(entity.getRelations())
                     self.html += "<br/>"
 
         self.finished.set()
 
-    def display_relations(self, rels): 
+    def realId(self, entityId):
 
-            translit = {"Discogs":"Discogs Link", "Wikipedia":"Wikipedia Link", "Myspace":"Myspace Website", "OfficialHomepage":"Band Homepage"}
-            ar = {}
+        if (entityId[:7] == "http://"):
+            return string.split(entityId,"/")[-1]
+        else:
+            return entityId
 
-            for rel in rels:
+    def getEntityLink(self, entityName, entityId, entityType):
 
-                mbns, hash, reltype = rel.getType().partition("#")
-                try:
-                    ar[reltype].append(rel)
-                except:
-                    ar[reltype] = []
-                    ar[reltype].append(rel)
+        tuple = [("id", entityId), ("name", entityName), ("type", entityType)]
+        return "<a href=\"mpx:///?%s\">%s</a>" % (urllib.urlencode(tuple), entityName)
 
-            for a in ar:
+    def write_Cover(self, Relations):
 
-                if a in translit: 
+        Covers = []
+        Output = []
 
-                    rls = ar[a]
-                    for rel in rls:
-                        if len(rls) > 1:
-                            self.html += "<a href='%s'>%s</a>(%s)" % (rel.getTargetId(), translit[a], str(rls.index(rel)+1))
-                        else:
-                            self.html += "<a href='%s'>%s</a>" % (rel.getTargetId(), translit[a])
-
-                        self.html += "  "
-
-    def printCover(self, rels):
-
-        for rel in rels:
+        for Rel in Relations:
 
             # Workaround for buggy pymusicbrainz; getTarget() on this rel returns None
-            url = rel.getTargetId()
-            id = url[url.rindex("/")+1:]
-            cover = self.q.getTrackById(id, self.wsinc)  
-            coverartist = cover.getArtist()
+            Id = string.split(Rel.getTargetId(),"/")[-1]
+            Cover = self.query.getTrackById(Id, self.wsinc)  
+            CoverArtist = Cover.getArtist()
+            Covers.append([Cover.getTitle(), CoverArtist.getName(), CoverArtist.getId()])
 
-        self.html += "...is a cover of <b>%s</b> by <b>%s</b><br/>" % (cover.getTitle(), coverartist.getName())
+        for Cover in Covers:
+
+            Output.append("<b>%s</b> by <b>%s</b>" % (Cover[0], self.getEntityLink(Cover[1],Cover[2],"artist")))
+
+        self.html += "...is a cover of %s<br/>" % (", ".join(Output))
         return True
 
-    def printComposer(self, rels):
+    def write_Instrument(self, Relations):
 
-        composers = []
+        for Rel in Relations:
 
-        for rel in rels:
+            pre, sep, instrument = Rel.getAttributes()[0].partition("#")
+            artist = Rel.getTarget()
+            self.html += "...has <b>%s</b> performed by <b>%s</b>" % (instrument, self.getEntityLink(artist.getName(),artist.getId(),"artist")) 
+            self.Entities.append(artist.getId())
 
-            composer = rel.getTarget()
-            self.entities.append(rel.getTargetId())
-            composers.append(composer.getName())
-
-        self.html += "...was composed by <b>%s</b><br/>" % (", ".join(composers))
         return True
 
-    def printSamplesMaterial(self, rels):
+    def write_SamplesMaterial(self, Relations):
 
-        sampled = []
+        Sampled = []
+        Output = []
 
-        for rel in rels:
+        for Rel in Relations:
 
-            url = rel.getTargetId()
-            id = url[url.rindex("/")+1:]
-            trk = self.q.getTrackById(id, self.wsinc)
-            sampledartist = trk.getArtist()
-            self.entities.append(sampledartist.getId())
-            sampled.append(trk.getTitle() + " by " + sampledartist.getName())
+            Id = string.split(Rel.getTargetId(),"/")[-1]
+            self.Entities.append(self.realId(SampledArtist.getId()))
 
-        self.html += "...contains samples from <b>%s</b><br/>" % (", ".join(sampled))
+            Track = self.query.getTrackById(Id, self.wsinc)
+
+            SampledArtist = Track.getArtist()
+            Sampled.append([Track.getTitle(), SampledArtist.getName(), self.realId(SampledArtist.getId())])
+
+        for Sample in Sampled:
+
+            Output.append("<b>%s</b> by <b>%s</b>" % (Sample[0], self.getEntityLink(Sample[1],Sample[2],"artist")))
+
+        self.html += "...contains samples from %s<br/>" % (", ".join(Output))
         return True
 
-    def printRemixer(self, rels):
+    def write_Relations(self, Relations, text):
 
-        remixers = []
+        Entities = []
+        Output = []
 
-        for rel in rels:
-            url = rel.getTargetId()
-            id = url[url.rindex("/")+1:]
-            remixer = self.q.getArtistById(id, self.wsinc)
-            self.entities.append(id)
-            remixers.append(remixer.getName())
+        for Rel in Relations:
 
-        self.html += "...was remixed by <b>%s</b><br/>" % (", ".join(remixers))
-        return True
+            Id = string.split(Rel.getTargetId(),"/")[-1]
+            self.Entities.append(Id)
 
-    def printProducer(self, rels):
+            Entity = Rel.getTarget() 
+            Entities.append([Entity.getName(),Entity.getId()])
 
-        producers = []
+        for Entity in Entities:
 
-        for rel in rels:
-            url = rel.getTargetId()
-            id = url[url.rindex("/")+1:]
-            producer = self.q.getArtistById(id, self.wsinc)
-            self.entities.append(id)
-            producers.append(producer.getName())
-            
-        self.html += "...was produced by <b>%s</b><br/>" % (", ".join(producers))
-        return True
+            Output.append("<b>"+self.getEntityLink(Entity[0],Entity[1],"artist")+"</b>")
 
-    def printLyricist(self, rels):
-
-        lyricists = []
-
-        for rel in rels:
-            lyricist = rel.getTarget() 
-            self.entities.append(rel.getTargetId())
-            lyricists.append(lyricist.getName())
-
-        self.html += "...has lyrics by <b>%s</b><br/>" % (", ".join(lyricists))
-        return True
-
-    def printPerformer(self, rels):
-
-        performers = []
-
-        for rel in rels:
-            performer = rel.getTarget() 
-            self.entities.append(rel.getTargetId())
-            performers.append(performer.getName())
-
-        self.html += "...was performed by <b>%s</b><br/>" % (", ".join(performers))
-        return True
-
-    def printInstrument(self, rels):
+        self.html += "...%s %s<br/>" % (text, ", ".join(Output))
         return True
 
 class TrackInfo:
 
     def __init__(self, xml):
 
+        self.query = ws.Query(musicbrainz2.webservice.WebService("www.uk.musicbrainz.org"))
+        self.wsinc = musicbrainz2.webservice.TrackIncludes(trackRelations=True,artist=True,puids=True,releases=True,artistRelations=True,releaseRelations=True,urlRelations=True)
+        self.wsinc_release = musicbrainz2.webservice.ReleaseIncludes(releaseEvents=True,releaseRelations=True,urlRelations=True)
+
         self.xml = xml
         self.notebook = self.xml.get_widget("notebook-track-info-1")
         self.progress = self.xml.get_widget("progress")
         self.alignment = self.xml.get_widget("alignment")
-        self.textview = webkit.WebView()
-        self.textview.show_all()
-        self.alignment.add(self.textview)
+        self.webview = webkit.WebView()
+        self.webview.show_all()
+        self.webview.connect("navigation-requested", self.on_webkit_navigation_requested)
+        self.alignment.add(self.webview)
         self.throb = self.xml.get_widget("throb")
         self.throb.set_from_file("@DATA_DIR@" + "/images/throbber.gif")
         self.notebook.set_current_page(0)
+
         self.player = gst.Pipeline("player")
         self.source = gst.element_factory_make("giosrc", "file-source")
         self.player.add(self.source)
@@ -271,15 +355,17 @@ class TrackInfo:
         self.demuxer.connect("new-decoded-pad", self.demuxer_callback)
         self.puid = gst.element_factory_make("puid", "puid")
         self.player.add(self.puid)
-        self.gotPuid = threading.Event()
+        self.gotPuid = threading.Event() 
         self.puid.set_property('musicdns-id', '234e8289d5a5fd4b29127bd114309954')
         self.audiosink = gst.element_factory_make("fakesink", "audio-output")
         self.player.add(self.audiosink)
+
         gst.element_link_many(self.source, self.demuxer)
         gst.element_link_many(self.puid, self.audiosink)
+
         self.bus = self.player.get_bus()
         self.bus.add_signal_watch()
-        self.bus.connect('message', self.on_message)
+        self.bus.connect('message', self.on_gst_bus_message)
 
     def demuxer_callback(self, demuxer, pad, arg):
 
@@ -300,20 +386,20 @@ class TrackInfo:
         else:
             return True
 
-    def on_message(self, bus, message):    
+    def on_gst_bus_message(self, bus, message):    
 
         t = message.type
         if t == gst.MESSAGE_EOS:
             puid = self.puid.get_property('puid')
             if puid and len(puid) > 0:
                 result = ws.TrackFilter(puid=puid) 
-                tracks = self.q.getTracks(result)
+                tracks = self.query.getTracks(result)
 
                 if len(tracks) > 0:
 
                     self.track[mpx.AttributeId.MB_TRACK_ID].set_string(str(tracks[0].getTrack().getId()))
 
-                    mbtrack = self.q.getTrackById(tracks[0].getTrack().getId(), self.wsinc) 
+                    mbtrack = self.query.getTrackById(tracks[0].getTrack().getId(), self.wsinc) 
                     artist = mbtrack.getArtist()
 
                     self.track[mpx.AttributeId.MB_ARTIST_ID].set_string(str(artist.getId()))
@@ -325,17 +411,10 @@ class TrackInfo:
                         self.track[mpx.AttributeId.TITLE].set_string(str(mbtrack.getTitle()))
 
             self.gotPuid.set()
-            self.show_real()
     
     def run(self,track):
 
-        self.notebook.set_current_page(1)
         self.track = track
-        self.show()
-
-    def show(self):
-
-        track = self.track
 
         if not self.gotPuid.isSet() and not track[mpx.AttributeId.MB_TRACK_ID] and track.get(mpx.AttributeId.LOCATION).get()[:7] == "file://":
 
@@ -345,19 +424,19 @@ class TrackInfo:
             gobject.timeout_add (500, self.display_pipeline_duration)
             self.progress.show_all() 
 
-            while not self.gotPuid.isSet(): 
+            while not self.gotPuid.isSet():
                 while gtk.events_pending():
                     gtk.main_iteration()
 
             self.gotPuid.clear()
 
-        else:
+        self.webview.open("mpx:///?type=track")
 
-            self.show_real()
+    def display_track(self, track):
 
-    def show_real(self):
+        self.notebook.set_current_page(1)
 
-        t = ThreadLooper (self.track)
+        t = TrackInfoQuery (track, self.query, self.wsinc, self.wsinc_release)
         t.start()
 
         while not t.is_done().isSet():
@@ -366,13 +445,74 @@ class TrackInfo:
 
         t.stop()
 
-        self.textview.load_html_string(t.get_html(), "") 
+        self.webview.load_html_string(t.get_html(), "") 
+
         self.notebook.set_current_page(2)
+
+        # In case we get called by g_idle
+        return False
+
+    def display_artist(self, mydict):
+
+        self.notebook.set_current_page(1)
+
+        t = ArtistInfoQuery (mydict["id"], mydict["name"], self.query, self.wsinc, self.wsinc_release)
+        t.start()
+
+        while not t.is_done().isSet():
+            while gtk.events_pending():
+                gtk.main_iteration()
+
+        t.stop()
+
+        self.webview.load_html_string(t.get_html(), "") 
+        self.notebook.set_current_page(2)
+
+        # In case we get called by g_idle
+        return False
 
     def clear(self):
 
-        self.textview.load_html_string("","")
+        self.webview.load_html_string("","")
         self.notebook.set_current_page(0)
+
+    def uriParse(self, uri):
+
+        pre, sep, post = uri.partition("?")        
+        segments = string.split(post,"&") 
+   
+        mydict = {}
+     
+        for segment in segments:
+
+            splitsegment = string.split(segment,"=")
+            mydict[splitsegment[0]] = splitsegment[1]
+
+        return mydict
+
+    def openUri(self, uri):
+    
+        if uri == "about:blank":
+
+                self.display_track( self.track )
+                return
+
+        mydict = self.uriParse(uri) 
+
+        if mydict["type"] == "artist":
+   
+                self.display_artist( mydict )
+                return
+
+        if mydict["type"] == "track":
+       
+                self.display_track( self.track ) 
+                return
+
+    def on_webkit_navigation_requested(self, webview, webframe, request):
+
+        self.openUri(request.get_uri())
+        return webkit.NAVIGATION_RESPONSE_ACCEPT
 
 class TrackInfoDispatcher(mpx.Plugin):
 

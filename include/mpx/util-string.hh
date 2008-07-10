@@ -58,9 +58,10 @@ namespace MPX
     match_keys (Glib::ustring const& haystack,
                 Glib::ustring const& needle);
 
-    std::string stdstrjoin (StrV const& strings, std::string const& delimiter);
-    Glib::ustring utf8_string_normalize (Glib::ustring const& in);
-	Glib::ustring sanitize_lastfm (Glib::ustring const& in);
+    std::string stdstrjoin (StrV const&, std::string const&);
+	std::string sanitize_lastfm (std::string const&);
+
+    Glib::ustring utf8_string_normalize (Glib::ustring const&);
 
   } // Util namespace
 } // MPX namespace

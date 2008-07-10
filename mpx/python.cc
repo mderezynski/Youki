@@ -756,6 +756,12 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("run", &MPX::LastFM::ArtistMetadataRequestSync::run)
 	;
 
+    def("LastFMArtistMetadataRequestString",
+        &MPX::LastFM::ArtistMetadataRequestString);
+
+    def("LastFMSanitizeWiki",
+        &MPX::Util::sanitize_lastfm);
+
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<MPX::SQL::Row>("SQLRow")

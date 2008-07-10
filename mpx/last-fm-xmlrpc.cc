@@ -228,6 +228,15 @@ namespace MPX
         m_v.push_back (item.title);
       }
 
+      std::string
+      ArtistMetadataRequestString (std::string const& artist)
+      {
+        xmlRpcVariantV v;
+        v.push_back(artist);
+        v.push_back(std::string ("en"));
+        return formatXmlRpc("artistMetadata", v);
+      }
+
       ArtistMetadataRequest::ArtistMetadataRequest (std::string const& artist) 
       : XmlRpcCall ()
       , m_artist (artist)
