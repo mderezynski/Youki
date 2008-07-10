@@ -30,6 +30,13 @@ from Ft.Xml.XPath import Evaluate
 from Ft.Xml.Domlette import NonvalidatingReader
 from Ft.Xml import EMPTY_NAMESPACE
 
+def realId(entityId):
+
+    if (entityId[:7] == "http://"):
+        return string.split(entityId,"/")[-1]
+    else:
+        return entityId
+
 def getLastFMArtistInfo(artistname):
 
         request = mpx.LastFMArtistMetadataRequestString(artistname)
@@ -42,6 +49,8 @@ def getLastFMArtistInfo(artistname):
         data = response.read()
         conn.close()
 
+        print data
+
         artist = ""
 
         try:
@@ -49,13 +58,11 @@ def getLastFMArtistInfo(artistname):
                 context = Context(reader)
                 wikitext = Evaluate("//member[name = 'wikiText']/value/string", context=context)
     
-                if wikitext and len(wikitext):
-
-                        artist = wikitext[0].firstChild.data
-                        re1 = re.compile("(\\[[^\\]]+\\])")
-                        re2 = re.compile("(\\[\\/[^\\]]+\\])")
-                        artist = re1.sub("",artist)
-                        artist = re2.sub("",artist)
+                artist = wikitext[0].firstChild.data
+                re1 = re.compile("(\\[[^\\]]+\\])")
+                re2 = re.compile("(\\[\\/[^\\]]+\\])")
+                artist = re1.sub("",artist)
+                artist = re2.sub("",artist)
         except:
                 artist = "No artist data on Last.fm"
 
@@ -102,7 +109,7 @@ class ArtistInfoQuery (threading.Thread):
         threading.Thread.__init__(self)
         self.finished = threading.Event()
         self.artistid = artistid
-        self.artistname = artistname
+        self.artistname = artistname.replace("+", " ")
         self.html = ""
 
     def is_done(self):
@@ -234,24 +241,19 @@ class TrackInfoQuery (threading.Thread):
             self.Entities = dict(zip(self.Entities,self.Entities)).keys() 
             if len(self.Entities) > 0:
                 self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
+                self.html += "<table>"
                 for id in self.Entities:
                     entity = self.query.getArtistById(id, self.wsinc)   
-                    self.html += "<b>%s</b>(%s): " % (entity.getName(), id)
+                    self.html += "<tr><td><b>%s</b></td><td>" % entity.getName()
                     self.html += displayRelations(entity.getRelations())
-                    self.html += "<br/>"
+                    self.html += "</td></tr>"
+                self.html += "</table>"
 
         self.finished.set()
 
-    def realId(self, entityId):
-
-        if (entityId[:7] == "http://"):
-            return string.split(entityId,"/")[-1]
-        else:
-            return entityId
-
     def getEntityLink(self, entityName, entityId, entityType):
 
-        tuple = [("id", entityId), ("name", entityName), ("type", entityType)]
+        tuple = [("id", entityId), ("name", entityName.replace("+", " ")), ("type", entityType)]
         return "<a href=\"mpx:///?%s\">%s</a>" % (urllib.urlencode(tuple), entityName)
 
     def write_Cover(self, Relations):
@@ -262,10 +264,9 @@ class TrackInfoQuery (threading.Thread):
         for Rel in Relations:
 
             # Workaround for buggy pymusicbrainz; getTarget() on this rel returns None
-            Id = string.split(Rel.getTargetId(),"/")[-1]
-            Cover = self.query.getTrackById(Id, self.wsinc)  
+            Cover = self.query.getTrackById(realId(Rel.getTargetId()), self.wsinc)  
             CoverArtist = Cover.getArtist()
-            Covers.append([Cover.getTitle(), CoverArtist.getName(), CoverArtist.getId()])
+            Covers.append([Cover.getTitle(), CoverArtist.getName(), realId(CoverArtist.getId())])
 
         for Cover in Covers:
 
@@ -280,8 +281,8 @@ class TrackInfoQuery (threading.Thread):
 
             pre, sep, instrument = Rel.getAttributes()[0].partition("#")
             artist = Rel.getTarget()
-            self.html += "...has <b>%s</b> performed by <b>%s</b>" % (instrument, self.getEntityLink(artist.getName(),artist.getId(),"artist")) 
-            self.Entities.append(artist.getId())
+            self.html += "...has <b>%s</b> performed by <b>%s</b><br/>" % (instrument, self.getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
+            self.Entities.append(realId(artist.getId()))
 
         return True
 
@@ -292,13 +293,11 @@ class TrackInfoQuery (threading.Thread):
 
         for Rel in Relations:
 
-            Id = string.split(Rel.getTargetId(),"/")[-1]
-            self.Entities.append(self.realId(SampledArtist.getId()))
-
-            Track = self.query.getTrackById(Id, self.wsinc)
+            Track = self.query.getTrackById(realId(Rel.getTargetId()), self.wsinc)
 
             SampledArtist = Track.getArtist()
-            Sampled.append([Track.getTitle(), SampledArtist.getName(), self.realId(SampledArtist.getId())])
+            self.Entities.append(realId(SampledArtist.getId()))
+            Sampled.append([Track.getTitle(), SampledArtist.getName(), realId(SampledArtist.getId())])
 
         for Sample in Sampled:
 
@@ -314,11 +313,9 @@ class TrackInfoQuery (threading.Thread):
 
         for Rel in Relations:
 
-            Id = string.split(Rel.getTargetId(),"/")[-1]
-            self.Entities.append(Id)
-
+            self.Entities.append(realId(Rel.getTargetId()))
             Entity = Rel.getTarget() 
-            Entities.append([Entity.getName(),Entity.getId()])
+            Entities.append([Entity.getName(),realId(Entity.getId())])
 
         for Entity in Entities:
 

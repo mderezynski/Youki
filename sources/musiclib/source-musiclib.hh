@@ -86,15 +86,6 @@ namespace MPX
             };
         };
 
-        struct PluginMenuData
-        {
-            Glib::RefPtr<Gdk::Pixbuf> m_Icon;
-            gint64                    m_Id;
-            std::string               m_Name;
-        };
-
-        typedef std::vector<PluginMenuData> VisiblePlugsT;
-        
 namespace Source
 {
         class PlaybackSourceMusicLib
@@ -112,10 +103,10 @@ namespace Source
 
                 Glib::RefPtr<Gtk::UIManager>        m_MainUIManager;
                 Glib::RefPtr<Gtk::ActionGroup>      m_MainActionGroup;
+                Glib::RefPtr<Gnome::Glade::Xml>     m_RefXml;
                 guint                               m_UIID;
 
                 MusicLibPrivate                   * m_Private;
-                VisiblePlugsT                       m_VisiblePlugs;
 
                 PAccess<MPX::Library>               m_Lib;
                 PAccess<MPX::HAL>                   m_HAL;
@@ -127,6 +118,9 @@ namespace Source
     
                 void
                 on_show_new_albums ();
+
+                void
+                on_view_change ();
 
                 void
                 on_plist_row_activated(const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* column);
