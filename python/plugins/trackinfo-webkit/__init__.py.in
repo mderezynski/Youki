@@ -114,7 +114,7 @@ class ArtistInfoQuery (threading.Thread):
 
     def is_done(self):
 
-        return self.finished
+        return self.finished.isSet()
 
     def get_html(self):
 
