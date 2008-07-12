@@ -1263,6 +1263,7 @@ namespace MPX
                   m_MusicLib.check_caps();
                   m_MusicLib.send_caps ();
                   columns_autosize();
+                  m_MusicLib.plist_end(true);
               }
 
               virtual void
@@ -1285,6 +1286,11 @@ namespace MPX
 
                   m_MusicLib.check_caps();
                   m_MusicLib.send_caps ();
+
+                  if(ListStore->children().empty())
+                  {
+                    m_MusicLib.plist_end(true);
+                  }
               }
 
               virtual void
@@ -1634,6 +1640,13 @@ namespace MPX
                       (ev->type == GDK_2BUTTON_PRESS) ||
                       (ev->type == GDK_3BUTTON_PRESS))
                   {
+                    if((ev->type == GDK_BUTTON_RELEASE) && m_CurrentIter)
+                    {
+                        if(TreePath (m_CurrentIter.get()) == TreePath(1, ListStore->children().size() - 1))
+                        {
+                            m_MusicLib.plist_end(false);
+                        }
+                    }
                     m_ButtonDepressed = false;
                     return false;
                   }
@@ -2800,7 +2813,7 @@ namespace Source
                             GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
                             0,
                             NULL, NULL,
-                            g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+                            g_cclosure_marshal_VOID__BOOLEAN, G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
 
             m_signals_installed = true;
         }
@@ -2940,6 +2953,18 @@ namespace Source
         }
 
         return false;        
+    }
+
+    void
+    PlaybackSourceMusicLib::plist_end(bool cleared)
+    {
+        g_signal_emit(G_OBJECT(gobj()), signals[PSM_SIGNAL_PLAYLIST_END], 0, gboolean(cleared));
+    }
+
+    void
+    PlaybackSourceMusicLib::plist_sensitive(bool sensitive)
+    {
+        m_Private->m_TreeViewPlaylist->set_sensitive(sensitive);
     }
 
 #if 0

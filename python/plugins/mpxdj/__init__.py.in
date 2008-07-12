@@ -7,6 +7,7 @@
 #
 
 import mpx
+import gtkmm
 import time
 import pygtk
 pygtk.require('2.0')
@@ -345,7 +346,7 @@ class MPXDJ(mpx.Plugin):
         # Finally:
         self.combo.connect("changed", self.cbox_changed)
         self.combo.set_active(0)
-    
+
     def on_append_toggled(self, cb):
 
         active = cb.get_active()
@@ -365,10 +366,11 @@ class MPXDJ(mpx.Plugin):
 
         return self.icon
 
-    def on_playlist_end(self, object):
+    def on_playlist_end(self, object, empty):
 
         self.go.set_sensitive(False)
         self.go.set_label("Working...")
+        self.mlib.set_sensitive(False)
 
         idv = mpx.IdVector()
         klass = self.callables[self.combo.get_active()]
@@ -386,11 +388,13 @@ class MPXDJ(mpx.Plugin):
 
         self.go.set_label("Go!")
         self.go.set_sensitive(True)
+        self.mlib.set_sensitive(True)
 
     def on_button_go(self, object):
 
         self.go.set_sensitive(False)
         self.go.set_label("Working...")
+        self.mlib.set_sensitive(False)
 
         idv = mpx.IdVector()
         klass = self.callables[self.combo.get_active()]
@@ -411,6 +415,7 @@ class MPXDJ(mpx.Plugin):
 
         self.go.set_label("Go!")
         self.go.set_sensitive(True)
+        self.mlib.set_sensitive(True)
 
     def get_gui(self):
         return self.widget

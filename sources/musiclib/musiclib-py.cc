@@ -49,6 +49,7 @@ BOOST_PYTHON_MODULE(mpx_musiclib)
             .def("append_tracks", &MPX::Source::PlaybackSourceMusicLib::append_tracks)
             .def("get_playlist_model", &MPX::Source::PlaybackSourceMusicLib::get_playlist_model)
             .def("get_playlist_current_iter", &MPX::Source::PlaybackSourceMusicLib::get_playlist_current_iter)
+            .def("set_sensitive", &MPX::Source::PlaybackSourceMusicLib::plist_sensitive)
             .def("gobj", &mpxpy::get_gobject<MPX::Source::PlaybackSourceMusicLib>)
     ;
 }

@@ -155,9 +155,12 @@ namespace Source
                 append_tracks(IdV const&);
 
 
+                void
+                plist_end(bool cleared);
 
                 void
-                action_cb_run_plugin (gint64);
+                plist_sensitive(bool sensitive);
+
 
                 void
                 action_cb_play ();
@@ -176,6 +179,7 @@ namespace Source
 
 
 
+                /* PUBLIC API FOR MPX SHELL */
 
                 virtual void
                 send_metadata ();
