@@ -59,7 +59,7 @@ namespace MPX
 	std::string
     TextRequest::run ()
     {
-        boost::format lyrics_url_f ("http://lyricwiki.org/api.php?fmt=xml&artist=%s&song=%s");
+        boost::format lyrics_url_f ("http://lyricwiki.org/api.php?fmt=text&artist=%s&song=%s");
         URI request_url ((lyrics_url_f % m_artist.c_str() % m_title.c_str()).str(), true);
 
         m_soup_request = Soup::RequestSync::create ((ustring(request_url)));
@@ -76,8 +76,9 @@ namespace MPX
 			throw LyricsReturnNotOK();
         }
 
-		std::string lyrics;
+		std::string lyrics (m_soup_request->get_data_raw(), m_soup_request->get_data_size());
 
+#if 0
         try{
                 lyrics = xpath_get_text(
                     m_soup_request->get_data_raw(),
@@ -89,6 +90,7 @@ namespace MPX
         {
             throw LyricsReturnNotOK();
         }
+#endif
 
 		return lyrics;
     }

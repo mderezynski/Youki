@@ -207,11 +207,14 @@ namespace MPX
       Gtk::ComboBox                     * m_cbox_alsa_card;
       Gtk::ComboBox                     * m_cbox_alsa_device;
       Gtk::SpinButton                   * m_alsa_buffer_time;
+      Gtk::Entry                        * m_alsa_device_string;
       Glib::RefPtr<Gtk::ListStore>        m_list_store_alsa_cards;
       Glib::RefPtr<Gtk::ListStore>        m_list_store_alsa_device;
+      bool                                m_ignore_device_string_set;
 
       AlsaCards get_alsa_cards ();
       void on_alsa_card_changed ();
+      void on_alsa_device_string_changed ();
 #endif //HAVE_ALSA
 
       // Video
