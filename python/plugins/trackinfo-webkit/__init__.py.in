@@ -177,19 +177,26 @@ class TrackInfoQuery (threading.Thread):
         self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % self.track[mpx.AttributeId.ARTIST].get()
         self.html += artist
 
-        req = mpx.LyricWiki(self.track[mpx.AttributeId.ARTIST].get(), self.track[mpx.AttributeId.TITLE].get())
-        lyrics = req.run()
-        if lyrics != "Not found":
-            self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Lyrics</p></div>"
-            self.html += lyrics.replace("\n","<br/>")
+        try:
+                req = mpx.LyricWiki(self.track[mpx.AttributeId.ARTIST].get(), self.track[mpx.AttributeId.TITLE].get())
+                lyrics = req.run()
+                if lyrics != "Not found":
+                    self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Lyrics</p></div>"
+                    self.html += lyrics.replace("\n","<br/>")
+        except:
+                pass
 
         if self.track[mpx.AttributeId.MB_TRACK_ID]:
 
             Relations = {}
             self.Entities = []
 
-            TrackId = self.track.get(mpx.AttributeId.MB_TRACK_ID).get()
-            MbTrack = self.query.getTrackById(TrackId, self.wsinc) 
+            try:
+                    TrackId = self.track.get(mpx.AttributeId.MB_TRACK_ID).get()
+                    MbTrack = self.query.getTrackById(TrackId, self.wsinc) 
+            except:
+                    self.finished.set()
+                    return;
 
             MbRelations = MbTrack.getRelations()
 
@@ -232,22 +239,30 @@ class TrackInfoQuery (threading.Thread):
                     print "Unhandled AR of type: " + rel
 
             if self.track[mpx.AttributeId.MB_ALBUM_ID] and self.track[mpx.AttributeId.MB_ALBUM_ID]: 
-                entity = self.query.getReleaseById(self.track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release)
-                rels = entity.getRelations()
-                if len(rels) > 0:
-                    self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Album Links</p></div>"
-                    self.html += displayRelations(rels)
+
+                try:
+                        entity = self.query.getReleaseById(self.track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release)
+                        rels = entity.getRelations()
+                        if len(rels) > 0:
+                            self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Album Links</p></div>"
+                            self.html += displayRelations(rels)
+                except:
+                        pass
 
             self.Entities = dict(zip(self.Entities,self.Entities)).keys() 
-            if len(self.Entities) > 0:
-                self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
-                self.html += "<table>"
-                for id in self.Entities:
-                    entity = self.query.getArtistById(id, self.wsinc)   
-                    self.html += "<tr><td><b>%s</b></td><td>" % entity.getName()
-                    self.html += displayRelations(entity.getRelations())
-                    self.html += "</td></tr>"
-                self.html += "</table>"
+
+            try:
+                    if len(self.Entities) > 0:
+                        self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
+                        self.html += "<table>"
+                        for id in self.Entities:
+                            entity = self.query.getArtistById(id, self.wsinc)   
+                            self.html += "<tr><td><b>%s</b></td><td>" % entity.getName()
+                            self.html += displayRelations(entity.getRelations())
+                            self.html += "</td></tr>"
+                        self.html += "</table>"
+            except:
+                    pass
 
         self.finished.set()
 

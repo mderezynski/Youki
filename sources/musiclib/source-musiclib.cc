@@ -1266,6 +1266,18 @@ namespace MPX
                   m_MusicLib.plist_end(true);
               }
 
+              void
+              check_for_end ()
+              {
+                  if(m_CurrentIter)
+                  {
+                        if(TreePath (m_CurrentIter.get()) == TreePath(1, ListStore->children().size() - 1))
+                        {
+                            m_MusicLib.plist_end(false);
+                        }
+                  }
+              }
+
               virtual void
               action_cb_playlist_remove_items ()
               {
@@ -1291,6 +1303,8 @@ namespace MPX
                   {
                     m_MusicLib.plist_end(true);
                   }
+
+                  check_for_end ();
               }
 
               virtual void
@@ -1319,6 +1333,8 @@ namespace MPX
 
                   m_MusicLib.check_caps();
                   m_MusicLib.send_caps ();
+
+                  check_for_end ();
               }
 
               void
@@ -1642,10 +1658,7 @@ namespace MPX
                   {
                     if((ev->type == GDK_BUTTON_RELEASE) && m_CurrentIter)
                     {
-                        if(TreePath (m_CurrentIter.get()) == TreePath(1, ListStore->children().size() - 1))
-                        {
-                            m_MusicLib.plist_end(false);
-                        }
+                        check_for_end ();
                     }
                     m_ButtonDepressed = false;
                     return false;
@@ -1907,9 +1920,14 @@ namespace MPX
               prepare_uris (Util::FileList const& uris, bool init_iter)
               {
                   bool begin = true;
+
                   TreeIter iter = ListStore->append();
+
                   if(init_iter)
+                  {
                       m_PlayInitIter = iter;
+                  }
+
                   append_uris (uris, iter, begin);
                   m_MusicLib.check_caps();
                   m_MusicLib.send_caps ();
@@ -3014,6 +3032,8 @@ namespace Source
     {
         m_Private->m_TreeViewPlaylist->clear();
         m_Private->m_TreeViewPlaylist->append_tracks(idv, NO_ORDER);
+        check_caps ();
+        send_caps();
         Signals.PlayRequest.emit();
     }
 
@@ -3021,6 +3041,8 @@ namespace Source
     PlaybackSourceMusicLib::append_tracks(IdV const& idv)
     {
         m_Private->m_TreeViewPlaylist->append_tracks(idv, NO_ORDER);
+        check_caps ();
+        send_caps();
     }
 
     void

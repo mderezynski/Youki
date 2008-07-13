@@ -272,7 +272,7 @@ AC_MSG_RESULT($PYGTK_DEFSDIR)
 PKG_CHECK_MODULES([XML], [libxml-2.0 >= 2.6.1])
 
 # libsoup
-PKG_CHECK_MODULES([SOUP], [libsoup-2.2 >= 2.2.101])
+PKG_CHECK_MODULES([SOUP], [libsoup-2.4 >= 2.2.101])
 
 # sqlite
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.4])

@@ -84,8 +84,15 @@ class OptionRandomMix(BaseOption):
 
     def run(self):
 
-        random_algos = [ self.RANDOM_lastfm, self.RANDOM_lastfm2, self.RANDOM_lastfm3, self.RANDOM_genre ]
-        random_algos[ random.randint(0,3) ](self.lib, self.v)
+        callables = [
+            self.RANDOM_lastfm,
+            self.RANDOM_lastfm2,
+            self.RANDOM_lastfm3,
+            self.RANDOM_genre,
+            self.RANDOM_toptune
+        ]
+
+        callables[ random.randint(0,4) ](self.lib, self.v)
 
         self.finished.set()
 
@@ -196,6 +203,12 @@ class OptionRandomMix(BaseOption):
         lib.getSQL(rv, "SELECT id, genre FROM track_view WHERE genre IS NOT NULL ORDER BY mpxrand() LIMIT 1")
         genre = rv[0]["genre"].get_string()
         lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY mpxrand() LIMIT 9" % genre)
+        extract_ids(rv, v)
+
+    def RANDOM_toptune(self, lib, v):
+    
+        rv = mpx.SQLRowV()
+        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY mpxrand() LIMIT 1")
         extract_ids(rv, v)
 
 class OptionTopTunes(BaseOption):

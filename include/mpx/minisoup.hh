@@ -176,6 +176,9 @@ namespace MPX
 
             static void
             got_answer (SoupMessage* /*message*/, gpointer /*data*/);
+
+            static void
+            got_body (SoupMessage* /*message*/, gpointer /*data*/);
     };
 
 
@@ -242,6 +245,9 @@ namespace MPX
                    
         static void
         got_chunk (SoupMessage* /*message*/, gpointer /*data*/);
+
+        static void
+        got_body (SoupMessage* /*message*/, gpointer /*data*/);
 
         static void
         got_content_length (SoupMessage* /*message*/, gpointer /*data*/);

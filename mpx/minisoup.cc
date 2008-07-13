@@ -57,8 +57,8 @@ namespace MPX
     {
       g_signal_connect (G_OBJECT (m_message), "got-chunk", G_CALLBACK (got_chunk), this);
       g_signal_connect (G_OBJECT (m_message), "restarted", G_CALLBACK (restarted), this);
-      soup_message_add_header_handler (m_message, "content-length", SOUP_HANDLER_PRE_BODY,
-                                       SoupMessageCallbackFn (got_content_length), this);
+      soup_message_add_header_handler (m_message, "got-headers", "content-length", 
+                                       GCallback (got_content_length), this);
       return soup_session_send_message (m_session, m_message);
     }
   
@@ -72,41 +72,41 @@ namespace MPX
     RequestSync::get_data ()
     {
       std::string buffer;
-      buffer.append (m_message->response.body, m_message->response.length);
+      buffer.append (m_message->response_body->data, m_message->response_body->length);
       return buffer;
     }
 
     void
     RequestSync::get_data (std::string & buffer)
     {
-      buffer.append (m_message->response.body, m_message->response.length);
+      buffer.append (m_message->response_body->data, m_message->response_body->length);
     }
 
     char const*
     RequestSync::get_data_raw ()
     {
-      return m_message->response.body;
+      return m_message->response_body->data;
     }
 
     guint
     RequestSync::get_data_size ()
     {
-      return m_message->response.length;
+      return m_message->response_body->length;
     }
 
     void
     RequestSync::add_header (std::string const& name,
                              std::string const& value) 
     {
-      soup_message_add_header (m_message->request_headers, name.c_str(), value.c_str());   
+      soup_message_headers_append (m_message->request_headers, name.c_str(), value.c_str());   
     }
 
     void
     RequestSync::add_request (std::string const& type,
                               std::string const& request)
     {
-      soup_message_set_request (m_message, type.c_str(), SOUP_BUFFER_SYSTEM_OWNED /* we can't rely on the std::string not being destroyed */,
-        g_strdup (const_cast<char*>(request.c_str())), strlen (request.c_str()));
+      soup_message_set_request (m_message, type.c_str(), SOUP_MEMORY_COPY /* we can't rely on the std::string not being destroyed */,
+      g_strdup (const_cast<char*>(request.c_str())), strlen (request.c_str()));
       m_post = true;
     }
 
@@ -125,7 +125,7 @@ namespace MPX
     {
       RequestSync & request = (*(reinterpret_cast<RequestSync*>(data)));
 
-      request.m_read += message->response.length;
+      request.m_read += message->response_body->length;
       double percent = (double (request.m_read) / double (request.m_size));
       if(percent >= 0. && percent <= 1.)
       {
@@ -137,7 +137,7 @@ namespace MPX
     RequestSync::got_content_length (SoupMessage* message, gpointer data)
     {
       RequestSync & request = (*(reinterpret_cast<RequestSync*>(data)));
-      request.m_size = g_ascii_strtoull (soup_message_get_header (message->response_headers, "content-length"), NULL, 10);
+      request.m_size = g_ascii_strtoull (soup_message_headers_get (message->response_headers, "content-length"), NULL, 10);
     }
 
 
@@ -157,6 +157,7 @@ namespace MPX
     Glib::RefPtr<Request>
     Request::create (std::string const& url, bool post)
     {
+      g_message("Soup Request with URL: %s", url.c_str());
       return Glib::RefPtr<Request>(new Request (url, post));  
     }
 
@@ -179,27 +180,27 @@ namespace MPX
     guint
     Request::message_status ()
     {
-      return m_message->status;
+      return m_message->status_code;
     }
 
     char const*
     Request::get_data_raw ()
     {
-      return m_message->response.body;
+      return m_message->response_body->data;
     }
 
     guint
     Request::get_data_size ()
     {
-      return m_message->response.length;
+      return m_message->response_body->length;
     }
 
     void
     Request::run ()
     {
       g_signal_connect (G_OBJECT (m_message), "restarted", G_CALLBACK (restarted), this);
-      soup_session_queue_message (m_session, m_message, SoupMessageCallbackFn (got_answer), this);
-      g_message("%s: Running", G_STRLOC);
+      g_signal_connect (G_OBJECT (m_message), "got-body", G_CALLBACK (got_body), this);
+      soup_session_queue_message (m_session, m_message, SoupSessionCallback (got_answer), this);
     }
 
     void
@@ -219,7 +220,7 @@ namespace MPX
     Request::add_header (std::string const& name,
                          std::string const& value) 
     {
-      soup_message_add_header (m_message->request_headers, name.c_str(), value.c_str());   
+      soup_message_headers_append (m_message->request_headers, name.c_str(), value.c_str());   
     }
 
     void
@@ -227,7 +228,7 @@ namespace MPX
                           std::string const& request)
     {
       g_message("%s: Adding request: %s", G_STRLOC, request.c_str());
-      soup_message_set_request (m_message, type.c_str(), SOUP_BUFFER_SYSTEM_OWNED /* we can't rely on the std::string not being destroyed */,
+      soup_message_set_request (m_message, type.c_str(), SOUP_MEMORY_COPY /* we can't rely on the std::string not being destroyed */,
         g_strdup (const_cast<char*>(request.c_str())), strlen (request.c_str()));
       m_post = true;
     }
@@ -240,7 +241,7 @@ namespace MPX
     }
 
     void
-    Request::got_answer (SoupMessage* message, gpointer data)
+    Request::got_body (SoupMessage* message, gpointer data)
     {
       Request & request = (*(reinterpret_cast<Request*>(data)));
 
@@ -251,19 +252,17 @@ namespace MPX
       if( block )
         return;
 
-      if( request.m_message->status != SOUP_MESSAGE_STATUS_FINISHED )
-        return;
-
-      //if( request.m_message->status_code == SOUP_STATUS_CANCELLED )
-        //return;
-
       request.Signals.Callback.emit(
-                                      request.m_message->response.body, 
-                                      request.m_message->response.length,
+                                      request.m_message->response_body->data, 
+                                      request.m_message->response_body->length,
                                       request.m_message->status_code
                                     );
     }
 
+    void
+    Request::got_answer (SoupMessage* message, gpointer data)
+    {
+    }
 
     /////////////////////////////////////
     // File Download                   //
@@ -287,7 +286,7 @@ namespace MPX
 
     RequestFile::~RequestFile ()
     {
-      if (G_IS_OBJECT(m_message) && m_message->status == SOUP_MESSAGE_STATUS_RUNNING)
+      if (G_IS_OBJECT(m_message)) 
       {
             cancel ();
             Signals.Aborted.emit ((boost::format (_("Download of file '%s' was cancelled prematurely!")) % filename_to_utf8 (m_filename).c_str()).str());
@@ -323,10 +322,11 @@ namespace MPX
     RequestFile::run ()
     {
       g_signal_connect (G_OBJECT (m_message), "got-chunk", G_CALLBACK (got_chunk), this);
+      g_signal_connect (G_OBJECT (m_message), "got-body", G_CALLBACK (got_body), this);
       g_signal_connect (G_OBJECT (m_message), "restarted", G_CALLBACK (restarted), this);
-      soup_message_add_header_handler (m_message, "content-length", SOUP_HANDLER_PRE_BODY,
-                                       SoupMessageCallbackFn (got_content_length), this);
-      soup_session_queue_message (m_session, m_message, SoupMessageCallbackFn (got_answer), this);
+      soup_message_add_header_handler (m_message, "got-headers", "content-length", 
+                                       GCallback (got_content_length), this);
+      soup_session_queue_message (m_session, m_message, SoupSessionCallback (got_answer), this);
       OpenFile ();
     }
 
@@ -336,7 +336,7 @@ namespace MPX
       if (G_IS_OBJECT(m_message))
       {
             soup_message_set_status (m_message, SOUP_STATUS_CANCELLED);
-            soup_session_cancel_message (m_session, m_message);
+            soup_session_cancel_message (m_session, m_message, 400);
             m_message = 0;
       }
       
@@ -348,7 +348,7 @@ namespace MPX
     RequestFile::add_header (std::string const& name,
                              std::string const& value) 
     {
-      soup_message_add_header (m_message->request_headers, name.c_str(), value.c_str());   
+      soup_message_headers_append (m_message->request_headers, name.c_str(), value.c_str());   
     }
 
 
@@ -361,7 +361,7 @@ namespace MPX
     }
 
     void
-    RequestFile::got_answer (SoupMessage* message, gpointer data)
+    RequestFile::got_body (SoupMessage* message, gpointer data)
     {
       RequestFile & request = (*(reinterpret_cast<RequestFile*>(data)));
       
@@ -373,9 +373,6 @@ namespace MPX
         return;
       }
 
-      if( request.m_message->status != SOUP_MESSAGE_STATUS_FINISHED )
-        return;
-
       if( request.m_message->status_code == SOUP_STATUS_CANCELLED)
         return;
 
@@ -384,12 +381,17 @@ namespace MPX
     }
 
     void
+    RequestFile::got_answer (SoupMessage* message, gpointer data)
+    {
+    }
+
+    void
     RequestFile::got_chunk (SoupMessage* message, gpointer data)
     {
       RequestFile & request = (*(reinterpret_cast<RequestFile*>(data)));
 
-      request.m_file.write (message->response.body, message->response.length);
-      request.m_read += message->response.length;
+      request.m_file.write (message->response_body->data, message->response_body->length);
+      request.m_read += message->response_body->length;
 
       double percent = (double (request.m_read) / double (request.m_size));
       if(percent >= 0. && percent <= 1.)
@@ -402,7 +404,7 @@ namespace MPX
     RequestFile::got_content_length (SoupMessage* message, gpointer data)
     {
       RequestFile & request = (*(reinterpret_cast<RequestFile*>(data)));
-      request.m_size = g_ascii_strtoull (soup_message_get_header (message->response_headers, "content-length"), NULL, 10);
+      request.m_size = g_ascii_strtoull (soup_message_headers_get (message->response_headers, "content-length"), NULL, 10);
     }
   }
 }

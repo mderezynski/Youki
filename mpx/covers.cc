@@ -78,8 +78,8 @@ namespace
   };
 
   static boost::format mbxml_f ("http://www.uk.musicbrainz.org/ws/1/release/%s?type=xml&inc=url-rels");
-  static boost::format amapi1_f ("http://webservices.amazon.com/onca/xml?Service=AWSECommerceService&SubscriptionId=1E90RVC80K4MVNTCHG02&Operation=ItemLookup&ItemId=%s&ResponseGroup=Images&Version=2005-03-23");
-  static boost::format amapi2_f ("http://webservices.amazon.com/onca/xml?Service=AWSECommerceService&SubscriptionId=1E90RVC80K4MVNTCHG02&Operation=ItemSearch&Artist=%s&Title=%s&SearchIndex=Music&ResponseGroup=Images&Version=2005-03-23");
+  static boost::format amapi1_f ("http://webservices.amazon.com/onca/xml?Service=AWSECommerceService&SubscriptionId=1E90RVC80K4MVNTCHG02&Operation=ItemLookup&ItemId=%s&ResponseGroup=Images&Version=2008-06-26");
+  static boost::format amapi2_f ("http://webservices.amazon.com/onca/xml?Service=AWSECommerceService&SubscriptionId=1E90RVC80K4MVNTCHG02&Operation=ItemSearch&Artist=%s&Title=%s&SearchIndex=Music&ResponseGroup=Images&Version=2008-06-26");
 
   int
   pixel_size(
@@ -124,7 +124,6 @@ namespace MPX
     {
         RequestKeeper.insert(amzn_data->mbid);
         std::string url = ((amazon_f[amzn_data->n] % amzn_data->asin).str());
-        g_message("Amazon URL: %s",url.c_str());
         amzn_data->request = Soup::Request::create ((amazon_f[amzn_data->n] % amzn_data->asin).str());
         amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_amazn ), amzn_data ));
         amzn_data->request->run();
@@ -145,7 +144,7 @@ namespace MPX
         }
         else
         {
-            amzn_data->request = Soup::Request::create ((amapi2_f % amzn_data->artist % amzn_data->album).str());
+            amzn_data->request = Soup::Request::create ((amapi2_f % (URI::escape_string(amzn_data->artist)) % (URI::escape_string(amzn_data->album))).str());
         }
 
         amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_amapi ), amzn_data ));
@@ -226,6 +225,9 @@ namespace MPX
         CoverFetchData* amzn_data
     )
     {
+        g_message("AMAPI Code: %u", code);
+        g_message("Reply: %s", std::string (data, size).c_str());
+
         RequestKeeper.erase(amzn_data->mbid);
 
         if( code == 200 )
@@ -238,7 +240,7 @@ namespace MPX
                     data,
                     size,
 					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item//amazon:ItemAttributes//amazon:Title",
-                    "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
+                    "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
                 ); 
 
                 if( ld_distance<std::string>(album, amzn_data->album) > 3 )
@@ -264,13 +266,14 @@ namespace MPX
                     data,
                     size,
 					"//amazon:Items//amazon:Item//amazon:LargeImage//amazon:URL",
-                    "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
+                    "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
                 ); 
 
                 got_image = true;
 
 			} catch (std::runtime_error & cxe)
 			{
+                g_message(cxe.what());
 			}
 
             if( !got_image) try{
@@ -279,13 +282,14 @@ namespace MPX
                     data,
                     size,
 					"//amazon:Items//amazon:Item//amazon:MediumImage//amazon:URL",
-                    "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
+                    "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
                 ); 
 
                 got_image = true;
 
 			} catch (std::runtime_error & cxe)
 			{
+                g_message(cxe.what());
 			}
 
             if( !got_image) try{
@@ -294,17 +298,19 @@ namespace MPX
                     data,
                     size,
 					"//amazon:Items//amazon:Item//amazon:SmallImage//amazon:URL",
-                    "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
+                    "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
                 ); 
 
                 got_image = true;
 
 			} catch (std::runtime_error & cxe)
 			{
+                g_message(cxe.what());
 			}
 
             if( got_image && image_url.length() )
             {
+                g_message("Fetching Image from URL: %s", image_url.c_str());
                 RequestKeeper.insert(amzn_data->mbid);
     	        amzn_data->request = Soup::Request::create(image_url);
 	    	    amzn_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &Covers::reply_cb_amazn ), amzn_data ));
@@ -318,7 +324,7 @@ namespace MPX
                     data,
                     size,
 					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item//amazon:ASIN",
-                    "amazon=http://webservices.amazon.com/AWSECommerceService/2005-03-23"
+                    "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
                 ); 
 
                 amzn_data->n = 0;
