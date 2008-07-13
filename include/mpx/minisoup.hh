@@ -28,11 +28,11 @@
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif //HAVE_CONFIG_H
+#include <libsoup/soup.h>
 #include <glib.h>
 #include <glibmm.h>
 #include <iostream>
 #include <fstream>
-#include <libsoup/soup.h>
 
 namespace MPX
 {

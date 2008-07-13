@@ -32,6 +32,7 @@
 #include <libglademm/xml.h>
 #include <sigc++/signal.h>
 #include "mpx/minisoup.hh"
+#include "mpx/xml.hh"
 #include "radio-directory-types.hh"
 
 namespace MPX

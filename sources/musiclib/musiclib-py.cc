@@ -22,6 +22,8 @@
 //  permission is above and beyond the permissions granted by the GPlaylist license
 //  MPX is covered by.
 #include "config.h"
+#include "source-musiclib.hh"
+
 #include "mpx/main.hh"
 #include "mcs/base.h"
 
@@ -33,11 +35,9 @@
 #include "mpx/python.hh"
 using namespace boost::python;
 
-#include "source-musiclib.hh"
-
-#if PY_VERSION_HEX < 0x02050000
-typedef int Py_ssize_t;
-#endif
+//#if PY_VERSION_HEX < 0x02050000
+//typedef int Py_ssize_t;
+//#endif
 
 using namespace Glib;
 

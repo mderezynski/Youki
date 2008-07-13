@@ -25,6 +25,9 @@
 #ifndef MPX_COVERS_HH
 #define MPX_COVERS_HH
 
+#include "config.h"
+#include "mpx/minisoup.hh"
+
 #include <string>
 #include <map>
 #include <set>
@@ -35,7 +38,6 @@
 
 #include "mpx/network.hh"
 #include "mpx/metadatareader-taglib.hh"
-#include "mpx/minisoup.hh"
 
 namespace MPX
 {

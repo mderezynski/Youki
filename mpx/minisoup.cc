@@ -55,8 +55,8 @@ namespace MPX
     guint
     RequestSync::run ()
     {
-      g_signal_connect (G_OBJECT (m_message), "got-chunk", G_CALLBACK (got_chunk), this);
-      g_signal_connect (G_OBJECT (m_message), "restarted", G_CALLBACK (restarted), this);
+      //g_signal_connect (G_OBJECT (m_message), "got-chunk", G_CALLBACK (got_chunk), this);
+      //g_signal_connect (G_OBJECT (m_message), "restarted", G_CALLBACK (restarted), this);
       soup_message_add_header_handler (m_message, "got-headers", "content-length", 
                                        GCallback (got_content_length), this);
       return soup_session_send_message (m_session, m_message);
