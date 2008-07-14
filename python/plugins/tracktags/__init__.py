@@ -112,7 +112,7 @@ class TrackTags(mpx.Plugin):
     def new_track(self, blah):
 
         self.tagview.clear()
-        self.display(False)
+        self.tagview.display(False)
 
         m = self.player.get_metadata()
 
@@ -130,4 +130,4 @@ class TrackTags(mpx.Plugin):
             for t in tags:
                 self.tagview.add_tag(t[0], t[1])
 
-        self.display(True)
+        self.tagview.display(True)

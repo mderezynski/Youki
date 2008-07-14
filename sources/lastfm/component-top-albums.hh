@@ -90,6 +90,7 @@ namespace MPX
             Gtk::Label                      * m_Label;
             Gtk::Label                      * m_LabelSuggest;
             Gtk::TreeView                   * m_View;
+            Gtk::ComboBox                   * m_CBox;
 
             Glib::RefPtr<Gtk::ListStore>      m_Model;
 

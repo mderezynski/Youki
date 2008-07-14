@@ -42,7 +42,8 @@ MPX::ComponentTopAlbums::ComponentTopAlbums (PAccess<MPX::Library> & obj_pa_libr
     m_XML->get_widget("view", m_View);
     m_XML->get_widget("label", m_Label);
     m_XML->get_widget("label-suggest", m_LabelSuggest);
-    
+    m_XML->get_widget("cbox-sel", m_CBox);
+
     setup_view ();
 
     m_Entry->signal_activate().connect(
@@ -92,6 +93,8 @@ MPX::ComponentTopAlbums::setup_view ()
 
     m_Model = Gtk::ListStore::create(Columns);
     m_View->set_model(m_Model);
+
+    m_CBox->set_active(0);
 }
 
 std::string
@@ -132,7 +135,7 @@ MPX::ComponentTopAlbums::on_entry_activated ()
     m_Label->set_markup((boost::format ("Showing '<b>%s</b>'") % Markup::escape_text(m_Entry->get_text())).str());
     std::string text = m_Entry->get_text();
     m_LabelSuggest->set_markup((boost::format ("'<b>%s</b>'") % find_nearest_artist(text)).str());
-    m_Thread->RequestLoad(text);
+    m_Thread->RequestLoad(text, m_CBox->get_active_row_number());
 }
 
 void

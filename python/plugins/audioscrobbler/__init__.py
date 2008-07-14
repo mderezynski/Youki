@@ -7,7 +7,34 @@ __version__ = "$Revision$"[11:-2]
 __docformat__ = "restructuredtext"
 
 
-import datetime, locale, md5, site, sys, time, urllib, urllib2, os, mpx
+import datetime, locale, md5, site, sys, time, urllib, urllib2, os, mpx, threading, gtk
+
+class HttpRead(threading.Thread):
+
+    def __init__(self, urlhandle):
+
+        threading.Thread.__init__(self)   
+ 
+        self.urlhandle = urlhandle
+        self.finished  = threading.Event()
+
+    def is_finished(self):
+
+        return self.finished.isSet()
+
+    def get_data(self):
+
+        return self.response
+       
+    def stop(self): 
+
+        self.finished.set()
+        self.join()
+
+    def run(self):
+
+        self.response = self.urlhandle.readlines()
+        self.finished.set()    
 
 try:
     # Python 2.5, module bundled:
@@ -383,8 +410,16 @@ class AudioScrobblerPost:
             code = error.reason#.args[0]
             message = error.reason#.args[1]
             raise AudioScrobblerConnectionError('network', code, message)
-        
-        response = url_handle.readlines()
+       
+        instance = HttpRead(url_handle) 
+        instance.start()
+
+        while not instance.is_finished():
+            while gtk.events_pending():
+                gtk.main_iteration()
+
+        response = instance.get_data() 
+
         if len(response) == 0:
             raise AudioScrobblerHandshakeError('Got nothing back from the server')  
             
@@ -550,7 +585,15 @@ class AudioScrobblerPost:
             print AudioScrobblerConnectionError('network', code, message)
             return
                 
-        response = url_handle.readlines()
+        instance = HttpRead(url_handle) 
+        instance.start()
+
+        while not instance.is_finished():
+            while gtk.events_pending():
+                gtk.main_iteration()
+
+        response = instance.get_data() 
+
         if response[0].startswith('OK'):
             self.log("Now playing track updated ('%s' by '%s')." % (p['t'], p['a']))
         elif response[0].startswith('BADSESSION'):
@@ -605,7 +648,15 @@ class AudioScrobblerPost:
             raise AudioScrobblerConnectionError('network', code, message)
         
         self.last_post = now
-        response = url_handle.readlines()
+
+        instance = HttpRead(url_handle) 
+        instance.start()
+
+        while not instance.is_finished():
+            while gtk.events_pending():
+                gtk.main_iteration()
+
+        response = instance.get_data() 
             
         # Test the various responses possibilities:
         if response[0].startswith('OK'):
