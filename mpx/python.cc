@@ -819,6 +819,7 @@ BOOST_PYTHON_MODULE(mpx)
         .def("clear", &MPX::TagView::clear)
         .def("add_tag", &MPX::TagView::add_tag)
         .def("get_widget", &mpxpy::tag_view_get_gobject)
+        .def("display", &MPX::TagView::display)
     ;
 
 	/*-------------------------------------------------------------------------------------*/

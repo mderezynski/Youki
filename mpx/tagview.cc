@@ -244,6 +244,9 @@ namespace MPX
             cr->rectangle(0, 0, w, h);
             cr->fill();
 
+            if( !m_Display )
+                return false;
+
             cr->scale( m_Layout.Scale, m_Layout.Scale );
 
             if(m_Layout.List.empty())
@@ -336,6 +339,13 @@ namespace MPX
         }
 
         void
+        TagView::display(bool do_display)
+        {
+            m_Display = do_display;
+            queue_draw ();
+        }
+
+        void
         TagView::add_tag (std::string const& text, double amplitude)
         {
             LayoutSP sp (new Layout);                        
@@ -359,6 +369,7 @@ namespace MPX
         TagView::TagView ()
         : motion_x(0)
         , motion_y(0)
+        , m_Display(true)
         {
             if(!gsignals_initialized)
             {

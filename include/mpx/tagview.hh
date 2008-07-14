@@ -59,6 +59,7 @@ class TagView : public Gtk::DrawingArea
         std::string m_ActiveTagName;
         int m_ActiveRow;
         guint m_GSignalTagClicked; 
+        bool m_Display;
 
     private:
         
@@ -101,6 +102,9 @@ class TagView : public Gtk::DrawingArea
 
         void
         clear ();
+
+        void
+        display(bool);
 };
 }
 
