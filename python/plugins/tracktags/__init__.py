@@ -47,27 +47,31 @@ class TrackTagsDataAcquire(threading.Thread):
 
     def run(self):
 
-        uri     = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(self.artist), urllib.quote(self.title))
-        lfmxml  = NonvalidatingReader.parseUri(uri)
-        ctx     = Context(lfmxml)
-
-        xml_names   = Evaluate("//name", context=ctx)
-        xml_count   = Evaluate("//count", context=ctx)
         self.l_tags = []
-        l_count     = []
 
-        for count in xml_count:
-            try:
-                if count.firstChild:
-                    l_count.append(float(math.log10((float(count.firstChild.data) * 5)+1)))
-            except:
+        try:
+                uri     = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(self.artist), urllib.quote(self.title))
+                lfmxml  = NonvalidatingReader.parseUri(uri)
+                ctx     = Context(lfmxml)
+
+                xml_names   = Evaluate("//name", context=ctx)
+                xml_count   = Evaluate("//count", context=ctx)
+                l_count     = []
+
+                for count in xml_count:
+                    try:
+                        if count.firstChild:
+                            l_count.append(float(math.log10((float(count.firstChild.data) * 5)+1)))
+                    except:
+                        pass
+
+                for name in xml_names:
+                    if name.firstChild:
+                            self.l_tags.append([str(name.firstChild.data), l_count[xml_names.index(name)]])
+
+                random.shuffle(self.l_tags)
+        except:
                 pass
-
-        for name in xml_names:
-            if name.firstChild:
-                    self.l_tags.append([str(name.firstChild.data), l_count[xml_names.index(name)]])
-
-        random.shuffle(self.l_tags)
 
         self.finished.set()
 
