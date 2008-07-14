@@ -16,10 +16,60 @@ import pango
 import urllib
 import random
 import math
+import threading
 from Ft.Xml.XPath.Context import Context
 from Ft.Xml.XPath import Evaluate
 from Ft.Xml.Domlette import NonvalidatingReader
 from Ft.Xml import EMPTY_NAMESPACE
+
+class TrackTagsDataAcquire(threading.Thread):
+
+    def __init__(self, artist, title):
+
+        threading.Thread.__init__(self)
+
+        self.finished   = threading.Event()
+        self.artist     = artist
+        self.title      = title
+        
+    def is_finished(self):
+
+        return self.finished.isSet()
+
+    def stop(self):
+
+        self.finished.set()
+        self.join()
+
+    def get_tags(self):
+
+        return self.l_tags
+
+    def run(self):
+
+        uri     = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(self.artist), urllib.quote(self.title))
+        lfmxml  = NonvalidatingReader.parseUri(uri)
+        ctx     = Context(lfmxml)
+
+        xml_names   = Evaluate("//name", context=ctx)
+        xml_count   = Evaluate("//count", context=ctx)
+        self.l_tags = []
+        l_count     = []
+
+        for count in xml_count:
+            try:
+                if count.firstChild:
+                    l_count.append(float(math.log10((float(count.firstChild.data) * 5)+1)))
+            except:
+                pass
+
+        for name in xml_names:
+            if name.firstChild:
+                    self.l_tags.append([str(name.firstChild.data), l_count[xml_names.index(name)]])
+
+        random.shuffle(self.l_tags)
+
+        self.finished.set()
 
 class TrackTags(mpx.Plugin):
 
@@ -63,34 +113,18 @@ class TrackTags(mpx.Plugin):
 
         self.tagview.clear()
 
-        try:
-            m = self.player.get_metadata()
+        m = self.player.get_metadata()
 
-            if m[mpx.AttributeId.ARTIST] and m[mpx.AttributeId.TITLE]:
-                uri = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(m.get(mpx.AttributeId.ARTIST).get()), urllib.quote(m[mpx.AttributeId.TITLE].get()))
-                lastfm = NonvalidatingReader.parseUri(uri)
-                ctx = Context(lastfm)
+        if m[mpx.AttributeId.ARTIST] and m[mpx.AttributeId.TITLE]:
 
-                tags = []
-                names_xml = Evaluate("//name", context=ctx)
-                counts_xml = Evaluate("//count", context=ctx)
+            instance = TrackTagsDataAcquire(m[mpx.AttributeId.ARTIST].get(), m[mpx.AttributeId.TITLE].get())
+            instance.start()
 
-                counts = []
-                for count in counts_xml:
-                    try:
-                        if count.firstChild:
-                            counts.append(float(math.log10((float(count.firstChild.data) * 5)+1)))
-                    except:
-                        print "Range Exceeded"
+            while not instance.is_finished():
+                while gtk.events_pending():
+                    gtk.main_iteration()
 
-                for name in names_xml:
-                    if name.firstChild:
-                        tags.append([str(name.firstChild.data), counts[names_xml.index(name)]])
+            tags = instance.get_tags()
 
-                random.shuffle(tags)
-                
-                for lst in tags:
-                    self.tagview.add_tag(lst[0], lst[1])
-            
-        except:
-            print "Error displaying tags"
+            for t in tags:
+                self.tagview.add_tag(t[0], t[1])

@@ -226,6 +226,12 @@ namespace Source
     void
     LastFM::on_playlist (XSPF::Playlist const& plist)
     {
+        if(!plist.Items.size())
+        {
+            on_tune_error(_("Playlist empty"));
+            return;
+        }
+
         PAccess<MPX::Play> pa;
         m_Player.get_object(pa);
         pa.get().set_custom_httpheader((boost::format ("Cookie: Session=%s") % m_LastFMRadio.session().SessionId).str().c_str());
