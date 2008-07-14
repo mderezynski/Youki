@@ -99,21 +99,19 @@ class OptionRandomMix(BaseOption):
 
     def RANDOM_LastFm(self, lib, v):
 
-        choice = random.randint(0,1)
-        artist = ""
-        rv = mpx.SQLRowV()
+        choice      = random.randint(0,1)
+        artist      = ""
+        rv          = mpx.SQLRowV()
+        playlist    = self.mlib.get_playlist_model()
 
-        if choice == 0:
+        if not len(playlist) or choice == 0:
 
             lib.getSQL(rv, "SELECT id, artist FROM track_view ORDER BY mpxrand() LIMIT 1")
-
             artist = rv[0]["artist"].get_string()
 
         else: 
 
-            playlist = self.mlib.get_playlist_model()
             track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
-
             artist = track[mpx.AttributeId.ARTIST].get()
 
 
@@ -150,26 +148,24 @@ class OptionRandomMix(BaseOption):
 
     def RANDOM_LastFm2(self, lib, v):
 
-        choice = random.randint(0,1)
-        artist = ""
-        title  = ""
-        rv     = mpx.SQLRowV()
+        choice      = random.randint(0,1)
+        artist      = ""
+        title       = ""
+        rv          = mpx.SQLRowV()
+        playlist    = self.mlib.get_playlist_model()
 
-
-        if choice == 0:
+        if not len(playlist) or choice == 0:
 
             lib.getSQL(rv, "SELECT id, artist, title FROM track_view ORDER BY mpxrand() LIMIT 1")
-
             artist = rv[0]["artist"].get_string()
             title  = rv[0]["title"].get_string()
 
         else:
 
-            playlist = self.mlib.get_playlist_model()
             track    = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
-
             artist = track[mpx.AttributeId.ARTIST].get()
             title  = track[mpx.AttributeId.TITLE].get()
+
 
         try:
             uri     = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/similar.xml" % (urllib.quote(artist), urllib.quote(title))
@@ -210,22 +206,21 @@ class OptionRandomMix(BaseOption):
 
     def RANDOM_LastFm3(self, lib, v):
 
-        choice = random.randint(0,1)
-        artist = ""
-        rv     = mpx.SQLRowV()
+        choice      = random.randint(0,1)
+        artist      = ""
+        rv          = mpx.SQLRowV()
+        playlist    = self.mlib.get_playlist_model()
 
-        if choice == 0:
+        if not len(playlists) or choice == 0:
 
             lib.getSQL(rv, "SELECT id, artist, title FROM track_view ORDER BY mpxrand() LIMIT 1")
-
             artist = rv[0]["artist"].get_string()
 
         else: 
 
-            playlist = self.mlib.get_playlist_model()
             track    = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
-
             artist   = track[mpx.AttributeId.ARTIST].get()
+
 
         try:
             uri     = u"http://ws.audioscrobbler.com/1.0/artist/%s/toptracks.xml" % (urllib.quote(artist))
@@ -255,16 +250,30 @@ class OptionRandomMix(BaseOption):
 
     def RANDOM_genre(self, lib, v):
 
-        rv = mpx.SQLRowV()
-        lib.getSQL(rv, "SELECT id, genre FROM track_view WHERE genre IS NOT NULL ORDER BY mpxrand() LIMIT 1")
-        genre = rv[0]["genre"].get_string()
-        lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY mpxrand() LIMIT 9" % genre)
+        choice      = random.randint(0,1)
+        genre       = ""
+        rv          = mpx.SQLRowV()
+        playlist    = self.mlib.get_playlist_model()
+
+        if not len(playlists) or choice == 0:
+
+            lib.getSQL(rv, "SELECT id, genre FROM track_view WHERE genre IS NOT NULL ORDER BY mpxrand() LIMIT 1")
+            genre = rv[0]["genre"].get_string()
+
+        else: 
+
+            track    = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
+            genre    = track[mpx.AttributeId.GENRE].get()
+
+        lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY mpxrand() LIMIT 5" % genre)
+
         extract_ids(rv, v)
 
     def RANDOM_toptune(self, lib, v):
     
         rv = mpx.SQLRowV()
         self.lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY mpxrand() LIMIT 1")
+
         extract_ids(rv, v)
 
 class OptionTopTunes(BaseOption):

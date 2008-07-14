@@ -88,7 +88,7 @@ MPX::TopAlbumsFetchThread::idle_loader ()
 }
 
 void
-MPX::TopAlbumsFetchThread::on_load (std::string const& value, int idx)
+MPX::TopAlbumsFetchThread::on_load (std::string const& artist)
 {
     ThreadData * pthreaddata = m_ThreadData.get();
 
@@ -98,18 +98,7 @@ MPX::TopAlbumsFetchThread::on_load (std::string const& value, int idx)
     pthreaddata->Stop = 0;
 
     try{
-        URI u;
-        
-        switch( idx )
-        {
-            case 0:
-                u = URI ((boost::format ("http://ws.audioscrobbler.com/1.0/artist/%s/topalbums.xml") % value).str(), true);
-                break;
-            case 1:
-                u = URI ((boost::format ("http://ws.audioscrobbler.com/1.0/tag/%s/topalbums.xml") % value).str(), true);
-                break;
-        }
-
+        URI u ((boost::format ("http://ws.audioscrobbler.com/1.0/artist/%s/topalbums.xml") % artist).str(), true);
         Glib::ustring uri = u;
         if(pthreaddata->Xml)
             delete pthreaddata->Xml;

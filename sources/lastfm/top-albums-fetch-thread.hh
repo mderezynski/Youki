@@ -39,8 +39,8 @@ namespace MPX
 			TopAlbumsFetchThread ();
 			~TopAlbumsFetchThread ();
 
-            typedef sigx::request_f<std::string const&,int> RequestLoad_t;
-            typedef sigx::request_f<>                       RequestStop_t;
+            typedef sigx::request_f<std::string const&> RequestLoad_t;
+            typedef sigx::request_f<>                   RequestStop_t;
 
             typedef sigc::signal< void, Glib::RefPtr<Gdk::Pixbuf>, std::string const& > SignalAlbum_t;
             typedef sigc::signal< void >                                                SignalStopped_t;
@@ -60,7 +60,7 @@ namespace MPX
             virtual void on_cleanup ();
    
             void 
-            on_load(std::string const&,int);
+            on_load(std::string const&);
     
             void
             on_stop();

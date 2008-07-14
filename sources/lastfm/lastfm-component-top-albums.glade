@@ -45,7 +45,7 @@
 	      <child>
 		<widget class="GtkLabel" id="label">
 		  <property name="visible">True</property>
-		  <property name="label" translatable="yes">Lookup </property>
+		  <property name="label" translatable="yes">Type an &lt;b&gt;Artist&lt;/b&gt;:</property>
 		  <property name="use_underline">False</property>
 		  <property name="use_markup">True</property>
 		  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -64,21 +64,6 @@
 		  <property name="padding">0</property>
 		  <property name="expand">False</property>
 		  <property name="fill">False</property>
-		</packing>
-	      </child>
-
-	      <child>
-		<widget class="GtkComboBox" id="cbox-sel">
-		  <property name="visible">True</property>
-		  <property name="items" translatable="yes">an Artist
-a Tag</property>
-		  <property name="add_tearoffs">False</property>
-		  <property name="focus_on_click">True</property>
-		</widget>
-		<packing>
-		  <property name="padding">0</property>
-		  <property name="expand">False</property>
-		  <property name="fill">True</property>
 		</packing>
 	      </child>
 
