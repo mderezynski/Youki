@@ -2791,13 +2791,7 @@ namespace MPX
       g_return_if_fail(m_ActiveSource);
 
       track_played();
-	  m_Sources[m_ActiveSource.get()]->stop ();
-	  safe_pause_unset ();
 	  m_Play->request_status( PLAYSTATUS_STOPPED );
-	  m_Sources[m_ActiveSource.get()]->send_caps();
-      m_ActiveSource.reset();
-      m_Sidebar->clearActiveId();
-      set_title (_("(Not Playing) - MPX"));
 	}
 
 	void
@@ -2831,37 +2825,8 @@ namespace MPX
 	Player::on_play_status_changed ()
 	{
 	  MPXPlaystatus status = MPXPlaystatus (m_Play->property_status().get_value());
-	  MPX::URI u;
 
-      g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_STATUS_CHANGED], 0, int(status));
-
-	  switch (status)
-	  {
-		case PLAYSTATUS_STOPPED:
-        case PLAYSTATUS_WAITING:
-		{
-		  g_atomic_int_set(&m_Seeking, 0);
-		  m_TimeLabel->set_text("      …      ");
-	      m_Seek->set_range(0., 1.);
-		  m_Seek->set_value(0.);
-	 	  m_Seek->set_sensitive(false);
-          m_VideoWidget->property_playing() = false; 
-          m_VideoWidget->queue_draw();
-		  break;
-		}
-
-		case PLAYSTATUS_PLAYING:
-		{
-		  g_atomic_int_set(&m_Seeking,0);
-	 	  m_Seek->set_sensitive(m_source_c[m_ActiveSource.get()] & PlaybackSource::C_CAN_SEEK);
-		  m_actions->get_action( ACTION_STOP )->set_sensitive (true);
-		  break;
-		}
-
-		default: ;
-	  }
-
-	  switch (status)
+	  switch( status )
 	  {
 		  case PLAYSTATUS_NONE:
 			/* ... */
@@ -2875,6 +2840,8 @@ namespace MPX
 		  {
             Glib::Mutex::Lock L (m_MetadataLock);
 
+            safe_pause_unset ();
+
 			if( m_ActiveSource ) 
 			{
 			  m_Sources[m_ActiveSource.get()]->stop ();
@@ -2882,6 +2849,9 @@ namespace MPX
 			}
 
 			m_TimeLabel->set_text("      …      ");
+
+		    g_atomic_int_set(&m_Seeking, 0);
+
 			m_Seek->set_range(0., 1.);
 			m_Seek->set_value(0.);
 			m_Seek->set_sensitive(false);
@@ -2891,20 +2861,43 @@ namespace MPX
 			m_actions->get_action (ACTION_PREV)->set_sensitive( false );
 			m_actions->get_action (ACTION_PAUSE)->set_sensitive( false );
 
+            m_VideoWidget->property_playing() = false; 
+            m_VideoWidget->queue_draw();
+
+            set_title (_("(Not Playing) - MPX"));
+
 			m_InfoArea->reset();
 		    m_Metadata.reset();	
             m_ActiveSource.reset();
+            m_Sidebar->clearActiveId();
 
 			break;
 		  }
 
 		  case PLAYSTATUS_WAITING:
 		  {
+            g_atomic_int_set(&m_Seeking, 0);
+
+            m_TimeLabel->set_text("      …      ");
+
+            m_Seek->set_range(0., 1.);
+            m_Seek->set_value(0.);
+            m_Seek->set_sensitive(false);
+
+            m_VideoWidget->property_playing() = false;
+            m_VideoWidget->queue_draw();
+
 			break;
 		  }
 
 		  case PLAYSTATUS_PLAYING:
 		  {
+            g_atomic_int_set(&m_Seeking,0);
+
+            m_Seek->set_sensitive(m_source_c[m_ActiveSource.get()] & PlaybackSource::C_CAN_SEEK);
+
+            m_actions->get_action( ACTION_STOP )->set_sensitive (true);
+
 			break;
 		  }
 
@@ -2913,6 +2906,8 @@ namespace MPX
 			break;
 		  }
 	  }
+
+      g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_STATUS_CHANGED], 0, int(status));
 	}
 
 

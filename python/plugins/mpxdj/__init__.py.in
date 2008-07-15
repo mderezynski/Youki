@@ -52,6 +52,92 @@ class BaseOption(threading.Thread):
 
         return self.finished.isSet()
 
+class OptionAnalyzer(BaseOption):    
+
+    def __init__(self, lib, v, xml, mlib):
+
+         BaseOption.__init__(self, lib, v, xml, mlib)
+
+    def get_tracktags(self, mpxtrack):
+
+        uri     = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(mpxtrack[mpx.AttributeId.ARTIST].get()), urllib.quote(mpxtrack[mpx.AttributeId.TITLE].get()))
+        lastfm  = NonvalidatingReader.parseUri(uri)
+        ctx     = Context(lastfm)
+
+        tags    = []
+        cnts    = []
+        n_xml   = Evaluate("//name", context=ctx)
+        c_xml   = Evaluate("//count", context=ctx)
+
+        for cnt in c_xml:
+            if cnt.firstChild:
+                cnts.append(int(cnt.firstChild.data))
+
+        for nam in n_xml:
+            if nam.firstChild:
+                tags.append([str(nam.firstChild.data), cnts[n_xml.index(nam)]])
+
+        return tags
+
+    def run(self):
+
+        playlist    = self.mlib.get_playlist_model()
+        tags        = {} 
+        items       = 10 
+
+        if len(playlist) < items:
+            items = len(playlist)
+
+        for i in range(len(playlist)-items,len(playlist)-1):
+
+            track   = mpx.unwrap_boxed_mpxtrack(playlist[i][9])
+            ttags   = self.get_tracktags(track)
+           
+            for tag in ttags: 
+                
+                if tag[0] in tags:
+                    tags[tag[0]] = tags[tag[0]] + tag[1] 
+                else:
+                    tags[tag[0]] = tag[1] 
+
+        highest_count = 0
+        highest_tag   = None
+
+        for tag in tags: 
+
+            if tags[tag] > highest_count:
+
+                print "Highest: " + str(tag)
+
+                highest_tag     = tag 
+                highest_count   = tags[tag]
+
+        if highest_tag:
+
+                print "Chosen accumulate tag: " + highest_tag
+
+                uri     = u"http://ws.audioscrobbler.com/1.0/tag/%s/topartists.xml" % urllib.quote(str(highest_tag))
+                lastfm  = NonvalidatingReader.parseUri(uri)
+                ctx     = Context(lastfm)
+                mbids   = Evaluate(MBID_NODE_XPATH, context=ctx)
+
+                random.shuffle(mbids)
+
+                for mbid in mbids: 
+
+                    if mbid.firstChild:
+
+                        rv = mpx.SQLRowV()
+                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY mpxrand() LIMIT 1"))
+                        extract_ids(rv, self.v)
+
+                        if len(rv) > 0:
+                            self.finished.set()
+                            return
+
+        self.finished.set()
+
+
 class OptionLastFmTag(BaseOption):    
 
     def __init__(self, lib, v, xml, mlib):
@@ -211,7 +297,7 @@ class OptionRandomMix(BaseOption):
         rv          = mpx.SQLRowV()
         playlist    = self.mlib.get_playlist_model()
 
-        if not len(playlists) or choice == 0:
+        if not len(playlist) or choice == 0:
 
             lib.getSQL(rv, "SELECT id, artist, title FROM track_view ORDER BY mpxrand() LIMIT 1")
             artist = rv[0]["artist"].get_string()
@@ -255,7 +341,7 @@ class OptionRandomMix(BaseOption):
         rv          = mpx.SQLRowV()
         playlist    = self.mlib.get_playlist_model()
 
-        if not len(playlists) or choice == 0:
+        if not len(playlist) or choice == 0:
 
             lib.getSQL(rv, "SELECT id, genre FROM track_view WHERE genre IS NOT NULL ORDER BY mpxrand() LIMIT 1")
             genre = rv[0]["genre"].get_string()
@@ -311,7 +397,7 @@ class OptionEntertainMe(BaseOption):
     def run(self):
 
         rv = mpx.SQLRowV()
-        lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC, rating DESC, mpxrand() LIMIT 10")
+        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC, rating DESC, mpxrand() LIMIT 10")
         extract_ids(rv, v)
         self.finished.set()
   
@@ -379,14 +465,15 @@ class MPXDJ(mpx.Plugin):
         except:
             self.icon = None
             
-        options = ["Entertain Me!", "Random Mix", "Play All", "Top Tunes", "New Music", "Memory Lane", "Sounds Of...",
+        options = [ "Random Mix", "Entertain Me!","Play All", "Top Tunes", "Analyzer", "Memory Lane", "Sounds Of...",
                    "Forgotten Gems", "Deja Vu", "Last.fm Tag"]
 
-        self.callables = [  OptionEntertainMe, 
+        self.callables = [
                             OptionRandomMix, 
+                            OptionEntertainMe, 
                             OptionPlayAll, 
                             OptionTopTunes, 
-                            None,
+                            OptionAnalyzer,
                             None,
                             OptionSoundsOf, 
                             None,
@@ -396,11 +483,11 @@ class MPXDJ(mpx.Plugin):
 
 
         self.helptexts = [
-                "Creates a running order composed of the most frequently played tracks.",
                 "Plays random, but similar tracks",
+                "Creates a running order composed of the most frequently played tracks.",
                 "Plays all tracks in the library",
                 "Plays a set number of the most frequently played tracks.",
-                "",
+                "Analyzes the playlist and plays similar Music",
                 "",
                 "Plays tracks from a specific decade.",
                 "",
@@ -481,7 +568,7 @@ class MPXDJ(mpx.Plugin):
         idv = mpx.IdVector()
         klass = self.callables[self.combo.get_active()]
         if klass:
-            instance = klass(self.lib, idv, self.xml)
+            instance = klass(self.lib, idv, self.xml, self.mlib)
             instance.start () 
         
             while not instance.is_done():

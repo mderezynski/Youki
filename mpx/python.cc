@@ -25,7 +25,6 @@
 #include "mpx/types.hh"
 #include "mpx/tagview.hh"
 #include "mpx/util-graphics.hh"
-#include "sources/playlist/source-playlist.hh"
 
 #include "audio-types.hh"
 #include "lyrics-v2.hh"

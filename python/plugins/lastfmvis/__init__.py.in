@@ -137,7 +137,6 @@ class LastFMVis(mpx.Plugin):
     def get_album_tlst(self, artist, album):
 
         uri = u"http://ws.audioscrobbler.com/1.0/artist/%s/toptags.xml" % (urllib.quote(artist))
-        print uri
         lastfm = NonvalidatingReader.parseUri(uri)
         ctx = Context(lastfm)
 
