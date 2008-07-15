@@ -471,7 +471,7 @@ class TrackInfo:
         t = ArtistInfoQuery (mydict["id"], mydict["name"], self.query, self.wsinc, self.wsinc_release)
         t.start()
 
-        while not t.is_done().isSet():
+        while not t.is_done():
             while gtk.events_pending():
                 gtk.main_iteration()
 

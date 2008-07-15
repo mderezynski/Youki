@@ -72,7 +72,8 @@ enum {
 	PROP_0,
 	PROP_EXPANDER_STYLE,
 	PROP_EXPANDER_SIZE,
-	PROP_ACTIVATABLE
+	PROP_ACTIVATABLE,
+    PROP_RENDER
 };
 
 typedef struct _GossipCellRendererExpanderPriv GossipCellRendererExpanderPriv;
@@ -88,6 +89,7 @@ struct _GossipCellRendererExpanderPriv {
 	GdkRectangle         animation_area;
 
 	guint                activatable : 1;
+    guint                render : 1;
 	guint                animation_expanding : 1;
 };
 
@@ -155,6 +157,14 @@ gossip_cell_renderer_expander_class_init (GossipCellRendererExpanderClass *klass
 							       TRUE,
 							       G_PARAM_READWRITE));
 
+	g_object_class_install_property (object_class,
+					 PROP_RENDER,
+					 g_param_spec_boolean ("render",
+							       "Render",
+							       "The expander will be rendered",
+							       TRUE,
+							       G_PARAM_READWRITE));
+
 	g_type_class_add_private (object_class, sizeof (GossipCellRendererExpanderPriv));
 }
 
@@ -181,6 +191,10 @@ gossip_cell_renderer_expander_get_property (GObject    *object,
 
 	case PROP_ACTIVATABLE:
 		g_value_set_boolean (value, priv->activatable);
+		break;
+
+	case PROP_RENDER:
+		g_value_set_boolean (value, priv->render);
 		break;
 
 	default:
@@ -212,6 +226,10 @@ gossip_cell_renderer_expander_set_property (GObject      *object,
 
 	case PROP_ACTIVATABLE:
 		priv->activatable = g_value_get_boolean (value);
+		break;
+
+	case PROP_RENDER:
+		priv->render = g_value_get_boolean (value);
 		break;
 
 	default:
@@ -298,6 +316,12 @@ gossip_cell_renderer_expander_render (GtkCellRenderer      *cell,
 	GossipCellRendererExpanderPriv *priv;
 	GtkExpanderStyle                expander_style;
 	gint                            x_offset, y_offset;
+
+    if(!priv->render)
+    {
+        priv->render = TRUE;
+        return;
+    }
 
 	expander = (GossipCellRendererExpander*) cell;
 	priv = GET_PRIV (expander);

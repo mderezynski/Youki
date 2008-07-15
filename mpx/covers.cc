@@ -440,7 +440,12 @@ namespace MPX
         {
             if( mbid.substr(0,4) == "mpx-" )
             {
-                cache_inline( mbid, uri );
+                CoverFetchData * data = new CoverFetchData( asin, mbid, uri, artist, album );
+
+                if(asin.empty())
+                    site_fetch_and_save_cover_amapi( data );
+                else
+                    site_fetch_and_save_cover_amazn( data );
             }
             else
             {

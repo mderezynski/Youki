@@ -39,7 +39,11 @@ libmpxsource_musiclib_la_SOURCES = 	\
 		musiclib-py.cc				\
 		musiclib-py.hh				\
 		source-musiclib.hh			\
-		source-musiclib.cc			
+		source-musiclib.cc			\
+		xsd-top-albums.cxx			\
+		xsd-top-albums.hxx			\
+		top-albums-fetch-thread.cc	\
+		top-albums-fetch-thread.hh
 
 libmpxsource_musiclibdir = $(PLUGIN_DIR)/sources
 
@@ -59,3 +63,4 @@ glib-marshalers.c: glib-marshalers.list
 glib-marshalers.h: glib-marshalers.list
 	@echo "* Generating glib-marshalers.h"
 	@$(GLIB_GENMARSHAL) --prefix=psm_glib_marshal --header $(srcdir)/glib-marshalers.list > glib-marshalers.h
+

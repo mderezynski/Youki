@@ -1271,6 +1271,7 @@ namespace MPX
     const char* mpris_attribute_id_int[] =
     {
         "tracknumber",
+        "time",
         "rating",
         "year",
         "mtime",
@@ -1302,7 +1303,7 @@ namespace MPX
                 value = g_new0(GValue,1);
                 g_value_init(value, G_TYPE_STRING);
                 g_value_set_string(value, (boost::get<std::string>(m[n].get())).c_str());
-                g_hash_table_insert(table, g_strdup(mpris_attribute_id_str[n]), value);
+                g_hash_table_insert(table, g_strdup(mpris_attribute_id_str[n-ATTRIBUTE_LOCATION]), value);
             }
         }
 
@@ -1313,7 +1314,7 @@ namespace MPX
                 value = g_new0(GValue,1);
                 g_value_init(value, G_TYPE_INT64);
                 g_value_set_int64(value, boost::get<gint64>(m[n].get()));
-                g_hash_table_insert(table, g_strdup(mpris_attribute_id_int[n]), value);
+                g_hash_table_insert(table, g_strdup(mpris_attribute_id_int[n-ATTRIBUTE_TRACK]), value);
             }
         }
 
@@ -2194,9 +2195,13 @@ namespace MPX
 	Player::get_metadata ()
 	{
         if(m_Metadata)
+        {
     		return m_Metadata.get();
+        }
         else
+        {
             throw std::runtime_error("No Current Metadata");
+        }
 	}
 
 	void

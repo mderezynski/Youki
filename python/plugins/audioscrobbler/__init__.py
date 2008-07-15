@@ -819,7 +819,10 @@ class MPXAudioScrobbler(mpx.Plugin):
             except:
                 p_mbid=u''
 
-            print "Posting track with MBID: " + p_mbid + " at date " + str(p_date)
+            if p_mbid:
+                print "Posting track with MBID: " + p_mbid + " at date " + str(p_date)
+            else:
+                print "Posting track with artist, title: " + p_artist + ", " + p_title 
 
             self.post.posttrack(str(p_artist),
                                 str(p_title),
