@@ -238,13 +238,16 @@ class TrackInfoQuery (threading.Thread):
                 else:
                     print "Unhandled AR of type: " + rel
 
+            self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Album Links</p></div>"
+
+            self.html += "<a href='http://rateyourmusic.com/release/album/%s/%s/'>RateYourMusic</a><br/><br/>" % (self.track[mpx.AttributeId.ALBUM_ARTIST].get().replace(" ","_").lower(), self.track[mpx.AttributeId.ALBUM].get().replace(" ","_").lower())
+
             if self.track[mpx.AttributeId.MB_ALBUM_ID] and self.track[mpx.AttributeId.MB_ALBUM_ID]: 
 
                 try:
                         entity = self.query.getReleaseById(self.track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release)
                         rels = entity.getRelations()
                         if len(rels) > 0:
-                            self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Album Links</p></div>"
                             self.html += displayRelations(rels)
                 except:
                         pass
