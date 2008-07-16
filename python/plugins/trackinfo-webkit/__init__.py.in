@@ -49,8 +49,6 @@ def getLastFMArtistInfo(artistname):
         data = response.read()
         conn.close()
 
-        print data
-
         artist = ""
 
         try:
@@ -140,7 +138,7 @@ class ArtistInfoQuery (threading.Thread):
                 self.html += displayRelations(entity.getRelations())
                 self.html += "<br/>"
         except:
-                pass
+                print "No Last.fm artist info" 
 
         self.finished.set()
 
@@ -184,7 +182,7 @@ class TrackInfoQuery (threading.Thread):
                     self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Lyrics</p></div>"
                     self.html += lyrics.replace("\n","<br/>")
         except:
-                pass
+                print "No Lyrics, or error" 
 
         if self.track[mpx.AttributeId.MB_TRACK_ID]:
 
@@ -195,6 +193,7 @@ class TrackInfoQuery (threading.Thread):
                     TrackId = self.track.get(mpx.AttributeId.MB_TRACK_ID).get()
                     MbTrack = self.query.getTrackById(TrackId, self.wsinc) 
             except:
+                    print "MusicBrainz WS error"
                     self.finished.set()
                     return;
 
@@ -250,7 +249,7 @@ class TrackInfoQuery (threading.Thread):
                         if len(rels) > 0:
                             self.html += displayRelations(rels)
                 except:
-                        pass
+                        print "MusicBrainz WS error #2" 
 
             self.Entities = dict(zip(self.Entities,self.Entities)).keys() 
 
@@ -265,7 +264,7 @@ class TrackInfoQuery (threading.Thread):
                             self.html += "</td></tr>"
                         self.html += "</table>"
             except:
-                    pass
+                    print "MusicBrainz WS error #3" 
 
         self.finished.set()
 
@@ -351,12 +350,30 @@ class TrackInfo:
         self.wsinc_release = musicbrainz2.webservice.ReleaseIncludes(releaseEvents=True,releaseRelations=True,urlRelations=True)
 
         self.xml = xml
-        self.notebook = self.xml.get_widget("notebook-track-info-1")
+
+        self.notebook = self.xml.get_widget("notebook-track-info")
+
         self.progress = self.xml.get_widget("progress")
         self.alignment = self.xml.get_widget("alignment")
+
+        self.entry = self.xml.get_widget("entry")
+        self.entry.connect("activate", self.on_web_nav_entry_activate)
+
+        self.bback = self.xml.get_widget("b-back")
+        self.bback.connect("clicked", self.on_web_nav_go_back)
+
+        self.bffwd = self.xml.get_widget("b-forward")
+        self.bffwd.connect("clicked", self.on_web_nav_go_forward)
+
+        self.progress_web = self.xml.get_widget("progress-web")
+
         self.webview = webkit.WebView()
         self.webview.show_all()
         self.webview.connect("navigation-requested", self.on_webkit_navigation_requested)
+        self.webview.connect("title-changed", self.on_webkit_title_changed)
+        self.webview.connect("load-progress-changed", self.on_webkit_progress_changed)
+        self.webview.connect("load-finished", self.on_webkit_load_finished)
+
         self.alignment.add(self.webview)
         self.throb = self.xml.get_widget("throb")
         self.throb.set_from_file("@DATA_DIR@" + "/images/throbber.gif")
@@ -493,19 +510,26 @@ class TrackInfo:
 
     def uriParse(self, uri):
 
-        pre, sep, post = uri.partition("?")        
-        segments = string.split(post,"&") 
-   
         mydict = {}
-     
-        for segment in segments:
 
-            splitsegment = string.split(segment,"=")
-            mydict[splitsegment[0]] = splitsegment[1]
+        try:
+                pre, sep, post = uri.partition("?")        
+                segments = string.split(post,"&") 
+             
+                for segment in segments:
+
+                    splitsegment = string.split(segment,"=")
+                    mydict[splitsegment[0]] = splitsegment[1]
+        except:
+                pre, sep, post = uri.partition("?")        
+                splitsegment = string.split(post,"=")
+                mydict[splitsegment[0]] = splitsegment[1]
 
         return mydict
 
     def openUri(self, uri):
+
+        print "OPENING: " + uri
     
         if uri == "about:blank":
 
@@ -514,20 +538,54 @@ class TrackInfo:
 
         mydict = self.uriParse(uri) 
 
-        if mydict["type"] == "artist":
-   
-                self.display_artist( mydict )
-                return
+        try:
+                if mydict["type"] == "artist":
+           
+                        self.display_artist( mydict )
+                        return
 
-        if mydict["type"] == "track":
-       
-                self.display_track( self.track ) 
-                return
+                if mydict["type"] == "track":
+               
+                        self.display_track( self.track ) 
+                        return
+        except:
+                print "openUri exception" 
 
     def on_webkit_navigation_requested(self, webview, webframe, request):
-
-        self.openUri(request.get_uri())
+    
+        self.current_uri = request.get_uri()
+        self.openUri(self.current_uri)
         return webkit.NAVIGATION_RESPONSE_ACCEPT
+
+    def on_webkit_title_changed(self, webview, frame, title):
+
+        self.current_uri = frame.get_uri()
+        self.entry.props.text = self.current_uri
+
+    def on_webkit_progress_changed(self, page, progress):
+
+        self.progress_web.set_fraction(float(progress)/100.)
+
+    def on_webkit_load_finished(self, page, frame):
+
+        self.bback.set_sensitive(self.webview.can_go_back())
+        self.bffwd.set_sensitive(self.webview.can_go_forward())
+
+    def on_web_nav_go_back(self, button):
+
+        self.webview.go_back()
+        self.bback.set_sensitive(self.webview.can_go_back())
+        self.bffwd.set_sensitive(self.webview.can_go_forward())
+
+    def on_web_nav_go_forward(self, button):
+
+        self.webview.go_forward()
+        self.bback.set_sensitive(self.webview.can_go_back())
+        self.bffwd.set_sensitive(self.webview.can_go_forward())
+
+    def on_web_nav_entry_activate(self, entry):
+
+        self.webview.open(entry.props.text)
 
 class TrackInfoDispatcher(mpx.Plugin):
 
@@ -540,7 +598,6 @@ class TrackInfoDispatcher(mpx.Plugin):
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/trackinfo-webkit/trackinfo-webkit.glade")
         self.vbox = self.xml.get_widget("vbox")
         self.vbox.unparent()
-        self.notebook = self.xml.get_widget("notebook-track-info-1")
 
     def activate(self):
 
@@ -548,7 +605,6 @@ class TrackInfoDispatcher(mpx.Plugin):
         self.player_playstatus_changed_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
         self.info = TrackInfo(self.xml)
         self.player.add_info_widget(self.vbox, "Track Info")
-        self.notebook.show_all()
         return True
 
     def deactivate(self):
@@ -567,5 +623,5 @@ class TrackInfoDispatcher(mpx.Plugin):
             m = self.player.get_metadata()
             self.info.run(m)
         except:
-            return
+            print "Error runing TrackInfo" 
 

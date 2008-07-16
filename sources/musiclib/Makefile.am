@@ -42,6 +42,8 @@ libmpxsource_musiclib_la_SOURCES = 	\
 		source-musiclib.cc			\
 		xsd-top-albums.cxx			\
 		xsd-top-albums.hxx			\
+		xsd-tag-topalbums.hxx		\
+		xsd-tag-topalbums.cxx		\
 		top-albums-fetch-thread.cc	\
 		top-albums-fetch-thread.hh
 

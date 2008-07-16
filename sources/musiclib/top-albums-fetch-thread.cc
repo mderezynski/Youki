@@ -4,7 +4,7 @@
 #include <gtkmm.h>
 #include <boost/format.hpp>
 
-#include "xsd-top-albums.hxx"
+#include "xsd-tag-topalbums.hxx"
 #include "top-albums-fetch-thread.hh"
 
 using namespace MPX;
@@ -13,8 +13,8 @@ using namespace MPX;
 struct MPX::TopAlbumsFetchThread::ThreadData
 {
     std::string                                     Artist;
-    MPX::XmlInstance<LastFM::topalbums>           * Xml; 
-    LastFM::topalbums::album_sequence::size_type    Position;
+    MPX::XmlInstance<tag>                         * Xml; 
+    tag::album_sequence::size_type                  Position;
 
     int Stop;
 
@@ -68,11 +68,13 @@ MPX::TopAlbumsFetchThread::idle_loader ()
 
         Glib::RefPtr<Gdk::Pixbuf> image =
             Util::get_image_from_uri(
-                (*(pthreaddata->Xml->xml().album().begin() + pthreaddata->Position)).image().large()
+                (*(pthreaddata->Xml->xml().album().begin() + pthreaddata->Position)).coverart().large()
             );
 
         pthreaddata->Album.emit(
-            image, (*(pthreaddata->Xml->xml().album().begin() + pthreaddata->Position)).name()
+            image,  
+            (*(pthreaddata->Xml->xml().album().begin() + pthreaddata->Position)).artist().name(),
+            (*(pthreaddata->Xml->xml().album().begin() + pthreaddata->Position)).name()
         );                
 
     } catch(...)
@@ -88,7 +90,7 @@ MPX::TopAlbumsFetchThread::idle_loader ()
 }
 
 void
-MPX::TopAlbumsFetchThread::on_load (std::string const& artist)
+MPX::TopAlbumsFetchThread::on_load (std::string const& value)
 {
     ThreadData * pthreaddata = m_ThreadData.get();
 
@@ -98,11 +100,11 @@ MPX::TopAlbumsFetchThread::on_load (std::string const& artist)
     pthreaddata->Stop = 0;
 
     try{
-        URI u ((boost::format ("http://ws.audioscrobbler.com/1.0/artist/%s/topalbums.xml") % artist).str(), true);
+        URI u ((boost::format ("http://ws.audioscrobbler.com/1.0/tag/%s/topalbums.xml") % value).str(), true);
         Glib::ustring uri = u;
         if(pthreaddata->Xml)
             delete pthreaddata->Xml;
-        pthreaddata->Xml = new MPX::XmlInstance<LastFM::topalbums>((ustring(u)));
+        pthreaddata->Xml = new MPX::XmlInstance<tag>((ustring(u)));
         pthreaddata->Position = 0; 
         if(pthreaddata->Xml->xml().album().size())
         {

@@ -2853,10 +2853,10 @@ namespace MPX
               }
 
               void
-              on_thread_new_album(Glib::RefPtr<Gdk::Pixbuf> icon, std::string const& album)
+              on_thread_new_album(Glib::RefPtr<Gdk::Pixbuf> icon, std::string const& artist, std::string const& album)
               {
                 SQL::RowV v;
-                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album LIKE '%s' AND album_artist LIKE '%s';") % mprintf("%q",album.c_str()) % mprintf("%q", m_FilterEntry->get_text().c_str())).str());
+                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album LIKE '%s' AND album_artist LIKE '%s';") % mprintf("%q",album.c_str()) % mprintf("%q", artist.c_str())).str());
 
                 if(!v.empty())
                 {
@@ -2884,16 +2884,13 @@ namespace MPX
                         (*iter)[LFMColumns.IsMPXAlbum]  = 0;
 
                         (*iter)[LFMColumns.Text] =
-//                            (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%Added: %4%</span>")
                             (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>")
                                 % Markup::escape_text(album).c_str()
-                                % Markup::escape_text(m_FilterEntry->get_text()).c_str()
-                                //% date
-                                //% get_timestr_from_time_t(idate)
+                                % Markup::escape_text(artist).c_str()
                             ).str();
 
                         (*iter)[LFMColumns.AlbumSort] = ustring(album).collate_key();
-                        (*iter)[LFMColumns.ArtistSort] = ustring(m_FilterEntry->get_text()).collate_key();
+                        (*iter)[LFMColumns.ArtistSort] = ustring(artist).collate_key();
                     }
                 }
               }

@@ -2342,8 +2342,11 @@ namespace MPX
 		switch (field)
 		{
 		  case FIELD_IMAGE:
-			m_Metadata.get().Image = m.m_image.get();
-			m_InfoArea->set_cover (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
+            if(!m_Metadata.get().Image)
+            {
+			    m_Metadata.get().Image = m.m_image.get();
+			    m_InfoArea->set_cover (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
+            }
 			return;
 	
 		  case FIELD_TITLE:
@@ -2483,11 +2486,14 @@ namespace MPX
 	{
         Glib::Mutex::Lock L (m_MetadataLock);
 
-        m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( true ); //FIXME: This implies we get metadata only once during one track, but there is just no such design guarantee
+        m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( true );
+        //FIXME: This implies we get metadata only once during one track, but there is just no such design guarantee
+
+        bool previous_metadata_image = m_Metadata.get().Image;
 
         m_Metadata = metadata;
 
-        if( !m_Metadata.get().Image && m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
+        if( !previous_metadata_image && !m_Metadata.get().Image && m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
         {
             m_Covers.fetch(
                 get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()),
@@ -2876,6 +2882,8 @@ namespace MPX
             m_ActiveSource.reset();
             m_Sidebar->clearActiveId();
 
+            m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
+
 			break;
 		  }
 
@@ -2891,6 +2899,8 @@ namespace MPX
 
             m_VideoWidget->property_playing() = false;
             m_VideoWidget->queue_draw();
+
+            m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
 
 			break;
 		  }

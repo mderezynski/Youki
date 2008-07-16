@@ -44,28 +44,10 @@ libmpxsource_lastfm_la_LIBADD =		\
 
 
 libmpxsource_lastfm_la_SOURCES =			\
-		component-base.hh					\
-		component-base.cc					\
-		component-top-albums.hh				\
-		component-top-albums.cc				\
-		component-user-top-albums.hh		\
-		component-user-top-albums.cc		\
-		component-slot-artist.hh			\
-		component-slot-artist.cc			\
 		plugin.cc							\
 		lastfm.hh							\
 		lastfm.cc							\
 		source-lastfm.hh					\
-		source-lastfm.cc					\
-		top-albums-fetch-thread.hh			\
-		top-albums-fetch-thread.cc			\
-		user-top-albums-fetch-thread.hh		\
-		user-top-albums-fetch-thread.cc		\
-		xsd-track-toptags.hxx				\
-		xsd-track-toptags.cxx				\
-		xsd-top-albums.hxx					\
-		xsd-top-albums.cxx					\
-		xsd-user-top-albums.hxx				\
-		xsd-user-top-albums.cxx
+		source-lastfm.cc					
 
 libmpxsource_lastfmdir = $(PLUGIN_DIR)/sources

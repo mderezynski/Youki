@@ -57,8 +57,8 @@
 #include "mpx/widgets/cell-renderer-cairo-surface.hh"
 #include "mpx/util-graphics.hh"
 
-#include "component-top-albums.hh"
-#include "component-user-top-albums.hh"
+//#include "component-top-albums.hh"
+//#include "component-user-top-albums.hh"
 
 #define STATE(e) ((m_state & e) != 0)
 #define SET_STATE(e) ((m_state |= e))
@@ -160,6 +160,7 @@ namespace Source
         PAccess<MPX::Library> pa_lib;
         player.get_object(pa_lib);
 
+#if 0
         ComponentTopAlbums * c = new ComponentTopAlbums(pa_lib);
         ComponentUserTopAlbums * c2 = new ComponentUserTopAlbums(&player);
 
@@ -184,6 +185,7 @@ namespace Source
         gtk_widget_reparent(c2->get_UI().gobj(), item);
         gdl_dock_add_item( GDL_DOCK( m_Dock ), GDL_DOCK_ITEM( item ), GDL_DOCK_CENTER );
         gtk_widget_show (item);
+#endif
     }
 
     std::string

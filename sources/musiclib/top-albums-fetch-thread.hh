@@ -42,11 +42,11 @@ namespace MPX
             typedef sigx::request_f<std::string const&> RequestLoad_t;
             typedef sigx::request_f<>                   RequestStop_t;
 
-            typedef sigc::signal< void, Glib::RefPtr<Gdk::Pixbuf>, std::string const& > SignalAlbum_t;
-            typedef sigc::signal< void >                                                SignalStopped_t;
+            typedef sigc::signal< void, Glib::RefPtr<Gdk::Pixbuf>, std::string const&, std::string const& > SignalAlbum_t;
+            typedef sigc::signal< void >                                                                    SignalStopped_t;
 
-            typedef sigx::signal_f< SignalAlbum_t >                                     SignalAlbum_x;
-            typedef sigx::signal_f< SignalStopped_t >                                   SignalStopped_x;
+            typedef sigx::signal_f< SignalAlbum_t >                                                         SignalAlbum_x;
+            typedef sigx::signal_f< SignalStopped_t >                                                       SignalStopped_x;
 
             RequestLoad_t           RequestLoad;
             RequestStop_t           RequestStop;
