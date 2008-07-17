@@ -122,10 +122,29 @@ namespace Source
 
         m_LastFMRadio.handshake();
 
-        m_LastFMRadio.signal_playlist().connect( sigc::mem_fun( *this, &LastFM::on_playlist ));
-        m_LastFMRadio.signal_no_playlist().connect( sigc::mem_fun( *this, &LastFM::on_playlist_cancel ));
-        m_LastFMRadio.signal_tuned().connect( sigc::mem_fun( *this, &LastFM::on_tune_ok ));
-        m_LastFMRadio.signal_tune_error().connect( sigc::mem_fun( *this, &LastFM::on_tune_error ));
+        m_LastFMRadio.signal_playlist().connect(
+            sigc::mem_fun(
+                *this,
+                &LastFM::on_playlist
+        ));
+
+        m_LastFMRadio.signal_no_playlist().connect(
+            sigc::mem_fun(
+                *this,
+                &LastFM::on_playlist_cancel
+        ));
+
+        m_LastFMRadio.signal_tuned().connect(
+            sigc::mem_fun(
+                *this,
+                &LastFM::on_tune_ok
+        ));
+
+        m_LastFMRadio.signal_tune_error().connect(
+            sigc::mem_fun(
+                *this,
+                &LastFM::on_tune_error
+        ));
 
 		const std::string path (build_filename(DATA_DIR, build_filename("glade","source-lastfm.glade")));
 		m_ref_xml = Gnome::Glade::Xml::create (path);

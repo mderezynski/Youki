@@ -170,10 +170,13 @@ class TrackInfoQuery (threading.Thread):
 
     def run (self):
 
-        artist = getLastFMArtistInfo(self.track[mpx.AttributeId.ARTIST].get())
+        try:
+                artist = getLastFMArtistInfo(self.track[mpx.AttributeId.ARTIST].get())
 
-        self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % self.track[mpx.AttributeId.ARTIST].get()
-        self.html += artist
+                self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % self.track[mpx.AttributeId.ARTIST].get()
+                self.html += artist
+        except:
+                pass 
 
         try:
                 req = mpx.LyricWiki(self.track[mpx.AttributeId.ARTIST].get(), self.track[mpx.AttributeId.TITLE].get())

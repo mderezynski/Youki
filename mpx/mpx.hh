@@ -358,6 +358,9 @@ namespace MPX
         void
         play_tracks (Util::FileList const& uris);
 
+        void
+        switch_stream (std::string const&, std::string const&);
+
 		void
 		track_played ();
 

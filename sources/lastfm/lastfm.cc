@@ -432,9 +432,12 @@ namespace MPX
     {
       XSPF::Playlist playlist;
       XSPF::XSPF_parse (playlist, data, size); 
+
+      // Last.fm-specific h4x
       replace_all (playlist.Title, "+" , " ");
       trim (playlist.Title);
       playlist.Title = URI::unescape_string (playlist.Title);
+
       Signals.Playlist.emit( playlist );
     }
     

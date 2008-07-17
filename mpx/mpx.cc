@@ -239,21 +239,19 @@ namespace MPX
 
           boost::optional<TextSet>              m_text_cur;
           boost::optional<TextSet>              m_text_new;
-          double                                m_layout_alpha;
-          sigc::connection                      m_fade_conn;
-
           boost::optional<Cairo::RefPtr<Cairo::ImageSurface> >   m_cover_surface_cur;
           boost::optional<Cairo::RefPtr<Cairo::ImageSurface> >   m_cover_surface_new;
           double                                m_cover_pos;
           double                                m_cover_velocity;
           double                                m_cover_accel;
           double                                m_cover_alpha;
+          double                                m_layout_alpha;
           sigc::connection                      m_cover_anim_conn_fade;
           sigc::connection                      m_cover_anim_conn_slide;
           sigc::connection                      m_decay_conn;
+          sigc::connection                      m_fade_conn;
 
           bool								    m_pressed;
-
           Glib::Mutex                           m_surface_lock;
           Glib::Mutex                           m_layout_lock;
 
@@ -556,17 +554,17 @@ namespace MPX
             std::fill (m_spectrum_data.begin (), m_spectrum_data.end (), 0.);
 
             m_cover_surface_new.reset();
+            m_cover_surface_cur.reset();
             m_text_new.reset();
+            m_text_cur.reset();
+
+            m_layout_alpha = 1.;
+            m_cover_alpha = 1.;
 
             m_fade_conn.disconnect();
-            m_fade_conn = signal_timeout().connect(
-                sigc::mem_fun( *this, &InfoArea::fade_out_layout ), 15
-            );
-
+            m_decay_conn.disconnect();
             m_cover_anim_conn_fade.disconnect ();
-            m_cover_anim_conn_fade = signal_timeout ().connect(
-                sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 10
-            );
+            m_cover_anim_conn_slide.disconnect ();
           }
 
           void
@@ -574,11 +572,7 @@ namespace MPX
           {
             Mutex::Lock L (m_layout_lock);
 
-		    if( !metadata.Image )
-            {
-                clear_cover (); 
-            }
-            else if( metadata.Image )
+            if( metadata.Image )
             {
 		        set_cover (metadata.Image->scale_simple (72, 72, Gdk::INTERP_BILINEAR));
             }
@@ -2345,7 +2339,10 @@ namespace MPX
             if(!m_Metadata.get().Image)
             {
 			    m_Metadata.get().Image = m.m_image.get();
-			    m_InfoArea->set_cover (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
+                if(m_Metadata.get().Image)
+                {
+			        m_InfoArea->set_cover (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
+                }
             }
 			return;
 	
@@ -2501,14 +2498,6 @@ namespace MPX
             );
         }
 
-#if 0
-        if(m_Metadata.get()[ATTRIBUTE_ASIN]) 
-        {
-            std::string const& asin = get<std::string>(m_Metadata.get()[ATTRIBUTE_ASIN].get());
-            m_CoverFlow->go_to(asin);
-        }
-#endif
-
         if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
         {
             m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
@@ -2539,10 +2528,7 @@ namespace MPX
 	  {
 			  if( source->play () )
 			  {
-                      g_message("%s: Playing", G_STRLOC);
-					  std::string uri = source->get_uri();
-                      g_message("%s: URI: %s", G_STRLOC, uri.c_str());
-					  m_Play->switch_stream (source->get_uri(), source->get_type());
+					  switch_stream (source->get_uri(), source->get_type());
 					  source->play_post ();
 					  play_post_internal (source_id);
 			  }
@@ -2569,6 +2555,28 @@ namespace MPX
 	}
 
 	//////////////////////////////// Internal Playback Control
+
+  void
+  Player::switch_stream(std::string const& uri, std::string const& type)
+  {
+    g_atomic_int_set(&m_Seeking, 0);
+
+    m_TimeLabel->set_text("      …      ");
+
+    m_Seek->set_range(0., 1.);
+    m_Seek->set_value(0.);
+    m_Seek->set_sensitive(false);
+
+    m_VideoWidget->property_playing() = false;
+    m_VideoWidget->queue_draw();
+
+    m_InfoArea->reset();
+    m_Metadata.reset();	
+
+    m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
+
+    m_Play->switch_stream( uri, type );
+  }
 
 	void
 	Player::track_played ()
@@ -2599,9 +2607,9 @@ namespace MPX
 	{
 	  PlaybackSource* source = m_Sources[source_id];
 
-      m_ActiveSource = source_id;
-	  m_Play->switch_stream (source->get_uri(), source->get_type());
-      source->play_post ();
+    m_ActiveSource = source_id;
+	  switch_stream(source->get_uri(), source->get_type());
+    source->play_post ();
 	  play_post_internal(source_id);
 	}
 
@@ -2656,7 +2664,7 @@ namespace MPX
             {
                     if( source->play() )
                     {
-                          m_Play->switch_stream (source->get_uri(), source->get_type());
+                          switch_stream (source->get_uri(), source->get_type());
                           source->play_post ();
                           play_post_internal (source_id);
                           return;
@@ -2706,7 +2714,7 @@ namespace MPX
 	  if( (f & PlaybackSource::F_PHONY_PREV) == 0 )
 	  {
 			safe_pause_unset();
-			m_Play->switch_stream (source->get_uri(), source->get_type());
+			switch_stream (source->get_uri(), source->get_type());
 			source->prev_post ();
 			play_post_internal (source_id);
 	  }
@@ -2734,7 +2742,7 @@ namespace MPX
 			else
 			if( source->go_prev () )
 			{
-					m_Play->switch_stream (source->get_uri(), source->get_type());
+					switch_stream (source->get_uri(), source->get_type());
 					prev_async_cb (source_id);
 					return;
 			}
@@ -2752,7 +2760,7 @@ namespace MPX
 	  if( (f & PlaybackSource::F_PHONY_NEXT) == 0 )
 	  {
 			safe_pause_unset();
-			m_Play->switch_stream (source->get_uri(), source->get_type());
+			switch_stream (source->get_uri(), source->get_type());
 		    source->next_post ();
 		    play_post_internal (source_id);
 	  }
@@ -2853,34 +2861,36 @@ namespace MPX
 
             safe_pause_unset ();
 
-			if( m_ActiveSource ) 
-			{
-			  m_Sources[m_ActiveSource.get()]->stop ();
-			  m_Sources[m_ActiveSource.get()]->send_caps ();
-			}
+            if( m_ActiveSource ) 
+            {
+                m_Sources[m_ActiveSource.get()]->stop ();
+                m_Sources[m_ActiveSource.get()]->send_caps ();
+            }
 
-			m_TimeLabel->set_text("      …      ");
+            m_TimeLabel->set_text("      …      ");
 
-		    g_atomic_int_set(&m_Seeking, 0);
+            g_atomic_int_set(&m_Seeking, 0);
 
-			m_Seek->set_range(0., 1.);
-			m_Seek->set_value(0.);
-			m_Seek->set_sensitive(false);
+            m_Seek->set_range(0., 1.);
+            m_Seek->set_value(0.);
+            m_Seek->set_sensitive(false);
 
-			m_actions->get_action (ACTION_STOP)->set_sensitive( false );
-			m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
-			m_actions->get_action (ACTION_PREV)->set_sensitive( false );
-			m_actions->get_action (ACTION_PAUSE)->set_sensitive( false );
+            m_actions->get_action (ACTION_STOP)->set_sensitive( false );
+            m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
+            m_actions->get_action (ACTION_PREV)->set_sensitive( false );
+            m_actions->get_action (ACTION_PAUSE)->set_sensitive( false );
 
             m_VideoWidget->property_playing() = false; 
             m_VideoWidget->queue_draw();
 
             set_title (_("(Not Playing) - MPX"));
 
-			m_InfoArea->reset();
-		    m_Metadata.reset();	
-            m_ActiveSource.reset();
+            m_InfoArea->reset();
+            m_Metadata.reset();	
+
             m_Sidebar->clearActiveId();
+
+            m_ActiveSource.reset();
 
             m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
 
@@ -2889,28 +2899,13 @@ namespace MPX
 
 		  case PLAYSTATUS_WAITING:
 		  {
-            g_atomic_int_set(&m_Seeking, 0);
-
-            m_TimeLabel->set_text("      …      ");
-
-            m_Seek->set_range(0., 1.);
-            m_Seek->set_value(0.);
-            m_Seek->set_sensitive(false);
-
-            m_VideoWidget->property_playing() = false;
-            m_VideoWidget->queue_draw();
-
-            m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
-
 			break;
 		  }
 
 		  case PLAYSTATUS_PLAYING:
 		  {
             g_atomic_int_set(&m_Seeking,0);
-
             m_Seek->set_sensitive(m_source_c[m_ActiveSource.get()] & PlaybackSource::C_CAN_SEEK);
-
             m_actions->get_action( ACTION_STOP )->set_sensitive (true);
 
 			break;
