@@ -1,5 +1,5 @@
-//  BMP
-//  Copyright (C) 2005-2007 BMP development.
+//  MPX
+//  Copyright (C) 2005-2007 MPX development.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,10 +17,10 @@
 //
 //  --
 //
-//  The BMPx project hereby grants permission for non GPL-compatible GStreamer
-//  plugins to be used and distributed together with GStreamer and BMPx. This
+//  The MPX project hereby grants permission for non GPL-compatible GStreamer
+//  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
-//  BMPx is covered by.
+//  MPX is covered by.
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -63,7 +63,7 @@ namespace MPX
         URI request_url ((lyrics_url_f % m_artist.c_str() % m_title.c_str()).str(), true);
 
         m_soup_request = Soup::RequestSync::create ((ustring(request_url)));
-        m_soup_request->add_header("User-Agent", "BMP-2.0");
+        m_soup_request->add_header("User-Agent", "MPX-1.0");
         m_soup_request->add_header("Content-Type", "text/xml"); 
         m_soup_request->add_header("Accept-Charset", "utf-8");
         m_soup_request->add_header("Connection", "close");
