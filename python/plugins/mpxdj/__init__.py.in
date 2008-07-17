@@ -79,7 +79,49 @@ class OptionAnalyzer(BaseOption):
 
         return tags
 
-    def run(self):
+    def get_similartracks(self, mpxtrack):
+
+        uri     = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/similar.xml" % (urllib.quote(mpxtrack[mpx.AttributeId.ARTIST].get()), urllib.quote(mpxtrack[mpx.AttributeId.TITLE].get()))
+        lastfm  = NonvalidatingReader.parseUri(uri)
+        ctx     = Context(lastfm)
+
+        a_xml   = Evaluate("//artist/name", context=ctx)
+        t_xml   = Evaluate("//track/name", context=ctx)
+
+        stracks = []
+
+        for i in range(0,len(a_xml)-1):
+            stracks.append({"artist":a_xml[i].firstChild.data,
+                            "title":t_xml[i].firstChild.data})
+
+        return stracks
+
+    def run_similar_track(self):
+
+        playlist    = self.mlib.get_playlist_model()
+
+        if not len(playlist):
+
+            return
+
+        track       = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
+        stracks     = self.get_similartracks(track)
+          
+        random.shuffle(stracks)
+
+        for strack in stracks: 
+
+                rv = mpx.SQLRowV()
+                self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' AND title = '%s' LIMIT 1" % ( strack["artist"].replace("\'", "\'\'") , strack["title"].replace("\'","\'\'") ) ))
+                extract_ids(rv, self.v)
+
+                if len(rv) > 0:
+                    self.finished.set()
+                    return
+
+        self.finished.set()
+
+    def run_accumulate_tags(self):
 
         playlist    = self.mlib.get_playlist_model()
         tags        = {} 
@@ -137,6 +179,12 @@ class OptionAnalyzer(BaseOption):
 
         self.finished.set()
 
+    def run(self):
+
+        self.run_similar_track()
+
+        if not len(self.v):
+            self.run_accumulate_tags()
 
 class OptionLastFmTag(BaseOption):    
 
