@@ -17,6 +17,10 @@ import gtk.glade
 import urllib
 import random
 import xml
+from Ft.Xml.XPath.Context import Context
+from Ft.Xml.XPath import Evaluate
+from Ft.Xml.Domlette import NonvalidatingReader
+from Ft.Xml import EMPTY_NAMESPACE
 
 class PlaylistDefaultTooltip(mpx.Plugin):
         
@@ -40,38 +44,70 @@ class PlaylistDefaultTooltip(mpx.Plugin):
         self.widget = self.xml.get_widget("widget")
         self.widget.unparent()
         self.image = self.xml.get_widget("image")
-        self.labels = []
+        self.labels = {} 
 
-        for l in ["artist", "album", "title", "bitrate", "samplerate", "type"]:
-            self.labels.append(self.xml.get_widget("label-%s" % l))
+        for l in ["artist", "album", "title", "bitrate", "samplerate", "type","mbartistid","mbalbumid","lfmtags"]:
+            self.labels[l] = self.xml.get_widget("label-%s" % l)
 
         mpxtrack_boxed = treemodel.get(iter, 9)[0]
         mpxtrack = mpx.unwrap_boxed_mpxtrack(mpxtrack_boxed)
+        artist = ""
+        title  = ""
 
         if mpxtrack[mpx.AttributeId.ARTIST]:
-            self.labels[0].set_text(mpxtrack[mpx.AttributeId.ARTIST].get())
+            artist = mpxtrack[mpx.AttributeId.ARTIST].get()
+            self.labels["artist"].set_text(artist)
 
         if mpxtrack[mpx.AttributeId.ALBUM]:
-            self.labels[1].set_text(mpxtrack[mpx.AttributeId.ALBUM].get())
+            self.labels["album"].set_text(mpxtrack[mpx.AttributeId.ALBUM].get())
 
         if mpxtrack[mpx.AttributeId.TITLE]:
-            self.labels[2].set_text(mpxtrack[mpx.AttributeId.TITLE].get())
+            title  = mpxtrack[mpx.AttributeId.TITLE].get()
+            self.labels["title"].set_text(title)
 
         if mpxtrack[mpx.AttributeId.BITRATE]:
-            self.labels[3].set_text(str(mpxtrack[mpx.AttributeId.BITRATE].get())+ " kbit/s")
+            self.labels["bitrate"].set_text(str(mpxtrack[mpx.AttributeId.BITRATE].get())+ " kbit/s")
 
         if mpxtrack[mpx.AttributeId.SAMPLERATE]:
-            self.labels[4].set_text(str(mpxtrack[mpx.AttributeId.SAMPLERATE].get()/1000.)+ " KHz")
+            self.labels["samplerate"].set_text(str(mpxtrack[mpx.AttributeId.SAMPLERATE].get()/1000.)+ " KHz")
 
         if mpxtrack[mpx.AttributeId.TYPE]:
-            self.labels[5].set_text(mpxtrack[mpx.AttributeId.TYPE].get())
+            self.labels["type"].set_text(mpxtrack[mpx.AttributeId.TYPE].get())
 
-        self.image.hide()
+        if mpxtrack[mpx.AttributeId.MB_ARTIST_ID]:
+            self.labels["mbartistid"].set_text(mpxtrack[mpx.AttributeId.MB_ARTIST_ID].get())
+
         if mpxtrack[mpx.AttributeId.MB_ALBUM_ID]:
+
+            self.labels["mbalbumid"].set_text(mpxtrack[mpx.AttributeId.MB_ALBUM_ID].get())
+
             mbid = mpxtrack[mpx.AttributeId.MB_ALBUM_ID].get()
             cover = self.covers.fetch(mbid) 
+
             if cover:
                 self.image.set_from_pixbuf(cover.scale_simple(192, 192, gtk.gdk.INTERP_BILINEAR))
                 self.image.show()
+            else:
+                self.image.hide()
+        else:
+                self.image.hide()
+
+
+        tags = []
+    
+        try:
+                uri         = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(artist), urllib.quote(title))
+                lfmxml      = NonvalidatingReader.parseUri(uri)
+                ctx         = Context(lfmxml)
+                xml_names   = Evaluate("//name", context=ctx)
+
+                for name in xml_names:
+                    if name.firstChild:
+                        tags.append(name.firstChild.data) 
+
+                self.labels["lfmtags"].set_text(", ".join(tags[0:10]))
+
+        except:
+                print "Error in PLTD fetching Last.fm tags" 
 
         return self.widget

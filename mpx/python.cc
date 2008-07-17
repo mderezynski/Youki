@@ -29,6 +29,7 @@
 #include "audio-types.hh"
 #include "lyrics-v2.hh"
 #include "last-fm-xmlrpc.hh"
+#include "play.hh"
 #include "pysigc.hh"
 
 #include "mpx/python.hh"
@@ -291,6 +292,13 @@ namespace mpxpy
 		return pa.get();
 	}
 
+	MPX::Play&
+	player_get_play (MPX::Player & obj)
+	{
+		MPX::PAccess<MPX::Play> pa;	
+		obj.get_object(pa);
+		return pa.get();
+	}
 
 #ifdef HAVE_HAL
 	MPX::HAL&
@@ -348,6 +356,15 @@ namespace mpxpy
         Glib::RefPtr<Gdk::Pixbuf> cover (0);
         obj.fetch(mbid, cover);
         return cover; // if it stays 0, the converter takes care of it
+	}
+}
+
+namespace mpxpy
+{
+    PyObject*
+	play_tap (MPX::Play & obj)
+	{
+        return pygobject_new((GObject*)(obj.tap()));
 	}
 }
 
@@ -679,6 +696,9 @@ BOOST_PYTHON_MODULE(mpx)
         .def("get_covers",          &mpxpy::player_get_covers,
                                     return_internal_reference<>())
 
+        .def("get_play",            &mpxpy::player_get_play,
+                                    return_internal_reference<>())
+
 		.def("play",                &MPX::Player::play)
 		.def("pause",               &MPX::Player::pause_ext)
 		.def("prev",                &MPX::Player::prev)
@@ -849,6 +869,14 @@ BOOST_PYTHON_MODULE(mpx)
 
     class_<MPX::Covers, boost::noncopyable>("Covers", boost::python::no_init)
         .def("fetch", &mpxpy::covers_fetch)
+    ;
+
+    /*-------------------------------------------------------------------------------------*/
+    /* Play */
+    /*-------------------------------------------------------------------------------------*/
+
+    class_<MPX::Play, boost::noncopyable>("Play", boost::python::no_init)
+        .def("tap", &mpxpy::play_tap)
     ;
 }
 

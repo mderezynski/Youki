@@ -734,6 +734,7 @@ AC_OUTPUT([
 	python/plugins/lastfmvis/Makefile
 	python/plugins/lastfmvis/__init__.py
 	python/plugins/audioscrobbler/Makefile
+	python/plugins/audiorecord/Makefile
 	python/plugins/notification/Makefile
 	python/plugins/notification/__init__.py
 	python/plugins/ratings_export/Makefile

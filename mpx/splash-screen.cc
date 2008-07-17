@@ -38,10 +38,10 @@ namespace MPX
     , m_image (Gdk::Pixbuf::create_from_file (build_filename(DATA_DIR, "images" G_DIR_SEPARATOR_S "splash.png")))
     , m_image_w (m_image->get_width())
     , m_image_h (m_image->get_height())
-    , m_bar_w (m_image_w - 220)
+    , m_bar_w (m_image_w - 240)
     , m_bar_h (4)
-    , m_bar_x (12)
-    , m_bar_y (m_image_h - 30)
+    , m_bar_x (32)
+    , m_bar_y (m_image_h - 15)
     , m_percent (0.0)
     {
         set_size_request (m_image_w, m_image_h);

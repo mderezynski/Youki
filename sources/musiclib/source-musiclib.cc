@@ -1886,10 +1886,11 @@ namespace MPX
 
                       g_object_set (cell,
                                 "visible", TRUE,
+                                "render", TRUE,
                                 "expander-style", row_expanded ? GTK_EXPANDER_EXPANDED : GTK_EXPANDER_COLLAPSED,
                                 NULL);
                   } else {
-                      g_object_set (cell, "visible", FALSE, NULL);
+                      g_object_set (cell, "visible", FALSE, "render", FALSE, NULL);
                   }
               }
 

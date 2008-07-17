@@ -43,11 +43,11 @@ class TrackTagsDataAcquire(threading.Thread):
 
     def get_tags(self):
 
-        return self.l_tags
+        return self.tags
 
     def run(self):
 
-        self.l_tags = []
+        self.tags = []
 
         try:
                 uri     = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(self.artist), urllib.quote(self.title))
@@ -56,20 +56,20 @@ class TrackTagsDataAcquire(threading.Thread):
 
                 xml_names   = Evaluate("//name", context=ctx)
                 xml_count   = Evaluate("//count", context=ctx)
-                l_count     = []
+                counts      = []
 
                 for count in xml_count:
                     try:
                         if count.firstChild:
-                            l_count.append(float(math.log10((float(count.firstChild.data) * 5)+1)))
+                            counts.append(float(math.log10((float(count.firstChild.data) * 5)+1)))
                     except:
                         pass
 
                 for name in xml_names:
                     if name.firstChild:
-                            self.l_tags.append([str(name.firstChild.data), l_count[xml_names.index(name)]])
+                            self.tags.append([str(name.firstChild.data), counts[xml_names.index(name)]])
 
-                random.shuffle(self.l_tags)
+                random.shuffle(self.tags)
         except:
                 pass
 

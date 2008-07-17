@@ -284,8 +284,8 @@ namespace MPX
           : WidgetLoader<Gtk::EventBox>(xml, "infoarea")
           , m_Play(play)
           , m_spectrum_data(SPECT_BANDS, 0)
-          , m_layout_alpha(0.)
           , m_cover_alpha(0.)
+          , m_layout_alpha(0.)
           , m_pressed(false)
           {
             add_events (Gdk::BUTTON_PRESS_MASK);
@@ -3385,26 +3385,27 @@ namespace MPX
       }
 
       if (keycodes[0] == key->keycode) {
-        if( player.m_Play->property_status() == PLAYSTATUS_PAUSED)
-          player.pause ();
-        else
-        if( player.m_Play->property_status() != PLAYSTATUS_WAITING)
-          player.play ();
+          (dynamic_cast<Gtk::Button*>(player.m_ref_xml->get_widget("controls-play")))->clicked();
+          //player.play ();
         return GDK_FILTER_REMOVE;
       } else if (keycodes[1] == key->keycode) {
         if( c & PlaybackSource::C_CAN_PAUSE )
-          player.pause ();
+          (dynamic_cast<Gtk::ToggleButton*>(player.m_ref_xml->get_widget("controls-pause")))->set_active(!(dynamic_cast<Gtk::ToggleButton*>(player.m_ref_xml->get_widget("controls-pause")))->get_active());
+          //player.pause ();
         return GDK_FILTER_REMOVE;
       } else if (keycodes[2] == key->keycode) {
         if( c & PlaybackSource::C_CAN_GO_PREV )
-          player.prev ();
+          (dynamic_cast<Gtk::Button*>(player.m_ref_xml->get_widget("controls-previous")))->clicked();
+          //player.prev ();
         return GDK_FILTER_REMOVE;
       } else if (keycodes[3] == key->keycode) {
         if( c & PlaybackSource::C_CAN_GO_NEXT )
-          player.next ();
+          (dynamic_cast<Gtk::Button*>(player.m_ref_xml->get_widget("controls-next")))->clicked();
+          //player.next ();
         return GDK_FILTER_REMOVE;
       } else if (keycodes[4] == key->keycode) {
-        player.stop ();
+          (dynamic_cast<Gtk::Button*>(player.m_ref_xml->get_widget("controls-stop")))->clicked();
+          //player.stop ();
         return GDK_FILTER_REMOVE;
       } else {
         return GDK_FILTER_CONTINUE;

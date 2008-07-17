@@ -1265,6 +1265,12 @@ namespace MPX
       return (*m_video_pipe)["videosink1"];
     }
   
+    GstElement*
+    Play::tap ()
+    {
+      gst_bin_get_by_name (GST_BIN (m_bin[BIN_OUTPUT]), "tee1");
+    }
+
     VideoPipe::SignalRequestWindowId&
     Play::signal_request_window_id()
     {

@@ -231,9 +231,11 @@ namespace MPX
         signal_metadata();
 
 
+
         MPXGstMetadata const&
         get_metadata ();
                             
+
         void
         request_status (MPXPlaystatus status);
 
@@ -249,6 +251,7 @@ namespace MPX
         void
         reset ();
 
+
         bool
         has_video ();
 
@@ -261,10 +264,13 @@ namespace MPX
         GstElement*
         x_overlay ();
 
+
+        GstElement*
+        tap ();
+
       private:
 
-        Glib::Mutex           m_state_lock,
-                              m_stream_lock;
+        Glib::Mutex           m_state_lock, m_stream_lock;
 
         SignalMPXPlaystatus   signal_playstatus_;
         SignalMetadata        signal_metadata_;

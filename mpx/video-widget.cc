@@ -190,14 +190,6 @@ namespace MPX
       }
 
       GtkWidget * widget = GTK_WIDGET(gobj());
-      gdk_draw_rectangle (mWindow->gobj(), widget->style->black_gc, TRUE, 0, 0,
-        widget->allocation.width, widget->allocation.height);
-
-#if 0
-      gdk_draw_rectangle (mVideo->gobj(), widget->style->black_gc, TRUE, 0, 0,
-        widget->allocation.width, widget->allocation.height);
-#endif
-
 
       if( property_playing() == true )
       {
@@ -205,15 +197,22 @@ namespace MPX
       }
       else
       {
+        gdk_draw_rectangle (mWindow->gobj(), widget->style->black_gc, TRUE, 0, 0,
+            widget->allocation.width, widget->allocation.height);
+
+#if 0
         Cairo::RefPtr<Cairo::Context> cr = mWindow->create_cairo_context();
-        int x,y,w,h,d;
+
+        int x,y,w,h,d,x0,y0;
+
         mWindow->get_geometry(x,y,w,h,d);
-        int x0 = (w/2 - mEmblem->get_width()/2);
-        int y0 = (h/2 - mEmblem->get_height()/2);
+        x0 = (w/2 - mEmblem->get_width()/2);
+        y0 = (h/2 - mEmblem->get_height()/2);
 
         Gdk::Cairo::set_source_pixbuf( cr, mEmblem, x0, y0 );
         cr->rectangle(x0, y0, mEmblem->get_width(), mEmblem->get_height());
         cr->fill();
+#endif
       }
 
       return true;
