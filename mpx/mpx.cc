@@ -2346,12 +2346,12 @@ namespace MPX
                 if(m_Metadata.get().Image)
                 {
 			        m_InfoArea->set_cover (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
+
+                    PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+                    g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_UPDATED], 0);
+                    pyg_gil_state_release(state);
                 }
-                else
-                    g_message("%s: Still no image after GST metadata", G_STRFUNC);
             }
-            else
-                g_message("%s: Has already image", G_STRFUNC);
 			return;
 	
 		  case FIELD_TITLE:
@@ -2496,8 +2496,6 @@ namespace MPX
 
         bool previous_metadata_image = m_Metadata && m_Metadata.get().Image;
 
-        g_message("%s: Previous metadata has image: %d", G_STRFUNC, int(previous_metadata_image));
-
         m_Metadata = metadata;
 
         if( !previous_metadata_image && !m_Metadata.get().Image && m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
@@ -2506,7 +2504,6 @@ namespace MPX
                 get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()),
                 m_Metadata.get().Image
             );
-            g_message("%s: Cover acquired", G_STRFUNC);
         }
 
         if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
@@ -2515,10 +2512,6 @@ namespace MPX
         }
 
         reparse_metadata ();
-
-        PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
-        pyg_gil_state_release(state);
 	}
 
 	void
@@ -2637,6 +2630,10 @@ namespace MPX
 	  source->send_metadata ();
 
       m_Sidebar->setActiveId(source_id);
+
+      PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+      g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
+      pyg_gil_state_release(state);
 	}
 
 	void

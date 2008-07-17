@@ -25,14 +25,14 @@ class TrackCover(mpx.Plugin):
     def activate(self):
 
         self.player.add_info_widget(self.image, "Album Cover")
-        self.player_new_track_handler_id = self.player.gobj().connect("new-track", self.new_track)
+        self.player_metadata_updated_handler_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
         self.player_playstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
 
         return True
 
     def deactivate(self):
         self.player.remove_info_widget(self.tagview.get_widget())
-        self.player.gobj().disconnect(self.player_new_track_handler_id)
+        self.player.gobj().disconnect(self.player_metadata_updated_handler_id)
         self.player.gobj().disconnect(self.player_playstatus_changed_handler_id)
 
     def pstate_changed(self, blah, state):
@@ -40,7 +40,7 @@ class TrackCover(mpx.Plugin):
         if state == mpx.PlayStatus.STOPPED:
             self.image.clear()
 
-    def new_track(self, blah):
+    def metadata_updated(self, blah):
 
         self.image.clear()
 
@@ -48,4 +48,4 @@ class TrackCover(mpx.Plugin):
             m = self.player.get_metadata()
             self.image.set_from_pixbuf(m.get_image())
         except:
-            pass
+            print "Error in TrackCover::metadata_updated"

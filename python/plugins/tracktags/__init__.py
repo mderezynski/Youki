@@ -89,14 +89,14 @@ class TrackTags(mpx.Plugin):
         self.tagview = mpx.TagView()
         self.player.add_info_widget(self.tagview.get_widget(), "Last.fm Tags")
         self.player_tagview_tag_handler_id = self.tagview.get_widget().connect("tag-clicked", self.tag_clicked)
-        self.player_new_track_handler_id = self.player.gobj().connect("new-track", self.new_track)
+        self.player_metadata_updated_handler_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
         self.player_playtstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
 
         return True
 
     def deactivate(self):
         self.player.remove_info_widget(self.tagview.get_widget())
-        self.player.gobj().disconnect(self.player_new_track_handler_id)
+        self.player.gobj().disconnect(self.player_metadata_updated_handler_id)
         self.player.gobj().disconnect(self.player_playtstatus_changed_handler_id)
         self.tagview.get_widget().disconnect(self.player_tagview_tag_handler_id)
 
@@ -113,7 +113,7 @@ class TrackTags(mpx.Plugin):
         if state == mpx.PlayStatus.STOPPED:
             self.tagview.clear()
 
-    def new_track(self, blah):
+    def metadata_updated(self, blah):
 
         self.tagview.clear()
         self.tagview.display(False)
