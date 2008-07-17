@@ -565,6 +565,8 @@ namespace MPX
             m_decay_conn.disconnect();
             m_cover_anim_conn_fade.disconnect ();
             m_cover_anim_conn_slide.disconnect ();
+
+            queue_draw ();
           }
 
           void
@@ -576,6 +578,8 @@ namespace MPX
             {
 		        set_cover (metadata.Image->scale_simple (72, 72, Gdk::INTERP_BILINEAR));
             }
+            else
+                g_message("%s: No image", G_STRFUNC);
 
             TextSet set;
 		    parse_metadata( metadata, set ); 
@@ -2343,7 +2347,11 @@ namespace MPX
                 {
 			        m_InfoArea->set_cover (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
                 }
+                else
+                    g_message("%s: Still no image after GST metadata", G_STRFUNC);
             }
+            else
+                g_message("%s: Has already image", G_STRFUNC);
 			return;
 	
 		  case FIELD_TITLE:
@@ -2486,7 +2494,9 @@ namespace MPX
         m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( true );
         //FIXME: This implies we get metadata only once during one track, but there is just no such design guarantee
 
-        bool previous_metadata_image = m_Metadata.get().Image;
+        bool previous_metadata_image = m_Metadata && m_Metadata.get().Image;
+
+        g_message("%s: Previous metadata has image: %d", G_STRFUNC, int(previous_metadata_image));
 
         m_Metadata = metadata;
 
@@ -2496,6 +2506,7 @@ namespace MPX
                 get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()),
                 m_Metadata.get().Image
             );
+            g_message("%s: Cover acquired", G_STRFUNC);
         }
 
         if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
@@ -2504,6 +2515,10 @@ namespace MPX
         }
 
         reparse_metadata ();
+
+        PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
+        pyg_gil_state_release(state);
 	}
 
 	void
@@ -2570,8 +2585,8 @@ namespace MPX
     m_VideoWidget->property_playing() = false;
     m_VideoWidget->queue_draw();
 
-    m_InfoArea->reset();
     m_Metadata.reset();	
+    m_InfoArea->reset();
 
     m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
 
@@ -2622,10 +2637,6 @@ namespace MPX
 	  source->send_metadata ();
 
       m_Sidebar->setActiveId(source_id);
-
-      PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-      g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
-      pyg_gil_state_release(state);
 	}
 
 	void
