@@ -317,14 +317,13 @@ gossip_cell_renderer_expander_render (GtkCellRenderer      *cell,
 	GtkExpanderStyle                expander_style;
 	gint                            x_offset, y_offset;
 
+	expander = (GossipCellRendererExpander*) cell;
 	priv = GET_PRIV (expander);
 
     if(!priv->render)
     {
         return;
     }
-
-	expander = (GossipCellRendererExpander*) cell;
 
 	if (priv->animation_node) {
 		GtkTreePath *path;
