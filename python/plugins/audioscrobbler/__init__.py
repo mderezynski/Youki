@@ -775,7 +775,7 @@ class MPXAudioScrobbler(mpx.Plugin):
 
     def pstate_changed(self, blah, state):
 
-        if state == mpx.PlayStatus.STOPPED:
+        if self.player.get_status() == mpx.PlayStatus.STOPPED:
             self.post.flushcache ()
         
     def track_played(self, blah):
@@ -823,7 +823,8 @@ class MPXAudioScrobbler(mpx.Plugin):
                 print "Posting track with MBID: " + p_mbid + " at date " + str(p_date)
             else:
                 print "Posting track with artist, title: " + p_artist + ", " + p_title 
-
+    
+            self.player.info_set("Submitting to AudioScrobbler")
             self.post.posttrack(str(p_artist),
                                 str(p_title),
                                 str(p_len),
@@ -831,6 +832,7 @@ class MPXAudioScrobbler(mpx.Plugin):
                                 str(p_tracknumber),
                                 str(p_album),
                                 str(p_mbid))
+            self.player.info_clear()
 
     def now_playing(self, blah):
 
@@ -866,6 +868,7 @@ class MPXAudioScrobbler(mpx.Plugin):
 
         print "Posting now-playing with MBID: " + p_mbid + " at date " + str(time.time())
 
+        self.player.info_set("Sending Now-Playing to AudioScrobbler")
         self.post.flushcache ()
         self.post.nowplaying(str(p_artist),
                              str(p_title),
@@ -873,3 +876,4 @@ class MPXAudioScrobbler(mpx.Plugin):
                              str(p_tracknumber),
                              str(p_album),
                              str(p_mbid))
+        self.player.info_clear()

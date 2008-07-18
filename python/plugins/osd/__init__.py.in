@@ -185,7 +185,7 @@ class MPXOSD(mpx.Plugin):
     def activate(self):
 
         self.player_new_track_handler_id = self.player.gobj().connect("new-track", self.new_track)
-        self.player_status_change_handler_id = self.player.gobj().connect("play-status-changed", self.pstatus_changed)
+        self.player_status_change_handler_id = self.player.gobj().connect("play-status-changed", self.status_changed)
 
         status = self.player.get_status()
 
@@ -211,9 +211,9 @@ class MPXOSD(mpx.Plugin):
         self.timeout_id = None
         return False
 
-    def pstatus_changed(self, playergobj, status): 
+    def status_changed(self, playergobj, status): 
 
-        if status == mpx.PlayStatus.STOPPED:
+        if self.player.get_status() == mpx.PlayStatus.STOPPED:
 
             self.osd.clear()
             self.osd.hide()

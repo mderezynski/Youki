@@ -699,6 +699,10 @@ BOOST_PYTHON_MODULE(mpx)
         .def("get_play",            &mpxpy::player_get_play,
                                     return_internal_reference<>())
 
+        .def("info_set",            &MPX::Player::info_set)
+
+        .def("info_clear",          &MPX::Player::info_clear)
+
 		.def("play",                &MPX::Player::play)
 		.def("pause",               &MPX::Player::pause)
 		.def("prev",                &MPX::Player::prev)

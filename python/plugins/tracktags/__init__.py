@@ -90,7 +90,7 @@ class TrackTags(mpx.Plugin):
         self.player.add_info_widget(self.tagview.get_widget(), "Last.fm Tags")
         self.player_tagview_tag_handler_id = self.tagview.get_widget().connect("tag-clicked", self.tag_clicked)
         self.player_metadata_updated_handler_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
-        self.player_playtstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
+        self.player_playtstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.status_changed)
 
         return True
 
@@ -108,9 +108,10 @@ class TrackTags(mpx.Plugin):
         else:
                 print "No player obj or tag length is 0"
 
-    def pstate_changed(self, blah, state):
-
-        if state == mpx.PlayStatus.STOPPED:
+    def status_changed(self, blah, state):
+    
+        # Workaround for asynchronicity between signal emission and new-track
+        if self.player.get_status() == mpx.PlayStatus.STOPPED:
             self.tagview.clear()
 
     def metadata_updated(self, blah):

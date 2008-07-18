@@ -953,7 +953,7 @@ namespace MPX
 
                     Util::cairo_rounded_rect(cr, x, y, Logical.get_width() + 24, Logical.get_height()+12, 6.);
                     cr->set_operator(Cairo::OPERATOR_ATOP);
-                    cr->set_source_rgba(0.65, 0.65, 0.65, 0.7);
+                    cr->set_source_rgba(0.65, 0.65, 0.65, 0.55);
                     cr->fill();
 
                     cr->move_to(x + 12, y + 6);
@@ -3738,5 +3738,17 @@ namespace MPX
         pyg_gil_state_release(state);
 
         return false;
+    }
+
+    void
+    Player::info_set (const std::string& info)
+    {
+        m_InfoArea->set_info(info);
+    }
+
+    void
+    Player::info_clear ()
+    {
+        m_InfoArea->clear_info();
     }
 }

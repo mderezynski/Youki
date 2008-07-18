@@ -160,6 +160,12 @@ namespace MPX
 		void
 		init_dbus ();
 
+        void
+        info_set (const std::string&);
+
+        void
+        info_clear ();
+
       private:
 
 		enum PlayerCSignals

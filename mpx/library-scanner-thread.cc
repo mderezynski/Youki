@@ -273,54 +273,118 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
             Track track;
             std::string type;
 
-            try{ 
-                if (!Audio::typefind(*i, type))  
-                {
-                  ++(erroneous) ;
-                  continue;
-                }
-              }  
-            catch (Glib::ConvertError & cxe)
-              {
-                  ++(erroneous) ;
-                  continue;
-              }   
-
-            track[ATTRIBUTE_TYPE] = type ;
             track[ATTRIBUTE_LOCATION] = *i ;
 
-            if( !m_MetadataReaderTagLib.get( *i, track ) )
-            {
-               ++(erroneous) ;
-               continue;
-            }
-
             try{
-                ScanResult status = insert( track, *i, insert_path_sql );
 
-                switch(status)
+                URI u (*i);
+
+                if(u.get_protocol() == URI::PROTOCOL_FILE)
                 {
-                    case SCAN_RESULT_UPTODATE:
-                        ++(uptodate) ;
-                        break;
 
-                    case SCAN_RESULT_OK:
-                        ++(added) ;
-                        break;
+                    bool err_occured = false;
 
-                    case SCAN_RESULT_ERROR:
-                        ++(erroneous) ;
-                        break;
+#ifdef HAVE_HAL
+                    try{
 
-                    case SCAN_RESULT_UPDATE:
-                        ++(updated) ;
-                        break;
+                        if (m_Flags & Library::F_USING_HAL)
+                        {
+                          HAL::Volume const& volume (m_HAL.get_volume_for_uri (*i));
+
+                          track[ATTRIBUTE_HAL_VOLUME_UDI] =
+                                        volume.volume_udi ;
+
+                          track[ATTRIBUTE_HAL_DEVICE_UDI] =
+                                        volume.device_udi ;
+
+                          track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
+                                        filename_from_uri (*i).substr (volume.mount_point.length()) ;
+                        }
+
+                    }
+                  catch (HAL::Exception & cxe)
+                    {
+                      g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+                      ++(erroneous);
+                      err_occured  = true;
+                    }
+                  catch (Glib::ConvertError & cxe)
+                    {
+                      g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+                      ++(erroneous);
+                      err_occured  = true;
+                    }
+#endif
+
+                    if( !err_occured )
+                    {
+                            try{ 
+                                if (!Audio::typefind(*i, type))  
+                                {
+                                  ++(erroneous) ;
+                                  continue;
+                                }
+                              }  
+                            catch (Glib::ConvertError & cxe)
+                              {
+                                  ++(erroneous) ;
+                                  continue;
+                              }   
+
+                            track[ATTRIBUTE_TYPE] = type ;
+
+                            GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), (*i).c_str()); 
+                            GFileInfo * info = g_file_query_info(file,
+                                                              G_FILE_ATTRIBUTE_TIME_MODIFIED,
+                                                              GFileQueryInfoFlags(0),
+                                                              NULL,
+                                                              NULL);
+
+                            track[ATTRIBUTE_MTIME] = gint64 (g_file_info_get_attribute_uint64(info,G_FILE_ATTRIBUTE_TIME_MODIFIED));
+
+                            g_object_unref(file);
+                            g_object_unref(info);
+
+                            time_t mtime = get_track_mtime (track);
+                            if (mtime != 0 && mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()))
+                            {
+                                ++(uptodate);
+                            }
+                            else
+                            {
+                                if( !m_MetadataReaderTagLib.get( *i, track ) )
+                                {
+                                   ++(erroneous) ;
+                                }
+                                else try{
+                                    ScanResult status = insert( track, *i, insert_path_sql );
+
+                                    switch(status)
+                                    {
+                                        case SCAN_RESULT_OK:
+                                            ++(added) ;
+                                            break;
+
+                                        case SCAN_RESULT_ERROR:
+                                            ++(erroneous) ;
+                                            break;
+
+                                        case SCAN_RESULT_UPDATE:
+                                            ++(updated) ;
+                                            break;
+                                    }
+                                }
+                                catch( Glib::ConvertError & cxe )
+                                {
+                                    g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+                                }
+                            }
+                    }
                 }
-            }
-            catch( Glib::ConvertError & cxe )
+            } catch(URI::ParseError)
             {
-                g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
             }
+
 
             pthreaddata->ScanRun.emit(std::distance(collection.begin(), i), collection.size());
         }
@@ -722,60 +786,6 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
     {
         track[ATTRIBUTE_DATE] = gint64(mb_date_int);
     }
-  }
-
-  try{
-      URI u (uri);
-      if(u.get_protocol() == URI::PROTOCOL_FILE)
-      {
-#ifdef HAVE_HAL
-          try{
-              if (m_Flags & Library::F_USING_HAL)
-              {
-                HAL::Volume const& volume (m_HAL.get_volume_for_uri (uri));
-
-                track[ATTRIBUTE_HAL_VOLUME_UDI] =
-                              volume.volume_udi ;
-
-                track[ATTRIBUTE_HAL_DEVICE_UDI] =
-                              volume.device_udi ;
-
-                track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
-                              filename_from_uri (uri).substr (volume.mount_point.length()) ;
-              }
-          }
-        catch (HAL::Exception & cxe)
-          {
-            g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
-            return SCAN_RESULT_ERROR ;
-          }
-        catch (Glib::ConvertError & cxe)
-          {
-            g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-            return SCAN_RESULT_ERROR ;
-          }
-#endif
-
-          GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str()); 
-          GFileInfo * info = g_file_query_info(file,
-                                            G_FILE_ATTRIBUTE_TIME_MODIFIED,
-                                            GFileQueryInfoFlags(0),
-                                            NULL,
-                                            NULL);
-
-          track[ATTRIBUTE_MTIME] = gint64 (g_file_info_get_attribute_uint64(info,G_FILE_ATTRIBUTE_TIME_MODIFIED));
-
-          g_object_unref(file);
-          g_object_unref(info);
-
-          time_t mtime = get_track_mtime (track);
-          if (mtime != 0 && mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()))
-          {
-            return SCAN_RESULT_UPTODATE ;
-          }
-      }
-  } catch(URI::ParseError)
-  {
   }
 
   track[ATTRIBUTE_INSERT_PATH] = insert_path;

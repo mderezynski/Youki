@@ -618,7 +618,7 @@ class TrackInfoDispatcher(mpx.Plugin):
 
     def pstate_changed(self, blah, state):
 
-        if state == mpx.PlayStatus.STOPPED:
+        if self.player.get_status() == mpx.PlayStatus.STOPPED:
             self.info.clear()
 
     def new_track(self, blah):
