@@ -718,8 +718,6 @@ AC_OUTPUT([
 
     python/Makefile
 	python/plugins/Makefile
-	python/plugins/trackinfo/Makefile
-	python/plugins/trackinfo/__init__.py
 	python/plugins/trackinfo-webkit/Makefile
 	python/plugins/trackinfo-webkit/__init__.py
 	python/plugins/tracktags/Makefile
