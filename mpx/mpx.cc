@@ -2661,22 +2661,6 @@ namespace MPX
     void
     Player::switch_stream(std::string const& uri, std::string const& type)
     {
-        g_atomic_int_set(&m_Seeking, 0);
-
-        m_TimeLabel->set_text("      …      ");
-
-        m_Seek->set_range(0., 1.);
-        m_Seek->set_value(0.);
-        m_Seek->set_sensitive(false);
-
-        m_VideoWidget->property_playing() = false;
-        m_VideoWidget->queue_draw();
-
-        m_Metadata.reset();	
-        m_InfoArea->reset();
-
-        m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
-
         m_Play->switch_stream( uri, type );
     }
 
@@ -2923,15 +2907,15 @@ namespace MPX
 
             if( source_id == m_ActiveSource ) 
             {
-              PlaybackSource::Caps caps = m_source_c[source_id];
-              m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
-              m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
-              m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
+                PlaybackSource::Caps caps = m_source_c[source_id];
+                m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
+                m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
+                m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
 
-              if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
-                m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
-              else
-                m_actions->get_action (ACTION_PAUSE)->set_sensitive (false);
+                if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
+                {
+                    m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
+                }
             }
         }
 	}
@@ -2953,63 +2937,79 @@ namespace MPX
 
 		  case PLAYSTATUS_STOPPED:
 		  {
-            Glib::Mutex::Lock L (m_MetadataLock);
+                Glib::Mutex::Lock L (m_MetadataLock);
 
-	        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
+                RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
-            if( m_ActiveSource ) 
-            {
-                m_Sources[m_ActiveSource.get()]->stop ();
-                m_Sources[m_ActiveSource.get()]->send_caps ();
-            }
+                if( m_ActiveSource ) 
+                {
+                    m_Sources[m_ActiveSource.get()]->stop ();
+                    m_Sources[m_ActiveSource.get()]->send_caps ();
+                }
 
-            m_TimeLabel->set_text("      …      ");
+                m_TimeLabel->set_text("      …      ");
 
-            g_atomic_int_set(&m_Seeking, 0);
+                g_atomic_int_set(&m_Seeking, 0);
 
-            m_Seek->set_range(0., 1.);
-            m_Seek->set_value(0.);
-            m_Seek->set_sensitive(false);
+                m_Seek->set_range(0., 1.);
+                m_Seek->set_value(0.);
+                m_Seek->set_sensitive(false);
 
-            m_actions->get_action (ACTION_STOP)->set_sensitive( false );
-            m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
-            m_actions->get_action (ACTION_PREV)->set_sensitive( false );
-            m_actions->get_action (ACTION_PAUSE)->set_sensitive( false );
+                m_actions->get_action (ACTION_STOP)->set_sensitive( false );
+                m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
+                m_actions->get_action (ACTION_PREV)->set_sensitive( false );
+                m_actions->get_action (ACTION_PAUSE)->set_sensitive( false );
 
-            m_VideoWidget->property_playing() = false; 
-            m_VideoWidget->queue_draw();
+                m_VideoWidget->property_playing() = false; 
+                m_VideoWidget->queue_draw();
 
-            set_title (_("(Not Playing) - MPX"));
+                set_title (_("(Not Playing) - MPX"));
 
-            m_InfoArea->reset();
-            m_Metadata.reset();	
+                m_InfoArea->reset();
+                m_Metadata.reset();	
 
-            m_Sidebar->clearActiveId();
+                m_Sidebar->clearActiveId();
 
-            m_ActiveSource.reset();
+                m_ActiveSource.reset();
 
-            m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
+                m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
 
-			break;
+                break;
 		  }
 
 		  case PLAYSTATUS_WAITING:
 		  {
-			break;
+                g_atomic_int_set(&m_Seeking, 0);
+
+                m_TimeLabel->set_text("      …      ");
+
+                m_Seek->set_range(0., 1.);
+                m_Seek->set_value(0.);
+                m_Seek->set_sensitive(false);
+
+                m_VideoWidget->property_playing() = false;
+                m_VideoWidget->queue_draw();
+
+                m_Metadata.reset();	
+                m_InfoArea->reset();
+
+                m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
+
+			    break;
 		  }
 
 		  case PLAYSTATUS_PLAYING:
 		  {
-            g_atomic_int_set(&m_Seeking,0);
-            m_Seek->set_sensitive(m_source_c[m_ActiveSource.get()] & PlaybackSource::C_CAN_SEEK);
-            m_actions->get_action( ACTION_STOP )->set_sensitive (true);
+                g_atomic_int_set(&m_Seeking,0);
+                m_Seek->set_sensitive(m_source_c[m_ActiveSource.get()] & PlaybackSource::C_CAN_SEEK);
+                m_actions->get_action( ACTION_STOP )->set_sensitive (true);
 
-			break;
+                break;
 		  }
 
 		  case PLAYSTATUS_PAUSED:
 		  {
-			break;
+                break;
 		  }
 	  }
 
