@@ -2191,11 +2191,14 @@ namespace MPX
         {
             m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
 
+            info_set(_("Sending 'Love Track' to Last.fm"));
+
             XSPF::Item item;
             item.creator = get<std::string>(m_Metadata.get()[ATTRIBUTE_ARTIST].get());
             item.title = get<std::string>(m_Metadata.get()[ATTRIBUTE_TITLE].get());
-
             LastFM::TrackAction ("loveTrack", item, username, password).run();
+
+            info_clear();
         }
     }
 

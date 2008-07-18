@@ -49,30 +49,25 @@ class TrackTagsDataAcquire(threading.Thread):
 
         self.tags = []
 
-        try:
-                uri     = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(self.artist), urllib.quote(self.title))
-                lfmxml  = NonvalidatingReader.parseUri(uri)
-                ctx     = Context(lfmxml)
+        uri         = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(self.artist), urllib.quote(self.title))
+        lfmxml      = NonvalidatingReader.parseUri(uri)
+        ctx         = Context(lfmxml)
+        xml_names   = Evaluate("//name", context=ctx)
+        xml_count   = Evaluate("//count", context=ctx)
+        uniq        = {}
 
-                xml_names   = Evaluate("//name", context=ctx)
-                xml_count   = Evaluate("//count", context=ctx)
-                counts      = []
+        for i in range(0,len(xml_names)-1):
 
-                for count in xml_count:
-                    try:
-                        if count.firstChild:
-                            counts.append(float(math.log10((float(count.firstChild.data) * 5)+1)))
-                    except:
-                        pass
+            if xml_names[i].firstChild.data not in uniq:
 
-                for name in xml_names:
-                    if name.firstChild:
-                            self.tags.append([str(name.firstChild.data), counts[xml_names.index(name)]])
+                    if xml_count[i].firstChild:
+                        self.tags.append([str(xml_names[i].firstChild.data), float(math.log10((float(xml_count[i].firstChild.data) * 5)+1))])
+                    else:
+                        self.tags.append([str(xml_names[i].firstChild.data), float(1.- (float(i)/float(len(xml_names)-1)))*2.5 ])
 
-                random.shuffle(self.tags)
-        except:
-                pass
+                    uniq[xml_names[i].firstChild.data] = 1
 
+        random.shuffle(self.tags)
         self.finished.set()
 
 class TrackTags(mpx.Plugin):
@@ -111,9 +106,9 @@ class TrackTags(mpx.Plugin):
     def status_changed(self, blah, state):
     
         # Workaround for asynchronicity between signal emission and new-track
-        #if self.player.get_status() == mpx.PlayStatus.STOPPED:
-        #    self.tagview.clear()
-        pass
+        if self.player.get_status() == mpx.PlayStatus.STOPPED:
+            print "Clearing"
+            self.tagview.clear()
 
     def metadata_updated(self, blah):
 
@@ -131,6 +126,7 @@ class TrackTags(mpx.Plugin):
                 while gtk.events_pending():
                     gtk.main_iteration()
 
+            print "Adding tags"
             tags = instance.get_tags()
 
             for t in tags:
