@@ -743,6 +743,7 @@ AC_OUTPUT([
 	remote/Makefile
     scripts/Makefile
     widgets/Makefile
+    api/Makefile
 
     include/Makefile
     include/mpx/Makefile

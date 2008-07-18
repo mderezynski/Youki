@@ -20,15 +20,15 @@
 #ifdef HAVE_HAL
 #include "mpx/hal.hh"
 #endif // HAVE_HAL
+#include "mpx/last-fm-xmlrpc.hh"
 #include "mpx/library.hh"
+#include "mpx/lyrics-v2.hh"
 #include "mpx/paccess.hh"
 #include "mpx/types.hh"
 #include "mpx/tagview.hh"
 #include "mpx/util-graphics.hh"
 
 #include "audio-types.hh"
-#include "lyrics-v2.hh"
-#include "last-fm-xmlrpc.hh"
 #include "play.hh"
 #include "pysigc.hh"
 

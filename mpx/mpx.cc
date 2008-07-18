@@ -71,7 +71,7 @@
 #include "sidebar.hh"
 #include "splash-screen.hh"
 
-#include "last-fm-xmlrpc.hh"
+#include "mpx/last-fm-xmlrpc.hh"
 
 #include "mlibmanager.hh"
 #include "plugin.hh"
@@ -1659,9 +1659,11 @@ namespace MPX
 	    sigc::mem_fun (*m_MLibManager, &MLibManager::present));
 #endif
 
+
 		m_actions->add (Action::create ("action-vacuum-lib",
 										_("Vacuum Library")),
 	    sigc::mem_fun (m_Library, &Library::vacuum));
+
 
 		m_actions->add (Action::create ("action-quit",
 										Gtk::Stock::QUIT,
@@ -1669,46 +1671,55 @@ namespace MPX
 										AccelKey("<ctrl>Q"),
 		sigc::ptr_fun ( &Gtk::Main::quit ));
 
+
 		m_actions->add (Action::create (ACTION_PLAY,
 										Gtk::Stock::MEDIA_PLAY,
 										_("Play")),
 		sigc::mem_fun (*this, &Player::on_controls_play ));
+
 
 		m_actions->add (ToggleAction::create (ACTION_PAUSE,
 										Gtk::Stock::MEDIA_PAUSE,
 										_("Pause")),
 		sigc::mem_fun (*this, &Player::on_controls_pause ));
 
+
 		m_actions->add (Action::create (ACTION_STOP,
 										Gtk::Stock::MEDIA_STOP,
 										_("Stop")),
         sigc::mem_fun (*this, &Player::stop ));
+
 
 		m_actions->add (Action::create (ACTION_NEXT,
 										Gtk::Stock::MEDIA_NEXT,
 										_("Next")),
 	    sigc::mem_fun (*this, &Player::on_controls_next ));
 
+
 		m_actions->add (Action::create (ACTION_PREV,
 										Gtk::Stock::MEDIA_PREVIOUS,
 										_("Prev")),
         sigc::mem_fun (*this, &Player::on_controls_prev ));
+
 
 		m_actions->add (Action::create (ACTION_PLUGINS,
 										Gtk::StockID(MPX_STOCK_PLUGIN),
 										_("Plugins...")),
 	    sigc::mem_fun (*this, &Player::on_show_plugins ));
 
+
 		m_actions->add (Action::create (ACTION_PREFERENCES,
 										Gtk::Stock::EXECUTE,
 										_("Preferences...")),
 	    sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
 
+
     	m_actions->add (Action::create (ACTION_LASTFM_LOVE,
                                         Gtk::StockID(MPX_STOCK_LASTFM),
 										_("I Love this Track!")),
                                         AccelKey("<ctrl>L"),
-										sigc::mem_fun (*this, &Player::on_lastfm_love_track ));
+        sigc::mem_fun (*this, &Player::on_lastfm_love_track ));
+
 
 		m_ui_manager->insert_action_group (m_actions);
 

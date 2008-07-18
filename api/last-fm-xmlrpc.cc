@@ -42,12 +42,12 @@
 #include <boost/algorithm/string/regex.hpp>
 
 #include "mpx/base64.h"
+#include "mpx/last-fm-xmlrpc.hh"
 #include "mpx/md5.h"
 #include "mpx/main.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-string.hh"
 #include "mpx/xspf-libxml2-sax.hh"
-#include "last-fm-xmlrpc.hh"
 
 using namespace Gtk;
 using namespace Glib;

@@ -139,7 +139,7 @@ class ArtistInfoQuery (threading.Thread):
                 self.html += displayRelations(entity.getRelations())
                 self.html += "<br/>"
         except:
-                print "No Last.fm artist info" 
+                print "TRACKINFO-WEBKIT: No Last.fm artist info" 
 
         self.finished.set()
 
@@ -180,16 +180,14 @@ class TrackInfoQuery (threading.Thread):
                 pass 
 
         try:
-                #req = mpx.LyricWiki(self.track[mpx.AttributeId.ARTIST].get(), self.track[mpx.AttributeId.TITLE].get())
-                #lyrics = req.run()
                 req  = urllib2.urlopen("http://lyricwiki.org/api.php?fmt=text&artist=%s&song=%s"
                         % (self.track[mpx.AttributeId.ARTIST].get(), self.track[mpx.AttributeId.TITLE].get()))
-                lyrics = req.readlines()
+                lyrics = req.read()
                 if lyrics != "Not found":
                     self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Lyrics</p></div>"
                     self.html += lyrics.replace("\n","<br/>")
         except:
-                print "No Lyrics, or error" 
+                print "TRACKINFO-WEBKIT: Error fetching lyrics" 
 
         if self.track[mpx.AttributeId.MB_TRACK_ID]:
 
@@ -200,7 +198,7 @@ class TrackInfoQuery (threading.Thread):
                     TrackId = self.track.get(mpx.AttributeId.MB_TRACK_ID).get()
                     MbTrack = self.query.getTrackById(TrackId, self.wsinc) 
             except:
-                    print "MusicBrainz WS error"
+                    print "TRACKINFO-WEBKIT: MusicBrainz WS error"
                     self.finished.set()
                     return;
 
@@ -218,15 +216,16 @@ class TrackInfoQuery (threading.Thread):
                         Relations[relation_type] = [Relation]
 
 
-            CallTable = {"Cover"             :   [self.write_Cover],
-                         "Instrument"        :   [self.write_Instrument],
-                         "SamplesMaterial"   :   [self.write_SamplesMaterial],
-                         "Composer"          :   [self.write_Relations, "was composed by"],
-                         "Remixer"           :   [self.write_Relations, "was remixed by"],
-                         "Lyricist"          :   [self.write_Relations, "has lyrics by"],
-                         "Producer"          :   [self.write_Relations, "was produced by"],
-                         "Performer"         :   [self.write_Relations, "was performed by"],
-                         "Vocal"             :   [self.write_Relations, "has vocals performed by"] }
+            CallTable = {"Cover"             :   [self.append_ar_coverversion],
+                         "Instrument"        :   [self.append_ar_instrument],
+                         "SamplesMaterial"   :   [self.append_ar_samplesmaterial],
+                         "Composer"          :   [self.append_ar_singleperson, "was composed by"],
+                         "Remixer"           :   [self.append_ar_singleperson, "was remixed by"],
+                         "Lyricist"          :   [self.append_ar_singleperson, "has lyrics by"],
+                         "Producer"          :   [self.append_ar_singleperson, "was produced by"],
+                         "Performer"         :   [self.append_ar_singleperson, "was performed by"],
+                         "Vocal"             :   [self.append_ar_singleperson, "has vocals performed by"],
+                         "Engineer"          :   [self.append_ar_singleperson, "was engineered by"] }
 
             if self.track[mpx.AttributeId.MB_ARTIST_ID]:
                 self.Entities.append(self.track[mpx.AttributeId.MB_ARTIST_ID].get())
@@ -242,7 +241,7 @@ class TrackInfoQuery (threading.Thread):
                     self.html += "<br/>"
 
                 else:
-                    print "Unhandled AR of type: " + rel
+                    print "TRACKINFO-WEBKIT: Unhandled AR of type: " + rel
 
             self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Album Links</p></div>"
 
@@ -257,7 +256,7 @@ class TrackInfoQuery (threading.Thread):
                         if len(rels) > 0:
                             self.html += displayRelations(rels)
                 except:
-                        print "MusicBrainz WS error #2" 
+                        print "TRACKINFO-WEBKIT: MusicBrainz WS error #2" 
 
             self.Entities = dict(zip(self.Entities,self.Entities)).keys() 
 
@@ -272,7 +271,7 @@ class TrackInfoQuery (threading.Thread):
                             self.html += "</td></tr>"
                         self.html += "</table>"
             except:
-                    print "MusicBrainz WS error #3" 
+                    print "TRACKINFO-WEBKIT: MusicBrainz WS error #3" 
 
         self.finished.set()
 
@@ -281,7 +280,7 @@ class TrackInfoQuery (threading.Thread):
         tuple = [("id", entityId), ("name", entityName.replace("+", " ")), ("type", entityType)]
         return "<a href=\"mpx:///?%s\">%s</a>" % (urllib.urlencode(tuple), entityName)
 
-    def write_Cover(self, Relations):
+    def append_ar_coverversion(self, Relations):
 
         Covers = []
         Output = []
@@ -300,7 +299,7 @@ class TrackInfoQuery (threading.Thread):
         self.html += "...is a cover of %s<br/>" % (", ".join(Output))
         return True
 
-    def write_Instrument(self, Relations):
+    def append_ar_instrument(self, Relations):
 
         for Rel in Relations:
 
@@ -311,7 +310,7 @@ class TrackInfoQuery (threading.Thread):
 
         return True
 
-    def write_SamplesMaterial(self, Relations):
+    def append_ar_samplesmaterial(self, Relations):
 
         Sampled = []
         Output = []
@@ -331,7 +330,7 @@ class TrackInfoQuery (threading.Thread):
         self.html += "...contains samples from %s<br/>" % (", ".join(Output))
         return True
 
-    def write_Relations(self, Relations, text):
+    def append_ar_singleperson(self, Relations, text):
 
         Entities = []
         Output = []
@@ -537,7 +536,7 @@ class TrackInfo:
 
     def openUri(self, uri):
 
-        print "OPENING: " + uri
+        print "TRACKINFO-WEBKIT: OPENING: " + uri
     
         if uri == "about:blank":
 
@@ -557,7 +556,7 @@ class TrackInfo:
                         self.display_track( self.track ) 
                         return
         except:
-                print "openUri exception" 
+                print "TRACKINFO-WEBKIT: openUri exception" 
 
     def on_webkit_navigation_requested(self, webview, webframe, request):
     
@@ -631,5 +630,5 @@ class TrackInfoDispatcher(mpx.Plugin):
             m = self.player.get_metadata()
             self.info.run(m)
         except:
-            print "Error runing TrackInfo" 
+            print "TRACKINFO-WEBKIT: Error runing TrackInfo" 
 

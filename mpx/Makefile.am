@@ -79,7 +79,8 @@ mpx_bin_LDADD =										\
 		$(top_builddir)/widgets/libmpx-widgets.la	\
 		$(top_builddir)/xmlcpp/libmpx-parsers.la	\
 		$(top_builddir)/mcs/libmconfig.la			\
-		$(top_builddir)/mpx/parser/libmpxparser.la	
+		$(top_builddir)/mpx/parser/libmpxparser.la	\
+		$(top_builddir)/api/libmpx-api.la	
 
 mpx_bin_CFLAGS =				\
     $(GLIB_CFLAGS) $(GST_CFLAGS) -I$(top_srcdir)/include
@@ -143,9 +144,6 @@ mpx_bin_SOURCES =				\
 	library.cc					\
 	library-scanner-thread.hh	\
 	library-scanner-thread.cc	\
-								\
-	lyrics-v2.hh				\
-	lyrics-v2.cc				\
 								\
 	metadatareader-taglib.hh	\
 	metadatareader-taglib.cc	\

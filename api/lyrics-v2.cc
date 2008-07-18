@@ -32,6 +32,7 @@
 #include <boost/format.hpp>
 #include <glibmm.h>
 
+#include "mpx/lyrics-v2.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-string.hh"
 #include "mpx/xml.hh"
@@ -39,8 +40,6 @@
 using namespace Glib;
 using boost::format;
 using std::string;
-
-#include "lyrics-v2.hh"
 
 namespace MPX
 {

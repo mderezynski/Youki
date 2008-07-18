@@ -22,19 +22,19 @@ CLEANFILES =  $(service_DATA) \
 DISTCLEANFILES = $(CLEANFILES) intltool-extract intltool-merge intltool-update
 
 SUBDIRS =		\
+	po			\
 	glade		\
 	icons		\
 	images		\
 	include		\
-	jnetlib		\
-	mcs		\
-	po		\
-	python		\
-	widgets		\
 	remote		\
-	sources		\
+	jnetlib		\
+	mcs			\
 	taglib		\
-	xmlcpp		
+	xmlcpp		\
+	widgets		\
+	python		\
+	sources
 
 if HAVE_HAL
 SUBDIRS += libhal++

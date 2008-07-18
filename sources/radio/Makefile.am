@@ -26,7 +26,7 @@ libmpxsource_radio_la_LIBADD =   \
 		$(SEXYMM_LIBS)				\
 		$(PYTHON_LIBS)				\
 		$(PYGTK_LIBS)				\
-		$(SOUP_LIBS)				\	
+		$(SOUP_LIBS)				\
 		$(top_builddir)/widgets/libmpx-widgets.la
 
 

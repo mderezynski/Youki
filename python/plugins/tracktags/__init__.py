@@ -111,8 +111,9 @@ class TrackTags(mpx.Plugin):
     def status_changed(self, blah, state):
     
         # Workaround for asynchronicity between signal emission and new-track
-        if self.player.get_status() == mpx.PlayStatus.STOPPED:
-            self.tagview.clear()
+        #if self.player.get_status() == mpx.PlayStatus.STOPPED:
+        #    self.tagview.clear()
+        pass
 
     def metadata_updated(self, blah):
 
