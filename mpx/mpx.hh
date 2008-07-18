@@ -254,6 +254,18 @@ namespace MPX
 		boost::optional<Metadata>   m_Metadata;
         Glib::Mutex                 m_MetadataLock;
 		Glib::RefPtr<Gdk::Pixbuf>   m_DiscDefault;
+        boost::optional<ItemKey>    m_PreparingSource;
+
+        enum PlayDirection
+        {
+            PD_NONE,
+            PD_PLAY,
+            PD_NEXT,
+            PD_PREV,
+        };
+
+        PlayDirection               m_PlayDirection;
+
 
 		void
 		on_cover_clicked ();
@@ -358,14 +370,14 @@ namespace MPX
 		void
 		next_async_cb (ItemKey const&);
 
-		void
-		play_post_internal (ItemKey const&);
-
         void
         play_tracks (Util::FileList const& uris);
 
         void
         switch_stream (std::string const&, std::string const&);
+
+		void
+		on_stream_switched ();
 
 		void
 		track_played ();

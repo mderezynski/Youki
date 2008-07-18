@@ -474,6 +474,8 @@ namespace MPX
 
       property_stream_ = stream;
 	  play_stream ();
+
+      signal_stream_switched_.emit();
     }
 
     void
@@ -1165,7 +1167,7 @@ namespace MPX
       return ProxyOf<PropInt>::ReadWrite (this, "volume");
     }
 
-    /// RO Proxies
+    // RO Proxies //
 
     ProxyOf<PropInt>::ReadOnly
     Play::property_status() const
@@ -1199,7 +1201,8 @@ namespace MPX
       return ProxyOf<PropInt>::ReadOnly (this, "duration");
     }
 
-    // Signals
+    /* Signals --------------------------------------------------------------------*/
+
     Play::SignalSpectrum &
     Play::signal_spectrum ()
     {
@@ -1260,6 +1263,26 @@ namespace MPX
       return signal_video_geom_;
     }
 
+    VideoPipe::SignalRequestWindowId&
+    Play::signal_request_window_id()
+    {
+      return m_video_pipe->signal_request_window_id();
+    }
+
+    Play::SignalMetadata &
+    Play::signal_metadata ()
+    {
+      return signal_metadata_;
+    }
+
+    Play::SignalStreamSwitched &
+    Play::signal_stream_switched ()
+    {
+      return signal_stream_switched_;
+    }
+
+    /*--------------------------------------------------------*/
+
     bool
     Play::has_video ()
     {
@@ -1285,18 +1308,6 @@ namespace MPX
     Play::tap ()
     {
       gst_bin_get_by_name (GST_BIN (m_bin[BIN_OUTPUT]), "tee1");
-    }
-
-    VideoPipe::SignalRequestWindowId&
-    Play::signal_request_window_id()
-    {
-      return m_video_pipe->signal_request_window_id();
-    }
-
-    Play::SignalMetadata &
-    Play::signal_metadata ()
-    {
-      return signal_metadata_;
     }
 
     MPXGstMetadata const&

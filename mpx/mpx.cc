@@ -1499,6 +1499,9 @@ namespace MPX
             sigc::mem_fun( *this, &MPX::Player::on_play_status_changed
         ));
 
+		m_Play->signal_stream_switched().connect(
+            sigc::mem_fun( *this, &MPX::Player::on_stream_switched
+        ));
 
 
         m_VideoWidget = manage(new VideoWidget(m_Play));
@@ -2619,7 +2622,7 @@ namespace MPX
 	  RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
 	  PlaybackSource* source = m_Sources[source_id];
-      m_ActiveSource = source_id;
+      m_PreparingSource = source_id;
 
 	  if( m_source_f[source_id] & PlaybackSource::F_ASYNC)
 	  {
@@ -2630,14 +2633,12 @@ namespace MPX
 	  {
 			  if( source->play () )
 			  {
-					  switch_stream (source->get_uri(), source->get_type());
-					  source->play_post ();
-					  play_post_internal (source_id);
+                m_PlayDirection = PD_PLAY;
+			    switch_stream (source->get_uri(), source->get_type());
 			  }
 			  else
 			  {
-				source->stop ();
-				m_Play->request_status (PLAYSTATUS_STOPPED);
+                m_Play->request_status (PLAYSTATUS_STOPPED);
 			  }
 	  }
 	}
@@ -2695,21 +2696,41 @@ namespace MPX
 	{
 	  PlaybackSource* source = m_Sources[source_id];
 
-    m_ActiveSource = source_id;
 	  switch_stream(source->get_uri(), source->get_type());
-    source->play_post ();
-	  play_post_internal(source_id);
+      source->play_post ();
 	}
 
 	void
-	Player::play_post_internal (ItemKey const& source_id)
+	Player::on_stream_switched ()
 	{
-	  PlaybackSource* source = m_Sources[source_id];
+      g_return_if_fail(m_PreparingSource);
+
+      m_ActiveSource = m_PreparingSource.get();
+
+	  PlaybackSource* source = m_Sources[m_PreparingSource.get()];
+
+      switch( m_PlayDirection )
+      {
+        case PD_NONE:
+            g_return_if_fail(0);
+            break;
+
+        case PD_PREV:
+            source->prev_post();
+            break;
+       
+        case PD_NEXT: 
+            source->next_post();
+
+        case PD_PLAY:
+            source->play_post();
+            break;
+      };
 
 	  source->send_caps ();
 	  source->send_metadata ();
 
-      m_Sidebar->setActiveId(source_id);
+      m_Sidebar->setActiveId(m_PreparingSource.get());
 
       PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
       g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
@@ -2740,7 +2761,7 @@ namespace MPX
 	        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
             PlaybackSource* source = m_Sources[source_id];
-            m_ActiveSource = source_id;
+            m_PreparingSource = source_id;
             
             if( m_source_f[source_id] & PlaybackSource::F_ASYNC)
             {
@@ -2752,9 +2773,8 @@ namespace MPX
             {
                     if( source->play() )
                     {
+                          m_PlayDirection = PD_PLAY;
                           switch_stream (source->get_uri(), source->get_type());
-                          source->play_post ();
-                          play_post_internal (source_id);
                           return;
                     }
             }
@@ -2773,10 +2793,14 @@ namespace MPX
 
         if(c & PlaybackSource::C_CAN_PAUSE )
         {
-          if( m_Play->property_status() == PLAYSTATUS_PAUSED)
-              m_Play->request_status (PLAYSTATUS_PLAYING);
-          else
+            if( m_Play->property_status() == PLAYSTATUS_PAUSED)
+            {
+                m_Play->request_status (PLAYSTATUS_PLAYING);
+            }
+            else
+            {
               m_Play->request_status (PLAYSTATUS_PAUSED);
+            }
         }
 	}
 
@@ -2788,10 +2812,8 @@ namespace MPX
 
 	  if( (f & PlaybackSource::F_PHONY_PREV) == 0 )
 	  {
-	        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
+            m_PlayDirection = PD_PREV;
 			switch_stream (source->get_uri(), source->get_type());
-			source->prev_post ();
-			play_post_internal (source_id);
 	  }
 	}
 
@@ -2819,7 +2841,6 @@ namespace MPX
 			else
 			if( source->go_prev () )
 			{
-					switch_stream (source->get_uri(), source->get_type());
 					prev_async_cb (source_id);
 					return;
 			}
@@ -2836,13 +2857,8 @@ namespace MPX
 
 	  if( (f & PlaybackSource::F_PHONY_NEXT) == 0 )
 	  {
-	        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
-
+            m_PlayDirection = PD_NEXT;
 			switch_stream (source->get_uri(), source->get_type());
-
-		    source->next_post ();
-
-		    play_post_internal (source_id);
 	  }
 	}
 
@@ -2971,6 +2987,7 @@ namespace MPX
                 m_Sidebar->clearActiveId();
 
                 m_ActiveSource.reset();
+                m_PreparingSource.reset();
 
                 m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
 

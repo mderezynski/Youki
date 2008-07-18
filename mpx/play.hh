@@ -157,6 +157,7 @@ namespace MPX
                                  , GstElement const*      /* error source */> SignalError;
                                                   
         typedef sigc::signal<void, MPXGstMetadataField> SignalMetadata;
+        typedef sigc::signal<void>                      SignalStreamSwitched;
 
         /** Signal emitted when video output requests a window ID
           *
@@ -230,6 +231,12 @@ namespace MPX
         SignalMetadata &
         signal_metadata();
 
+        /** Signal sent after stream switch is complete 
+         *
+         */
+        SignalStreamSwitched &
+        signal_stream_switched();
+
 
 
         MPXGstMetadata const&
@@ -270,19 +277,20 @@ namespace MPX
 
       private:
 
-        Glib::Mutex           m_state_lock, m_stream_lock;
+        Glib::Mutex             m_state_lock, m_stream_lock;
 
-        SignalMPXPlaystatus   signal_playstatus_;
-        SignalMetadata        signal_metadata_;
-        SignalSeek            signal_seek_;
-        SignalBuffering       signal_buffering_;
-        SignalSpectrum        signal_spectrum_;
-        SignalPosition        signal_position_;
-        SignalHttpStatus      signal_http_status_;
-        SignalPipelineState   signal_pipeline_state_;
-        SignalEos             signal_eos_;
-        SignalError           signal_error_;
-        SignalVideoGeom       signal_video_geom_;
+        SignalMPXPlaystatus     signal_playstatus_;
+        SignalMetadata          signal_metadata_;
+        SignalSeek              signal_seek_;
+        SignalBuffering         signal_buffering_;
+        SignalSpectrum          signal_spectrum_;
+        SignalPosition          signal_position_;
+        SignalHttpStatus        signal_http_status_;
+        SignalPipelineState     signal_pipeline_state_;
+        SignalEos               signal_eos_;
+        SignalError             signal_error_;
+        SignalVideoGeom         signal_video_geom_;
+        SignalStreamSwitched    signal_stream_switched_;
 
         MPXGstMetadata        m_metadata;
         Spectrum              m_spectrum, m_zero_spectrum;
