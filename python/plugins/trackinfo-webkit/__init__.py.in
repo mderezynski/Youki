@@ -181,7 +181,7 @@ class TrackInfoQuery (threading.Thread):
 
         try:
                 req  = urllib2.urlopen("http://lyricwiki.org/api.php?fmt=text&artist=%s&song=%s"
-                        % (self.track[mpx.AttributeId.ARTIST].get(), self.track[mpx.AttributeId.TITLE].get()))
+                        % (urllib.quote(self.track[mpx.AttributeId.ARTIST].get()), urllib.quote(self.track[mpx.AttributeId.TITLE].get())))
                 lyrics = req.read()
                 if lyrics != "Not found":
                     self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Lyrics</p></div>"

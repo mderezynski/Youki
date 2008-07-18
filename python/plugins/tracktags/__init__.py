@@ -119,6 +119,8 @@ class TrackTags(mpx.Plugin):
 
         if m[mpx.AttributeId.ARTIST] and m[mpx.AttributeId.TITLE]:
 
+            self.player.info_set("Fetching Last.fm track tags")
+
             instance = TrackTagsDataAcquire(m[mpx.AttributeId.ARTIST].get(), m[mpx.AttributeId.TITLE].get())
             instance.start()
 
@@ -126,10 +128,11 @@ class TrackTags(mpx.Plugin):
                 while gtk.events_pending():
                     gtk.main_iteration()
 
-            print "Adding tags"
             tags = instance.get_tags()
 
             for t in tags:
                 self.tagview.add_tag(t[0], t[1])
+
+            self.player.info_clear()
 
         self.tagview.display(True)
