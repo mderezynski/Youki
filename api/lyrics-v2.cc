@@ -33,6 +33,7 @@
 #include <glibmm.h>
 
 #include "mpx/lyrics-v2.hh"
+
 #include "mpx/uri.hh"
 #include "mpx/util-string.hh"
 #include "mpx/xml.hh"

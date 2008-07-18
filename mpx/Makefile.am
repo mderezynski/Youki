@@ -101,10 +101,6 @@ endif
 mpx_bin_SOURCES =				\
 								\
 	audio.cc					\
-								\
-	base64.h					\
-	base64.c					\
-								\
 	covers.cc					\
 								\
 	dialog-filebrowser.hh		\
@@ -120,9 +116,6 @@ mpx_bin_SOURCES =				\
 								\
 	glib-marshalers.c			\
 								\
-	gstpuid.h					\
-	gstpuid.cc					\
-								\
 	gtkmmmodule.h				\
 	gtkmmmodule.cc				\
 	gtkmm.cc					\
@@ -136,11 +129,6 @@ mpx_bin_SOURCES =				\
 	jnethttpsrc.h				\
 	jnethttpsrc.cc				\
 								\
-	lastfm.hh					\
-								\
-	last-fm-xmlrpc.hh			\
-	last-fm-xmlrpc.cc			\
-								\
 	library.cc					\
 	library-scanner-thread.hh	\
 	library-scanner-thread.cc	\
@@ -150,9 +138,6 @@ mpx_bin_SOURCES =				\
 								\
 	minisoup.hh					\
 	minisoup.cc					\
-								\
-	md5.h						\
-	md5.c						\
 								\
 	main.cc						\
 								\
@@ -170,10 +155,6 @@ mpx_bin_SOURCES =				\
 								\
 	playbacksource.hh			\
 	playbacksource.cc			\
-								\
-	playlistparser-xspf.hh		\
-	playlistparser-xspf.cc		\
-								\
 								\
 	plugin.hh					\
 	plugin.cc					\
@@ -201,8 +182,6 @@ mpx_bin_SOURCES =				\
 	stock.hh					\
 	stock.cc					\
 								\
-	tagview.cc					\
-								\
 	tasks.hh					\
 	tasks.cc					\
 								\
@@ -228,14 +207,8 @@ mpx_bin_SOURCES =				\
 	video-playback.cc			\
 								\
 	video-widget.hh				\
-	video-widget.cc				\
-								\
-	xml.cc						\
-								\
-	xspf.hh						\
-	xspf-libxml2-sax.hh			\
-	xspf-libxml2-sax.cc
-
+	video-widget.cc				
+							
 if HAVE_HAL								
 mpx_bin_SOURCES += hal.hh hal.cc
 endif

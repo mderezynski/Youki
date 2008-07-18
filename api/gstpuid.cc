@@ -30,16 +30,14 @@
 #  include "config.h"
 #endif
 
+#include "mpx/gstpuid.h"
+
 #include <stdlib.h>
 #include <string.h>
-
 #include <ofa1/ofa.h>
-
 #include <glib.h>
 #include <glib/gi18n.h> 
-#include "gstpuid.h"
 #include <gst/gstmarshal.h>
-
 #include "mpx/minisoup.hh"
 
 using namespace MPX;

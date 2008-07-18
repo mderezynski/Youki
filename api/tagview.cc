@@ -342,6 +342,13 @@ namespace MPX
         TagView::display(bool do_display)
         {
             m_Display = do_display;
+
+            if( m_Display )
+            {
+                update_global_extents ();
+                layout ();
+            }
+
             queue_draw ();
         }
 
@@ -361,9 +368,12 @@ namespace MPX
             sp->m_Layout->get_pixel_extents(sp->m_Ink, sp->m_Logical);
             m_Layout.List.push_back(sp);
 
-            update_global_extents ();
-            layout ();
-            queue_draw ();
+            if( m_Display )
+            {
+                update_global_extents ();
+                layout ();
+                queue_draw ();
+            }
         }
 
         TagView::TagView ()
