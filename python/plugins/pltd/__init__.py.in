@@ -35,8 +35,16 @@ class PlaylistDefaultTooltip(mpx.Plugin):
         
         self.lib = player.get_library()
         self.covers = player.get_covers()
-        
-        player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd").gobj().connect("playlist-tooltip", self.on_playlist_tooltip)
+        self.player = player
+
+    def activate(self):
+
+        self.handler = self.player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd").gobj().connect("playlist-tooltip", self.on_playlist_tooltip)
+        return True
+
+    def deactivate(self):
+
+        self.player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd").gobj().disconnect(self.handler)
 
     def on_playlist_tooltip(self, object, treemodel, iter):
 
@@ -110,4 +118,10 @@ class PlaylistDefaultTooltip(mpx.Plugin):
         except:
                 print "Error in PLTD fetching Last.fm tags" 
 
+        self.widget.connect("destroy", self.widget_destroyed)
+
         return self.widget
+
+    def widget_destroyed(self, widget):
+
+        print "*BOOM*"

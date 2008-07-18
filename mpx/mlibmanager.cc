@@ -63,42 +63,126 @@ namespace MPX
     , m_Library(obj_library)
     , m_ref_xml(xml)
     {
+        Gtk::CellRendererText * cell = 0; 
+        Gtk::TreeViewColumn * col = 0; 
 
-        m_Library.scanner().signal_scan_start().connect( sigc::mem_fun( *this, &MLibManager::scan_start ));
-        m_Library.scanner().signal_scan_end().connect( sigc::mem_fun( *this, &MLibManager::scan_end ));
+        m_HAL.signal_volume_added().connect(
+            sigc::mem_fun(
+                *this,
+                &MLibManager::on_volume_added
+        ));
 
-        m_ref_xml->get_widget("volumes-cbox", m_VolumesCBox);
-        Gtk::CellRendererText * cell = manage (new Gtk::CellRendererText());
-        m_VolumesCBox->pack_start(*cell);
-        m_VolumesCBox->add_attribute(*cell, "markup", VolumeColumns.Name);
+        m_Library.scanner().signal_scan_start().connect(
+            sigc::mem_fun(
+                *this,
+                &MLibManager::scan_start
+        ));
+
+        m_Library.scanner().signal_scan_end().connect(
+            sigc::mem_fun(
+                *this,
+                &MLibManager::scan_end
+        ));
+
+        m_ref_xml->get_widget("volumes-view", m_VolumesView);
+
+        cell = manage (new Gtk::CellRendererText());
+        col = manage (new Gtk::TreeViewColumn(_("Device Name")));
+        col->pack_start(*cell);
+        col->add_attribute(*cell, "text", VolumeColumns.Name);
+        m_VolumesView->append_column(*col);
+
+
+        cell = manage (new Gtk::CellRendererText());
+        col = manage (new Gtk::TreeViewColumn(_("Mount Point")));
+        col->pack_start(*cell);
+        col->add_attribute(*cell, "text", VolumeColumns.Mountpoint);
+        m_VolumesView->append_column(*col);
+
+
         VolumeStore = Gtk::ListStore::create(VolumeColumns);
-        m_VolumesCBox->set_model(VolumeStore);
-        m_VolumesCBox->signal_changed().connect( sigc::mem_fun( *this, &MLibManager::on_volumes_cbox_changed ));
+        m_VolumesView->set_model(VolumeStore);
+        m_VolumesView->get_selection()->signal_changed().connect(
+            sigc::mem_fun(
+                *this,
+                &MLibManager::on_volumes_cbox_changed
+        ));
+
         populate_volumes();
 
+
+        /* FSTREE VIEW */
+
         m_ref_xml->get_widget("fstree-view", m_FSTree);
+
         cell = manage (new Gtk::CellRendererText());
         Gtk::CellRendererToggle * cell2 = manage (new Gtk::CellRendererToggle());
-        cell2->signal_toggled().connect( sigc::mem_fun( *this, &MLibManager::on_path_toggled ));
-        Gtk::TreeViewColumn * col = manage (new Gtk::TreeViewColumn());
+
+        cell2->signal_toggled().connect(
+            sigc::mem_fun(
+                *this,
+                &MLibManager::on_path_toggled
+        ));
+
+        col = manage (new Gtk::TreeViewColumn());
+
         col->pack_start(*cell2, false);
         col->pack_start(*cell, false);
-        col->set_cell_data_func(*cell2, sigc::mem_fun( *this, &MLibManager::cell_data_func_active ));
-        col->set_cell_data_func(*cell, sigc::mem_fun( *this, &MLibManager::cell_data_func_text ));
+
+        col->set_cell_data_func(
+            *cell2,
+            sigc::mem_fun(
+                *this,
+                &MLibManager::cell_data_func_active
+        ));
+
+        col->set_cell_data_func(
+            *cell,
+            sigc::mem_fun(
+                *this,
+                &MLibManager::cell_data_func_text
+        ));
+
         m_FSTree->append_column(*col);
+
         FSTreeStore = Gtk::TreeStore::create(FSTreeColumns);
-        FSTreeStore->set_default_sort_func( sigc::mem_fun( *this, &MLibManager::fstree_sort ));
-        FSTreeStore->set_sort_column( -1, Gtk::SORT_ASCENDING ); 
-        m_FSTree->signal_row_expanded().connect( sigc::mem_fun( *this, &MLibManager::on_fstree_row_expanded )); 
-        m_FSTree->get_selection()->set_mode( Gtk::SELECTION_NONE ); 
+        FSTreeStore->set_default_sort_func(
+            sigc::mem_fun(
+                *this,
+                &MLibManager::fstree_sort
+        ));
+        FSTreeStore->set_sort_column(
+            -1,
+            Gtk::SORT_ASCENDING
+        ); 
+
+        m_FSTree->signal_row_expanded().connect(
+            sigc::mem_fun(
+                *this,
+                &MLibManager::on_fstree_row_expanded
+        )); 
+
+        m_FSTree->get_selection()->set_mode(
+            Gtk::SELECTION_NONE
+        ); 
 
         m_FSTree->set_model(FSTreeStore);
 
-        m_ref_xml->get_widget("b-close", m_Close);
-        m_ref_xml->get_widget("b-rescan", m_Rescan);
+        /* BUTTONS */
 
-        m_Close->signal_clicked().connect( sigc::mem_fun( *this, &MLibManager::hide ));
-        m_Rescan->signal_clicked().connect( sigc::mem_fun( *this, &MLibManager::on_rescan_volume ));
+        m_ref_xml->get_widget("b-close", m_Close);
+        m_Close->signal_clicked().connect(
+            sigc::mem_fun(
+            *this,
+            &MLibManager::hide
+        ));
+
+        m_ref_xml->get_widget("b-rescan", m_Rescan);
+        m_Rescan->signal_clicked().connect(
+            sigc::mem_fun(
+            *this,
+            &MLibManager::on_rescan_volume
+        ));
     }
 
     /* ------------------------------------------------------------------------------------------------*/
@@ -124,43 +208,100 @@ namespace MPX
     void
     MLibManager::present ()
     {
-        if(m_VolumesCBox->get_active_row_number() == -1)
-        {
-            m_VolumesCBox->set_active(0);
-        }
-
         Gtk::Window::present ();
     }
 
     void
-    MLibManager::populate_volumes ()
+    MLibManager::on_volume_removed (const HAL::Volume& volume)
     {
-        static boost::format volume_label_f1 ("<b>%1% %2%</b> (%3%, %4%: '%5%')");
-        static boost::format volume_label_f2 ("<b>%1% %2%</b> (%3%: '%4%')");
+    } 
 
-        Hal::RefPtr<Hal::Context> Ctx = m_HAL.get_context();
+    void
+    MLibManager::on_volume_added (const HAL::Volume& volume)
+    {
+        static boost::format volume_label_f1 ("%1%: %2%");
 
-        HAL::VolumesV volumes;
-        m_HAL.volumes(volumes);
-
-        for(HAL::VolumesV::const_iterator i = volumes.begin(); i != volumes.end(); ++i)
-        {
-            Hal::RefPtr<Hal::Volume> Vol = *i;
+        try{
+            Hal::RefPtr<Hal::Context> Ctx = m_HAL.get_context();
+            Hal::RefPtr<Hal::Volume> Vol = Hal::Volume::create_from_udi(Ctx, volume.volume_udi); 
             std::string vol_label = Vol->get_partition_label();
             std::string vol_mount = Vol->get_mount_point();
             
             Hal::RefPtr<Hal::Drive> Drive = Hal::Drive::create_from_udi(Ctx, Vol->get_storage_device_udi()); 
-            std::string drive_model = Drive->get_model();
+            std::string drive_model  = Drive->get_model();
             std::string drive_vendor = Drive->get_vendor();
             
             TreeIter iter = VolumeStore->append(); 
 
             if(!vol_label.empty())
-                (*iter)[VolumeColumns.Name] = (volume_label_f1 % drive_vendor % drive_model % vol_label % (_("mounted on")) % vol_mount).str();
+                (*iter)[VolumeColumns.Name] = (volume_label_f1 % drive_model % vol_label).str();
             else
-                (*iter)[VolumeColumns.Name] = (volume_label_f2 % drive_vendor % drive_model % (_("Mounted on")) % vol_mount).str();
+                (*iter)[VolumeColumns.Name] = drive_model; 
             
+            (*iter)[VolumeColumns.Mountpoint] = vol_mount; 
             (*iter)[VolumeColumns.Volume] = Vol;
+        } catch(...) {
+            MessageDialog dialog (_("An error occured trying to display the volume"));
+            dialog.run();
+        }
+    } 
+
+    void
+    MLibManager::populate_volumes ()
+    {
+        static boost::format volume_label_f1 ("%1%: %2%");
+
+#if 0
+        try{
+                typedef std::vector<Glib::RefPtr<Gio::Volume> > GVolumeV;
+
+                //
+                Glib::RefPtr<Gio::VolumeMonitor> Monitor = Gio::VolumeMonitor::get();
+                GVolumeV Volumes = Monitor->get_volumes(); 
+    
+                for(GVolumeV::const_iterator i = Volumes.begin(); i != Volumes.end(); ++i)
+                {
+                    Glib::RefPtr<Gio::Volume> const& Volume = *i;
+
+                    (*iter)[VolumeColumns.Name] = Volume->get_name();
+                    (*iter)[VolumeColumns.Mountpoint] = Volume->get_mount()->get_name(); 
+                    (*iter)[VolumeColumns.GioVolume] = *i; 
+                }
+
+        } catch(...) {
+            MessageDialog dialog (_("An error occured trying to populate volumes"));
+            dialog.run();
+        }
+#endif
+           
+        try { 
+                Hal::RefPtr<Hal::Context> Ctx = m_HAL.get_context();
+                HAL::VolumesV volumes;
+                m_HAL.volumes(volumes);
+
+                for(HAL::VolumesV::const_iterator i = volumes.begin(); i != volumes.end(); ++i)
+                {
+                    Hal::RefPtr<Hal::Volume> Vol = *i;
+                    std::string vol_label = Vol->get_partition_label();
+                    std::string vol_mount = Vol->get_mount_point();
+                    
+                    Hal::RefPtr<Hal::Drive> Drive = Hal::Drive::create_from_udi(Ctx, Vol->get_storage_device_udi()); 
+                    std::string drive_model  = Drive->get_model();
+                    std::string drive_vendor = Drive->get_vendor();
+                    
+                    TreeIter iter = VolumeStore->append(); 
+
+                    if(!vol_label.empty())
+                        (*iter)[VolumeColumns.Name] = (volume_label_f1 % drive_model % vol_label).str();
+                    else
+                        (*iter)[VolumeColumns.Name] = drive_model; 
+                    
+                    (*iter)[VolumeColumns.Mountpoint] = vol_mount; 
+                    (*iter)[VolumeColumns.Volume] = Vol;
+                }
+        } catch(...) {
+            MessageDialog dialog (_("An error occured trying to populate volumes"));
+            dialog.run();
         }
     }
 
@@ -272,22 +413,29 @@ namespace MPX
     void
     MLibManager::on_volumes_cbox_changed ()
     {
-        if(m_VolumesCBox->get_active_row_number() >= 0)
+        if(m_VolumesView->get_selection()->count_selected_rows() > 0)
         {
-            TreeIter iter = m_VolumesCBox->get_active();
+            TreeIter iter = m_VolumesView->get_selection()->get_selected();
+
             Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
-            m_VolumeUDI = Vol->get_udi();
-            m_DeviceUDI = Vol->get_storage_device_udi();
-            m_MountPoint = Vol->get_mount_point();
-            m_ManagedPaths = StrSetT();
+
+            m_VolumeUDI     = Vol->get_udi();
+            m_DeviceUDI     = Vol->get_storage_device_udi();
+            m_MountPoint    = Vol->get_mount_point();
+            m_ManagedPaths  = StrSetT();
 
             SQL::RowV v;
-            m_Library.getSQL(v, (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'") % m_DeviceUDI % m_VolumeUDI).str());
+            m_Library.getSQL(
+                    v,
+                    (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
+                        % m_DeviceUDI
+                        % m_VolumeUDI
+                    ).str()
+            );
+
             for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
             {
-                SQL::Row & r = *i;
-                std::string full_path = build_filename(m_MountPoint, boost::get<std::string>(r["insert_path"]));
-                m_ManagedPaths.insert(full_path); 
+                m_ManagedPaths.insert(build_filename(m_MountPoint, boost::get<std::string>((*i)["insert_path"])));
             }
 
             recreate_path_frags ();
@@ -304,7 +452,13 @@ namespace MPX
             return;
 
         GtkTreeIter children;
-        bool has_children = (gtk_tree_model_iter_children(GTK_TREE_MODEL(FSTreeStore->gobj()), &children, const_cast<GtkTreeIter*>(iter->gobj())));
+
+        bool has_children = (
+            gtk_tree_model_iter_children(
+                GTK_TREE_MODEL(FSTreeStore->gobj()),
+                &children,
+                const_cast<GtkTreeIter*>(iter->gobj())
+        ));
 
         std::string full_path = (*iter)[FSTreeColumns.FullPath];
         TreeIter iter_copy = iter;
@@ -332,7 +486,7 @@ namespace MPX
         if(m_ManagedPaths.count(full_path))
         {
             MessageDialog dialog(
-                (boost::format ("Are you sure you want <b>remove</b> Music from this path from the Library:\n\n'<b>%s</b>'")
+                (boost::format ("<b>Are you sure you want remove</b> Music from this path from the Library:\n\n'<b>%s</b>'")
                     % Markup::escape_text(filename_to_utf8(full_path)).c_str()
                 ).str(),
                 true,

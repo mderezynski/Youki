@@ -118,9 +118,6 @@ namespace MPX
 		void
 		pause ();
     
-        void
-        pause_ext ();
-
 		void
 		prev ();
 
@@ -300,6 +297,9 @@ namespace MPX
 		void
 		on_play_metadata (MPXGstMetadataField);
 
+        void
+        on_play_buffering (double);
+
 		void
 		on_play_eos ();
 
@@ -363,8 +363,7 @@ namespace MPX
 
 		void
 		track_played ();
-
-
+    
 
 
         ::Window
@@ -376,16 +375,19 @@ namespace MPX
 
 
 		void
-		install_source (ItemKey const& source_id);
+		source_install (ItemKey const& source_id);
 
 		bool
-		load_source_plugin (std::string const& path);
+		source_load (std::string const& path);
+
+
+
 
 		void
-		safe_pause_unset ();
+		metadata_reparse ();
 
-		void
-		reparse_metadata ();
+        bool
+        metadata_updated ();
 
 
 

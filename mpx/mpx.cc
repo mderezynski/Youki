@@ -236,7 +236,7 @@ namespace MPX
 
           MPX::Play&                            m_Play;
           Spectrum                              m_spectrum_data;
-
+          boost::optional<Glib::ustring>        m_info_text;
           boost::optional<TextSet>              m_text_cur;
           boost::optional<TextSet>              m_text_new;
           boost::optional<Cairo::RefPtr<Cairo::ImageSurface> >   m_cover_surface_cur;
@@ -254,6 +254,7 @@ namespace MPX
           bool								    m_pressed;
           Glib::Mutex                           m_surface_lock;
           Glib::Mutex                           m_layout_lock;
+          Glib::Mutex                           m_info_lock;
 
     public:
 
@@ -566,6 +567,24 @@ namespace MPX
             m_cover_anim_conn_fade.disconnect ();
             m_cover_anim_conn_slide.disconnect ();
 
+            queue_draw ();
+          }
+
+          void
+          set_info ( const Glib::ustring& text )
+          {
+            Mutex::Lock L (m_info_lock);
+
+            m_info_text = text;
+            queue_draw ();
+          }
+    
+          void
+          clear_info ()
+          {
+            Mutex::Lock L (m_info_lock);
+
+            m_info_text.reset();
             queue_draw ();
           }
 
@@ -906,6 +925,43 @@ namespace MPX
               }
           }
 
+          void
+          draw_info (Cairo::RefPtr<Cairo::Context> & cr)
+          {
+            Mutex::Lock L (m_info_lock);
+
+            if( m_info_text )
+            {
+                    int w, h;
+                    Gtk::Allocation a = get_allocation();
+                    w = a.get_width();
+                    h = a.get_height();
+
+                    Glib::RefPtr<Pango::Layout> Layout = create_pango_layout(Markup::escape_text(m_info_text.get()));
+                    Pango::AttrList list;
+                    Pango::Attribute attr1 = Pango::Attribute::create_attr_size(12000);
+                    Pango::Attribute attr2 = Pango::Attribute::create_attr_weight(Pango::WEIGHT_BOLD);
+                    list.insert(attr1);
+                    list.insert(attr2);
+                    Layout->set_attributes(list);
+
+                    Pango::Rectangle Ink, Logical;
+                    Layout->get_pixel_extents(Ink, Logical);
+
+                    int x = (w/2 - Logical.get_width()/2);
+                    int y = (h/2 - Logical.get_height()/2);
+
+                    Util::cairo_rounded_rect(cr, x, y, Logical.get_width() + 24, Logical.get_height()+12, 6.);
+                    cr->set_operator(Cairo::OPERATOR_ATOP);
+                    cr->set_source_rgba(0.65, 0.65, 0.65, 0.7);
+                    cr->fill();
+
+                    cr->move_to(x + 12, y + 6);
+                    cr->set_source_rgba(1., 1., 1., 1.);
+                    pango_cairo_show_layout(cr->cobj(), Layout->gobj());
+                }
+          }
+
     protected:
 
           virtual bool
@@ -917,6 +973,7 @@ namespace MPX
               draw_cover (cr);
               draw_spectrum (cr);
               draw_text (cr);
+              draw_info (cr);
 
               return true;
           }
@@ -1419,6 +1476,7 @@ namespace MPX
 
         splash.set_message(_("Initializing Playback Engine"), 0.2);
 
+
         m_Play = new Play();
 
 		m_Play->signal_eos().connect(
@@ -1433,9 +1491,15 @@ namespace MPX
             sigc::mem_fun( *this, &MPX::Player::on_play_metadata
         ));
 
+		m_Play->signal_buffering().connect(
+            sigc::mem_fun( *this, &MPX::Player::on_play_buffering
+        ));
+
 		m_Play->property_status().signal_changed().connect(
             sigc::mem_fun( *this, &MPX::Player::on_play_status_changed
         ));
+
+
 
         m_VideoWidget = manage(new VideoWidget(m_Play));
         m_VideoWidget->show ();
@@ -1708,7 +1772,7 @@ namespace MPX
         {
     		Util::dir_for_each_entry(
                 sources_path,
-                sigc::mem_fun(*this, &MPX::Player::load_source_plugin)
+                sigc::mem_fun(*this, &MPX::Player::source_load)
             );  
         }
 
@@ -1866,7 +1930,7 @@ namespace MPX
 	}
 
     bool
-    Player::load_source_plugin (std::string const& path)
+    Player::source_load (std::string const& path)
     {
 		enum
 		{
@@ -1936,13 +2000,13 @@ namespace MPX
 
         ItemKey key (boost::optional<gint64>(), m_NextSourceId++);
 		m_Sources[key] = p;
-		install_source(key);
+		source_install(key);
 
 		return false;
     }
 
 	void
-	Player::install_source (ItemKey const& source_id)
+	Player::source_install (ItemKey const& source_id)
 	{
         g_message("%s: Installing Source '%s'", G_STRLOC, m_Sources[source_id]->get_name().c_str());
 
@@ -2241,7 +2305,7 @@ namespace MPX
         );
         ItemKey key (parent.second, id);
 		m_Sources[key] = p;
-		install_source(key);
+		source_install(key);
     }
 
 	void
@@ -2347,9 +2411,11 @@ namespace MPX
                 {
 			        m_InfoArea->set_cover (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
 
-                    PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-                    g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_UPDATED], 0);
-                    pyg_gil_state_release(state);
+                    signal_idle().connect(
+                        sigc::mem_fun(
+                            *this,
+                            &Player::metadata_updated
+                    ));
                 }
             }
 			return;
@@ -2363,7 +2429,7 @@ namespace MPX
 			}
 
 			m_Metadata.get()[ATTRIBUTE_TITLE] = std::string(m.m_title.get());
-			reparse_metadata();
+			metadata_reparse();
 			return;
 
 		  case FIELD_ALBUM:
@@ -2375,7 +2441,7 @@ namespace MPX
 			}
 
 			m_Metadata.get()[ATTRIBUTE_ALBUM] = std::string(m.m_album.get());
-			reparse_metadata();
+			metadata_reparse();
 			break;
 
 		  case FIELD_AUDIO_BITRATE:
@@ -2420,6 +2486,20 @@ namespace MPX
 		m_TrackDuration = m_Play->property_duration().get_value();
 	  }
 	}
+
+    void
+    Player::on_play_buffering (double size)
+    {
+        if( size >= 1.0 )
+        {
+            m_InfoArea->set_info((boost::format (_("Buffering: %d")) % (int(size*100))).str());
+            m_InfoArea->clear_info();
+        }
+        else
+        {
+            m_InfoArea->set_info((boost::format (_("Buffering: %d")) % (int(size*100))).str());
+        }
+    }
 
 #ifdef HAVE_HAL
     Player*
@@ -2511,7 +2591,7 @@ namespace MPX
             m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
         }
 
-        reparse_metadata ();
+        metadata_reparse ();
 	}
 
 	void
@@ -2522,7 +2602,7 @@ namespace MPX
         stop ();
       }
 
-      safe_pause_unset();
+	  RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
 	  PlaybackSource* source = m_Sources[source_id];
       m_ActiveSource = source_id;
@@ -2564,50 +2644,52 @@ namespace MPX
 
 	//////////////////////////////// Internal Playback Control
 
-  void
-  Player::switch_stream(std::string const& uri, std::string const& type)
-  {
-    g_atomic_int_set(&m_Seeking, 0);
+    void
+    Player::switch_stream(std::string const& uri, std::string const& type)
+    {
+        g_atomic_int_set(&m_Seeking, 0);
 
-    m_TimeLabel->set_text("      …      ");
+        m_TimeLabel->set_text("      …      ");
 
-    m_Seek->set_range(0., 1.);
-    m_Seek->set_value(0.);
-    m_Seek->set_sensitive(false);
+        m_Seek->set_range(0., 1.);
+        m_Seek->set_value(0.);
+        m_Seek->set_sensitive(false);
 
-    m_VideoWidget->property_playing() = false;
-    m_VideoWidget->queue_draw();
+        m_VideoWidget->property_playing() = false;
+        m_VideoWidget->queue_draw();
 
-    m_Metadata.reset();	
-    m_InfoArea->reset();
+        m_Metadata.reset();	
+        m_InfoArea->reset();
 
-    m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
+        m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
 
-    m_Play->switch_stream( uri, type );
-  }
+        m_Play->switch_stream( uri, type );
+    }
 
 	void
 	Player::track_played ()
 	{
-      Glib::Mutex::Lock L (m_MetadataLock);
+        Glib::Mutex::Lock L (m_MetadataLock);
 
-      if(!m_Metadata)
-          return;
+        if(
+            m_Metadata
+                && 
+            m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID]
+                && 
+            ((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_TrackDuration/2))
+        )
+        {
+            m_Library.trackPlayed(
+              get<gint64>(m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID].get()),
+              time(NULL)
+            );
 
-      if(!m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID])
-          return;
+            PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+            g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_TRACK_PLAYED], 0);
+            pyg_gil_state_release(state);
+        }
 
-      if((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_TrackDuration/2))
-      {
-          gint64 id = get<gint64>(m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID].get());
-          m_Library.trackPlayed(id, time(NULL));
-
-          PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-          g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_TRACK_PLAYED], 0);
-          pyg_gil_state_release(state);
-      }
-
-      m_TrackPlayedSeconds = 0.;
+        m_TrackPlayedSeconds = 0.;
 	}
 
 	void
@@ -2657,7 +2739,7 @@ namespace MPX
                   }
             }
 
-            safe_pause_unset();
+	        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
             PlaybackSource* source = m_Sources[source_id];
             m_ActiveSource = source_id;
@@ -2685,19 +2767,6 @@ namespace MPX
 	}
 
 	void
-	Player::safe_pause_unset ()
-	{
-	    RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
-	}
-
-    void
-    Player::pause_ext ()
-    {
-        bool paused = RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->get_active();
-        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(!paused);
-    }
-
-	void
 	Player::pause ()
 	{
         g_return_if_fail(m_ActiveSource);
@@ -2721,7 +2790,7 @@ namespace MPX
 
 	  if( (f & PlaybackSource::F_PHONY_PREV) == 0 )
 	  {
-			safe_pause_unset();
+	        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 			switch_stream (source->get_uri(), source->get_type());
 			source->prev_post ();
 			play_post_internal (source_id);
@@ -2740,7 +2809,9 @@ namespace MPX
 	  if( c & PlaybackSource::C_CAN_GO_PREV )
 	  {
 			track_played();
-			safe_pause_unset();
+
+	        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
+
 			if( f & PlaybackSource::F_ASYNC )
 			{
 					m_actions->get_action (ACTION_PREV)->set_sensitive( false );
@@ -2767,9 +2838,12 @@ namespace MPX
 
 	  if( (f & PlaybackSource::F_PHONY_NEXT) == 0 )
 	  {
-			safe_pause_unset();
+	        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
+
 			switch_stream (source->get_uri(), source->get_type());
+
 		    source->next_post ();
+
 		    play_post_internal (source_id);
 	  }
 	}
@@ -2867,7 +2941,7 @@ namespace MPX
 		  {
             Glib::Mutex::Lock L (m_MetadataLock);
 
-            safe_pause_unset ();
+	        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
             if( m_ActiveSource ) 
             {
@@ -3631,7 +3705,7 @@ namespace MPX
     }
 
 	void
-	Player::reparse_metadata ()
+	Player::metadata_reparse ()
 	{
         m_InfoArea->set_metadata(m_Metadata.get());
 
@@ -3649,8 +3723,20 @@ namespace MPX
             set_title(_("(Untitled Track) - (MPX)"));
         }
 
+        signal_idle().connect(
+            sigc::mem_fun(
+                *this,
+                &Player::metadata_updated
+        ));
+	}
+
+    bool
+    Player::metadata_updated ()
+    {
         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
         g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_UPDATED], 0);
         pyg_gil_state_release(state);
-	}
+
+        return false;
+    }
 }

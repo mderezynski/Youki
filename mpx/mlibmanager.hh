@@ -28,7 +28,7 @@
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif // HAVE_CONFIG_H
-
+#include <giomm.h>
 #include <gtkmm/button.h>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/filechooserwidget.h>
@@ -102,20 +102,30 @@ namespace MPX
 
             void
             on_rescan_volume ();
+
+            void
+            on_volume_added (const HAL::Volume&);
     
+            void
+            on_volume_removed (const HAL::Volume&);
 
 
-            Gtk::ComboBox * m_VolumesCBox;
+
+            Gtk::TreeView * m_VolumesView;
 
             struct VolumeColumnsT : public Gtk::TreeModel::ColumnRecord
             {
-                Gtk::TreeModelColumn<Glib::ustring>             Name;
-                Gtk::TreeModelColumn<Hal::RefPtr<Hal::Volume> > Volume;
+                Gtk::TreeModelColumn<Glib::ustring>                 Name;
+                Gtk::TreeModelColumn<Glib::ustring>                 Mountpoint;
+                Gtk::TreeModelColumn<Hal::RefPtr<Hal::Volume> >     Volume;
+                Gtk::TreeModelColumn<Glib::RefPtr<Gio::Volume> >    GioVolume;
 
                 VolumeColumnsT ()
                 {
                     add (Name);
+                    add (Mountpoint);
                     add (Volume);
+                    add (GioVolume);
                 };
             };
 

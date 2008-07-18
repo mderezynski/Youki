@@ -2030,7 +2030,7 @@ namespace MPX
                 TreeStore->set_sort_func(3 , sigc::mem_fun( *this, &AlbumTreeView::slotSortStrictAlpha ));
                 TreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
 
-                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")));
+                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")))->scale_simple(72,72,Gdk::INTERP_BILINEAR);
                 m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(72,72,Gdk::INTERP_BILINEAR));
 
                 album_list_load ();
@@ -2075,8 +2075,7 @@ namespace MPX
               Gtk::TreePath                         m_PathButtonPress;
 
               bool                                  m_ButtonPressed;
-              bool                                  m_Hand;
-              bool                                  m_ShowNew;
+              bool                                  m_DragSource;
 
               Gtk::Entry*                           m_FilterEntry;
               TopAlbumsFetchThread                * m_Thread;
@@ -2212,6 +2211,21 @@ namespace MPX
                     AlbumRowType rt = (*iter)[LFMColumns.RowType];
                     if( rt == ROW_ALBUM )
                     {
+                             if( (*iter)[LFMColumns.IsMPXAlbum] ) 
+                             {
+                                std::vector<TargetEntry> Entries;
+                                Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
+                                Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
+                                drag_source_set(Entries); 
+                                m_DragSource = true;
+                             }
+                             else
+                             {
+                                drag_source_unset ();
+                                m_DragSource = false;
+                             }
+    
+
                             if(!g_atomic_int_get(&m_ButtonPressed))
                                 return false;
 
@@ -2223,34 +2237,7 @@ namespace MPX
                                 return true;
                             }
                     }
-#if 0
-                    else
-                    if( rt == ROW_TRACK )
-                    {
-                        TreeViewColumn * col = get_column(0);
-                        int start_x, width;
-                        if( col->get_cell_position( *m_CellArtist, start_x, width ) )
-                        {
-                                if( cell_x >= start_x && cell_x <= (start_x+width)) 
-                                {
-                                    GdkCursor *cursor = gdk_cursor_new_from_name (gdk_display_get_default (), "hand2");
-                                    gdk_window_set_cursor (GTK_WIDGET (gobj())->window, cursor);
-                                    m_Hand = true;
-                                }
-                                else
-                                if( m_Hand )
-                                {
-                                    GdkCursor *cursor = gdk_cursor_new_from_name (gdk_display_get_default (), "left_ptr");
-                                    gdk_window_set_cursor (GTK_WIDGET (gobj())->window, cursor);
-                                    m_Hand = false;
-                                }
-                        }
-                        else
-                                g_message("Cell not in column.");
-                    }
-#endif
                 }
-
                 return false;
              } 
 
@@ -2323,7 +2310,6 @@ namespace MPX
                 (*iter)[LFMColumns.RowType] = ROW_ALBUM; 
                 (*iter)[LFMColumns.HasTracks] = false; 
                 (*iter)[LFMColumns.NewAlbum] = get<gint64>(r["album_new"]);
-                (*iter)[LFMColumns.Image] = m_DiscDefault_Pixbuf; 
                 (*iter)[LFMColumns.Id] = id; 
                 (*iter)[LFMColumns.IsMPXAlbum] = 1;
 
@@ -2362,7 +2348,11 @@ namespace MPX
                         Util::cairo_image_surface_rounded_border(surface, 1., 6.);
                         (*iter)[LFMColumns.Image] = Util::cairo_image_surface_to_pixbuf(surface);
                     }
+                    else
+                        (*iter)[LFMColumns.Image] = m_DiscDefault_Pixbuf;
                 }
+                else
+                    (*iter)[LFMColumns.Image] = m_DiscDefault_Pixbuf;
 
                 std::string date; 
                 if(r.count("mb_release_date"))
@@ -2687,13 +2677,6 @@ namespace MPX
               {
                   AlbumRowType rt = (*iter)[LFMColumns.RowType];
 
-                  if( m_ShowNew && rt == ROW_ALBUM ) 
-                  {
-                    bool visible = (*iter)[LFMColumns.NewAlbum];
-                    if( !visible ) 
-                        return false;
-                  } 
-
                   ustring filter (ustring (m_FilterEntry->get_text()).lowercase());
 
                   TreePath path (TreeStore->get_path(iter));
@@ -2716,11 +2699,15 @@ namespace MPX
                 }
               }
 
-              void
-              set_new_albums_state (int state)
+              bool
+              slot_select(
+                const Glib::RefPtr <Gtk::TreeModel>&    model,
+                const Gtk::TreeModel::Path&             path,
+                bool                                    was_selected
+              )
               {
-                 m_ShowNew = state;
-                 TreeStoreFilter->refilter();
+                TreeIter iter = TreeStoreFilter->get_iter(path);
+                return (*iter)[LFMColumns.IsMPXAlbum] || path.get_depth() == 2;
               }
 
               LFMTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml,    
@@ -2730,8 +2717,7 @@ namespace MPX
               , m_Covers(amzn)
               , m_MLib(mlib)
               , m_ButtonPressed(false)
-              , m_Hand(false)
-              , m_ShowNew(false)
+              , m_DragSource(true)
               {
                 for(int n = 0; n < 6; ++n)
                     m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename(DATA_DIR,"images"),
@@ -2812,7 +2798,7 @@ namespace MPX
                 TreeStore->set_sort_func(2 , sigc::mem_fun( *this, &LFMTreeView::slotSortRating ));
                 TreeStore->set_sort_func(3 , sigc::mem_fun( *this, &LFMTreeView::slotSortStrictAlpha ));
 
-                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")));
+                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")))->scale_simple(72,72,Gdk::INTERP_BILINEAR);
                 m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(72,72,Gdk::INTERP_BILINEAR));
 
                 std::vector<TargetEntry> Entries;
@@ -2837,6 +2823,12 @@ namespace MPX
 
                 m_Thread->SignalStopped().connect(
                     sigc::mem_fun(*this, &LFMTreeView::on_thread_stopped
+                ));
+
+                get_selection()->set_select_function(
+                    sigc::mem_fun(
+                        *this,
+                        &LFMTreeView::slot_select
                 ));
               }
 

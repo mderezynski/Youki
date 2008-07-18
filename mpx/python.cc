@@ -700,7 +700,7 @@ BOOST_PYTHON_MODULE(mpx)
                                     return_internal_reference<>())
 
 		.def("play",                &MPX::Player::play)
-		.def("pause",               &MPX::Player::pause_ext)
+		.def("pause",               &MPX::Player::pause)
 		.def("prev",                &MPX::Player::prev)
 		.def("next",                &MPX::Player::next)
 		.def("stop",                &MPX::Player::stop)
@@ -904,8 +904,8 @@ namespace MPX
         if(!py_initialized)
         {
             try {
-                PyImport_AppendInittab("gtkmm", initgtkmm);
-                PyImport_AppendInittab("mpx", initmpx);
+                PyImport_AppendInittab((const char*)"gtkmm", initgtkmm);
+                PyImport_AppendInittab((const char*)"mpx", initmpx);
                 Py_Initialize();
                 init_pygobject();
                 init_pygtk();

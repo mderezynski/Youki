@@ -655,6 +655,22 @@ namespace MPX
 
         switch (GST_MESSAGE_TYPE (message))
         {
+            case GST_MESSAGE_APPLICATION:
+            {
+              GstStructure const* s = gst_message_get_structure (message);
+              if (std::string (gst_structure_get_name (s)) == "buffering")
+                {
+                  double size;
+                  gst_structure_get_double (s, "size", &size);
+                  play.signal_buffering_.emit(size);
+                }
+              else
+              if (std::string (gst_structure_get_name (s)) == "buffering-done")
+                {
+                }
+              break;
+            }
+
             case GST_MESSAGE_ELEMENT:
             {
               GstStructure const* s = gst_message_get_structure (message);

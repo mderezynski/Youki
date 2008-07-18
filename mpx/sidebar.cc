@@ -108,23 +108,6 @@ namespace MPX
         Entries.push_back(TargetEntry("mpx-track"));
         drag_dest_set(Entries, DEST_DEFAULT_ALL);
         drag_dest_add_uri_targets();
-
-#if 0
-        m_actions->add(
-            Gtk::Action::create(
-                "dummy"
-                "dummy"
-        ));
-
-        m_actions->add(
-            Gtk::Action::create(
-            ),
-            sigc::mem_fun(*this, &Sidebar::on_attach_plugin)
-        );
-
-        m_ui_manager->insert_action_group(m_actions);
-        Util::ui_manager_add_ui(m_ui_manager, ui_sidebar_popup, dynamic_cast<Gtk::Window&>(*get_toplevel()), _("Sidebar"));
-#endif
     }
 
     Sidebar::~Sidebar()
