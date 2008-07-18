@@ -277,7 +277,7 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
 
             try{
 
-                URI u (*i);
+                URI u (*i, true);
 
                 if(u.get_protocol() == URI::PROTOCOL_FILE)
                 {

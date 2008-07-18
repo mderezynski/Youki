@@ -24,6 +24,7 @@ import string
 import threading
 import time
 import urllib
+import urllib2
 import webkit
 from Ft.Xml.XPath.Context import Context
 from Ft.Xml.XPath import Evaluate
@@ -179,8 +180,11 @@ class TrackInfoQuery (threading.Thread):
                 pass 
 
         try:
-                req = mpx.LyricWiki(self.track[mpx.AttributeId.ARTIST].get(), self.track[mpx.AttributeId.TITLE].get())
-                lyrics = req.run()
+                #req = mpx.LyricWiki(self.track[mpx.AttributeId.ARTIST].get(), self.track[mpx.AttributeId.TITLE].get())
+                #lyrics = req.run()
+                req  = urllib2.urlopen("http://lyricwiki.org/api.php?fmt=text&artist=%s&song=%s"
+                        % (self.track[mpx.AttributeId.ARTIST].get(), self.track[mpx.AttributeId.TITLE].get()))
+                lyrics = req.readlines()
                 if lyrics != "Not found":
                     self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Lyrics</p></div>"
                     self.html += lyrics.replace("\n","<br/>")
@@ -242,7 +246,8 @@ class TrackInfoQuery (threading.Thread):
 
             self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Album Links</p></div>"
 
-            self.html += "<a href='http://rateyourmusic.com/release/album/%s/%s/'>RateYourMusic</a><br/><br/>" % (self.track[mpx.AttributeId.ALBUM_ARTIST].get().replace(" ","_").lower(), self.track[mpx.AttributeId.ALBUM].get().replace(" ","_").lower())
+            if self.track[mpx.AttributeId.ALBUM_ARTIST] and self.track[mpx.AttributeId.ALBUM]: 
+                self.html += "<a href='http://rateyourmusic.com/release/album/%s/%s/'>RateYourMusic</a><br/><br/>" % (self.track[mpx.AttributeId.ALBUM_ARTIST].get().replace(" ","_").lower(), self.track[mpx.AttributeId.ALBUM].get().replace(" ","_").lower())
 
             if self.track[mpx.AttributeId.MB_ALBUM_ID] and self.track[mpx.AttributeId.MB_ALBUM_ID]: 
 

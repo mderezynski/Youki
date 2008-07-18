@@ -2087,8 +2087,11 @@ namespace MPX
                 TreeIter iter = TreeStore->get_iter (TreeStoreFilter->convert_path_to_child_path(path));
                 if(path.get_depth() == ROW_ALBUM)
                 {
-                        gint64 id = (*iter)[LFMColumns.Id];
-                        m_MLib.play_album(id);
+                        if( (*iter)[LFMColumns.IsMPXAlbum] )
+                        {
+                            gint64 id = (*iter)[LFMColumns.Id];
+                            m_MLib.play_album(id);
+                        }
                 }
                 else
                 {
