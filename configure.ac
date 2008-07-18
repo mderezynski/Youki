@@ -410,6 +410,8 @@ AC_ARG_WITH([sid-prefix],
     [sid_prefix="/usr"]
 )
 
+echo $have_sid
+
 if test "$have_sid" != "no"; then
 
     AC_LANG_SAVE

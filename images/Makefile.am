@@ -14,3 +14,4 @@ images_DATA =					\
 		trackdetails.png
 
 imagesdir = $(pkgdatadir)/images
+EXTRA_DIST = $(images_DATA)

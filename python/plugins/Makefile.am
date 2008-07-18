@@ -8,5 +8,6 @@ SUBDIRS =			        \
 		pidgin			    \
 		pltd				\
 		ratings_export		\
+		trackcover			\
 		trackinfo-webkit    \
 		tracktags

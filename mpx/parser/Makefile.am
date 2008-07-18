@@ -7,6 +7,4 @@ libmpxparser_la_LDFLAGS = $(BOOST_FILESYSTEM_LIBS)
 
 libmpxparser_la_SOURCES =  \
 		libxml2-sax-base.cc			\
-		libxml2-sax-base.hh			\
-		xpath.hh					\
 		xpath.cc

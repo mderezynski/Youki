@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = dist-bzip2
-DISTCHECK_CONFIGURE_FLAGS = --with-dbus-services-dir=/tmp --enable-hal --enable-mp4v2 --enable-sid --enable-ofa
+DISTCHECK_CONFIGURE_FLAGS = --with-dbus-services-dir=/tmp --enable-hal
 
 # Main Service
 servicedir = $(DBUS_SERVICES_DIR)
@@ -22,15 +22,19 @@ CLEANFILES =  $(service_DATA) \
 DISTCLEANFILES = $(CLEANFILES) intltool-extract intltool-merge intltool-update
 
 SUBDIRS =		\
-	api		\
-	po		\
+	scripts		\
+	desktop		\
 	glade		\
 	icons		\
 	images		\
+	po			\
+	boost		\
 	include		\
+	xsd			\
+	api			\
 	remote		\
 	jnetlib		\
-	mcs		\
+	mcs			\
 	taglib		\
 	xmlcpp		\
 	widgets		\

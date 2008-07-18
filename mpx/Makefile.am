@@ -106,9 +106,6 @@ mpx_bin_SOURCES =				\
 	dialog-filebrowser.hh		\
 	dialog-filebrowser.cc		\
 								\
-	exception.hh				\
-	exception-db.hh				\
-								\
 	flow_engine.hh				\
 	flow_engine.cc				\
 	flow_widget.hh				\
@@ -130,13 +127,10 @@ mpx_bin_SOURCES =				\
 	jnethttpsrc.cc				\
 								\
 	library.cc					\
-	library-scanner-thread.hh	\
 	library-scanner-thread.cc	\
 								\
-	metadatareader-taglib.hh	\
 	metadatareader-taglib.cc	\
 								\
-	minisoup.hh					\
 	minisoup.cc					\
 								\
 	main.cc						\
@@ -147,13 +141,11 @@ mpx_bin_SOURCES =				\
 	mpx.hh						\
 	mpx.cc						\
 								\
-	network.hh					\
 	network.cc					\
 								\
 	play.hh						\
 	play.cc						\
 								\
-	playbacksource.hh			\
 	playbacksource.cc			\
 								\
 	plugin.hh					\
@@ -164,7 +156,6 @@ mpx_bin_SOURCES =				\
 	preferences.hh				\
 	preferences.cc				\
 								\
-	python.hh					\
 	python.cc					\
 								\
 	request-value.hh			\
@@ -176,31 +167,16 @@ mpx_bin_SOURCES =				\
 	splash-screen.hh			\
 	splash-screen.cc			\
 								\
-	sql.hh						\
 	sql.cc						\
-								\
-	stock.hh					\
 	stock.cc					\
-								\
-	tasks.hh					\
 	tasks.cc					\
-								\
-	treeview-popup.hh			\
 	treeview-popup.cc			\
 								\
-	uri.hh						\
 	uri.cc						\
 								\
-	util-file.hh				\
 	util-file.cc				\
-								\
-	util-graphics.hh			\
 	util-graphics.cc			\
-								\
-	util-string.hh				\
 	util-string.cc				\
-								\
-	util-ui.hh					\
 	util-ui.cc					\
 								\
 	video-playback.hh			\
@@ -210,7 +186,7 @@ mpx_bin_SOURCES =				\
 	video-widget.cc				
 							
 if HAVE_HAL								
-mpx_bin_SOURCES += hal.hh hal.cc
+mpx_bin_SOURCES += hal.cc
 endif
 
 built_header_make = 		\
