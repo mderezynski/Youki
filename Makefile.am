@@ -22,14 +22,15 @@ CLEANFILES =  $(service_DATA) \
 DISTCLEANFILES = $(CLEANFILES) intltool-extract intltool-merge intltool-update
 
 SUBDIRS =		\
-	po			\
+	api		\
+	po		\
 	glade		\
 	icons		\
 	images		\
 	include		\
 	remote		\
 	jnetlib		\
-	mcs			\
+	mcs		\
 	taglib		\
 	xmlcpp		\
 	widgets		\
