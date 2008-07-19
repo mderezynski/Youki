@@ -446,7 +446,7 @@ gst_puid_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
                     "enc=%s"        // Encoding. e = true: ISO-8859-15; e = false: UTF-8 (default). Optional.
                     "\r\n";
 
-      char* post_data = g_strdup_printf (request_format, 
+      puid->puid = g_strdup_printf (request_format, 
                                          puid->musicdns_id,
                                          "gst_puid_0_01",
                                          puid->fingerprint,
@@ -462,6 +462,7 @@ gst_puid_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
                                          "",
                                          "");
 
+#if 0
       Soup::RequestSyncRefP request = Soup::RequestSync::create ("http://ofa.musicdns.org/ofa/1/track/", true);
       request->add_request ("application/x-www-form-urlencoded", post_data);
       guint code = request->run ();
@@ -475,11 +476,13 @@ gst_puid_transform_ip (GstBaseTransform * trans, GstBuffer * buf)
               g_markup_parse_context_parse (ctx, puid->xmldoc, strlen (puid->xmldoc), NULL);
               g_markup_parse_context_free (ctx); 
 
-              GST_OBJECT_UNLOCK(puid);
-
-              GstEvent *event = gst_event_new_eos ();
-              gst_element_send_event (GST_ELEMENT (puid), event);
       }
+#endif
+
+      GST_OBJECT_UNLOCK(puid);
+      GstEvent *event = gst_event_new_eos ();
+      gst_element_send_event (GST_ELEMENT (puid), event);
+
       goto out;
     }
 

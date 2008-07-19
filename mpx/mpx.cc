@@ -777,11 +777,12 @@ namespace MPX
           {
             Gtk::Allocation allocation = get_allocation ();
             cr->set_source_rgb(0., 0., 0.);
-            Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 4.);
-            cr->fill_preserve ();
-            cr->set_source_rgba(1., 1., 1., .6);
+            Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 7.);
+            cr->fill ();
+
+            /*Gdk::Cairo::set_source_color(cr, get_style()->get_background(get_state()));
             cr->set_line_width(2);
-            cr->stroke();
+            cr->stroke();*/
           }
 
           void
