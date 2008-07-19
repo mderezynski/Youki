@@ -48,7 +48,7 @@ class Notification(mpx.Plugin):
         self.on_notification_toggled(self.notification)
         self.on_controls_toggled(self.controls)
 
-        self.player_new_track_handler_id = self.player.gobj().connect("new-track", self.now_playing)
+        self.player_new_track_handler_id = self.player.gobj().connect("metadata-updated", self.now_playing)
         self.player_state_change_handler_id = self.player.gobj().connect("play-status-changed", self.on_state_change)
         return True
 

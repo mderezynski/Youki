@@ -2696,8 +2696,10 @@ namespace MPX
 	{
 	  PlaybackSource* source = m_Sources[source_id];
 
+      m_PreparingSource = source_id;
+      m_PlayDirection = PD_PLAY;
+
 	  switch_stream(source->get_uri(), source->get_type());
-      source->play_post ();
 	}
 
 	void
@@ -2855,8 +2857,12 @@ namespace MPX
 	  PlaybackSource* source = m_Sources[source_id];
 	  PlaybackSource::Flags f = m_source_f[source_id];
 
+
+      g_message("Next-async-cb");
+
 	  if( (f & PlaybackSource::F_PHONY_NEXT) == 0 )
 	  {
+            g_message("Switching stream");
             m_PlayDirection = PD_NEXT;
 			switch_stream (source->get_uri(), source->get_type());
 	  }

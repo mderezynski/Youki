@@ -15,6 +15,7 @@ import httplib
 import mpx
 import musicbrainz2
 import musicbrainz2.webservice as ws
+from musicbrainz2.model import *
 import os
 import pango
 import pygst
@@ -37,6 +38,11 @@ def realId(entityId):
         return string.split(entityId,"/")[-1]
     else:
         return entityId
+
+def getEntityLink(entityName, entityId, entityType):
+
+    tuple = [("id", entityId), ("name", entityName.replace("+", " ")), ("type", entityType)]
+    return "<a href=\"mpx:///?%s\">%s</a>" % (urllib.urlencode(tuple), entityName)
 
 def getLastFMArtistInfo(artistname):
 
@@ -67,35 +73,64 @@ def getLastFMArtistInfo(artistname):
 
         return artist
 
-def displayRelations(rels): 
+def append_url_rels(entity): 
 
-    html = ""
-    translit = {"Discogs":"Discogs Link", "Wikipedia":"Wikipedia Link", "Myspace":"Myspace Website", "OfficialHomepage":"Band Homepage"}
-    ar = {}
+    html        = ""
+    mapping     = {
+                    "Discogs"           :   "Discogs Link",
+                    "Wikipedia"         :   "Wikipedia Link",
+                    "Myspace"           :   "Myspace Website",
+                    "OfficialHomepage"  :   "Band Homepage"
+                  }
+    rel_links   = {}
+    links       = []
+    rels        = entity.getRelations(Relation.TO_URL)
 
     for rel in rels:
 
         mbns, hash, reltype = rel.getType().partition("#")
         try:
-            ar[reltype].append(rel)
+            rel_links[reltype].append(rel)
         except:
-            ar[reltype] = []
-            ar[reltype].append(rel)
+            rel_links[reltype] = []
+            rel_links[reltype].append(rel)
 
-    for a in ar:
+    for a in rel_links:
 
-        if a in translit: 
+        if a in mapping:
 
-            rls = ar[a]
+            rls = rel_links[a]
             for rel in rls:
                 if len(rls) > 1:
-                    html += "<a href='%s'>%s</a>(%s)" % (rel.getTargetId(), translit[a], str(rls.index(rel)+1))
+                    links.append("<a href='%s'>%s</a>(%s)" % (rel.getTargetId(), mapping[a], str(rls.index(rel)+1)))
                 else:
-                    html += "<a href='%s'>%s</a>" % (rel.getTargetId(), translit[a])
+                    links.append("<a href='%s'>%s</a>" % (rel.getTargetId(), mapping[a]))
 
-                html += "  "
+    return "  ".join(links) 
 
-    return html
+def append_artist_rels(entity): 
+
+    data        = []
+    relations   = entity.getRelations(Relation.TO_ARTIST)
+
+    for rel in relations:
+
+        mbns, hash, reltype = rel.getType().partition("#")
+
+        if reltype == "MemberOfBand":
+
+            if rel.getDirection() == Relation.DIR_BACKWARD:
+
+                target = rel.getTarget() 
+                data.append("...has member <b>%s</b>" % (getEntityLink(target.getName(),target.getId(),"artist")))
+
+            elif rel.getDirection() == Relation.DIR_FORWARD:
+
+                target = rel.getTarget() 
+                data.append("...is member in <b>%s</b>" % (getEntityLink(target.getName(),target.getId(),"artist")))
+
+    return "<br/>".join(data)
+                
 
 class ArtistInfoQuery (threading.Thread):
 
@@ -128,16 +163,17 @@ class ArtistInfoQuery (threading.Thread):
 
         artist = getLastFMArtistInfo(self.artistname)
 
-        self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % self.artistname 
+        self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % self.artistname 
         self.html += artist
 
-        self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
+        self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
 
         try:
                 entity = self.query.getArtistById(self.artistid, self.wsinc)   
-                self.html += "<b>%s</b>(%s): " % (entity.getName(), self.artistid)
-                self.html += displayRelations(entity.getRelations())
+                self.html += "<b>%s</b>(%s): <br/><br/>" % (entity.getName(), self.artistid)
+                self.html += append_artist_rels(entity)
                 self.html += "<br/>"
+                self.html += append_url_rels(entity)
         except:
                 print "TRACKINFO-WEBKIT: No Last.fm artist info" 
 
@@ -174,7 +210,7 @@ class TrackInfoQuery (threading.Thread):
         try:
                 artist = getLastFMArtistInfo(self.track[mpx.AttributeId.ARTIST].get())
 
-                self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % self.track[mpx.AttributeId.ARTIST].get()
+                self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % self.track[mpx.AttributeId.ARTIST].get()
                 self.html += artist
         except:
                 pass 
@@ -184,7 +220,7 @@ class TrackInfoQuery (threading.Thread):
                         % (urllib.quote(self.track[mpx.AttributeId.ARTIST].get()), urllib.quote(self.track[mpx.AttributeId.TITLE].get())))
                 lyrics = req.read()
                 if lyrics != "Not found":
-                    self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Lyrics</p></div>"
+                    self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Lyrics</p></div>"
                     self.html += lyrics.replace("\n","<br/>")
         except:
                 print "TRACKINFO-WEBKIT: Error fetching lyrics" 
@@ -230,7 +266,7 @@ class TrackInfoQuery (threading.Thread):
             if self.track[mpx.AttributeId.MB_ARTIST_ID]:
                 self.Entities.append(self.track[mpx.AttributeId.MB_ARTIST_ID].get())
 
-            self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>This Track...</p></div>"
+            self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>This Track...</p></div>"
             for rel in Relations:
                 if rel in CallTable:
                     CallInfo = CallTable[rel] 
@@ -243,42 +279,35 @@ class TrackInfoQuery (threading.Thread):
                 else:
                     print "TRACKINFO-WEBKIT: Unhandled AR of type: " + rel
 
-            self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Album Links</p></div>"
+            self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Album Links</p></div>"
 
             if self.track[mpx.AttributeId.ALBUM_ARTIST] and self.track[mpx.AttributeId.ALBUM]: 
-                self.html += "<a href='http://rateyourmusic.com/release/album/%s/%s/'>RateYourMusic</a><br/><br/>" % (self.track[mpx.AttributeId.ALBUM_ARTIST].get().replace(" ","_").lower(), self.track[mpx.AttributeId.ALBUM].get().replace(" ","_").lower())
+                self.html += "<a href='http://rateyourmusic.com/release/album/%s/%s/'>RateYourMusic</a>  " % (self.track[mpx.AttributeId.ALBUM_ARTIST].get().replace(" ","_").lower(), self.track[mpx.AttributeId.ALBUM].get().replace(" ","_").lower())
 
             if self.track[mpx.AttributeId.MB_ALBUM_ID] and self.track[mpx.AttributeId.MB_ALBUM_ID]: 
 
-                try:
-                        entity = self.query.getReleaseById(self.track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release)
-                        rels = entity.getRelations()
-                        if len(rels) > 0:
-                            self.html += displayRelations(rels)
-                except:
-                        print "TRACKINFO-WEBKIT: MusicBrainz WS error #2" 
+                #try:
+                    entity = self.query.getReleaseById(self.track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release)
+                    self.html += append_url_rels(entity)
+                #except:
+                #    print "TRACKINFO-WEBKIT: MusicBrainz WS error #2" 
 
             self.Entities = dict(zip(self.Entities,self.Entities)).keys() 
 
             try:
                     if len(self.Entities) > 0:
-                        self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #909090; color: black; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
-                        self.html += "<table>"
+                        self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
                         for id in self.Entities:
                             entity = self.query.getArtistById(id, self.wsinc)   
-                            self.html += "<tr><td><b>%s</b></td><td>" % entity.getName()
-                            self.html += displayRelations(entity.getRelations())
-                            self.html += "</td></tr>"
-                        self.html += "</table>"
+                            self.html += "<span style='font-weight:bold; font-size: large'>%s</span><br/>" % entity.getName()
+                            self.html += append_artist_rels(entity)
+                            self.html += "<br/>"
+                            self.html += append_url_rels(entity)
+                            self.html += "<br/><br/>"
             except:
                     print "TRACKINFO-WEBKIT: MusicBrainz WS error #3" 
 
         self.finished.set()
-
-    def getEntityLink(self, entityName, entityId, entityType):
-
-        tuple = [("id", entityId), ("name", entityName.replace("+", " ")), ("type", entityType)]
-        return "<a href=\"mpx:///?%s\">%s</a>" % (urllib.urlencode(tuple), entityName)
 
     def append_ar_coverversion(self, Relations):
 
@@ -294,7 +323,7 @@ class TrackInfoQuery (threading.Thread):
 
         for Cover in Covers:
 
-            Output.append("<b>%s</b> by <b>%s</b>" % (Cover[0], self.getEntityLink(Cover[1],Cover[2],"artist")))
+            Output.append("<b>%s</b> by <b>%s</b>" % (Cover[0], getEntityLink(Cover[1],Cover[2],"artist")))
 
         self.html += "...is a cover of %s<br/>" % (", ".join(Output))
         return True
@@ -309,14 +338,14 @@ class TrackInfoQuery (threading.Thread):
             if len(attr) == 1:
 
                     pre, sep, instrument = Rel.getAttributes()[0].partition("#")
-                    self.html += "...has <b>%s</b> performed by <b>%s</b><br/>" % (instrument, self.getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
+                    self.html += "...has <b>%s</b> performed by <b>%s</b><br/>" % (instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
                     self.Entities.append(realId(artist.getId()))
 
             elif len(attr) == 2:
 
                     pre, sep, adjective = Rel.getAttributes()[0].partition("#")
                     pre, sep, instrument = Rel.getAttributes()[1].partition("#")
-                    self.html += "...has <b>%s %s</b> performed by <b>%s</b><br/>" % (adjective.lower(), instrument, self.getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
+                    self.html += "...has <b>%s %s</b> performed by <b>%s</b><br/>" % (adjective.lower(), instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
                     self.Entities.append(realId(artist.getId()))
 
             elif len(attr) == 3:
@@ -324,7 +353,7 @@ class TrackInfoQuery (threading.Thread):
                     pre, sep, adjective2 = Rel.getAttributes()[0].partition("#")
                     pre, sep, adjective1 = Rel.getAttributes()[1].partition("#")
                     pre, sep, instrument = Rel.getAttributes()[2].partition("#")
-                    self.html += "...has <b>%s %s %s</b> performed by <b>%s</b><br/>" % (adjective1.lower(), adjective2.lower(), instrument, self.getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
+                    self.html += "...has <b>%s %s %s</b> performed by <b>%s</b><br/>" % (adjective1.lower(), adjective2.lower(), instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
                     self.Entities.append(realId(artist.getId()))
 
         return True
@@ -344,7 +373,7 @@ class TrackInfoQuery (threading.Thread):
 
         for Sample in Sampled:
 
-            Output.append("<b>%s</b> by <b>%s</b>" % (Sample[0], self.getEntityLink(Sample[1],Sample[2],"artist")))
+            Output.append("<b>%s</b> by <b>%s</b>" % (Sample[0], getEntityLink(Sample[1],Sample[2],"artist")))
 
         self.html += "...contains samples from %s<br/>" % (", ".join(Output))
         return True
@@ -362,7 +391,7 @@ class TrackInfoQuery (threading.Thread):
 
         for Entity in Entities:
 
-            Output.append("<b>"+self.getEntityLink(Entity[0],Entity[1],"artist")+"</b>")
+            Output.append("<b>"+getEntityLink(Entity[0],Entity[1],"artist")+"</b>")
 
         self.html += "...%s %s<br/>" % (text, ", ".join(Output))
         return True

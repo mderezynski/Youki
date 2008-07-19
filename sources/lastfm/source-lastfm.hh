@@ -40,6 +40,7 @@
 #include <libglademm/xml.h>
 #include <gdl/gdl.h>
 
+#include "mpx/minisoup.hh"
 #include "mpx/mpx-public.hh"
 #include "mpx/i-playbacksource.hh"
 #include "mpx/tagview.hh"
@@ -66,6 +67,7 @@ namespace Source
             Glib::RefPtr<Gtk::ActionGroup>  m_actions;
             Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
             Glib::RefPtr<Gtk::UIManager>    m_ui_manager_main;
+            Soup::RequestRefP               m_track_cover_req;
 
             Gtk::Widget					  * m_UI;
             Gtk::Entry                    * m_URL_Entry;
@@ -82,6 +84,8 @@ namespace Source
             MPX::LastFMRadio                m_LastFMRadio;
             MPX::Player                   & m_Player;
 
+            Metadata                        m_metadata;
+
             void
             on_playlist (XSPF::Playlist const&);
 
@@ -96,6 +100,9 @@ namespace Source
 
             void
             on_url_entry_activated ();
+
+            void
+            track_cover_cb (char const * data, guint size, guint code);
 
       protected:
 

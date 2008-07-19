@@ -328,15 +328,31 @@ namespace Source
         m_PlaylistIter = m_Playlist.get().Items.begin();
     }
 
-	void
-	LastFM::send_metadata ()
-	{
-	}
-
     void
     LastFM::next_post ()
     {
         play_post ();
+    }
+
+    void
+    LastFM::track_cover_cb (char const * data, guint size, guint code)
+    {
+        Glib::RefPtr<Gdk::Pixbuf> image = Glib::RefPtr<Gdk::Pixbuf>(0);
+
+        try{
+            Glib::RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
+            loader->write (reinterpret_cast<const guint8*>(data), size);
+            loader->close ();
+            image = loader->get_pixbuf();
+        }
+        catch (Gdk::PixbufError & cxe)
+        {
+            g_message("%s: Gdk::PixbufError: %s", G_STRLOC, cxe.what().c_str());
+        }
+
+        m_metadata.Image = image; 
+
+        Signals.Metadata.emit(m_metadata);
     }
 
     void
@@ -347,19 +363,33 @@ namespace Source
 
         XSPF::Item const& item = *m_PlaylistIter;
 
-        Metadata metadata;
-        metadata[ATTRIBUTE_ARTIST] = item.creator;
-        metadata[ATTRIBUTE_ALBUM] = item.album;
-        metadata[ATTRIBUTE_TITLE] = item.title;
-        metadata[ATTRIBUTE_TIME] = gint64(item.duration);
-        metadata[ATTRIBUTE_GENRE] = "Last.fm: " + m_Playlist.get().Title; 
-        metadata.Image = Util::get_image_from_uri (item.image);
-        Signals.Metadata.emit (metadata);
+        m_track_cover_req = Soup::Request::create(item.image);
+        m_track_cover_req->request_callback().connect(
+            sigc::mem_fun(
+                *this,
+                &LastFM::track_cover_cb
+        ));
+        m_track_cover_req->run();
 
         if( m_PlaylistIter != m_Playlist.get().Items.end() )
           m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_GO_NEXT);
         else
           m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_GO_NEXT);
+    }
+
+    void
+    LastFM::send_metadata ()
+    {
+        XSPF::Item const& item = *m_PlaylistIter;
+
+        m_metadata = Metadata();
+        m_metadata[ATTRIBUTE_ARTIST]  = item.creator;
+        m_metadata[ATTRIBUTE_ALBUM]   = item.album;
+        m_metadata[ATTRIBUTE_TITLE]   = item.title;
+        m_metadata[ATTRIBUTE_TIME]    = gint64(item.duration);
+        m_metadata[ATTRIBUTE_GENRE]   = "Last.fm: " + m_Playlist.get().Title; 
+
+        Signals.Metadata.emit(m_metadata);
     }
 
     void

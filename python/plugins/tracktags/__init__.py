@@ -49,23 +49,26 @@ class TrackTagsDataAcquire(threading.Thread):
 
         self.tags = []
 
-        uri         = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(self.artist), urllib.quote(self.title))
-        lfmxml      = NonvalidatingReader.parseUri(uri)
-        ctx         = Context(lfmxml)
-        xml_names   = Evaluate("//name", context=ctx)
-        xml_count   = Evaluate("//count", context=ctx)
-        uniq        = {}
+        try:
+                uri         = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(self.artist), urllib.quote(self.title))
+                lfmxml      = NonvalidatingReader.parseUri(uri)
+                ctx         = Context(lfmxml)
+                xml_names   = Evaluate("//name", context=ctx)
+                xml_count   = Evaluate("//count", context=ctx)
+                uniq        = {}
 
-        for i in range(0,len(xml_names)-1):
+                for i in range(0,len(xml_names)-1):
 
-            if xml_names[i].firstChild.data not in uniq:
+                    if xml_names[i].firstChild.data not in uniq:
 
-                    if xml_count[i].firstChild:
-                        self.tags.append([str(xml_names[i].firstChild.data), float(math.log10((float(xml_count[i].firstChild.data) * 5)+1))])
-                    else:
-                        self.tags.append([str(xml_names[i].firstChild.data), float(1.- (float(i)/float(len(xml_names)-1)))*2.5 ])
+                            if xml_count[i].firstChild:
+                                self.tags.append([str(xml_names[i].firstChild.data), float(math.log10((float(xml_count[i].firstChild.data) * 5)+1))])
+                            else:
+                                self.tags.append([str(xml_names[i].firstChild.data), float(1.- (float(i)/float(len(xml_names)-1)))*2.5 ])
 
-                    uniq[xml_names[i].firstChild.data] = 1
+                            uniq[xml_names[i].firstChild.data] = 1
+        except:
+                pass
 
         random.shuffle(self.tags)
         self.finished.set()
