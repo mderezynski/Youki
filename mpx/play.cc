@@ -1307,7 +1307,7 @@ namespace MPX
     GstElement*
     Play::tap ()
     {
-      gst_bin_get_by_name (GST_BIN (m_bin[BIN_OUTPUT]), "tee1");
+      return gst_bin_get_by_name (GST_BIN (m_bin[BIN_OUTPUT]), "tee1");
     }
 
     MPXGstMetadata const&

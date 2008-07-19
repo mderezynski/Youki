@@ -6,25 +6,10 @@ glade_DATA = 							\
 		import-folder.glade				\
 		import-share.glade				\
 		mlibmanager.glade				\
-		mpx1.glade						\
 		mpx.glade						\
-		mpxx.glade						\
 		playlist-plugin-manager.glade	\
 		plugin-manager.glade			\
 		preferences.glade				\
 		request-value.glade
 
-EXTRA_DIST =							\
-		dialog-filebrowser.glade		\
-		dialog-simple-entry.glade		\
-		import-folder.glade				\
-		import-share.glade				\
-		mlibmanager.glade				\
-		mpx1.glade						\
-		mpx.glade						\
-		mpxx.glade						\
-		playlist-plugin-manager.glade	\
-		plugin-manager.glade			\
-		preferences.glade				\
-		request-value.glade
-
+EXTRA_DIST = $(glade_DATA)

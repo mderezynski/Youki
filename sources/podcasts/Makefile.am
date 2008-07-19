@@ -12,6 +12,7 @@ INCLUDES = 							\
 		$(SIGX_CFLAGS)				\
 		$(SOUP_CFLAGS)				\
 		-I$(top_srcdir)/include		\
+		-I$(top_srcdir)				\
 		-I$(top_srcdir)/libhal++
 
 libmpxsource_podcasts_LTLIBRARIES = libmpxsource-podcasts.la
@@ -48,3 +49,4 @@ stockdir = $(pkgdatadir)/icons/hicolor/24x24/stock
 glade_DATA = 						\
 	source-podcasts.glade				
 gladedir = $(pkgdatadir)/glade
+EXTRA_DIST = $(glade_DATA)

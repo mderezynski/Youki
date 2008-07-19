@@ -10,7 +10,8 @@ INCLUDES = 						\
 	$(SEXYMM_CFLAGS)			\
 	$(SIGX_CFLAGS)				\
 	$(SOUP_CFLAGS)				\
-  	-I$(top_srcdir)/include	
+  	-I$(top_srcdir)/include		\
+  	-I$(top_srcdir)
 
 libmpxsource_radio_LTLIBRARIES = libmpxsource-radio.la
 libmpxsource_radio_la_LDFLAGS = -fPIC -module
@@ -47,3 +48,4 @@ libmpxsource_radiodir = $(PLUGIN_DIR)/sources
 glade_DATA = 						\
 	source-radio.glade				
 gladedir = $(pkgdatadir)/glade
+EXTRA_DIST = $(glade_DATA)

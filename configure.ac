@@ -744,16 +744,18 @@ AC_OUTPUT([
     scripts/Makefile
     widgets/Makefile
     api/Makefile
+    xmlcpp/Makefile
+    musicbrainz/Makefile
 
     include/Makefile
     include/mpx/Makefile
     include/mpx/parser/Makefile
+    include/mpx/widgets/Makefile
 
     sources/Makefile
     sources/musiclib/Makefile
     sources/radio/Makefile
     sources/lastfm/Makefile
-    sources/podcasts/Makefile
 
     taglib/Makefile
     taglib/id3v2/Makefile
@@ -784,11 +786,7 @@ AC_OUTPUT([
     xsd/cxx/parser/non-validating/Makefile
     xsd/cxx/parser/expat/Makefile
     
-    xmlcpp/Makefile
-
     mpx/Makefile
-    mpx/parser/Makefile
-    mpx/musicbrainz/Makefile
 
     po/Makefile.in
 

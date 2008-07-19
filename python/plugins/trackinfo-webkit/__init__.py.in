@@ -303,10 +303,29 @@ class TrackInfoQuery (threading.Thread):
 
         for Rel in Relations:
 
-            pre, sep, instrument = Rel.getAttributes()[0].partition("#")
+            attr = Rel.getAttributes()
             artist = Rel.getTarget()
-            self.html += "...has <b>%s</b> performed by <b>%s</b><br/>" % (instrument, self.getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
-            self.Entities.append(realId(artist.getId()))
+
+            if len(attr) == 1:
+
+                    pre, sep, instrument = Rel.getAttributes()[0].partition("#")
+                    self.html += "...has <b>%s</b> performed by <b>%s</b><br/>" % (instrument, self.getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
+                    self.Entities.append(realId(artist.getId()))
+
+            elif len(attr) == 2:
+
+                    pre, sep, adjective = Rel.getAttributes()[0].partition("#")
+                    pre, sep, instrument = Rel.getAttributes()[1].partition("#")
+                    self.html += "...has <b>%s %s</b> performed by <b>%s</b><br/>" % (adjective.lower(), instrument, self.getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
+                    self.Entities.append(realId(artist.getId()))
+
+            elif len(attr) == 3:
+    
+                    pre, sep, adjective2 = Rel.getAttributes()[0].partition("#")
+                    pre, sep, adjective1 = Rel.getAttributes()[1].partition("#")
+                    pre, sep, instrument = Rel.getAttributes()[2].partition("#")
+                    self.html += "...has <b>%s %s %s</b> performed by <b>%s</b><br/>" % (adjective1.lower(), adjective2.lower(), instrument, self.getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
+                    self.Entities.append(realId(artist.getId()))
 
         return True
 
@@ -608,7 +627,7 @@ class TrackInfoDispatcher(mpx.Plugin):
 
     def activate(self):
 
-        self.player_infoarea_click_id = self.player.gobj().connect("infoarea-click", self.new_track)
+        self.player_infoarea_click_id = self.player.gobj().connect("new-track", self.new_track)
         self.player_playstatus_changed_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
         self.info = TrackInfo(self.xml)
         self.player.add_info_widget(self.vbox, "Track Info")

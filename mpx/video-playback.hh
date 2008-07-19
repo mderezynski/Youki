@@ -35,7 +35,6 @@
 #include <gdk/gdkx.h>
 #include <sigc++/sigc++.h>
 #include <boost/format.hpp>
-
 #include "audio-types.hh"
 
 namespace MPX

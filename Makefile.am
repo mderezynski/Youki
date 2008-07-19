@@ -27,25 +27,32 @@ SUBDIRS =		\
 	glade		\
 	icons		\
 	images		\
+				\
 	po			\
+				\
 	boost		\
 	include		\
 	xsd			\
-	api			\
-	remote		\
-	jnetlib		\
-	mcs			\
-	taglib		\
-	xmlcpp		\
 	widgets		\
-	python		\
-	sources
+	musicbrainz	\
+	xmlcpp		\
+	taglib		
 
 if HAVE_HAL
 SUBDIRS += libhal++
 endif
 
-SUBDIRS += mpx
+SUBDIRS +=		\
+				\
+	jnetlib		\
+	mcs			\
+				\
+	remote		\
+	python		\
+	sources		\
+				\
+	api			\
+	mpx
 
 man_MANS = mpx.1
 

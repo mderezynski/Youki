@@ -4,3 +4,4 @@ python_DATA = 				\
 		notification.mpx-plugin
 pythondir = $(pkgdatadir)/python-plugins/notification
 BUILT_SOURCES = __init__.py
+EXTRA_DIST = $(python_DATA)

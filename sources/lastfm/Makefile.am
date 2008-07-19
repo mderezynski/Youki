@@ -1,11 +1,7 @@
-images_DATA = artist-unknown.png
-
-imagesdir = $(pkgdatadir)/images
-
 glade_DATA = 								\
-	source-lastfm.glade						\
-	lastfm-component-top-albums.glade		\
-	lastfm-component-user-top-albums.glade
+	source-lastfm.glade						
+
+EXTRA_DIST = $(glade_DATA)
 
 gladedir = $(pkgdatadir)/glade
 
@@ -23,7 +19,8 @@ INCLUDES =							\
 		$(SEXYMM_CFLAGS)			\
 		$(SIGX_CFLAGS)				\
 		$(SOUP_CFLAGS)				\
-		-I$(top_srcdir)/include	
+		-I$(top_srcdir)/include		\
+		-I$(top_srcdir)
 
 libmpxsource_lastfm_LTLIBRARIES = libmpxsource-lastfm.la
 libmpxsource_lastfm_la_LDFLAGS = -fPIC -module

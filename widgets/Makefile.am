@@ -1,4 +1,4 @@
-noinst_LTLIBRARIES = libmpx-widgets.la
+lib_LTLIBRARIES = libmpx-widgets.la
 
 libmpx_widgets_la_CFLAGS = 	\
 	$(GLIB_CFLAGS) $(GTK_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx

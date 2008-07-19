@@ -7,3 +7,4 @@ python_DATA = 				\
 
 pythondir = $(pkgdatadir)/python-plugins/mpxdj
 BUILT_SOURCES = __init__.py
+EXTRA_DIST = $(python_DATA)

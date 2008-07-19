@@ -1,4 +1,4 @@
-SUBDIRS = parser
+SUBDIRS = parser widgets
 noinst_HEADERS =					\
 									\
 	audio.hh						\
@@ -10,7 +10,6 @@ noinst_HEADERS =					\
 	gstpuid.h						\
 	hal.hh							\
 	i-metadatareader.hh				\
-	inotify-cxx.h					\
 	i-playbacksource.hh				\
 	i-playlistparser.hh				\
 	last-fm-xmlrpc.hh				\

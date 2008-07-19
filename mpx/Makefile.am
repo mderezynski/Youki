@@ -1,5 +1,3 @@
-SUBDIRS = parser musicbrainz
-
 libexec_PROGRAMS = mpx-bin 
 
 mpx_bin_LDFLAGS = -Wl,--export-dynamic 
@@ -76,11 +74,9 @@ mpx_bin_LDADD =										\
 		-lgstinterfaces-0.10 						\
 		-lgstvideo-0.10								\
 		$(top_builddir)/jnetlib/libjnetlib.la		\
-		$(top_builddir)/widgets/libmpx-widgets.la	\
-		$(top_builddir)/xmlcpp/libmpx-parsers.la	\
 		$(top_builddir)/mcs/libmconfig.la			\
-		$(top_builddir)/mpx/parser/libmpxparser.la	\
 		$(top_builddir)/api/libmpx-api.la	
+		$(top_builddir)/musicbrainz/libmpx-musicbrainz.la
 
 mpx_bin_CFLAGS =				\
     $(GLIB_CFLAGS) $(GST_CFLAGS) -I$(top_srcdir)/include
@@ -101,6 +97,9 @@ endif
 mpx_bin_SOURCES =				\
 								\
 	audio.cc					\
+	audio-types.hh				\
+	audio-exception.hh			\
+								\
 	covers.cc					\
 								\
 	dialog-filebrowser.hh		\
@@ -138,6 +137,8 @@ mpx_bin_SOURCES =				\
 	mlibmanager.hh				\
 	mlibmanager.cc				\
 								\
+	messages.hh					\
+								\
 	mpx.hh						\
 	mpx.cc						\
 								\
@@ -156,6 +157,7 @@ mpx_bin_SOURCES =				\
 	preferences.hh				\
 	preferences.cc				\
 								\
+	pysigc.hh					\
 	python.cc					\
 								\
 	request-value.hh			\
@@ -198,10 +200,12 @@ EXTRA_DIST = 				\
 	dbus-obj-PLAYER.xml 	\
 	dbus-marshalers.list
 
+BUILT_SOURCES = $(built_header_make)
+
 dbus-obj-MPX-glue.h: Makefile.am dbus-obj-MPX.xml
 	@echo "* Generating /MPX DBus Glue"
 	@$(DBUSBINDINGTOOL) --mode=glib-server --prefix=Player::DBusMPX::mpx \
-    $(abs_top_builddir)/mpx/dbus-obj-MPX.xml > \
+    $(abs_top_srcdir)/mpx/dbus-obj-MPX.xml > \
     dbus-obj-MPX-glue.h.temp
 	@cat dbus-obj-MPX-glue.h.temp   | sed s:G_BEGIN_DECLS:: | sed s:G_END_DECLS:: > \
     dbus-obj-MPX-glue.h.temp.1
@@ -216,7 +220,7 @@ dbus-obj-MPX-glue.h: Makefile.am dbus-obj-MPX.xml
 dbus-obj-PLAYER-glue.h: Makefile.am dbus-obj-PLAYER.xml
 	@echo "* Generating /Player DBus Glue"
 	@$(DBUSBINDINGTOOL) --mode=glib-server --prefix=Player::DBusPlayer::player \
-    $(abs_top_builddir)/mpx/dbus-obj-PLAYER.xml > \
+    $(abs_top_srcdir)/mpx/dbus-obj-PLAYER.xml > \
     dbus-obj-PLAYER-glue.h.temp
 	@cat dbus-obj-PLAYER-glue.h.temp   | sed s:G_BEGIN_DECLS:: | sed s:G_END_DECLS:: > \
     dbus-obj-PLAYER-glue.h.temp.1
@@ -237,7 +241,7 @@ dbus-marshalers.h: dbus-marshalers.list
 	@$(GLIB_GENMARSHAL) --prefix=mpx_dbus_marshal --header $(srcdir)/dbus-marshalers.list > dbus-marshalers.h
 
 
-BUILT_SOURCES = dbus-marshalers.c dbus-marshalers.h
+BUILT_SOURCES += dbus-marshalers.c dbus-marshalers.h
 mpx_bin_SOURCES += dbus-marshalers.c
 
 EXTRA_DIST += glib-marshalers.list

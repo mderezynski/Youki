@@ -12,6 +12,7 @@ INCLUDES = 							\
 		$(SIGX_CFLAGS)				\
 		$(SOUP_CFLAGS)				\
 		-I$(top_srcdir)/include		\
+		-I$(top_srcdir)				\
 		-I$(top_srcdir)/libhal++
 
 libmpxsource_musiclib_LTLIBRARIES = libmpxsource-musiclib.la
@@ -53,10 +54,9 @@ glade_DATA = 						\
 	source-musiclib.glade				
 gladedir = $(pkgdatadir)/glade
 
-EXTRA_DIST = glib-marshalers.list
+EXTRA_DIST = glib-marshalers.list $(glade_DATA)
 
-built_header_make = 	\
-		glib-marshalers.h
+BUILT_SOURCES = glib-marshalers.h 
 
 glib-marshalers.c: glib-marshalers.list 
 	@echo "* Generating glib-marshalers.c"

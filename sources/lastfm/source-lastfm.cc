@@ -26,6 +26,8 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
+#include "source-lastfm.hh"
+
 #include <gtkmm.h>
 #include <gtk/gtk.h>
 #include <glibmm.h>
@@ -47,18 +49,10 @@
 #include "mpx/stock.hh"
 #include "mpx/types.hh"
 #include "mpx/uri.hh"
-#include "mpx/util-ui.hh"
-#include "mpx/xmltoc++.hh"
-
-#include "source-lastfm.hh"
-#include "lastfm-extra-widgets.hh"
-#include "xsd-track-toptags.hxx"
-
-#include "mpx/widgets/cell-renderer-cairo-surface.hh"
 #include "mpx/util-graphics.hh"
-
-//#include "component-top-albums.hh"
-//#include "component-user-top-albums.hh"
+#include "mpx/util-ui.hh"
+#include "mpx/widgets/cell-renderer-cairo-surface.hh"
+#include "mpx/xmltoc++.hh"
 
 #define STATE(e) ((m_state & e) != 0)
 #define SET_STATE(e) ((m_state |= e))
@@ -72,28 +66,6 @@ namespace
     boost::format f1 ("lastfm://artist/%s/similarartists");
     boost::format f2 ("lastfm://globaltags/%s");
     boost::format f3 ("lastfm://user/%s/neighbours");
-
-    class TagInserter
-    {
-      public:
-
-        TagInserter (/*MPX::LastFMTagView & view*/ MPX::TagView & view)
-        : m_View(view)
-        {
-        }
-
-        void
-        operator()(::tag const& t)
-        {
-/*            m_View.insert_tag( t.name(), t.url(), t.count() ); */
-            m_View.add_tag( t.name(), std::log10(t.count()*5) );
-        }
-
-      private:
-
-        // MPX::LastFMTagView & m_View;
-        MPX::TagView & m_View;
-    };
 }
 
 namespace MPX

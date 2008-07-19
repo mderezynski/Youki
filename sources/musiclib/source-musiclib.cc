@@ -2221,24 +2221,23 @@ namespace MPX
                                 Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
                                 drag_source_set(Entries); 
                                 m_DragSource = true;
+
+                                if(!g_atomic_int_get(&m_ButtonPressed))
+                                    return false;
+
+                                if( (cell_x >= 102) && (cell_x <= 162) && (cell_y >= 65) && (cell_y <=78))
+                                {
+                                    int rating = ((cell_x - 102)+7) / 12;
+                                    (*iter)[LFMColumns.Rating] = rating;  
+                                    m_Lib.get().albumRated(m_DragAlbumId.get(), rating);
+                                    return true;
+                                }
                              }
                              else
                              {
                                 drag_source_unset ();
                                 m_DragSource = false;
                              }
-    
-
-                            if(!g_atomic_int_get(&m_ButtonPressed))
-                                return false;
-
-                            if( (cell_x >= 102) && (cell_x <= 162) && (cell_y >= 65) && (cell_y <=78))
-                            {
-                                int rating = ((cell_x - 102)+7) / 12;
-                                (*iter)[LFMColumns.Rating] = rating;  
-                                m_Lib.get().albumRated(m_DragAlbumId.get(), rating);
-                                return true;
-                            }
                     }
                 }
                 return false;
@@ -2260,7 +2259,7 @@ namespace MPX
                 if(get_path_at_pos (event->x, event->y, m_PathButtonPress, col, cell_x, cell_y))
                 {
                     TreeIter iter = TreeStore->get_iter(TreeStoreFilter->convert_path_to_child_path(m_PathButtonPress));
-                    if(m_PathButtonPress.get_depth() == ROW_ALBUM)
+                    if(m_PathButtonPress.get_depth() == ROW_ALBUM && (*iter)[LFMColumns.IsMPXAlbum])
                     {
                         m_DragMBID = (*iter)[LFMColumns.MBID];
                         m_DragAlbumId = (*iter)[LFMColumns.Id];

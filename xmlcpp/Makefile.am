@@ -1,4 +1,4 @@
-noinst_LTLIBRARIES = libmpx-parsers.la
+lib_LTLIBRARIES = libmpx-parsers.la
 libmpx_parsers_la_dir = $(libdir)
 
 INCLUDES = -I$(top_srcdir) $(XML_INCLUDES)

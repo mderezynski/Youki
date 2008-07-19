@@ -31,7 +31,6 @@
 	<widget class="GtkHPaned" id="hpaned1">
 	  <property name="visible">True</property>
 	  <property name="can_focus">True</property>
-	  <property name="position">0</property>
 
 	  <child>
 	    <widget class="GtkVBox" id="vbox2">

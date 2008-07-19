@@ -71,11 +71,7 @@ libmpx_api_la_LIBADD =								\
 		$(XLIB_LIBS)								\
 		-lgstinterfaces-0.10 						\
 		-lgstvideo-0.10								\
-		$(top_builddir)/jnetlib/libjnetlib.la		\
-		$(top_builddir)/widgets/libmpx-widgets.la	\
-		$(top_builddir)/xmlcpp/libmpx-parsers.la	\
-		$(top_builddir)/mcs/libmconfig.la			\
-		$(top_builddir)/mpx/parser/libmpxparser.la	
+		$(top_builddir)/xmlcpp/libmpx-parsers.la
 
 libmpx_api_la_CFLAGS =								\
     $(GLIB_CFLAGS) $(GST_CFLAGS) -I$(top_srcdir)/include
@@ -85,9 +81,11 @@ libmpx_api_la_SOURCES = 							\
 		base64.c									\
 		gstpuid.cc									\
 		last-fm-xmlrpc.cc							\
+		libxml2-sax-base.cc							\
 		lyrics-v2.cc								\
 		md5.c										\
-		tagview.cc									\
 		playlistparser-xspf.cc						\
+		tagview.cc									\
 		xml.cc										\
-		xspf-libxml2-sax.cc
+		xpath.cc									\
+		xspf-libxml2-sax.cc							
