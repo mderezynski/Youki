@@ -107,13 +107,14 @@ namespace
   "         <menuitem action='action-quit'/>"
   "   </menu>"
   "   <menu action='MenuEdit'>"
-  "         <menuitem action='action-preferences'/>"
-  "         <menuitem action='action-plugins'/>"
-  "         <separator name='separator-menubar-main-01'/>"
 #ifdef HAVE_HAL
   "         <menuitem action='action-mlibmanager'/>"
 #endif // HAVE_HAL
   "			<menuitem action='action-vacuum-lib'/>"
+  "         <separator/>"
+  "         <menuitem action='action-plugins'/>"
+  "         <separator/>"
+  "         <menuitem action='action-preferences'/>"
   "   </menu>"
   "   <menu action='MenuView'>"
   "   </menu>"
@@ -1658,14 +1659,29 @@ namespace MPX
 #else
 
 		m_actions->add (Action::create ("action-mlibmanager",
-										_("Manage Music Library")),
+										_("Manage Music Library...")),
 	    sigc::mem_fun (*m_MLibManager, &MLibManager::present));
 #endif
 
 
 		m_actions->add (Action::create ("action-vacuum-lib",
-										_("Vacuum Library")),
+										_("Vacuum Music Library")),
 	    sigc::mem_fun (m_Library, &Library::vacuum));
+
+
+
+		m_actions->add (Action::create (ACTION_PLUGINS,
+										Gtk::StockID(MPX_STOCK_PLUGIN),
+										_("Manage Plugins...")),
+	    sigc::mem_fun (*this, &Player::on_show_plugins ));
+
+
+
+		m_actions->add (Action::create (ACTION_PREFERENCES,
+										Gtk::Stock::EXECUTE,
+										_("Edit Preferences...")),
+	    sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
+
 
 
 		m_actions->add (Action::create ("action-quit",
@@ -1675,10 +1691,12 @@ namespace MPX
 		sigc::ptr_fun ( &Gtk::Main::quit ));
 
 
+
 		m_actions->add (Action::create (ACTION_PLAY,
 										Gtk::Stock::MEDIA_PLAY,
 										_("Play")),
 		sigc::mem_fun (*this, &Player::on_controls_play ));
+
 
 
 		m_actions->add (ToggleAction::create (ACTION_PAUSE,
@@ -1703,18 +1721,6 @@ namespace MPX
 										Gtk::Stock::MEDIA_PREVIOUS,
 										_("Prev")),
         sigc::mem_fun (*this, &Player::on_controls_prev ));
-
-
-		m_actions->add (Action::create (ACTION_PLUGINS,
-										Gtk::StockID(MPX_STOCK_PLUGIN),
-										_("Plugins...")),
-	    sigc::mem_fun (*this, &Player::on_show_plugins ));
-
-
-		m_actions->add (Action::create (ACTION_PREFERENCES,
-										Gtk::Stock::EXECUTE,
-										_("Preferences...")),
-	    sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
 
 
     	m_actions->add (Action::create (ACTION_LASTFM_LOVE,
