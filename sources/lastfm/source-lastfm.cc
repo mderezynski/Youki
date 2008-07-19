@@ -37,9 +37,7 @@
 #include <cmath>
 
 #include <boost/format.hpp>
-#include <boost/regex.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/algorithm/string/regex.hpp>
 
 #include "mpx/mpx-public.hh"
 #include "mpx/play-public.hh"
