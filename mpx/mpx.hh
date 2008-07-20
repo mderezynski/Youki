@@ -33,6 +33,7 @@
 #include <libglademm/xml.h>
 #include <sigx/sigx.h>
 
+#include "mpx/audio.hh"
 #include "mpx/covers.hh"
 #ifdef HAVE_HAL
 #include "mpx/hal.hh"
@@ -106,7 +107,7 @@ namespace MPX
         PyObject*
         get_sources_by_class(std::string const& uuid);
 
-		Metadata const& 
+		Metadata& 
 		get_metadata ();
 
         MPXPlaystatus
@@ -174,6 +175,7 @@ namespace MPX
 			PSIGNAL_TRACK_PLAYED,
 			PSIGNAL_INFOAREA_CLICK,
             PSIGNAL_STATUS_CHANGED,
+            PSIGNAL_METADATA_PRE,
             PSIGNAL_METADATA_UPDATED,
             PSIGNAL_NEW_SOURCE,
 			N_SIGNALS
@@ -253,6 +255,8 @@ namespace MPX
 
 		boost::optional<Metadata>   m_Metadata;
         Glib::Mutex                 m_MetadataLock;
+        Audio::ProcessorPUID      * m_ProcessorPUID;
+
 		Glib::RefPtr<Gdk::Pixbuf>   m_DiscDefault;
         boost::optional<ItemKey>    m_PreparingSource;
 
@@ -407,6 +411,8 @@ namespace MPX
         bool
         metadata_updated ();
 
+        void
+        on_processor_puid_eos ();
 
 
 

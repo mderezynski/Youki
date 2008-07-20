@@ -3146,7 +3146,7 @@ namespace Source
 
         playlist.m_CurrentIter = playlist.ListStore->get_iter( path );
         playlist.m_CurrentId = (*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.RowId];
-        playlist.queue_draw();
+
         Signals.PlayRequest.emit();
     }
 
@@ -3345,17 +3345,15 @@ namespace Source
         {
             playlist.m_CurrentIter = playlist.m_PlayInitIter.get();
             playlist.m_PlayInitIter.reset ();
-            exists = playlist.check_current_exists();
         }
-        else
-        if(!playlist.m_CurrentIter)
+
+        if /* still */ (!playlist.m_CurrentIter)
         {
             if( !rows.empty() )
             {
                     playlist.m_CurrentIter = playlist.ListStore->get_iter (rows[0]); 
                     playlist.m_CurrentId = (*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.RowId];
                     playlist.queue_draw();
-                    exists = playlist.check_current_exists();
             }
             else
             {
@@ -3363,9 +3361,13 @@ namespace Source
                     {
                         TreePath path (TreePath::size_type(1), TreePath::value_type(0));
                         playlist.m_CurrentIter = playlist.ListStore->get_iter(path);
-                        exists = playlist.check_current_exists();
                     }
             }
+        }
+
+        if /* finally */ ( playlist.m_CurrentIter )
+        {
+            exists = playlist.check_current_exists();
         }
 
         if( !exists )

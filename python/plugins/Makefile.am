@@ -7,6 +7,7 @@ SUBDIRS =			        \
 		osd			        \
 		pidgin			    \
 		pltd				\
+		puid-scan			\
 		ratings_export		\
 		trackcover			\
 		trackinfo-webkit    \

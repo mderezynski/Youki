@@ -257,8 +257,6 @@ namespace MPX
           Glib::Mutex                           m_layout_lock;
           Glib::Mutex                           m_info_lock;
 
-          int                                   m_info_count;
-
     public:
 
           typedef sigc::signal<void> SignalCoverClicked;
@@ -571,7 +569,6 @@ namespace MPX
             m_cover_anim_conn_slide.disconnect ();
 
             m_info_text.reset();
-            m_info_count = 0;
 
             queue_draw ();
           }
@@ -582,7 +579,6 @@ namespace MPX
             Mutex::Lock L (m_info_lock);
 
             m_info_text = text;
-            m_info_count++;
             queue_draw ();
           }
     
@@ -591,12 +587,8 @@ namespace MPX
           {
             Mutex::Lock L (m_info_lock);
 
-            m_info_count--;
-            if( m_info_count == 0 )
-            {
-                m_info_text.reset();
-                queue_draw ();
-            }
+            m_info_text.reset();
+            queue_draw ();
           }
 
           void
@@ -1582,6 +1574,14 @@ namespace MPX
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT); 
 
+		signals[PSIGNAL_METADATA_PRE] =
+			g_signal_new ("metadata-pre",
+					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+					  GSignalFlags (G_SIGNAL_RUN_FIRST),
+					  0,
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
 		signals[PSIGNAL_METADATA_UPDATED] =
 			g_signal_new ("metadata-updated",
 					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
@@ -2303,7 +2303,7 @@ namespace MPX
     }
 
 
-	Metadata const&
+	Metadata&
 	Player::get_metadata ()
 	{
         if(m_Metadata)
@@ -3807,6 +3807,10 @@ namespace MPX
     Player::metadata_updated ()
     {
         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_PRE], 0);
+        pyg_gil_state_release(state);
+
+        state = (PyGILState_STATE)(pyg_gil_state_ensure ());
         g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_UPDATED], 0);
         pyg_gil_state_release(state);
 
