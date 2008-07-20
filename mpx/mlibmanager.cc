@@ -316,51 +316,57 @@ namespace MPX
     void
     MLibManager::prescan_path (std::string const& scan_path, TreeIter & iter)
     {
-        Glib::Dir dir (scan_path);
-        std::vector<std::string> strv (dir.begin(), dir.end());
-        dir.close ();
+        try{
+                Glib::Dir dir (scan_path);
+                std::vector<std::string> strv (dir.begin(), dir.end());
+                dir.close ();
 
-        for(std::vector<std::string>::const_iterator i = strv.begin(); i != strv.end(); ++i)
-        {
-            std::string path = build_filename(scan_path, *i);
-            if((i->operator[](0) != '.')
-              && file_test(path, FILE_TEST_IS_DIR))
-            {
-                if(!m_HAL.path_is_mount_path(path))
+                for(std::vector<std::string>::const_iterator i = strv.begin(); i != strv.end(); ++i)
                 {
-                    FSTreeStore->append(iter->children());
-                    return;
+                    std::string path = build_filename(scan_path, *i);
+                    if((i->operator[](0) != '.')
+                      && file_test(path, FILE_TEST_IS_DIR))
+                    {
+                        if(!m_HAL.path_is_mount_path(path))
+                        {
+                            FSTreeStore->append(iter->children());
+                            return;
+                        }
+                    }
                 }
-            }
+        } catch( Glib::FileError ) {
         }
     } 
 
     void
     MLibManager::append_path (std::string const& root_path, TreeIter & root_iter)
     {
-        Glib::Dir dir (root_path);
-        std::vector<std::string> strv (dir.begin(), dir.end());
-        dir.close ();
+        try{
+                Glib::Dir dir (root_path);
+                std::vector<std::string> strv (dir.begin(), dir.end());
+                dir.close ();
 
-        for(std::vector<std::string>::const_iterator i = strv.begin(); i != strv.end(); ++i)
-        {
-            std::string path = build_filename(root_path, *i);
-            if(i->operator[](0) != '.')
-                try{
-                    if(file_test(path, FILE_TEST_IS_DIR))
-                    {
-                        if(!m_HAL.path_is_mount_path(path))
-                        {
-                            TreeIter iter = FSTreeStore->append(root_iter->children());
-                            (*iter)[FSTreeColumns.SegName] = *i; 
-                            (*iter)[FSTreeColumns.FullPath] = path;
-                            (*iter)[FSTreeColumns.WasExpanded] = false;
-                            prescan_path (path, iter);
-                        }
-                    }
-                } catch (Glib::Error)
+                for(std::vector<std::string>::const_iterator i = strv.begin(); i != strv.end(); ++i)
                 {
+                    std::string path = build_filename(root_path, *i);
+                    if(i->operator[](0) != '.')
+                        try{
+                            if(file_test(path, FILE_TEST_IS_DIR))
+                            {
+                                if(!m_HAL.path_is_mount_path(path))
+                                {
+                                    TreeIter iter = FSTreeStore->append(root_iter->children());
+                                    (*iter)[FSTreeColumns.SegName] = *i; 
+                                    (*iter)[FSTreeColumns.FullPath] = path;
+                                    (*iter)[FSTreeColumns.WasExpanded] = false;
+                                    prescan_path (path, iter);
+                                }
+                            }
+                        } catch (Glib::Error)
+                        {
+                        }
                 }
+        } catch( Glib::FileError ) {
         }
 
         (*root_iter)[FSTreeColumns.WasExpanded] = true;
