@@ -313,7 +313,7 @@ def realId(entityId):
 
 def getEntityLink(entityName, entityId, entityType):
 
-    tuple = [("id", entityId), ("name", entityName.replace("+", " ")), ("type", entityType)]
+    tuple = [("id", realId(entityId)), ("name", entityName.replace("+", " ")), ("type", entityType)]
     return "<a href=\"mpx-info:///?%s\">%s</a>" % (urllib.urlencode(tuple), entityName)
 
 def getLastFMArtistInfo(artistname):
@@ -878,7 +878,7 @@ class TrackInfo:
 
     def display_artist(self, mydict):
 
-        if self.artist_cached[mydict["id"]]:
+        if mydict["id"] in self.artist_cached:
             self.webview.load_html_string(self.artist_cached[mydict["id"]], "") 
         else:
             self.notebook.set_current_page(1)

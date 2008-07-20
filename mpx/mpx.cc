@@ -1780,13 +1780,22 @@ namespace MPX
 
 		/*- Load Sources --------------------------------------------------*/ 
 
-		m_Sidebar->signal_id_changed().connect( sigc::mem_fun( *this, &Player::on_source_changed ));
+		m_Sidebar->signal_id_changed().connect(
+            sigc::mem_fun(
+                *this,
+                &Player::on_source_changed
+        ));
 
         m_Sidebar->addItem(
             _("Now Playing"),
             m_VideoWidget,
             0,
-            Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "images" G_DIR_SEPARATOR_S "now-playing.png"))->scale_simple(20,20,Gdk::INTERP_BILINEAR),
+            Gdk::Pixbuf::create_from_file(
+                build_filename(
+                    DATA_DIR,
+                    "images" G_DIR_SEPARATOR_S "now-playing.png"
+                )
+            )->scale_simple(20,20,Gdk::INTERP_BILINEAR),
             0 
         );
 
@@ -1794,7 +1803,12 @@ namespace MPX
             _("Track Details"),
             m_InfoNotebook,
             0,
-            Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "images" G_DIR_SEPARATOR_S "trackdetails.png"))->scale_simple(20,20,Gdk::INTERP_BILINEAR),
+            Gdk::Pixbuf::create_from_file(
+                build_filename(
+                    DATA_DIR,
+                    "images" G_DIR_SEPARATOR_S "trackdetails.png"
+                )
+            )->scale_simple(20,20,Gdk::INTERP_BILINEAR),
             1 
         );
 
@@ -2727,8 +2741,12 @@ namespace MPX
       g_return_if_fail(m_PreparingSource);
 
       m_ActiveSource = m_PreparingSource.get();
-
 	  PlaybackSource* source = m_Sources[m_PreparingSource.get()];
+
+	  source->send_caps ();
+	  source->send_metadata ();
+
+      m_Sidebar->setActiveId(m_PreparingSource.get());
 
       switch( m_PlayDirection )
       {
@@ -2747,11 +2765,6 @@ namespace MPX
             source->play_post();
             break;
       };
-
-	  source->send_caps ();
-	  source->send_metadata ();
-
-      m_Sidebar->setActiveId(m_PreparingSource.get());
 
       PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
       g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
@@ -2949,14 +2962,18 @@ namespace MPX
             if( source_id == m_ActiveSource ) 
             {
                 PlaybackSource::Caps caps = m_source_c[source_id];
-                m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
-                m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
-                m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
+                m_actions->get_action (ACTION_PREV)->set_sensitive( caps & PlaybackSource::C_CAN_GO_PREV );
+                m_actions->get_action (ACTION_NEXT)->set_sensitive( caps & PlaybackSource::C_CAN_GO_NEXT );
+                m_actions->get_action (ACTION_PLAY)->set_sensitive( caps & PlaybackSource::C_CAN_PLAY );
 
                 if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
                 {
                     m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
                 }
+            }
+            else
+            {
+                m_actions->get_action (ACTION_PLAY)->set_sensitive( false );
             }
         }
 	}

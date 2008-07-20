@@ -464,7 +464,7 @@ namespace MPX
     Play::switch_stream_real (ustring const& stream,
                               ustring const& type)
     {
-      Glib::Mutex::Lock L (m_stream_lock);
+      //Glib::Mutex::Lock L (m_stream_lock);
 
       set_custom_httpheader(NULL);
 	  m_metadata.reset();
