@@ -339,7 +339,7 @@ namespace MPX
 			object callable = instance.attr("activate");
 			result = boost::python::call<bool>(callable.ptr());
 			i->second->m_Active = true;
-            signal_.emit(id);
+            signal_activated_.emit(id);
 		} catch( error_already_set )
 		{
 			push_traceback (id, "activate");
@@ -379,6 +379,7 @@ namespace MPX
 			object callable = instance.attr("deactivate");
 			result = boost::python::call<bool>(callable.ptr());
 			i->second->m_Active = false;
+            signal_deactivated_.emit(id);
 		} catch( error_already_set ) 
 		{
 			push_traceback (id, "deactivate");
@@ -408,6 +409,8 @@ namespace MPX
         std::string name = m_Map.find(id)->second->get_name();
         g_message("%s: Failed to call '%s' on plugin %lld:\nTraceback: %s", G_STRLOC, method.c_str(), id, traceback.c_str());
 		m_TracebackList.push_front(Traceback(name, method, traceback));
+
+        signal_traceback_.emit();
 
         Py_XDECREF (pytype);
         Py_XDECREF (pyvalue);

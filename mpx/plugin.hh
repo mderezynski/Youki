@@ -107,7 +107,8 @@ namespace MPX
 			get_traceback() const;
 	};
 
-    typedef sigc::signal<void, gint64> SignalPluginActivated;
+    typedef sigc::signal<void, gint64> SignalPlugin;
+    typedef sigc::signal<void>         Signal;
 
 
 	class Player;
@@ -115,18 +116,38 @@ namespace MPX
     {
         friend class PluginActivate;
 
-        SignalPluginActivated signal_;
+        SignalPlugin signal_activated_;
+        SignalPlugin signal_deactivated_;
+        Signal       signal_traceback_;
 
 		public:
 	
 			PluginManager (MPX::Player* /*player*/);
 			~PluginManager ();
 
-            SignalPluginActivated&	
-            signal_plugin_activated() { return signal_; }
+
+            SignalPlugin&	
+            signal_plugin_activated()
+            {
+                return signal_activated_;
+            }
+
+            SignalPlugin&	
+            signal_plugin_deactivated()
+            {
+                return signal_deactivated_;
+            }
+
+            Signal&	
+            signal_traceback()
+            {
+                return signal_traceback_;
+            }
 
 			void
-			append_search_path (std::string const& /*path*/);
+			append_search_path(
+                std::string const& /*path*/
+            );
 
 			void
 			load_plugins ();
@@ -134,33 +155,41 @@ namespace MPX
             void
             activate_plugins ();
 
-
-			PluginHoldMap const&
-			get_map () const;
-		
+			const PluginHoldMap&
+			get_map ()
+            const;
 
 			bool	
-			activate (gint64 /*id*/);
+			activate(
+                gint64 /*id*/
+            );
 	
 			bool
-			deactivate (gint64 /*id*/);
+			deactivate(
+                gint64 /*id*/
+            );
 
             Gtk::Widget *
-            get_gui (gint64 /*id*/);
-
+            get_gui(
+                gint64 /*id*/
+            );
 
 			void
-			push_traceback(gint64 id, const std::string& /*method*/);
+			push_traceback(
+                gint64 /*id*/,
+                const std::string& /*method*/
+            );
 
 			unsigned int
-			get_traceback_count() const;
+			get_traceback_count()
+            const;
 
 			Traceback
-			get_last_traceback() const;
+			get_last_traceback()
+            const;
 
 			Traceback
 			pull_last_traceback();
-
 
 		private:
 

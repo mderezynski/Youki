@@ -1455,14 +1455,18 @@ namespace MPX
               void
               on_got_cover(const Glib::ustring& mbid)
               {
-                Cairo::RefPtr<Cairo::ImageSurface> Cover;
-                m_Covers.get().fetch(mbid, Cover, COVER_SIZE_ALBUM_LIST);
-                Util::cairo_image_surface_border(Cover, 2.);
-                Cover = Util::cairo_image_surface_round(Cover, 12.);
+                Cairo::RefPtr<Cairo::ImageSurface> surface;
+
+                m_Covers.get().fetch(mbid, surface, COVER_SIZE_ALBUM_LIST);
+
+                surface = Util::cairo_image_surface_round(surface, 5.);
+                Util::cairo_image_surface_rounded_border(surface, .5, 5.);
+
                 IterSet & set = m_MBIDIterMap[mbid];
+
                 for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
                 {
-                    (*(*i))[AlbumColumns.Image] = Cover;
+                    (*(*i))[AlbumColumns.Image] = surface;
                 }
               }
 
@@ -1518,7 +1522,10 @@ namespace MPX
                     if(year.size())
                     {
                         year = year.substr(0,4);
-                        (*iter)[AlbumColumns.Date] = boost::lexical_cast<int>(year);
+                        try{
+                            (*iter)[AlbumColumns.Date] = boost::lexical_cast<int>(year);
+                        } catch( boost::bad_lexical_cast ) {
+                        } 
                     }
                 }
                 else
@@ -1626,7 +1633,10 @@ namespace MPX
                     if(year.size())
                     {
                         year = year.substr(0,4);
-                        (*iter)[AlbumColumns.Date] = boost::lexical_cast<int>(year);
+                        try{
+                            (*iter)[AlbumColumns.Date] = boost::lexical_cast<int>(year);
+                        } catch( boost::bad_lexical_cast ) {
+                        } 
                     }
                 }
                 else
@@ -2451,8 +2461,8 @@ namespace MPX
                     Cairo::RefPtr<Cairo::ImageSurface> surface;
                     if( m_Covers.get().fetch( mbid, surface, COVER_SIZE_ALBUM_LIST ))
                     {
-                        surface = Util::cairo_image_surface_round(surface, 12.);
-                        Util::cairo_image_surface_rounded_border(surface, 1., 12.);
+                        surface = Util::cairo_image_surface_round(surface, 5.);
+                        Util::cairo_image_surface_rounded_border(surface, .5, 5.);
                         (*iter)[LFMColumns.Image] = Util::cairo_image_surface_to_pixbuf(surface);
                     }
                     else
@@ -2974,8 +2984,8 @@ namespace MPX
                                     Gdk::INTERP_BILINEAR
                             ));
 
-                        surface = Util::cairo_image_surface_round(surface, 12.);
-                        Util::cairo_image_surface_rounded_border(surface, 1., 12.);
+                        surface = Util::cairo_image_surface_round(surface, 5.);
+                        Util::cairo_image_surface_rounded_border(surface, .5, 5.);
 
                         (*iter)[LFMColumns.Image]       = Util::cairo_image_surface_to_pixbuf(surface);
                         (*iter)[LFMColumns.RowType]     = ROW_ALBUM;

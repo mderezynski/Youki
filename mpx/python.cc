@@ -703,6 +703,8 @@ BOOST_PYTHON_MODULE(mpx)
 
         .def("info_clear",          &MPX::Player::info_clear)
 
+        .def("deactivate_plugin",   &MPX::Player::deactivate_plugin)
+
 		.def("play",                &MPX::Player::play)
 		.def("pause",               &MPX::Player::pause)
 		.def("prev",                &MPX::Player::prev)

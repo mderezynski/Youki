@@ -374,6 +374,13 @@ class AudioScrobblerPost:
         self.updateurl = None
         self.posturl = None
         self.npurl = None
+
+    def set_credentials(self, username, password):
+
+        self.params["username"] = username
+        self.params["password"] = password
+
+        self.auth()
         
     def auth(self):
         
@@ -548,9 +555,10 @@ class AudioScrobblerPost:
                   tracknumber=u'', 
                   album=u'',
                   mbid=u''):
-
-        self.auth()
         
+        if not self.authenticated:
+            return
+
         p = {}
         p['s'] = self.auth_details['s']
         
@@ -605,6 +613,9 @@ class AudioScrobblerPost:
         Post the tracks by popping the first ten off the cache and attempting
         to post them.
         """
+
+        if not self.authenticated:
+            return
         
         if len(self.cache) == 0:
             return
@@ -676,7 +687,10 @@ class AudioScrobblerPost:
     def flushcache(self):
         
         """ Post all the tracks in the cache """
-        
+
+        if not self.authenticated:
+            return
+
         while len(self.cache) > 0:
             self.post()
     
@@ -750,6 +764,30 @@ class MPXAudioScrobbler(mpx.Plugin):
         self.id = id
         self.player = player
         self.mcs = mcs
+        self.xml = gtk.glade.XML("/usr/share/mpx" + "/python-plugins/audioscrobbler/audioscrobbler.glade")
+        self.widget = self.xml.get_widget("widget")
+        self.widget.unparent()
+
+        self.username = self.xml.get_widget("e-username")
+        self.password = self.xml.get_widget("e-password")
+
+        self.username.props.text = self.mcs.key_get_string("lastfm", "username")
+        self.password.props.text = self.mcs.key_get_string("lastfm", "password")
+
+        self.username.connect("changed", self.on_credentials_changed)
+        self.password.connect("changed", self.on_credentials_changed)
+    
+    def on_credentials_changed(self, entry):
+
+        self.mcs.key_set_string("lastfm", "username", self.username.props.text)
+        self.mcs.key_set_string("lastfm", "password", self.password.props.text)
+
+        self.post.authenticated = False
+        self.player.deactivate_plugin(self.id)
+
+    def get_gui(self):
+
+        return self.widget
 
     def activate(self):
     
@@ -758,6 +796,7 @@ class MPXAudioScrobbler(mpx.Plugin):
         self.as = AudioScrobbler()
         self.post = self.as.post(self.mcs.key_get_string("lastfm", "username"), self.mcs.key_get_string("lastfm", "password"))
         self.post.auth()
+    
         self.hand1 = self.player.gobj().connect("track-played", self.track_played)
         self.hand2 = self.player.gobj().connect("new-track", self.now_playing)
         self.player_playstatus_changed = self.player.gobj().connect("play-status-changed", self.pstate_changed)

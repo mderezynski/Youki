@@ -434,10 +434,10 @@ class ArtistInfoQuery (threading.Thread):
 
         artist = getLastFMArtistInfo(self.artistname)
 
-        self.html += "<div style='height: 2em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % self.artistname 
+        self.html += "<div style='height: 2em; margin-bottom: 0.2em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % self.artistname 
         self.html += artist
 
-        self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
+        self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 0.2em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
 
         try:
                 entity = self.query.getArtistById(self.artistid, self.wsinc)   
@@ -481,7 +481,7 @@ class TrackInfoQuery (threading.Thread):
         try:
                 artist = getLastFMArtistInfo(self.track[mpx.AttributeId.ARTIST].get())
 
-                self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % self.track[mpx.AttributeId.ARTIST].get()
+                self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 0.2em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>About %s</p></div>" % self.track[mpx.AttributeId.ARTIST].get()
                 self.html += artist
         except:
                 pass 
@@ -491,7 +491,7 @@ class TrackInfoQuery (threading.Thread):
                         % (urllib.quote(self.track[mpx.AttributeId.ARTIST].get()), urllib.quote(self.track[mpx.AttributeId.TITLE].get())))
                 lyrics = req.read()
                 if lyrics != "Not found":
-                    self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Lyrics</p></div>"
+                    self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 0.2em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Lyrics</p></div>"
                     self.html += lyrics.replace("\n","<br/>")
         except:
                 print "TRACKINFO-WEBKIT: Error fetching lyrics" 
@@ -537,7 +537,7 @@ class TrackInfoQuery (threading.Thread):
             if self.track[mpx.AttributeId.MB_ARTIST_ID]:
                 self.Entities.append(self.track[mpx.AttributeId.MB_ARTIST_ID].get())
 
-            self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>This Track...</p></div>"
+            self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 0.2em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>This Track...</p></div>"
             for rel in Relations:
                 if rel in CallTable:
                     CallInfo = CallTable[rel] 
@@ -550,7 +550,7 @@ class TrackInfoQuery (threading.Thread):
                 else:
                     print "TRACKINFO-WEBKIT: Unhandled AR of type: " + rel
 
-            self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Album Links</p></div>"
+            self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 0.2em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Album Links</p></div>"
 
             if self.track[mpx.AttributeId.ALBUM_ARTIST] and self.track[mpx.AttributeId.ALBUM]: 
                 self.html += "<a href='http://rateyourmusic.com/release/album/%s/%s/'>RateYourMusic</a>  " % (self.track[mpx.AttributeId.ALBUM_ARTIST].get().replace(" ","_").lower(), self.track[mpx.AttributeId.ALBUM].get().replace(" ","_").lower())
@@ -567,7 +567,7 @@ class TrackInfoQuery (threading.Thread):
 
             try:
                     if len(self.Entities) > 0:
-                        self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 1em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
+                        self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 0.2em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
                         for id in self.Entities:
                             entity = self.query.getArtistById(id, self.wsinc)   
                             self.html += "<span style='font-weight:bold; font-size: large'>%s</span><br/>" % entity.getName()

@@ -113,6 +113,9 @@ namespace MPX
         MPXPlaystatus
         get_status ();
 
+        void
+        deactivate_plugin(gint64);
+
 		void
 		play ();
 

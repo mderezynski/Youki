@@ -75,7 +75,8 @@ mpx_bin_LDADD =										\
 		-lgstvideo-0.10								\
 		$(top_builddir)/jnetlib/libjnetlib.la		\
 		$(top_builddir)/mcs/libmconfig.la			\
-		$(top_builddir)/api/libmpx-api.la	
+		$(top_builddir)/api/libmpx-api.la			\
+		$(top_builddir)/widgets/libmpx-widgets.la	\
 		$(top_builddir)/musicbrainz/libmpx-musicbrainz.la
 
 mpx_bin_CFLAGS =				\

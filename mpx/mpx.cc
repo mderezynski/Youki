@@ -2216,9 +2216,9 @@ namespace MPX
         std::string password = mcs->key_get<std::string>("lastfm", "password");
 
         if(
-            username.size()
+            !username.empty()
                 &&
-            password.size()
+            !password.empty()
                 &&
             m_Metadata.get()[ATTRIBUTE_ARTIST]
                 &&
@@ -2959,7 +2959,7 @@ namespace MPX
         {
             m_SourceUI = m_Sources[source_id]->add_menu();
 
-            if( source_id == m_ActiveSource ) 
+            if( source_id == m_ActiveSource.get() ) 
             {
                 PlaybackSource::Caps caps = m_source_c[source_id];
                 m_actions->get_action (ACTION_PREV)->set_sensitive( caps & PlaybackSource::C_CAN_GO_PREV );
@@ -3815,6 +3815,12 @@ namespace MPX
         pyg_gil_state_release(state);
 
         return false;
+    }
+
+    void
+    Player::deactivate_plugin(gint64 id)
+    {
+        m_PluginManager->deactivate(id);
     }
 
     void

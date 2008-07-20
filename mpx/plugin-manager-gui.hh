@@ -68,6 +68,9 @@ namespace MPX
 
 		private:
 
+            void
+            check_traceback();
+
 			PluginManager & m_Manager;
 			PTV * m_PTV;
 			Gtk::Notebook * notebook;

@@ -32,6 +32,7 @@
 #include <gdk/gdkx.h>
 #include <X11/Xlib.h>
 #include "mpx/util-graphics.hh"
+#include "mpx/widgets/cairoextensions.hh"
 
 namespace
 {
@@ -309,20 +310,7 @@ namespace MPX
     {
       g_return_if_fail (width > 0 && height > 0 && radius >= 0);
 
-      double edge_length_x = width - radius * 2;
-      double edge_length_y = height - radius * 2;
-
-      //g_return_if_fail (edge_length_x >= 0 && edge_length_y >= 0);
-
-      cr->move_to (x + radius, y);
-      cr->rel_line_to (edge_length_x, 0);
-      cr->rel_curve_to (radius, 0, radius, radius, radius, radius);
-      cr->rel_line_to (0, edge_length_y);
-      cr->rel_curve_to (0, radius, -radius, radius, -radius, radius);
-      cr->rel_line_to (-edge_length_x, 0);
-      cr->rel_curve_to (-radius, 0, -radius, -radius, -radius, -radius);
-      cr->rel_line_to (0, -edge_length_y);
-      cr->rel_curve_to (0, -radius, radius, -radius, radius, -radius);
+      RoundedRectangle( cr, x, y, width, height, radius );
     }
 
     Cairo::RefPtr<Cairo::ImageSurface>

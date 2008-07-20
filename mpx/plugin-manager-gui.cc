@@ -38,6 +38,8 @@ namespace MPX
 	class PTV
 		: public WidgetLoader<Gtk::TreeView>
 	{
+            typedef std::map<gint64, Gtk::TreeIter> IdIterMap_t;
+    
 			class ColumnsT : public Gtk::TreeModelColumnRecord
 			{
 				public:
@@ -68,12 +70,11 @@ namespace MPX
 				};
 			};
 	
-			Glib::RefPtr<Gtk::ListStore> Store;
-			ColumnsT Columns;
-
-			PluginManager & m_Manager;
-
-            Gtk::CellRendererPixbuf * m_pRendererPixbuf;
+			Glib::RefPtr<Gtk::ListStore>    Store;
+			ColumnsT                        Columns;
+			PluginManager                 & m_Manager;
+            Gtk::CellRendererPixbuf       * m_pRendererPixbuf;
+            IdIterMap_t                     m_IdIterMap;
 
 		public:
 
@@ -95,34 +96,79 @@ namespace MPX
                 pColumn->add_attribute(m_pRendererPixbuf->property_pixbuf(), Columns.Pixbuf);
 
 				std::vector<Gtk::CellRenderer*> renderers = pColumn->get_cell_renderers();
+
 				Gtk::CellRendererToggle * cell_toggle =	dynamic_cast<Gtk::CellRendererToggle*>(renderers[0]);
-				cell_toggle->signal_toggled().connect( sigc::mem_fun( *this, &PTV::on_cell_toggled ) );
-                pColumn->set_cell_data_func(*renderers[0], sigc::mem_fun( *this, &PTV::cell_data_func_active ));
+
+				cell_toggle->signal_toggled().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &PTV::on_cell_toggled
+                    )
+                );
+
+                pColumn->set_cell_data_func(
+                    *renderers[0],
+                    sigc::mem_fun(
+                        *this,
+                        &PTV::cell_data_func_active
+                    )
+                );
 
 				PluginHoldMap const& map = m_Manager.get_map();	
 
 				for(PluginHoldMap::const_iterator i = map.begin(); i != map.end(); ++i)
 				{
 					TreeIter iter = Store->append();
-					(*iter)[Columns.Name] = i->second->get_name();
-					(*iter)[Columns.Desc] = i->second->get_desc();
-					(*iter)[Columns.Authors] = i->second->get_authors();
-					(*iter)[Columns.Copyright] = i->second->get_copyright();
-					(*iter)[Columns.Website] = i->second->get_website();
-					(*iter)[Columns.Active] = i->second->get_active();
-					(*iter)[Columns.HasGUI] = i->second->get_has_gui();
-					(*iter)[Columns.CanActivate] = i->second->get_can_activate();
+
+					(*iter)[Columns.Id]             = i->second->get_id();
+					(*iter)[Columns.Name]           = i->second->get_name();
+					(*iter)[Columns.Desc]           = i->second->get_desc();
+					(*iter)[Columns.Authors]        = i->second->get_authors();
+					(*iter)[Columns.Copyright]      = i->second->get_copyright();
+					(*iter)[Columns.Website]        = i->second->get_website();
+					(*iter)[Columns.Active]         = i->second->get_active();
+					(*iter)[Columns.HasGUI]         = i->second->get_has_gui();
+					(*iter)[Columns.CanActivate]    = i->second->get_can_activate();
+
 					if(!i->second->get_can_activate())
+                    {
 						(*iter)[Columns.Pixbuf] = Theme->load_icon("emblem-readonly", 16, Gtk::ICON_LOOKUP_NO_SVG);
-					(*iter)[Columns.Id] = i->second->get_id();
+                    }
+
+                    m_IdIterMap.insert(std::make_pair(i->second->get_id(), iter));
 
 				}
 
                 Store->set_default_sort_func( sigc::mem_fun( *this, &PTV::plugin_sort_func ));
                 Store->set_sort_column(-1, Gtk::SORT_ASCENDING);
 				set_model (Store);
-				signal_row_activated().connect( sigc::mem_fun( *this, &PTV::on_row_activated ) );
+            
+                manager.signal_plugin_activated().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &PTV::on_plugin_activated
+                ));
+
+                manager.signal_plugin_deactivated().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &PTV::on_plugin_deactivated
+                ));
 			}
+
+            void
+            on_plugin_activated(gint64 id)
+            {
+                TreeIter iter = m_IdIterMap.find(id)->second;
+				(*iter)[Columns.Active] = true;
+            }
+
+            void
+            on_plugin_deactivated(gint64 id)
+            {
+                TreeIter iter = m_IdIterMap.find(id)->second;
+				(*iter)[Columns.Active] = false;
+            }
 
             int
             plugin_sort_func(const TreeIter& iter_a, const TreeIter& iter_b)
@@ -166,9 +212,7 @@ namespace MPX
 				if(active)
 					m_Manager.deactivate(id);
 				else
-					result = m_Manager.activate(id);
-
-				(*iter)[Columns.Active] = result;
+					m_Manager.activate(id);
 			}
 
 			Gtk::Widget *
@@ -237,7 +281,6 @@ namespace MPX
 		, m_PTV(new PTV(xml, obj_manager))
 		{
 			m_PTV->get_selection()->signal_changed().connect( sigc::mem_fun( *this, &PluginManagerGUI::on_selection_changed ) );
-			m_PTV->get_model()->signal_row_changed().connect( sigc::mem_fun( *this, &PluginManagerGUI::on_row_changed ) );
 
 			xml->get_widget("notebook", notebook);
 			notebook->get_nth_page(1)->hide();
@@ -257,6 +300,12 @@ namespace MPX
 			Gtk::Button * buClose;
 			xml->get_widget("close", buClose);
 			buClose->signal_clicked().connect( sigc::mem_fun( *this, &Gtk::Widget::hide ) );
+
+            obj_manager.signal_traceback().connect(
+                sigc::mem_fun(
+                    *this,
+                    &PluginManagerGUI::check_traceback
+            ));
 		}
 
 		PluginManagerGUI*
@@ -304,9 +353,9 @@ namespace MPX
 				notebook->get_nth_page(1)->hide();
 		}
 
-		void
-		PluginManagerGUI::on_row_changed(const Gtk::TreeModel::Path& /*path*/, const Gtk::TreeModel::iterator& /*iter*/)
-		{
+        void
+        PluginManagerGUI::check_traceback()
+        {
 			if(m_Manager.get_traceback_count())
 			{
 				set_error_text();
@@ -317,8 +366,8 @@ namespace MPX
 				error->set_markup(" ");
 				buTraceback->set_sensitive(false);
 			}
-		}
-
+        }
+        
 		void
 		PluginManagerGUI::show_dialog()
 		{
@@ -328,7 +377,9 @@ namespace MPX
 			dialog.run();
 
 			if(m_Manager.get_traceback_count())
+            {
 				set_error_text();
+            }
 			else
 			{
 				error->set_markup(" ");
