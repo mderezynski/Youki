@@ -90,6 +90,12 @@ namespace
         {   "mb_release_date",
             VALUE_TYPE_STRING   }, 
 
+        {   "mb_release_country",
+            VALUE_TYPE_STRING   }, 
+
+        {   "mb_release_type",
+            VALUE_TYPE_STRING   }, 
+
         {   "amazon_asin",
             VALUE_TYPE_STRING   }, 
 
@@ -253,13 +259,15 @@ namespace MPX
         static boost::format
           album_table_f ("CREATE TABLE IF NOT EXISTS album "
                           "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
-                          "'%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, "
+                          "'%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, "
                           "'%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, UNIQUE "
-                          "('%s', '%s', '%s', '%s', '%s'));");
+                          "('%s', '%s', '%s', '%s', '%s', '%s', '%s'));");
 
         m_SQL->exec_sql ((album_table_f % attrs[ATTRIBUTE_ALBUM].id
                                         % attrs[ATTRIBUTE_MB_ALBUM_ID].id
                                         % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
+                                        % attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id
+                                        % attrs[ATTRIBUTE_MB_RELEASE_TYPE].id
                                         % attrs[ATTRIBUTE_ASIN].id
 										% "album_genre" 
 										% "album_rating"
@@ -269,6 +277,8 @@ namespace MPX
                                         % attrs[ATTRIBUTE_ALBUM].id
                                         % attrs[ATTRIBUTE_MB_ALBUM_ID].id
                                         % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
+                                        % attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id
+                                        % attrs[ATTRIBUTE_MB_RELEASE_TYPE].id
                                         % attrs[ATTRIBUTE_ASIN].id
                                         % "album_artist_j").str());
 

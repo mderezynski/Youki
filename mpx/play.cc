@@ -1394,7 +1394,7 @@ namespace MPX
     void
     Play::push_message (Audio::Message const& message)
     {
-		Glib::Mutex::Lock L (m_QueueLock);
+		//Glib::Mutex::Lock L (m_QueueLock);
 	    g_async_queue_push (m_MessageQueue, (gpointer)(new Audio::Message (message)));
 	    process_queue ();
     }

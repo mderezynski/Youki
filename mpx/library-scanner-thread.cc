@@ -63,6 +63,12 @@ namespace
         {   "mb_release_date",
             VALUE_TYPE_STRING   }, 
 
+        {   "mb_release_country",
+            VALUE_TYPE_STRING   }, 
+
+        {   "mb_release_type",
+            VALUE_TYPE_STRING   }, 
+
         {   "amazon_asin",
             VALUE_TYPE_STRING   }, 
 
@@ -567,7 +573,7 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
     if( track[ATTRIBUTE_MB_ALBUM_ID] )
     {
-      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
+      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
 
       sql = mprintf (select_album_f,
 
@@ -584,6 +590,16 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
              attrs[ATTRIBUTE_MB_RELEASE_DATE].id,
             (track[ATTRIBUTE_MB_RELEASE_DATE]
                 ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()).c_str()
+                : "IS NULL"), 
+
+             attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id,
+            (track[ATTRIBUTE_MB_RELEASE_COUNTRY]
+                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_RELEASE_COUNTRY].get()).c_str()).c_str()
+                : "IS NULL"), 
+
+             attrs[ATTRIBUTE_MB_RELEASE_TYPE].id,
+            (track[ATTRIBUTE_MB_RELEASE_TYPE]
+                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_RELEASE_TYPE].get()).c_str()).c_str()
                 : "IS NULL"), 
 
             attrs[ATTRIBUTE_ASIN].id,
@@ -639,13 +655,15 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
         custom_id = true;
       }
 
-      char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s, %s, album_new) VALUES (%Q, %Q, %Q, %Q, %lld, %lld, 1);");
+      char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s, %s, %s, %s, album_new) VALUES (%Q, %Q, %Q, %Q, %Q, %Q, %lld, %lld, 1);");
 
       std::string sql = mprintf (set_album_f,
 
           attrs[ATTRIBUTE_ALBUM].id,
           attrs[ATTRIBUTE_MB_ALBUM_ID].id,
           attrs[ATTRIBUTE_MB_RELEASE_DATE].id,
+          attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id,
+          attrs[ATTRIBUTE_MB_RELEASE_TYPE].id,
           attrs[ATTRIBUTE_ASIN].id,
           "album_artist_j",
           "album_insert_date",
@@ -660,6 +678,14 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
           (track[ATTRIBUTE_MB_RELEASE_DATE]
               ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()
+              : NULL) , 
+
+          (track[ATTRIBUTE_MB_RELEASE_COUNTRY]
+              ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_COUNTRY].get()).c_str()
+              : NULL) , 
+
+          (track[ATTRIBUTE_MB_RELEASE_TYPE]
+              ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_TYPE].get()).c_str()
               : NULL) , 
 
           (track[ATTRIBUTE_ASIN]

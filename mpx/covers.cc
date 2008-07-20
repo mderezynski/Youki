@@ -225,9 +225,6 @@ namespace MPX
         CoverFetchData* amzn_data
     )
     {
-        g_message("AMAPI Code: %u", code);
-        g_message("Reply: %s", std::string (data, size).c_str());
-
         RequestKeeper.erase(amzn_data->mbid);
 
         if( code == 200 )
@@ -350,8 +347,6 @@ namespace MPX
         CoverFetchData* amzn_data
     )
     {
-        g_message( G_STRFUNC );
-
         RequestKeeper.erase(amzn_data->mbid);
 
         if (code == 200)

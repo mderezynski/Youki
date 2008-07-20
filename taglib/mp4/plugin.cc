@@ -108,6 +108,18 @@ extern "C" bool _get (std::string const& filename, Track & track)
                   ItemMap["\251day"].toStringList()[0].toCString (true); 
   }
 
+  if (ItemMap.contains ("----:com.apple.iTunes:MusicBrainz Album Release Country"))
+  {
+      track[ATTRIBUTE_MB_RELEASE_COUNTRY] =
+                  ItemMap[ "----:com.apple.iTunes:MusicBrainz Album Release Country"].toStringList()[0].toCString (true); 
+  }
+
+  if (ItemMap.contains ("----:com.apple.iTunes:MusicBrainz Album Type"))
+  {
+      track[ATTRIBUTE_MB_RELEASE_TYPE] =
+                  ItemMap[ "----:com.apple.iTunes:MusicBrainz Album Type"].toStringList()[0].toCString (true); 
+  }
+
   if (ItemMap.contains ("aART"))
   {
       track[ATTRIBUTE_ALBUM_ARTIST] =

@@ -64,10 +64,11 @@ namespace MPX
             Gtk::TreeModelColumn<Glib::ustring> ArtistSort;
             Gtk::TreeModelColumn<Glib::ustring> AlbumSort;
             Gtk::TreeModelColumn<gint64>        RowId;
-            Gtk::TreeModelColumn<Glib::ustring> Location;
+            Gtk::TreeModelColumn<std::string>   Location;
             Gtk::TreeModelColumn< ::MPX::Track> MPXTrack;
             Gtk::TreeModelColumn<gint64>        Rating;
             Gtk::TreeModelColumn<bool>          IsMPXTrack;
+            Gtk::TreeModelColumn<bool>          IsBad;
 
             PlaylistColumnsT ()
             {
@@ -83,6 +84,7 @@ namespace MPX
                 add (MPXTrack);
                 add (Rating);
                 add (IsMPXTrack);
+                add (IsBad);
             };
         };
 

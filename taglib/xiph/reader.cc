@@ -37,16 +37,18 @@ namespace MPX
           int   datum;
           char* id;
       } mb_metadata_xiph[] = {
-        { ATTRIBUTE_ALBUM_ARTIST,           "ALBUMARTIST"                 },
-        { ATTRIBUTE_ALBUM_ARTIST_SORTNAME,  "ALBUMARTISTSORT"             },
-        { ATTRIBUTE_MB_ALBUM_ARTIST_ID,     "MUSICBRAINZ_ALBUMARTISTID"   },
-        { ATTRIBUTE_MB_TRACK_ID,            "MUSICBRAINZ_TRACKID"         },
-        { ATTRIBUTE_MB_ALBUM_ID,            "MUSICBRAINZ_ALBUMID"         },
-        { ATTRIBUTE_MB_ARTIST_ID,           "MUSICBRAINZ_ARTISTID"        },
-        { ATTRIBUTE_ARTIST_SORTNAME,        "ARTISTSORT"                  },
-        { ATTRIBUTE_MB_RELEASE_DATE,        "DATE"                        },
-        { ATTRIBUTE_ASIN,                   "ASIN"                        },
-        { ATTRIBUTE_MUSICIP_PUID,           "MUSICIP_PUID"                },
+        { ATTRIBUTE_ALBUM_ARTIST,           "ALBUMARTIST"               },
+        { ATTRIBUTE_ALBUM_ARTIST_SORTNAME,  "ALBUMARTISTSORT"           },
+        { ATTRIBUTE_MB_ALBUM_ARTIST_ID,     "MUSICBRAINZ_ALBUMARTISTID" },
+        { ATTRIBUTE_MB_TRACK_ID,            "MUSICBRAINZ_TRACKID"       },
+        { ATTRIBUTE_MB_ALBUM_ID,            "MUSICBRAINZ_ALBUMID"       },
+        { ATTRIBUTE_MB_ARTIST_ID,           "MUSICBRAINZ_ARTISTID"      },
+        { ATTRIBUTE_ARTIST_SORTNAME,        "ARTISTSORT"                },
+        { ATTRIBUTE_MB_RELEASE_DATE,        "DATE"                      },
+        { ATTRIBUTE_ASIN,                   "ASIN"                      },
+        { ATTRIBUTE_MUSICIP_PUID,           "MUSICIP_PUID"              },
+        { ATTRIBUTE_MB_RELEASE_COUNTRY,     "RELEASECOUNTRY"            },
+        { ATTRIBUTE_MB_RELEASE_TYPE,        "MUSICBRAINZ_ALBUMTYPE"     },
       };
 
       Ogg::FieldListMap const& map (comment->fieldListMap());

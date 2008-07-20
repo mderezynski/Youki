@@ -47,12 +47,13 @@ namespace MPX
   }
 
   std::string
-  default_stock_path ()
+  default_stock_path (std::string const& size)
   {
-   return build_filename (DATA_DIR, G_DIR_SEPARATOR_S "icons"
-						            G_DIR_SEPARATOR_S "hicolor"
-									G_DIR_SEPARATOR_S "24x24"
-									G_DIR_SEPARATOR_S "stock");
+   return build_filename (DATA_DIR, build_filename("icons",
+						                build_filename("hicolor",
+                                            build_filename(size.c_str(),
+									            "stock"
+          ))));
   }
 
   void
@@ -68,6 +69,11 @@ namespace MPX
     v.push_back(StockIconSpec( "plugin.png",                   MPX_STOCK_PLUGIN            ));
     v.push_back(StockIconSpec( "plugin-disabled.png",          MPX_STOCK_PLUGIN_DISABLED   ));
 
-    register_stock_icons (v, default_stock_path()); 
+    register_stock_icons (v, default_stock_path("24x24")); 
+
+    v.clear();
+    v.push_back(StockIconSpec( "error.png",                    MPX_STOCK_ERROR             ));
+
+    register_stock_icons (v, default_stock_path("16x16")); 
   }
 }

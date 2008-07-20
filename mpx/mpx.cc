@@ -257,6 +257,8 @@ namespace MPX
           Glib::Mutex                           m_layout_lock;
           Glib::Mutex                           m_info_lock;
 
+          int                                   m_info_count;
+
     public:
 
           typedef sigc::signal<void> SignalCoverClicked;
@@ -568,6 +570,9 @@ namespace MPX
             m_cover_anim_conn_fade.disconnect ();
             m_cover_anim_conn_slide.disconnect ();
 
+            m_info_text.reset();
+            m_info_count = 0;
+
             queue_draw ();
           }
 
@@ -577,6 +582,7 @@ namespace MPX
             Mutex::Lock L (m_info_lock);
 
             m_info_text = text;
+            m_info_count++;
             queue_draw ();
           }
     
@@ -585,8 +591,12 @@ namespace MPX
           {
             Mutex::Lock L (m_info_lock);
 
-            m_info_text.reset();
-            queue_draw ();
+            m_info_count--;
+            if( m_info_count == 0 )
+            {
+                m_info_text.reset();
+                queue_draw ();
+            }
           }
 
           void
@@ -1313,6 +1323,8 @@ namespace MPX
         "album",
         "mb album id",
         "mb release date",
+        "mb release country",
+        "mb release type",
         "asin",
         "mb album artist",
         "mb album artist sort name",

@@ -45,7 +45,9 @@ class TrackCover(mpx.Plugin):
         self.image.clear()
 
         try:
-            m = self.player.get_metadata()
-            self.image.set_from_pixbuf(m.get_image())
+            image = self.player.get_metadata().get_image()
+
+            if image:
+                self.image.set_from_pixbuf(image.scale_simple(512,512,gtk.gdk.INTERP_HYPER))
         except:
             print "Error in TrackCover::metadata_updated"

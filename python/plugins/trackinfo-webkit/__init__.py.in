@@ -832,6 +832,8 @@ class TrackInfo:
         self.track = track
 
         if not track[mpx.AttributeId.MB_TRACK_ID] and track.get(mpx.AttributeId.LOCATION).get()[:7] == "file://":
+
+                self.mpx.info_set("Analyizng File")
             
                 scan = PuidScan(self.track)
                 scan.start()
@@ -847,6 +849,8 @@ class TrackInfo:
 
                 self.progress.set_fraction(0.)
                 self.progress.hide() 
+
+                self.mpx.info_clear()
 
         self.webview.open("mpx-info:///?type=track")
 

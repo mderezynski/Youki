@@ -27,6 +27,7 @@
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include <glib.h>
+#include <giomm.h>
 #include <libglademm.h>
 #include <Python.h>
 #define NO_IMPORT
@@ -36,6 +37,7 @@
 #include "mpx/hal.hh"
 #include "mpx/library.hh"
 #include "mpx/sql.hh"
+#include "mpx/stock.hh"
 #include "mpx/types.hh"
 #include "mpx/util-graphics.hh"
 #include "mpx/util-ui.hh"
@@ -182,6 +184,8 @@ namespace MPX
               PAccess<MPX::HAL> m_HAL;
 
               Glib::RefPtr<Gdk::Pixbuf> m_Playing;
+              Glib::RefPtr<Gdk::Pixbuf> m_Bad;
+
               gint64 m_RowId;
 
               TreePath m_PathButtonPress;
@@ -227,9 +231,18 @@ namespace MPX
                 set_rules_hint();
 
                 m_Playing = Gdk::Pixbuf::create_from_file(Glib::build_filename(Glib::build_filename(DATA_DIR,"images"),"play.png"));
+                m_Bad = render_icon (StockID (MPX_STOCK_ERROR), ICON_SIZE_SMALL_TOOLBAR);
+
                 for(int n = 0; n < 6; ++n)
                 {
-                    m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename(DATA_DIR,"images"), (boost::format("stars%d.png") % n).str()));
+                    m_Stars[n] = Gdk::Pixbuf::create_from_file(
+                        build_filename(
+                            build_filename(
+                                DATA_DIR,
+                                "images"
+                            ),
+                            (boost::format("stars%d.png") % n).str()
+                    ));
                 }
 
                 TreeViewColumn * col = manage (new TreeViewColumn(""));
@@ -237,7 +250,7 @@ namespace MPX
                 col->pack_start(*cell, true);
                 col->set_min_width(24);
                 col->set_max_width(24);
-                col->set_cell_data_func(*cell, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncPlaying ));
+                col->set_cell_data_func(*cell, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncIcon ));
 
                 append_column(*col);
                 append_column(_("Name"), PlaylistColumns.Name);
@@ -424,7 +437,7 @@ namespace MPX
                   TreePath path = ListStore->get_path(m_CurrentIter.get());
                   path.next();
         
-                  while( path.get_indices().data()[0] < ListStore->children().size() )
+                  while( guint(path.get_indices().data()[0]) < ListStore->children().size() )
                   {
                     p.push_back(path);
                     path.next ();
@@ -492,6 +505,7 @@ namespace MPX
                   (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
                   (*iter)[PlaylistColumns.MPXTrack] = m_Lib.get().sqlToTrack(r); 
                   (*iter)[PlaylistColumns.IsMPXTrack] = true; 
+                  (*iter)[PlaylistColumns.IsBad] = false; 
               }
 
               void
@@ -538,6 +552,7 @@ namespace MPX
 
                   (*iter)[PlaylistColumns.MPXTrack] = track; 
                   (*iter)[PlaylistColumns.IsMPXTrack] = track[ATTRIBUTE_MPX_TRACK_ID] ? true : false; 
+                  (*iter)[PlaylistColumns.IsBad] = false; 
               }
 
               void
@@ -956,10 +971,17 @@ namespace MPX
               }
 
               void
-              cellDataFuncPlaying (CellRenderer * basecell, TreeModel::iterator const &iter)
+              cellDataFuncIcon (CellRenderer * basecell, TreeModel::iterator const &iter)
               {
                   CellRendererPixbuf *cell_p = dynamic_cast<CellRendererPixbuf*>(basecell);
-                  if(m_CurrentIter && m_CurrentIter.get() == iter)
+
+                  if( (*iter)[PlaylistColumns.IsBad] )
+                  {
+                      cell_p->property_pixbuf() = m_Bad; 
+                      return;
+                  }
+
+                  if( m_CurrentIter && m_CurrentIter.get() == iter )
                       cell_p->property_pixbuf() = m_Playing;
                   else
                       cell_p->property_pixbuf() = Glib::RefPtr<Gdk::Pixbuf>(0);
@@ -1043,6 +1065,44 @@ namespace MPX
                   m_MusicLib.send_caps ();
               }
 
+              bool
+              check_current_exists ()
+              {
+                g_return_val_if_fail(m_CurrentIter,false);
+
+                std::string location;
+#ifdef HAVE_HAL
+                try{
+                    MPX::Track t ((*m_CurrentIter.get())[PlaylistColumns.MPXTrack]);
+                    std::string volume_udi = get<std::string>(t[ATTRIBUTE_HAL_VOLUME_UDI].get());
+                    std::string device_udi = get<std::string>(t[ATTRIBUTE_HAL_DEVICE_UDI].get());
+                    std::string vrp = get<std::string>(t[ATTRIBUTE_VOLUME_RELATIVE_PATH].get());
+                    std::string mount_point = m_HAL.get().get_mount_point_for_volume(volume_udi, device_udi);
+                    std::string uri = build_filename(mount_point, vrp);
+                    location = filename_to_uri(uri);
+                } catch (HAL::NoMountPathForVolumeError & cxe)
+                {
+                    g_message("%s: Error: What: %s", G_STRLOC, cxe.what());
+                }
+#else
+                location = (*m_CurrentIter.get())[PlaylistColumns.Location];
+#endif // HAVE_HAL
+
+                if( !location.empty() ) 
+                {
+                    try{
+                        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri( location );
+                        bool exists = file->query_exists();
+                        (*m_CurrentIter.get())[PlaylistColumns.IsBad] = !exists; 
+                        return exists;
+                    } catch( Glib::Error & cxe ) {
+                        g_warning("%s: %s", G_STRFUNC, cxe.what().c_str());
+                    }
+    
+                }
+                
+                return false;
+              }
         };
 
         enum AlbumRowType
@@ -1444,20 +1504,24 @@ namespace MPX
                 (*iter)[AlbumColumns.Image] = m_DiscDefault; 
                 (*iter)[AlbumColumns.Id] = id; 
 
+                gint64 idate = 0;
+                std::string asin;
+                std::string date; 
+                std::string country;
+                std::string artist_sort;
+
                 if(r.count("album_rating"))
                 {
                     gint64 rating = get<gint64>(r["album_rating"]);
                     (*iter)[AlbumColumns.Rating] = rating;
                 }
 
-                gint64 idate = 0;
                 if(r.count("album_insert_date"))
                 {
                     idate = get<gint64>(r["album_insert_date"]);
                     (*iter)[AlbumColumns.InsertDate] = idate;
                 }
 
-                std::string asin;
                 if(r.count("amazon_asin"))
                 {
                     asin = get<std::string>(r["amazon_asin"]);
@@ -1473,7 +1537,6 @@ namespace MPX
                     (*iter)[AlbumColumns.MBID] = mbid; 
                 }
 
-                std::string date; 
                 if(r.count("mb_release_date"))
                 {
                     date = get<std::string>(r["mb_release_date"]);
@@ -1482,28 +1545,53 @@ namespace MPX
                         gint64 date_int;
                         sscanf(date.c_str(), "%04lld", &date_int);
                         (*iter)[AlbumColumns.Date] = date_int; 
-                        date = date.substr(0,4) + ", ";
+                        date = date.substr(0,4);
                     }
                 }
                 else
+                {
                     (*iter)[AlbumColumns.Date] = 0; 
+                }
 
-                std::string ArtistSort;
+                if(r.count("mb_release_country"))
+                {
+                    country = get<std::string>(r["mb_release_country"]); 
+                }
+
                 if(r.find("album_artist_sortname") != r.end())
-                    ArtistSort = get<std::string>(r["album_artist_sortname"]);
+                {
+                    artist_sort = get<std::string>(r["album_artist_sortname"]);
+                }
                 else
-                    ArtistSort = get<std::string>(r["album_artist"]);
+                {
+                    artist_sort = get<std::string>(r["album_artist"]);
+                }
 
-                (*iter)[AlbumColumns.Text] =
-                    (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%Added: %4%</span>")
-                        % Markup::escape_text(get<std::string>(r["album"])).c_str()
-                        % Markup::escape_text(ArtistSort).c_str()
-                        % date
-                        % get_timestr_from_time_t(idate)
-                    ).str();
+                if( !country.empty() )
+                {
+                        (*iter)[AlbumColumns.Text] =
+                            (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4%</span>  <span size='7000'>(%5%)</span>")
+                                % Markup::escape_text(get<std::string>(r["album"])).c_str()
+                                % Markup::escape_text(artist_sort).c_str()
+                                % country
+                                % date
+                                % get_timestr_from_time_t(idate)
+                            ).str();
+                }
+                else
+                {
+                        (*iter)[AlbumColumns.Text] =
+                            (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%</span>  <span size='7000'>(%4%)</span>")
+                                % Markup::escape_text(get<std::string>(r["album"])).c_str()
+                                % Markup::escape_text(artist_sort).c_str()
+                                % date
+                                % get_timestr_from_time_t(idate)
+                            ).str();
+                }
+
 
                 (*iter)[AlbumColumns.AlbumSort] = ustring(get<std::string>(r["album"])).collate_key();
-                (*iter)[AlbumColumns.ArtistSort] = ustring(ArtistSort).collate_key();
+                (*iter)[AlbumColumns.ArtistSort] = ustring(artist_sort).collate_key();
               } 
    
               void
@@ -2677,10 +2765,7 @@ namespace MPX
               bool
               albumVisibleFunc (TreeIter const& iter)
               {
-                  AlbumRowType rt = (*iter)[LFMColumns.RowType];
-
                   ustring filter (ustring (m_FilterEntry->get_text()).lowercase());
-
                   TreePath path (TreeStore->get_path(iter));
 
                   if( filter.empty() || path.get_depth() > 1)
@@ -3217,45 +3302,54 @@ namespace Source
     PlaybackSourceMusicLib::play ()
     {
         std::vector<Gtk::TreePath> rows = m_Private->m_TreeViewPlaylist->get_selection()->get_selected_rows();
+        MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
+        bool exists = false;
 
-        if(m_Private->m_TreeViewPlaylist->m_PlayInitIter)
+        if(playlist.m_PlayInitIter)
         {
-            m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->m_PlayInitIter.get();
-            m_Private->m_TreeViewPlaylist->m_PlayInitIter.reset ();
+            playlist.m_CurrentIter = playlist.m_PlayInitIter.get();
+            playlist.m_PlayInitIter.reset ();
         }
+
         // NO else so we fall through to the last check
-        if(!rows.empty() && !m_Private->m_TreeViewPlaylist->m_CurrentIter)
+        if(!rows.empty() && !playlist.m_CurrentIter)
         {
-            m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter (rows[0]); 
-            m_Private->m_TreeViewPlaylist->m_CurrentId = (*m_Private->m_TreeViewPlaylist->m_CurrentIter.get())[m_Private->m_TreeViewPlaylist->PlaylistColumns.RowId];
-            m_Private->m_TreeViewPlaylist->queue_draw();
-            return true;
+            playlist.m_CurrentIter = playlist.ListStore->get_iter (rows[0]); 
+            playlist.m_CurrentId = (*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.RowId];
+            playlist.queue_draw();
+            exists = playlist.check_current_exists();
         }
         else
-        if(rows.empty() && !m_Private->m_TreeViewPlaylist->m_CurrentIter)
+        if(rows.empty() && !playlist.m_CurrentIter)
         {
-            TreePath path;
-            path.append_index(0);
-            m_Private->m_TreeViewPlaylist->m_CurrentIter = m_Private->m_TreeViewPlaylist->ListStore->get_iter(path);
-            return true;
+            TreePath path (TreePath::size_type(1), TreePath::value_type(0));
+            playlist.m_CurrentIter = playlist.ListStore->get_iter(path);
+            exists = playlist.check_current_exists();
         }
         else
-        if(m_Private->m_TreeViewPlaylist->m_CurrentIter)
+        if(playlist.m_CurrentIter)
         {
-            TreeIter &iter = m_Private->m_TreeViewPlaylist->m_CurrentIter.get();
-            TreePath path1 = m_Private->m_TreeViewPlaylist->ListStore->get_path(iter);
-            TreePath path2 = m_Private->m_TreeViewPlaylist->ListStore->get_path(--m_Private->m_TreeViewPlaylist->ListStore->children().end());
+            TreeIter &iter = playlist.m_CurrentIter.get();
+            TreePath path1 = playlist.ListStore->get_path(iter);
+            TreePath path2 = playlist.ListStore->get_path(--playlist.ListStore->children().end());
 
             if(path1[0] == path2[0])
             {
                 g_signal_emit(G_OBJECT(gobj()), signals[PSM_SIGNAL_PLAYLIST_END], 0);
             }
-            return true;
+            exists = playlist.check_current_exists();
+        }
+
+        if( !exists )
+        {
+            playlist.m_CurrentIter.reset();
+            playlist.m_PlayInitIter.reset();
+            playlist.queue_draw();
         }
 
         check_caps ();
-    
-        return false;
+        
+        return exists;
     }
 
     bool

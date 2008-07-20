@@ -702,6 +702,8 @@ AC_OUTPUT([
     icons/hicolor/64x64/places/Makefile
     icons/hicolor/24x24/Makefile
     icons/hicolor/24x24/stock/Makefile
+    icons/hicolor/16x16/Makefile
+    icons/hicolor/16x16/stock/Makefile
 
 	desktop/Makefile
 	desktop/mpx.desktop

@@ -2,6 +2,7 @@ INCLUDES = 							\
 		$(BOOST_CPPFLAGS)			\
 		$(DBUS_CFLAGS)				\
 		$(EXO_CFLAGS)				\
+		$(GIOMM_CFLAGS)				\
 		$(GLADEMM_CFLAGS)			\
 		$(GLIBMM_CFLAGS)			\
 		$(GTKMM_CFLAGS)				\
@@ -23,6 +24,7 @@ libmpxsource_musiclib_la_LIBADD =  	\
 		$(BOOST_FILESYSTEM_LIB)		\
 		$(BOOST_IOSTREAMS_LIB)		\
 		$(EXO_LIBS)					\
+		$(GIOMM_LIBS)				\
 		$(GLADEMM_LIBS)				\
 		$(GLIBMM_LIBS)				\
 		$(GTKMM_LIBS)				\

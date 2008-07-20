@@ -69,12 +69,14 @@ namespace MPX
             int         datum;
             std::string id;
         } mb_metadata_id3v2[] = {
-          { ATTRIBUTE_MB_ALBUM_ARTIST_ID,             "MusicBrainz Album Artist Id"   },
-          { ATTRIBUTE_MB_ALBUM_ID,                    "MusicBrainz Album Id"          },
-          { ATTRIBUTE_MB_ARTIST_ID,                   "MusicBrainz Artist Id"         },
-          { ATTRIBUTE_ASIN,                           "ASIN"                          },
-          { ATTRIBUTE_ALBUM_ARTIST_SORTNAME,          "ALBUMARTISTSORT"               },
-          { ATTRIBUTE_MUSICIP_PUID,                   "MusicIP PUID"                  },
+          { ATTRIBUTE_MB_ALBUM_ARTIST_ID,             "MusicBrainz Album Artist Id"         },
+          { ATTRIBUTE_MB_ALBUM_ID,                    "MusicBrainz Album Id"                },
+          { ATTRIBUTE_MB_ARTIST_ID,                   "MusicBrainz Artist Id"               },
+          { ATTRIBUTE_ASIN,                           "ASIN"                                },
+          { ATTRIBUTE_ALBUM_ARTIST_SORTNAME,          "ALBUMARTISTSORT"                     },
+          { ATTRIBUTE_MUSICIP_PUID,                   "MusicIP PUID"                        },
+          { ATTRIBUTE_MB_RELEASE_COUNTRY,             "MusicBrainz Album Release Country"   },
+          { ATTRIBUTE_MB_RELEASE_TYPE,                "MusicBrainz Album Type"              }
         };
 
         ID3v2::UserTextIdentificationFrame * frame = 0;
