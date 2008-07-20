@@ -24,9 +24,6 @@ from Ft.Xml import EMPTY_NAMESPACE
 #import musicbrainz2
 #import musicbrainz2.webservice as ws
 
-MBID_NODE_XPATH = u'//mbid'
-MATCH_NODE_XPATH = u'//match'
-
 def extract_ids(rv, v):
 
     for val in rv:
@@ -149,19 +146,15 @@ class OptionAnalyzer(BaseOption):
 
             if tags[tag] > highest_count:
 
-                print "Highest: " + str(tag)
-
                 highest_tag     = tag 
                 highest_count   = tags[tag]
 
         if highest_tag:
 
-                print "Chosen accumulate tag: " + highest_tag
-
                 uri     = u"http://ws.audioscrobbler.com/1.0/tag/%s/topartists.xml" % urllib.quote(str(highest_tag))
                 lastfm  = NonvalidatingReader.parseUri(uri)
                 ctx     = Context(lastfm)
-                mbids   = Evaluate(MBID_NODE_XPATH, context=ctx)
+                mbids   = Evaluate("//mbid", context=ctx)
 
                 random.shuffle(mbids)
 
@@ -195,20 +188,21 @@ class OptionLastFmTag(BaseOption):
     def run(self):
         
         text = self.xml.get_widget("entry-lastfm-tag").get_text()
-
-        uri = u"http://ws.audioscrobbler.com/1.0/tag/%s/topartists.xml" % urllib.quote(text)
-        lastfm = NonvalidatingReader.parseUri(uri)
-        ctx = Context(lastfm)
-        mbids = Evaluate(MBID_NODE_XPATH, context=ctx)
-
         rv = mpx.SQLRowV()
 
-        for mbid in mbids:
-            if mbid.firstChild:
-                self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY mpxrand() LIMIT 1"))
+        try:
+                uri     = u"http://ws.audioscrobbler.com/1.0/tag/%s/topartists.xml" % urllib.quote(text)
+                doc     = NonvalidatingReader.parseUri(uri)
+                ctx     = Context(doc)
+                mbids   = Evaluate("//mbid", context=ctx)
+
+                for mbid in mbids:
+                    if mbid.firstChild:
+                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY mpxrand() LIMIT 1"))
+        except:
+                pass
 
         extract_ids(rv, self.v)
-
         self.finished.set()
 
 class OptionRandomMix(BaseOption):
@@ -255,14 +249,14 @@ class OptionRandomMix(BaseOption):
 
             ctx = Context(lastfm)
 
-            mbids_xml = Evaluate(MBID_NODE_XPATH, context=ctx)
+            mbids_xml = Evaluate("//mbid", context=ctx)
             mbids = []
        
             for mbid in mbids_xml: 
                 if mbid.firstChild:
                     mbids.append(str(mbid.firstChild.data))
             
-            matches_xml = Evaluate(MATCH_NODE_XPATH, context=ctx)
+            matches_xml = Evaluate("//match", context=ctx)
             matches = []
        
             for match in matches_xml: 
@@ -513,15 +507,25 @@ class MPXDJ(mpx.Plugin):
         except:
             self.icon = None
             
-        options = [ "Random Mix", "Entertain Me!","Play All", "Top Tunes", "Analyzer", "Memory Lane", "Sounds Of...",
-                   "Forgotten Gems", "Deja Vu", "Last.fm Tag"]
+        options = [
+                    "Analyzer",
+                    "Entertain Me!",
+                    "Play All",
+                    "Top Tunes",
+                    "Random Mix",
+                    "Memory Lane",
+                    "Sounds Of...",
+                    "Forgotten Gems",
+                    "Deja Vu",
+                    "Last.fm Tag"
+                   ]
 
         self.callables = [
-                            OptionRandomMix, 
+                            OptionAnalyzer,
                             OptionEntertainMe, 
                             OptionPlayAll, 
                             OptionTopTunes, 
-                            OptionAnalyzer,
+                            OptionRandomMix, 
                             None,
                             OptionSoundsOf, 
                             None,
@@ -531,11 +535,11 @@ class MPXDJ(mpx.Plugin):
 
 
         self.helptexts = [
-                "Plays random, but similar tracks",
+                "Analyzes the playlist and plays similar Music",
                 "Creates a running order composed of the most frequently played tracks.",
                 "Plays all tracks in the library",
                 "Plays a set number of the most frequently played tracks.",
-                "Analyzes the playlist and plays similar Music",
+                "Plays random, but similar tracks",
                 "",
                 "Plays tracks from a specific decade.",
                 "",

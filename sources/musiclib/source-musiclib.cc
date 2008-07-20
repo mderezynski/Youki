@@ -3337,7 +3337,7 @@ namespace Source
     {
         MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
-        std::vector<Gtk::TreePath> rows = m_Private->m_TreeViewPlaylist->get_selection()->get_selected_rows();
+        std::vector<Gtk::TreePath> rows = playlist.get_selection()->get_selected_rows();
 
         bool exists = false;
 
@@ -3345,27 +3345,27 @@ namespace Source
         {
             playlist.m_CurrentIter = playlist.m_PlayInitIter.get();
             playlist.m_PlayInitIter.reset ();
-        }
-
-        // NO else so we fall through to the last check
-        if(!rows.empty() && !playlist.m_CurrentIter)
-        {
-            playlist.m_CurrentIter = playlist.ListStore->get_iter (rows[0]); 
-            playlist.m_CurrentId = (*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.RowId];
-            playlist.queue_draw();
             exists = playlist.check_current_exists();
         }
         else
-        if(rows.empty() && !playlist.m_CurrentIter)
+        if(!playlist.m_CurrentIter)
         {
-            TreePath path (TreePath::size_type(1), TreePath::value_type(0));
-            playlist.m_CurrentIter = playlist.ListStore->get_iter(path);
-            exists = playlist.check_current_exists();
-        }
-        else
-        if(playlist.m_CurrentIter)
-        {
-            exists = playlist.check_current_exists();
+            if( !rows.empty() )
+            {
+                    playlist.m_CurrentIter = playlist.ListStore->get_iter (rows[0]); 
+                    playlist.m_CurrentId = (*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.RowId];
+                    playlist.queue_draw();
+                    exists = playlist.check_current_exists();
+            }
+            else
+            {
+                    if( playlist.ListStore->children().size() )
+                    {
+                        TreePath path (TreePath::size_type(1), TreePath::value_type(0));
+                        playlist.m_CurrentIter = playlist.ListStore->get_iter(path);
+                        exists = playlist.check_current_exists();
+                    }
+            }
         }
 
         if( !exists )

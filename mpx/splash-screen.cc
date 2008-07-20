@@ -38,10 +38,10 @@ namespace MPX
     , m_image (Gdk::Pixbuf::create_from_file (build_filename(DATA_DIR, "images" G_DIR_SEPARATOR_S "splash.png")))
     , m_image_w (m_image->get_width())
     , m_image_h (m_image->get_height())
-    , m_bar_w (m_image_w - 280)
-    , m_bar_h (4)
+    , m_bar_w (4)
+    , m_bar_h (m_image_h - 28)
     , m_bar_x (32)
-    , m_bar_y (m_image_h - 15)
+    , m_bar_y (15)
     , m_percent (0.0)
     {
         set_size_request (m_image_w, m_image_h);
@@ -115,9 +115,10 @@ namespace MPX
 
         m_cr->set_operator( Cairo::OPERATOR_ATOP );
         m_cr->set_source_rgba( 1., 1., 1., 1.); 
-        m_cr->rectangle( m_bar_x , m_bar_y , m_bar_w * m_percent , m_bar_h );
+        m_cr->rectangle( m_bar_x , m_bar_y , m_bar_w, m_bar_h * m_percent);
         m_cr->fill ();
 
+#if 0
         int lw, lh;
 
         Pango::FontDescription desc = get_style()->get_font ();
@@ -135,6 +136,7 @@ namespace MPX
         desc = get_style()->get_font ();
         pango_font_description_set_absolute_size (desc.gobj(), 8 * PANGO_SCALE);
         pango_layout_set_font_description (m_layout->gobj(), desc.gobj ()); 
+#endif
 
         return false;
     }
