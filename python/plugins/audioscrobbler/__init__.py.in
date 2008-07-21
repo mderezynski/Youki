@@ -580,6 +580,8 @@ class AudioScrobblerPost:
         npdata = urllib.urlencode(p)
         
         req = urllib2.Request(url=self.npurl, data=npdata)
+    
+        print npdata
         
         try:
             url_handle = urllib2.urlopen(req)
@@ -615,9 +617,11 @@ class AudioScrobblerPost:
         """
 
         if not self.authenticated:
+            self.log("Not authenticated")
             return
         
         if len(self.cache) == 0:
+            self.log("Empty cache")
             return
         if len(self.cache) > 10:
             number = 10
@@ -635,7 +639,9 @@ class AudioScrobblerPost:
         params.update(self.auth_details)
         postdata = urllib.urlencode(params)
         req = urllib2.Request(url=self.posturl, data=postdata)
-        
+
+        print postdata
+
         now = datetime.datetime.utcnow()
         
         try:
@@ -741,9 +747,10 @@ class AudioScrobblerPost:
         """ Add a line to the log, print it if verbose """
         
         time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.loglines.append("%s: %s" % (time, msg))
-        if self.verbose:
-            print self.loglines[-1]
+        print ("%s: %s" % (time, msg))
+        #self.loglines.append("%s: %s" % (time, msg))
+        #if self.verbose:
+        #    print self.loglines[-1]
             
     def getlog(self, clear=False):
         
@@ -808,7 +815,7 @@ class MPXAudioScrobbler(mpx.Plugin):
         self.hand2 = self.player.gobj().connect("metadata-updated", self.now_playing)
         self.player_playstatus_changed = self.player.gobj().connect("play-status-changed", self.pstate_changed)
 
-        print "Audioscrobbler activated: " + str(self.post.authenticated)
+        print ("Audioscrobbler activated: " + str(self.post.authenticated))
 
         return True
 
@@ -832,63 +839,37 @@ class MPXAudioScrobbler(mpx.Plugin):
         
     def track_played(self, blah):
 
-        print "track played"
+        print ("Track played")
 
-        p_date = time.time()
         m = self.player.get_metadata()
 
-        try:
-            p_artist = m.get(mpx.AttributeId.ARTIST).get()
-            p_title = m.get(mpx.AttributeId.TITLE).get()
-        except:
-            p_artist = None
-            p_title = None
+        print m[mpx.AttributeId.TIME]
+        print m[mpx.AttributeId.TIME].get()
 
-        if p_artist != None and p_title != None: 
+        p_artist      = m[mpx.AttributeId.ARTIST].get()
+        p_title       = m[mpx.AttributeId.TITLE].get()
+        p_len         = m[mpx.AttributeId.TIME].get()
+        p_album       = m[mpx.AttributeId.ALBUM].get()
+        p_tracknumber = m[mpx.AttributeId.TRACK].get()
+        p_mbid        = m[mpx.AttributeId.MB_TRACK_ID].get()
+        p_date        = time.time()
 
-            p_artist = m.get(mpx.AttributeId.ARTIST).get()
-            p_title = m.get(mpx.AttributeId.TITLE).get()
-
-            try:
-                m_len = m.get(mpx.AttributeId.TIME)
-                p_len = m_len.get()
-            except:
-                p_len = 0
-
-            try:
-                m_album = m.get(mpx.AttributeId.ALBUM)
-                p_album = m_album.get()
-            except:
-                p_album=u''
-
-            try:
-                m_tracknumber = m.get(mpx.AttributeId.TRACK)
-                p_tracknumber = str(m_tracknumber.get())
-            except:
-                p_tracknumber=u''
-
-            try:
-                m_mbid = m.get(mpx.AttributeId.MB_TRACK_ID)
-                p_mbid = m_mbid.get()
-            except:
-                p_mbid=u''
-
-            if p_mbid:
-                print "Posting track with MBID: " + p_mbid + " at date " + str(p_date)
-            else:
-                print "Posting track with artist, title: " + p_artist + ", " + p_title 
+        if p_mbid:
+                print ("Posting track with MBID: " + p_mbid + " at date " + str(p_date))
+        else:
+                print ("Posting track with artist, title: " + p_artist + ", " + p_title )
     
-            self.newTrack = False
+        self.newTrack = False
 
-            self.player.info_set("Submitting to AudioScrobbler")
-            self.post.posttrack(str(p_artist),
-                                str(p_title),
-                                str(p_len),
-                                str(int(p_date)),
-                                str(p_tracknumber),
-                                str(p_album),
-                                str(p_mbid))
-            self.player.info_clear()
+        self.player.info_set("Submitting to AudioScrobbler")
+        self.post.posttrack(str(p_artist),
+                            str(p_title),
+                            str(p_len),
+                            str(int(p_date)),
+                            str(p_tracknumber),
+                            str(p_album),
+                            str(p_mbid))
+        self.player.info_clear()
 
     def now_playing(self, blah):
 
@@ -898,24 +879,16 @@ class MPXAudioScrobbler(mpx.Plugin):
 
         p_artist        = m[mpx.AttributeId.ARTIST].get()
         p_title         = m[mpx.AttributeId.TITLE].get()
+        p_album         = m[mpx.AttributeId.ALBUM].get()
         p_len           = u'' 
         p_album         = u''
         p_tracknumber   = u''
         p_mbid          = u''
+        p_len           = str(m[mpx.AttributeId.TIME].get())
+        p_tracknumber   = str(m[mpx.AttributeId.TRACK].get())
+        p_mbid          = m[mpx.AttributeId.MB_TRACK_ID].get()
 
-        if m[mpx.AttributeId.TIME]: 
-                p_len = str(m[mpx.AttributeId.TIME].get())
-
-        if m[mpx.AttributeId.ALBUM]: 
-                p_album = m[mpx.AttributeId.ALBUM].get()
-
-        if m[mpx.AttributeId.TRACK]: 
-                p_tracknumber = str(m[mpx.AttributeId.TRACK].get())
-
-        if m[mpx.AttributeId.MB_TRACK_ID]: 
-                p_mbid = m[mpx.AttributeId.MB_TRACK_ID].get()
-
-        print "Posting now-playing with MBID: " + p_mbid + " at date " + str(time.time())
+        print ("Posting now-playing with MBID: " + p_mbid + " at date " + str(time.time()))
 
         self.newTrack = False
 

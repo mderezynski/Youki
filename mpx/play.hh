@@ -275,6 +275,9 @@ namespace MPX
         GstElement*
         tap ();
 
+        GstElement*
+        pipeline ();
+
       private:
 
         Glib::Mutex             m_state_lock, m_stream_lock;

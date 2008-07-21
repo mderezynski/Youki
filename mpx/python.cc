@@ -90,6 +90,8 @@ namespace MPX
       MPX_ATTRIBUTE_ALBUM,
       MPX_ATTRIBUTE_MB_ALBUM_ID,
       MPX_ATTRIBUTE_MB_RELEASE_DATE,
+      MPX_ATTRIBUTE_MB_RELEASE_COUNTRY,
+      MPX_ATTRIBUTE_MB_RELEASE_TYPE,
       MPX_ATTRIBUTE_ASIN,
 
       MPX_ATTRIBUTE_ALBUM_ARTIST,
@@ -260,6 +262,18 @@ namespace mpxpy
 		return MPX::N_ATTRIBUTES_INT;
 	}
 
+    bool	
+	track_contains(MPX::Track &self, MPX::AttributeId id)
+	{
+		return self.has(id);
+	}
+
+    bool	
+	metadata_contains(MPX::Metadata &self, MPX::AttributeId id)
+	{
+		return self.has(id);
+	}
+
     std::string
     track_repr (MPX::Track &self)
     {
@@ -361,11 +375,20 @@ namespace mpxpy
 
 namespace mpxpy
 {
-    PyObject*
-	play_tap (MPX::Play & obj)
-	{
-        return pygobject_new((GObject*)(obj.tap()));
-	}
+    struct Play
+    {
+            static PyObject*
+            tap (MPX::Play & obj)
+            {
+                return pygobject_new((GObject*)(obj.tap()));
+            }
+
+            static PyObject*
+            pipeline (MPX::Play & obj)
+            {
+                return pygobject_new((GObject*)(obj.pipeline()));
+            }
+    };
 }
 
 namespace mpxpy
@@ -648,6 +671,8 @@ BOOST_PYTHON_MODULE(mpx)
       .value("ALBUM", MPX::MPX_ATTRIBUTE_ALBUM)
       .value("MB_ALBUM_ID", MPX::MPX_ATTRIBUTE_MB_ALBUM_ID)
       .value("MB_RELEASE_DATE", MPX::MPX_ATTRIBUTE_MB_RELEASE_DATE)
+      .value("MB_RELEASE_COUNTRY", MPX::MPX_ATTRIBUTE_MB_RELEASE_COUNTRY)
+      .value("MB_RELEASE_TYPE", MPX::MPX_ATTRIBUTE_MB_RELEASE_TYPE)
       .value("ASIN", MPX::MPX_ATTRIBUTE_ASIN)
       .value("ALBUM_ARTIST", MPX::MPX_ATTRIBUTE_ALBUM_ARTIST)
       .value("ALBUM_ARTIST_SORTNAME", MPX::MPX_ATTRIBUTE_ALBUM_ARTIST_SORTNAME)
@@ -757,6 +782,7 @@ BOOST_PYTHON_MODULE(mpx)
 	class_<MPX::Track >("Track")
 		.def("__getitem__", &mpxpy::track_getitem,  return_internal_reference<>()) 
 		.def("__len__",     &mpxpy::track_len,      return_value_policy<return_by_value>())
+        .def("__contains__",&mpxpy::track_contains, return_value_policy<return_by_value>())
 		.def("get",         &mpxpy::track_getitem,  return_value_policy<return_by_value>()) 
 	;
 
@@ -765,6 +791,7 @@ BOOST_PYTHON_MODULE(mpx)
 	class_<MPX::Metadata >("Metadata")
 		.def("__getitem__", &mpxpy::metadata_getitem,   return_internal_reference<>()) 
 		.def("__len__",     &mpxpy::metadata_len,       return_value_policy<return_by_value>())
+        .def("__contains__",&mpxpy::metadata_contains,  return_value_policy<return_by_value>())
 		.def("get",         &mpxpy::metadata_getitem,   return_internal_reference<>()) 
 		.def("get_image",   &MPX::Metadata::get_image)
 	;
@@ -883,7 +910,8 @@ BOOST_PYTHON_MODULE(mpx)
     /*-------------------------------------------------------------------------------------*/
 
     class_<MPX::Play, boost::noncopyable>("Play", boost::python::no_init)
-        .def("tap", &mpxpy::play_tap)
+        .def("tap", &mpxpy::Play::tap)
+        .def("pipeline", &mpxpy::Play::pipeline)
     ;
 }
 

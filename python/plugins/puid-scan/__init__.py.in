@@ -185,10 +185,6 @@ class PuidScanExec(mpx.Plugin):
         m = self.player.get_metadata()
         self.run(m)
 
-        print m[mpx.AttributeId.TITLE].get()
-        print m[mpx.AttributeId.ARTIST].get()
-        print m[mpx.AttributeId.ALBUM].get()
-
     def run(self,track):
 
         if not track[mpx.AttributeId.MB_TRACK_ID] and track.get(mpx.AttributeId.LOCATION).get()[:7] == "file://":
