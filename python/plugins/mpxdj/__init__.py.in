@@ -427,7 +427,7 @@ class OptionPlayAll(BaseOption):
 
         rv = mpx.SQLRowV()
         lib.getSQL(rv, "SELECT id FROM track_view ORDER BY album, track")
-        extract_ids(rv, v)
+        extract_ids(rv, self.v)
         self.finished.set()
 
 class OptionEntertainMe(BaseOption):
@@ -440,7 +440,7 @@ class OptionEntertainMe(BaseOption):
 
         rv = mpx.SQLRowV()
         self.lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC, rating DESC, mpxrand() LIMIT 10")
-        extract_ids(rv, v)
+        extract_ids(rv, self.v)
         self.finished.set()
   
 class OptionSoundsOf(BaseOption):
