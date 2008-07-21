@@ -511,7 +511,7 @@ namespace pysigc
         .def("disconnect",  &signal_pysigc::disconnect)
         ;
 
-        to_python_converter<signal_sigc, sigc3<T1, T2, T3>
+        to_python_converter<signal_sigc, sigc3_to_pysigc<T1, T2, T3>
 #if defined BOOST_PYTHON_SUPPORTS_PY_SIGNATURES
 		, false
 #endif
@@ -802,6 +802,7 @@ BOOST_PYTHON_MODULE(mpx)
 	/*-------------------------------------------------------------------------------------*/
 
     pysigc::wrap_signal1<gint64>();
+    pysigc::wrap_signal3<MPX::Track,gint64,gint64>();
 
 	class_<MPX::Library, boost::noncopyable>("Library", boost::python::no_init)
 

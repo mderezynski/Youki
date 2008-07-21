@@ -17,6 +17,7 @@ import urllib
 import random
 import math
 import threading
+import mutex
 from Ft.Xml.XPath.Context import Context
 from Ft.Xml.XPath import Evaluate
 from Ft.Xml.Domlette import NonvalidatingReader
@@ -81,6 +82,7 @@ class TrackTags(mpx.Plugin):
 
         self.id = id
         self.player = player
+        self.lock = mutex.mutex()
 
     def activate(self):
 
@@ -118,6 +120,10 @@ class TrackTags(mpx.Plugin):
         self.tagview.clear()
         self.tagview.display(False)
 
+        self.lock.lock(self.display_track_tags, blah)
+
+    def display_track_tags(self, blah):
+
         m = self.player.get_metadata()
 
         if m[mpx.AttributeId.ARTIST] and m[mpx.AttributeId.TITLE]:
@@ -133,9 +139,14 @@ class TrackTags(mpx.Plugin):
 
             tags = instance.get_tags()
 
+            self.tagview.clear()
+            self.tagview.display(False)
+
             for t in tags:
                 self.tagview.add_tag(t[0], t[1])
 
             self.player.info_clear()
 
         self.tagview.display(True)
+
+        self.lock.unlock()
