@@ -1,6 +1,6 @@
 // (C) 2006 M. Derezynski
 
-#include <taglib-gio/tstring.h>
+#include <tstring.h>
 #include "modproperties.h"
   
 using namespace TagLib;

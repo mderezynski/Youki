@@ -4,8 +4,8 @@
 #ifndef TAGLIB_AUDIBLEFILETYPERESOLVER_H
 #define TAGLIB_AUDIBLEFILETYPERESOLVER_H
 
-#include <taglib-gio/tfile.h>
-#include <taglib-gio/fileref.h>
+#include <tfile.h>
+#include <fileref.h>
 
 
 class AudibleFileTypeResolver : public TagLib::FileRef::FileTypeResolver

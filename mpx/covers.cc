@@ -41,16 +41,16 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <taglib-gio/taglib-gio.h>
-#include <taglib-gio/fileref.h>
-#include <taglib-gio/tfile.h>
-#include <taglib-gio/tag.h>
-#include <taglib-gio/id3v2tag.h>
-#include <taglib-gio/mpegfile.h>
-#include <taglib-gio/id3v2framefactory.h>
-#include <taglib-gio/textidentificationframe.h>
-#include <taglib-gio/uniquefileidentifierframe.h>
-#include <taglib-gio/attachedpictureframe.h>
+#include <taglib-gio.h>
+#include <fileref.h>
+#include <tfile.h>
+#include <tag.h>
+#include <id3v2tag.h>
+#include <mpegfile.h>
+#include <id3v2framefactory.h>
+#include <textidentificationframe.h>
+#include <uniquefileidentifierframe.h>
+#include <attachedpictureframe.h>
 
 #include "mpx/audio.hh"
 #include "mpx/covers.hh"

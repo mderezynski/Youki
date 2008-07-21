@@ -22,8 +22,8 @@
 #ifndef TAGLIB_SIDTAG_H
 #define TAGLIB_SIDTAG_H
 
-#include <taglib-gio/tmap.h>
-#include <taglib-gio/tag.h>
+#include <tmap.h>
+#include <tag.h>
 #include "sidfile.h"
 
 namespace TagLib

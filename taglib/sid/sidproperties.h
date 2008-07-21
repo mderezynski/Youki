@@ -23,7 +23,7 @@
 #define TAGLIB_SIDPROPERTIES_H
 
 #include <audioproperties.h>
-#include <taglib-gio/tstring.h>
+#include <tstring.h>
 
 namespace TagLib
 {

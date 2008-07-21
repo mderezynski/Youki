@@ -6,7 +6,7 @@
 
 #include "audibleproperties.h"
 
-#include <taglib-gio/tstring.h>
+#include <tstring.h>
 
 #include "taglib_audiblefile.h"
 

@@ -3,8 +3,8 @@
 #ifndef TAGLIB_MODFILETYPERESOLVER_H
 #define TAGLIB_MODFILETYPERESOLVER_H
 
-#include <taglib-gio/tfile.h>
-#include <taglib-gio/fileref.h>
+#include <tfile.h>
+#include <fileref.h>
 
 class MODFileTypeResolver : public TagLib::FileRef::FileTypeResolver
 {

@@ -22,8 +22,8 @@
 #ifndef TAGLIB_MODTAG_H
 #define TAGLIB_MODTAG_H
 
-#include <taglib-gio/tmap.h>
-#include <taglib-gio/tag.h>
+#include <tmap.h>
+#include <tag.h>
 #include "modfile.h"
 
 namespace TagLib

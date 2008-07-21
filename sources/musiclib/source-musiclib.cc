@@ -37,6 +37,7 @@
 
 #include "mpx/hal.hh"
 #include "mpx/library.hh"
+#include "mpx/main.hh"
 #include "mpx/sql.hh"
 #include "mpx/stock.hh"
 #include "mpx/types.hh"
@@ -3078,6 +3079,11 @@ namespace Source
         m_Private = new MusicLibPrivate(player,*this,m_RefXml);
         m_Private->m_TreeViewPlaylist->signal_row_activated().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_row_activated ) );
         m_Private->m_TreeViewPlaylist->signal_query_tooltip().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_query_tooltip ) );
+
+        mcs->domain_register("PlaybackSourceMusicLib");
+        mcs->key_register("PlaybackSourceMusicLib", "divider-position", 250);
+
+        (dynamic_cast<Gtk::HPaned*>(m_Private->m_UI))->set_position(mcs->key_get<int>("PlaybackSourceMusicLib", "divider-position"));
 
 
         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");

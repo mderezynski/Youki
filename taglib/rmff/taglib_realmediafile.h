@@ -29,9 +29,9 @@
 #ifndef _TAGLIB_REALMEDIAFILE_H_
 #define _TAGLIB_REALMEDIAFILE_H_
 
-#include <taglib-gio/tfile.h>
+#include <tfile.h>
 #include <audioproperties.h>
-#include <taglib-gio/tag.h>
+#include <tag.h>
 
 #include <iostream>
 

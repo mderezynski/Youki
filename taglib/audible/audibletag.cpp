@@ -6,7 +6,7 @@
 
 #include "audibletag.h"
 
-#include <taglib-gio/tag.h>
+#include <tag.h>
 
 #include <netinet/in.h> // ntohl
 

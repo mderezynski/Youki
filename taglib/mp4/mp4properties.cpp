@@ -19,7 +19,7 @@
  *   USA                                                                   *
  ***************************************************************************/
 
-#include <taglib-gio/tstring.h>
+#include <tstring.h>
 #include "mp4file.h"
 #include "mp4atom.h"
 #include "mp4properties.h"

@@ -22,9 +22,9 @@
 #ifndef TAGLIB_ASFTAG_H
 #define TAGLIB_ASFTAG_H
 
-#include <taglib-gio/tag.h>
-#include <taglib-gio/tlist.h>
-#include <taglib-gio/tmap.h>
+#include <tag.h>
+#include <tlist.h>
+#include <tmap.h>
 #include "asfattribute.h"
 
 namespace TagLib {

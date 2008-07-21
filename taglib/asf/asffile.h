@@ -22,8 +22,8 @@
 #ifndef TAGLIB_ASFFILE_H
 #define TAGLIB_ASFFILE_H
 
-#include <taglib-gio/tag.h>
-#include <taglib-gio/tfile.h>
+#include <tag.h>
+#include <tfile.h>
 #include "asfproperties.h"
 #include "asftag.h"
 

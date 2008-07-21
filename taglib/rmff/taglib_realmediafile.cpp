@@ -27,9 +27,9 @@
  *   USA, or check http://www.fsf.org/about/contact.html                   *
  ***************************************************************************/
 
-#include <taglib-gio/tfile.h>
+#include <tfile.h>
 #include <audioproperties.h>
-#include <taglib-gio/tstring.h>
+#include <tstring.h>
 #include <id3v1tag.h>
 #include "rmff.h"
 #include "taglib_realmediafile.h"

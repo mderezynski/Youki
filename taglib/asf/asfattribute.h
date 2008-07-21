@@ -22,8 +22,8 @@
 #ifndef TAGLIB_ASFATTRIBUTE_H
 #define TAGLIB_ASFATTRIBUTE_H
 
-#include <taglib-gio/tstring.h>
-#include <taglib-gio/tbytevector.h>
+#include <tstring.h>
+#include <tbytevector.h>
 
 namespace TagLib
 {
