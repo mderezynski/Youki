@@ -184,7 +184,10 @@ class PuidScanExec(mpx.Plugin):
 
         m = self.player.get_metadata()
         self.run(m)
-        print "returning from puid scan"
+
+        print m[mpx.AttributeId.TITLE].get()
+        print m[mpx.AttributeId.ARTIST].get()
+        print m[mpx.AttributeId.ALBUM].get()
 
     def run(self,track):
 

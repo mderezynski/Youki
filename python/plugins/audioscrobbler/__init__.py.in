@@ -778,6 +778,8 @@ class MPXAudioScrobbler(mpx.Plugin):
 
         self.username.connect("changed", self.on_credentials_changed)
         self.password.connect("changed", self.on_credentials_changed)
+
+        self.newTrack = False
     
     def on_credentials_changed(self, entry):
 
@@ -802,8 +804,11 @@ class MPXAudioScrobbler(mpx.Plugin):
         self.post.auth()
     
         self.hand1 = self.player.gobj().connect("track-played", self.track_played)
-        self.hand2 = self.player.gobj().connect("new-track", self.now_playing)
+        self.hand2 = self.player.gobj().connect("new-track", self.new_track)
+        self.hand2 = self.player.gobj().connect("metadata-updated", self.now_playing)
         self.player_playstatus_changed = self.player.gobj().connect("play-status-changed", self.pstate_changed)
+
+        print "Audioscrobbler activated: " + str(self.post.authenticated)
 
         return True
 
@@ -820,8 +825,14 @@ class MPXAudioScrobbler(mpx.Plugin):
 
         if self.player.get_status() == mpx.PlayStatus.STOPPED:
             self.post.flushcache ()
+
+    def new_track(self, blah):
+
+        self.newTrack = True
         
     def track_played(self, blah):
+
+        print "track played"
 
         p_date = time.time()
         m = self.player.get_metadata()
@@ -867,6 +878,8 @@ class MPXAudioScrobbler(mpx.Plugin):
             else:
                 print "Posting track with artist, title: " + p_artist + ", " + p_title 
     
+            self.newTrack = False
+
             self.player.info_set("Submitting to AudioScrobbler")
             self.post.posttrack(str(p_artist),
                                 str(p_title),
@@ -879,39 +892,35 @@ class MPXAudioScrobbler(mpx.Plugin):
 
     def now_playing(self, blah):
 
+        if not self.newTrack: return
+
         m = self.player.get_metadata()
 
-        attrs = [mpx.AttributeId.ARTIST,
-                 mpx.AttributeId.TITLE,
-                 mpx.AttributeId.TIME ]
-
-
-        for attr in attrs:
-            if not m[attr]:
-                return
-                
-        p_artist = m[mpx.AttributeId.ARTIST].get()
-        p_title = m[mpx.AttributeId.TITLE].get()
-        p_len = u'' 
-        p_album = u''
-        p_tracknumber = u''
-        p_mbid = u''
+        p_artist        = m[mpx.AttributeId.ARTIST].get()
+        p_title         = m[mpx.AttributeId.TITLE].get()
+        p_len           = u'' 
+        p_album         = u''
+        p_tracknumber   = u''
+        p_mbid          = u''
 
         if m[mpx.AttributeId.TIME]: 
-            p_len = str(m[mpx.AttributeId.TIME].get())
+                p_len = str(m[mpx.AttributeId.TIME].get())
 
         if m[mpx.AttributeId.ALBUM]: 
-            p_album = m[mpx.AttributeId.ALBUM].get()
+                p_album = m[mpx.AttributeId.ALBUM].get()
 
         if m[mpx.AttributeId.TRACK]: 
-            p_tracknumber = str(m[mpx.AttributeId.TRACK].get())
+                p_tracknumber = str(m[mpx.AttributeId.TRACK].get())
 
         if m[mpx.AttributeId.MB_TRACK_ID]: 
-            p_mbid = m[mpx.AttributeId.MB_TRACK_ID].get()
+                p_mbid = m[mpx.AttributeId.MB_TRACK_ID].get()
 
         print "Posting now-playing with MBID: " + p_mbid + " at date " + str(time.time())
 
+        self.newTrack = False
+
         self.player.info_set("Sending Now-Playing to AudioScrobbler")
+
         self.post.flushcache ()
         self.post.nowplaying(str(p_artist),
                              str(p_title),
