@@ -768,6 +768,8 @@ class MPXAudioScrobbler(mpx.Plugin):
         self.widget = self.xml.get_widget("widget")
         self.widget.unparent()
 
+        self.post = None
+
         self.username = self.xml.get_widget("e-username")
         self.password = self.xml.get_widget("e-password")
 
@@ -782,7 +784,9 @@ class MPXAudioScrobbler(mpx.Plugin):
         self.mcs.key_set_string("lastfm", "username", self.username.props.text)
         self.mcs.key_set_string("lastfm", "password", self.password.props.text)
 
-        self.post.authenticated = False
+        if self.post:
+            self.post.authenticated = False
+
         self.player.deactivate_plugin(self.id)
 
     def get_gui(self):
