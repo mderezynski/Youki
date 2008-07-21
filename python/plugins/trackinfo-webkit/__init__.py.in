@@ -570,11 +570,10 @@ class TrackInfoQuery (threading.Thread):
                         self.html += "<div style='height: 2em; margin-top: 1.5em; margin-bottom: 0.2em; padding-left: 0.5em; background-color: #1d6ac8; color: white; font-size: 1.5em;font-weight: bold'><p style='line-height: 2em'>Contributor Links</p></div>"
                         for id in self.Entities:
                             entity = self.query.getArtistById(id, self.wsinc)   
-                            self.html += "<span style='font-weight:bold; font-size: large'>%s</span><br/>" % entity.getName()
+                            self.html += "<span style='font-weight:bold; font-size: large'>%s</span><div style='margin-left: 1em; margin-bottom: 0.5em'>" % entity.getName()
                             self.html += append_artist_rels(entity)
-                            self.html += "<br/>"
                             self.html += append_url_rels(entity)
-                            self.html += "<br/><br/>"
+                            self.html += "</div>"
             except:
                     print "TRACKINFO-WEBKIT: MusicBrainz WS error #3" 
 

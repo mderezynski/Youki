@@ -164,7 +164,6 @@ class PuidScanExec(mpx.Plugin):
     def activate(self):
 
         self.metadata_pre_id = self.player.gobj().connect("metadata-pre", self.on_metadata_pre)
-        self.player_playstatus_changed_id = self.player.gobj().connect("play-status-changed", self.on_player_state_changed)
 
         return True
 
@@ -172,11 +171,6 @@ class PuidScanExec(mpx.Plugin):
 
         self.player.gobj().disconnect(self.metadata_pre_id)
         self.player.gobj().disconnect(self.player_playstatus_changed_id)
-
-    def on_player_state_changed(self, blah, state):
-
-        if self.player.get_status() == mpx.PlayStatus.STOPPED:
-            self.info.clear()
 
     def on_metadata_pre(self, blah):
 
