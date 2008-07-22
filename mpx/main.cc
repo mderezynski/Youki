@@ -301,6 +301,16 @@ namespace
 
 	  mcs->domain_register ("pyplugs");
 
+      mcs->domain_register("Preferences-CoverArtSources");
+      mcs->key_register("Preferences-CoverArtSources", "Source0", int(0));
+      mcs->key_register("Preferences-CoverArtSources", "Source1", int(1));
+      mcs->key_register("Preferences-CoverArtSources", "Source2", int(2));
+      mcs->key_register("Preferences-CoverArtSources", "Source3", int(3));
+      mcs->key_register("Preferences-CoverArtSources", "SourceActive0", bool(true));
+      mcs->key_register("Preferences-CoverArtSources", "SourceActive1", bool(true));
+      mcs->key_register("Preferences-CoverArtSources", "SourceActive2", bool(true));
+      mcs->key_register("Preferences-CoverArtSources", "SourceActive3", bool(true));
+
 	  mcs->load (Mcs::Mcs::VERSION_IGNORE);
 	}
 } // anonymous namespace

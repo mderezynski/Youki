@@ -151,9 +151,9 @@ namespace MPX
     char const* sources[] =
     {
         N_("Local files (folder.jpg, cover.jpg, etc)"),
-        N_("Amazon ASIN based Lookup (precise)"),
-        N_("MusicBrainz AR Lookup (precise)"),
-        N_("Amazon Search (imprecise)")
+        N_("Amazon ASIN"),
+        N_("MusicBrainz AR"),
+        N_("Amazon search")
     };
   } // <anonymous> namespace
     
@@ -217,16 +217,12 @@ namespace MPX
                   {
                       TreeIter iter = Store->append();
                       
-                      (*iter)[Columns.Name]   = _(sources[i]);
-                      (*iter)[Columns.ID]     = i; 
-                      (*iter)[Columns.Active] = false;
-                  }
+                      int source = mcs->key_get<int>("Preferences-CoverArtSources", (boost::format ("Source%d") % i).str());
 
-                  mcs->domain_register("Preferences-CovertArtSources");
-                  mcs->key_register("Preferences-CovertArtSources", "Source0", -1);
-                  mcs->key_register("Preferences-CovertArtSources", "Source1", -1);
-                  mcs->key_register("Preferences-CovertArtSources", "Source2", -1);
-                  mcs->key_register("Preferences-CovertArtSources", "Source3", -1);
+                      (*iter)[Columns.Name]   = _(sources[source]);
+                      (*iter)[Columns.ID]     = source; 
+                      (*iter)[Columns.Active] = mcs->key_get<bool>("Preferences-CoverArtSources", (boost::format ("SourceActive%d") % i).str());
+                  }
               };
 
               void
@@ -240,14 +236,8 @@ namespace MPX
                 {
                     int pos = std::distance(children.begin(), i);
 
-                    if( ! (*i)[Columns.Active] )
-                    {
-                        mcs->key_set<int>("Preferences-CoverArtSources", (boost::format ("Source%d") % pos).str(), -1);
-                    }
-                    else
-                    {
-                        mcs->key_set<int>("Preferences-CoverArtSources", (boost::format ("Source%d") % pos).str(), (*i)[Columns.ID]);
-                    }
+                    mcs->key_set<int>("Preferences-CoverArtSources", (boost::format ("Source%d") % pos).str(), (*i)[Columns.ID]);
+                    mcs->key_set<bool>("Preferences-CoverArtSources", (boost::format ("SourceActive%d") % pos).str(), (*i)[Columns.Active]);
                 }
               }
 
