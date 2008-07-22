@@ -405,15 +405,22 @@ namespace MPX
     )
     {
         std::string cover_file_name = local_cover_file(local_data->uri);
-
         Glib::RefPtr<Gio::File> source = Gio::File::create_for_path( cover_file_name );
-        Glib::RefPtr<Gio::File> dest   = Gio::File::create_for_path( get_thumb_path(local_data->mbid) );
 
-        g_message("Copying %s to %s", source->get_path().c_str(), dest->get_path().c_str());
+        char* cover_art_contents;
+        gsize read_bytes;
+        std::string etag;
+        source->load_contents(cover_art_contents, read_bytes, etag);
 
-        source->copy( dest );
+        RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
+        loader->write (reinterpret_cast<const guint8*>(cover_art_contents), read_bytes);
+        loader->close ();
 
-        RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( dest->get_path() );
+        RefPtr<Gdk::Pixbuf> cover = loader->get_pixbuf();
+        cover->save( get_thumb_path( local_data->mbid ), "png" );
+
+        g_message("saved pixbuf");
+
         m_pixbuf_cache.insert( std::make_pair( local_data->mbid, cover ));
         Signals.GotCover.emit( local_data->mbid );
 
@@ -441,7 +448,11 @@ namespace MPX
         RefPtr<Gio::FileInfo> file ;
         while ( (file = files->next_file()) != 0 )
         {
-            if( file->get_name().rfind("png") != std::string::npos )
+            if( file->get_content_type().find("image") != std::string::npos &&
+                ( file->get_name().find("folder") ||
+                  file->get_name().find("cover")  ||
+                  file->get_name().find("front")     )
+              )
             {
                 return directory->get_child(file->get_name())->get_path();
             }
@@ -473,10 +484,10 @@ namespace MPX
 
         if( acquire )
         {
+            // TODO It should be probably be a user preference which of these options takes priority...
             if ( !local_cover_file(uri).empty() )
             {
                 CoverFetchData * data = new CoverFetchData( asin, mbid, uri, artist, album );
-                g_message("Has cover art at %s", local_cover_file(uri).c_str()); 
 
                 local_save_cover( data );
             }
