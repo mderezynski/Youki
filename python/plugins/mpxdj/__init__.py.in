@@ -245,8 +245,20 @@ class OptionAnalyzer(BaseOption):
         except:
             print "Error running run_similar_artist"
 
+    def run_markov(self):
+
+        # Find a track based on Markov
+
+        playlist  = self.mlib.get_playlist_model()
+        track_id  = playlist[len(playlist)-1][7] 
+        markov_id = self.lib.markovFind(track_id)
+
+        if markov_id != -1:
+                self.v.append(markov_id)
+
     def run(self):
 
+        """
         try:
                 self.run_similar_track()
                 if len(self.v):
@@ -257,6 +269,14 @@ class OptionAnalyzer(BaseOption):
 
         try:
                 self.run_accumulate_tags()
+                if len(self.v):
+                    self.finished.set()
+                    return
+        except:
+                pass
+
+        try:
+                self.run_markov()
                 if len(self.v):
                     self.finished.set()
                     return
@@ -278,16 +298,6 @@ class OptionAnalyzer(BaseOption):
         extract_ids(rv, self.v)
         self.finished.set()
 
-        """
-        self.run_similar_track()
-
-        if not len(self.v):
-            self.run_accumulate_tags()
-
-        if not len(self.v):
-            self.run_similar_artist()
-        """
-            
 class OptionLastFmTag(BaseOption):    
 
     def __init__(self, lib, v, xml, mlib, mcs):

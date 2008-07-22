@@ -672,7 +672,7 @@ namespace MPX
         } catch( ... ) {
         }
 
-        return 0;
+        return -1;
     }
 
     Track
