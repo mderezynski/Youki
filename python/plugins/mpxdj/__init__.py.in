@@ -97,13 +97,47 @@ class OptionAnalyzer(BaseOption):
 
         return stracks
 
+    def count_previous_mbid_presence(self, playlist, mbid):
+
+        count = 0
+        items = 0
+
+        if (len(playlist)-1) < items:
+
+                items = len(playlist)-1
+
+        for i in range(0,items):
+
+                track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-items+i][9])
+                mbid_track = track[mpx.AttributeId.MB_ARTIST_ID].get()
+                if mbid_track == mbid: 
+                        count = count +1
+
+        return count
+
+    def count_previous_artist_presence(self, playlist, artist):
+
+        count = 0
+        items = 9
+
+        if (len(playlist)-1) < items:
+
+                items = len(playlist)-1
+
+        for i in range(0,items):
+
+                track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-items+i][9])
+                artist_track = track[mpx.AttributeId.ARTIST].get()
+                if artist_track == artist: 
+                        count = count +1
+
+        return count
+
     def run_similar_track(self):
 
         playlist    = self.mlib.get_playlist_model()
 
-        if not len(playlist):
-
-            return
+        if not len(playlist): return
 
         track       = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
         stracks     = self.get_similartracks(track)
@@ -113,14 +147,15 @@ class OptionAnalyzer(BaseOption):
         for strack in stracks: 
 
                 rv = mpx.SQLRowV()
-                self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' AND title = '%s' LIMIT 1" % ( strack["artist"].replace("\'", "\'\'") , strack["title"].replace("\'","\'\'") ) ))
-                extract_ids(rv, self.v)
 
-                if len(rv) > 0:
-                    self.finished.set()
-                    return
+                if self.count_previous_artist_presence(playlist, strack["artist"]) <= 1:
 
-        self.finished.set()
+                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' AND title = '%s' ORDER BY mpxrand() LIMIT 1" % ( strack["artist"].replace("'", "''") , strack["title"].replace("'","''") ) ))
+                        extract_ids(rv, self.v)
+
+                        if len(self.v) > 0:
+
+                                return
 
     def run_accumulate_tags(self):
 
@@ -139,9 +174,9 @@ class OptionAnalyzer(BaseOption):
             for tag in ttags: 
                 
                 if tag[0] in tags:
-                    tags[tag[0]] = tags[tag[0]] + tag[1] 
+                    tags[tag[0]] = tags[tag[0]] + (float(tag[1]) / float(len(ttags)))
                 else:
-                    tags[tag[0]] = tag[1] 
+                    tags[tag[0]] = float(tag[1]) / float(len(ttags))
 
         highest_count = 0
         highest_tag   = None
@@ -164,25 +199,95 @@ class OptionAnalyzer(BaseOption):
 
                 for mbid in mbids: 
 
-                    if mbid.firstChild:
+                        if mbid.firstChild:
 
-                        rv = mpx.SQLRowV()
-                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY mpxrand() LIMIT 1"))
-                        extract_ids(rv, self.v)
+                                rv    = mpx.SQLRowV()
+                                id    = str(mbid.firstChild.data)
+                                count = self.count_previous_mbid_presence(playlist, id)
 
-                        if len(rv) > 0:
-                            self.finished.set()
-                            return
+                                if count <= 1:
+                                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY mpxrand() LIMIT 1" % id))
+                                        extract_ids(rv, self.v)
 
-        self.finished.set()
+                                if len(rv) > 0:
+                                        return
+
+    def run_similar_artist(self):
+
+        rv          = mpx.SQLRowV()
+        playlist    = self.mlib.get_playlist_model()
+        track       = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
+        artist      = track[mpx.AttributeId.ARTIST].get()
+
+        try:
+            uri     = u"http://ws.audioscrobbler.com/1.0/artist/%s/similar.xml" % urllib.quote(artist)
+            lastfm  = NonvalidatingReader.parseUri(uri)
+            ctx     = Context(lastfm)
+            names   = Evaluate("//name", context=ctx)
+            tries   = 3
+
+            random.shuffle(names)
+
+            while tries > 0:
+
+                    name = str(names[3-tries].firstChild.data)
+
+                    if self.count_previous_artist_presence(playlist, artist) <= 1:
+
+                            self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' ORDER BY mpxrand() LIMIT 1" % name.replace("'","''") ))
+                            extract_ids(rv, self.v)
+
+                            if len(self.v):
+                                    return
+
+                    tries = tries - 1
+
+        except:
+            print "Error running run_similar_artist"
 
     def run(self):
 
+        try:
+                self.run_similar_track()
+                if len(self.v):
+                    self.finished.set()
+                    return
+        except:
+                pass
+
+        try:
+                self.run_accumulate_tags()
+                if len(self.v):
+                    self.finished.set()
+                    return
+        except:
+                pass
+
+        try:
+                self.run_similar_artist()
+                if len(self.v):
+                    self.finished.set()
+                    return
+        except:
+                pass
+
+        # Pick one track at random
+
+        rv = mpx.SQLRowV()
+        self.lib.getSQL(rv, str("SELECT id FROM track_view ORDER BY mpxrand() LIMIT 1"))
+        extract_ids(rv, self.v)
+        self.finished.set()
+
+        """
         self.run_similar_track()
 
         if not len(self.v):
             self.run_accumulate_tags()
 
+        if not len(self.v):
+            self.run_similar_artist()
+        """
+            
 class OptionLastFmTag(BaseOption):    
 
     def __init__(self, lib, v, xml, mlib, mcs):
@@ -202,7 +307,8 @@ class OptionLastFmTag(BaseOption):
 
                 for mbid in mbids:
                     if mbid.firstChild:
-                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid.firstChild.data + "' ORDER BY mpxrand() LIMIT 1"))
+                        id = str(mbid.firstChild.data)
+                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY mpxrand() LIMIT 1" % id))
         except:
                 pass
 
@@ -218,171 +324,17 @@ class OptionRandomMix(BaseOption):
     def run(self):
 
         callables = [
-            self.RANDOM_LastFm,
-            self.RANDOM_LastFm2,
-            self.RANDOM_LastFm3,
             self.RANDOM_genre,
             self.RANDOM_toptune
         ]
 
-        callables[ random.randint(0,4) ](self.lib, self.v)
+        callables[ random.randint(0,1) ](self.lib, self.v)
 
         self.finished.set()
 
-    def RANDOM_LastFm(self, lib, v):
-
-        choice      = random.randint(0,1)
-        artist      = ""
-        rv          = mpx.SQLRowV()
-        playlist    = self.mlib.get_playlist_model()
-
-        if not len(playlist) or choice == 0:
-
-            lib.getSQL(rv, "SELECT id, artist FROM track_view ORDER BY mpxrand() LIMIT 1")
-            artist = rv[0]["artist"].get_string()
-
-        else: 
-
-            track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
-            artist = track[mpx.AttributeId.ARTIST].get()
-
-
-        try:
-            uri = u"http://ws.audioscrobbler.com/1.0/artist/%s/similar.xml" % urllib.quote(artist)
-            lastfm = NonvalidatingReader.parseUri(uri)
-
-            ctx = Context(lastfm)
-
-            mbids_xml = Evaluate("//mbid", context=ctx)
-            mbids = []
-       
-            for mbid in mbids_xml: 
-                if mbid.firstChild:
-                    mbids.append(str(mbid.firstChild.data))
-            
-            matches_xml = Evaluate("//match", context=ctx)
-            matches = []
-       
-            for match in matches_xml: 
-                if match.firstChild:
-                    matches.append(float(match.firstChild.data))
-
-            rv = mpx.SQLRowV()
-
-            for mbid in mbids:
-                if matches[mbids.index(mbid)] > 50:
-                    lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='" + mbid + "' ORDER BY mpxrand() LIMIT 1"))
-
-        except:
-            print "Error running RANDOM_LastFm"
-
-        extract_ids(rv, v)
-
-    def RANDOM_LastFm2(self, lib, v):
-
-        choice      = random.randint(0,1)
-        artist      = ""
-        title       = ""
-        rv          = mpx.SQLRowV()
-        playlist    = self.mlib.get_playlist_model()
-
-        if not len(playlist) or choice == 0:
-
-            lib.getSQL(rv, "SELECT id, artist, title FROM track_view ORDER BY mpxrand() LIMIT 1")
-            artist = rv[0]["artist"].get_string()
-            title  = rv[0]["title"].get_string()
-
-        else:
-
-            track    = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
-            artist = track[mpx.AttributeId.ARTIST].get()
-            title  = track[mpx.AttributeId.TITLE].get()
-
-
-        try:
-            uri     = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/similar.xml" % (urllib.quote(artist), urllib.quote(title))
-            lastfm  = NonvalidatingReader.parseUri(uri)
-            ctx     = Context(lastfm)
-
-            artists_xml = Evaluate("//track/artist/name", context=ctx)
-            artists     = []
-       
-            for artist in artists_xml: 
-                if artist.firstChild:
-                    artists.append(str(artist.firstChild.data))
-            
-            tracks_xml  = Evaluate("//track/name", context=ctx)
-            tracks      = []
-       
-            for track in tracks_xml: 
-                if track.firstChild:
-                    tracks.append(str(track.firstChild.data))
-
-            matches_xml = Evaluate("//track/match", context=ctx)
-            matches     = []
-       
-            for match in matches_xml: 
-                if match.firstChild:
-                    matches.append(float(match.firstChild.data))
-
-            rv = mpx.SQLRowV()
-
-            for artist in artists:
-                track = tracks[artists.index(artist)]
-                lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist LIKE '%s' AND title LIKE '%s' LIMIT 1" % (artist.replace("'","''"), track.replace("'","''"))))
-
-        except:
-            print "Error in RANDOM_LastFm2"
-
-        extract_ids(rv, v)
-
-    def RANDOM_LastFm3(self, lib, v):
-
-        choice      = random.randint(0,1)
-        artist      = ""
-        rv          = mpx.SQLRowV()
-        playlist    = self.mlib.get_playlist_model()
-
-        if not len(playlist) or choice == 0:
-
-            lib.getSQL(rv, "SELECT id, artist, title FROM track_view ORDER BY mpxrand() LIMIT 1")
-            artist = rv[0]["artist"].get_string()
-
-        else: 
-
-            track    = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
-            artist   = track[mpx.AttributeId.ARTIST].get()
-
-
-        try:
-            uri     = u"http://ws.audioscrobbler.com/1.0/artist/%s/toptracks.xml" % (urllib.quote(artist))
-            lastfm  = NonvalidatingReader.parseUri(uri)
-            ctx     = Context(lastfm)
-
-            tracks_xml = Evaluate("//track/name", context=ctx)
-            tracks     = []
-       
-            for track in tracks_xml: 
-                if track.firstChild:
-                    tracks.append(str(track.firstChild.data))
-
-            max_loop = random.randint(2,5)
-            if len(tracks) < max_loop:
-                max_loop = len(tracks)
-
-            offset = random.randint(0,len(tracks)-max_loop)
-
-            for idx in range(max_loop):
-                lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist LIKE '%s' AND title LIKE '%s' LIMIT 1" % (artist.replace("'","''"), tracks[idx+offset].replace("'","''"))))
-        except:
-            print "Error in RANDOM_LastFm3"
-
-        random.shuffle(rv)
-        extract_ids(rv, v)
-
     def RANDOM_genre(self, lib, v):
 
-        choice      = random.randint(0,1)
+        choice      = random.randint(0,2)
         genre       = ""
         rv          = mpx.SQLRowV()
         playlist    = self.mlib.get_playlist_model()
@@ -391,13 +343,17 @@ class OptionRandomMix(BaseOption):
 
             lib.getSQL(rv, "SELECT id, genre FROM track_view WHERE genre IS NOT NULL ORDER BY mpxrand() LIMIT 1")
             genre = rv[0]["genre"].get_string()
+            lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY mpxrand() LIMIT 2" % genre)
 
-        else: 
+        elif choice == 1: 
 
             track    = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
             genre    = track[mpx.AttributeId.GENRE].get()
+            lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY mpxrand() LIMIT 2" % genre)
+        
+        elif choice == 2:
 
-        lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY mpxrand() LIMIT 5" % genre)
+            lib.getSQL(rv, "SELECT id FROM track_view ORDER BY mpxrand() LIMIT 2")
 
         extract_ids(rv, v)
 

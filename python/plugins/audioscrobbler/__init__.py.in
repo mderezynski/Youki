@@ -794,7 +794,7 @@ class MPXAudioScrobbler(mpx.Plugin):
         self.mcs.key_set_string("lastfm", "password", self.password.props.text)
 
         if self.post:
-            self.post.authenticated = False
+                self.post.authenticated = False
 
         self.player.deactivate_plugin(self.id)
 
@@ -808,7 +808,11 @@ class MPXAudioScrobbler(mpx.Plugin):
 
         self.as = AudioScrobbler()
         self.post = self.as.post(self.mcs.key_get_string("lastfm", "username"), self.mcs.key_get_string("lastfm", "password"))
-        self.post.auth()
+        
+        try:
+            self.post.auth()
+        except:
+            print "AudioScrobbler: activation error"
     
         self.hand1 = self.player.gobj().connect("track-played", self.track_played)
         self.hand2 = self.player.gobj().connect("new-track", self.new_track)

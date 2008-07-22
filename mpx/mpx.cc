@@ -2743,7 +2743,6 @@ namespace MPX
       m_ActiveSource = m_PreparingSource.get();
 	  PlaybackSource* source = m_Sources[m_PreparingSource.get()];
 
-	  source->send_caps ();
 	  source->send_metadata ();
 
       m_Sidebar->setActiveId(m_PreparingSource.get());
@@ -2765,6 +2764,8 @@ namespace MPX
             source->play_post();
             break;
       };
+
+	  source->send_caps ();
 
       PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
       g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);

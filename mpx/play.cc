@@ -889,14 +889,28 @@ namespace MPX
             if (GST_IS_ELEMENT (spectrum))
             {
               GstElement* tee = gst_element_factory_make ("tee", "tee1"); 
-              gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, m_Equalizer, tee, spectrum, volume, vol_fade, sink_element, NULL);
-              gst_element_link_many (convert, resample, m_Equalizer, tee, volume, vol_fade, sink_element, NULL);
+              GstElement* idn = gst_element_factory_make ("identity", "identity1"); 
+
+              gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]),
+                    convert,
+                    resample,
+                    idn,
+                    m_Equalizer,
+                    tee,
+                    spectrum,
+                    volume,
+                    vol_fade,
+                    sink_element,
+                    NULL);
+
+              gst_element_link_many (convert, resample, idn, m_Equalizer, tee, volume, vol_fade, sink_element, NULL);
               gst_element_link_many (tee, spectrum, NULL);
             }
             else
             {
-              gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, m_Equalizer, volume, vol_fade, sink_element, NULL);
-              gst_element_link_many (convert, resample, m_Equalizer, volume, vol_fade, sink_element, NULL);
+              GstElement* idn = gst_element_factory_make ("identity", "identity1"); 
+              gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, idn, m_Equalizer, volume, vol_fade, sink_element, NULL);
+              gst_element_link_many (convert, resample, idn, m_Equalizer, volume, vol_fade, sink_element, NULL);
             }
 
             // Connect MCS to Equalizer Bands
@@ -913,14 +927,27 @@ namespace MPX
             if (GST_IS_ELEMENT (spectrum))
             {
               GstElement* tee = gst_element_factory_make ("tee", "tee1"); 
-              gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, tee, spectrum, volume, vol_fade, sink_element, NULL);
-              gst_element_link_many (convert, resample, tee, volume, vol_fade, sink_element, NULL);
+              GstElement* idn = gst_element_factory_make ("identity", "identity1"); 
+
+              gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]),
+                    convert,
+                    resample,
+                    idn,
+                    tee,
+                    spectrum,
+                    volume,
+                    vol_fade,
+                    sink_element,
+                    NULL);
+
+              gst_element_link_many (convert, resample, idn, tee, volume, vol_fade, sink_element, NULL);
               gst_element_link_many (tee, spectrum, NULL);
             }
             else
             {
-              gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, volume, vol_fade, sink_element, NULL);
-              gst_element_link_many (convert, resample, volume, vol_fade, sink_element, NULL);
+              GstElement* idn = gst_element_factory_make ("identity", "identity1"); 
+              gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, idn, volume, vol_fade, sink_element, NULL);
+              gst_element_link_many (convert, resample, idn, volume, vol_fade, sink_element, NULL);
             }
           }
 
@@ -1307,7 +1334,7 @@ namespace MPX
     GstElement*
     Play::tap ()
     {
-      return gst_bin_get_by_name (GST_BIN (m_bin[BIN_OUTPUT]), "tee1");
+      return gst_bin_get_by_name (GST_BIN (m_bin[BIN_OUTPUT]), "identity1");
     }
 
     GstElement*

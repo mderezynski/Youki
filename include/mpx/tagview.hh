@@ -16,6 +16,10 @@ class TagView : public Gtk::DrawingArea
 {
         static bool gsignals_initialized; // We need this because we have no class_init in gtkmm
 
+        struct CachedLayout
+        {
+        };
+
         static double TAG_SPACING; 
         static double ACCEPTABLE_MIN_SCALE;
         static double SCALE_STEP; 
@@ -23,6 +27,7 @@ class TagView : public Gtk::DrawingArea
         struct Layout
         {
             Glib::RefPtr<Pango::Layout> m_Layout; // cached
+            Cairo::RefPtr<Cairo::ImageSurface> m_Cached;
             Pango::Rectangle m_Ink, m_Logical;
             double x, y;
             double amplitude;

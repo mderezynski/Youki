@@ -31,7 +31,7 @@ class TrackCover(mpx.Plugin):
         return True
 
     def deactivate(self):
-        self.player.remove_info_widget(self.tagview.get_widget())
+        self.player.remove_info_widget(self.image)
         self.player.gobj().disconnect(self.player_metadata_updated_handler_id)
         self.player.gobj().disconnect(self.player_playstatus_changed_handler_id)
 
