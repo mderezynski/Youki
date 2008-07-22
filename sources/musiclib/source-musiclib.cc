@@ -173,7 +173,7 @@ namespace
         return output;
     }
 
-    const std::string attribute_names[] =
+    char const* attribute_names[] =
     {
         N_("File Location"),
         N_("Name"),
@@ -273,7 +273,7 @@ namespace
                     {
                         TreeIter iter = Store->append();
                         
-                        (*iter)[Columns.Name]   = attribute_names[i];
+                        (*iter)[Columns.Name]   = _(attribute_names[i]);
                         (*iter)[Columns.ID]     = i;
                         (*iter)[Columns.Active] = false;
                     }
@@ -339,6 +339,8 @@ namespace MPX
         ReferenceV & m_references;
     };  
 
+    static const int N_STARS = 6;
+
     struct MusicLibPrivate
     {
         Glib::RefPtr<Gnome::Glade::Xml>     m_RefXml;
@@ -370,7 +372,7 @@ namespace MPX
               boost::optional<Gtk::TreeIter>        m_CurrentIter;
               boost::optional<Gtk::TreeIter>        m_PlayInitIter;
               boost::optional<gint64>               m_CurrentId;
-              Glib::RefPtr<Gdk::Pixbuf>             m_Stars[6];
+              Glib::RefPtr<Gdk::Pixbuf>             m_Stars[N_STARS];
 
               PlaylistColumnsT                      PlaylistColumns;
               Glib::RefPtr<Gtk::ListStore>          ListStore;
@@ -494,21 +496,8 @@ namespace MPX
                 get_selection()->set_mode(Gtk::SELECTION_MULTIPLE);
                 get_selection()->signal_changed().connect( sigc::mem_fun( *this, &PlaylistTreeView::on_selection_changed ) );
 
-                /* FIXME: The problem here is it's the order of adding, not the
-                 * order in the view */
-                /*
-                ListStore->set_default_sort_func(
-                    sigc::mem_fun( *this, &PlaylistTreeView::slotSortById ));
-                */
-
                 set_headers_clickable();
                 set_model(ListStore);
-
-                std::vector<TargetEntry> Entries;
-                Entries.push_back(TargetEntry("mpx-album"));
-                Entries.push_back(TargetEntry("mpx-track"));
-                drag_dest_set(Entries, DEST_DEFAULT_MOTION);
-                drag_dest_add_uri_targets();
 
                 m_UIManager = Gtk::UIManager::create();
                 m_ActionGroup = Gtk::ActionGroup::create ("Actions_UiPartPlaylist-PlaylistList");
@@ -549,6 +538,12 @@ namespace MPX
                 ));
 
 				set_tooltip_text(_("Drag and drop albums, tracks and files here to add them to the playlist."));
+
+                std::vector<TargetEntry> Entries;
+                Entries.push_back(TargetEntry("mpx-album"));
+                Entries.push_back(TargetEntry("mpx-track"));
+                drag_dest_set(Entries, DEST_DEFAULT_MOTION);
+                drag_dest_add_uri_targets();
               }
 
               void
@@ -1227,7 +1222,7 @@ namespace MPX
                   }
                   else
                   {
-                    cell_t->property_markup() = _("<i>N/A</i>");
+                    cell_t->property_text() = ""; 
                   }
               }
 
@@ -3274,6 +3269,7 @@ namespace Source
     PlaybackSourceMusicLib::PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
     : PlaybackSource(ui_manager, _("Music"), C_CAN_SEEK)
     , m_MainUIManager(ui_manager)
+    , m_Skipped(false)
     {
         mpx_musiclib_py_init();
 
@@ -3776,6 +3772,23 @@ namespace Source
                 g_signal_emit(G_OBJECT(gobj()), signals[PSM_SIGNAL_PLAYLIST_END], 0);
             }
         }
+
+        if( !m_Skipped )
+        {
+                // Update markov
+                gint64 track_id_b = (*iter)[playlist.PlaylistColumns.RowId];
+                TreeIter iter2 = iter;
+                --iter2;
+                if(iter2)
+                {
+                    gint64 track_id_a = (*iter2)[playlist.PlaylistColumns.RowId];
+                    m_Lib.get().markovUpdate( track_id_a, track_id_b );
+                }
+        }
+        else
+        {
+                m_Skipped = false;
+        }
     }
 
     void
@@ -3794,7 +3807,9 @@ namespace Source
 
     void
     PlaybackSourceMusicLib::skipped () 
-    {}
+    {
+        m_Skipped = true;
+    }
 
     void
     PlaybackSourceMusicLib::segment () 

@@ -100,6 +100,12 @@ namespace MPX
             void
             trackTagged(gint64, std::string const&);
 
+            void
+            markovUpdate(gint64 /* track a */, gint64 /* track b */);
+
+            gint64 
+            markovFind(gint64 /* track a*/); 
+
         public:
 
             typedef sigc::signal<void,
