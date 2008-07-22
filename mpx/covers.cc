@@ -409,7 +409,7 @@ namespace MPX
 
         if (!file_test(cover_file_name, FILE_TEST_EXISTS))
         {
-            g_warning("Was told to save a cover from local file '%s', but this doesn't exist!", source->get_path().c_str());
+            g_warning("Was told to save a cover from local file '%s', but this doesn't exist!", cover_file_name.c_str());
             return;
         }
 
