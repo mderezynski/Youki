@@ -28,6 +28,7 @@
 
 #include <gtkmm.h>
 #include <glibmm.h>
+#include <giomm.h>
 #include <glibmm/i18n.h>
 #include <glib/gstdio.h>
 
@@ -398,6 +399,34 @@ namespace MPX
             }
         }
     }
+
+    void
+    Covers::local_save_cover(
+        CoverFetchData * local_data
+    )
+    {
+        std::string cover_file_name = local_cover_file(local_data->uri);
+        Glib::RefPtr<Gio::File> source = Gio::File::create_for_path( cover_file_name );
+
+        char* cover_art_contents;
+        gsize read_bytes;
+        std::string etag;
+        source->load_contents(cover_art_contents, read_bytes, etag);
+
+        RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
+        loader->write (reinterpret_cast<const guint8*>(cover_art_contents), read_bytes);
+        loader->close ();
+
+        RefPtr<Gdk::Pixbuf> cover = loader->get_pixbuf();
+        cover->save( get_thumb_path( local_data->mbid ), "png" );
+
+        g_message("saved pixbuf");
+
+        m_pixbuf_cache.insert( std::make_pair( local_data->mbid, cover ));
+        Signals.GotCover.emit( local_data->mbid );
+
+        delete local_data;
+    }
     
     std::string
     Covers::get_thumb_path(
@@ -407,6 +436,28 @@ namespace MPX
         std::string basename = (boost::format ("%s.png") % mbid).str ();
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", basename.c_str(), NULL));
         return std::string(path.get());
+    }
+
+    std::string
+    Covers::local_cover_file(
+        const std::string& track_uri
+    )
+    {
+        Glib::RefPtr<Gio::File> directory = Gio::File::create_for_uri( track_uri )->get_parent( );
+        Glib::RefPtr<Gio::FileEnumerator> files = directory->enumerate_children( );
+    
+        RefPtr<Gio::FileInfo> file ;
+        while ( (file = files->next_file()) != 0 )
+        {
+            if( file->get_content_type().find("image") != std::string::npos &&
+                ( file->get_name().find("folder") ||
+                  file->get_name().find("cover")  ||
+                  file->get_name().find("front")     )
+              )
+            {
+                return directory->get_child(file->get_name())->get_path();
+            }
+        }
     }
 
     void 
@@ -434,6 +485,14 @@ namespace MPX
 
         if( acquire )
         {
+            // TODO It should be probably be a user preference which of these options takes priority...
+            if ( !local_cover_file(uri).empty() )
+            {
+                CoverFetchData * data = new CoverFetchData( asin, mbid, uri, artist, album );
+
+                local_save_cover( data );
+            }
+            else
             if( mbid.substr(0,4) == "mpx-" )
             {
                 CoverFetchData * data = new CoverFetchData( asin, mbid, uri, artist, album );

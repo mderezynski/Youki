@@ -137,12 +137,18 @@ namespace MPX
 	  std::string
 	  get_thumb_path (const std::string& /*mbid*/);
 
+	  std::string
+	  local_cover_file (const std::string& /*track_uri*/);
+
 	  void 
 	  site_fetch_and_save_cover_mbxml (CoverFetchData*);
 	  void 
 	  site_fetch_and_save_cover_amazn (CoverFetchData*);
 	  void 
 	  site_fetch_and_save_cover_amapi (CoverFetchData*);
+
+      void
+      local_save_cover (CoverFetchData*);
 
 	  void
 	  reply_cb_amazn (char const*, guint, guint, CoverFetchData*);
