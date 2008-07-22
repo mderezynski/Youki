@@ -408,6 +408,12 @@ namespace MPX
         std::string cover_file_name = local_cover_file(local_data->uri);
         Glib::RefPtr<Gio::File> source = Gio::File::create_for_path( cover_file_name );
 
+        if (!source->query_exists())
+        {
+            g_warning("Was told to save a cover from local file '%s', but this doesn't exist!", source->get_path().c_str());
+            return;
+        }
+
         char* cover_art_contents;
         gsize read_bytes;
         std::string etag;
@@ -458,6 +464,8 @@ namespace MPX
                 return directory->get_child(file->get_name())->get_path();
             }
         }
+
+        return "";
     }
 
     void 
@@ -489,6 +497,7 @@ namespace MPX
             if ( !local_cover_file(uri).empty() )
             {
                 CoverFetchData * data = new CoverFetchData( asin, mbid, uri, artist, album );
+                g_message("Found artwork %s", local_cover_file(uri).c_str());
 
                 local_save_cover( data );
             }
