@@ -46,7 +46,7 @@
 
 namespace MPX
 {
-  class Core;
+  class CoverArtSourceView;
 
   /** Preferences dialog
    *
@@ -66,8 +66,19 @@ namespace MPX
     public:
 
       Preferences (Glib::RefPtr<Gnome::Glade::Xml> const&, MPX::Play&);
-      static Preferences* create (MPX::Play&);
-      virtual ~Preferences () {}
+
+      static
+      Preferences*
+      create (MPX::Play&);
+
+      virtual
+      ~Preferences()
+      {
+      }
+
+    private:
+
+      CoverArtSourceView      * m_CoverArtSources; 
 
       class AudioSystemColumnRecord
         : public Gtk::TreeModel::ColumnRecord
@@ -87,16 +98,27 @@ namespace MPX
               add (sink);
           }
       };
-      AudioSystemColumnRecord  audio_system_columns;
-      std::vector<int> audio_system_cbox_ids;
 
-      Gtk::StockID stock (bool truth);
-      void setup_audio_widgets ();
-      void setup_audio ();
+      AudioSystemColumnRecord   audio_system_columns;
+      std::vector<int>          audio_system_cbox_ids;
 
-      void audio_system_apply_set_sensitive ();
-      void audio_system_changed ();
-      void audio_system_apply ();
+      Gtk::StockID
+      get_plugin_stock(bool /*available*/);
+
+      void
+      setup_audio_widgets ();
+
+      void
+      setup_audio ();
+
+      void
+      audio_system_apply_set_sensitive ();
+
+      void
+      audio_system_changed ();
+
+      void
+      audio_system_apply ();
 
       Gtk::Button                       * m_button_audio_system_apply;
       Gtk::Button                       * m_button_audio_system_reset;
@@ -113,8 +135,8 @@ namespace MPX
       struct AlsaDevice
       {
           std::string   m_handle;
-          int	          m_card_id;
-          int	          m_device_id;
+          int	        m_card_id;
+          int	        m_device_id;
           std::string   m_name;
 
           AlsaDevice  () {}
@@ -200,10 +222,8 @@ namespace MPX
           }
       };
 
-      AlsaCardColumnRecord m_alsa_card_columns;
-      AlsaDeviceColumnRecord m_alsa_device_columns;
-
-
+      AlsaCardColumnRecord                m_alsa_card_columns;
+      AlsaDeviceColumnRecord              m_alsa_device_columns;
       Gtk::ComboBox                     * m_cbox_alsa_card;
       Gtk::ComboBox                     * m_cbox_alsa_device;
       Gtk::SpinButton                   * m_alsa_buffer_time;
@@ -266,20 +286,20 @@ namespace MPX
       void  mm_apply ();
       void  mm_toggled ();
 
-      public:
+    public:
 
         typedef sigc::signal<void> Signal;
-        struct SignalsT
+        struct Signals_t
         {
           Signal  HotkeyEditBegin;
           Signal  HotkeyEditEnd;
         };
 
-      private:
+    private:
 
-        SignalsT Signals;
+        Signals_t Signals;
 
-      public:
+    public:
 
         Signal&
         signal_mm_edit_begin ()

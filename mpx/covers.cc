@@ -406,24 +406,15 @@ namespace MPX
     )
     {
         std::string cover_file_name = local_cover_file(local_data->uri);
-        Glib::RefPtr<Gio::File> source = Gio::File::create_for_path( cover_file_name );
 
-        char* cover_art_contents;
-        gsize read_bytes;
-        std::string etag;
-        source->load_contents(cover_art_contents, read_bytes, etag);
-
-        RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
-        loader->write (reinterpret_cast<const guint8*>(cover_art_contents), read_bytes);
-        loader->close ();
-
-        RefPtr<Gdk::Pixbuf> cover = loader->get_pixbuf();
-        cover->save( get_thumb_path( local_data->mbid ), "png" );
-
-        g_message("saved pixbuf");
-
-        m_pixbuf_cache.insert( std::make_pair( local_data->mbid, cover ));
-        Signals.GotCover.emit( local_data->mbid );
+        try{
+                RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cover_file_name ); 
+                cover->save( get_thumb_path( local_data->mbid ), "png" );
+                m_pixbuf_cache.insert( std::make_pair( local_data->mbid, cover ));
+                g_message("saved pixbuf");
+                Signals.GotCover.emit( local_data->mbid );
+        } catch(...) {
+        }
 
         delete local_data;
     }
@@ -458,6 +449,8 @@ namespace MPX
                 return directory->get_child(file->get_name())->get_path();
             }
         }
+
+        return std::string();
     }
 
     void 
