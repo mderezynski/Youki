@@ -77,7 +77,10 @@ namespace MPX
 			vacuum();
 
             void
-            reload ();
+            reload();
+
+            void
+            recacheCovers();
 
             Track
             sqlToTrack (SQL::Row&);

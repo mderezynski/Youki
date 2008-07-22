@@ -60,6 +60,7 @@
 #include "mpx/uri.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-graphics.hh"
+#include "mpx/util-string.hh"
 #include "mpx/xml.hh"
 
 using namespace Glib;
@@ -568,5 +569,21 @@ namespace MPX
         }
 
         return false;
+    }
+
+    void
+    Covers::purge()
+    {
+        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", NULL));
+
+        Glib::Dir dir (path.get());
+        StrV v (dir.begin(), dir.end());
+        dir.close ();
+
+        for(StrV::const_iterator i = v.begin(); i != v.end(); ++i)
+        {
+            std::string fullpath = build_filename(path.get(), *i);
+            g_unlink(fullpath.c_str());
+        }
     }
 }

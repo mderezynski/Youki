@@ -24,6 +24,7 @@ class TrackCover(mpx.Plugin):
         self.box = gtk.HBox(False,16)
         self.box.show_all()
         self.alignment.add(self.box)
+        self.alignment.show_all()
 
     def activate(self):
 
@@ -46,6 +47,7 @@ class TrackCover(mpx.Plugin):
         self.box = gtk.HBox(False,16)
         self.box.show_all()
         self.alignment.add(self.box)
+        self.alignment.show_all()
 
     def pstate_changed(self, blah, state):
 

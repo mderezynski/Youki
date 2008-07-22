@@ -104,6 +104,8 @@ namespace
     "         <menuitem action='musiclib-show-collections'/>"
     "         <separator/>"
     "         <menuitem action='musiclib-show-ccdialog'/>"
+    "         <separator/>"
+    "         <menuitem action='musiclib-action-recache-covers'/>"
     "     </menu>"
     "   </placeholder>"
     "</menubar>"
@@ -3344,8 +3346,11 @@ namespace Source
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-show-collections"))->property_value() = 1;
 
 
-        m_MainActionGroup->add (Action::create( "musiclib-show-ccdialog", _("Configure Columns...")),
+        m_MainActionGroup->add (Action::create( "musiclib-show-ccdialog", _("Configure columns...")),
                                                 sigc::mem_fun( *m_Private->m_TreeViewPlaylist, &MusicLibPrivate::PlaylistTreeView::action_cb_show_ccdialog ));
+
+        m_MainActionGroup->add (Action::create( "musiclib-action-recache-covers", _("Refresh album covers")),
+                                                sigc::mem_fun( m_Lib.get(), &Library::recacheCovers ));
 
         m_MainUIManager->insert_action_group(m_MainActionGroup);
     }

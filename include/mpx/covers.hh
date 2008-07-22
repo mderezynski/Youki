@@ -94,9 +94,12 @@ namespace MPX
         const std::string& /*artist*/   = std::string(),
         const std::string& /*album*/    = std::string(),
         bool               /*acquire*/  = false
-     );
+      );
 
-	private:
+      void
+      purge();
+
+    private:
 
 	  struct CoverFetchData
 	  {

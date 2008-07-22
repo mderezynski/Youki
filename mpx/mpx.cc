@@ -2958,21 +2958,28 @@ namespace MPX
         {
             m_SourceUI = m_Sources[source_id]->add_menu();
 
-            if( source_id == m_ActiveSource.get() ) 
+            if( m_Play->property_status() == PLAYSTATUS_PLAYING)
             {
-                PlaybackSource::Caps caps = m_source_c[source_id];
-                m_actions->get_action (ACTION_PREV)->set_sensitive( caps & PlaybackSource::C_CAN_GO_PREV );
-                m_actions->get_action (ACTION_NEXT)->set_sensitive( caps & PlaybackSource::C_CAN_GO_NEXT );
-                m_actions->get_action (ACTION_PLAY)->set_sensitive( caps & PlaybackSource::C_CAN_PLAY );
-
-                if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
-                {
-                    m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
-                }
+                    if( source_id == m_ActiveSource.get() ) 
+                    {
+                        PlaybackSource::Caps caps = m_source_c[source_id];
+                        m_actions->get_action (ACTION_PREV)->set_sensitive( caps & PlaybackSource::C_CAN_GO_PREV );
+                        m_actions->get_action (ACTION_NEXT)->set_sensitive( caps & PlaybackSource::C_CAN_GO_NEXT );
+                        m_actions->get_action (ACTION_PLAY)->set_sensitive( caps & PlaybackSource::C_CAN_PLAY );
+                        m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
+                    }
+                    else
+                    {
+                        m_actions->get_action (ACTION_PLAY)->set_sensitive( false );
+                    }
             }
             else
             {
-                m_actions->get_action (ACTION_PLAY)->set_sensitive( false );
+                    PlaybackSource::Caps caps = m_source_c[source_id];
+                    m_actions->get_action (ACTION_PREV)->set_sensitive( false ); 
+                    m_actions->get_action (ACTION_NEXT)->set_sensitive( false); 
+                    m_actions->get_action (ACTION_PLAY)->set_sensitive( caps & PlaybackSource::C_CAN_PLAY );
+                    m_actions->get_action (ACTION_PAUSE)->set_sensitive( false);
             }
         }
 	}
