@@ -216,9 +216,18 @@ namespace
         N_("MPX Album ID")
     };
 
+    typedef sigc::signal<void, int, bool> SignalColumnState;
+
     class ColumnControlView : public WidgetLoader<Gtk::TreeView>
     {
         public:
+               
+                struct Signals_t 
+                {
+                    SignalColumnState ColumnState;
+                };
+
+                Signals_t Signals;
 
                 class Columns_t : public Gtk::TreeModelColumnRecord
                 {
@@ -248,18 +257,17 @@ namespace
 
                     TreeViewColumn *col = manage( new TreeViewColumn(_("Active")));
                     CellRendererToggle *cell1 = manage( new CellRendererToggle );
+                    cell1->property_xalign() = 0.5;
                     cell1->signal_toggled().connect(
                         sigc::mem_fun(
                             *this,
                             &ColumnControlView::on_cell_toggled
                     ));
-                    col->pack_start(*cell1, false);
+                    col->pack_start(*cell1, true);
+                    col->add_attribute(*cell1, "active", Columns.Active);
                     append_column(*col);            
 
-                    col = manage( new TreeViewColumn(_("Column")));
-                    CellRendererText *cell2 = manage( new CellRendererText );
-                    col->pack_start(*cell2, true);
-                    append_column(*col);            
+                    append_column(_("Column"), Columns.Name);            
 
                     for( int i = 0; i < N_ATTRIBUTES_INT; ++i )
                     {
@@ -277,8 +285,9 @@ namespace
                     TreeIter iter = Store->get_iter(path);
 
                     bool active = (*iter)[Columns.Active];
-                
                     (*iter)[Columns.Active] = !active;
+
+                    Signals.ColumnState.emit((*iter)[Columns.ID], !active);
                 }
     };
 
@@ -292,6 +301,12 @@ namespace
                 : WidgetLoader<Gtk::Dialog>(xml, "cc-dialog")
                 {
                     m_ControlView = new ColumnControlView(xml);
+                }
+
+                SignalColumnState&
+                signal_column_state()
+                {
+                    return m_ControlView->Signals.ColumnState;
                 }
     };
 }
@@ -371,6 +386,8 @@ namespace MPX
                 C_RATING,
               };
 
+              static const int N_FIRST_CUSTOM = 7;
+
               PlaylistTreeView(
                     Glib::RefPtr<Gnome::Glade::Xml> const& xml,
                     PAccess<MPX::Library>           const& lib,
@@ -438,7 +455,7 @@ namespace MPX
                 cell2 = manage (new CellRendererText);
                 for( int i = 0; i < N_ATTRIBUTES_INT; ++i)
                 {
-                        col = manage (new TreeViewColumn());
+                        col = manage (new TreeViewColumn(_(attribute_names[i])));
                         col->pack_start(*cell2, true);
                         col->set_cell_data_func(*cell2, sigc::bind(sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncCustom ), i ));
                         col->property_visible()= false;
@@ -525,8 +542,19 @@ namespace MPX
                 label->set_markup(_("<b>Play</b>"));
 
                 m_CCDialog = new ColumnControlDialog(xml);
+                m_CCDialog->signal_column_state().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &PlaylistTreeView::on_column_toggled
+                ));
 
-				//set_tooltip_text(_("Drag and drop albums, tracks and files here to add them to the playlist."));
+				set_tooltip_text(_("Drag and drop albums, tracks and files here to add them to the playlist."));
+              }
+
+              void
+              on_column_toggled( int column, bool state )
+              {
+                get_column(N_FIRST_CUSTOM + column)->property_visible() = state;
               }
 
               void
