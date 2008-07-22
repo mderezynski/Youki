@@ -6,50 +6,90 @@
 # (C) 2008 M. Derezynski
 #
 
-import mpx
+import gobject
 import pygtk
 pygtk.require('2.0')
 import gtk
 import gst
-import pygst
-import gobject
+gobject.threads_init()
+import mpx
 import pango
+import threading
+import socket
+import BaseHTTPServer
+import Queue
 
 class AudioRecord(mpx.Plugin):
 
     def __init__(self, id, player, mcs):
 
-        self.id = id
-        self.player = player
-        self.mcs = mcs
-        self.tap = player.get_play().tap()
-        self.pipeline = player.get_play().pipeline()
+        gobject.threads_init()
 
-        self.queue    = gst.element_factory_make("queue", "queue-audiorecord")
-        self.pipeline.add(self.queue)
+        self.player     = player
+        self.id         = id
+        self.mcs        = mcs
+        self.tap        = player.get_play().tap()
+        self.queue      = Queue.Queue(0)
 
-        self.lame     = gst.element_factory_make("lame", "lame-audiorecord")
-        self.pipeline.add(self.lame)
+        #self.tap.connect("handoff", self.data_handoff)
+        #self.server('', 8080)
 
-        self.shoutsink  = gst.element_factory_make("shout2send", "shout-audiorecord") 
-        self.pipeline.add(self.shoutsink)
-        self.shoutsink.set_property("protocol", 2)
-        self.shoutsink.set_property("url","/")
+    def data_handoff(self, elmt, buffer):
+        
+        self.queue.put(buffer)
+       
+    def server(self, host, port):
 
-        gst.element_link_many(self.queue, self.lame, self.shoutsink)
+        '''Initialize server and start listening.'''
+        self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.sock.bind((host, port))
+        self.sock.listen(1)
+        print "Listening..."
+        gobject.io_add_watch(self.sock, gobject.IO_IN, self.listener)
+     
+     
+    def listener(self, sock, *args):
 
+        '''Asynchronous connection listener. Starts a handler for each connection.'''
+        conn, addr = sock.accept()
+        print "Connected"
+        gobject.io_add_watch(conn, gobject.IO_IN, self.handler)
+        return True
+
+     
+     
+    def handler(self, conn, *args):
+
+        '''Asynchronous connection handler. Processes each line from the socket.'''
+        line = conn.recv(4096)
+        if not line or not len(line):
+            return False
+        else:
+            conn.send("HTTP/1.1 200 OK") 
+            conn.send("Content-type: audio/mp3")
+            conn.send("\n\n")
+
+            #while conn and not self.queue.empty():
+            #
+            #    conn.send(queue.get())
+
+            conn.close()
+            return True
+ 
     def activate(self):
 
         self.player_playstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
-        gst.element_link_many(self.tap, self.queue)
 
         return True
 
     def deactivate(self):
 
         self.player.gobj().disconnect(self.player_playstatus_changed_handler_id)
-        gst.element_unlink_many(self.tap, self.queue)
 
     def pstate_changed(self, blah, state):
 
-        pass
+        if state == mpx.PlayStatus.PLAYING: 
+
+                pass
+

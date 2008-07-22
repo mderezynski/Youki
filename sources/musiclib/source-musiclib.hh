@@ -113,7 +113,8 @@ namespace Source
                 PAccess<MPX::Library>               m_Lib;
                 PAccess<MPX::HAL>                   m_HAL;
                 PAccess<MPX::Covers>                m_Covers;
-    
+
+                bool                                m_Skipped;   
 
                 void
                 on_sort_column_change ();

@@ -20,34 +20,51 @@ class TrackCover(mpx.Plugin):
         self.id = id
         self.player = player
         self.mcs = mcs
-        self.image = gtk.Image()
+        self.alignment = gtk.Alignment(xalign=0.5, yalign=0.5)
+        self.box = gtk.HBox(False,16)
+        self.box.show_all()
+        self.alignment.add(self.box)
 
     def activate(self):
 
-        self.player.add_info_widget(self.image, "Album Cover")
+        self.player.add_info_widget(self.alignment, "Track Covers")
         self.player_metadata_updated_handler_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
+        self.player_metadata_updated_handler_id = self.player.gobj().connect("new-track", self.new_track)
         self.player_playstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
 
         return True
 
     def deactivate(self):
-        self.player.remove_info_widget(self.tagview.get_widget())
+
+        self.player.remove_info_widget(self.alignment)
         self.player.gobj().disconnect(self.player_metadata_updated_handler_id)
         self.player.gobj().disconnect(self.player_playstatus_changed_handler_id)
+
+    def regen_box(self):
+
+        self.box.destroy()
+        self.box = gtk.HBox(False,16)
+        self.box.show_all()
+        self.alignment.add(self.box)
 
     def pstate_changed(self, blah, state):
 
         if state == mpx.PlayStatus.STOPPED:
-            self.image.clear()
+                self.regen_box()
+
+    def new_track(self, blah):
+
+        self.regen_box()
 
     def metadata_updated(self, blah):
 
-        self.image.clear()
-
         try:
-            image = self.player.get_metadata().get_image()
+                pixbuf = self.player.get_metadata().get_image()
 
-            if image:
-                self.image.set_from_pixbuf(image.scale_simple(512,512,gtk.gdk.INTERP_HYPER))
+                if pixbuf:
+                        image = gtk.Image()
+                        image.set_from_pixbuf(pixbuf.scale_simple( 256, 256, gtk.gdk.INTERP_HYPER ))
+                        self.box.pack_end(image, False, False)
+                        image.show_all()
         except:
-            print "Error in TrackCover::metadata_updated"
+                pass

@@ -348,6 +348,7 @@ namespace MPX
                          "ON artist.id = track.artist_j JOIN album_artist ON album.album_artist_j = album_artist.id;");
 
         m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS devices (id INTEGER PRIMARY KEY AUTOINCREMENT, device_udi TEXT, volume_udi TEXT);");
+        m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS markov (id INTEGER PRIMARY KEY AUTOINCREMENT, count INTEGER DEFAULT 0, track_id_a INTEGER DEFAULT NULL, track_id_b INTEGER DEFAULT NULL);");
     }
 
 #ifdef HAVE_HAL
@@ -640,6 +641,38 @@ namespace MPX
         {
            execSQL(mprintf(update_f, id, tag_id));
         }
+    }
+
+    void
+    Library::markovUpdate(gint64 a, gint64 b)
+    {
+		RowV rows;
+		getSQL (rows, (boost::format("SELECT id FROM markov WHERE track_id_a = %lld AND track_id_b = %lld") % a % b).str());
+        if( rows.empty ())
+        {
+            execSQL((boost::format("INSERT INTO markov (count, track_id_a, track_id_b) VALUES (1, %lld, %lld)") % a % b).str());
+        }
+        else
+        {
+            gint64 id = get <gint64> (rows[0].find ("id")->second);
+            execSQL((boost::format("UPDATE markov SET count = count + 1 WHERE id = %lld") % id).str());
+        }
+    }
+
+    gint64
+    Library::markovFind(gint64 a)
+    {
+        try{
+                RowV rows;
+                getSQL (rows, (boost::format("SELECT track_id_b FROM markov WHERE track_id_a = %lld AND count != 0 ORDER BY count DESC") % a).str());
+                if( !rows.empty() )
+                {
+                    return get<gint64>(rows[0].find ("track_id_b")->second);
+                }
+        } catch( ... ) {
+        }
+
+        return -1;
     }
 
     Track

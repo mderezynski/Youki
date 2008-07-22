@@ -102,6 +102,8 @@ namespace
     "         <separator/>"
     "         <menuitem action='musiclib-show-albums'/>"
     "         <menuitem action='musiclib-show-collections'/>"
+    "         <separator/>"
+    "         <menuitem action='musiclib-show-ccdialog'/>"
     "     </menu>"
     "   </placeholder>"
     "</menubar>"
@@ -144,6 +146,169 @@ namespace
         NO_ORDER,
         ORDER
     };
+
+    std::string
+    ovariant_get_string (MPX::OVariant & self)
+    {
+        if(!self.is_initialized())
+        {
+            return std::string();
+        }
+
+        std::string output;
+
+        switch(self.get().which())
+        {
+            case 0:
+                output = boost::lexical_cast<std::string>(boost::get<gint64>(self.get()));
+                break;
+            case 1:
+                output = boost::lexical_cast<std::string>(boost::get<double>(self.get()));
+                break;
+            case 2:
+                output = boost::get<std::string>(self.get());
+                break;
+        }
+
+        return output;
+    }
+
+    char const* attribute_names[] =
+    {
+        N_("File Location"),
+        N_("Name"),
+        N_("Genre"),
+        N_("Comment"),
+        N_("MusicIP PUID"),
+        N_("File Hash"),
+        N_("MusicBrainz Track ID"),
+        N_("Artist"),
+        N_("Artist Sort Name"),
+        N_("MusicBrainz Artist ID"),
+        N_("Album"),
+        N_("MusicBrainz Album ID"),
+        N_("Release Date"),
+        N_("Release Country"),
+        N_("Release Type"),
+        N_("Amazon ASIN"),
+        N_("Album Artist"),
+        N_("Album Artist Sort Name"),
+        N_("MusicBrainz Album Artist ID"),
+        N_("MIME type"),
+        N_("HAL Volume UDI"),
+        N_("HAL Device UDI"),
+        N_("Volume-relative Path"),
+        N_("Insert Path"),
+        N_("Location Name"),
+        N_("Track"),
+        N_("Time"),
+        N_("Rating"),
+        N_("Date"),
+        N_("Change Time"),
+        N_("Bitrate"),
+        N_("Samplerate"),
+        N_("Play Count"),
+        N_("Play Date"),
+        N_("Insert Date"),
+        N_("Is MB Album Artist"),
+        N_("Active"),
+        N_("MPX Track ID"),
+        N_("MPX Album ID")
+    };
+
+    typedef sigc::signal<void, int, bool> SignalColumnState;
+
+    class ColumnControlView : public WidgetLoader<Gtk::TreeView>
+    {
+        public:
+               
+                struct Signals_t 
+                {
+                    SignalColumnState ColumnState;
+                };
+
+                Signals_t Signals;
+
+                class Columns_t : public Gtk::TreeModelColumnRecord
+                {
+                    public: 
+
+                            Gtk::TreeModelColumn<Glib::ustring> Name;
+                            Gtk::TreeModelColumn<int>           ID;
+                            Gtk::TreeModelColumn<bool>          Active;
+
+                            Columns_t ()
+                            {
+                                add(Name);
+                                add(ID);
+                                add(Active);
+                            };
+                };
+
+
+                Columns_t                       Columns;
+                Glib::RefPtr<Gtk::ListStore>    Store;
+
+                ColumnControlView (const Glib::RefPtr<Gnome::Glade::Xml>& xml)
+                : WidgetLoader<Gtk::TreeView>(xml, "cc-treeview")
+                {
+                    Store = Gtk::ListStore::create(Columns); 
+                    set_model(Store);
+
+                    TreeViewColumn *col = manage( new TreeViewColumn(_("Active")));
+                    CellRendererToggle *cell1 = manage( new CellRendererToggle );
+                    cell1->property_xalign() = 0.5;
+                    cell1->signal_toggled().connect(
+                        sigc::mem_fun(
+                            *this,
+                            &ColumnControlView::on_cell_toggled
+                    ));
+                    col->pack_start(*cell1, true);
+                    col->add_attribute(*cell1, "active", Columns.Active);
+                    append_column(*col);            
+
+                    append_column(_("Column"), Columns.Name);            
+
+                    for( int i = 0; i < N_ATTRIBUTES_INT; ++i )
+                    {
+                        TreeIter iter = Store->append();
+                        
+                        (*iter)[Columns.Name]   = _(attribute_names[i]);
+                        (*iter)[Columns.ID]     = i;
+                        (*iter)[Columns.Active] = false;
+                    }
+                };
+
+                void
+                on_cell_toggled(Glib::ustring const& path)
+                {
+                    TreeIter iter = Store->get_iter(path);
+
+                    bool active = (*iter)[Columns.Active];
+                    (*iter)[Columns.Active] = !active;
+
+                    Signals.ColumnState.emit((*iter)[Columns.ID], !active);
+                }
+    };
+
+    class ColumnControlDialog : public WidgetLoader<Gtk::Dialog>
+    {
+                ColumnControlView *m_ControlView;
+    
+        public:
+
+                ColumnControlDialog(const Glib::RefPtr<Gnome::Glade::Xml>& xml)
+                : WidgetLoader<Gtk::Dialog>(xml, "cc-dialog")
+                {
+                    m_ControlView = new ColumnControlView(xml);
+                }
+
+                SignalColumnState&
+                signal_column_state()
+                {
+                    return m_ControlView->Signals.ColumnState;
+                }
+    };
 }
  
 namespace MPX
@@ -174,37 +339,43 @@ namespace MPX
         ReferenceV & m_references;
     };  
 
+    static const int N_STARS = 6;
+
     struct MusicLibPrivate
     {
-        Glib::RefPtr<Gnome::Glade::Xml> m_RefXml;
-        Gtk::Widget * m_UI;
+        Glib::RefPtr<Gnome::Glade::Xml>     m_RefXml;
+        Gtk::Widget                       * m_UI;
 
         class PlaylistTreeView
             :   public WidgetLoader<Gtk::TreeView>
         {
-              PAccess<MPX::Library> m_Lib;
+              ColumnControlDialog                 * m_CCDialog;
+
               MPX::Source::PlaybackSourceMusicLib & m_MusicLib;
-              PAccess<MPX::HAL> m_HAL;
 
-              Glib::RefPtr<Gdk::Pixbuf> m_Playing;
-              Glib::RefPtr<Gdk::Pixbuf> m_Bad;
+              PAccess<MPX::Library>                 m_Lib;
+              PAccess<MPX::HAL>                     m_HAL;
 
-              gint64 m_RowId;
+              Glib::RefPtr<Gdk::Pixbuf>             m_Playing;
+              Glib::RefPtr<Gdk::Pixbuf>             m_Bad;
 
-              TreePath m_PathButtonPress;
-              int m_ButtonDepressed;
+              gint64                                m_RowId;
 
-              Glib::RefPtr<Gtk::UIManager> m_UIManager;
-              Glib::RefPtr<Gtk::ActionGroup> m_ActionGroup;
+              TreePath                              m_PathButtonPress;
+              int                                   m_ButtonDepressed;
+
+              Glib::RefPtr<Gtk::UIManager>          m_UIManager;
+              Glib::RefPtr<Gtk::ActionGroup>        m_ActionGroup;      
 
             public:
 
-              boost::optional<Gtk::TreeIter> m_CurrentIter;
-              boost::optional<Gtk::TreeIter> m_PlayInitIter;
-              boost::optional<gint64> m_CurrentId;
-              PlaylistColumnsT PlaylistColumns;
-              Glib::RefPtr<Gtk::ListStore> ListStore;
-              Glib::RefPtr<Gdk::Pixbuf> m_Stars[6];
+              boost::optional<Gtk::TreeIter>        m_CurrentIter;
+              boost::optional<Gtk::TreeIter>        m_PlayInitIter;
+              boost::optional<gint64>               m_CurrentId;
+              Glib::RefPtr<Gdk::Pixbuf>             m_Stars[N_STARS];
+
+              PlaylistColumnsT                      PlaylistColumns;
+              Glib::RefPtr<Gtk::ListStore>          ListStore;
 
               enum Column
               {
@@ -217,6 +388,8 @@ namespace MPX
                 C_RATING,
               };
 
+              static const int N_FIRST_CUSTOM = 7;
+
               PlaylistTreeView(
                     Glib::RefPtr<Gnome::Glade::Xml> const& xml,
                     PAccess<MPX::Library>           const& lib,
@@ -224,8 +397,8 @@ namespace MPX
                     MPX::Source::PlaybackSourceMusicLib  & mlib
               )
               : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-playlist")
-              , m_Lib(lib)
               , m_MusicLib(mlib)
+              , m_Lib(lib)
               , m_HAL(hal)
               , m_RowId(0)
               , m_ButtonDepressed(0)
@@ -254,19 +427,19 @@ namespace MPX
                 col->set_min_width(24);
                 col->set_max_width(24);
                 col->set_cell_data_func(*cell, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncIcon ));
-
                 append_column(*col);
+
                 append_column(_("Name"), PlaylistColumns.Name);
 
                 col = manage (new TreeViewColumn(_("Time")));
                 CellRendererText * cell2 = manage (new CellRendererText);
                 col->property_alignment() = 1.;
                 col->pack_start(*cell2, true);
-                col->set_cell_data_func(*cell2, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFunc ));
+                col->set_cell_data_func(*cell2, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncTime ));
                 col->set_sort_column_id(PlaylistColumns.Length);
                 g_object_set(G_OBJECT(cell2->gobj()), "xalign", 1.0f, NULL);
-
                 append_column(*col);
+
                 append_column(_("Artist"), PlaylistColumns.Artist);
                 append_column(_("Album"), PlaylistColumns.Album);
                 append_column(_("Track"), PlaylistColumns.Track);
@@ -277,8 +450,21 @@ namespace MPX
                 col->set_min_width(66);
                 col->set_max_width(66);
                 col->set_cell_data_func(*cell, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncRating ));
-
                 append_column(*col);
+
+                //////////////////////////////// 
+
+                cell2 = manage (new CellRendererText);
+                for( int i = 0; i < N_ATTRIBUTES_INT; ++i)
+                {
+                        col = manage (new TreeViewColumn(_(attribute_names[i])));
+                        col->pack_start(*cell2, true);
+                        col->set_cell_data_func(*cell2, sigc::bind(sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncCustom ), i ));
+                        col->property_visible()= false;
+                        append_column(*col);
+                }
+    
+                ////////////////////////////////
 
                 get_column(C_TITLE)->set_sort_column_id(PlaylistColumns.Name);
                 get_column(C_LENGTH)->set_sort_column_id(PlaylistColumns.Length);
@@ -296,6 +482,7 @@ namespace MPX
                 get_column(6)->set_resizable(false);
 
                 ListStore = Gtk::ListStore::create(PlaylistColumns);
+
                 ListStore->set_sort_func(PlaylistColumns.Artist,
                     sigc::mem_fun( *this, &PlaylistTreeView::slotSortByArtist ));
                 ListStore->set_sort_func(PlaylistColumns.Album,
@@ -303,24 +490,14 @@ namespace MPX
                 ListStore->set_sort_func(PlaylistColumns.Track,
                     sigc::mem_fun( *this, &PlaylistTreeView::slotSortByTrack ));
 
+                ListStore->set_default_sort_func(
+                    sigc::mem_fun( *this, &PlaylistTreeView::slotSortDefault ));
+
                 get_selection()->set_mode(Gtk::SELECTION_MULTIPLE);
                 get_selection()->signal_changed().connect( sigc::mem_fun( *this, &PlaylistTreeView::on_selection_changed ) );
 
-                /* FIXME: The problem here is it's the order of adding, not the
-                 * order in the view */
-                /*
-                ListStore->set_default_sort_func(
-                    sigc::mem_fun( *this, &PlaylistTreeView::slotSortById ));
-                */
-
                 set_headers_clickable();
                 set_model(ListStore);
-
-                std::vector<TargetEntry> Entries;
-                Entries.push_back(TargetEntry("mpx-album"));
-                Entries.push_back(TargetEntry("mpx-track"));
-                drag_dest_set(Entries, DEST_DEFAULT_MOTION);
-                drag_dest_add_uri_targets();
 
                 m_UIManager = Gtk::UIManager::create();
                 m_ActionGroup = Gtk::ActionGroup::create ("Actions_UiPartPlaylist-PlaylistList");
@@ -353,7 +530,33 @@ namespace MPX
                 Gtk::Label * label = dynamic_cast<Gtk::Label*>(dynamic_cast<Gtk::Bin*>(item)->get_child());
                 label->set_markup(_("<b>Play</b>"));
 
-				//set_tooltip_text(_("Drag and drop albums, tracks and files here to add them to the playlist."));
+                m_CCDialog = new ColumnControlDialog(xml);
+                m_CCDialog->signal_column_state().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &PlaylistTreeView::on_column_toggled
+                ));
+
+				set_tooltip_text(_("Drag and drop albums, tracks and files here to add them to the playlist."));
+
+                std::vector<TargetEntry> Entries;
+                Entries.push_back(TargetEntry("mpx-album"));
+                Entries.push_back(TargetEntry("mpx-track"));
+                drag_dest_set(Entries, DEST_DEFAULT_MOTION);
+                drag_dest_add_uri_targets();
+              }
+
+              void
+              on_column_toggled( int column, bool state )
+              {
+                get_column(N_FIRST_CUSTOM + column)->property_visible() = state;
+              }
+
+              void
+              action_cb_show_ccdialog ()
+              {
+                m_CCDialog->run();
+                m_CCDialog->hide();
               }
 
               virtual void
@@ -369,39 +572,6 @@ namespace MPX
                   }
                   else
                     g_message("%s: No Album ID", G_STRLOC);
-              }
-
-              virtual void
-              scroll_to_track ()
-              {
-                if(m_CurrentIter)
-                {
-                    TreePath path = ListStore->get_path(m_CurrentIter.get());
-                    scroll_to_row(path, 0.5);
-                }
-              }
-
-              virtual void
-              clear ()  
-              {
-                  ListStore->clear ();
-                  m_CurrentIter.reset ();
-                  m_MusicLib.check_caps();
-                  m_MusicLib.send_caps ();
-                  columns_autosize();
-                  m_MusicLib.plist_end(true);
-              }
-
-              void
-              check_for_end ()
-              {
-                  if(m_CurrentIter)
-                  {
-                        if(TreePath (m_CurrentIter.get()) == TreePath(1, ListStore->children().size() - 1))
-                        {
-                            m_MusicLib.plist_end(false);
-                        }
-                  }
               }
 
               virtual void
@@ -472,6 +642,38 @@ namespace MPX
                       m_MusicLib.clear_play();
               }
 
+              virtual void
+              scroll_to_track ()
+              {
+                if(m_CurrentIter)
+                {
+                    TreePath path = ListStore->get_path(m_CurrentIter.get());
+                    scroll_to_row(path, 0.5);
+                }
+              }
+
+              virtual void
+              clear ()  
+              {
+                  ListStore->clear ();
+                  m_CurrentIter.reset ();
+                  m_MusicLib.check_caps();
+                  m_MusicLib.send_caps ();
+                  columns_autosize();
+                  m_MusicLib.plist_end(true);
+              }
+
+              void
+              check_for_end ()
+              {
+                  if(m_CurrentIter)
+                  {
+                        if(TreePath (m_CurrentIter.get()) == TreePath(1, ListStore->children().size() - 1))
+                        {
+                            m_MusicLib.plist_end(false);
+                        }
+                  }
+              }
 
               void
               place_track(SQL::Row & r, Gtk::TreeIter const& iter)
@@ -965,7 +1167,7 @@ namespace MPX
               }
 
               void
-              cellDataFunc (CellRenderer * basecell, TreeModel::iterator const &iter)
+              cellDataFuncTime (CellRenderer * basecell, TreeModel::iterator const &iter)
               {
                   CellRendererText *cell_t = dynamic_cast<CellRendererText*>(basecell);
                   guint64 Length = (*iter)[PlaylistColumns.Length]; 
@@ -1006,6 +1208,28 @@ namespace MPX
                       g_return_if_fail((i >= 0) && (i <= 5));
                       cell_p->property_pixbuf() = m_Stars[i];
                   }
+              }
+
+              void
+              cellDataFuncCustom (CellRenderer * basecell, TreeModel::iterator const &iter, int attribute)
+              {
+                  CellRendererText *cell_t = dynamic_cast<CellRendererText*>(basecell);
+                  MPX::Track track = (*iter)[PlaylistColumns.MPXTrack]; 
+
+                  if(track.has(attribute))
+                  {
+                    cell_t->property_text() = ovariant_get_string(track[attribute]);
+                  }
+                  else
+                  {
+                    cell_t->property_text() = ""; 
+                  }
+              }
+
+              int
+              slotSortDefault(const TreeIter& iter_a, const TreeIter& iter_b)
+              {
+                  return 0;
               }
 
               int
@@ -3045,6 +3269,7 @@ namespace Source
     PlaybackSourceMusicLib::PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
     : PlaybackSource(ui_manager, _("Music"), C_CAN_SEEK)
     , m_MainUIManager(ui_manager)
+    , m_Skipped(false)
     {
         mpx_musiclib_py_init();
 
@@ -3090,36 +3315,39 @@ namespace Source
         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
 
         Gtk::RadioButtonGroup gr1;
-        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-name", "Sort Albums by Album/Date/Artist"),
+        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-name", _("Sort Albums by Album/Date/Artist")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-name"))->property_value() = 0;
 
-        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-date", "Sort Albums by Time Added"),
+        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-date", _("Sort Albums by Time Added")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-date"))->property_value() = 1;
 
-        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-rating", "Sort Albums by Rating"),
+        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-rating", _("Sort Albums by Rating")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-rating"))->property_value() = 2;
 
-        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-alphabet", "Sort Albums Alphabetically"),
+        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-alphabet", _("Sort Albums Alphabetically")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-alphabet"))->property_value() = 3;
 
-        m_MainActionGroup->add (ToggleAction::create( "musiclib-show-only-new", "Show only New Albums"),
+        m_MainActionGroup->add (ToggleAction::create( "musiclib-show-only-new", _("Show only New Albums")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_show_new_albums ));
 
         Gtk::RadioButtonGroup gr2;
-        m_MainActionGroup->add (RadioAction::create( gr2, "musiclib-show-albums", "Albums"),
+        m_MainActionGroup->add (RadioAction::create( gr2, "musiclib-show-albums", _("Albums")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_view_change ));
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-show-albums"))->property_value() = 0;
 
-        m_MainActionGroup->add (RadioAction::create( gr2, "musiclib-show-collections", "Last.fm View"),
+        m_MainActionGroup->add (RadioAction::create( gr2, "musiclib-show-collections", _("Last.fm View")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_view_change ));
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-show-collections"))->property_value() = 1;
 
-        m_MainUIManager->insert_action_group(m_MainActionGroup);
 
+        m_MainActionGroup->add (Action::create( "musiclib-show-ccdialog", _("Configure Columns...")),
+                                                sigc::mem_fun( *m_Private->m_TreeViewPlaylist, &MusicLibPrivate::PlaylistTreeView::action_cb_show_ccdialog ));
+
+        m_MainUIManager->insert_action_group(m_MainActionGroup);
     }
 
     PlaybackSourceMusicLib::~PlaybackSourceMusicLib ()
@@ -3544,6 +3772,23 @@ namespace Source
                 g_signal_emit(G_OBJECT(gobj()), signals[PSM_SIGNAL_PLAYLIST_END], 0);
             }
         }
+
+        if( !m_Skipped )
+        {
+                // Update markov
+                gint64 track_id_b = (*iter)[playlist.PlaylistColumns.RowId];
+                TreeIter iter2 = iter;
+                --iter2;
+                if(iter2)
+                {
+                    gint64 track_id_a = (*iter2)[playlist.PlaylistColumns.RowId];
+                    m_Lib.get().markovUpdate( track_id_a, track_id_b );
+                }
+        }
+        else
+        {
+                m_Skipped = false;
+        }
     }
 
     void
@@ -3562,7 +3807,9 @@ namespace Source
 
     void
     PlaybackSourceMusicLib::skipped () 
-    {}
+    {
+        m_Skipped = true;
+    }
 
     void
     PlaybackSourceMusicLib::segment () 

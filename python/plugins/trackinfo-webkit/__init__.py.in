@@ -681,10 +681,13 @@ class TrackInfoQuery (threading.Thread):
 
         for Rel in Relations:
 
-            # Workaround for buggy pymusicbrainz; getTarget() on this rel returns None
-            Cover = self.query.getTrackById(realId(Rel.getTargetId()), self.wsinc)  
-            CoverArtist = Cover.getArtist()
-            Covers.append([Cover.getTitle(), CoverArtist.getName(), realId(CoverArtist.getId())])
+                try:
+                        # Workaround for buggy pymusicbrainz; getTarget() on this rel returns None
+                        Cover = self.query.getTrackById(realId(Rel.getTargetId()), self.wsinc)  
+                        CoverArtist = Cover.getArtist()
+                        Covers.append([Cover.getTitle(), CoverArtist.getName(), realId(CoverArtist.getId())])
+                except:
+                        pass
 
         for Cover in Covers:
 
@@ -697,33 +700,36 @@ class TrackInfoQuery (threading.Thread):
 
         for Rel in Relations:
 
-            attr = Rel.getAttributes()
-            artist = Rel.getTarget()
+                try:
+                        attr = Rel.getAttributes()
+                        artist = Rel.getTarget()
 
-            if len(attr) == 1:
+                        if len(attr) == 1:
 
-                    pre, sep, instrument = Rel.getAttributes()[0].partition("#")
-                    self.html += "...has <b>%s</b> performed by <b>%s</b>" % (instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
-                    Entities.append(realId(artist.getId()))
+                                pre, sep, instrument = Rel.getAttributes()[0].partition("#")
+                                self.html += "...has <b>%s</b> performed by <b>%s</b>" % (instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
+                                Entities.append(realId(artist.getId()))
 
-            elif len(attr) == 2:
+                        elif len(attr) == 2:
 
-                    pre, sep, adjective = Rel.getAttributes()[0].partition("#")
-                    pre, sep, instrument = Rel.getAttributes()[1].partition("#")
-                    self.html += "...has <b>%s %s</b> performed by <b>%s</b>" % (adjective.lower(), instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
-                    Entities.append(realId(artist.getId()))
+                                pre, sep, adjective = Rel.getAttributes()[0].partition("#")
+                                pre, sep, instrument = Rel.getAttributes()[1].partition("#")
+                                self.html += "...has <b>%s %s</b> performed by <b>%s</b>" % (adjective.lower(), instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
+                                Entities.append(realId(artist.getId()))
 
-            elif len(attr) == 3:
-    
-                    pre, sep, adjective2 = Rel.getAttributes()[0].partition("#")
-                    pre, sep, adjective1 = Rel.getAttributes()[1].partition("#")
-                    pre, sep, instrument = Rel.getAttributes()[2].partition("#")
-                    self.html += "...has <b>%s %s %s</b> performed by <b>%s</b>" % (adjective1.lower(), adjective2.lower(), instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
-                    Entities.append(realId(artist.getId()))
+                        elif len(attr) == 3:
+                
+                                pre, sep, adjective2 = Rel.getAttributes()[0].partition("#")
+                                pre, sep, adjective1 = Rel.getAttributes()[1].partition("#")
+                                pre, sep, instrument = Rel.getAttributes()[2].partition("#")
+                                self.html += "...has <b>%s %s %s</b> performed by <b>%s</b>" % (adjective1.lower(), adjective2.lower(), instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
+                                Entities.append(realId(artist.getId()))
 
-            if Relations.index(Rel) != (len(Relations)-1):
+                        if Relations.index(Rel) != (len(Relations)-1):
 
-                    self.html += "<br/>"
+                                self.html += "<br/>"
+                except:
+                        pass
 
         return True
 
@@ -733,16 +739,18 @@ class TrackInfoQuery (threading.Thread):
         Output  = []
 
         for Rel in Relations:
-
-            Track = self.query.getTrackById(realId(Rel.getTargetId()), self.wsinc)
-
-            SampledArtist = Track.getArtist()
-            Entities.append(realId(SampledArtist.getId()))
-            Sampled.append([Track.getTitle(), SampledArtist.getName(), realId(SampledArtist.getId())])
+        
+                try:
+                        Track = self.query.getTrackById(realId(Rel.getTargetId()), self.wsinc)
+                        SampledArtist = Track.getArtist()
+                        Entities.append(realId(SampledArtist.getId()))
+                        Sampled.append([Track.getTitle(), SampledArtist.getName(), realId(SampledArtist.getId())])
+                except:
+                        pass
 
         for Sample in Sampled:
 
-            Output.append("<b>%s</b> by <b>%s</b>" % (Sample[0], getEntityLink(Sample[1],Sample[2],"artist")))
+                Output.append("<b>%s</b> by <b>%s</b>" % (Sample[0], getEntityLink(Sample[1],Sample[2],"artist")))
 
         self.html += "...contains samples from %s" % (", ".join(Output))
         return True
@@ -754,13 +762,16 @@ class TrackInfoQuery (threading.Thread):
 
         for Rel in Relations:
 
-            Entities.append(realId(Rel.getTargetId()))
-            Entity = Rel.getTarget() 
-            Entities_L.append([Entity.getName(),realId(Entity.getId())])
+                try:
+                        Entities.append(realId(Rel.getTargetId()))
+                        Entity = Rel.getTarget() 
+                        Entities_L.append([Entity.getName(),realId(Entity.getId())])
+                except:
+                        pass
 
         for Entity in Entities_L:
 
-            Output.append("<b>"+getEntityLink(Entity[0],Entity[1],"artist")+"</b>")
+                Output.append("<b>"+getEntityLink(Entity[0],Entity[1],"artist")+"</b>")
 
         self.html += "...%s %s" % (text, ", ".join(Output))
         return True

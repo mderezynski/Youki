@@ -1574,8 +1574,8 @@ namespace MPX
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT); 
 
-		signals[PSIGNAL_METADATA_PRE] =
-			g_signal_new ("metadata-pre",
+		signals[PSIGNAL_METADATA_PREPARE] =
+			g_signal_new ("metadata-prepare",
 					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
 					  GSignalFlags (G_SIGNAL_RUN_FIRST),
 					  0,
@@ -2621,14 +2621,9 @@ namespace MPX
 	{
         Glib::Mutex::Lock L (m_MetadataLock);
 
-        m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( true );
-        //FIXME: This implies we get metadata only once during one track, but there is just no such design guarantee
-
-        bool previous_metadata_image = m_Metadata && m_Metadata.get().Image;
-
         m_Metadata = metadata;
 
-        if( !previous_metadata_image && !m_Metadata.get().Image && m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
+        if( !m_Metadata.get().Image && m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
         {
             m_Covers.fetch(
                 get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()),
@@ -2642,6 +2637,9 @@ namespace MPX
         }
 
         metadata_reparse ();
+
+        //FIXME: This implies we get metadata only once during one track, but there is just no such design guarantee
+        m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( true );
 	}
 
 	void
@@ -2743,7 +2741,6 @@ namespace MPX
       m_ActiveSource = m_PreparingSource.get();
 	  PlaybackSource* source = m_Sources[m_PreparingSource.get()];
 
-	  source->send_caps ();
 	  source->send_metadata ();
 
       m_Sidebar->setActiveId(m_PreparingSource.get());
@@ -2765,6 +2762,8 @@ namespace MPX
             source->play_post();
             break;
       };
+
+	  source->send_caps ();
 
       PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
       g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
@@ -3807,7 +3806,7 @@ namespace MPX
     Player::metadata_updated ()
     {
         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_PRE], 0);
+        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_PREPARE], 0);
         pyg_gil_state_release(state);
 
         state = (PyGILState_STATE)(pyg_gil_state_ensure ());
