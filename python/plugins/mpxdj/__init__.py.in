@@ -259,7 +259,7 @@ class OptionAnalyzer(BaseOption):
     def run(self):
 
         try:
-                self.run_similar_track()
+                self.run_accumulate_tags()
                 if len(self.v):
                     self.finished.set()
                     return
@@ -267,7 +267,7 @@ class OptionAnalyzer(BaseOption):
                 pass
 
         try:
-                self.run_accumulate_tags()
+                self.run_similar_track()
                 if len(self.v):
                     self.finished.set()
                     return
