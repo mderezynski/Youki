@@ -147,18 +147,18 @@ namespace MPX
 	  void 
 	  site_fetch_and_save_cover_amapi (CoverFetchData*);
 
-      void
-      local_save_cover (CoverFetchData*);
+          void
+          local_save_cover (CoverFetchData*);
 
 	  void
 	  reply_cb_amazn (char const*, guint, guint, CoverFetchData*);
 	  void
 	  reply_cb_mbxml (char const*, guint, guint, CoverFetchData*);
-      void
-      reply_cb_amapi (char const*, guint, guint, CoverFetchData*);
-
-      bool
-      cache_inline (const std::string& mbid, const std::string& uri);
+          void
+          reply_cb_amapi (char const*, guint, guint, CoverFetchData*);
+ 
+          bool
+          cache_inline (const std::string& mbid, const std::string& uri);
 
 	  RequestKeeperT              RequestKeeper;
 	  Glib::Mutex                 RequestKeeperLock;
