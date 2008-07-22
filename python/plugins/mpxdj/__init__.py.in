@@ -258,7 +258,6 @@ class OptionAnalyzer(BaseOption):
 
     def run(self):
 
-        """
         try:
                 self.run_similar_track()
                 if len(self.v):
