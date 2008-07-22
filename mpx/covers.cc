@@ -28,6 +28,7 @@
 
 #include <gtkmm.h>
 #include <glibmm.h>
+#include <giomm.h>
 #include <glibmm/i18n.h>
 #include <glib/gstdio.h>
 
@@ -397,6 +398,27 @@ namespace MPX
             }
         }
     }
+
+    void
+    Covers::local_save_cover(
+        CoverFetchData * local_data
+    )
+    {
+        std::string cover_file_name = local_cover_file(local_data->uri);
+
+        Glib::RefPtr<Gio::File> source = Gio::File::create_for_path( cover_file_name );
+        Glib::RefPtr<Gio::File> dest   = Gio::File::create_for_path( get_thumb_path(local_data->mbid) );
+
+        g_message("Copying %s to %s", source->get_path().c_str(), dest->get_path().c_str());
+
+        source->copy( dest );
+
+        RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( dest->get_path() );
+        m_pixbuf_cache.insert( std::make_pair( local_data->mbid, cover ));
+        Signals.GotCover.emit( local_data->mbid );
+
+        delete local_data;
+    }
     
     std::string
     Covers::get_thumb_path(
@@ -406,6 +428,24 @@ namespace MPX
         std::string basename = (boost::format ("%s.png") % mbid).str ();
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", basename.c_str(), NULL));
         return std::string(path.get());
+    }
+
+    std::string
+    Covers::local_cover_file(
+        const std::string& track_uri
+    )
+    {
+        Glib::RefPtr<Gio::File> directory = Gio::File::create_for_uri( track_uri )->get_parent( );
+        Glib::RefPtr<Gio::FileEnumerator> files = directory->enumerate_children( );
+    
+        RefPtr<Gio::FileInfo> file ;
+        while ( (file = files->next_file()) != 0 )
+        {
+            if( file->get_name().rfind("png") != std::string::npos )
+            {
+                return directory->get_child(file->get_name())->get_path();
+            }
+        }
     }
 
     void 
@@ -433,6 +473,14 @@ namespace MPX
 
         if( acquire )
         {
+            if ( !local_cover_file(uri).empty() )
+            {
+                CoverFetchData * data = new CoverFetchData( asin, mbid, uri, artist, album );
+                g_message("Has cover art at %s", local_cover_file(uri).c_str()); 
+
+                local_save_cover( data );
+            }
+            else
             if( mbid.substr(0,4) == "mpx-" )
             {
                 CoverFetchData * data = new CoverFetchData( asin, mbid, uri, artist, album );

@@ -34,6 +34,7 @@
 #include <glib/gi18n.h>
 #include <glib/gstdio.h>
 #include <glibmm/miscutils.h>
+#include <giomm.h>
 #include <gst/gst.h>
 #include <gtkmm/main.h>
 #include <gtkglmm.h>
@@ -311,6 +312,7 @@ main (int argc, char ** argv)
 
     Glib::thread_init(0);
     Glib::init();
+    Gio::init();
 
     signal_handlers_install ();
 	setup_mcs ();
