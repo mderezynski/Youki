@@ -771,7 +771,7 @@ class MPXAudioScrobbler(mpx.Plugin):
         self.id = id
         self.player = player
         self.mcs = mcs
-        self.xml = gtk.glade.XML("/usr/local/share/mpx" + "/python-plugins/audioscrobbler/audioscrobbler.glade")
+        self.xml = gtk.glade.XML("/usr/share/mpx" + "/python-plugins/audioscrobbler/audioscrobbler.glade")
         self.widget = self.xml.get_widget("widget")
         self.widget.unparent()
 

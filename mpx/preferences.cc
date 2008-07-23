@@ -53,6 +53,7 @@
 #include "mpx/main.hh"
 #include "mpx/stock.hh"
 #include "mpx/util-string.hh"
+#include "mpx/widgetloader.h"
 
 #include "preferences.hh"
 
@@ -146,9 +147,120 @@ namespace MPX
          SINK_JACKSINK},
 
     };
-  } // <anonymous> namespace
 
-  // Audio preferences
+    char const* sources[] =
+    {
+        N_("Local files (folder.jpg, cover.jpg, etc)"),
+        N_("Amazon ASIN"),
+        N_("MusicBrainz AR"),
+        N_("Amazon search")
+    };
+  } // <anonymous> namespace
+    
+
+  using namespace Gnome::Glade;
+
+  typedef sigc::signal<void, int, bool> SignalColumnState;
+
+  class CoverArtSourceView : public WidgetLoader<Gtk::TreeView>
+  {
+      public:
+             
+              struct Signals_t 
+              {
+                  SignalColumnState ColumnState;
+              };
+
+              Signals_t Signals;
+
+              class Columns_t : public Gtk::TreeModelColumnRecord
+              {
+                  public: 
+
+                          Gtk::TreeModelColumn<Glib::ustring> Name;
+                          Gtk::TreeModelColumn<int>           ID;
+                          Gtk::TreeModelColumn<bool>          Active;
+
+                          Columns_t ()
+                          {
+                              add(Name);
+                              add(ID);
+                              add(Active);
+                          };
+              };
+
+
+              Columns_t                       Columns;
+              Glib::RefPtr<Gtk::ListStore>    Store;
+
+              CoverArtSourceView (const Glib::RefPtr<Gnome::Glade::Xml>& xml)
+              : WidgetLoader<Gtk::TreeView>(xml, "preferences-treeview-coverartsources")
+              {
+                  Store = Gtk::ListStore::create(Columns); 
+                  set_model(Store);
+
+                  TreeViewColumn *col = manage( new TreeViewColumn(_("Active")));
+                  CellRendererToggle *cell1 = manage( new CellRendererToggle );
+                  cell1->property_xalign() = 0.5;
+                  cell1->signal_toggled().connect(
+                      sigc::mem_fun(
+                          *this,
+                          &CoverArtSourceView::on_cell_toggled
+                  ));
+                  col->pack_start(*cell1, true);
+                  col->add_attribute(*cell1, "active", Columns.Active);
+                  append_column(*col);            
+
+                  append_column(_("Column"), Columns.Name);            
+
+                  for( int i = 0; i < 4; ++i )
+                  {
+                      TreeIter iter = Store->append();
+                      
+                      int source = mcs->key_get<int>("Preferences-CoverArtSources", (boost::format ("Source%d") % i).str());
+
+                      (*iter)[Columns.Name]   = _(sources[source]);
+                      (*iter)[Columns.ID]     = source; 
+                      (*iter)[Columns.Active] = mcs->key_get<bool>("Preferences-CoverArtSources", (boost::format ("SourceActive%d") % i).str());
+                  }
+              };
+
+              void
+              update_configuration ()
+              {
+                using namespace Gtk;
+
+                TreeNodeChildren const& children = Store->children();
+
+                for(TreeNodeChildren::const_iterator i = children.begin(); i != children.end(); ++i) 
+                {
+                    int pos = std::distance(children.begin(), i);
+
+                    mcs->key_set<int>("Preferences-CoverArtSources", (boost::format ("Source%d") % pos).str(), (*i)[Columns.ID]);
+                    mcs->key_set<bool>("Preferences-CoverArtSources", (boost::format ("SourceActive%d") % pos).str(), (*i)[Columns.Active]);
+                }
+              }
+
+              void
+              on_cell_toggled(Glib::ustring const& path)
+              {
+                  TreeIter iter = Store->get_iter(path);
+
+                  bool active = (*iter)[Columns.Active];
+                  (*iter)[Columns.Active] = !active;
+
+                  Signals.ColumnState.emit((*iter)[Columns.ID], !active);
+
+                  update_configuration ();
+              }
+
+              virtual void
+              on_rows_reordered (const TreeModel::Path& path, const TreeModel::iterator& iter, int* new_order)
+              {
+                  update_configuration ();
+              }
+  };
+
   void
   Preferences::audio_system_changed ()
   {
@@ -329,7 +441,7 @@ namespace MPX
 #define NONE_SINK (-1)
 
   Gtk::StockID
-  Preferences::stock (bool truth)
+  Preferences::get_plugin_stock (bool truth)
   {
     return (truth ? StockID(MPX_STOCK_PLUGIN) : StockID(MPX_STOCK_PLUGIN_DISABLED));
   }
@@ -499,13 +611,13 @@ namespace MPX
     bool has_http = true; // built-in http src 
 
     dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_cdda"))->set
-       (stock (has_cdda), ICON_SIZE_SMALL_TOOLBAR);
+       (get_plugin_stock (has_cdda), ICON_SIZE_SMALL_TOOLBAR);
 
     dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_http"))->set
-       (stock (has_http), ICON_SIZE_SMALL_TOOLBAR);
+       (get_plugin_stock (has_http), ICON_SIZE_SMALL_TOOLBAR);
 
     dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_mms"))->set
-       (stock (has_mmsx), ICON_SIZE_SMALL_TOOLBAR);
+       (get_plugin_stock (has_mmsx), ICON_SIZE_SMALL_TOOLBAR);
 
     struct SupportCheckTuple
     {
@@ -527,25 +639,25 @@ namespace MPX
 
     // Check for either mad or flump3dec
     dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_mp3"))->set
-        (stock ((test_element ("mad") ||
+        (get_plugin_stock ((test_element ("mad") ||
                   test_element ("flump3dec")) &&
                   test_element("id3demux") &&
                   test_element ("apedemux")),
         ICON_SIZE_SMALL_TOOLBAR);
 
     dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_ogg"))->set
-      (stock (test_element ("oggdemux") && test_element("vorbisdec")), ICON_SIZE_SMALL_TOOLBAR);
+      (get_plugin_stock (test_element ("oggdemux") && test_element("vorbisdec")), ICON_SIZE_SMALL_TOOLBAR);
 
     for (unsigned int n = 0; n < G_N_ELEMENTS (support_check); ++n)
     {
       dynamic_cast<Image*> (m_ref_xml->get_widget (support_check[n].widget))->set
-        (stock (test_element (support_check[n].element)), ICON_SIZE_SMALL_TOOLBAR);
+        (get_plugin_stock (test_element (support_check[n].element)), ICON_SIZE_SMALL_TOOLBAR);
     }
 
     bool video = (test_element ("filesrc") && test_element ("decodebin") && test_element ("queue") &&
                   test_element ("ffmpegcolorspace") && test_element ("xvimagesink"));
     
-    dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_video"))->set (stock (video), ICON_SIZE_SMALL_TOOLBAR);
+    dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_video"))->set (get_plugin_stock (video), ICON_SIZE_SMALL_TOOLBAR);
     m_cbox_video_out->signal_changed().connect
       (sigc::mem_fun( *this, &Preferences::audio_system_apply_set_sensitive) );
 
@@ -696,8 +808,11 @@ namespace MPX
   , m_ref_xml(xml)
   , m_Play(play)
   {
-      dynamic_cast<Button*>
-        (m_ref_xml->get_widget ("close"))->signal_clicked().connect (sigc::mem_fun (*this, &Preferences::hide));
+      dynamic_cast<Button*>(m_ref_xml->get_widget ("close"))->signal_clicked().connect(
+        sigc::mem_fun(
+            *this,
+            &Preferences::hide
+      ));
 
       m_ref_xml->get_widget ("cbox_audio_system", m_cbox_audio_system);
 
@@ -745,17 +860,17 @@ namespace MPX
 
       DomainKeyPair buttons[] =
       {
-        { "audio",    "enable-eq",              "enable-eq"             },
+        { "audio", "enable-eq", "enable-eq" },
       };
 
       for (unsigned int n = 0; n < G_N_ELEMENTS (buttons); ++n)
       {
-
         ToggleButton* button = dynamic_cast<ToggleButton*> (m_ref_xml->get_widget (buttons[n].widget));
+
         if (button)
-          mcs_bind->bind_toggle_button (*button, buttons[n].domain, buttons[n].key);
+            mcs_bind->bind_toggle_button (*button, buttons[n].domain, buttons[n].key);
         else
-          g_warning ("%s: Widget '%s' not found in 'preferences.glade'", G_STRLOC, buttons[n].widget);
+            g_warning ("%s: Widget '%s' not found in 'preferences.glade'", G_STRLOC, buttons[n].widget);
 
       }
 
@@ -798,6 +913,8 @@ namespace MPX
       mm_enable->signal_toggled().connect(sigc::mem_fun( *this, &Preferences::mm_toggled ));
 
       mm_load ();
+
+      m_CoverArtSources = new CoverArtSourceView(m_ref_xml);
   }
 
   void
