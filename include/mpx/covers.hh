@@ -168,6 +168,7 @@ namespace MPX
 	  MSurfaceCache               m_surface_cache[N_COVER_SIZES];
       StoresT                     m_all_stores, m_current_stores;
       int                         m_rebuild;
+      int                         m_rebuilt;
   };
 }
 

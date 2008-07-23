@@ -387,70 +387,81 @@ namespace MPX
     {
     }
 
+    bool
+    Library::recache_covers_handler (SQL::RowV *v, int* position)
+    {
+        Row & r = (*v)[*position]; 
+
+        std::string location;
+#ifdef HAVE_HAL
+        if (m_Flags & F_USING_HAL)
+        {
+            try{
+                std::string volume_udi  = get<std::string>(r["hal_volume_udi"]); 
+                std::string device_udi  = get<std::string>(r["hal_device_udi"]); 
+                std::string hal_vrp     = get<std::string>(r["hal_vrp"]);
+                std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
+                location = filename_to_uri(build_filename(mount_point, hal_vrp));
+            } catch (...) {
+            }
+        }
+        else
+#endif // HAVE_HAL
+        {
+            location = get<std::string>(r["location"]);
+        }
+
+        std::string mb_album_id;
+        std::string amazon_asin;
+        std::string album_artist;
+        std::string album;
+
+        if( r.count("album.mb_album_id"))
+            mb_album_id = get<std::string>(r["album.mb_album_id"]); 
+
+        if( r.count("album.amazon_asin") ) 
+            amazon_asin = get<std::string>(r["album.amazon_asin"]);
+
+        if( r.count("album_artist.album_artist") )
+            album_artist = get<std::string>(r["album_artist.album_artist"]);
+
+        if( r.count("album.album") )
+            album = get<std::string>(r["album.album"]);
+
+        m_Covers.cache(
+                mb_album_id,
+                amazon_asin,
+                location,
+                album_artist,
+                album,
+                true
+        );
+
+        (*position)++;
+
+        if((*position) == (*v).size())
+        {
+            delete v;
+            delete position;
+            return false;
+        }
+
+        return true;
+    }
+
     void
     Library::recacheCovers()
     {
         m_Covers.purge();
         reload ();
 
-        RowV v;
-        getSQL(v, "SELECT DISTINCT album_j, location, hal_volume_udi, hal_device_udi, hal_vrp, album.mb_album_id, album.amazon_asin, album_artist.album_artist, album.album "
+        RowV * v = new RowV;
+        getSQL(*v, "SELECT DISTINCT album_j, location, hal_volume_udi, hal_device_udi, hal_vrp, album.mb_album_id, album.amazon_asin, album_artist.album_artist, album.album "
                   "FROM track JOIN album ON album_j = album.id JOIN album_artist ON album.album_artist_j = album_artist.id GROUP BY album_j");
+        int * position = new int;
+        *position = 0;
 
-        for(RowV::iterator i = v.begin(); i != v.end(); ++i)
-        {
-                Row & r = *i;
-
-                std::string location;
-#ifdef HAVE_HAL
-                if (m_Flags & F_USING_HAL)
-                {
-                    try{
-                        std::string volume_udi  = get<std::string>(r["hal_volume_udi"]); 
-                        std::string device_udi  = get<std::string>(r["hal_device_udi"]); 
-                        std::string hal_vrp     = get<std::string>(r["hal_vrp"]);
-                        std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
-                        location = filename_to_uri(build_filename(mount_point, hal_vrp));
-                    } catch (...) {
-                    }
-                }
-                else
-#endif // HAVE_HAL
-                {
-		            location = get<std::string>(r["location"]);
-                }
-
-                std::string mb_album_id;
-                std::string amazon_asin;
-                std::string album_artist;
-                std::string album;
-
-                for(Row::const_iterator i = r.begin(); i != r.end(); ++i)
-                {
-                    g_message(i->first.c_str());
-                }
-
-                if( r.count("album.mb_album_id"))
-                    mb_album_id = get<std::string>(r["album.mb_album_id"]); 
-
-                if( r.count("album.amazon_asin") ) 
-                    amazon_asin = get<std::string>(r["album.amazon_asin"]);
-
-                if( r.count("album_artist.album_artist") )
-                    album_artist = get<std::string>(r["album_artist.album_artist"]);
-
-                if( r.count("album.album") )
-                    album = get<std::string>(r["album.album"]);
-
-                m_Covers.cache(
-                        mb_album_id,
-                        amazon_asin,
-                        location,
-                        album_artist,
-                        album,
-                        true
-                );
-        }
+        signal_timeout().connect( sigc::bind( sigc::mem_fun( *this, &Library::recache_covers_handler ), v, position), 300);
     }
 
     void

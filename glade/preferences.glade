@@ -4429,7 +4429,7 @@ Non-accelerated (Use this when problems arise with Accelerated)</property>
 				  <child>
 				    <widget class="GtkLabel" id="label456">
 				      <property name="visible">True</property>
-				      <property name="label" translatable="yes">&lt;small&gt;Here you can select which cover art sources should be user, and in what order&lt;/small&gt;</property>
+				      <property name="label" translatable="yes">&lt;small&gt;Select which cover art sources should be used, and in what order.&lt;/small&gt;</property>
 				      <property name="use_underline">False</property>
 				      <property name="use_markup">True</property>
 				      <property name="justify">GTK_JUSTIFY_LEFT</property>
