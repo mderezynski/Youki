@@ -65,24 +65,75 @@ namespace MPX
         load_artwork(CoverFetchData* /*cover_data*/) = 0;
     };
 
-    class AmazonCovers : public CoverStore,
-                         public sigx::glib_auto_dispatchable
+    class RemoteStore : public CoverStore
     {
     public:
-        AmazonCovers(Covers& c) : CoverStore(c)
+        RemoteStore(Covers& c) : CoverStore(c) { }
+
+        virtual void
+        load_artwork(CoverFetchData*);
+
+        virtual std::string
+        get_url(CoverFetchData*) { return ""; }
+
+        virtual bool
+        can_load_artwork(CoverFetchData*);
+
+        void
+        save_image(
+            char const*,
+            guint,
+            guint,
+            CoverFetchData*
+        );
+    };
+
+    class AmazonCovers : public RemoteStore
+    {
+    public:
+        AmazonCovers(Covers& c) : RemoteStore(c)
+        { }
+
+        bool
+        can_load_artwork(CoverFetchData*);
+
+        std::string
+        get_url(CoverFetchData*);
+    };
+
+    class AmapiCovers : public RemoteStore
+    {
+    public:
+        AmapiCovers(Covers& c) : RemoteStore(c)
+        { }
+        
+        void
+        load_artwork(CoverFetchData*);
+        
+    private:
+        void
+        reply_cb(char const*, guint, guint, CoverFetchData*);
+    };
+
+    class MusicBrainzCovers : public RemoteStore
+    {
+    public:
+        MusicBrainzCovers(Covers& c) : RemoteStore(c)
         { }
 
         void
         load_artwork(CoverFetchData*);
+
     private:
         void
-        reply_cb_amazn(char const*, guint, guint, CoverFetchData*);
+        reply_cb(char const*, guint, guint, CoverFetchData*);
     };
 
-    class DummyStore : public CoverStore
+    class LocalCovers : public CoverStore,
+                         public sigx::glib_auto_dispatchable
     {
     public:
-        DummyStore(Covers& c) : CoverStore(c)
+        LocalCovers(Covers& c) : CoverStore(c)
         { }
 
         void

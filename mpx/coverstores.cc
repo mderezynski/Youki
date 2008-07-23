@@ -32,6 +32,11 @@
 
 #include "mpx/covers.hh"
 #include "mpx/coverstores.hh"
+#include "mpx/ld.hh"
+#include "mpx/uri.hh"
+#include "mpx/util-string.hh"
+#include "mpx/util-string.hh"
+#include "mpx/xml.hh"
 
 namespace
 {
@@ -44,6 +49,10 @@ namespace
         boost::format("http://images-eu.amazon.com/images/P/%s.01.MZZZZZZZ.jpg"),
         boost::format("http://ec1.images-amazon.com/images/P/%s.01.MZZZZZZZ.jpg"),
     };
+
+    static boost::format mbxml_f ("http://www.uk.musicbrainz.org/ws/1/release/%s?type=xml&inc=url-rels");
+
+    static boost::format amapi2_f ("http://webservices.amazon.com/onca/xml?Service=AWSECommerceService&SubscriptionId=1E90RVC80K4MVNTCHG02&Operation=ItemSearch&Artist=%s&Title=%s&SearchIndex=Music&ResponseGroup=Images&Version=2008-06-26");
 }
 
 using namespace Glib;
@@ -52,36 +61,41 @@ namespace MPX
 {
     // --------------------------------------------------
     //
-    // Amazon store
+    // Remote store (still an abstract class, but provides a callback)
     //
     // --------------------------------------------------
     void
-    AmazonCovers::load_artwork(CoverFetchData* data)
+    RemoteStore::load_artwork(CoverFetchData* data)
     {
-        if(data->asin.empty())
+        if(!can_load_artwork(data))
         {
-            // No ASIN... don't even bother looking
             Signals.NotFound.emit(data);
+            return;
         }
 
-        std::string url = (amazon_f[data->n] % data->asin).str();
-        data->request = Soup::Request::create (url);
-        data->request->request_callback().connect(sigc::bind(sigc::mem_fun(*this, &AmazonCovers::reply_cb_amazn), data));
+        data->request = Soup::Request::create ( get_url(data) );
+        data->request->request_callback().connect(sigc::bind(sigc::mem_fun(*this, &RemoteStore::save_image), data));
         data->request->run();
     }
 
+    bool
+    RemoteStore::can_load_artwork(CoverFetchData* data)
+    {
+        return true;
+    }
+
     void
-    AmazonCovers::reply_cb_amazn(
+    RemoteStore::save_image(
         char const*     data,
         guint           size,
         guint           code,
-        CoverFetchData* amzn_data
+        CoverFetchData* cb_data
     )
     {
         if (code == 200)
         {
             RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
-            loader->write (reinterpret_cast<const guint8*>(amzn_data->request->get_data_raw()), amzn_data->request->get_data_size());
+            loader->write (reinterpret_cast<const guint8*>(data), size);
             loader->close ();
 
             RefPtr<Gdk::Pixbuf> cover = loader->get_pixbuf();
@@ -92,24 +106,247 @@ namespace MPX
             }
             else
             { 
-                Glib::Mutex::Lock L(covers.RequestKeeperLock);
-                cover->save( covers.get_thumb_path( amzn_data->mbid ), "png" );
-                covers.cache_artwork( amzn_data->mbid, cover );
-                covers.Signals.GotCover.emit( amzn_data->mbid );
-                delete amzn_data;
+                Glib::Mutex::Lock L( covers.RequestKeeperLock );
+                cover->save( covers.get_thumb_path( cb_data->mbid ), "png" );
+                covers.cache_artwork( cb_data->mbid, cover );
+                covers.Signals.GotCover.emit( cb_data->mbid );
+
+                delete cb_data;
             }
         }
         else
         {
             next_image:
-            Signals.NotFound.emit(amzn_data);
+            Signals.NotFound.emit(cb_data);
+        }
+    }
+    
+    // --------------------------------------------------
+    //
+    // Amapi cover art urls
+    //
+    // --------------------------------------------------
+    void
+    AmapiCovers::load_artwork(CoverFetchData* data)
+    {
+        data->request = Soup::Request::create ((amapi2_f % (URI::escape_string(data->artist)) % (URI::escape_string(data->album))).str());
+        data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &AmapiCovers::reply_cb ), data ));
+        data->request->run();
+    }
+
+    void
+    AmapiCovers::reply_cb(
+        char const*     data,
+        guint           size,
+        guint           code,
+        CoverFetchData* cb_data
+    )
+    {
+        if( code == 200 )
+        {
+			try
+            {
+                std::string album;
+
+                album = xpath_get_text(
+                    data,
+                    size,
+					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item//amazon:ItemAttributes//amazon:Title",
+                    "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
+                ); 
+
+                if( ld_distance<std::string>(album, cb_data->album) > 3 )
+                {
+                    Signals.NotFound.emit(cb_data);
+                    return;
+                }
+
+			}
+            catch (std::runtime_error & cxe)
+			{ }
+
+            std::string image_url;
+            bool got_image = false;
+
+			try
+            {
+                image_url = xpath_get_text(
+                    data,
+                    size,
+					"//amazon:Items//amazon:Item//amazon:LargeImage//amazon:URL",
+                    "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
+                ); 
+
+                got_image = true;
+
+			} 
+            catch (std::runtime_error & cxe)
+			{
+                g_message(cxe.what());
+			}
+
+            if(!got_image)
+            {
+                try
+                {
+                    image_url = xpath_get_text(
+                        data,
+                        size,
+	    				"//amazon:Items//amazon:Item//amazon:MediumImage//amazon:URL",
+                        "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
+                    ); 
+
+                    got_image = true;
+    			}
+                catch (std::runtime_error & cxe)
+			    {
+                    g_message(cxe.what());
+    			}
+            }
+
+            if( !got_image )
+            {
+                try
+                {
+                    image_url = xpath_get_text(
+                        data,
+                        size,
+			    		"//amazon:Items//amazon:Item//amazon:SmallImage//amazon:URL",
+                        "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
+                    ); 
+
+                    got_image = true;
+    			}
+                catch (std::runtime_error & cxe)
+	    		{
+                    g_message(cxe.what());
+    			}
+            }
+
+            if( got_image && image_url.length() )
+            {
+                g_message("Fetching Image from URL: %s", image_url.c_str());
+
+    	        cb_data->request = Soup::Request::create(image_url);
+	    	    cb_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &RemoteStore::save_image ), cb_data ));
+		    	cb_data->request->run();
+
+                return;
+            }
+            else
+            {
+                Signals.NotFound.emit(cb_data);
+                return;
+            }
         }
     }
 
+    // --------------------------------------------------
+    //
+    // MusicBrainz cover art urls
+    //
+    // --------------------------------------------------
+    void
+    MusicBrainzCovers::load_artwork(CoverFetchData* data)
+    {
+        data->request = Soup::Request::create( (mbxml_f % data->mbid).str() );
+        data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &MusicBrainzCovers::reply_cb ), data ));
+        data->request->run();
+    }
 
     void
-    DummyStore::load_artwork(CoverFetchData* data)
+    MusicBrainzCovers::reply_cb(
+        char const*     data,
+        guint           size,
+        guint           code,
+        CoverFetchData* cb_data
+    )
     {
-        Signals.NotFound.emit(data);
+        if( code == 200 )
+        {
+			std::string image_url;
+
+			try
+            {
+			    image_url = xpath_get_text(
+                    data,
+                    size,
+					"/metadata/release/relation-list//relation[@type='CoverArtLink']/@target",
+                    "mb=http://musicbrainz.org/ns/mmd-1.0#"
+                ); 
+			}
+            catch (std::runtime_error & cxe)
+			{
+                Signals.NotFound(cb_data);
+				return;
+			}
+
+	        cb_data->request = Soup::Request::create(image_url);
+		    cb_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &RemoteStore::save_image ), cb_data ));
+			cb_data->request->run();
+        }
+        else
+        {
+            Signals.NotFound(cb_data);
+        }
+    }
+
+    // --------------------------------------------------
+    //
+    // Amazon store
+    //
+    // --------------------------------------------------
+    bool
+    AmazonCovers::can_load_artwork(CoverFetchData* data)
+    {
+        return !data->asin.empty();
+    }
+
+    std::string
+    AmazonCovers::get_url(CoverFetchData* data)
+    {
+        return (amazon_f[data->n] % data->asin).str();
+    }
+
+    // --------------------------------------------------
+    //
+    // LocalFs (filesystem) covers
+    //
+    // --------------------------------------------------
+    void
+    LocalCovers::load_artwork(CoverFetchData* data)
+    {
+        Glib::RefPtr<Gio::File> directory = Gio::File::create_for_uri( data->uri )->get_parent( );
+        Glib::RefPtr<Gio::FileEnumerator> files = directory->enumerate_children( );
+    
+        Glib::RefPtr<Gio::FileInfo> file;
+
+        std::string cover_art;
+        while ( (file = files->next_file()) != 0 )
+        {
+            if( file->get_content_type().find("image") != std::string::npos &&
+                ( file->get_name().find("folder") ||
+                  file->get_name().find("cover")  ||
+                  file->get_name().find("front")     )
+              )
+            {
+                cover_art = directory->get_child(file->get_name())->get_path();
+                break;
+            }
+        }
+
+        if(cover_art.empty())
+        {
+            Signals.NotFound.emit(data);
+        }
+        else
+        {
+            RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cover_art );
+            cover->save( covers.get_thumb_path( data->mbid ), "png" );
+            covers.cache_artwork( data->mbid, cover );
+            covers.Signals.GotCover.emit( data->mbid );
+
+            delete data;
+        }
     }
 }

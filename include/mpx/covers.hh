@@ -148,31 +148,11 @@ namespace MPX
 	  typedef std::map <std::string, Cairo::RefPtr<Cairo::ImageSurface> > MSurfaceCache;
       typedef std::vector <CoverStore*> StoresT;
 
-	  std::string
-	  local_cover_file (const std::string& /*track_uri*/);
-
-	  void 
-	  site_fetch_and_save_cover_mbxml (CoverFetchData*);
-	  void 
-	  site_fetch_and_save_cover_amazn (CoverFetchData*);
-	  void 
-	  site_fetch_and_save_cover_amapi (CoverFetchData*);
-
-          void
-          local_save_cover (CoverFetchData*);
-
-	  void
-	  reply_cb_amazn (char const*, guint, guint, CoverFetchData*);
-	  void
-	  reply_cb_mbxml (char const*, guint, guint, CoverFetchData*);
-          void
-          reply_cb_amapi (char const*, guint, guint, CoverFetchData*);
-
-          void
-          store_not_found_cb (CoverFetchData*);
+      void
+      store_not_found_cb (CoverFetchData*);
  
-          bool
-          cache_inline (const std::string& mbid, const std::string& uri);
+      bool
+      cache_inline (const std::string& mbid, const std::string& uri);
 
 	  RequestKeeperT              RequestKeeper;
 	  MPixbufCache                m_pixbuf_cache;
