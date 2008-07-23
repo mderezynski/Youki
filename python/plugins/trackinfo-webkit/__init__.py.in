@@ -674,7 +674,7 @@ class TrackInfoQuery (threading.Thread):
 
         self.finished.set()
 
-    def append_ar_coverversion(self, Relations):
+    def append_ar_coverversion(self, Entities, Relations):
 
         Covers = []
         Output = []

@@ -2,6 +2,7 @@ SUBDIRS =			        \
 		audiorecord			\
 		audioscrobbler		\
 		lastfmvis			\
+		lastfmstuff			\
 		mpxdj			    \
 		notification		\
 		osd			        \

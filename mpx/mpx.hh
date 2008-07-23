@@ -113,6 +113,9 @@ namespace MPX
         MPXPlaystatus
         get_status ();
 
+        Glib::RefPtr<Gtk::UIManager>&
+        ui (); 
+
         void
         deactivate_plugin(gint64);
 
@@ -285,9 +288,6 @@ namespace MPX
 
 		void
 		on_volume_value_changed(double);
-
-        void
-        on_lastfm_love_track ();
 
 
 

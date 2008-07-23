@@ -1,0 +1,103 @@
+#
+# -*- coding: utf-8 -*-
+# -*- mode:python ; tab-width:4 -*- ex:set tabstop=4 shiftwidth=4 expandtab: -*-
+#
+# MPX Trackinfo
+# (C) 2008 M. Derezynski
+
+
+import mpx
+import random
+import xmlrpclib
+import md5
+import time
+import gtk
+from gettext import gettext as _
+
+class LastFmActions(mpx.Plugin):
+        
+    """Last.fm Actions provides actions based on Last.fm, e.g. 'I Love this Track'"""
+
+    def activate(self):
+
+        self.merge_id = self.ui.add_ui_from_string(self.uistring)
+        self.handler1_id = self.player.gobj().connect("metadata-updated", self.on_metadata_updated)
+        return True
+
+    def deactivate(self):
+
+        self.ui.remove_ui(self.merge_id)
+        self.player.gobj().disconnect(self.handler1_id)
+
+    def rpchead(self):
+
+        rpc_time  = int(time.time())         
+
+        md5_value = md5.new()
+        md5_value.update(self.mcs.key_get_string("lastfm","password"))
+
+        rpc_pass  = md5_value.hexdigest()
+        rpc_pass  = rpc_pass + str(rpc_time)
+
+        md5_value = md5.new()
+        md5_value.update(rpc_pass)
+
+        rpc_pass  = md5_value.hexdigest()
+
+        return [self.mcs.key_get_string("lastfm","username"), str(rpc_time), rpc_pass] 
+
+    def __init__(self,id,player,mcs):
+
+        self.lib        = player.get_library()
+        self.covers     = player.get_covers()
+        self.ui         = player.ui()
+        self.player     = player
+        self.mcs        = mcs
+
+        self.action     = gtk.Action("lastfmstuff-action-ilovethistrack", _("I Love this Track!"), "", "mpx-stock-lastfm")
+        self.action.connect("activate", self.on_action)
+    
+        self.group      = gtk.ActionGroup("LastFmStuff")
+        self.group.add_action(self.action)
+
+        self.ui.insert_action_group(self.group, -1)
+
+        self.uistring   = """
+                <ui>
+                <menubar name='MenubarMain'>
+                     <menu action='MenuTrack'>
+                        <placeholder name='placeholder-track-actions'>
+                        <menuitem action='lastfmstuff-action-ilovethistrack'/>
+                        </placeholder>
+                     </menu>
+                </menubar>
+                </ui>
+        """
+
+        self.merge_id = None
+
+    def on_metadata_updated(self, action):
+        
+        m = self.player.get_metadata() 
+
+        if (mpx.AttributeId.TITLE in m) and (mpx.AttributeId.ARTIST in m):
+
+                self.action.set_sensitive(True)
+
+        else:
+
+                self.action.set_sensitive(False)
+
+    def on_action(self, action):
+
+        m = self.player.get_metadata() 
+
+        title   = m[mpx.AttributeId.TITLE].get()
+        artist  = m[mpx.AttributeId.ARTIST].get()
+
+        head    = self.rpchead()
+        rpcsvr  = xmlrpclib.Server("http://ws.audioscrobbler.com/1.0/rw/xmlrpc.php")
+        rpcsvr.loveTrack(head[0], head[1], head[2], artist, title)
+
+        self.action.set_sensitive(False)
+

@@ -314,6 +314,12 @@ namespace mpxpy
 		return pa.get();
 	}
 
+    PyObject*
+	player_get_ui (MPX::Player & obj)
+	{
+		return pygobject_new((GObject*)(obj.ui()->gobj()));
+	}
+
 #ifdef HAVE_HAL
 	MPX::HAL&
 	player_get_hal (MPX::Player & obj)
@@ -560,6 +566,13 @@ BOOST_PYTHON_MODULE(mpx)
 #endif
 		    >();
 
+    to_python_converter<Glib::RefPtr<Gtk::UIManager>, mpxpy::refptr_to_gobject<Gtk::UIManager>
+#if defined BOOST_PYTHON_SUPPORTS_PY_SIGNATURES
+	    , true
+#endif
+		    >();
+
+
     def("unwrap_boxed_mpxtrack", &mpxpy::unwrap_boxed<MPX::Track>, return_value_policy<return_by_value>());
 
 	class_<MPX::Plugin>("Plugin")	
@@ -723,6 +736,8 @@ BOOST_PYTHON_MODULE(mpx)
 
         .def("get_play",            &mpxpy::player_get_play,
                                     return_internal_reference<>())
+
+        .def("ui",                  &mpxpy::player_get_ui)
 
         .def("info_set",            &MPX::Player::info_set)
 

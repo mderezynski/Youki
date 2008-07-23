@@ -744,6 +744,9 @@ AC_OUTPUT([
 	python/plugins/ratings_export/__init__.py
 	python/plugins/puid-scan/Makefile
 	python/plugins/puid-scan/__init__.py
+	python/plugins/lastfmstuff/Makefile
+	python/plugins/lastfmstuff/__init__.py
+
 
 	remote/Makefile
     scripts/Makefile

@@ -119,7 +119,7 @@ namespace
   "   <menu action='MenuView'>"
   "   </menu>"
   "   <menu action='MenuTrack'>"
-  "         <menuitem action='action-lastfm-love'/>"
+  "         <placeholder name='placeholder-track-actions'/>"
   "   </menu>"
   "   <placeholder name='placeholder-source'/>"
   "</menubar>"
@@ -137,7 +137,6 @@ namespace
   char const ACTION_SHOW_INFO[] = "action-show-info";
   char const ACTION_SHOW_VIDEO[] = "action-show-video";
   char const ACTION_SHOW_SOURCES[] = "action-show-sources";
-  char const ACTION_LASTFM_LOVE[] = "action-lastfm-love";
 
   std::string
   gprintf (const char *format, ...)
@@ -1736,13 +1735,6 @@ namespace MPX
         sigc::mem_fun (*this, &Player::on_controls_prev ));
 
 
-    	m_actions->add (Action::create (ACTION_LASTFM_LOVE,
-                                        Gtk::StockID(MPX_STOCK_LASTFM),
-										_("I Love this Track!")),
-                                        AccelKey("<ctrl>L"),
-        sigc::mem_fun (*this, &Player::on_lastfm_love_track ));
-
-
 		m_ui_manager->insert_action_group (m_actions);
 
 		if(Util::ui_manager_add_ui(m_ui_manager, MenubarMain, *this, _("Main Menubar")))
@@ -2207,37 +2199,6 @@ namespace MPX
 		m_PluginManagerGUI->present ();
 	}
 
-    void
-    Player::on_lastfm_love_track ()
-    {
-        Glib::Mutex::Lock L (m_MetadataLock);
-
-        std::string username = mcs->key_get<std::string>("lastfm", "username");
-        std::string password = mcs->key_get<std::string>("lastfm", "password");
-
-        if(
-            !username.empty()
-                &&
-            !password.empty()
-                &&
-            m_Metadata.get()[ATTRIBUTE_ARTIST]
-                &&
-            m_Metadata.get()[ATTRIBUTE_TITLE]
-        )
-        {
-            m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
-
-            info_set(_("Sending 'Love Track' to Last.fm"));
-
-            XSPF::Item item;
-            item.creator = get<std::string>(m_Metadata.get()[ATTRIBUTE_ARTIST].get());
-            item.title = get<std::string>(m_Metadata.get()[ATTRIBUTE_TITLE].get());
-            LastFM::TrackAction ("loveTrack", item, username, password).run();
-
-            info_clear();
-        }
-    }
-
     PyObject*
     Player::get_source(std::string const& uuid)
     {
@@ -2295,6 +2256,12 @@ namespace MPX
 		pa = PAccess<MPX::HAL>(m_HAL);
 	}
 #endif // HAVE_HAL
+
+    Glib::RefPtr<Gtk::UIManager>&
+    Player::ui ()
+    {
+        return m_ui_manager;
+    }
 
     MPXPlaystatus
     Player::get_status ()
