@@ -1468,29 +1468,44 @@ namespace MPX
 
             private:
 
+            // treemodel stuff
+
               AlbumColumnsT                         AlbumColumns;
+
+            // objects
+
               PAccess<MPX::Library>                 m_Lib;
               PAccess<MPX::Covers>                  m_Covers;
               MPX::Source::PlaybackSourceMusicLib&  m_MLib;
 
+            // view mappings
+
               MBIDIterMap                           m_MBIDIterMap;
               IdIterMap                             m_AlbumIterMap;
 
+            // disc+rating pixbufs
+    
               Cairo::RefPtr<Cairo::ImageSurface>    m_DiscDefault;
               Glib::RefPtr<Gdk::Pixbuf>             m_DiscDefault_Pixbuf;
               Glib::RefPtr<Gdk::Pixbuf>             m_Stars[6];
+
+            // DND state variables
 
               boost::optional<std::string>          m_DragMBID;
               boost::optional<gint64>               m_DragAlbumId;
               boost::optional<gint64>               m_DragTrackId;
               Gtk::TreePath                         m_PathButtonPress;
 
+            // state variables
+    
               bool                                  m_ButtonPressed;
               bool                                  m_Hand;
               bool                                  m_ShowNew;
 
-              Gtk::Entry*                           m_FilterEntry;
+             // widgets
 
+              Gtk::Entry*                           m_FilterEntry;
+              Gtk::Label*                           m_LabelShowing;
 
 
               virtual void
@@ -2260,6 +2275,15 @@ namespace MPX
                     return (Util::match_keys (ustring((*iter)[AlbumColumns.Text]).lowercase(), filter)); 
               }
 
+              void
+              albumsRefilter ()
+              {
+                    TreeStoreFilter->refilter();
+                    TreeNodeChildren::size_type n1 = TreeStoreFilter->children().size();
+                    TreeNodeChildren::size_type n2 = TreeStore->children().size();
+                    m_LabelShowing->set_text ((boost::format (_("Showing %lld of %lld albums.")) % n1 % n2).str());
+              }
+
             public:
 
               void
@@ -2301,6 +2325,7 @@ namespace MPX
                 m_Covers.get().signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
 
                 xml->get_widget("album-filter-entry", m_FilterEntry);
+                xml->get_widget("label-showing", m_LabelShowing);
 
                 set_show_expanders( false );
                 set_level_indentation( 32 );
@@ -2339,50 +2364,99 @@ namespace MPX
                 cvbox->property_renderer2() = cellpixbuf;
 
                 col->pack_start(*cvbox, true);
-                col->set_cell_data_func(*cvbox, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncText1 ));
+                col->set_cell_data_func(
+                    *cvbox,
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::cellDataFuncText1
+                ));
 
                 CellRendererCount *cellcount = manage (new CellRendererCount);
-                col->pack_start(*cellcount, false);
-                col->set_cell_data_func(*cellcount, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncText2 ));
                 cellcount->property_box() = BOX_NORMAL;
+                col->pack_start(*cellcount, false);
+
+                col->set_cell_data_func(
+                    *cellcount,
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::cellDataFuncText2
+                ));
 
                 celltext = manage (new CellRendererText);
                 col->pack_start(*celltext, false);
-                col->set_cell_data_func(*celltext, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncText3 ));
+
+                col->set_cell_data_func(
+                    *celltext,
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::cellDataFuncText3
+                ));
 
                 celltext = manage (new CellRendererText);
                 col->pack_start(*celltext, false);
-                col->set_cell_data_func(*celltext, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncText4 ));
+
+                col->set_cell_data_func(
+                    *celltext,
+                    sigc::mem_fun(
+                    *this,
+                    &AlbumTreeView::cellDataFuncText4
+                ));
 
                 celltext = manage (new CellRendererText);
                 col->pack_start(*celltext, false);
                 celltext->property_xalign() = 0.;
                 celltext->property_xpad() = 2;
-                col->set_cell_data_func(*celltext, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncText5 ));
+
+                col->set_cell_data_func(
+                    *celltext,
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::cellDataFuncText5
+                ));
 
                 append_column(*col);
 
                 TreeStore = Gtk::TreeStore::create(AlbumColumns);
+
                 TreeStoreFilter = Gtk::TreeModelFilter::create(TreeStore);
-                TreeStoreFilter->set_visible_func (sigc::mem_fun (*this, &AlbumTreeView::albumVisibleFunc));
-                m_FilterEntry->signal_changed().connect (sigc::mem_fun (TreeStoreFilter.operator->(), &TreeModelFilter::refilter));
+
+                TreeStoreFilter->set_visible_func(
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::albumVisibleFunc
+                ));
+
+                m_FilterEntry->signal_changed().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::albumsRefilter
+                ));
 
                 set_model(TreeStoreFilter);
+
                 TreeStore->set_sort_func(0 , sigc::mem_fun( *this, &AlbumTreeView::slotSortAlpha ));
                 TreeStore->set_sort_func(1 , sigc::mem_fun( *this, &AlbumTreeView::slotSortDate ));
                 TreeStore->set_sort_func(2 , sigc::mem_fun( *this, &AlbumTreeView::slotSortRating ));
                 TreeStore->set_sort_func(3 , sigc::mem_fun( *this, &AlbumTreeView::slotSortStrictAlpha ));
+
                 TreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
 
-                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")))->scale_simple(90,90,Gdk::INTERP_BILINEAR);
-                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(90,90,Gdk::INTERP_BILINEAR));
+                m_DiscDefault_Pixbuf =
+                    Gdk::Pixbuf::create_from_file(
+                        build_filename(
+                            DATA_DIR,
+                            build_filename("images","disc-default.png")
+                        )
+                    )->scale_simple(90,90,Gdk::INTERP_BILINEAR);
 
-                album_list_load ();
+                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(90,90,Gdk::INTERP_BILINEAR));
 
                 std::vector<TargetEntry> Entries;
                 Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
                 Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
                 drag_source_set(Entries); 
+
+                album_list_load ();
               }
         };
 
