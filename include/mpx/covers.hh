@@ -88,6 +88,7 @@ namespace MPX
   {
 	public:
 	  Glib::Mutex                 RequestKeeperLock;
+      Glib::Mutex                 StoresLock;
 
 	  typedef sigc::signal<void, const std::string&> SignalGotCover;
 
@@ -154,11 +155,7 @@ namespace MPX
       store_not_found_cb (CoverFetchData*);
 
       void
-      source_pref_changed_callback(const std::string& domain, const std::string& key, const Mcs::KeyVariant& value )
-      {
-          g_message("changed");
-          rebuild_stores();
-      }
+      source_pref_changed_callback(const std::string& domain, const std::string& key, const Mcs::KeyVariant& value );
 
       void
       rebuild_stores ();
@@ -170,6 +167,7 @@ namespace MPX
 	  MPixbufCache                m_pixbuf_cache;
 	  MSurfaceCache               m_surface_cache[N_COVER_SIZES];
       StoresT                     m_all_stores, m_current_stores;
+      bool                        m_rebuild;
   };
 }
 

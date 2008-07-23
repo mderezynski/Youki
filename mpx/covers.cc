@@ -102,6 +102,7 @@ namespace MPX
 {
     Covers::Covers ()
     : sigx::glib_auto_dispatchable()
+    , m_rebuild(false)
     {
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", NULL));
         g_mkdir(path.get(), 0700);
@@ -111,10 +112,10 @@ namespace MPX
         AmazonCovers*      amzn_store  = new AmazonCovers(*this);
         AmapiCovers*       amapi_store = new AmapiCovers(*this);
 
-        m_stores.push_back(local_store);
-        m_stores.push_back(mb_store);
-        m_stores.push_back(amzn_store);
-        m_stores.push_back(amapi_store);
+        m_all_stores.push_back(local_store);
+        m_all_stores.push_back(mb_store);
+        m_all_stores.push_back(amzn_store);
+        m_all_stores.push_back(amapi_store);
 
         for( size_t i = 0; i < m_all_stores.size(); i++ )
         {
@@ -122,15 +123,13 @@ namespace MPX
         }
 
         rebuild_stores();
-
-        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "SourceActive0", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
-        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "SourceActive1", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
-        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "SourceActive2", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
         mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "SourceActive3", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
-        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "Source0", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
-        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "Source1", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
-        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "Source2", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
-        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "Source3", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
+    }
+
+    void
+    Covers::source_pref_changed_callback(const std::string& domain, const std::string& key, const Mcs::KeyVariant& value )
+    {
+        m_rebuild = true;
     }
 
     void
@@ -157,14 +156,13 @@ namespace MPX
     void
     Covers::store_not_found_cb (CoverFetchData* data)
     {
-        int i = RequestKeeper[data->mbid];
-        g_message("Store %d not found", i);
+        Glib::Mutex::Lock L (StoresLock);
 
+        int i = RequestKeeper[data->mbid];
         i++;
 
         if(i < m_current_stores.size())
         {
-            g_message("Trying store %d", i);
             RequestKeeper[data->mbid] = i;
             m_current_stores[i]->load_artwork(data);
         }
@@ -205,9 +203,17 @@ namespace MPX
     )
     {
         Glib::Mutex::Lock L (RequestKeeperLock);
+
         if( RequestKeeper.count(mbid) )
         {
             return;
+        }
+
+        if( m_rebuild )
+        {
+            StoresLock.lock();
+            rebuild_stores();
+            StoresLock.unlock();
         }
 
         std::string thumb_path = get_thumb_path (mbid);
