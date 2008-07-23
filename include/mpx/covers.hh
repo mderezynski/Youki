@@ -36,6 +36,8 @@
 #include <cairomm/cairomm.h>
 #include <sigx/sigx.h>
 
+#include "mpx/main.hh"
+
 #include "mpx/coverstores.hh"
 #include "mpx/network.hh"
 #include "mpx/metadatareader-taglib.hh"
@@ -150,6 +152,16 @@ namespace MPX
 
       void
       store_not_found_cb (CoverFetchData*);
+
+      void
+      source_pref_changed_callback(const std::string& domain, const std::string& key, const Mcs::KeyVariant& value )
+      {
+          g_message("changed");
+          rebuild_stores();
+      }
+
+      void
+      rebuild_stores ();
  
       bool
       cache_inline (const std::string& mbid, const std::string& uri);
@@ -157,7 +169,7 @@ namespace MPX
 	  RequestKeeperT              RequestKeeper;
 	  MPixbufCache                m_pixbuf_cache;
 	  MSurfaceCache               m_surface_cache[N_COVER_SIZES];
-      StoresT                     m_stores;
+      StoresT                     m_all_stores, m_current_stores;
   };
 }
 

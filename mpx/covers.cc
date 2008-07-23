@@ -57,6 +57,7 @@
 #include "mpx/covers.hh"
 #include "mpx/coverstores.hh"
 #include "mpx/ld.hh"
+#include "mpx/main.hh"
 #include "mpx/minisoup.hh"
 #include "mpx/network.hh"
 #include "mpx/uri.hh"
@@ -108,15 +109,49 @@ namespace MPX
         LocalCovers*       local_store = new LocalCovers(*this);
         MusicBrainzCovers* mb_store    = new MusicBrainzCovers(*this);
         AmazonCovers*      amzn_store  = new AmazonCovers(*this);
+        AmapiCovers*       amapi_store = new AmapiCovers(*this);
 
-        m_stores.push_back(local_store);
-        m_stores.push_back(mb_store);
-        m_stores.push_back(amzn_store);
+        m_all_stores.push_back(local_store);
+        m_all_stores.push_back(amzn_store);
+        m_all_stores.push_back(mb_store);
+        m_all_stores.push_back(amapi_store);
 
-        for( size_t i = 0; i < m_stores.size(); i++ )
+        for( size_t i = 0; i < m_all_stores.size(); i++ )
         {
-            m_stores[i]->not_found_callback().connect(sigc::mem_fun(*this, &Covers::store_not_found_cb));
+            m_all_stores[i]->not_found_callback().connect(sigc::mem_fun(*this, &Covers::store_not_found_cb));
         }
+
+        rebuild_stores();
+
+        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "SourceActive0", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
+        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "SourceActive1", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
+        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "SourceActive2", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
+        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "SourceActive3", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
+        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "Source0", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
+        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "Source1", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
+        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "Source2", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
+        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "Source3", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
+    }
+
+    void
+    Covers::rebuild_stores()
+    {
+        m_current_stores.clear();
+
+        int at0 = mcs->key_get<int>("Preferences-CoverArtSources", "Source0");
+        int at1 = mcs->key_get<int>("Preferences-CoverArtSources", "Source1");
+        int at2 = mcs->key_get<int>("Preferences-CoverArtSources", "Source2");
+        int at3 = mcs->key_get<int>("Preferences-CoverArtSources", "Source3");
+
+        bool use0 = mcs->key_get<bool>("Preferences-CoverArtSources", "SourceActive0");
+        bool use1 = mcs->key_get<bool>("Preferences-CoverArtSources", "SourceActive1");
+        bool use2 = mcs->key_get<bool>("Preferences-CoverArtSources", "SourceActive2");
+        bool use3 = mcs->key_get<bool>("Preferences-CoverArtSources", "SourceActive3");
+
+        if (use0) { m_current_stores.push_back(m_all_stores[at0]); }
+        if (use1) { m_current_stores.push_back(m_all_stores[at1]); }
+        if (use2) { m_current_stores.push_back(m_all_stores[at2]); }
+        if (use3) { m_current_stores.push_back(m_all_stores[at3]); }
     }
  
     void
@@ -125,10 +160,10 @@ namespace MPX
         int i = RequestKeeper[data->mbid];
         i++;
 
-        if(i < m_stores.size())
+        if(i < m_current_stores.size())
         {
             RequestKeeper[data->mbid] = i;
-            m_stores[i]->load_artwork(data);
+            m_current_stores[i]->load_artwork(data);
         }
         else
         {
@@ -181,10 +216,10 @@ namespace MPX
 
         if( acquire )
         {
-            if(m_stores.size())
+            if(m_current_stores.size())
             {
                 RequestKeeper[mbid] = 0;
-                m_stores[0]->load_artwork(new CoverFetchData(asin, mbid, uri, artist, album));
+                m_current_stores[0]->load_artwork(new CoverFetchData(asin, mbid, uri, artist, album));
             }
         }
     }
