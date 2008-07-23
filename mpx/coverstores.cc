@@ -107,9 +107,15 @@ namespace MPX
             else
             { 
                 Glib::Mutex::Lock L( covers.RequestKeeperLock );
-                cover->save( covers.get_thumb_path( cb_data->mbid ), "png" );
-                covers.cache_artwork( cb_data->mbid, cover );
-                covers.Signals.GotCover.emit( cb_data->mbid );
+
+                try{
+                        cover->save( covers.get_thumb_path( cb_data->mbid ), "png" );
+                        covers.cache_artwork( cb_data->mbid, cover );
+                        covers.Signals.GotCover.emit( cb_data->mbid );
+                } catch( Glib::FileError & cxe )
+                {
+                        g_message("File Error while trying to save cover image: %s", cxe.what().c_str());
+                }
 
                 delete cb_data;
             }
