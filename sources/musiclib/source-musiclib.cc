@@ -2274,14 +2274,25 @@ namespace MPX
                   else
                     return (Util::match_keys (ustring((*iter)[AlbumColumns.Text]).lowercase(), filter)); 
               }
-
+    
               void
-              albumsRefilter ()
+              update_album_count_display ()
               {
-                    TreeStoreFilter->refilter();
                     TreeNodeChildren::size_type n1 = TreeStoreFilter->children().size();
                     TreeNodeChildren::size_type n2 = TreeStore->children().size();
                     m_LabelShowing->set_text ((boost::format (_("showing %lld of %lld albums")) % n1 % n2).str());
+              }
+
+              void
+              on_row_added_or_deleted ()
+              {
+                    update_album_count_display ();
+              }
+
+              void
+              on_filter_entry_changed ()
+              {
+                    TreeStoreFilter->refilter();
               }
 
             public:
@@ -2324,14 +2335,12 @@ namespace MPX
 
                 m_Covers.get().signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
 
-                xml->get_widget("album-filter-entry", m_FilterEntry);
                 xml->get_widget("label-showing", m_LabelShowing);
 
                 set_show_expanders( false );
                 set_level_indentation( 32 );
 
                 TreeViewColumn * col = manage (new TreeViewColumn());
-
                 GtkCellRenderer * renderer = gossip_cell_renderer_expander_new ();
                 gtk_tree_view_column_pack_start (col->gobj(), renderer, FALSE);
                 gtk_tree_view_column_set_cell_data_func (col->gobj(),
@@ -2349,7 +2358,6 @@ namespace MPX
                 cellcairo->property_xalign() = 0.;
 
                 CellRendererVBox *cvbox = manage (new CellRendererVBox);
-
                 CellRendererText *celltext = manage (new CellRendererText);
                 celltext->property_yalign() = 0.;
                 celltext->property_ypad() = 4;
@@ -2426,11 +2434,18 @@ namespace MPX
                         &AlbumTreeView::albumVisibleFunc
                 ));
 
-                m_FilterEntry->signal_changed().connect(
-                    sigc::mem_fun(
+                TreeStoreFilter->signal_row_inserted().connect((
+                    sigc::hide(sigc::hide(sigc::mem_fun(
                         *this,
-                        &AlbumTreeView::albumsRefilter
-                ));
+                        &AlbumTreeView::on_row_added_or_deleted
+                )))));
+
+                TreeStoreFilter->signal_row_deleted().connect((
+                    sigc::hide(sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::on_row_added_or_deleted
+                ))));
+
 
                 set_model(TreeStoreFilter);
 
@@ -2455,6 +2470,14 @@ namespace MPX
                 Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
                 Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
                 drag_source_set(Entries); 
+
+                xml->get_widget("album-filter-entry", m_FilterEntry);
+
+                m_FilterEntry->signal_changed().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::on_filter_entry_changed
+                ));
 
                 album_list_load ();
               }

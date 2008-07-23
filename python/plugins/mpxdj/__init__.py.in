@@ -291,7 +291,7 @@ class OptionAnalyzer(BaseOption):
         # Pick one track at random
 
         rv = mpx.SQLRowV()
-        self.lib.getSQL(rv, str("SELECT id FROM track_view ORDER BY mpxrand() LIMIT 1"))
+        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY mpxrand() LIMIT 1"))
         extract_ids(rv, self.v)
         self.finished.set()
 
