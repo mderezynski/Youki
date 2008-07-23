@@ -111,10 +111,10 @@ namespace MPX
         AmazonCovers*      amzn_store  = new AmazonCovers(*this);
         AmapiCovers*       amapi_store = new AmapiCovers(*this);
 
-        m_all_stores.push_back(local_store);
-        m_all_stores.push_back(amzn_store);
-        m_all_stores.push_back(mb_store);
-        m_all_stores.push_back(amapi_store);
+        m_stores.push_back(local_store);
+        m_stores.push_back(mb_store);
+        m_stores.push_back(amzn_store);
+        m_stores.push_back(amapi_store);
 
         for( size_t i = 0; i < m_all_stores.size(); i++ )
         {
@@ -158,10 +158,13 @@ namespace MPX
     Covers::store_not_found_cb (CoverFetchData* data)
     {
         int i = RequestKeeper[data->mbid];
+        g_message("Store %d not found", i);
+
         i++;
 
         if(i < m_current_stores.size())
         {
+            g_message("Trying store %d", i);
             RequestKeeper[data->mbid] = i;
             m_current_stores[i]->load_artwork(data);
         }

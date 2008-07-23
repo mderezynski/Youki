@@ -43,7 +43,10 @@ public:
 		* T_WIDGET class is initialized 
 		*/
 		T_WIDGET( get_widget(refxml, widgetname))
-	{};
+    ,   m_Xml(refxml)
+	{}
+protected:
+    Glib::RefPtr<Gnome::Glade::Xml> m_Xml;
 private:
 	typedef typename T_WIDGET::BaseObjectType widget_type;
 

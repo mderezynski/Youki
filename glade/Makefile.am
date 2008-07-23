@@ -10,6 +10,7 @@ glade_DATA = 							\
 		playlist-plugin-manager.glade	\
 		plugin-manager.glade			\
 		preferences.glade				\
-		request-value.glade
+		request-value.glade				\
+		timed-confirmation.glade
 
 EXTRA_DIST = $(glade_DATA)

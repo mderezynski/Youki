@@ -25,6 +25,7 @@ libmpx_widgets_la_SOURCES = 			\
 		dialog-simple-entry.cc			\
 		gossip-cell-renderer-expander.c	\
 		taskdialog.cc					\
+		timed-confirmation.cc			\
 	    widget-marshalers.c   			
 
 widget-marshalers.c: widget-marshalers.list 

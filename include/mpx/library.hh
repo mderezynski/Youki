@@ -215,8 +215,8 @@ namespace MPX
 #endif //HAVE_HAL 
 
             Covers                  & m_Covers;
-            LibraryScannerThread    * m_ScannerThread;
             SQL::SQLDB              * m_SQL;
+            LibraryScannerThread    * m_ScannerThread;
             MetadataReaderTagLib    & m_MetadataReaderTagLib ;
             gint64                    m_Flags;
 
@@ -236,6 +236,9 @@ namespace MPX
 
             void
             on_new_track (Track&,gint64,gint64);
+
+            bool
+            recache_covers_handler (SQL::RowV *, int*); 
     };
 
 } // namespace MPX
