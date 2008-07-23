@@ -137,7 +137,7 @@ namespace MPX
     void
     Covers::rebuild_stores()
     {
-        m_current_stores.clear();
+        m_current_stores = StoresT (4, (CoverStore*)(0));
 
         int at0 = mcs->key_get<int>("Preferences-CoverArtSources", "Source0");
         int at1 = mcs->key_get<int>("Preferences-CoverArtSources", "Source1");
@@ -149,10 +149,10 @@ namespace MPX
         bool use2 = mcs->key_get<bool>("Preferences-CoverArtSources", "SourceActive2");
         bool use3 = mcs->key_get<bool>("Preferences-CoverArtSources", "SourceActive3");
 
-        if (use0) { m_current_stores.push_back(m_all_stores[at0]); }
-        if (use1) { m_current_stores.push_back(m_all_stores[at1]); }
-        if (use2) { m_current_stores.push_back(m_all_stores[at2]); }
-        if (use3) { m_current_stores.push_back(m_all_stores[at3]); }
+        if (use0) { m_current_stores[0] = m_all_stores[at0]; }
+        if (use1) { m_current_stores[1] = m_all_stores[at1]; }
+        if (use2) { m_current_stores[2] = m_all_stores[at2]; }
+        if (use3) { m_current_stores[3] = m_all_stores[at3]; }
     }
  
     void
@@ -162,8 +162,12 @@ namespace MPX
         {
             if(m_current_stores.size())
             {
-                RequestKeeper[mbid] = 0;
-                m_current_stores[0]->load_artwork(data)
+                CoverStore * store = m_current_stores[0]; // to avoid race conditions
+                if( store )
+                {
+                    RequestKeeper[data->mbid] = 0;
+                    store->load_artwork(data);
+                }
             }
 
             return;
