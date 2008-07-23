@@ -832,8 +832,8 @@ class TrackInfo:
 
     def display_artist(self, mydict):
 
-        if mydict["id"] in self.artist_cached:
-            self.webview.load_html_string(self.artist_cached[mydict["id"]], "") 
+        if mydict["name"] in self.artist_cached:
+            self.webview.load_html_string(self.artist_cached[mydict["name"]], "") 
         else:
             self.notebook.set_current_page(1)
             t = ArtistInfoQuery (mydict["id"], mydict["name"], self.query, self.wsinc, self.wsinc_release)
