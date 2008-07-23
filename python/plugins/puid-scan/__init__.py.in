@@ -111,8 +111,6 @@ class PuidScan():
                 res = ctx.xpathEval("//mmd:puid/@id")
                 puid = res[0].getContent() 
 
-                print puid
-
                 if puid and len(puid):
 
                     result = ws.TrackFilter(puid=puid) 

@@ -12,7 +12,99 @@ import xmlrpclib
 import md5
 import time
 import gtk
+import gobject
 from gettext import gettext as _
+import urllib
+import urllib2
+import libxml2
+
+def rpchead(mcs):
+
+        rpc_time  = int(time.time())         
+
+        md5_value = md5.new()
+        md5_value.update(mcs.key_get_string("lastfm","password"))
+
+        rpc_pass  = md5_value.hexdigest()
+        rpc_pass  = rpc_pass + str(rpc_time)
+
+        md5_value = md5.new()
+        md5_value.update(rpc_pass)
+
+        rpc_pass  = md5_value.hexdigest()
+
+        return [mcs.key_get_string("lastfm","username"), str(rpc_time), rpc_pass] 
+
+class LoveTrack():
+
+    def run(self, track):
+
+        title   = track[mpx.AttributeId.TITLE].get()
+        artist  = track[mpx.AttributeId.ARTIST].get()
+        head    = rpchead(self.mcs)
+        rpcsvr  = xmlrpclib.Server("http://ws.audioscrobbler.com/1.0/rw/xmlrpc.php")
+        rpcsvr.loveTrack(head[0], head[1], head[2], artist, title)
+
+class TagTrack():
+
+    def __init__(self, mcs):
+    
+        self.mcs = mcs
+
+        self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/lastfmstuff/tag-track.glade")
+
+        self.dialog = self.xml.get_widget("dialog")
+
+        self.model = gtk.ListStore(gobject.TYPE_STRING)
+
+        self.entry = self.xml.get_widget("entry")
+
+        self.entry_completion = gtk.EntryCompletion()
+        self.entry_completion.set_model(self.model)
+        self.entry_completion.set_minimum_key_length(1)
+        self.entry_completion.set_popup_completion(True)
+        self.entry_completion.set_inline_completion(False)
+        self.entry_completion.set_inline_selection(True)
+        self.entry_completion.set_text_column(0)
+        self.entry.set_completion(self.entry_completion)
+
+        self.tags = {}
+
+    def run(self, track):
+
+        artist  = track[mpx.AttributeId.ARTIST].get()
+        title   = track[mpx.AttributeId.TITLE].get()
+
+        handle = urllib2.urlopen("http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(artist), urllib.quote(title)))
+        response = "\n".join(handle.readlines())
+
+        doc = libxml2.parseMemory(response,len(response))
+        ctx = doc.xpathNewContext()
+        res = ctx.xpathEval("//name")
+
+        for tag in res:
+
+                self.model.append([tag.getContent()])
+                self.tags[tag.getContent()] = True
+
+        response = self.dialog.run()
+        self.dialog.destroy()
+
+        if response == gtk.RESPONSE_OK:
+
+            head    = rpchead(self.mcs)
+            rpcsvr  = xmlrpclib.Server("http://ws.audioscrobbler.com/1.0/rw/xmlrpc.php")
+            tag     = self.entry.props.text
+
+            method  = "" 
+
+            if tag in self.tags:
+                method = "append"
+            else:
+                method = "set"
+
+            print rpcsvr.tagTrack(head[0], head[1], head[2], artist, title, [tag], method)
+
 
 class LastFmActions(mpx.Plugin):
         
@@ -29,23 +121,6 @@ class LastFmActions(mpx.Plugin):
         self.ui.remove_ui(self.merge_id)
         self.player.gobj().disconnect(self.handler1_id)
 
-    def rpchead(self):
-
-        rpc_time  = int(time.time())         
-
-        md5_value = md5.new()
-        md5_value.update(self.mcs.key_get_string("lastfm","password"))
-
-        rpc_pass  = md5_value.hexdigest()
-        rpc_pass  = rpc_pass + str(rpc_time)
-
-        md5_value = md5.new()
-        md5_value.update(rpc_pass)
-
-        rpc_pass  = md5_value.hexdigest()
-
-        return [self.mcs.key_get_string("lastfm","username"), str(rpc_time), rpc_pass] 
-
     def __init__(self,id,player,mcs):
 
         self.lib        = player.get_library()
@@ -53,12 +128,24 @@ class LastFmActions(mpx.Plugin):
         self.ui         = player.ui()
         self.player     = player
         self.mcs        = mcs
+        self.actions    = {}
 
-        self.action     = gtk.Action("lastfmstuff-action-ilovethistrack", _("I Love this Track!"), "", "mpx-stock-lastfm")
-        self.action.connect("activate", self.on_action)
-    
-        self.group      = gtk.ActionGroup("LastFmStuff")
-        self.group.add_action(self.action)
+        self.actions["love"] = gtk.Action("lastfmstuff-action-ilovethistrack", _("I Love this Track!"), "", "mpx-stock-lastfm")
+        self.actions["tagtrack"] = gtk.Action("lastfmstuff-action-tagtrack", _("Tag Track"), "", "mpx-stock-lastfm")
+
+        Callbacks = {
+                        "love"      :   self.on_action_love,
+                        "tagtrack"  :   self.on_action_tagtrack
+                    }
+
+        for action in self.actions:
+
+                self.actions[action].set_sensitive(False)
+                self.actions[action].connect("activate", Callbacks[action])
+
+        self.group = gtk.ActionGroup("LastFmStuff")
+        self.group.add_action(self.actions["love"])
+        self.group.add_action_with_accel(self.actions["tagtrack"], "<ctrl>T")
 
         self.ui.insert_action_group(self.group, -1)
 
@@ -68,6 +155,7 @@ class LastFmActions(mpx.Plugin):
                      <menu action='MenuTrack'>
                         <placeholder name='placeholder-track-actions'>
                         <menuitem action='lastfmstuff-action-ilovethistrack'/>
+                        <menuitem action='lastfmstuff-action-tagtrack'/>
                         </placeholder>
                      </menu>
                 </menubar>
@@ -82,22 +170,21 @@ class LastFmActions(mpx.Plugin):
 
         if (mpx.AttributeId.TITLE in m) and (mpx.AttributeId.ARTIST in m):
 
-                self.action.set_sensitive(True)
+                self.actions["love"].set_sensitive(True)
+                self.actions["tagtrack"].set_sensitive(True)
 
         else:
 
-                self.action.set_sensitive(False)
+                self.actions["love"].set_sensitive(False)
+                self.actions["tagtrack"].set_sensitive(False)
 
-    def on_action(self, action):
+    def on_action_love(self, action):
 
-        m = self.player.get_metadata() 
+        t = LoveTrack()
+        t.run(self.player.get_metadata()) 
+        self.actions["love"].set_sensitive(False)
 
-        title   = m[mpx.AttributeId.TITLE].get()
-        artist  = m[mpx.AttributeId.ARTIST].get()
+    def on_action_tagtrack(self, action):
 
-        head    = self.rpchead()
-        rpcsvr  = xmlrpclib.Server("http://ws.audioscrobbler.com/1.0/rw/xmlrpc.php")
-        rpcsvr.loveTrack(head[0], head[1], head[2], artist, title)
-
-        self.action.set_sensitive(False)
-
+        t = TagTrack(self.mcs) 
+        t.run(self.player.get_metadata())

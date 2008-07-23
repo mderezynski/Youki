@@ -1,5 +1,6 @@
 python_DATA = 				\
 		__init__.py 		\
+		tag-track.glade		\
 		lastfmstuff.mpx-plugin 	
 
 pythondir = $(pkgdatadir)/python-plugins/lastfmstuff
