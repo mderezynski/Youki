@@ -55,6 +55,7 @@
 
 #include "mpx/audio.hh"
 #include "mpx/covers.hh"
+#include "mpx/coverstores.hh"
 #include "mpx/ld.hh"
 #include "mpx/minisoup.hh"
 #include "mpx/network.hh"
@@ -117,8 +118,47 @@ namespace MPX
     {
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", NULL));
         g_mkdir(path.get(), 0700);
+
+        AmazonCovers* dumb_store = new AmazonCovers(*this);
+        dumb_store->not_found_callback().connect(sigc::mem_fun(*this, &Covers::store_not_found_cb));
+
+        DummyStore* amzn_cstore = new DummyStore(*this);
+        amzn_cstore->not_found_callback().connect(sigc::mem_fun(*this, &Covers::store_not_found_cb));
+
+        m_stores.push_back(dumb_store);
+        m_stores.push_back(amzn_cstore);
+    }
+ 
+    void
+    Covers::store_not_found_cb (CoverFetchData* data)
+    {
+        g_message("A store couldn't find artwork for %s", data->mbid.c_str());
+        int i = RequestKeeper[data->mbid];
+        i++;
+
+        if(i < m_stores.size())
+        {
+            g_message("Forwarded to store %d", i);
+            RequestKeeper[data->mbid] = i;
+
+            m_stores[i]->load_artwork(data);
+        }
+        else
+        {
+            g_message("No more stores");
+        }
     }
 
+    void
+    Covers::cache_artwork(
+        const std::string& mbid,
+        RefPtr<Gdk::Pixbuf> cover
+    )
+    {
+        m_pixbuf_cache.insert(std::make_pair(mbid, cover));
+    }
+
+    /*
     void
     Covers::site_fetch_and_save_cover_amazn(
         CoverFetchData * amzn_data
@@ -435,16 +475,6 @@ namespace MPX
     }
     
     std::string
-    Covers::get_thumb_path(
-        const std::string& mbid
-    )
-    {
-        std::string basename = (boost::format ("%s.png") % mbid).str ();
-        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", basename.c_str(), NULL));
-        return std::string(path.get());
-    }
-
-    std::string
     Covers::local_cover_file(
         const std::string& track_uri
     )
@@ -466,6 +496,16 @@ namespace MPX
         }
 
         return "";
+    }*/
+
+    std::string
+    Covers::get_thumb_path(
+        const std::string& mbid
+    )
+    {
+        std::string basename = (boost::format ("%s.png") % mbid).str ();
+        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", basename.c_str(), NULL));
+        return std::string(path.get());
     }
 
     void 
@@ -493,6 +533,14 @@ namespace MPX
 
         if( acquire )
         {
+            if(m_stores.size())
+            {
+                g_message("dispatching request to stores");
+
+                RequestKeeper[mbid] = 0;
+                m_stores[0]->load_artwork(new CoverFetchData(asin, mbid, uri, artist, album));
+            }
+/*
             // TODO It should be probably be a user preference which of these options takes priority...
             if ( !local_cover_file(uri).empty() )
             {
@@ -519,7 +567,7 @@ namespace MPX
                     site_fetch_and_save_cover_mbxml( data );
                 else
                     site_fetch_and_save_cover_amazn( data );
-            }
+            }*/
         }
     }
 

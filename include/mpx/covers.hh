@@ -36,6 +36,7 @@
 #include <cairomm/cairomm.h>
 #include <sigx/sigx.h>
 
+#include "mpx/coverstores.hh"
 #include "mpx/network.hh"
 #include "mpx/metadatareader-taglib.hh"
 
@@ -50,14 +51,47 @@ namespace MPX
     N_COVER_SIZES
   };
 
+  struct CoverFetchData
+  {
+      Soup::RequestRefP request;
+      std::string asin;
+      std::string mbid;
+      std::string uri;
+      std::string artist;
+      std::string album;
+      int n;
+      bool amapi;
+
+      CoverFetchData(
+            const std::string& asin_    = std::string(),
+            const std::string& mbid_    = std::string(),
+            const std::string& uri_     = std::string(),
+            const std::string& artist_  = std::string(),
+            const std::string& album_   = std::string()
+      )
+      : asin(asin_)
+      , mbid(mbid_)
+      , uri(uri_)
+      , artist(artist_)
+      , album(album_)
+      , n(0)
+      , amapi(false)
+      {
+      }
+  };
+
+  class CoverStore;
+
   class Covers : public sigx::glib_auto_dispatchable
   {
 	public:
+	  Glib::Mutex                 RequestKeeperLock;
 
 	  typedef sigc::signal<void, const std::string&> SignalGotCover;
 
 	  struct SignalsT
 	  {
+          // Fired if a store found cover artwork
 		  SignalGotCover GotCover;
 	  };
 
@@ -99,43 +133,20 @@ namespace MPX
       void
       purge();
 
-    private:
-
-	  struct CoverFetchData
-	  {
-		  Soup::RequestRefP request;
-		  std::string asin;
-		  std::string mbid;
-          std::string uri;
-          std::string artist;
-          std::string album;
-		  int n;
-          bool amapi;
-
-		  CoverFetchData(
-                const std::string& asin_    = std::string(),
-                const std::string& mbid_    = std::string(),
-                const std::string& uri_     = std::string(),
-                const std::string& artist_  = std::string(),
-                const std::string& album_   = std::string()
-          )
-		  : asin(asin_)
-          , mbid(mbid_)
-          , uri(uri_)
-          , artist(artist_)
-          , album(album_)
-		  , n(0)
-          , amapi(false)
-		  {
-		  }
-	  };
-
-	  typedef std::set <std::string> RequestKeeperT;
-	  typedef std::map <std::string, Glib::RefPtr<Gdk::Pixbuf> > MPixbufCache;
-	  typedef std::map <std::string, Cairo::RefPtr<Cairo::ImageSurface> > MSurfaceCache;
+      void
+      cache_artwork(
+        const std::string& /* mbid */,
+        Glib::RefPtr<Gdk::Pixbuf> /*cover*/
+      );
 
 	  std::string
 	  get_thumb_path (const std::string& /*mbid*/);
+
+    private:
+	  typedef std::map <std::string, int> RequestKeeperT;
+	  typedef std::map <std::string, Glib::RefPtr<Gdk::Pixbuf> > MPixbufCache;
+	  typedef std::map <std::string, Cairo::RefPtr<Cairo::ImageSurface> > MSurfaceCache;
+      typedef std::vector <CoverStore*> StoresT;
 
 	  std::string
 	  local_cover_file (const std::string& /*track_uri*/);
@@ -156,14 +167,17 @@ namespace MPX
 	  reply_cb_mbxml (char const*, guint, guint, CoverFetchData*);
           void
           reply_cb_amapi (char const*, guint, guint, CoverFetchData*);
+
+          void
+          store_not_found_cb (CoverFetchData*);
  
           bool
           cache_inline (const std::string& mbid, const std::string& uri);
 
 	  RequestKeeperT              RequestKeeper;
-	  Glib::Mutex                 RequestKeeperLock;
 	  MPixbufCache                m_pixbuf_cache;
 	  MSurfaceCache               m_surface_cache[N_COVER_SIZES];
+      StoresT                     m_stores;
   };
 }
 

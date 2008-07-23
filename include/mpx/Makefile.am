@@ -4,6 +4,7 @@ noinst_HEADERS =					\
 	audio.hh						\
 	base64.h						\
 	covers.hh						\
+	coverstores.hh 					\
 	exception-db.hh					\
 	exception.hh					\
 	glibaddons.hh					\

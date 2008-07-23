@@ -102,6 +102,7 @@ mpx_bin_SOURCES =				\
 	audio-exception.hh			\
 								\
 	covers.cc					\
+	coverstores.cc 				\
 								\
 	dialog-filebrowser.hh		\
 	dialog-filebrowser.cc		\
