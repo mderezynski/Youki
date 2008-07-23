@@ -514,13 +514,26 @@ namespace MPX
         }
         else
         {
-            m_ManagedPaths.insert(full_path);
-            recreate_path_frags ();
-            TreePath path = FSTreeStore->get_path(iter_copy); 
-            FSTreeStore->row_changed(path, iter_copy);
-            StrV v;
-            v.push_back(filename_to_uri(full_path));
-            m_Library.initScan(v);
+            MessageDialog dialog(
+                (boost::format ("Are you sure you want <b>add</b> Music <b>from this path</b> to the Library:\n\n'<b>%s</b>'")
+                    % Markup::escape_text(filename_to_utf8(full_path)).c_str()
+                ).str(),
+                true,
+                MESSAGE_QUESTION,
+                BUTTONS_YES_NO,
+                true
+            );
+
+            if( dialog.run() == GTK_RESPONSE_YES )
+            {
+                    m_ManagedPaths.insert(full_path);
+                    recreate_path_frags ();
+                    TreePath path = FSTreeStore->get_path(iter_copy); 
+                    FSTreeStore->row_changed(path, iter_copy);
+                    StrV v;
+                    v.push_back(filename_to_uri(full_path));
+                    m_Library.initScan(v);
+            }
         }
     }
 
