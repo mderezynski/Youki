@@ -143,7 +143,7 @@ namespace MPX
       );
 
 	  std::string
-	  get_thumb_path (const std::string& /*mbid*/);
+	  get_thumb_path (std::string /*mbid*/);
 
     private:
 	  typedef std::map <std::string, int> RequestKeeperT;

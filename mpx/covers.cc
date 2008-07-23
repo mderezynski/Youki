@@ -199,9 +199,11 @@ namespace MPX
 
     std::string
     Covers::get_thumb_path(
-        const std::string& mbid
+        std::string mbid
     )
     {
+        using boost::algorithm::replace_all;
+        replace_all(mbid, "/","_");
         std::string basename = (boost::format ("%s.png") % mbid).str ();
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", basename.c_str(), NULL));
         return std::string(path.get());
