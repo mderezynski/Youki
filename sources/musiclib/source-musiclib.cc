@@ -2281,7 +2281,7 @@ namespace MPX
                     TreeStoreFilter->refilter();
                     TreeNodeChildren::size_type n1 = TreeStoreFilter->children().size();
                     TreeNodeChildren::size_type n2 = TreeStore->children().size();
-                    m_LabelShowing->set_text ((boost::format (_("Showing %lld of %lld albums.")) % n1 % n2).str());
+                    m_LabelShowing->set_text ((boost::format (_("showing %lld of %lld albums")) % n1 % n2).str());
               }
 
             public:
