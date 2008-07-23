@@ -119,33 +119,35 @@ namespace MPX
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", NULL));
         g_mkdir(path.get(), 0700);
 
-        AmazonCovers* dumb_store = new AmazonCovers(*this);
-        dumb_store->not_found_callback().connect(sigc::mem_fun(*this, &Covers::store_not_found_cb));
+        LocalCovers*       local_store = new LocalCovers(*this);
+        MusicBrainzCovers* mb_store    = new MusicBrainzCovers(*this);
+        AmazonCovers*      amzn_store  = new AmazonCovers(*this);
 
-        DummyStore* amzn_cstore = new DummyStore(*this);
-        amzn_cstore->not_found_callback().connect(sigc::mem_fun(*this, &Covers::store_not_found_cb));
+        m_stores.push_back(local_store);
+        m_stores.push_back(mb_store);
+        m_stores.push_back(amzn_store);
 
-        m_stores.push_back(dumb_store);
-        m_stores.push_back(amzn_cstore);
+        for( size_t i = 0; i < m_stores.size(); i++ )
+        {
+            m_stores[i]->not_found_callback().connect(sigc::mem_fun(*this, &Covers::store_not_found_cb));
+        }
     }
  
     void
     Covers::store_not_found_cb (CoverFetchData* data)
     {
-        g_message("A store couldn't find artwork for %s", data->mbid.c_str());
         int i = RequestKeeper[data->mbid];
         i++;
 
         if(i < m_stores.size())
         {
-            g_message("Forwarded to store %d", i);
             RequestKeeper[data->mbid] = i;
-
             m_stores[i]->load_artwork(data);
         }
         else
         {
-            g_message("No more stores");
+            // No more stores to try
+            delete data;
         }
     }
 
@@ -440,54 +442,7 @@ namespace MPX
         }
     }
 
-    void
-    Covers::local_save_cover(
-        CoverFetchData * local_data
-    )
-    {
-        std::string cover_file_name = local_cover_file(local_data->uri);
-
-        if (!file_test(cover_file_name, FILE_TEST_EXISTS))
-        {
-            g_warning("Was told to save a cover from local file '%s', but this doesn't exist!", cover_file_name.c_str());
-            return;
-        }
-
-        try{
-                RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cover_file_name ); 
-                cover->save( get_thumb_path( local_data->mbid ), "png" );
-                m_pixbuf_cache.insert( std::make_pair( local_data->mbid, cover ));
-                g_message("saved pixbuf");
-                Signals.GotCover.emit( local_data->mbid );
-        } catch(...) {
-        }
-
-        delete local_data;
-    }
-    
-    std::string
-    Covers::local_cover_file(
-        const std::string& track_uri
-    )
-    {
-        Glib::RefPtr<Gio::File> directory = Gio::File::create_for_uri( track_uri )->get_parent( );
-        Glib::RefPtr<Gio::FileEnumerator> files = directory->enumerate_children( );
-    
-        RefPtr<Gio::FileInfo> file ;
-        while ( (file = files->next_file()) != 0 )
-        {
-            if( file->get_content_type().find("image") != std::string::npos &&
-                ( file->get_name().find("folder") ||
-                  file->get_name().find("cover")  ||
-                  file->get_name().find("front")     )
-              )
-            {
-                return directory->get_child(file->get_name())->get_path();
-            }
-        }
-
-        return "";
-    }*/
+    */
 
     std::string
     Covers::get_thumb_path(
@@ -526,8 +481,6 @@ namespace MPX
         {
             if(m_stores.size())
             {
-                g_message("dispatching request to stores");
-
                 RequestKeeper[mbid] = 0;
                 m_stores[0]->load_artwork(new CoverFetchData(asin, mbid, uri, artist, album));
             }

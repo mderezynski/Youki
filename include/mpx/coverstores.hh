@@ -74,15 +74,35 @@ namespace MPX
 
         void
         load_artwork(CoverFetchData*);
+
     private:
         void
-        reply_cb_amazn(char const*, guint, guint, CoverFetchData*);
+        reply_amazn(char const*, guint, guint, CoverFetchData*);
     };
 
-    class DummyStore : public CoverStore
+    class MusicBrainzCovers : public CoverStore,
+                         public sigx::glib_auto_dispatchable
     {
     public:
-        DummyStore(Covers& c) : CoverStore(c)
+        MusicBrainzCovers(Covers& c) : CoverStore(c)
+        { }
+
+        void
+        load_artwork(CoverFetchData*);
+
+    private:
+        void
+        reply_cb(char const*, guint, guint, CoverFetchData*);
+
+        void
+        save_image_cb(char const*, guint, guint, CoverFetchData*);
+    };
+
+    class LocalCovers : public CoverStore,
+                         public sigx::glib_auto_dispatchable
+    {
+    public:
+        LocalCovers(Covers& c) : CoverStore(c)
         { }
 
         void
