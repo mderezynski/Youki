@@ -172,8 +172,9 @@ mpx_bin_SOURCES =				\
 	splash-screen.cc			\
 								\
 	sql.cc						\
+								\
 	stock.cc					\
-	tasks.cc					\
+								\
 	treeview-popup.cc			\
 								\
 	uri.cc						\

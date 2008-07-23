@@ -1686,8 +1686,8 @@ namespace MPX
 
                 m_Covers.get().fetch(mbid, surface, COVER_SIZE_ALBUM_LIST);
 
-                surface = Util::cairo_image_surface_round(surface, 5.);
-                Util::cairo_image_surface_rounded_border(surface, .5, 5.);
+                surface = Util::cairo_image_surface_round(surface, 9.5);
+                Util::cairo_image_surface_rounded_border(surface, .5, 9.5);
 
                 IterSet & set = m_MBIDIterMap[mbid];
 
@@ -2688,8 +2688,8 @@ namespace MPX
                     Cairo::RefPtr<Cairo::ImageSurface> surface;
                     if( m_Covers.get().fetch( mbid, surface, COVER_SIZE_ALBUM_LIST ))
                     {
-                        surface = Util::cairo_image_surface_round(surface, 5.);
-                        Util::cairo_image_surface_rounded_border(surface, .5, 5.);
+                        surface = Util::cairo_image_surface_round(surface, 9.5);
+                        Util::cairo_image_surface_rounded_border(surface, .5, 9.5);
                         (*iter)[LFMColumns.Image] = Util::cairo_image_surface_to_pixbuf(surface);
                     }
                     else
@@ -3211,8 +3211,8 @@ namespace MPX
                                     Gdk::INTERP_BILINEAR
                             ));
 
-                        surface = Util::cairo_image_surface_round(surface, 5.);
-                        Util::cairo_image_surface_rounded_border(surface, .5, 5.);
+                        surface = Util::cairo_image_surface_round(surface, 9.5);
+                        Util::cairo_image_surface_rounded_border(surface, .5, 9.5);
 
                         (*iter)[LFMColumns.Image]       = Util::cairo_image_surface_to_pixbuf(surface);
                         (*iter)[LFMColumns.RowType]     = ROW_ALBUM;

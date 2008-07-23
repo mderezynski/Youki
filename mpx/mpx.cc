@@ -2960,7 +2960,7 @@ namespace MPX
 
             if( m_Play->property_status() == PLAYSTATUS_PLAYING)
             {
-                    if( source_id == m_ActiveSource.get() ) 
+                    if( m_ActiveSource && source_id == m_ActiveSource.get() ) 
                     {
                         PlaybackSource::Caps caps = m_source_c[source_id];
                         m_actions->get_action (ACTION_PREV)->set_sensitive( caps & PlaybackSource::C_CAN_GO_PREV );

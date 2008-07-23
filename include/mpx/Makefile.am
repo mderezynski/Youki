@@ -32,7 +32,6 @@ noinst_HEADERS =					\
 	sql.hh							\
 	stock.hh						\
 	tagview.hh						\
-	tasks.hh						\
 	treeview-popup.hh				\
 	types.hh						\
 	uri.hh							\

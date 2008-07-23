@@ -310,7 +310,7 @@ namespace MPX
     {
       g_return_if_fail (width > 0 && height > 0 && radius >= 0);
 
-      RoundedRectangle( cr, x, y, width, height, radius );
+      RoundedRectangle( cr, x + 1, y + 1, width - 2, height - 2, radius );
     }
 
     Cairo::RefPtr<Cairo::ImageSurface>
