@@ -102,7 +102,7 @@ namespace MPX
 {
     Covers::Covers ()
     : sigx::glib_auto_dispatchable()
-    , m_rebuild(false)
+    , m_rebuild(0)
     {
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", NULL));
         g_mkdir(path.get(), 0700);
@@ -129,7 +129,7 @@ namespace MPX
     void
     Covers::source_pref_changed_callback(const std::string& domain, const std::string& key, const Mcs::KeyVariant& value )
     {
-        m_rebuild = true;
+        g_atomic_int_set(&m_rebuild, 1);
     }
 
     void
@@ -157,6 +157,12 @@ namespace MPX
     Covers::store_not_found_cb (CoverFetchData* data)
     {
         Glib::Mutex::Lock L (StoresLock);
+
+        if( g_atomic_int_get(&m_rebuild) )
+        {
+            delete data;
+            return;
+        }
 
         int i = RequestKeeper[data->mbid];
         i++;
@@ -209,11 +215,12 @@ namespace MPX
             return;
         }
 
-        if( m_rebuild )
+        if( g_atomic_int_get(&m_rebuild) )
         {
             StoresLock.lock();
             rebuild_stores();
             StoresLock.unlock();
+            g_atomic_int_set(&m_rebuild, 0);
         }
 
         std::string thumb_path = get_thumb_path (mbid);
