@@ -117,6 +117,15 @@ namespace MPX
         else
         {
             next_image:
+
+            ++(cb_data->n);
+
+            if(cb_data->n < 6)
+            {
+                load_artwork(cb_data);
+                return;
+            }
+
             Signals.NotFound.emit(cb_data);
         }
     }

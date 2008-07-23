@@ -38,6 +38,7 @@
 #include "mpx/hal.hh"
 #include "mpx/library.hh"
 #include "mpx/main.hh"
+#include "mpx/playlistparser-xspf.hh"
 #include "mpx/sql.hh"
 #include "mpx/stock.hh"
 #include "mpx/types.hh"
@@ -45,11 +46,12 @@
 #include "mpx/util-ui.hh"
 #include "mpx/util-string.hh"
 #include "mpx/widgetloader.h"
-#include "mpx/playlistparser-xspf.hh"
+
 #include "mpx/widgets/cell-renderer-cairo-surface.hh"
 #include "mpx/widgets/cell-renderer-count.hh"
 #include "mpx/widgets/cell-renderer-vbox.hh"
 #include "mpx/widgets/gossip-cell-renderer-expander.h"
+#include "mpx/widgets/timed-confirmation.hh"
 
 #include "glib-marshalers.h"
 #include "musiclib-py.hh"
@@ -3350,7 +3352,7 @@ namespace Source
                                                 sigc::mem_fun( *m_Private->m_TreeViewPlaylist, &MusicLibPrivate::PlaylistTreeView::action_cb_show_ccdialog ));
 
         m_MainActionGroup->add (Action::create( "musiclib-action-recache-covers", _("Refresh album covers")),
-                                                sigc::mem_fun( m_Lib.get(), &Library::recacheCovers ));
+                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::action_cb_refresh_covers ));
 
         m_MainUIManager->insert_action_group(m_MainActionGroup);
     }
@@ -3358,6 +3360,33 @@ namespace Source
     PlaybackSourceMusicLib::~PlaybackSourceMusicLib ()
     {
         delete m_Private;
+    }
+
+    void
+    PlaybackSourceMusicLib::action_cb_play ()
+    {
+        MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
+
+        playlist.m_CurrentIter = boost::optional<Gtk::TreeIter>(); 
+        playlist.m_CurrentId = boost::optional<gint64>();
+        Signals.PlayRequest.emit();
+    }
+
+    void
+    PlaybackSourceMusicLib::action_cb_go_to_album(gint64 id)
+    {
+        m_Private->m_TreeViewAlbums->go_to_album(id);
+    }
+
+    void
+    PlaybackSourceMusicLib::action_cb_refresh_covers ()
+    {
+        TimedConfirmation dialog (_("Please confirm Cover Refresh"), 4);
+        int response = dialog.run(_("Are you sure you want to Refresh <b>all</b> covers at this time? (previous covers will be irrevocably lost)"));
+        if( response == Gtk::RESPONSE_OK )
+        {
+            m_Lib.get().recacheCovers();
+        }
     }
 
     PyObject*
@@ -3523,22 +3552,6 @@ namespace Source
         playlist.append_tracks(idv, NO_ORDER);
         check_caps ();
         send_caps();
-    }
-
-    void
-    PlaybackSourceMusicLib::action_cb_play ()
-    {
-        MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
-
-        playlist.m_CurrentIter = boost::optional<Gtk::TreeIter>(); 
-        playlist.m_CurrentId = boost::optional<gint64>();
-        Signals.PlayRequest.emit();
-    }
-
-    void
-    PlaybackSourceMusicLib::action_cb_go_to_album(gint64 id)
-    {
-        m_Private->m_TreeViewAlbums->go_to_album(id);
     }
 
     std::string
