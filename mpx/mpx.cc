@@ -1589,6 +1589,14 @@ namespace MPX
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
 
+		signals[PSIGNAL_NEW_COVERART] =
+			g_signal_new ("new-coverart",
+					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+					  GSignalFlags (G_SIGNAL_RUN_FIRST),
+					  0,
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE, 0);
+
 		signals[PSIGNAL_NEW_SOURCE] =
 			g_signal_new ("new-source",
 					  G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
@@ -1764,7 +1772,6 @@ namespace MPX
 		m_actions->get_action (ACTION_PREV)->set_sensitive( false );
 		m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
 		m_actions->get_action (ACTION_STOP)->set_sensitive( false );
-		m_actions->get_action (ACTION_LASTFM_LOVE)->set_sensitive( false );
 
         add_accel_group (m_ui_manager->get_accel_group());
 
@@ -2428,11 +2435,10 @@ namespace MPX
                 {
 			        m_InfoArea->set_cover (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
 
-                    signal_idle().connect(
-                        sigc::mem_fun(
-                            *this,
-                            &Player::metadata_updated
-                    ));
+                    PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+                    g_message("%s: New coverart...", G_STRFUNC);
+                    g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_COVERART], 0);
+                    pyg_gil_state_release(state);
                 }
             }
 			return;
@@ -2596,6 +2602,8 @@ namespace MPX
                 get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()),
                 m_Metadata.get().Image
             );
+
+            PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
         }
 
         if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
@@ -2604,9 +2612,6 @@ namespace MPX
         }
 
         metadata_reparse ();
-
-        //FIXME: This implies we get metadata only once during one track, but there is just no such design guarantee
-        m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( true );
 	}
 
 	void
@@ -3004,8 +3009,6 @@ namespace MPX
                 m_ActiveSource.reset();
                 m_PreparingSource.reset();
 
-                m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
-
                 break;
 		  }
 
@@ -3024,8 +3027,6 @@ namespace MPX
 
                 m_Metadata.reset();	
                 m_InfoArea->reset();
-
-                m_actions->get_action( ACTION_LASTFM_LOVE )->set_sensitive( false );
 
 			    break;
 		  }
@@ -3780,11 +3781,13 @@ namespace MPX
     Player::metadata_updated ()
     {
         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_PREPARE], 0);
-        pyg_gil_state_release(state);
 
-        state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+        g_message("%s: Metadata prepare...", G_STRFUNC);
+        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_PREPARE], 0);
+
+        g_message("%s: Metadata updated...", G_STRFUNC);
         g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_UPDATED], 0);
+
         pyg_gil_state_release(state);
 
         return false;

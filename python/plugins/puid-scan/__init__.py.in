@@ -10,6 +10,7 @@ import copy
 import gobject
 gobject.threads_init()
 import gst
+import gtk
 import httplib
 import mpx
 import musicbrainz2
@@ -169,8 +170,8 @@ class PuidScanExec(mpx.Plugin):
 
     def activate(self):
 
+        print "Activating PuidScan"
         self.metadata_prepare_id = self.player.gobj().connect("metadata-prepare", self.on_metadata_prepare)
-
         return True
 
     def deactivate(self):
@@ -179,6 +180,7 @@ class PuidScanExec(mpx.Plugin):
 
     def on_metadata_prepare(self, blah):
 
+        print "Metadata prepare PuidScan"
         m = self.player.get_metadata()
         self.run(m)
 
@@ -192,10 +194,11 @@ class PuidScanExec(mpx.Plugin):
                 scan.run()
         
                 ctx = gobject.main_context_default()
-
+                
                 while not scan.is_done():
                     while ctx.pending():
                         ctx.iteration(True)
                     self.player.info_set("Analyzing File: %f" % scan.progress)
+
 
                 self.player.info_clear()

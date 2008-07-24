@@ -17,6 +17,7 @@ from gettext import gettext as _
 import urllib
 import urllib2
 import libxml2
+from mpxapi import lastfm
 
 def rpchead(mcs):
 
@@ -37,18 +38,24 @@ def rpchead(mcs):
 
 class LoveTrack():
 
-    def run(self, track):
+    def __init__(self, track):
 
-        title   = track[mpx.AttributeId.TITLE].get()
-        artist  = track[mpx.AttributeId.ARTIST].get()
+        self.title   = track[mpx.AttributeId.TITLE].get()
+        self.artist  = track[mpx.AttributeId.ARTIST].get()
+
+    def run(self):
+
         head    = rpchead(self.mcs)
         rpcsvr  = xmlrpclib.Server("http://ws.audioscrobbler.com/1.0/rw/xmlrpc.php")
-        rpcsvr.loveTrack(head[0], head[1], head[2], artist, title)
+        rpcsvr.loveTrack(head[0], head[1], head[2], self.artist, self.title)
 
 class TagTrack():
 
-    def __init__(self, mcs):
-    
+    def __init__(self, track, mcs):
+
+        self.title   = track[mpx.AttributeId.TITLE].get()
+        self.artist  = track[mpx.AttributeId.ARTIST].get()
+
         self.mcs = mcs
 
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/lastfmstuff/tag-track.glade")
@@ -70,40 +77,40 @@ class TagTrack():
 
         self.tags = {}
 
-    def run(self, track):
+    def run(self):
 
-        artist  = track[mpx.AttributeId.ARTIST].get()
-        title   = track[mpx.AttributeId.TITLE].get()
+        try:
+                handle = urllib2.urlopen("http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(self.artist), urllib.quote(self.title)))
+                response = "\n".join(handle.readlines())
 
-        handle = urllib2.urlopen("http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(artist), urllib.quote(title)))
-        response = "\n".join(handle.readlines())
+                doc = libxml2.parseMemory(response,len(response))
+                ctx = doc.xpathNewContext()
+                res = ctx.xpathEval("//name")
 
-        doc = libxml2.parseMemory(response,len(response))
-        ctx = doc.xpathNewContext()
-        res = ctx.xpathEval("//name")
+                for tag in res:
 
-        for tag in res:
+                        self.model.append([tag.getContent()])
+                        self.tags[tag.getContent()] = True
 
-                self.model.append([tag.getContent()])
-                self.tags[tag.getContent()] = True
+                response = self.dialog.run()
+                self.dialog.destroy()
 
-        response = self.dialog.run()
-        self.dialog.destroy()
+                if response == gtk.RESPONSE_OK:
 
-        if response == gtk.RESPONSE_OK:
+                    head    = rpchead(self.mcs)
+                    rpcsvr  = xmlrpclib.Server("http://ws.audioscrobbler.com/1.0/rw/xmlrpc.php")
+                    tag     = self.entry.props.text
 
-            head    = rpchead(self.mcs)
-            rpcsvr  = xmlrpclib.Server("http://ws.audioscrobbler.com/1.0/rw/xmlrpc.php")
-            tag     = self.entry.props.text
+                    method  = "" 
 
-            method  = "" 
+                    if tag in self.tags:
+                        method = "append"
+                    else:
+                        method = "set"
 
-            if tag in self.tags:
-                method = "append"
-            else:
-                method = "set"
-
-            print rpcsvr.tagTrack(head[0], head[1], head[2], artist, title, [tag], method)
+                    print rpcsvr.tagTrack(head[0], head[1], head[2], artist, title, [tag], method)
+        except:
+                pass
 
 
 class LastFmActions(mpx.Plugin):
@@ -114,6 +121,7 @@ class LastFmActions(mpx.Plugin):
 
         self.merge_id = self.ui.add_ui_from_string(self.uistring)
         self.handler1_id = self.player.gobj().connect("metadata-updated", self.on_metadata_updated)
+        self.handler2_id = self.player.gobj().connect("play-status-changed", self.on_play_status_changed)
         return True
 
     def deactivate(self):
@@ -164,6 +172,18 @@ class LastFmActions(mpx.Plugin):
 
         self.merge_id = None
 
+    def on_play_status_changed(self, player, status):
+
+        if status == mpx.PlayStatus.STOPPED:
+
+                self.actions["love"].set_sensitive(False)
+                self.actions["tagtrack"].set_sensitive(False)
+
+        elif status == mpx.PlayStatus.WAITING:
+
+                self.actions["love"].set_sensitive(False)
+                self.actions["tagtrack"].set_sensitive(False)
+
     def on_metadata_updated(self, action):
         
         m = self.player.get_metadata() 
@@ -180,11 +200,12 @@ class LastFmActions(mpx.Plugin):
 
     def on_action_love(self, action):
 
-        t = LoveTrack()
-        t.run(self.player.get_metadata()) 
+        d = LoveTrack(self.player.get_metadata()) 
+        d.run()
         self.actions["love"].set_sensitive(False)
 
     def on_action_tagtrack(self, action):
 
-        t = TagTrack(self.mcs) 
-        t.run(self.player.get_metadata())
+        d = TagTrack(self.player.get_metadata(), self.mcs)
+        d.run()
+

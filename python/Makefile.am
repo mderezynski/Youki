@@ -1,1 +1,1 @@
-SUBDIRS = plugins
+SUBDIRS = plugins pyapi

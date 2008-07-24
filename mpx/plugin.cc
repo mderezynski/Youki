@@ -138,6 +138,14 @@ namespace MPX
         }
 
 		PyObject * sys_path = PySys_GetObject ("path");
+
+        {
+            std::string pyapi_path = build_filename(DATA_DIR, "pyapi");
+	        PyObject *path = PyString_FromString ((char*)pyapi_path.c_str());
+            PyList_Insert (sys_path, 0, path); 
+            Py_DECREF(path);
+        }
+
 		for(Strings::const_iterator i = m_Paths.begin(); i != m_Paths.end(); ++i)
 		{
 			PyObject *path = PyString_FromString ((char*)i->c_str());

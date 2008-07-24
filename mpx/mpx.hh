@@ -183,6 +183,7 @@ namespace MPX
             PSIGNAL_STATUS_CHANGED,
             PSIGNAL_METADATA_PREPARE,
             PSIGNAL_METADATA_UPDATED,
+            PSIGNAL_NEW_COVERART,
             PSIGNAL_NEW_SOURCE,
 			N_SIGNALS
 		};

@@ -30,6 +30,7 @@ class TrackCover(mpx.Plugin):
 
         self.player.add_info_widget(self.alignment, "Track Covers")
         self.player_metadata_updated_handler_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
+        self.player_metadata_updated_handler_id = self.player.gobj().connect("new-coverart", self.metadata_updated)
         self.player_metadata_updated_handler_id = self.player.gobj().connect("new-track", self.new_track)
         self.player_playstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
 
@@ -65,7 +66,7 @@ class TrackCover(mpx.Plugin):
 
                 if pixbuf:
                         image = gtk.Image()
-                        image.set_from_pixbuf(pixbuf.scale_simple( 256, 256, gtk.gdk.INTERP_HYPER ))
+                        image.set_from_pixbuf(pixbuf.scale_simple( 384, 384, gtk.gdk.INTERP_HYPER ))
                         self.box.pack_end(image, False, False)
                         image.show_all()
         except:
