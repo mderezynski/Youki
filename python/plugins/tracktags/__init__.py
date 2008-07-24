@@ -70,7 +70,8 @@ class TrackTagsDataAcquire(threading.Thread):
                 self.tags.append([name, calc_size]) 
 
                 size = size - 10
-
+        
+        random.seed(3.14159)
         random.shuffle(self.tags)
         self.finished.set()
 
