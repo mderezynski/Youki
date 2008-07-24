@@ -3368,7 +3368,7 @@ namespace Source
     bool PlaybackSourceMusicLib::m_signals_installed = false;
 
     PlaybackSourceMusicLib::PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
-    : PlaybackSource(ui_manager, _("Music"), C_CAN_SEEK)
+    : PlaybackSource(ui_manager, _("Music Library"), C_CAN_SEEK)
     , m_MainUIManager(ui_manager)
     , m_Skipped(false)
     {
