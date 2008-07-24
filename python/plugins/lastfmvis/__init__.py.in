@@ -21,6 +21,7 @@ from Ft.Xml.XPath.Context import Context
 from Ft.Xml.XPath import Evaluate
 from Ft.Xml.Domlette import NonvalidatingReader
 from Ft.Xml import EMPTY_NAMESPACE
+from mpxapi import lasfm
 #import musicbrainz2
 #import musicbrainz2.webservice as ws
 
@@ -134,26 +135,11 @@ class LastFMVis(mpx.Plugin):
         
         return result 
 
-    def get_album_tlst(self, artist, album):
+    def get_album_tlst(self, artist):
 
-        uri = u"http://ws.audioscrobbler.com/1.0/artist/%s/toptags.xml" % (urllib.quote(artist))
-        lastfm = NonvalidatingReader.parseUri(uri)
-        ctx = Context(lastfm)
-
-        tlst = [] 
-        cnts = []
-        n_xml = Evaluate("//name", context=ctx)
-        c_xml = Evaluate("//count", context=ctx)
-
-        for cnt in c_xml:
-            if cnt.firstChild:
-                cnts.append(float(math.log10((float(cnt.firstChild.data) * 5)+1)))
-
-        for nam in n_xml:
-            if nam.firstChild:
-                tlst.append([str(nam.firstChild.data), cnts[n_xml.index(nam)]])
-
-        return tlst
+        r = lastfm.ArtistTopTags(artist) 
+        t = r.get()
+        return t
 
     def on_treeview_ddr(self, widget, context, x, y, seldata, info, timestamp):
        
@@ -174,7 +160,7 @@ class LastFMVis(mpx.Plugin):
 
         album = row["album"].get_string()
         artist = row["album_artist"].get_string()
-        self.model.append([True, cover, "<span size='12000'><b>%s</b></span>\n<span size='12000'>%s</span>" % (artist, album), self.get_album_tlst(artist, album)])
+        self.model.append([True, cover, "<span size='12000'><b>%s</b></span>\n<span size='12000'>%s</span>" % (artist, album), self.get_album_tlst(artist)])
 
         self.traverse_model_and_intersect()
         self.display_tags()

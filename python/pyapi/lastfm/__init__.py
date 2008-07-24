@@ -10,7 +10,7 @@ import time
 import urllib
 import urllib2
 import xml.dom.minidom
-from mpxapi.lastfm.model import TrackTopTags
+import mpxapi.lastfm.model
 
 class TrackTopTags():
 
@@ -18,7 +18,7 @@ class TrackTopTags():
 
         self.artist = artist
         self.title  = title
-        self.parse_current_elmt = None 
+        self.parse_elmt = None 
         self.parse_data = {}
         self.parse_tags = []
 
@@ -32,21 +32,19 @@ class TrackTopTags():
 
                     if "name" in self.parse_data:
         
-                        model = TrackTopTag()
-
+                        model = mpxapi.lastfm.model.TrackTopTag()
                         model.setName(self.parse_data["name"])
                         model.setCount(self.parse_data["count"])
                         model.setUrl(self.parse_data["url"])
-
                         self.parse_tags.append(model)
-
                         self.parse_data = {} 
 
-                self.parse_current_elmt = node.nodeName
+                self.parse_elmt = node.nodeName
                 self.parse_data[node.nodeName] = ""
 
             elif node.nodeType == node.TEXT_NODE:
-                    self.parse_data[self.parse_current_elmt] = self.parse_data[self.parse_current_elmt] + node.nodeValue.strip()
+                    if self.parse_elmt:
+                            self.parse_data[self.parse_elmt] = self.parse_data[self.parse_elmt] + node.nodeValue.strip()
 
             self.document(node)
  
@@ -59,15 +57,14 @@ class TrackTopTags():
         self.document(dom)
         return self.parse_tags
 
-class SimilarTracks():
+class ArtistTopTags():
 
-    def __init__(self, artist, title):
+    def __init__(self, artist):
 
         self.artist = artist
-        self.title = title
-        self.parse_current_elmt = None 
+        self.parse_elmt = None 
         self.parse_data = {}
-        self.tracks = []
+        self.parse_tags = []
 
     def document(self, dom):
 
@@ -75,36 +72,102 @@ class SimilarTracks():
 
             if node.nodeType == node.ELEMENT_NODE:
 
-                if node.nodename == "similartracks":
+                if node.nodeName == "tag":
 
-                    continue
+                    if "name" in self.parse_data:
+        
+                        model = mpxapi.lastfm.model.ArtistTopTag()
+                        model.setName(self.parse_data["name"])
+                        model.setCount(self.parse_data["count"])
+                        model.setUrl(self.parse_data["url"])
+                        self.parse_tags.append(model)
+                        self.parse_data = {} 
 
-                elif node.nodeName == "track":
-
-                    model = lastfm.SimilarTrack()
-                    artist = lastfm.SimilarTrackArtist()
-
-                    artist.setName(self.parse_data["track.artist.name"])
-                    artist.setUrl(self.parse_data["track.artist.url"])
-
-                    model.setArtist(artist)
-                    model.setName(self.parse_data["track.name"])
-                    model.setMatch(float(self.parse_data["track.match"]))
-                    model.setUrl(self.parse_data["track.url"])
-                    model.setStreamable(self.parse_data["track.streamable"])
-
-                    self.tracks.append(model)
-
-                    self.parse_current_elmt = node.nodeName
-
-                else:
-
-                    self.parse_current_elmt = self.parse_current_elmt + "." + node.nodeName
-
-                self.parse_data[self.parse_current_elmt] = ""
+                self.parse_elmt = node.nodeName
+                self.parse_data[node.nodeName] = ""
 
             elif node.nodeType == node.TEXT_NODE:
-                    self.parse_data[self.parse_current_elmt] = self.parse_data[self.parse_current_elmt] + node.nodeValue.strip()
+                    if self.parse_elmt:
+                            self.parse_data[self.parse_elmt] = self.parse_data[self.parse_elmt] + node.nodeValue.strip()
+
+            self.document(node)
+ 
+    def get(self):
+
+        req = "http://ws.audioscrobbler.com/1.0/artist/%s/toptags.xml" % urllib.quote(self.artist)
+        handle = urllib2.urlopen(req)
+        dom = xml.dom.minidom.parse(handle)
+        handle.close()
+        self.document(dom)
+        return self.parse_tags
+
+
+class SimilarTracks():
+
+    def __init__(self, artist, title):
+
+        self.artist         = artist
+        self.title          = title
+        self.tracks         = []
+
+    def doc_get_artist(self, dom):
+
+        for node in dom.childNodes:
+
+            if node.nodeType == node.ELEMENT_NODE:
+
+                    self.parse_elmt = "artist." + node.nodeName
+                    self.parse_data[self.parse_elmt] = ""
+
+            elif node.nodeType == node.TEXT_NODE:
+                    if self.parse_elmt:
+                            self.parse_data[self.parse_elmt] = self.parse_data[self.parse_elmt] + node.nodeValue.strip()
+
+            self.doc_get_artist(node)
+
+    def doc_get_track(self, dom):
+
+        for node in dom.childNodes:
+
+            if node.nodeType == node.ELEMENT_NODE:
+
+                if node.NodeName == "artist":
+    
+                    self.doc_get_artist(node)
+                
+                else:
+
+                    self.parse_elmt = node.nodeName
+                    self.parse_data[self.parse_elmt] = ""
+
+            elif node.nodeType == node.TEXT_NODE:
+                    if self.parse_elmt:
+                            self.parse_data[self.parse_elmt] = self.parse_data[self.parse_elmt] + node.nodeValue.strip()
+
+            self.doc_get_track(node)
+ 
+    def document(self, dom):
+
+        for node in dom.childNodes:
+
+            if node.nodeType == node.ELEMENT_NODE:
+
+                if node.nodeName == "track":
+
+                    self.parse_elmt = None 
+                    self.parse_data = {}
+                    self.doc_get_track(node)
+                    model = mpxapi.lastfm.model.SimilarTrack()
+                    artist = mpxapi.lastfm.model.SimilarTrackArtist()
+                    artist.setName(self.parse_data["artist.name"])
+                    artist.setUrl(self.parse_data["artist.url"])
+                    model.setArtist(artist)
+                    model.setName(self.parse_data["name"])
+                    model.setMatch(float(self.parse_data["match"]))
+                    model.setUrl(self.parse_data["url"])
+                    model.setStreamable(self.parse_data["streamable"])
+                    self.tracks.append(model)
+                    self.parse_elmt = node.nodeName
 
             self.document(node)
  
@@ -116,3 +179,115 @@ class SimilarTracks():
         handle.close()
         self.document(dom)
         return self.tracks
+
+class UserTopTracks():
+
+    def __init__(self, user):
+
+        self.user       = user
+        self.tracks     = []
+
+    def doc_get_track(self, dom):
+
+        for node in dom.childNodes:
+
+            if node.nodeType == node.ELEMENT_NODE:
+
+                if node.nodeName == "artist":
+                    self.parse_data["artist@mbid"] = node.getAttribute("mbid")
+
+                self.parse_elmt = node.nodeName
+                self.parse_data[self.parse_elmt] = ""
+
+            elif node.nodeType == node.TEXT_NODE:
+                    if self.parse_elmt:
+                            self.parse_data[self.parse_elmt] = self.parse_data[self.parse_elmt] + node.nodeValue.strip()
+
+            self.doc_get_track(node)
+
+    def document(self, dom):
+
+        for node in dom.childNodes:
+
+            if node.nodeType == node.ELEMENT_NODE:
+
+                if node.nodeName == "track":
+
+                    self.parse_data = {}
+                    self.parse_elmt = None
+                    self.doc_get_track(node)
+
+                    model = mpxapi.lastfm.model.UserTopTrack()
+                    model.setArtist(self.parse_data["artist"])
+                    model.setArtistMBID(self.parse_data["artist@mbid"])
+                    model.setName(self.parse_data["name"])
+                    model.setMBID(self.parse_data["mbid"])
+                    model.setPlaycount(self.parse_data["playcount"])
+                    model.setUrl(self.parse_data["url"])
+                    self.tracks.append(model)
+
+            self.document(node)
+ 
+    def get(self):
+
+        req = "http://ws.audioscrobbler.com/1.0/user/%s/toptracks.xml" % urllib.quote(self.user)
+        handle = urllib2.urlopen(req)
+        dom = xml.dom.minidom.parse(handle)
+        handle.close()
+        self.document(dom)
+        return self.tracks
+
+class SimilarArtists():
+
+    def __init__(self, artist):
+
+        self.artist         = artist
+        self.artists        = []
+
+    def doc_get_artist(self, dom):
+
+        for node in dom.childNodes:
+
+            if node.nodeType == node.ELEMENT_NODE:
+
+                    self.parse_elmt = node.nodeName
+                    self.parse_data[self.parse_elmt] = ""
+
+            elif node.nodeType == node.TEXT_NODE:
+                    if self.parse_elmt:
+                            self.parse_data[self.parse_elmt] = self.parse_data[self.parse_elmt] + node.nodeValue.strip()
+
+            self.doc_get_artist(node)
+
+    def document(self, dom):
+
+        for node in dom.childNodes:
+
+            if node.nodeType == node.ELEMENT_NODE:
+
+                if node.nodeName == "artist":
+
+                    self.parse_data = {}
+                    self.parse_elmt = None 
+                    self.doc_get_artist(node)
+
+                    model = mpxapi.lastfm.model.SimilarArtist()
+                    model.setName(self.parse_data["name"])
+                    model.setMBID(self.parse_data["mbid"])
+                    model.setMatch(float(self.parse_data["match"]))
+                    model.setUrl(self.parse_data["url"])
+                    model.setImageSmall(self.parse_data["image_small"])
+                    model.setImage(self.parse_data["image"])
+                    model.setStreamable(self.parse_data["streamable"])
+                    self.artists.append(model)
+
+            self.document(node)
+ 
+    def get(self):
+
+        req = "http://ws.audioscrobbler.com/1.0/artist/%s/similar.xml" % urllib.quote(self.artist)
+        handle = urllib2.urlopen(req)
+        dom = xml.dom.minidom.parse(handle)
+        handle.close()
+        self.document(dom)
+        return self.artists

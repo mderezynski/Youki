@@ -187,25 +187,20 @@ class OptionAnalyzer(BaseOption):
         artist      = track[mpx.AttributeId.ARTIST].get()
 
         try:
-            uri     = u"http://ws.audioscrobbler.com/1.0/artist/%s/similar.xml" % urllib.quote(artist)
-            lastfm  = NonvalidatingReader.parseUri(uri)
-            ctx     = Context(lastfm)
-            names   = Evaluate("//name", context=ctx)
-            tries   = 3
+            m = lastfm.SimilarArtists(artist)
+            a = m.get()
 
-            random.shuffle(names)
+            random.shuffle(a)
 
             while tries > 0:
 
-                    name = str(names[3-tries].firstChild.data)
+                    name = str(a[3-tries].getName())
 
-                    if self.count_previous_artist_presence(playlist, artist) <= 1:
+                    if self.count_previous_artist_presence(playlist, name) <= 1:
 
                             self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' ORDER BY mpxrand() LIMIT 1" % name.replace("'","''") ))
                             extract_ids(rv, self.v)
-
-                            if len(self.v):
-                                    return
+                            if len(self.v): return
 
                     tries = tries - 1
 
@@ -372,12 +367,9 @@ class OptionEntertainMe(BaseOption):
 
     def run(self):
 
-        callables = [
-            self.ENTERTAIN_Local,
-            self.ENTERTAIN_LastFm
-        ]
-
-        callables[ random.randint(0,1) ]()
+        [self.ENTERTAIN_Local,
+         self.ENTERTAIN_LastFm
+        ][random.randint(0,1)]()
 
         self.finished.set()
 
@@ -389,31 +381,12 @@ class OptionEntertainMe(BaseOption):
   
     def ENTERTAIN_LastFm(self):
 
-        tracks  = []
-
-        try:
-                uri     = u"http://ws.audioscrobbler.com/1.0/user/%s/toptracks.xml" % urllib.quote(self.mcs.key_get_string("lastfm","username"))
-                lastfm  = NonvalidatingReader.parseUri(uri)
-                ctx     = Context(lastfm)
-                artists = Evaluate("//artist", context=ctx)
-                names   = Evaluate("//name", context=ctx)
-
-                for artist in artists: 
-                        if artist.firstChild:
-                                tracks.append({'artist':artist.firstChild.data})
-               
-                for i in range(0,len(tracks)-1): 
-                    tracks[i]['title'] = names[i].firstChild.data
-
-                random.shuffle(tracks)
-        except:
-                self.finished.set()
-                return
-
-        rv      = mpx.SQLRowV()
-        artist  = tracks[0]['artist'].replace("'","''")
-        title   = tracks[0]['title'].replace("'","''")
-
+        r = lastfm.UserTopTracks(self.mcs.key_get_string("lastfm","username"))
+        t = r.get()
+        random.shuffle(t)
+        rv = mpx.SQLRowV()
+        artist = t[0].getArtist().replace("'","''")
+        title = t[0].getName().replace("'","''")
         self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist = '%s' AND title = '%s' LIMIT 1" % (artist,title)))
         extract_ids(rv, self.v)
 
