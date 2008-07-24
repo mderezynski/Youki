@@ -32,6 +32,7 @@
 #endif // HAVE_HAL
 #include "mpx/library.hh"
 #include "mpx/metadatareader-taglib.hh"
+#include "mpx/random.hh"
 #include "mpx/sql.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-string.hh"
@@ -745,14 +746,22 @@ namespace MPX
     }
 
     gint64
-    Library::markovFind(gint64 a)
+    Library::markovGetRandomProbableTrack(gint64 a)
     {
         try{
+                std::vector<double> ratios;
                 RowV rows;
-                getSQL (rows, (boost::format("SELECT track_id_b FROM markov WHERE track_id_a = %lld AND count != 0 ORDER BY count DESC") % a).str());
+                getSQL (rows, (boost::format("SELECT * FROM markov WHERE track_id_a = %lld AND count > 0") % a).str());
                 if( !rows.empty() )
                 {
-                    return get<gint64>(rows[0].find ("track_id_b")->second);
+                        for( RowV::const_iterator i = rows.begin(); i != rows.end(); ++i )
+                        {
+                            gint64 count = get <gint64> ((*i).find ("count")->second);
+                            ratios.push_back(double(count) / double(rows.size()));
+                        }
+                        int row = MPX::rand(ratios);
+                        gint64 id = get <gint64> (rows[row].find ("id")->second);
+                        return id;
                 }
         } catch( ... ) {
         }

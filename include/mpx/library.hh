@@ -106,7 +106,7 @@ namespace MPX
             markovUpdate(gint64 /* track a */, gint64 /* track b */);
 
             gint64 
-            markovFind(gint64 /* track a*/); 
+            markovGetRandomProbableTrack(gint64 /* track a*/); 
 
         public:
 
