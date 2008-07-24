@@ -863,6 +863,12 @@ BOOST_PYTHON_MODULE(mpx)
         .def("signal_track_updated",    &MPX::Library::signal_track_updated, return_value_policy<return_by_value>())
 	;
 
+    typedef std::vector<double> IEEEV;
+
+	class_<IEEEV>("IEEEV")
+		.def(vector_indexing_suite<IEEEV>());
+	;
+
 	/*-------------------------------------------------------------------------------------*/
 
 	class_<Mcs::Mcs, boost::noncopyable>("MCS", boost::python::no_init)

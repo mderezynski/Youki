@@ -484,8 +484,8 @@ class TrackInfoQuery (threading.Thread):
         try:
                 artist_info = getLastFMArtistInfo(self.track[mpx.AttributeId.ARTIST].get())
                 self.html += Template(tmpl_section_header).render(header='About %s' % self.track[mpx.AttributeId.ARTIST].get())
-                self.html += artist_info["wikitext"] 
-                self.html += "<a href='%s'>[more]</a></div>" % artist_info["wikipageurl"]
+                self.html += artist_info["wikiText"] 
+                self.html += "<a href='%s'>[more]</a></div>" % artist_info["wikiPageUrl"]
                 if artist_info["similar"] and len(artist_info["similar"]):
                         e = []
                         for a in artist_info["similar"]:

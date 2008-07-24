@@ -187,25 +187,27 @@ class OptionAnalyzer(BaseOption):
         artist      = track[mpx.AttributeId.ARTIST].get()
 
         try:
-            m = lastfm.SimilarArtists(artist)
-            a = m.get()
+                m = lastfm.SimilarArtists(artist)
+                a = m.get()
 
-            random.shuffle(a)
+                random.shuffle(a)
 
-            while tries > 0:
+                tries = 3
 
-                    name = str(a[3-tries].getName())
+                while tries > 0:
 
-                    if self.count_previous_artist_presence(playlist, name) <= 1:
+                        name = str(a[3-tries].getName())
 
-                            self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' ORDER BY mpxrand() LIMIT 1" % name.replace("'","''") ))
-                            extract_ids(rv, self.v)
-                            if len(self.v): return
+                        if self.count_previous_artist_presence(playlist, name) <= 1:
 
-                    tries = tries - 1
+                                self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' ORDER BY mpxrand() LIMIT 1" % name.replace("'","''") ))
+                                extract_ids(rv, self.v)
+                                if len(self.v): return
 
-        except:
-            print "Error running run_similar_artist"
+                        tries = tries - 1
+
+        except Exception, e:
+                print "Error running run_similar_artist: " + str(e) 
 
     def run_markov(self):
 
@@ -220,8 +222,21 @@ class OptionAnalyzer(BaseOption):
 
     def run(self):
 
-        choice = mpx.rand([70.,20.,10.])
+        playlist  = self.mlib.get_playlist_model()
+        ieeev = mpx.IEEEV()
+
         callables = [self.run_accumulate_tags, self.run_similar_track, self.run_similar_artist]
+
+        if len(playlist) < 3:
+                ieeev.append(float(10))
+                ieeev.append(float(45))
+                ieeev.append(float(45))
+        else:
+                ieeev.append(float(40))
+                ieeev.append(float(30))
+                ieeev.append(float(30))
+
+        choice = mpx.rand(ieeev)
 
         try:
                 callables[choice]()
@@ -229,16 +244,16 @@ class OptionAnalyzer(BaseOption):
                 if len(self.v):
                         self.finished.set()
                         return
-        except:
-                pass
+        except Exception, e:
+                print e 
 
         try:
                 self.run_markov()
                 if len(self.v):
                     self.finished.set()
                     return
-        except:
-                pass
+        except Exception, e:
+                print e 
 
         # Pick one track at random
         rv = mpx.SQLRowV()
@@ -267,8 +282,8 @@ class OptionLastFmTag(BaseOption):
                     if mbid.firstChild:
                         id = str(mbid.firstChild.data)
                         self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY mpxrand() LIMIT 1" % id))
-        except:
-                pass
+        except Exception, e:
+                e 
 
         extract_ids(rv, self.v)
         self.finished.set()
