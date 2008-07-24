@@ -18,10 +18,7 @@ import random
 import math
 import threading
 import mutex
-from Ft.Xml.XPath.Context import Context
-from Ft.Xml.XPath import Evaluate
-from Ft.Xml.Domlette import NonvalidatingReader
-from Ft.Xml import EMPTY_NAMESPACE
+from mpxapi import lastfm
 
 class TrackTagsDataAcquire(threading.Thread):
 
@@ -50,26 +47,29 @@ class TrackTagsDataAcquire(threading.Thread):
 
         self.tags = []
 
-        try:
-                uri         = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(self.artist), urllib.quote(self.title))
-                lfmxml      = NonvalidatingReader.parseUri(uri)
-                ctx         = Context(lfmxml)
-                xml_names   = Evaluate("//name", context=ctx)
-                xml_count   = Evaluate("//count", context=ctx)
-                uniq        = {}
+        #try:
+        t = lastfm.TrackTopTags(self.artist, self.title)
+        tags = t.get()
+        size = 1000 
 
-                for i in range(0,len(xml_names)-1):
+        for tag in tags:
 
-                    if xml_names[i].firstChild.data not in uniq:
+                name = tag.getName()
+                count = tag.getCount()
 
-                            if xml_count[i].firstChild:
-                                self.tags.append([str(xml_names[i].firstChild.data), float(math.log10((float(xml_count[i].firstChild.data) * 5)+1))])
-                            else:
-                                self.tags.append([str(xml_names[i].firstChild.data), float(1.- (float(i)/float(len(xml_names)-1)))*2.5 ])
+                if count == None:
+                        count = size
+    
+                try:
+                    calc_size = math.sqrt(math.log10(((float(count) * 10.))+1))
+                    if calc_size < 0.6:
+                        calc_size = 0.6
+                except:
+                    calc_size = 0.6
 
-                            uniq[xml_names[i].firstChild.data] = 1
-        except:
-                pass
+                self.tags.append([name, calc_size]) 
+
+                size = size - 10
 
         random.shuffle(self.tags)
         self.finished.set()
@@ -134,8 +134,8 @@ class TrackTags(mpx.Plugin):
             instance.start()
 
             while not instance.is_finished():
-                while gtk.events_pending():
-                    gtk.main_iteration()
+                    while gtk.events_pending():
+                            gtk.main_iteration()
 
             tags = instance.get_tags()
 
@@ -143,7 +143,7 @@ class TrackTags(mpx.Plugin):
             self.tagview.display(False)
 
             for t in tags:
-                self.tagview.add_tag(t[0], t[1])
+                self.tagview.add_tag(str(t[0]), float(t[1]))
 
             self.player.info_clear()
 

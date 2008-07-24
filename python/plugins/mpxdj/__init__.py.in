@@ -21,6 +21,7 @@ from Ft.Xml.XPath.Context import Context
 from Ft.Xml.XPath import Evaluate
 from Ft.Xml.Domlette import NonvalidatingReader
 from Ft.Xml import EMPTY_NAMESPACE
+from mpxapi import lastfm
 #import musicbrainz2
 #import musicbrainz2.webservice as ws
 
@@ -55,27 +56,6 @@ class OptionAnalyzer(BaseOption):
     def __init__(self, lib, v, xml, mlib, mcs):
 
          BaseOption.__init__(self, lib, v, xml, mlib, mcs)
-
-    def get_tracktags(self, mpxtrack):
-
-        uri     = u"http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(mpxtrack[mpx.AttributeId.ARTIST].get()), urllib.quote(mpxtrack[mpx.AttributeId.TITLE].get()))
-        lastfm  = NonvalidatingReader.parseUri(uri)
-        ctx     = Context(lastfm)
-
-        tags    = []
-        cnts    = []
-        n_xml   = Evaluate("//name", context=ctx)
-        c_xml   = Evaluate("//count", context=ctx)
-
-        for cnt in c_xml:
-            if cnt.firstChild:
-                cnts.append(int(cnt.firstChild.data))
-
-        for nam in n_xml:
-            if nam.firstChild:
-                tags.append([str(nam.firstChild.data), cnts[n_xml.index(nam)]])
-
-        return tags
 
     def get_similartracks(self, mpxtrack):
 
@@ -159,24 +139,27 @@ class OptionAnalyzer(BaseOption):
 
     def run_accumulate_tags(self):
 
-        playlist    = self.mlib.get_playlist_model()
-        tags        = {} 
-        items       = 10 
+        playlist = self.mlib.get_playlist_model()
+        tags = {} 
+        items = 10 
 
         if len(playlist) < items:
             items = len(playlist)
 
         for i in range(len(playlist)-items,len(playlist)-1):
 
-            track   = mpx.unwrap_boxed_mpxtrack(playlist[i][9])
-            ttags   = self.get_tracktags(track)
+            track = mpx.unwrap_boxed_mpxtrack(playlist[i][9])
+            t = lastfm.TrackTopTags(track[mpx.AttributeId.ARTIST].get(), track[mpx.AttributeId.TITLE].get())
+            ttags = t.get()
            
             for tag in ttags: 
-                
-                if tag[0] in tags:
-                    tags[tag[0]] = tags[tag[0]] + (float(tag[1]) / float(len(ttags)))
+               
+                name = tag.getName()
+ 
+                if name in tags:
+                    tags[name] = tags[name] + (float(tag.getCount()) / float(len(ttags)))
                 else:
-                    tags[tag[0]] = float(tag[1]) / float(len(ttags))
+                    tags[name] = float(tag.getCount()) / float(len(ttags))
 
         highest_count = 0
         highest_tag   = None

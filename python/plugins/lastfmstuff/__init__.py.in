@@ -80,17 +80,13 @@ class TagTrack():
     def run(self):
 
         try:
-                handle = urllib2.urlopen("http://ws.audioscrobbler.com/1.0/track/%s/%s/toptags.xml" % (urllib.quote(self.artist), urllib.quote(self.title)))
-                response = "\n".join(handle.readlines())
+                t = lastfm.TrackTopTags(self.artist, self.title)
+                tags = t.get()
 
-                doc = libxml2.parseMemory(response,len(response))
-                ctx = doc.xpathNewContext()
-                res = ctx.xpathEval("//name")
+                for tag in tags:
 
-                for tag in res:
-
-                        self.model.append([tag.getContent()])
-                        self.tags[tag.getContent()] = True
+                        self.model.append([tag.getName()])
+                        self.tags[tag.getName()] = True
 
                 response = self.dialog.run()
                 self.dialog.destroy()

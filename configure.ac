@@ -749,6 +749,7 @@ AC_OUTPUT([
 
     python/pyapi/Makefile
     python/pyapi/lastfm/Makefile
+    python/pyapi/lastfm/model/Makefile
 
 
 	remote/Makefile
