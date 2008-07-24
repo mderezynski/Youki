@@ -768,7 +768,7 @@ namespace MPX
               append_album (gint64 id)
               {
                   SQL::RowV v;
-                  m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = '%lld'") % id).str()); 
+                  m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = '%lld' ORDER BY track") % id).str()); 
                   TreeIter iter = ListStore->append();
                   for(SQL::RowV::const_iterator i = v.begin(); i != v.end(); ++i)
                   {
