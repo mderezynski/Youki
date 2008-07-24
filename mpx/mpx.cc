@@ -2577,8 +2577,8 @@ namespace MPX
 	  {
 			if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
 			{
-                  m_Seek->set_sensitive(m_source_c[caps] & PlaybackSource::C_CAN_SEEK);
-				  m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
+                  m_Seek->set_sensitive( caps & PlaybackSource::C_CAN_SEEK );
+				  m_actions->get_action( ACTION_PAUSE )->set_sensitive( caps & PlaybackSource::C_CAN_PAUSE );
 			}
 	  }
 	}
