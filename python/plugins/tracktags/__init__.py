@@ -47,29 +47,31 @@ class TrackTagsDataAcquire(threading.Thread):
 
         self.tags = []
 
-        #try:
-        t = lastfm.TrackTopTags(self.artist, self.title)
-        tags = t.get()
-        size = 1000 
+        try:
+                t = lastfm.TrackTopTags(self.artist, self.title)
+                tags = t.get()
+                size = 1000 
 
-        for tag in tags:
+                for tag in tags:
 
-                name = tag.getName()
-                count = tag.getCount()
+                        name = tag.getName()
+                        count = tag.getCount()
 
-                if count == None:
-                        count = size
-    
-                try:
-                    calc_size = math.sqrt(math.log10(((float(count) * 10.))+1))
-                    if calc_size < 0.6:
-                        calc_size = 0.6
-                except:
-                    calc_size = 0.6
+                        if count == None:
+                                count = size
+            
+                        try:
+                            calc_size = math.sqrt(math.log10(((float(count) * 10.))+1))
+                            if calc_size < 0.6:
+                                calc_size = 0.6
+                        except:
+                            calc_size = 0.6
 
-                self.tags.append([name, calc_size]) 
+                        self.tags.append([name, calc_size]) 
 
-                size = size - 10
+                        size = size - 10
+        except:
+                pass
         
         random.seed(3.14159)
         random.shuffle(self.tags)

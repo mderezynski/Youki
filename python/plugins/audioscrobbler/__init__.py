@@ -858,11 +858,6 @@ class MPXAudioScrobbler(mpx.Plugin):
         p_mbid        = m[mpx.AttributeId.MB_TRACK_ID].get()
         p_date        = time.time()
 
-        if p_mbid:
-                print ("Posting track with MBID: " + p_mbid + " at date " + str(p_date))
-        else:
-                print ("Posting track with artist, title: " + p_artist + ", " + p_title )
-    
         self.newTrack = False
 
         self.player.info_set("Submitting to AudioScrobbler")
@@ -891,8 +886,6 @@ class MPXAudioScrobbler(mpx.Plugin):
         p_len           = str(m[mpx.AttributeId.TIME].get())
         p_tracknumber   = str(m[mpx.AttributeId.TRACK].get())
         p_mbid          = m[mpx.AttributeId.MB_TRACK_ID].get()
-
-        print ("Posting now-playing with MBID: " + p_mbid + " at date " + str(time.time()))
 
         self.newTrack = False
 

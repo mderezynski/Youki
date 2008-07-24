@@ -38,10 +38,11 @@ def rpchead(mcs):
 
 class LoveTrack():
 
-    def __init__(self, track):
+    def __init__(self, track, mcs):
 
         self.title   = track[mpx.AttributeId.TITLE].get()
         self.artist  = track[mpx.AttributeId.ARTIST].get()
+        self.mcs     = mcs
 
     def run(self):
 
@@ -196,7 +197,7 @@ class LastFmActions(mpx.Plugin):
 
     def on_action_love(self, action):
 
-        d = LoveTrack(self.player.get_metadata()) 
+        d = LoveTrack(self.player.get_metadata(), self.mcs) 
         d.run()
         self.actions["love"].set_sensitive(False)
 
