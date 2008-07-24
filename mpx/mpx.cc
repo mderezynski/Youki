@@ -2918,6 +2918,8 @@ namespace MPX
       g_return_if_fail(m_ActiveSource);
 
       track_played();
+      m_Sources[m_ActiveSource.get()]->stop ();
+      m_Sources[m_ActiveSource.get()]->send_caps ();
 	  m_Play->request_status( PLAYSTATUS_STOPPED );
 	}
 
@@ -3820,6 +3822,7 @@ namespace MPX
     void
     Player::check_py_error ()
     {
+#if 0
         GError * gerr = NULL;
 
         if(pyg_error_check(&gerr))
@@ -3829,5 +3832,6 @@ namespace MPX
                 g_error_free(gerr);
                 m_ErrorManager->new_error(err);
         }
+#endif
     }
 }

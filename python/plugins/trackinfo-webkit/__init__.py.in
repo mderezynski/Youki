@@ -886,7 +886,15 @@ class TrackInfoDispatcher(mpx.Plugin):
         if self.player.get_status() == mpx.PlayStatus.STOPPED:
             self.info.clear()
 
+    def metadata_updated_idle(self):
+
+        try:
+            self.info.run(self.player.get_metadata())
+        except Exception, e:
+            print e
+
+        return False
+
     def metadata_updated(self, blah):
 
-        self.info.run(self.player.get_metadata())
-
+        gobject.idle_add(self.metadata_updated_idle)
