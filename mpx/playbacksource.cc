@@ -222,4 +222,16 @@ namespace MPX
         {
         }
 
+        void
+        PlaybackSource::add_cap (Caps caps)
+        {
+            m_Caps = Caps( m_Caps | caps);
+        }
+
+        void
+        PlaybackSource::rem_cap (Caps caps)
+        {
+            m_Caps = Caps( m_Caps &~ caps);
+        }
+
 } // end namespace MPX 

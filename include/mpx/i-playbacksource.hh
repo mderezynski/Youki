@@ -249,6 +249,12 @@ namespace MPX
             virtual void
             post_install ();
 
+            void
+            add_cap (Caps);
+
+            void
+            rem_cap (Caps);
+
         private:
 
             friend class ::MPX::Player;

@@ -176,7 +176,7 @@ namespace Source
 
 
                 void
-                check_caps ();
+                check_nextprev_caps ();
 
                 void
                 set_play ();

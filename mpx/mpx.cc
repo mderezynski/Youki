@@ -2566,17 +2566,18 @@ namespace MPX
 
 	  m_source_c[source_id] = caps;
 
-	  if( (m_ActiveSource && ((source_id == m_ActiveSource) || (m_Sidebar->getVisibleId() == m_ActiveSource))) || (!m_ActiveSource))
+	  if( m_Sidebar->getVisibleId() == source_id ) 
 	  {
 		m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
 		m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
 		m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
 	  }
 
-	  if( (m_ActiveSource && (source_id == m_ActiveSource)) || (!m_ActiveSource))
+	  if( m_ActiveSource && source_id == m_ActiveSource.get() )
 	  {
 			if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
 			{
+                  m_Seek->set_sensitive(m_source_c[caps] & PlaybackSource::C_CAN_SEEK);
 				  m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
 			}
 	  }
@@ -2735,6 +2736,8 @@ namespace MPX
             break;
       };
 
+      g_atomic_int_set(&m_Seeking,0);
+
 	  source->send_caps ();
 
       PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
@@ -2860,12 +2863,8 @@ namespace MPX
 	  PlaybackSource* source = m_Sources[source_id];
 	  PlaybackSource::Flags f = m_source_f[source_id];
 
-
-      g_message("Next-async-cb");
-
 	  if( (f & PlaybackSource::F_PHONY_NEXT) == 0 )
 	  {
-            g_message("Switching stream");
             m_PlayDirection = PD_NEXT;
 			switch_stream (source->get_uri(), source->get_type());
 	  }
@@ -2926,33 +2925,36 @@ namespace MPX
             m_ui_manager->remove_ui(m_SourceUI);
         }
 
+        PlaybackSource::Caps caps = m_source_c[source_id];
+
         if( m_Sources.count(source_id) ) 
         {
             m_SourceUI = m_Sources[source_id]->add_menu();
 
             if( m_Play->property_status() == PLAYSTATUS_PLAYING)
             {
-                    if( m_ActiveSource && source_id == m_ActiveSource.get() ) 
+                    if( m_ActiveSource && m_ActiveSource.get() == source_id )
                     {
                         PlaybackSource::Caps caps = m_source_c[source_id];
                         m_actions->get_action (ACTION_PREV)->set_sensitive( caps & PlaybackSource::C_CAN_GO_PREV );
                         m_actions->get_action (ACTION_NEXT)->set_sensitive( caps & PlaybackSource::C_CAN_GO_NEXT );
-                        m_actions->get_action (ACTION_PLAY)->set_sensitive( caps & PlaybackSource::C_CAN_PLAY );
                         m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
-                    }
-                    else
-                    {
-                        m_actions->get_action (ACTION_PLAY)->set_sensitive( false );
+
                     }
             }
             else
             {
-                    PlaybackSource::Caps caps = m_source_c[source_id];
                     m_actions->get_action (ACTION_PREV)->set_sensitive( false ); 
                     m_actions->get_action (ACTION_NEXT)->set_sensitive( false); 
-                    m_actions->get_action (ACTION_PLAY)->set_sensitive( caps & PlaybackSource::C_CAN_PLAY );
                     m_actions->get_action (ACTION_PAUSE)->set_sensitive( false);
             }
+
+
+            if( m_Sidebar->getVisibleId() == source_id ) 
+                m_actions->get_action (ACTION_PLAY)->set_sensitive( caps & PlaybackSource::C_CAN_PLAY );
+            else
+                m_actions->get_action (ACTION_PLAY)->set_sensitive( false );
+
         }
 	}
 
@@ -3033,10 +3035,7 @@ namespace MPX
 
 		  case PLAYSTATUS_PLAYING:
 		  {
-                g_atomic_int_set(&m_Seeking,0);
-                m_Seek->set_sensitive(m_source_c[m_ActiveSource.get()] & PlaybackSource::C_CAN_SEEK);
-                m_actions->get_action( ACTION_STOP )->set_sensitive (true);
-
+                m_actions->get_action( ACTION_STOP )->set_sensitive( true );
                 break;
 		  }
 

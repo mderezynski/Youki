@@ -596,7 +596,7 @@ namespace MPX
                     i = v.erase (i);
                   }
 
-                  m_MusicLib.check_caps();
+                  m_MusicLib.check_nextprev_caps();
                   m_MusicLib.send_caps ();
 
                   if(ListStore->children().empty())
@@ -631,7 +631,7 @@ namespace MPX
                     i = v.erase (i);
                   }
 
-                  m_MusicLib.check_caps();
+                  m_MusicLib.check_nextprev_caps();
                   m_MusicLib.send_caps ();
 
                   check_for_end ();
@@ -661,7 +661,7 @@ namespace MPX
               {
                   ListStore->clear ();
                   m_CurrentIter.reset ();
-                  m_MusicLib.check_caps();
+                  m_MusicLib.check_nextprev_caps();
                   m_MusicLib.send_caps ();
                   columns_autosize();
                   m_MusicLib.plist_end(true);
@@ -932,7 +932,7 @@ namespace MPX
                       append_uris (uris, iter, begin);
                   }
 
-                  m_MusicLib.check_caps ();
+                  m_MusicLib.check_nextprev_caps ();
                   m_MusicLib.send_caps ();
               }
 
@@ -1292,7 +1292,7 @@ namespace MPX
                   }
 
                   append_uris (uris, iter, begin);
-                  m_MusicLib.check_caps();
+                  m_MusicLib.check_nextprev_caps();
                   m_MusicLib.send_caps ();
               }
 
@@ -3372,6 +3372,8 @@ namespace Source
     , m_MainUIManager(ui_manager)
     , m_Skipped(false)
     {
+        add_cap(C_CAN_SEEK);
+
         mpx_musiclib_py_init();
 
         if(!m_signals_installed)
@@ -3636,7 +3638,7 @@ namespace Source
 
         playlist.clear();
         playlist.append_tracks(idv, NO_ORDER);
-        check_caps ();
+        check_nextprev_caps ();
         send_caps();
         Signals.PlayRequest.emit();
     }
@@ -3647,7 +3649,7 @@ namespace Source
         MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
         playlist.append_tracks(idv, NO_ORDER);
-        check_caps ();
+        check_nextprev_caps ();
         send_caps();
     }
 
@@ -3736,7 +3738,7 @@ namespace Source
             playlist.queue_draw();
         }
 
-        check_caps ();
+        check_nextprev_caps ();
         
         return exists;
     }
@@ -3788,32 +3790,32 @@ namespace Source
         playlist.m_CurrentIter = boost::optional<Gtk::TreeIter>();
         playlist.m_CurrentId = boost::optional<gint64>(); 
         playlist.queue_draw();
-        check_caps ();
+        check_nextprev_caps ();
     }
 
     void
     PlaybackSourceMusicLib::set_play ()
     {
-        m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_PLAY);
+        add_cap(C_CAN_PLAY);
         send_caps ();
     }
 
     void
     PlaybackSourceMusicLib::clear_play ()
     {
-        m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_PLAY);
+        rem_cap(C_CAN_PLAY);
         send_caps ();
     }
 
     void
-    PlaybackSourceMusicLib::check_caps ()
+    PlaybackSourceMusicLib::check_nextprev_caps ()
     {
         MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
         if (!playlist.m_CurrentIter)
         {
-            m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_NEXT);
-            m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_PREV);
+            rem_cap(C_CAN_GO_NEXT);
+            rem_cap(C_CAN_GO_PREV);
             return;
         }
 
@@ -3824,14 +3826,14 @@ namespace Source
         TreePath path3 = playlist.ListStore->get_path(--playlist.ListStore->children().end());
 
         if(path1[0] > path2[0])
-            m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_GO_PREV);
+            add_cap(C_CAN_GO_PREV);
         else
-            m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_PREV);
+            rem_cap(C_CAN_GO_PREV);
 
         if(path1[0] < path3[0])
-            m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_GO_NEXT);
+            add_cap(C_CAN_GO_NEXT);
         else
-            m_Caps = Caps (m_Caps &~ PlaybackSource::C_CAN_GO_NEXT);
+            rem_cap(C_CAN_GO_NEXT);
     }
 
     void
@@ -3850,10 +3852,9 @@ namespace Source
     {
         MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
-        m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_PAUSE);
-        m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_PROVIDE_METADATA);
-
-        check_caps ();
+        add_cap(C_CAN_PAUSE);
+        add_cap(C_CAN_PROVIDE_METADATA);
+        check_nextprev_caps ();
 
         m_Private->m_TreeViewPlaylist->scroll_to_track();
 
@@ -3873,7 +3874,7 @@ namespace Source
         MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
         playlist.queue_draw();
-        check_caps ();
+        check_nextprev_caps ();
         playlist.scroll_to_track();
 
         TreeIter &iter = playlist.m_CurrentIter.get();
@@ -3912,7 +3913,7 @@ namespace Source
         MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
         playlist.queue_draw();
-        check_caps ();
+        check_nextprev_caps ();
         playlist.scroll_to_track();
     }
 
