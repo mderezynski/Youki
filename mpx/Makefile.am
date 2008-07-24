@@ -107,6 +107,8 @@ mpx_bin_SOURCES =				\
 	dialog-filebrowser.hh		\
 	dialog-filebrowser.cc		\
 								\
+	error.cc					\
+								\
 	flow_engine.hh				\
 	flow_engine.cc				\
 	flow_widget.hh				\

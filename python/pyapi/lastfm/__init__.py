@@ -291,3 +291,65 @@ class SimilarArtists():
         handle.close()
         self.document(dom)
         return self.artists
+
+class TagTopArtists():
+
+    def __init__(self, tag):
+
+        self.tag = tag
+        self.artists = []
+
+    def doc_iterate1(self, dom):
+
+        for node in dom.childNodes:
+
+            if node.nodeType == node.ELEMENT_NODE:
+
+                    self.parse_elmt = node.nodeName
+                    self.parse_data[self.parse_elmt] = ""
+
+            elif node.nodeType == node.TEXT_NODE:
+                    if self.parse_elmt:
+                            self.parse_data[self.parse_elmt] = self.parse_data[self.parse_elmt] + node.nodeValue.strip()
+
+            self.doc_iterate1(node)
+
+    def document_iterate(self, dom):
+
+        for node in dom.childNodes:
+
+            if node.nodeType == node.ELEMENT_NODE:
+
+                if node.nodeName == "artist":
+
+                    self.parse_data["artist@name"] = node.getAttribute("name")
+                    self.parse_data["artist@count"] = node.getAttribute("count")
+                    #FIXME: Parse streamable
+
+                    self.parse_data = {}
+                    self.parse_elmt = None
+
+                    self.doc_iterate1(node)
+
+                    model = mpxapi.lastfm.model.TagTopArtist()
+                    model.setName(self.parse_data["artist@name"])
+                    model.setCount(self.parse_data["artist@count"])
+                    model.setMBID(self.parse_data["artist@mbid"])
+                    model.setUrl(self.parse_data["url"])
+                    model.setThumbnail(self.parse_data["thumbnail"])
+                    model.setImage(self.parse_data["image"])
+                    self.artists.append(model)
+
+            self.document_iterate(node)
+ 
+    def get(self):
+
+        req = "http://ws.audioscrobbler.com/1.0/tag/%s/topartists.xml" % urllib.quote(self.tag)
+        handle = urllib2.urlopen(req)
+        dom = xml.dom.minidom.parse(handle)
+        handle.close()
+
+        self.document_iterate(dom)
+        return self.tracks
+
+

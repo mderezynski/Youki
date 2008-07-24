@@ -17,10 +17,6 @@ import gtk.glade
 import urllib
 import random
 import threading
-from Ft.Xml.XPath.Context import Context
-from Ft.Xml.XPath import Evaluate
-from Ft.Xml.Domlette import NonvalidatingReader
-from Ft.Xml import EMPTY_NAMESPACE
 from mpxapi import lastfm
 #import musicbrainz2
 #import musicbrainz2.webservice as ws
@@ -156,28 +152,23 @@ class OptionAnalyzer(BaseOption):
                 highest_count   = tags[tag]
 
         if highest_tag:
+                    
+                r = lastfm.TagTopArtists(str(highest_tag))
+                a = r.get()
 
-                uri     = u"http://ws.audioscrobbler.com/1.0/tag/%s/topartists.xml" % urllib.quote(str(highest_tag))
-                lastfm  = NonvalidatingReader.parseUri(uri)
-                ctx     = Context(lastfm)
-                mbids   = Evaluate("//mbid", context=ctx)
+                random.shuffle(a)
 
-                random.shuffle(mbids)
+                for artist in a: 
 
-                for mbid in mbids: 
+                    id = artist.getMBID() 
+                    rv = mpx.SQLRowV()
 
-                        if mbid.firstChild:
+                    if self.count_previous_mbid_presence(playlist, id) <= 1:
+                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY mpxrand() LIMIT 1" % id))
+                        extract_ids(rv, self.v)
 
-                                rv    = mpx.SQLRowV()
-                                id    = str(mbid.firstChild.data)
-                                count = self.count_previous_mbid_presence(playlist, id)
+                    if len(rv) > 0: return
 
-                                if count <= 1:
-                                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY mpxrand() LIMIT 1" % id))
-                                        extract_ids(rv, self.v)
-
-                                if len(rv) > 0:
-                                        return
 
     def run_similar_artist(self):
 
@@ -273,17 +264,14 @@ class OptionLastFmTag(BaseOption):
         rv = mpx.SQLRowV()
 
         try:
-                uri     = u"http://ws.audioscrobbler.com/1.0/tag/%s/topartists.xml" % urllib.quote(text)
-                doc     = NonvalidatingReader.parseUri(uri)
-                ctx     = Context(doc)
-                mbids   = Evaluate("//mbid", context=ctx)
+                r = lastfm.TagTopArtists(text)
+                a = r.get()
 
-                for mbid in mbids:
-                    if mbid.firstChild:
-                        id = str(mbid.firstChild.data)
-                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY mpxrand() LIMIT 1" % id))
+                for artist in a:
+                    self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY mpxrand() LIMIT 1" % artist.getMBID()))
+
         except Exception, e:
-                e 
+                print e
 
         extract_ids(rv, self.v)
         self.finished.set()

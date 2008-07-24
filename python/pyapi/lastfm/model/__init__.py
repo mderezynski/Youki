@@ -288,3 +288,57 @@ class SimilarArtist():
     def setStreamable(self, streamable):
         self.streamable = int(streamable)
 
+class TagTopArtist():
+
+    def __init__(self):
+
+        self.name           = None 
+        self.mbid           = None
+        self.url            = None
+        self.thumbnail      = None
+        self.image          = None
+        self.streamable     = None
+        self.count          = None
+
+    def getName(self):
+        return self.name
+
+    def setName(self, name):
+        self.name = name
+
+    def getMBID(self):
+        return self.mbid
+
+    def setMBID(self, mbid):
+        self.mbid = mbid
+
+    def getUrl(self):
+        return self.url
+
+    def setUrl(self, url):
+        self.url = url
+
+    def getThumbnail(self):
+        return self.thumbnail
+
+    def setThumbnail(self, thumbnail):
+        self.image_small = thumbnail
+
+    def getImage(self):
+        return self.image
+
+    def setImage(self, image):
+        self.image = image
+
+    def getStreamable(self):
+        return self.streamable
+
+    def setStreamable(self, streamable):
+        self.streamable = int(streamable)
+
+    def getCount(self):
+        return self.count
+
+    def setCount(self, count):
+        self.count = int(count)
+

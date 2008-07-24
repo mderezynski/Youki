@@ -59,6 +59,7 @@ namespace Gtk
 class CoverFlowWidget;
 namespace MPX
 {
+    class ErrorManager;
     class InfoArea;
     class MLibManager;
     class Play;
@@ -225,47 +226,51 @@ namespace MPX
 		gdouble m_PreSeekPosition;
 		gdouble m_TrackDuration;
 
+    // source related stuff
+
         gint64                      m_NextSourceId;
         boost::optional<ItemKey>    m_ActiveSource;
+        boost::optional<ItemKey>    m_PreparingSource;
 		Glib::Mutex                 m_SourceCFLock;
 		guint                       m_SourceUI;
 		UriSchemeMap                m_UriMap;
         SourcePluginsKeeper         m_SourcePlugins;
+		SourcesMap                  m_Sources;
+        FlagsMap_t                  m_source_f;
+        CapsMap_t                   m_source_c;
 
-        Covers              & m_Covers;
-        HAL                 & m_HAL;
-        Library             & m_Library;
-		PluginManager       * m_PluginManager;
-		Play                * m_Play;
+    // objects
 
-        Preferences         * m_Preferences;
-        MLibManager         * m_MLibManager;
-		PluginManagerGUI    * m_PluginManagerGUI;
-        Sidebar             * m_Sidebar;
-        InfoArea            * m_InfoArea;
-        VideoWidget         * m_VideoWidget; 
-        CoverFlowWidget     * m_CoverFlow;
+        Covers                    & m_Covers;
+        HAL                       & m_HAL;
+        Library                   & m_Library;
+		PluginManager             * m_PluginManager;
+		Play                      * m_Play;
+        Preferences               * m_Preferences;
+        MLibManager               * m_MLibManager;
+		PluginManagerGUI          * m_PluginManagerGUI;
+        Sidebar                   * m_Sidebar;
+        InfoArea                  * m_InfoArea;
+        VideoWidget               * m_VideoWidget; 
+        CoverFlowWidget           * m_CoverFlow;
+        ErrorManager              * m_ErrorManager;
 
-        Gtk::Statusbar      * m_Statusbar;
-		Gtk::Notebook       * m_MainNotebook;
-        Gtk::Notebook       * m_OuterNotebook;
-		Gtk::VolumeButton   * m_Volume;
-		Gtk::HScale         * m_Seek;
-		Gtk::Label          * m_TimeLabel;
-        Gtk::Notebook       * m_InfoNotebook;
-        Gtk::Expander       * m_InfoExpander;
-        WidgetWidgetMap       m_InfoWidgetMap;
+    // widgets
 
-		SourcesMap            m_Sources;
-        FlagsMap_t            m_source_f;
-        CapsMap_t             m_source_c;
+        Gtk::Statusbar            * m_Statusbar;
+		Gtk::Notebook             * m_MainNotebook;
+        Gtk::Notebook             * m_OuterNotebook;
+		Gtk::VolumeButton         * m_Volume;
+		Gtk::HScale               * m_Seek;
+		Gtk::Label                * m_TimeLabel;
+        Gtk::Notebook             * m_InfoNotebook;
+        Gtk::Expander             * m_InfoExpander;
+        WidgetWidgetMap             m_InfoWidgetMap;
 
 		boost::optional<Metadata>   m_Metadata;
         Glib::Mutex                 m_MetadataLock;
-        Audio::ProcessorPUID      * m_ProcessorPUID;
 
 		Glib::RefPtr<Gdk::Pixbuf>   m_DiscDefault;
-        boost::optional<ItemKey>    m_PreparingSource;
 
         enum PlayDirection
         {
@@ -415,8 +420,10 @@ namespace MPX
         bool
         metadata_updated ();
 
+
+
         void
-        on_processor_puid_eos ();
+        check_py_error ();
 
 
 

@@ -53,6 +53,7 @@
 #include <gdl/gdl.h>
 
 #include "mpx.hh"
+#include "mpx/error.hh"
 #include "mpx/library.hh"
 #include "mpx/stock.hh"
 #include "mpx/python.hh"
@@ -1423,6 +1424,8 @@ namespace MPX
 #endif // HAVE_HAL
     , m_Library(obj_library)
    {
+        m_ErrorManager = new ErrorManager;
+
         Splashscreen splash;
         splash.set_message(_("Startup..."), 0.);
 
@@ -2436,8 +2439,8 @@ namespace MPX
 			        m_InfoArea->set_cover (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
 
                     PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-                    g_message("%s: New coverart...", G_STRFUNC);
                     g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_COVERART], 0);
+                    check_py_error();
                     pyg_gil_state_release(state);
                 }
             }
@@ -2556,6 +2559,7 @@ namespace MPX
 	{
         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 		g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_INFOAREA_CLICK], 0);
+        check_py_error();
         pyg_gil_state_release(state);
 	}
 
@@ -2603,8 +2607,6 @@ namespace MPX
                 get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()),
                 m_Metadata.get().Image
             );
-
-            PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
         }
 
         if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
@@ -2689,6 +2691,7 @@ namespace MPX
 
             PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
             g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_TRACK_PLAYED], 0);
+            check_py_error();
             pyg_gil_state_release(state);
         }
 
@@ -2742,6 +2745,7 @@ namespace MPX
 
       PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
       g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
+      check_py_error();
       pyg_gil_state_release(state);
 	}
 
@@ -3045,7 +3049,10 @@ namespace MPX
 		  }
 	  }
 
+      PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
       g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_STATUS_CHANGED], 0, int(status));
+      check_py_error();
+      pyg_gil_state_release(state);
 	}
 
 
@@ -3780,13 +3787,13 @@ namespace MPX
     Player::metadata_updated ()
     {
         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-
-        g_message("%s: Metadata prepare...", G_STRFUNC);
         g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_PREPARE], 0);
+        check_py_error();
+        pyg_gil_state_release(state);
 
-        g_message("%s: Metadata updated...", G_STRFUNC);
+        state = (PyGILState_STATE)(pyg_gil_state_ensure ());
         g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_UPDATED], 0);
-
+        check_py_error();
         pyg_gil_state_release(state);
 
         return false;
@@ -3808,5 +3815,19 @@ namespace MPX
     Player::info_clear ()
     {
         m_InfoArea->clear_info();
+    }
+
+    void
+    Player::check_py_error ()
+    {
+        GError * gerr = NULL;
+
+        if(pyg_error_check(&gerr))
+        {
+                g_message("Error occurred");
+                Error err (_("Python Plugins"), "", gerr->message);
+                g_error_free(gerr);
+                m_ErrorManager->new_error(err);
+        }
     }
 }

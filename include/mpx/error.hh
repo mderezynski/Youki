@@ -29,6 +29,7 @@ class Error
         }
 
         const Glib::ustring&
+        get_errorstring()
         {
             return m_errorstring;
         }
@@ -36,7 +37,7 @@ class Error
         Error(
             const Glib::ustring&    component,
             const Glib::ustring&    subcomponent,
-            const Glib::ustrnig&    errorstring
+            const Glib::ustring&    errorstring
         )
         : m_component(component)
         , m_subcomponent(subcomponent)
@@ -55,18 +56,17 @@ class ErrorManager
             void
             append_error( const Error& );
 
-            void            
-            pop_error ();
-
             void
             display_errors ();
 
         public:
 
-            ErrorManger (); 
+            ErrorManager (); 
             virtual ~ErrorManager();
 
             void
             new_error( const Error& );
 };
 }
+
+#endif // MPX_ERROR_HH
