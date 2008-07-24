@@ -24,6 +24,7 @@
 #include "mpx/library.hh"
 #include "mpx/lyrics-v2.hh"
 #include "mpx/paccess.hh"
+#include "mpx/random.hh"
 #include "mpx/types.hh"
 #include "mpx/tagview.hh"
 #include "mpx/util-graphics.hh"
@@ -581,6 +582,8 @@ BOOST_PYTHON_MODULE(mpx)
     class_<MPX::Bindable>("Bindable")
     ;
 
+    def ("rand", &MPX::rand);
+
 	/*-------------------------------------------------------------------------------------*/
 
     enum_<MPX::MPXPlaystatus>("PlayStatus")
@@ -822,12 +825,6 @@ BOOST_PYTHON_MODULE(mpx)
 	class_<MPX::LastFM::ArtistMetadataRequestSync, boost::noncopyable>("LastFMArtist", boost::python::init<std::string>())
 		.def("run", &MPX::LastFM::ArtistMetadataRequestSync::run)
 	;
-
-    def("LastFMArtistMetadataRequestString",
-        &MPX::LastFM::ArtistMetadataRequestString);
-
-    def("LastFMSanitizeWiki",
-        &MPX::Util::sanitize_lastfm);
 
 	/*-------------------------------------------------------------------------------------*/
 

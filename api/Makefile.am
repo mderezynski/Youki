@@ -85,6 +85,7 @@ libmpx_api_la_SOURCES = 							\
 		lyrics-v2.cc								\
 		md5.c										\
 		playlistparser-xspf.cc						\
+		random.cc									\
 		tagview.cc									\
 		xml.cc										\
 		xpath.cc									\
