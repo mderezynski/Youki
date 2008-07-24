@@ -95,6 +95,13 @@ class TrackTags(mpx.Plugin):
         self.player_metadata_updated_handler_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
         self.player_playtstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.status_changed)
 
+        try:
+                self.tagview.clear()
+                self.tagview.display(False)
+                self.lock.lock(self.display_track_tags, blah)
+        except:
+                pass 
+
         return True
 
     def deactivate(self):
@@ -122,7 +129,6 @@ class TrackTags(mpx.Plugin):
 
         self.tagview.clear()
         self.tagview.display(False)
-
         self.lock.lock(self.display_track_tags, blah)
 
     def display_track_tags(self, blah):

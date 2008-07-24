@@ -821,6 +821,13 @@ class MPXAudioScrobbler(mpx.Plugin):
 
         print ("Audioscrobbler activated: " + str(self.post.authenticated))
 
+        self.newTrack = True
+
+        try:
+            self.now_playing([])
+        except:
+            pass
+
         return True
 
     def deactivate(self):
