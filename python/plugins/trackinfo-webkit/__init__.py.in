@@ -333,7 +333,7 @@ class NoArtistInfoException(Exception):
 def getLastFMArtistInfo(artistname):
     
         svr = xmlrpclib.Server("http://ws.audioscrobbler.com/1.0/rw/xmlrpc.php")
-        artist = svr.artistMetadata("artistname", locale.getdefaultlocale()[0][:2])
+        artist = svr.artistMetadata(artistname, locale.getdefaultlocale()[0][:2])
         return artist
 
 def append_url_rels(entity): 

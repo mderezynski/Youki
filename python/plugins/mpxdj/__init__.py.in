@@ -213,20 +213,18 @@ class OptionAnalyzer(BaseOption):
 
         playlist  = self.mlib.get_playlist_model()
         track_id  = playlist[len(playlist)-1][7] 
-        markov_id = self.lib.markovFind(track_id)
+        markov_id = self.lib.markovGetRandomProbableTrack(track_id)
 
         if markov_id != -1:
                 self.v.append(markov_id)
 
     def run(self):
 
-        choice = random.randint(0,1)
+        choice = mpx.rand([70.,20.,10.])
+        callables = [self.run_accumulate_tags, self.run_similar_track, self.run_similar_artist]
 
         try:
-                if choice == 0:
-                        self.run_accumulate_tags()
-                elif choice == 1:
-                        self.run_similar_track()
+                callables[choice]()
 
                 if len(self.v):
                         self.finished.set()
@@ -242,16 +240,7 @@ class OptionAnalyzer(BaseOption):
         except:
                 pass
 
-        try:
-                self.run_similar_artist()
-                if len(self.v):
-                    self.finished.set()
-                    return
-        except:
-                pass
-
         # Pick one track at random
-
         rv = mpx.SQLRowV()
         self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY mpxrand() LIMIT 1"))
         extract_ids(rv, self.v)
@@ -292,21 +281,19 @@ class OptionRandomMix(BaseOption):
 
     def run(self):
 
-        callables = [
-            self.RANDOM_genre,
-            self.RANDOM_toptune
-        ]
-
-        callables[ random.randint(0,1) ](self.lib, self.v)
+        [self.RANDOM_genre,
+         self.RANDOM_toptune,
+         self.RANDOM_markov
+        ][ random.randint(0,2) ](self.lib, self.v)
 
         self.finished.set()
 
     def RANDOM_genre(self, lib, v):
 
-        choice      = random.randint(0,2)
-        genre       = ""
-        rv          = mpx.SQLRowV()
-        playlist    = self.mlib.get_playlist_model()
+        choice = random.randint(0,2)
+        genre = ""
+        rv = mpx.SQLRowV()
+        playlist = self.mlib.get_playlist_model()
 
         if not len(playlist) or choice == 0:
 
@@ -316,8 +303,8 @@ class OptionRandomMix(BaseOption):
 
         elif choice == 1: 
 
-            track    = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
-            genre    = track[mpx.AttributeId.GENRE].get()
+            track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
+            genre = track[mpx.AttributeId.GENRE].get()
             lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY mpxrand() LIMIT 2" % genre)
         
         elif choice == 2:
@@ -330,8 +317,16 @@ class OptionRandomMix(BaseOption):
     
         rv = mpx.SQLRowV()
         self.lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY mpxrand() LIMIT 1")
-
         extract_ids(rv, v)
+
+    def RANDOM_markov(self, lib, v):
+        
+        track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
+        id = track[mpx.AttributeId.MPX_TRACK_ID].get()
+        markov_id = lib.markovGetRandomProbableTrack(id)
+
+        if markov_id != -1:
+            v.append(markov_id)
 
 class OptionTopTunes(BaseOption):
 
