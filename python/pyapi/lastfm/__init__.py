@@ -131,7 +131,7 @@ class SimilarTracks():
 
             if node.nodeType == node.ELEMENT_NODE:
 
-                if node.NodeName == "artist":
+                if node.nodeName == "artist":
     
                     self.doc_get_artist(node)
                 
