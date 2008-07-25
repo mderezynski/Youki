@@ -1381,6 +1381,7 @@ namespace MPX
 
             Gtk::TreeModelColumn<gint64>                                Id;
             Gtk::TreeModelColumn<std::string>                           MBID;
+            Gtk::TreeModelColumn<std::string>                           AlbumArtistMBID;
 
             Gtk::TreeModelColumn<gint64>                                Date;
             Gtk::TreeModelColumn<gint64>                                InsertDate;
@@ -1407,6 +1408,7 @@ namespace MPX
 
                 add (Id);
                 add (MBID);
+                add (AlbumArtistMBID);
 
                 add (Date);
                 add (InsertDate);
@@ -1435,6 +1437,7 @@ namespace MPX
 
             Gtk::TreeModelColumn<gint64>                                Id;
             Gtk::TreeModelColumn<std::string>                           MBID;
+            Gtk::TreeModelColumn<std::string>                           AlbumArtistMBID;
 
             Gtk::TreeModelColumn<gint64>                                Date;
             Gtk::TreeModelColumn<gint64>                                InsertDate;
@@ -1463,6 +1466,7 @@ namespace MPX
 
                 add (Id);
                 add (MBID);
+                add (AlbumArtistMBID);
 
                 add (Date);
                 add (InsertDate);
@@ -1561,15 +1565,29 @@ namespace MPX
                     GtkTreeIter children;
                     bool has_children = (gtk_tree_model_iter_children(GTK_TREE_MODEL(TreeStore->gobj()), &children, const_cast<GtkTreeIter*>(iter->gobj())));
 
+                    std::string album_artist_mb_id = (*iter)[AlbumColumns.AlbumArtistMBID];
+                    std::string track_artist_mb_id;
+
                     SQL::RowV v;
                     m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = %lld ORDER BY track;") % gint64((*iter)[AlbumColumns.Id])).str());
 
                     for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                     {
                         SQL::Row & r = *i;
+
                         TreeIter child = TreeStore->append(iter->children());
+
+                        if(r.count("mb_artist_id"))
+                        {
+                            track_artist_mb_id = get<std::string>(r["mb_artist_id"]);
+                        }
+            
+                        if( album_artist_mb_id != track_artist_mb_id )
+                        {
+                            (*child)[AlbumColumns.TrackArtist] = (boost::format (_("<small>by</small> %s")) % Markup::escape_text(get<std::string>(r["artist"]))).str();;
+                        }
+
                         (*child)[AlbumColumns.TrackTitle] = get<std::string>(r["title"]);
-                        (*child)[AlbumColumns.TrackArtist] = get<std::string>(r["artist"]);
                         (*child)[AlbumColumns.TrackNumber] = get<gint64>(r["track"]);
                         (*child)[AlbumColumns.TrackLength] = get<gint64>(r["time"]);
                         (*child)[AlbumColumns.TrackId] = get<gint64>(r["id"]);
@@ -1783,6 +1801,12 @@ namespace MPX
                     s.insert(iter);
 
                     (*iter)[AlbumColumns.MBID] = mbid; 
+                }
+
+                if(r.count("mb_album_artist_id"))
+                {
+                    std::string mb_album_artist_id = get<std::string>(r["mb_album_artist_id"]);
+                    (*iter)[AlbumColumns.AlbumArtistMBID] = mb_album_artist_id; 
                 }
 
                 if(r.count("mb_release_date"))
@@ -2244,7 +2268,7 @@ namespace MPX
                 if(path.get_depth() == ROW_TRACK)
                 {
                     cell->property_visible() = true; 
-                    cell->property_markup() = (boost::format (_("<small>by</small> %s")) % Markup::escape_text((*iter)[AlbumColumns.TrackArtist])).str();
+                    cell->property_markup() = (*iter)[AlbumColumns.TrackArtist];
                 }
                 else
                 {
