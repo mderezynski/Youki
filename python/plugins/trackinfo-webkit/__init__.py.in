@@ -426,7 +426,14 @@ class ArtistInfoQuery (threading.Thread):
         try:
                 artist_info = getLastFMArtistInfo(self.artistname)
                 self.html += Template(tmpl_section_header).render(header=_('About %s') % self.artistname)
-                self.html += artist_info["wikiText"] 
+
+                value = artist_info["wikiText"]
+                re1 = re.compile("(\\[[^\\]]+\\])")
+                re2 = re.compile("(\\[\\/[^\\]]+\\])")
+                value = re1.sub("",value)
+                value = re2.sub("",value)
+
+                self.html += value 
                 self.html += "  <a href='%s'>...[more]</a></div>" % artist_info["wikiPageUrl"]
 
                 if artist_info["similar"] and len(artist_info["similar"]):
