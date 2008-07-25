@@ -1,5 +1,4 @@
 SUBDIRS =			        \
-		audiorecord			\
 		audioscrobbler		\
 		lastfmstuff			\
 		mpxdj			    \
