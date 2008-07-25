@@ -1,7 +1,7 @@
 // (c) 2007 M. Derezynski
 
-#ifndef MPX_I_PLAYLIST_PARSER_XSPF_HH
-#define MPX_I_PLAYLIST_PARSER_XSPF_HH
+#ifndef MPX_I_PLAYLIST_PARSER_PLS_HH
+#define MPX_I_PLAYLIST_PARSER_PLS_HH
 
 #include <string>
 #include "mpx/types.hh"
@@ -12,13 +12,13 @@ namespace MPX
 {
 namespace PlaylistParser
 {
-    class XSPF
+    class PLS
 		:	public PlaylistParser::Base
     {
         public:
 
-          XSPF ();
-          virtual ~XSPF (); 
+          PLS ();
+          virtual ~PLS (); 
 
           virtual bool
           read( 

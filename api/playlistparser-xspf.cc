@@ -9,16 +9,18 @@
 
 namespace MPX
 {
-	PlaylistParserXSPF::PlaylistParserXSPF ()
+namespace PlaylistParser
+{
+	XSPF::XSPF ()
 	{
 	}
 
-	PlaylistParserXSPF::~PlaylistParserXSPF ()
+	XSPF::~XSPF ()
 	{
 	}
 
 	bool
-	PlaylistParserXSPF::read (std::string const& uri, Util::FileList& list)
+	XSPF::read (std::string const& uri, Track_v & v)
 	{
 		try{
 			MPX::XmlInstance<xspf::playlist> xspf (uri.c_str());
@@ -27,9 +29,16 @@ namespace MPX
 				xspf::trackList::track_sequence tracklist = (*xspf.xml().trackList().begin()).track();
 				for(xspf::trackList::track_sequence::iterator i = tracklist.begin(); i != tracklist.end(); ++i)
 				{
-					// Extract only the URI for now
-					std::string location = *(i->location().begin());
-					list.push_back(location);
+                    MPX::Track t;
+
+                    t[ATTRIBUTE_LOCATION] = OVariant(*(i->location().begin()));
+                    t[ATTRIBUTE_TITLE] = OVariant(*(i->title().begin()));
+                    t[ATTRIBUTE_ARTIST] = OVariant(*(i->creator().begin()));
+                    t[ATTRIBUTE_ALBUM] = OVariant(*(i->album().begin()));
+                    t[ATTRIBUTE_TRACK] = OVariant(*(i->trackNum().begin()));
+                    t[ATTRIBUTE_TIME] = OVariant(*(i->duration().begin()));
+            
+                    v.push_back(t);
 				}
 			}
 		} catch (...) {
@@ -39,8 +48,9 @@ namespace MPX
 	}
 
 	bool
-	PlaylistParserXSPF::write (std::string const& uri, Util::FileList const& list)
+	XSPF::write (std::string const& uri, Track_v const& list)
 	{
 		return false;
 	}
+}
 }

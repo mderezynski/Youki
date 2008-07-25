@@ -7,4 +7,5 @@ noinst_HEADERS =							\
 		dialog-play-uri.hh					\
 		dialog-simple-entry.hh				\
 		gossip-cell-renderer-expander.h		\
-		taskdialog.hh
+		taskdialog.hh						\
+		timed-confirmation.hh

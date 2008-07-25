@@ -4,23 +4,35 @@
 #define MPX_I_PLAYLIST_PARSER_HH
 
 #include <string>
+#include "mpx/types.hh"
 #include "mpx/util-file.hh"
 
 namespace MPX
 {
-    class PlaylistParser
+    typedef std::vector<MPX::Track> Track_v;
+
+namespace PlaylistParser
+{
+    class Base
     {
         public:
 
-          PlaylistParser () {}
-          virtual ~PlaylistParser () {}
+          Base () {}
+          virtual ~Base () {}
 
           virtual bool
-          read (std::string const&, Util::FileList&) = 0;
+          read(
+            std::string const&,
+            Track_v&
+          ) = 0;
 
           virtual bool
-          write (std::string const&, Util::FileList const&) = 0;
+          write(
+            std::string const&,
+            Track_v const&
+          ) = 0;
     };
+}
 }
 
 #endif // MPX_I_PLAYLIST_PARSER_HH

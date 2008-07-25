@@ -79,14 +79,20 @@ libmpx_api_la_CFLAGS =								\
 libmpx_api_la_SOURCES = 							\
 													\
 		base64.c									\
+		md5.c										\
+		random.cc									\
+													\
 		gstpuid.cc									\
+													\
 		last-fm-xmlrpc.cc							\
 		libxml2-sax-base.cc							\
 		lyrics-v2.cc								\
-		md5.c										\
+		xspf-libxml2-sax.cc							\
+													\
 		playlistparser-xspf.cc						\
-		random.cc									\
+		playlistparser-pls.cc						\
+													\
 		tagview.cc									\
+													\
 		xml.cc										\
-		xpath.cc									\
-		xspf-libxml2-sax.cc							
+		xpath.cc									

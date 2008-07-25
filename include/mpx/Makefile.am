@@ -1,45 +1,58 @@
 SUBDIRS = parser widgets
 noinst_HEADERS =					\
 									\
-	audio.hh						\
-	base64.h						\
-	covers.hh						\
-	coverstores.hh 					\
-	exception-db.hh					\
-	exception.hh					\
-	glibaddons.hh					\
-	gstpuid.h						\
-	hal.hh							\
+	mpx-api-macros.hh				\
+	paccess.hh						\
+	types.hh						\
+									\
 	i-metadatareader.hh				\
 	i-playbacksource.hh				\
 	i-playlistparser.hh				\
-	last-fm-xmlrpc.hh				\
-	ld.hh							\
-	library.hh						\
-	library-scanner-thread.hh		\
-	lyrics-v2.hh					\
-	main.hh							\
-	md5.h							\
-	metadatareader-taglib.hh		\
-	minisoup.hh						\
-	mpx-api-macros.hh				\
-	mpx-public.hh					\
-	network.hh						\
-	paccess.hh						\
+									\
 	playlistparser-xspf.hh			\
-	play-public.hh					\
-	python.hh						\
-	sql.hh							\
-	stock.hh						\
-	tagview.hh						\
-	treeview-popup.hh				\
-	types.hh						\
-	uri.hh							\
+	playlistparser-pls.hh			\
+									\
 	util-file.hh					\
 	util-graphics.hh				\
 	util-string.hh					\
 	util-ui.hh						\
+									\
+	play-public.hh					\
+	mpx-public.hh					\
+									\
+	main.hh							\
+	audio.hh						\
+	covers.hh						\
+	coverstores.hh 					\
+	hal.hh							\
+	library.hh						\
+	library-scanner-thread.hh		\
+	minisoup.hh						\
+	network.hh						\
+	python.hh						\
+	sql.hh							\
+	uri.hh							\
+									\
+	base64.h						\
+	glibaddons.hh					\
+	ld.hh							\
+	md5.h							\
+	random.hh						\
+									\
+	exception-db.hh					\
+	exception.hh					\
+									\
+	gstpuid.h						\
+									\
+	metadatareader-taglib.hh		\
+									\
+	stock.hh						\
+	tagview.hh						\
+	treeview-popup.hh				\
 	widgetloader.h					\
+									\
+	last-fm-xmlrpc.hh				\
+	lyrics-v2.hh					\
 	xml.hh							\
 	xmltoc++.hh						\
 	xspf.hh							\

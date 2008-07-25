@@ -39,6 +39,7 @@
 #include "mpx/library.hh"
 #include "mpx/main.hh"
 #include "mpx/playlistparser-xspf.hh"
+#include "mpx/playlistparser-pls.hh"
 #include "mpx/sql.hh"
 #include "mpx/stock.hh"
 #include "mpx/types.hh"
@@ -829,20 +830,42 @@ namespace MPX
                       }
 
                       // Check for playlist types
+                      PlaylistParser::Base * pp = 0;
+
                       if(Util::str_has_suffix_nocase(*i, "xspf"))
                       {
-                          PlaylistParserXSPF p;
-                          Util::FileList xspf_uris;
-                          p.read(*i, xspf_uris); 
-                          append_uris(xspf_uris, iter, begin);
+                          pp = new PlaylistParser::XSPF;
+                      }
+                      else
+                      if(Util::str_has_suffix_nocase(*i, "pls"))
+                      {
+                          pp = new PlaylistParser::PLS;
                       }
 
+                      if( pp )
+                      {
+                          Track_v v;
+
+                          pp->read(*i, v); 
+
+                          for(Track_v::const_iterator i = v.begin(); i != v.end(); ++i)
+                          {
+                            MPX::Track t = *i;
+                            if(!begin)
+                                iter = ListStore->insert_after(iter);
+                            place_track(t, iter); 
+                          }
+
+                          delete pp;
+                      }
 
                       Track track;
                       m_Lib.get().getMetadata(*i, track);
 
                       if(!begin)
-                        iter = ListStore->insert_after(iter);
+                      {
+                          iter = ListStore->insert_after(iter);
+                      }
 
                       begin = false;
 
@@ -850,12 +873,14 @@ namespace MPX
                   }
 
                   if(!dirs.empty())
+                  {
                       for(Util::FileList::const_iterator i = dirs.begin(); i != dirs.end(); ++i)
                       {
-                                              Util::FileList files;
-                                              Util::collect_audio_paths(*i, files);
-                                              append_uris(files,iter,begin);
+                            Util::FileList files;
+                            Util::collect_audio_paths(*i, files);
+                            append_uris(files,iter,begin);
                       }
+                  }
               }
 
               virtual void
