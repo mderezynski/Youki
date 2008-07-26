@@ -245,7 +245,7 @@ namespace MPX
                                                                             GTK_WIDGET (gobj())->style->font_desc, 
                                                                             pango_context_get_language (context));
 
-                    m_rowheight = (pango_font_metrics_get_ascent  (metrics)/PANGO_SCALE) + 
+                    m_rowheight = (pango_font_metrics_get_ascent (metrics)/PANGO_SCALE) + 
                                    (pango_font_metrics_get_descent (metrics)/PANGO_SCALE) + 4;
                 }
 
@@ -289,10 +289,13 @@ namespace MPX
                 on_configure_event (GdkEventConfigure * event)        
                 {
                     Gtk::Allocation const& alloc = get_allocation();
-                    m_prop_vadj.get_value()->set_page_size(double(event->height) / double(m_model->size() * m_rowheight));
+
+                    m_prop_vadj.get_value()->set_page_size(double(event->height/m_rowheight - 2) / double(m_model->size()));
+
                     m_visibleheight = event->height;
 
                     double columnwidth = double(event->width) / double(m_columns.size());
+
                     for(int n = 0; n < m_columns.size(); ++n)
                     {
                         m_columns[n]->set_width(columnwidth);
@@ -326,7 +329,7 @@ namespace MPX
                         {
                             cr->set_operator(Cairo::OPERATOR_ATOP);
                             Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
-                            cr->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.8);
+                            cr->set_source_rgb(c.get_red_p(), c.get_green_p(), c.get_blue_p());
                             RoundedRectangle(cr, 0, y_pos, alloc.get_width(), m_rowheight, 4.);
                             cr->fill(); 
                             cr->set_operator(Cairo::OPERATOR_SOURCE);
