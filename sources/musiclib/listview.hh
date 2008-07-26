@@ -263,7 +263,7 @@ namespace MPX
                 void
                 on_vadj_value_changed ()
                 {
-                    int row = double(m_model->size()) * double(m_prop_vadj.get_value()->get_value());
+                    int row = int(m_prop_vadj.get_value()->get_value()/m_rowheight);
                     if( m_previousdrawnrow != row )
                     {
                         queue_draw ();
@@ -322,7 +322,7 @@ namespace MPX
                     else
                     if(event->type == GDK_BUTTON_PRESS)
                     {
-                        m_pressed_row = (double(m_model->size() - (m_visibleheight/m_rowheight)) * double(m_prop_vadj.get_value()->get_value())) + std::floor(double(event->y) / double(m_rowheight));
+                        m_pressed_row = int((m_prop_vadj.get_value()->get_value()+event->y)/m_rowheight);
                     }
                 
                     return false;
@@ -354,7 +354,8 @@ namespace MPX
                 bool
                 on_configure_event (GdkEventConfigure * event)        
                 {
-                    m_prop_vadj.get_value()->set_page_size(double(event->height) / double(m_model->size()*m_rowheight));
+                    m_prop_vadj.get_value()->set_page_size(event->height); 
+                    m_prop_vadj.get_value()->set_upper((m_model->size()+1) * m_rowheight);
 
                     m_visibleheight = event->height;
 
@@ -378,7 +379,7 @@ namespace MPX
 
                     Gtk::Allocation const& alloc = get_allocation();
 
-                    int row = double(m_model->size() - (m_visibleheight/m_rowheight)) * double(m_prop_vadj.get_value()->get_value());
+                    int row = int(m_prop_vadj.get_value()->get_value()/m_rowheight);
                     int y_pos = 0;
 
                     m_previousdrawnrow = row;
