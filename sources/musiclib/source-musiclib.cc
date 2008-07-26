@@ -952,6 +952,23 @@ namespace MPX
                           place_track(r, iter);
                       }
                   }
+                  if(data.get_data_type() == "mpx-idvec")
+                  {
+                      IdV const& idv = *(reinterpret_cast<const IdV*>(data.get_data()));
+
+                      for(IdV::const_iterator i = idv.begin(); i != idv.end(); ++i) 
+                      {
+                              SQL::RowV v;
+                              m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = %lld;") % *i).str()); 
+                              SQL::Row & r = v[0]; 
+
+                              if(i != idv.begin())
+                                iter = ListStore->insert_after(iter);
+
+                              place_track(r, iter);
+                      }
+                  }
+
                   else
                   {
                       bool begin = true;

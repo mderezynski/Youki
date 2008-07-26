@@ -8,6 +8,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/optional.hpp>
 #include "mpx/glibaddons.hh"
+#include "mpx/types.hh"
 #include "mpx/util-string.hh"
 #include "mpx/widgets/cairoextensions.hh"
 #include "glib-marshalers.h"
@@ -224,6 +225,7 @@ namespace MPX
 
         typedef boost::shared_ptr<Column> ColumnP;
         typedef std::vector<ColumnP> Columns;
+        typedef std::set<ModelT::iterator> Selection;
 
         typedef sigc::signal<void, gint64> SignalTrackActivated;
 
@@ -237,10 +239,13 @@ namespace MPX
                 PropAdj                             m_prop_vadj;
                 PropAdj                             m_prop_hadj;
                 guint                               m_signal0; 
-                std::vector<ModelT::iterator>       m_selection;
+                Selection                           m_selection;
                 boost::optional<ModelT::iterator>   m_selected;
                 SignalTrackActivated                m_trackactivated;
                 GtkWidget                         * m_treeview;
+                IdV                                 m_dnd_idv;
+                bool                                m_dnd;
+                int                                 m_pressed_row;
 
                 void
                 initialize_metrics ()
@@ -267,17 +272,37 @@ namespace MPX
 
             protected:
 
+                virtual void 
+                on_drag_begin (const Glib::RefPtr<Gdk::DragContext>& context)
+                {
+                    m_dnd = true;
+                }
+
+                virtual void
+                on_drag_end (const Glib::RefPtr<Gdk::DragContext>& context)
+                {
+                    m_dnd = false;
+                } 
+
                 virtual void
                 on_drag_data_get (const Glib::RefPtr<Gdk::DragContext>& context, Gtk::SelectionData& selection_data, guint info, guint time)
                 {
                     using boost::get;
 
-                    if(!m_selected)
+                    if(m_selection.empty())
                         return;
 
-                    Row4 const& r = *(m_selected.get());
-                    gint64 * id = new gint64(get<3>(r));
-                    selection_data.set("mpx-track", 8, reinterpret_cast<const guint8*>(id), 8);
+                    m_dnd_idv.clear();
+
+                    for(Selection::const_iterator i = m_selection.begin(); i != m_selection.end(); ++i)
+                    {
+                        Row4 const& r = *(*(i));
+                        m_dnd_idv.push_back(get<3>(r));
+                    }
+
+                    selection_data.set("mpx-idvec", 8, reinterpret_cast<const guint8*>(&m_dnd_idv), 8);
+
+                    m_dnd = false;
                 }
 
                 bool
@@ -287,24 +312,49 @@ namespace MPX
 
                     if(event->type == GDK_2BUTTON_PRESS)
                     {
-                        Row4 const& r = *(m_selected.get());
-                        gint64 id = get<3>(r);
-                        m_trackactivated.emit(id);
+                        if( !m_selection.empty() )
+                        {
+                                Row4 const& r = *(*(m_selection.begin()));
+                                gint64 id = get<3>(r);
+                                m_trackactivated.emit(id);
+                        }
                     }
                     else
+                    if(event->type == GDK_BUTTON_PRESS)
                     {
-                        int row = (double(m_model->size() - (m_visibleheight/m_rowheight)) * double(m_prop_vadj.get_value()->get_value())) + std::floor(double(event->y) / double(m_rowheight));
-                        m_selected = m_model->m_mapping[row];
-                        queue_draw ();
+                        m_pressed_row = (double(m_model->size() - (m_visibleheight/m_rowheight)) * double(m_prop_vadj.get_value()->get_value())) + std::floor(double(event->y) / double(m_rowheight));
                     }
                 
                     return false;
                 }
 
                 bool
+                on_button_release_event (GdkEventButton * event)
+                {
+                    using boost::get;
+
+                    if(event->type == GDK_BUTTON_RELEASE && !m_dnd)
+                    {
+                        if(event->state & GDK_CONTROL_MASK)
+                        {
+                            m_selection.insert(m_model->m_mapping[m_pressed_row]);
+                        }
+                        else
+                        {
+                            m_selection.clear();
+                            m_selection.insert(m_model->m_mapping[m_pressed_row]);
+                        }
+                        queue_draw ();
+                    }
+                
+                    return false;
+                }
+
+
+                bool
                 on_configure_event (GdkEventConfigure * event)        
                 {
-                    m_prop_vadj.get_value()->set_page_size(double(event->height/m_rowheight - 2) / double(m_model->size()));
+                    m_prop_vadj.get_value()->set_page_size(double(event->height) / double(m_model->size()*m_rowheight));
 
                     m_visibleheight = event->height;
 
@@ -363,7 +413,7 @@ namespace MPX
 
                         ModelT::iterator selected = m_model->m_mapping[row];
 
-                        if( m_selected && m_selected.get() == selected) 
+                        if( !m_selection.empty() && m_selection.count(selected)) 
                         {
                             cr->set_operator(Cairo::OPERATOR_ATOP);
 
@@ -404,7 +454,7 @@ namespace MPX
                     {
                         m_prop_vadj.get_value()->set_value(0.);
                     } 
-                    m_selected.reset();
+                    m_selection.clear();
                     queue_draw();
                 }
 
@@ -462,6 +512,7 @@ namespace MPX
                 , m_previousdrawnrow(0)
                 , m_prop_vadj   (*this, "vadjustment", (Gtk::Adjustment*)(0))
                 , m_prop_hadj   (*this, "hadjustment", (Gtk::Adjustment*)(0))
+                , m_dnd(false)
                 {
                     m_treeview = gtk_tree_view_new();
                     gtk_widget_realize(GTK_WIDGET(m_treeview));
@@ -481,6 +532,7 @@ namespace MPX
 
                     std::vector<Gtk::TargetEntry> Entries;
                     Entries.push_back(Gtk::TargetEntry("mpx-track", Gtk::TARGET_SAME_APP, 0x81));
+                    Entries.push_back(Gtk::TargetEntry("mpx-idvec", Gtk::TARGET_SAME_APP, 0x82));
                     drag_source_set(Entries); 
                 }
 
