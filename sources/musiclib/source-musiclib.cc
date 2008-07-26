@@ -59,6 +59,8 @@
 #include "source-musiclib.hh"
 #include "top-albums-fetch-thread.hh"
 
+#include "listview.hh"
+
 using namespace Gtk;
 using namespace Glib;
 using namespace Gnome::Glade;
@@ -922,6 +924,7 @@ namespace MPX
 
                       SQL::RowV v;
                       m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = %lld ORDER BY track;") % id).str()); 
+
                       for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                       {
                           SQL::Row & r = *i;
@@ -938,6 +941,7 @@ namespace MPX
 
                       SQL::RowV v;
                       m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = %lld;") % id).str()); 
+
                       for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                       {
                           SQL::Row & r = *i;
@@ -3434,10 +3438,90 @@ namespace MPX
         };
 
         class AllTracksTreeView
+        {
+              MPX::Source::PlaybackSourceMusicLib & m_MLib;
+              PAccess<MPX::Library>                 m_Lib;
+              PAccess<MPX::HAL>                     m_HAL;
+              ListView                            * m_ListView;
+              DataModelFilterP                    * m_FilterModel;
+
+            public:
+
+              AllTracksTreeView(
+                    Glib::RefPtr<Gnome::Glade::Xml> const& xml,
+                    PAccess<MPX::Library>           const& lib,
+                    PAccess<MPX::HAL>               const& hal,
+                    MPX::Source::PlaybackSourceMusicLib  & mlib
+              )
+              : m_MLib(mlib)
+              , m_Lib(lib)
+              , m_HAL(hal)
+              {
+                    Gtk::ScrolledWindow     * scrollwin = dynamic_cast<Gtk::ScrolledWindow*>(xml->get_widget("musiclib-alltracks-sw")); 
+                    Gtk::Entry              * entry     = dynamic_cast<Gtk::Entry*>(xml->get_widget("musiclib-alltracks-filter-entry")); 
+                    ListView                * view      = new ListView;
+                   
+                    ModelP model = ModelP( new ModelT );
+
+                    SQL::RowV v;
+                    m_Lib.get().getSQL(v, (boost::format("SELECT id, artist, album, title FROM track_view ORDER BY album_artist, album, track_view.track")).str()); 
+                    for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                    {
+                            SQL::Row & r = *i;
+                            std::string artist = boost::get<std::string>(r["artist"]);
+                            std::string album  = boost::get<std::string>(r["album"]);
+                            std::string title  = boost::get<std::string>(r["title"]);
+                            gint64         id  = boost::get<gint64>(r["id"]);
+
+                            Row4 row (artist, album, title, id); 
+                            model->push_back(row);
+                    }
+
+                    DataModelP m (new DataModel(model));
+                    DataModelFilterP f (new DataModelFilter(m));
+
+                    entry->signal_changed().connect(
+                        sigc::bind(
+                            sigc::mem_fun(
+                                *this,
+                                &AllTracksTreeView::on_entry_changed
+                            ),
+                            f,
+                            entry
+                    ));
+
+                    ColumnP c1 (new Column);
+                    c1->set_column(0);
+
+                    ColumnP c2 (new Column);
+                    c2->set_column(1);
+
+                    ColumnP c3 (new Column);
+                    c3->set_column(2);
+
+                    view->append_column(c1);
+                    view->append_column(c2);
+                    view->append_column(c3);
+
+                    view->set_model(f);
+
+                    scrollwin->add(*view);
+                    view->show();
+                    scrollwin->show_all();
+              }
+
+              void
+              on_entry_changed (DataModelFilterP model, Gtk::Entry* entry)
+              {
+                    model->set_filter(entry->get_text());
+              }
+        };
+
+#if 0 
+        class AllTracksTreeView
             :   public WidgetLoader<Gtk::TreeView>
         {
               MPX::Source::PlaybackSourceMusicLib & m_MLib;
-
               PAccess<MPX::Library>                 m_Lib;
               PAccess<MPX::HAL>                     m_HAL;
 
@@ -3603,6 +3687,10 @@ namespace MPX
                         &AllTracksTreeView::on_new_track
                 ));
 
+                std::vector<TargetEntry> Entries;
+                Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
+                drag_source_set(Entries); 
+
                 append_tracks();
                 set_model(ListStoreFilter);
               }
@@ -3618,6 +3706,17 @@ namespace MPX
                 m_MLib.play_tracks(v);
               }
 
+              virtual void
+              on_drag_data_get (const Glib::RefPtr<Gdk::DragContext>& context, SelectionData& selection_data, guint info, guint time)
+              {
+                std::vector<Gtk::TreePath> rows = get_selection()->get_selected_rows();
+                TreeIter iter = ListStore->get_iter( ListStoreFilter->convert_path_to_child_path(rows[0]));
+                gint64 * id = new gint64((*iter)[AllTracksColumns.RowId]);
+                selection_data.set("mpx-track", 8, reinterpret_cast<const guint8*>(id), 8);
+              }
+
+        private:
+
               void
               on_filter_entry_changed ()
               {
@@ -3627,7 +3726,7 @@ namespace MPX
               void
               on_new_track(Track & track, gint64 album_id, gint64 artist_id)
               {
-                TreeIter iter = TreeStore->append(iter->children());
+                TreeIter iter = ListStore->append();
                 place_track( track, iter );
               }
 
@@ -3899,6 +3998,7 @@ namespace MPX
                   return art_a.compare(art_b); 
               }
         };
+#endif
 
         PlaylistTreeView        *   m_TreeViewPlaylist;
         AlbumTreeView           *   m_TreeViewAlbums;
