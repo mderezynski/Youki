@@ -151,14 +151,16 @@ namespace MPX
 
         class Column
         {
-                int m_width;
-                int m_column;
+                int         m_width;
+                int         m_column;
+                std::string m_title;
 
             public:
 
-                Column ()
-                : m_width(200)
-                , m_column(0)
+                Column (std::string const& title)
+                : m_width   (0)
+                , m_column  (0)
+                , m_title   (title)
                 {
                 }
 
@@ -191,13 +193,54 @@ namespace MPX
                 }
 
                 void
+                set_title (std::string const& title)
+                {
+                    m_title = title;
+                }
+
+                std::string const&
+                get_title ()
+                {
+                    return m_title;
+                }
+
+
+                void
+                render_header(Cairo::RefPtr<Cairo::Context> cr, Gtk::Widget& widget, int x_pos, int y_pos, int rowheight)
+                {
+                    using boost::get;
+
+                    Gdk::Color c = widget.get_style()->get_text(Gtk::STATE_NORMAL);
+                    cr->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.2);
+                    RoundedRectangle(cr, x_pos+6, y_pos+2, m_width-4, rowheight-2, 4.);
+                    cr->fill(); 
+
+                    cr->rectangle( x_pos + 10, y_pos + 6, m_width, rowheight);
+                    cr->clip();
+
+                    cr->move_to( x_pos + 10, y_pos + 6);
+                    cr->set_operator(Cairo::OPERATOR_SOURCE);
+                    Gdk::Cairo::set_source_color(cr, widget.get_style()->get_text(Gtk::STATE_NORMAL));
+                    Glib::RefPtr<Pango::Layout> layout = widget.create_pango_layout(""); 
+                    layout->set_markup((boost::format("<b>%s</b>") % Glib::Markup::escape_text(m_title).c_str()).str());
+                    layout->set_ellipsize(Pango::ELLIPSIZE_END);
+                    layout->set_width((m_width-10)*PANGO_SCALE);
+                    pango_cairo_show_layout(cr->cobj(), layout->gobj());
+
+                    cr->reset_clip();
+                }
+
+                void
                 render(Cairo::RefPtr<Cairo::Context> cr, Row4 const& datarow, Gtk::Widget& widget, int row, int x_pos, int y_pos, int rowheight)
                 {
                     using boost::get;
 
+                    cr->set_operator(Cairo::OPERATOR_SOURCE);
+                    Gdk::Cairo::set_source_color(cr, widget.get_style()->get_text(Gtk::STATE_NORMAL));
+
                     cr->rectangle( x_pos, y_pos, m_width, rowheight);
                     cr->clip();
-                    cr->move_to( x_pos, y_pos + 4);
+                    cr->move_to( x_pos + 10, y_pos + 4);
 
                     Glib::RefPtr<Pango::Layout> layout; 
                     switch( m_column )
@@ -351,7 +394,7 @@ namespace MPX
                             Selection::iterator i_sel = m_selection.end();
                             i_sel--;
                             int row_p = i_sel->second; 
-                            int row_c = (m_prop_vadj.get_value()->get_value() / m_rowheight) + (int(event->y) / m_rowheight);
+                            int row_c = (m_prop_vadj.get_value()->get_value() / m_rowheight) + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
                             for(int i = row_p+1; i <= row_c; ++i)
                             {
                                 m_selection.insert(std::make_pair(m_model->m_mapping[i], i));
@@ -360,7 +403,7 @@ namespace MPX
                         }
                         else
                         {
-                            m_click_row_1 = (m_prop_vadj.get_value()->get_value() / m_rowheight) + (int(event->y) / m_rowheight);
+                            m_click_row_1 = (m_prop_vadj.get_value()->get_value() / m_rowheight) + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
 
                             if( event->state & GDK_CONTROL_MASK)
                             {
@@ -405,7 +448,7 @@ namespace MPX
                                 Selection::iterator i_sel = m_selection.end();
                                 i_sel--;
                                 int row_p = i_sel->second; 
-                                int row_c = (m_prop_vadj.get_value()->get_value() / m_rowheight) + (int(event->y) / m_rowheight);
+                                int row_c = (m_prop_vadj.get_value()->get_value() / m_rowheight) + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
                                 for(int i = row_p+1; i <= row_c; ++i)
                                 {
                                     m_selection.insert(std::make_pair(m_model->m_mapping[i], i));
@@ -454,15 +497,20 @@ namespace MPX
                     Gtk::Allocation const& alloc = get_allocation();
 
                     int row = m_prop_vadj.get_value()->get_value() / m_rowheight; 
-                    int y_pos = 0;
-
                     m_previousdrawnrow = row;
 
-                    Gdk::Cairo::set_source_color(cr, get_style()->get_text(Gtk::STATE_NORMAL));
+                    int y_pos = m_rowheight + 4;
+                    int x_pos = 0;
+
+                    for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
+                    {
+                        (*i)->render_header(cr, *this, x_pos, 0, m_rowheight+2);
+                        x_pos += (*i)->get_width() + 2;
+                    }
 
                     while(m_model->is_set() && (y_pos < m_visibleheight) && (row < m_model->size())) 
                     {
-                        int x_pos = 8;
+                        x_pos = 0;
 
                         if( row % 2 )
                         {
@@ -493,25 +541,17 @@ namespace MPX
                             cr->set_operator(Cairo::OPERATOR_ATOP);
 
                             Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
-
                             cr->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.8);
-
                             RoundedRectangle(cr, 4, y_pos+2, alloc.get_width()-8, m_rowheight-4, 4.);
-
                             cr->fill_preserve(); 
-
                             cr->set_source_rgb(c.get_red_p(), c.get_green_p(), c.get_blue_p());
-
                             cr->stroke();
-
-                            cr->set_operator(Cairo::OPERATOR_SOURCE);
-                            Gdk::Cairo::set_source_color(cr, get_style()->get_text(Gtk::STATE_NORMAL));
                         }
 
                         for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                         {
                             (*i)->render(cr, m_model->row(row), *this, row, x_pos, y_pos, m_rowheight);
-                            x_pos += (*i)->get_width();
+                            x_pos += (*i)->get_width() + 2;
                         }
 
                         y_pos += m_rowheight;

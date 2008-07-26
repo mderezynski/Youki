@@ -3507,13 +3507,13 @@ namespace MPX
                             entry
                     ));
 
-                    ColumnP c1 (new Column);
+                    ColumnP c1 (new Column(_("Name")));
                     c1->set_column(0);
 
-                    ColumnP c2 (new Column);
+                    ColumnP c2 (new Column(_("Artist")));
                     c2->set_column(1);
 
-                    ColumnP c3 (new Column);
+                    ColumnP c3 (new Column(_("Album")));
                     c3->set_column(2);
 
                     view->append_column(c1);
