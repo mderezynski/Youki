@@ -108,15 +108,15 @@ namespace MPX
                     using boost::get;
 
                     m_mapping.clear();
+
                     
                     for(ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i)
                     {
                         Row4 const& row = *i;
+
+                        std::string compound_haystack = get<0>(row) + " " + get<1>(row) + " " + get<2>(row);
                     
-                        if( m_filter.empty() || 
-                            Util::match_keys( Glib::ustring(get<0>(row)).lowercase(), m_filter ) ||
-                            Util::match_keys( Glib::ustring(get<1>(row)).lowercase(), m_filter ) ||
-                            Util::match_keys( Glib::ustring(get<2>(row)).lowercase(), m_filter ))
+                        if( m_filter.empty() || Util::match_keys( compound_haystack, m_filter )) 
                         {
                             m_mapping.push_back(i);
                         }
@@ -129,15 +129,14 @@ namespace MPX
                     using boost::get;
 
                     RowRowMapping new_mapping;
-                    
+
                     for(RowRowMapping::const_iterator i = m_mapping.begin(); i != m_mapping.end(); ++i)
                     {
                         Row4 const& row = *(*i);
+
+                        std::string compound_haystack = get<0>(row) + " " + get<1>(row) + " " + get<2>(row);
                    
-                        if( m_filter.empty() || 
-                            Util::match_keys( Glib::ustring(get<0>(row)).lowercase(), m_filter ) ||
-                            Util::match_keys( Glib::ustring(get<1>(row)).lowercase(), m_filter ) ||
-                            Util::match_keys( Glib::ustring(get<2>(row)).lowercase(), m_filter ))
+                        if( m_filter.empty() || Util::match_keys( compound_haystack, m_filter )) 
                         {
                             new_mapping.push_back(*i);
                         }
@@ -244,8 +243,8 @@ namespace MPX
                 GtkWidget                         * m_treeview;
                 IdV                                 m_dnd_idv;
                 bool                                m_dnd;
-                bool                                m_multiple;
                 int                                 m_click_row_1;
+                int                                 m_sel_size_was;
 
                 void
                 initialize_metrics ()
@@ -275,6 +274,12 @@ namespace MPX
                 virtual void 
                 on_drag_begin (const Glib::RefPtr<Gdk::DragContext>& context)
                 {
+                    if(m_selection.empty())
+                    {
+                        m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
+                        queue_draw ();
+                    }
+
                     m_dnd = true;
                 }
 
@@ -327,6 +332,8 @@ namespace MPX
                 {
                     using boost::get;
 
+                    m_sel_size_was = m_selection.size();
+
                     if(event->type == GDK_2BUTTON_PRESS)
                     {
                         if( !m_selection.empty() )
@@ -344,8 +351,7 @@ namespace MPX
                             Selection::iterator i_sel = m_selection.end();
                             i_sel--;
                             int row_p = i_sel->second; 
-                            int row_c = (m_prop_vadj.get_value()->get_value()+event->y) / double(m_rowheight);
-                            m_multiple = true;
+                            int row_c = (m_prop_vadj.get_value()->get_value() / m_rowheight) + (int(event->y) / m_rowheight);
                             for(int i = row_p+1; i <= row_c; ++i)
                             {
                                 m_selection.insert(std::make_pair(m_model->m_mapping[i], i));
@@ -354,7 +360,21 @@ namespace MPX
                         }
                         else
                         {
-                            m_click_row_1 = (m_prop_vadj.get_value()->get_value()+event->y) / double(m_rowheight);
+                            m_click_row_1 = (m_prop_vadj.get_value()->get_value() / m_rowheight) + (int(event->y) / m_rowheight);
+
+                            if( event->state & GDK_CONTROL_MASK)
+                            {
+                                m_sel_size_was = 1; // hack
+                                m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
+                                queue_draw();
+                            }
+                            else
+                            if( m_selection.size() <= 1)
+                            {
+                                m_selection.clear();
+                                m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
+                                queue_draw();
+                            }
                         }
                     }
                 
@@ -373,22 +393,32 @@ namespace MPX
                             return false;
                         }
 
-                        if( m_multiple )
+                        if( m_sel_size_was > 1 )
                         {
-                            m_multiple = false;
-                            return false;
+                            if( event->state & GDK_CONTROL_MASK )
+                            {
+                                m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
+                                queue_draw ();
+                            }
+                            if(event->state & GDK_SHIFT_MASK)
+                            {
+                                Selection::iterator i_sel = m_selection.end();
+                                i_sel--;
+                                int row_p = i_sel->second; 
+                                int row_c = (m_prop_vadj.get_value()->get_value() / m_rowheight) + (int(event->y) / m_rowheight);
+                                for(int i = row_p+1; i <= row_c; ++i)
+                                {
+                                    m_selection.insert(std::make_pair(m_model->m_mapping[i], i));
+                                    queue_draw();
+                                }
+                            }
+                            else
+                            {
+                                m_selection.clear();
+                                m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
+                                queue_draw ();
+                            }
                         }
-
-                        if( event->state & GDK_CONTROL_MASK)
-                        {
-                            m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
-                        }
-                        else
-                        {
-                            m_selection.clear();
-                            m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
-                        }
-                        queue_draw ();
                     }
                 
                     return false;
@@ -500,7 +530,7 @@ namespace MPX
                         m_prop_vadj.get_value()->set_value(0.);
                     } 
                     m_selection.clear();
-                    m_prop_vadj.get_value()->set_upper((m_model->size()+1) * m_rowheight);
+                    m_prop_vadj.get_value()->set_upper((m_model->size()) * m_rowheight);
                     queue_draw();
                 }
 
@@ -559,7 +589,6 @@ namespace MPX
                 , m_prop_vadj   (*this, "vadjustment", (Gtk::Adjustment*)(0))
                 , m_prop_hadj   (*this, "hadjustment", (Gtk::Adjustment*)(0))
                 , m_dnd(false)
-                , m_multiple(false)
                 {
                     m_treeview = gtk_tree_view_new();
                     gtk_widget_realize(GTK_WIDGET(m_treeview));
