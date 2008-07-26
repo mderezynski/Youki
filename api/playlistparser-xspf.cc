@@ -1,4 +1,4 @@
-"3// (c) 2007 M. Derezynski
+// (c) 2007 M. Derezynski
 
 #include <glib/gmacros.h>
 #include <glib/gmessages.h>
