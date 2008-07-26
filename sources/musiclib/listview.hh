@@ -62,7 +62,7 @@ namespace MPX
 
         struct DataModelFilter : public DataModel
         {
-                typedef std::vector<ModelT::const_iterator> RowRowMapping;
+                typedef std::vector<ModelT::iterator> RowRowMapping;
 
                 RowRowMapping   m_mapping;
                 std::string     m_filter;
@@ -109,7 +109,7 @@ namespace MPX
 
                     m_mapping.clear();
                     
-                    for(ModelT::const_iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i)
+                    for(ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i)
                     {
                         Row4 const& row = *i;
                     
@@ -170,7 +170,7 @@ namespace MPX
                 void
                 set_width (int width)
                 {
-                    m_width = width - 4;
+                    m_width = width - 8;
                 }
 
                 int
@@ -198,7 +198,7 @@ namespace MPX
 
                     cr->rectangle( x_pos, y_pos, m_width, rowheight);
                     cr->clip();
-                    cr->move_to( x_pos, y_pos + 2);
+                    cr->move_to( x_pos, y_pos + 4);
 
                     Glib::RefPtr<Pango::Layout> layout; 
                     switch( m_column )
@@ -232,7 +232,7 @@ namespace MPX
                 int                                 m_rowheight;
                 int                                 m_visibleheight;
                 int                                 m_previousdrawnrow;
-                DataModelP                          m_model;
+                DataModelFilterP                    m_model;
                 Columns                             m_columns;
                 PropAdj                             m_prop_vadj;
                 PropAdj                             m_prop_hadj;
@@ -240,7 +240,7 @@ namespace MPX
                 std::vector<ModelT::iterator>       m_selection;
                 boost::optional<ModelT::iterator>   m_selected;
                 SignalTrackActivated                m_trackactivated;
-            
+                GtkWidget                         * m_treeview;
 
                 void
                 initialize_metrics ()
@@ -252,7 +252,7 @@ namespace MPX
                                                                             pango_context_get_language (context));
 
                     m_rowheight = (pango_font_metrics_get_ascent (metrics)/PANGO_SCALE) + 
-                                   (pango_font_metrics_get_descent (metrics)/PANGO_SCALE) + 4;
+                                   (pango_font_metrics_get_descent (metrics)/PANGO_SCALE) + 8;
                 }
 
                 void
@@ -293,8 +293,8 @@ namespace MPX
                     }
                     else
                     {
-                        int row = int(double(m_model->size()) * double(m_prop_vadj.get_value()->get_value())) + (event->y / m_rowheight);
-                        m_selected = m_model->m_mapping.begin() + row; 
+                        int row = (double(m_model->size() - (m_visibleheight/m_rowheight)) * double(m_prop_vadj.get_value()->get_value())) + std::floor(double(event->y) / double(m_rowheight));
+                        m_selected = m_model->m_mapping[row];
                         queue_draw ();
                     }
                 
@@ -304,8 +304,6 @@ namespace MPX
                 bool
                 on_configure_event (GdkEventConfigure * event)        
                 {
-                    Gtk::Allocation const& alloc = get_allocation();
-
                     m_prop_vadj.get_value()->set_page_size(double(event->height/m_rowheight - 2) / double(m_model->size()));
 
                     m_visibleheight = event->height;
@@ -320,7 +318,7 @@ namespace MPX
                 }
 
                 bool
-                on_expose_event (GdkEventExpose *)
+                on_expose_event (GdkEventExpose *event)
                 {
                     Cairo::RefPtr<Cairo::Context> cr = get_window()->create_cairo_context(); 
 
@@ -339,15 +337,48 @@ namespace MPX
 
                     while(m_model->is_set() && (y_pos < m_visibleheight) && (row < m_model->size())) 
                     {
-                        int x_pos = 2;
+                        int x_pos = 8;
 
-                        if( m_selected && m_selected.get() == (m_model->m_mapping.begin() + row) )
+                        if( row % 2 )
+                        {
+                          GdkRectangle background_area;
+                          background_area.x = 0;
+                          background_area.y = y_pos;
+                          background_area.width = alloc.get_width();
+                          background_area.height = m_rowheight;
+
+                          gtk_paint_flat_box(get_style()->gobj(),
+                                  event->window,
+                                  GTK_STATE_NORMAL,
+                                  GTK_SHADOW_NONE,
+                                  &event->area,
+                                  m_treeview,
+                                  "cell_odd_ruled",
+                                  background_area.x,
+                                  background_area.y,
+                                  background_area.width,
+                                  background_area.height);
+                        }
+
+
+                        ModelT::iterator selected = m_model->m_mapping[row];
+
+                        if( m_selected && m_selected.get() == selected) 
                         {
                             cr->set_operator(Cairo::OPERATOR_ATOP);
+
                             Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
+
+                            cr->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.8);
+
+                            RoundedRectangle(cr, 4, y_pos+2, alloc.get_width()-8, m_rowheight-4, 4.);
+
+                            cr->fill_preserve(); 
+
                             cr->set_source_rgb(c.get_red_p(), c.get_green_p(), c.get_blue_p());
-                            RoundedRectangle(cr, 0, y_pos, alloc.get_width(), m_rowheight, 4.);
-                            cr->fill(); 
+
+                            cr->stroke();
+
                             cr->set_operator(Cairo::OPERATOR_SOURCE);
                             Gdk::Cairo::set_source_color(cr, get_style()->get_text(Gtk::STATE_NORMAL));
                         }
@@ -403,7 +434,7 @@ namespace MPX
             public:
 
                 void
-                set_model(DataModelP model)
+                set_model(DataModelFilterP model)
                 {
                     m_model = model;
                     set_size_request(200, 8 * m_rowheight);
@@ -428,10 +459,13 @@ namespace MPX
 
                 ListView ()
                 : ObjectBase    ("MPXListView")
+                , m_previousdrawnrow(0)
                 , m_prop_vadj   (*this, "vadjustment", (Gtk::Adjustment*)(0))
                 , m_prop_hadj   (*this, "hadjustment", (Gtk::Adjustment*)(0))
-                , m_previousdrawnrow(0)
                 {
+                    m_treeview = gtk_tree_view_new();
+                    gtk_widget_realize(GTK_WIDGET(m_treeview));
+
                     ((GtkWidgetClass*)(G_OBJECT_GET_CLASS(G_OBJECT(gobj()))))->set_scroll_adjustments_signal = 
                             g_signal_new ("set_scroll_adjustments",
                                       G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
