@@ -1,4 +1,4 @@
-// (c) 2007 M. Derezynski
+"3// (c) 2007 M. Derezynski
 
 #include <glib/gmacros.h>
 #include <glib/gmessages.h>
@@ -35,7 +35,9 @@ namespace PlaylistParser
                     t[ATTRIBUTE_TITLE] = OVariant(*(i->title().begin()));
                     t[ATTRIBUTE_ARTIST] = OVariant(*(i->creator().begin()));
                     t[ATTRIBUTE_ALBUM] = OVariant(*(i->album().begin()));
-                    t[ATTRIBUTE_TIME] = OVariant(*(i->duration().begin()));
+
+                    gint64 time = *(i->duration().begin());
+                    t[ATTRIBUTE_TIME] = OVariant(time);
 
                     gint64 track = *(i->trackNum().begin());
                     t[ATTRIBUTE_TRACK] = OVariant(track); 
