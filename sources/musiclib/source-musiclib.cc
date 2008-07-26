@@ -105,6 +105,7 @@ namespace
     "         <separator/>"
     "         <menuitem action='musiclib-show-albums'/>"
     "         <menuitem action='musiclib-show-collections'/>"
+    "         <menuitem action='musiclib-show-alltracks'/>"
     "         <separator/>"
     "         <menuitem action='musiclib-show-ccdialog'/>"
     "         <separator/>"
@@ -356,15 +357,13 @@ namespace MPX
         {
               ColumnControlDialog                 * m_CCDialog;
 
-              MPX::Source::PlaybackSourceMusicLib & m_MusicLib;
+              MPX::Source::PlaybackSourceMusicLib & m_MLib;
 
               PAccess<MPX::Library>                 m_Lib;
               PAccess<MPX::HAL>                     m_HAL;
 
               Glib::RefPtr<Gdk::Pixbuf>             m_Playing;
               Glib::RefPtr<Gdk::Pixbuf>             m_Bad;
-
-              gint64                                m_RowId;
 
               TreePath                              m_PathButtonPress;
               int                                   m_ButtonDepressed;
@@ -402,10 +401,9 @@ namespace MPX
                     MPX::Source::PlaybackSourceMusicLib  & mlib
               )
               : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-playlist")
-              , m_MusicLib(mlib)
+              , m_MLib(mlib)
               , m_Lib(lib)
               , m_HAL(hal)
-              , m_RowId(0)
               , m_ButtonDepressed(0)
               {
                 set_has_tooltip();
@@ -573,7 +571,7 @@ namespace MPX
                   if(t[ATTRIBUTE_MPX_ALBUM_ID])
                   {
                     gint64 id = get<gint64>(t[ATTRIBUTE_MPX_ALBUM_ID].get());
-                    m_MusicLib.action_cb_go_to_album(id);
+                    m_MLib.action_cb_go_to_album(id);
                   }
                   else
                     g_message("%s: No Album ID", G_STRLOC);
@@ -597,12 +595,12 @@ namespace MPX
                     i = v.erase (i);
                   }
 
-                  m_MusicLib.check_nextprev_caps();
-                  m_MusicLib.send_caps ();
+                  m_MLib.check_nextprev_caps();
+                  m_MLib.send_caps ();
 
                   if(ListStore->children().empty())
                   {
-                    m_MusicLib.plist_end(true);
+                    m_MLib.plist_end(true);
                   }
 
                   check_for_end ();
@@ -632,8 +630,8 @@ namespace MPX
                     i = v.erase (i);
                   }
 
-                  m_MusicLib.check_nextprev_caps();
-                  m_MusicLib.send_caps ();
+                  m_MLib.check_nextprev_caps();
+                  m_MLib.send_caps ();
 
                   check_for_end ();
               }
@@ -642,9 +640,9 @@ namespace MPX
               on_selection_changed ()
               {
                   if(get_selection()->count_selected_rows() == 1)
-                      m_MusicLib.set_play();
+                      m_MLib.set_play();
                   else
-                      m_MusicLib.clear_play();
+                      m_MLib.clear_play();
               }
 
               virtual void
@@ -662,10 +660,10 @@ namespace MPX
               {
                   ListStore->clear ();
                   m_CurrentIter.reset ();
-                  m_MusicLib.check_nextprev_caps();
-                  m_MusicLib.send_caps ();
+                  m_MLib.check_nextprev_caps();
+                  m_MLib.send_caps ();
                   columns_autosize();
-                  m_MusicLib.plist_end(true);
+                  m_MLib.plist_end(true);
               }
 
               void
@@ -675,7 +673,7 @@ namespace MPX
                   {
                         if(TreePath (m_CurrentIter.get()) == TreePath(1, ListStore->children().size() - 1))
                         {
-                            m_MusicLib.plist_end(false);
+                            m_MLib.plist_end(false);
                         }
                   }
               }
@@ -957,8 +955,8 @@ namespace MPX
                       append_uris (uris, iter, begin);
                   }
 
-                  m_MusicLib.check_nextprev_caps ();
-                  m_MusicLib.send_caps ();
+                  m_MLib.check_nextprev_caps ();
+                  m_MLib.send_caps ();
               }
 
               virtual bool
@@ -1317,8 +1315,8 @@ namespace MPX
                   }
 
                   append_uris (uris, iter, begin);
-                  m_MusicLib.check_nextprev_caps();
-                  m_MusicLib.send_caps ();
+                  m_MLib.check_nextprev_caps();
+                  m_MLib.send_caps ();
               }
 
               bool
@@ -1528,7 +1526,6 @@ namespace MPX
             // state variables
     
               bool                                  m_ButtonPressed;
-              bool                                  m_Hand;
               bool                                  m_ShowNew;
 
              // widgets
@@ -1536,6 +1533,176 @@ namespace MPX
               Gtk::Entry*                           m_FilterEntry;
               Gtk::Label*                           m_LabelShowing;
 
+            public:
+
+              AlbumTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml,    
+                         PAccess<MPX::Library> const& lib, PAccess<MPX::Covers> const& amzn, MPX::Source::PlaybackSourceMusicLib & mlib)
+              : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-albums")
+              , m_Lib(lib)
+              , m_Covers(amzn)
+              , m_MLib(mlib)
+              , m_ButtonPressed(false)
+              , m_ShowNew(false)
+              {
+                for(int n = 0; n < 6; ++n)
+                    m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename(DATA_DIR,"images"),
+                        (boost::format("stars%d.png") % n).str()));
+
+                m_Lib.get().signal_new_album().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_album ));
+                m_Lib.get().signal_new_track().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_track ));
+                m_Lib.get().signal_album_updated().connect( sigc::mem_fun( *this, &AlbumTreeView::on_album_updated ));
+                m_Lib.get().signal_reload().connect( sigc::mem_fun( *this, &AlbumTreeView::album_list_load ));
+
+                m_Covers.get().signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
+
+                xml->get_widget("label-showing", m_LabelShowing);
+
+                set_show_expanders( false );
+                set_level_indentation( 32 );
+
+                TreeViewColumn * col = manage (new TreeViewColumn());
+                GtkCellRenderer * renderer = gossip_cell_renderer_expander_new ();
+                gtk_tree_view_column_pack_start (col->gobj(), renderer, FALSE);
+                gtk_tree_view_column_set_cell_data_func (col->gobj(),
+                                     renderer,
+                                     GtkTreeCellDataFunc(rb_sourcelist_expander_cell_data_func),
+                                     this,
+                                     NULL);
+
+                CellRendererCairoSurface * cellcairo = manage (new CellRendererCairoSurface);
+                col->pack_start(*cellcairo, false);
+                col->set_cell_data_func(*cellcairo, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncCover ));
+                cellcairo->property_xpad() = 4;
+                cellcairo->property_ypad() = 4;
+                cellcairo->property_yalign() = 0.;
+                cellcairo->property_xalign() = 0.;
+
+                CellRendererVBox *cvbox = manage (new CellRendererVBox);
+                CellRendererText *celltext = manage (new CellRendererText);
+                celltext->property_yalign() = 0.;
+                celltext->property_ypad() = 4;
+                celltext->property_height() = 72;
+                celltext->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE;
+                cvbox->property_renderer1() = celltext;
+
+                CellRendererPixbuf *cellpixbuf = manage (new CellRendererPixbuf);
+                cellpixbuf->property_xalign() = 0.;
+                cellpixbuf->property_ypad() = 2;
+                cellpixbuf->property_xpad() = 2;
+                cvbox->property_renderer2() = cellpixbuf;
+
+                col->pack_start(*cvbox, true);
+                col->set_cell_data_func(
+                    *cvbox,
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::cellDataFuncText1
+                ));
+
+                CellRendererCount *cellcount = manage (new CellRendererCount);
+                cellcount->property_box() = BOX_NORMAL;
+                col->pack_start(*cellcount, false);
+
+                col->set_cell_data_func(
+                    *cellcount,
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::cellDataFuncText2
+                ));
+
+                celltext = manage (new CellRendererText);
+                col->pack_start(*celltext, false);
+
+                col->set_cell_data_func(
+                    *celltext,
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::cellDataFuncText3
+                ));
+
+                celltext = manage (new CellRendererText);
+                col->pack_start(*celltext, false);
+
+                col->set_cell_data_func(
+                    *celltext,
+                    sigc::mem_fun(
+                    *this,
+                    &AlbumTreeView::cellDataFuncText4
+                ));
+
+                celltext = manage (new CellRendererText);
+                col->pack_start(*celltext, false);
+                celltext->property_xalign() = 0.;
+                celltext->property_xpad() = 2;
+
+                col->set_cell_data_func(
+                    *celltext,
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::cellDataFuncText5
+                ));
+
+                append_column(*col);
+
+                TreeStore = Gtk::TreeStore::create(AlbumColumns);
+
+                TreeStoreFilter = Gtk::TreeModelFilter::create(TreeStore);
+
+                TreeStoreFilter->set_visible_func(
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::album_visible_func
+                ));
+
+                TreeStoreFilter->signal_row_inserted().connect((
+                    sigc::hide(sigc::hide(sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::on_row_added_or_deleted
+                )))));
+
+                TreeStoreFilter->signal_row_deleted().connect((
+                    sigc::hide(sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::on_row_added_or_deleted
+                ))));
+
+
+                set_model(TreeStoreFilter);
+
+                TreeStore->set_sort_func(0 , sigc::mem_fun( *this, &AlbumTreeView::slotSortAlpha ));
+                TreeStore->set_sort_func(1 , sigc::mem_fun( *this, &AlbumTreeView::slotSortDate ));
+                TreeStore->set_sort_func(2 , sigc::mem_fun( *this, &AlbumTreeView::slotSortRating ));
+                TreeStore->set_sort_func(3 , sigc::mem_fun( *this, &AlbumTreeView::slotSortStrictAlpha ));
+
+                TreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
+
+                m_DiscDefault_Pixbuf =
+                    Gdk::Pixbuf::create_from_file(
+                        build_filename(
+                            DATA_DIR,
+                            build_filename("images","disc-default.png")
+                        )
+                    )->scale_simple(90,90,Gdk::INTERP_BILINEAR);
+
+                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(90,90,Gdk::INTERP_BILINEAR));
+
+                std::vector<TargetEntry> Entries;
+                Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
+                Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
+                drag_source_set(Entries); 
+
+                xml->get_widget("album-filter-entry", m_FilterEntry);
+
+                m_FilterEntry->signal_changed().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::on_filter_entry_changed
+                ));
+
+                album_list_load ();
+              }
+
+        protected:
 
               virtual void
               on_row_activated (const TreeModel::Path& path, TreeViewColumn* column)
@@ -1738,6 +1905,8 @@ namespace MPX
                 }
                 return false;
               } 
+
+        private:
 
               void
               on_got_cover(const Glib::ustring& mbid)
@@ -2303,7 +2472,7 @@ namespace MPX
               }
 
               bool
-              albumVisibleFunc (TreeIter const& iter)
+              album_visible_func (TreeIter const& iter)
               {
                   AlbumRowType rt = (*iter)[AlbumColumns.RowType];
 
@@ -2363,173 +2532,6 @@ namespace MPX
                  TreeStoreFilter->refilter();
               }
 
-              AlbumTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml,    
-                         PAccess<MPX::Library> const& lib, PAccess<MPX::Covers> const& amzn, MPX::Source::PlaybackSourceMusicLib & mlib)
-              : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-albums")
-              , m_Lib(lib)
-              , m_Covers(amzn)
-              , m_MLib(mlib)
-              , m_ButtonPressed(false)
-              , m_Hand(false)
-              , m_ShowNew(false)
-              {
-                for(int n = 0; n < 6; ++n)
-                    m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename(DATA_DIR,"images"),
-                        (boost::format("stars%d.png") % n).str()));
-
-                m_Lib.get().signal_new_album().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_album ));
-                m_Lib.get().signal_new_track().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_track ));
-                m_Lib.get().signal_album_updated().connect( sigc::mem_fun( *this, &AlbumTreeView::on_album_updated ));
-                m_Lib.get().signal_reload().connect( sigc::mem_fun( *this, &AlbumTreeView::album_list_load ));
-
-                m_Covers.get().signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
-
-                xml->get_widget("label-showing", m_LabelShowing);
-
-                set_show_expanders( false );
-                set_level_indentation( 32 );
-
-                TreeViewColumn * col = manage (new TreeViewColumn());
-                GtkCellRenderer * renderer = gossip_cell_renderer_expander_new ();
-                gtk_tree_view_column_pack_start (col->gobj(), renderer, FALSE);
-                gtk_tree_view_column_set_cell_data_func (col->gobj(),
-                                     renderer,
-                                     GtkTreeCellDataFunc(rb_sourcelist_expander_cell_data_func),
-                                     this,
-                                     NULL);
-
-                CellRendererCairoSurface * cellcairo = manage (new CellRendererCairoSurface);
-                col->pack_start(*cellcairo, false);
-                col->set_cell_data_func(*cellcairo, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncCover ));
-                cellcairo->property_xpad() = 4;
-                cellcairo->property_ypad() = 4;
-                cellcairo->property_yalign() = 0.;
-                cellcairo->property_xalign() = 0.;
-
-                CellRendererVBox *cvbox = manage (new CellRendererVBox);
-                CellRendererText *celltext = manage (new CellRendererText);
-                celltext->property_yalign() = 0.;
-                celltext->property_ypad() = 4;
-                celltext->property_height() = 72;
-                celltext->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE;
-                cvbox->property_renderer1() = celltext;
-
-                CellRendererPixbuf *cellpixbuf = manage (new CellRendererPixbuf);
-                cellpixbuf->property_xalign() = 0.;
-                cellpixbuf->property_ypad() = 2;
-                cellpixbuf->property_xpad() = 2;
-                cvbox->property_renderer2() = cellpixbuf;
-
-                col->pack_start(*cvbox, true);
-                col->set_cell_data_func(
-                    *cvbox,
-                    sigc::mem_fun(
-                        *this,
-                        &AlbumTreeView::cellDataFuncText1
-                ));
-
-                CellRendererCount *cellcount = manage (new CellRendererCount);
-                cellcount->property_box() = BOX_NORMAL;
-                col->pack_start(*cellcount, false);
-
-                col->set_cell_data_func(
-                    *cellcount,
-                    sigc::mem_fun(
-                        *this,
-                        &AlbumTreeView::cellDataFuncText2
-                ));
-
-                celltext = manage (new CellRendererText);
-                col->pack_start(*celltext, false);
-
-                col->set_cell_data_func(
-                    *celltext,
-                    sigc::mem_fun(
-                        *this,
-                        &AlbumTreeView::cellDataFuncText3
-                ));
-
-                celltext = manage (new CellRendererText);
-                col->pack_start(*celltext, false);
-
-                col->set_cell_data_func(
-                    *celltext,
-                    sigc::mem_fun(
-                    *this,
-                    &AlbumTreeView::cellDataFuncText4
-                ));
-
-                celltext = manage (new CellRendererText);
-                col->pack_start(*celltext, false);
-                celltext->property_xalign() = 0.;
-                celltext->property_xpad() = 2;
-
-                col->set_cell_data_func(
-                    *celltext,
-                    sigc::mem_fun(
-                        *this,
-                        &AlbumTreeView::cellDataFuncText5
-                ));
-
-                append_column(*col);
-
-                TreeStore = Gtk::TreeStore::create(AlbumColumns);
-
-                TreeStoreFilter = Gtk::TreeModelFilter::create(TreeStore);
-
-                TreeStoreFilter->set_visible_func(
-                    sigc::mem_fun(
-                        *this,
-                        &AlbumTreeView::albumVisibleFunc
-                ));
-
-                TreeStoreFilter->signal_row_inserted().connect((
-                    sigc::hide(sigc::hide(sigc::mem_fun(
-                        *this,
-                        &AlbumTreeView::on_row_added_or_deleted
-                )))));
-
-                TreeStoreFilter->signal_row_deleted().connect((
-                    sigc::hide(sigc::mem_fun(
-                        *this,
-                        &AlbumTreeView::on_row_added_or_deleted
-                ))));
-
-
-                set_model(TreeStoreFilter);
-
-                TreeStore->set_sort_func(0 , sigc::mem_fun( *this, &AlbumTreeView::slotSortAlpha ));
-                TreeStore->set_sort_func(1 , sigc::mem_fun( *this, &AlbumTreeView::slotSortDate ));
-                TreeStore->set_sort_func(2 , sigc::mem_fun( *this, &AlbumTreeView::slotSortRating ));
-                TreeStore->set_sort_func(3 , sigc::mem_fun( *this, &AlbumTreeView::slotSortStrictAlpha ));
-
-                TreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
-
-                m_DiscDefault_Pixbuf =
-                    Gdk::Pixbuf::create_from_file(
-                        build_filename(
-                            DATA_DIR,
-                            build_filename("images","disc-default.png")
-                        )
-                    )->scale_simple(90,90,Gdk::INTERP_BILINEAR);
-
-                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(90,90,Gdk::INTERP_BILINEAR));
-
-                std::vector<TargetEntry> Entries;
-                Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
-                Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
-                drag_source_set(Entries); 
-
-                xml->get_widget("album-filter-entry", m_FilterEntry);
-
-                m_FilterEntry->signal_changed().connect(
-                    sigc::mem_fun(
-                        *this,
-                        &AlbumTreeView::on_filter_entry_changed
-                ));
-
-                album_list_load ();
-              }
         };
 
         class LFMTreeView
@@ -3165,7 +3167,7 @@ namespace MPX
               }
 
               bool
-              albumVisibleFunc (TreeIter const& iter)
+              album_visible_func (TreeIter const& iter)
               {
                   ustring filter (ustring (m_FilterEntry->get_text()).lowercase());
                   TreePath path (TreeStore->get_path(iter));
@@ -3388,9 +3390,498 @@ namespace MPX
 
         };
 
+        struct AllTracksColumnsT : public Gtk::TreeModel::ColumnRecord 
+        {
+            Gtk::TreeModelColumn<Glib::ustring> Artist;
+            Gtk::TreeModelColumn<Glib::ustring> Album;
+            Gtk::TreeModelColumn<guint64>       Track;
+            Gtk::TreeModelColumn<Glib::ustring> Name;
+            Gtk::TreeModelColumn<guint64>       Length;
+
+            // These hidden columns are used for sorting
+            // They don't contain sortnames, as one might 
+            // think from their name, but instead the MB
+            // IDs (if not available, then just the plain name)
+            // They are used only for COMPARISON FOR EQUALITY.
+            // Obviously, comparing them with compare() is
+            // useless if they're MB IDs
+
+            Gtk::TreeModelColumn<Glib::ustring> ArtistSort;
+            Gtk::TreeModelColumn<Glib::ustring> AlbumSort;
+            Gtk::TreeModelColumn<gint64>        RowId;
+            Gtk::TreeModelColumn<std::string>   Location;
+            Gtk::TreeModelColumn< ::MPX::Track> MPXTrack;
+            Gtk::TreeModelColumn<gint64>        Rating;
+            Gtk::TreeModelColumn<bool>          IsMPXTrack;
+            Gtk::TreeModelColumn<bool>          IsBad;
+
+            AllTracksColumnsT ()
+            {
+                add (Artist);
+                add (Album);
+                add (Track);
+                add (Name);
+                add (Length);
+                add (ArtistSort);
+                add (AlbumSort);
+                add (RowId);
+                add (Location);
+                add (MPXTrack);
+                add (Rating);
+                add (IsMPXTrack);
+                add (IsBad);
+            };
+        };
+
+        class AllTracksTreeView
+            :   public WidgetLoader<Gtk::TreeView>
+        {
+              MPX::Source::PlaybackSourceMusicLib & m_MLib;
+
+              PAccess<MPX::Library>                 m_Lib;
+              PAccess<MPX::HAL>                     m_HAL;
+
+              Glib::RefPtr<Gdk::Pixbuf>             m_Playing;
+              Glib::RefPtr<Gdk::Pixbuf>             m_Bad;
+
+              Glib::RefPtr<Gtk::UIManager>          m_UIManager;
+              Glib::RefPtr<Gtk::ActionGroup>        m_ActionGroup;      
+
+            public:
+
+              Glib::RefPtr<Gdk::Pixbuf>             m_Stars[N_STARS];
+
+              AllTracksColumnsT                     AllTracksColumns;
+              Glib::RefPtr<Gtk::ListStore>          ListStore;
+              Glib::RefPtr<Gtk::TreeModelFilter>    ListStoreFilter;
+
+              Gtk::Entry                          * m_FilterEntry;
+
+              enum Column
+              {
+                C_TITLE,
+                C_ARTIST,
+                C_LENGTH,
+                C_ALBUM,
+                C_TRACK,
+                C_RATING,
+              };
+
+              static const int N_FIRST_CUSTOM = 6;
+
+              AllTracksTreeView(
+                    Glib::RefPtr<Gnome::Glade::Xml> const& xml,
+                    PAccess<MPX::Library>           const& lib,
+                    PAccess<MPX::HAL>               const& hal,
+                    MPX::Source::PlaybackSourceMusicLib  & mlib
+              )
+              : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-alltracks")
+              , m_MLib(mlib)
+              , m_Lib(lib)
+              , m_HAL(hal)
+              {
+                set_has_tooltip();
+                set_rules_hint();
+
+                for(int n = 0; n < 6; ++n)
+                {
+                    m_Stars[n] = Gdk::Pixbuf::create_from_file(
+                        build_filename(
+                            build_filename(
+                                DATA_DIR,
+                                "images"
+                            ),
+                            (boost::format("stars%d.png") % n).str()
+                    ));
+                }
+
+                TreeViewColumn * col = 0; 
+
+                append_column(_("Name"), AllTracksColumns.Name);
+                append_column(_("Artist"), AllTracksColumns.Artist);
+
+                col = manage (new TreeViewColumn(_("Time")));
+                CellRendererText * cell2 = manage (new CellRendererText);
+                col->property_alignment() = 1.;
+                col->pack_start(*cell2, true);
+                col->set_cell_data_func(*cell2, sigc::mem_fun( *this, &AllTracksTreeView::cellDataFuncTime ));
+                col->set_sort_column_id(AllTracksColumns.Length);
+                g_object_set(G_OBJECT(cell2->gobj()), "xalign", 1.0f, NULL);
+                append_column(*col);
+
+                append_column(_("Album"), AllTracksColumns.Album);
+                append_column(_("Track"), AllTracksColumns.Track);
+
+                col = manage (new TreeViewColumn(_("My Rating")));
+                CellRendererPixbuf *cell = manage (new CellRendererPixbuf);
+                col->pack_start(*cell, false);
+                col->set_min_width(66);
+                col->set_max_width(66);
+                col->set_cell_data_func(*cell, sigc::mem_fun( *this, &AllTracksTreeView::cellDataFuncRating ));
+                append_column(*col);
+
+                //////////////////////////////// 
+
+#if 0
+                cell2 = manage (new CellRendererText);
+                for( int i = 0; i < N_ATTRIBUTES_INT; ++i)
+                {
+                        col = manage (new TreeViewColumn(_(attribute_names[i])));
+                        col->pack_start(*cell2, true);
+                        col->set_cell_data_func(*cell2, sigc::bind(sigc::mem_fun( *this, &AllTracksTreeView::cellDataFuncCustom ), i ));
+                        col->property_visible()= false;
+                        append_column(*col);
+                }
+#endif
+    
+                ////////////////////////////////
+
+                get_column(C_TITLE)->set_sort_column_id(AllTracksColumns.Name);
+                get_column(C_ARTIST)->set_sort_column_id(AllTracksColumns.Artist);
+                get_column(C_LENGTH)->set_sort_column_id(AllTracksColumns.Length);
+                get_column(C_ALBUM)->set_sort_column_id(AllTracksColumns.Album);
+                get_column(C_TRACK)->set_sort_column_id(AllTracksColumns.Track);
+                get_column(C_RATING)->set_sort_column_id(AllTracksColumns.Rating);
+
+                get_column(0)->set_resizable(true);
+                get_column(1)->set_resizable(true);
+                get_column(2)->set_resizable(false);
+                get_column(3)->set_resizable(true);
+                get_column(4)->set_resizable(false);
+                get_column(5)->set_resizable(false);
+
+                ListStore = Gtk::ListStore::create(AllTracksColumns);
+                ListStoreFilter = Gtk::TreeModelFilter::create(ListStore);
+
+                ListStoreFilter->set_visible_func(
+                    sigc::mem_fun(
+                        *this,
+                        &AllTracksTreeView::track_visible_func
+                ));
+
+                ListStore->set_sort_func(AllTracksColumns.Artist,
+                    sigc::mem_fun( *this, &AllTracksTreeView::slotSortByArtist ));
+                ListStore->set_sort_func(AllTracksColumns.Album,
+                    sigc::mem_fun( *this, &AllTracksTreeView::slotSortByAlbum ));
+                ListStore->set_sort_func(AllTracksColumns.Track,
+                    sigc::mem_fun( *this, &AllTracksTreeView::slotSortByTrack ));
+
+#if 0 
+                ListStore->set_default_sort_func(
+                    sigc::mem_fun( *this, &AllTracksTreeView::slotSortDefault ));
+#endif
+
+                get_selection()->set_mode(Gtk::SELECTION_MULTIPLE);
+
+                set_headers_clickable();
+
+                m_UIManager = Gtk::UIManager::create();
+                m_ActionGroup = Gtk::ActionGroup::create ("Actions_UiPartPlaylist-AllTracksList");
+                m_ActionGroup->add  (Gtk::Action::create("dummy","dummy"));
+                m_UIManager->insert_action_group (m_ActionGroup);
+
+                xml->get_widget("alltracks-filter-entry", m_FilterEntry);
+
+                m_FilterEntry->signal_changed().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &AllTracksTreeView::on_filter_entry_changed
+                ));
+
+                append_tracks();
+                set_model(ListStoreFilter);
+              }
+
+        protected:
+
+              virtual void
+              on_row_activated (const TreeModel::Path& path, TreeViewColumn* column)
+              {
+                TreeIter iter = ListStore->get_iter( ListStoreFilter->convert_path_to_child_path(path) );
+                gint64 id = (*iter)[AllTracksColumns.RowId];
+                IdV v (1, id);
+                m_MLib.play_tracks(v);
+              }
+
+              void
+              on_filter_entry_changed ()
+              {
+                    ListStoreFilter->refilter();
+              }
+
+              bool
+              track_visible_func (TreeIter const& iter)
+              {
+                  std::string filter = m_FilterEntry->get_text().lowercase();
+                  TreePath path = ListStore->get_path(iter);
+
+                  if( filter.empty() ) return true;
+
+                  typedef std::vector<std::string> split_vector_type; 
+
+                  split_vector_type SplitVec;
+                  boost::algorithm::split( SplitVec, filter, boost::algorithm::is_any_of(" "));
+    
+                  split_vector_type MatchVec;
+                  MatchVec.push_back(ustring((*iter)[AllTracksColumns.Artist]).lowercase());
+                  MatchVec.push_back(ustring((*iter)[AllTracksColumns.Album]).lowercase());
+                  MatchVec.push_back(ustring((*iter)[AllTracksColumns.Name]).lowercase());
+
+                  for(split_vector_type::const_iterator i = SplitVec.begin(); i != SplitVec.end(); ++i)
+                  {
+                    bool found_fragment = false;
+                    for(split_vector_type::const_iterator x = MatchVec.begin(); x != MatchVec.end(); ++x)
+                    {
+                        if((*i).empty())
+                            continue;
+
+                        if(boost::algorithm::find_first(*x, *i))
+                        {
+                            found_fragment = true; 
+                        }
+                    }
+                    if(! found_fragment )
+                    {
+                        return false;
+                    }
+                  }
+
+                  return true;
+             }
+    
+ 
+              void
+              place_track(SQL::Row & r, Gtk::TreeIter const& iter)
+              {
+                  if(r.count("id"))
+                      (*iter)[AllTracksColumns.RowId] = get<gint64>(r["id"]); 
+                  else
+                      g_critical("%s: No id for track, extremeley suspicious", G_STRLOC);
+
+                  if(r.count("artist"))
+                      (*iter)[AllTracksColumns.Artist] = get<std::string>(r["artist"]); 
+                  if(r.count("album"))
+                      (*iter)[AllTracksColumns.Album] = get<std::string>(r["album"]); 
+                  if(r.count("track"))
+                      (*iter)[AllTracksColumns.Track] = guint64(get<gint64>(r["track"]));
+                  if(r.count("title"))
+                      (*iter)[AllTracksColumns.Name] = get<std::string>(r["title"]);
+                  if(r.count("time"))
+                      (*iter)[AllTracksColumns.Length] = guint64(get<gint64>(r["time"]));
+                  if(r.count("mb_artist_id"))
+                      (*iter)[AllTracksColumns.ArtistSort] = get<std::string>(r["mb_artist_id"]);
+                  if(r.count("mb_album_id"))
+                      (*iter)[AllTracksColumns.AlbumSort] = get<std::string>(r["mb_album_id"]);
+                  if(r.count("rating"))
+                      (*iter)[AllTracksColumns.Rating] = get<gint64>(r["rating"]);
+
+                  (*iter)[AllTracksColumns.Location] = get<std::string>(r["location"]); 
+                  (*iter)[AllTracksColumns.MPXTrack] = m_Lib.get().sqlToTrack(r); 
+                  (*iter)[AllTracksColumns.IsMPXTrack] = true; 
+                  (*iter)[AllTracksColumns.IsBad] = false; 
+              }
+
+              void
+              place_track(MPX::Track & track, Gtk::TreeIter const& iter)
+              {
+                  if(track[ATTRIBUTE_MPX_TRACK_ID])
+                      (*iter)[AllTracksColumns.RowId] = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()); 
+                  else
+                      g_critical("Warning, no id given for track; this is totally wrong and should never happen.");
+
+
+                  if(track[ATTRIBUTE_ARTIST])
+                      (*iter)[AllTracksColumns.Artist] = get<std::string>(track[ATTRIBUTE_ARTIST].get()); 
+
+                  if(track[ATTRIBUTE_ALBUM])
+                      (*iter)[AllTracksColumns.Album] = get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
+
+                  if(track[ATTRIBUTE_TRACK])
+                      (*iter)[AllTracksColumns.Track] = guint64(get<gint64>(track[ATTRIBUTE_TRACK].get()));
+
+                  if(track[ATTRIBUTE_TITLE])
+                      (*iter)[AllTracksColumns.Name] = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
+
+                  if(track[ATTRIBUTE_TIME])
+                      (*iter)[AllTracksColumns.Length] = guint64(get<gint64>(track[ATTRIBUTE_TIME].get()));
+
+                  if(track[ATTRIBUTE_MB_ARTIST_ID])
+                      (*iter)[AllTracksColumns.ArtistSort] = get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get());
+
+                  if(track[ATTRIBUTE_MB_ALBUM_ID])
+                      (*iter)[AllTracksColumns.AlbumSort] = get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get());
+
+                  if(track[ATTRIBUTE_RATING])
+                      (*iter)[AllTracksColumns.Rating] = get<gint64>(track[ATTRIBUTE_RATING].get());
+
+                  if(track[ATTRIBUTE_LOCATION])
+                      (*iter)[AllTracksColumns.Location] = get<std::string>(track[ATTRIBUTE_LOCATION].get());
+                  else
+                      g_critical("Warning, no location given for track; this is totally wrong and should never happen.");
+
+                  (*iter)[AllTracksColumns.MPXTrack] = track; 
+                  (*iter)[AllTracksColumns.IsMPXTrack] = track[ATTRIBUTE_MPX_TRACK_ID] ? true : false; 
+                  (*iter)[AllTracksColumns.IsBad] = false; 
+              }
+
+              void          
+              append_tracks ()
+              {
+                  SQL::RowV v;
+                  m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY album_artist, album, track_view.track")).str()); 
+                  TreeIter iter = ListStore->append();
+
+                  for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                  {
+                          SQL::Row & r = *i;
+                          
+                          if(i != v.begin())
+                              iter = ListStore->insert_after(iter);
+
+                          place_track(r, iter);
+                  }
+              } 
+
+              virtual bool
+              on_button_press_event (GdkEventButton* event)
+              {
+                  int cell_x, cell_y ;
+                  TreeViewColumn *col ;
+                  TreePath path;
+
+                  if(get_path_at_pos (event->x, event->y, path, col, cell_x, cell_y))
+                  {
+                      if(col == get_column(5))
+                      {
+                          int rating = (cell_x + 7) / 12;
+                          g_return_val_if_fail(((rating >= 0) && (rating <= 5)), false);
+                          TreeIter iter = ListStore->get_iter(path);
+                          (*iter)[AllTracksColumns.Rating] = rating;   
+                          m_Lib.get().trackRated(gint64((*iter)[AllTracksColumns.RowId]), rating);
+                      }
+                  }
+                  TreeView::on_button_press_event(event);
+                  return false;
+              }
+
+              virtual bool
+              on_event (GdkEvent * ev)
+              {
+                  if( ev->type == GDK_BUTTON_PRESS )
+                  {
+                    GdkEventButton * event = reinterpret_cast <GdkEventButton *> (ev);
+                    if( event->button == 3 )
+                    {
+#if 0
+                      Gtk::Menu * menu = dynamic_cast < Gtk::Menu* > (Util::get_popup (m_UIManager, "/popup-playlist-list/menu-playlist-list"));
+                      if (menu) // better safe than screwed
+                      {
+                        menu->popup (event->button, event->time);
+                      }
+                      return true;
+#endif
+                    }
+                  }
+                  return false;
+              }
+
+              void
+              cellDataFuncTime (CellRenderer * basecell, TreeModel::iterator const &iter)
+              {
+                  CellRendererText *cell_t = dynamic_cast<CellRendererText*>(basecell);
+                  guint64 Length = (*iter)[AllTracksColumns.Length]; 
+                  g_object_set(G_OBJECT(cell_t->gobj()), "xalign", 1.0f, NULL);
+                  cell_t->property_text() = (boost::format ("%d:%02d") % (Length / 60) % (Length % 60)).str();
+              }
+
+              void
+              cellDataFuncRating (CellRenderer * basecell, TreeModel::iterator const &iter)
+              {
+                  CellRendererPixbuf *cell_p = dynamic_cast<CellRendererPixbuf*>(basecell);
+                  if(!(*iter)[AllTracksColumns.IsMPXTrack])
+                  {
+                      cell_p->property_sensitive() = false; 
+                      cell_p->property_pixbuf() = Glib::RefPtr<Gdk::Pixbuf>(0);
+                  }
+                  else
+                  {
+                      cell_p->property_sensitive() = true; 
+                      gint64 i = ((*iter)[AllTracksColumns.Rating]);
+                      g_return_if_fail((i >= 0) && (i <= 5));
+                      cell_p->property_pixbuf() = m_Stars[i];
+                  }
+              }
+
+              void
+              cellDataFuncCustom (CellRenderer * basecell, TreeModel::iterator const &iter, int attribute)
+              {
+                  CellRendererText *cell_t = dynamic_cast<CellRendererText*>(basecell);
+                  MPX::Track track = (*iter)[AllTracksColumns.MPXTrack]; 
+
+                  if(track.has(attribute))
+                  {
+                    cell_t->property_text() = ovariant_get_string(track[attribute]);
+                  }
+                  else
+                  {
+                    cell_t->property_text() = ""; 
+                  }
+              }
+
+              int
+              slotSortDefault(const TreeIter& iter_a, const TreeIter& iter_b)
+              {
+                  return 0;
+              }
+
+              int
+              slotSortById(const TreeIter& iter_a, const TreeIter& iter_b)
+              {
+                  guint64 id_a = (*iter_a)[AllTracksColumns.RowId];
+                  guint64 id_b = (*iter_b)[AllTracksColumns.RowId];
+      
+                  return (id_a - id_b); // FIXME: int overflow
+              }
+
+              int
+              slotSortByTrack(const TreeIter& iter_a, const TreeIter& iter_b)
+              {
+                  ustring alb_a = (*iter_a)[AllTracksColumns.AlbumSort];
+                  ustring alb_b = (*iter_b)[AllTracksColumns.AlbumSort];
+                  guint64 trk_a = (*iter_a)[AllTracksColumns.Track];
+                  guint64 trk_b = (*iter_b)[AllTracksColumns.Track];
+
+                  if(alb_a != alb_b)
+                      return 0;
+
+                  return (trk_a - trk_b); // FIXME: int overflow
+              }
+
+              int
+              slotSortByAlbum(const TreeIter& iter_a, const TreeIter& iter_b)
+              {
+                  ustring arts_a = (*iter_a)[AllTracksColumns.ArtistSort];
+                  ustring arts_b = (*iter_b)[AllTracksColumns.ArtistSort];
+                  ustring alb_a = (*iter_a)[AllTracksColumns.Album];
+                  ustring alb_b = (*iter_b)[AllTracksColumns.Album];
+
+                  return alb_a.compare(alb_b); 
+              }
+
+              int
+              slotSortByArtist(const TreeIter& iter_a, const TreeIter& iter_b)
+              {
+                  ustring art_a = (*iter_a)[AllTracksColumns.Artist];
+                  ustring art_b = (*iter_b)[AllTracksColumns.Artist];
+
+                  return art_a.compare(art_b); 
+              }
+        };
+
         PlaylistTreeView        *   m_TreeViewPlaylist;
         AlbumTreeView           *   m_TreeViewAlbums;
         LFMTreeView             *   m_TreeViewLFM;
+        AllTracksTreeView       *   m_TreeViewAllTracks;
 
         PAccess<MPX::Library>       m_Lib;
         PAccess<MPX::Covers>        m_Covers;
@@ -3406,6 +3897,7 @@ namespace MPX
             m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, m_Lib, m_HAL, mlib);
             m_TreeViewAlbums = new AlbumTreeView(m_RefXml, m_Lib, m_Covers, mlib);
             m_TreeViewLFM = new LFMTreeView(m_RefXml, m_Lib, m_Covers, mlib);
+            m_TreeViewAllTracks = new AllTracksTreeView(m_RefXml, m_Lib, m_HAL, mlib);
         }
     };
 }
@@ -3486,14 +3978,21 @@ namespace Source
         m_MainActionGroup->add (ToggleAction::create( "musiclib-show-only-new", _("Show only New Albums")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_show_new_albums ));
 
+
+
         Gtk::RadioButtonGroup gr2;
-        m_MainActionGroup->add (RadioAction::create( gr2, "musiclib-show-albums", _("Albums")),
+        m_MainActionGroup->add (RadioAction::create( gr2, "musiclib-show-albums", _("All Albums")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_view_change ));
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-show-albums"))->property_value() = 0;
 
-        m_MainActionGroup->add (RadioAction::create( gr2, "musiclib-show-collections", _("Last.fm View")),
+        m_MainActionGroup->add (RadioAction::create( gr2, "musiclib-show-alltracks", _("All Tracks")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_view_change ));
-        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-show-collections"))->property_value() = 1;
+        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-show-alltracks"))->property_value() = 1;
+
+        m_MainActionGroup->add (RadioAction::create( gr2, "musiclib-show-collections", _("Last.fm Albums-by-Tag View")),
+                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_view_change ));
+        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-show-collections"))->property_value() = 2;
+
 
 
         m_MainActionGroup->add (Action::create( "musiclib-show-ccdialog", _("Configure columns...")),
@@ -3685,7 +4184,6 @@ namespace Source
     {
         MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
-        playlist.clear();
         playlist.append_tracks(idv, NO_ORDER);
         check_nextprev_caps ();
         send_caps();

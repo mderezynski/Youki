@@ -183,6 +183,7 @@ namespace MPX
             *this,
             &MLibManager::on_rescan_volume
         ));
+        m_Rescan->set_sensitive( false );
     }
 
     /* ------------------------------------------------------------------------------------------------*/
@@ -419,7 +420,10 @@ namespace MPX
     void
     MLibManager::on_volumes_cbox_changed ()
     {
-        if(m_VolumesView->get_selection()->count_selected_rows() > 0)
+        bool has_selection = m_VolumesView->get_selection()->count_selected_rows();
+        m_Rescan->set_sensitive( has_selection );
+
+        if( has_selection )
         {
             TreeIter iter = m_VolumesView->get_selection()->get_selected();
 

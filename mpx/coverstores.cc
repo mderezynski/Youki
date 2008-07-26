@@ -102,6 +102,7 @@ namespace MPX
 
             if (cover->get_width() == 1 && cover->get_height() == 1)
             {
+                g_message("%s: 1x1px, Trying Next Image", G_STRFUNC);
                 goto next_image;
             }
             else
@@ -111,6 +112,7 @@ namespace MPX
                 try{
                         cover->save( covers.get_thumb_path( cb_data->mbid ), "png" );
                         covers.cache_artwork( cb_data->mbid, cover );
+                        g_message("%s: Got Image", G_STRFUNC);
                         covers.Signals.GotCover.emit( cb_data->mbid );
                 } catch( Glib::FileError & cxe )
                 {
@@ -122,6 +124,8 @@ namespace MPX
         }
         else
         {
+            g_message("%s: Image Retrieval: FAILED", G_STRFUNC);
+
             next_image:
 
             ++(cb_data->n);

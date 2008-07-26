@@ -178,8 +178,12 @@ namespace MPX
 
         if(i < m_current_stores.size())
         {
-            RequestKeeper[data->mbid] = i;
-            m_current_stores[i]->load_artwork(data);
+            CoverStore * store = m_current_stores[0]; // to avoid race conditions
+            if( store )
+            {
+                RequestKeeper[data->mbid] = i;
+                store->load_artwork(data);
+            }
         }
         else
         {
