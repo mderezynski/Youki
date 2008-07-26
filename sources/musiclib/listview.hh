@@ -21,8 +21,7 @@ namespace MPX
         typedef std::vector<std::string>                                    Row1;
         typedef std::vector<Row4>                                           ModelT;
         typedef boost::shared_ptr<ModelT>                                   ModelP;
-
-        typedef sigc::signal<void> Signal0;
+        typedef sigc::signal<void>                                          Signal0;
 
         struct DataModel
         {
@@ -225,7 +224,7 @@ namespace MPX
 
         typedef boost::shared_ptr<Column> ColumnP;
         typedef std::vector<ColumnP> Columns;
-        typedef std::set<ModelT::iterator> Selection;
+        typedef std::set<std::pair<ModelT::iterator, int> > Selection;
 
         typedef sigc::signal<void, gint64> SignalTrackActivated;
 
@@ -245,7 +244,8 @@ namespace MPX
                 GtkWidget                         * m_treeview;
                 IdV                                 m_dnd_idv;
                 bool                                m_dnd;
-                int                                 m_pressed_row;
+                bool                                m_multiple;
+                int                                 m_click_row_1;
 
                 void
                 initialize_metrics ()
@@ -263,7 +263,7 @@ namespace MPX
                 void
                 on_vadj_value_changed ()
                 {
-                    int row = int(m_prop_vadj.get_value()->get_value()/m_rowheight);
+                    int row = (double(m_prop_vadj.get_value()->get_value()-m_rowheight) / double(m_rowheight));
                     if( m_previousdrawnrow != row )
                     {
                         queue_draw ();
@@ -296,13 +296,30 @@ namespace MPX
 
                     for(Selection::const_iterator i = m_selection.begin(); i != m_selection.end(); ++i)
                     {
-                        Row4 const& r = *(*(i));
+                        Row4 const& r = *(i->first);
                         m_dnd_idv.push_back(get<3>(r));
                     }
 
                     selection_data.set("mpx-idvec", 8, reinterpret_cast<const guint8*>(&m_dnd_idv), 8);
 
                     m_dnd = false;
+                }
+
+                virtual bool
+                on_key_press_event (GdkEventKey * event)
+                {
+                    switch( event->keyval )
+                    {
+                        case GDK_Up:
+                            g_message("Up");
+                            break;
+
+                        case GDK_Down:
+                            break;
+                            g_message("Down");
+                    }
+
+                    return false;
                 }
 
                 bool
@@ -314,7 +331,7 @@ namespace MPX
                     {
                         if( !m_selection.empty() )
                         {
-                                Row4 const& r = *(*(m_selection.begin()));
+                                Row4 const& r = *(m_selection.begin()->first);
                                 gint64 id = get<3>(r);
                                 m_trackactivated.emit(id);
                         }
@@ -322,7 +339,23 @@ namespace MPX
                     else
                     if(event->type == GDK_BUTTON_PRESS)
                     {
-                        m_pressed_row = int((m_prop_vadj.get_value()->get_value()+event->y)/m_rowheight);
+                        if(event->state & GDK_SHIFT_MASK)
+                        {
+                            Selection::iterator i_sel = m_selection.end();
+                            i_sel--;
+                            int row_p = i_sel->second; 
+                            int row_c = (m_prop_vadj.get_value()->get_value()+event->y) / double(m_rowheight);
+                            m_multiple = true;
+                            for(int i = row_p+1; i <= row_c; ++i)
+                            {
+                                m_selection.insert(std::make_pair(m_model->m_mapping[i], i));
+                                queue_draw();
+                            }
+                        }
+                        else
+                        {
+                            m_click_row_1 = (m_prop_vadj.get_value()->get_value()+event->y) / double(m_rowheight);
+                        }
                     }
                 
                     return false;
@@ -333,16 +366,27 @@ namespace MPX
                 {
                     using boost::get;
 
-                    if(event->type == GDK_BUTTON_RELEASE && !m_dnd)
+                    if(event->type == GDK_BUTTON_RELEASE) 
                     {
-                        if(event->state & GDK_CONTROL_MASK)
+                        if( m_dnd )
                         {
-                            m_selection.insert(m_model->m_mapping[m_pressed_row]);
+                            return false;
+                        }
+
+                        if( m_multiple )
+                        {
+                            m_multiple = false;
+                            return false;
+                        }
+
+                        if( event->state & GDK_CONTROL_MASK)
+                        {
+                            m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
                         }
                         else
                         {
                             m_selection.clear();
-                            m_selection.insert(m_model->m_mapping[m_pressed_row]);
+                            m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
                         }
                         queue_draw ();
                     }
@@ -379,7 +423,7 @@ namespace MPX
 
                     Gtk::Allocation const& alloc = get_allocation();
 
-                    int row = int(m_prop_vadj.get_value()->get_value()/m_rowheight);
+                    int row = m_prop_vadj.get_value()->get_value() / m_rowheight; 
                     int y_pos = 0;
 
                     m_previousdrawnrow = row;
@@ -414,7 +458,7 @@ namespace MPX
 
                         ModelT::iterator selected = m_model->m_mapping[row];
 
-                        if( !m_selection.empty() && m_selection.count(selected)) 
+                        if( !m_selection.empty() && m_selection.count(std::make_pair(selected, row))) 
                         {
                             cr->set_operator(Cairo::OPERATOR_ATOP);
 
@@ -456,6 +500,7 @@ namespace MPX
                         m_prop_vadj.get_value()->set_value(0.);
                     } 
                     m_selection.clear();
+                    m_prop_vadj.get_value()->set_upper((m_model->size()+1) * m_rowheight);
                     queue_draw();
                 }
 
@@ -514,9 +559,12 @@ namespace MPX
                 , m_prop_vadj   (*this, "vadjustment", (Gtk::Adjustment*)(0))
                 , m_prop_hadj   (*this, "hadjustment", (Gtk::Adjustment*)(0))
                 , m_dnd(false)
+                , m_multiple(false)
                 {
                     m_treeview = gtk_tree_view_new();
                     gtk_widget_realize(GTK_WIDGET(m_treeview));
+
+                    GTK_WIDGET_SET_FLAGS(GTK_WIDGET(gobj()), GTK_CAN_FOCUS);
 
                     ((GtkWidgetClass*)(G_OBJECT_GET_CLASS(G_OBJECT(gobj()))))->set_scroll_adjustments_signal = 
                             g_signal_new ("set_scroll_adjustments",
