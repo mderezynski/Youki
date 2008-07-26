@@ -35,7 +35,7 @@ namespace PlaylistParser
                     t[ATTRIBUTE_TITLE] = OVariant(*(i->title().begin()));
                     t[ATTRIBUTE_ARTIST] = OVariant(*(i->creator().begin()));
                     t[ATTRIBUTE_ALBUM] = OVariant(*(i->album().begin()));
-                    t[ATTRIBUTE_TRACK] = OVariant(*(i->trackNum().begin()));
+                    t[ATTRIBUTE_TRACK] = OVariant(gint64(*(i->trackNum().begin())));
                     t[ATTRIBUTE_TIME] = OVariant(*(i->duration().begin()));
             
                     v.push_back(t);
