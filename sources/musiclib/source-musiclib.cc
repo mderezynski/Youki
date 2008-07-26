@@ -3559,17 +3559,26 @@ namespace MPX
                         &AllTracksTreeView::track_visible_func
                 ));
 
-                ListStore->set_sort_func(AllTracksColumns.Artist,
-                    sigc::mem_fun( *this, &AllTracksTreeView::slotSortByArtist ));
-                ListStore->set_sort_func(AllTracksColumns.Album,
-                    sigc::mem_fun( *this, &AllTracksTreeView::slotSortByAlbum ));
-                ListStore->set_sort_func(AllTracksColumns.Track,
-                    sigc::mem_fun( *this, &AllTracksTreeView::slotSortByTrack ));
+                ListStore->set_sort_func(
+                    AllTracksColumns.Artist,
+                    sigc::mem_fun(
+                        *this,
+                        &AllTracksTreeView::slotSortByArtist
+                ));
 
-#if 0 
-                ListStore->set_default_sort_func(
-                    sigc::mem_fun( *this, &AllTracksTreeView::slotSortDefault ));
-#endif
+                ListStore->set_sort_func(
+                    AllTracksColumns.Album,
+                    sigc::mem_fun(
+                        *this,
+                        &AllTracksTreeView::slotSortByAlbum
+                ));
+
+                ListStore->set_sort_func(
+                    AllTracksColumns.Track,
+                    sigc::mem_fun(
+                        *this,
+                        &AllTracksTreeView::slotSortByTrack
+                ));
 
                 get_selection()->set_mode(Gtk::SELECTION_MULTIPLE);
 
@@ -3586,6 +3595,12 @@ namespace MPX
                     sigc::mem_fun(
                         *this,
                         &AllTracksTreeView::on_filter_entry_changed
+                ));
+
+                m_Lib.get().signal_new_track().connect( 
+                    sigc::mem_fun(
+                        *this,
+                        &AllTracksTreeView::on_new_track
                 ));
 
                 append_tracks();
@@ -3606,7 +3621,14 @@ namespace MPX
               void
               on_filter_entry_changed ()
               {
-                    ListStoreFilter->refilter();
+                ListStoreFilter->refilter();
+              }
+
+              void
+              on_new_track(Track & track, gint64 album_id, gint64 artist_id)
+              {
+                TreeIter iter = TreeStore->append(iter->children());
+                place_track( track, iter );
               }
 
               bool
