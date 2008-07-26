@@ -171,7 +171,7 @@ namespace MPX
                 void
                 set_width (int width)
                 {
-                    m_width = width - 8;
+                    m_width = width - 2;
                 }
 
                 int
@@ -505,7 +505,7 @@ namespace MPX
                     for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                     {
                         (*i)->render_header(cr, *this, x_pos, 0, m_rowheight+2);
-                        x_pos += (*i)->get_width() + 2;
+                        x_pos += (*i)->get_width() + 1;
                     }
 
                     while(m_model->is_set() && (y_pos < m_visibleheight) && (row < m_model->size())) 
@@ -542,7 +542,7 @@ namespace MPX
 
                             Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
                             cr->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.8);
-                            RoundedRectangle(cr, 4, y_pos+2, alloc.get_width()-8, m_rowheight-4, 4.);
+                            RoundedRectangle(cr, 6, y_pos+2, alloc.get_width()-10, m_rowheight-4, 4.);
                             cr->fill_preserve(); 
                             cr->set_source_rgb(c.get_red_p(), c.get_green_p(), c.get_blue_p());
                             cr->stroke();
@@ -551,7 +551,7 @@ namespace MPX
                         for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                         {
                             (*i)->render(cr, m_model->row(row), *this, row, x_pos, y_pos, m_rowheight);
-                            x_pos += (*i)->get_width() + 2;
+                            x_pos += (*i)->get_width() + 1;
                         }
 
                         y_pos += m_rowheight;
