@@ -158,6 +158,10 @@ class PuidScan():
         self.player.set_state(gst.STATE_PLAYING)
         gobject.timeout_add (500, self.update_pipeline_duration)
 
+    def dispose_pipeline():
+
+        self.player.set_state(gst.STATE_NULL)
+
 class PuidScanExec(mpx.Plugin):
 
     """The PUID Scanner performs an audio analysis on the given file to retrieve metadata from MusicBrainz."""
@@ -200,5 +204,5 @@ class PuidScanExec(mpx.Plugin):
                         ctx.iteration(True)
                     self.player.info_set("Analyzing File: %f" % scan.progress)
 
-
+                scan.dispose_pipeline()
                 self.player.info_clear()
