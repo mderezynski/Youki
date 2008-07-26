@@ -214,6 +214,8 @@ namespace MPX
                             break;
                             
                     }
+                    layout->set_ellipsize(Pango::ELLIPSIZE_END);
+                    layout->set_width(m_width*PANGO_SCALE);
                     pango_cairo_show_layout(cr->cobj(), layout->gobj());
 
                     cr->reset_clip();
@@ -223,18 +225,22 @@ namespace MPX
         typedef boost::shared_ptr<Column> ColumnP;
         typedef std::vector<ColumnP> Columns;
 
+        typedef sigc::signal<void, gint64> SignalTrackActivated;
+
         class ListView : public Gtk::DrawingArea
         {
-                int                     m_rowheight;
-                int                     m_visibleheight;
-                int                     m_previousdrawnrow;
-                DataModelP              m_model;
-                Columns                 m_columns;
-                PropAdj                 m_prop_vadj;
-                PropAdj                 m_prop_hadj;
-                guint                   m_signal0; 
-                std::vector<bool>       m_selection;
-                boost::optional<int>    m_selected;
+                int                                 m_rowheight;
+                int                                 m_visibleheight;
+                int                                 m_previousdrawnrow;
+                DataModelP                          m_model;
+                Columns                             m_columns;
+                PropAdj                             m_prop_vadj;
+                PropAdj                             m_prop_hadj;
+                guint                               m_signal0; 
+                std::vector<ModelT::iterator>       m_selection;
+                boost::optional<ModelT::iterator>   m_selected;
+                SignalTrackActivated                m_trackactivated;
+            
 
                 void
                 initialize_metrics ()
@@ -269,7 +275,7 @@ namespace MPX
                     if(!m_selected)
                         return;
 
-                    Row4 const& r = m_model->row(m_selected.get());
+                    Row4 const& r = *(m_selected.get());
                     gint64 * id = new gint64(get<3>(r));
                     selection_data.set("mpx-track", 8, reinterpret_cast<const guint8*>(id), 8);
                 }
@@ -277,10 +283,20 @@ namespace MPX
                 bool
                 on_button_press_event (GdkEventButton * event)
                 {
-                    int row = double(m_model->size()) * double(m_prop_vadj.get_value()->get_value());
-                    row += (event->y / m_rowheight);
-                    m_selected = row;
-                    queue_draw ();
+                    using boost::get;
+
+                    if(event->type == GDK_2BUTTON_PRESS)
+                    {
+                        Row4 const& r = *(m_selected.get());
+                        gint64 id = get<3>(r);
+                        m_trackactivated.emit(id);
+                    }
+                    else
+                    {
+                        int row = int(double(m_model->size()) * double(m_prop_vadj.get_value()->get_value())) + (event->y / m_rowheight);
+                        m_selected = m_model->m_mapping.begin() + row; 
+                        queue_draw ();
+                    }
                 
                     return false;
                 }
@@ -325,7 +341,7 @@ namespace MPX
                     {
                         int x_pos = 2;
 
-                        if( m_selected && m_selected.get() == row )
+                        if( m_selected && m_selected.get() == (m_model->m_mapping.begin() + row) )
                         {
                             cr->set_operator(Cairo::OPERATOR_ATOP);
                             Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
@@ -402,6 +418,12 @@ namespace MPX
                 append_column (ColumnP column)
                 {
                     m_columns.push_back(column);
+                }
+
+                SignalTrackActivated&
+                signal_track_activated()
+                {
+                    return m_trackactivated;
                 }
 
                 ListView ()

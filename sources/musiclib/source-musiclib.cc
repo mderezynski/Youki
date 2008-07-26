@@ -3508,6 +3508,19 @@ namespace MPX
                     scrollwin->add(*view);
                     view->show();
                     scrollwin->show_all();
+
+                    view->signal_track_activated().connect(
+                        sigc::mem_fun(
+                            *this,
+                            &AllTracksTreeView::on_track_activated
+                    ));
+              }
+
+              void
+              on_track_activated (gint64 id)
+              {
+                IdV v (1, id);
+                m_MLib.play_tracks(v);
               }
 
               void
@@ -4306,6 +4319,7 @@ namespace Source
     {
         MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
+        playlist.clear();
         playlist.append_tracks(idv, NO_ORDER);
         check_nextprev_caps ();
         send_caps();
