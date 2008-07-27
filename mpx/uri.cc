@@ -611,19 +611,15 @@ namespace MPX
     std::string
     URI::escape_string (std::string const& in)
     {
-      gchar * field = path_escape (in.c_str()); 
-      std::string s (field);
-      g_free (field);
-      return s;
+      Glib::ScopedPtr<char> field (path_escape (in.c_str()));
+      return field.get();
     }
   
     std::string
     URI::unescape_string (std::string const& in)
     {
-      gchar * field = path_unescape (in.c_str()); 
-      std::string s (field);
-      g_free (field);
-      return s;
+      Glib::ScopedPtr<char> field (path_unescape (in.c_str()));
+      return field.get();
     }
 
     std::string
