@@ -28,9 +28,9 @@ namespace MPX
                 ModelP          m_realmodel;
                 Signal0         m_changed;
 
-                DataModel(ModelP model)
+                DataModel()
                 {
-                    m_realmodel = model;
+                    m_realmodel = ModelP(new ModelT); 
                 }
 
                 virtual Signal0&
@@ -56,6 +56,57 @@ namespace MPX
                 {
                     return (*m_realmodel)[row];
                 }
+
+                void
+                append_track(SQL::Row & r)
+                {
+                    using boost::get;
+
+                    std::string artist, album, title;
+                    gint64 id;
+
+                    if(r.count("id"))
+                        id = get<gint64>(r["id"]); 
+                    else
+                        g_critical("%s: No id for track, extremeley suspicious", G_STRLOC);
+
+                    if(r.count("artist"))
+                        artist = get<std::string>(r["artist"]); 
+                    if(r.count("album"))
+                        album = get<std::string>(r["album"]); 
+                    if(r.count("title"))
+                        title = get<std::string>(r["title"]);
+
+                    Row4 row (artist, album, title, id);
+                    m_realmodel->push_back(row);
+                }
+
+                virtual void
+                append_track(MPX::Track & track)
+                {
+                    using boost::get;
+
+                    std::string artist, album, title;
+                    gint64 id;
+
+                    if(track[ATTRIBUTE_MPX_TRACK_ID])
+                        id = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()); 
+                    else
+                        g_critical("Warning, no id given for track; this is totally wrong and should never happen.");
+
+
+                    if(track[ATTRIBUTE_ARTIST])
+                        artist = get<std::string>(track[ATTRIBUTE_ARTIST].get()); 
+
+                    if(track[ATTRIBUTE_ALBUM])
+                        album = get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
+
+                    if(track[ATTRIBUTE_TITLE])
+                        title = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
+
+                    Row4 row (artist, album, title, id);
+                    m_realmodel->push_back(row);
+                }
         };
 
         typedef boost::shared_ptr<DataModel> DataModelP;
@@ -68,7 +119,7 @@ namespace MPX
                 std::string     m_filter;
 
                 DataModelFilter(DataModelP & model)
-                : DataModel(model->m_realmodel)
+                : DataModel()
                 {
                     regen_mapping ();
                 }
@@ -86,6 +137,13 @@ namespace MPX
                 }
 
                 virtual void
+                append_track(MPX::Track& track)
+                {
+                    DataModel::append_track(track);
+                    regen_mapping();
+                }
+                
+                virtual void
                 set_filter(std::string const& filter)
                 {
                     if(!m_filter.empty() && filter.substr(0, filter.size()-1) == m_filter)
@@ -98,8 +156,6 @@ namespace MPX
                         m_filter = Glib::ustring(filter).lowercase();
                         regen_mapping();
                     }
-
-                    m_changed.emit();
                 }
 
                 void
@@ -121,6 +177,8 @@ namespace MPX
                             m_mapping.push_back(i);
                         }
                     }
+
+                    m_changed.emit();
                 }
 
                 void
@@ -143,6 +201,8 @@ namespace MPX
                     }
 
                     std::swap(m_mapping, new_mapping);
+
+                    m_changed.emit();
                 }
 
         };

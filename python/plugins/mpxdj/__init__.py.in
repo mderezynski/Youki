@@ -26,7 +26,7 @@ def extract_ids(rv, v):
     for val in rv:
         v.append(val["id"].get_int())
 
-class BaseOption(threading.Thread):
+class BaseOPTION__(threading.Thread):
 
     def __init__(self, lib, v, xml, mlib, mcs):
 
@@ -47,11 +47,11 @@ class BaseOption(threading.Thread):
 
         return self.finished.isSet()
 
-class OptionAnalyzer(BaseOption):    
+class OPTION__Analyzer(BaseOPTION__):    
 
     def __init__(self, lib, v, xml, mlib, mcs):
 
-         BaseOption.__init__(self, lib, v, xml, mlib, mcs)
+         BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
 
     def get_similartracks(self, mpxtrack):
 
@@ -265,11 +265,11 @@ class OptionAnalyzer(BaseOption):
         extract_ids(rv, self.v)
         self.finished.set()
 
-class OptionLastFmTag(BaseOption):    
+class OPTION__LastFmTag(BaseOPTION__):    
 
     def __init__(self, lib, v, xml, mlib, mcs):
 
-         BaseOption.__init__(self, lib, v, xml, mlib, mcs)
+         BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
 
     def run(self):
         
@@ -289,11 +289,11 @@ class OptionLastFmTag(BaseOption):
         extract_ids(rv, self.v)
         self.finished.set()
 
-class OptionRandomMix(BaseOption):
+class OPTION__RandomMix(BaseOPTION__):
 
     def __init__(self, lib, v, xml, mlib, mcs):
 
-        BaseOption.__init__(self, lib, v, xml, mlib, mcs)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
 
     def run(self):
 
@@ -344,11 +344,11 @@ class OptionRandomMix(BaseOption):
         if markov_id != -1:
             v.append(markov_id)
 
-class OptionTopTunes(BaseOption):
+class OPTION__TopTunes(BaseOPTION__):
 
     def __init__(self, lib, v, xml, mlib, mcs):
 
-        BaseOption.__init__(self, lib, v, xml, mlib, mcs)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
 
     def run(self):
     
@@ -357,11 +357,11 @@ class OptionTopTunes(BaseOption):
         extract_ids(rv, self.v)
         self.finished.set()
 
-class OptionPlayAll(BaseOption):
+class OPTION__PlayAll(BaseOPTION__):
 
     def __init__(self, lib, v, xml, mlib, mcs):
 
-        BaseOption.__init__(self, lib, v, xml, mlib, mcs)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
 
     def run(self):
 
@@ -370,11 +370,11 @@ class OptionPlayAll(BaseOption):
         extract_ids(rv, self.v)
         self.finished.set()
 
-class OptionEntertainMe(BaseOption):
+class OPTION__EntertainMe(BaseOPTION__):
 
     def __init__(self, lib, v, xml, mlib, mcs):
 
-        BaseOption.__init__(self, lib, v, xml, mlib, mcs)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
 
     def run(self):
 
@@ -401,11 +401,11 @@ class OptionEntertainMe(BaseOption):
         self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist = '%s' AND title = '%s' LIMIT 1" % (artist,title)))
         extract_ids(rv, self.v)
 
-class OptionSoundsOf(BaseOption):
+class OPTION__SoundsOf(BaseOPTION__):
 
     def __init__(self, lib, v, xml, mlib, mcs):
 
-        BaseOption.__init__(self, lib, v, xml, mlib, mcs)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
  
     def run(self):
     
@@ -480,16 +480,16 @@ class MPXDJ(mpx.Plugin):
                    ]
 
         self.callables = [
-                            OptionAnalyzer,
-                            OptionEntertainMe, 
-                            OptionPlayAll, 
-                            OptionTopTunes, 
-                            OptionRandomMix, 
+                            OPTION__Analyzer,
+                            OPTION__EntertainMe, 
+                            OPTION__PlayAll, 
+                            OPTION__TopTunes, 
+                            OPTION__RandomMix, 
                             None,
-                            OptionSoundsOf, 
+                            OPTION__SoundsOf, 
                             None,
                             None,
-                            OptionLastFmTag 
+                            OPTION__LastFmTag 
                          ]
 
 

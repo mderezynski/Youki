@@ -3460,7 +3460,7 @@ namespace MPX
               PAccess<MPX::Library>                 m_Lib;
               PAccess<MPX::HAL>                     m_HAL;
               ListView                            * m_ListView;
-              DataModelFilterP                    * m_FilterModel;
+              DataModelFilterP                      m_FilterModel;
 
             public:
 
@@ -3478,24 +3478,17 @@ namespace MPX
                     Gtk::Entry              * entry     = dynamic_cast<Gtk::Entry*>(xml->get_widget("musiclib-alltracks-filter-entry")); 
                     ListView                * view      = new ListView;
                    
-                    ModelP model = ModelP( new ModelT );
+                    DataModelP m (new DataModel);
 
                     SQL::RowV v;
                     m_Lib.get().getSQL(v, (boost::format("SELECT id, artist, album, title FROM track_view ORDER BY album_artist, album, track_view.track")).str()); 
                     for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                     {
-                            SQL::Row & r = *i;
-                            std::string artist = boost::get<std::string>(r["artist"]);
-                            std::string album  = boost::get<std::string>(r["album"]);
-                            std::string title  = boost::get<std::string>(r["title"]);
-                            gint64         id  = boost::get<gint64>(r["id"]);
-
-                            Row4 row (artist, album, title, id); 
-                            model->push_back(row);
+                        SQL::Row & r = *i;
+                        m->append_track(r);
                     }
 
-                    DataModelP m (new DataModel(model));
-                    DataModelFilterP f (new DataModelFilter(m));
+                    m_FilterModel = DataModelFilterP (new DataModelFilter(m));
 
                     entry->signal_changed().connect(
                         sigc::bind(
@@ -3503,7 +3496,7 @@ namespace MPX
                                 *this,
                                 &AllTracksTreeView::on_entry_changed
                             ),
-                            f,
+                            m_FilterModel,
                             entry
                     ));
 
@@ -3520,7 +3513,7 @@ namespace MPX
                     view->append_column(c2);
                     view->append_column(c3);
 
-                    view->set_model(f);
+                    view->set_model(m_FilterModel);
 
                     scrollwin->add(*view);
                     view->show();
@@ -3531,6 +3524,18 @@ namespace MPX
                             *this,
                             &AllTracksTreeView::on_track_activated
                     ));
+
+                    m_Lib.get().signal_new_track().connect( 
+                        sigc::mem_fun(
+                            *this,
+                            &AllTracksTreeView::on_new_track
+                    ));
+              }
+
+              void
+              on_new_track(Track & track, gint64 album_id, gint64 artist_id)
+              {
+                    m_FilterModel->append_track( track );
               }
 
               void
@@ -3800,7 +3805,6 @@ namespace MPX
                   return true;
              }
     
- 
               void
               place_track(SQL::Row & r, Gtk::TreeIter const& iter)
               {
