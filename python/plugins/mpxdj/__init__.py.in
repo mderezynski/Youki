@@ -1,4 +1,4 @@
-#
+#@
 # -*- coding: utf-8 -*-
 # -*- mode:python ; tab-width:4 -*- ex:set tabstop=4 shiftwidth=4 expandtab: -*-
 #
@@ -120,6 +120,8 @@ class OptionAnalyzer(BaseOption):
     def run_accumulate_tags(self):
 
         playlist = self.mlib.get_playlist_model()
+        if not len(playlist): return
+
         tags = {} 
         items = 10 
 
@@ -172,10 +174,12 @@ class OptionAnalyzer(BaseOption):
 
     def run_similar_artist(self):
 
-        rv          = mpx.SQLRowV()
-        playlist    = self.mlib.get_playlist_model()
-        track       = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
-        artist      = track[mpx.AttributeId.ARTIST].get()
+        playlist = self.mlib.get_playlist_model()
+        if not len(playlist): return
+
+        track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
+        artist = track[mpx.AttributeId.ARTIST].get()
+        rv = mpx.SQLRowV()
 
         try:
                 m = lastfm.SimilarArtists(artist)
@@ -214,41 +218,50 @@ class OptionAnalyzer(BaseOption):
     def run(self):
 
         playlist  = self.mlib.get_playlist_model()
-        ieeev = mpx.IEEEV()
-
         callables = [self.run_accumulate_tags, self.run_similar_track, self.run_similar_artist]
 
-        if len(playlist) < 3:
-                ieeev.append(float(10))
-                ieeev.append(float(45))
-                ieeev.append(float(45))
-        else:
-                ieeev.append(float(40))
-                ieeev.append(float(30))
-                ieeev.append(float(30))
+        tries = 3
 
-        choice = mpx.rand(ieeev)
+        while tries:
 
-        try:
-                callables[choice]()
-
+                #try:
+                callables[0]()
                 if len(self.v):
                         self.finished.set()
                         return
-        except Exception, e:
-                print e 
+                #except Exception, e:
+                #        print e 
 
-        try:
+                #try:
+                callables[1]()
+                if len(self.v):
+                        self.finished.set()
+                        return
+                #except Exception, e:
+                #        print e 
+
+                #try:
+                callables[2]()
+                if len(self.v):
+                        self.finished.set()
+                        return
+                #except Exception, e:
+                #        print e 
+
+
+                #try:
                 self.run_markov()
                 if len(self.v):
-                    self.finished.set()
-                    return
-        except Exception, e:
-                print e 
+                        self.finished.set()
+                        return
+                #except Exception, e:
+                #        print e 
+
+                tries = tries - 1
 
         # Pick one track at random
         rv = mpx.SQLRowV()
-        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY mpxrand() LIMIT 1"))
+        self.lib.getSQL(rv, str("SELECT id FROM track_view ORDER BY mpxrand() LIMIT 1"))
         extract_ids(rv, self.v)
         self.finished.set()
 
@@ -263,15 +276,15 @@ class OptionLastFmTag(BaseOption):
         text = self.xml.get_widget("entry-lastfm-tag").get_text()
         rv = mpx.SQLRowV()
 
-        try:
-                r = lastfm.TagTopArtists(text)
-                a = r.get()
+        #try:
+        r = lastfm.TagTopArtists(text)
+        a = r.get()
 
-                for artist in a:
-                    self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY mpxrand() LIMIT 1" % artist.getMBID()))
+        for artist in a:
+            self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY mpxrand() LIMIT 1" % artist.getMBID()))
 
-        except Exception, e:
-                print e
+        #except Exception, e:
+        #        print e
 
         extract_ids(rv, self.v)
         self.finished.set()
