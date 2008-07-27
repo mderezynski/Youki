@@ -91,7 +91,7 @@ namespace MPX
         GFileInfo * f = g_file_enumerator_next_file(enm, NULL, NULL);
         if(f)
         {
-            std::string full_path (uri + G_DIR_SEPARATOR_S + g_file_info_get_name(f));
+            std::string full_path = uri + G_DIR_SEPARATOR_S + URI::escape_string(g_file_info_get_name(f));
             GFileType t = g_file_info_get_file_type(f);
             g_object_unref(f);
             if (t == G_FILE_TYPE_REGULAR)
