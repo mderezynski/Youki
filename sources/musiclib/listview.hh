@@ -33,6 +33,12 @@ namespace MPX
                     m_realmodel = ModelP(new ModelT); 
                 }
 
+                DataModel(ModelP model)
+                {
+                    m_realmodel = model; 
+                }
+
+
                 virtual Signal0&
                 signal_changed ()
                 {
@@ -63,7 +69,7 @@ namespace MPX
                     using boost::get;
 
                     std::string artist, album, title;
-                    gint64 id;
+                    gint64 id = 0;
 
                     if(r.count("id"))
                         id = get<gint64>(r["id"]); 
@@ -87,7 +93,7 @@ namespace MPX
                     using boost::get;
 
                     std::string artist, album, title;
-                    gint64 id;
+                    gint64 id = 0;
 
                     if(track[ATTRIBUTE_MPX_TRACK_ID])
                         id = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()); 
@@ -119,7 +125,7 @@ namespace MPX
                 std::string     m_filter;
 
                 DataModelFilter(DataModelP & model)
-                : DataModel()
+                : DataModel(model->m_realmodel)
                 {
                     regen_mapping ();
                 }
@@ -148,12 +154,12 @@ namespace MPX
                 {
                     if(!m_filter.empty() && filter.substr(0, filter.size()-1) == m_filter)
                     {
-                        m_filter = Glib::ustring(filter).lowercase();
+                        m_filter = filter; 
                         regen_mapping_iterative();
                     }
                     else
                     {
-                        m_filter = Glib::ustring(filter).lowercase();
+                        m_filter = filter; 
                         regen_mapping();
                     }
                 }
@@ -165,6 +171,7 @@ namespace MPX
 
                     m_mapping.clear();
 
+                    std::string filter = Glib::ustring(m_filter).lowercase().c_str();
                     
                     for(ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i)
                     {
@@ -187,6 +194,8 @@ namespace MPX
                     using boost::get;
 
                     RowRowMapping new_mapping;
+
+                    std::string filter = Glib::ustring(m_filter).lowercase().c_str();
 
                     for(RowRowMapping::const_iterator i = m_mapping.begin(); i != m_mapping.end(); ++i)
                     {
@@ -291,7 +300,16 @@ namespace MPX
                 }
 
                 void
-                render(Cairo::RefPtr<Cairo::Context> cr, Row4 const& datarow, Gtk::Widget& widget, int row, int x_pos, int y_pos, int rowheight)
+                render(
+                    Cairo::RefPtr<Cairo::Context>   cr,
+                    Row4 const&                     datarow,
+                    std::string const&              filter,
+                    Gtk::Widget&                    widget,
+                    int                             row,
+                    int                             x_pos,
+                    int                             y_pos,
+                    int                             rowheight
+                )
                 {
                     using boost::get;
 
@@ -302,20 +320,59 @@ namespace MPX
                     cr->clip();
                     cr->move_to( x_pos + 10, y_pos + 4);
 
-                    Glib::RefPtr<Pango::Layout> layout; 
+                    std::string str;
                     switch( m_column )
                     {
                         case 0:
-                            layout = widget.create_pango_layout(get<0>(datarow));
+                            str = get<0>(datarow);
                             break;
                         case 1:
-                            layout = widget.create_pango_layout(get<1>(datarow));
+                            str = get<1>(datarow);
                             break;
                         case 2:
-                            layout = widget.create_pango_layout(get<2>(datarow));
+                            str = get<2>(datarow);
                             break;
-                            
                     }
+
+#if 0
+                    using namespace boost::algorithm;
+
+                    typedef std::vector< std::string >                                  SplitVectorType;
+
+                    typedef boost::iterator_range<std::string::iterator>                Range;
+                    typedef std::pair<std::string::size_type, std::string::size_type>   IndexedRange; 
+
+                    typedef std::list<Range>                                            Results;
+                    typedef std::list<IndexedRange>                                     IndexResults;
+
+                    typedef std::vector<Results>                                        ResultsVector;
+                    typedef std::vector<IndexResults>                                   IndexResultsVector;
+
+                    SplitVectorType split_vec; // #2: Search for tokens
+                    boost::algorithm::split( split_vec, filter, boost::algorithm::is_any_of(" ") );
+
+                    std::sort( split_vec.begin(), split_vec.end() );
+                    std::reverse( split_vec.begin(), split_vec.end());
+
+                    IndexResultsVector iv;
+
+                    for( SplitVectorType::const_iterator i = split_vec.begin(); i != split_vec.end(); ++i )
+                    {
+                        Results x; 
+                        ifind_all(x, str, *i);
+
+                        IndexResults ir;
+                        for(Results::const_iterator i = x.begin(); i != x.end(); ++i )
+                        {
+                            ir.push_back(std::make_pair(std::distance(str.begin(), (*i).begin()), std::distance(str.begin(), (*i).end())));
+                        }
+
+                        iv.push_back(ir);
+                    }
+#endif
+
+                    Glib::RefPtr<Pango::Layout> layout; 
+                    layout = widget.create_pango_layout(str);
                     layout->set_ellipsize(Pango::ELLIPSIZE_END);
                     layout->set_width(m_width*PANGO_SCALE);
                     pango_cairo_show_layout(cr->cobj(), layout->gobj());
@@ -435,6 +492,11 @@ namespace MPX
                 {
                     using boost::get;
 
+                    if( event->y < (m_rowheight+4))
+                    {
+                        return false;
+                    }
+        
                     m_sel_size_was = m_selection.size();
 
                     if(event->type == GDK_2BUTTON_PRESS)
@@ -455,28 +517,35 @@ namespace MPX
                             i_sel--;
                             int row_p = i_sel->second; 
                             int row_c = (m_prop_vadj.get_value()->get_value() / m_rowheight) + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
-                            for(int i = row_p+1; i <= row_c; ++i)
+                            if( row_c < m_model->m_mapping.size() )
                             {
-                                m_selection.insert(std::make_pair(m_model->m_mapping[i], i));
-                                queue_draw();
+                                    for(int i = row_p+1; i <= row_c; ++i)
+                                    {
+                                        m_selection.insert(std::make_pair(m_model->m_mapping[i], i));
+                                        queue_draw();
+                                    }
                             }
                         }
                         else
                         {
-                            m_click_row_1 = (m_prop_vadj.get_value()->get_value() / m_rowheight) + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
+                            int row = (m_prop_vadj.get_value()->get_value() / m_rowheight) + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
+                            if( row < m_model->m_mapping.size() )
+                            {
+                                    m_click_row_1 = row;
 
-                            if( event->state & GDK_CONTROL_MASK)
-                            {
-                                m_sel_size_was = 1; // hack
-                                m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
-                                queue_draw();
-                            }
-                            else
-                            if( m_selection.size() <= 1)
-                            {
-                                m_selection.clear();
-                                m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
-                                queue_draw();
+                                    if( event->state & GDK_CONTROL_MASK)
+                                    {
+                                        m_sel_size_was = 1; // hack
+                                        m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
+                                        queue_draw();
+                                    }
+                                    else
+                                    if( m_selection.size() <= 1)
+                                    {
+                                        m_selection.clear();
+                                        m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
+                                        queue_draw();
+                                    }
                             }
                         }
                     }
@@ -489,6 +558,11 @@ namespace MPX
                 {
                     using boost::get;
 
+                    if( event->y < (m_rowheight+4))
+                    {
+                        return false;
+                    }
+        
                     if(event->type == GDK_BUTTON_RELEASE) 
                     {
                         if( m_dnd )
@@ -509,10 +583,13 @@ namespace MPX
                                 i_sel--;
                                 int row_p = i_sel->second; 
                                 int row_c = (m_prop_vadj.get_value()->get_value() / m_rowheight) + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
-                                for(int i = row_p+1; i <= row_c; ++i)
+                                if( row_c < m_model->m_mapping.size() )
                                 {
-                                    m_selection.insert(std::make_pair(m_model->m_mapping[i], i));
-                                    queue_draw();
+                                        for(int i = row_p+1; i <= row_c; ++i)
+                                        {
+                                            m_selection.insert(std::make_pair(m_model->m_mapping[i], i));
+                                            queue_draw();
+                                        }
                                 }
                             }
                             else
@@ -610,7 +687,7 @@ namespace MPX
 
                         for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                         {
-                            (*i)->render(cr, m_model->row(row), *this, row, x_pos, y_pos, m_rowheight);
+                            (*i)->render(cr, m_model->row(row), m_model->m_filter, *this, row, x_pos, y_pos, m_rowheight);
                             x_pos += (*i)->get_width() + 1;
                         }
 
@@ -693,7 +770,7 @@ namespace MPX
                     m_treeview = gtk_tree_view_new();
                     gtk_widget_realize(GTK_WIDGET(m_treeview));
 
-                    GTK_WIDGET_SET_FLAGS(GTK_WIDGET(gobj()), GTK_CAN_FOCUS);
+                    set_flags(Gtk::CAN_FOCUS);
 
                     ((GtkWidgetClass*)(G_OBJECT_GET_CLASS(G_OBJECT(gobj()))))->set_scroll_adjustments_signal = 
                             g_signal_new ("set_scroll_adjustments",
