@@ -137,11 +137,15 @@ class OPTION__Analyzer(BaseOPTION__):
             for tag in ttags: 
                
                 name = tag.getName()
- 
-                if name in tags:
-                    tags[name] = tags[name] + (float(tag.getCount()) / float(len(ttags)))
-                else:
-                    tags[name] = float(tag.getCount()) / float(len(ttags))
+
+                try: 
+                        if name in tags:
+                            tags[name] = tags[name] + (float(tag.getCount()) / float(len(ttags)))
+                        else:
+                            tags[name] = float(tag.getCount()) / float(len(ttags))
+                except Exception, e:
+
+                        print "Exception in ttags iteration: " + str(e)
 
         highest_count = 0
         highest_tag   = None

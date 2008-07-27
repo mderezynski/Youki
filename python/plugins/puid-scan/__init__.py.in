@@ -158,7 +158,7 @@ class PuidScan():
         self.player.set_state(gst.STATE_PLAYING)
         gobject.timeout_add (500, self.update_pipeline_duration)
 
-    def dispose_pipeline():
+    def dispose_pipeline(self):
 
         self.player.set_state(gst.STATE_NULL)
 
