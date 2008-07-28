@@ -83,7 +83,7 @@ namespace MPX
                     if(r.count("title"))
                         title = get<std::string>(r["title"]);
 
-                    Row4 row (artist, album, title, id);
+                    Row4 row (title, artist, album, id);
                     m_realmodel->push_back(row);
                 }
 
@@ -341,10 +341,10 @@ namespace MPX
                     {
                             using namespace boost::algorithm;
 
-                            typedef std::vector< std::string >                                  SplitVectorType;
-                            typedef std::set<std::string::size_type>                            IndexSet; 
-                            typedef boost::iterator_range<std::string::iterator>                Range;
-                            typedef std::list<Range>                                            Results;
+                            typedef boost::iterator_range<std::string::iterator>    Range;
+                            typedef std::vector< std::string >                      SplitVectorType;
+                            typedef std::map<std::string::size_type, int>           IndexSet; 
+                            typedef std::list<Range>                                Results;
 
                             SplitVectorType split_vec; // #2: Search for tokens
                             boost::algorithm::split( split_vec, filter, boost::algorithm::is_any_of(" ") );
@@ -362,8 +362,8 @@ namespace MPX
 
                                 for(Results::const_iterator i = x.begin(); i != x.end(); ++i )
                                 {
-                                    i_begin.insert(std::distance(str.begin(), (*i).begin()));
-                                    i_end.insert(std::distance(str.begin(), (*i).end()));
+                                    i_begin[std::distance(str.begin(), (*i).begin())] ++;
+                                    i_end[std::distance(str.begin(), (*i).end())] ++;
                                 }
                             }
     
@@ -372,7 +372,7 @@ namespace MPX
                                     std::string output;
                                     output.reserve(1024);
 
-                                    if( i_begin.size() == 1 && (*(i_begin.begin())) == 0 && (*(i_end.begin())) == str.size() )    
+                                    if( i_begin.size() == 1 && (*(i_begin.begin())).first == 0 && (*(i_end.begin())).first == str.size() )    
                                     {
                                         output += "<span color='#ffff80'>" + Glib::Markup::escape_text(str).raw() + "</span>";
                                     }
@@ -394,8 +394,9 @@ namespace MPX
                                                 else
                                                 if( i_begin.count(idx) )
                                                 {
-                                                    c_open ++;
-                                                    if( c_open == 1 )
+                                                    int c_open_prev = c_open;
+                                                    c_open += (*(i_begin.find(idx))).second;
+                                                    if( !c_open_prev && c_open >= 1 )
                                                     {
                                                         output += Glib::Markup::escape_text(chunk).raw();
                                                         chunk.clear();
@@ -404,7 +405,7 @@ namespace MPX
                                                 }
                                                 if( i_end.count(idx) )
                                                 {
-                                                    c_close ++;
+                                                    c_close += (*(i_end.find(idx))).second;
                                                     if( c_close == c_open )
                                                     {
                                                         output += Glib::Markup::escape_text(chunk).raw();
@@ -418,12 +419,15 @@ namespace MPX
                                                 chunk += *i;
                                             }
 
+                                            output += Glib::Markup::escape_text(chunk).raw();
+
                                             if( c_open )
                                             {
                                                 output += "</span>";
                                             }
-                                            output += Glib::Markup::escape_text(chunk).raw();
                                     }
+
+                                    g_message(output.c_str());
 
                                     layout = widget.create_pango_layout("");
                                     layout->set_markup(output);
