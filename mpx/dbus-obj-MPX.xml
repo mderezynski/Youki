@@ -6,7 +6,7 @@
 
   <signal name="StartupComplete" />
   <signal name="ShutdownComplete" />
-  <signal name="Quit" />
+  <method name="Quit" />
   <method name="Startup"/>
 
   </interface>

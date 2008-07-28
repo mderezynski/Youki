@@ -1054,6 +1054,7 @@ namespace MPX
 
 // HACK: Hackery to rename functions in glue
 #define mpx_startup     startup
+#define mpx_quit        quit
 
 #include "dbus-obj-MPX-glue.h"
 
@@ -1149,7 +1150,6 @@ namespace MPX
         if(self->player->m_startup_complete)
         {
             self->player->present();
-            self->player->raise();
         }
 
 	    return TRUE;
@@ -1171,7 +1171,7 @@ namespace MPX
 	void
 	Player::DBusMPX::quit (DBusMPX *self)
 	{
-        g_signal_emit (self, signals[SIGNAL_QUIT], 0);
+        gtk_main_quit ();
 	}
 
 #define TYPE_DBUS_OBJ_PLAYER (DBusPlayer::get_type ())

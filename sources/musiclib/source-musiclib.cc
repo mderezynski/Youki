@@ -4105,9 +4105,6 @@ namespace Source
         m_Private->m_TreeViewPlaylist->signal_row_activated().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_row_activated ) );
         m_Private->m_TreeViewPlaylist->signal_query_tooltip().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_query_tooltip ) );
 
-        mcs->domain_register("PlaybackSourceMusicLib");
-        mcs->key_register("PlaybackSourceMusicLib", "divider-position", 250);
-
         (dynamic_cast<Gtk::HPaned*>(m_Private->m_UI))->set_position(mcs->key_get<int>("PlaybackSourceMusicLib", "divider-position"));
 
 
@@ -4115,47 +4112,108 @@ namespace Source
         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
 
         Gtk::RadioButtonGroup gr1;
-        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-name", _("Sort Albums by Album/Date/Artist")),
+        m_MainActionGroup->add(
+            RadioAction::create( gr1, "musiclib-sort-by-name", _("Sort Albums by Album/Date/Artist")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
-        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-name"))->property_value() = 0;
 
-        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-date", _("Sort Albums by Time Added")),
+        m_MainActionGroup->add(
+            RadioAction::create( gr1, "musiclib-sort-by-date", _("Sort Albums by Time Added")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
-        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-date"))->property_value() = 1;
 
-        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-rating", _("Sort Albums by Rating")),
+        m_MainActionGroup->add(
+            RadioAction::create( gr1, "musiclib-sort-by-rating", _("Sort Albums by Rating")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
-        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-rating"))->property_value() = 2;
 
-        m_MainActionGroup->add (RadioAction::create( gr1, "musiclib-sort-by-alphabet", _("Sort Albums Alphabetically")),
+        m_MainActionGroup->add(
+            RadioAction::create( gr1, "musiclib-sort-by-alphabet", _("Sort Albums Alphabetically")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
-        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-alphabet"))->property_value() = 3;
-
-        m_MainActionGroup->add (ToggleAction::create( "musiclib-show-only-new", _("Show only New Albums")),
+        m_MainActionGroup->add(
+            ToggleAction::create(     "musiclib-show-only-new", _("Show only New Albums")),
                                                 sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_show_new_albums ));
 
+        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-name"))->property_value() = 0;
+        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-date"))->property_value() = 1;
+        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-rating"))->property_value() = 2;
+        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-alphabet"))->property_value() = 3;
 
 
         Gtk::RadioButtonGroup gr2;
-        m_MainActionGroup->add (RadioAction::create( gr2, "musiclib-show-albums", _("All Albums")),
-                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_view_change ));
-        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-show-albums"))->property_value() = 0;
 
-        m_MainActionGroup->add (RadioAction::create( gr2, "musiclib-show-alltracks", _("All Tracks")),
-                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_view_change ));
-        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-show-alltracks"))->property_value() = 1;
+        m_MainActionGroup->add(
 
-        m_MainActionGroup->add (RadioAction::create( gr2, "musiclib-show-collections", _("Last.fm Albums-by-Tag View")),
-                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_view_change ));
-        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-show-collections"))->property_value() = 2;
+                RadioAction::create(
+                    gr2,
+                    "musiclib-show-albums",
+                    _("All _Albums")
+                ),
+
+                AccelKey("<alt>1"),
+
+                sigc::mem_fun(
+                    *this,
+                    &PlaybackSourceMusicLib::on_view_change
+                )
+        );
+        RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-show-albums"))->property_value() = 0;
+
+        m_MainActionGroup->add(
+
+                RadioAction::create(
+                    gr2,
+                    "musiclib-show-alltracks",
+                    _("All _Tracks")
+                ),
+
+                AccelKey("<alt>2"),
+
+                sigc::mem_fun(
+                    *this,
+                    &PlaybackSourceMusicLib::on_view_change
+                )
+        );
+        RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-show-alltracks"))->property_value() = 1;
+
+        m_MainActionGroup->add(
+
+                RadioAction::create(
+                    gr2,
+                    "musiclib-show-collections",
+                    _("_Last.fm Albums-by-Tag Display")
+                ),
+
+                AccelKey("<alt>3"),
+
+                sigc::mem_fun(
+                    *this,
+                    &PlaybackSourceMusicLib::on_view_change
+                )
+        );
+        RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-show-collections"))->property_value() = 2;
 
 
+        m_MainActionGroup->add(
 
-        m_MainActionGroup->add (Action::create( "musiclib-show-ccdialog", _("Configure columns...")),
-                                                sigc::mem_fun( *m_Private->m_TreeViewPlaylist, &MusicLibPrivate::PlaylistTreeView::action_cb_show_ccdialog ));
+                Action::create(
+                    "musiclib-show-ccdialog",
+                    _("Configure columns...")
+                ),
 
-        m_MainActionGroup->add (Action::create( "musiclib-action-recache-covers", _("Refresh album covers")),
-                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::action_cb_refresh_covers ));
+                sigc::mem_fun(
+                    *m_Private->m_TreeViewPlaylist,
+                    &MusicLibPrivate::PlaylistTreeView::action_cb_show_ccdialog
+        ));
+
+        m_MainActionGroup->add(
+
+                Action::create(
+                    "musiclib-action-recache-covers",
+                    _("Refresh album covers")
+                ),
+
+                sigc::mem_fun(
+                    *this,
+                    &PlaybackSourceMusicLib::action_cb_refresh_covers
+        ));
 
         m_MainUIManager->insert_action_group(m_MainActionGroup);
     }

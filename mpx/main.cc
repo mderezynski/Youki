@@ -311,6 +311,9 @@ namespace
       mcs->key_register("Preferences-CoverArtSources", "SourceActive2", bool(true));
       mcs->key_register("Preferences-CoverArtSources", "SourceActive3", bool(true));
 
+      mcs->domain_register("PlaybackSourceMusicLib");
+      mcs->key_register("PlaybackSourceMusicLib", "divider-position", 250);
+
 	  mcs->load (Mcs::Mcs::VERSION_IGNORE);
 	}
 } // anonymous namespace
