@@ -3447,15 +3447,18 @@ namespace MPX
     void
     Player::Quit()
     {
+        g_message("%s: Quit", G_STRLOC);
         gtk_main_quit();
     }
 
     void
     Player::Startup() 
     {
+        g_message("%s: Startup", G_STRLOC);
         if( m_startup_complete )
         {
-            Gtk::Window::present();
+            Gtk::Window::deiconify();
+            Gtk::Window::raise();
         }
     }
 }

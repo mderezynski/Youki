@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<node name="/Player">
+<node name="/info/backtrace/mpx/Player">
 
   <interface name="info.backtrace.mpx">
 

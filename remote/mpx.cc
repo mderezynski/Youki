@@ -268,7 +268,7 @@ main (int    argc,
 
   DBusGProxy* o_mpx = dbus_g_proxy_new_for_name_owner (dbus,
                                                        "info.backtrace.mpx",
-                                                       "/MPX",
+                                                       "/info/backtrace/mpx/Player",
                                                        "info.backtrace.mpx",
                                                        &error);
 
@@ -283,8 +283,10 @@ main (int    argc,
 
   o_mpx = dbus_g_proxy_new_for_name (dbus,
                                      "info.backtrace.mpx",
-                                     "/MPX",
+                                     "/info/backtrace/mpx/Player",
                                      "info.backtrace.mpx");
+
+  g_message("%s: calling startup", G_STRLOC);
 
   dbus_g_proxy_call (o_mpx, "Startup", &error,
                        G_TYPE_INVALID,
@@ -311,9 +313,6 @@ main (int    argc,
 
   g_main_loop_unref (mainloop);
 
-  DBusGProxy* o_player = dbus_g_proxy_new_for_name (dbus,  "info.backtrace.mpx",
-                                                           "/Player",
-                                                           "org.freedesktop.MediaPlayer");
   if (argc > 1)
   {
       char** uri_list = g_new0 (char*, argc+1);
@@ -340,7 +339,7 @@ main (int    argc,
           }
       }
 
-      if (!dbus_g_proxy_call (o_player, "PlayTracks", &error,
+      if (!dbus_g_proxy_call (o_mpx, "PlayTracks", &error,
                               G_TYPE_STRV, uri_list,
                               G_TYPE_INVALID,
                               G_TYPE_INVALID))
@@ -353,27 +352,21 @@ main (int    argc,
       g_strfreev (uri_list);
   }
 
-  if (o_player)
-    g_object_unref (o_player);
+  if (o_mpx)
+    g_object_unref (o_mpx);
 
   if (o_bus)
     g_object_unref (o_bus);
-
-  if (o_mpx)
-    g_object_unref (o_mpx);
 
   return EXIT_SUCCESS;
 
 abort:
 
-  if (o_player)
-    g_object_unref (o_player);
+  if (o_mpx)
+    g_object_unref (o_mpx);
 
   if (o_bus)
     g_object_unref (o_bus);
-
-  if (o_mpx)
-    g_object_unref (o_mpx);
 
   std::abort (); 
 }

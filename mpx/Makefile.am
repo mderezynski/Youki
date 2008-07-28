@@ -207,9 +207,6 @@ dbusxx-player.hh: Makefile.am dbus-obj-PLAYER.xml
 	@echo "* Generating /Player DBus Glue"
 	dbusxx-xml2cpp $(abs_top_srcdir)/mpx/dbus-obj-PLAYER.xml --adaptor=dbusxx-player.hh 
 
-BUILT_SOURCES += dbus-marshalers.c dbus-marshalers.h
-mpx_bin_SOURCES += dbus-marshalers.c
-
 EXTRA_DIST = glib-marshalers.list
 
 built_header_make += 	\
