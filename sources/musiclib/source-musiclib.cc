@@ -1852,7 +1852,7 @@ namespace MPX
                 m_Xml->get_widget("albums-textview-comment", textview);
                 m_Xml->get_widget("albums-dialog-rate-and-comment", dialog);
         
-                int response = dialog.run();
+                int response = dialog->run();
 
                 if( response == GTK_RESPONSE_OK )
                 {
@@ -1861,6 +1861,8 @@ namespace MPX
 
                     m_Lib.get().albumAddNewRating(id, rating, text);
                 }
+
+                dialog->hide();
               }
 
               virtual bool
@@ -1888,7 +1890,7 @@ namespace MPX
 
                             run_rating_comment_dialog(rating, m_DragAlbumId.get());
 
-                            int rating = m_Lib.get().albumGetMeanRatingValue(m_DragAlbumId.get());
+                            rating = m_Lib.get().albumGetMeanRatingValue(m_DragAlbumId.get());
                             (*iter)[AlbumColumns.Rating] = rating;  
                             queue_draw ();
                         }
