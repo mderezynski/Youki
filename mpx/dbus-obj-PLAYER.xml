@@ -1,22 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<node name="/info/backtrace/mpx/Player">
+<node name="/Player">
 
-  <interface name="info.backtrace.mpx">
+  <interface name="org.freedesktop.MediaPlayer">
 
       <method name="GetMetadata">
             <arg type="a{sv}" direction="out" />
       </method>
 
       <method name="PlayTracks">
-            <arg type="as" direction="in"/>
+            <arg type="as"/>
       </method>
-
-      <method name="Quit" />
-      <method name="Startup"/>
-
-      <signal name="StartupComplete" />
-      <signal name="ShutdownComplete" />
 
   </interface>
 </node>

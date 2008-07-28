@@ -10,7 +10,6 @@ mpx_bin_CXXFLAGS = 									\
 		$(CDIO_CFLAGS)								\
 		$(CDPARANOIA_INCLUDES) 						\
 		$(DBUS_CFLAGS)								\
-		$(DBUSXX_CFLAGS)							\
 		$(EXO_CFLAGS)								\
 		$(GDL_CFLAGS)								\
 		$(GIOMM_CFLAGS)								\
@@ -49,7 +48,6 @@ mpx_bin_LDADD =										\
 		$(CDIO_LIBS)								\
 		$(CDPARANOIA_LIBS)							\
 		$(DBUS_LIBS)								\
-		$(DBUSXX_LIBS)								\
 		$(EXO_LIBS)									\
 		$(GDL_LIBS)									\
 		$(GIOMM_LIBS)								\
@@ -110,6 +108,11 @@ mpx_bin_SOURCES =				\
 	dialog-filebrowser.cc		\
 								\
 	error.cc					\
+								\
+	flow_engine.hh				\
+	flow_engine.cc				\
+	flow_widget.hh				\
+	flow_widget.cc				\
 								\
 	glib-marshalers.c			\
 								\
@@ -194,13 +197,59 @@ mpx_bin_SOURCES += hal.cc
 endif
 
 built_header_make = 		\
-	dbusxx-player.hh		
+	dbus-obj-MPX-glue.h		\
+	dbus-obj-PLAYER-glue.h
+
+EXTRA_DIST = 				\
+	dbus-obj-MPX.xml 		\
+	dbus-obj-PLAYER.xml 	\
+	dbus-marshalers.list
 
 BUILT_SOURCES = $(built_header_make)
 
-dbusxx-player.hh: Makefile.am dbus-obj-PLAYER.xml
+dbus-obj-MPX-glue.h: Makefile.am dbus-obj-MPX.xml
+	@echo "* Generating /MPX DBus Glue"
+	@$(DBUSBINDINGTOOL) --mode=glib-server --prefix=Player::DBusMPX::mpx \
+    $(abs_top_srcdir)/mpx/dbus-obj-MPX.xml > \
+    dbus-obj-MPX-glue.h.temp
+	@cat dbus-obj-MPX-glue.h.temp   | sed s:G_BEGIN_DECLS:: | sed s:G_END_DECLS:: > \
+    dbus-obj-MPX-glue.h.temp.1
+	@cat dbus-obj-MPX-glue.h.temp.1 | sed s/dbus_glib_Player\:\:DBusMPX\:\:mpx/dbus_glib_mpx/g > \
+    dbus-obj-MPX-glue.h.temp.2
+	@cat dbus-obj-MPX-glue.h.temp.2 | sed s/dbus_glib_marshal_Player\:\:DBusMPX\:\:mpx/dbus_glib_marshal_mpx/g > \
+    dbus-obj-MPX-glue.h
+	@rm -f dbus-obj-MPX-glue.h.temp
+	@rm -f dbus-obj-MPX-glue.h.temp.1
+	@rm -f dbus-obj-MPX-glue.h.temp.2
+
+dbus-obj-PLAYER-glue.h: Makefile.am dbus-obj-PLAYER.xml
 	@echo "* Generating /Player DBus Glue"
-	dbusxx-xml2cpp $(abs_top_srcdir)/mpx/dbus-obj-PLAYER.xml --adaptor=dbusxx-player.hh 
+	@$(DBUSBINDINGTOOL) --mode=glib-server --prefix=Player::DBusPlayer::player \
+    $(abs_top_srcdir)/mpx/dbus-obj-PLAYER.xml > \
+    dbus-obj-PLAYER-glue.h.temp
+	@cat dbus-obj-PLAYER-glue.h.temp   | sed s:G_BEGIN_DECLS:: | sed s:G_END_DECLS:: > \
+    dbus-obj-PLAYER-glue.h.temp.1
+	@cat dbus-obj-PLAYER-glue.h.temp.1 | sed s/dbus_glib_Player\:\:DBusPlayer\:\:player/dbus_glib_player/g > \
+    dbus-obj-PLAYER-glue.h.temp.2
+	@cat dbus-obj-PLAYER-glue.h.temp.2 | sed s/dbus_glib_marshal_Player\:\:DBusPlayer\:\:player/dbus_glib_marshal_player/g > \
+    dbus-obj-PLAYER-glue.h
+	@rm -f dbus-obj-PLAYER-glue.h.temp
+	@rm -f dbus-obj-PLAYER-glue.h.temp.1
+	@rm -f dbus-obj-PLAYER-glue.h.temp.2
+
+dbus-marshalers.c: dbus-marshalers.list 
+	@echo "* Generating dbus-marshalers.c"
+	@$(GLIB_GENMARSHAL) --prefix=mpx_dbus_marshal --body   $(srcdir)/dbus-marshalers.list > dbus-marshalers.c
+
+dbus-marshalers.h: dbus-marshalers.list
+	@echo "* Generating dbus-marshalers.h"
+	@$(GLIB_GENMARSHAL) --prefix=mpx_dbus_marshal --header $(srcdir)/dbus-marshalers.list > dbus-marshalers.h
+
+
+BUILT_SOURCES += dbus-marshalers.c dbus-marshalers.h
+mpx_bin_SOURCES += dbus-marshalers.c
+
+EXTRA_DIST += glib-marshalers.list
 
 built_header_make += 	\
 		glib-marshalers.h
@@ -212,16 +261,3 @@ glib-marshalers.c: glib-marshalers.list
 glib-marshalers.h: glib-marshalers.list
 	@echo "* Generating glib-marshalers.h"
 	@$(GLIB_GENMARSHAL) --prefix=psm_glib_marshal --header $(srcdir)/glib-marshalers.list > glib-marshalers.h
-
-dbus-marshalers.c: dbus-marshalers.list 
-	@echo "* Generating dbus-marshalers.c"
-	@$(GLIB_GENMARSHAL) --prefix=mpx_dbus_marshal --body   $(srcdir)/dbus-marshalers.list > dbus-marshalers.c
-
-dbus-marshalers.h: dbus-marshalers.list
-	@echo "* Generating dbus-marshalers.h"
-	@$(GLIB_GENMARSHAL) --prefix=mpx_dbus_marshal --header $(srcdir)/dbus-marshalers.list > dbus-marshalers.h
-
-BUILT_SOURCES += dbus-marshalers.c dbus-marshalers.h
-mpx_bin_SOURCES += dbus-marshalers.c
-
-EXTRA_DIST = glib-marshalers.list dbus-marshalers.list

@@ -300,9 +300,6 @@ PKG_CHECK_MODULES([GLADEMM], [libglademm-2.4 >= 2.6.0])
 # cairomm
 PKG_CHECK_MODULES([CAIROMM], [cairomm-1.0 >= 0.6.0])
 
-# dbus-c++
-PKG_CHECK_MODULES([DBUSXX], [dbus-c++-1 >= 0.5.0])
-
 #sexymm
 #PKG_CHECK_MODULES([SEXYMM], [libsexymm >= 0.1.9])
 SEXYMM_INCLUDES=

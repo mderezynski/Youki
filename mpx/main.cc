@@ -352,12 +352,6 @@ main (int argc, char ** argv)
 	clutter_init(&argc, &argv);
     Gtk::GL::init(argc, argv);
 
-    DBus::Glib::BusDispatcher dispatcher;
-    DBus::default_dispatcher = &dispatcher;
-    dispatcher.attach(NULL);
-    DBus::Connection conn = DBus::Connection::SessionBus();
-    conn.request_name("info.backtrace.mpx");
-
 #ifdef HAVE_HAL
     try{
         MPX::HAL                    * obj_hal               = new MPX::HAL;
@@ -372,9 +366,9 @@ main (int argc, char ** argv)
 #endif
 
 #ifdef HAVE_HAL
-        MPX::Player                 * obj_mpx               = MPX::Player::create(conn, *obj_library, *obj_covers, *obj_hal);
+        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *obj_covers, *obj_hal);
 #else
-        MPX::Player                 * obj_mpx               = MPX::Player::create(conn, *obj_library, *obj_covers);
+        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *obj_covers);
 #endif // HAVE_HAL
         
         Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );

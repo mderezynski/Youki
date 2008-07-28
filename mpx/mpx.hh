@@ -23,17 +23,12 @@
 //  MPX is covered by.
 #ifndef MPX_HH
 #define MPX_HH
-#include <dbus-c++/dbus.h>
-#include <dbus-c++/glib-integration.h>
-#define HAVE_CONFIG_H
 #include "config.h"
-#include <gtkmm.h>
 #include <boost/python.hpp>
 #include <dbus/dbus-glib.h>
-#include <X11/Xlib.h>
-#include <X11/XF86keysym.h>
 #include <gdk/gdkx.h>
 #include <giomm.h>
+#include <gtkmm.h>
 #include <gtkmm/volumebutton.h>
 #include <libglademm/xml.h>
 #include <sigx/sigx.h>
@@ -50,11 +45,9 @@
 #include "mpx/widgetloader.h"
 
 #include "audio-types.hh"
-#include "video-widget.hh"
-
+#include "dbus-marshalers.h"
 #include "sidebar.hh"
-
-#include "dbusxx-player.hh"
+#include "video-widget.hh"
 
 using namespace Gnome::Glade;
 
@@ -63,6 +56,7 @@ namespace Gtk
     class Statusbar;
 }
 
+class CoverFlowWidget;
 namespace MPX
 {
     class ErrorManager;
@@ -76,8 +70,6 @@ namespace MPX
     class Player
       : public WidgetLoader<Gtk::Window>
       , public sigx::glib_auto_dispatchable
-      , public info::backtrace::mpx
-      , public DBus::ObjectAdaptor
     {
       public:
 
@@ -151,20 +143,30 @@ namespace MPX
       protected:
 
 #ifdef HAVE_HAL
-        Player (DBus::Connection&, const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Covers&, MPX::HAL&);
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Covers&, MPX::HAL&);
 #else
-        Player (DBus::Connection&, const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Covers&);
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Covers&);
 #endif // HAVE_HAL
 
 	  public:
 
 #ifdef HAVE_HAL
         static Player*
-        create (DBus::Connection&, MPX::Library&, MPX::Covers&, MPX::HAL&);
+        create (MPX::Library&, MPX::Covers&, MPX::HAL&);
 #else
         static Player*
-        create (DBus::Connection&, MPX::Library&, MPX::Covers&);
+        create (MPX::Library&, MPX::Covers&);
 #endif // HAVE_HAL
+
+		class DBusRoot; 
+		class DBusMPX; 
+        class DBusPlayer;
+        class DBusTrackList;
+
+        friend class DBusMPX;
+
+		void
+		init_dbus ();
 
         void
         info_set (const std::string&);
@@ -207,7 +209,18 @@ namespace MPX
         Glib::RefPtr<Gtk::ActionGroup>  m_actions;
         Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
 
-        bool    m_startup_complete;
+		struct DBusObjectsT
+		{
+			DBusRoot        *root;
+			DBusMPX		    *mpx;
+            DBusPlayer      *player;
+            DBusTrackList   *tracklist;
+		};
+
+		DBusObjectsT      DBusObjects;
+		DBusGConnection * m_SessionBus;
+        bool              m_startup_complete;
+
 		int     m_Seeking;
 		gdouble m_TrackPlayedSeconds;
 		gdouble m_PreSeekPosition;
@@ -228,11 +241,10 @@ namespace MPX
 
     // objects
 
-		boost::shared_ptr<PluginManager> m_PluginManager;
-
         Covers                    & m_Covers;
         HAL                       & m_HAL;
         Library                   & m_Library;
+		PluginManager             * m_PluginManager;
 		Play                      * m_Play;
         Preferences               * m_Preferences;
         MLibManager               * m_MLibManager;
@@ -240,6 +252,7 @@ namespace MPX
         Sidebar                   * m_Sidebar;
         InfoArea                  * m_InfoArea;
         VideoWidget               * m_VideoWidget; 
+        CoverFlowWidget           * m_CoverFlow;
         ErrorManager              * m_ErrorManager;
 
     // widgets
@@ -252,13 +265,12 @@ namespace MPX
 		Gtk::Label                * m_TimeLabel;
         Gtk::Notebook             * m_InfoNotebook;
         Gtk::Expander             * m_InfoExpander;
-
         WidgetWidgetMap             m_InfoWidgetMap;
-
-		Glib::RefPtr<Gdk::Pixbuf>   m_DiscDefault;
 
 		boost::optional<Metadata>   m_Metadata;
         Glib::Mutex                 m_MetadataLock;
+
+		Glib::RefPtr<Gdk::Pixbuf>   m_DiscDefault;
 
         enum PlayDirection
         {
@@ -410,38 +422,10 @@ namespace MPX
 
 
 
-
         void
         check_py_error ();
 
 
-
-
-    // GIO stuff
-
-        Glib::RefPtr<Gio::File> m_MountFile;
-        Glib::RefPtr<Gio::MountOperation> m_MountOperation;
-        Glib::ustring m_Share, m_ShareName;
-
-        void
-        mount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
-
-        void
-        unmount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
-
-        void
-        ask_password_cb (const Glib::ustring& message,
-                         const Glib::ustring& default_user,
-                         const Glib::ustring& default_domain,
-                         Gio::AskPasswordFlags flags);
-
-        void
-        on_import_folder();
-
-        void
-        on_import_share();
-
-    // MMKEYS stuff    
 
         enum grab_type
         {
@@ -497,30 +481,32 @@ namespace MPX
 
 
 
-      protected:
+        Glib::RefPtr<Gio::File> m_MountFile;
+        Glib::RefPtr<Gio::MountOperation> m_MountOperation;
+        Glib::ustring m_Share, m_ShareName;
 
-    // Gtk::Widget
+        void
+        mount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
+
+        void
+        unmount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
+
+        void
+        ask_password_cb (const Glib::ustring& message,
+                         const Glib::ustring& default_user,
+                         const Glib::ustring& default_domain,
+                         Gio::AskPasswordFlags flags);
+
+        void
+        on_import_folder();
+
+        void
+        on_import_share();
+
+      protected:
 
         virtual bool
         on_key_press_event (GdkEventKey*);
-
-    // info::backtrace::mpx
-
-        virtual
-        std::map< ::DBus::String, ::DBus::Variant >
-        GetMetadata();
-
-        virtual
-        void
-        PlayTracks( const std::vector< ::DBus::String >&  ); 
-
-        virtual
-        void
-        Quit();
-
-        virtual
-        void
-        Startup();
     };
 }
 #endif

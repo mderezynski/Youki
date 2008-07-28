@@ -30,8 +30,6 @@
 // PyGTK NO_IMPORT
 #define NO_IMPORT
 
-#include "mpx.hh"
-
 #include "config.h"
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
@@ -41,14 +39,21 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
-#include "dbus-marshalers.h"
+#include <giomm.h>
 #include <glib/gstdio.h>
 #include <glibmm/i18n.h>
+#include <gtkmm.h>
+#include <Python.h>
 #include <pygobject.h>
 #include <pygtk/pygtk.h>
+
+#include <X11/Xlib.h>
+#include <X11/XF86keysym.h>
+#include <gdk/gdkx.h>
 #include <gdl/gdl.h>
+
+#include "mpx.hh"
 #include "mpx/error.hh"
-#include "mpx/last-fm-xmlrpc.hh"
 #include "mpx/library.hh"
 #include "mpx/stock.hh"
 #include "mpx/python.hh"
@@ -63,14 +68,20 @@
 #include "dialog-filebrowser.hh"
 #include "import-share.hh"
 #include "import-folder.hh"
+#include "request-value.hh"
+#include "sidebar.hh"
+#include "splash-screen.hh"
+
+#include "mpx/last-fm-xmlrpc.hh"
+
 #include "mlibmanager.hh"
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
 #include "play.hh"
 #include "preferences.hh"
-#include "request-value.hh"
-#include "sidebar.hh"
-#include "splash-screen.hh"
+
+#include "flow_widget.hh"
+#include "flow_engine.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -984,6 +995,311 @@ namespace MPX
 
 namespace MPX
 {
+#define TYPE_DBUS_OBJ_MPX (DBusMPX::get_type ())
+#define DBUS_OBJ_MPX(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_DBUS_OBJ_MPX, DBusMPX))
+
+    struct DBusMPXClass
+    {
+        GObjectClass parent;
+    };
+
+    struct Player::DBusMPX
+    {
+        GObject parent;
+        Player * player;
+
+        enum
+        {
+          SIGNAL_STARTUP_COMPLETE,
+          SIGNAL_SHUTDOWN_COMPLETE,
+          SIGNAL_QUIT,
+          N_SIGNALS,
+        };
+
+        static guint signals[N_SIGNALS];
+
+        static gpointer parent_class;
+
+        static GType
+        get_type ();
+
+        static DBusMPX *
+        create (Player &, DBusGConnection*);
+
+        static void
+        class_init (gpointer klass,
+                    gpointer class_data);
+
+        static GObject *
+        constructor (GType                   type,
+                     guint                   n_construct_properties,
+                     GObjectConstructParam * construct_properties);
+
+        static gboolean
+        startup (DBusMPX * self,
+                 GError ** error);
+
+        static void
+        startup_complete (DBusMPX * self);
+      
+        static void
+        shutdown_complete (DBusMPX * self);
+
+        static void
+        quit (DBusMPX * self);
+    };
+
+    gpointer Player::DBusMPX::parent_class       = 0;
+    guint    Player::DBusMPX::signals[N_SIGNALS] = { 0 };
+
+// HACK: Hackery to rename functions in glue
+#define mpx_startup     startup
+#define mpx_quit        quit
+
+#include "dbus-obj-MPX-glue.h"
+
+	void
+	Player::DBusMPX::class_init (gpointer klass, gpointer class_data)
+	{
+        parent_class = g_type_class_peek_parent (klass);
+
+        GObjectClass *gobject_class = reinterpret_cast<GObjectClass*>(klass);
+        gobject_class->constructor  = &DBusMPX::constructor;
+
+        signals[SIGNAL_STARTUP_COMPLETE] =
+          g_signal_new ("startup-complete",
+                        G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
+                        GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+                        0,
+                        NULL, NULL,
+                        g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+
+        signals[SIGNAL_SHUTDOWN_COMPLETE] =
+          g_signal_new ("shutdown-complete",
+                        G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
+                        GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+                        0,
+                        NULL, NULL,
+                        g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+
+        signals[SIGNAL_QUIT] =
+          g_signal_new ("quit",
+                        G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (klass)),
+                        GSignalFlags (G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED),
+                        0,
+                        NULL, NULL,
+                        g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
+	}
+
+	GObject *
+	Player::DBusMPX::constructor (GType                   type,
+							guint                   n_construct_properties,
+							GObjectConstructParam*  construct_properties)
+	{
+        GObject *object = G_OBJECT_CLASS (parent_class)->constructor (type, n_construct_properties, construct_properties);
+        return object;
+	}
+
+	Player::DBusMPX *
+	Player::DBusMPX::create (Player & player, DBusGConnection * session_bus)
+	{
+		dbus_g_object_type_install_info (TYPE_DBUS_OBJ_MPX, &dbus_glib_mpx_object_info);
+
+		DBusMPX * self = DBUS_OBJ_MPX (g_object_new (TYPE_DBUS_OBJ_MPX, NULL));
+		self->player = &player;
+
+        if(session_bus)
+	    {
+		    dbus_g_connection_register_g_object (session_bus, "/MPX", G_OBJECT(self));
+		    g_message("%s: /MPX Object registered on session DBus", G_STRLOC);
+        }
+
+        return self;
+	}
+
+	GType
+	Player::DBusMPX::get_type ()
+	{
+        static GType type = 0;
+
+        if (G_UNLIKELY (type == 0))
+          {
+            static GTypeInfo const type_info =
+              {
+                sizeof (DBusMPXClass),
+                NULL,
+                NULL,
+                &class_init,
+                NULL,
+                NULL,
+                sizeof (DBusMPX),
+                0,
+                NULL
+              };
+
+            type = g_type_register_static (G_TYPE_OBJECT, "MPX", &type_info, GTypeFlags (0));
+          }
+
+        return type;
+	}
+
+	gboolean
+	Player::DBusMPX::startup  (DBusMPX* self,
+						       GError** error)
+	{
+        if(self->player->m_startup_complete)
+        {
+            self->player->present();
+        }
+
+	    return TRUE;
+	}
+
+	void
+	Player::DBusMPX::startup_complete (DBusMPX* self)
+	{
+	    g_signal_emit (self, signals[SIGNAL_STARTUP_COMPLETE], 0);
+        self->player->m_startup_complete = true;
+	}
+
+	void
+	Player::DBusMPX::shutdown_complete (DBusMPX* self)
+	{
+        g_signal_emit (self, signals[SIGNAL_SHUTDOWN_COMPLETE], 0);
+	}
+
+	void
+	Player::DBusMPX::quit (DBusMPX *self)
+	{
+        gtk_main_quit ();
+	}
+
+#define TYPE_DBUS_OBJ_PLAYER (DBusPlayer::get_type ())
+#define DBUS_OBJ_PLAYER(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_DBUS_OBJ_PLAYER, DBusPlayer))
+
+    struct DBusPlayerClass
+    {
+        GObjectClass parent;
+    };
+
+    struct Player::DBusPlayer
+    {
+        GObject parent;
+        Player * player;
+
+        enum
+        {
+          PLAYER_SIGNAL_CAPS,
+          PLAYER_SIGNAL_STATE,
+          N_SIGNALS,
+        };
+
+        static guint signals[N_SIGNALS];
+
+        static gpointer parent_class;
+
+        static GType
+        get_type ();
+
+        static DBusPlayer *
+        create (Player &, DBusGConnection*);
+
+        static void
+        class_init (gpointer klass,
+                    gpointer class_data);
+
+        static GObject *
+        constructor (GType                   type,
+                     guint                   n_construct_properties,
+                     GObjectConstructParam * construct_properties);
+
+        static gboolean
+        get_metadata (DBusPlayer* self,
+                      GHashTable** metadata,
+                      GError** error);
+
+        static gboolean
+        play_tracks (DBusPlayer* self,
+                     char** uris,
+                     GError** error);
+    };
+
+    gpointer Player::DBusPlayer::parent_class       = 0;
+    guint    Player::DBusPlayer::signals[N_SIGNALS] = { 0 };
+
+// HACK: Hackery to rename functions in glue
+#define player_next next 
+#define player_prev prev
+#define player_pause pause
+#define player_stop stop
+#define player_play play
+#define player_get_metadata get_metadata
+#define player_play_tracks play_tracks
+
+#include "dbus-obj-PLAYER-glue.h"
+
+	void
+	Player::DBusPlayer::class_init (gpointer klass, gpointer class_data)
+	{
+	  parent_class = g_type_class_peek_parent (klass);
+
+	  GObjectClass *gobject_class = reinterpret_cast<GObjectClass*>(klass);
+	  gobject_class->constructor  = &DBusPlayer::constructor;
+	}
+
+	GObject *
+	Player::DBusPlayer::constructor (GType                   type,
+							guint                   n_construct_properties,
+							GObjectConstructParam*  construct_properties)
+	{
+	  GObject *object = G_OBJECT_CLASS (parent_class)->constructor (type, n_construct_properties, construct_properties);
+
+	  return object;
+	}
+
+	Player::DBusPlayer *
+	Player::DBusPlayer::create (Player & player, DBusGConnection * session_bus)
+	{
+		dbus_g_object_type_install_info (TYPE_DBUS_OBJ_PLAYER, &dbus_glib_player_object_info);
+
+		DBusPlayer * self = DBUS_OBJ_PLAYER (g_object_new (TYPE_DBUS_OBJ_PLAYER, NULL));
+		self->player = &player;
+
+	  if(session_bus)
+	  {
+		dbus_g_connection_register_g_object (session_bus, "/Player", G_OBJECT(self));
+		g_message("%s: /Player Object registered on session DBus", G_STRLOC);
+	  }
+
+	  return self;
+	}
+
+	GType
+	Player::DBusPlayer::get_type ()
+	{
+	  static GType type = 0;
+
+	  if (G_UNLIKELY (type == 0))
+		{
+		  static GTypeInfo const type_info =
+			{
+			  sizeof (DBusPlayerClass),
+			  NULL,
+			  NULL,
+			  &class_init,
+			  NULL,
+			  NULL,
+			  sizeof (DBusPlayer),
+			  0,
+			  NULL
+			};
+
+		  type = g_type_register_static (G_TYPE_OBJECT, "Player", &type_info, GTypeFlags (0));
+		}
+
+	  return type;
+	}
+    
     const char* mpris_attribute_id_str[] =
     {
         "location",
@@ -1031,24 +1347,72 @@ namespace MPX
         "mpx album id",
     };
 
+    gboolean
+    Player::DBusPlayer::get_metadata (DBusPlayer* self,
+                                      GHashTable** metadata,
+                                      GError** error)
+    {
+        MPX::Metadata m = self->player->get_metadata();
+
+        GHashTable * table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+        GValue* value = 0;
+
+        for(int n = ATTRIBUTE_LOCATION; n < N_ATTRIBUTES_STRING; ++n)
+        {
+            if(m[n].is_initialized())
+            {
+                value = g_new0(GValue,1);
+                g_value_init(value, G_TYPE_STRING);
+                g_value_set_string(value, (boost::get<std::string>(m[n].get())).c_str());
+                g_hash_table_insert(table, g_strdup(mpris_attribute_id_str[n-ATTRIBUTE_LOCATION]), value);
+            }
+        }
+
+        for(int n = ATTRIBUTE_TRACK; n < N_ATTRIBUTES_INT; ++n)
+        {
+            if(m[n].is_initialized())
+            {
+                value = g_new0(GValue,1);
+                g_value_init(value, G_TYPE_INT64);
+                g_value_set_int64(value, boost::get<gint64>(m[n].get()));
+                g_hash_table_insert(table, g_strdup(mpris_attribute_id_int[n-ATTRIBUTE_TRACK]), value);
+            }
+        }
+
+        *metadata = table;
+        return TRUE;
+    }
+
+    gboolean
+    Player::DBusPlayer::play_tracks (DBusPlayer* self,
+                                     char** uris,
+                                     GError** error)
+    {
+        Util::FileList list;
+        if( uris )
+        {
+            while( *uris )
+            {
+                list.push_back( *uris );
+                ++uris;
+            }
+        }
+        self->player->play_tracks(list);
+        return TRUE;
+    }
+
+
 #ifdef HAVE_HAL
-    Player::Player(
-        DBus::Connection&                       conn,
-        const Glib::RefPtr<Gnome::Glade::Xml>&  xml,
-        MPX::Library&                           obj_library,
-        MPX::Covers&                            obj_amazon,
-        MPX::HAL&                               obj_hal
-    )
+    Player::Player(const Glib::RefPtr<Gnome::Glade::Xml>& xml,
+                   MPX::Library & obj_library,
+                   MPX::Covers & obj_amazon,
+                   MPX::HAL & obj_hal)
 #else
-    Player::Player(
-        DBus::Connection&                       conn,
-        const Glib::RefPtr<Gnome::Glade::Xml>&  xml,
-        MPX::Library&                           obj_library,
-        MPX::Covers&                            obj_amazon
-    )
+    Player::Player(const Glib::RefPtr<Gnome::Glade::Xml>& xml,
+                   MPX::Library & obj_library,
+                   MPX::Covers & obj_amazon)
 #endif // HAVE_HAL
     : WidgetLoader<Gtk::Window>(xml, "mpx")
-    , DBus::ObjectAdaptor(conn, "/info/backtrace/mpx/Player")
     , sigx::glib_auto_dispatchable()
     , m_ref_xml(xml)
     , m_startup_complete(false)
@@ -1071,7 +1435,7 @@ namespace MPX
         m_ref_xml->get_widget("notebook-info", m_InfoNotebook);
         m_ref_xml->get_widget("volumebutton", m_Volume);
 
-		m_PluginManager = boost::shared_ptr<PluginManager>(new PluginManager(this));
+		m_PluginManager = new PluginManager(this);
         m_Sidebar = new Sidebar(m_ref_xml, *m_PluginManager);
 
         try{
@@ -1253,6 +1617,11 @@ namespace MPX
         )))->scale_simple(64,64,Gdk::INTERP_BILINEAR);
 
         splash.set_message(_("Setting up DBus"), 0.4);
+
+		init_dbus ();
+		DBusObjects.mpx = DBusMPX::create(*this, m_SessionBus);
+        DBusObjects.player = DBusPlayer::create(*this, m_SessionBus);
+
         splash.set_message(_("Loading Plugins"), 0.6);
 	
 		/*- Connect Library -----------------------------------------------*/ 
@@ -1537,10 +1906,77 @@ namespace MPX
             mcs->key_get<int>("mpx","window-y")
         );
 
+#if 0
+        m_CoverFlow = new CoverFlowWidget;
+        CoverFlowEngine::SongList songs;
+
+        SQL::RowV v;
+        obj_library.getSQL(v, "SELECT DISTINCT mb_album_id FROM album WHERE mb_album_id IS NOT NULL;");
+        for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+        {
+            std::string asin = boost::get<std::string>((*i)["mb_album_id"]);
+            songs.push_back(std::make_pair(asin, asin));
+        }
+        m_CoverFlow->load_covers(songs);
+        m_CoverFlow->show ();
+        add_widget(m_CoverFlow);
+#endif
+
 		show ();
-        StartupComplete ();
-        m_startup_complete = true;
+
+		DBusObjects.mpx->startup_complete(DBusObjects.mpx);
     }
+
+	void
+	Player::init_dbus ()
+	{
+		DBusGProxy * m_SessionBus_proxy;
+		guint dbus_request_name_result;
+		GError * error = NULL;
+
+		m_SessionBus = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+		if (!m_SessionBus)
+		{
+		  g_error_free (error);
+		  return;
+		}
+
+		m_SessionBus_proxy = dbus_g_proxy_new_for_name (m_SessionBus,
+													   "org.freedesktop.DBus",
+													   "/org/freedesktop/DBus",
+													   "org.freedesktop.DBus");
+
+		if (!dbus_g_proxy_call (m_SessionBus_proxy, "RequestName", &error,
+								G_TYPE_STRING, "info.backtrace.mpx",
+								G_TYPE_UINT, 0,
+								G_TYPE_INVALID,
+								G_TYPE_UINT, &dbus_request_name_result,
+								G_TYPE_INVALID))
+		{
+		  g_critical ("%s: RequestName Request Failed: %s", G_STRFUNC, error->message);
+		  g_error_free (error);
+		  error = NULL;
+		}
+		else
+		{
+		  switch (dbus_request_name_result)
+		  {
+			case DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER:
+			{
+			  break;
+			}
+
+			case DBUS_REQUEST_NAME_REPLY_EXISTS:
+			{
+			  g_object_unref(m_SessionBus);
+			  m_SessionBus = NULL;
+			  return;
+			}
+		  }
+		}
+
+		g_message("%s: info.backtrace.mpx service registered on session DBus", G_STRLOC);
+	}
 
     bool
     Player::source_load (std::string const& path)
@@ -1797,7 +2233,7 @@ namespace MPX
         {
             if((*i).second->get_class_guid() == uuid)
             {
-                l.append(::boost::python::object(handle<>(borrowed((*i).second->get_py_obj()))));
+                l.append(object(handle<>(borrowed((*i).second->get_py_obj()))));
             }
         }
 
@@ -2093,27 +2529,18 @@ namespace MPX
 
 #ifdef HAVE_HAL
     Player*
-    Player::create(
-        DBus::Connection&   conn,
-        MPX::Library&       obj_library,
-        MPX::Covers&        obj_amazn,
-        MPX::HAL&           obj_hal
-    )
+    Player::create (MPX::Library & obj_library, MPX::Covers & obj_amazn, MPX::HAL & obj_hal)
     {
-		const std::string path ( build_filename(DATA_DIR, build_filename("glade","mpx.glade")) );
-		Player * p = new Player( conn, Gnome::Glade::Xml::create (path), obj_library, obj_amazn, obj_hal ); 
+		const std::string path (build_filename(DATA_DIR, build_filename("glade","mpx.glade")));
+		Player * p = new Player(Gnome::Glade::Xml::create (path), obj_library, obj_amazn, obj_hal); 
 		return p;
     }
 #else
     Player*
-    Player::create(
-        DBus::Connection&   conn,
-        MPX::Library&       obj_library,
-        MPX::Covers&        obj_amazn
-    )
+    Player::create (MPX::Library & obj_library, MPX::Covers & obj_amazn)
     {
-		const std::string path( build_filename(DATA_DIR, build_filename("glade","mpx.glade")) );
-		Player * p = new Player( conn, Gnome::Glade::Xml::create (path), obj_library, obj_amazn ); 
+		const std::string path (build_filename(DATA_DIR, build_filename("glade","mpx.glade")));
+		Player * p = new Player(Gnome::Glade::Xml::create (path), obj_library, obj_amazn); 
 		return p;
     }
 #endif // HAVE_HAL
@@ -2122,7 +2549,9 @@ namespace MPX
     {
         Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-y")));
         Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-h")));
-        ShutdownComplete();
+		DBusObjects.mpx->shutdown_complete(DBusObjects.mpx); 
+		g_object_unref(G_OBJECT(DBusObjects.mpx));
+		delete m_PluginManager;
     }
 
 	void
@@ -3393,66 +3822,16 @@ namespace MPX
     void
     Player::check_py_error ()
     {
-    }
+#if 0
+        GError * gerr = NULL;
 
-    std::map< ::DBus::String, ::DBus::Variant >
-    Player::GetMetadata()
-    {
-        typedef std::map< ::DBus::String, ::DBus::Variant > MetadataMap;
-
-        MetadataMap mm;
-
-        if( ! m_Metadata )
-            return mm;
-    
-        MPX::Metadata m = m_Metadata.get(); 
-
-        for(int n = ATTRIBUTE_LOCATION; n < N_ATTRIBUTES_STRING; ++n)
+        if(pyg_error_check(&gerr))
         {
-            if(m[n].is_initialized())
-            {
-                DBus::MessageIter it;
-                it << boost::get<std::string>(m[n].get());
-                mm.insert(std::make_pair( mpris_attribute_id_str[n-ATTRIBUTE_LOCATION], DBus::Variant( it )));
-            }
+                g_message("Error occurred");
+                Error err (_("Python Plugins"), "", gerr->message);
+                g_error_free(gerr);
+                m_ErrorManager->new_error(err);
         }
-
-        for(int n = ATTRIBUTE_TRACK; n < N_ATTRIBUTES_INT; ++n)
-        {
-            if(m[n].is_initialized())
-            {
-                DBus::MessageIter it;
-                it << boost::get<gint64>(m[n].get());
-                mm.insert(std::make_pair( mpris_attribute_id_int[n-ATTRIBUTE_TRACK], DBus::Variant( it )));
-            }
-        }
-        return mm;
-    }
-
-    void
-    Player::PlayTracks( const std::vector< ::DBus::String >& data  )
-    {
-        Util::FileList list;
-        for(std::vector< ::DBus::String >::const_iterator i = data.begin(); i != data.end(); ++i )
-        {
-            list.push_back( *i );
-        }
-        play_tracks(list);
-    }
-
-    void
-    Player::Quit()
-    {
-        gtk_main_quit();
-    }
-
-    void
-    Player::Startup() 
-    {
-        if( m_startup_complete )
-        {
-            Gtk::Window::deiconify();
-            Gtk::Window::raise();
-        }
+#endif
     }
 }

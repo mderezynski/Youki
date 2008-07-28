@@ -476,7 +476,8 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Up )
                             {
-                                step = - (m_prop_vadj.get_value()->get_value() / m_rowheight); 
+                                step = - (m_visibleheight / m_rowheight);
+                                step ++;
                             }
                             else
                             {
@@ -528,7 +529,8 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Down )
                             {
-                                step = (m_prop_vadj.get_value()->get_value() / m_rowheight); 
+                                step = (m_visibleheight / m_rowheight);
+                                step --;
                             }
                             else
                             {
@@ -558,7 +560,7 @@ namespace MPX
                                         m_selection.clear();
                                         m_selection.insert(std::make_pair(i, row));
 
-                                        if( row >= ((m_prop_vadj.get_value()->get_value() / m_rowheight) + (m_visibleheight/m_rowheight)))
+                                        if( row > ((m_prop_vadj.get_value()->get_value() / m_rowheight) + (m_visibleheight/m_rowheight) - 1))
                                         {
                                             double value = m_prop_vadj.get_value()->get_value();
                                             value += m_rowheight;
