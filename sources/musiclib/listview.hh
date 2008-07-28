@@ -371,52 +371,59 @@ namespace MPX
                             {
                                     std::string output;
                                     output.reserve(1024);
-                                    std::string chunk;
-                                    chunk.reserve(1024);
-                                    int c_open = 0;
-                                    int c_close = 0;
 
-                                    for(std::string::iterator i = str.begin(); i != str.end(); ++i)
+                                    if( i_begin.size() == 1 && (*(i_begin.begin())) == 0 && (*(i_end.begin())) == str.size() )    
                                     {
-                                        std::string::size_type idx = std::distance(str.begin(), i);
-
-                                        if( i_begin.count(idx) && i_end.count(idx) )
-                                        {
-                                            /* do nothing */
-                                        }
-                                        else
-                                        if( i_begin.count(idx) )
-                                        {
-                                            c_open ++;
-                                            if( c_open == 1 )
-                                            {
-                                                output += Glib::Markup::escape_text(chunk).raw();
-                                                chunk.clear();
-                                                output += "<span color='#ffff80'>";
-                                            }
-                                        }
-                                        if( i_end.count(idx) )
-                                        {
-                                            c_close ++;
-                                            if( c_close == c_open )
-                                            {
-                                                output += Glib::Markup::escape_text(chunk).raw();
-                                                chunk.clear();
-                                                output += "</span>"; 
-                                                c_close = 0;
-                                                c_open  = 0;
-                                            }
-                                        }
-
-                                        chunk += *i;
+                                        output += "<span color='#ffff80'>" + Glib::Markup::escape_text(str).raw() + "</span>";
                                     }
-
-                                    if( c_open )
+                                    else
                                     {
-                                        output += "</span>";
-                                    }
+                                            std::string chunk;
+                                            chunk.reserve(1024);
+                                            int c_open = 0;
+                                            int c_close = 0;
 
-                                    output += Glib::Markup::escape_text(chunk).raw();
+                                            for(std::string::iterator i = str.begin(); i != str.end(); ++i)
+                                            {
+                                                std::string::size_type idx = std::distance(str.begin(), i);
+
+                                                if( i_begin.count(idx) && i_end.count(idx) )
+                                                {
+                                                    /* do nothing */
+                                                }
+                                                else
+                                                if( i_begin.count(idx) )
+                                                {
+                                                    c_open ++;
+                                                    if( c_open == 1 )
+                                                    {
+                                                        output += Glib::Markup::escape_text(chunk).raw();
+                                                        chunk.clear();
+                                                        output += "<span color='#ffff80'>";
+                                                    }
+                                                }
+                                                if( i_end.count(idx) )
+                                                {
+                                                    c_close ++;
+                                                    if( c_close == c_open )
+                                                    {
+                                                        output += Glib::Markup::escape_text(chunk).raw();
+                                                        chunk.clear();
+                                                        output += "</span>"; 
+                                                        c_close = 0;
+                                                        c_open  = 0;
+                                                    }
+                                                }
+
+                                                chunk += *i;
+                                            }
+
+                                            if( c_open )
+                                            {
+                                                output += "</span>";
+                                            }
+                                            output += Glib::Markup::escape_text(chunk).raw();
+                                    }
 
                                     layout = widget.create_pango_layout("");
                                     layout->set_markup(output);
