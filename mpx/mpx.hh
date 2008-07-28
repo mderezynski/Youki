@@ -63,7 +63,6 @@ namespace Gtk
     class Statusbar;
 }
 
-class CoverFlowWidget;
 namespace MPX
 {
     class ErrorManager;
@@ -241,7 +240,6 @@ namespace MPX
         Sidebar                   * m_Sidebar;
         InfoArea                  * m_InfoArea;
         VideoWidget               * m_VideoWidget; 
-        CoverFlowWidget           * m_CoverFlow;
         ErrorManager              * m_ErrorManager;
 
     // widgets

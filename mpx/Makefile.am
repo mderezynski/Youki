@@ -111,11 +111,6 @@ mpx_bin_SOURCES =				\
 								\
 	error.cc					\
 								\
-	flow_engine.hh				\
-	flow_engine.cc				\
-	flow_widget.hh				\
-	flow_widget.cc				\
-								\
 	glib-marshalers.c			\
 								\
 	gtkmmmodule.h				\

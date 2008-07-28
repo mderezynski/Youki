@@ -41,12 +41,14 @@
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
+#include "dbus-marshalers.h"
 #include <glib/gstdio.h>
 #include <glibmm/i18n.h>
 #include <pygobject.h>
 #include <pygtk/pygtk.h>
 #include <gdl/gdl.h>
 #include "mpx/error.hh"
+#include "mpx/last-fm-xmlrpc.hh"
 #include "mpx/library.hh"
 #include "mpx/stock.hh"
 #include "mpx/python.hh"
@@ -61,20 +63,14 @@
 #include "dialog-filebrowser.hh"
 #include "import-share.hh"
 #include "import-folder.hh"
-#include "request-value.hh"
-#include "sidebar.hh"
-#include "splash-screen.hh"
-
-#include "mpx/last-fm-xmlrpc.hh"
-
 #include "mlibmanager.hh"
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
 #include "play.hh"
 #include "preferences.hh"
-
-#include "flow_widget.hh"
-#include "flow_engine.hh"
+#include "request-value.hh"
+#include "sidebar.hh"
+#include "splash-screen.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -1542,8 +1538,8 @@ namespace MPX
         );
 
 		show ();
-
         StartupComplete ();
+        m_startup_complete = true;
     }
 
     bool
@@ -3447,14 +3443,12 @@ namespace MPX
     void
     Player::Quit()
     {
-        g_message("%s: Quit", G_STRLOC);
         gtk_main_quit();
     }
 
     void
     Player::Startup() 
     {
-        g_message("%s: Startup", G_STRLOC);
         if( m_startup_complete )
         {
             Gtk::Window::deiconify();
