@@ -50,9 +50,9 @@
 #include "mpx/widgetloader.h"
 
 #include "audio-types.hh"
-#include "dbus-marshalers.h"
-#include "sidebar.hh"
 #include "video-widget.hh"
+
+#include "sidebar.hh"
 
 #include "dbusxx-player.hh"
 
