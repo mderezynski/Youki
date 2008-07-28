@@ -602,9 +602,10 @@ namespace MPX
                             if( m_selection.size() > 1 || m_selection.size() == 0 )
                             {
                                 mark_first_row_up:
-
+    
+                                int row = get_upper_row();
                                 m_selection.clear();
-                                m_selection.insert(std::make_pair(m_model->m_mapping[row], get_upper_row()));
+                                m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
                             }
                             else
                             {
@@ -655,8 +656,9 @@ namespace MPX
                             {
                                 mark_first_row_down:
 
+                                int row = get_upper_row();
                                 m_selection.clear();
-                                m_selection.insert(std::make_pair(m_model->m_mapping[row], get_upper_row()));
+                                m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
                             }
                             else
                             {
