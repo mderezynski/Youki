@@ -207,8 +207,6 @@ dbusxx-player.hh: Makefile.am dbus-obj-PLAYER.xml
 	@echo "* Generating /Player DBus Glue"
 	dbusxx-xml2cpp $(abs_top_srcdir)/mpx/dbus-obj-PLAYER.xml --adaptor=dbusxx-player.hh 
 
-EXTRA_DIST = glib-marshalers.list
-
 built_header_make += 	\
 		glib-marshalers.h
 
@@ -219,3 +217,16 @@ glib-marshalers.c: glib-marshalers.list
 glib-marshalers.h: glib-marshalers.list
 	@echo "* Generating glib-marshalers.h"
 	@$(GLIB_GENMARSHAL) --prefix=psm_glib_marshal --header $(srcdir)/glib-marshalers.list > glib-marshalers.h
+
+dbus-marshalers.c: dbus-marshalers.list 
+	@echo "* Generating dbus-marshalers.c"
+	@$(GLIB_GENMARSHAL) --prefix=mpx_dbus_marshal --body   $(srcdir)/dbus-marshalers.list > dbus-marshalers.c
+
+dbus-marshalers.h: dbus-marshalers.list
+	@echo "* Generating dbus-marshalers.h"
+	@$(GLIB_GENMARSHAL) --prefix=mpx_dbus_marshal --header $(srcdir)/dbus-marshalers.list > dbus-marshalers.h
+
+BUILT_SOURCES += dbus-marshalers.c dbus-marshalers.h
+mpx_bin_SOURCES += dbus-marshalers.c
+
+EXTRA_DIST = glib-marshalers.list dbus-marshalers.list
