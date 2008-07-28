@@ -334,42 +334,6 @@ namespace MPX
                             break;
                     }
 
-#if 0
-                    using namespace boost::algorithm;
-
-                    typedef std::vector< std::string >                                  SplitVectorType;
-
-                    typedef boost::iterator_range<std::string::iterator>                Range;
-                    typedef std::pair<std::string::size_type, std::string::size_type>   IndexedRange; 
-
-                    typedef std::list<Range>                                            Results;
-                    typedef std::list<IndexedRange>                                     IndexResults;
-
-                    typedef std::vector<Results>                                        ResultsVector;
-                    typedef std::vector<IndexResults>                                   IndexResultsVector;
-
-                    SplitVectorType split_vec; // #2: Search for tokens
-                    boost::algorithm::split( split_vec, filter, boost::algorithm::is_any_of(" ") );
-
-                    std::sort( split_vec.begin(), split_vec.end() );
-                    std::reverse( split_vec.begin(), split_vec.end());
-
-                    IndexResultsVector iv;
-
-                    for( SplitVectorType::const_iterator i = split_vec.begin(); i != split_vec.end(); ++i )
-                    {
-                        Results x; 
-                        ifind_all(x, str, *i);
-
-                        IndexResults ir;
-                        for(Results::const_iterator i = x.begin(); i != x.end(); ++i )
-                        {
-                            ir.push_back(std::make_pair(std::distance(str.begin(), (*i).begin()), std::distance(str.begin(), (*i).end())));
-                        }
-
-                        iv.push_back(ir);
-                    }
-#endif
 
                     Glib::RefPtr<Pango::Layout> layout; 
                     layout = widget.create_pango_layout(str);
@@ -471,17 +435,142 @@ namespace MPX
                 }
 
                 virtual bool
+                on_focus (Gtk::DirectionType direction)
+                { 
+                    grab_focus();
+                    return true;
+                }
+
+                bool
+                visible_row (int row)
+                {
+                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_rowheight); 
+                    int row_lower = row_upper + m_visibleheight/m_rowheight;
+                    return ( row >= row_upper && row <= row_lower);
+                }
+
+                virtual bool
                 on_key_press_event (GdkEventKey * event)
                 {
+                    int step; 
+
                     switch( event->keyval )
                     {
+                        case GDK_Return:
+                        case GDK_KP_Enter:
+                        case GDK_ISO_Enter:
+                        case GDK_3270_Enter:
+                            if( m_selection.size() == 1 )
+                            {
+                                Row4 const& r = *(m_selection.begin()->first);
+                                gint64 id = get<3>(r);
+                                m_trackactivated.emit(id);
+                            }
+                            return true;
+
                         case GDK_Up:
-                            g_message("Up");
-                            break;
+                        case GDK_KP_Up:
+                        case GDK_Page_Up:
+
+                            if( event->keyval == GDK_Page_Up )
+                            {
+                                step = - (m_prop_vadj.get_value()->get_value() / m_rowheight); 
+                            }
+                            else
+                            {
+                                step = -1;
+                            }
+
+                            if( m_selection.size() > 1 || m_selection.size() == 0 )
+                            {
+                                mark_first_row_up:
+
+                                m_selection.clear();
+                                int row = (m_prop_vadj.get_value()->get_value() / m_rowheight); 
+                                m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
+                            }
+                            else
+                            {
+                                if( visible_row( (*(m_selection.begin())).second ))
+                                {
+                                    ModelT::iterator i = (*(m_selection.begin())).first;
+                                    int row = (*(m_selection.begin())).second;
+
+                                    std::advance(i, step);
+                                    row += step;
+
+                                    if( row >= 0 )
+                                    {
+                                        m_selection.clear();
+                                        m_selection.insert(std::make_pair(i, row));
+
+                                        if( row < (m_prop_vadj.get_value()->get_value() / m_rowheight)) 
+                                        {
+                                            double value = m_prop_vadj.get_value()->get_value();
+                                            value -= m_rowheight;
+                                            m_prop_vadj.get_value()->set_value( value );
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    goto mark_first_row_up;
+                                }
+                            }
+                            queue_draw();
+                            return true;
 
                         case GDK_Down:
-                            break;
-                            g_message("Down");
+                        case GDK_KP_Down:
+                        case GDK_Page_Down:
+
+                            if( event->keyval == GDK_Page_Down )
+                            {
+                                step = (m_prop_vadj.get_value()->get_value() / m_rowheight); 
+                            }
+                            else
+                            {
+                                step = 1;
+                            }
+
+                            if( m_selection.size() > 1 || m_selection.size() == 0 )
+                            {
+                                mark_first_row_down:
+
+                                m_selection.clear();
+                                int row = (m_prop_vadj.get_value()->get_value() / m_rowheight); 
+                                m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
+                            }
+                            else
+                            {
+                                if( visible_row( (*(m_selection.begin())).second ))
+                                {
+                                    ModelT::iterator i = (*(m_selection.begin())).first;
+                                    int row = (*(m_selection.begin())).second;
+
+                                    std::advance(i, step);
+                                    row += step;
+
+                                    if( row < m_model->m_mapping.size() )
+                                    {
+                                        m_selection.clear();
+                                        m_selection.insert(std::make_pair(i, row));
+
+                                        if( row >= ((m_prop_vadj.get_value()->get_value() / m_rowheight) + (m_visibleheight/m_rowheight)))
+                                        {
+                                            double value = m_prop_vadj.get_value()->get_value();
+                                            value += m_rowheight;
+                                            m_prop_vadj.get_value()->set_value( value );
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    goto mark_first_row_down;
+                                }
+                            }
+                            queue_draw();
+                            return true;
                     }
 
                     return false;
@@ -609,7 +698,7 @@ namespace MPX
                 on_configure_event (GdkEventConfigure * event)        
                 {
                     m_prop_vadj.get_value()->set_page_size(event->height); 
-                    m_prop_vadj.get_value()->set_upper((m_model->size()+1) * m_rowheight);
+                    m_prop_vadj.get_value()->set_upper((m_model->size()) * m_rowheight);
 
                     m_visibleheight = event->height;
 
@@ -695,6 +784,21 @@ namespace MPX
                         row ++;
                     }
 
+                    if( has_focus() )
+                    {
+                        get_style()->paint_focus(
+                            get_window(),
+                            Gtk::STATE_NORMAL,
+                            get_allocation(),
+                            *this,
+                            "treeview",
+                            get_allocation().get_x(), 
+                            get_allocation().get_y(), 
+                            get_allocation().get_width(), 
+                            get_allocation().get_height()
+                        );
+                    }
+
                     return true;
                 }
 
@@ -771,6 +875,7 @@ namespace MPX
                     gtk_widget_realize(GTK_WIDGET(m_treeview));
 
                     set_flags(Gtk::CAN_FOCUS);
+                    add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_FOCUS_CHANGE_MASK));
 
                     ((GtkWidgetClass*)(G_OBJECT_GET_CLASS(G_OBJECT(gobj()))))->set_scroll_adjustments_signal = 
                             g_signal_new ("set_scroll_adjustments",
