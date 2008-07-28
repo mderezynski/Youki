@@ -3560,10 +3560,14 @@ namespace MPX
               }
 
               void
-              on_track_activated (gint64 id)
+              on_track_activated (gint64 id, bool play)
               {
                 IdV v (1, id);
-                m_MLib.play_tracks(v);
+
+                if( play )
+                    m_MLib.play_tracks(v);
+                else
+                    m_MLib.append_tracks(v);
               }
 
               void

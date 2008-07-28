@@ -443,7 +443,7 @@ namespace MPX
                     }
 
                     layout->set_ellipsize(Pango::ELLIPSIZE_END);
-                    layout->set_width(m_width*PANGO_SCALE);
+                    layout->set_width((m_width-8)*PANGO_SCALE);
                     pango_cairo_show_layout(cr->cobj(), layout->gobj());
 
                     cr->reset_clip();
@@ -454,7 +454,7 @@ namespace MPX
         typedef std::vector<ColumnP> Columns;
         typedef std::set<std::pair<ModelT::iterator, int> > Selection;
 
-        typedef sigc::signal<void, gint64> SignalTrackActivated;
+        typedef sigc::signal<void, gint64, bool> SignalTrackActivated;
 
         class ListView : public Gtk::DrawingArea
         {
@@ -468,13 +468,14 @@ namespace MPX
                 guint                               m_signal0; 
                 Selection                           m_selection;
                 boost::optional<ModelT::iterator>   m_selected;
-                SignalTrackActivated                m_trackactivated;
                 GtkWidget                         * m_treeview;
                 IdV                                 m_dnd_idv;
                 bool                                m_dnd;
                 int                                 m_click_row_1;
                 int                                 m_sel_size_was;
                 bool                                m_highlight;
+
+                SignalTrackActivated                m_trackactivated;
 
                 void
                 initialize_metrics ()
@@ -497,6 +498,21 @@ namespace MPX
                     {
                         queue_draw ();
                     }
+                }
+
+                int
+                get_upper_row ()
+                {
+                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_rowheight); 
+                    return row_upper;
+                }
+
+                bool
+                get_row_is_visible (int row)
+                {
+                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_rowheight); 
+                    int row_lower = row_upper + m_visibleheight/m_rowheight;
+                    return ( row >= row_upper && row <= row_lower);
                 }
 
             protected:
@@ -547,14 +563,6 @@ namespace MPX
                     return true;
                 }
 
-                bool
-                visible_row (int row)
-                {
-                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_rowheight); 
-                    int row_lower = row_upper + m_visibleheight/m_rowheight;
-                    return ( row >= row_upper && row <= row_lower);
-                }
-
                 virtual bool
                 on_key_press_event (GdkEventKey * event)
                 {
@@ -572,7 +580,8 @@ namespace MPX
 
                                 Row4 const& r = *(m_selection.begin()->first);
                                 gint64 id = get<3>(r);
-                                m_trackactivated.emit(id);
+                                bool play = (event->state & GDK_CONTROL_MASK);
+                                m_trackactivated.emit(id, !play);
                             }
                             return true;
 
@@ -595,12 +604,11 @@ namespace MPX
                                 mark_first_row_up:
 
                                 m_selection.clear();
-                                int row = (m_prop_vadj.get_value()->get_value() / m_rowheight); 
-                                m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
+                                m_selection.insert(std::make_pair(m_model->m_mapping[row], get_upper_row()));
                             }
                             else
                             {
-                                if( visible_row( (*(m_selection.begin())).second ))
+                                if( get_row_is_visible( (*(m_selection.begin())).second ))
                                 {
                                     ModelT::iterator i = (*(m_selection.begin())).first;
                                     int row = (*(m_selection.begin())).second;
@@ -613,7 +621,7 @@ namespace MPX
                                         m_selection.clear();
                                         m_selection.insert(std::make_pair(i, row));
 
-                                        if( row < (m_prop_vadj.get_value()->get_value() / m_rowheight)) 
+                                        if( row < get_upper_row()) 
                                         {
                                             double value = m_prop_vadj.get_value()->get_value();
                                             value -= m_rowheight;
@@ -648,12 +656,11 @@ namespace MPX
                                 mark_first_row_down:
 
                                 m_selection.clear();
-                                int row = (m_prop_vadj.get_value()->get_value() / m_rowheight); 
-                                m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
+                                m_selection.insert(std::make_pair(m_model->m_mapping[row], get_upper_row()));
                             }
                             else
                             {
-                                if( visible_row( (*(m_selection.begin())).second ))
+                                if( get_row_is_visible( (*(m_selection.begin())).second ))
                                 {
                                     ModelT::iterator i = (*(m_selection.begin())).first;
                                     int row = (*(m_selection.begin())).second;
@@ -666,7 +673,7 @@ namespace MPX
                                         m_selection.clear();
                                         m_selection.insert(std::make_pair(i, row));
 
-                                        if( row > ((m_prop_vadj.get_value()->get_value() / m_rowheight) + (m_visibleheight/m_rowheight) - 1))
+                                        if( row > (get_upper_row() + ((m_visibleheight-m_row_height-2)/m_rowheight)))
                                         {
                                             double value = m_prop_vadj.get_value()->get_value();
                                             value += m_rowheight;
@@ -704,7 +711,8 @@ namespace MPX
                         {
                                 Row4 const& r = *(m_selection.begin()->first);
                                 gint64 id = get<3>(r);
-                                m_trackactivated.emit(id);
+                                bool play = (event->state & GDK_CONTROL_MASK);
+                                m_trackactivated.emit(id, !play);
                         }
                     }
                     else
@@ -715,7 +723,7 @@ namespace MPX
                             Selection::iterator i_sel = m_selection.end();
                             i_sel--;
                             int row_p = i_sel->second; 
-                            int row_c = (m_prop_vadj.get_value()->get_value() / m_rowheight) + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
+                            int row_c = get_upper_row() + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
                             if( row_c < m_model->m_mapping.size() )
                             {
                                     for(int i = row_p+1; i <= row_c; ++i)
@@ -727,7 +735,7 @@ namespace MPX
                         }
                         else
                         {
-                            int row = (m_prop_vadj.get_value()->get_value() / m_rowheight) + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
+                            int row = get_upper_row() + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
                             if( row < m_model->m_mapping.size() )
                             {
                                     m_click_row_1 = row;
@@ -781,7 +789,7 @@ namespace MPX
                                 Selection::iterator i_sel = m_selection.end();
                                 i_sel--;
                                 int row_p = i_sel->second; 
-                                int row_c = (m_prop_vadj.get_value()->get_value() / m_rowheight) + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
+                                int row_c = get_upper_row() + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
                                 if( row_c < m_model->m_mapping.size() )
                                 {
                                         for(int i = row_p+1; i <= row_c; ++i)
@@ -832,7 +840,7 @@ namespace MPX
 
                     Gtk::Allocation const& alloc = get_allocation();
 
-                    int row = m_prop_vadj.get_value()->get_value() / m_rowheight; 
+                    int row = get_upper_row() 
                     m_previousdrawnrow = row;
 
                     int y_pos = m_rowheight + 4;
