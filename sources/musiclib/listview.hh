@@ -390,6 +390,8 @@ namespace MPX
                                             c_open ++;
                                             if( c_open == 1 )
                                             {
+                                                output += Glib::Markup::escape_text(chunk).raw();
+                                                chunk.clear();
                                                 output += "<span color='#ffff80'>";
                                             }
                                         }
@@ -398,19 +400,23 @@ namespace MPX
                                             c_close ++;
                                             if( c_close == c_open )
                                             {
+                                                output += Glib::Markup::escape_text(chunk).raw();
+                                                chunk.clear();
                                                 output += "</span>"; 
                                                 c_close = 0;
-                                                c_open = 0;
+                                                c_open  = 0;
                                             }
                                         }
 
-                                        output += *i;
+                                        chunk += *i;
                                     }
 
                                     if( c_open )
                                     {
                                         output += "</span>";
                                     }
+
+                                    output += Glib::Markup::escape_text(chunk).raw();
 
                                     layout = widget.create_pango_layout("");
                                     layout->set_markup(output);
