@@ -462,6 +462,8 @@ namespace MPX
                         case GDK_3270_Enter:
                             if( m_selection.size() == 1 )
                             {
+                                using boost::get;
+
                                 Row4 const& r = *(m_selection.begin()->first);
                                 gint64 id = get<3>(r);
                                 m_trackactivated.emit(id);
