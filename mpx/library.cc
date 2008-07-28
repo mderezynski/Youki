@@ -718,11 +718,11 @@ namespace MPX
         std::string mbid = get<std::string>(v[0]["mb_album_id"]);
 
         execSQL(
-                mprintf(" INSERT INTO album_rating_history (mbid, rating, comment) VALUES ('%q', '%d', '%q', '%lld') ",
+                mprintf(" INSERT INTO album_rating_history (mbid, rating, comment, time) VALUES ('%q', '%d', '%q', '%lld') ",
                     mbid.c_str(),
                     rating,
                     comment.c_str(),
-                    time(NULL)
+                    gint64(time(NULL))
         ));
     }
     
