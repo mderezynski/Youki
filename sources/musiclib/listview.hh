@@ -842,7 +842,7 @@ namespace MPX
 
                     Gtk::Allocation const& alloc = get_allocation();
 
-                    int row = get_upper_row() 
+                    int row = get_upper_row() ;
                     m_previousdrawnrow = row;
 
                     int y_pos = m_rowheight + 4;
