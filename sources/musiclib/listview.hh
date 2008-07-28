@@ -308,7 +308,8 @@ namespace MPX
                     int                             row,
                     int                             x_pos,
                     int                             y_pos,
-                    int                             rowheight
+                    int                             rowheight,
+                    bool                            highlight
                 )
                 {
                     using boost::get;
@@ -334,9 +335,96 @@ namespace MPX
                             break;
                     }
 
-
                     Glib::RefPtr<Pango::Layout> layout; 
-                    layout = widget.create_pango_layout(str);
+
+                    if( highlight )
+                    {
+                            using namespace boost::algorithm;
+
+                            typedef std::vector< std::string >                                  SplitVectorType;
+                            typedef std::set<std::string::size_type>                            IndexSet; 
+                            typedef boost::iterator_range<std::string::iterator>                Range;
+                            typedef std::list<Range>                                            Results;
+
+                            SplitVectorType split_vec; // #2: Search for tokens
+                            boost::algorithm::split( split_vec, filter, boost::algorithm::is_any_of(" ") );
+
+                            std::sort( split_vec.begin(), split_vec.end() );
+                            std::reverse( split_vec.begin(), split_vec.end());
+
+                            IndexSet i_begin;
+                            IndexSet i_end;
+
+                            for( SplitVectorType::const_iterator i = split_vec.begin(); i != split_vec.end(); ++i )
+                            {
+                                Results x; 
+                                ifind_all(x, str, *i);
+
+                                for(Results::const_iterator i = x.begin(); i != x.end(); ++i )
+                                {
+                                    i_begin.insert(std::distance(str.begin(), (*i).begin()));
+                                    i_end.insert(std::distance(str.begin(), (*i).end()));
+                                }
+                            }
+    
+                            if( ! i_begin.empty() )
+                            {
+                                    std::string output;
+                                    output.reserve(1024);
+                                    std::string chunk;
+                                    chunk.reserve(1024);
+                                    int c_open = 0;
+                                    int c_close = 0;
+
+                                    for(std::string::iterator i = str.begin(); i != str.end(); ++i)
+                                    {
+                                        std::string::size_type idx = std::distance(str.begin(), i);
+
+                                        if( i_begin.count(idx) && i_end.count(idx) )
+                                        {
+                                            /* do nothing */
+                                        }
+                                        else
+                                        if( i_begin.count(idx) )
+                                        {
+                                            c_open ++;
+                                            if( c_open == 1 )
+                                            {
+                                                output += "<span color='#ffff80'>";
+                                            }
+                                        }
+                                        if( i_end.count(idx) )
+                                        {
+                                            c_close ++;
+                                            if( c_close == c_open )
+                                            {
+                                                output += "</span>"; 
+                                                c_close = 0;
+                                                c_open = 0;
+                                            }
+                                        }
+
+                                        output += *i;
+                                    }
+
+                                    if( c_open )
+                                    {
+                                        output += "</span>";
+                                    }
+
+                                    layout = widget.create_pango_layout("");
+                                    layout->set_markup(output);
+                            }
+                            else
+                            {
+                                layout = widget.create_pango_layout(str);
+                            }
+                    }
+                    else
+                    {
+                        layout = widget.create_pango_layout(str);
+                    }
+
                     layout->set_ellipsize(Pango::ELLIPSIZE_END);
                     layout->set_width(m_width*PANGO_SCALE);
                     pango_cairo_show_layout(cr->cobj(), layout->gobj());
@@ -369,6 +457,7 @@ namespace MPX
                 bool                                m_dnd;
                 int                                 m_click_row_1;
                 int                                 m_sel_size_was;
+                bool                                m_highlight;
 
                 void
                 initialize_metrics ()
@@ -769,7 +858,6 @@ namespace MPX
                         if( !m_selection.empty() && m_selection.count(std::make_pair(selected, row))) 
                         {
                             cr->set_operator(Cairo::OPERATOR_ATOP);
-
                             Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
                             cr->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.8);
                             RoundedRectangle(cr, 6, y_pos+2, alloc.get_width()-10, m_rowheight-4, 4.);
@@ -780,7 +868,7 @@ namespace MPX
 
                         for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                         {
-                            (*i)->render(cr, m_model->row(row), m_model->m_filter, *this, row, x_pos, y_pos, m_rowheight);
+                            (*i)->render(cr, m_model->row(row), m_model->m_filter, *this, row, x_pos, y_pos, m_rowheight, m_highlight);
                             x_pos += (*i)->get_width() + 1;
                         }
 
@@ -843,6 +931,13 @@ namespace MPX
                 }
 
             public:
+    
+                void
+                set_highlight(bool highlight)
+                {
+                    m_highlight = highlight;
+                    queue_draw ();
+                }
 
                 void
                 set_model(DataModelFilterP model)
@@ -874,6 +969,9 @@ namespace MPX
                 , m_prop_vadj   (*this, "vadjustment", (Gtk::Adjustment*)(0))
                 , m_prop_hadj   (*this, "hadjustment", (Gtk::Adjustment*)(0))
                 , m_dnd(false)
+                , m_click_row_1(0)
+                , m_sel_size_was(0)
+                , m_highlight(false)
                 {
                     m_treeview = gtk_tree_view_new();
                     gtk_widget_realize(GTK_WIDGET(m_treeview));

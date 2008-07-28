@@ -3454,7 +3454,7 @@ namespace MPX
             };
         };
 
-        class AllTracksTreeView
+        class AllTracksView
         {
               MPX::Source::PlaybackSourceMusicLib & m_MLib;
               PAccess<MPX::Library>                 m_Lib;
@@ -3464,7 +3464,7 @@ namespace MPX
 
             public:
 
-              AllTracksTreeView(
+              AllTracksView(
                     Glib::RefPtr<Gnome::Glade::Xml> const& xml,
                     PAccess<MPX::Library>           const& lib,
                     PAccess<MPX::HAL>               const& hal,
@@ -3476,7 +3476,7 @@ namespace MPX
               {
                     Gtk::ScrolledWindow     * scrollwin = dynamic_cast<Gtk::ScrolledWindow*>(xml->get_widget("musiclib-alltracks-sw")); 
                     Gtk::Entry              * entry     = dynamic_cast<Gtk::Entry*>(xml->get_widget("musiclib-alltracks-filter-entry")); 
-                    ListView                * view      = new ListView;
+                    m_ListView                          = new ListView;
                    
                     DataModelP m (new DataModel);
 
@@ -3494,7 +3494,7 @@ namespace MPX
                         sigc::bind(
                             sigc::mem_fun(
                                 *this,
-                                &AllTracksTreeView::on_entry_changed
+                                &AllTracksView::on_entry_changed
                             ),
                             m_FilterModel,
                             entry
@@ -3509,28 +3509,49 @@ namespace MPX
                     ColumnP c3 (new Column(_("Album")));
                     c3->set_column(2);
 
-                    view->append_column(c1);
-                    view->append_column(c2);
-                    view->append_column(c3);
+                    m_ListView->append_column(c1);
+                    m_ListView->append_column(c2);
+                    m_ListView->append_column(c3);
 
-                    view->set_model(m_FilterModel);
+                    m_ListView->set_model(m_FilterModel);
 
-                    scrollwin->add(*view);
-                    view->show();
+                    scrollwin->add(*m_ListView);
+                    m_ListView->show();
                     scrollwin->show_all();
 
-                    view->signal_track_activated().connect(
+                    m_ListView->signal_track_activated().connect(
                         sigc::mem_fun(
                             *this,
-                            &AllTracksTreeView::on_track_activated
+                            &AllTracksView::on_track_activated
                     ));
 
                     m_Lib.get().signal_new_track().connect( 
                         sigc::mem_fun(
                             *this,
-                            &AllTracksTreeView::on_new_track
+                            &AllTracksView::on_new_track
+                    ));
+
+                    Gtk::CheckButton * cb;
+                    xml->get_widget("alltracks-highlight", cb);
+
+                    cb->signal_toggled().connect(
+
+                        sigc::bind(
+
+                            sigc::mem_fun(
+                                *this,
+                                &AllTracksView::on_highlight_toggled
+                            ),
+
+                            cb
                     ));
               }
+
+              void
+              on_highlight_toggled( Gtk::CheckButton * cb )
+              {
+                    m_ListView->set_highlight( cb->get_active() );
+              }   
 
               void
               on_new_track(Track & track, gint64 album_id, gint64 artist_id)
@@ -3553,7 +3574,7 @@ namespace MPX
         };
 
 #if 0 
-        class AllTracksTreeView
+        class AllTracksView
             :   public WidgetLoader<Gtk::TreeView>
         {
               MPX::Source::PlaybackSourceMusicLib & m_MLib;
@@ -3588,7 +3609,7 @@ namespace MPX
 
               static const int N_FIRST_CUSTOM = 6;
 
-              AllTracksTreeView(
+              AllTracksView(
                     Glib::RefPtr<Gnome::Glade::Xml> const& xml,
                     PAccess<MPX::Library>           const& lib,
                     PAccess<MPX::HAL>               const& hal,
@@ -3623,7 +3644,7 @@ namespace MPX
                 CellRendererText * cell2 = manage (new CellRendererText);
                 col->property_alignment() = 1.;
                 col->pack_start(*cell2, true);
-                col->set_cell_data_func(*cell2, sigc::mem_fun( *this, &AllTracksTreeView::cellDataFuncTime ));
+                col->set_cell_data_func(*cell2, sigc::mem_fun( *this, &AllTracksView::cellDataFuncTime ));
                 col->set_sort_column_id(AllTracksColumns.Length);
                 g_object_set(G_OBJECT(cell2->gobj()), "xalign", 1.0f, NULL);
                 append_column(*col);
@@ -3636,7 +3657,7 @@ namespace MPX
                 col->pack_start(*cell, false);
                 col->set_min_width(66);
                 col->set_max_width(66);
-                col->set_cell_data_func(*cell, sigc::mem_fun( *this, &AllTracksTreeView::cellDataFuncRating ));
+                col->set_cell_data_func(*cell, sigc::mem_fun( *this, &AllTracksView::cellDataFuncRating ));
                 append_column(*col);
 
                 //////////////////////////////// 
@@ -3647,7 +3668,7 @@ namespace MPX
                 {
                         col = manage (new TreeViewColumn(_(attribute_names[i])));
                         col->pack_start(*cell2, true);
-                        col->set_cell_data_func(*cell2, sigc::bind(sigc::mem_fun( *this, &AllTracksTreeView::cellDataFuncCustom ), i ));
+                        col->set_cell_data_func(*cell2, sigc::bind(sigc::mem_fun( *this, &AllTracksView::cellDataFuncCustom ), i ));
                         col->property_visible()= false;
                         append_column(*col);
                 }
@@ -3675,28 +3696,28 @@ namespace MPX
                 ListStoreFilter->set_visible_func(
                     sigc::mem_fun(
                         *this,
-                        &AllTracksTreeView::track_visible_func
+                        &AllTracksView::track_visible_func
                 ));
 
                 ListStore->set_sort_func(
                     AllTracksColumns.Artist,
                     sigc::mem_fun(
                         *this,
-                        &AllTracksTreeView::slotSortByArtist
+                        &AllTracksView::slotSortByArtist
                 ));
 
                 ListStore->set_sort_func(
                     AllTracksColumns.Album,
                     sigc::mem_fun(
                         *this,
-                        &AllTracksTreeView::slotSortByAlbum
+                        &AllTracksView::slotSortByAlbum
                 ));
 
                 ListStore->set_sort_func(
                     AllTracksColumns.Track,
                     sigc::mem_fun(
                         *this,
-                        &AllTracksTreeView::slotSortByTrack
+                        &AllTracksView::slotSortByTrack
                 ));
 
                 get_selection()->set_mode(Gtk::SELECTION_MULTIPLE);
@@ -3713,13 +3734,13 @@ namespace MPX
                 m_FilterEntry->signal_changed().connect(
                     sigc::mem_fun(
                         *this,
-                        &AllTracksTreeView::on_filter_entry_changed
+                        &AllTracksView::on_filter_entry_changed
                 ));
 
                 m_Lib.get().signal_new_track().connect( 
                     sigc::mem_fun(
                         *this,
-                        &AllTracksTreeView::on_new_track
+                        &AllTracksView::on_new_track
                 ));
 
                 std::vector<TargetEntry> Entries;
@@ -4037,7 +4058,7 @@ namespace MPX
         PlaylistTreeView        *   m_TreeViewPlaylist;
         AlbumTreeView           *   m_TreeViewAlbums;
         LFMTreeView             *   m_TreeViewLFM;
-        AllTracksTreeView       *   m_TreeViewAllTracks;
+        AllTracksView       *   m_ViewAllTracks;
 
         PAccess<MPX::Library>       m_Lib;
         PAccess<MPX::Covers>        m_Covers;
@@ -4053,7 +4074,7 @@ namespace MPX
             m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, m_Lib, m_HAL, mlib);
             m_TreeViewAlbums = new AlbumTreeView(m_RefXml, m_Lib, m_Covers, mlib);
             m_TreeViewLFM = new LFMTreeView(m_RefXml, m_Lib, m_Covers, mlib);
-            m_TreeViewAllTracks = new AllTracksTreeView(m_RefXml, m_Lib, m_HAL, mlib);
+            m_ViewAllTracks = new AllTracksView(m_RefXml, m_Lib, m_HAL, mlib);
         }
     };
 }
