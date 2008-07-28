@@ -1843,6 +1843,26 @@ namespace MPX
                 }
               }
 
+              void
+              run_rating_comment_dialog(int rating, gint64 id)
+              {
+                Gtk::TextView   * textview;
+                Gtk::Dialog     * dialog;
+                
+                m_Xml->get_widget("albums-textview-comment", textview);
+                m_Xml->get_widget("albums-dialog-rate-and-comment", dialog);
+        
+                int response = dialog.run();
+
+                if( response == GTK_RESPONSE_OK )
+                {
+                    Glib::RefPtr<Gtk::TextBuffer> buffer = textview->get_buffer();
+                    Glib::ustring text = buffer->get_text();
+
+                    m_Lib.get().albumAddNewRating(id, rating, text);
+                }
+              }
+
               virtual bool
               on_button_press_event (GdkEventButton* event)
               {
@@ -1864,7 +1884,13 @@ namespace MPX
                         {
                             int rating = ((cell_x - 124)+7) / 12;
                             (*iter)[AlbumColumns.Rating] = rating;  
-                            m_Lib.get().albumRated(m_DragAlbumId.get(), rating);
+                            queue_draw ();
+
+                            run_rating_comment_dialog(rating, m_DragAlbumId.get());
+
+                            int rating = m_Lib.get().albumGetMeanRatingValue(m_DragAlbumId.get());
+                            (*iter)[AlbumColumns.Rating] = rating;  
+                            queue_draw ();
                         }
                     }
                     else
@@ -1885,47 +1911,6 @@ namespace MPX
                 g_atomic_int_set(&m_ButtonPressed, 0);
                 return false;
               }
-
-              virtual bool
-              on_motion_notify_event (GdkEventMotion *event)
-              {
-                int x_orig, y_orig;
-                GdkModifierType state;
-
-                if (event->is_hint)
-                {
-                  gdk_window_get_pointer (event->window, &x_orig, &y_orig, &state);
-                }
-                else
-                {
-                  x_orig = int (event->x);
-                  y_orig = int (event->y);
-                  state = GdkModifierType (event->state);
-                }
-
-                TreePath path;              
-                TreeViewColumn *col;
-                int cell_x, cell_y;
-                if(get_path_at_pos (x_orig, y_orig, path, col, cell_x, cell_y))
-                {
-                    TreeIter iter = TreeStore->get_iter(TreeStoreFilter->convert_path_to_child_path(path));
-                    AlbumRowType rt = (*iter)[AlbumColumns.RowType];
-                    if( rt == ROW_ALBUM )
-                    {
-                            if(!g_atomic_int_get(&m_ButtonPressed))
-                                return false;
-
-                            if( (cell_x >= 124) && (cell_x <= 184) && (cell_y >= 72) && (cell_y < 90))
-                            {
-                                int rating = ((cell_x - 124)+7) / 12;
-                                (*iter)[AlbumColumns.Rating] = rating;  
-                                m_Lib.get().albumRated(m_DragAlbumId.get(), rating);
-                                return true;
-                            }
-                    }
-                }
-                return false;
-              } 
 
         private:
 
@@ -1968,10 +1953,15 @@ namespace MPX
 
                 std::string album = get<std::string>(r["album"]);
 
-                if(r.count("album_rating"))
+                gint64 rating = 0;
+
+                try{
+                    rating = m_Lib.get().albumGetMeanRatingValue(id);
+                } catch( std::runtime_error )
                 {
-                    (*iter)[AlbumColumns.Rating] = get<gint64>(r["album_rating"]);
                 }
+
+                (*iter)[AlbumColumns.Rating] = rating;
 
                 if(r.count("album_insert_date"))
                 {
@@ -2085,10 +2075,15 @@ namespace MPX
 
                 std::string album = get<std::string>(r["album"]);
 
-                if(r.count("album_rating"))
+                gint64 rating = 0;
+
+                try{
+                    rating = m_Lib.get().albumGetMeanRatingValue(id);
+                } catch( std::runtime_error )
                 {
-                    (*iter)[AlbumColumns.Rating] = get<gint64>(r["album_rating"]);
                 }
+
+                (*iter)[AlbumColumns.Rating] = rating;
 
                 if(r.count("album_insert_date"))
                 {
@@ -2828,11 +2823,15 @@ namespace MPX
                 (*iter)[LFMColumns.Id] = id; 
                 (*iter)[LFMColumns.IsMPXAlbum] = 1;
 
-                if(r.count("album_rating"))
+                gint64 rating = 0;
+
+                try{
+                    rating = m_Lib.get().albumGetMeanRatingValue(id);
+                } catch( std::runtime_error )
                 {
-                    gint64 rating = get<gint64>(r["album_rating"]);
-                    (*iter)[LFMColumns.Rating] = rating;
                 }
+
+                (*iter)[LFMColumns.Rating] = rating;
 
                 gint64 idate = 0;
                 if(r.count("album_insert_date"))

@@ -303,6 +303,19 @@ namespace MPX
                                         % "tagid" % "trackid").str()); 
 
 
+        static boost::format
+          album_rating_history_f ("CREATE TABLE IF NOT EXISTS album_rating_history "
+                            "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT NOT NULL, '%s' INTEGER NOT NULL, '%s' TEXT DEFAULT NULL, '%s' INTEGER NOT NULL);"); 
+                    
+        m_SQL->exec_sql(
+            (album_rating_history_f
+                % "mbid"
+                % "rating"
+                % "comment"
+                % "time"
+        ).str()); 
+
+
         StrV columns;
         for (unsigned int n = 0; n < G_N_ELEMENTS(attrs); ++n)
         {
@@ -691,6 +704,74 @@ namespace MPX
 	{
 		m_SQL->exec_sql(sql);
 	}
+
+    void
+    Library::albumAddNewRating(gint64 id, int rating, std::string const& comment)
+    {
+        RowV v;
+        getSQL(v, (boost::format ("SELECT mb_album_id FROM album WHERE id = '%lld'") % id).str());
+        if( v.empty ())
+        {
+            throw std::runtime_error("Invalid ID specified");
+        }
+
+        std::string mbid = get<std::string>(v[0]["mb_album_id"]);
+
+        execSQL(
+                mprintf(" INSERT INTO album_rating_history (mbid, rating, comment) VALUES ('%q', '%d', '%q', '%lld') ",
+                    mbid.c_str(),
+                    rating,
+                    comment.c_str(),
+                    time(NULL)
+        ));
+    }
+    
+    void
+    Library::albumGetAllRatings(gint64 id, RowV & v)
+    {
+        RowV v2;
+        getSQL(v2, (boost::format ("SELECT mb_album_id FROM album WHERE id = '%lld'") % id).str());
+        if( v2.empty ())
+        {
+            throw std::runtime_error("Invalid ID specified");
+        }
+
+        std::string mbid = get<std::string>(v2[0]["mb_album_id"]);
+        getSQL(v, mprintf("SELECT * FROM album_rating_history WHERE mbid = '%q'",mbid.c_str()));
+    }
+
+    int
+    Library::albumGetMeanRatingValue(gint64 id)
+    {
+        RowV v;
+
+        getSQL(v, (boost::format ("SELECT mb_album_id FROM album WHERE id = '%lld'") % id).str());
+        if( v.empty ())
+        {
+            throw std::runtime_error("Invalid ID specified");
+        }
+
+        std::string mbid = get<std::string>(v[0]["mb_album_id"]);
+
+        v.clear();
+        getSQL(v, mprintf("SELECT rating FROM album_rating_history WHERE mbid = '%q'",mbid.c_str()));
+
+        if( !v.empty() )
+        {
+                double rating = 0;
+
+                for(RowV::iterator i = v.begin(); i != v.end(); ++i)
+                {
+                    rating += double(get<gint64>((*i)["rating"]));
+                }
+
+                rating /= double(v.size());
+
+                return rating;
+        }
+
+        return 0;
+    }
 
 	void	
 	Library::albumRated(gint64 id, int rating)

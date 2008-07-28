@@ -591,8 +591,7 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Up )
                             {
-                                step = - (m_visibleheight / m_rowheight);
-                                step ++;
+                                step = - (m_visibleheight / m_rowheight) - 1;
                             }
                             else
                             {
@@ -644,8 +643,7 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Down )
                             {
-                                step = (m_visibleheight / m_rowheight);
-                                step --;
+                                step = (m_visibleheight / m_rowheight) + 1;
                             }
                             else
                             {
