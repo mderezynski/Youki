@@ -39,9 +39,9 @@ namespace MPX
     , m_image_w (m_image->get_width())
     , m_image_h (m_image->get_height())
     , m_bar_w (4)
-    , m_bar_h (m_image_h - 28)
-    , m_bar_x (32)
-    , m_bar_y (15)
+    , m_bar_h (m_image_h - 38)
+    , m_bar_x (12)
+    , m_bar_y (25)
     , m_percent (0.0)
     {
         set_size_request (m_image_w, m_image_h);
