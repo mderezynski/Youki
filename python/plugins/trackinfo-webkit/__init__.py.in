@@ -33,6 +33,7 @@ import urllib
 import urllib2
 import webkit
 import xmlrpclib
+from gettext import gettext as _
 
 # Templates
 
@@ -340,10 +341,10 @@ def append_url_rels(entity):
 
     html        = ""
     mapping     = {
-                    "Discogs"           :   "Discogs Link",
-                    "Wikipedia"         :   "Wikipedia Link",
-                    "Myspace"           :   "Myspace Website",
-                    "OfficialHomepage"  :   "Band Homepage"
+                    "Discogs"           :   _("Discogs Link"),
+                    "Wikipedia"         :   _("Wikipedia Link"),
+                    "Myspace"           :   _("Myspace Website"),
+                    "OfficialHomepage"  :   _("Band Homepage")
                   }
     rel_links   = {}
     links       = []
@@ -441,7 +442,7 @@ class ArtistInfoQuery (threading.Thread):
                         for a in artist_info["similar"]:
                             e.append(getEntityLink(a, "", "artist"))
 
-                self.html += "<p><b>Similar Artists: </b>%s</p>" % ", ".join(e)
+                self.html += "<p><b>%s: </b>%s</p>" % (_("Similar Artists"), ", ".join(e))
         except:
                 print "Error in ArtistInfoQuery: artist information"
 
@@ -505,7 +506,7 @@ class TrackInfoQuery (threading.Thread):
                         for a in artist_info["similar"]:
                             e.append(getEntityLink(a, "", "artist"))
 
-                self.html += "<p><b>Similar Artists: </b>%s</p>" % ", ".join(e)
+                self.html += "<p><b>%s: </b>%s</p>" % (_("Similar Artists"), ", ".join(e))
         except:
                 print "Error in TrackInfoQuery: artist information"
 
@@ -530,16 +531,16 @@ class TrackInfoQuery (threading.Thread):
             CallTable = {"Cover"             :   [self.append_ar_coverversion],
                          "Instrument"        :   [self.append_ar_instrument],
                          "SamplesMaterial"   :   [self.append_ar_samplesmaterial],
-                         "Composer"          :   [self.append_ar_singleperson, "was composed by"],
-                         "Remixer"           :   [self.append_ar_singleperson, "was remixed by"],
-                         "Lyricist"          :   [self.append_ar_singleperson, "has lyrics by"],
-                         "Producer"          :   [self.append_ar_singleperson, "was produced by"],
-                         "Performer"         :   [self.append_ar_singleperson, "was performed by"],
-                         "Vocal"             :   [self.append_ar_singleperson, "has vocals performed by"],
-                         "Engineer"          :   [self.append_ar_singleperson, "was engineered by"],
-                         "Mix"               :   [self.append_ar_singleperson, "was mixed by"],
-                         "Programming"       :   [self.append_ar_singleperson, "was programmed by"],
-                         "Recording"         :   [self.append_ar_singleperson, "was recorded by"] }
+                         "Composer"          :   [self.append_ar_singleperson, _("was composed by")],
+                         "Remixer"           :   [self.append_ar_singleperson, _("was remixed by")],
+                         "Lyricist"          :   [self.append_ar_singleperson, _("has lyrics by")],
+                         "Producer"          :   [self.append_ar_singleperson, _("was produced by")],
+                         "Performer"         :   [self.append_ar_singleperson, _("was performed by")],
+                         "Vocal"             :   [self.append_ar_singleperson, _("has vocals performed by")],
+                         "Engineer"          :   [self.append_ar_singleperson, _("was engineered by")],
+                         "Mix"               :   [self.append_ar_singleperson, _("was mixed by")],
+                         "Programming"       :   [self.append_ar_singleperson, _("was programmed by")],
+                         "Recording"         :   [self.append_ar_singleperson, _("was recorded by")] }
 
             Relations = {}
             Entities  = []
@@ -596,14 +597,17 @@ class TrackInfoQuery (threading.Thread):
             self.html += Template(tmpl_section_header).render(header=_('Album Links'))
 
             if self.track[mpx.AttributeId.ALBUM_ARTIST] and self.track[mpx.AttributeId.ALBUM]: 
+    
                 album_links_text += "<a href='http://rateyourmusic.com/release/album/%s/%s/'>RateYourMusic</a>  " % (self.track[mpx.AttributeId.ALBUM_ARTIST].get().replace(" ","_").lower(), self.track[mpx.AttributeId.ALBUM].get().replace(" ","_").lower())
 
-            if self.track[mpx.AttributeId.MB_ALBUM_ID] and self.track[mpx.AttributeId.MB_ALBUM_ID]: 
+            if self.track[mpx.AttributeId.MB_ALBUM_ID]: 
 
                 try:
                     album_links_text += append_url_rels(self.query.getReleaseById(self.track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release))
                 except:
                     print "TRACKINFO-WEBKIT: MusicBrainz WS error #2" 
+
+            self.html += album_links_text
 
 
             # Contributor Links
@@ -622,6 +626,8 @@ class TrackInfoQuery (threading.Thread):
                         self.html += "<span style='font-weight:bold; font-size: large'>%s</span>" % entity.getName()
 
                         self.html += "<div style='margin-left: 1em; margin-bottom: 0.5em'>"
+
+                        self.html += "<a href='http://www.bbc.co.uk/music/artists/%s'>BBC Web Link</a> " % id 
 
                         artist_rels = append_artist_rels(entity)
                         if len(artist_rels):
@@ -654,10 +660,12 @@ class TrackInfoQuery (threading.Thread):
 
             Output.append("<b>%s</b> by <b>%s</b>" % (Cover[0], getEntityLink(Cover[1],Cover[2],"artist")))
 
-        self.html += "...is a cover of %s" % (", ".join(Output))
+        self.html += "...%s %s" % (_("is a cover version of"),(", ".join(Output)))
         return True
 
     def append_ar_instrument(self, Entities, Relations):
+
+        instrument_format = _("...has <b>%s</b> performed by <b>%s</b>")
 
         for Rel in Relations:
 
@@ -668,14 +676,14 @@ class TrackInfoQuery (threading.Thread):
                         if len(attr) == 1:
 
                                 pre, sep, instrument = Rel.getAttributes()[0].partition("#")
-                                self.html += "...has <b>%s</b> performed by <b>%s</b>" % (instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
+                                self.html += instrument_format % (instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
                                 Entities.append(realId(artist.getId()))
 
                         elif len(attr) == 2:
 
                                 pre, sep, adjective = Rel.getAttributes()[0].partition("#")
                                 pre, sep, instrument = Rel.getAttributes()[1].partition("#")
-                                self.html += "...has <b>%s %s</b> performed by <b>%s</b>" % (adjective.lower(), instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
+                                self.html += instrument_format % (adjective.lower(), instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
                                 Entities.append(realId(artist.getId()))
 
                         elif len(attr) == 3:
@@ -683,7 +691,7 @@ class TrackInfoQuery (threading.Thread):
                                 pre, sep, adjective2 = Rel.getAttributes()[0].partition("#")
                                 pre, sep, adjective1 = Rel.getAttributes()[1].partition("#")
                                 pre, sep, instrument = Rel.getAttributes()[2].partition("#")
-                                self.html += "...has <b>%s %s %s</b> performed by <b>%s</b>" % (adjective1.lower(), adjective2.lower(), instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
+                                self.html += instrument_format % (adjective1.lower(), adjective2.lower(), instrument, getEntityLink(artist.getName(),realId(artist.getId()),"artist")) 
                                 Entities.append(realId(artist.getId()))
 
                         if Relations.index(Rel) != (len(Relations)-1):
@@ -713,7 +721,7 @@ class TrackInfoQuery (threading.Thread):
 
                 Output.append("<b>%s</b> by <b>%s</b>" % (Sample[0], getEntityLink(Sample[1],Sample[2],"artist")))
 
-        self.html += "...contains samples from %s" % (", ".join(Output))
+        self.html += "...%s %s" % (_("contains samples from"), (", ".join(Output)))
         return True
 
     def append_ar_singleperson(self, Entities, Relations, text):
@@ -886,7 +894,7 @@ class TrackInfoDispatcher(mpx.Plugin):
 
         self.player_infoarea_click_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
         self.player_playstatus_changed_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
-        self.player.add_info_widget(self.vbox, "Track Info")
+        self.player.add_info_widget(self.vbox, _("Browser"))
 
         try:
             self.info.run(self.player.get_metadata())

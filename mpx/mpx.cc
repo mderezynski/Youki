@@ -1800,7 +1800,7 @@ namespace MPX
         );
 
         m_Sidebar->addItem(
-            _("Track Details"),
+            _("Plugins"),
             m_InfoNotebook,
             0,
             Gdk::Pixbuf::create_from_file(
