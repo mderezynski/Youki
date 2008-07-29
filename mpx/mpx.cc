@@ -2714,10 +2714,9 @@ namespace MPX
 
       m_ActiveSource = m_PreparingSource.get();
 	  PlaybackSource* source = m_Sources[m_PreparingSource.get()];
+      m_Sidebar->setActiveId(m_ActiveSource.get());
 
 	  source->send_metadata ();
-
-      m_Sidebar->setActiveId(m_PreparingSource.get());
 
       switch( m_PlayDirection )
       {
@@ -2737,10 +2736,11 @@ namespace MPX
             break;
       };
 
-      g_atomic_int_set(&m_Seeking,0);
-
 	  source->send_caps ();
 
+	  Mutex::Lock L (m_SourceCFLock);
+
+      PlaybackSource::Caps c = m_source_c[m_ActiveSource.get()];
       m_Seek->set_sensitive( caps & PlaybackSource::C_CAN_SEEK );
 	  m_actions->get_action( ACTION_PAUSE )->set_sensitive( caps & PlaybackSource::C_CAN_PAUSE );
 
