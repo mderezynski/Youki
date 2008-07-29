@@ -459,7 +459,7 @@ namespace
 
                         (*iter)[Columns.DateString] = time_ccs;
                         (*iter)[Columns.Rating]     = rating; 
-                        (*iter)[Columns.ShortText]  = Glib::ustring(text).substr(0,64) + "[...]";
+                        (*iter)[Columns.ShortText]  = Glib::ustring(text).substr(0,64) + "...";
                         (*iter)[Columns.Text]       = text; 
                     }
                 }
@@ -2126,6 +2126,8 @@ namespace MPX
               {
                 Gtk::TextView   * textview;
                 Gtk::Dialog     * dialog;
+                Glib::RefPtr<Gtk::TextBuffer> buffer = textview->get_buffer();
+                buffer->set_text("");
                 
                 m_Xml->get_widget("albums-textview-comment", textview);
                 m_Xml->get_widget("albums-dialog-rate-and-comment", dialog);
