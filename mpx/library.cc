@@ -724,6 +724,8 @@ namespace MPX
                     comment.c_str(),
                     gint64(time(NULL))
         ));
+
+		Signals.AlbumUpdated.emit(id);
     }
     
     void

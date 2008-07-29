@@ -32,7 +32,9 @@
 #include <Python.h>
 #define NO_IMPORT
 #include <pygobject.h>
+
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 
 
 #include "mpx/hal.hh"
@@ -70,7 +72,7 @@ using boost::algorithm::trim;
 
 namespace
 {
-    using namespace MPX;
+    const int N_STARS = 6;
 
     const char ACTION_CLEAR [] = "action-clear";
     const char ACTION_REMOVE_ITEMS [] = "action-remove-items";
@@ -354,30 +356,121 @@ namespace
 
                             Gtk::TreeModelColumn<Glib::ustring> DateString;
                             Gtk::TreeModelColumn<int>           Rating;
-                            Gtk::TreeModelColumn<bool>          ShortText;
+                            Gtk::TreeModelColumn<Glib::ustring> ShortText;
+                            Gtk::TreeModelColumn<Glib::ustring> Text;
 
                             Columns_t ()
                             {
                                 add(DateString);
                                 add(Rating);
                                 add(ShortText);
+                                add(Text);
                             };
                 };
 
 
                 Columns_t                       Columns;
                 Glib::RefPtr<Gtk::ListStore>    Store;
+                Glib::RefPtr<Gdk::Pixbuf>       Stars[N_STARS];
+                Glib::RefPtr<Gtk::TextBuffer>   Buffer;
 
                 AlbumRatingsList (const Glib::RefPtr<Gnome::Glade::Xml>& xml)
                 : WidgetLoader<Gtk::TreeView>(xml, "albumratingslist")
                 {
                     Store = Gtk::ListStore::create(Columns); 
-                    set_model(Store);
 
-                    append_column(_("DateString"), Columns.DateString);            
-                    append_column(_("Rating"), Columns.Rating);            
-                    append_column(_("ShortText"), Columns.ShortText);            
+                    append_column(_("Date"), Columns.DateString);            
+
+                    TreeViewColumn * col = manage (new TreeViewColumn(_("Rating")));
+                    CellRendererPixbuf * cell = manage (new CellRendererPixbuf);
+                    col->pack_start(*cell, false);
+                    col->set_min_width(66);
+                    col->set_max_width(66);
+                    col->set_cell_data_func(
+                            *cell,
+                            sigc::mem_fun(
+                                *this,
+                                &AlbumRatingsList::cellDataFuncRating
+                    ));
+                    append_column(*col);
+
+                    append_column(_("Abstract"), Columns.ShortText);            
+
+                    for(int n = 0; n < N_STARS; ++n)
+                    {
+                        Stars[n] = Gdk::Pixbuf::create_from_file(
+                            build_filename(
+                                build_filename(
+                                    DATA_DIR,
+                                    "images"
+                                ),
+                                (boost::format("stars%d.png") % n).str()
+                        ));
+                    }
+
+                    Gtk::TextView * view;
+                    m_Xml->get_widget("albumcommentview", view);
+                    Buffer = view->get_buffer();
+
+                    get_selection()->signal_changed().connect(
+                        sigc::mem_fun(
+                            *this,
+                            &AlbumRatingsList::on_selection_changed
+                    ));
+
+                    set_model(Store);
                 };
+
+                void
+                on_selection_changed ()
+                { 
+                    if( get_selection()->count_selected_rows() )
+                    {
+                        TreeIter iter = get_selection()->get_selected();
+                        Buffer->set_text((*iter)[Columns.Text]);
+                    }
+                    else
+                    {
+                        Buffer->set_text("");
+                    }
+                }
+
+                void
+                load_ratings(gint64 id, MPX::Library & lib)
+                {
+                    using boost::get;
+
+                    SQL::RowV v; 
+                    lib.albumGetAllRatings(id, v);
+                    for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
+                    {
+                        TreeIter iter = Store->append();
+
+                        gint64 rating = get<gint64>((*i)["rating"]);
+                        time_t time = time_t(get<gint64>((*i)["time"]));
+                        std::string text = get<std::string>((*i)["comment"]);
+
+                    
+                        char * time_s = ctime(&time);
+                        std::string time_ccs (time_s);
+                        boost::algorithm::trim (time_ccs);
+
+                        (*iter)[Columns.DateString] = time_ccs;
+                        (*iter)[Columns.Rating]     = rating; 
+                        (*iter)[Columns.ShortText]  = Glib::ustring(text).substr(0,64) + "[...]";
+                        (*iter)[Columns.Text]       = text; 
+                    }
+                }
+
+                void
+                cellDataFuncRating (CellRenderer * basecell, TreeModel::iterator const &iter)
+                {
+                    CellRendererPixbuf *cell_p = dynamic_cast<CellRendererPixbuf*>(basecell);
+                    gint64 i = ((*iter)[Columns.Rating]);
+                    g_return_if_fail((i >= 0) && (i <= 5));
+                    cell_p->property_pixbuf() = Stars[i];
+                }
+
     };
 
     class AlbumInfoWindow : public WidgetLoader<Gtk::Window>
@@ -416,7 +509,9 @@ namespace
                 , m_Covers(obj_covers)
                 {
                     glade_xml_signal_autoconnect(xml->gobj());
+
                     m_AlbumRatingsList = new AlbumRatingsList(xml);
+                    m_AlbumRatingsList->load_ratings(id, obj_library);
 
                     m_Xml->get_widget("albumcover", m_ImageCover); 
 
@@ -464,8 +559,6 @@ namespace MPX
         Glib::RefPtr<Gtk::TreeModel> const& m_model; 
         ReferenceV & m_references;
     };  
-
-    static const int N_STARS = 6;
 
     struct MusicLibPrivate
     {
@@ -532,7 +625,7 @@ namespace MPX
                 m_Playing = Gdk::Pixbuf::create_from_file(Glib::build_filename(Glib::build_filename(DATA_DIR,"images"),"play.png"));
                 m_Bad = render_icon (StockID (MPX_STOCK_ERROR), ICON_SIZE_SMALL_TOOLBAR);
 
-                for(int n = 0; n < 6; ++n)
+                for(int n = 0; n < N_STARS; ++n)
                 {
                     m_Stars[n] = Gdk::Pixbuf::create_from_file(
                         build_filename(
@@ -1690,9 +1783,17 @@ namespace MPX
               , m_ButtonPressed(false)
               , m_ShowNew(false)
               {
-                for(int n = 0; n < 6; ++n)
-                    m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename(DATA_DIR,"images"),
-                        (boost::format("stars%d.png") % n).str()));
+                for(int n = 0; n < N_STARS; ++n)
+                {
+                    m_Stars[n] = Gdk::Pixbuf::create_from_file(
+                        build_filename(
+                            build_filename(
+                                    DATA_DIR,
+                                    "images"
+                            ),
+                            (boost::format("stars%d.png") % n).str()
+                    ));
+                }
 
                 m_Lib.get().signal_new_album().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_album ));
                 m_Lib.get().signal_new_track().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_track ));
