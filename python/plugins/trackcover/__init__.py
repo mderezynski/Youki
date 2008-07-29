@@ -28,7 +28,7 @@ class TrackCover(mpx.Plugin):
 
     def activate(self):
 
-        self.player.add_info_widget(self.alignment, "Track Covers")
+        self.player.add_info_widget(self.alignment, "Album Covers")
         self.player_metadata_updated_handler_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
         self.player_metadata_updated_handler_id = self.player.gobj().connect("new-coverart", self.metadata_updated)
         self.player_metadata_updated_handler_id = self.player.gobj().connect("new-track", self.new_track)
@@ -41,6 +41,8 @@ class TrackCover(mpx.Plugin):
         self.player.remove_info_widget(self.alignment)
         self.player.gobj().disconnect(self.player_metadata_updated_handler_id)
         self.player.gobj().disconnect(self.player_playstatus_changed_handler_id)
+
+        return True
 
     def regen_box(self):
 
@@ -62,12 +64,11 @@ class TrackCover(mpx.Plugin):
     def metadata_updated(self, blah):
 
         try:
-                pixbuf = self.player.get_metadata().get_image()
-
-                if pixbuf:
-                        image = gtk.Image()
-                        image.set_from_pixbuf(pixbuf.scale_simple( 384, 384, gtk.gdk.INTERP_HYPER ))
-                        self.box.pack_end(image, False, False)
-                        image.show_all()
+            pixbuf = self.player.get_metadata().get_image()
+            if pixbuf:
+                image = gtk.Image()
+                image.set_from_pixbuf(pixbuf.scale_simple( 384, 384, gtk.gdk.INTERP_HYPER ))
+                self.box.pack_end(image, False, False)
+                image.show_all()
         except:
-                pass
+            pass

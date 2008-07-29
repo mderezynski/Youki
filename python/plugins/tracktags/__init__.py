@@ -57,13 +57,11 @@ class TrackTagsDataAcquire(threading.Thread):
                         name = tag.getName()
                         count = tag.getCount()
 
-                        if count == None:
-                                count = size
+                        if count == None: count = size
             
                         try:
                             calc_size = math.sqrt(math.log10(((float(count) * 10.))+1))
-                            if calc_size < 0.6:
-                                calc_size = 0.6
+                            if calc_size < 0.6: calc_size = 0.6
                         except:
                             calc_size = 0.6
 
@@ -86,6 +84,7 @@ class TrackTags(mpx.Plugin):
         self.id = id
         self.player = player
         self.lock = mutex.mutex()
+        self.serial = 0
 
     def activate(self):
 
@@ -96,11 +95,11 @@ class TrackTags(mpx.Plugin):
         self.player_playtstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.status_changed)
 
         try:
-                self.tagview.clear()
-                self.tagview.display(False)
-                self.lock.lock(self.display_track_tags, blah)
+          self.tagview.clear()
+          self.tagview.display(False)
+          self.lock.lock(self.display_track_tags, blah)
         except:
-                pass 
+          pass 
 
         return True
 
@@ -113,25 +112,24 @@ class TrackTags(mpx.Plugin):
     def tag_clicked(self, blah, tag):
         
         if self.player and len(tag) > 0:
-                print "Asking to play Tag '%s'" % tag
-                self.player.play_uri("lastfm://globaltags/%s" % tag)
+          print "Asking to play Tag '%s'" % tag
+          self.player.play_uri("lastfm://globaltags/%s" % tag)
         else:
-                print "No player obj or tag length is 0"
+          print "No player obj or tag length is 0"
 
     def status_changed(self, blah, state):
     
         # Workaround for asynchronicity between signal emission and new-track
-        if self.player.get_status() == mpx.PlayStatus.STOPPED:
-            print "Clearing"
-            self.tagview.clear()
+        if self.player.get_status() == mpx.PlayStatus.STOPPED: self.tagview.clear()
 
     def metadata_updated(self, blah):
 
-        self.tagview.clear()
-        self.tagview.display(False)
-        self.lock.lock(self.display_track_tags, blah)
+        self.serial = self.serial + 1
+        self.lock.lock(self.display_track_tags, self.serial)
 
-    def display_track_tags(self, blah):
+    def display_track_tags(self, serial):
+
+        current_serial = serial
 
         m = self.player.get_metadata()
 
@@ -143,16 +141,17 @@ class TrackTags(mpx.Plugin):
             instance.start()
 
             while not instance.is_finished():
-                    while gtk.events_pending():
-                            gtk.main_iteration()
+                while gtk.events_pending(): gtk.main_iteration()
 
             tags = instance.get_tags()
+    
+            if current_serial == self.serial:
 
-            self.tagview.clear()
-            self.tagview.display(False)
+                    self.tagview.clear()
+                    self.tagview.display(False)
 
-            for t in tags:
-                self.tagview.add_tag(str(t[0]), float(t[1]))
+                    for t in tags:
+                        self.tagview.add_tag(str(t[0]), float(t[1]))
 
             self.player.info_clear()
 
