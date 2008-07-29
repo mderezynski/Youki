@@ -2568,21 +2568,21 @@ namespace MPX
 
 	  m_source_c[source_id] = caps;
 
-	  if( m_Sidebar->getVisibleId() == source_id ) 
+	  if( m_Sidebar->getVisibleId() == source_id )
 	  {
-		m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
-		m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
 		m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
 	  }
 
 	  if( m_ActiveSource && source_id == m_ActiveSource.get() )
 	  {
-			if( m_Play->property_status().get_value() == PLAYSTATUS_PLAYING )
-			{
-                  m_Seek->set_sensitive( caps & PlaybackSource::C_CAN_SEEK );
-				  m_actions->get_action( ACTION_PAUSE )->set_sensitive( caps & PlaybackSource::C_CAN_PAUSE );
-			}
+    		m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
+	    	m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
 	  }
+      else
+      {
+    		m_actions->get_action (ACTION_PREV)->set_sensitive (false);
+	    	m_actions->get_action (ACTION_NEXT)->set_sensitive (false);
+      }
 	}
 
 	void
@@ -2740,6 +2740,9 @@ namespace MPX
       g_atomic_int_set(&m_Seeking,0);
 
 	  source->send_caps ();
+
+      m_Seek->set_sensitive( caps & PlaybackSource::C_CAN_SEEK );
+	  m_actions->get_action( ACTION_PAUSE )->set_sensitive( caps & PlaybackSource::C_CAN_PAUSE );
 
       PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
       g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
@@ -2924,6 +2927,8 @@ namespace MPX
 	void
 	Player::on_source_changed (ItemKey const& source_id)
 	{
+	    Mutex::Lock L (m_SourceCFLock);
+
         if(m_SourceUI)
         {
             m_ui_manager->remove_ui(m_SourceUI);
@@ -2935,30 +2940,20 @@ namespace MPX
         {
             m_SourceUI = m_Sources[source_id]->add_menu();
 
-            if( m_Play->property_status() == PLAYSTATUS_PLAYING)
+            if( (m_Play->property_status() == PLAYSTATUS_PLAYING)
+                && ( m_ActiveSource && m_ActiveSource.get() == source_id ))
             {
-                    if( m_ActiveSource && m_ActiveSource.get() == source_id )
-                    {
-                        PlaybackSource::Caps caps = m_source_c[source_id];
-                        m_actions->get_action (ACTION_PREV)->set_sensitive( caps & PlaybackSource::C_CAN_GO_PREV );
-                        m_actions->get_action (ACTION_NEXT)->set_sensitive( caps & PlaybackSource::C_CAN_GO_NEXT );
-                        m_actions->get_action (ACTION_PAUSE)->set_sensitive (caps & PlaybackSource::C_CAN_PAUSE);
-
-                    }
+                PlaybackSource::Caps caps = m_source_c[source_id];
+                m_actions->get_action (ACTION_PREV)->set_sensitive( caps & PlaybackSource::C_CAN_GO_PREV );
+                m_actions->get_action (ACTION_NEXT)->set_sensitive( caps & PlaybackSource::C_CAN_GO_NEXT );
             }
             else
             {
-                    m_actions->get_action (ACTION_PREV)->set_sensitive( false ); 
-                    m_actions->get_action (ACTION_NEXT)->set_sensitive( false); 
-                    m_actions->get_action (ACTION_PAUSE)->set_sensitive( false);
+                m_actions->get_action (ACTION_PREV)->set_sensitive( false ); 
+                m_actions->get_action (ACTION_NEXT)->set_sensitive( false); 
             }
 
-
-            if( m_Sidebar->getVisibleId() == source_id ) 
-                m_actions->get_action (ACTION_PLAY)->set_sensitive( caps & PlaybackSource::C_CAN_PLAY );
-            else
-                m_actions->get_action (ACTION_PLAY)->set_sensitive( false );
-
+            m_actions->get_action (ACTION_PLAY)->set_sensitive( caps & PlaybackSource::C_CAN_PLAY );
         }
 	}
 
@@ -2981,18 +2976,15 @@ namespace MPX
 		  {
                 Glib::Mutex::Lock L (m_MetadataLock);
 
-                RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
-
                 if( m_ActiveSource ) 
                 {
                     m_Sources[m_ActiveSource.get()]->stop ();
                     m_Sources[m_ActiveSource.get()]->send_caps ();
                 }
 
-                m_TimeLabel->set_text("      …      ");
+                RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
                 g_atomic_int_set(&m_Seeking, 0);
-
                 m_Seek->set_range(0., 1.);
                 m_Seek->set_value(0.);
                 m_Seek->set_sensitive(false);
@@ -3004,6 +2996,8 @@ namespace MPX
 
                 m_VideoWidget->property_playing() = false; 
                 m_VideoWidget->queue_draw();
+
+                m_TimeLabel->set_text("      …      ");
 
                 set_title (_("AudioSource: (Not Playing)"));
 

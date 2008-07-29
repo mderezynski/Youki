@@ -40,6 +40,9 @@ from gettext import gettext as _
 CSS = '''
 body {
     color: #404040;
+    background-color: #000000;
+    padding-left: 3em;
+    padding-right: 3em;
 }
 
 img {
@@ -47,7 +50,7 @@ img {
     border-color: #c7c6ca;
     border-width: 2px;
     border-style: solid;
-    -webkit-border-radius: 5px;
+    -webkit-border-radius: 10px;
 }
 
 .SectionHeader {
@@ -64,13 +67,13 @@ img {
     margin-top: 1.5em;
     padding-left: 0.5em;
     margin-bottom: 0; 
-    -webkit-border-top-left-radius: 5px;
-    -webkit-border-top-right-radius: 5px;
+    -webkit-border-top-left-radius: 10px;
+    -webkit-border-top-right-radius: 10px;
 }
 
 .SectionContent {
-    -webkit-border-bottom-left-radius: 5px;
-    -webkit-border-bottom-right-radius: 5px;
+    -webkit-border-bottom-left-radius: 10px;
+    -webkit-border-bottom-right-radius: 10px;
     border-color: #dfdfdf;
     border-width: 2px;
     border-style: solid;
@@ -86,34 +89,34 @@ img {
     color: white;
     font-weight: bold;
     padding: 0.3em;
-    -webkit-border-radius: 5px;
+    -webkit-border-radius: 10px;
 }
 
 a {
     color: #5392b7;
     font-weight: bold;
-    -webkit-border-radius: 5px;
+    -webkit-border-radius: 10px;
     text-decoration: none;
 }
 
 a:active {
     color: #5392b7;
     font-weight: bold;
-    -webkit-border-radius: 5px;
+    -webkit-border-radius: 10px;
     text-decoration: none;
 }
 
 a:visited {
     color: #5392b7;
     font-weight: bold;
-    -webkit-border-radius: 5px;
+    -webkit-border-radius: 10px;
     text-decoration: none;
 }
 
 a:hover {
     color: #3b6693;
     font-weight: bold;
-    -webkit-border-radius: 5px;
+    -webkit-border-radius: 10px;
     text-decoration: none;
 }
 
@@ -740,7 +743,7 @@ class TrackInfoQuery (threading.Thread):
                         self.html += artist_rels 
                         self.html += "<br/><br/>"
 
-                    self.html += "<a href='http://www.bbc.co.uk/music/artists/%s'>BBC Web Link</a> | " % id 
+                    self.html += "<a href='http://www.bbc.co.uk/music/artists/%s'>BBC Web Link</a>, " % id 
                     self.html += append_url_rels(entity)
 
                     self.html += "</div>"
