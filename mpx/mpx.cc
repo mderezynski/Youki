@@ -72,8 +72,6 @@
 #include "sidebar.hh"
 #include "splash-screen.hh"
 
-#include "mpx/last-fm-xmlrpc.hh"
-
 #include "mlibmanager.hh"
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"

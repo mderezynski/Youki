@@ -1,9 +1,9 @@
-SUBDIRS = parser widgets
+SUBDIRS = algorithm parser widgets
 noinst_HEADERS =					\
 									\
-	mpx-api-macros.hh				\
 	paccess.hh						\
 	types.hh						\
+	mpx-api-macros.hh				\
 									\
 	i-metadatareader.hh				\
 	i-playbacksource.hh				\
@@ -23,21 +23,18 @@ noinst_HEADERS =					\
 	main.hh							\
 	audio.hh						\
 	covers.hh						\
-	coverstores.hh 					\
 	hal.hh							\
 	library.hh						\
-	library-scanner-thread.hh		\
 	minisoup.hh						\
 	network.hh						\
 	python.hh						\
 	sql.hh							\
 	uri.hh							\
 									\
-	base64.h						\
+	covers-stores.hh 				\
+	library-scanner-thread.hh		\
+									\
 	glibaddons.hh					\
-	ld.hh							\
-	md5.h							\
-	random.hh						\
 									\
 	exception-db.hh					\
 	exception.hh					\

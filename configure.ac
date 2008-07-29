@@ -753,6 +753,7 @@ AC_OUTPUT([
     include/mpx/Makefile
     include/mpx/parser/Makefile
     include/mpx/widgets/Makefile
+    include/mpx/algorithm/Makefile
 
     sources/Makefile
     sources/musiclib/Makefile

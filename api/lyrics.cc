@@ -32,7 +32,7 @@
 #include <boost/format.hpp>
 #include <glibmm.h>
 
-#include "mpx/lyrics-v2.hh"
+#include "mpx/lyrics.hh"
 
 #include "mpx/uri.hh"
 #include "mpx/util-string.hh"

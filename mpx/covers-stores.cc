@@ -31,11 +31,15 @@
 #include <boost/format.hpp>
 
 #include "mpx/covers.hh"
-#include "mpx/coverstores.hh"
-#include "mpx/ld.hh"
+#include "mpx/covers-stores.hh"
+
+#include "mpx/algorithm/ld.hh"
+
 #include "mpx/uri.hh"
+
 #include "mpx/util-string.hh"
 #include "mpx/util-string.hh"
+
 #include "mpx/xml.hh"
 
 namespace

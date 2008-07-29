@@ -20,9 +20,8 @@
 #ifdef HAVE_HAL
 #include "mpx/hal.hh"
 #endif // HAVE_HAL
-#include "mpx/last-fm-xmlrpc.hh"
 #include "mpx/library.hh"
-#include "mpx/lyrics-v2.hh"
+#include "mpx/lyrics.hh"
 #include "mpx/paccess.hh"
 #include "mpx/random.hh"
 #include "mpx/types.hh"
@@ -812,18 +811,6 @@ BOOST_PYTHON_MODULE(mpx)
         .def("__contains__",&mpxpy::metadata_contains,  return_value_policy<return_by_value>())
 		.def("get",         &mpxpy::metadata_getitem,   return_internal_reference<>()) 
 		.def("get_image",   &MPX::Metadata::get_image)
-	;
-
-	/*-------------------------------------------------------------------------------------*/
-
-	class_<MPX::LyricWiki::TextRequest, boost::noncopyable>("LyricWiki", boost::python::init<std::string, std::string>())	
-		.def("run", &MPX::LyricWiki::TextRequest::run)
-	;
-
-	/*-------------------------------------------------------------------------------------*/
-
-	class_<MPX::LastFM::ArtistMetadataRequestSync, boost::noncopyable>("LastFMArtist", boost::python::init<std::string>())
-		.def("run", &MPX::LastFM::ArtistMetadataRequestSync::run)
 	;
 
 	/*-------------------------------------------------------------------------------------*/

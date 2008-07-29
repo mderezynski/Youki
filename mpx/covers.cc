@@ -55,8 +55,8 @@
 
 #include "mpx/audio.hh"
 #include "mpx/covers.hh"
-#include "mpx/coverstores.hh"
-#include "mpx/ld.hh"
+#include "mpx/covers-stores.hh"
+#include "mpx/algorithm/ld.hh"
 #include "mpx/main.hh"
 #include "mpx/minisoup.hh"
 #include "mpx/network.hh"

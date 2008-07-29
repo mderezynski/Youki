@@ -84,10 +84,10 @@ libmpx_api_la_SOURCES = 							\
 													\
 		gstpuid.cc									\
 													\
-		last-fm-xmlrpc.cc							\
 		libxml2-sax-base.cc							\
-		lyrics-v2.cc								\
 		xspf-libxml2-sax.cc							\
+													\
+		lyrics.cc									\
 													\
 		playlistparser-xspf.cc						\
 		playlistparser-pls.cc						\
