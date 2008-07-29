@@ -2478,6 +2478,14 @@ namespace MPX
                 trim(year);
                 trim(type);
 
+                if( type.length() > 1 )
+                {
+                        Glib::ustring type_1st = type.substr(0, 1);
+                        Glib::ustring type_2nd = type.substr(1, type.length());
+
+                        type = type_1st.uppercase() + type_2nd;
+                }
+
                 if( !country.empty() )
                 {
                         (*iter)[AlbumColumns.Text] =

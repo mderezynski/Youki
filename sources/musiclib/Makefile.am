@@ -55,7 +55,9 @@ libmpxsource_musiclib_la_SOURCES = 	\
 libmpxsource_musiclibdir = $(PLUGIN_DIR)/sources
 
 glade_DATA = 						\
-	source-musiclib.glade				
+	source-musiclib.glade			\
+	albuminfowindow.glade
+
 gladedir = $(pkgdatadir)/glade
 
 EXTRA_DIST = glib-marshalers.list $(glade_DATA)

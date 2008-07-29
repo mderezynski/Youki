@@ -902,7 +902,7 @@
 		      <child>
 			<widget class="GtkLabel" id="label19">
 			  <property name="visible">True</property>
-			  <property name="label">Cancel Rating</property>
+			  <property name="label">_Cancel Rating</property>
 			  <property name="use_underline">True</property>
 			  <property name="use_markup">False</property>
 			  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -977,7 +977,7 @@
 		      <child>
 			<widget class="GtkLabel" id="label16">
 			  <property name="visible">True</property>
-			  <property name="label" translatable="yes">Send</property>
+			  <property name="label" translatable="yes">_Send</property>
 			  <property name="use_underline">True</property>
 			  <property name="use_markup">False</property>
 			  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -1028,7 +1028,7 @@
 	      <property name="can_focus">True</property>
 	      <property name="editable">True</property>
 	      <property name="overwrite">False</property>
-	      <property name="accepts_tab">True</property>
+	      <property name="accepts_tab">False</property>
 	      <property name="justification">GTK_JUSTIFY_LEFT</property>
 	      <property name="wrap_mode">GTK_WRAP_CHAR</property>
 	      <property name="cursor_visible">True</property>
