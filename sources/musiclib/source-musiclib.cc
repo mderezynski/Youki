@@ -70,6 +70,8 @@ using boost::algorithm::trim;
 
 namespace
 {
+    using namespace MPX;
+
     const char ACTION_CLEAR [] = "action-clear";
     const char ACTION_REMOVE_ITEMS [] = "action-remove-items";
     const char ACTION_REMOVE_REMAINING [] = "action-remove-remaining";
@@ -86,6 +88,19 @@ namespace
     "     <separator/>"
     "       <menuitem action='action-remove-items'/>"
     "       <menuitem action='action-clear'/>"
+    "   </menu>"
+    ""
+    "</menubar>"
+    ""
+    "</ui>";
+
+    const char ui_albums_popup [] =
+    "<ui>"
+    ""
+    "<menubar name='popup-albumlist-list'>"
+    ""
+    "   <menu action='dummy' name='menu-albumlist-list'>"
+    "       <menuitem action='action-album-info'/>"
     "   </menu>"
     ""
     "</menubar>"
@@ -180,6 +195,8 @@ namespace
 
         return output;
     }
+
+    // Column-Control
 
     char const* attribute_names[] =
     {
@@ -317,6 +334,107 @@ namespace
                     return m_ControlView->Signals.ColumnState;
                 }
     };
+
+    // Album Details Window
+
+    class AlbumRatingsList : public WidgetLoader<Gtk::TreeView>
+    {
+        public:
+               
+                struct Signals_t 
+                {
+                    SignalColumnState ColumnState;
+                };
+
+                Signals_t Signals;
+
+                class Columns_t : public Gtk::TreeModelColumnRecord
+                {
+                    public: 
+
+                            Gtk::TreeModelColumn<Glib::ustring> DateString;
+                            Gtk::TreeModelColumn<int>           Rating;
+                            Gtk::TreeModelColumn<bool>          ShortText;
+
+                            Columns_t ()
+                            {
+                                add(DateString);
+                                add(Rating);
+                                add(ShortText);
+                            };
+                };
+
+
+                Columns_t                       Columns;
+                Glib::RefPtr<Gtk::ListStore>    Store;
+
+                AlbumRatingsList (const Glib::RefPtr<Gnome::Glade::Xml>& xml)
+                : WidgetLoader<Gtk::TreeView>(xml, "albumratingslist")
+                {
+                    Store = Gtk::ListStore::create(Columns); 
+                    set_model(Store);
+
+                    append_column(_("DateString"), Columns.DateString);            
+                    append_column(_("Rating"), Columns.Rating);            
+                    append_column(_("ShortText"), Columns.ShortText);            
+                };
+    };
+
+    class AlbumInfoWindow : public WidgetLoader<Gtk::Window>
+    {
+                AlbumRatingsList        * m_AlbumRatingsList;
+                Gtk::Image              * m_ImageCover;
+                gint64                    m_Id;
+                MPX::Library            & m_Lib;
+                MPX::Covers             & m_Covers;
+         
+        public:
+
+                static AlbumInfoWindow*
+                create(
+                    gint64                      id,
+                    MPX::Library              & obj_library,
+                    MPX::Covers               & obj_covers
+                )
+                {
+                    const std::string path = DATA_DIR G_DIR_SEPARATOR_S "glade" G_DIR_SEPARATOR_S "albuminfowindow.glade";
+                    Glib::RefPtr<Gnome::Glade::Xml> glade_xml = Gnome::Glade::Xml::create (path);
+                    AlbumInfoWindow * p = new AlbumInfoWindow(glade_xml, id, obj_library, obj_covers); 
+                    return p;
+                }
+
+
+                AlbumInfoWindow(
+                    const Glib::RefPtr<Gnome::Glade::Xml>&  xml,
+                    gint64                                  id,
+                    MPX::Library                          & obj_library,    
+                    MPX::Covers                           & obj_covers
+                )
+                : WidgetLoader<Gtk::Window>(xml, "albuminfowindow")
+                , m_Id(id)
+                , m_Lib(obj_library)
+                , m_Covers(obj_covers)
+                {
+                    glade_xml_signal_autoconnect(xml->gobj());
+                    m_AlbumRatingsList = new AlbumRatingsList(xml);
+
+                    m_Xml->get_widget("albumcover", m_ImageCover); 
+
+                    SQL::RowV v;
+                    m_Lib.getSQL(v, (boost::format ("SELECT mb_album_id FROM album WHERE id = '%lld'") % id).str());
+                    if( !v.empty ())
+                    {
+                        std::string mbid = get<std::string>(v[0]["mb_album_id"]);
+                        Cairo::RefPtr<Cairo::ImageSurface> surface;
+                        m_Covers.fetch(mbid, surface, COVER_SIZE_DEFAULT);
+                        surface = Util::cairo_image_surface_round(surface, 9.5);
+                        Util::cairo_image_surface_rounded_border(surface, 1., 9.5);
+                        m_ImageCover->set(Util::cairo_image_surface_to_pixbuf(surface));
+                    }
+                }
+    };
+
+
 }
  
 namespace MPX
@@ -505,7 +623,7 @@ namespace MPX
                 set_model(ListStore);
 
                 m_UIManager = Gtk::UIManager::create();
-                m_ActionGroup = Gtk::ActionGroup::create ("Actions_UiPartPlaylist-PlaylistList");
+                m_ActionGroup = Gtk::ActionGroup::create ("Actions_UiPartMusicLib-PlaylistList");
 
                 m_ActionGroup->add  (Gtk::Action::create("dummy","dummy"));
 
@@ -1516,6 +1634,9 @@ namespace MPX
 
             private:
 
+              Glib::RefPtr<Gtk::UIManager>          m_UIManager;
+              Glib::RefPtr<Gtk::ActionGroup>        m_ActionGroup;      
+
             // treemodel stuff
 
               AlbumColumnsT                         AlbumColumns;
@@ -1556,8 +1677,12 @@ namespace MPX
 
             public:
 
-              AlbumTreeView (Glib::RefPtr<Gnome::Glade::Xml> const& xml,    
-                         PAccess<MPX::Library> const& lib, PAccess<MPX::Covers> const& amzn, MPX::Source::PlaybackSourceMusicLib & mlib)
+              AlbumTreeView(
+                    const Glib::RefPtr<Gnome::Glade::Xml>&  xml,    
+                    const PAccess<MPX::Library>&            lib,
+                    const PAccess<MPX::Covers>&             amzn,
+                    MPX::Source::PlaybackSourceMusicLib&    mlib
+              )
               : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-albums")
               , m_Lib(lib)
               , m_Covers(amzn)
@@ -1719,6 +1844,28 @@ namespace MPX
                         *this,
                         &AlbumTreeView::on_filter_entry_changed
                 ));
+
+                m_UIManager = Gtk::UIManager::create();
+
+                m_ActionGroup = Gtk::ActionGroup::create ("Actions_UiPartMusicLib-AlbumList");
+
+                m_ActionGroup->add(Gtk::Action::create("dummy","dummy"));
+
+                m_ActionGroup->add(
+
+                    Gtk::Action::create(
+                        "action-album-info",
+                        Gtk::StockID (GTK_STOCK_INFO),
+                        _("Album _Info")
+                    ),
+
+                    sigc::mem_fun(
+                        *this,
+                        &AlbumTreeView::on_album_show_info
+                ));
+
+                m_UIManager->insert_action_group(m_ActionGroup);
+                m_UIManager->add_ui_from_string(ui_albums_popup);
 
                 album_list_load ();
               }
@@ -1914,7 +2061,52 @@ namespace MPX
                 return false;
               }
 
+              virtual bool
+              on_event (GdkEvent * ev)
+              {
+                  if( ev->type == GDK_BUTTON_PRESS )
+                  {
+                    GdkEventButton * event = reinterpret_cast <GdkEventButton *> (ev);
+                    if( event->button == 3 )
+                    {
+                      int cell_x, cell_y ;
+                      TreeViewColumn *col ;
+                      TreePath path;
+
+                      if(get_path_at_pos (event->x, event->y, path, col, cell_x, cell_y))
+                      {
+                              get_selection()->select( path );
+
+                              Gtk::Menu * menu = dynamic_cast < Gtk::Menu* > (
+                                    Util::get_popup(
+                                        m_UIManager,
+                                        "/popup-albumlist-list/menu-albumlist-list"
+                              ));
+
+                              if (menu) // better safe than screwed
+                              {
+                                menu->popup (event->button, event->time);
+                              }
+
+                              return true;
+                      }
+                    }
+                  }
+                  return false;
+              }
+
+
         private:
+
+              void
+              on_album_show_info ()
+              {
+                AlbumInfoWindow * d = AlbumInfoWindow::create(
+                    (*get_selection()->get_selected())[AlbumColumns.Id],
+                    m_Lib.get(),
+                    m_Covers.get()
+                );
+              }
 
               void
               on_got_cover(const Glib::ustring& mbid)
@@ -2030,6 +2222,14 @@ namespace MPX
                 trim(country);
                 trim(year);
                 trim(type);
+
+                if( type.length() > 1 )
+                {
+                        Glib::ustring type_1st = type.substr(0, 1);
+                        Glib::ustring type_2nd = type.substr(1, type.length());
+
+                        type = type_1st.uppercase() + type_2nd;
+                }
 
                 if( !country.empty() )
                 {
@@ -3730,7 +3930,7 @@ namespace MPX
                 set_headers_clickable();
 
                 m_UIManager = Gtk::UIManager::create();
-                m_ActionGroup = Gtk::ActionGroup::create ("Actions_UiPartPlaylist-AllTracksList");
+                m_ActionGroup = Gtk::ActionGroup::create ("Actions_UiPartMusicLib-AllTracksList");
                 m_ActionGroup->add  (Gtk::Action::create("dummy","dummy"));
                 m_UIManager->insert_action_group (m_ActionGroup);
 

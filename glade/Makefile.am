@@ -1,6 +1,7 @@
 gladedir = $(pkgdatadir)/glade
 
 glade_DATA = 							\
+		albuminfowindow.glade			\
 		dialog-filebrowser.glade		\
 		dialog-simple-entry.glade		\
 		import-folder.glade				\
