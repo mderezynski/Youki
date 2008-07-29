@@ -531,7 +531,7 @@ namespace
                 void
                 display_album(gint64 id)
                 {
-                    m_AlbumRatingsList->load_ratings(id, obj_library);
+                    m_AlbumRatingsList->load_ratings(id, m_Lib);
 
                     SQL::RowV v;
                     m_Lib.getSQL(v, (boost::format ("SELECT * FROM album JOIN album_artist ON album_artist_j = album_artist.id WHERE album.id = '%lld'") % id).str());
