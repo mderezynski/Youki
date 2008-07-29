@@ -3007,7 +3007,7 @@ namespace MPX
                 m_VideoWidget->property_playing() = false; 
                 m_VideoWidget->queue_draw();
 
-                set_title (_("(Not Playing) - MPX"));
+                set_title (_("AudioSource: (Not Playing)"));
 
                 m_InfoArea->reset();
                 m_Metadata.reset();	
@@ -3767,7 +3767,7 @@ namespace MPX
         if(m_Metadata.get()[ATTRIBUTE_TITLE] && m_Metadata.get()[ATTRIBUTE_ARTIST])
         {
             set_title(
-                (boost::format ("%1% - %2% (MPX)") 
+                (boost::format ("AudioSource: %1% - %2%") 
                         % get<std::string>(m_Metadata.get()[ATTRIBUTE_ARTIST].get())
                         % get<std::string>(m_Metadata.get()[ATTRIBUTE_TITLE].get())
                 ).str()
@@ -3775,7 +3775,7 @@ namespace MPX
         }
         else
         {
-            set_title(_("(Untitled Track) - (MPX)"));
+            set_title(_("AudioSource: [Untitled Track]"));
         }
 
         signal_idle().connect(

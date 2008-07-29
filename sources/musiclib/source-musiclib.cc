@@ -2126,11 +2126,11 @@ namespace MPX
               {
                 Gtk::TextView   * textview;
                 Gtk::Dialog     * dialog;
-                Glib::RefPtr<Gtk::TextBuffer> buffer = textview->get_buffer();
-                buffer->set_text("");
                 
                 m_Xml->get_widget("albums-textview-comment", textview);
                 m_Xml->get_widget("albums-dialog-rate-and-comment", dialog);
+                Glib::RefPtr<Gtk::TextBuffer> buffer = textview->get_buffer();
+                buffer->set_text("");
         
                 int response = dialog->run();
 

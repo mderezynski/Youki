@@ -3,7 +3,7 @@
 <!--*- mode: xml -*-->
 <glade-interface>
   <widget class="GtkWindow" id="mpx">
-    <property name="title" translatable="yes">MPX</property>
+    <property name="title" translatable="yes">AudioSource</property>
     <property name="window_position">GTK_WIN_POS_CENTER</property>
     <property name="default_width">600</property>
     <property name="default_height">350</property>
