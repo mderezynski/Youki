@@ -52,8 +52,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/regex.hpp>
 
-#include "mpx/base64.h"
-#include "mpx/md5.h"
+#include "mpx/algorithm/base64.h"
+#include "mpx/algorithm/md5.h"
 #include "mpx/main.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-string.hh"

@@ -673,7 +673,7 @@ namespace MPX
                                         m_selection.clear();
                                         m_selection.insert(std::make_pair(i, row));
 
-                                        if( row > (get_upper_row() + ((m_visibleheight-m_rowheight-2)/m_rowheight)))
+                                        if( row > (get_upper_row() + ((m_visibleheight)/m_rowheight)))
                                         {
                                             double value = m_prop_vadj.get_value()->get_value();
                                             value += m_rowheight;

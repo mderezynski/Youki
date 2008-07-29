@@ -3,7 +3,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
-#include "mpx/random.hh"
+#include "mpx/algorithm/random.hh"
 
 namespace MPX
 {

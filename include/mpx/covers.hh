@@ -37,8 +37,7 @@
 #include <sigx/sigx.h>
 
 #include "mpx/main.hh"
-
-#include "mpx/coverstores.hh"
+#include "mpx/covers-stores.hh"
 #include "mpx/network.hh"
 #include "mpx/metadatareader-taglib.hh"
 

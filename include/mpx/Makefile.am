@@ -33,23 +33,18 @@ noinst_HEADERS =					\
 									\
 	covers-stores.hh 				\
 	library-scanner-thread.hh		\
-									\
-	glibaddons.hh					\
+	metadatareader-taglib.hh		\
 									\
 	exception-db.hh					\
 	exception.hh					\
 									\
-	gstpuid.h						\
-									\
-	metadatareader-taglib.hh		\
-									\
+	glibaddons.hh					\
 	stock.hh						\
 	tagview.hh						\
-	treeview-popup.hh				\
 	widgetloader.h					\
+	gstpuid.h						\
 									\
-	last-fm-xmlrpc.hh				\
-	lyrics-v2.hh					\
+	lyrics.hh						\
 	xml.hh							\
 	xmltoc++.hh						\
 	xspf.hh							\
