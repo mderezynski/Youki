@@ -2740,7 +2740,7 @@ namespace MPX
 
 	  Mutex::Lock L (m_SourceCFLock);
 
-      PlaybackSource::Caps c = m_source_c[m_ActiveSource.get()];
+      PlaybackSource::Caps caps = m_source_c[m_ActiveSource.get()];
       m_Seek->set_sensitive( caps & PlaybackSource::C_CAN_SEEK );
 	  m_actions->get_action( ACTION_PAUSE )->set_sensitive( caps & PlaybackSource::C_CAN_PAUSE );
 
