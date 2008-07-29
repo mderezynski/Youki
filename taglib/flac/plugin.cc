@@ -8,22 +8,22 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <taglib-gio/fileref.h>
+#include <fileref.h>
 
 // Plugin-specific include
-#include <taglib-gio/taglib-gio.h>
-#include <taglib-gio/fileref.h>
-#include <taglib-gio/tfile.h>
-#include <taglib-gio/tag.h>
+#include <taglib-gio.h>
+#include <fileref.h>
+#include <tfile.h>
+#include <tag.h>
 
-#include <taglib-gio/oggfile.h>
-#include <taglib-gio/vorbisfile.h>
-#include <taglib-gio/vorbisproperties.h>
-#include <taglib-gio/xiphcomment.h>
+#include <oggfile.h>
+#include <vorbisfile.h>
+#include <vorbisproperties.h>
+#include <xiphcomment.h>
 
-#include <taglib-gio/flacfile.h>
-#include <taglib-gio/mpegfile.h>
-#include <taglib-gio/id3v2tag.h>
+#include <flacfile.h>
+#include <mpegfile.h>
+#include <id3v2tag.h>
 
 #include "id3v2/reader.hh"
 #include "xiph/reader.hh"
