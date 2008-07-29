@@ -516,7 +516,7 @@ namespace
                     m_Xml->get_widget("albumcover", m_ImageCover); 
 
                     SQL::RowV v;
-                    m_Lib.getSQL(v, (boost::format ("SELECT mb_album_id FROM album WHERE id = '%lld'") % id).str());
+                    m_Lib.getSQL(v, (boost::format ("SELECT * FROM album JOIN album_artist ON album_artist_j = album_artist.id WHERE id = '%lld'") % id).str());
                     if( !v.empty ())
                     {
                         std::string mbid = get<std::string>(v[0]["mb_album_id"]);
@@ -525,6 +525,18 @@ namespace
                         surface = Util::cairo_image_surface_round(surface, 9.5);
                         Util::cairo_image_surface_rounded_border(surface, 1., 9.5);
                         m_ImageCover->set(Util::cairo_image_surface_to_pixbuf(surface));
+        
+                        Gtk::Label *l1, *l2;
+                        m_Xml->get_widget("label-artist", l1);
+                        m_Xml->get_widget("label-album", l2);
+
+                        l1->set_markup((boost::format ("<big>%s</big>")
+                            % Glib::Markup::escape_text(get<std::string>(v[0]["album_artist"])).raw()
+                        ).str());
+
+                        l2->set_markup((boost::format ("<big><b>%s</b></big>")
+                            % Glib::Markup::escape_text(get<std::string>(v[0]["album"])).raw()
+                        ).str());
                     }
                 }
     };
