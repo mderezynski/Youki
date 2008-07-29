@@ -32,7 +32,7 @@
 #endif // HAVE_HAL
 #include "mpx/library.hh"
 #include "mpx/metadatareader-taglib.hh"
-#include "mpx/random.hh"
+#include "mpx/algorithm/random.hh"
 #include "mpx/sql.hh"
 #include "mpx/uri.hh"
 #include "mpx/util-string.hh"
@@ -775,12 +775,12 @@ namespace MPX
         return 0;
     }
 
-	void	
-	Library::albumRated(gint64 id, int rating)
-	{
-		execSQL((boost::format ("UPDATE album SET album_rating = '%d' WHERE id = %lld") % rating % id).str());
-		Signals.AlbumUpdated.emit(id);
-	}
+    void
+    Library::albumDeleteRating(gint64 rating_id, gint64 album_id)
+    {
+		execSQL((boost::format ("DELETE FROM album_rating_history WHERE id = %lld") % rating_id).str());
+		Signals.AlbumUpdated.emit(album_id);
+    }
 
 	void	
 	Library::trackRated(gint64 id, int rating)

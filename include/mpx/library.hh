@@ -103,9 +103,9 @@ namespace MPX
             int
             albumGetMeanRatingValue(gint64 id);
 
-			void
-			albumRated(gint64, int);
-		
+            void
+            albumDeleteRating(gint64 rating_id, gint64 album_idd);
+
 
 			void
 			trackRated(gint64, int);

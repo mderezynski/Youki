@@ -23,7 +23,7 @@
 #include "mpx/library.hh"
 #include "mpx/lyrics.hh"
 #include "mpx/paccess.hh"
-#include "mpx/random.hh"
+#include "mpx/algorithm/random.hh"
 #include "mpx/types.hh"
 #include "mpx/tagview.hh"
 #include "mpx/util-graphics.hh"
@@ -837,7 +837,6 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("getMetadata",                     &MPX::Library::getMetadata)
         .def("sqlToTrack",                      &MPX::Library::sqlToTrack)
         .def("getTrackTags",                    &MPX::Library::getTrackTags)
-        .def("albumRated",                      &MPX::Library::albumRated)
         .def("trackRated",                      &MPX::Library::trackRated)
         .def("trackPlayed",                     &MPX::Library::trackPlayed) // can't see how plugins could possibly need this
         .def("trackTagged",                     &MPX::Library::trackTagged)

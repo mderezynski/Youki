@@ -339,6 +339,7 @@ namespace
 
     // Album Details Window
 
+    typedef boost::optional<gint64> OptionalId_t;
     class AlbumRatingsList : public WidgetLoader<Gtk::TreeView>
     {
         public:
@@ -358,6 +359,7 @@ namespace
                             Gtk::TreeModelColumn<int>           Rating;
                             Gtk::TreeModelColumn<Glib::ustring> ShortText;
                             Gtk::TreeModelColumn<Glib::ustring> Text;
+                            Gtk::TreeModelColumn<gint64>        Id;
 
                             Columns_t ()
                             {
@@ -365,6 +367,7 @@ namespace
                                 add(Rating);
                                 add(ShortText);
                                 add(Text);
+                                add(Id);
                             };
                 };
 
@@ -451,7 +454,7 @@ namespace
                         gint64 rating = get<gint64>((*i)["rating"]);
                         time_t time = time_t(get<gint64>((*i)["time"]));
                         std::string text = get<std::string>((*i)["comment"]);
-
+                        gint64 id = get<gint64>((*i)["id"]);
                     
                         char * time_s = ctime(&time);
                         std::string time_ccs (time_s);
@@ -461,6 +464,7 @@ namespace
                         (*iter)[Columns.Rating]     = rating; 
                         (*iter)[Columns.ShortText]  = Glib::ustring(text).substr(0,64) + "...";
                         (*iter)[Columns.Text]       = text; 
+                        (*iter)[Columns.Id]         = id; 
                     }
                 }
 
@@ -484,6 +488,7 @@ namespace
                 AlbumRatingsList        * m_AlbumRatingsList;
                 Gtk::Image              * m_ImageCover;
                 Gtk::Label              * m_l1, *m_l2;
+                Gtk::Button             * m_delete_rating;
          
         public:
 
@@ -517,15 +522,47 @@ namespace
                     m_Xml->get_widget("albumcover", m_ImageCover); 
                     m_Xml->get_widget("label-artist", m_l1);
                     m_Xml->get_widget("label-album", m_l2);
+                    m_Xml->get_widget("delete-rating", m_delete_rating);
+
+                    m_delete_rating->signal_clicked().connect(
+                        sigc::mem_fun(
+                            *this,
+                            &AlbumInfoWindow::delete_rating
+                    ));
 
                     m_AlbumRatingsList = new AlbumRatingsList(xml);
-                    display_album(id);
+
+                    m_AlbumRatingsList->get_selection()->signal_changed().connect(
+                        sigc::mem_fun(
+                            *this,
+                            &AlbumInfoWindow::on_rating_list_selection_changed
+                    ));
 
                     m_Lib.signal_album_updated().connect(
                         sigc::mem_fun(
                             *this,
                             &AlbumInfoWindow::display_album
                     ));
+
+                    display_album(id);
+                }
+
+                void
+                on_rating_list_selection_changed ()
+                { 
+                    m_delete_rating->set_sensitive( m_AlbumRatingsList->get_selection()->count_selected_rows() );
+                }
+
+                void
+                delete_rating ()
+                {
+                    if( m_AlbumRatingsList->get_selection()->count_selected_rows() )
+                    {
+                        TreeIter iter = m_AlbumRatingsList->get_selection()->get_selected();
+                        gint64 rating_id = (*iter)[m_AlbumRatingsList->Columns.Id];
+                        m_Lib.albumDeleteRating(rating_id, m_Id);
+                        display_album(m_Id);
+                    }
                 }
 
                 void
@@ -3042,57 +3079,8 @@ namespace MPX
               virtual bool
               on_motion_notify_event (GdkEventMotion *event)
               {
-                int x_orig, y_orig;
-                GdkModifierType state;
-
-                if (event->is_hint)
-                {
-                  gdk_window_get_pointer (event->window, &x_orig, &y_orig, &state);
-                }
-                else
-                {
-                  x_orig = int (event->x);
-                  y_orig = int (event->y);
-                  state = GdkModifierType (event->state);
-                }
-
-                TreePath path;              
-                TreeViewColumn *col;
-                int cell_x, cell_y;
-                if(get_path_at_pos (x_orig, y_orig, path, col, cell_x, cell_y))
-                {
-                    TreeIter iter = TreeStore->get_iter(TreeStoreFilter->convert_path_to_child_path(path));
-                    AlbumRowType rt = (*iter)[LFMColumns.RowType];
-                    if( rt == ROW_ALBUM )
-                    {
-                             if( (*iter)[LFMColumns.IsMPXAlbum] ) 
-                             {
-                                std::vector<TargetEntry> Entries;
-                                Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
-                                Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
-                                drag_source_set(Entries); 
-                                m_DragSource = true;
-
-                                if(!g_atomic_int_get(&m_ButtonPressed))
-                                    return false;
-
-                                if( (cell_x >= 102) && (cell_x <= 162) && (cell_y >= 65) && (cell_y <=78))
-                                {
-                                    int rating = ((cell_x - 102)+7) / 12;
-                                    (*iter)[LFMColumns.Rating] = rating;  
-                                    m_Lib.get().albumRated(m_DragAlbumId.get(), rating);
-                                    return true;
-                                }
-                             }
-                             else
-                             {
-                                drag_source_unset ();
-                                m_DragSource = false;
-                             }
-                    }
-                }
                 return false;
-             } 
+              } 
 
               virtual bool
               on_button_release_event (GdkEventButton* event)
@@ -3104,36 +3092,6 @@ namespace MPX
               virtual bool
               on_button_press_event (GdkEventButton* event)
               {
-                int cell_x, cell_y ;
-                TreeViewColumn *col ;
-
-                if(get_path_at_pos (event->x, event->y, m_PathButtonPress, col, cell_x, cell_y))
-                {
-                    TreeIter iter = TreeStore->get_iter(TreeStoreFilter->convert_path_to_child_path(m_PathButtonPress));
-                    if(m_PathButtonPress.get_depth() == ROW_ALBUM && (*iter)[LFMColumns.IsMPXAlbum])
-                    {
-                        m_DragMBID = (*iter)[LFMColumns.MBID];
-                        m_DragAlbumId = (*iter)[LFMColumns.Id];
-                        m_DragTrackId.reset(); 
-                
-                        g_atomic_int_set(&m_ButtonPressed, 1);
-
-                        if( (cell_x >= 102) && (cell_x <= 162) && (cell_y >= 65) && (cell_y <=78))
-                        {
-                            int rating = ((cell_x - 102)+7) / 12;
-                            (*iter)[LFMColumns.Rating] = rating;  
-                            m_Lib.get().albumRated(m_DragAlbumId.get(), rating);
-                        }
-                    }
-                    else
-                    if(m_PathButtonPress.get_depth() == ROW_TRACK)
-                    {
-                        m_DragMBID.reset(); 
-                        m_DragAlbumId.reset();
-                        m_DragTrackId = (*iter)[LFMColumns.TrackId];
-                    }
-                }
-                TreeView::on_button_press_event(event);
                 return false;
               }
 

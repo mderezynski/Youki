@@ -102,7 +102,7 @@ mpx_bin_SOURCES =				\
 	audio-exception.hh			\
 								\
 	covers.cc					\
-	cover-stores.cc 			\
+	covers-stores.cc 			\
 								\
 	dialog-filebrowser.hh		\
 	dialog-filebrowser.cc		\
@@ -132,16 +132,16 @@ mpx_bin_SOURCES =				\
 	library.cc					\
 	library-scanner-thread.cc	\
 								\
+	main.cc						\
+								\
+	messages.hh					\
+								\
 	metadatareader-taglib.cc	\
 								\
 	minisoup.cc					\
 								\
-	main.cc						\
-								\
 	mlibmanager.hh				\
 	mlibmanager.cc				\
-								\
-	messages.hh					\
 								\
 	mpx.hh						\
 	mpx.cc						\
@@ -176,8 +176,6 @@ mpx_bin_SOURCES =				\
 	sql.cc						\
 								\
 	stock.cc					\
-								\
-	treeview-popup.cc			\
 								\
 	uri.cc						\
 								\
