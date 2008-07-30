@@ -63,7 +63,7 @@ namespace MPX
                     return (*m_realmodel)[row];
                 }
 
-                void
+                virtual void
                 append_track(SQL::Row & r)
                 {
                     using boost::get;
@@ -427,8 +427,6 @@ namespace MPX
                                             }
                                     }
 
-                                    g_message(output.c_str());
-
                                     layout = widget.create_pango_layout("");
                                     layout->set_markup(output);
                             }
@@ -591,7 +589,7 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Up )
                             {
-                                step = - (m_visibleheight / m_rowheight) - 1;
+                                step = - (m_visibleheight / m_rowheight) + 1;
                             }
                             else
                             {
@@ -624,7 +622,7 @@ namespace MPX
                                         if( row < get_upper_row()) 
                                         {
                                             double value = m_prop_vadj.get_value()->get_value();
-                                            value -= m_rowheight;
+                                            value += step*m_rowheight;
                                             m_prop_vadj.get_value()->set_value( value );
                                         }
                                     }
@@ -643,7 +641,7 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Down )
                             {
-                                step = (m_visibleheight / m_rowheight) + 1;
+                                step = (m_visibleheight / m_rowheight) - 1;
                             }
                             else
                             {
@@ -673,10 +671,10 @@ namespace MPX
                                         m_selection.clear();
                                         m_selection.insert(std::make_pair(i, row));
 
-                                        if( row > (get_upper_row() + ((m_visibleheight-m_rowheight)/m_rowheight)))
+                                        if( row >= (get_upper_row() + ((m_visibleheight-m_rowheight)/m_rowheight)))
                                         {
                                             double value = m_prop_vadj.get_value()->get_value();
-                                            value += m_rowheight;
+                                            value += step*m_rowheight;
                                             m_prop_vadj.get_value()->set_value( value );
                                         }
                                     }
@@ -852,7 +850,7 @@ namespace MPX
                         x_pos += (*i)->get_width() + 1;
                     }
 
-                    while(m_model->is_set() && (y_pos < m_visibleheight) && (row < m_model->size())) 
+                    while(m_model->is_set() && (y_pos < (m_visibleheight-m_rowheight)) && (row < m_model->m_mapping.size())) 
                     {
                         x_pos = 0;
 

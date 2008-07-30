@@ -222,6 +222,11 @@ class OPTION__Analyzer(BaseOPTION__):
     def run(self):
 
         playlist  = self.mlib.get_playlist_model()
+
+        if not len(playlist):
+            self.finished.set()
+            return
+
         callables = [self.run_accumulate_tags, self.run_similar_track, self.run_similar_artist]
 
         tries = 3

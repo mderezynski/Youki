@@ -2180,7 +2180,7 @@ namespace MPX
                 m_VideoWidget->queue_draw();
 
                 m_Metadata.reset();	
-                m_InfoArea->reset();
+                //m_InfoArea->reset();
 
 			    break;
 		  }
