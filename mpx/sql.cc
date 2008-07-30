@@ -185,16 +185,6 @@ namespace MPX
     return r; 
   }
 
-  string
-  gprintf (const char *format, ...)
-  {
-    va_list args;
-    va_start (args, format);
-    Glib::ScopedPtr<char> s (g_strdup_vprintf (format, args));
-    va_end (args);
-    return std::string(s.get());
-  }
-
   namespace SQL
   {
       std::string

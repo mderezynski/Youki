@@ -63,6 +63,9 @@ namespace MPX
 
     Glib::ustring utf8_string_normalize (Glib::ustring const&);
 
+    std::string
+    gprintf (const char *format, ...);
+
   } // Util namespace
 } // MPX namespace
 

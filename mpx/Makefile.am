@@ -126,6 +126,11 @@ mpx_bin_SOURCES =				\
 	import-folder.hh			\
 	import-folder.cc			\
 								\
+	infoarea.hh					\
+	infoarea.cc					\
+	infoarea__protected.cc		\
+	infoarea__private.cc		\
+								\
 	jnethttpsrc.h				\
 	jnethttpsrc.cc				\
 								\
