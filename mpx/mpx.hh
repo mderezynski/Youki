@@ -23,12 +23,11 @@
 //  MPX is covered by.
 #ifndef MPX_HH
 #define MPX_HH
+#include <giomm.h>
+#include <gtkmm.h>
 #include "config.h"
 #include <boost/python.hpp>
 #include <dbus/dbus-glib.h>
-#include <gdk/gdkx.h>
-#include <giomm.h>
-#include <gtkmm.h>
 #include <gtkmm/volumebutton.h>
 #include <libglademm/xml.h>
 #include <sigx/sigx.h>

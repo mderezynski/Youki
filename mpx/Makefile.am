@@ -145,6 +145,7 @@ mpx_bin_SOURCES =				\
 								\
 	mpx.hh						\
 	mpx.cc						\
+	mpx-mmkeys.cc				\
 								\
 	network.cc					\
 								\
