@@ -1,7 +1,6 @@
 #include "config.h"
 #include "infoarea.hh"
 #include <boost/algorithm/string.hpp>
-#include "mpx/util-string.hh"
 
 namespace MPX 
 {

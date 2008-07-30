@@ -1,8 +1,5 @@
 #include "config.h"
 #include "infoarea.hh"
-#include "mpx/mpx-types.hh"
-#include "mpx/util-string.hh"
-#include "mpx/util-graphics.hh"
 
 using boost::get;
 

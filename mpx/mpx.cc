@@ -2535,16 +2535,5 @@ namespace MPX
     void
     Player::check_py_error ()
     {
-#if 0
-        GError * gerr = NULL;
-
-        if(pyg_error_check(&gerr))
-        {
-                g_message("Error occurred");
-                Error err (_("Python Plugins"), "", gerr->message);
-                g_error_free(gerr);
-                m_ErrorManager->new_error(err);
-        }
-#endif
     }
 }

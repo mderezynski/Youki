@@ -6,8 +6,10 @@
 #include "play.hh"
 #include "mpx/widgets/widgetloader.hh"
 #include "mpx/util-file.hh"
-#include "mpx/mpx-types.hh"
+#include "mpx/util-graphics.hh"
+#include "mpx/util-string.hh"
 #include "mpx/i-playbacksource.hh"
+#include "mpx/mpx-types.hh"
 
 namespace MPX
 {

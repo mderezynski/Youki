@@ -1,7 +1,6 @@
 #include "config.h"
 #include "infoarea.hh"
 #include <glibmm/i18n.h>
-#include "mpx/util-graphics.cc"
 
 namespace MPX
 {
