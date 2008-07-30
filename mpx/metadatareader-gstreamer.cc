@@ -4,7 +4,7 @@
 #define MPX_I_METADATA_READER_HH
 
 #include <string>
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 
 namespace MPX
 {

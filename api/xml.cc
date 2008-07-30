@@ -31,7 +31,7 @@
 #include <glib/gi18n.h>
 #include <string>
 #include <stdexcept>
-#include "mpx/xml.hh"
+#include "mpx/xml/xml.hh"
 
 namespace
 {

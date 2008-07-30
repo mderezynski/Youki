@@ -10,7 +10,7 @@
 #include "mp4tag.h"
 
 #include "common/common.hh"
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 
 extern "C" int  _plugin_has_accessors;
 int  _plugin_has_accessors = 1;

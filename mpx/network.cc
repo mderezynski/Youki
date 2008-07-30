@@ -41,9 +41,9 @@
 #include <iostream>
 #include <sstream>
 
-#include "mpx/uri.hh"
-#include "mpx/minisoup.hh"
-#include "mpx/network.hh"
+#include "mpx/mpx-uri.hh"
+#include "mpx/mpx-minisoup.hh"
+#include "mpx/mpx-network.hh"
 
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>

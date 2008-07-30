@@ -30,7 +30,7 @@
 #include <gtkmm/liststore.h>
 #include <gtkmm/treemodelfilter.h>
 #include <gtkmm/treeview.h>
-#include "mpx/minisoup.hh"
+#include "mpx/mpx-minisoup.hh"
 #include <libglademm.h>
 
 namespace MPX

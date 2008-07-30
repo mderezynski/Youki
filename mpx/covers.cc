@@ -53,18 +53,18 @@
 #include <uniquefileidentifierframe.h>
 #include <attachedpictureframe.h>
 
-#include "mpx/audio.hh"
-#include "mpx/covers.hh"
-#include "mpx/covers-stores.hh"
+#include "mpx/mpx-audio.hh"
+#include "mpx/mpx-covers.hh"
+#include "mpx/mpx-covers-stores.hh"
 #include "mpx/algorithm/ld.hh"
-#include "mpx/main.hh"
-#include "mpx/minisoup.hh"
-#include "mpx/network.hh"
-#include "mpx/uri.hh"
+#include "mpx/mpx-main.hh"
+#include "mpx/mpx-minisoup.hh"
+#include "mpx/mpx-network.hh"
+#include "mpx/mpx-uri.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-graphics.hh"
 #include "mpx/util-string.hh"
-#include "mpx/xml.hh"
+#include "mpx/xml/xml.hh"
 
 using namespace Glib;
 using namespace TagLib;

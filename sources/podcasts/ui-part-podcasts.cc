@@ -43,15 +43,15 @@
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "main.hh"
-#include "network.hh"
+#include "mpx-main.hh"
+#include "mpx-network.hh"
 #include "paths.hh"
-#include "stock.hh"
+#include "mpx-stock.hh"
 #include "debug.hh"
 #include "util.hh"
 #include "util-file.hh"
 #include "ui-tools.hh"
-#include "uri.hh"
+#include "mpx-uri.hh"
 
 #include "bmp/library-ops.hh"
 

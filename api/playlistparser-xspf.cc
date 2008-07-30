@@ -1,11 +1,12 @@
 // (c) 2007 M. Derezynski
 
+#include "mpx/playlistparser-xspf.hh"
+
 #include <glib/gmacros.h>
 #include <glib/gmessages.h>
 #include <string>
-#include "mpx/playlistparser-xspf.hh"
 #include "xmlcpp/xspf.hxx"
-#include "mpx/xmltoc++.hh"
+#include "mpx/xml/xmltoc++.hh"
 
 namespace MPX
 {

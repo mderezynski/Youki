@@ -34,8 +34,8 @@
 #include <set>
 #include <string>
 
-#include "mpx/library.hh"
-#include "mpx/paccess.hh"
+#include "mpx/mpx-library.hh"
+#include "mpx/mpx-protected-access.hh"
 
 #include "component-base.hh"
 #include "component-slot-artist.hh"

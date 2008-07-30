@@ -26,7 +26,7 @@
 #define MPX_COVERS_HH
 
 #include "config.h"
-#include "mpx/minisoup.hh"
+#include "mpx/mpx-minisoup.hh"
 
 #include <string>
 #include <map>
@@ -36,9 +36,9 @@
 #include <cairomm/cairomm.h>
 #include <sigx/sigx.h>
 
-#include "mpx/main.hh"
-#include "mpx/covers-stores.hh"
-#include "mpx/network.hh"
+#include "mpx/mpx-main.hh"
+#include "mpx/mpx-covers-stores.hh"
+#include "mpx/mpx-network.hh"
 #include "mpx/metadatareader-taglib.hh"
 
 namespace MPX

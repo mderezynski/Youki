@@ -22,43 +22,22 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPXx is covered by.
 
-#ifndef MPX_LYRICWIKI_HH
-#define MPX_LYRICWIKI_HH
+#ifndef MPX_XSPF_LIBXML2_SAX_PARSE_HH
+#define MPX_XSPF_LIBXML2_SAX_PARSE_HH
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
-#include "mpx/minisoup.hh"
+#include "mpx/xml/xspf.hh"
 
 namespace MPX
 {
-
-#include "mpx/exception.hh"
-
-  class LyricsReturnNotOK : public MPX::Exception 
-  { 
-	public: 
-        LyricsReturnNotOK (std::string const& msg = std::string()) : MPX::Exception(msg) {} 
-  };
-
-  namespace LyricWiki
+  namespace XSPF
   {
-    class TextRequest
-      : public Glib::Object
-    {
-      public:
-  
-        TextRequest (Glib::ustring const& artist, Glib::ustring const& title);
-        std::string run ();
-        virtual ~TextRequest ();
-
-      private:
-
-        Soup::RequestSyncRefP m_soup_request;
-		Glib::ustring m_artist, m_title;
-    };
+    int XSPF_parse (XSPF::Playlist & playlist, std::string const& data);
+    int XSPF_parse (XSPF::Playlist & playlist, char const* data, ssize_t size); 
   }
 }
 
-#endif //!MPX_LYRICWIKI_HH
+#endif //!MPX_XSPF_LIBXML2_SAX_PARSE_HH

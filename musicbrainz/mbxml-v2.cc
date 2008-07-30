@@ -31,8 +31,8 @@
 #include <glibmm/markup.h>
 #include <boost/format.hpp>
 
-#include "mpx/minisoup.hh"
-#include "mpx/uri.hh"
+#include "mpx/mpx-minisoup.hh"
+#include "mpx/mpx-uri.hh"
 #include "mb-libxml2-sax-release-list.hh"
 #include "mb-libxml2-sax-release.hh"
 #include "mb-libxml2-sax-tracks.hh"

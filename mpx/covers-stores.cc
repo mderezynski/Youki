@@ -30,17 +30,17 @@
 
 #include <boost/format.hpp>
 
-#include "mpx/covers.hh"
-#include "mpx/covers-stores.hh"
+#include "mpx/mpx-covers.hh"
+#include "mpx/mpx-covers-stores.hh"
 
 #include "mpx/algorithm/ld.hh"
 
-#include "mpx/uri.hh"
+#include "mpx/mpx-uri.hh"
 
 #include "mpx/util-string.hh"
 #include "mpx/util-string.hh"
 
-#include "mpx/xml.hh"
+#include "mpx/xml/xml.hh"
 
 namespace
 {

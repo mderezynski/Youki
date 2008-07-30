@@ -40,10 +40,10 @@
 #include <libglademm/xml.h>
 #include <gdl/gdl.h>
 
-#include "mpx/minisoup.hh"
-#include "mpx/mpx-public.hh"
+#include "mpx/mpx-minisoup.hh"
+#include "mpx/mpx-public-mpx.hh"
 #include "mpx/i-playbacksource.hh"
-#include "mpx/tagview.hh"
+#include "mpx/widgets/tagview.hh"
 
 #include "lastfm.hh"
 

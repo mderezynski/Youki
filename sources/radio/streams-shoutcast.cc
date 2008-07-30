@@ -39,8 +39,8 @@
 #include <boost/shared_ptr.hpp>
 #include <sigc++/sigc++.h>
 #include "mpx/widgets/dialog-simple-entry.hh"
-#include "mpx/uri.hh"
-#include "mpx/xml.hh"
+#include "mpx/mpx-uri.hh"
+#include "mpx/xml/xml.hh"
 #include "streams-shoutcast.hh"
 using namespace Glib;
 using namespace Gtk;

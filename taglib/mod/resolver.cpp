@@ -5,7 +5,7 @@
 #include <string>
 #include "resolver.h"
 #include "modfile.h"
-#include "mpx/audio.hh"
+#include "mpx/mpx-audio.hh"
 
 TagLib::File * MODFileTypeResolver::createFile (const char                        *filename,
                                                 bool                               read_properties,

@@ -26,15 +26,15 @@
 #include <glibmm/i18n.h>
 #include <gio/gio.h>
 
-#include "mpx/audio.hh"
+#include "mpx/mpx-audio.hh"
 #ifdef HAVE_HAL
-#include "mpx/hal.hh"
+#include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
-#include "mpx/library.hh"
+#include "mpx/mpx-library.hh"
 #include "mpx/metadatareader-taglib.hh"
 #include "mpx/algorithm/random.hh"
-#include "mpx/sql.hh"
-#include "mpx/uri.hh"
+#include "mpx/mpx-sql.hh"
+#include "mpx/mpx-uri.hh"
 #include "mpx/util-string.hh"
 
 using namespace Glib;

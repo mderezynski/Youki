@@ -32,8 +32,8 @@
 
 #include <boost/format.hpp>
 
-#include "mpx/uri.hh"
-#include "mpx/minisoup.hh"
+#include "mpx/mpx-uri.hh"
+#include "mpx/mpx-minisoup.hh"
 using namespace Glib;
 using namespace Gtk;
 

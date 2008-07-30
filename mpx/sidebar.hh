@@ -30,9 +30,9 @@
 #include <libglademm/xml.h>
 #include <boost/optional.hpp>
 #include "plugin.hh"
-#include "mpx/treeview-popup.hh"
-#include "mpx/types.hh"
-#include "mpx/widgetloader.h"
+#include "mpx/widgets/treeview-popup.hh"
+#include "mpx/mpx-types.hh"
+#include "mpx/widgets/widgetloader.hh"
 
 namespace MPX
 {

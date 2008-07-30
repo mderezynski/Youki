@@ -33,7 +33,7 @@
 #include "mb-libxml2-sax-release.hh"
 #include "mb-libxml2-sax-tracks.hh"
 
-#include "bmp/types/types-library.hh"
+#include "bmp/types/types-mpx-library.hh"
 
 namespace MPX
 {

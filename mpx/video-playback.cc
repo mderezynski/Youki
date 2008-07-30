@@ -30,7 +30,7 @@
 #include <gst/interfaces/xoverlay.h>
 #include <boost/format.hpp>
 
-#include "mpx/main.hh" // for mcs
+#include "mpx/mpx-main.hh" // for mcs
 
 #include "video-playback.hh"
 

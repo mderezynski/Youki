@@ -33,7 +33,7 @@
 #include <vector>
 #include <sqlite3.h>
 
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 
 namespace MPX
 {

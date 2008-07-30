@@ -10,7 +10,7 @@
 #include "asffile.h"
 #include "asftag.h"
 
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 #include "common/common.hh"
 
 extern "C" int  _plugin_has_accessors;

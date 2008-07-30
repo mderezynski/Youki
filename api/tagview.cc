@@ -1,7 +1,7 @@
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
 #include <boost/shared_ptr.hpp>
-#include "mpx/tagview.hh"
+#include "mpx/widgets/tagview.hh"
 #define NO_IMPORT
 #include <pygobject.h>
 

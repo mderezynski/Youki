@@ -45,14 +45,13 @@
 #include <gst/interfaces/mixeroptions.h>
 #endif //!MPX_PLUGIN_BUILD
 
-#include "mpx/uri.hh"
-#include "mpx/mpx-api-macros.hh"
+#include "mpx/mpx-uri.hh"
 
 namespace MPX
 {
   namespace Audio
   {
-    MPX_API bool
+    bool
     typefind (std::string const& uri, std::string & type);
 
 #ifndef MPX_PLUGIN_BUILD

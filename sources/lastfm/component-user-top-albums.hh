@@ -30,9 +30,9 @@
 #include <glibmm.h>
 #include <gtkmm.h>
 #include <sigx/sigx.h>
-#include "mpx/library.hh"
-#include "mpx/mpx-public.hh"
-#include "mpx/paccess.hh"
+#include "mpx/mpx-library.hh"
+#include "mpx/mpx-public-mpx.hh"
+#include "mpx/mpx-protected-access.hh"
 #include "component-base.hh"
 #include "user-top-albums-fetch-thread.hh"
 

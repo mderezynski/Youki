@@ -36,10 +36,10 @@
 #define NO_IMPORT
 #include <pygobject.h>
 
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 #include "mpx/util-file.hh"
 #include "mpx/i-playbacksource.hh"
-#include "mpx/mpx-public.hh"
+#include "mpx/mpx-public-mpx.hh"
 
 namespace MPX
 {

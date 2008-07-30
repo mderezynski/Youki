@@ -27,7 +27,7 @@
 #include <libglademm/xml.h>
 #include <boost/python.hpp>
 #include "plugin.hh"
-#include "mpx/widgetloader.h"
+#include "mpx/widgets/widgetloader.hh"
 
 using namespace Gnome::Glade;
 

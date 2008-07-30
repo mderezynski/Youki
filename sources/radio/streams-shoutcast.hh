@@ -31,8 +31,8 @@
 #include <gtkmm/treeview.h>
 #include <libglademm/xml.h>
 #include <sigc++/signal.h>
-#include "mpx/minisoup.hh"
-#include "mpx/xml.hh"
+#include "mpx/mpx-minisoup.hh"
+#include "mpx/xml/xml.hh"
 #include "radio-directory-types.hh"
 
 namespace MPX

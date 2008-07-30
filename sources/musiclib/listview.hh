@@ -7,8 +7,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/optional.hpp>
-#include "mpx/glibaddons.hh"
-#include "mpx/types.hh"
+#include "mpx/aux/glibaddons.hh"
+#include "mpx/mpx-types.hh"
 #include "mpx/util-string.hh"
 #include "mpx/widgets/cairoextensions.hh"
 #include "glib-marshalers.h"

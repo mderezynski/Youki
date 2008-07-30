@@ -24,7 +24,7 @@
 #include "config.h"
 #include "source-musiclib.hh"
 
-#include "mpx/main.hh"
+#include "mpx/mpx-main.hh"
 #include "mcs/base.h"
 
 #define NO_IMPORT
@@ -32,7 +32,7 @@
 #include <pygobject.h>
 #include <boost/python.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
-#include "mpx/python.hh"
+#include "mpx/mpx-python.hh"
 using namespace boost::python;
 
 //#if PY_VERSION_HEX < 0x02050000

@@ -38,11 +38,11 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/regex.hpp>
 
-#include "mpx/mpx-public.hh"
-#include "mpx/library.hh"
-#include "mpx/stock.hh"
-#include "mpx/types.hh"
-#include "mpx/minisoup.hh"
+#include "mpx/mpx-public-mpx.hh"
+#include "mpx/mpx-library.hh"
+#include "mpx/mpx-stock.hh"
+#include "mpx/mpx-types.hh"
+#include "mpx/mpx-minisoup.hh"
 #include "source-podcasts.hh"
 
 using namespace Glib;

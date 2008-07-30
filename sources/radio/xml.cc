@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <glib.h>
 
-#include "xml.hh"
+#include "xml/xml.hh"
 
 namespace
 {

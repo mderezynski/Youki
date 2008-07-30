@@ -26,7 +26,7 @@
 #include <gtkmm/dialog.h>
 #include <libglademm/xml.h>
 
-#include "mpx/widgetloader.h"
+#include "mpx/widgets/widgetloader.hh"
 
 using namespace Gnome::Glade;
 

@@ -14,7 +14,7 @@
 #include <taglib-gio/vorbisproperties.h>
 #include <taglib-gio/xiphcomment.h>
 
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 
 namespace MPX
 {

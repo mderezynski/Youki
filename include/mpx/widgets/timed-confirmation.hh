@@ -2,7 +2,7 @@
 #define MPX_TIMED_CONFIRMATION_HH
 
 #include <gtkmm.h>
-#include "mpx/widgetloader.h"
+#include "mpx/widgets/widgetloader.hh"
 
 using namespace Gnome::Glade;
 namespace MPX

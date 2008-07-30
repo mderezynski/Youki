@@ -54,11 +54,11 @@
 
 #include "mpx/algorithm/base64.h"
 #include "mpx/algorithm/md5.h"
-#include "mpx/main.hh"
-#include "mpx/uri.hh"
+#include "mpx/mpx-main.hh"
+#include "mpx/mpx-uri.hh"
 #include "mpx/util-string.hh"
-#include "mpx/xspf-libxml2-sax.hh"
-#include "mpx/xml.hh"
+#include "mpx/xml/xspf-libxml2-sax.hh"
+#include "mpx/xml/xml.hh"
 
 #include "lastfm.hh"
 

@@ -5,7 +5,7 @@
 
 #include "resolver.h"
 #include "mp4file.h"
-#include "mpx/audio.hh"
+#include "mpx/mpx-audio.hh"
 
 TagLib::File *MP4FileTypeResolver::createFile (const char*                        filename,
                                                bool                               read_properties,

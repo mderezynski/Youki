@@ -39,18 +39,18 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "mpx/mpx-public.hh"
-#include "mpx/play-public.hh"
-#include "mpx/library.hh"
-#include "mpx/main.hh"
-#include "mpx/minisoup.hh"
-#include "mpx/stock.hh"
-#include "mpx/types.hh"
-#include "mpx/uri.hh"
+#include "mpx/mpx-public-mpx.hh"
+#include "mpx/mpx-public-play.hh"
+#include "mpx/mpx-library.hh"
+#include "mpx/mpx-main.hh"
+#include "mpx/mpx-minisoup.hh"
+#include "mpx/mpx-stock.hh"
+#include "mpx/mpx-types.hh"
+#include "mpx/mpx-uri.hh"
 #include "mpx/util-graphics.hh"
 #include "mpx/util-ui.hh"
 #include "mpx/widgets/cell-renderer-cairo-surface.hh"
-#include "mpx/xmltoc++.hh"
+#include "mpx/xml/xmltoc++.hh"
 
 #define STATE(e) ((m_state & e) != 0)
 #define SET_STATE(e) ((m_state |= e))

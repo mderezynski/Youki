@@ -30,7 +30,7 @@
 
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
-#include "mpx/glibaddons.hh"
+#include "mpx/aux/glibaddons.hh"
 
 namespace MPX
 {

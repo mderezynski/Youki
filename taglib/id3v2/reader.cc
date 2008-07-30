@@ -29,7 +29,7 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 
 using namespace Glib;
 using namespace TagLib;

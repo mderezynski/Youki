@@ -40,8 +40,8 @@
 #include <boost/variant.hpp>
 
 #include "mcs/mcs.h"
-#include "mpx/minisoup.hh"
-#include "mpx/xspf.hh"
+#include "mpx/mpx-minisoup.hh"
+#include "mpx/xml/xspf.hh"
 
 using namespace Glib;
 

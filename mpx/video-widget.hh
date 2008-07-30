@@ -27,7 +27,7 @@
 
 #include <gtkmm.h>
 #include <gdk/gdkx.h>
-#include "mpx/glibaddons.hh"
+#include "mpx/aux/glibaddons.hh"
 
 namespace MPX
 {

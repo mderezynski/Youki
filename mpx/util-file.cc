@@ -39,8 +39,8 @@
 #include <glibmm.h>
 #include <gio/gio.h>
 
-#include "mpx/audio.hh"
-#include "mpx/uri.hh"
+#include "mpx/mpx-audio.hh"
+#include "mpx/mpx-uri.hh"
 #include "mpx/util-file.hh"
 
 using namespace Glib;

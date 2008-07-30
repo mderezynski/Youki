@@ -38,8 +38,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 
-#include "mpx/audio.hh"
-#include "mpx/uri.hh"
+#include "mpx/mpx-audio.hh"
+#include "mpx/mpx-uri.hh"
 #include "mpx/util-string.hh"
 
 using namespace Glib;

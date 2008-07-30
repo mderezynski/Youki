@@ -5,7 +5,7 @@
 #include <string>
 #include "mpx/playlistparser-pls.hh"
 #include "xmlcpp/xspf.hxx"
-#include "mpx/xmltoc++.hh"
+#include "mpx/xml/xmltoc++.hh"
 
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
@@ -14,7 +14,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include "mpx/util-string.hh"
-#include "mpx/uri.hh"
+#include "mpx/mpx-uri.hh"
 
 using namespace Glib;
 using namespace MPX;

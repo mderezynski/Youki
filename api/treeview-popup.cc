@@ -1,4 +1,4 @@
-#include "mpx/treeview-popup.hh"
+#include "mpx/widgets/treeview-popup.hh"
 #include "mpx/util-ui.hh"
 
 using namespace Gtk;

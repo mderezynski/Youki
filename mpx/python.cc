@@ -16,23 +16,23 @@
 #include "mcs/mcs.h"
 
 #include "mpx.hh"
-#include "mpx/covers.hh"
+#include "mpx/mpx-covers.hh"
 #ifdef HAVE_HAL
-#include "mpx/hal.hh"
+#include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
-#include "mpx/library.hh"
-#include "mpx/lyrics.hh"
-#include "mpx/paccess.hh"
+#include "mpx/mpx-library.hh"
+#include "mpx/mpx-lyrics.hh"
+#include "mpx/mpx-protected-access.hh"
 #include "mpx/algorithm/random.hh"
-#include "mpx/types.hh"
-#include "mpx/tagview.hh"
+#include "mpx/mpx-types.hh"
+#include "mpx/widgets/tagview.hh"
 #include "mpx/util-graphics.hh"
 
 #include "audio-types.hh"
 #include "play.hh"
 #include "pysigc.hh"
 
-#include "mpx/python.hh"
+#include "mpx/mpx-python.hh"
 #include "gtkmmmodule.h"
 
 using namespace boost::python;

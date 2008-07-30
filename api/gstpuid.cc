@@ -30,7 +30,7 @@
 #  include "config.h"
 #endif
 
-#include "mpx/gstpuid.h"
+#include "mpx/aux/gstpuid.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -38,7 +38,7 @@
 #include <glib.h>
 #include <glib/gi18n.h> 
 #include <gst/gstmarshal.h>
-#include "mpx/minisoup.hh"
+#include "mpx/mpx-minisoup.hh"
 
 using namespace MPX;
 

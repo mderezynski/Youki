@@ -29,8 +29,8 @@
 #include <sigx/sigx.h>
 #include <sigx/signal_f.h>
 #include <sigx/request_f.h>
-#include "mpx/sql.hh"
-#include "mpx/types.hh"
+#include "mpx/mpx-sql.hh"
+#include "mpx/mpx-types.hh"
 #include "mpx/util-string.hh"
 #include "mpx/util-file.hh"
 

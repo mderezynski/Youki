@@ -33,16 +33,16 @@
 #include <libglademm/xml.h>
 #include <sigx/sigx.h>
 
-#include "mpx/audio.hh"
-#include "mpx/covers.hh"
+#include "mpx/mpx-audio.hh"
+#include "mpx/mpx-covers.hh"
 #ifdef HAVE_HAL
-#include "mpx/hal.hh"
+#include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
 #include "mpx/i-playbacksource.hh"
-#include "mpx/library.hh"
-#include "mpx/paccess.hh"
+#include "mpx/mpx-library.hh"
+#include "mpx/mpx-protected-access.hh"
 #include "mpx/util-file.hh"
-#include "mpx/widgetloader.h"
+#include "mpx/widgets/widgetloader.hh"
 
 #include "audio-types.hh"
 #include "dbus-marshalers.h"

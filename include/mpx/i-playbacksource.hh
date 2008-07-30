@@ -37,7 +37,7 @@
 #define NO_IMPORT
 #include <pygobject.h>
 
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 #include "mpx/util-file.hh"
 
 namespace MPX

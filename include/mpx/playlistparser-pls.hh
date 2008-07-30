@@ -4,7 +4,7 @@
 #define MPX_I_PLAYLIST_PARSER_PLS_HH
 
 #include <string>
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 #include "mpx/i-playlistparser.hh"
 #include "mpx/util-file.hh"
 

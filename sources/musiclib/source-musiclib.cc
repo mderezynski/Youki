@@ -37,18 +37,18 @@
 #include <boost/lexical_cast.hpp>
 
 
-#include "mpx/hal.hh"
-#include "mpx/library.hh"
-#include "mpx/main.hh"
+#include "mpx/mpx-hal.hh"
+#include "mpx/mpx-library.hh"
+#include "mpx/mpx-main.hh"
 #include "mpx/playlistparser-xspf.hh"
 #include "mpx/playlistparser-pls.hh"
-#include "mpx/sql.hh"
-#include "mpx/stock.hh"
-#include "mpx/types.hh"
+#include "mpx/mpx-sql.hh"
+#include "mpx/mpx-stock.hh"
+#include "mpx/mpx-types.hh"
 #include "mpx/util-graphics.hh"
 #include "mpx/util-ui.hh"
 #include "mpx/util-string.hh"
-#include "mpx/widgetloader.h"
+#include "mpx/widgets/widgetloader.hh"
 
 #include "mpx/widgets/cell-renderer-cairo-surface.hh"
 #include "mpx/widgets/cell-renderer-count.hh"

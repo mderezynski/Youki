@@ -37,9 +37,9 @@
 #include <libglademm/xml.h>
 #include <sigx/sigx.h>
 
-#include "mpx/widgetloader.h"
-#include "mpx/hal.hh"
-#include "mpx/library.hh"
+#include "mpx/widgets/widgetloader.hh"
+#include "mpx/mpx-hal.hh"
+#include "mpx/mpx-library.hh"
 
 #include "libhal++/hal++.hh"
 

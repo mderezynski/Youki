@@ -10,7 +10,7 @@
 #endif //HAVE_CONFIG_H
 
 #include <taglib-gio/id3v2tag.h>
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 
 namespace MPX
 {

@@ -26,6 +26,8 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
+#include "source-radio.hh"
+
 #include <gtkmm.h>
 #include <gtk/gtk.h>
 #include <glibmm.h>
@@ -38,13 +40,13 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/regex.hpp>
 
-#include "mpx/mpx-public.hh"
-#include "mpx/library.hh"
-#include "mpx/types.hh"
-#include "mpx/minisoup.hh"
+#include "mpx/mpx-public-mpx.hh"
+#include "mpx/mpx-library.hh"
+#include "mpx/mpx-types.hh"
+#include "mpx/mpx-minisoup.hh"
+
 #include "streams-shoutcast.hh"
 #include "streams-icecast.hh"
-#include "source-radio.hh"
 
 using namespace Glib;
 using namespace Gtk;

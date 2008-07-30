@@ -29,8 +29,8 @@
 #include <gtk/gtk.h>
 #include <glibmm/i18n.h>
 
-#include "mpx/audio.hh"
-#include "mpx/main.hh"
+#include "mpx/mpx-audio.hh"
+#include "mpx/mpx-main.hh"
 #include "mpx/util-file.hh"
 
 #include "dialog-filebrowser.hh"

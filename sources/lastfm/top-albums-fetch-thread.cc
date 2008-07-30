@@ -1,5 +1,5 @@
-#include "mpx/uri.hh"
-#include "mpx/xmltoc++.hh"
+#include "mpx/mpx-uri.hh"
+#include "mpx/xml/xmltoc++.hh"
 #include "mpx/util-ui.hh"
 #include <gtkmm.h>
 #include <boost/format.hpp>

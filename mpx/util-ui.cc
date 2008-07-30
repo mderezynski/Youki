@@ -30,8 +30,8 @@
 #include <gtkmm/messagedialog.h>
 #include <gtkmm.h>
 #include "mpx/util-ui.hh"
-#include "mpx/minisoup.hh"
-#include "mpx/uri.hh"
+#include "mpx/mpx-minisoup.hh"
+#include "mpx/mpx-uri.hh"
 using namespace Gtk;
 
 namespace MPX

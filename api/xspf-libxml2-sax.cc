@@ -35,7 +35,7 @@ using namespace Glib;
 #include "mpx/parser/libxml2-sax-base.hh"
 using MPX::XPath;
 
-#include "mpx/xspf-libxml2-sax.hh"
+#include "mpx/xml/xspf-libxml2-sax.hh"
 
 namespace
 {

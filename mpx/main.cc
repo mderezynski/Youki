@@ -42,15 +42,15 @@
 
 #include "mpx.hh"
 
-#include "mpx/covers.hh"
+#include "mpx/mpx-covers.hh"
 #ifdef HAVE_HAL
-#include "mpx/hal.hh"
+#include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
-#include "mpx/library.hh"
-#include "mpx/main.hh"
+#include "mpx/mpx-library.hh"
+#include "mpx/mpx-main.hh"
 #include "mpx/metadatareader-taglib.hh"
-#include "mpx/network.hh"
-#include "mpx/types.hh"
+#include "mpx/mpx-network.hh"
+#include "mpx/mpx-types.hh"
 #include "mpx/util-file.hh"
 
 using namespace MPX;

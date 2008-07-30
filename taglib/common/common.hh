@@ -10,7 +10,7 @@
 #endif //HAVE_CONFIG_H
 
 #include <taglib-gio/tfile.h>
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 
 namespace MPX
 {

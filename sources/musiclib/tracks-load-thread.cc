@@ -1,7 +1,7 @@
 #include <gtkmm.h>
 #include <boost/format.hpp>
-#include "mpx/sql.hh"
-#include "mpx/types.hh"
+#include "mpx/mpx-sql.hh"
+#include "mpx/mpx-types.hh"
 #include "source-musiclib.hh"
 #include "tracks-load-thread.hh"
 

@@ -15,7 +15,7 @@
 
 #include "common/common.hh"
 #include "xiph/reader.hh"
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 
 using namespace MPX;
 using namespace TagLib;

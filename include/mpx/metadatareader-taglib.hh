@@ -11,7 +11,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "mpx/i-metadatareader.hh"
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 
 
 namespace MPX

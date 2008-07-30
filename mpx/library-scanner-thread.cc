@@ -1,10 +1,10 @@
-#include "mpx/audio.hh"
-#include "mpx/hal.hh"
-#include "mpx/library-scanner-thread.hh"
-#include "mpx/library.hh"
+#include "mpx/mpx-audio.hh"
+#include "mpx/mpx-hal.hh"
+#include "mpx/mpx-library-scanner-thread.hh"
+#include "mpx/mpx-library.hh"
 #include "mpx/metadatareader-taglib.hh"
-#include "mpx/sql.hh"
-#include "mpx/types.hh"
+#include "mpx/mpx-sql.hh"
+#include "mpx/mpx-types.hh"
 #include <queue>
 #include <boost/ref.hpp>
 #include <boost/format.hpp>

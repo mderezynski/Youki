@@ -30,11 +30,11 @@
 #include <glibmm/i18n.h>
 #include <boost/format.hpp>
 
-#include "mpx/main.hh"
+#include "mpx/mpx-main.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
 #include "libhal++/hal++.hh"
-#include "mpx/sql.hh"
+#include "mpx/mpx-sql.hh"
 
 #include "mlibmanager.hh"
 

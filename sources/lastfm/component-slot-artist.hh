@@ -28,7 +28,7 @@
 #ifndef MPX_COMPONENT_SLOT_ARTIST_HH
 #define MPX_COMPONENT_SLOT_ARTIST_HH
 #include <glibmm.h>
-#include "mpx/glibaddons.hh"
+#include "mpx/aux/glibaddons.hh"
 
 namespace MPX
 {

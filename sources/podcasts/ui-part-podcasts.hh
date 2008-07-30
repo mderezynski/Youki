@@ -52,12 +52,12 @@
 
 #include "podcast.hh"
 #include "podcast-utils.hh"
-#include "podcast-v2-types.hh"
+#include "podcast-v2-mpx-types.hh"
 
 #include "playbacksource.hh"
 #include "ui-part-base.hh"
 
-#include "minisoup.hh"
+#include "mpx-minisoup.hh"
 
 using namespace Bmp::PodcastV2;
 using namespace Gtk;

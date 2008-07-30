@@ -32,11 +32,11 @@
 #include <boost/format.hpp>
 #include <glibmm.h>
 
-#include "mpx/lyrics.hh"
+#include "mpx/mpx-lyrics.hh"
 
-#include "mpx/uri.hh"
+#include "mpx/mpx-uri.hh"
 #include "mpx/util-string.hh"
-#include "mpx/xml.hh"
+#include "mpx/xml/xml.hh"
 
 using namespace Glib;
 using boost::format;

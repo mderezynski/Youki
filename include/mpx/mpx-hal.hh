@@ -46,7 +46,7 @@
 
 #include <boost/functional/hash.hpp>
 
-#include "sql.hh"
+#include "mpx-sql.hh"
 #include "hal++.hh"
 
 namespace MPX

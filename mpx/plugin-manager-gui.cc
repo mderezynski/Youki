@@ -28,7 +28,7 @@
 #include <boost/format.hpp>
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
-#include "mpx/main.hh"
+#include "mpx/mpx-main.hh"
 
 using namespace Glib;
 using namespace Gtk;

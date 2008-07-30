@@ -49,11 +49,11 @@
 
 #include <mcs/mcs.h>
 
-#include "mpx/audio.hh"
-#include "mpx/main.hh"
-#include "mpx/stock.hh"
+#include "mpx/mpx-audio.hh"
+#include "mpx/mpx-main.hh"
+#include "mpx/mpx-stock.hh"
 #include "mpx/util-string.hh"
-#include "mpx/widgetloader.h"
+#include "mpx/widgets/widgetloader.hh"
 
 #include "preferences.hh"
 

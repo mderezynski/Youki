@@ -23,7 +23,7 @@
 //  MPX is covered by.
 #include "config.h"
 #include "plugin.hh"
-#include "mpx/main.hh"
+#include "mpx/mpx-main.hh"
 #include "mcs/mcs.h"
 
 #define NO_IMPORT
@@ -42,8 +42,8 @@ typedef int Py_ssize_t;
 #include <boost/cstdint.hpp>
 #include <Python.h>
 
-#include "mpx/mpx-public.hh"
-#include "mpx/python.hh"
+#include "mpx/mpx-public-mpx.hh"
+#include "mpx/mpx-python.hh"
 
 using namespace Glib;
 using namespace boost::python;

@@ -4,7 +4,7 @@
 
 #include "mpx/ld.hh"
 #include "mpx/util-graphics.hh"
-#include "mpx/sql.hh"
+#include "mpx/mpx-sql.hh"
 
 #include "component-top-albums.hh"
 

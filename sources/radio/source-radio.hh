@@ -38,7 +38,7 @@
 #include <gtkmm/treeview.h>
 #include <gtkmm/uimanager.h>
 #include <libglademm/xml.h>
-#include "mpx/mpx-public.hh"
+#include "mpx/mpx-public-mpx.hh"
 #include "mpx/i-playbacksource.hh"
 #include "streams-shoutcast.hh"
 #include "streams-icecast.hh"

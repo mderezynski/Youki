@@ -16,7 +16,7 @@
 using namespace TagLib;
 using namespace std;
 
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 // we don't really need it, but just to make sure we won't fuck up declaration/definition 
 #include "common.hh"
 

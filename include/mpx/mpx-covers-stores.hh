@@ -29,7 +29,7 @@
 
 #include <sigx/sigx.h>
 
-#include "mpx/covers.hh"
+#include "mpx/mpx-covers.hh"
 
 namespace MPX
 {

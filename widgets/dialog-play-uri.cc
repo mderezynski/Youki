@@ -34,10 +34,10 @@
 #include <string>
 
 #include "paths.hh"
-#include "stock.hh"
+#include "mpx-stock.hh"
 #include "ui-tools.hh"
 
-#include "dialog-play-uri.hh"
+#include "dialog-play-mpx-uri.hh"
 
 namespace Bmp
 {

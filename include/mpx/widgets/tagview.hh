@@ -5,7 +5,7 @@
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
 #include <boost/shared_ptr.hpp>
-#include "mpx/widgetloader.h"
+#include "mpx/widgets/widgetloader.hh"
 #include <libglademm/xml.h>
 
 using namespace Gnome::Glade;

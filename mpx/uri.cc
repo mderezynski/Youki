@@ -40,7 +40,7 @@
 #include <glibmm.h>
 #include <iostream>
 
-#include "mpx/uri.hh"
+#include "mpx/mpx-uri.hh"
 #include "mpx/util-string.hh"
 
 #define USERINFO_ESCAPE_MASK	0x01

@@ -45,14 +45,6 @@ body {
     padding-right: 3em;
 }
 
-img {
-
-    border-color: #c7c6ca;
-    border-width: 2px;
-    border-style: solid;
-    -webkit-border-radius: 10px;
-}
-
 .SectionHeader {
 
     background-color: #9fa782;
@@ -843,7 +835,7 @@ class TrackInfoQuery (threading.Thread):
         for Entity in Entities_L:
             Output.append("<b>"+getEntityLink(Entity[0],Entity[1],"artist")+"</b>")
 
-        self.html += "...%s %s" % (text, " | ".join(Output))
+        self.html += "...%s %s" % (text, ", ".join(Output))
         return True
 
 class TrackInfo:

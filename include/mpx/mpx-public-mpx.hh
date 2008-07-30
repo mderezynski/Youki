@@ -26,8 +26,8 @@
 #include "config.h"
 #include <gtkmm.h>
 #include <sigx/sigx.h>
-#include "widgetloader.h"
-#include "mpx/paccess.hh"
+#include "widgets/widgetloader.hh"
+#include "mpx/mpx-protected-access.hh"
 #include "mpx/i-playbacksource.hh"
 
 using namespace Gnome::Glade;

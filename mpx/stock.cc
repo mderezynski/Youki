@@ -24,7 +24,7 @@
 #include <gtkmm.h>
 #include <string>
 
-#include "mpx/stock.hh"
+#include "mpx/mpx-stock.hh"
 
 namespace MPX
 {

@@ -23,7 +23,7 @@
 #include <gst/base/gstpushsrc.h>
 #include <stdio.h>
 
-#include "mpx/uri.hh"
+#include "mpx/mpx-uri.hh"
 #include "jnetlib/connection.h"
 #include "jnetlib/httpget.h"
 #include "jnetlib/util.h"

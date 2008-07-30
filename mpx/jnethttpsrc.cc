@@ -27,7 +27,7 @@
 #include "jnetlib/httpget.h"
 #include "jnetlib/util.h"
 #include "jnethttpsrc.h"
-#include "mpx/uri.hh"
+#include "mpx/mpx-uri.hh"
 
 using namespace Glib;
 

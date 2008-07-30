@@ -18,7 +18,7 @@
 #include <apefooter.h>
 
 #include "common/common.hh"
-#include "mpx/types.hh"
+#include "mpx/mpx-types.hh"
 
 using namespace MPX;
 using namespace TagLib;

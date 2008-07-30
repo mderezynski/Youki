@@ -31,8 +31,8 @@
 #include <gtkmm/liststore.h>
 #include <gdkmm/pixbuf.h>
 #include <sigx/sigx.h>
-#include "mpx/paccess.hh"
-#include "mpx/library.hh"
+#include "mpx/mpx-protected-access.hh"
+#include "mpx/mpx-library.hh"
 
 namespace MPX
 {

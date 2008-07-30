@@ -39,7 +39,7 @@
 
 #include "src/util-string.hh"
 #include "src/util-file.hh"
-#include "src/uri.hh"
+#include "src/mpx-uri.hh"
 #include "src/vfs.hh"
 
 using namespace Glib;
