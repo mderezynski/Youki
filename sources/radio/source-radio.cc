@@ -208,14 +208,13 @@ namespace Source
 		m_icecast_list->get_selection()->signal_changed().connect
 		  (sigc::bind (sigc::mem_fun (*this, &Radio::on_selection_changed), dynamic_cast<RadioDirectory::ViewBase*>(m_icecast_list) ) );
 
-		m_ui_manager = Gtk::UIManager::create();
+		m_ui_manager = ui_manager; 
 		m_actions = ActionGroup::create ("Actions_Radio");
 		m_actions->add (Action::create ("MenuUiPartRadio", _("Radio")));
 
 		m_actions->add  (Action::create (RADIO_ACTION_UPDATE_LIST,
 										  Gtk::Stock::REFRESH,
 										  _("Update Icecast List")),
-										  AccelKey("<control>r"),
 										  (sigc::mem_fun (*this, &Radio::on_update_list)));
 
 		Gtk::RadioButtonGroup gr1;

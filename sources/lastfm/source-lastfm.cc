@@ -137,7 +137,7 @@ namespace Source
             sigc::mem_fun( *this, &LastFM::on_url_entry_activated
         ));
 
-        m_ui_manager = Gtk::UIManager::create();
+        m_ui_manager = ui_manager; 
         m_actions = Gtk::ActionGroup::create ("Actions_UiPartLASTFM");
         m_actions->add (Gtk::Action::create ("dummy", "dummy"));
         m_ui_manager->insert_action_group (m_actions);

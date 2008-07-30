@@ -676,6 +676,7 @@ namespace MPX
 
               PlaylistTreeView(
                     Glib::RefPtr<Gnome::Glade::Xml> const& xml,
+                    Glib::RefPtr<Gtk::UIManager>    const& ui_manager,
                     PAccess<MPX::Library>           const& lib,
                     PAccess<MPX::HAL>               const& hal,
                     MPX::Source::PlaybackSourceMusicLib  & mlib
@@ -782,7 +783,8 @@ namespace MPX
                 set_headers_clickable();
                 set_model(ListStore);
 
-                m_UIManager = Gtk::UIManager::create();
+                //m_UIManager = Gtk::UIManager::create();
+                m_UIManager = ui_manager;
                 m_ActionGroup = Gtk::ActionGroup::create ("Actions_UiPartMusicLib-PlaylistList");
 
                 m_ActionGroup->add  (Gtk::Action::create("dummy","dummy"));
@@ -795,6 +797,7 @@ namespace MPX
                 m_ActionGroup->add  (Gtk::Action::create (ACTION_CLEAR,
                                     Gtk::StockID (GTK_STOCK_CLEAR),
                                     _("Clear Playlist")),
+                                    AccelKey("<ctrl>d"),
                                     sigc::mem_fun( *this, &PlaylistTreeView::clear ));
 
                 m_ActionGroup->add  (Gtk::Action::create (ACTION_REMOVE_ITEMS,
@@ -804,6 +807,7 @@ namespace MPX
 
                 m_ActionGroup->add  (Gtk::Action::create (ACTION_REMOVE_REMAINING,
                                 _("Remove remaining Tracks")),
+                                AccelKey("<ctrl>r"),
                                 sigc::mem_fun( *this, &PlaylistTreeView::action_cb_playlist_remove_remaining ));
 
                 m_UIManager->insert_action_group (m_ActionGroup);
@@ -1839,6 +1843,7 @@ namespace MPX
 
               AlbumTreeView(
                     const Glib::RefPtr<Gnome::Glade::Xml>&  xml,    
+                    Glib::RefPtr<Gtk::UIManager>            ui_manager,
                     const PAccess<MPX::Library>&            lib,
                     const PAccess<MPX::Covers>&             amzn,
                     MPX::Source::PlaybackSourceMusicLib&    mlib
@@ -2013,7 +2018,7 @@ namespace MPX
                         &AlbumTreeView::on_filter_entry_changed
                 ));
 
-                m_UIManager = Gtk::UIManager::create();
+                m_UIManager = ui_manager;
 
                 m_ActionGroup = Gtk::ActionGroup::create ("Actions_UiPartMusicLib-AlbumList");
 
@@ -4362,21 +4367,21 @@ namespace MPX
         PlaylistTreeView        *   m_TreeViewPlaylist;
         AlbumTreeView           *   m_TreeViewAlbums;
         LFMTreeView             *   m_TreeViewLFM;
-        AllTracksView       *   m_ViewAllTracks;
+        AllTracksView           *   m_ViewAllTracks;
 
         PAccess<MPX::Library>       m_Lib;
         PAccess<MPX::Covers>        m_Covers;
         PAccess<MPX::HAL>           m_HAL;
 
-        MusicLibPrivate (MPX::Player & player, MPX::Source::PlaybackSourceMusicLib & mlib, Glib::RefPtr<Gnome::Glade::Xml> xml)
+        MusicLibPrivate (MPX::Player & player, MPX::Source::PlaybackSourceMusicLib & mlib, Glib::RefPtr<Gnome::Glade::Xml> xml, Glib::RefPtr<Gtk::UIManager> uiman)
         {
             m_RefXml = xml;
             m_UI = m_RefXml->get_widget("source-musiclib");
             player.get_object(m_Lib);
             player.get_object(m_Covers);
             player.get_object(m_HAL);
-            m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, m_Lib, m_HAL, mlib);
-            m_TreeViewAlbums = new AlbumTreeView(m_RefXml, m_Lib, m_Covers, mlib);
+            m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, uiman, m_Lib, m_HAL, mlib);
+            m_TreeViewAlbums = new AlbumTreeView(m_RefXml, uiman, m_Lib, m_Covers, mlib);
             m_TreeViewLFM = new LFMTreeView(m_RefXml, m_Lib, m_Covers, mlib);
             m_ViewAllTracks = new AllTracksView(m_RefXml, m_Lib, m_HAL, mlib);
         }
@@ -4426,7 +4431,7 @@ namespace Source
         const std::string path (build_filename(DATA_DIR, build_filename("glade","source-musiclib.glade")));
         m_RefXml = Gnome::Glade::Xml::create (path);
 
-        m_Private = new MusicLibPrivate(player,*this,m_RefXml);
+        m_Private = new MusicLibPrivate(player,*this,m_RefXml,ui_manager);
         m_Private->m_TreeViewPlaylist->signal_row_activated().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_row_activated ) );
         m_Private->m_TreeViewPlaylist->signal_query_tooltip().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_query_tooltip ) );
 
