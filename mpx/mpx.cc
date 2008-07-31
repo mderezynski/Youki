@@ -1774,7 +1774,9 @@ namespace MPX
 	{
 	  if( m_ActiveSource ) 
 	  {
-        stop ();
+          track_played();
+          m_Sources[m_ActiveSource.get()]->stop ();
+          m_Sources[m_ActiveSource.get()]->send_caps ();
       }
 
 	  RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);

@@ -155,7 +155,7 @@ namespace MPX
 
         m_cover_anim_conn_fade.disconnect ();
         m_cover_anim_conn_fade = signal_timeout ().connect(
-            sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 20
+            sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 10
         );
     }
   }
@@ -166,7 +166,7 @@ namespace MPX
         m_cover_surface_new.reset();
         m_cover_anim_conn_fade.disconnect ();
         m_cover_anim_conn_fade = signal_timeout ().connect(
-            sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 20
+            sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 10
         );
   }
 }
