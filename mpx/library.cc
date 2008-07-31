@@ -519,38 +519,39 @@ namespace MPX
 		RowV rows;
 		getSQL (rows, "SELECT * FROM track");
 
-		for (RowV::iterator i = rows.begin(); i != rows.end(); ++i)
+		for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
 		{
-		  Row & r = *i;
+            Row & r = *i;
 
-		  std::string uri;
+            std::string uri;
 
 #ifdef HAVE_HAL
-          if (m_Flags & F_USING_HAL)
-          {
-              std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
-              std::string device_udi = get<std::string>(r["hal_device_udi"]); 
-              std::string hal_vrp	 = get<std::string>(r["hal_vrp"]);
+            if( m_Flags & F_USING_HAL )
+            {
+                std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
+                std::string device_udi = get<std::string>(r["hal_device_udi"]); 
+                std::string hal_vrp	 = get<std::string>(r["hal_vrp"]);
 
-              // FIXME: More intelliget scanning by prefetching grouped data from the DB
+                // FIXME: More intelliget scanning by prefetching grouped data from the DB
 
-              HAL::VolumeKey key (volume_udi, device_udi);
-              VolMountPointMap::const_iterator i = m.find(key);
+                HAL::VolumeKey key (volume_udi, device_udi);
+                VolMountPointMap::const_iterator i = m.find(key);
 
-              if(i == m.end())
-              {
-                  try{		
-                      std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
-                      m[key] = mount_point;
-                      uri = filename_to_uri(build_filename(mount_point, hal_vrp));
-                  } catch (...) {
-                      continue; // Not mounted, we're not checking
-                  }
-              }
-              else
-              {
-                  uri = filename_to_uri(build_filename(i->second, hal_vrp));
-              }
+                if(i == m.end())
+                {
+                    try{		
+                        std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
+                        m[key] = mount_point;
+                        uri = filename_to_uri(build_filename(mount_point, hal_vrp));
+                    } catch (...) {
+                        g_message("%s: Couldn't get mount point for track MPX-ID [%lld]", G_STRLOC, get<gint64>(r["id"]));
+                        continue; // Not mounted or HAL error, skip it
+                    }
+                }
+                else
+                {
+                    uri = filename_to_uri(build_filename(i->second, hal_vrp));
+                }
           } 
           else
 #else
@@ -558,8 +559,6 @@ namespace MPX
 		      uri = get<std::string>(r["location"]);
           }
 #endif
-
-          g_message("%s: URI: %s", G_STRLOC, uri.c_str());
 
 		  if (!file_test (filename_from_uri (uri), FILE_TEST_EXISTS))
 		  {
