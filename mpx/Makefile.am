@@ -177,6 +177,9 @@ mpx_bin_SOURCES =				\
 	sidebar.hh					\
 	sidebar.cc					\
 								\
+	source-controller.hh		\
+	source-controller.cc		\
+								\
 	splash-screen.hh			\
 	splash-screen.cc			\
 								\
