@@ -42,7 +42,7 @@ namespace MPX
         cairo->fill();
 
         cairo->set_operator(Cairo::OPERATOR_ATOP);
-        RoundedRectangle(cairo, 0+1,0+1,a.get_width()-2,a.get_height()-2, 4.);
+        RoundedRectangle(cairo, 0+1,0+1,a.get_width()-2,a.get_height()-2, 6.);
         cairo->set_source_rgb(0., 0., 0.);
         cairo->fill();
         

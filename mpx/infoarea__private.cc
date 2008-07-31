@@ -315,15 +315,15 @@ namespace MPX
         }
         cr->save ();
 
-        double wh = 72 * m_cover_alpha;
+        double wh = 72 - (10*m_cover_alpha);
 
         //cr->rotate((2*M_PI)*(1. - m_cover_alpha));
         cr->scale(wh/72., wh/72.);
         Util::draw_cairo_image(
             cr,
             m_cover_surface_cur.get(),
-            (cover_anim_area_x0 + ((72.-wh)/2.))*(1./m_cover_alpha),
-            (cover_anim_area_y0 + ((72.-wh)/2.))*(1./m_cover_alpha),
+            (cover_anim_area_x0 + ((72.-wh)/2.)),
+            (cover_anim_area_y0 + ((72.-wh)/2.)),
             m_cover_alpha/2.
         );
         cr->restore ();
