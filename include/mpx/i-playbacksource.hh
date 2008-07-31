@@ -85,11 +85,12 @@ namespace MPX
       C_CAN_GO_PREV             = 1 << 1,
       C_CAN_PAUSE               = 1 << 2,
       C_CAN_PLAY                = 1 << 3,
-      C_CAN_SEEK                = 1 << 4,
-      C_CAN_RESTORE_CONTEXT     = 1 << 5, 
-      C_CAN_PROVIDE_METADATA    = 1 << 6,
-      C_CAN_BOOKMARK            = 1 << 7,
-      C_PROVIDES_TIMING         = 1 << 8,
+      C_CAN_STOP                = 1 << 4, // this is really only used in the SourceController
+      C_CAN_SEEK                = 1 << 5,
+      C_CAN_RESTORE_CONTEXT     = 1 << 6, 
+      C_CAN_PROVIDE_METADATA    = 1 << 7,
+      C_CAN_BOOKMARK            = 1 << 8,
+      C_PROVIDES_TIMING         = 1 << 9,
     };
 
     class Player;

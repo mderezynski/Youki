@@ -914,17 +914,13 @@ namespace MPX
 		m_actions->get_action (ACTION_STOP)->connect_proxy
 			  (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-stop"))));
 
-		m_actions->get_action (ACTION_PLAY)->set_sensitive( false );
-		m_actions->get_action (ACTION_PAUSE)->set_sensitive( false );
-		m_actions->get_action (ACTION_PREV)->set_sensitive( false );
-		m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
-		m_actions->get_action (ACTION_STOP)->set_sensitive( false );
+        translate_caps(); // sets all actions intially insensitive as we have C_NONE
 
         add_accel_group (m_ui_manager->get_accel_group());
 
-        splash.set_message(_("Loading Sources"), 0.8);
-
 		/*- Load Sources --------------------------------------------------*/ 
+
+        splash.set_message(_("Loading Sources"), 0.8);
 
 		m_Sidebar->signal_id_changed().connect(
             sigc::mem_fun(
@@ -1560,8 +1556,8 @@ namespace MPX
 	  Mutex::Lock L (m_SourceCFLock);
 
       Caps caps = m_source_c[m_ActiveSource.get()];
-      m_Seek->set_sensitive( caps & C_CAN_SEEK );
-	  m_actions->get_action( ACTION_PAUSE )->set_sensitive( caps & C_CAN_PAUSE );
+      set_caps(C_CAN_SEEK, caps & C_CAN_SEEK);
+      set_caps(C_CAN_PAUSE, caps & C_CAN_PAUSE);
 
       PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
       g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
@@ -1583,14 +1579,16 @@ namespace MPX
             if( m_ActiveSource && (m_Play->property_status().get_value() != PLAYSTATUS_STOPPED))
             {
                   track_played ();
+
                   m_Sources[m_ActiveSource.get()]->stop ();
+
                   if( m_ActiveSource != source_id)
                   {
                         m_Play->request_status (PLAYSTATUS_STOPPED);
                   }
             }
 
-	        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
+            del_caps(C_CAN_PAUSE);
 
             PlaybackSource* source = m_Sources[source_id];
             m_PreparingSource = source_id;
@@ -1598,7 +1596,7 @@ namespace MPX
             if( m_source_f[source_id] & F_ASYNC)
             {
                     source->play_async ();
-                    m_actions->get_action( ACTION_STOP )->set_sensitive (true);
+                    set_caps(C_CAN_STOP);
                     return;
             }
             else
@@ -1649,11 +1647,11 @@ namespace MPX
 	  {
 			track_played();
 
-	        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
+            del_caps(C_CAN_PAUSE);
 
 			if( f & F_ASYNC )
 			{
-					m_actions->get_action (ACTION_PREV)->set_sensitive( false );
+                    del_caps(C_CAN_GO_PREV);
 					source->go_prev_async ();
 					return;
 			}
@@ -1682,7 +1680,7 @@ namespace MPX
 			track_played();
 			if( f & F_ASYNC )
 			{
-				m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
+                del_caps(C_CAN_GO_NEXT);
 				source->go_next_async ();
 				return;
 			}
@@ -1742,17 +1740,11 @@ namespace MPX
                     m_Sources[m_ActiveSource.get()]->send_caps ();
                 }
 
-                RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
-
                 g_atomic_int_set(&m_Seeking, 0);
                 m_Seek->set_range(0., 1.);
                 m_Seek->set_value(0.);
-                m_Seek->set_sensitive(false);
 
-                m_actions->get_action (ACTION_STOP)->set_sensitive( false );
-                m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
-                m_actions->get_action (ACTION_PREV)->set_sensitive( false );
-                m_actions->get_action (ACTION_PAUSE)->set_sensitive( false );
+                del_caps(Caps(C_CAN_SEEK | C_CAN_PAUSE | C_CAN_STOP | C_CAN_GO_NEXT | C_CAN_GO_PREV | C_CAN_PAUSE));
 
                 m_VideoWidget->property_playing() = false; 
                 m_VideoWidget->queue_draw();
@@ -1793,7 +1785,7 @@ namespace MPX
 
 		  case PLAYSTATUS_PLAYING:
 		  {
-                m_actions->get_action( ACTION_STOP )->set_sensitive( true );
+                set_caps(C_CAN_STOP);
                 break;
 		  }
 
@@ -2103,5 +2095,34 @@ namespace MPX
     void
     Player::check_py_error ()
     {
+    }
+
+    void
+    Player::del_caps(Caps caps)
+    {
+        m_Caps = Caps(m_Caps & ~caps);
+        translate_caps();
+    }
+
+    void
+    Player::set_caps(Caps caps, bool argument)
+    {
+        if( argument )
+            m_Caps = Caps(m_Caps | caps);
+        else
+            m_Caps = Caps(m_Caps & ~caps);
+
+        translate_caps();
+    }
+
+    void
+    Player::translate_caps ()
+    {
+		m_actions->get_action( ACTION_PLAY )->set_sensitive( m_Caps & C_CAN_PLAY );
+		m_actions->get_action( ACTION_PAUSE )->set_sensitive( m_Caps & C_CAN_PAUSE );
+		m_actions->get_action( ACTION_PREV )->set_sensitive( m_Caps & C_CAN_GO_PREV );
+		m_actions->get_action( ACTION_NEXT )->set_sensitive( m_Caps & C_CAN_GO_NEXT );
+		m_actions->get_action( ACTION_STOP )->set_sensitive( m_Caps & C_CAN_STOP );
+        m_Seek->set_sensitive( m_Caps & C_CAN_SEEK );
     }
 }

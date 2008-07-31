@@ -414,7 +414,6 @@ namespace MPX
 
 
 
-
 		void
 		metadata_reparse ();
 
@@ -427,6 +426,48 @@ namespace MPX
         check_py_error ();
 
 
+        void
+        del_caps(Caps caps);
+    
+        void
+        set_caps(Caps, bool = true);
+
+        void
+        translate_caps ();
+
+      protected:
+
+        virtual bool
+        on_key_press_event (GdkEventKey*);
+
+      private:
+
+    // GIO import stuff
+
+        void
+        on_import_folder();
+
+        void
+        on_import_share();
+
+
+        Glib::RefPtr<Gio::File> m_MountFile;
+        Glib::RefPtr<Gio::MountOperation> m_MountOperation;
+        Glib::ustring m_Share, m_ShareName;
+
+        void
+        mount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
+
+        void
+        unmount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
+
+        void
+        ask_password_cb (const Glib::ustring& message,
+                         const Glib::ustring& default_user,
+                         const Glib::ustring& default_domain,
+                         Gio::AskPasswordFlags flags);
+
+    // mmkeys stuff
 
         enum grab_type
         {
@@ -479,35 +520,6 @@ namespace MPX
 
         bool mm_active;
         sigc::connection mWindowFocusConn;
-
-
-
-        Glib::RefPtr<Gio::File> m_MountFile;
-        Glib::RefPtr<Gio::MountOperation> m_MountOperation;
-        Glib::ustring m_Share, m_ShareName;
-
-        void
-        mount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
-
-        void
-        unmount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
-
-        void
-        ask_password_cb (const Glib::ustring& message,
-                         const Glib::ustring& default_user,
-                         const Glib::ustring& default_domain,
-                         Gio::AskPasswordFlags flags);
-
-        void
-        on_import_folder();
-
-        void
-        on_import_share();
-
-      protected:
-
-        virtual bool
-        on_key_press_event (GdkEventKey*);
     };
 }
 #endif

@@ -56,17 +56,6 @@ using boost::algorithm::is_any_of;
 
 namespace
 {
-  char const ACTION_PLAY [] = "action-play";
-  char const ACTION_STOP [] = "action-stop";
-  char const ACTION_NEXT [] = "action-next";
-  char const ACTION_PREV [] = "action-prev";
-  char const ACTION_PAUSE [] = "action-pause";
-  char const ACTION_PLUGINS [] = "action-plugins";
-  char const ACTION_PREFERENCES[] ="action-preferences";
-  char const ACTION_SHOW_INFO[] = "action-show-info";
-  char const ACTION_SHOW_VIDEO[] = "action-show-video";
-  char const ACTION_SHOW_SOURCES[] = "action-show-sources";
-
   inline bool
   is_module (std::string const& basename)
   {
@@ -301,18 +290,18 @@ namespace MPX
 
 	  if( m_Sidebar->getVisibleId() == source_id )
 	  {
-		m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & C_CAN_PLAY);
+        set_caps(C_CAN_PLAY, caps & C_CAN_PLAY);
 	  }
 
 	  if( m_ActiveSource && source_id == m_ActiveSource.get() )
 	  {
-    		m_actions->get_action (ACTION_PREV)->set_sensitive (caps & C_CAN_GO_PREV);
-	    	m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & C_CAN_GO_NEXT);
+            set_caps(C_CAN_GO_PREV, caps & C_CAN_GO_PREV);
+            set_caps(C_CAN_GO_NEXT, caps & C_CAN_GO_NEXT);
 	  }
       else
       {
-    		m_actions->get_action (ACTION_PREV)->set_sensitive (false);
-	    	m_actions->get_action (ACTION_NEXT)->set_sensitive (false);
+            del_caps(C_CAN_GO_PREV);
+            del_caps(C_CAN_GO_NEXT);
       }
 	}
 
@@ -356,14 +345,14 @@ namespace MPX
           m_Sources[m_ActiveSource.get()]->send_caps ();
       }
 
-	  RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
+      del_caps(C_CAN_PAUSE);
 
 	  PlaybackSource* source = m_Sources[source_id];
       m_PreparingSource = source_id;
 
 	  if( m_source_f[source_id] & F_ASYNC)
 	  {
-			m_actions->get_action( ACTION_STOP )->set_sensitive (true);
+            set_caps(C_CAN_STOP);
 			source->play_async ();
 	  }
 	  else
@@ -414,16 +403,16 @@ namespace MPX
                 && ( m_ActiveSource && m_ActiveSource.get() == source_id ))
             {
                 Caps caps = m_source_c[source_id];
-                m_actions->get_action (ACTION_PREV)->set_sensitive( caps & C_CAN_GO_PREV );
-                m_actions->get_action (ACTION_NEXT)->set_sensitive( caps & C_CAN_GO_NEXT );
+                set_caps(C_CAN_GO_PREV, caps & C_CAN_GO_PREV);
+                set_caps(C_CAN_GO_NEXT, caps & C_CAN_GO_NEXT);
             }
             else
             {
-                m_actions->get_action (ACTION_PREV)->set_sensitive( false ); 
-                m_actions->get_action (ACTION_NEXT)->set_sensitive( false); 
+                del_caps(C_CAN_GO_PREV);
+                del_caps(C_CAN_GO_NEXT);
             }
 
-            m_actions->get_action (ACTION_PLAY)->set_sensitive( caps & C_CAN_PLAY );
+            set_caps(C_CAN_PLAY, caps & C_CAN_PLAY);
         }
 	}
 
