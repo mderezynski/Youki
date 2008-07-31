@@ -65,37 +65,37 @@ namespace MPX
 		}
     };
 
+    enum Flags
+    {
+      F_NONE                    = 0,
+      F_ASYNC                   = 1 << 0,
+      F_HANDLE_STREAMINFO       = 1 << 1,
+      F_PHONY_NEXT              = 1 << 2,
+      F_PHONY_PREV              = 1 << 3,
+      F_HANDLE_LASTFM           = 1 << 5,
+      F_HANDLE_LASTFM_ACTIONS   = 1 << 6,
+      F_USES_REPEAT             = 1 << 7,
+      F_USES_SHUFFLE            = 1 << 8,
+    };
+
+    enum Caps
+    {
+      C_NONE                    = 0,
+      C_CAN_GO_NEXT             = 1 << 0,
+      C_CAN_GO_PREV             = 1 << 1,
+      C_CAN_PAUSE               = 1 << 2,
+      C_CAN_PLAY                = 1 << 3,
+      C_CAN_SEEK                = 1 << 4,
+      C_CAN_RESTORE_CONTEXT     = 1 << 5, 
+      C_CAN_PROVIDE_METADATA    = 1 << 6,
+      C_CAN_BOOKMARK            = 1 << 7,
+      C_PROVIDES_TIMING         = 1 << 8,
+    };
+
     class Player;
     class PlaybackSource
     {
         public:
-
-            enum Flags
-            {
-              F_NONE                    = 0,
-              F_ASYNC                   = 1 << 0,
-              F_HANDLE_STREAMINFO       = 1 << 1,
-              F_PHONY_NEXT              = 1 << 2,
-              F_PHONY_PREV              = 1 << 3,
-              F_HANDLE_LASTFM           = 1 << 5,
-              F_HANDLE_LASTFM_ACTIONS   = 1 << 6,
-              F_USES_REPEAT             = 1 << 7,
-              F_USES_SHUFFLE            = 1 << 8,
-            };
-
-            enum Caps
-            {
-              C_NONE                    = 0,
-              C_CAN_GO_NEXT             = 1 << 0,
-              C_CAN_GO_PREV             = 1 << 1,
-              C_CAN_PAUSE               = 1 << 2,
-              C_CAN_PLAY                = 1 << 3,
-              C_CAN_SEEK                = 1 << 4,
-              C_CAN_RESTORE_CONTEXT     = 1 << 5, 
-              C_CAN_PROVIDE_METADATA    = 1 << 6,
-              C_CAN_BOOKMARK            = 1 << 7,
-              C_PROVIDES_TIMING         = 1 << 8,
-            };
 
             typedef sigc::signal<void, Caps>                    SignalCaps;
             typedef sigc::signal<void, Flags>                   SignalFlags;
@@ -291,11 +291,11 @@ namespace MPX
 
     }; // end class PlaybackSource 
 
-    inline PlaybackSource::Caps operator|(PlaybackSource::Caps lhs, PlaybackSource::Caps rhs)
-      { return static_cast<PlaybackSource::Caps>(static_cast<unsigned>(lhs) | static_cast<unsigned>(rhs)); }
+    inline Caps operator|(Caps lhs, Caps rhs)
+      { return static_cast<Caps>(static_cast<unsigned>(lhs) | static_cast<unsigned>(rhs)); }
 
-    inline PlaybackSource::Flags operator|(PlaybackSource::Flags lhs, PlaybackSource::Flags rhs)
-      { return static_cast<PlaybackSource::Flags>(static_cast<unsigned>(lhs) | static_cast<unsigned>(rhs)); }
+    inline Flags operator|(Flags lhs, Flags rhs)
+      { return static_cast<Flags>(static_cast<unsigned>(lhs) | static_cast<unsigned>(rhs)); }
 
 } // end namespace MPX 
   

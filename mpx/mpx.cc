@@ -559,6 +559,7 @@ namespace MPX
     , sigx::glib_auto_dispatchable()
     , m_ref_xml(xml)
     , m_startup_complete(false)
+    , m_Caps(C_NONE)
 	, m_NextSourceId(0)
 	, m_SourceUI(0)
     , m_Covers(obj_amazon)
@@ -1558,9 +1559,9 @@ namespace MPX
 
 	  Mutex::Lock L (m_SourceCFLock);
 
-      PlaybackSource::Caps caps = m_source_c[m_ActiveSource.get()];
-      m_Seek->set_sensitive( caps & PlaybackSource::C_CAN_SEEK );
-	  m_actions->get_action( ACTION_PAUSE )->set_sensitive( caps & PlaybackSource::C_CAN_PAUSE );
+      Caps caps = m_source_c[m_ActiveSource.get()];
+      m_Seek->set_sensitive( caps & C_CAN_SEEK );
+	  m_actions->get_action( ACTION_PAUSE )->set_sensitive( caps & C_CAN_PAUSE );
 
       PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
       g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
@@ -1575,9 +1576,9 @@ namespace MPX
 
       if( m_Sources.count(source_id) ) 
       {
-          PlaybackSource::Caps c = m_source_c[source_id];
+          Caps c = m_source_c[source_id];
 
-          if( c & PlaybackSource::C_CAN_PLAY )
+          if( c & C_CAN_PLAY )
           {
             if( m_ActiveSource && (m_Play->property_status().get_value() != PLAYSTATUS_STOPPED))
             {
@@ -1594,7 +1595,7 @@ namespace MPX
             PlaybackSource* source = m_Sources[source_id];
             m_PreparingSource = source_id;
             
-            if( m_source_f[source_id] & PlaybackSource::F_ASYNC)
+            if( m_source_f[source_id] & F_ASYNC)
             {
                     source->play_async ();
                     m_actions->get_action( ACTION_STOP )->set_sensitive (true);
@@ -1620,9 +1621,9 @@ namespace MPX
 	{
         g_return_if_fail(m_ActiveSource);
 
-        PlaybackSource::Caps c = m_source_c[m_ActiveSource.get()];
+        Caps c = m_source_c[m_ActiveSource.get()];
 
-        if(c & PlaybackSource::C_CAN_PAUSE )
+        if(c & C_CAN_PAUSE )
         {
             if( m_Play->property_status() == PLAYSTATUS_PAUSED)
             {
@@ -1641,16 +1642,16 @@ namespace MPX
 	  ItemKey const& source_id = m_ActiveSource.get(); 
 
 	  PlaybackSource*           source = m_Sources[source_id];
-	  PlaybackSource::Flags          f = m_source_f[source_id];
-	  PlaybackSource::Caps           c = m_source_c[source_id];
+	  Flags          f = m_source_f[source_id];
+	  Caps           c = m_source_c[source_id];
 
-	  if( c & PlaybackSource::C_CAN_GO_PREV )
+	  if( c & C_CAN_GO_PREV )
 	  {
 			track_played();
 
 	        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
-			if( f & PlaybackSource::F_ASYNC )
+			if( f & F_ASYNC )
 			{
 					m_actions->get_action (ACTION_PREV)->set_sensitive( false );
 					source->go_prev_async ();
@@ -1672,14 +1673,14 @@ namespace MPX
 	{
 	  ItemKey const& source_id = m_ActiveSource.get(); 
 
-	  PlaybackSource           *source = m_Sources[source_id];
-	  PlaybackSource::Flags     f      = m_source_f[source_id];
-	  PlaybackSource::Caps      c      = m_source_c[source_id];
+	  PlaybackSource *source = m_Sources[source_id];
+	  Flags           f      = m_source_f[source_id];
+	  Caps            c      = m_source_c[source_id];
 
-	  if( c & PlaybackSource::C_CAN_GO_NEXT )
+	  if( c & C_CAN_GO_NEXT )
 	  {
 			track_played();
-			if( f & PlaybackSource::F_ASYNC )
+			if( f & F_ASYNC )
 			{
 				m_actions->get_action (ACTION_NEXT)->set_sensitive( false );
 				source->go_next_async ();

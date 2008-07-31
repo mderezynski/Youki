@@ -201,8 +201,9 @@ namespace MPX
 		typedef std::map<ItemKey, PlaybackSource*>       SourcesMap;
 		typedef std::map<std::string, ItemKey>           UriSchemeMap;
         typedef std::map<Gtk::Widget*, Gtk::Widget*>     WidgetWidgetMap;
-        typedef std::map<ItemKey, PlaybackSource::Flags> FlagsMap_t;
-        typedef std::map<ItemKey, PlaybackSource::Caps>  CapsMap_t;
+        typedef std::map<ItemKey, Flags> FlagsMap_t;
+        typedef std::map<ItemKey, Caps>  CapsMap_t;
+        typedef Caps                     EffectiveCaps;
 
         Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
         Glib::RefPtr<Gtk::ActionGroup>  m_actions;
@@ -216,17 +217,18 @@ namespace MPX
             DBusTrackList   *tracklist;
 		};
 
-		DBusObjectsT      DBusObjects;
-		DBusGConnection * m_SessionBus;
-        bool              m_startup_complete;
+		DBusObjectsT                DBusObjects;
+		DBusGConnection           * m_SessionBus;
+        bool                        m_startup_complete;
 
-		int     m_Seeking;
-		gdouble m_TrackPlayedSeconds;
-		gdouble m_PreSeekPosition;
-		gdouble m_TrackDuration;
+		int                         m_Seeking;
+		gdouble                     m_TrackPlayedSeconds;
+		gdouble                     m_PreSeekPosition;
+		gdouble                     m_TrackDuration;
 
     // source related stuff
 
+        EffectiveCaps               m_Caps;
         gint64                      m_NextSourceId;
         boost::optional<ItemKey>    m_ActiveSource;
         boost::optional<ItemKey>    m_PreparingSource;
@@ -353,10 +355,10 @@ namespace MPX
 		on_source_changed (ItemKey const&);
 
 		void
-		on_source_caps (PlaybackSource::Caps, ItemKey const&);
+		on_source_caps (Caps, ItemKey const&);
 
 		void
-		on_source_flags (PlaybackSource::Flags, ItemKey const&);
+		on_source_flags (Flags, ItemKey const&);
 
 		void
 		on_source_track_metadata (Metadata const&, ItemKey const&);

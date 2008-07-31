@@ -313,16 +313,23 @@ namespace MPX
           Util::draw_cairo_image (cr, m_cover_surface_new.get(), m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), 1.);
           cr->restore ();
         }
+
         cr->save ();
 
-        double wh = 72 - (10*m_cover_alpha);
+        double wh = 72 - (15*m_cover_alpha);
+
+        cr->save ();
+        cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
+                       cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
+                                                           cover_anim_area_height+(m_pressed?1:0));
+        cr->clip ();
 
         //cr->rotate((2*M_PI)*(1. - m_cover_alpha));
         cr->scale(wh/72., wh/72.);
         Util::draw_cairo_image(
             cr,
             m_cover_surface_cur.get(),
-            (cover_anim_area_x0 + ((72.-wh)/2.)),
+            (cover_anim_area_x0 + ((72.-wh)/2.)) + pow((1./m_cover_alpha),9),
             (cover_anim_area_y0 + ((72.-wh)/2.)),
             m_cover_alpha/2.
         );

@@ -293,7 +293,7 @@ namespace MPX
     }
 
 	void
-	Player::on_source_caps (PlaybackSource::Caps caps, ItemKey const& source_id)
+	Player::on_source_caps (Caps caps, ItemKey const& source_id)
 	{
 	  Mutex::Lock L (m_SourceCFLock);
 
@@ -301,13 +301,13 @@ namespace MPX
 
 	  if( m_Sidebar->getVisibleId() == source_id )
 	  {
-		m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & PlaybackSource::C_CAN_PLAY);
+		m_actions->get_action (ACTION_PLAY)->set_sensitive (caps & C_CAN_PLAY);
 	  }
 
 	  if( m_ActiveSource && source_id == m_ActiveSource.get() )
 	  {
-    		m_actions->get_action (ACTION_PREV)->set_sensitive (caps & PlaybackSource::C_CAN_GO_PREV);
-	    	m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & PlaybackSource::C_CAN_GO_NEXT);
+    		m_actions->get_action (ACTION_PREV)->set_sensitive (caps & C_CAN_GO_PREV);
+	    	m_actions->get_action (ACTION_NEXT)->set_sensitive (caps & C_CAN_GO_NEXT);
 	  }
       else
       {
@@ -317,7 +317,7 @@ namespace MPX
 	}
 
 	void
-	Player::on_source_flags (PlaybackSource::Flags flags, ItemKey const& source_id)
+	Player::on_source_flags (Flags flags, ItemKey const& source_id)
 	{
 	  Mutex::Lock L (m_SourceCFLock);
 	  m_source_f[source_id] = flags;
@@ -361,7 +361,7 @@ namespace MPX
 	  PlaybackSource* source = m_Sources[source_id];
       m_PreparingSource = source_id;
 
-	  if( m_source_f[source_id] & PlaybackSource::F_ASYNC)
+	  if( m_source_f[source_id] & F_ASYNC)
 	  {
 			m_actions->get_action( ACTION_STOP )->set_sensitive (true);
 			source->play_async ();
@@ -404,7 +404,7 @@ namespace MPX
             m_ui_manager->remove_ui(m_SourceUI);
         }
 
-        PlaybackSource::Caps caps = m_source_c[source_id];
+        Caps caps = m_source_c[source_id];
 
         if( m_Sources.count(source_id) ) 
         {
@@ -413,9 +413,9 @@ namespace MPX
             if( (m_Play->property_status() == PLAYSTATUS_PLAYING)
                 && ( m_ActiveSource && m_ActiveSource.get() == source_id ))
             {
-                PlaybackSource::Caps caps = m_source_c[source_id];
-                m_actions->get_action (ACTION_PREV)->set_sensitive( caps & PlaybackSource::C_CAN_GO_PREV );
-                m_actions->get_action (ACTION_NEXT)->set_sensitive( caps & PlaybackSource::C_CAN_GO_NEXT );
+                Caps caps = m_source_c[source_id];
+                m_actions->get_action (ACTION_PREV)->set_sensitive( caps & C_CAN_GO_PREV );
+                m_actions->get_action (ACTION_NEXT)->set_sensitive( caps & C_CAN_GO_NEXT );
             }
             else
             {
@@ -423,7 +423,7 @@ namespace MPX
                 m_actions->get_action (ACTION_NEXT)->set_sensitive( false); 
             }
 
-            m_actions->get_action (ACTION_PLAY)->set_sensitive( caps & PlaybackSource::C_CAN_PLAY );
+            m_actions->get_action (ACTION_PLAY)->set_sensitive( caps & C_CAN_PLAY );
         }
 	}
 
@@ -442,9 +442,9 @@ namespace MPX
 	Player::next_async_cb (ItemKey const& source_id)
 	{
 	  PlaybackSource* source = m_Sources[source_id];
-	  PlaybackSource::Flags f = m_source_f[source_id];
+	  Flags f = m_source_f[source_id];
 
-	  if( (f & PlaybackSource::F_PHONY_NEXT) == 0 )
+	  if( (f & F_PHONY_NEXT) == 0 )
 	  {
             m_PlayDirection = PD_NEXT;
 			switch_stream (source->get_uri(), source->get_type());
@@ -455,9 +455,9 @@ namespace MPX
 	Player::prev_async_cb (ItemKey const& source_id)
 	{
 	  PlaybackSource* source = m_Sources[source_id];
-	  PlaybackSource::Flags f = m_source_f[source_id];
+	  Flags f = m_source_f[source_id];
 
-	  if( (f & PlaybackSource::F_PHONY_PREV) == 0 )
+	  if( (f & F_PHONY_PREV) == 0 )
 	  {
             m_PlayDirection = PD_PREV;
 			switch_stream (source->get_uri(), source->get_type());

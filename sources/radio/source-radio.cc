@@ -262,9 +262,9 @@ namespace Source
 		p->set_filter (m_filter_entry->get_text());
 
 		if( p->get_selection ()->count_selected_rows() ) 
-			  m_Caps = Caps (m_Caps |  PlaybackSource::C_CAN_PLAY);
+			  m_Caps = Caps (m_Caps |  C_CAN_PLAY);
 		else
-			  m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_PLAY);
+			  m_Caps = Caps (m_Caps & ~C_CAN_PLAY);
 		Signals.Caps.emit (m_Caps);
     }
 
@@ -297,9 +297,9 @@ namespace Source
     Radio::on_selection_changed (RadioDirectory::ViewBase * view)
     {
 		if( view->get_selection ()->count_selected_rows() == 1 )
-			  m_Caps = Caps (m_Caps |  PlaybackSource::C_CAN_PLAY);
+			  m_Caps = Caps (m_Caps |  C_CAN_PLAY);
 		else
-			  m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_PLAY);
+			  m_Caps = Caps (m_Caps & ~C_CAN_PLAY);
 		Signals.Caps.emit (m_Caps);
     }
 
@@ -343,12 +343,12 @@ namespace Source
     {
 		if ( !m_shoutcast_list->get_selection()->count_selected_rows() && !m_icecast_list->get_selection()->count_selected_rows())
 		{
-		  m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_PLAY);
+		  m_Caps = Caps (m_Caps & ~C_CAN_PLAY);
 		}
 
 		m_current_uri = ustring();
 		m_current_name = ustring();
-		m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_PAUSE);
+		m_Caps = Caps (m_Caps & ~C_CAN_PAUSE);
 		Signals.Caps.emit (m_Caps);
     }
 
@@ -401,7 +401,7 @@ namespace Source
     Radio::play_post ()
     {
 		send_metadata ();
-		m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_PAUSE);
+		m_Caps = Caps (m_Caps | C_CAN_PAUSE);
 		send_caps ();
     }
 

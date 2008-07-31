@@ -272,7 +272,7 @@ namespace Source
 
         if( m_PlaylistIter == m_Playlist.get().Items.end() )
         {
-            m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_GO_NEXT);
+            m_Caps = Caps (m_Caps & ~C_CAN_GO_NEXT);
             send_caps();
             m_LastFMRadio.get_xspf_playlist ();
         } 
@@ -316,7 +316,7 @@ namespace Source
     void
     LastFM::stop ()
     {
-        m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_GO_NEXT);
+        m_Caps = Caps (m_Caps & ~C_CAN_GO_NEXT);
         send_caps();
         m_LastFMRadio.get_xspf_playlist_cancel();
         PAccess<MPX::Play> pa;
@@ -370,9 +370,9 @@ namespace Source
         m_track_cover_req->run();
 
         if( m_PlaylistIter != m_Playlist.get().Items.end() )
-          m_Caps = Caps (m_Caps | PlaybackSource::C_CAN_GO_NEXT);
+          m_Caps = Caps (m_Caps | C_CAN_GO_NEXT);
         else
-          m_Caps = Caps (m_Caps & ~PlaybackSource::C_CAN_GO_NEXT);
+          m_Caps = Caps (m_Caps & ~C_CAN_GO_NEXT);
     }
 
     void
