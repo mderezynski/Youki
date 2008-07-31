@@ -24,8 +24,11 @@ libmpx_widgets_la_SOURCES = 			\
 		cell-renderer-vbox.cc			\
 		dialog-simple-entry.cc			\
 		gossip-cell-renderer-expander.c	\
+		rounded-layout.cc				\
 		taskdialog.cc					\
+		tagview.cc						\
 		timed-confirmation.cc			\
+		treeview-popup.cc				\
 	    widget-marshalers.c   			
 
 widget-marshalers.c: widget-marshalers.list 

@@ -92,8 +92,5 @@ libmpx_api_la_SOURCES = 							\
 		playlistparser-xspf.cc						\
 		playlistparser-pls.cc						\
 													\
-		tagview.cc									\
-		treeview-popup.cc							\
-													\
 		xml.cc										\
 		xpath.cc									

@@ -55,6 +55,7 @@
 #include "mpx/widgets/cell-renderer-vbox.hh"
 #include "mpx/widgets/gossip-cell-renderer-expander.h"
 #include "mpx/widgets/timed-confirmation.hh"
+#include "mpx/widgets/rounded-layout.hh"
 
 #include "glib-marshalers.h"
 #include "musiclib-py.hh"
@@ -1844,7 +1845,7 @@ namespace MPX
              // widgets
 
               Gtk::Entry*                           m_FilterEntry;
-              Gtk::Label*                           m_LabelShowing;
+              RoundedLayout*                        m_LabelShowing;
 
             public:
 
@@ -1881,7 +1882,7 @@ namespace MPX
 
                 m_Covers.get().signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
 
-                xml->get_widget("label-showing", m_LabelShowing);
+                m_LabelShowing = new RoundedLayout(xml, "da-showing");
 
                 set_show_expanders( false );
                 set_level_indentation( 32 );
@@ -2905,7 +2906,7 @@ namespace MPX
               {
                     TreeNodeChildren::size_type n1 = TreeStoreFilter->children().size();
                     TreeNodeChildren::size_type n2 = TreeStore->children().size();
-                    m_LabelShowing->set_text ((boost::format (_("showing %lld of %lld albums")) % n1 % n2).str());
+                    m_LabelShowing->set_text ((boost::format (_("%lld of %lld")) % n1 % n2).str());
               }
 
               void
