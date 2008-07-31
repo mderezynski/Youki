@@ -28,6 +28,7 @@
 #include "config.h"
 #include "mpx/mpx-minisoup.hh"
 
+#include <boost/shared_ptr.hpp>
 #include <string>
 #include <map>
 #include <set>
@@ -52,6 +53,12 @@ namespace MPX
     N_COVER_SIZES
   };
 
+  typedef std::map <std::string, int> RequestKeeperT;
+  typedef std::map <std::string, Glib::RefPtr<Gdk::Pixbuf> > MPixbufCache;
+  typedef std::map <std::string, Cairo::RefPtr<Cairo::ImageSurface> > MSurfaceCache;
+  typedef boost::shared_ptr<CoverStore> StoreP;
+  typedef std::vector <StoreP> StoresT;
+
   struct CoverFetchData
   {
       Soup::RequestRefP request;
@@ -61,14 +68,15 @@ namespace MPX
       std::string artist;
       std::string album;
       int n;
-      bool amapi;
+      StoresT m_req_stores;
 
       CoverFetchData(
             const std::string& asin_    = std::string(),
             const std::string& mbid_    = std::string(),
             const std::string& uri_     = std::string(),
             const std::string& artist_  = std::string(),
-            const std::string& album_   = std::string()
+            const std::string& album_   = std::string(), 
+            StoresT            stores   = StoresT()
       )
       : asin(asin_)
       , mbid(mbid_)
@@ -76,7 +84,7 @@ namespace MPX
       , artist(artist_)
       , album(album_)
       , n(0)
-      , amapi(false)
+      , m_req_stores(stores) // we COPY intentionally
       {
       }
   };
@@ -145,10 +153,6 @@ namespace MPX
 	  get_thumb_path (std::string /*mbid*/);
 
     private:
-	  typedef std::map <std::string, int> RequestKeeperT;
-	  typedef std::map <std::string, Glib::RefPtr<Gdk::Pixbuf> > MPixbufCache;
-	  typedef std::map <std::string, Cairo::RefPtr<Cairo::ImageSurface> > MSurfaceCache;
-      typedef std::vector <CoverStore*> StoresT;
 
       void
       store_not_found_cb (CoverFetchData*);

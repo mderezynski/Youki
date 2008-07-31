@@ -108,15 +108,10 @@ namespace MPX
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", NULL));
         g_mkdir(path.get(), 0700);
 
-        LocalCovers*       local_store = new LocalCovers(*this);
-        MusicBrainzCovers* mb_store    = new MusicBrainzCovers(*this);
-        AmazonCovers*      amzn_store  = new AmazonCovers(*this);
-        AmapiCovers*       amapi_store = new AmapiCovers(*this);
-
-        m_all_stores.push_back(local_store);
-        m_all_stores.push_back(mb_store);
-        m_all_stores.push_back(amzn_store);
-        m_all_stores.push_back(amapi_store);
+        m_all_stores.push_back(StoreP(new LocalCovers(*this)));
+        m_all_stores.push_back(StoreP(new MusicBrainzCovers(*this)));
+        m_all_stores.push_back(StoreP(new AmazonCovers(*this)));
+        m_all_stores.push_back(StoreP(new AmapiCovers(*this)));
 
         for( size_t i = 0; i < m_all_stores.size(); i++ )
         {
@@ -137,7 +132,7 @@ namespace MPX
     void
     Covers::rebuild_stores()
     {
-        m_current_stores = StoresT (4, (CoverStore*)(0));
+        m_current_stores = StoresT (4, StoreP());
 
         int at0 = mcs->key_get<int>("Preferences-CoverArtSources", "Source0");
         int at1 = mcs->key_get<int>("Preferences-CoverArtSources", "Source1");
@@ -160,25 +155,15 @@ namespace MPX
     {
         if( g_atomic_int_get(&m_rebuilt) )
         {
-            if(m_current_stores.size())
-            {
-                CoverStore * store = m_current_stores[0]; // to avoid race conditions
-                if( store )
-                {
-                    RequestKeeper[data->mbid] = 0;
-                    store->load_artwork(data);
-                }
-            }
-
             return;
         }
 
         int i = RequestKeeper[data->mbid];
         i++;
 
-        if(i < m_current_stores.size())
+        if(i < data->m_req_stores.size())
         {
-            CoverStore * store = m_current_stores[0]; // to avoid race conditions
+            StoreP store = data->m_req_stores[i]; // to avoid race conditions
             if( store )
             {
                 RequestKeeper[data->mbid] = i;
@@ -249,7 +234,7 @@ namespace MPX
             if(m_current_stores.size())
             {
                 RequestKeeper[mbid] = 0;
-                m_current_stores[0]->load_artwork(new CoverFetchData(asin, mbid, uri, artist, album));
+                m_current_stores[0]->load_artwork(new CoverFetchData(asin, mbid, uri, artist, album, m_current_stores));
             }
         }
     }
