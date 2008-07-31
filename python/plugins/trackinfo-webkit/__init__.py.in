@@ -39,10 +39,40 @@ from gettext import gettext as _
 
 CSS = '''
 body {
+    padding-top: 1.5em;
+    padding-bottom: 1.5em;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
     color: #404040;
     background-color: #000000;
     padding-left: 3em;
     padding-right: 3em;
+}
+
+.SectionHeaderSmall {
+
+    background-color: #9fa782;
+    border-color: #9fa782;
+    border-width: 4px;
+    border-style: solid;
+    color: white;
+    font-weight: bold;
+    height: 2em;
+    line-height: 2em;
+    padding-left: 0.5em;
+    -webkit-border-top-left-radius: 10px;
+    -webkit-border-top-right-radius: 10px;
+}
+
+.SectionContentSmall {
+    -webkit-border-bottom-left-radius: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+    border-color: #dfdfdf;
+    border-width: 2px;
+    border-style: solid;
+    padding: 0.5em;
+    margin-bottom: 1.5em;
+    background-color: #dfdfdf;
 }
 
 .SectionHeader {
@@ -56,9 +86,7 @@ body {
     font-weight: bold;
     height: 2em;
     line-height: 2em;
-    margin-top: 1.5em;
     padding-left: 0.5em;
-    margin-bottom: 0; 
     -webkit-border-top-left-radius: 10px;
     -webkit-border-top-right-radius: 10px;
 }
@@ -70,18 +98,41 @@ body {
     border-width: 2px;
     border-style: solid;
     padding: 0.5em;
+    margin-bottom: 1.5em;
     background-color: #dfdfdf;
+    font-size: 115%;
 }
 
 .InfoBadge {
-    background-color: #e00500;
-    border-color: #e00500;
+    background-color: #bd975c;
+    border-color: #bd975c;
     border-style: solid;
     border-width: 2px;
     color: white;
     font-weight: bold;
-    padding: 0.3em;
-    -webkit-border-radius: 10px;
+    padding: 0.4em;
+    margin: 0;
+    -webkit-border-top-left-radius: 10px;
+    -webkit-border-top-right-radius: 10px;
+    text-align: center;
+}
+
+.InfoBadgeContent {
+    -webkit-border-bottom-left-radius: 10px;
+    -webkit-border-bottom-right-radius: 10px;
+    background-color: #404040;
+    border-color: #404040;
+    border-style: solid;
+    border-width: 2px;
+    color: white;
+    font-weight: bold;
+    padding: 0.4em;
+    margin: 0;
+    line-height: 120%;
+}
+
+.SidebarSimilarArtist {
+    border-bottom: 1x solid #404040;
 }
 
 a {
@@ -116,6 +167,10 @@ a:hover {
 
 tmpl_section_header = '''
 <div class='SectionHeader'>${header}</div>
+'''
+
+tmpl_section_header_small = '''
+<div class='SectionHeaderSmall'>${header}</div>
 '''
 
 class WebToolbar(gtk.Toolbar):
@@ -515,16 +570,9 @@ class ArtistInfoQuery (threading.Thread):
                 value = re1.sub("",value)
                 value = re2.sub("",value)
 
-                self.html += value 
                 if len(value) > 0:
+                    self.html += value 
                     self.html += "<a href='%s'>(%s)</a>" % (artist_info["wikiPageUrl"], _("more"))
-
-                if artist_info["similar"] and len(artist_info["similar"]):
-                        e = []
-                        for a in artist_info["similar"]:
-                            e.append(getEntityLink(a, "", "artist"))
-
-                self.html += "<p><b>%s</b>: %s</p>" % (_("Similar Artists"), ", ".join(e))
 
                 self.html += "</td></tr></table>"
                 self.html += "</div>"
@@ -558,7 +606,8 @@ class TrackInfoQuery (threading.Thread):
         threading.Thread.__init__(self)
         self.finished = threading.Event()
         self.track = track
-        self.html = "<html><head><style type='text/css'>" + CSS + "</style></head><body>"
+        self.html = ""
+        self.sidebar = ""
 
     def is_done(self):
 
@@ -576,6 +625,7 @@ class TrackInfoQuery (threading.Thread):
     def run (self):
 
         try:
+            self.html += "<html><head><style type='text/css'>" + CSS + "</style></head><body>"
             self.APPEND_ArtistInfo()
             self.APPEND_Lyrics()
             self.APPEND_MBData()
@@ -586,30 +636,31 @@ class TrackInfoQuery (threading.Thread):
 
     def APPEND_ArtistInfo(self):
 
-        artist_info = getLastFMArtistInfo(self.track[mpx.AttributeId.ARTIST].get())
+        self.artist_info = getLastFMArtistInfo(self.track[mpx.AttributeId.ARTIST].get())
+
         self.html += Template(tmpl_section_header).render(header=_('About %s') % self.track[mpx.AttributeId.ARTIST].get())
-
         self.html += "<div class='SectionContent'>"
-        self.html += "<table><tr valign='top'><td valign='top'>"
-        self.html += "<img src='%s'/>" % artist_info["picture"]
+        self.html += "<table style='width: 100%'><tr valign='top'><td valign='top'>"
+        self.html += "<img src='%s'/>" % self.artist_info["picture"]
         self.html += "</td><td>"
-
-        value = artist_info["wikiText"]
+        value = self.artist_info["wikiText"]
         re1 = re.compile("(\\[[^\\]]+\\])")
         re2 = re.compile("(\\[\\/[^\\]]+\\])")
         value = re1.sub("",value)
         value = re2.sub("",value)
-
-        self.html += value 
         if len(value) > 0:
-            self.html += "<a href='%s'>(%s)</a>" % (artist_info["wikiPageUrl"], _("more"))
+            self.html += "<span style='font-size: 115%'>" + value + "</span>"
+            self.html += "<a href='%s'>(%s)</a>" % (self.artist_info["wikiPageUrl"], _("more"))
+        self.html += "</td><td style='width: 20%'>"
 
-        if artist_info["similar"] and len(artist_info["similar"]):
-                e = []
-                for a in artist_info["similar"]:
-                    e.append(getEntityLink(a, "", "artist"))
-
-        self.html += "<p><b>%s</b>: %s</p>" % (_("Similar Artists"), ", ".join(e))
+        self.html += "<table style='width: 100%' cellspacing=0 cellpadding=0>"
+        self.html += "<tr><td class='InfoBadge'><span style='width: 100%'>Similar Artists</span></td></tr>"
+        self.html += "<tr><td class='InfoBadgeContent'>"
+        if self.artist_info["similar"] and len(self.artist_info["similar"]):
+            for artist in self.artist_info["similar"]:
+                self.html += getEntityLink(artist, "", "artist")
+                self.html += "<br/>"
+        self.html += "</td></tr></table>"
 
         self.html += "</td></tr></table>"
         self.html += "</div>"

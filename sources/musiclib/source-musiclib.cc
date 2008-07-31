@@ -1830,9 +1830,16 @@ namespace MPX
               Gtk::TreePath                         m_PathButtonPress;
 
             // state variables
-    
+   
+              enum AState
+              {
+                ALBUMS_STATE_NO_FLAGS                =   0,
+                ALBUMS_STATE_SHOW_NEW                =   1 << 0,
+                ALBUMS_STATE_IGNORE_SINGLE_TRACKS    =   1 << 1
+              };
+ 
               bool                                  m_ButtonPressed;
-              bool                                  m_ShowNew;
+              int                                   m_State;
 
              // widgets
 
@@ -1853,7 +1860,7 @@ namespace MPX
               , m_Covers(amzn)
               , m_MLib(mlib)
               , m_ButtonPressed(false)
-              , m_ShowNew(false)
+              , m_State(ALBUMS_STATE_NO_FLAGS)
               {
                 for(int n = 0; n < N_STARS; ++n)
                 {
@@ -2877,21 +2884,20 @@ namespace MPX
               {
                   AlbumRowType rt = (*iter)[AlbumColumns.RowType];
 
-                  if( m_ShowNew && rt == ROW_ALBUM ) 
+                  if( (m_State & ALBUMS_STATE_SHOW_NEW) && rt == ROW_ALBUM ) 
                   {
                     bool visible = (*iter)[AlbumColumns.NewAlbum];
                     if( !visible ) 
                         return false;
                   } 
 
-                  ustring filter (ustring (m_FilterEntry->get_text()).lowercase());
-
-                  TreePath path (TreeStore->get_path(iter));
+                  ustring filter = m_FilterEntry->get_text().lowercase();
+                  TreePath path = TreeStore->get_path(iter);
 
                   if( filter.empty() || path.get_depth() > 1)
                     return true;
-                  else
-                    return (Util::match_keys (ustring((*iter)[AlbumColumns.Text]).lowercase(), filter)); 
+
+                  return (Util::match_keys (ustring((*iter)[AlbumColumns.Text]).lowercase(), filter)); 
               }
     
               void
@@ -2927,12 +2933,14 @@ namespace MPX
               }
 
               void
-              set_new_albums_state (int state)
+              set_new_albums_state (bool state)
               {
-                 m_ShowNew = state;
-                 TreeStoreFilter->refilter();
+                if(state)
+                     m_State |= ALBUMS_STATE_SHOW_NEW;
+                else
+                     m_State &= ~ALBUMS_STATE_SHOW_NEW;
+                TreeStoreFilter->refilter();
               }
-
         };
 
         class LFMTreeView
@@ -4442,24 +4450,26 @@ namespace Source
         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
 
         Gtk::RadioButtonGroup gr1;
+
         m_MainActionGroup->add(
             RadioAction::create( gr1, "musiclib-sort-by-name", _("Sort Albums by Album/Date/Artist")),
-                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
+                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_albums_sort_column_change ));
 
         m_MainActionGroup->add(
             RadioAction::create( gr1, "musiclib-sort-by-date", _("Sort Albums by Time Added")),
-                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
+                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_albums_sort_column_change ));
 
         m_MainActionGroup->add(
             RadioAction::create( gr1, "musiclib-sort-by-rating", _("Sort Albums by Rating")),
-                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
+                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_albums_sort_column_change ));
 
         m_MainActionGroup->add(
             RadioAction::create( gr1, "musiclib-sort-by-alphabet", _("Sort Albums Alphabetically")),
-                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_sort_column_change ));
+                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_albums_sort_column_change ));
+
         m_MainActionGroup->add(
-            ToggleAction::create(     "musiclib-show-only-new", _("Show only New Albums")),
-                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_show_new_albums ));
+            ToggleAction::create(     "musiclib-show-only-new", _("Show only new albums")),
+                                                sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_view_option_show_new_albums ));
 
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-name"))->property_value() = 0;
         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-date"))->property_value() = 1;
@@ -4620,16 +4630,16 @@ namespace Source
     }
 
     void
-    PlaybackSourceMusicLib::on_sort_column_change ()
+    PlaybackSourceMusicLib::on_albums_sort_column_change ()
     {
-        int value = RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action ("musiclib-sort-by-name"))->get_current_value();
+        bool value = RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action ("musiclib-sort-by-name"))->get_current_value();
         m_Private->m_TreeViewAlbums->TreeStore->set_sort_column(value, Gtk::SORT_ASCENDING);    
     }
 
     void
-    PlaybackSourceMusicLib::on_show_new_albums ()
+    PlaybackSourceMusicLib::on_view_option_show_new_albums ()
     {
-        int value = RefPtr<Gtk::ToggleAction>::cast_static (m_MainActionGroup->get_action ("musiclib-show-only-new"))->get_active();
+        bool value = RefPtr<Gtk::ToggleAction>::cast_static (m_MainActionGroup->get_action ("musiclib-show-only-new"))->get_active();
         m_Private->m_TreeViewAlbums->set_new_albums_state(value);
     }
 

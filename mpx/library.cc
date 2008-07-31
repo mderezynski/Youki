@@ -558,6 +558,9 @@ namespace MPX
 		      uri = get<std::string>(r["location"]);
           }
 #endif
+
+          g_message("%s: URI: %s", G_STRLOC, uri.c_str());
+
 		  if (!file_test (filename_from_uri (uri), FILE_TEST_EXISTS))
 		  {
 			  execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(r["id"])).str()); 

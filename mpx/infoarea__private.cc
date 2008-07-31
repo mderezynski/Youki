@@ -317,6 +317,7 @@ namespace MPX
 
         double wh = 72 * m_cover_alpha;
 
+        //cr->rotate((2*M_PI)*(1. - m_cover_alpha));
         cr->scale(wh/72., wh/72.);
         Util::draw_cairo_image(
             cr,

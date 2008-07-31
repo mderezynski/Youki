@@ -117,10 +117,10 @@ namespace Source
                 bool                                m_Skipped;   
 
                 void
-                on_sort_column_change ();
+                on_albums_sort_column_change ();
     
                 void
-                on_show_new_albums ();
+                on_view_option_show_new_albums ();
 
                 void
                 on_view_change ();
