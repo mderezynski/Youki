@@ -8,14 +8,11 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <fileref.h>
-
 // Plugin-specific include
 #include <taglib-gio.h>
 #include <fileref.h>
 #include <tfile.h>
 #include <tag.h>
-
 #include <oggfile.h>
 #include <vorbisfile.h>
 #include <vorbisproperties.h>

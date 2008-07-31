@@ -10,15 +10,12 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <fileref.h>
 #include <glibmm.h>
 
-// Plugin-specific include
 #include <taglib-gio.h>
 #include <fileref.h>
 #include <tfile.h>
 #include <tag.h>
-
 #include <id3v2tag.h>
 #include <mpegfile.h>
 #include <id3v2framefactory.h>

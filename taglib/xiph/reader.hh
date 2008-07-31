@@ -9,10 +9,10 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
-#include <taglib-gio/oggfile.h>
-#include <taglib-gio/vorbisfile.h>
-#include <taglib-gio/vorbisproperties.h>
-#include <taglib-gio/xiphcomment.h>
+#include <oggfile.h>
+#include <vorbisfile.h>
+#include <vorbisproperties.h>
+#include <xiphcomment.h>
 
 #include "mpx/mpx-types.hh"
 

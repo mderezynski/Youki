@@ -5,6 +5,7 @@
 #include <glibmm.h>
 
 #include <fileref.h>
+
 #include "resolver.h"
 #include "mp4file.h"
 #include "mp4tag.h"
