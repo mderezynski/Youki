@@ -578,6 +578,8 @@ namespace MPX
         m_ref_xml->get_widget("statusbar", m_Statusbar);
         m_ref_xml->get_widget("notebook-info", m_InfoNotebook);
         m_ref_xml->get_widget("volumebutton", m_Volume);
+        m_ref_xml->get_widget("label-time", m_TimeLabel);
+        m_ref_xml->get_widget("scale-seek", m_Seek);
 
 		m_PluginManager = new PluginManager(this);
         m_Sidebar = new Sidebar(m_ref_xml, *m_PluginManager);
@@ -914,8 +916,6 @@ namespace MPX
 		m_actions->get_action (ACTION_STOP)->connect_proxy
 			  (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-stop"))));
 
-        translate_caps(); // sets all actions intially insensitive as we have C_NONE
-
         add_accel_group (m_ui_manager->get_accel_group());
 
 		/*- Load Sources --------------------------------------------------*/ 
@@ -981,20 +981,12 @@ namespace MPX
 
         m_Volume->set_value(double(mcs->key_get<int>("mpx", "volume")));
 
-
-		/*- Time -----------------------------------------------------------*/
-
-        m_ref_xml->get_widget("label-time", m_TimeLabel);
-
 		/*- Seek -----------------------------------------------------------*/
-
-        m_ref_xml->get_widget("scale-seek", m_Seek);
 
 		m_Seek->signal_event().connect(
             sigc::mem_fun( *this, &Player::on_seek_event
         ));
 
-		m_Seek->set_sensitive(false);
 		g_atomic_int_set(&m_Seeking,0);
 
         /*- Infoarea--------------------------------------------------------*/
@@ -1046,21 +1038,7 @@ namespace MPX
             mcs->key_get<int>("mpx","window-y")
         );
 
-#if 0
-        m_CoverFlow = new CoverFlowWidget;
-        CoverFlowEngine::SongList songs;
-
-        SQL::RowV v;
-        obj_library.getSQL(v, "SELECT DISTINCT mb_album_id FROM album WHERE mb_album_id IS NOT NULL;");
-        for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
-        {
-            std::string asin = boost::get<std::string>((*i)["mb_album_id"]);
-            songs.push_back(std::make_pair(asin, asin));
-        }
-        m_CoverFlow->load_covers(songs);
-        m_CoverFlow->show ();
-        add_widget(m_CoverFlow);
-#endif
+        translate_caps(); // sets all actions intially insensitive as we have C_NONE
 
 		show ();
 
