@@ -207,7 +207,7 @@ namespace MPX
     Mutex::Lock L (m_surface_lock);
 
     m_cover_alpha = fmax(m_cover_alpha - 0.1, 0.);
-    bool cond = m_cover_alpha > 0;
+    bool cond = m_cover_alpha >= 0.2;
     if(m_cover_alpha < 0.2 && m_cover_surface_new)
     {
         if(!m_cover_anim_conn_slide.connected())
@@ -314,14 +314,17 @@ namespace MPX
           cr->restore ();
         }
         cr->save ();
-        cr->rectangle (cover_anim_area_x0 + (cover_anim_area_width - (cover_anim_area_width*m_cover_alpha)),
-                       cover_anim_area_y0 + (cover_anim_area_height - (cover_anim_area_height*m_cover_alpha)),
-                       cover_anim_area_width,
-                       cover_anim_area_height);
-        cr->clip ();
-        cr->scale(m_cover_alpha, m_cover_alpha);
-        double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface_cur.get()->get_height ()) / 2;
-        Util::draw_cairo_image (cr, m_cover_surface_cur.get(), cover_anim_area_x0, y, sqrt(m_cover_alpha));
+
+        double wh = 72 * m_cover_alpha;
+
+        cr->scale(wh/72., wh/72.);
+        Util::draw_cairo_image(
+            cr,
+            m_cover_surface_cur.get(),
+            (cover_anim_area_x0 + ((72.-wh)/2.))*(1./m_cover_alpha),
+            (cover_anim_area_y0 + ((72.-wh)/2.))*(1./m_cover_alpha),
+            sqrt(m_cover_alpha)
+        );
         cr->restore ();
     }
     else
