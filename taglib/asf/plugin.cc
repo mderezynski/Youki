@@ -122,8 +122,8 @@ extern "C" bool _get (std::string const& filename, Track & track)
 
   TagLib::ASF::AttributeListMap const& attrMap = tag->attributeListMap();
   struct { 
-      int       datum;
-      char*     id;
+      int         datum;
+      char const* id;
   } mb_metadata_wma[] = {
       { ATTRIBUTE_MB_TRACK_ID,              "MusicBrainz/Track Id"              },
       { ATTRIBUTE_MB_ARTIST_ID,             "MusicBrainz/Artist Id"             },

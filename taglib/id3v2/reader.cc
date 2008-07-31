@@ -67,7 +67,7 @@ namespace MPX
 
         struct {
             int         datum;
-            std::string id;
+            char const* id;
         } mb_metadata_id3v2[] = {
           { ATTRIBUTE_MB_ALBUM_ARTIST_ID,             "MusicBrainz Album Artist Id"         },
           { ATTRIBUTE_MB_ALBUM_ID,                    "MusicBrainz Album Id"                },

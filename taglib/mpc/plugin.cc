@@ -104,8 +104,8 @@ extern "C" bool _set (std::string const& filename, Track & track)
 extern "C" bool _get (std::string const& filename, Track & track)
 {
   struct {
-      int   datum;
-      char* id;
+      int         datum;
+      char const* id;
   } mb_metadata_ape[] = {
     { ATTRIBUTE_ALBUM_ARTIST,           "Album Artist"                  },
     { ATTRIBUTE_ALBUM_ARTIST_SORTNAME,  "ALBUMARTISTSORT"               }, 
