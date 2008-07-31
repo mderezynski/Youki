@@ -275,7 +275,7 @@ namespace MPX
 
 
                 void
-                render_header(Cairo::RefPtr<Cairo::Context> cr, Gtk::Widget& widget, int x_pos, int y_pos, int rowheight)
+                render_header(Cairo::RefPtr<Cairo::Context> cr, Gtk::Widget& widget, int x_pos, int y_pos, int rowheight, int column)
                 {
                     using boost::get;
 
@@ -843,10 +843,11 @@ namespace MPX
 
                     int y_pos = m_rowheight + 4;
                     int x_pos = 0;
-
-                    for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
+                    int col   = 0;
+                    
+                    for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i, ++col)
                     {
-                        (*i)->render_header(cr, *this, x_pos, 0, m_rowheight+2);
+                        (*i)->render_header(cr, *this, x_pos, 0, m_rowheight+2, col);
                         x_pos += (*i)->get_width() + 1;
                     }
 

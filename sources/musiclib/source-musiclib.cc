@@ -3775,6 +3775,7 @@ namespace MPX
               PAccess<MPX::HAL>                     m_HAL;
               ListView                            * m_ListView;
               DataModelFilterP                      m_FilterModel;
+              RoundedLayout*                        m_LabelShowing;
 
             public:
 
@@ -3791,6 +3792,7 @@ namespace MPX
                     Gtk::ScrolledWindow     * scrollwin = dynamic_cast<Gtk::ScrolledWindow*>(xml->get_widget("musiclib-alltracks-sw")); 
                     Gtk::Entry              * entry     = dynamic_cast<Gtk::Entry*>(xml->get_widget("musiclib-alltracks-filter-entry")); 
                     m_ListView                          = new ListView;
+                    m_LabelShowing                      = new RoundedLayout(xml, "da-showing-alltracks");
                    
                     DataModelP m (new DataModel);
 
@@ -3888,6 +3890,7 @@ namespace MPX
               on_entry_changed (DataModelFilterP model, Gtk::Entry* entry)
               {
                     model->set_filter(entry->get_text());
+                    m_LabelShowing->set_text ((boost::format (_("%lld of %lld")) % model->m_mapping.size() % model->m_realmodel->size()).str());
               }
         };
 
