@@ -34,8 +34,8 @@ namespace MPX
     metadata_get_xiph (TagLib::Ogg::XiphComment * comment, Track & track)
     {
       struct {
-          int   datum;
-          char* id;
+          int          datum;
+          const char*  id;
       } mb_metadata_xiph[] = {
         { ATTRIBUTE_ALBUM_ARTIST,           "ALBUMARTIST"               },
         { ATTRIBUTE_ALBUM_ARTIST_SORTNAME,  "ALBUMARTISTSORT"           },
