@@ -94,7 +94,7 @@ if HAVE_LINUX
 mpx_bin_CXXFLAGS += -D_XOPEN_SOURCE=600
 mpx_bin_CFLAGS += -D_XOPEN_SOURCE=600
 endif
-  
+
 mpx_bin_SOURCES =				\
 								\
 	audio.cc					\
@@ -185,6 +185,9 @@ mpx_bin_SOURCES =				\
 								\
 	services.cc					\
 								\
+	signals.cc					\
+	signals.hh					\
+								\
 	sql.cc						\
 								\
 	stock.cc					\
@@ -201,7 +204,7 @@ mpx_bin_SOURCES =				\
 								\
 	video-widget.hh				\
 	video-widget.cc				
-							
+
 if HAVE_HAL								
 mpx_bin_SOURCES += hal.cc
 endif
