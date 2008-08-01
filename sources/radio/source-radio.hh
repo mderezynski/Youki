@@ -44,6 +44,7 @@
 #include "streams-icecast.hh"
 #include "radio-directory-types.hh"
 #include "radio-directory-view-base.hh"
+#include "mpx/mpx-minisoup.hh"
 
 using namespace Glib;
 
@@ -61,24 +62,25 @@ namespace Source
   
       private:
 
+        Soup::RequestRefP               m_request;
+
 		Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
-		Glib::RefPtr<Gtk::ActionGroup> m_actions;
-		Glib::RefPtr<Gtk::UIManager> m_ui_manager;
-		Glib::RefPtr<Gtk::UIManager> m_ui_manager_main;
+		Glib::RefPtr<Gtk::ActionGroup>  m_actions;
+		Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
 	
-		Gtk::Widget					* m_UI;
+		Gtk::Widget					  * m_UI;
 
-        Gtk::Notebook               * m_notebook_radio;
-        Gtk::Notebook               * m_notebook_shoutcast;
-        Gtk::Notebook               * m_notebook_icecast;
+        Gtk::Notebook                 * m_notebook_radio;
+        Gtk::Notebook                 * m_notebook_shoutcast;
+        Gtk::Notebook                 * m_notebook_icecast;
 
-        RadioDirectory::Shoutcast   * m_shoutcast_base;
-        RadioDirectory::ViewBase    * m_shoutcast_list;
-        RadioDirectory::Icecast     * m_icecast_list;
+        RadioDirectory::Shoutcast     * m_shoutcast_base;
+        RadioDirectory::ViewBase      * m_shoutcast_list;
+        RadioDirectory::Icecast       * m_icecast_list;
 
-        Gtk::Entry                  * m_filter_entry;
-        ustring                       m_current_uri;
-        ustring                       m_current_name;
+        Gtk::Entry                    * m_filter_entry;
+        ustring                         m_current_uri;
+        ustring                         m_current_name;
 
         void
         on_filter_changed ();
@@ -101,6 +103,9 @@ namespace Source
         void
         on_icecast_list_updated ();
 
+        void
+        playlist_cb (char const * data, guint size, guint code);
+
       protected:
 
         virtual std::string
@@ -114,6 +119,9 @@ namespace Source
 
 	    virtual Gtk::Widget*
 		get_ui ();
+
+        virtual guint
+        add_menu ();
 
         virtual std::string
         get_uri ();
@@ -129,6 +137,9 @@ namespace Source
 
         virtual bool
         play ();
+
+        virtual void
+        play_async();
 
         virtual void
         play_post ();

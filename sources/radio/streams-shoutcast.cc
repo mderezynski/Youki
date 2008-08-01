@@ -1,5 +1,5 @@
 //  MPX
-//  Copyright (C) 2005-2007 MPX development.
+//  Copyright (C) 2005-2009 MPX development.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License Version 2
@@ -16,10 +16,10 @@
 //
 //  --
 //
-//  The MPXx project hereby grants permission for non-GPL compatible GStreamer
-//  plugins to be used and distributed together with GStreamer and MPXx. This
+//  The MPX project hereby grants permission for non-GPL compatible GStreamer
+//  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
-//  MPXx is covered by.
+//  MPX is covered by.
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
@@ -164,7 +164,7 @@ namespace MPX
           if( path.get_indices().data()[0] == 1 )
           {
             boost::shared_ptr<DialogSimpleEntry> p = boost::shared_ptr<DialogSimpleEntry> (DialogSimpleEntry::create());
-            p->set_title (_("Shoutcast: Custom Search - MPX"));
+            p->set_title (_("AudioSource: Custom Search (ShoutCast)"));
             p->set_heading (_("Please enter search terms to search for stations:"));
             ustring text;
             int response = p->run (text);

@@ -174,7 +174,6 @@ class PuidScanExec(mpx.Plugin):
 
     def activate(self):
 
-        print "Activating PuidScan"
         self.metadata_prepare_id = self.player.gobj().connect("metadata-prepare", self.on_metadata_prepare)
         return True
 
@@ -184,7 +183,6 @@ class PuidScanExec(mpx.Plugin):
 
     def on_metadata_prepare(self, blah):
 
-        print "Metadata prepare PuidScan"
         m = self.player.get_metadata()
         self.run(m)
 

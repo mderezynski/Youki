@@ -850,9 +850,9 @@ class MPXAudioScrobbler(mpx.Plugin):
         
     def track_played(self, blah):
 
-        print ("Track played")
-
         m = self.player.get_metadata()
+        if m[mpx.AttributeId.LOCATION].get()[:7] == "http://":
+            return
 
         print m[mpx.AttributeId.TIME]
         print m[mpx.AttributeId.TIME].get()
@@ -879,9 +879,12 @@ class MPXAudioScrobbler(mpx.Plugin):
 
     def now_playing(self, blah):
 
-        if not self.newTrack: return
+        if not self.newTrack:
+            return
 
         m = self.player.get_metadata()
+        if m[mpx.AttributeId.LOCATION].get()[:7] == "http://":
+            return
 
         p_artist        = m[mpx.AttributeId.ARTIST].get()
         p_title         = m[mpx.AttributeId.TITLE].get()

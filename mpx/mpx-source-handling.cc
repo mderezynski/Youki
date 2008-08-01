@@ -284,32 +284,32 @@ namespace MPX
 	void
 	Player::on_source_caps (Caps caps, ItemKey const& source_id)
 	{
-	  Mutex::Lock L (m_SourceCFLock);
+        Mutex::Lock L (m_SourceCFLock);
 
-	  m_source_c[source_id] = caps;
+        m_source_c[source_id] = caps;
 
-	  if( m_Sidebar->getVisibleId() == source_id )
-	  {
-        set_caps(C_CAN_PLAY, caps & C_CAN_PLAY);
-	  }
+        if( m_Sidebar->getVisibleId() == source_id )
+        {
+          set_caps(C_CAN_PLAY, caps & C_CAN_PLAY);
+        }
 
-	  if( m_ActiveSource && source_id == m_ActiveSource.get() )
-	  {
-            set_caps(C_CAN_GO_PREV, caps & C_CAN_GO_PREV);
-            set_caps(C_CAN_GO_NEXT, caps & C_CAN_GO_NEXT);
-	  }
-      else
-      {
-            del_caps(C_CAN_GO_PREV);
-            del_caps(C_CAN_GO_NEXT);
-      }
+        if( m_ActiveSource && source_id == m_ActiveSource.get() )
+        {
+              set_caps(C_CAN_GO_PREV, caps & C_CAN_GO_PREV);
+              set_caps(C_CAN_GO_NEXT, caps & C_CAN_GO_NEXT);
+        }
+        else
+        {
+              del_caps(C_CAN_GO_PREV);
+              del_caps(C_CAN_GO_NEXT);
+        }
 	}
 
 	void
 	Player::on_source_flags (Flags flags, ItemKey const& source_id)
 	{
-	  Mutex::Lock L (m_SourceCFLock);
-	  m_source_f[source_id] = flags;
+        Mutex::Lock L (m_SourceCFLock);
+        m_source_f[source_id] = flags;
 	}
 
 	void
@@ -338,49 +338,51 @@ namespace MPX
 	void
 	Player::on_source_play_request (ItemKey const& source_id)
 	{
-	  if( m_ActiveSource ) 
-	  {
-          track_played();
-          m_Sources[m_ActiveSource.get()]->stop ();
-          m_Sources[m_ActiveSource.get()]->send_caps ();
-      }
+        if( m_ActiveSource ) 
+        {
+            track_played();
+            m_Sources[m_ActiveSource.get()]->stop ();
+            m_Sources[m_ActiveSource.get()]->send_caps ();
+        }
 
-      del_caps(C_CAN_PAUSE);
+        del_caps(C_CAN_PAUSE);
 
-	  PlaybackSource* source = m_Sources[source_id];
-      m_PreparingSource = source_id;
+        PlaybackSource* source = m_Sources[source_id];
+        m_PreparingSource = source_id;
 
-	  if( m_source_f[source_id] & F_ASYNC)
-	  {
-            set_caps(C_CAN_STOP);
-			source->play_async ();
-	  }
-	  else
-	  {
-			  if( source->play () )
-			  {
-                m_PlayDirection = PD_PLAY;
-			    switch_stream (source->get_uri(), source->get_type());
-			  }
-			  else
-			  {
-                m_Play->request_status (PLAYSTATUS_STOPPED);
-			  }
-	  }
+        if( m_source_f[source_id] & F_ASYNC)
+        {
+              set_caps(C_CAN_STOP);
+              source->play_async ();
+        }
+        else
+        {
+                if( source->play () )
+                {
+                  m_PlayDirection = PD_PLAY;
+                  switch_stream (source->get_uri(), source->get_type());
+                }
+                else
+                {
+                  m_Play->request_status (PLAYSTATUS_STOPPED);
+                }
+        }
 	}
 
 	void
 	Player::on_source_segment (ItemKey const& source_id)
 	{
-	  g_return_if_fail( m_ActiveSource == source_id );
-	  m_Sources[source_id]->segment ();
+        g_return_if_fail( m_ActiveSource == source_id );
+        m_Sources[source_id]->segment ();
 	}
 
 	void
 	Player::on_source_stop (ItemKey const& source_id)
 	{
-	  g_return_if_fail( m_ActiveSource == source_id );
-      stop ();
+        if(m_ActiveSource == source_id || m_PreparingSource == source_id)
+        {
+            stop ();
+        }
 	}
 
 	void
@@ -419,37 +421,37 @@ namespace MPX
 	void
 	Player::play_async_cb (ItemKey const& source_id)
 	{
-	  PlaybackSource* source = m_Sources[source_id];
+        PlaybackSource* source = m_Sources[source_id];
 
-      m_PreparingSource = source_id;
-      m_PlayDirection = PD_PLAY;
+        m_PreparingSource = source_id;
+        m_PlayDirection = PD_PLAY;
 
-	  switch_stream(source->get_uri(), source->get_type());
+        switch_stream(source->get_uri(), source->get_type());
 	}
 
 	void
 	Player::next_async_cb (ItemKey const& source_id)
 	{
-	  PlaybackSource* source = m_Sources[source_id];
-	  Flags f = m_source_f[source_id];
+        PlaybackSource* source = m_Sources[source_id];
+        Flags f = m_source_f[source_id];
 
-	  if( (f & F_PHONY_NEXT) == 0 )
-	  {
-            m_PlayDirection = PD_NEXT;
-			switch_stream (source->get_uri(), source->get_type());
-	  }
+        if( (f & F_PHONY_NEXT) == 0 )
+        {
+              m_PlayDirection = PD_NEXT;
+              switch_stream (source->get_uri(), source->get_type());
+        }
 	}
 
 	void
 	Player::prev_async_cb (ItemKey const& source_id)
 	{
-	  PlaybackSource* source = m_Sources[source_id];
-	  Flags f = m_source_f[source_id];
+        PlaybackSource* source = m_Sources[source_id];
+        Flags f = m_source_f[source_id];
 
-	  if( (f & F_PHONY_PREV) == 0 )
-	  {
-            m_PlayDirection = PD_PREV;
-			switch_stream (source->get_uri(), source->get_type());
-	  }
+        if( (f & F_PHONY_PREV) == 0 )
+        {
+              m_PlayDirection = PD_PREV;
+              switch_stream (source->get_uri(), source->get_type());
+        }
 	}
 }

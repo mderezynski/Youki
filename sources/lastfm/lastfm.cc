@@ -118,68 +118,68 @@ namespace
   bool
   startsWith (std::string const& source, std::string const& target)
   {
-    if (source.length() < target.length())
-      return false;
-
-    return (source.substr(0, target.length()) == target);
+    if(source.length() < target.length())
+        return false;
+    else
+        return (source.substr(0, target.length()) == target);
   }
 }
 
 namespace MPX
 {
     Signal&
-    LastFMRadio::signal_tuned ()
+    LastFmBackend::signal_tuned ()
     {
       return Signals.Tuned;
     }
 
     SignalTuneError&
-    LastFMRadio::signal_tune_error ()
+    LastFmBackend::signal_tune_error ()
     {
       return Signals.TuneError;
     }
 
     SignalPlaylist&
-    LastFMRadio::signal_playlist ()
+    LastFmBackend::signal_playlist ()
     {
       return Signals.Playlist;
     }
 
     Signal&
-    LastFMRadio::signal_no_playlist ()
+    LastFmBackend::signal_no_playlist ()
     {
       return Signals.NoPlaylist;
     }
 
     Signal&
-    LastFMRadio::signal_disconnected()
+    LastFmBackend::signal_disconnected()
     {
       return Signals.Disconnected;
     }
 
     Signal&
-    LastFMRadio::signal_connected()
+    LastFmBackend::signal_connected()
     {
       return Signals.Connected;
     }
 
-    LastFMRadio::LastFMRadio ()
+    LastFmBackend::LastFmBackend ()
     : m_IsConnected (false)
     {}
 
-    LastFMRadio::~LastFMRadio ()
+    LastFmBackend::~LastFmBackend ()
     {
       m_HandshakeRequest.clear ();
     }
 
     bool
-    LastFMRadio::connected () const
+    LastFmBackend::connected () const
     {
       return m_IsConnected;
     }
 
     void
-    LastFMRadio::handshake_cb (char const * data, guint size, guint code)
+    LastFmBackend::handshake_cb (char const * data, guint size, guint code)
     {
       if (code != 200)
       {
@@ -214,7 +214,7 @@ namespace MPX
 
       if (m_IsConnected)
       {
-        g_message( "%s: LastFM LastFMRadio Handshake OK. ID [%s], URL: [%s%s]",
+        g_message( "%s: LastFmBackend Handshake OK. ID [%s], URL: [%s%s]",
           G_STRLOC,
           m_Session.SessionId.c_str(),
           m_Session.BaseUrl.c_str(),
@@ -224,13 +224,13 @@ namespace MPX
       }
       else
       {
-        g_message( "%s: LastFM LastFMRadio Handshake unsucessful (session, url or url path are empty)", G_STRLOC );
+        g_message( "%s: LastFmBackend Handshake unsucessful (session, url or url path are empty)", G_STRLOC );
         Signals.Disconnected.emit ();
       }
     }
     
     void
-    LastFMRadio::disconnect ()
+    LastFmBackend::disconnect ()
     {
       m_HandshakeRequest.clear();
       m_IsConnected = false;
@@ -238,7 +238,7 @@ namespace MPX
     }
 
     void 
-    LastFMRadio::handshake ()
+    LastFmBackend::handshake ()
     {
       if (!m_IsConnected)
       {
@@ -256,19 +256,19 @@ namespace MPX
 
         URI u (uri, true); 
         m_HandshakeRequest = Soup::Request::create (ustring (u));
-        m_HandshakeRequest->request_callback().connect (sigc::mem_fun (*this, &LastFMRadio::handshake_cb));
+        m_HandshakeRequest->request_callback().connect (sigc::mem_fun (*this, &LastFmBackend::handshake_cb));
         m_HandshakeRequest->run ();
       }
     }
 
-    LastFMRadio::Session const& 
-    LastFMRadio::session () const
+    LastFmBackend::Session const& 
+    LastFmBackend::session () const
     {
       return m_Session;
     }
 
     void
-    LastFMRadio::playurl_cb (char const * data, guint size, guint code, bool playlist) 
+    LastFmBackend::playurl_cb (char const * data, guint size, guint code, bool playlist) 
     {
       if (code != 200)
       {
@@ -355,7 +355,7 @@ namespace MPX
     }
 
     void
-    LastFMRadio::playurl (std::string const& url)
+    LastFmBackend::playurl (std::string const& url)
     {
       if (!m_IsConnected)
         return;
@@ -384,12 +384,12 @@ namespace MPX
       g_message("%s: Creating request with URI: %s", G_STRLOC, request_uri.c_str());
 
       m_PlayURLRequest = Soup::Request::create (request_uri);
-      m_PlayURLRequest->request_callback().connect (sigc::bind (sigc::mem_fun (*this, &LastFMRadio::playurl_cb), playlist));
+      m_PlayURLRequest->request_callback().connect (sigc::bind (sigc::mem_fun (*this, &LastFmBackend::playurl_cb), playlist));
       m_PlayURLRequest->run ();
     }
 
     void
-    LastFMRadio::playlist_cb (char const * data, guint size, guint code)
+    LastFmBackend::playlist_cb (char const * data, guint size, guint code)
     {
       if (code == SOUP_STATUS_CANCELLED)
       {
@@ -419,7 +419,7 @@ namespace MPX
     }
 
     bool
-    LastFMRadio::is_playlist (std::string const& url)
+    LastFmBackend::is_playlist (std::string const& url)
     {
       return (startsWith(url, "lastfm://play/") ||
               startsWith(url, "lastfm://preview/") ||
@@ -428,7 +428,7 @@ namespace MPX
     }
 
     void
-    LastFMRadio::parse_playlist (char const* data, guint size)
+    LastFmBackend::parse_playlist (char const* data, guint size)
     {
       XSPF::Playlist playlist;
       XSPF::XSPF_parse (playlist, data, size); 
@@ -442,13 +442,13 @@ namespace MPX
     }
     
     void
-    LastFMRadio::get_xspf_playlist_cancel ()
+    LastFmBackend::get_xspf_playlist_cancel ()
     {
       m_PlaylistRequest.clear();
     }
 
     void
-    LastFMRadio::get_xspf_playlist ()
+    LastFmBackend::get_xspf_playlist ()
     {
       std::string uri ((boost::format ("http://%s%s/xspf.php?sk=%s&discovery=%d&desktop=1.3.0.58") 
                         % m_Session.BaseUrl
@@ -457,7 +457,7 @@ namespace MPX
                         % int (mcs->key_get<bool>("lastfm","discoverymode"))).str());
 
       m_PlaylistRequest = Soup::Request::create (uri);
-      m_PlaylistRequest->request_callback().connect (sigc::mem_fun (*this, &LastFMRadio::playlist_cb));
+      m_PlaylistRequest->request_callback().connect (sigc::mem_fun (*this, &LastFmBackend::playlist_cb));
       m_PlaylistRequest->run ();
     }
 }

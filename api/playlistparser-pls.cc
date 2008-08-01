@@ -24,27 +24,26 @@ namespace
 {
   typedef map < string, string > StringMap;
 
-  void
-  parse_to_map (StringMap& map, string const& buffer)
-  {
-    using boost::algorithm::split;
-    using boost::algorithm::split_regex;
-    using boost::algorithm::is_any_of;
-
-    vector<string> lines;
-    split_regex (lines, buffer, boost::regex ("\\\r?\\\n"));
-
-    for (unsigned int n = 0; n < lines.size(); ++n)
+    void
+    parse_to_map (StringMap& map, string const& data)
     {
-      char **line = g_strsplit (lines[n].c_str(), "=", 2);
-      if (line[0] && line[1] && strlen(line[0]) && strlen(line[1]))
-      {
-        ustring key (line[0]);
-        map[std::string (key.lowercase())] = line[1];
-      }
-      g_strfreev (line);
-    }
-  }
+        using boost::algorithm::split;
+        using boost::algorithm::split_regex;
+        using boost::algorithm::is_any_of;
+
+        char **lines = g_strsplit(data.c_str(), "\n", -1);
+        for (int n = 0; lines[n] != NULL; ++n)
+        {
+            char **line = g_strsplit (lines[n], "=", 2);
+            if (line[0] && line[1] && strlen(line[0]) && strlen(line[1]))
+            {
+                ustring key (line[0]);
+                map[std::string (key.lowercase())] = line[1];
+            }
+            g_strfreev (line);
+        }
+        g_strfreev (lines);
+    } 
 }
 
 
@@ -61,23 +60,32 @@ namespace PlaylistParser
 	}
 
 	bool
-	PLS::read (std::string const& uri, Track_v & v)
+	PLS::read (std::string const& data, Track_v & v, bool download)
 	{
-		try{
+        try{
             StringMap map;
-            parse_to_map (map, file_get_contents(filename_from_uri(uri)));
 
+            if(download)
+            {
+                parse_to_map (map, file_get_contents(filename_from_uri(data)));
+            }
+            else
+            {
+                parse_to_map (map, data);
+            } 
+                
             int n = boost::lexical_cast<int>(map.find("numberofentries")->second);
 
-            for (int a = 1; a <= n ; ++a)
+            for (int i = 1; i <= n ; ++i)
             {
-              MPX::Track t;
-              t[ATTRIBUTE_LOCATION] = map[(boost::format("file%d") % n).str()]; 
-              t[ATTRIBUTE_TITLE] = map[(boost::format("title%d") % n).str()]; 
-              t[ATTRIBUTE_TIME] = gint64(boost::lexical_cast<int>(  map[(boost::format("length%d") % n).str()]));
-              v.push_back(t);
+                MPX::Track t;
+                t[ATTRIBUTE_LOCATION] = map[(boost::format("file%d") % i).str()]; 
+                t[ATTRIBUTE_TITLE] = map[(boost::format("title%d") % i).str()]; 
+                t[ATTRIBUTE_TIME] = gint64(boost::lexical_cast<int>(  map[(boost::format("length%d") % i).str()]));
+                v.push_back(t);
             }
-		} catch (...) {
+		} catch(std::exception & cxe) {
+            g_message("%s: error: %s", G_STRLOC, cxe.what());
 			return false;
 		}
 		return true;

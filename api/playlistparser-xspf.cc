@@ -21,7 +21,7 @@ namespace PlaylistParser
 	}
 
 	bool
-	XSPF::read (std::string const& uri, Track_v & v)
+	XSPF::read (std::string const& uri, Track_v & v, bool G_GNUC_UNUSED)
 	{
 		try{
 			MPX::XmlInstance<xspf::playlist> xspf (uri.c_str());

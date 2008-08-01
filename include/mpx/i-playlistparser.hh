@@ -23,7 +23,8 @@ namespace PlaylistParser
           virtual bool
           read(
             std::string const&,
-            Track_v&
+            Track_v&,
+            bool = true
           ) = 0;
 
           virtual bool

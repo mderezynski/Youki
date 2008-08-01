@@ -81,7 +81,7 @@ namespace Source
             XSPF::ItemIter                  m_PlaylistIter;
             Glib::Mutex                     m_PlaylistLock;
 
-            MPX::LastFMRadio                m_LastFMRadio;
+            MPX::LastFmBackend              m_LastFmBackend;
             MPX::Player                   & m_Player;
 
             Metadata                        m_metadata;

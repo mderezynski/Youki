@@ -1515,6 +1515,7 @@ namespace MPX
       g_return_if_fail(m_PreparingSource);
 
       m_ActiveSource = m_PreparingSource.get();
+      m_PreparingSource.reset();
 	  PlaybackSource* source = m_Sources[m_PreparingSource.get()];
       m_Sidebar->setActiveId(m_ActiveSource.get());
 
@@ -1685,21 +1686,27 @@ namespace MPX
 	void
 	Player::next ()
 	{
-      g_return_if_fail(m_ActiveSource);
-
-      m_Sources[m_ActiveSource.get()]->skipped();
-	  on_play_eos ();
+        g_return_if_fail(m_ActiveSource);
+        m_Sources[m_ActiveSource.get()]->skipped();
+        on_play_eos ();
 	}
 
 	void
 	Player::stop ()
 	{
-      g_return_if_fail(m_ActiveSource);
-
-      track_played();
-      m_Sources[m_ActiveSource.get()]->stop ();
-      m_Sources[m_ActiveSource.get()]->send_caps ();
-	  m_Play->request_status( PLAYSTATUS_STOPPED );
+        if(m_PreparingSource)
+        {
+            m_Sources[m_PreparingSource.get()]->stop ();
+            m_Sources[m_PreparingSource.get()]->send_caps ();
+            m_Play->request_status( PLAYSTATUS_STOPPED );
+        }
+        else
+        {
+            track_played();
+            m_Sources[m_ActiveSource.get()]->stop ();
+            m_Sources[m_ActiveSource.get()]->send_caps ();
+            m_Play->request_status( PLAYSTATUS_STOPPED );
+        }
 	}
 
 	void

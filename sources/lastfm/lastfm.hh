@@ -62,10 +62,10 @@ namespace MPX
         LFM_ERROR_OFFLINE                 // The streaming system is offline for maintenance, please try again later
     };
 
-    /** Client code for Last.fm LastFMRadio
+    /** Client code for Last.fm LastFmBackend
      *
      **/
-    class LastFMRadio
+    class LastFmBackend
     {
       public:
 
@@ -88,8 +88,8 @@ namespace MPX
 
       public:
 
-        LastFMRadio ();
-        ~LastFMRadio ();
+        LastFmBackend ();
+        ~LastFmBackend ();
 
         Session const& session () const;
 

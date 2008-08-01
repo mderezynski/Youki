@@ -48,11 +48,11 @@
 #include "streams-shoutcast.hh"
 #include "streams-icecast.hh"
 
+#include "mpx/playlistparser-pls.hh"
+
 using namespace Glib;
 using namespace Gtk;
 
-#define RADIO_ACTION_SHOW_ICECAST   "radio-action-show-icecast"
-#define RADIO_ACTION_SHOW_SHOUTCAST "radio-action-show-shoutcast"
 #define RADIO_ACTION_UPDATE_LIST    "radio-action-update-list"
 
 namespace
@@ -62,69 +62,20 @@ namespace
     PAGE_SHOUTCAST,
     PAGE_ICECAST,
   };
-}
 
-namespace
-{
-  using namespace MPX;
-  using namespace std;
-
-  typedef map < string, string > StringMap;
-
-  void
-  parse_to_map (StringMap& map, string const& buffer)
-  {
-    using boost::algorithm::split;
-    using boost::algorithm::split_regex;
-    using boost::algorithm::is_any_of;
-
-    //vector<string> lines;
-    //split_regex (lines, buffer, boost::regex ("\\\r?\\\n"));
-	char **lines = g_strsplit(buffer.c_str(), "\n", -1);
-
-    //for (unsigned int n = 0; n < lines.size(); ++n)
-    for (int n = 0; lines[n] != NULL; ++n)
-    {
-      char **line = g_strsplit (lines[n], "=", 2);
-      if (line[0] && line[1] && strlen(line[0]) && strlen(line[1]))
-      {
-        ustring key (line[0]);
-        map[std::string (key.lowercase())] = line[1];
-      }
-      g_strfreev (line);
-    }
-    g_strfreev (lines);
-  }
-
-  void 
-  parse_pls (std::string const& buffer, VUri & list)
-  {
-	StringMap map;
-	parse_to_map (map, buffer);
-
-	if (map.empty()) 
-		return; 
-
-	if (map.find("numberofentries") == map.end())
-		return;
-
-	unsigned int n = strtol (map.find("numberofentries")->second.c_str(), NULL, 10);
-	static boost::format File ("file%d");
-	for (unsigned int a = 1; a <= n ; ++a)
-	{
-	  StringMap::iterator const& i = map.find ((File % a).str());
-	  if (i != map.end())
-	  {
-		list.push_back (i->second);
-	  }
-	}
-
-	if (list.empty()) 
-		return; 
-
-	if (list.size() != n)
-		return;
-  }
+    char const * ui_source =
+    "<ui>"
+    ""
+    "<menubar name='MenubarMain'>"
+    "   <placeholder name='placeholder-source'>"
+    "     <menu action='menu-source-radio'>"
+    "         <menuitem action='radio-action-update-list'/>"
+    "     </menu>"
+    "   </placeholder>"
+    "</menubar>"
+    ""
+    "</ui>"
+    "";
 }
 
 namespace MPX
@@ -145,8 +96,14 @@ namespace Source
         return m_UI;
     }
 
+    guint
+    Radio::add_menu ()
+    {
+        return m_ui_manager->add_ui_from_string(ui_source);
+    }
+
     Radio::Radio (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
-    : PlaybackSource  (ui_manager, _("Radio"))
+    : PlaybackSource  (ui_manager, _("Radio"), C_NONE, F_ASYNC)
     {
 		const std::string path (build_filename(DATA_DIR, build_filename("glade","source-radio.glade")));
 		m_ref_xml = Gnome::Glade::Xml::create (path);
@@ -210,32 +167,22 @@ namespace Source
 
 		m_ui_manager = ui_manager; 
 		m_actions = ActionGroup::create ("Actions_Radio");
-		m_actions->add (Action::create ("MenuUiPartRadio", _("Radio")));
+		m_actions->add (Action::create ("menu-source-radio", _("Radio")));
 
 		m_actions->add  (Action::create (RADIO_ACTION_UPDATE_LIST,
 										  Gtk::Stock::REFRESH,
 										  _("Update Icecast List")),
 										  (sigc::mem_fun (*this, &Radio::on_update_list)));
 
-		Gtk::RadioButtonGroup gr1;
-		m_actions->add  (RadioAction::create (gr1, RADIO_ACTION_SHOW_SHOUTCAST,
-											  "Shoutcast"),
-											  (sigc::mem_fun (*this, &Radio::on_set_notebook_page)));
-
-		m_actions->add  (RadioAction::create (gr1, RADIO_ACTION_SHOW_ICECAST,
-											  _("Icecast")),
-											  (sigc::mem_fun (*this, &Radio::on_set_notebook_page)));
-
-		RefPtr<Gtk::RadioAction>::cast_static (m_actions->get_action (RADIO_ACTION_SHOW_SHOUTCAST))->property_value() = 0;
-		RefPtr<Gtk::RadioAction>::cast_static (m_actions->get_action (RADIO_ACTION_SHOW_ICECAST))->property_value() = 1;
-
-		m_actions->get_action (RADIO_ACTION_SHOW_SHOUTCAST)->connect_proxy
-			  (*(dynamic_cast<ToggleToolButton *>(m_ref_xml->get_widget ("radio-tooltb-shoutcast"))));
-
-		m_actions->get_action (RADIO_ACTION_SHOW_ICECAST)->connect_proxy
-			  (*(dynamic_cast<ToggleToolButton *>(m_ref_xml->get_widget ("radio-tooltb-icecast"))));
-
 		m_ui_manager->insert_action_group (m_actions);
+
+        m_notebook_radio->signal_switch_page().connect(
+            sigc::hide(
+                sigc::hide(
+                    sigc::mem_fun(
+                        *this,
+                        &Radio::on_set_notebook_page
+        ))));
 
 		on_set_notebook_page ();
     }
@@ -255,11 +202,10 @@ namespace Source
     void
     Radio::on_set_notebook_page ()
     {
-		int page = RefPtr<Gtk::RadioAction>::cast_static (m_actions->get_action (RADIO_ACTION_SHOW_SHOUTCAST))->get_current_value();
-		m_notebook_radio->set_current_page (page);
+		int page = m_notebook_radio->get_current_page(); 
 
 		RadioDirectory::ViewBase * p = (page == PAGE_SHOUTCAST) ? m_shoutcast_list : m_icecast_list;
-		p->set_filter (m_filter_entry->get_text());
+		p->set_filter(m_filter_entry->get_text());
 
 		if( p->get_selection ()->count_selected_rows() ) 
 			  m_Caps = Caps (m_Caps |  C_CAN_PLAY);
@@ -341,6 +287,11 @@ namespace Source
     void
     Radio::stop ()
     {
+        if(m_request)
+        {
+            m_request->cancel();
+        }
+
 		if ( !m_shoutcast_list->get_selection()->count_selected_rows() && !m_icecast_list->get_selection()->count_selected_rows())
 		{
 		  m_Caps = Caps (m_Caps & ~C_CAN_PLAY);
@@ -352,40 +303,61 @@ namespace Source
 		Signals.Caps.emit (m_Caps);
     }
 
-    bool
-    Radio::play ()
+    void
+    Radio::playlist_cb (char const * data, guint size, guint code)
+    {
+        if (code == 200)
+        {
+            Track_v v;
+
+            PlaylistParser::PLS * parse = new PlaylistParser::PLS; 
+            parse->read(std::string(data, size), v, false);
+
+            if(v.size())
+            {
+                using boost::get;
+
+                m_current_uri = get<std::string>(v[0][ATTRIBUTE_LOCATION].get()); //FIXME: We would want to get the other URIs listed as well..
+                Signals.PlayAsync.emit();
+                return;
+            }
+        }
+
+        m_current_uri = "";
+        m_current_name = "";
+        Signals.StopRequest.emit();
+    }
+
+    void
+    Radio::play_async ()
     {
 		if( m_current_uri.empty() )
 		{
 		  int page = m_notebook_radio->get_current_page ();
+
 		  if( page == PAGE_SHOUTCAST )
 		  {
 				ustring uri;
-				m_shoutcast_list->get (m_current_name, uri);
-				Soup::RequestSyncRefP req = Soup::RequestSync::create(uri);
-				if( req->run () == 200)
-				{
-					std::string data;
-					req->get_data (data);
-					VUri list;
-					parse_pls(data, list);
-
-					if(list.size())
-						m_current_uri = list[0]; //FIXME: We would want to get the other URIs listed as well..
-					else
-						return false;
-				}
-				else
-					return false;
+				m_shoutcast_list->get(m_current_name, uri);
+				m_request = Soup::Request::create(uri);
+                m_request->request_callback().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &Radio::playlist_cb
+                ));
+                m_request->run();
 		  }
-
-		  if( page == PAGE_ICECAST )
+		  else if( page == PAGE_ICECAST )
 		  {
-				m_icecast_list->get (m_current_name, m_current_uri);
+				m_icecast_list->get(m_current_name, m_current_uri);
 		  }
 		}
+    }
 
-		return true;
+    bool
+    Radio::play ()
+    {
+		return false;
     }
 
 	void

@@ -90,27 +90,27 @@ namespace Source
     {
         mcs->key_register("lastfm", "discoverymode", true);
 
-        m_LastFMRadio.handshake();
+        m_LastFmBackend.handshake();
 
-        m_LastFMRadio.signal_playlist().connect(
+        m_LastFmBackend.signal_playlist().connect(
             sigc::mem_fun(
                 *this,
                 &LastFM::on_playlist
         ));
 
-        m_LastFMRadio.signal_no_playlist().connect(
+        m_LastFmBackend.signal_no_playlist().connect(
             sigc::mem_fun(
                 *this,
                 &LastFM::on_playlist_cancel
         ));
 
-        m_LastFMRadio.signal_tuned().connect(
+        m_LastFmBackend.signal_tuned().connect(
             sigc::mem_fun(
                 *this,
                 &LastFM::on_tune_ok
         ));
 
-        m_LastFMRadio.signal_tune_error().connect(
+        m_LastFmBackend.signal_tune_error().connect(
             sigc::mem_fun(
                 *this,
                 &LastFM::on_tune_error
@@ -121,11 +121,30 @@ namespace Source
 
 		m_UI = m_ref_xml->get_widget("source-lastfm");
 
-        m_ref_xml->get_widget("url_entry", m_URL_Entry);
-        m_ref_xml->get_widget("error_hbox", m_HBox_Error);
-        m_ref_xml->get_widget("error_label", m_Label_Error);
-        m_ref_xml->get_widget("error_hide_button", m_Button_Error_Hide);
-        m_ref_xml->get_widget("station_type_cbox", m_CBox_Sel);
+        m_ref_xml->get_widget(
+            "url_entry",
+            m_URL_Entry
+        );
+
+        m_ref_xml->get_widget(
+            "error_hbox",
+            m_HBox_Error
+        );
+
+        m_ref_xml->get_widget(
+            "error_label",
+            m_Label_Error
+        );
+
+        m_ref_xml->get_widget(
+            "error_hide_button",
+            m_Button_Error_Hide
+        );
+
+        m_ref_xml->get_widget(
+            "station_type_cbox",
+            m_CBox_Sel
+        );
 
         m_CBox_Sel->set_active(0);
 
@@ -141,40 +160,6 @@ namespace Source
         m_actions = Gtk::ActionGroup::create ("Actions_UiPartLASTFM");
         m_actions->add (Gtk::Action::create ("dummy", "dummy"));
         m_ui_manager->insert_action_group (m_actions);
-
-        m_Dock = gdl_dock_new ();
-        gtk_widget_show(m_Dock);
-        dynamic_cast<Alignment*>(m_ref_xml->get_widget("alignment_dock"))->add(*Glib::wrap(m_Dock,false));
-
-        PAccess<MPX::Library> pa_lib;
-        player.get_object(pa_lib);
-
-#if 0
-        ComponentTopAlbums * c = new ComponentTopAlbums(pa_lib);
-        ComponentUserTopAlbums * c2 = new ComponentUserTopAlbums(&player);
-
-        GtkWidget * item = gdl_dock_item_new_with_stock(
-            "TopAlbums",
-            "Top Albums",
-            NULL,
-            GdlDockItemBehavior(GDL_DOCK_ITEM_BEH_CANT_CLOSE | GDL_DOCK_ITEM_BEH_CANT_ICONIFY)
-        );
-
-        gtk_widget_reparent(c->get_UI().gobj(), item);
-        gdl_dock_add_item( GDL_DOCK( m_Dock ), GDL_DOCK_ITEM( item ), GDL_DOCK_CENTER );
-        gtk_widget_show (item);
-
-        item = gdl_dock_item_new_with_stock(
-            "TopUserAlbums",
-            "Top User Albums",
-            NULL,
-            GdlDockItemBehavior(GDL_DOCK_ITEM_BEH_CANT_CLOSE | GDL_DOCK_ITEM_BEH_CANT_ICONIFY)
-        );
-
-        gtk_widget_reparent(c2->get_UI().gobj(), item);
-        gdl_dock_add_item( GDL_DOCK( m_Dock ), GDL_DOCK_ITEM( item ), GDL_DOCK_CENTER );
-        gtk_widget_show (item);
-#endif
     }
 
     std::string
@@ -210,7 +195,7 @@ namespace Source
                 break;
         }
 
-        m_LastFMRadio.playurl((ustring(u)));
+        m_LastFmBackend.playurl((ustring(u)));
         m_URL_Entry->set_text("");
     }
 
@@ -219,7 +204,7 @@ namespace Source
     {
         PAccess<MPX::Play> pa;
         m_Player.get_object(pa);
-        pa.get().set_custom_httpheader((boost::format ("Cookie: Session=%s") % m_LastFMRadio.session().SessionId).str().c_str());
+        pa.get().set_custom_httpheader((boost::format ("Cookie: Session=%s") % m_LastFmBackend.session().SessionId).str().c_str());
 
         bool next = (m_Playlist && (m_PlaylistIter == m_Playlist.get().Items.end()));
 
@@ -241,7 +226,7 @@ namespace Source
     void
     LastFM::on_tune_ok ()
     {
-        m_LastFMRadio.get_xspf_playlist();
+        m_LastFmBackend.get_xspf_playlist();
     }
 
     void
@@ -274,7 +259,7 @@ namespace Source
         {
             m_Caps = Caps (m_Caps & ~C_CAN_GO_NEXT);
             send_caps();
-            m_LastFMRadio.get_xspf_playlist ();
+            m_LastFmBackend.get_xspf_playlist ();
         } 
         else
         {
@@ -291,7 +276,7 @@ namespace Source
     LastFM::play_async ()
     {
         m_Playlist.reset();
-        m_LastFMRadio.get_xspf_playlist();
+        m_LastFmBackend.get_xspf_playlist();
     }
 
     bool
@@ -316,14 +301,15 @@ namespace Source
     void
     LastFM::stop ()
     {
+        m_LastFmBackend.get_xspf_playlist_cancel();
+
         m_Caps = Caps (m_Caps & ~C_CAN_GO_NEXT);
         send_caps();
-        m_LastFMRadio.get_xspf_playlist_cancel();
+
         PAccess<MPX::Play> pa;
         m_Player.get_object(pa);
         pa.get().set_custom_httpheader(NULL);
         m_Playlist.reset();
-        m_PlaylistIter = m_Playlist.get().Items.begin();
     }
 
     void
@@ -408,7 +394,7 @@ namespace Source
     {
         g_return_if_fail (!uris.empty());
         if(play)
-            m_LastFMRadio.playurl(uris[0]);
+            m_LastFmBackend.playurl(uris[0]);
         else
             g_message("%s: Non-play processing of URIs is not supported", G_STRLOC);
     }

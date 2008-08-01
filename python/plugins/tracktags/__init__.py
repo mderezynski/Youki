@@ -156,5 +156,5 @@ class TrackTags(mpx.Plugin):
             self.player.info_clear()
 
         self.tagview.display(True)
-
         self.lock.unlock()
+
