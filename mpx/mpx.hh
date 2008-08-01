@@ -42,6 +42,7 @@
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/util-file.hh"
 #include "mpx/widgets/widgetloader.hh"
+#include "mpx/mpx-services.hh"
 
 #include "audio-types.hh"
 #include "dbus-marshalers.h"
@@ -70,6 +71,7 @@ namespace MPX
     class Player
       : public WidgetLoader<Gtk::Window>
       , public sigx::glib_auto_dispatchable
+      , public Service::Base
     {
       public:
 
@@ -156,21 +158,12 @@ namespace MPX
 
       protected:
 
-#ifdef HAVE_HAL
-        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Covers&, MPX::HAL&);
-#else
-        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Covers&);
-#endif // HAVE_HAL
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Service::Manager&);
 
 	  public:
 
-#ifdef HAVE_HAL
         static Player*
-        create (MPX::Library&, MPX::Covers&, MPX::HAL&);
-#else
-        static Player*
-        create (MPX::Library&, MPX::Covers&);
-#endif // HAVE_HAL
+        create (MPX::Service::Manager&);
 
 		class DBusRoot; 
 		class DBusMPX; 
@@ -264,8 +257,8 @@ namespace MPX
         Covers                        & m_Covers;
         HAL                           & m_HAL;
         Library                       & m_Library;
+		Play                          & m_Play;
 		PluginManager                 * m_PluginManager;
-		Play                          * m_Play;
         Preferences                   * m_Preferences;
         MLibManager                   * m_MLibManager;
 		PluginManagerGUI              * m_PluginManagerGUI;

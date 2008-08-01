@@ -31,23 +31,20 @@
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
 #include "mpx/mpx-library-scanner-thread.hh"
+#include "mpx/mpx-services.hh"
 
 namespace MPX
 {
   class HAL;
   class MetadataReaderTagLib;
-  class Library : public sigx::glib_auto_dispatchable
+  class Library : public sigx::glib_auto_dispatchable, public Service::Base
   {
         friend class LibraryScannerThread;
 
         public:
 
             Library(
-#ifdef HAVE_HAL
-                HAL&,
-#endif //HAVE_HAL
-                Covers&,
-                MetadataReaderTagLib&,
+                Service::Manager&,
 #ifdef HAVE_HAL
                 bool
 #endif //HAVE_HAL

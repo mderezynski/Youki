@@ -96,8 +96,9 @@ namespace
 
 namespace MPX
 {
-    Play::Play()
+    Play::Play(MPX::Service::Manager& services)
     : ObjectBase              ("MPXPlaybackEngine")
+    , Service::Base           ("mpx-service-play")
     , property_stream_        (*this, "stream", "")
     , property_stream_type_   (*this, "stream-type", "")
     , property_volume_        (*this, "volume", 50)

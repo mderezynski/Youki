@@ -9,15 +9,16 @@
 #include <map>
 
 #include <boost/shared_ptr.hpp>
-
 #include "mpx/i-metadatareader.hh"
 #include "mpx/mpx-types.hh"
+#include "mpx/mpx-services.hh"
 
 
 namespace MPX
 {
     class MetadataReaderTagLib
         : public MetadataReader
+        , public Service::Base
     {
         struct TaglibPlugin
         {
@@ -35,7 +36,7 @@ namespace MPX
 
         public:
 
-          MetadataReaderTagLib ();
+          MetadataReaderTagLib (MPX::Service::Manager&);
           virtual ~MetadataReaderTagLib ();
 
           virtual bool

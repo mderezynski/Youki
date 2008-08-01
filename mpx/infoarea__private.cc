@@ -1,6 +1,8 @@
 #include "config.h"
 #include "infoarea.hh"
+#include <glibmm.h>
 
+using namespace Glib;
 using boost::get;
 
 namespace

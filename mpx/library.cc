@@ -168,24 +168,17 @@ namespace
 namespace MPX
 {
 
+    Library::Library(
+        Service::Manager&         serivces,
 #ifdef HAVE_HAL
-    Library::Library(
-        HAL                     & obj_hal,
-        Covers                  & obj_covers,
-        MetadataReaderTagLib    & obj_reader,
         bool                      use_hal
+#endif // HAVE_HAL
     )
     : sigx::glib_auto_dispatchable()
-    , m_HAL(obj_hal)
-#else
-    Library::Library(
-        Covers                  & obj_covers
-        MetadataReaderTagLib    & obj_reader,
-    )
-    : sigx::glib_auto_dispatchable()
-#endif
-    , m_Covers(obj_covers)
-    , m_MetadataReaderTagLib(obj_reader)
+    , Service::Base("mpx-service-library")
+    , m_HAL(*(services->get<HAL>("mpx-service-hal")))
+    , m_Covers(*(services->get<Covers>("mpx-service-covers")))
+    , m_MetadataReaderTagLib(*(services->get<MetadataReaderTagLib>("mpx-service-taglib")))
     , m_Flags (0)
     {
         const int MLIB_VERSION_CUR = 1;
@@ -379,6 +372,7 @@ namespace MPX
     )
     : sigx::glib_auto_dispatchable()
 #endif
+    , Service::Base("mpx-service-library")
     , m_Covers(other.m_Covers)
     , m_MetadataReaderTagLib(other.m_MetadataReaderTagLib)
     , m_Flags(0)

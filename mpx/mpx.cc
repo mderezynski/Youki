@@ -545,28 +545,24 @@ namespace MPX
     }
 
 
-#ifdef HAVE_HAL
-    Player::Player(const Glib::RefPtr<Gnome::Glade::Xml>& xml,
-                   MPX::Library & obj_library,
-                   MPX::Covers & obj_amazon,
-                   MPX::HAL & obj_hal)
-#else
-    Player::Player(const Glib::RefPtr<Gnome::Glade::Xml>& xml,
-                   MPX::Library & obj_library,
-                   MPX::Covers & obj_amazon)
-#endif // HAVE_HAL
+    Player::Player(
+        const Glib::RefPtr<Gnome::Glade::Xml>&  xml,
+        MPX::Service::Manager&                  services
+    )
     : WidgetLoader<Gtk::Window>(xml, "mpx")
     , sigx::glib_auto_dispatchable()
+    , Service::Base("mpx-service-player")
     , m_ref_xml(xml)
     , m_startup_complete(false)
     , m_Caps(C_NONE)
 	, m_NextSourceId(0)
 	, m_SourceUI(0)
-    , m_Covers(obj_amazon)
+    , m_Covers(*(services.get<Covers>("mpx-service-covers")))
 #ifdef HAVE_HAL
-    , m_HAL(obj_hal)
+    , m_HAL(*(services.get<HAL>("mpx-service-hal")))
 #endif // HAVE_HAL
-    , m_Library(obj_library)
+    , m_Library(*(services.get<Library>("mpx-service-library")))
+    , m_Play(*(services.get<Play>("mpx-service-play")))
    {
         m_ErrorManager = new ErrorManager;
 
@@ -630,53 +626,50 @@ namespace MPX
 
         splash.set_message(_("Initializing Playback Engine"), 0.2);
 
-
-        m_Play = new Play();
-
-		m_Play->signal_eos().connect(
+		m_Play.signal_eos().connect(
             sigc::mem_fun( *this, &MPX::Player::on_play_eos
         ));
 
-		m_Play->signal_position().connect(
+		m_Play.signal_position().connect(
             sigc::mem_fun( *this, &MPX::Player::on_play_position
         ));
 
-		m_Play->signal_metadata().connect(
+		m_Play.signal_metadata().connect(
             sigc::mem_fun( *this, &MPX::Player::on_play_metadata
         ));
 
-		m_Play->signal_buffering().connect(
+		m_Play.signal_buffering().connect(
             sigc::mem_fun( *this, &MPX::Player::on_play_buffering
         ));
 
-		m_Play->property_status().signal_changed().connect(
+		m_Play.property_status().signal_changed().connect(
             sigc::mem_fun( *this, &MPX::Player::on_play_status_changed
         ));
 
-		m_Play->signal_stream_switched().connect(
+		m_Play.signal_stream_switched().connect(
             sigc::mem_fun( *this, &MPX::Player::on_stream_switched
         ));
 
-        m_Play->signal_spectrum().connect(
+        m_Play.signal_spectrum().connect(
             sigc::mem_fun( *this, &MPX::Player::on_play_update_spectrum )
         );
 
-        m_VideoWidget = manage(new VideoWidget(m_Play));
+        m_VideoWidget = manage(new VideoWidget(&m_Play));
         m_VideoWidget->show ();
         gtk_widget_realize (GTK_WIDGET (m_VideoWidget->gobj()));
 
-        if( m_Play->has_video() )
+        if( m_Play.has_video() )
         {
-            m_Play->signal_request_window_id ().connect
+            m_Play.signal_request_window_id ().connect
                     (sigc::mem_fun( *this, &Player::on_gst_set_window_id ));
-            m_Play->signal_video_geom ().connect
+            m_Play.signal_video_geom ().connect
                     (sigc::mem_fun( *this, &Player::on_gst_set_window_geom ));
         }
 			  
-        m_Preferences = Preferences::create(*m_Play);
+        m_Preferences = Preferences::create(m_Play);
 
 #ifdef HAVE_HAL
-        m_MLibManager = MLibManager::create(obj_hal, obj_library);
+        m_MLibManager = MLibManager::create(m_HAL, m_Library);
 #endif // HAVE_HAL
 
         m_scrolllock_mask   = 0;
@@ -1040,23 +1033,13 @@ namespace MPX
 		DBusObjects.mpx->startup_complete(DBusObjects.mpx);
     }
 
-#ifdef HAVE_HAL
     Player*
-    Player::create (MPX::Library & obj_library, MPX::Covers & obj_amazn, MPX::HAL & obj_hal)
+    Player::create (MPX::Service::Manager&services)
     {
 		const std::string path (build_filename(DATA_DIR, build_filename("glade","mpx.glade")));
-		Player * p = new Player(Gnome::Glade::Xml::create (path), obj_library, obj_amazn, obj_hal); 
+		Player * p = new Player(Gnome::Glade::Xml::create (path), services);
 		return p;
     }
-#else
-    Player*
-    Player::create (MPX::Library & obj_library, MPX::Covers & obj_amazn)
-    {
-		const std::string path (build_filename(DATA_DIR, build_filename("glade","mpx.glade")));
-		Player * p = new Player(Gnome::Glade::Xml::create (path), obj_library, obj_amazn); 
-		return p;
-    }
-#endif // HAVE_HAL
 
     Player::~Player()
     {
@@ -1208,7 +1191,7 @@ namespace MPX
 	void
 	Player::get_object (PAccess<MPX::Play> & pa)
 	{
-		pa = PAccess<MPX::Play>(*m_Play);
+		pa = PAccess<MPX::Play>(m_Play);
 	}
 
 #ifdef HAVE_HAL
@@ -1228,7 +1211,7 @@ namespace MPX
     MPXPlaystatus
     Player::get_status ()
     {
-        return MPXPlaystatus(m_Play->property_status().get_value());
+        return MPXPlaystatus(m_Play.property_status().get_value());
     }
 
 
@@ -1280,7 +1263,7 @@ namespace MPX
 	void
 	Player::on_volume_value_changed (double volume)
 	{
-		m_Play->property_volume() = volume*100;	
+		m_Play.property_volume() = volume*100;	
 		mcs->key_set("mpx","volume", int(volume*100));
 	}
 
@@ -1290,22 +1273,22 @@ namespace MPX
 	  if( event->type == GDK_KEY_PRESS )
 	  {
 			  GdkEventKey * ev = ((GdkEventKey*)(event));
-			  gint64 status = m_Play->property_status().get_value();
+			  gint64 status = m_Play.property_status().get_value();
 			  if((status == PLAYSTATUS_PLAYING) || (status == PLAYSTATUS_PAUSED))
 			  {
-					  gint64 pos = m_Play->property_position().get_value();
+					  gint64 pos = m_Play.property_position().get_value();
 
 					  int delta = (ev->state & GDK_SHIFT_MASK) ? 1 : 15;
 
 					  if(ev->keyval == GDK_Left)
 					  {
-						  m_Play->seek( pos - delta );
+						  m_Play.seek( pos - delta );
 						  m_TrackPlayedSeconds -= delta;
 						  return true;
 					  }
 					  else if(ev->keyval == GDK_Right)
 					  {
-						  m_Play->seek( pos + delta );
+						  m_Play.seek( pos + delta );
 						  return true;
 					  }
 			  }
@@ -1314,7 +1297,7 @@ namespace MPX
 	  else if( event->type == GDK_BUTTON_PRESS )
 	  {
 		g_atomic_int_set(&m_Seeking,1);
-		m_PreSeekPosition = m_Play->property_position().get_value();
+		m_PreSeekPosition = m_Play.property_position().get_value();
 		goto SET_SEEK_POSITION;
 	  }
 	  else if( event->type == GDK_BUTTON_RELEASE && g_atomic_int_get(&m_Seeking))
@@ -1324,13 +1307,13 @@ namespace MPX
 		{
 			m_TrackPlayedSeconds -= (m_PreSeekPosition - m_Seek->get_value());
 		}
-		m_Play->seek (gint64(m_Seek->get_value()));
+		m_Play.seek (gint64(m_Seek->get_value()));
 	  }
 	  else if( event->type == GDK_MOTION_NOTIFY && g_atomic_int_get(&m_Seeking))
 	  {
 		SET_SEEK_POSITION:
 
-		guint64 duration = m_Play->property_duration().get_value();
+		guint64 duration = m_Play.property_duration().get_value();
 		guint64 position = m_Seek->get_value();
 
 		guint64 m_pos = position / 60;
@@ -1356,7 +1339,7 @@ namespace MPX
 	{
         Glib::Mutex::Lock L (m_MetadataLock);
 
-		MPXGstMetadata const& m = m_Play->get_metadata();
+		MPXGstMetadata const& m = m_Play.get_metadata();
 
 		switch (field)
 		{
@@ -1417,7 +1400,7 @@ namespace MPX
 	  if (g_atomic_int_get(&m_Seeking))
 		return;
 
-	  guint64 duration = m_Play->property_duration().get_value();
+	  guint64 duration = m_Play.property_duration().get_value();
 
 	  if( (duration > 0) && (position <= duration) && (position >= 0) )
 	  {
@@ -1439,7 +1422,7 @@ namespace MPX
 		m_Seek->set_value(double (position));
 
 		m_TrackPlayedSeconds += 0.5; // this is slightly incorrect, the tick is every 500ms, but nothing says that the time always also progresses by exactly 0.5s
-		m_TrackDuration = m_Play->property_duration().get_value();
+		m_TrackDuration = m_Play.property_duration().get_value();
 	  }
 	}
 
@@ -1471,7 +1454,7 @@ namespace MPX
     void
     Player::switch_stream(std::string const& uri, std::string const& type)
     {
-        m_Play->switch_stream( uri, type );
+        m_Play.switch_stream( uri, type );
     }
 
 	void
@@ -1556,7 +1539,7 @@ namespace MPX
 
           if( c & C_CAN_PLAY )
           {
-            if( m_ActiveSource && (m_Play->property_status().get_value() != PLAYSTATUS_STOPPED))
+            if( m_ActiveSource && (m_Play.property_status().get_value() != PLAYSTATUS_STOPPED))
             {
                   track_played ();
 
@@ -1564,7 +1547,7 @@ namespace MPX
 
                   if( m_ActiveSource != source_id)
                   {
-                        m_Play->request_status (PLAYSTATUS_STOPPED);
+                        m_Play.request_status (PLAYSTATUS_STOPPED);
                   }
             }
 
@@ -1603,13 +1586,13 @@ namespace MPX
 
         if(c & C_CAN_PAUSE )
         {
-            if( m_Play->property_status() == PLAYSTATUS_PAUSED)
+            if( m_Play.property_status() == PLAYSTATUS_PAUSED)
             {
-                m_Play->request_status (PLAYSTATUS_PLAYING);
+                m_Play.request_status (PLAYSTATUS_PLAYING);
             }
             else
             {
-              m_Play->request_status (PLAYSTATUS_PAUSED);
+              m_Play.request_status (PLAYSTATUS_PAUSED);
             }
         }
 	}
@@ -1690,21 +1673,21 @@ namespace MPX
         {
             m_Sources[m_PreparingSource.get()]->stop ();
             m_Sources[m_PreparingSource.get()]->send_caps ();
-            m_Play->request_status( PLAYSTATUS_STOPPED );
+            m_Play.request_status( PLAYSTATUS_STOPPED );
         }
         else
         {
             track_played();
             m_Sources[m_ActiveSource.get()]->stop ();
             m_Sources[m_ActiveSource.get()]->send_caps ();
-            m_Play->request_status( PLAYSTATUS_STOPPED );
+            m_Play.request_status( PLAYSTATUS_STOPPED );
         }
 	}
 
 	void
 	Player::on_play_status_changed ()
 	{
-	  MPXPlaystatus status = MPXPlaystatus (m_Play->property_status().get_value());
+	  MPXPlaystatus status = MPXPlaystatus (m_Play.property_status().get_value());
 
 	  switch( status )
 	  {
@@ -2133,7 +2116,7 @@ namespace MPX
 
         if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
         {
-            m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
+            m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play.property_stream().get_value();
         }
 
         metadata_reparse ();

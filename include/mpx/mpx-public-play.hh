@@ -30,17 +30,17 @@
 
 #include <glibmm.h>
 #include <cstring>
-
-using namespace std;
+#include "mpx/mpx-services.hh"
 
 namespace MPX
 {
     class Play
-      : public Glib::Object
+    : public Glib::Object
+    , public Service::Base
     {
       private:
 
-        Play ();
+        Play (MPX::Service::Manager&);
         ~Play ();
 
       public:

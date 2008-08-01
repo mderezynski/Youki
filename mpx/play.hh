@@ -56,6 +56,8 @@
 #include "audio-types.hh"
 #include "messages.hh"
 
+#include "mpx/mpx-services.hh"
+
 using namespace std;
 
 namespace MPX
@@ -69,7 +71,8 @@ namespace MPX
      *
      */
     class Play
-      : public Glib::Object
+    : public Glib::Object
+    , public Service::Base
     {
       private:
 
@@ -127,7 +130,7 @@ namespace MPX
 
       public:
 
-        Play ();
+        Play (MPX::Service::Manager&);
         ~Play ();
 
         ProxyOf<PropString>::ReadWrite  property_stream ();

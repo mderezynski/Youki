@@ -50,6 +50,7 @@
 #include "mpx/mpx-main.hh"
 #include "mpx/metadatareader-taglib.hh"
 #include "mpx/mpx-network.hh"
+#include "play.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/mpx-types.hh"
 
@@ -356,37 +357,55 @@ main (int argc, char ** argv)
 
 #ifdef HAVE_HAL
     try{
-        boost::shared_ptr<HAL>      ptr_halobj  (new MPX::HAL(*services));
+        boost::shared_ptr<HAL>
+            ptr_halobj
+            (new MPX::HAL(*services));
         services->add(ptr_halobj);
 #endif
-        boost::shared_ptr<Covers>   ptr_covers  (new MPX::Covers(*services));
+ //       MPX::NM *obj_netman = new MPX::NM;
+
+        boost::shared_ptr<Covers>
+            ptr_covers
+            (new MPX::Covers(*services));
         services->add(ptr_covers);
 
-        MPX::NM                     * obj_netman            = new MPX::NM;
+        boost::shared_ptr<MetadataReaderTagLib>
+            ptr_taglib
+            (new MPX::MetadataReaderTagLib(*services));
+        services->add(ptr_taglib);
 
-		MPX::MetadataReaderTagLib   * obj_reader            = new MPX::MetadataReaderTagLib();
 #ifdef HAVE_HAL
-        MPX::Library                * obj_library           = new MPX::Library(*ptr_halobj.get(), *ptr_covers.get(), *obj_reader, true);
+        boost::shared_ptr<Library>
+            ptr_library
+            (new MPX::Library(*services, true));
+        services->add(ptr_library);
 #else
-        MPX::Library                * obj_library           = new MPX::Library(*obj_covers, *obj_reader); 
+        boost::shared_ptr<Library>
+            ptr_library
+            (new MPX::Library(*services));
+        services->add(ptr_library);
 #endif
 
-#ifdef HAVE_HAL
-        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *ptr_covers.get(), *ptr_halobj.get());
-#else
-        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *ptr_covers.get());
-#endif // HAVE_HAL
-        
+        boost::shared_ptr<Play>
+            ptr_play
+            (new MPX::Play(*services));
+        services->add(ptr_play);
+
+        boost::shared_ptr<Player>
+            ptr_player
+            (MPX::Player::create(*services));
+        services->add(ptr_player);
+
         Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
 
         gtkLock.lock();
-        gtk->run (*obj_mpx);
+        gtk->run (*ptr_player.get());
 
-        delete obj_mpx;
-        delete obj_library;
+//        delete obj_mpx;
+//        delete obj_library;
 //        delete obj_covers;
-        delete obj_reader;
-        delete obj_netman;
+//        delete ptr_taglib;
+//        delete obj_netman;
 #ifdef HAVE_HAL
 //        delete obj_hal;
       }

@@ -347,7 +347,7 @@ namespace MPX
                 }
                 else
                 {
-                  m_Play->request_status (PLAYSTATUS_STOPPED);
+                  m_Play.request_status (PLAYSTATUS_STOPPED);
                 }
         }
 	}
@@ -384,7 +384,7 @@ namespace MPX
         {
             m_SourceUI = m_Sources[source_id]->add_menu();
 
-            if( (m_Play->property_status() == PLAYSTATUS_PLAYING)
+            if( (m_Play.property_status() == PLAYSTATUS_PLAYING)
                 && ( m_ActiveSource && m_ActiveSource.get() == source_id ))
             {
                 Caps caps = m_source_c[source_id];

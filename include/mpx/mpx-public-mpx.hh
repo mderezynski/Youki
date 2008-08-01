@@ -29,6 +29,7 @@
 #include "widgets/widgetloader.hh"
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/i-playbacksource.hh"
+#include "mpx/mpx-services.hh"
 
 using namespace Gnome::Glade;
 
@@ -45,8 +46,9 @@ namespace MPX
     class HAL;
 
     class Player
-      : public WidgetLoader<Gtk::Window>
-      , public sigx::glib_auto_dispatchable
+    : public WidgetLoader<Gtk::Window>
+    , public sigx::glib_auto_dispatchable
+    , public Service::Base
     {
       public:
 
@@ -83,7 +85,7 @@ namespace MPX
 
       protected:
 
-        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Library&, MPX::Covers&);
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Service::Manager&);
     };
 }
 #endif

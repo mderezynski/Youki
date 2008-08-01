@@ -508,10 +508,10 @@ namespace MPX
       Caps c = player.m_source_c[player.m_ActiveSource.get()];
 
       if (strcmp (key, "Play") == 0) {
-        if( player.m_Play->property_status() == PLAYSTATUS_PAUSED)
+        if( player.m_Play.property_status() == PLAYSTATUS_PAUSED)
           player.pause ();
         else
-        if( player.m_Play->property_status() != PLAYSTATUS_WAITING)
+        if( player.m_Play.property_status() != PLAYSTATUS_WAITING)
           player.play ();
       } else if (strcmp (key, "Pause") == 0) {
         if( c & C_CAN_PAUSE )
