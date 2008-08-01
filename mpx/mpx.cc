@@ -1545,38 +1545,34 @@ namespace MPX
 
             if( c & C_CAN_PLAY )
             {
-              if( m_ActiveSource && (m_Play.property_status().get_value() != PLAYSTATUS_STOPPED))
-              {
-                    track_played ();
+                if( m_ActiveSource && (m_Play.property_status().get_value() != PLAYSTATUS_STOPPED))
+                {
+                      track_played ();
+                      m_Sources[m_ActiveSource.get()]->stop ();
+                }
+                
+                if( m_PreparingSource )
+                {
+                      m_Sources[m_PreparingSource.get()]->stop ();
+                }
 
-                    m_Sources[m_ActiveSource.get()]->stop ();
+                PlaybackSource* source = m_Sources[source_id];
+                m_PreparingSource = source_id;
 
-                    if( m_ActiveSource != source_id)
-                    {
-                          m_Play.request_status (PLAYSTATUS_STOPPED);
-                    }
-              }
-
-              del_caps(C_CAN_PAUSE);
-
-              PlaybackSource* source = m_Sources[source_id];
-              m_PreparingSource = source_id;
-              
-              if( m_source_f[source_id] & F_ASYNC)
-              {
-                      source->play_async ();
-                      set_caps(C_CAN_STOP);
-                      return;
-              }
-              else
-              {
-                      if( source->play() )
-                      {
-                            m_PlayDirection = PD_PLAY;
-                            switch_stream (source->get_uri(), source->get_type());
-                            return;
-                      }
-              }
+                if( m_source_f[source_id] & F_ASYNC)
+                {
+                        source->play_async ();
+                        return;
+                }
+                else
+                {
+                        if( source->play() )
+                        {
+                              m_PlayDirection = PD_PLAY;
+                              switch_stream (source->get_uri(), source->get_type());
+                              return;
+                        }
+                }
             }
 
             stop ();
@@ -1715,6 +1711,11 @@ namespace MPX
                     m_Sources[m_ActiveSource.get()]->send_caps ();
                 }
 
+                if( m_PreparingSource ) 
+                {
+                    m_Sources[m_PreparingSource.get()]->stop ();
+                }
+
                 g_atomic_int_set(&m_Seeking, 0);
                 m_Seek->set_range(0., 1.);
                 m_Seek->set_value(0.);
@@ -1725,16 +1726,13 @@ namespace MPX
                 m_VideoWidget->queue_draw();
 
                 m_TimeLabel->set_text("      …      ");
-
                 set_title (_("AudioSource: (Not Playing)"));
 
                 m_InfoArea->reset();
                 m_Metadata.reset();	
-
-                m_Sidebar->clearActiveId();
-
                 m_ActiveSource.reset();
                 m_PreparingSource.reset();
+                m_Sidebar->clearActiveId();
 
                 break;
 		  }
@@ -1753,7 +1751,6 @@ namespace MPX
                 m_VideoWidget->queue_draw();
 
                 m_Metadata.reset();	
-                //m_InfoArea->reset();
 
 			    break;
 		  }

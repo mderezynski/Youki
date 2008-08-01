@@ -326,9 +326,8 @@ namespace MPX
             track_played();
             m_Sources[m_ActiveSource.get()]->stop ();
             m_Sources[m_ActiveSource.get()]->send_caps ();
+            m_ActiveSource.reset();
         }
-
-        del_caps(C_CAN_PAUSE);
 
         PlaybackSource* source = m_Sources[source_id];
         m_PreparingSource = source_id;
@@ -344,12 +343,11 @@ namespace MPX
                 {
                   m_PlayDirection = PD_PLAY;
                   switch_stream (source->get_uri(), source->get_type());
-                }
-                else
-                {
-                  m_Play.request_status (PLAYSTATUS_STOPPED);
+                  return;
                 }
         }
+
+        stop();
 	}
 
 	void
