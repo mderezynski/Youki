@@ -67,7 +67,7 @@ namespace MPX
             int
             file_system_tree_sort (const Gtk::TreeIter & iter_a, const Gtk::TreeIter & iter_b);
 
-            void
+            bool
             prescan_path (std::string const& path, Gtk::TreeIter & iter);
 
             void
@@ -75,6 +75,9 @@ namespace MPX
             
             void
             cell_data_func_text (Gtk::CellRenderer * basecell, Gtk::TreeIter const& iter);
+
+            bool
+            search_func(const Glib::RefPtr<Gtk::TreeModel>&, int, const Glib::ustring&, const Gtk::TreeModel::iterator&);
 
 
             struct FileSystemTreeColumnsT : public Gtk::TreeModel::ColumnRecord

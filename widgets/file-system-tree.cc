@@ -80,6 +80,13 @@ namespace MPX
         ); 
 
         set_model(FileSystemTreeStore);
+        set_enable_search();
+        set_search_column(FileSystemTreeColumns.SegName);
+        set_search_equal_func(
+            sigc::mem_fun(
+                *this,
+                &FileSystemTree::search_func
+        ));
     }
 
     /* ------------------------------------------------------------------------------------------------*/
@@ -97,15 +104,15 @@ namespace MPX
             return a.compare(b);
 
         if(is_dir_a && is_dir_b)
-            return 0;
+            return a.compare(b);
 
         if(!is_dir_a)
-            return 1;
-
-        return -1;
+            return  1;
+        else
+            return -1;
     }
 
-    void
+    bool
     FileSystemTree::prescan_path (std::string const& scan_path, TreeIter & iter)
     {
         try{
@@ -116,15 +123,16 @@ namespace MPX
                 for(std::vector<std::string>::const_iterator i = strv.begin(); i != strv.end(); ++i)
                 {
                     std::string path = build_filename(scan_path, *i);
-                    if((i->operator[](0) != '.')
-                      && file_test(path, FILE_TEST_IS_DIR))
+                    if((i->operator[](0) != '.'))
                     {
                         FileSystemTreeStore->append(iter->children());
-                        return;
+                        return true;
                     }
                 }
         } catch( Glib::FileError ) {
         }
+
+        return false;
     } 
 
     void
@@ -148,7 +156,10 @@ namespace MPX
                             if(file_test(path, FILE_TEST_IS_DIR))
                             {
                                 (*iter)[FileSystemTreeColumns.IsDir] = true;
-                                prescan_path (path, iter);
+                                if(!prescan_path (path, iter))
+                                {
+                                    FileSystemTreeStore->erase(iter);
+                                }
                             }
                             else
                             {
@@ -187,6 +198,13 @@ namespace MPX
 
         Glib::ustring segName = (*iter)[FileSystemTreeColumns.SegName];
         cell.property_text() = segName; 
+    }
+
+    bool
+    FileSystemTree::search_func(const Glib::RefPtr<TreeModel>& model, int col, const Glib::ustring& key, const TreeModel::iterator& iter)
+    {
+        Glib::ustring haystack = (*iter)[FileSystemTreeColumns.SegName]; 
+        return Util::match_keys(haystack, key);
     }
 
     void

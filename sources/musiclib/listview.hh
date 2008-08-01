@@ -458,8 +458,8 @@ namespace MPX
 
         class ListView : public Gtk::DrawingArea
         {
-                int                                 m_rowheight;
-                int                                 m_visibleheight;
+                int                                 m_row_height;
+                int                                 m_visible_height;
                 int                                 m_previousdrawnrow;
                 DataModelFilterP                    m_model;
                 Columns                             m_columns;
@@ -486,14 +486,14 @@ namespace MPX
                                                                             GTK_WIDGET (gobj())->style->font_desc, 
                                                                             pango_context_get_language (context));
 
-                    m_rowheight = (pango_font_metrics_get_ascent (metrics)/PANGO_SCALE) + 
+                    m_row_height = (pango_font_metrics_get_ascent (metrics)/PANGO_SCALE) + 
                                    (pango_font_metrics_get_descent (metrics)/PANGO_SCALE) + 8;
                 }
 
                 void
                 on_vadj_value_changed ()
                 {
-                    int row = (double(m_prop_vadj.get_value()->get_value()-m_rowheight) / double(m_rowheight));
+                    int row = (double(m_prop_vadj.get_value()->get_value()-m_row_height) / double(m_row_height));
                     if( m_previousdrawnrow != row )
                     {
                         queue_draw ();
@@ -503,15 +503,15 @@ namespace MPX
                 int
                 get_upper_row ()
                 {
-                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_rowheight); 
+                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
                     return row_upper;
                 }
 
                 bool
                 get_row_is_visible (int row)
                 {
-                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_rowheight); 
-                    int row_lower = row_upper + m_visibleheight/m_rowheight;
+                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
+                    int row_lower = row_upper + m_visible_height/m_row_height;
                     return ( row >= row_upper && row <= row_lower);
                 }
 
@@ -591,7 +591,7 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Up )
                             {
-                                step = - (m_visibleheight / m_rowheight) + 1;
+                                step = - (m_visible_height / m_row_height) + 1;
                             }
                             else
                             {
@@ -624,7 +624,7 @@ namespace MPX
                                         if( row < get_upper_row()) 
                                         {
                                             double value = m_prop_vadj.get_value()->get_value();
-                                            value += step*m_rowheight;
+                                            value += step*m_row_height;
                                             m_prop_vadj.get_value()->set_value( value );
                                         }
                                     }
@@ -643,7 +643,7 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Down )
                             {
-                                step = (m_visibleheight / m_rowheight) - 1;
+                                step = (m_visible_height / m_row_height) - 1;
                             }
                             else
                             {
@@ -673,10 +673,10 @@ namespace MPX
                                         m_selection.clear();
                                         m_selection.insert(std::make_pair(i, row));
 
-                                        if( row >= (get_upper_row() + ((m_visibleheight-m_rowheight)/m_rowheight)))
+                                        if( row >= (get_upper_row() + ((m_visible_height-m_row_height)/m_row_height)))
                                         {
                                             double value = m_prop_vadj.get_value()->get_value();
-                                            value += step*m_rowheight;
+                                            value += step*m_row_height;
                                             m_prop_vadj.get_value()->set_value( value );
                                         }
                                     }
@@ -698,7 +698,7 @@ namespace MPX
                 {
                     using boost::get;
 
-                    if( event->y < (m_rowheight+4))
+                    if( event->y < (m_row_height+4))
                     {
                         return false;
                     }
@@ -723,7 +723,7 @@ namespace MPX
                             Selection::iterator i_sel = m_selection.end();
                             i_sel--;
                             int row_p = i_sel->second; 
-                            int row_c = get_upper_row() + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
+                            int row_c = get_upper_row() + ((int(event->y)-(m_row_height+2)) / m_row_height);
                             if( row_c < m_model->m_mapping.size() )
                             {
                                     for(int i = row_p+1; i <= row_c; ++i)
@@ -735,7 +735,7 @@ namespace MPX
                         }
                         else
                         {
-                            int row = get_upper_row() + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
+                            int row = get_upper_row() + ((int(event->y)-(m_row_height+2)) / m_row_height);
                             if( row < m_model->m_mapping.size() )
                             {
                                     m_click_row_1 = row;
@@ -765,7 +765,7 @@ namespace MPX
                 {
                     using boost::get;
 
-                    if( event->y < (m_rowheight+4))
+                    if( event->y < (m_row_height+4))
                     {
                         return false;
                     }
@@ -789,7 +789,7 @@ namespace MPX
                                 Selection::iterator i_sel = m_selection.end();
                                 i_sel--;
                                 int row_p = i_sel->second; 
-                                int row_c = get_upper_row() + ((int(event->y)-(m_rowheight+2)) / m_rowheight);
+                                int row_c = get_upper_row() + ((int(event->y)-(m_row_height+2)) / m_row_height);
                                 if( row_c < m_model->m_mapping.size() )
                                 {
                                         for(int i = row_p+1; i <= row_c; ++i)
@@ -816,9 +816,9 @@ namespace MPX
                 on_configure_event (GdkEventConfigure * event)        
                 {
                     m_prop_vadj.get_value()->set_page_size(event->height); 
-                    m_prop_vadj.get_value()->set_upper((m_model->size()) * m_rowheight);
+                    m_prop_vadj.get_value()->set_upper((m_model->size()) * m_row_height);
 
-                    m_visibleheight = event->height;
+                    m_visible_height = event->height;
 
                     double columnwidth = double(event->width) / double(m_columns.size());
 
@@ -843,17 +843,18 @@ namespace MPX
                     int row = get_upper_row() ;
                     m_previousdrawnrow = row;
 
-                    int y_pos = m_rowheight + 4;
-                    int x_pos = 0;
-                    int col   = 0;
+                    int y_pos       = m_row_height + 2;
+                    int x_pos       = 0;
+                    int col         = 0;
+                    int cnt         = (m_visible_height - (m_row_height + 2)) / m_row_height;
                     
                     for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i, ++col)
                     {
-                        (*i)->render_header(cairo, *this, x_pos, 0, m_rowheight+2, col);
+                        (*i)->render_header(cairo, *this, x_pos, 0, m_row_height+2, col);
                         x_pos += (*i)->get_width() + 1;
                     }
 
-                    while(m_model->is_set() && (y_pos < (m_visibleheight-m_rowheight)) && (row < m_model->m_mapping.size())) 
+                    while(m_model->is_set() && cnt && (row < m_model->m_mapping.size())) 
                     {
                         x_pos = 0;
 
@@ -863,7 +864,7 @@ namespace MPX
                           background_area.x = 0;
                           background_area.y = y_pos;
                           background_area.width = alloc.get_width();
-                          background_area.height = m_rowheight;
+                          background_area.height = m_row_height;
 
                           gtk_paint_flat_box(get_style()->gobj(),
                                   event->window,
@@ -886,8 +887,8 @@ namespace MPX
                             cairo->set_operator(Cairo::OPERATOR_ATOP);
                             Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
                             cairo->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.8);
-                            //RoundedRectangle(cairo, 2, y_pos+2, alloc.get_width()-4, m_rowheight-4, 4.);
-                            cairo->rectangle(0, y_pos+2, alloc.get_width(), m_rowheight-4.);
+                            //RoundedRectangle(cairo, 2, y_pos+2, alloc.get_width()-4, m_row_height-4, 4.);
+                            cairo->rectangle(0, y_pos+2, alloc.get_width(), m_row_height-4.);
                             cairo->fill_preserve(); 
                             cairo->set_source_rgb(c.get_red_p(), c.get_green_p(), c.get_blue_p());
                             cairo->stroke();
@@ -895,12 +896,13 @@ namespace MPX
 
                         for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                         {
-                            (*i)->render(cairo, m_model->row(row), m_model->m_filter, *this, row, x_pos, y_pos, m_rowheight, m_highlight);
+                            (*i)->render(cairo, m_model->row(row), m_model->m_filter, *this, row, x_pos, y_pos, m_row_height, m_highlight);
                             x_pos += (*i)->get_width();
                         }
 
-                        y_pos += m_rowheight;
+                        y_pos += m_row_height;
                         row ++;
+                        cnt --;
                     }
 
                     if( has_focus() )
@@ -924,13 +926,13 @@ namespace MPX
                 void
                 on_model_changed()
                 {
-                    int view_count = m_visibleheight / m_rowheight;
+                    int view_count = m_visible_height / m_row_height;
                     if( m_model->size() < view_count )
                     {
                         m_prop_vadj.get_value()->set_value(0.);
                     } 
                     m_selection.clear();
-                    m_prop_vadj.get_value()->set_upper((m_model->size()) * m_rowheight);
+                    m_prop_vadj.get_value()->set_upper((m_model->size()) * m_row_height);
                     queue_draw();
                 }
 
@@ -970,7 +972,7 @@ namespace MPX
                 set_model(DataModelFilterP model)
                 {
                     m_model = model;
-                    set_size_request(200, 8 * m_rowheight);
+                    set_size_request(200, 8 * m_row_height);
                     m_model->signal_changed().connect(
                         sigc::mem_fun(
                             *this,
