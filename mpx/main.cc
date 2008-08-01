@@ -39,12 +39,12 @@
 #include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
 
+#include "paths.hh"
 #include "play.hh"
 #include "signals.hh"
 
 #include <clutter/clutter.h>
 #include <glib/gi18n.h>
-#include <glib/gstdio.h>
 #include <glibmm/miscutils.h>
 #include <giomm.h>
 #include <gst/gst.h>
@@ -68,12 +68,6 @@ namespace MPX
     const int signal_check_interval = 1000;
 
     int terminate = 0;
-
-
-    void make_user_dir (std::string const& path)
-    {
-        g_mkdir(path.c_str(), 0700);
-    }
 
     void
     empty_handler (int signal_number)
@@ -132,9 +126,7 @@ namespace MPX
     setup_mcs ()
     {
         try{
-            std::string user_config_dir = Glib::build_filename (Glib::get_user_config_dir (), "mpx");
-
-            mcs = new Mcs::Mcs (Glib::build_filename (user_config_dir, "config.xml"), "mpx", 0.01);
+            mcs = new Mcs::Mcs (Glib::build_filename (get_app_config_dir (), "config.xml"), "mpx", 0.01);
         } catch( Mcs::Mcs::Exceptions & cxe )
         {
             if (cxe == Mcs::Mcs::PARSE_ERROR)
@@ -290,11 +282,9 @@ main (int argc, char ** argv)
 
     signal_handlers_install ();
 
-    setup_mcs ();
+    create_user_dirs ();
 
-    make_user_dir (Glib::build_filename(g_get_user_data_dir(), "mpx"));
-    make_user_dir (Glib::build_filename(g_get_user_cache_dir(), "mpx"));
-    make_user_dir (Glib::build_filename(g_get_user_config_dir(), "mpx"));
+    setup_mcs ();
 
     GOptionContext * context_c = g_option_context_new (_(" - run AudioSource Player"));
     g_option_context_add_group (context_c, gst_init_get_option_group ());

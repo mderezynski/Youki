@@ -155,6 +155,9 @@ mpx_bin_SOURCES =				\
 								\
 	network.cc					\
 								\
+	paths.hh					\
+	paths.cc					\
+								\
 	play.hh						\
 	play.cc						\
 								\
