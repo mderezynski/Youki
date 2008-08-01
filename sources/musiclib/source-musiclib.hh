@@ -34,11 +34,12 @@
 #include <pygobject.h>
 #include <pygtk/pygtk.h>
 
+#include "mpx/i-playbacksource.hh"
+
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-public-mpx.hh"
 #include "mpx/mpx-types.hh"
-#include "mpx/i-playbacksource.hh"
 #include "mpx/mpx-protected-access.hh"
 
 namespace MPX

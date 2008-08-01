@@ -4,7 +4,7 @@ libmpx_widgets_la_CFLAGS = 	\
 	$(GLIB_CFLAGS) $(GTK_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
 
 libmpx_widgets_la_CXXFLAGS = \
-	$(GLADEMM_CFLAGS) $(GLIBMM_CFLAGS) $(GTKMM_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
+	$(SIGX_CFLAGS) $(GIOMM_CFLAGS) $(GLADEMM_CFLAGS) $(GLIBMM_CFLAGS) $(GTKMM_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
 
 libmpx_widgets_la_LIBADD =	\
 	$(GLIBMM_LIBS)			\
@@ -23,6 +23,7 @@ libmpx_widgets_la_SOURCES = 			\
 		cell-renderer-source.cc			\
 		cell-renderer-vbox.cc			\
 		dialog-simple-entry.cc			\
+		file-system-tree.cc				\
 		gossip-cell-renderer-expander.c	\
 		rounded-layout.cc				\
 		taskdialog.cc					\
