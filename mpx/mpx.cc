@@ -1487,94 +1487,100 @@ namespace MPX
 	void
 	Player::on_stream_switched ()
 	{
-      g_return_if_fail(m_PreparingSource);
+        g_return_if_fail(m_PreparingSource || m_ActiveSource);
 
-      m_ActiveSource = m_PreparingSource.get();
-      m_PreparingSource.reset();
-	  PlaybackSource* source = m_Sources[m_PreparingSource.get()];
-      m_Sidebar->setActiveId(m_ActiveSource.get());
+        if(!m_ActiveSource)
+        {
+            g_return_if_fail(m_PreparingSource);
 
-	  source->send_metadata ();
+            m_ActiveSource = m_PreparingSource.get();
+            m_PreparingSource.reset();
+        }
 
-      switch( m_PlayDirection )
-      {
-        case PD_NONE:
-            g_return_if_fail(0);
-            break;
+        PlaybackSource* source = m_Sources[m_ActiveSource.get()];
+        m_Sidebar->setActiveId(m_ActiveSource.get());
 
-        case PD_PREV:
-            source->prev_post();
-            break;
-       
-        case PD_NEXT: 
-            source->next_post();
+        source->send_metadata ();
 
-        case PD_PLAY:
-            source->play_post();
-            break;
-      };
+        switch( m_PlayDirection )
+        {
+          case PD_NONE:
+              g_return_if_fail(0);
+              break;
 
-	  source->send_caps ();
+          case PD_PREV:
+              source->prev_post();
+              break;
+         
+          case PD_NEXT: 
+              source->next_post();
 
-	  Mutex::Lock L (m_SourceCFLock);
+          case PD_PLAY:
+              source->play_post();
+              break;
+        };
 
-      Caps caps = m_source_c[m_ActiveSource.get()];
-      set_caps(C_CAN_SEEK, caps & C_CAN_SEEK);
-      set_caps(C_CAN_PAUSE, caps & C_CAN_PAUSE);
+        source->send_caps ();
 
-      PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-      g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
-      check_py_error();
-      pyg_gil_state_release(state);
+        Mutex::Lock L (m_SourceCFLock);
+
+        Caps caps = m_source_c[m_ActiveSource.get()];
+        set_caps(C_CAN_SEEK, caps & C_CAN_SEEK);
+        set_caps(C_CAN_PAUSE, caps & C_CAN_PAUSE);
+
+        PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
+        check_py_error();
+        pyg_gil_state_release(state);
 	}
 
 	void
 	Player::play ()
 	{
-	  ItemKey const& source_id = m_Sidebar->getVisibleId(); 
+        ItemKey const& source_id = m_Sidebar->getVisibleId(); 
 
-      if( m_Sources.count(source_id) ) 
-      {
-          Caps c = m_source_c[source_id];
+        if( m_Sources.count(source_id) ) 
+        {
+            Caps c = m_source_c[source_id];
 
-          if( c & C_CAN_PLAY )
-          {
-            if( m_ActiveSource && (m_Play.property_status().get_value() != PLAYSTATUS_STOPPED))
+            if( c & C_CAN_PLAY )
             {
-                  track_played ();
+              if( m_ActiveSource && (m_Play.property_status().get_value() != PLAYSTATUS_STOPPED))
+              {
+                    track_played ();
 
-                  m_Sources[m_ActiveSource.get()]->stop ();
+                    m_Sources[m_ActiveSource.get()]->stop ();
 
-                  if( m_ActiveSource != source_id)
-                  {
-                        m_Play.request_status (PLAYSTATUS_STOPPED);
-                  }
-            }
-
-            del_caps(C_CAN_PAUSE);
-
-            PlaybackSource* source = m_Sources[source_id];
-            m_PreparingSource = source_id;
-            
-            if( m_source_f[source_id] & F_ASYNC)
-            {
-                    source->play_async ();
-                    set_caps(C_CAN_STOP);
-                    return;
-            }
-            else
-            {
-                    if( source->play() )
+                    if( m_ActiveSource != source_id)
                     {
-                          m_PlayDirection = PD_PLAY;
-                          switch_stream (source->get_uri(), source->get_type());
-                          return;
+                          m_Play.request_status (PLAYSTATUS_STOPPED);
                     }
-            }
-          }
+              }
 
-          stop ();
-      }
+              del_caps(C_CAN_PAUSE);
+
+              PlaybackSource* source = m_Sources[source_id];
+              m_PreparingSource = source_id;
+              
+              if( m_source_f[source_id] & F_ASYNC)
+              {
+                      source->play_async ();
+                      set_caps(C_CAN_STOP);
+                      return;
+              }
+              else
+              {
+                      if( source->play() )
+                      {
+                            m_PlayDirection = PD_PLAY;
+                            switch_stream (source->get_uri(), source->get_type());
+                            return;
+                      }
+              }
+            }
+
+            stop ();
+        }
 	}
 
 	void
