@@ -619,7 +619,7 @@ namespace MPX
                                     if( row >= 0 )
                                     {
                                         m_selection.clear();
-                                        m_selection.insert(std::make_pair(i, row));
+                                        m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
 
                                         if( row < get_upper_row()) 
                                         {
@@ -664,14 +664,14 @@ namespace MPX
                                 {
                                     ModelT::iterator i = (*(m_selection.begin())).first;
                                     int row = (*(m_selection.begin())).second;
-
+    
                                     std::advance(i, step);
                                     row += step;
 
                                     if( row < m_model->m_mapping.size() )
                                     {
                                         m_selection.clear();
-                                        m_selection.insert(std::make_pair(i, row));
+                                        m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
 
                                         if( row >= (get_upper_row() + ((m_visible_height-m_row_height)/m_row_height)))
                                         {
@@ -933,6 +933,7 @@ namespace MPX
                     } 
                     m_selection.clear();
                     m_prop_vadj.get_value()->set_upper((m_model->size()) * m_row_height);
+                    m_prop_vadj.get_value()->set_value(0.);
                     queue_draw();
                 }
 

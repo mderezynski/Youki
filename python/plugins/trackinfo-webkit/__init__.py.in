@@ -786,6 +786,8 @@ class TrackInfoQuery (threading.Thread):
                         self.html += artist_rels 
                         self.html += "<br/><br/>"
 
+                    self.html += "<a href='http://www.google.com/search?q=%s'>Google Search</a>, " % urllib.quote(entity.getName())
+                    self.html += "<a href='http://www.last.fm/music/%s'>Last.fm Page</a>, " % urllib.quote_plus(entity.getName())
                     self.html += "<a href='http://www.bbc.co.uk/music/artists/%s'>BBC Web Link</a>, " % id 
                     self.html += append_url_rels(entity)
 

@@ -81,7 +81,7 @@ namespace MPX
 
         set_model(FileSystemTreeStore);
         set_enable_search();
-        set_search_column(FileSystemTreeColumns.SegName);
+        //set_search_column(FileSystemTreeColumns.SegName);
         set_search_equal_func(
             sigc::mem_fun(
                 *this,
@@ -204,7 +204,7 @@ namespace MPX
     FileSystemTree::search_func(const Glib::RefPtr<TreeModel>& model, int col, const Glib::ustring& key, const TreeModel::iterator& iter)
     {
         Glib::ustring haystack = (*iter)[FileSystemTreeColumns.SegName]; 
-        return Util::match_keys(haystack, key);
+        return !Util::match_keys(haystack, key);
     }
 
     void
