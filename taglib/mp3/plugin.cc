@@ -6,7 +6,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include <fileref.h>
 #include <glibmm.h>
 
 // Plugin-specific include
