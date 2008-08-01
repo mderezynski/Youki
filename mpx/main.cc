@@ -67,7 +67,6 @@ namespace MPX
 namespace 
 {
     Gtk::Main * gtk = 0;
-    Glib::StaticMutex gtkLock;
     
     namespace
     {
@@ -337,7 +336,6 @@ main (int argc, char ** argv)
     g_mkdir(build_filename(g_get_user_config_dir(), "mpx").c_str(), 0700);
 
     GOptionContext * context_c = g_option_context_new (_(" - run AudioSource Player"));
-    //g_option_context_add_main_entries (context_c, options, "mpx");
     g_option_context_add_group (context_c, gst_init_get_option_group ());
     OptionContext context (context_c, true);
 
@@ -396,18 +394,9 @@ main (int argc, char ** argv)
             (MPX::Player::create(*services));
         services->add(ptr_player);
 
-        Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
-
-        gtkLock.lock();
         gtk->run (*ptr_player.get());
 
-//        delete obj_mpx;
-//        delete obj_library;
-//        delete obj_covers;
-//        delete ptr_taglib;
-//        delete obj_netman;
 #ifdef HAVE_HAL
-//        delete obj_hal;
       }
     catch( HAL::NotInitializedError )
       {
