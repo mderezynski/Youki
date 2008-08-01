@@ -2296,7 +2296,7 @@ namespace MPX
               {
                 Cairo::RefPtr<Cairo::ImageSurface> surface;
 
-                m_Covers.get().fetch(mbid, surface, COVER_SIZE_ALBUM_LIST);
+                m_Covers.get().fetch(mbid, surface, COVER_SIZE_ALBUM);
 
                 surface = Util::cairo_image_surface_round(surface, 9.5);
                 Util::cairo_image_surface_rounded_border(surface, .5, 9.5);
@@ -3113,7 +3113,7 @@ namespace MPX
               on_got_cover(const Glib::ustring& mbid)
               {
                 Cairo::RefPtr<Cairo::ImageSurface> surface;
-                m_Covers.get().fetch(mbid, surface, COVER_SIZE_ALBUM_LIST);
+                m_Covers.get().fetch(mbid, surface, COVER_SIZE_ALBUM);
 
                 Util::cairo_image_surface_border(surface, 2.);
                 surface = Util::cairo_image_surface_round(surface, 6.);
@@ -3171,7 +3171,7 @@ namespace MPX
                     (*iter)[LFMColumns.MBID] = mbid; 
 
                     Cairo::RefPtr<Cairo::ImageSurface> surface;
-                    if( m_Covers.get().fetch( mbid, surface, COVER_SIZE_ALBUM_LIST ))
+                    if( m_Covers.get().fetch( mbid, surface, COVER_SIZE_ALBUM ))
                     {
                         surface = Util::cairo_image_surface_round(surface, 9.5);
                         Util::cairo_image_surface_rounded_border(surface, .5, 9.5);

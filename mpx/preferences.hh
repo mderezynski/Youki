@@ -39,6 +39,7 @@
 #include <gtkmm.h>
 #include <libglademm/xml.h>
 #include <mcs/mcs.h>
+#include <mcs/gtk-bind.h>
 
 #include "mpx/mpx-audio.hh"
 #include "mpx/widgets/widgetloader.hh"
@@ -313,6 +314,9 @@ namespace MPX
           return Signals.HotkeyEditEnd;
         }
 
+    private:
+
+        Mcs::Bind * mcs_bind;
   }; // class Preferences
 } // namespace MPX
 

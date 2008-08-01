@@ -79,12 +79,8 @@ namespace
     int pixel_size = 0;
     switch (size)
     {
-      case MPX::COVER_SIZE_ALBUM_LIST:
+      case MPX::COVER_SIZE_ALBUM:
         pixel_size = 90;
-        break;
-
-      case MPX::COVER_SIZE_INFO_AREA:
-        pixel_size = 48;
         break;
 
       case MPX::COVER_SIZE_DEFAULT:
@@ -100,8 +96,9 @@ namespace
 
 namespace MPX
 {
-    Covers::Covers ()
+    Covers::Covers (MPX::Service::Manager& services)
     : sigx::glib_auto_dispatchable()
+    , Service::Base("mpx-service-covers")
     , m_rebuild(0)
     , m_rebuilt(0)
     {

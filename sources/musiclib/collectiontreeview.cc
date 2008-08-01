@@ -266,7 +266,7 @@
               {
 #if 0
                 Cairo::RefPtr<Cairo::ImageSurface> Cover;
-                m_Covers.get().fetch(mbid, Cover, COVER_SIZE_ALBUM_LIST);
+                m_Covers.get().fetch(mbid, Cover, COVER_SIZE_ALBUM);
                 Util::cairo_image_surface_border(Cover, 2.);
                 Cover = Util::cairo_image_surface_round(Cover, 6.);
                 IterSet & set = m_MBIDIterMap[mbid];

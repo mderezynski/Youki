@@ -808,6 +808,8 @@ namespace MPX
   , m_ref_xml(xml)
   , m_Play(play)
   {
+      mcs_bind = new Mcs::Bind(mcs);
+
       dynamic_cast<Button*>(m_ref_xml->get_widget ("close"))->signal_clicked().connect(
         sigc::mem_fun(
             *this,

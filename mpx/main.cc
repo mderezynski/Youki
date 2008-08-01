@@ -50,15 +50,17 @@
 #include "mpx/mpx-main.hh"
 #include "mpx/metadatareader-taglib.hh"
 #include "mpx/mpx-network.hh"
+#include "mpx/mpx-services.hh"
 #include "mpx/mpx-types.hh"
+
 #include "mpx/util-file.hh"
 
 using namespace MPX;
 
 namespace MPX
 {
-	Mcs::Mcs  * mcs = 0;
-    Mcs::Bind * mcs_bind = 0;
+	Mcs::Mcs         * mcs      = 0;
+    Service::Manager * services = 0; 
 }
 
 namespace 
@@ -180,8 +182,6 @@ namespace
                 g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, _("Unable to parse configuration file!"));
             }
 	  }
-
-      mcs_bind = new Mcs::Bind(mcs);
 
 	  mcs->domain_register ("main-window");
 	  mcs->key_register ("main-window", "width", 0); //FIXME:
@@ -352,23 +352,29 @@ main (int argc, char ** argv)
 	clutter_init(&argc, &argv);
     Gtk::GL::init(argc, argv);
 
+    MPX::services = new Service::Manager;
+
 #ifdef HAVE_HAL
     try{
-        MPX::HAL                    * obj_hal               = new MPX::HAL;
+        boost::shared_ptr<HAL>      ptr_halobj  (new MPX::HAL(*services));
+        services->add(ptr_halobj);
 #endif
+        boost::shared_ptr<Covers>   ptr_covers  (new MPX::Covers(*services));
+        services->add(ptr_covers);
+
         MPX::NM                     * obj_netman            = new MPX::NM;
-		MPX::MetadataReaderTagLib   * obj_reader            = new MPX::MetadataReaderTagLib;
-        MPX::Covers                 * obj_covers            = new MPX::Covers;
+
+		MPX::MetadataReaderTagLib   * obj_reader            = new MPX::MetadataReaderTagLib();
 #ifdef HAVE_HAL
-        MPX::Library                * obj_library           = new MPX::Library(*obj_hal, *obj_covers, *obj_reader, true);
+        MPX::Library                * obj_library           = new MPX::Library(*ptr_halobj.get(), *ptr_covers.get(), *obj_reader, true);
 #else
         MPX::Library                * obj_library           = new MPX::Library(*obj_covers, *obj_reader); 
 #endif
 
 #ifdef HAVE_HAL
-        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *obj_covers, *obj_hal);
+        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *ptr_covers.get(), *ptr_halobj.get());
 #else
-        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *obj_covers);
+        MPX::Player                 * obj_mpx               = MPX::Player::create(*obj_library, *ptr_covers.get());
 #endif // HAVE_HAL
         
         Glib::signal_idle().connect( sigc::bind_return( sigc::mem_fun( gtkLock, &Glib::StaticMutex::unlock ), false ) );
@@ -378,11 +384,11 @@ main (int argc, char ** argv)
 
         delete obj_mpx;
         delete obj_library;
-        delete obj_covers;
+//        delete obj_covers;
         delete obj_reader;
         delete obj_netman;
 #ifdef HAVE_HAL
-        delete obj_hal;
+//        delete obj_hal;
       }
     catch( HAL::NotInitializedError )
       {

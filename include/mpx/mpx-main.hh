@@ -2,12 +2,12 @@
 #define MPX_MAIN_HH
 
 #include <mcs/mcs.h>
-#include <mcs/gtk-bind.h>
+#include "mpx/mpx-services.hh"
 
 namespace MPX
 {
-	extern Mcs::Mcs * mcs;
-    extern Mcs::Bind * mcs_bind;
+	extern Mcs::Mcs         * mcs;
+    extern Service::Manager * services;
 }
 
 #endif // MPX_MAIN_HH

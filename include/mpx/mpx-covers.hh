@@ -40,24 +40,24 @@
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-covers-stores.hh"
 #include "mpx/mpx-network.hh"
+#include "mpx/mpx-services.hh"
+
 #include "mpx/metadatareader-taglib.hh"
 
 namespace MPX
 {
   enum CoverSize
   {
-    COVER_SIZE_ALBUM_LIST = 0,
-    COVER_SIZE_INFO_AREA  = 1,
-    COVER_SIZE_DEFAULT    = 2,
-
+    COVER_SIZE_ALBUM        = 0,
+    COVER_SIZE_DEFAULT      = 1,
     N_COVER_SIZES
   };
 
-  typedef std::map <std::string, int> RequestKeeperT;
-  typedef std::map <std::string, Glib::RefPtr<Gdk::Pixbuf> > MPixbufCache;
-  typedef std::map <std::string, Cairo::RefPtr<Cairo::ImageSurface> > MSurfaceCache;
-  typedef boost::shared_ptr<CoverStore> StoreP;
-  typedef std::vector <StoreP> StoresT;
+  typedef std::map <std::string, int>                                   RequestKeeperT;
+  typedef std::map <std::string, Glib::RefPtr<Gdk::Pixbuf> >            MPixbufCache;
+  typedef std::map <std::string, Cairo::RefPtr<Cairo::ImageSurface> >   MSurfaceCache;
+  typedef boost::shared_ptr<CoverStore>                                 StoreP;
+  typedef std::vector<StoreP>                                           StoresT;
 
   struct CoverFetchData
   {
@@ -91,7 +91,7 @@ namespace MPX
 
   class CoverStore;
 
-  class Covers : public sigx::glib_auto_dispatchable
+  class Covers : public sigx::glib_auto_dispatchable, public Service::Base
   {
 	public:
 	  Glib::Mutex                 RequestKeeperLock;
@@ -115,7 +115,7 @@ namespace MPX
 
       typedef bool (Covers::*FetchFunc) (const std::string&, Glib::RefPtr<Gdk::Pixbuf>&);
 
-	  Covers ();
+	  Covers (MPX::Service::Manager&);
 
 	  bool
 	  fetch(
