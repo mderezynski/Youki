@@ -47,11 +47,22 @@ namespace MPX
     {
         private:
 
-                MPX::Player & m_Player;
+                struct SourcePlugin
+                {
+                    PlaybackSource* (*get_instance)       (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
+                    void            (*del_instance)       (MPX::PlaybackSource*);
+                };
+
+                typedef boost::shared_ptr<SourcePlugin>          SourcePluginPtr;
+                typedef std::vector<SourcePluginPtr>             SourcePluginsKeeper;
+
+                SourcePluginsKeeper             m_SourcePlugins;
+
                 MPX::Play   & m_Play;
+                MPX::Player & m_Player;
         public:
 
-                SourceController ();
+                SourceController (MPX::Play&, MPX::Player&);
                 ~SourceController ();
         private:
                 bool

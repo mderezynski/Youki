@@ -36,8 +36,6 @@
 
 namespace MPX
 {
-    typedef std::pair<boost::optional<gint64>, gint64> ItemKey;
-
     enum AttributeIdString
     {
       ATTRIBUTE_LOCATION,

@@ -93,6 +93,10 @@ namespace MPX
       C_PROVIDES_TIMING         = 1 << 9,
     };
 
+    typedef std::pair<boost::optional<gint64>, gint64> ItemKey;
+    typedef std::map<ItemKey, Flags>                   FlagsMap_t;
+    typedef std::map<ItemKey, Caps>                    CapsMap_t; 
+
     class Player;
     class PlaybackSource
     {

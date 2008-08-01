@@ -757,14 +757,6 @@ namespace MPX
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE, 1, g_type_from_name("PyObject")); 
 
-		m_DiscDefault = Gdk::Pixbuf::create_from_file(
-            build_filename(
-                DATA_DIR,
-			    build_filename(
-                    "images",
-                    "disc-default.png"
-        )))->scale_simple(64,64,Gdk::INTERP_BILINEAR);
-
         splash.set_message(_("Setting up DBus"), 0.4);
 
 		init_dbus ();
@@ -2118,5 +2110,32 @@ namespace MPX
 		m_actions->get_action( ACTION_NEXT )->set_sensitive( m_Caps & C_CAN_GO_NEXT );
 		m_actions->get_action( ACTION_STOP )->set_sensitive( m_Caps & C_CAN_STOP );
         m_Seek->set_sensitive( m_Caps & C_CAN_SEEK );
+    }
+
+// XXX: Public API we need when we split off SourceController
+
+    void
+    Player::set_metadata (Metadata const& metadata, ItemKey const& source_id)
+    {
+        g_return_if_fail(m_ActiveSource && m_ActiveSource.get() == source_id);
+
+        Glib::Mutex::Lock L (m_MetadataLock);
+
+        m_Metadata = metadata;
+
+        if( !m_Metadata.get().Image && m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
+        {
+            m_Covers.fetch(
+                get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()),
+                m_Metadata.get().Image
+            );
+        }
+
+        if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
+        {
+            m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
+        }
+
+        metadata_reparse ();
     }
 }

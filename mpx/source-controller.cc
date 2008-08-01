@@ -31,6 +31,7 @@
 #define NO_IMPORT
 
 #include "source-controller.hh"
+#include "mpx.hh"
 
 namespace
 {
@@ -43,6 +44,15 @@ namespace
 
 namespace MPX
 {
+    SourceController::SourceController(
+        MPX::Play&      obj_play,
+        MPX::Player&    obj_player
+    )
+    : m_Play(obj_play)
+    , m_Player(obj_player)
+    {
+    }
+
     bool
     SourceController::source_load (std::string const& path)
     {
@@ -309,26 +319,7 @@ namespace MPX
 	void
 	SourceController::on_source_track_metadata (Metadata const& metadata, ItemKey const& source_id)
 	{
-#if 0
-        Glib::Mutex::Lock L (m_MetadataLock);
-
-        m_Metadata = metadata;
-
-        if( !m_Metadata.get().Image && m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
-        {
-            m_Covers.fetch(
-                get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()),
-                m_Metadata.get().Image
-            );
-        }
-
-        if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
-        {
-            m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
-        }
-
-        metadata_reparse ();
-#endif
+        m_Player.set_metadata(metadata, source_id);
 	}
 
 	void
@@ -357,7 +348,7 @@ namespace MPX
 			  if( source->play () )
 			  {
                 m_PlayDirection = PD_PLAY;
-			    switch_stream (source->get_uri(), source->get_type());
+			    m_Play.switch_stream (source->get_uri(), source->get_type());
 			  }
 			  else
 			  {
@@ -429,7 +420,7 @@ namespace MPX
       m_PreparingSource = source_id;
       m_PlayDirection = PD_PLAY;
 
-	  switch_stream(source->get_uri(), source->get_type());
+	  m_Play.switch_stream(source->get_uri(), source->get_type());
 #endif
 	}
 
@@ -443,7 +434,7 @@ namespace MPX
 	  if( (f & F_PHONY_NEXT) == 0 )
 	  {
             m_PlayDirection = PD_NEXT;
-			switch_stream (source->get_uri(), source->get_type());
+			m_Play.switch_stream (source->get_uri(), source->get_type());
 	  }
 #endif
 	}
@@ -458,7 +449,7 @@ namespace MPX
 	  if( (f & F_PHONY_PREV) == 0 )
 	  {
             m_PlayDirection = PD_PREV;
-			switch_stream (source->get_uri(), source->get_type());
+			m_Play.switch_stream (source->get_uri(), source->get_type());
 	  }
 #endif
 	}

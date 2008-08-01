@@ -315,24 +315,7 @@ namespace MPX
 	void
 	Player::on_source_track_metadata (Metadata const& metadata, ItemKey const& source_id)
 	{
-        Glib::Mutex::Lock L (m_MetadataLock);
-
-        m_Metadata = metadata;
-
-        if( !m_Metadata.get().Image && m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
-        {
-            m_Covers.fetch(
-                get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()),
-                m_Metadata.get().Image
-            );
-        }
-
-        if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
-        {
-            m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
-        }
-
-        metadata_reparse ();
+        set_metadata(metadata, source_id);
 	}
 
 	void

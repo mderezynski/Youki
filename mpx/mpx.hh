@@ -137,8 +137,22 @@ namespace MPX
 
         void
         play_uri (std::string const&);
-
+    
         virtual ~Player ();
+
+    // XXX: Public API needed when we split of SourceController
+
+        void
+        set_metadata(Metadata const&, ItemKey const&);
+
+        void
+        del_caps(Caps caps);
+    
+        void
+        set_caps(Caps, bool = true);
+
+        void
+        translate_caps ();
 
       protected:
 
@@ -199,16 +213,20 @@ namespace MPX
 
         typedef boost::shared_ptr<SourcePlugin>          SourcePluginPtr;
         typedef std::vector<SourcePluginPtr>             SourcePluginsKeeper;
+
+        SourcePluginsKeeper             m_SourcePlugins;
+        FlagsMap_t                      m_source_f;
+        CapsMap_t                       m_source_c;
+
+
 		typedef std::map<ItemKey, PlaybackSource*>       SourcesMap;
 		typedef std::map<std::string, ItemKey>           UriSchemeMap;
-        typedef std::map<Gtk::Widget*, Gtk::Widget*>     WidgetWidgetMap;
-        typedef std::map<ItemKey, Flags> FlagsMap_t;
-        typedef std::map<ItemKey, Caps>  CapsMap_t;
-        typedef Caps                     EffectiveCaps;
 
-        Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
-        Glib::RefPtr<Gtk::ActionGroup>  m_actions;
-        Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
+		UriSchemeMap                    m_UriMap;
+		SourcesMap                      m_Sources;
+
+        typedef std::map<Gtk::Widget*, Gtk::Widget*>     WidgetWidgetMap;
+        typedef Caps                                     EffectiveCaps;
 
 		struct DBusObjectsT
 		{
@@ -218,61 +236,59 @@ namespace MPX
             DBusTrackList   *tracklist;
 		};
 
-		DBusObjectsT                DBusObjects;
-		DBusGConnection           * m_SessionBus;
-        bool                        m_startup_complete;
+        Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
+        Glib::RefPtr<Gtk::ActionGroup>  m_actions;
+        Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
 
-		int                         m_Seeking;
-		gdouble                     m_TrackPlayedSeconds;
-		gdouble                     m_PreSeekPosition;
-		gdouble                     m_TrackDuration;
+
+		DBusObjectsT                    DBusObjects;
+		DBusGConnection               * m_SessionBus;
+        bool                            m_startup_complete;
+
+		int                             m_Seeking;
+		gdouble                         m_TrackPlayedSeconds;
+		gdouble                         m_PreSeekPosition;
+		gdouble                         m_TrackDuration;
 
     // source related stuff
 
-        EffectiveCaps               m_Caps;
-        gint64                      m_NextSourceId;
-        boost::optional<ItemKey>    m_ActiveSource;
-        boost::optional<ItemKey>    m_PreparingSource;
-		Glib::Mutex                 m_SourceCFLock;
-		guint                       m_SourceUI;
-		UriSchemeMap                m_UriMap;
-        SourcePluginsKeeper         m_SourcePlugins;
-		SourcesMap                  m_Sources;
-        FlagsMap_t                  m_source_f;
-        CapsMap_t                   m_source_c;
+        EffectiveCaps                   m_Caps;
+        gint64                          m_NextSourceId;
+        boost::optional<ItemKey>        m_ActiveSource;
+        boost::optional<ItemKey>        m_PreparingSource;
+		Glib::Mutex                     m_SourceCFLock;
+		guint                           m_SourceUI;
 
     // objects
 
-        Covers                    & m_Covers;
-        HAL                       & m_HAL;
-        Library                   & m_Library;
-		PluginManager             * m_PluginManager;
-		Play                      * m_Play;
-        Preferences               * m_Preferences;
-        MLibManager               * m_MLibManager;
-		PluginManagerGUI          * m_PluginManagerGUI;
-        Sidebar                   * m_Sidebar;
-        InfoArea                  * m_InfoArea;
-        VideoWidget               * m_VideoWidget; 
-        CoverFlowWidget           * m_CoverFlow;
-        ErrorManager              * m_ErrorManager;
+        Covers                        & m_Covers;
+        HAL                           & m_HAL;
+        Library                       & m_Library;
+		PluginManager                 * m_PluginManager;
+		Play                          * m_Play;
+        Preferences                   * m_Preferences;
+        MLibManager                   * m_MLibManager;
+		PluginManagerGUI              * m_PluginManagerGUI;
+        Sidebar                       * m_Sidebar;
+        InfoArea                      * m_InfoArea;
+        VideoWidget                   * m_VideoWidget; 
+        CoverFlowWidget               * m_CoverFlow;
+        ErrorManager                  * m_ErrorManager;
 
     // widgets
 
-        Gtk::Statusbar            * m_Statusbar;
-		Gtk::Notebook             * m_MainNotebook;
-        Gtk::Notebook             * m_OuterNotebook;
-		Gtk::VolumeButton         * m_Volume;
-		Gtk::HScale               * m_Seek;
-		Gtk::Label                * m_TimeLabel;
-        Gtk::Notebook             * m_InfoNotebook;
-        Gtk::Expander             * m_InfoExpander;
-        WidgetWidgetMap             m_InfoWidgetMap;
+        Gtk::Statusbar                * m_Statusbar;
+		Gtk::Notebook                 * m_MainNotebook;
+        Gtk::Notebook                 * m_OuterNotebook;
+		Gtk::VolumeButton             * m_Volume;
+		Gtk::HScale                   * m_Seek;
+		Gtk::Label                    * m_TimeLabel;
+        Gtk::Notebook                 * m_InfoNotebook;
+        Gtk::Expander                 * m_InfoExpander;
+        WidgetWidgetMap                 m_InfoWidgetMap;
 
-		boost::optional<Metadata>   m_Metadata;
-        Glib::Mutex                 m_MetadataLock;
-
-		Glib::RefPtr<Gdk::Pixbuf>   m_DiscDefault;
+		boost::optional<Metadata>       m_Metadata;
+        Glib::Mutex                     m_MetadataLock;
 
         enum PlayDirection
         {
@@ -282,7 +298,7 @@ namespace MPX
             PD_PREV,
         };
 
-        PlayDirection               m_PlayDirection;
+        PlayDirection                   m_PlayDirection;
 
 
 		void
@@ -429,15 +445,6 @@ namespace MPX
         void
         check_py_error ();
 
-
-        void
-        del_caps(Caps caps);
-    
-        void
-        set_caps(Caps, bool = true);
-
-        void
-        translate_caps ();
 
       protected:
 

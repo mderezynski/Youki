@@ -183,6 +183,8 @@ mpx_bin_SOURCES =				\
 	splash-screen.hh			\
 	splash-screen.cc			\
 								\
+	services.cc					\
+								\
 	sql.cc						\
 								\
 	stock.cc					\
