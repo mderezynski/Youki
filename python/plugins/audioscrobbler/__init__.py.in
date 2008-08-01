@@ -841,7 +841,7 @@ class MPXAudioScrobbler(mpx.Plugin):
 
     def pstate_changed(self, blah, state):
 
-        if self.player.get_status() == mpx.PlayStatus.STOPPED:
+        if self.player.get_status() == mpx.PlayStatus.STOPPED and self.post:
             self.post.flushcache ()
 
     def new_track(self, blah):
