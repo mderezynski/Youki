@@ -144,42 +144,6 @@ namespace MPX
   }
 
   bool
-  InfoArea::decay_spectrum ()
-  {
-      for (int n = 0; n < SPECT_BANDS; ++n)
-      {
-        m_spectrum_data[n] = (((m_spectrum_data[n] - 5) < 0) ? 0 : (m_spectrum_data[n] - 5));
-      }
-      queue_draw ();
-      return true;
-  }
-
-  void
-  InfoArea::play_update_spectrum (Spectrum const& spectrum)
-  {
-      m_spectrum_data = spectrum;
-      queue_draw ();
-
-  }
-
-  void
-  InfoArea::play_status_changed ()
-  {
-      if( m_Play.property_status ().get_value() == PLAYSTATUS_PAUSED )
-      {
-        m_decay_conn = Glib::signal_timeout ().connect(
-            sigc::mem_fun(*this, &InfoArea::decay_spectrum), 50
-        );
-      }
-      else
-      {
-        m_decay_conn.disconnect ();
-      }
-  }
-
-
-
-  bool
   InfoArea::fade_out_layout ()
   {
     Mutex::Lock L (m_layout_lock);

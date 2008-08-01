@@ -26,7 +26,6 @@ namespace MPX
   {
     private:
 
-          MPX::Play&                            m_Play;
           Spectrum                              m_spectrum_data;
           boost::optional<Glib::ustring>        m_info_text;
           boost::optional<TextSet>              m_text_cur;
@@ -90,9 +89,7 @@ namespace MPX
 
     public:
 
-          InfoArea (MPX::Play & play,
-                    Glib::RefPtr<Gnome::Glade::Xml> const& xml);
-
+          InfoArea(Glib::RefPtr<Gnome::Glade::Xml> const& xml, std::string const&);
           ~InfoArea ()
           {}
 
@@ -129,12 +126,6 @@ namespace MPX
           void
           disable_drag_dest ();
 
-          bool
-          decay_spectrum ();
-
-          void
-          play_update_spectrum (Spectrum const& spectrum);
-
           void
           play_status_changed ();
 
@@ -160,6 +151,9 @@ namespace MPX
 
           void
           clear_cover ();
+
+          void
+          update_spectrum (Spectrum const& spectrum);
 
     private:
 
@@ -195,7 +189,7 @@ namespace MPX
     public:
 
           static InfoArea*
-          create(MPX::Play & play, Glib::RefPtr<Gnome::Glade::Xml> & xml);
+          create(Glib::RefPtr<Gnome::Glade::Xml> & xml, std::string const&);
   };
 }
 

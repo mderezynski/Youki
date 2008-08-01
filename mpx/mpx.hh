@@ -45,6 +45,7 @@
 
 #include "audio-types.hh"
 #include "dbus-marshalers.h"
+#include "play.hh"
 #include "sidebar.hh"
 #include "video-widget.hh"
 
@@ -285,13 +286,13 @@ namespace MPX
 
 
 		void
-		on_cover_clicked ();
+		on_cb_album_cover_clicked ();
 
 		void
-		on_show_plugins ();
+		on_action_cb_show_plugins ();
 
 		void
-		on_play_files ();
+		on_action_cb_play_files ();
 
 		void
 		on_volume_value_changed(double);
@@ -334,6 +335,9 @@ namespace MPX
 
 		void
 		on_play_eos ();
+
+        void
+        on_play_update_spectrum (Spectrum const& spectrum);
 
 
 

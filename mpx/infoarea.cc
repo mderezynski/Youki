@@ -5,15 +5,13 @@
 namespace MPX
 {
   InfoArea*
-  InfoArea::create(MPX::Play & play, Glib::RefPtr<Gnome::Glade::Xml> & xml)
+  InfoArea::create(Glib::RefPtr<Gnome::Glade::Xml> & xml, std::string const& name)
   {
-       return new InfoArea(play,xml);
+       return new InfoArea(xml, name);
   } 
 
-  InfoArea::InfoArea (MPX::Play & play,
-            Glib::RefPtr<Gnome::Glade::Xml> const& xml)
-  : Gnome::Glade::WidgetLoader<Gtk::EventBox>(xml, "infoarea")
-  , m_Play(play)
+  InfoArea::InfoArea(Glib::RefPtr<Gnome::Glade::Xml> const& xml, std::string const& name)
+  : Gnome::Glade::WidgetLoader<Gtk::EventBox>(xml, name)
   , m_spectrum_data(SPECT_BANDS, 0)
   , m_cover_alpha(0.)
   , m_layout_alpha(0.)
@@ -35,14 +33,6 @@ namespace MPX
   , cover_anim_dt(InfoArea::cover_anim_time_scale / InfoArea::cover_anim_fps)
   {
     add_events (Gdk::BUTTON_PRESS_MASK);
-
-    m_Play.signal_spectrum().connect(
-        sigc::mem_fun( *this, &InfoArea::play_update_spectrum )
-    );
-
-    m_Play.property_status().signal_changed().connect(
-        sigc::mem_fun( *this, &InfoArea::play_status_changed)
-    );
 
     enable_drag_dest ();
 
@@ -168,5 +158,13 @@ namespace MPX
         m_cover_anim_conn_fade = signal_timeout ().connect(
             sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 25
         );
+  }
+
+  void
+  InfoArea::update_spectrum (Spectrum const& spectrum)
+  {
+      m_spectrum_data = spectrum;
+      queue_draw ();
+
   }
 }

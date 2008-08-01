@@ -657,6 +657,9 @@ namespace MPX
             sigc::mem_fun( *this, &MPX::Player::on_stream_switched
         ));
 
+        m_Play->signal_spectrum().connect(
+            sigc::mem_fun( *this, &MPX::Player::on_play_update_spectrum )
+        );
 
         m_VideoWidget = manage(new VideoWidget(m_Play));
         m_VideoWidget->show ();
@@ -813,7 +816,7 @@ namespace MPX
 		m_actions->add (Action::create ("action-play-files",
 										Gtk::Stock::OPEN,
 										_("_Play Files...")),
-        sigc::mem_fun (*this, &Player::on_play_files));
+        sigc::mem_fun (*this, &Player::on_action_cb_play_files));
 
 #ifndef HAVE_HAL
 		m_actions->add (Action::create ("action-import-folder",
@@ -842,7 +845,7 @@ namespace MPX
 		m_actions->add (Action::create (ACTION_PLUGINS,
 										Gtk::StockID(MPX_STOCK_PLUGIN),
 										_("Manage Plugins...")),
-	    sigc::mem_fun (*this, &Player::on_show_plugins ));
+	    sigc::mem_fun (*this, &Player::on_action_cb_show_plugins ));
 
 
 
@@ -991,10 +994,10 @@ namespace MPX
 
         /*- Infoarea--------------------------------------------------------*/
 
-        m_InfoArea = InfoArea::create(*m_Play, m_ref_xml);
+        m_InfoArea = InfoArea::create(m_ref_xml, "infoarea");
 
 		m_InfoArea->signal_cover_clicked().connect
-		  (sigc::mem_fun( *this, &Player::on_cover_clicked
+		  (sigc::mem_fun( *this, &Player::on_cb_album_cover_clicked
         ));
 
 		m_InfoArea->signal_uris_dropped().connect
@@ -1163,7 +1166,7 @@ namespace MPX
     }
 
 	void
-	Player::on_play_files ()
+	Player::on_action_cb_play_files ()
 	{
 		typedef boost::shared_ptr<FileBrowser> FBRefP;
 		FBRefP p (FileBrowser::create());
@@ -1193,7 +1196,7 @@ namespace MPX
 	}
 
 	void
-	Player::on_show_plugins ()
+	Player::on_action_cb_show_plugins ()
 	{
 		m_PluginManagerGUI->present ();
 	}
@@ -1350,6 +1353,12 @@ namespace MPX
 	  return false;
 	}
 
+    void
+    Player::on_play_update_spectrum (Spectrum const& spectrum)
+    {
+        m_InfoArea->update_spectrum(spectrum);
+    }
+
 	void
 	Player::on_play_metadata (MPXGstMetadataField field)
 	{
@@ -1457,7 +1466,7 @@ namespace MPX
     }
 
 	void
-	Player::on_cover_clicked ()
+	Player::on_cb_album_cover_clicked ()
 	{
         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
 		g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_INFOAREA_CLICK], 0);
