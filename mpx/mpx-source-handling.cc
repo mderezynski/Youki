@@ -330,7 +330,6 @@ namespace MPX
         }
 
         PlaybackSource* source = m_Sources[source_id];
-        m_PreparingSource = source_id;
 
         if( m_source_f[source_id] & F_ASYNC)
         {
@@ -341,7 +340,8 @@ namespace MPX
         {
                 if( source->play () )
                 {
-                  m_PlayDirection = PD_PLAY;
+                  m_PlayDirection   = PD_PLAY;
+                  m_PreparingSource = source_id;
                   switch_stream (source->get_uri(), source->get_type());
                   return;
                 }

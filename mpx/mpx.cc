@@ -1489,10 +1489,8 @@ namespace MPX
 	{
         g_return_if_fail(m_PreparingSource || m_ActiveSource);
 
-        if(!m_ActiveSource)
+        if(m_PreparingSource)
         {
-            g_return_if_fail(m_PreparingSource);
-
             m_ActiveSource = m_PreparingSource.get();
             m_PreparingSource.reset();
         }
