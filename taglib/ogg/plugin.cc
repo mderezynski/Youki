@@ -33,6 +33,7 @@ extern "C" const char ** _mimetypes ()
   static const char * _types[] =
   {
     "application/ogg",
+    "audio/x-vorbis+ogg",
     NULL
   };
   return _types;

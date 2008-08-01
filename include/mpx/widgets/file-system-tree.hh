@@ -42,11 +42,21 @@ using namespace Gnome::Glade;
 
 namespace MPX
 {
+    typedef sigc::signal<void, Glib::ustring> SignalUri;
+
     class FileSystemTree
       : public WidgetLoader<Gtk::TreeView>
       , public sigx::glib_auto_dispatchable
     {
+            SignalUri       signalUri;
+
         public:
+                
+            SignalUri&
+            signal_uri()
+            {
+                return signalUri;
+            }
 
             FileSystemTree (Glib::RefPtr<Gnome::Glade::Xml> const& xml, std::string const&); 
             virtual ~FileSystemTree () {}
@@ -61,6 +71,9 @@ namespace MPX
 
             virtual void
             on_row_expanded (const Gtk::TreeIter & iter, const Gtk::TreePath & path);
+
+            virtual void
+            on_row_activated (const Gtk::TreeModel::Path&, Gtk::TreeViewColumn*);
 
         private:
 

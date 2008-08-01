@@ -10,4 +10,5 @@ noinst_HEADERS =							\
 		gossip-cell-renderer-expander.h		\
 		rounded-layout.hh					\
 		taskdialog.hh						\
-		timed-confirmation.hh
+		timed-confirmation.hh				\
+		widgetloader.hh

@@ -35,6 +35,8 @@
 #include <gst/interfaces/mixertrack.h>
 #include <gst/interfaces/mixeroptions.h>
 
+#include <giomm.h>
+
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 
@@ -362,6 +364,18 @@ namespace MPX
     typefind (std::string const& uri,
               std::string&       type)
     {
+#if 0
+      try{
+        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+        Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
+        type = info->get_attribute_string("standard::content-type");
+        g_message("Found type: %s", type.c_str());
+        return true;
+      } catch(...) {
+        return false;
+      }
+#endif
+    
       GstStateChangeReturn state_change;
       GstElement* pipeline  = 0;
       GstElement* source    = 0;

@@ -3927,6 +3927,11 @@ namespace MPX
             m_ViewAllTracks = new AllTracksView(m_RefXml, m_Lib, m_HAL, mlib);
 
             m_TreeViewFS->build_file_system_tree("/");
+            m_TreeViewFS->signal_uri().connect(
+                sigc::mem_fun(
+                    mlib,
+                    &::MPX::Source::PlaybackSourceMusicLib::play_uri
+            ));
         }
     };
 }
@@ -4619,6 +4624,14 @@ namespace Source
         {
             Signals.PlayRequest.emit();
         }
+    }
+
+    void    
+    PlaybackSourceMusicLib::play_uri (Glib::ustring const& uri)
+    {
+        Util::FileList uris (1, uri);
+        m_Private->m_TreeViewPlaylist->prepare_uris (uris, true);
+        Signals.PlayRequest.emit();
     }
 
 } // end namespace Source

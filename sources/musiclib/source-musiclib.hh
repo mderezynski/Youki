@@ -160,6 +160,9 @@ namespace Source
 
 
                 void
+                play_uri (Glib::ustring const&);
+
+                void
                 plist_end(bool cleared);
 
                 void

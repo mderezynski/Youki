@@ -30,7 +30,6 @@
 #include <glibmm/i18n.h>
 #include <boost/format.hpp>
 
-#include "mpx/mpx-main.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
 #include "mpx/widgets/file-system-tree.hh"
@@ -205,6 +204,14 @@ namespace MPX
     {
         Glib::ustring haystack = (*iter)[FileSystemTreeColumns.SegName]; 
         return !Util::match_keys(haystack, key);
+    }
+
+    void
+    FileSystemTree::on_row_activated (const Gtk::TreeModel::Path& path, Gtk::TreeViewColumn* G_GNUC_UNUSED)
+    {
+        TreeIter iter = FileSystemTreeStore->get_iter(path);
+        std::string FullPath = (*iter)[FileSystemTreeColumns.FullPath]; 
+        signalUri.emit(Glib::filename_to_uri(FullPath));
     }
 
     void

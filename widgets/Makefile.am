@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libmpx-widgets.la
 
 libmpx_widgets_la_CFLAGS = 	\
-	$(GLIB_CFLAGS) $(GTK_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
+	$(GLIB_CFLAGS) $(GTK_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
 
 libmpx_widgets_la_CXXFLAGS = \
 	$(SIGX_CFLAGS) $(GIOMM_CFLAGS) $(GLADEMM_CFLAGS) $(GLIBMM_CFLAGS) $(GTKMM_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
