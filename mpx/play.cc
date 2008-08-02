@@ -491,7 +491,7 @@ namespace MPX
 	}		
 
     void
-    Play::request_status (MPXPlaystatus status)
+    Play::request_status (PlayStatus status)
     {
 		Audio::Message message;
 		message.status = status;
@@ -500,7 +500,7 @@ namespace MPX
     } 
 
     void
-    Play::request_status_real (MPXPlaystatus status)
+    Play::request_status_real (PlayStatus status)
     {
         m_state_lock.lock ();
 
@@ -553,7 +553,7 @@ namespace MPX
           }
         }
 
-        signal_playstatus_.emit (MPXPlaystatus (property_status().get_value()));
+        signal_playstatus_.emit (PlayStatus (property_status().get_value()));
         m_state_lock.unlock ();
     }
 
@@ -1237,7 +1237,7 @@ namespace MPX
       return signal_spectrum_;
     }
 
-    Play::SignalMPXPlaystatus &
+    Play::SignalPlayStatus &
     Play::signal_playstatus ()
     {
       return signal_playstatus_;
@@ -1344,7 +1344,7 @@ namespace MPX
       return m_bin[BIN_OUTPUT]; 
     }
 
-    MPXGstMetadata const&
+    GstMetadata const&
     Play::get_metadata ()
     {
       return m_metadata;

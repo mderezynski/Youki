@@ -585,7 +585,7 @@ BOOST_PYTHON_MODULE(mpx)
 
 	/*-------------------------------------------------------------------------------------*/
 
-    enum_<MPX::MPXPlaystatus>("PlayStatus")
+    enum_<MPX::PlayStatus>("PlayStatus")
         .value("NONE", MPX::PLAYSTATUS_NONE)
         .value("STOPPED", MPX::PLAYSTATUS_STOPPED)
         .value("PLAYING", MPX::PLAYSTATUS_PLAYING)

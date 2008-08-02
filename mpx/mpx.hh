@@ -114,7 +114,7 @@ namespace MPX
 		Metadata& 
 		get_metadata ();
 
-        MPXPlaystatus
+        PlayStatus
         get_status ();
 
         Glib::RefPtr<Gtk::UIManager>&
@@ -341,7 +341,7 @@ namespace MPX
 		on_play_position (guint64);
 
 		void
-		on_play_metadata (MPXGstMetadataField);
+		on_play_metadata (GstMetadataField);
 
         void
         on_play_buffering (double);

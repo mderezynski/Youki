@@ -36,6 +36,7 @@
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-uri.hh"
 #include "mpx/util-string.hh"
+#include "mpx/mpx-public-mpx.hh"
 
 using namespace Glib;
 using boost::get;
@@ -176,6 +177,7 @@ namespace MPX
     )
     : sigx::glib_auto_dispatchable()
     , Service::Base("mpx-service-library")
+    , m_Manager(services)
     , m_HAL(*(services->get<HAL>("mpx-service-hal")))
     , m_Covers(*(services->get<Covers>("mpx-service-covers")))
     , m_MetadataReaderTagLib(*(services->get<MetadataReaderTagLib>("mpx-service-taglib")))
@@ -399,6 +401,10 @@ namespace MPX
     Library::recache_covers_handler (SQL::RowV *v, int* position)
     {
         Row & r = (*v)[*position]; 
+
+        MPX::Player & player = (*(m_Manager->get<Player>("mpx-service-player")));
+
+        player->push_message((boost::format(_("Refreshing album covers: %lld / %lld")) % *position % (*v).size()).str());
 
         std::string location;
 #ifdef HAVE_HAL

@@ -146,17 +146,10 @@ namespace Source
 
 
                 void
-                play_album(gint64);
+                play_album(gint64, bool = true);
 
                 void
-                append_album(gint64);
-
-
-                void
-                play_tracks(IdV const&);
-
-                void
-                append_tracks(IdV const&);
+                play_tracks(IdV const&, bool = true);
 
 
                 void

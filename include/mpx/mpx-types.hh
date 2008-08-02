@@ -36,6 +36,16 @@
 
 namespace MPX
 {
+    enum PlayStatus
+    {
+      PLAYSTATUS_NONE    = 0,
+      PLAYSTATUS_STOPPED = 1 << 0,
+      PLAYSTATUS_PLAYING = 1 << 1,
+      PLAYSTATUS_PAUSED  = 1 << 2,
+      PLAYSTATUS_SEEKING = 1 << 3,
+      PLAYSTATUS_WAITING = 1 << 4
+    };
+
     enum AttributeIdString
     {
       ATTRIBUTE_LOCATION,

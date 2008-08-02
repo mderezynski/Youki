@@ -19,22 +19,12 @@ namespace MPX
   typedef std::vector<float> Spectrum; 
   typedef std::map<std::string, bool> MPXFileExtensions;
 
-  enum MPXPlaystatus
-  {
-    PLAYSTATUS_NONE    = 0,
-    PLAYSTATUS_STOPPED = 1 << 0,
-    PLAYSTATUS_PLAYING = 1 << 1,
-    PLAYSTATUS_PAUSED  = 1 << 2,
-    PLAYSTATUS_SEEKING = 1 << 3,
-    PLAYSTATUS_WAITING = 1 << 4
-  };
-
   enum StateFlags
   {
     DONT_SET_STATE = 0
   };
 
-  enum MPXGstMetadataField
+  enum GstMetadataField
   {
     FIELD_TITLE,
     FIELD_ALBUM,
@@ -44,7 +34,7 @@ namespace MPX
     FIELD_VIDEO_CODEC,
   };
 
-  struct MPXGstMetadata
+  struct GstMetadata
   {
     boost::optional<Glib::ustring>                m_title;
     boost::optional<Glib::ustring>                m_album;

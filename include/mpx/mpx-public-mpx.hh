@@ -28,8 +28,9 @@
 #include <sigx/sigx.h>
 #include "widgets/widgetloader.hh"
 #include "mpx/mpx-protected-access.hh"
-#include "mpx/i-playbacksource.hh"
 #include "mpx/mpx-services.hh"
+#include "mpx/mpx-types.hh"
+#include "mpx/i-playbacksource.hh"
 
 using namespace Gnome::Glade;
 
@@ -81,11 +82,61 @@ namespace MPX
         get_object (PAccess<MPX::HAL>&);
 #endif // HAVE_HAL
 
+        PyObject* 
+        get_source(std::string const& uuid);
+
+        PyObject*
+        get_sources_by_class(std::string const& uuid);
+
+		Metadata& 
+		get_metadata ();
+
+        PlayStatus
+        get_status ();
+
+        Glib::RefPtr<Gtk::UIManager>&
+        ui (); 
+
+        void
+        deactivate_plugin(gint64);
+
+        void
+        push_message (const std::string&);
+
+		void
+		play ();
+
+		void
+		pause ();
+    
+		void
+		prev ();
+
+		void
+		next ();
+
+		void
+		stop ();
+
+        void
+        play_uri (std::string const&);
+    
         virtual ~Player ();
 
-      protected:
+    // XXX: Public API needed when we split of SourceController
 
-        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Service::Manager&);
+        void
+        set_metadata(Metadata const&, ItemKey const&);
+
+        void
+        del_caps(Caps caps);
+    
+        void
+        set_caps(Caps, bool = true);
+
+        void
+        translate_caps ();
+
     };
 }
 #endif

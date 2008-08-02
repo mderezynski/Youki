@@ -346,6 +346,7 @@ class OPTION__RandomMix(BaseOPTION__):
 
     def RANDOM_markov(self, lib, v):
         
+        playlist = self.mlib.get_playlist_model()
         track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
         id = track[mpx.AttributeId.MPX_TRACK_ID].get()
         markov_id = lib.markovGetRandomProbableTrack(id)
@@ -448,6 +449,7 @@ class MPXDJ(mpx.Plugin):
         self.covers = player.get_covers()
         self.mlib = player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd"); 
         self.mcs = mcs
+        self.player = player
 
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj.glade")
 
@@ -574,7 +576,7 @@ class MPXDJ(mpx.Plugin):
             instance.stop ()
 
             if len(idv):
-                self.mlib.append_tracks(idv) 
+                self.mlib.play_tracks(idv, False) 
             else:
                 self.player.push_message(_("Failed to produce track"))
 
@@ -601,10 +603,7 @@ class MPXDJ(mpx.Plugin):
             instance.stop ()
 
             if len(idv):
-                if self.play.get_active():
-                    self.mlib.play_tracks(idv)
-                else:
-                    self.mlib.append_tracks(idv) 
+                self.mlib.play_tracks(idv,self.play.get_active()) 
             else:
                 self.player.push_message(_("Failed to produce track"))
 

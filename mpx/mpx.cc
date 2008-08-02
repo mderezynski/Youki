@@ -1223,10 +1223,10 @@ namespace MPX
         return m_ui_manager;
     }
 
-    MPXPlaystatus
+    PlayStatus
     Player::get_status ()
     {
-        return MPXPlaystatus(m_Play.property_status().get_value());
+        return PlayStatus(m_Play.property_status().get_value());
     }
 
 
@@ -1350,11 +1350,11 @@ namespace MPX
     }
 
 	void
-	Player::on_play_metadata (MPXGstMetadataField field)
+	Player::on_play_metadata (GstMetadataField field)
 	{
         Glib::Mutex::Lock L (m_MetadataLock);
 
-		MPXGstMetadata const& m = m_Play.get_metadata();
+		GstMetadata const& m = m_Play.get_metadata();
 
 		switch (field)
 		{
@@ -1703,7 +1703,7 @@ namespace MPX
 	void
 	Player::on_play_status_changed ()
 	{
-	  MPXPlaystatus status = MPXPlaystatus (m_Play.property_status().get_value());
+	  PlayStatus status = PlayStatus (m_Play.property_status().get_value());
 
 	  switch( status )
 	  {

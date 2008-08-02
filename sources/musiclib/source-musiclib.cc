@@ -3880,11 +3880,7 @@ namespace MPX
               on_track_activated (gint64 id, bool play)
               {
                 IdV v (1, id);
-
-                if( play )
-                    m_MLib.play_tracks(v);
-                else
-                    m_MLib.append_tracks(v);
+                m_MLib.play_tracks(v, play);
               }
 
               void
@@ -4273,43 +4269,33 @@ namespace Source
     }
 
     void
-    PlaybackSourceMusicLib::play_album(gint64 id)
+    PlaybackSourceMusicLib::play_album(gint64 id, bool play)
     {
         MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
-        playlist.clear();
-        playlist.append_album(id);
-        Signals.PlayRequest.emit();
-    }
-
-    void
-    PlaybackSourceMusicLib::append_album(gint64 id)
-    {
-        MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
+        if( play )
+            playlist.clear();
 
         playlist.append_album(id);
+
+        if( play )
+            Signals.PlayRequest.emit();
     }
 
     void
-    PlaybackSourceMusicLib::play_tracks(IdV const& idv)
+    PlaybackSourceMusicLib::play_tracks(IdV const& idv, bool play)
     {
         MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
-        playlist.clear();
-        playlist.append_tracks(idv, NO_ORDER);
-        check_nextprev_caps ();
-        send_caps();
-        Signals.PlayRequest.emit();
-    }
-
-    void
-    PlaybackSourceMusicLib::append_tracks(IdV const& idv)
-    {
-        MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
+        if( play )
+            playlist.clear();
 
         playlist.append_tracks(idv, NO_ORDER);
         check_nextprev_caps ();
         send_caps();
+
+        if( play )
+            Signals.PlayRequest.emit();
     }
 
     std::string

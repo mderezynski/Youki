@@ -38,22 +38,22 @@
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
 
-#include "audio-types.hh"
+#include "mpx/mpx-types.hh"
 
 namespace MPX
 {
-  namespace Audio
-  {
+namespace Audio
+{
 	struct Message
 	{
-		int id;
-		MPXPlaystatus status;
+		int         id;
+		PlayStatus  status;
 		std::string stream;
 		std::string type;
 
 		Message () : id (-1) {}
 	};
-  } // Audio namespace
+} // Audio namespace
 } // MPX namespace
 
 #endif //!MPX_AUDIO_HH

@@ -50,6 +50,7 @@
 
 #include "mpx/aux/glibaddons.hh"
 #include "mpx/mpx-main.hh"
+#include "mpx/mpx-types.hh"
 #include "mpx/mpx-uri.hh"
 
 #include "video-playback.hh"
@@ -149,7 +150,7 @@ namespace MPX
         typedef sigc::signal<void>                    SignalLastFMSync;
         typedef sigc::signal<void, double>            SignalBuffering;
         typedef sigc::signal<void, GstState>          SignalPipelineState;
-        typedef sigc::signal<void, MPXPlaystatus>     SignalMPXPlaystatus;
+        typedef sigc::signal<void, PlayStatus>     SignalPlayStatus;
         typedef sigc::signal<void, Spectrum const&>   SignalSpectrum;
         typedef sigc::signal<void, int, int, GValue const*> SignalVideoGeom;
 
@@ -159,7 +160,7 @@ namespace MPX
                                  , GError*                /* error        */
                                  , GstElement const*      /* error source */> SignalError;
                                                   
-        typedef sigc::signal<void, MPXGstMetadataField> SignalMetadata;
+        typedef sigc::signal<void, GstMetadataField> SignalMetadata;
         typedef sigc::signal<void>                      SignalStreamSwitched;
 
         /** Signal emitted when video output requests a window ID
@@ -183,7 +184,7 @@ namespace MPX
         /** Signal emitted when the engine state changes 
          *
          */
-        SignalMPXPlaystatus &
+        SignalPlayStatus &
         signal_playstatus();
 
         /** Signal emitted when a stream title is incoming 
@@ -242,12 +243,12 @@ namespace MPX
 
 
 
-        MPXGstMetadata const&
+        GstMetadata const&
         get_metadata ();
                             
 
         void
-        request_status (MPXPlaystatus status);
+        request_status (PlayStatus status);
 
         void
         switch_stream (Glib::ustring const& stream, Glib::ustring const& type = Glib::ustring());
@@ -285,7 +286,7 @@ namespace MPX
 
         Glib::Mutex             m_state_lock, m_stream_lock;
 
-        SignalMPXPlaystatus     signal_playstatus_;
+        SignalPlayStatus     signal_playstatus_;
         SignalMetadata          signal_metadata_;
         SignalSeek              signal_seek_;
         SignalBuffering         signal_buffering_;
@@ -298,7 +299,7 @@ namespace MPX
         SignalVideoGeom         signal_video_geom_;
         SignalStreamSwitched    signal_stream_switched_;
 
-        MPXGstMetadata        m_metadata;
+        GstMetadata        m_metadata;
         Spectrum              m_spectrum, m_zero_spectrum;
 
         void
@@ -369,7 +370,7 @@ namespace MPX
         void  on_volume_changed ();
 
         void  pipeline_configure (PipelineId id);
-        void  request_status_real (MPXPlaystatus status);
+        void  request_status_real (PlayStatus status);
         void  switch_stream_real (Glib::ustring const& stream, Glib::ustring const& type = Glib::ustring());
 
         GstElement * control_pipe () const;
