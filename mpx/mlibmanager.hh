@@ -22,13 +22,22 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 
-#ifndef MPX_MLIBMANAGER_HH 
+#ifndef MPX_MLIBMANAGER_HH
 #define MPX_MLIBMANAGER_HH
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif // HAVE_CONFIG_H
+
+// FIXME: Must be here for some damn reason
 #include <giomm.h>
+
+#include "mpx/widgets/widgetloader.hh"
+#include "mpx/mpx-hal.hh"
+#include "mpx/mpx-library.hh"
+
+#include "libhal++/hal++.hh"
+
 #include <gtkmm/button.h>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/filechooserwidget.h>
@@ -37,18 +46,10 @@
 #include <libglademm/xml.h>
 #include <sigx/sigx.h>
 
-#include "mpx/widgets/widgetloader.hh"
-#include "mpx/mpx-hal.hh"
-#include "mpx/mpx-library.hh"
-
-#include "libhal++/hal++.hh"
-
-using namespace Gnome::Glade;
-
 namespace MPX
 {
     class MLibManager
-      : public WidgetLoader<Gtk::Window>
+      : public Gnome::Glade::WidgetLoader<Gtk::Window>
       , public sigx::glib_auto_dispatchable
     {
         public:
@@ -77,7 +78,7 @@ namespace MPX
 
             void
             build_fstree (std::string const& root_path);
-        
+
             void
             append_path (std::string const& root_path, Gtk::TreeIter & root_iter);
 
@@ -89,7 +90,7 @@ namespace MPX
 
             bool
             has_active_parent (Gtk::TreeIter &);
-            
+
 
             void
             on_volumes_cbox_changed ();
@@ -105,7 +106,7 @@ namespace MPX
 
             void
             on_volume_added (const HAL::Volume&);
-    
+
             void
             on_volume_removed (const HAL::Volume&);
 
@@ -131,7 +132,7 @@ namespace MPX
 
             VolumeColumnsT VolumeColumns;
             Glib::RefPtr<Gtk::ListStore> VolumeStore;
-    
+
 
 
             Gtk::TreeView * m_FSTree;
@@ -173,7 +174,7 @@ namespace MPX
             PathFragsV m_ManagedPathFrags;
             std::string m_VolumeUDI;
             std::string m_DeviceUDI;
-            std::string m_MountPoint; 
+            std::string m_MountPoint;
 
 
             Gtk::Button * m_Close;

@@ -21,15 +21,24 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
+
 #ifndef MPX_PLUGIN_HH
 #define MPX_PLUGIN_HH
-#include "config.h"
-#include <gtkmm.h>
-#include <Python.h>
-#include <boost/shared_ptr.hpp>
+
+#include <config.h>
+
 #include <map>
+#include <list>
 #include <string>
+#include <vector>
+
+#include <glib/gtypes.h>
+#include <glibmm/thread.h>
+#include <gtkmm/widget.h>
+#include <boost/shared_ptr.hpp>
 #include <mcs/mcs.h>
+#include <Python.h>
+
 
 namespace MPX
 {
@@ -202,4 +211,5 @@ namespace MPX
             Mcs::Mcs            * mcs_plugins;
     };
 }
+
 #endif

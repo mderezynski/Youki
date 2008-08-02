@@ -65,7 +65,7 @@ namespace MPX
   void
   InfoArea::set_info ( const Glib::ustring& text )
   {
-    Mutex::Lock L (m_info_lock);
+    Glib::Mutex::Lock L (m_info_lock);
 
     m_info_text = text;
     queue_draw ();
@@ -74,7 +74,7 @@ namespace MPX
   void
   InfoArea::clear_info ()
   {
-    Mutex::Lock L (m_info_lock);
+    Glib::Mutex::Lock L (m_info_lock);
 
     m_info_text.reset();
     queue_draw ();
@@ -83,7 +83,7 @@ namespace MPX
   void
   InfoArea::set_metadata( Metadata & metadata )
   {
-    Mutex::Lock L (m_layout_lock);
+    Glib::Mutex::Lock L (m_layout_lock);
 
     if( metadata.Image )
     {
@@ -100,7 +100,7 @@ namespace MPX
     if( m_text_cur )
     {
         m_text_new = set;
-        m_fade_conn = signal_timeout().connect(
+        m_fade_conn = Glib::signal_timeout().connect(
             sigc::mem_fun( *this, &InfoArea::fade_out_layout ), 15
         );
     }
@@ -113,7 +113,7 @@ namespace MPX
   }
 
   void
-  InfoArea::set_cover (RefPtr<Gdk::Pixbuf> const& pixbuf)
+  InfoArea::set_cover (Glib::RefPtr<Gdk::Pixbuf> const& pixbuf)
   {
     set_cover (Util::cairo_image_surface_round(Util::cairo_image_surface_from_pixbuf (pixbuf), 6.));
   }
@@ -121,7 +121,7 @@ namespace MPX
   void
   InfoArea::set_cover (Cairo::RefPtr<Cairo::ImageSurface> const& surface)
   {
-    Mutex::Lock L (m_surface_lock);
+    Glib::Mutex::Lock L (m_surface_lock);
 
     m_cover_pos           = cover_anim_initial_pos;
     m_cover_velocity      = cover_anim_initial_velocity;
@@ -133,7 +133,7 @@ namespace MPX
         m_cover_surface_cur = surface; 
 
         m_cover_anim_conn_slide.disconnect ();
-        m_cover_anim_conn_slide = signal_timeout ().connect(
+        m_cover_anim_conn_slide = Glib::signal_timeout ().connect(
             sigc::mem_fun( *this, &InfoArea::slide_in_cover ), cover_anim_interval
         );
     }
@@ -144,7 +144,7 @@ namespace MPX
         m_cover_anim_conn_slide.disconnect ();
 
         m_cover_anim_conn_fade.disconnect ();
-        m_cover_anim_conn_fade = signal_timeout ().connect(
+        m_cover_anim_conn_fade = Glib::signal_timeout ().connect(
             sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 25 
         );
     }
@@ -155,7 +155,7 @@ namespace MPX
   {
         m_cover_surface_new.reset();
         m_cover_anim_conn_fade.disconnect ();
-        m_cover_anim_conn_fade = signal_timeout ().connect(
+        m_cover_anim_conn_fade = Glib::signal_timeout ().connect(
             sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 25
         );
   }

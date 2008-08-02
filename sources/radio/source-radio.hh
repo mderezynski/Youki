@@ -29,24 +29,28 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
+#include "mpx/mpx-public-mpx.hh"
+#include "mpx/i-playbacksource.hh"
+#include "mpx/mpx-minisoup.hh"
+#include "streams-shoutcast.hh"
+#include "streams-icecast.hh"
+#include "radio-directory-types.hh"
+#include "radio-directory-view-base.hh"
+
 #include <string>
 #include <sigc++/connection.h>
 #include <boost/optional.hpp>
 
 #include <glibmm/ustring.h>
+#include <gdkmm/pixbuf.h>
+#include <gtkmm/uimanager.h>
+#include <gtkmm/entry.h>
+#include <gtkmm/notebook.h>
 #include <gtkmm/treemodel.h>
 #include <gtkmm/treeview.h>
 #include <gtkmm/uimanager.h>
 #include <libglademm/xml.h>
-#include "mpx/mpx-public-mpx.hh"
-#include "mpx/i-playbacksource.hh"
-#include "streams-shoutcast.hh"
-#include "streams-icecast.hh"
-#include "radio-directory-types.hh"
-#include "radio-directory-view-base.hh"
-#include "mpx/mpx-minisoup.hh"
 
-using namespace Glib;
 
 namespace MPX
 {
@@ -59,16 +63,16 @@ namespace Source
 
         Radio (const Glib::RefPtr<Gtk::UIManager>&, MPX::Player&);
         virtual ~Radio () {}
-  
+
       private:
 
         Soup::RequestRefP               m_request;
 
-		Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
-		Glib::RefPtr<Gtk::ActionGroup>  m_actions;
-		Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
-	
-		Gtk::Widget					  * m_UI;
+        Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
+        Glib::RefPtr<Gtk::ActionGroup>  m_actions;
+        Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
+
+        Gtk::Widget                   * m_UI;
 
         Gtk::Notebook                 * m_notebook_radio;
         Gtk::Notebook                 * m_notebook_shoutcast;
@@ -79,8 +83,8 @@ namespace Source
         RadioDirectory::Icecast       * m_icecast_list;
 
         Gtk::Entry                    * m_filter_entry;
-        ustring                         m_current_uri;
-        ustring                         m_current_name;
+        Glib::ustring                   m_current_uri;
+        Glib::ustring                   m_current_name;
 
         void
         on_filter_changed ();
@@ -114,11 +118,11 @@ namespace Source
         virtual std::string
         get_class_guid ();
 
-	    virtual Glib::RefPtr<Gdk::Pixbuf>
-		get_icon ();
+        virtual Glib::RefPtr<Gdk::Pixbuf>
+        get_icon ();
 
-	    virtual Gtk::Widget*
-		get_ui ();
+        virtual Gtk::Widget*
+        get_ui ();
 
         virtual guint
         add_menu ();
@@ -147,9 +151,10 @@ namespace Source
         virtual void
         restore_context ();
 
-		virtual void
-		send_metadata ();
+        virtual void
+        send_metadata ();
     };
   }
 }
+
 #endif // !MPX_UI_PART_RADIO_STREAMS

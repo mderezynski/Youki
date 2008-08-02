@@ -231,7 +231,7 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
                 if (m_Flags & Library::F_USING_HAL)
                 {
                     HAL::Volume const& volume (m_HAL.get_volume_for_uri (*i));
-                    insert_path_sql = filename_from_uri(*i).substr (volume.mount_point.length()) ;
+                    insert_path_sql = Glib::filename_from_uri(*i).substr (volume.mount_point.length()) ;
                 }
                 else
 #endif
@@ -304,7 +304,7 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
                                         volume.device_udi ;
 
                           track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
-                                        filename_from_uri (*i).substr (volume.mount_point.length()) ;
+                                        Glib::filename_from_uri (*i).substr (volume.mount_point.length()) ;
                         }
 
                     }

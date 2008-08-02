@@ -23,26 +23,27 @@
 //  MPX is covered by.
 #ifndef MPX_HH
 #define MPX_HH
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+// FIXME: Must be here for some damn reason
 #include <giomm.h>
-#include <gtkmm.h>
-#include "config.h"
-#include <boost/python.hpp>
-#include <dbus/dbus-glib.h>
-#include <gtkmm/volumebutton.h>
-#include <libglademm/xml.h>
-#include <sigx/sigx.h>
 
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-covers.hh"
-#ifdef HAVE_HAL
-#include "mpx/mpx-hal.hh"
-#endif // HAVE_HAL
 #include "mpx/i-playbacksource.hh"
+
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/util-file.hh"
 #include "mpx/widgets/widgetloader.hh"
 #include "mpx/mpx-services.hh"
+
+#ifdef HAVE_HAL
+#include "mpx/mpx-hal.hh"
+#endif // HAVE_HAL
 
 #include "audio-types.hh"
 #include "dbus-marshalers.h"
@@ -50,14 +51,16 @@
 #include "sidebar.hh"
 #include "video-widget.hh"
 
-using namespace Gnome::Glade;
+#include <gtkmm.h>
+#include <gtkmm/volumebutton.h>
+#include <libglademm/xml.h>
 
-namespace Gtk
-{
-    class Statusbar;
-}
+#include <boost/python.hpp>
+#include <dbus/dbus-glib.h>
+#include <sigx/sigx.h>
 
 class CoverFlowWidget;
+
 namespace MPX
 {
     class AboutDialog;
@@ -70,7 +73,7 @@ namespace MPX
     class Preferences;
 
     class Player
-      : public WidgetLoader<Gtk::Window>
+     : public Gnome::Glade::WidgetLoader<Gtk::Window>
       , public sigx::glib_auto_dispatchable
       , public Service::Base
     {
@@ -530,4 +533,5 @@ namespace MPX
         sigc::connection mWindowFocusConn;
     };
 }
+
 #endif

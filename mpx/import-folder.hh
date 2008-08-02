@@ -23,16 +23,17 @@
 //  MPX is covered by.
 #ifndef MPX_IMPORT_FOLDER_HH
 #define MPX_IMPORT_FOLDER_HH
-#include <gtkmm/dialog.h>
-#include <libglademm/xml.h>
+
 #include "mpx/widgets/widgetloader.hh"
 
-using namespace Gnome::Glade;
+#include <glibmm/ustring.h>
+#include <gtkmm/dialog.h>
+#include <libglademm/xml.h>
 
 namespace MPX
 {
   class DialogImportFolder
-    : public WidgetLoader<Gtk::Dialog>
+      : public Gnome::Glade::WidgetLoader<Gtk::Dialog>
   {
       public:
           DialogImportFolder (Glib::RefPtr<Gnome::Glade::Xml> const& xml);

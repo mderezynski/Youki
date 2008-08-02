@@ -21,11 +21,19 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
-#include "config.h"
+
+#include <config.h>
 
 #ifdef HAVE_SUN
 # include <fcntl.h>
 #endif // !HAVE_SUN
+
+#include <cstdio>
+#include <cstring>
+
+#include <dbus/dbus-glib-lowlevel.h>
+#include <dbus/dbus-glib.h>
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/fcntl.h>
@@ -34,19 +42,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <stdio.h>
 #include <unistd.h>
-
-#include <cstring>
-#include <iostream>
-#include <sstream>
 
 #include "mpx/mpx-uri.hh"
 #include "mpx/mpx-minisoup.hh"
 #include "mpx/mpx-network.hh"
 
-#include <dbus/dbus-glib-lowlevel.h>
-#include <dbus/dbus-glib.h>
 
 namespace MPX
 {

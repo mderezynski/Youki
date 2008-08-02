@@ -23,19 +23,22 @@
 //  MPX is covered by.
 #ifndef MPX_PLUGIN_MANGER_GUI_HH
 #define MPX_PLUGIN_MANGER_GUI_HH
-#include "config.h"
-#include <libglademm/xml.h>
-#include <boost/python.hpp>
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "plugin.hh"
 #include "mpx/widgets/widgetloader.hh"
 
-using namespace Gnome::Glade;
+#include <libglademm/xml.h>
+#include <boost/python.hpp>
 
 namespace MPX
 {
-	class PTV;
+    class PTV;
     class PluginManagerGUI
-      : public WidgetLoader<Gtk::Window>
+      : public Gnome::Glade::WidgetLoader<Gtk::Window>
     {
 		public:
 

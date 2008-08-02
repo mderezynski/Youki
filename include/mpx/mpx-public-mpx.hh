@@ -23,16 +23,23 @@
 //  MPX is covered by.
 #ifndef MPX_HH
 #define MPX_HH
-#include "config.h"
-#include <gtkmm.h>
-#include <sigx/sigx.h>
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include "widgets/widgetloader.hh"
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/i-playbacksource.hh"
 
-using namespace Gnome::Glade;
+#include <string>
+
+#include <glib/gtypes.h>
+#include <gtkmm/widget.h>
+#include <gtkmm/window.h>
+#include <sigx/sigx.h>
 
 namespace Gtk
 {
@@ -41,20 +48,20 @@ namespace Gtk
 
 namespace MPX
 {
-	class Library;
-	class Covers;
+    class Library;
+    class Covers;
     class Play;
     class HAL;
 
     class Player
-    : public WidgetLoader<Gtk::Window>
+    : public Gnome::Glade::WidgetLoader<Gtk::Window>
     , public sigx::glib_auto_dispatchable
     , public Service::Base
     {
       public:
 
-		void
-		add_widget (Gtk::Widget*);
+        void
+        add_widget (Gtk::Widget*);
 
         void
         add_info_widget(Gtk::Widget*, std::string const&);
@@ -62,17 +69,17 @@ namespace MPX
         void
         add_subsource(PlaybackSource*, ItemKey const&, gint64 id);
 
-		void
-		remove_widget (Gtk::Widget*);
+        void
+        remove_widget (Gtk::Widget*);
 
-		void
-		remove_info_widget (Gtk::Widget*);
+        void
+        remove_info_widget (Gtk::Widget*);
 
-		void
-		get_object (PAccess<MPX::Library>&);
+        void
+        get_object (PAccess<MPX::Library>&);
 
-		void	
-		get_object (PAccess<MPX::Covers>&);
+        void
+        get_object (PAccess<MPX::Covers>&);
 
         void
         get_object (PAccess<MPX::Play>&);
@@ -139,4 +146,5 @@ namespace MPX
 
     };
 }
+
 #endif

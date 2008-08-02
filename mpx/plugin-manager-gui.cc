@@ -21,14 +21,19 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
-#include "config.h"
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include "plugin.hh"
+#include "plugin-manager-gui.hh"
+#include "mpx/mpx-main.hh"
+
 #include <glibmm.h>
 #include <glibmm/i18n.h>
 #include <libglademm/xml.h>
 #include <boost/format.hpp>
-#include "plugin.hh"
-#include "plugin-manager-gui.hh"
-#include "mpx/mpx-main.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -36,7 +41,7 @@ using namespace Gtk;
 namespace MPX
 {
 	class PTV
-		: public WidgetLoader<Gtk::TreeView>
+          : public Gnome::Glade::WidgetLoader<Gtk::TreeView>
 	{
             typedef std::map<gint64, Gtk::TreeIter> IdIterMap_t;
     
@@ -79,7 +84,7 @@ namespace MPX
 		public:
 
 			PTV (const Glib::RefPtr<Gnome::Glade::Xml> &xml, PluginManager & manager)
-			: WidgetLoader<Gtk::TreeView>(xml, "treeview")
+                        : Gnome::Glade::WidgetLoader<Gtk::TreeView>(xml, "treeview")
 			, m_Manager(manager)
 			{
 				Store = Gtk::ListStore::create(Columns);
@@ -276,7 +281,7 @@ namespace MPX
 		}
 
 		PluginManagerGUI::PluginManagerGUI (const Glib::RefPtr<Gnome::Glade::Xml> &xml, PluginManager &obj_manager)
-	    : WidgetLoader<Gtk::Window>(xml, "window")
+                : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
 		, m_Manager(obj_manager)
 		, m_PTV(new PTV(xml, obj_manager))
 		{

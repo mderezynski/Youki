@@ -63,7 +63,7 @@ namespace MPX
     }
 
     Glib::RefPtr<Gdk::Pixbuf>
-    Util::get_image_from_uri (ustring const& uri)
+    Util::get_image_from_uri (Glib::ustring const& uri)
     {
       Glib::RefPtr<Gdk::Pixbuf> image = Glib::RefPtr<Gdk::Pixbuf>(0);
 
@@ -71,7 +71,7 @@ namespace MPX
         URI u (uri);
         if (u.get_protocol() == URI::PROTOCOL_HTTP)
         {
-          Soup::RequestSyncRefP request = Soup::RequestSync::create (ustring (u));
+          Soup::RequestSyncRefP request = Soup::RequestSync::create (Glib::ustring (u));
           guint code = request->run (); 
 
           if (code == 200)

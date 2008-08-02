@@ -21,7 +21,11 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
-#include "config.h"
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <glibmm.h>
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
@@ -29,6 +33,7 @@
 #include <cstring>
 #include <string>
 #include "import-folder.hh"
+
 using namespace Glib;
 using namespace Gtk;
 
@@ -43,7 +48,7 @@ namespace MPX
     }
 
     DialogImportFolder::DialogImportFolder(const Glib::RefPtr<Gnome::Glade::Xml>& xml)
-    : WidgetLoader<Gtk::Dialog>(xml, "import-folder")
+    : Gnome::Glade::WidgetLoader<Gtk::Dialog>(xml, "import-folder")
     , m_ref_xml(xml)
     {
     }
@@ -53,7 +58,7 @@ namespace MPX
     {
         uri = dynamic_cast<FileChooser*>(m_ref_xml->get_widget("fcbutton"))->get_current_folder_uri();
     }
-    
+
     DialogImportFolder::~DialogImportFolder ()
     {
     }

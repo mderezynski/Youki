@@ -28,6 +28,17 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
+#include "mcs/mcs.h"
+
+#include "mpx/aux/glibaddons.hh"
+#include "mpx/mpx-main.hh"
+#include "mpx/mpx-services.hh"
+#include "mpx/mpx-uri.hh"
+
+#include "video-playback.hh"
+#include "audio-types.hh"
+#include "messages.hh"
+
 #include <map>
 #include <string>
 
@@ -45,21 +56,6 @@
 #include <gst/interfaces/mixer.h>
 #include <gst/interfaces/mixertrack.h>
 #include <gst/interfaces/mixeroptions.h>
-
-#include "mcs/mcs.h"
-
-#include "mpx/aux/glibaddons.hh"
-#include "mpx/mpx-main.hh"
-#include "mpx/mpx-types.hh"
-#include "mpx/mpx-uri.hh"
-
-#include "video-playback.hh"
-#include "audio-types.hh"
-#include "messages.hh"
-
-#include "mpx/mpx-services.hh"
-
-using namespace std;
 
 namespace MPX
 {
@@ -150,7 +146,7 @@ namespace MPX
         typedef sigc::signal<void>                    SignalLastFMSync;
         typedef sigc::signal<void, double>            SignalBuffering;
         typedef sigc::signal<void, GstState>          SignalPipelineState;
-        typedef sigc::signal<void, PlayStatus>     SignalPlayStatus;
+        typedef sigc::signal<void, PlayStatus>        SignalPlayStatus;
         typedef sigc::signal<void, Spectrum const&>   SignalSpectrum;
         typedef sigc::signal<void, int, int, GValue const*> SignalVideoGeom;
 
@@ -160,8 +156,8 @@ namespace MPX
                                  , GError*                /* error        */
                                  , GstElement const*      /* error source */> SignalError;
                                                   
-        typedef sigc::signal<void, GstMetadataField> SignalMetadata;
-        typedef sigc::signal<void>                      SignalStreamSwitched;
+        typedef sigc::signal<void, GstMetadataField>  SignalMetadata;
+        typedef sigc::signal<void>                    SignalStreamSwitched;
 
         /** Signal emitted when video output requests a window ID
           *
@@ -286,7 +282,7 @@ namespace MPX
 
         Glib::Mutex             m_state_lock, m_stream_lock;
 
-        SignalPlayStatus     signal_playstatus_;
+        SignalPlayStatus        signal_playstatus_;
         SignalMetadata          signal_metadata_;
         SignalSeek              signal_seek_;
         SignalBuffering         signal_buffering_;
@@ -299,8 +295,8 @@ namespace MPX
         SignalVideoGeom         signal_video_geom_;
         SignalStreamSwitched    signal_stream_switched_;
 
-        GstMetadata        m_metadata;
-        Spectrum              m_spectrum, m_zero_spectrum;
+        GstMetadata             m_metadata;
+        Spectrum                 m_spectrum, m_zero_spectrum;
 
         void
         eq_band_changed (MCS_CB_DEFAULT_SIGNATURE, unsigned int band);

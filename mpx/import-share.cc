@@ -21,14 +21,20 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
-#include "config.h"
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include "import-share.hh"
+
 #include <glibmm.h>
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include <libglademm.h>
 #include <cstring>
 #include <string>
-#include "import-share.hh"
+
 using namespace Glib;
 using namespace Gtk;
 
@@ -43,7 +49,7 @@ namespace MPX
     }
 
     DialogImportShare::DialogImportShare(const Glib::RefPtr<Gnome::Glade::Xml>& xml)
-    : WidgetLoader<Gtk::Dialog>(xml, "import-share")
+   : Gnome::Glade::WidgetLoader<Gtk::Dialog>(xml, "import-share")
     , m_ref_xml(xml)
     {
         dynamic_cast<ToggleButton*>(m_ref_xml->get_widget("cb-show-credentials"))->signal_toggled().connect(
@@ -58,7 +64,7 @@ namespace MPX
         login = dynamic_cast<Entry*>(m_ref_xml->get_widget("share-login"))->get_text();
         password = dynamic_cast<Entry*>(m_ref_xml->get_widget("share-password"))->get_text();
     }
-    
+
     void
     DialogImportShare::on_cb_show_credentials_toggled()
     {

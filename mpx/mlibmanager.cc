@@ -57,7 +57,7 @@ namespace MPX
 
     MLibManager::MLibManager (RefPtr<Gnome::Glade::Xml> const& xml,
                               MPX::HAL & obj_hal, MPX::Library & obj_library)
-    : WidgetLoader<Gtk::Window>(xml, "window")
+    : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
     , sigx::glib_auto_dispatchable()
     , m_HAL(obj_hal)
     , m_Library(obj_library)

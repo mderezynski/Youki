@@ -21,19 +21,19 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
+
 #ifndef MPX_REQUEST_VALUE_HH
 #define MPX_REQUEST_VALUE_HH
-#include <gtkmm/dialog.h>
-#include <libglademm/xml.h>
 
 #include "mpx/widgets/widgetloader.hh"
 
-using namespace Gnome::Glade;
+#include <gtkmm/dialog.h>
+#include <libglademm/xml.h>
 
 namespace MPX
 {
   class RequestValue
-    : public WidgetLoader<Gtk::Dialog>
+    : public Gnome::Glade::WidgetLoader<Gtk::Dialog>
   {
       public:
           RequestValue (Glib::RefPtr<Gnome::Glade::Xml> const& xml);
@@ -53,4 +53,3 @@ namespace MPX
 } // namespace MPX
 
 #endif // !MPX_REQUEST_VALUE_HH
-

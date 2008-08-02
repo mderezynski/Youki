@@ -30,7 +30,37 @@
 // PyGTK NO_IMPORT
 #define NO_IMPORT
 
-#include "config.h"
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include "mpx.hh"
+#include "mpx/error.hh"
+#include "mpx/mpx-library.hh"
+#include "mpx/mpx-stock.hh"
+#include "mpx/mpx-python.hh"
+#include "mpx/mpx-sql.hh"
+#include "mpx/mpx-uri.hh"
+#include "mpx/util-file.hh"
+#include "mpx/util-graphics.hh"
+#include "mpx/util-string.hh"
+#include "mpx/util-ui.hh"
+#include "mpx/xml/xspf.hh"
+
+#include "dialog-about.hh"
+#include "dialog-filebrowser.hh"
+#include "import-share.hh"
+#include "import-folder.hh"
+#include "infoarea.hh"
+#include "mlibmanager.hh"
+#include "play.hh"
+#include "plugin.hh"
+#include "plugin-manager-gui.hh"
+#include "preferences.hh"
+#include "request-value.hh"
+#include "sidebar.hh"
+#include "splash-screen.hh"
+
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/algorithm/string.hpp>
@@ -51,33 +81,6 @@
 #include <X11/XF86keysym.h>
 #include <gdk/gdkx.h>
 #include <gdl/gdl.h>
-
-#include "mpx.hh"
-#include "mpx/error.hh"
-#include "mpx/mpx-library.hh"
-#include "mpx/mpx-stock.hh"
-#include "mpx/mpx-python.hh"
-#include "mpx/mpx-sql.hh"
-#include "mpx/mpx-uri.hh"
-#include "mpx/util-file.hh"
-#include "mpx/util-graphics.hh"
-#include "mpx/util-string.hh"
-#include "mpx/util-ui.hh"
-#include "mpx/xml/xspf.hh"
- 
-#include "dialog-about.hh"
-#include "dialog-filebrowser.hh"
-#include "import-share.hh"
-#include "import-folder.hh"
-#include "infoarea.hh"
-#include "mlibmanager.hh"
-#include "play.hh"
-#include "plugin.hh"
-#include "plugin-manager-gui.hh"
-#include "preferences.hh"
-#include "request-value.hh"
-#include "sidebar.hh"
-#include "splash-screen.hh"
 
 using namespace Glib;
 using namespace Gtk;
