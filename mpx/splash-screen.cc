@@ -98,7 +98,7 @@ namespace MPX
         Cairo::RefPtr<Cairo::Context> m_cr = get_window ()->create_cairo_context ();
 
         m_cr->set_operator (Cairo::OPERATOR_SOURCE);
-        if (m_has_alpha)
+        if(m_has_alpha)
         {
             m_cr->set_source_rgba (.0, .0, .0, .0);
             m_cr->paint ();
@@ -115,10 +115,12 @@ namespace MPX
         m_cr->stroke ();
 #endif
 
+#if 0
         m_cr->set_operator( Cairo::OPERATOR_ATOP );
         m_cr->set_source_rgba( 1., 1., 1., .15); 
         m_cr->rectangle( m_bar_x , m_bar_y , m_bar_w, m_bar_h * m_percent);
         m_cr->fill ();
+#endif
 
 #if 0
         int lw, lh;

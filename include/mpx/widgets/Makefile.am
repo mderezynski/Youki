@@ -9,6 +9,8 @@ noinst_HEADERS =							\
 		file-system-tree.hh					\
 		gossip-cell-renderer-expander.h		\
 		rounded-layout.hh					\
+		tagview.hh							\
 		taskdialog.hh						\
 		timed-confirmation.hh				\
+		treeview-popup.hh					\
 		widgetloader.hh
