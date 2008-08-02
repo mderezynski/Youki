@@ -1,11 +1,13 @@
 #include "mpx/mpx-uri.hh"
 #include "mpx/xml/xmltoc++.hh"
 #include "mpx/util-ui.hh"
-#include <gtkmm.h>
-#include <boost/format.hpp>
 
 #include "xsd-tag-topalbums.hxx"
 #include "top-albums-fetch-thread.hh"
+
+#include <gdkmm/pixbuf.h>
+#include <glibmm/main.h>
+#include <boost/format.hpp>
 
 using namespace MPX;
 
@@ -104,7 +106,7 @@ MPX::TopAlbumsFetchThread::on_load (std::string const& value)
         Glib::ustring uri = u;
         if(pthreaddata->Xml)
             delete pthreaddata->Xml;
-        pthreaddata->Xml = new MPX::XmlInstance<tag>((ustring(u)));
+        pthreaddata->Xml = new MPX::XmlInstance<tag>(Glib::ustring(u));
         pthreaddata->Position = 0; 
         if(pthreaddata->Xml->xml().album().size())
         {

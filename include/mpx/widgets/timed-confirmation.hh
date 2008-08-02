@@ -1,13 +1,17 @@
 #ifndef MPX_TIMED_CONFIRMATION_HH
 #define MPX_TIMED_CONFIRMATION_HH
 
-#include <gtkmm.h>
 #include "mpx/widgets/widgetloader.hh"
 
-using namespace Gnome::Glade;
+#include <glibmm/main.h>
+#include <glibmm/ustring.h>
+#include <gtkmm/button.h>
+#include <gtkmm/dialog.h>
+
 namespace MPX
 {
-class TimedConfirmation : public WidgetLoader<Gtk::Dialog>
+class TimedConfirmation
+: public Gnome::Glade::WidgetLoader<Gtk::Dialog>
 {
     public:
 
@@ -20,7 +24,7 @@ class TimedConfirmation : public WidgetLoader<Gtk::Dialog>
 
         void
         button_clicked (int);
-        
+
         bool
         handler ();
 

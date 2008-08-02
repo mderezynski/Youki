@@ -8,8 +8,6 @@
 #include "mpx/widgets/widgetloader.hh"
 #include <libglademm/xml.h>
 
-using namespace Gnome::Glade;
-
 namespace MPX
 {
 class TagView : public Gtk::DrawingArea

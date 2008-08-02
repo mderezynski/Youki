@@ -24,15 +24,12 @@
 #ifndef MPX_LASTFM_EXTRA_WIDGETS_HH
 #define MPX_LASTFM_EXTRA_WIDGETS_HH
 
+#include "lastfm.hh"
+
 #include <glibmm/ustring.h>
 #include <gdkmm/pixbuf.h>
 #include <gtkmm.h>
 #include <gtk/gtktextview.h>
-
-#include "lastfm.hh"
-
-using namespace Gtk;
-using namespace Glib;
 
 namespace MPX
 {
@@ -41,22 +38,22 @@ namespace MPX
   {
     private:
 
-        LastFMLinkTag (ustring const& url, guint64 rank, std::string const& fg)
+        LastFMLinkTag (Glib::ustring const& url, guint64 rank, std::string const& fg)
         : ObjectBase (typeid(LastFMLinkTag))
         , TextTag ()
         , mTag (url)
         , mFg (fg)
         {
-          property_foreground() = mFg; 
+          property_foreground() = mFg;
           property_scale() = (double (rank) / 50.) + 1;
           property_justification() = Gtk::JUSTIFY_FILL;
         }
 
     public:
 
-        static RefPtr<LastFMLinkTag> create (ustring const& url, guint64 rank, std::string const& fg = "#4b72a9")
+        static Glib::RefPtr<LastFMLinkTag> create (Glib::ustring const& url, guint64 rank, std::string const& fg = "#4b72a9")
         {
-          return RefPtr<LastFMLinkTag> (new LastFMLinkTag (url, rank, fg)); 
+          return Glib::RefPtr<LastFMLinkTag> (new LastFMLinkTag (url, rank, fg));
         }
 
         virtual ~LastFMLinkTag () {}
@@ -64,7 +61,7 @@ namespace MPX
     public:
 
       typedef sigc::signal<void, ustring const&> SignalUrlActivated;
-    
+
     private:
 
       struct SignalsT
@@ -72,7 +69,7 @@ namespace MPX
         SignalUrlActivated  UrlActivated;
       };
 
-      SignalsT Signals;    
+      SignalsT Signals;
 
     public:
 
@@ -85,7 +82,7 @@ namespace MPX
     protected:
 
       virtual bool
-      on_event (RefPtr<Object> const& event_object, GdkEvent* event, TextIter const& iter) 
+      on_event (Glib::RefPtr<Object> const& event_object, GdkEvent* event, Gtk::TextIter const& iter)
       {
         if (event->type == GDK_BUTTON_PRESS)
         {
@@ -99,7 +96,7 @@ namespace MPX
         {
               GdkEventButton * ev = (GdkEventButton*)(event);
               if (ev->button == 1)
-              { 
+              {
                     Signals.UrlActivated.emit (mTag);
                     return true;
               }
@@ -108,7 +105,7 @@ namespace MPX
       }
 
     private:
-    
+
       ustring mName;
       ustring mTag;
       ustring mFg;
@@ -125,10 +122,10 @@ namespace MPX
     public:
 
       LastFMTagView (BaseObjectType*                  obj,
-                     RefPtr<Gnome::Glade::Xml> const& xml)
-      : TextView (obj) 
-      { 
-        gtk_widget_add_events (GTK_WIDGET (gobj()), 
+                     Glib::RefPtr<Gnome::Glade::Xml> const& xml)
+      : TextView (obj)
+      {
+        gtk_widget_add_events (GTK_WIDGET (gobj()),
                                GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK);
         realize ();
         setCursor("left_ptr");
@@ -141,11 +138,11 @@ namespace MPX
       Glib::RefPtr<LastFMLinkTag>
       insert_tag( std::string const& text, std::string const& url, gint64 rank )
       {
-        Glib::RefPtr<LastFMLinkTag> tag = LastFMLinkTag::create(url, rank); 
+        Glib::RefPtr<LastFMLinkTag> tag = LastFMLinkTag::create(url, rank);
         get_buffer()->get_tag_table()->add(tag);
-        TextBuffer::iterator iter = get_buffer()->end();
+        Gtk::TextBuffer::iterator iter = get_buffer()->end();
         iter = get_buffer()->insert( iter, "    ");
-        iter = get_buffer()->insert_with_tag( iter, text, tag); 
+        iter = get_buffer()->insert_with_tag( iter, text, tag);
         iter = get_buffer()->insert( iter, "    ");
         return tag;
       }
@@ -163,7 +160,7 @@ namespace MPX
       setCursor (std::string const& type)
       {
         GdkWindow * window = GDK_WINDOW (gtk_text_view_get_window (GTK_TEXT_VIEW (gobj()), GTK_TEXT_WINDOW_TEXT));
-        GdkCursor * cursor = gdk_cursor_new_from_name (gdk_display_get_default (), type.c_str()); 
+        GdkCursor * cursor = gdk_cursor_new_from_name (gdk_display_get_default (), type.c_str());
         if (!cursor)
         {
              cursor = gdk_cursor_new_for_display (gdk_display_get_default (), GDK_XTERM);
@@ -177,7 +174,7 @@ namespace MPX
       {
         if (m_current_tag && m_current_tag->gobj())
         {
-          m_current_tag->property_foreground_gdk() = mFg; 
+          m_current_tag->property_foreground_gdk() = mFg;
           m_current_tag = RefTextTag (0);
         }
         return false;
@@ -202,17 +199,17 @@ namespace MPX
 
         window_to_buffer_coords (TEXT_WINDOW_WIDGET, x_orig, y_orig, x, y);
 
-        RefPtr<TextBuffer> buf = get_buffer();
-        TextBuffer::iterator iter;
-        get_iter_at_location (iter, x, y);      
-      
+        Glib::RefPtr<TextBuffer> buf = get_buffer();
+        Gtk::TextBuffer::iterator iter;
+        get_iter_at_location (iter, x, y);
+
         TagV tags = iter.get_tags();
-    
-        if( !tags.empty() ) 
+
+        if( !tags.empty() )
         {
           if ((m_current_tag && m_current_tag->gobj()) && (m_current_tag->gobj() != tags[0]->gobj()))
           {
-            m_current_tag->property_foreground_gdk() = mFg; 
+            m_current_tag->property_foreground_gdk() = mFg;
           }
 
           if (!m_current_tag || (m_current_tag->gobj() != tags[0]->gobj()))
@@ -225,14 +222,14 @@ namespace MPX
 
           return true;
         }
- 
-        if (m_current_tag) 
+
+        if (m_current_tag)
         {
           setCursor("left_ptr");
-          m_current_tag->property_foreground_gdk() = mFg; 
+          m_current_tag->property_foreground_gdk() = mFg;
           m_current_tag = RefTextTag (0);
         }
-    
+
         return true;
       }
   };

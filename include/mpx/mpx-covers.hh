@@ -25,17 +25,11 @@
 #ifndef MPX_COVERS_HH
 #define MPX_COVERS_HH
 
-#include "config.h"
-#include "mpx/mpx-minisoup.hh"
+#ifndef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
-#include <boost/shared_ptr.hpp>
-#include <string>
-#include <map>
-#include <set>
-#include <glibmm/ustring.h>
-#include <gdkmm/pixbuf.h> // bleh!
-#include <cairomm/cairomm.h>
-#include <sigx/sigx.h>
+#include "mpx/mpx-minisoup.hh"
 
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-covers-stores.hh"
@@ -43,6 +37,17 @@
 #include "mpx/mpx-services.hh"
 
 #include "mpx/metadatareader-taglib.hh"
+
+#include <string>
+#include <map>
+#include <set>
+
+#include <glibmm/ustring.h>
+#include <gdkmm/pixbuf.h> // bleh!
+#include <cairomm/cairomm.h>
+
+#include <boost/shared_ptr.hpp>
+#include <sigx/sigx.h>
 
 namespace MPX
 {
@@ -75,7 +80,7 @@ namespace MPX
             const std::string& mbid_    = std::string(),
             const std::string& uri_     = std::string(),
             const std::string& artist_  = std::string(),
-            const std::string& album_   = std::string(), 
+            const std::string& album_   = std::string(),
             StoresT            stores   = StoresT()
       )
       : asin(asin_)
@@ -93,45 +98,45 @@ namespace MPX
 
   class Covers : public sigx::glib_auto_dispatchable, public Service::Base
   {
-	public:
-	  Glib::Mutex                 RequestKeeperLock;
+    public:
+      Glib::Mutex                 RequestKeeperLock;
       Glib::Mutex                 StoresLock;
 
-	  typedef sigc::signal<void, const std::string&> SignalGotCover;
+      typedef sigc::signal<void, const std::string&> SignalGotCover;
 
-	  struct SignalsT
-	  {
+      struct SignalsT
+      {
           // Fired if a store found cover artwork
-		  SignalGotCover GotCover;
-	  };
+          SignalGotCover GotCover;
+      };
 
-	  SignalsT Signals;
+      SignalsT Signals;
 
-	  SignalGotCover&
-	  signal_got_cover()
+      SignalGotCover&
+      signal_got_cover()
       {
         return Signals.GotCover ;
       }
 
       typedef bool (Covers::*FetchFunc) (const std::string&, Glib::RefPtr<Gdk::Pixbuf>&);
 
-	  Covers (MPX::Service::Manager&);
+      Covers (MPX::Service::Manager&);
 
-	  bool
-	  fetch(
+      bool
+      fetch(
         const std::string&                      /*mbid*/,
         Glib::RefPtr<Gdk::Pixbuf>&              /*cover*/
       );
 
-	  bool
-	  fetch(
+      bool
+      fetch(
         const std::string&                      /*mbid*/,
         Cairo::RefPtr<Cairo::ImageSurface>&     /*cover*/,
         CoverSize                               /*size*/
       );
 
-	  void
-	  cache(
+      void
+      cache(
         const std::string& /*mbid*/,
         const std::string& /*uri*/      = std::string(),
         const std::string& /*asin*/     = std::string(),
@@ -149,8 +154,8 @@ namespace MPX
         Glib::RefPtr<Gdk::Pixbuf> /*cover*/
       );
 
-	  std::string
-	  get_thumb_path (std::string /*mbid*/);
+      std::string
+      get_thumb_path (std::string /*mbid*/);
 
     private:
 
@@ -162,13 +167,13 @@ namespace MPX
 
       void
       rebuild_stores ();
- 
+
       bool
       cache_inline (const std::string& mbid, const std::string& uri);
 
-	  RequestKeeperT              RequestKeeper;
-	  MPixbufCache                m_pixbuf_cache;
-	  MSurfaceCache               m_surface_cache[N_COVER_SIZES];
+      RequestKeeperT              RequestKeeper;
+      MPixbufCache                m_pixbuf_cache;
+      MSurfaceCache               m_surface_cache[N_COVER_SIZES];
       StoresT                     m_all_stores, m_current_stores;
       int                         m_rebuild;
       int                         m_rebuilt;

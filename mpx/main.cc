@@ -288,11 +288,11 @@ main (int argc, char ** argv)
 
     GOptionContext * context_c = g_option_context_new (_(" - run AudioSource Player"));
     g_option_context_add_group (context_c, gst_init_get_option_group ());
-    OptionContext context (context_c, true);
+    Glib::OptionContext context (context_c, true);
 
     try{
         gtk = new Gtk::Main (argc, argv, context);
-    } catch( OptionError & cxe )
+    } catch( Glib::OptionError & cxe )
     {
         g_warning(G_STRLOC ": %s", cxe.what().c_str());
         std::exit(EXIT_FAILURE);

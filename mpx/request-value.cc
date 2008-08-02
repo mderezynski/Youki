@@ -1,5 +1,5 @@
 //  MPX
-//  Copyright (C) 2005-2007 MPX Project 
+//  Copyright (C) 2005-2007 MPX Project
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -21,14 +21,20 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
-#include "config.h"
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include "request-value.hh"
+
 #include <glibmm.h>
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include <libglademm.h>
 #include <cstring>
 #include <string>
-#include "request-value.hh"
+
 using namespace Glib;
 using namespace Gtk;
 
@@ -37,19 +43,19 @@ namespace MPX
     RequestValue*
     RequestValue::create ()
     {
-      const std::string path (build_filename(DATA_DIR, build_filename("glade","request-value.glade")));
+      const std::string path = DATA_DIR G_DIR_SEPARATOR_S "glade" G_DIR_SEPARATOR_S "request-value.glade";
       RequestValue *p = new RequestValue(Gnome::Glade::Xml::create (path));
       return p;
     }
 
     RequestValue::RequestValue(const Glib::RefPtr<Gnome::Glade::Xml>& xml)
-    : WidgetLoader<Gtk::Dialog>(xml, "request-value")
+    : Gnome::Glade::WidgetLoader<Gtk::Dialog>(xml, "request-value")
     , m_ref_xml(xml)
     {
     }
 
     void
-    RequestValue::get_request_infos(Glib::ustring& value) 
+    RequestValue::get_request_infos(Glib::ustring& value)
     {
         value = dynamic_cast<Entry*>(m_ref_xml->get_widget("field"))->get_text();
     }
@@ -59,7 +65,7 @@ namespace MPX
     {
         dynamic_cast<Label*>(m_ref_xml->get_widget("question"))->set_text(question);
     }
-    
+
     RequestValue::~RequestValue ()
     {
     }

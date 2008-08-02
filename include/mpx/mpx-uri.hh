@@ -5,8 +5,6 @@
 #include <string>
 #include <glibmm/ustring.h>
 
-using namespace Glib;
-
 namespace MPX
 {
     class URI
@@ -16,9 +14,9 @@ namespace MPX
 #include "mpx/exception.hh"
         EXCEPTION(ParseError)
 
-        typedef std::pair <ustring, ustring >   QElement;
-        typedef std::map  <ustring, QElement >	Query;
-        typedef std::pair <ustring, QElement >	QueryPair;
+        typedef std::pair <Glib::ustring, Glib::ustring> QElement;
+        typedef std::map  <Glib::ustring, QElement>      Query;
+        typedef std::pair <Glib::ustring, QElement>      QueryPair;
 
         enum Protocol
         {
@@ -37,9 +35,7 @@ namespace MPX
         };
 
         URI ();
-        URI (ustring const &uri, bool escape = false);
-        URI (URI const& uri) { *this  = uri; }
-        ~URI  () {};
+        URI (Glib::ustring const& uri, bool escape = false);
 
         Protocol            get_protocol ();
         void                set_protocol (Protocol p);
@@ -51,21 +47,21 @@ namespace MPX
         std::string         fullpath () const;
         void                parse_query (Query & q);
 
-        operator ustring () const;
+        operator Glib::ustring () const;
 
-        ustring	scheme;
-        ustring	userinfo;
-        ustring	hostname;
-        ustring	path;
-        ustring	query;
-        ustring	fragment;
-        int		port;
+        Glib::ustring scheme;
+        Glib::ustring userinfo;
+        Glib::ustring hostname;
+        Glib::ustring path;
+        Glib::ustring query;
+        Glib::ustring fragment;
+        guint16	      port;
 
       private:
 
-        bool fragmentize (ustring const& uri);
+        bool fragmentize (Glib::ustring const& uri);
 
-        mutable ustring complete;
+        mutable Glib::ustring complete;
 
     };
 }

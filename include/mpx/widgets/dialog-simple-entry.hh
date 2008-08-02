@@ -27,7 +27,6 @@
 
 #include <gtkmm/dialog.h>
 #include <libglademm.h>
-using namespace Glib;
 
 namespace MPX
 {
@@ -37,17 +36,17 @@ namespace MPX
       public:
 
           DialogSimpleEntry (BaseObjectType                       * cobj,
-                             RefPtr<Gnome::Glade::Xml> const& xml);
+                             Glib::RefPtr<Gnome::Glade::Xml> const& xml);
           static DialogSimpleEntry * create ();
           virtual ~DialogSimpleEntry ();
 
-          int run (ustring & text);
+          int run (Glib::ustring & text);
 
-          void set_heading (ustring const& text);
+          void set_heading (Glib::ustring const& text);
 
       private:
 
-        RefPtr<Gnome::Glade::Xml>	m_ref_xml;
+          Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
   };
 } // namespace MPX
 

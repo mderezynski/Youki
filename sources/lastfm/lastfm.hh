@@ -43,8 +43,6 @@
 #include "mpx/mpx-minisoup.hh"
 #include "mpx/xml/xspf.hh"
 
-using namespace Glib;
-
 namespace MPX
 {
     typedef sigc::signal<void, XSPF::Playlist const&> SignalPlaylist;

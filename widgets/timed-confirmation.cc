@@ -10,7 +10,7 @@ namespace MPX
         Glib::ustring const& text,
         int                  seconds
     )
-    : WidgetLoader<Gtk::Dialog>(
+    : Gnome::Glade::WidgetLoader<Gtk::Dialog>(
             Gnome::Glade::Xml::create(DATA_DIR G_DIR_SEPARATOR_S "glade" G_DIR_SEPARATOR_S "timed-confirmation.glade"),
             "dialog"
       )

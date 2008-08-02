@@ -29,7 +29,10 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
-#include <map>
+#include "mpx/mpx-audio.hh"
+#include "mpx/widgets/widgetloader.hh"
+#include "play.hh"
+
 #include <set>
 #include <string>
 #include <vector>
@@ -40,10 +43,6 @@
 #include <libglademm/xml.h>
 #include <mcs/mcs.h>
 #include <mcs/gtk-bind.h>
-
-#include "mpx/mpx-audio.hh"
-#include "mpx/widgets/widgetloader.hh"
-#include "play.hh"
 
 namespace MPX
 {

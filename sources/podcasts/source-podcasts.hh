@@ -41,8 +41,6 @@
 #include "mpx/mpx-public-mpx.hh"
 #include "mpx/i-playbacksource.hh"
 
-using namespace Glib;
-
 namespace MPX
 {
     class PodcastsPrivate;

@@ -29,6 +29,7 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
+#include "lastfm.hh"
 #include <string>
 #include <sigc++/connection.h>
 #include <boost/optional.hpp>
@@ -44,10 +45,6 @@
 #include "mpx/mpx-public-mpx.hh"
 #include "mpx/i-playbacksource.hh"
 #include "mpx/widgets/tagview.hh"
-
-#include "lastfm.hh"
-
-using namespace Glib;
 
 namespace MPX
 {

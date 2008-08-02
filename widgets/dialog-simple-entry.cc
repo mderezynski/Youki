@@ -26,14 +26,15 @@
 #  include <config.h>
 #endif //!HAVE_CONFIG_H
 
+#include "mpx/util-ui.hh"
+#include "mpx/widgets/dialog-simple-entry.hh"
+
 #include <glibmm.h>
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include <cstring>
 #include <string>
 
-#include "mpx/util-ui.hh"
-#include "mpx/widgets/dialog-simple-entry.hh"
 using namespace Gtk;
 using namespace Glib;
 
@@ -47,7 +48,7 @@ namespace MPX
   DialogSimpleEntry*
   DialogSimpleEntry::create ()
   {
-    const std::string path = build_filename(build_filename(DATA_DIR,"glade"),"dialog-simple-entry.glade");
+    const std::string path = DATA_DIR G_DIR_SEPARATOR_S "glade" G_DIR_SEPARATOR_S "dialog-simple-entry.glade";
     Glib::RefPtr<Gnome::Glade::Xml> glade_xml = Gnome::Glade::Xml::create (path);
     DialogSimpleEntry * p = 0;
     glade_xml->get_widget_derived ("dialog", p);

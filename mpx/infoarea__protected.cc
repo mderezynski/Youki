@@ -42,7 +42,7 @@ namespace MPX
                 int                                   y,
                 guint                                 time)
   {
-      ustring target (drag_dest_find_target (context));
+      Glib::ustring target (drag_dest_find_target (context));
       if( !target.empty() )
       {
         drag_get_data (context, target, time);

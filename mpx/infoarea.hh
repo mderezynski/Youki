@@ -1,8 +1,6 @@
 #ifndef MPX_INFOAREA_HH
 #define MPX_INFOAREA_HH
 
-#include <gtkmm.h>
-#include <cairomm/cairomm.h>
 #include "mpx/widgets/widgetloader.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-graphics.hh"
@@ -10,6 +8,10 @@
 #include "mpx/i-playbacksource.hh"
 #include "mpx/mpx-types.hh"
 #include "play.hh"
+
+#include <boost/optional.hpp>
+#include <gtkmm.h>
+#include <cairomm/cairomm.h>
 
 namespace MPX
 {
@@ -42,7 +44,7 @@ namespace MPX
           sigc::connection                      m_decay_conn;
           sigc::connection                      m_fade_conn;
 
-          bool								    m_pressed;
+          bool                                  m_pressed;
           Glib::Mutex                           m_surface_lock;
           Glib::Mutex                           m_layout_lock;
           Glib::Mutex                           m_info_lock;
@@ -136,7 +138,7 @@ namespace MPX
 
           void
           set_info ( const Glib::ustring& text );
-    
+
           void
           clear_info ();
 
@@ -144,7 +146,7 @@ namespace MPX
           set_metadata( Metadata & metadata );
 
           void
-          set_cover (RefPtr<Gdk::Pixbuf> const& pixbuf);
+          set_cover (Glib::RefPtr<Gdk::Pixbuf> const& pixbuf);
 
           void
           set_cover (Cairo::RefPtr<Cairo::ImageSurface> const& surface);

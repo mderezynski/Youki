@@ -38,14 +38,12 @@
 #include <sigx/sigx.h>
 #include "mpx/widgets/widgetloader.hh"
 
-using namespace Gnome::Glade;
-
 namespace MPX
 {
     typedef sigc::signal<void, Glib::ustring> SignalUri;
 
     class FileSystemTree
-      : public WidgetLoader<Gtk::TreeView>
+      : public Gnome::Glade::WidgetLoader<Gtk::TreeView>
       , public sigx::glib_auto_dispatchable
     {
             SignalUri       signalUri;

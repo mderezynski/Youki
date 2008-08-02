@@ -20,26 +20,31 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
+
 #ifndef MPX_PLAYBACK_SOURCE_PY_HH
 #define MPX_PLAYBACK_SOURCE_PY_HH
-#include "config.h"
-#include <glib/ghash.h>
-#include <glibmm/ustring.h>
-#include <gdkmm/pixbuf.h>
-#include <gtkmm/widget.h>
-#include <sigc++/signal.h>
-#include <boost/format.hpp>
-#include <Python.h>
-#include <boost/python.hpp>
-#include <vector>
 
-#define NO_IMPORT
-#include <pygobject.h>
+#include <config.h>
 
 #include "mpx/mpx-types.hh"
 #include "mpx/util-file.hh"
 #include "mpx/i-playbacksource.hh"
 #include "mpx/mpx-public-mpx.hh"
+
+#include <string>
+
+#include <glib/ghash.h>
+#include <glibmm/ustring.h>
+#include <gdkmm/pixbuf.h>
+#include <gtkmm/widget.h>
+#include <gtkmm/ui_manager.h>
+#include <sigc++/signal.h>
+
+//#include <Python.h>
+//#include <boost/python.hpp>
+
+#define NO_IMPORT
+#include <pygobject.h>
 
 namespace MPX
 {
