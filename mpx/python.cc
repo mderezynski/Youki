@@ -745,6 +745,8 @@ BOOST_PYTHON_MODULE(mpx)
 
         .def("info_clear",          &MPX::Player::info_clear)
 
+        .def("push_message",        &MPX::Player::push_message)
+
         .def("deactivate_plugin",   &MPX::Player::deactivate_plugin)
 
 		.def("play",                &MPX::Player::play)

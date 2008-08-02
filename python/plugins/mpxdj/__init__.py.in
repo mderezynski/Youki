@@ -573,7 +573,10 @@ class MPXDJ(mpx.Plugin):
 
             instance.stop ()
 
-            self.mlib.append_tracks(idv) 
+            if len(idv):
+                self.mlib.append_tracks(idv) 
+            else:
+                self.player.push_message(_("Failed to produce track"))
 
         self.go.set_label("Go!")
         self.go.set_sensitive(True)
@@ -588,23 +591,22 @@ class MPXDJ(mpx.Plugin):
         idv = mpx.IdVector()
         klass = self.callables[self.combo.get_active()]
         if klass:
-            print "Calling class"
             instance = klass(self.lib, idv, self.xml, self.mlib, self.mcs)
             instance.start () 
        
-            print "Waiting for done" 
             while not instance.is_done():
                 while gtk.events_pending():
                     gtk.main_iteration()
 
-            print "Stopping class"
             instance.stop ()
 
-            print "Appending/playing tracks"
-            if self.play.get_active():
-                self.mlib.play_tracks(idv)
+            if len(idv):
+                if self.play.get_active():
+                    self.mlib.play_tracks(idv)
+                else:
+                    self.mlib.append_tracks(idv) 
             else:
-                self.mlib.append_tracks(idv) 
+                self.player.push_message(_("Failed to produce track"))
 
         self.go.set_label("Go!")
         self.go.set_sensitive(True)

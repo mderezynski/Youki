@@ -1691,6 +1691,7 @@ namespace MPX
             m_Play.request_status( PLAYSTATUS_STOPPED );
         }
         else
+        if(m_ActiveSource)
         {
             track_played();
             m_Sources[m_ActiveSource.get()]->stop ();
@@ -2136,5 +2137,12 @@ namespace MPX
         }
 
         metadata_reparse ();
+    }
+
+    void
+    Player::push_message (std::string const& message)
+    {
+        m_Statusbar->pop();
+        m_Statusbar->push(message);
     }
 }
