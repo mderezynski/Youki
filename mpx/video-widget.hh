@@ -119,7 +119,6 @@ namespace MPX
     private:
 
       Glib::RefPtr<Gdk::Window> mWindow, mVideo;
-      Glib::RefPtr<Gdk::Pixbuf> mEmblem;
 
       PropBool        property_playing_;
       PropGeom        property_geometry_;

@@ -67,7 +67,6 @@ namespace MPX
     {
       property_playing().signal_changed().connect( sigc::mem_fun( *this, &VideoWidget::queue_resize ) );
       property_aspect_ratio().signal_changed().connect( sigc::mem_fun( *this, &VideoWidget::queue_resize ) );
-      mEmblem = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, "images" G_DIR_SEPARATOR_S "audiosource-emblem.png"));
       property_playing().signal_changed().connect( sigc::mem_fun( *this, &VideoWidget::on_playing_changed ));
     }
 
