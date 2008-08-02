@@ -104,6 +104,9 @@ mpx_bin_SOURCES =				\
 	covers.cc					\
 	covers-stores.cc 			\
 								\
+	dialog-about.hh				\
+	dialog-about.cc				\
+								\
 	dialog-filebrowser.hh		\
 	dialog-filebrowser.cc		\
 								\

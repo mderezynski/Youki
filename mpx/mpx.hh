@@ -60,6 +60,7 @@ namespace Gtk
 class CoverFlowWidget;
 namespace MPX
 {
+    class AboutDialog;
     class ErrorManager;
     class InfoArea;
     class MLibManager;
@@ -265,7 +266,6 @@ namespace MPX
         Sidebar                       * m_Sidebar;
         InfoArea                      * m_InfoArea;
         VideoWidget                   * m_VideoWidget; 
-        CoverFlowWidget               * m_CoverFlow;
         ErrorManager                  * m_ErrorManager;
 
     // widgets
@@ -278,6 +278,7 @@ namespace MPX
 		Gtk::Label                    * m_TimeLabel;
         Gtk::Notebook                 * m_InfoNotebook;
         Gtk::Expander                 * m_InfoExpander;
+        AboutDialog                   * m_AboutDialog;
         WidgetWidgetMap                 m_InfoWidgetMap;
 
 		boost::optional<Metadata>       m_Metadata;

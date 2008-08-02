@@ -65,9 +65,11 @@
 #include "mpx/util-ui.hh"
 #include "mpx/xml/xspf.hh"
  
+#include "dialog-about.hh"
 #include "dialog-filebrowser.hh"
 #include "import-share.hh"
 #include "import-folder.hh"
+#include "infoarea.hh"
 #include "mlibmanager.hh"
 #include "play.hh"
 #include "plugin.hh"
@@ -76,8 +78,6 @@
 #include "request-value.hh"
 #include "sidebar.hh"
 #include "splash-screen.hh"
-
-#include "infoarea.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -119,6 +119,9 @@ namespace
   "         <placeholder name='placeholder-track-actions'/>"
   "   </menu>"
   "   <placeholder name='placeholder-source'/>"
+  "   <menu action='MenuHelp'>"
+  "         <menuitem action='action-about'/>"
+  "   </menu>"
   "</menubar>"
   ""
   "</ui>"
@@ -566,6 +569,8 @@ namespace MPX
    {
         m_ErrorManager = new ErrorManager;
 
+        m_AboutDialog = new AboutDialog;
+
         Splashscreen splash;
         splash.set_message(_("Startup..."), 0.);
 
@@ -798,6 +803,11 @@ namespace MPX
             _("_Track")
         ));
 
+		m_actions->add(Action::create(
+            "MenuHelp",
+            _("_Help")
+        ));
+
 		m_actions->add (Action::create ("action-play-files",
 										Gtk::Stock::OPEN,
 										_("_Play Files...")),
@@ -847,6 +857,11 @@ namespace MPX
 										AccelKey("<ctrl>Q"),
 		sigc::ptr_fun ( &Gtk::Main::quit ));
 
+
+		m_actions->add (Action::create ("action-about",
+										Gtk::Stock::ABOUT,
+										_("_About")),
+		sigc::mem_fun ( *m_AboutDialog, &AboutDialog::present ));
 
 
 		m_actions->add (Action::create (ACTION_PLAY,
@@ -923,7 +938,7 @@ namespace MPX
             Gdk::Pixbuf::create_from_file(
                 build_filename(
                     DATA_DIR,
-                    "images" G_DIR_SEPARATOR_S "now-playing.png"
+                    "images" G_DIR_SEPARATOR_S "icon-now-playing-tab.png"
                 )
             )->scale_simple(20,20,Gdk::INTERP_BILINEAR),
             0 
@@ -936,7 +951,7 @@ namespace MPX
             Gdk::Pixbuf::create_from_file(
                 build_filename(
                     DATA_DIR,
-                    "images" G_DIR_SEPARATOR_S "trackdetails.png"
+                    "images" G_DIR_SEPARATOR_S "icon-plugins-tab.png"
                 )
             )->scale_simple(20,20,Gdk::INTERP_BILINEAR),
             1 

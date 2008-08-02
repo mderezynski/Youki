@@ -1,3 +1,9 @@
+images_DATA =						\
+		play.png					
+
+imagesdir = $(pkgdatadir)/images
+EXTRA_DIST = $(images_DATA)
+
 INCLUDES = 							\
 		$(BOOST_CPPFLAGS)			\
 		$(DBUS_CFLAGS)				\
@@ -60,7 +66,7 @@ glade_DATA = 						\
 
 gladedir = $(pkgdatadir)/glade
 
-EXTRA_DIST = glib-marshalers.list $(glade_DATA)
+EXTRA_DIST += glib-marshalers.list $(glade_DATA)
 
 BUILT_SOURCES = glib-marshalers.h 
 
