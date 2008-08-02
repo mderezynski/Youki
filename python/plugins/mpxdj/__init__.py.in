@@ -452,18 +452,11 @@ class MPXDJ(mpx.Plugin):
         self.player = player
 
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj.glade")
-
         self.widget = self.xml.get_widget("widget")
         self.widget.unparent()
 
         self.combo = self.xml.get_widget("combobox")
-
-        self.play = self.xml.get_widget("cb-play")
-
         self.label = self.xml.get_widget("label")
-
-        self.append = self.xml.get_widget("cb-append")
-        self.append.connect("toggled", self.on_append_toggled)
 
         self.go = self.xml.get_widget("button-go")
         self.go.set_sensitive(False)
@@ -533,6 +526,7 @@ class MPXDJ(mpx.Plugin):
         # Finally:
         self.combo.connect("changed", self.on_mode_cbox_changed)
         self.combo.set_active(0)
+        self.working = False
 
     def get_icon(self):
 
@@ -542,14 +536,13 @@ class MPXDJ(mpx.Plugin):
 
         return self.widget
 
-    def on_append_toggled(self, cb):
+    def activate(self):
 
-        active = cb.get_active()
+        self.conn_playlist_end = self.mlib.gobj().connect("playlist-end", self.on_playlist_end)
 
-        if active:
-            self.conn_playlist_end = self.mlib.gobj().connect("playlist-end", self.on_playlist_end)
-        else:
-            self.mlib.gobj().disconnect(self.conn_playlist_end)
+    def deactivate(self):
+
+        self.mlib.gobj().disconnect(self.conn_playlist_end)
 
     def on_mode_cbox_changed(self, cbox):
 
@@ -559,6 +552,9 @@ class MPXDJ(mpx.Plugin):
 
     def on_playlist_end(self, object, empty):
 
+        if self.working: return
+
+        self.working = True
         self.go.set_sensitive(False)
         self.go.set_label("Working...")
         self.mlib.set_sensitive(False)
@@ -583,9 +579,13 @@ class MPXDJ(mpx.Plugin):
         self.go.set_label("Go!")
         self.go.set_sensitive(True)
         self.mlib.set_sensitive(True)
+        self.working = False
 
     def on_button_go(self, object):
 
+        if self.working: return
+
+        self.working = True
         self.go.set_sensitive(False)
         self.go.set_label("Working...")
         self.mlib.set_sensitive(False)
@@ -603,11 +603,11 @@ class MPXDJ(mpx.Plugin):
             instance.stop ()
 
             if len(idv):
-                self.mlib.play_tracks(idv,self.play.get_active()) 
+                self.mlib.play_tracks(idv)
             else:
                 self.player.push_message(_("Failed to produce track"))
 
         self.go.set_label("Go!")
         self.go.set_sensitive(True)
         self.mlib.set_sensitive(True)
-
+        self.working = False
