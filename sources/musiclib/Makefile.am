@@ -69,6 +69,8 @@ gladedir = $(pkgdatadir)/glade
 EXTRA_DIST += glib-marshalers.list $(glade_DATA)
 
 BUILT_SOURCES = glib-marshalers.h 
+CLEANFILES = $(BUILT_SOURCES) 
+DISTCLEANFILES = $(BUILT_SOURCES) 
 
 glib-marshalers.c: glib-marshalers.list 
 	@echo "* Generating glib-marshalers.c"

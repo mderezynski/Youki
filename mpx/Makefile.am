@@ -117,8 +117,6 @@ mpx_bin_SOURCES =				\
 	flow_widget.hh				\
 	flow_widget.cc				\
 								\
-	glib-marshalers.c			\
-								\
 	gtkmmmodule.h				\
 	gtkmmmodule.cc				\
 	gtkmm.cc					\
@@ -215,7 +213,7 @@ if HAVE_HAL
 mpx_bin_SOURCES += hal.cc
 endif
 
-built_header_make = 		\
+BUILT_SOURCES = 			\
 	dbus-obj-MPX-glue.h		\
 	dbus-obj-PLAYER-glue.h
 
@@ -223,8 +221,6 @@ EXTRA_DIST = 				\
 	dbus-obj-MPX.xml 		\
 	dbus-obj-PLAYER.xml 	\
 	dbus-marshalers.list
-
-BUILT_SOURCES = $(built_header_make)
 
 dbus-obj-MPX-glue.h: Makefile.am dbus-obj-MPX.xml
 	@echo "* Generating /MPX DBus Glue"
@@ -268,15 +264,5 @@ dbus-marshalers.h: dbus-marshalers.list
 BUILT_SOURCES += dbus-marshalers.c dbus-marshalers.h
 mpx_bin_SOURCES += dbus-marshalers.c
 
-EXTRA_DIST += glib-marshalers.list
-
-built_header_make += 	\
-		glib-marshalers.h
-
-glib-marshalers.c: glib-marshalers.list 
-	@echo "* Generating glib-marshalers.c"
-	@$(GLIB_GENMARSHAL) --prefix=psm_glib_marshal --body   $(srcdir)/glib-marshalers.list > glib-marshalers.c
-
-glib-marshalers.h: glib-marshalers.list
-	@echo "* Generating glib-marshalers.h"
-	@$(GLIB_GENMARSHAL) --prefix=psm_glib_marshal --header $(srcdir)/glib-marshalers.list > glib-marshalers.h
+CLEANFILES = $(BUILT_SOURCES)
+DISTCLEANFILES = $(BUILT_SOURCES)
