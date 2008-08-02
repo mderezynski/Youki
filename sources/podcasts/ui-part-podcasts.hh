@@ -59,10 +59,6 @@
 
 #include "mpx-minisoup.hh"
 
-using namespace Bmp::PodcastV2;
-using namespace Gtk;
-using namespace Glib;
-
 namespace Bmp
 {
   typedef boost::optional<TreeIter> OptionalTreeIter;

@@ -28,11 +28,9 @@
 #include <string>
 #include <stdexcept>
 
-using namespace xercesc;
-using namespace std;
-
 namespace MPX
 {
+    using namespace xercesc;
 
     template<typename T>
     struct XmlInstance
@@ -54,8 +52,8 @@ namespace MPX
             , m_ConfigFileParser (0)
             {
             }
- 
-            explicit XmlInstance (const std::string& url) 
+
+            explicit XmlInstance (const std::string& url)
             : m_Xml (0)
             , m_ConfigFileParser (0)
             {
@@ -75,11 +73,11 @@ namespace MPX
                   if( !xmlDoc ) throw(std::runtime_error("No Document!"));
 
                   // Get the top-level element: NAme is "root". No attributes for "root"
-                  
+
                   DOMElement* elementRoot = xmlDoc->getDocumentElement();
                   if( !elementRoot ) throw(std::runtime_error("No Root element found!"));
 
-                  m_Xml = new T (*elementRoot);   
+                  m_Xml = new T (*elementRoot);
                 }
                 catch( xercesc::XMLException& e )
                 {

@@ -43,7 +43,7 @@ namespace MPX
         RefPtr<Gnome::Glade::Xml> const&    xml,
         std::string const&                  name 
     )
-    : WidgetLoader<Gtk::TreeView>(xml, name)
+    : Gnome::Glade::WidgetLoader<Gtk::TreeView>(xml, name)
     , sigx::glib_auto_dispatchable()
     {
         std::vector<Gtk::TargetEntry> entries;
