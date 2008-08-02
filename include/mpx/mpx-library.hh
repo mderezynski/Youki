@@ -225,14 +225,12 @@ namespace MPX
 #ifdef HAVE_HAL
             HAL                     & m_HAL;
 #endif //HAVE_HAL 
-
-            Service::Manager        & m_Manager;
-
+            Service::Manager        & m_Services;
             Covers                  & m_Covers;
             MetadataReaderTagLib    & m_MetadataReaderTagLib ;
-
             SQL::SQLDB              * m_SQL;
             LibraryScannerThread    * m_ScannerThread;
+
             gint64                    m_Flags;
 
         protected:

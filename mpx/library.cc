@@ -170,17 +170,17 @@ namespace MPX
 {
 
     Library::Library(
-        Service::Manager&         serivces,
+        Service::Manager&         services,
 #ifdef HAVE_HAL
         bool                      use_hal
 #endif // HAVE_HAL
     )
     : sigx::glib_auto_dispatchable()
     , Service::Base("mpx-service-library")
-    , m_Manager(services)
-    , m_HAL(*(services->get<HAL>("mpx-service-hal")))
-    , m_Covers(*(services->get<Covers>("mpx-service-covers")))
-    , m_MetadataReaderTagLib(*(services->get<MetadataReaderTagLib>("mpx-service-taglib")))
+    , m_Services(services)
+    , m_HAL(*(services.get<HAL>("mpx-service-hal")))
+    , m_Covers(*(services.get<Covers>("mpx-service-covers")))
+    , m_MetadataReaderTagLib(*(services.get<MetadataReaderTagLib>("mpx-service-taglib")))
     , m_Flags (0)
     {
         const int MLIB_VERSION_CUR = 1;
@@ -362,27 +362,19 @@ namespace MPX
         m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS markov (id INTEGER PRIMARY KEY AUTOINCREMENT, count INTEGER DEFAULT 0, track_id_a INTEGER DEFAULT NULL, track_id_b INTEGER DEFAULT NULL);");
     }
 
+    Library::Library(
+        Library const& other
+    )
+    : sigx::glib_auto_dispatchable()
+    , Service::Base("mpx-service-library-copy")
+    , m_Services(other.m_Services)
 #ifdef HAVE_HAL
-    Library::Library(
-        Library const& other
-    )
-    : sigx::glib_auto_dispatchable()
     , m_HAL(other.m_HAL)
-#else
-    Library::Library(
-        Library const& other
-    )
-    : sigx::glib_auto_dispatchable()
 #endif
-    , Service::Base("mpx-service-library")
     , m_Covers(other.m_Covers)
     , m_MetadataReaderTagLib(other.m_MetadataReaderTagLib)
     , m_Flags(0)
     {
-        const int MLIB_VERSION_CUR = 1;
-        const int MLIB_VERSION_REV = 0;
-        const int MLIB_VERSION_AGE = 0;
-
         try{
           m_SQL = new SQL::SQLDB (*other.m_SQL);
         }
@@ -402,9 +394,8 @@ namespace MPX
     {
         Row & r = (*v)[*position]; 
 
-        MPX::Player & player = (*(m_Manager->get<Player>("mpx-service-player")));
-
-        player->push_message((boost::format(_("Refreshing album covers: %lld / %lld")) % *position % (*v).size()).str());
+        MPX::Player & player = (*(m_Services.get<Player>("mpx-service-player")));
+        player.push_message((boost::format(_("Refreshing album covers: %lld / %lld")) % *position % (*v).size()).str());
 
         std::string location;
 #ifdef HAVE_HAL
