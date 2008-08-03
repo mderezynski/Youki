@@ -340,10 +340,11 @@ namespace MPX
         {
                 if( source->play () )
                 {
-                  m_PlayDirection   = PD_PLAY;
-                  m_PreparingSource = source_id;
-                  switch_stream (source->get_uri(), source->get_type());
-                  return;
+                    g_message("Requesting stream switch");
+                    m_PlayDirection   = PD_PLAY;
+                    m_PreparingSource = source_id;
+                    switch_stream (source->get_uri(), source->get_type());
+                    return;
                 }
         }
 

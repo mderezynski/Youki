@@ -1305,12 +1305,18 @@ namespace MPX
                                         if(ev->keyval == GDK_Left)
                                         {
                                                 m_Play.seek( pos - delta );
-                                                m_TrackPlayedSeconds -= delta;
+                                                m_FFWDSeeked -= delta;
+                                                if( m_FFWDSeeked < 0 )
+                                                {
+                                                    m_TrackPlayedSeconds += m_FFWDSeeked;
+                                                    m_FFWDSeeked = 0;
+                                                }
                                                 return true;
                                         }
                                         else if(ev->keyval == GDK_Right)
                                         {
                                                 m_Play.seek( pos + delta );
+                                                m_FFWDSeeked += delta;
                                                 return true;
                                         }
                                 }
@@ -1327,7 +1333,13 @@ namespace MPX
                                 g_atomic_int_set(&m_Seeking,0);
                                 if(m_PreSeekPosition > m_Seek->get_value())
                                 {
-                                        m_TrackPlayedSeconds -= (m_PreSeekPosition - m_Seek->get_value());
+                                        double delta = (m_PreSeekPosition - m_Seek->get_value());
+                                        m_FFWDSeeked -= delta;
+                                        if( m_FFWDSeeked < 0 )
+                                        {
+                                            m_TrackPlayedSeconds += m_FFWDSeeked;
+                                            m_FFWDSeeked = 0;
+                                        }
                                 }
                                 m_Play.seek (gint64(m_Seek->get_value()));
                         }
@@ -1514,7 +1526,7 @@ SET_SEEK_POSITION:
                                 m_PreparingSource.reset();
                         }
 
-                        del_caps(C_CAN_PAUSE);
+                        //del_caps(C_CAN_PAUSE);
                         RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
                         PlaybackSource* source = m_Sources[m_ActiveSource.get()];
@@ -1630,7 +1642,7 @@ SET_SEEK_POSITION:
 
                         if( c & C_CAN_GO_PREV )
                         {
-                                del_caps(C_CAN_PAUSE);
+                                //del_caps(C_CAN_PAUSE);
                                 track_played();
 
                                 if( f & F_ASYNC )
@@ -1661,7 +1673,7 @@ SET_SEEK_POSITION:
 
                         if( c & C_CAN_GO_NEXT )
                         {
-                                del_caps(C_CAN_PAUSE);
+                                //del_caps(C_CAN_PAUSE);
                                 track_played();
 
                                 if( f & F_ASYNC )
@@ -1692,7 +1704,7 @@ SET_SEEK_POSITION:
         void
                 Player::stop ()
                 {
-                        del_caps(C_CAN_PAUSE);
+                        //del_caps(C_CAN_PAUSE);
                         RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
                         if(m_PreparingSource)
