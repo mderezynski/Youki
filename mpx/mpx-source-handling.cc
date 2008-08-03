@@ -329,6 +329,8 @@ namespace MPX
             m_ActiveSource.reset();
         }
 
+        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
+
         PlaybackSource* source = m_Sources[source_id];
 
         if( m_source_f[source_id] & F_ASYNC)
@@ -418,6 +420,7 @@ namespace MPX
 
         if( (f & F_PHONY_NEXT) == 0 )
         {
+              RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
               m_PlayDirection = PD_NEXT;
               switch_stream (source->get_uri(), source->get_type());
         }
@@ -430,7 +433,8 @@ namespace MPX
         Flags f = m_source_f[source_id];
 
         if( (f & F_PHONY_PREV) == 0 )
-        {
+        {        
+              RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
               m_PlayDirection = PD_PREV;
               switch_stream (source->get_uri(), source->get_type());
         }

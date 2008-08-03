@@ -1573,6 +1573,8 @@ SET_SEEK_POSITION:
                                                 m_Sources[m_PreparingSource.get()]->stop ();
                                         }
 
+                                        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
+
                                         PlaybackSource* source = m_Sources[source_id];
                                         m_PreparingSource = source_id;
 
@@ -1688,6 +1690,8 @@ SET_SEEK_POSITION:
         void
                 Player::stop ()
                 {
+                        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
+
                         if(m_PreparingSource)
                         {
                                 m_Sources[m_PreparingSource.get()]->stop ();
@@ -1695,13 +1699,13 @@ SET_SEEK_POSITION:
                                 m_Play.request_status( PLAYSTATUS_STOPPED );
                         }
                         else
-                                if(m_ActiveSource)
-                                {
-                                        track_played();
-                                        m_Sources[m_ActiveSource.get()]->stop ();
-                                        m_Sources[m_ActiveSource.get()]->send_caps ();
-                                        m_Play.request_status( PLAYSTATUS_STOPPED );
-                                }
+                        if(m_ActiveSource)
+                        {
+                                track_played();
+                                m_Sources[m_ActiveSource.get()]->stop ();
+                                m_Sources[m_ActiveSource.get()]->send_caps ();
+                                m_Play.request_status( PLAYSTATUS_STOPPED );
+                        }
                 }
 
         void
