@@ -41,6 +41,11 @@ MPX::MarkovAnalyzerThread::process_tracks(
 {
     using boost::get;
 
+    if( !(track1.has(ATTRIUTE_MPX_TRACK_ID) && track2.has(ATTRIBUTE_MPX_TRACK_ID) ))
+    {
+        return;
+    }
+
     m_Library->markovUpdate(
         get<gint64>(track1[ATTRIBUTE_MPX_TRACK_ID].get()),
         get<gint64>(track2[ATTRIBUTE_MPX_TRACK_ID].get())

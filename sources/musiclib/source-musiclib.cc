@@ -126,15 +126,17 @@ namespace
     "         <menuitem action='musiclib-sort-by-rating'/>"
     "         <menuitem action='musiclib-sort-by-alphabet'/>"
     "         <separator/>"
-    "         <menuitem action='musiclib-albums-show-all'/>"
-    "         <menuitem action='musiclib-albums-show-albums'/>"
-    "         <menuitem action='musiclib-albums-show-singles'/>"
-    "         <menuitem action='musiclib-albums-show-compilations'/>"
-    "         <menuitem action='musiclib-albums-show-eps'/>"
-    "         <menuitem action='musiclib-albums-show-live'/>"
-    "         <menuitem action='musiclib-albums-show-remix'/>"
-    "         <menuitem action='musiclib-albums-show-soundtracks'/>"
-    "         <menuitem action='musiclib-albums-show-other'/>"
+    "         <menu action='menu-musiclib-albums'>"
+    "           <menuitem action='musiclib-albums-show-all'/>"
+    "           <menuitem action='musiclib-albums-show-albums'/>"
+    "           <menuitem action='musiclib-albums-show-singles'/>"
+    "           <menuitem action='musiclib-albums-show-compilations'/>"
+    "           <menuitem action='musiclib-albums-show-eps'/>"
+    "           <menuitem action='musiclib-albums-show-live'/>"
+    "           <menuitem action='musiclib-albums-show-remix'/>"
+    "           <menuitem action='musiclib-albums-show-soundtracks'/>"
+    "           <menuitem action='musiclib-albums-show-other'/>"
+    "         </menu>"
     "         <separator/>"
     "         <menuitem action='musiclib-show-only-new'/>"
     "         <separator/>"
@@ -4205,6 +4207,7 @@ namespace Source
 
         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
+        m_MainActionGroup->add(Action::create("menu-musiclib-albums", _("Show Release Types...")));
 
         Gtk::RadioButtonGroup gr1;
 
