@@ -2902,7 +2902,7 @@ namespace MPX
                         return false;
                   } 
 
-                  if( !(m_TypeState & (*iter)[Columns.RT]))
+                  if( path.get_depth() == 1 && !(m_TypeState & (*iter)[Columns.RT]))
                   {
                     return false;
                   }
