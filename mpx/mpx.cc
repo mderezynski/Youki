@@ -1305,18 +1305,18 @@ namespace MPX
                                         if(ev->keyval == GDK_Left)
                                         {
                                                 m_Play.seek( pos - delta );
-                                                m_FFWDSeeked -= delta;
-                                                if( m_FFWDSeeked < 0 )
+                                                m_TrackSekeedSeconds -= delta;
+                                                if( m_TrackSekeedSeconds < 0 )
                                                 {
-                                                    m_TrackPlayedSeconds += m_FFWDSeeked;
-                                                    m_FFWDSeeked = 0;
+                                                    m_TrackPlayedSeconds += m_TrackSekeedSeconds;
+                                                    m_TrackSekeedSeconds = 0;
                                                 }
                                                 return true;
                                         }
                                         else if(ev->keyval == GDK_Right)
                                         {
                                                 m_Play.seek( pos + delta );
-                                                m_FFWDSeeked += delta;
+                                                m_TrackSekeedSeconds += delta;
                                                 return true;
                                         }
                                 }
@@ -1334,11 +1334,11 @@ namespace MPX
                                 if(m_PreSeekPosition > m_Seek->get_value())
                                 {
                                         double delta = (m_PreSeekPosition - m_Seek->get_value());
-                                        m_FFWDSeeked -= delta;
-                                        if( m_FFWDSeeked < 0 )
+                                        m_TrackSekeedSeconds -= delta;
+                                        if( m_TrackSekeedSeconds < 0 )
                                         {
-                                            m_TrackPlayedSeconds += m_FFWDSeeked;
-                                            m_FFWDSeeked = 0;
+                                            m_TrackPlayedSeconds += m_TrackSekeedSeconds;
+                                            m_TrackSekeedSeconds = 0;
                                         }
                                 }
                                 m_Play.seek (gint64(m_Seek->get_value()));
@@ -1519,6 +1519,9 @@ SET_SEEK_POSITION:
                 Player::on_stream_switched ()
                 {
                         g_return_if_fail(m_PreparingSource || m_ActiveSource);
+
+                        m_TrackPlayedSeconds = 0;
+                        m_TrackSeekedSeconds = 0;
 
                         if(m_PreparingSource)
                         {

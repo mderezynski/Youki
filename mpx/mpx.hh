@@ -249,7 +249,7 @@ namespace MPX
 
 		int                             m_Seeking;
 		gdouble                         m_TrackPlayedSeconds;
-		gdouble                         m_FFWDSeeked;
+		gdouble                         m_TrackSeekedSeconds;
 		gdouble                         m_PreSeekPosition;
 		gdouble                         m_TrackDuration;
 
