@@ -570,7 +570,7 @@ namespace MPX
                           , m_Library(*(services.get<Library>("mpx-service-library")))
                           , m_Play(*(services.get<Play>("mpx-service-play")))
                           {
-                                  m_MarkovThread = new m_MarkovThread(m_Library);
+                                  m_MarkovThread = new MarkovAnalyzerThread(m_Library);
 
                                   m_ErrorManager = new ErrorManager;
                                   m_AboutDialog = new AboutDialog;
@@ -1046,7 +1046,7 @@ namespace MPX
                                       );
 
 
-                                  m_MarkovThread->start();
+                                  m_MarkovThread->run();
 
                                   translate_caps(); // sets all actions intially insensitive as we have C_NONE
 
