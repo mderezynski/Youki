@@ -3193,10 +3193,10 @@ namespace MPX
                 if(get_path_at_pos (x_orig, y_orig, path, col, cell_x, cell_y))
                 {
                     TreeIter iter = TreeStore->get_iter(TreeStoreFilter->convert_path_to_child_path(path));
-                    AlbumRowType rt = (*iter)[LFMColumns.RowType];
+                    AlbumRowType rt = (*iter)[Columns.RowType];
                     if( rt == ROW_ALBUM )
                     {
-                             if( (*iter)[LFMColumns.IsMPXAlbum] ) 
+                             if( (*iter)[Columns.IsMPXAlbum] ) 
                              {
                                 std::vector<TargetEntry> Entries;
                                 Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
@@ -3204,16 +3204,18 @@ namespace MPX
                                 drag_source_set(Entries); 
                                 m_DragSource = true;
 
+#if 0
                                 if(!g_atomic_int_get(&m_ButtonPressed))
                                     return false;
 
                                 if( (cell_x >= 102) && (cell_x <= 162) && (cell_y >= 65) && (cell_y <=78))
                                 {
                                     int rating = ((cell_x - 102)+7) / 12;
-                                    (*iter)[LFMColumns.Rating] = rating;  
+                                    (*iter)[Columns.Rating] = rating;  
                                     m_Lib.get().albumRated(m_DragAlbumId.get(), rating);
                                     return true;
                                 }
+#endif
                              }
                              else
                              {
