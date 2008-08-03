@@ -51,8 +51,13 @@ namespace MPX
             );
 
             Library (const Library& other);
-
             ~Library () ;
+
+            SQL::SQLDB*
+            get_sql_db ()
+            {
+                return m_SQL;
+            }
 
             LibraryScannerThread::ScannerConnectable&
             scanner()

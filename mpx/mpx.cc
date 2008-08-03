@@ -570,8 +570,9 @@ namespace MPX
                           , m_Library(*(services.get<Library>("mpx-service-library")))
                           , m_Play(*(services.get<Play>("mpx-service-play")))
                           {
-                                  m_ErrorManager = new ErrorManager;
+                                  m_MarkovThread = new m_MarkovThread(m_Library);
 
+                                  m_ErrorManager = new ErrorManager;
                                   m_AboutDialog = new AboutDialog;
 
                                   Splashscreen splash;
@@ -1044,6 +1045,9 @@ namespace MPX
                                                   mcs->key_get<int>("mpx","window-y")
                                       );
 
+
+                                  m_MarkovThread->start();
+
                                   translate_caps(); // sets all actions intially insensitive as we have C_NONE
 
                                   show ();
@@ -1481,17 +1485,14 @@ SET_SEEK_POSITION:
                         Glib::Mutex::Lock L (m_MetadataLock);
 
                         if(
-                                        m_Metadata
+                                    m_Metadata
                                         && 
-                                        m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID]
+                                    m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID]
                                         && 
-                                        ((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_TrackDuration/2))
+                                    ((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_TrackDuration/2))
                           )
                         {
-                                m_Library.trackPlayed(
-                                                get<gint64>(m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID].get()),
-                                                time(NULL)
-                                                );
+                                m_MarkovThread->append( m_Metadata.get() );
 
                                 PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
                                 g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_TRACK_PLAYED], 0);

@@ -16,6 +16,7 @@ noinst_HEADERS =							\
 		mpx-library.hh						\
 		mpx-lyrics.hh						\
 		mpx-main.hh							\
+		mpx-markov-analyzer-thread.hh		\
 		mpx-minisoup.hh						\
 		mpx-network.hh						\
 		mpx-protected-access.hh				\

@@ -4533,23 +4533,6 @@ namespace Source
                 g_signal_emit(G_OBJECT(gobj()), signals[PSM_SIGNAL_PLAYLIST_END], 0);
             }
         }
-
-        if( !m_Skipped )
-        {
-                // Update markov
-                gint64 track_id_b = (*iter)[playlist.PlaylistColumns.RowId];
-                TreeIter iter2 = iter;
-                --iter2;
-                if(iter2)
-                {
-                    gint64 track_id_a = (*iter2)[playlist.PlaylistColumns.RowId];
-                    m_Lib.get().markovUpdate( track_id_a, track_id_b );
-                }
-        }
-        else
-        {
-                m_Skipped = false;
-        }
     }
 
     void

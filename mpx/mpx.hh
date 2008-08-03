@@ -33,23 +33,25 @@
 
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-covers.hh"
-#include "mpx/i-playbacksource.hh"
-
 #include "mpx/mpx-library.hh"
+#include "mpx/mpx-markov-analyzer-thread.hh"
 #include "mpx/mpx-protected-access.hh"
-#include "mpx/util-file.hh"
-#include "mpx/widgets/widgetloader.hh"
 #include "mpx/mpx-services.hh"
+#include "mpx/widgets/widgetloader.hh"
+
+#include "mpx/i-playbacksource.hh"
+#include "mpx/util-file.hh"
 
 #ifdef HAVE_HAL
 #include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
 
-#include "audio-types.hh"
-#include "dbus-marshalers.h"
 #include "play.hh"
 #include "sidebar.hh"
 #include "video-widget.hh"
+
+#include "audio-types.hh"
+#include "dbus-marshalers.h"
 
 #include <gtkmm.h>
 #include <gtkmm/volumebutton.h>
@@ -273,6 +275,7 @@ namespace MPX
         InfoArea                      * m_InfoArea;
         VideoWidget                   * m_VideoWidget; 
         ErrorManager                  * m_ErrorManager;
+        MarkovAnalyzerThread          * m_MarkovThread;
 
     // widgets
 
