@@ -1514,6 +1514,8 @@ SET_SEEK_POSITION:
                                 m_PreparingSource.reset();
                         }
 
+                        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
+
                         PlaybackSource* source = m_Sources[m_ActiveSource.get()];
                         m_Sidebar->setActiveId(m_ActiveSource.get());
 
@@ -1573,8 +1575,6 @@ SET_SEEK_POSITION:
                                                 m_Sources[m_PreparingSource.get()]->stop ();
                                         }
 
-                                        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
-
                                         PlaybackSource* source = m_Sources[source_id];
                                         m_PreparingSource = source_id;
 
@@ -1629,9 +1629,8 @@ SET_SEEK_POSITION:
 
                         if( c & C_CAN_GO_PREV )
                         {
-                                track_played();
-
                                 del_caps(C_CAN_PAUSE);
+                                track_played();
 
                                 if( f & F_ASYNC )
                                 {
@@ -1661,7 +1660,9 @@ SET_SEEK_POSITION:
 
                         if( c & C_CAN_GO_NEXT )
                         {
+                                del_caps(C_CAN_PAUSE);
                                 track_played();
+
                                 if( f & F_ASYNC )
                                 {
                                         del_caps(C_CAN_GO_NEXT);
