@@ -3173,6 +3173,55 @@ namespace MPX
               virtual bool
               on_motion_notify_event (GdkEventMotion *event)
               {
+                int x_orig, y_orig;
+                GdkModifierType state;
+
+                if (event->is_hint)
+                {
+                  gdk_window_get_pointer (event->window, &x_orig, &y_orig, &state);
+                }
+                else
+                {
+                  x_orig = int (event->x);
+                  y_orig = int (event->y);
+                  state = GdkModifierType (event->state);
+                }
+
+                TreePath path;              
+                TreeViewColumn *col;
+                int cell_x, cell_y;
+                if(get_path_at_pos (x_orig, y_orig, path, col, cell_x, cell_y))
+                {
+                    TreeIter iter = TreeStore->get_iter(TreeStoreFilter->convert_path_to_child_path(path));
+                    AlbumRowType rt = (*iter)[LFMColumns.RowType];
+                    if( rt == ROW_ALBUM )
+                    {
+                             if( (*iter)[LFMColumns.IsMPXAlbum] ) 
+                             {
+                                std::vector<TargetEntry> Entries;
+                                Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
+                                Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
+                                drag_source_set(Entries); 
+                                m_DragSource = true;
+
+                                if(!g_atomic_int_get(&m_ButtonPressed))
+                                    return false;
+
+                                if( (cell_x >= 102) && (cell_x <= 162) && (cell_y >= 65) && (cell_y <=78))
+                                {
+                                    int rating = ((cell_x - 102)+7) / 12;
+                                    (*iter)[LFMColumns.Rating] = rating;  
+                                    m_Lib.get().albumRated(m_DragAlbumId.get(), rating);
+                                    return true;
+                                }
+                             }
+                             else
+                             {
+                                drag_source_unset ();
+                                m_DragSource = false;
+                             }
+                    }
+                }
                 return false;
               } 
 
