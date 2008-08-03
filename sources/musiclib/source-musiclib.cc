@@ -116,20 +116,29 @@ namespace
     "<menubar name='MenubarMain'>"
     "   <placeholder name='placeholder-source'>"
     "     <menu action='menu-source-musiclib'>"
-    "         <menuitem action='musiclib-sort-by-name'/>"
-    "         <menuitem action='musiclib-sort-by-date'/>"
-    "         <menuitem action='musiclib-sort-by-rating'/>"
-    "         <menuitem action='musiclib-sort-by-alphabet'/>"
-    "         <separator/>"
-    "         <menuitem action='musiclib-show-only-new'/>"
-    "         <separator/>"
     "         <menuitem action='musiclib-show-albums'/>"
     "         <menuitem action='musiclib-show-alltracks'/>"
     "         <menuitem action='musiclib-show-collections'/>"
     "         <menuitem action='musiclib-show-file-system-tree'/>"
     "         <separator/>"
-    "         <menuitem action='musiclib-show-ccdialog'/>"
+    "         <menuitem action='musiclib-sort-by-name'/>"
+    "         <menuitem action='musiclib-sort-by-date'/>"
+    "         <menuitem action='musiclib-sort-by-rating'/>"
+    "         <menuitem action='musiclib-sort-by-alphabet'/>"
     "         <separator/>"
+    "         <menuitem action='musiclib-albums-show-all'/>"
+    "         <menuitem action='musiclib-albums-show-albums'/>"
+    "         <menuitem action='musiclib-albums-show-singles'/>"
+    "         <menuitem action='musiclib-albums-show-compilations'/>"
+    "         <menuitem action='musiclib-albums-show-eps'/>"
+    "         <menuitem action='musiclib-albums-show-live'/>"
+    "         <menuitem action='musiclib-albums-show-remix'/>"
+    "         <menuitem action='musiclib-albums-show-soundtracks'/>"
+    "         <menuitem action='musiclib-albums-show-other'/>"
+    "         <separator/>"
+    "         <menuitem action='musiclib-show-only-new'/>"
+    "         <separator/>"
+    "         <menuitem action='musiclib-show-ccdialog'/>"
     "         <menuitem action='musiclib-action-recache-covers'/>"
     "     </menu>"
     "   </placeholder>"
@@ -198,6 +207,57 @@ namespace
         }
 
         return output;
+    }
+
+    // Release Types
+
+    enum ReleaseType
+    {
+        RT_NONE             =   0,   
+        RT_ALBUM            =   1 << 0,
+        RT_SINGLE           =   1 << 1,
+        RT_COMPILATION      =   1 << 2,
+        RT_EP               =   1 << 3,
+        RT_LIVE             =   1 << 4,
+        RT_REMIX            =   1 << 5,
+        RT_SOUNDTRACK       =   1 << 6,
+        RT_OTHER            =   1 << 7,
+        RT_ALL              =   (RT_ALBUM|RT_SINGLE|RT_COMPILATION|RT_EP|RT_LIVE|RT_REMIX|RT_SOUNDTRACK|RT_OTHER)
+
+    };
+
+    struct ReleaseTypeActionInfo
+    {
+        char const*     Label;
+        char const*     Name;
+        int             Value;
+    };
+
+    ReleaseType
+    determine_release_type (const std::string& type)
+    {
+        if( type == "Album" )
+            return RT_ALBUM;
+
+        if( type == "Single" )
+            return RT_SINGLE;
+
+        if( type == "Compilation" )
+            return RT_COMPILATION;
+
+        if( type == "Ep" )
+            return RT_EP;
+
+        if( type == "Live" )
+            return RT_LIVE;
+
+        if( type == "Remix" )
+            return RT_REMIX;
+
+        if( type == "Soundtrack" )
+            return RT_SOUNDTRACK;
+
+        return RT_OTHER;
     }
 
     // Column-Control
@@ -1673,6 +1733,8 @@ namespace MPX
         struct AlbumColumnsT : public Gtk::TreeModel::ColumnRecord 
         {
             Gtk::TreeModelColumn<AlbumRowType>                          RowType;
+            Gtk::TreeModelColumn<ReleaseType>                           RT;
+
             Gtk::TreeModelColumn<Cairo::RefPtr<Cairo::ImageSurface> >   Image;
             Gtk::TreeModelColumn<Glib::ustring>                         Text;
 
@@ -1700,6 +1762,8 @@ namespace MPX
             AlbumColumnsT ()
             {
                 add (RowType);
+                add (RT);
+
                 add (Image);
                 add (Text);
 
@@ -1842,6 +1906,7 @@ namespace MPX
  
               bool                                  m_ButtonPressed;
               int                                   m_State;
+              int                                   m_TypeState;
 
              // widgets
 
@@ -1863,6 +1928,7 @@ namespace MPX
               , m_MLib(mlib)
               , m_ButtonPressed(false)
               , m_State(ALBUMS_STATE_NO_FLAGS)
+              , m_TypeState(RT_ALL)
               {
                 for(int n = 0; n < N_STARS; ++n)
                 {
@@ -2440,6 +2506,7 @@ namespace MPX
 
                 (*iter)[AlbumColumns.AlbumSort] = ustring(album).collate_key();
                 (*iter)[AlbumColumns.ArtistSort] = ustring(artist).collate_key();
+                (*iter)[AlbumColumns.RT] = determine_release_type(type);
               } 
    
               void
@@ -2893,6 +2960,11 @@ namespace MPX
                         return false;
                   } 
 
+                  if( !(m_TypeState & (*iter)[AlbumColumns.RT]))
+                  {
+                    return false;
+                  }
+
                   ustring filter = m_FilterEntry->get_text().lowercase();
                   TreePath path = TreeStore->get_path(iter);
 
@@ -2941,6 +3013,13 @@ namespace MPX
                      m_State |= ALBUMS_STATE_SHOW_NEW;
                 else
                      m_State &= ~ALBUMS_STATE_SHOW_NEW;
+                TreeStoreFilter->refilter();
+              }
+
+              void
+              set_release_type_filter (int state)
+              {
+                m_TypeState = state; 
                 TreeStoreFilter->refilter();
               }
         };
@@ -4108,12 +4187,52 @@ namespace Source
                     &PlaybackSourceMusicLib::action_cb_refresh_covers
         ));
 
+        const ReleaseTypeActionInfo action_infos[] =
+        {
+            {N_("Show All Release Types"), "musiclib-albums-show-all", RT_ALL},
+            {N_("Show Albums"), "musiclib-albums-show-albums", RT_ALBUM},
+            {N_("Show Singles"), "musiclib-albums-show-singles", RT_SINGLE},
+            {N_("Show Compilations"), "musiclib-albums-show-compilations", RT_COMPILATION},
+            {N_("Show EPs"), "musiclib-albums-show-eps", RT_EP},
+            {N_("Show Live Recordings"), "musiclib-albums-show-live", RT_LIVE},
+            {N_("Show Remixes"), "musiclib-albums-show-remix", RT_REMIX},
+            {N_("Show Soundtracks"), "musiclib-albums-show-soundtracks", RT_SOUNDTRACK},
+            {N_("Show Other Release Types"), "musiclib-albums-show-other", RT_OTHER},
+        };
+
+        Gtk::RadioButtonGroup gr3;
+
+        for(int n = 0; n < G_N_ELEMENTS(action_infos); ++n)
+        {
+                m_MainActionGroup->add(
+                        RadioAction::create(
+                            gr3,
+                            action_infos[n].Name,
+                            _(action_infos[n].Label)
+                        ),
+                        sigc::mem_fun(
+                            *this, 
+                            &PlaybackSourceMusicLib::action_cb_toggle_albums_type_filter
+                ));
+
+                RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action(action_infos[n].Name))->property_value() = action_infos[n].Value; 
+        }
+
+        RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-albums-show-all"))->set_current_value(RT_ALL);
+
         m_MainUIManager->insert_action_group(m_MainActionGroup);
     }
 
     PlaybackSourceMusicLib::~PlaybackSourceMusicLib ()
     {
         delete m_Private;
+    }
+
+    void
+    PlaybackSourceMusicLib::action_cb_toggle_albums_type_filter ()
+    {
+        int value = RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action ("musiclib-albums-show-all"))->get_current_value();
+        m_Private->m_TreeViewAlbums->set_release_type_filter(value);
     }
 
     void

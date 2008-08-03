@@ -163,6 +163,9 @@ namespace Source
 
 
                 void
+                action_cb_toggle_albums_type_filter ();
+
+                void
                 action_cb_play ();
 
                 void
