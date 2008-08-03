@@ -603,7 +603,7 @@ class MPXDJ(mpx.Plugin):
             instance.stop ()
 
             if len(idv):
-                self.mlib.play_tracks(idv)
+                self.mlib.play_tracks(idv, True)
             else:
                 self.player.push_message(_("Failed to produce track"))
 
