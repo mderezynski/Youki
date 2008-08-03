@@ -1514,6 +1514,7 @@ SET_SEEK_POSITION:
                                 m_PreparingSource.reset();
                         }
 
+                        del_caps(C_CAN_PAUSE);
                         RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
                         PlaybackSource* source = m_Sources[m_ActiveSource.get()];
@@ -1691,6 +1692,7 @@ SET_SEEK_POSITION:
         void
                 Player::stop ()
                 {
+                        del_caps(C_CAN_PAUSE);
                         RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
                         if(m_PreparingSource)
