@@ -1305,18 +1305,18 @@ namespace MPX
                                         if(ev->keyval == GDK_Left)
                                         {
                                                 m_Play.seek( pos - delta );
-                                                m_TrackSekeedSeconds -= delta;
-                                                if( m_TrackSekeedSeconds < 0 )
+                                                m_TrackSeekedSeconds -= delta;
+                                                if( m_TrackSeekedSeconds < 0 )
                                                 {
-                                                    m_TrackPlayedSeconds += m_TrackSekeedSeconds;
-                                                    m_TrackSekeedSeconds = 0;
+                                                    m_TrackPlayedSeconds += m_TrackSeekedSeconds;
+                                                    m_TrackSeekedSeconds = 0;
                                                 }
                                                 return true;
                                         }
                                         else if(ev->keyval == GDK_Right)
                                         {
                                                 m_Play.seek( pos + delta );
-                                                m_TrackSekeedSeconds += delta;
+                                                m_TrackSeekedSeconds += delta;
                                                 return true;
                                         }
                                 }
@@ -1334,11 +1334,11 @@ namespace MPX
                                 if(m_PreSeekPosition > m_Seek->get_value())
                                 {
                                         double delta = (m_PreSeekPosition - m_Seek->get_value());
-                                        m_TrackSekeedSeconds -= delta;
-                                        if( m_TrackSekeedSeconds < 0 )
+                                        m_TrackSeekedSeconds -= delta;
+                                        if( m_TrackSeekedSeconds < 0 )
                                         {
-                                            m_TrackPlayedSeconds += m_TrackSekeedSeconds;
-                                            m_TrackSekeedSeconds = 0;
+                                            m_TrackPlayedSeconds += m_TrackSeekedSeconds;
+                                            m_TrackSeekedSeconds = 0;
                                         }
                                 }
                                 m_Play.seek (gint64(m_Seek->get_value()));
