@@ -446,6 +446,7 @@ namespace MPX
 
         if((*position) == (*v).size())
         {
+            player.push_message("");
             delete v;
             delete position;
             return false;

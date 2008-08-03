@@ -2897,11 +2897,6 @@ namespace MPX
                                         TreePath path = TreeStore->get_path(iter);
                                         ustring filter = m_FilterEntry->get_text().lowercase();
 
-                                        if( path.size()  > 1 || filter.empty()) 
-                                        {
-                                                return true;
-                                        }
-
                                         if( path.size() == 1 && (m_State & ALBUMS_STATE_SHOW_NEW) && !(*iter)[Columns.NewAlbum])
                                         {
                                                 return false;
@@ -2910,6 +2905,11 @@ namespace MPX
                                         if( path.size() == 1 && !(m_TypeState & (*iter)[Columns.RT]))
                                         {
                                                 return false;
+                                        }
+
+                                        if( path.size() > 1 || filter.empty()) 
+                                        {
+                                                return true;
                                         }
 
                                         return (Util::match_keys (ustring((*iter)[Columns.Text]).lowercase(), filter)); 
