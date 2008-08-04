@@ -12,7 +12,7 @@
 #include "mpx/mpx-types.hh"
 #include "mpx/util-string.hh"
 #include "mpx/widgets/cairo-extensions.hh"
-#include "mpx/algorithm/aqe.hh"
+#include "mpx/algorithm/aque.hh"
 
 #include "glib-marshalers.h"
 

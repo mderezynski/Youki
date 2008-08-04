@@ -55,7 +55,7 @@
 #include "mpx/widgets/rounded-layout.hh"
 #include "mpx/widgets/timed-confirmation.hh"
 
-#include "mpx/algorithm/aqe.hh"
+#include "mpx/algorithm/aque.hh"
 
 namespace MPX
 {
