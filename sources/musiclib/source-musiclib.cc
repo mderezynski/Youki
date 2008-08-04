@@ -2532,6 +2532,12 @@ namespace MPX
                         }
 
                         void
+                                set_advanced (bool advanced)
+                                {
+                                        m_ListView->set_advanced( advanced );
+                                }
+
+                        void
                                 on_highlight_toggled( Gtk::CheckButton * cb )
                                 {
                                         m_ListView->set_highlight( cb->get_active() );
