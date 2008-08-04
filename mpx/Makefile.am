@@ -73,11 +73,14 @@ mpx_bin_LDADD =										\
 		$(XLIB_LIBS)								\
 		-lgstinterfaces-0.10 						\
 		-lgstvideo-0.10								\
-		$(top_builddir)/jnetlib/libjnetlib.la		\
-		$(top_builddir)/mcs/libmconfig.la			\
-		$(top_builddir)/api/libmpx-api.la			\
-		$(top_builddir)/widgets/libmpx-widgets.la	\
-		$(top_builddir)/musicbrainz/libmpx-musicbrainz.la
+													\
+													\
+		$(top_builddir)/jnetlib/libjnetlib.la						\
+		$(top_builddir)/mcs/libmconfig.la							\
+		$(top_builddir)/api/libmpx-api.la							\
+		$(top_builddir)/widgets/libmpx-widgets.la					\
+		$(top_builddir)/musicbrainz/libmpx-musicbrainz.la			\
+		$(top_builddir)/viewcomponents/libmpx-view-components.la
 
 mpx_bin_CFLAGS =				\
     $(GLIB_CFLAGS) $(GST_CFLAGS) -I$(top_srcdir)/include

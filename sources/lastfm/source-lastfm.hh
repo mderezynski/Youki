@@ -44,7 +44,6 @@
 #include "mpx/mpx-minisoup.hh"
 #include "mpx/mpx-public-mpx.hh"
 #include "mpx/i-playbacksource.hh"
-#include "mpx/widgets/tagview.hh"
 
 namespace MPX
 {
