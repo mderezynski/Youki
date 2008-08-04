@@ -2172,5 +2172,7 @@ rerun_import_share_dialog:
                 {
                         m_Statusbar->pop();
                         m_Statusbar->push(message);
+                        while (gtk_events_pending())
+                            gtk_main_iteration();
                 }
 }
