@@ -1603,6 +1603,7 @@ namespace MPX
                                                 drag_source_set_icon(m_DiscDefault_Pixbuf->scale_simple(128,128,Gdk::INTERP_BILINEAR));
                                         }
                                         else
+                                        if(m_DragTrackId)
                                         {
                                                 Glib::RefPtr<Gdk::Pixmap> pix = create_row_drag_icon(m_PathButtonPress);
                                                 drag_source_set_icon(pix->get_colormap(), pix, Glib::RefPtr<Gdk::Bitmap>(0));
@@ -1639,7 +1640,6 @@ namespace MPX
                                                         {
                                                                 std::vector<TargetEntry> Entries;
                                                                 Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
-                                                                Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
                                                                 drag_source_set(Entries); 
                                                                 m_DragSource = true;
 
@@ -1662,6 +1662,13 @@ namespace MPX
                                                                 m_DragSource = false;
                                                         }
                                                 }
+                                                else if( rt == ROW_TRACK )
+                                                {
+                                                        std::vector<TargetEntry> Entries;
+                                                        Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
+                                                        drag_source_set(Entries); 
+                                                        m_DragSource = true;
+                                                }
                                         }
                                         return false;
                                 } 
@@ -1683,7 +1690,7 @@ namespace MPX
                                         if(get_path_at_pos (event->x, event->y, m_PathButtonPress, col, cell_x, cell_y))
                                         {
                                                 TreeIter iter = TreeStore->get_iter(TreeStoreFilter->convert_path_to_child_path(m_PathButtonPress));
-                                                if(m_PathButtonPress.get_depth() == ROW_ALBUM)
+                                                if(m_PathButtonPress.get_depth() == 1)
                                                 {
                                                         m_DragAlbumMBID = (*iter)[Columns.MBID];
                                                         m_DragAlbumId = (*iter)[Columns.Id];
@@ -1706,12 +1713,12 @@ namespace MPX
 #endif
                                                 }
                                                 else
-                                                        if(m_PathButtonPress.get_depth() == ROW_TRACK)
-                                                        {
-                                                                m_DragAlbumMBID.reset(); 
-                                                                m_DragAlbumId.reset();
-                                                                m_DragTrackId = (*iter)[Columns.TrackId];
-                                                        }
+                                                if(m_PathButtonPress.get_depth() == 2)
+                                                {
+                                                        m_DragAlbumMBID.reset(); 
+                                                        m_DragAlbumId.reset();
+                                                        m_DragTrackId = (*iter)[Columns.TrackId];
+                                                }
                                         }
                                         TreeView::on_button_press_event(event);
                                         return false;

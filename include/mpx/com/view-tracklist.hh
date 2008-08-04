@@ -12,17 +12,18 @@
 #include "mpx/mpx-types.hh"
 #include "mpx/util-string.hh"
 #include "mpx/widgets/cairo-extensions.hh"
+#include "mpx/algorithm/aqe.hh"
+
 #include "glib-marshalers.h"
 
 typedef Glib::Property<Gtk::Adjustment*> PropAdj;
 
 namespace MPX
 {
-        typedef boost::tuple<std::string, std::string, std::string, gint64> Row4;
-        typedef std::vector<std::string>                                    Row1;
-        typedef std::vector<Row4>                                           ModelT;
-        typedef boost::shared_ptr<ModelT>                                   ModelP;
-        typedef sigc::signal<void>                                          Signal0;
+        typedef boost::tuple<std::string, std::string, std::string, gint64, MPX::Track> Row5;
+        typedef std::vector<Row5>                                                       ModelT;
+        typedef boost::shared_ptr<ModelT>                                               ModelP;
+        typedef sigc::signal<void>                                                      Signal0;
 
         struct DataModel
         {
@@ -58,7 +59,7 @@ namespace MPX
                     return m_realmodel->size();
                 }
 
-                virtual Row4 const&
+                virtual Row5 const&
                 row (int row)
                 {
                     return (*m_realmodel)[row];
@@ -84,7 +85,7 @@ namespace MPX
                     if(r.count("title"))
                         title = get<std::string>(r["title"]);
 
-                    Row4 row (title, artist, album, id);
+                    Row5 row (title, artist, album, id);
                     m_realmodel->push_back(row);
                 }
 
@@ -111,7 +112,7 @@ namespace MPX
                     if(track[ATTRIBUTE_TITLE])
                         title = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
 
-                    Row4 row (artist, album, title, id);
+                    Row5 row (artist, album, title, id);
                     m_realmodel->push_back(row);
                 }
         };
@@ -122,8 +123,10 @@ namespace MPX
         {
                 typedef std::vector<ModelT::iterator> RowRowMapping;
 
-                RowRowMapping   m_mapping;
-                std::string     m_filter;
+                RowRowMapping           m_mapping;
+                std::string             m_filter_full;
+                std::string             m_filter_effective;
+                AQE::Constraints_t      m_constraints;
 
                 DataModelFilter(DataModelP & model)
                 : DataModel(model->m_realmodel)
@@ -137,7 +140,7 @@ namespace MPX
                     return m_mapping.size();
                 }
 
-                virtual Row4 const&
+                virtual Row5 const&
                 row (int row)
                 {
                     return *(m_mapping[row]);
@@ -153,14 +156,18 @@ namespace MPX
                 virtual void
                 set_filter(std::string const& filter)
                 {
-                    if(!m_filter.empty() && filter.substr(0, filter.size()-1) == m_filter)
+                    if(!m_filter_full.empty() && filter.substr(0, filter.size()-1) == m_filter_full)
                     {
-                        m_filter = filter; 
+                        m_filter_full = filter; 
+                        m_constraints.clear();
+                        m_filter_effective = AQE::parse_advanced_query(m_constraints, filter);
                         regen_mapping_iterative();
                     }
                     else
                     {
-                        m_filter = filter; 
+                        m_filter_full = filter; 
+                        m_constraints.clear();
+                        m_filter_effective = AQE::parse_advanced_query(m_constraints, filter);
                         regen_mapping();
                     }
                 }
@@ -171,18 +178,26 @@ namespace MPX
                     using boost::get;
 
                     m_mapping.clear();
-
-                    std::string filter = Glib::ustring(m_filter).lowercase().c_str();
                     
                     for(ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i)
                     {
-                        Row4 const& row = *i;
+                        Row5 const& row = *i;
 
-                        std::string compound_haystack = get<0>(row) + " " + get<1>(row) + " " + get<2>(row);
-                    
-                        if( m_filter.empty() || Util::match_keys( compound_haystack, m_filter )) 
+                        if( m_filter_effective.empty() && m_constraints.empty() ) 
                         {
                             m_mapping.push_back(i);
+                        }
+                        else
+                        {
+                            std::string compound_haystack = get<0>(row) + " " + get<1>(row) + " " + get<2>(row);
+                            bool match = Util::match_keys( compound_haystack, m_filter_effective ); 
+                            MPX::Track track = get<4>(row);
+                            bool truth = AQE::match_track(m_constraints, track);
+
+                            if( match && truth )
+                            {
+                                m_mapping.push_back(i);
+                            }
                         }
                     }
 
@@ -194,24 +209,32 @@ namespace MPX
                 {
                     using boost::get;
 
+                    std::string filter = Glib::ustring(m_filter_effective).lowercase().c_str();
+
                     RowRowMapping new_mapping;
-
-                    std::string filter = Glib::ustring(m_filter).lowercase().c_str();
-
                     for(RowRowMapping::const_iterator i = m_mapping.begin(); i != m_mapping.end(); ++i)
                     {
-                        Row4 const& row = *(*i);
+                        Row5 const& row = *(*i);
 
-                        std::string compound_haystack = get<0>(row) + " " + get<1>(row) + " " + get<2>(row);
-                   
-                        if( m_filter.empty() || Util::match_keys( compound_haystack, m_filter )) 
+                        if( m_filter_effective.empty() && m_constraints.empty() ) 
                         {
                             new_mapping.push_back(*i);
+                        }
+                        else
+                        {
+                            std::string compound_haystack = get<0>(row) + " " + get<1>(row) + " " + get<2>(row);
+                            bool match = Util::match_keys( compound_haystack, m_filter_effective ); 
+                            MPX::Track track = get<4>(row);
+                            bool truth = AQE::match_track(m_constraints, track);
+
+                            if( match && truth )
+                            {
+                                new_mapping.push_back(*i);
+                            }
                         }
                     }
 
                     std::swap(m_mapping, new_mapping);
-
                     m_changed.emit();
                 }
 
@@ -304,7 +327,7 @@ namespace MPX
                 void
                 render(
                     Cairo::RefPtr<Cairo::Context>   cairo,
-                    Row4 const&                     datarow,
+                    Row5 const&                     datarow,
                     std::string const&              filter,
                     Gtk::Widget&                    widget,
                     int                             row,
@@ -548,7 +571,7 @@ namespace MPX
 
                     for(Selection::const_iterator i = m_selection.begin(); i != m_selection.end(); ++i)
                     {
-                        Row4 const& r = *(i->first);
+                        Row5 const& r = *(i->first);
                         m_dnd_idv.push_back(get<3>(r));
                     }
 
@@ -579,7 +602,7 @@ namespace MPX
                             {
                                 using boost::get;
 
-                                Row4 const& r = *(m_selection.begin()->first);
+                                Row5 const& r = *(m_selection.begin()->first);
                                 gint64 id = get<3>(r);
                                 bool play = (event->state & GDK_CONTROL_MASK);
                                 m_trackactivated.emit(id, !play);
@@ -710,7 +733,7 @@ namespace MPX
                     {
                         if( !m_selection.empty() )
                         {
-                                Row4 const& r = *(m_selection.begin()->first);
+                                Row5 const& r = *(m_selection.begin()->first);
                                 gint64 id = get<3>(r);
                                 bool play = (event->state & GDK_CONTROL_MASK);
                                 m_trackactivated.emit(id, !play);
@@ -897,7 +920,7 @@ namespace MPX
 
                         for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                         {
-                            (*i)->render(cairo, m_model->row(row), m_model->m_filter, *this, row, x_pos, y_pos, m_row_height, m_highlight);
+                            (*i)->render(cairo, m_model->row(row), m_model->m_filter_effective, *this, row, x_pos, y_pos, m_row_height, m_highlight);
                             x_pos += (*i)->get_width();
                         }
 
