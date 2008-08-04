@@ -508,12 +508,16 @@ namespace MPX
                 {
                         typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
 
+                        MPX::Player & player = (*(m_Services.get<Player>("mpx-service-player")));
+
                         VolMountPointMap m;
                         RowV rows;
                         getSQL (rows, "SELECT * FROM track");
 
                         for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
                         {
+                                player.push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+
                                 Row & r = *i;
 
                                 std::string uri;
@@ -553,19 +557,18 @@ namespace MPX
                                 }
 #endif
 
-                                g_message("URI: %s", uri.c_str());
-
                                 try{
                                         Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
                                         if (!file->query_exists())
                                         {
-                                                g_message("URI doesn't exist anymore");
                                                 execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(r["id"])).str()); 
                                         }
                                 } catch(...) {
                                         g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
                                 }
                         }
+
+                        player.push_message(_("Finding Lost Artists..."));
 
                         typedef std::set <gint64> IdSet;
                         static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld';");
@@ -593,6 +596,8 @@ namespace MPX
                         }
 
 
+                        player.push_message(_("Finding Lost Albums..."));
+
                         idset1.clear();
                         rows.clear();
                         getSQL(rows, "SELECT DISTINCT album_j FROM track;");
@@ -611,6 +616,7 @@ namespace MPX
                                         execSQL((delete_f % "album" % (*i)).str());
                         }
 
+                        player.push_message(_("Finding Lost Album Artists..."));
 
                         idset1.clear();
                         rows.clear();
@@ -630,7 +636,11 @@ namespace MPX
                                         execSQL((delete_f % "album_artist" % (*i)).str());
                         }
 
+                        player.push_message(_("Reloading..."));
+
                         reload ();
+
+                        player.push_message(_("Vacuum process DONE."));
                 }
 
         RowV
