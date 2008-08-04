@@ -29,7 +29,7 @@
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">_Search:</property>
                         <property name="use_underline">True</property>
-                        <property name="mnemonic_widget">album-filter-entry</property>
+                        <property name="mnemonic_widget">albums-filter-entry</property>
                       </widget>
                       <packing>
                         <property name="expand">False</property>
@@ -37,7 +37,7 @@
                       </packing>
                     </child>
                     <child>
-                      <widget class="GtkEntry" id="album-filter-entry">
+                      <widget class="GtkEntry" id="albums-filter-entry">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
                       </widget>
