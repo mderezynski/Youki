@@ -48,6 +48,7 @@ namespace MPX
         { ATTRIBUTE_MUSICIP_PUID,           "MUSICIP_PUID"              },
         { ATTRIBUTE_MB_RELEASE_COUNTRY,     "RELEASECOUNTRY"            },
         { ATTRIBUTE_MB_RELEASE_TYPE,        "MUSICBRAINZ_ALBUMTYPE"     },
+        { ATTRIBUTE_MB_RELEASE_TYPE,        "RELEASETYPE"               },
       };
 
       Ogg::FieldListMap const& map (comment->fieldListMap());

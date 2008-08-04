@@ -126,7 +126,6 @@ namespace
                 "           <menuitem action='musiclib-albums-show-soundtracks'/>"
                 "           <menuitem action='musiclib-albums-show-other'/>"
                 "         </menu>"
-                "         <separator/>"
                 "         <menuitem action='musiclib-show-only-new'/>"
                 "         <separator/>"
                 "         <menuitem action='musiclib-show-ccdialog'/>"
@@ -2663,7 +2662,7 @@ namespace MPX
 
                         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
                         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
-                        m_MainActionGroup->add(Action::create("menu-musiclib-albums", _("Show Release Types...")));
+                        m_MainActionGroup->add(Action::create("menu-musiclib-albums", _("Release Types...")));
 
                         Gtk::RadioButtonGroup gr1;
 
@@ -2684,7 +2683,7 @@ namespace MPX
                                         sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_albums_sort_column_change ));
 
                         m_MainActionGroup->add(
-                                        ToggleAction::create(     "musiclib-show-only-new", _("Show only new albums")),
+                                        ToggleAction::create(     "musiclib-show-only-new", _("Show New Albums Only")),
                                         sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_view_option_show_new_albums ));
 
                         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-name"))->property_value() = 0;
@@ -2768,7 +2767,7 @@ namespace MPX
 
                                         Action::create(
                                                 "musiclib-show-ccdialog",
-                                                _("Configure columns...")
+                                                _("Configure Columns...")
                                                 ),
 
                                         sigc::mem_fun(
@@ -2780,7 +2779,7 @@ namespace MPX
 
                                         Action::create(
                                                 "musiclib-action-recache-covers",
-                                                _("Refresh album covers")
+                                                _("Refresh Album Covers")
                                                 ),
 
                                         sigc::mem_fun(
