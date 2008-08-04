@@ -3,7 +3,7 @@
 
 <glade-interface>
 
-<widget class="GtkWindow" id="albuminfowindow">
+<widget class="GtkWindow" id="album-info-window">
   <property name="border_width">8</property>
   <property name="visible">True</property>
   <property name="title" translatable="yes">AudioSource: Album Details</property>
@@ -35,7 +35,7 @@
 	  <property name="spacing">8</property>
 
 	  <child>
-	    <widget class="GtkImage" id="albumcover">
+	    <widget class="GtkImage" id="album-info-window-cover">
 	      <property name="width_request">256</property>
 	      <property name="height_request">256</property>
 	      <property name="visible">True</property>
@@ -58,7 +58,7 @@
 	      <property name="spacing">0</property>
 
 	      <child>
-		<widget class="GtkLabel" id="label-artist">
+		<widget class="GtkLabel" id="album-info-window-label-artist">
 		  <property name="visible">True</property>
 		  <property name="label" translatable="yes"></property>
 		  <property name="use_underline">False</property>
@@ -83,7 +83,7 @@
 	      </child>
 
 	      <child>
-		<widget class="GtkLabel" id="label-album">
+		<widget class="GtkLabel" id="album-info-window-label-album">
 		  <property name="visible">True</property>
 		  <property name="label" translatable="yes"></property>
 		  <property name="use_underline">False</property>
@@ -137,7 +137,7 @@
 	      <property name="window_placement">GTK_CORNER_TOP_LEFT</property>
 
 	      <child>
-		<widget class="GtkTreeView" id="albumratingslist">
+		<widget class="GtkTreeView" id="album-info-window-ratings-list">
 		  <property name="visible">True</property>
 		  <property name="can_focus">True</property>
 		  <property name="headers_visible">True</property>
@@ -205,7 +205,7 @@
 	  <property name="spacing">0</property>
 
 	  <child>
-	    <widget class="GtkButton" id="delete-rating">
+	    <widget class="GtkButton" id="album-info-window-delete-rating">
 	      <property name="visible">True</property>
 	      <property name="sensitive">False</property>
 	      <property name="can_default">True</property>

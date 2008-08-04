@@ -74,7 +74,7 @@
                   </packing>
                 </child>
                 <child>
-                  <widget class="GtkDrawingArea" id="da-showing">
+                  <widget class="GtkDrawingArea" id="albums-showing">
                     <property name="visible">True</property>
                   </widget>
                   <packing>

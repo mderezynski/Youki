@@ -42,20 +42,24 @@ libmpxsource_musiclib_la_LIBADD =  	\
 		$(top_builddir)/widgets/libmpx-widgets.la
 
 
-libmpxsource_musiclib_la_SOURCES = 	\
-		plugin.cc					\
-									\
-		glib-marshalers.c			\
-		listview.hh					\
-		musiclib-py.cc				\
-		musiclib-py.hh				\
-		source-musiclib.hh			\
-		source-musiclib.cc			\
-		xsd-top-albums.cxx			\
-		xsd-top-albums.hxx			\
-		xsd-tag-topalbums.hxx		\
-		xsd-tag-topalbums.cxx		\
-		top-albums-fetch-thread.cc	\
+libmpxsource_musiclib_la_SOURCES = 		\
+		plugin.cc						\
+										\
+		glib-marshalers.c				\
+		listview.hh						\
+		musiclib-py.cc					\
+		musiclib-py.hh					\
+		musiclib-album-info-window.hh	\
+		musiclib-album-info-window.cc	\
+		musiclib-view-albums.hh			\
+		musiclib-view-albums.cc			\
+		source-musiclib.hh				\
+		source-musiclib.cc				\
+		xsd-top-albums.cxx				\
+		xsd-top-albums.hxx				\
+		xsd-tag-topalbums.hxx			\
+		xsd-tag-topalbums.cxx			\
+		top-albums-fetch-thread.cc		\
 		top-albums-fetch-thread.hh
 
 libmpxsource_musiclibdir = $(PLUGIN_DIR)/sources

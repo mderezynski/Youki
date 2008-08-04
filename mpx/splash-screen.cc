@@ -38,10 +38,10 @@ namespace MPX
     , m_image (Gdk::Pixbuf::create_from_file (build_filename(DATA_DIR, "images" G_DIR_SEPARATOR_S "splash.png")))
     , m_image_w (m_image->get_width())
     , m_image_h (m_image->get_height())
-    , m_bar_w (246)
-    , m_bar_h (1)
-    , m_bar_x (171)
-    , m_bar_y (142)
+    , m_bar_w (477)
+    , m_bar_h (3)
+    , m_bar_x (6)
+    , m_bar_y (158)
     , m_percent (0.0)
     {
         set_size_request (m_image_w, m_image_h);
@@ -117,7 +117,7 @@ namespace MPX
 
 #if 0
         m_cr->set_operator( Cairo::OPERATOR_ATOP );
-        m_cr->set_source_rgba( 1., 1., 1., .15); 
+        m_cr->set_source_rgba( 1., 1., 1., .55); 
         m_cr->rectangle( m_bar_x , m_bar_y , m_bar_w, m_bar_h * m_percent);
         m_cr->fill ();
 #endif
