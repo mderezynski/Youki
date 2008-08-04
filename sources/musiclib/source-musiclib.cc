@@ -2569,11 +2569,11 @@ namespace MPX
                 PAccess<MPX::HAL>           m_HAL;
 
                 MusicLibPrivate(
-                                MPX::Player&                            player,
-                                MPX::Source::PlaybackSourceMusicLib&    mlib,
-                                const Glib::RefPtr<Gnome::Glade::Xml>&  xml,
-                                const Glib::RefPtr<Gtk::UIManager>&     ui_manager
-                               )
+                    MPX::Player&                            player,
+                    MPX::Source::PlaybackSourceMusicLib&    mlib,
+                    const Glib::RefPtr<Gnome::Glade::Xml>&  xml,
+                    const Glib::RefPtr<Gtk::UIManager>&     ui_manager
+                )
                 {
                         m_RefXml = xml;
 
@@ -2613,6 +2613,24 @@ namespace MPX
                                                 ),
                                                 true
                         ));
+
+                        Gtk::CheckButton * cb;
+                        m_RefXml->get_widget("tracks-advanced-cb", cb);
+                        cb->signal_toggled().connect(
+                            sigc::bind(
+                                sigc::mem_fun(
+                                    *this,
+                                    &MusicLibPrivate::on_tracks_advanced_cb_toggled
+                                ),
+                                cb
+                        ));
+                            
+                }
+
+                void
+                on_tracks_advanced_cb_toggled (Gtk::CheckButton const* cb)
+                {
+                    m_ViewAllTracks->set_advanced(cb->get_active());
                 }
         };
 }

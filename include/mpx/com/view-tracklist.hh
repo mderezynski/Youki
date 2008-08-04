@@ -127,9 +127,11 @@ namespace MPX
                 std::string             m_filter_full;
                 std::string             m_filter_effective;
                 AQE::Constraints_t      m_constraints;
+                bool                    m_advanced;
 
                 DataModelFilter(DataModelP & model)
                 : DataModel(model->m_realmodel)
+                , m_advanced(false)
                 {
                     regen_mapping ();
                 }
@@ -155,21 +157,36 @@ namespace MPX
                 
                 virtual void
                 set_filter(std::string const& filter)
-                {
-                    if(!m_filter_full.empty() && filter.substr(0, filter.size()-1) == m_filter_full)
+                { 
+                    if(!m_filter_full.empty() && (filter.substr(0, filter.size()-1) == m_filter_full) && !m_advanced)
                     {
                         m_filter_full = filter; 
-                        m_constraints.clear();
-                        m_filter_effective = AQE::parse_advanced_query(m_constraints, filter);
+                        m_filter_effective = filter;
                         regen_mapping_iterative();
                     }
                     else
                     {
                         m_filter_full = filter; 
-                        m_constraints.clear();
-                        m_filter_effective = AQE::parse_advanced_query(m_constraints, filter);
+
+                        if( m_advanced )
+                        {
+                            m_constraints.clear();
+                            m_filter_effective = AQE::parse_advanced_query(m_constraints, filter);
+                        }
+                        else
+                        {
+                            m_filter_effective = m_filter_full;
+                        }
+
                         regen_mapping();
                     }
+                }
+
+                virtual void
+                set_advanced (bool advanced)
+                {
+                    m_advanced = advanced;
+                    set_filter(m_filter_full);
                 }
 
                 void
@@ -1015,6 +1032,12 @@ namespace MPX
                 signal_track_activated()
                 {
                     return m_trackactivated;
+                }
+
+                void
+                set_advanced (bool advanced)
+                {
+                    m_model->set_advanced(advanced);
                 }
 
                 ListView ()

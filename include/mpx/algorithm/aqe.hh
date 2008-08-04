@@ -55,6 +55,38 @@ namespace AQE
             {
                 Constraint_t c;
 
+                if( v2[0] == "musicip-puid" )
+                {
+                    c.TargetAttr = ATTRIBUTE_MUSICIP_PUID;
+                    c.MatchType = MT_EQUAL;
+                    c.TargetValue = v2[1];
+                    constraints.push_back(c);
+                }
+                else
+                if( v2[0] == "album-mbid" )
+                {
+                    c.TargetAttr = ATTRIBUTE_MB_ALBUM_ID;
+                    c.MatchType = MT_EQUAL;
+                    c.TargetValue = v2[1];
+                    constraints.push_back(c);
+                }
+                else
+                if( v2[0] == "album-artist-mbid" )
+                {
+                    c.TargetAttr = ATTRIBUTE_MB_ALBUM_ARTIST_ID;
+                    c.MatchType = MT_EQUAL;
+                    c.TargetValue = v2[1];
+                    constraints.push_back(c);
+                }
+                else
+                if( v2[0] == "artist-mbid" )
+                {
+                    c.TargetAttr = ATTRIBUTE_MB_ARTIST_ID;
+                    c.MatchType = MT_EQUAL;
+                    c.TargetValue = v2[1];
+                    constraints.push_back(c);
+                }
+                else
                 if( v2[0] == "country" )
                 {
                     c.TargetAttr = ATTRIBUTE_MB_RELEASE_COUNTRY;
