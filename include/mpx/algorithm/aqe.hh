@@ -30,6 +30,64 @@ namespace AQE
 
     typedef std::vector<Constraint_t> Constraints_t;
 
+    Glib::ustring
+    parse_advanced_query (Constraints_t& constraints, const std::string& text)
+    {
+        typedef std::vector< std::string > VectorType;
+
+        VectorType non_attr_strings;
+
+        VectorType v;
+        boost::algorithm::split( v, text, boost::algorithm::is_any_of(" ") );
+
+        for( VectorType::const_iterator i = v.begin(); i != v.end(); ++i )
+        {
+            std::string const& token = *i;
+
+            VectorType v2;
+            boost::algorithm::split( v2, token, boost::algorithm::is_any_of(":") );
+
+            if( v2.size() == 1) 
+            {
+                non_attr_strings.push_back(v2[0]);
+            }
+            else
+            {
+                Constraint_t c;
+
+                if( v2[0] == "country" )
+                {
+                    c.TargetAttr = ATTRIBUTE_MB_RELEASE_COUNTRY;
+                    c.MatchType = MT_EQUAL;
+                    c.TargetValue = v2[1];
+                    constraints.push_back(c);
+                }
+                else
+                if( v2[0] == "type" )
+                {
+                    c.TargetAttr = ATTRIBUTE_MB_RELEASE_TYPE;
+                    c.MatchType = MT_EQUAL;
+                    c.TargetValue = v2[1];
+                    constraints.push_back(c);
+                }
+                else
+                if( v2[0] == "year" )
+                {
+                    try{
+                            c.TargetValue = gint64(boost::lexical_cast<int>(v2[1]));
+                            c.TargetAttr = ATTRIBUTE_DATE;
+                            c.MatchType = MT_EQUAL;
+                            constraints.push_back(c);
+                    } catch( boost::bad_lexical_cast ) {
+                    }
+                }
+            }
+        }
+
+        return Glib::ustring(boost::algorithm::join( non_attr_strings, " ")).lowercase();
+    }
+
+
     template <typename T>
     bool
     determine_match (const Constraint_t& c, MPX::Track& track)

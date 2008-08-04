@@ -362,9 +362,6 @@ namespace MPX
                         virtual void
                                 on_advanced_query_cb_toggled ();
 
-                        virtual void
-                                parse_advanced_query ();
-
                         public:
 
                         virtual void

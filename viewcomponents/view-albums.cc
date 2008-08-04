@@ -367,71 +367,12 @@ namespace MPX
                 }
 
                 void
-                        AlbumTreeView::parse_advanced_query ()
-                        {
-                                typedef std::vector< std::string > VectorType;
-
-                                std::string text = m_FilterEntry->get_text();
-
-                                m_Constraints.clear();
-                                VectorType non_attr_strings;
-
-                                VectorType v;
-                                boost::algorithm::split( v, text, boost::algorithm::is_any_of(" ") );
-
-                                for( VectorType::const_iterator i = v.begin(); i != v.end(); ++i )
-                                {
-                                    std::string const& token = *i;
-
-                                    VectorType v2;
-                                    boost::algorithm::split( v2, token, boost::algorithm::is_any_of(":") );
-
-                                    if( v2.size() == 1) 
-                                    {
-                                        non_attr_strings.push_back(v2[0]);
-                                    }
-                                    else
-                                    {
-                                        Constraint_t c;
-
-                                        if( v2[0] == "country" )
-                                        {
-                                            c.TargetAttr = ATTRIBUTE_MB_RELEASE_COUNTRY;
-                                            c.MatchType = MT_EQUAL;
-                                            c.TargetValue = v2[1];
-                                            m_Constraints.push_back(c);
-                                        }
-                                        else
-                                        if( v2[0] == "type" )
-                                        {
-                                            c.TargetAttr = ATTRIBUTE_MB_RELEASE_TYPE;
-                                            c.MatchType = MT_EQUAL;
-                                            c.TargetValue = v2[1];
-                                            m_Constraints.push_back(c);
-                                        }
-                                        else
-                                        if( v2[0] == "year" )
-                                        {
-                                            try{
-                                                    c.TargetValue = gint64(boost::lexical_cast<int>(v2[1]));
-                                                    c.TargetAttr = ATTRIBUTE_DATE;
-                                                    c.MatchType = MT_EQUAL;
-                                                    m_Constraints.push_back(c);
-                                            } catch( boost::bad_lexical_cast ) {
-                                            }
-                                        }
-                                    }
-                                }
-
-                                m_FilterText = Glib::ustring(boost::algorithm::join( non_attr_strings, " ")).lowercase();
-                        }
-
-                void
                         AlbumTreeView::on_filter_entry_changed ()
                         {
                                 if(m_Advanced)
                                 {
-                                    parse_advanced_query ();
+                                    m_Constraints.clear();
+                                    m_FilterText = AQE::parse_advanced_query (m_Constraints, m_FilterEntry->get_text());
                                 }
                                 else
                                 {
