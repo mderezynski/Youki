@@ -900,6 +900,15 @@ namespace MPX
                         if (row.count("mb_album_artist_id"))
                                 track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = get<std::string>(row["mb_album_artist_id"]);
 
+                        if (row.count("mb_release_country"))
+                                track[ATTRIBUTE_MB_RELEASE_COUNTRY] = get<std::string>(row["mb_release_country"]);
+
+                        if (row.count("mb_release_type"))
+                                track[ATTRIBUTE_MB_RELEASE_TYPE] = get<std::string>(row["mb_release_type"]);
+
+                        if (row.count("date"))
+                                track[ATTRIBUTE_DATE] = get<gint64>(row["date"]);
+
                         if (row.count("amazon_asin"))
                                 track[ATTRIBUTE_ASIN] = get<std::string>(row["amazon_asin"]);
 
