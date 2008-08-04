@@ -49,10 +49,6 @@ libmpxsource_musiclib_la_SOURCES = 		\
 		listview.hh						\
 		musiclib-py.cc					\
 		musiclib-py.hh					\
-		musiclib-album-info-window.hh	\
-		musiclib-album-info-window.cc	\
-		musiclib-view-albums.hh			\
-		musiclib-view-albums.cc			\
 		source-musiclib.hh				\
 		source-musiclib.cc				\
 		xsd-top-albums.cxx				\
@@ -65,8 +61,7 @@ libmpxsource_musiclib_la_SOURCES = 		\
 libmpxsource_musiclibdir = $(PLUGIN_DIR)/sources
 
 glade_DATA = 						\
-	source-musiclib.glade			\
-	album-info-window.glade
+	source-musiclib.glade			
 
 gladedir = $(pkgdatadir)/glade
 

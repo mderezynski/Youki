@@ -29,14 +29,11 @@
 #include <glib.h>
 #include <giomm.h>
 #include <libglademm.h>
-#include <Python.h>
-#define NO_IMPORT
-#include <pygobject.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/format.hpp>
 
-#include "mpx/mpx-hal.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-stock.hh"
@@ -49,13 +46,12 @@
 #include "mpx/widgets/cell-renderer-cairo-surface.hh"
 #include "mpx/widgets/cell-renderer-count.hh"
 #include "mpx/widgets/cell-renderer-vbox.hh"
-#include "mpx/widgets/file-system-tree.hh"
-#include "mpx/widgets/gossip-cell-renderer-expander.h"
+#include "mpx/widgets/cell-renderer-expander.h"
 #include "mpx/widgets/rounded-layout.hh"
 #include "mpx/widgets/timed-confirmation.hh"
 
-#include "musiclib-view-albums.hh"
-#include "musiclib-album-info-window.hh"
+#include "mpx/com/view-albums.hh"
+#include "mpx/com/album-info-window.hh"
 
 using namespace Gtk;
 using namespace Glib;
@@ -151,19 +147,17 @@ namespace
 namespace MPX
 {
                 AlbumTreeView::AlbumTreeView(
-                                const Glib::RefPtr<Gnome::Glade::Xml>&  xml,    
-                                const std::string&                      name,
-                                const std::string&                      name_showing_label,
-                                const std::string&                      name_filter_entry,
-                                Glib::RefPtr<Gtk::UIManager>            ui_manager,
-                                const PAccess<MPX::Library>&            lib,
-                                const PAccess<MPX::Covers>&             amzn,
-                                MPX::Source::PlaybackSourceMusicLib&    mlib
+                        const Glib::RefPtr<Gnome::Glade::Xml>&  xml,    
+                        const std::string&                      name,
+                        const std::string&                      name_showing_label,
+                        const std::string&                      name_filter_entry,
+                        Glib::RefPtr<Gtk::UIManager>            ui_manager,
+                        const PAccess<MPX::Library>&            lib,
+                        const PAccess<MPX::Covers>&             amzn
                 )
                 : WidgetLoader<Gtk::TreeView>(xml,name)
                 , m_Lib(lib)
                 , m_Covers(amzn)
-                , m_MLib(mlib)
                 , m_ButtonPressed(false)
                 , m_State(ALBUMS_STATE_NO_FLAGS)
                 , m_TypeState(RT_ALL)
@@ -365,14 +359,13 @@ namespace MPX
                                 if(path.get_depth() == ROW_ALBUM)
                                 {
                                         gint64 id = (*iter)[Columns.Id];
-                                        m_MLib.play_album(id);
+                                        Signals.PlayAlbum.emit(id);
                                 }
                                 else
                                 {
                                         gint64 id = (*iter)[Columns.TrackId];
-                                        IdV v;
-                                        v.push_back(id);
-                                        m_MLib.play_tracks(v);
+                                        IdV v (1, id);
+                                        Signals.PlayTracks.emit(v);
                                 }
                         }
 

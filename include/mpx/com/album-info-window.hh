@@ -29,11 +29,7 @@
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include <glib.h>
-#include <giomm.h>
 #include <libglademm.h>
-#include <Python.h>
-#define NO_IMPORT
-#include <pygobject.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>

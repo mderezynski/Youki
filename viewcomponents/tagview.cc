@@ -1,14 +1,14 @@
+
+#include "mpx/com/tagview.hh"
+
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
 #include <boost/shared_ptr.hpp>
-#include "mpx/widgets/tagview.hh"
-
 #ifdef HAVE_TR1
 #include <tr1/cmath>
 #else
 #include <math.h>
 #endif
-
 #include "mpx/util-graphics.hh"
 
 using namespace Glib;

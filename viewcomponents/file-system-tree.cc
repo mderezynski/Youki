@@ -21,6 +21,8 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 
+#include "mpx/com/file-system-tree.hh"
+
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif // HAVE_CONFIG_H
@@ -32,7 +34,6 @@
 
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
-#include "mpx/widgets/file-system-tree.hh"
 
 using namespace Glib;
 using namespace Gtk;

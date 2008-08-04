@@ -32,7 +32,7 @@
 #include <gdk/gdkx.h>
 #include <X11/Xlib.h>
 #include "mpx/util-graphics.hh"
-#include "mpx/widgets/cairoextensions.hh"
+#include "mpx/widgets/cairo-extensions.hh"
 
 namespace
 {

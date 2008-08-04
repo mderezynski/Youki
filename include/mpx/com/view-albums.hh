@@ -46,23 +46,20 @@
 #include "mpx/util-ui.hh"
 #include "mpx/util-string.hh"
 #include "mpx/widgets/widgetloader.hh"
+#include "mpx/mpx-protected-access.hh"
 
 #include "mpx/widgets/cell-renderer-cairo-surface.hh"
 #include "mpx/widgets/cell-renderer-count.hh"
 #include "mpx/widgets/cell-renderer-vbox.hh"
-#include "mpx/widgets/file-system-tree.hh"
-#include "mpx/widgets/gossip-cell-renderer-expander.h"
+#include "mpx/widgets/cell-renderer-expander.h"
 #include "mpx/widgets/rounded-layout.hh"
 #include "mpx/widgets/timed-confirmation.hh"
 
-#include "musiclib-py.hh"
-#include "glib-marshalers.h"
-#include "source-musiclib.hh"
-#include "top-albums-fetch-thread.hh"
-#include "listview.hh"
-
 namespace MPX
 {
+                typedef sigc::signal<void, gint64>      SignalPlayAlbum;
+                typedef sigc::signal<void, IdV>         SignalPlayTracks;
+
                 const int N_STARS = 6;
 
                 enum AlbumRowType
@@ -178,7 +175,6 @@ namespace MPX
 
                         PAccess<MPX::Library>                 m_Lib;
                         PAccess<MPX::Covers>                  m_Covers;
-                        MPX::Source::PlaybackSourceMusicLib&  m_MLib;
 
                         // view mappings
 
@@ -216,7 +212,27 @@ namespace MPX
                         Gtk::Entry*                           m_FilterEntry;
                         RoundedLayout*                        m_LabelShowing;
 
+                        struct Signals_t
+                        {
+                            SignalPlayAlbum         PlayAlbum;
+                            SignalPlayTracks        PlayTracks; 
+                        };
+
+                        Signals_t Signals;
+
                         public:
+
+                        SignalPlayTracks&
+                        signal_play_tracks()
+                        {
+                            return Signals.PlayTracks;
+                        }
+
+                        SignalPlayAlbum&
+                        signal_play_album()
+                        {
+                            return Signals.PlayAlbum;
+                        }
 
                         AlbumTreeView(
                             const Glib::RefPtr<Gnome::Glade::Xml>&,    
@@ -225,8 +241,7 @@ namespace MPX
                             const std::string&,
                             Glib::RefPtr<Gtk::UIManager>,
                             const PAccess<MPX::Library>&,
-                            const PAccess<MPX::Covers>&,
-                            MPX::Source::PlaybackSourceMusicLib&
+                            const PAccess<MPX::Covers>&
                         );
 
                         protected:

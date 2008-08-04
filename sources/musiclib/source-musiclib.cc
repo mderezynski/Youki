@@ -36,7 +36,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 
-
 #include "mpx/mpx-hal.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
@@ -53,21 +52,20 @@
 #include "mpx/widgets/cell-renderer-cairo-surface.hh"
 #include "mpx/widgets/cell-renderer-count.hh"
 #include "mpx/widgets/cell-renderer-vbox.hh"
-#include "mpx/widgets/file-system-tree.hh"
-#include "mpx/widgets/gossip-cell-renderer-expander.h"
+#include "mpx/widgets/cell-renderer-expander.h"
 #include "mpx/widgets/rounded-layout.hh"
 #include "mpx/widgets/timed-confirmation.hh"
 
-#include "glib-marshalers.h"
-
-#include "listview.hh"
+#include "mpx/com/file-system-tree.hh"
+#include "mpx/com/view-tracklist.hh"
+#include "mpx/com/view-albums.hh"
 
 #include "source-musiclib.hh"
 #include "musiclib-py.hh"
 
-#include "musiclib-view-albums.hh"
 #include "top-albums-fetch-thread.hh"
 
+#include "glib-marshalers.h"
 using namespace Gtk;
 using namespace Glib;
 using namespace Gnome::Glade;
@@ -2580,7 +2578,7 @@ namespace MPX
                         player.get_object(m_HAL);
 
                         m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, ui_manager, m_Lib, m_HAL, mlib);
-                        m_TreeViewAlbums = new AlbumTreeView(m_RefXml, "source-musiclib-treeview-albums", "albums-showing", "albums-filter-entry", ui_manager, m_Lib, m_Covers, mlib);
+                        m_TreeViewAlbums = new AlbumTreeView(m_RefXml, "source-musiclib-treeview-albums", "albums-showing", "albums-filter-entry", ui_manager, m_Lib, m_Covers);
                         m_TreeViewLFM = new LFMTreeView(m_RefXml, m_Lib, m_Covers, mlib);
                         m_TreeViewFS = new FileSystemTree(m_RefXml, "musiclib-treeview-file-system");
                         m_ViewAllTracks = new AllTracksView(m_RefXml, m_Lib, m_HAL, mlib);
@@ -2590,7 +2588,25 @@ namespace MPX
                                         sigc::mem_fun(
                                                 mlib,
                                                 &::MPX::Source::PlaybackSourceMusicLib::play_uri
-                                                ));
+                        ));
+
+                        m_TreeViewAlbums->signal_play_tracks().connect(
+                                        sigc::bind(
+                                                sigc::mem_fun(
+                                                        mlib,
+                                                        &::MPX::Source::PlaybackSourceMusicLib::play_tracks
+                                                ),
+                                                true
+                        ));
+
+                        m_TreeViewAlbums->signal_play_album().connect(
+                                        sigc::bind(
+                                                sigc::mem_fun(
+                                                        mlib,
+                                                        &::MPX::Source::PlaybackSourceMusicLib::play_album
+                                                ),
+                                                true
+                        ));
                 }
         };
 }

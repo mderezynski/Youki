@@ -25,7 +25,7 @@
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/algorithm/random.hh"
 #include "mpx/mpx-types.hh"
-#include "mpx/widgets/tagview.hh"
+#include "mpx/com/tagview.hh"
 #include "mpx/util-graphics.hh"
 
 #include "audio-types.hh"

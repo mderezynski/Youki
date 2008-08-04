@@ -1,6 +1,6 @@
 #include <cairomm/cairomm.h>
 #include <cmath>
-#include "mpx/widgets/cairoextensions.hh"
+#include "mpx/widgets/cairo-extensions.hh"
 
 namespace MPX        
 {

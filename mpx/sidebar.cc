@@ -29,7 +29,7 @@
 #include <boost/format.hpp>
 #include "mpx/i-playbacksource.hh"
 #include "mpx/util-ui.hh"
-#include "mpx/widgets/gossip-cell-renderer-expander.h"
+#include "mpx/widgets/cell-renderer-expander.h"
 #include "plugin.hh"
 #include "sidebar.hh"
 using namespace Glib;

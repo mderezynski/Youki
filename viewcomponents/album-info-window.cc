@@ -20,7 +20,7 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
-#include "musiclib-album-info-window.hh"
+#include "mpx/com/album-info-window.hh"
 #include "config.h"
 #ifdef HAVE_TR1
 #include <tr1/unordered_map>
@@ -28,11 +28,7 @@
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include <glib.h>
-#include <giomm.h>
 #include <libglademm.h>
-#include <Python.h>
-#define NO_IMPORT
-#include <pygobject.h>
 
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>

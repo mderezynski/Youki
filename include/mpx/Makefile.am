@@ -1,4 +1,4 @@
-SUBDIRS = algorithm aux parser widgets xml
+SUBDIRS = algorithm aux parser widgets xml com
 
 noinst_HEADERS =							\
 		error.hh							\

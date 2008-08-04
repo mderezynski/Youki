@@ -5,7 +5,7 @@
 #include <glibmm.h>
 #include <gtkmm.h>
 
-#include "mpx/widgets/cairoextensions.hh"
+#include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/widgets/cell-renderer-count.hh"
 
 using namespace Gtk;

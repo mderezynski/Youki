@@ -17,19 +17,23 @@ libmpx_widgets_la_SOURCES = 			\
 		bmp_status_icon.h	    		\
     	bmp_tray_icon.c       			\
 	    bmp_tray_icon.h	      			\
-		cairoextensions.cc				\
+										\
+		cairo-extensions.cc				\
+										\
 		cell-renderer-cairo-surface.cc	\
 		cell-renderer-count.cc			\
+		cell-renderer-expander.c		\
 		cell-renderer-source.cc			\
 		cell-renderer-vbox.cc			\
+										\
 		dialog-simple-entry.cc			\
-		file-system-tree.cc				\
-		gossip-cell-renderer-expander.c	\
+										\
 		rounded-layout.cc				\
-		taskdialog.cc					\
-		tagview.cc						\
+										\
+		task-dialog.cc					\
+										\
 		timed-confirmation.cc			\
-		treeview-popup.cc				\
+										\
 	    widget-marshalers.c   			
 
 widget-marshalers.c: widget-marshalers.list 

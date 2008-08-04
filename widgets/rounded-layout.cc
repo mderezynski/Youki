@@ -1,7 +1,7 @@
 #include "mpx/widgets/rounded-layout.hh"
 
 #include <gtkmm.h>
-#include "mpx/widgets/cairoextensions.hh"
+#include "mpx/widgets/cairo-extensions.hh"
 
 namespace MPX
 {

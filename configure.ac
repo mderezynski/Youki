@@ -745,6 +745,7 @@ AC_OUTPUT([
 	remote/Makefile
     scripts/Makefile
     widgets/Makefile
+    viewcomponents/Makefile
     api/Makefile
     xmlcpp/Makefile
     musicbrainz/Makefile
@@ -756,6 +757,7 @@ AC_OUTPUT([
     include/mpx/parser/Makefile
     include/mpx/widgets/Makefile
     include/mpx/xml/Makefile
+    include/mpx/com/Makefile
 
     sources/Makefile
     sources/musiclib/Makefile

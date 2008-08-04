@@ -30,7 +30,7 @@
 #include <gtkmm/stock.h>
 #include <sigc++/bind.h>
 
-#include "mpx/widgets/taskdialog.hh"
+#include "mpx/widgets/task-dialog.hh"
 
 namespace MPX
 {

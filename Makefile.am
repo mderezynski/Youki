@@ -21,21 +21,22 @@ CLEANFILES =  $(service_DATA) \
 
 DISTCLEANFILES = $(CLEANFILES) intltool-extract intltool-merge intltool-update
 
-SUBDIRS =		\
-	scripts		\
-	desktop		\
-	glade		\
-	icons		\
-	images		\
-				\
-	po			\
-				\
-	boost		\
-	include		\
-	xsd			\
-	widgets		\
-	musicbrainz	\
-	xmlcpp		\
+SUBDIRS =			\
+	scripts			\
+	desktop			\
+	glade			\
+	icons			\
+	images			\
+					\
+	po				\
+					\
+	boost			\
+	include			\
+	xsd				\
+	widgets			\
+	viewcomponents	\
+	musicbrainz		\
+	xmlcpp			\
 	taglib		
 
 if HAVE_HAL

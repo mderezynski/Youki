@@ -29,11 +29,7 @@
 #  include <config.h>
 #endif // HAVE_CONFIG_H
 #include <giomm.h>
-#include <gtkmm/button.h>
-#include <gtkmm/checkbutton.h>
-#include <gtkmm/filechooserwidget.h>
-#include <gtkmm/filefilter.h>
-#include <gtkmm/window.h>
+#include <gtkmm.h>
 #include <libglademm/xml.h>
 #include <sigx/sigx.h>
 #include "mpx/widgets/widgetloader.hh"

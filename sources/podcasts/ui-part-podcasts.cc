@@ -65,7 +65,7 @@
 #include "video-widget.hh"
 #include "ui-part-podcasts.hh"
 
-#include "widgets/cairoextensions.hh"
+#include "widgets/cairo-extensions.hh"
 #include "widgets/cell-renderer-count.hh"
 
 using namespace Glib;

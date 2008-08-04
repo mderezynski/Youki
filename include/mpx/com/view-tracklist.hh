@@ -11,7 +11,7 @@
 #include "mpx/aux/glibaddons.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/util-string.hh"
-#include "mpx/widgets/cairoextensions.hh"
+#include "mpx/widgets/cairo-extensions.hh"
 #include "glib-marshalers.h"
 
 typedef Glib::Property<Gtk::Adjustment*> PropAdj;

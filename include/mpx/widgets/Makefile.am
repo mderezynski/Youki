@@ -1,16 +1,12 @@
 noinst_HEADERS =							\
-		cairoextensions.hh					\
+		cairo-extensions.hh					\
 		cell-renderer-cairo-surface.hh		\
 		cell-renderer-count.hh				\
+		cell-renderer-expander.h			\
 		cell-renderer-source.hh				\
 		cell-renderer-vbox.hh				\
-		dialog-play-uri.hh					\
 		dialog-simple-entry.hh				\
-		file-system-tree.hh					\
-		gossip-cell-renderer-expander.h		\
 		rounded-layout.hh					\
-		tagview.hh							\
-		taskdialog.hh						\
+		task-dialog.hh						\
 		timed-confirmation.hh				\
-		treeview-popup.hh					\
 		widgetloader.hh
