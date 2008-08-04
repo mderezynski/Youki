@@ -1254,6 +1254,7 @@ namespace MPX
                                 if( !m_Constraints.empty() )
                                 {
                                     MPX::Track track = (*iter)[Columns.AlbumTrack]; 
+                                    truthvalue = AQE::match_track(m_Constraints, track);
                                 }
 
                                 return truthvalue && Util::match_keys (ustring((*iter)[Columns.Text]).lowercase(), m_FilterText); 
