@@ -55,31 +55,14 @@
 #include "mpx/widgets/rounded-layout.hh"
 #include "mpx/widgets/timed-confirmation.hh"
 
+#include "mpx/algorithm/aqe.hh"
+
 namespace MPX
 {
                 typedef sigc::signal<void, gint64>      SignalPlayAlbum;
                 typedef sigc::signal<void, IdV>         SignalPlayTracks;
 
                 const int N_STARS = 6;
-
-                enum MatchType_t
-                {
-                    MT_EQUAL,
-                    MT_NOT_EQUAL,
-                    MT_GREATER_THAN,
-                    MT_LESSER_THAN,
-                    MT_GREATER_THAN_OR_EQUAL,
-                    MT_LESSER_THAN_OR_EQUAL,
-                };
-
-                struct Constraint_t
-                {
-                    int                     TargetAttr;
-                    MPX::OVariant           TargetValue;
-                    MatchType_t             MatchType;
-                };
-
-                typedef std::vector<Constraint_t> Constraints_t;
 
                 enum AlbumRowType
                 {
@@ -231,7 +214,7 @@ namespace MPX
                           int                                   m_State_Type;
                           bool                                  m_Advanced;
                           Glib::ustring                         m_FilterText;
-                          Constraints_t                         m_Constraints;
+                          AQE::Constraints_t                    m_Constraints;
 
                         // widgets
 

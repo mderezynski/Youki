@@ -57,51 +57,10 @@ using namespace Gtk;
 using namespace Glib;
 using namespace Gnome::Glade;
 using namespace MPX;
+using namespace MPX::AQE;
 using boost::get;
 using boost::algorithm::trim;
 using boost::algorithm::split;
-
-namespace MPX
-{
-    template <typename T>
-    bool
-    determine_match (const MPX::Constraint_t& c, MPX::Track& track)
-    {
-        g_return_val_if_fail(track.has(c.TargetAttr), false);
-
-        bool truthvalue = false;
-
-        switch( c.MatchType )
-        {
-            case MT_EQUAL:
-                truthvalue = get<T>(track[c.TargetAttr].get()) == get<T>(c.TargetValue.get());
-                break;
-
-            case MT_NOT_EQUAL:
-                truthvalue = get<T>(track[c.TargetAttr].get()) != get<T>(c.TargetValue.get());
-                break;
-
-            case MT_GREATER_THAN:
-                truthvalue = get<T>(track[c.TargetAttr].get())  > get<T>(c.TargetValue.get());
-                break;
-
-            case MT_LESSER_THAN:
-                truthvalue = get<T>(track[c.TargetAttr].get())  < get<T>(c.TargetValue.get());
-                break;
-
-            case MT_GREATER_THAN_OR_EQUAL:
-                truthvalue = get<T>(track[c.TargetAttr].get()) >= get<T>(c.TargetValue.get());
-                break;
-
-            case MT_LESSER_THAN_OR_EQUAL:
-                truthvalue = get<T>(track[c.TargetAttr].get()) <= get<T>(c.TargetValue.get());
-                break;
-
-        }
-
-        return truthvalue;
-    }
-}
 
 namespace
 {
@@ -1354,23 +1313,6 @@ namespace MPX
                                 if( !m_Constraints.empty() )
                                 {
                                     MPX::Track track = (*iter)[Columns.AlbumTrack]; 
-                                    for( Constraints_t::const_iterator i = m_Constraints.begin(); i != m_Constraints.end(); ++i )
-                                    {
-                                        Constraint_t const& c = *i;
-
-                                        if( !track.has(c.TargetAttr) )
-                                        {
-                                            return false;
-                                        }
-
-                                        if( c.TargetAttr >= ATTRIBUTE_TRACK )
-                                            truthvalue = determine_match<gint64>(c, track);
-                                        else
-                                            truthvalue = determine_match<std::string>(c, track);
-
-                                        if( !truthvalue )
-                                            return false;
-                                    }
                                 }
 
                                 return truthvalue && Util::match_keys (ustring((*iter)[Columns.Text]).lowercase(), m_FilterText); 
