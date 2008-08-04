@@ -30,10 +30,11 @@
 // PyGTK NO_IMPORT
 #define NO_IMPORT
 
-#include "config.h"
-#include <boost/optional.hpp>
 #include <boost/python.hpp>
+#include <boost/optional.hpp>
 #include <boost/algorithm/string.hpp>
+
+#include "config.h"
 #include <glibmm.h>
 #include <Python.h>
 #include <pygobject.h>

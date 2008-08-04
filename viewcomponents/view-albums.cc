@@ -350,7 +350,7 @@ namespace MPX
                         m_ActionGroup->add(
 
                                         Gtk::Action::create(
-                                                (boost::format ("action-album-info-%s") % name).str(),
+                                                "action-album-info", 
                                                 Gtk::StockID (GTK_STOCK_INFO),
                                                 _("Album _Info")
                                                 ),
