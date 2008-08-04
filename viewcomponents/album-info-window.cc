@@ -32,7 +32,6 @@
 
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"

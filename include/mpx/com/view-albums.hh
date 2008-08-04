@@ -62,6 +62,25 @@ namespace MPX
 
                 const int N_STARS = 6;
 
+                enum MatchType_t
+                {
+                    MT_EQUAL,
+                    MT_NOT_EQUAL,
+                    MT_GREATER_THAN,
+                    MT_LESSER_THAN,
+                    MT_GREATER_THAN_OR_EQUAL,
+                    MT_LESSER_THAN_OR_EQUAL,
+                };
+
+                struct Constraint_t
+                {
+                    int                     TargetAttr;
+                    MPX::OVariant           TargetValue;
+                    MatchType_t             MatchType;
+                };
+
+                typedef std::vector<Constraint_t> Constraints_t;
+
                 enum AlbumRowType
                 {
                         ROW_ALBUM   =   1,
@@ -101,6 +120,8 @@ namespace MPX
                         {
                                 Gtk::TreeModelColumn<AlbumRowType>                          RowType;
                                 Gtk::TreeModelColumn<ReleaseType>                           RT;
+                                // we use an MPX::Track to store album attributes
+                                Gtk::TreeModelColumn<MPX::Track>                            AlbumTrack;
 
                                 Gtk::TreeModelColumn<Cairo::RefPtr<Cairo::ImageSurface> >   Image;
                                 Gtk::TreeModelColumn<Glib::ustring>                         Text;
@@ -130,6 +151,7 @@ namespace MPX
                                 {
                                         add (RowType);
                                         add (RT);
+                                        add (AlbumTrack);
 
                                         add (Image);
                                         add (Text);
@@ -159,66 +181,73 @@ namespace MPX
 
                         public:
 
+                        // treemodel stuff
+
                         Glib::RefPtr<Gtk::TreeStore>          AlbumsTreeStore;
                         Glib::RefPtr<Gtk::TreeModelFilter>    AlbumsTreeStoreFilter;
+                        ColumnsT                              Columns;
 
                         protected:
 
-                        Glib::RefPtr<Gtk::UIManager>          m_UIManager;
-                        Glib::RefPtr<Gtk::ActionGroup>        m_ActionGroup;      
+                        // ui
 
-                        // treemodel stuff
-
-                        ColumnsT                              Columns;
+                          Glib::RefPtr<Gtk::UIManager>          m_UIManager;
+                          Glib::RefPtr<Gtk::ActionGroup>        m_ActionGroup;      
 
                         // objects
 
-                        PAccess<MPX::Library>                 m_Lib;
-                        PAccess<MPX::Covers>                  m_Covers;
+                          PAccess<MPX::Library>                 m_Lib;
+                          PAccess<MPX::Covers>                  m_Covers;
 
                         // view mappings
 
-                        MBIDIterMap                           m_MBIDIterMap;
-                        IdIterMap                             m_AlbumIterMap;
+                          MBIDIterMap                           m_MBIDIterMap;
+                          IdIterMap                             m_AlbumIterMap;
 
                         // disc+rating pixbufs
 
-                        Cairo::RefPtr<Cairo::ImageSurface>    m_DiscDefault;
-                        Glib::RefPtr<Gdk::Pixbuf>             m_DiscDefault_Pixbuf;
-                        Glib::RefPtr<Gdk::Pixbuf>             m_Stars[N_STARS];
+                          Cairo::RefPtr<Cairo::ImageSurface>    m_DiscDefault;
+                          Glib::RefPtr<Gdk::Pixbuf>             m_DiscDefault_Pixbuf;
+                          Glib::RefPtr<Gdk::Pixbuf>             m_Stars[N_STARS];
 
                         // DND state variables
 
-                        boost::optional<std::string>          m_DragAlbumMBID;
-                        boost::optional<gint64>               m_DragAlbumId;
-                        boost::optional<gint64>               m_DragTrackId;
-                        Gtk::TreePath                         m_PathButtonPress;
+                          boost::optional<std::string>          m_DragAlbumMBID;
+                          boost::optional<gint64>               m_DragAlbumId;
+                          boost::optional<gint64>               m_DragTrackId;
+                          Gtk::TreePath                         m_PathButtonPress;
 
                         // state variables
 
-                        enum AState
-                        {
-                                ALBUMS_STATE_NO_FLAGS                =   0,
-                                ALBUMS_STATE_SHOW_NEW                =   1 << 0,
-                                ALBUMS_STATE_IGNORE_SINGLE_TRACKS    =   1 << 1
-                        };
+                          enum AState
+                          {
+                                  ALBUMS_STATE_NO_FLAGS                =   0,
+                                  ALBUMS_STATE_SHOW_NEW                =   1 << 0,
+                                  ALBUMS_STATE_IGNORE_SINGLE_TRACKS    =   1 << 1
+                          };
 
-                        bool                                  m_ButtonPressed;
-                        int                                   m_State;
-                        int                                   m_TypeState;
+                          bool                                  m_ButtonPressed;
+                          int                                   m_State_New;
+                          int                                   m_State_Type;
+                          bool                                  m_Advanced;
+                          Glib::ustring                         m_FilterText;
+                          Constraints_t                         m_Constraints;
 
                         // widgets
 
-                        Gtk::Entry*                           m_FilterEntry;
-                        RoundedLayout*                        m_LabelShowing;
+                          Gtk::Entry*                           m_FilterEntry;
+                          RoundedLayout*                        m_LabelShowing;
+                          Gtk::CheckButton*                     m_AdvancedQueryCB;
 
-                        struct Signals_t
-                        {
-                            SignalPlayAlbum         PlayAlbum;
-                            SignalPlayTracks        PlayTracks; 
-                        };
+                        // signals
 
-                        Signals_t Signals;
+                          struct Signals_t
+                          {
+                              SignalPlayAlbum         PlayAlbum;
+                              SignalPlayTracks        PlayTracks; 
+                          };
+
+                          Signals_t Signals;
 
                         public:
 
@@ -236,6 +265,7 @@ namespace MPX
 
                         AlbumTreeView(
                             const Glib::RefPtr<Gnome::Glade::Xml>&,    
+                            const std::string&,
                             const std::string&,
                             const std::string&,
                             const std::string&,
@@ -345,6 +375,12 @@ namespace MPX
 
                         virtual void
                                 on_filter_entry_changed ();
+
+                        virtual void
+                                on_advanced_query_cb_toggled ();
+
+                        virtual void
+                                parse_advanced_query ();
 
                         public:
 

@@ -59,6 +59,49 @@ using namespace Gnome::Glade;
 using namespace MPX;
 using boost::get;
 using boost::algorithm::trim;
+using boost::algorithm::split;
+
+namespace MPX
+{
+    template <typename T>
+    bool
+    determine_match (const MPX::Constraint_t& c, MPX::Track& track)
+    {
+        g_return_val_if_fail(track.has(c.TargetAttr), false);
+
+        bool truthvalue = false;
+
+        switch( c.MatchType )
+        {
+            case MT_EQUAL:
+                truthvalue = get<T>(track[c.TargetAttr].get()) == get<T>(c.TargetValue.get());
+                break;
+
+            case MT_NOT_EQUAL:
+                truthvalue = get<T>(track[c.TargetAttr].get()) != get<T>(c.TargetValue.get());
+                break;
+
+            case MT_GREATER_THAN:
+                truthvalue = get<T>(track[c.TargetAttr].get())  > get<T>(c.TargetValue.get());
+                break;
+
+            case MT_LESSER_THAN:
+                truthvalue = get<T>(track[c.TargetAttr].get())  < get<T>(c.TargetValue.get());
+                break;
+
+            case MT_GREATER_THAN_OR_EQUAL:
+                truthvalue = get<T>(track[c.TargetAttr].get()) >= get<T>(c.TargetValue.get());
+                break;
+
+            case MT_LESSER_THAN_OR_EQUAL:
+                truthvalue = get<T>(track[c.TargetAttr].get()) <= get<T>(c.TargetValue.get());
+                break;
+
+        }
+
+        return truthvalue;
+    }
+}
 
 namespace
 {
@@ -151,6 +194,7 @@ namespace MPX
                         const std::string&                      name,
                         const std::string&                      name_showing_label,
                         const std::string&                      name_filter_entry,
+                        const std::string&                      name_advanced_cb,
                         Glib::RefPtr<Gtk::UIManager>            ui_manager,
                         const PAccess<MPX::Library>&            lib,
                         const PAccess<MPX::Covers>&             amzn
@@ -159,8 +203,9 @@ namespace MPX
                 , m_Lib(lib)
                 , m_Covers(amzn)
                 , m_ButtonPressed(false)
-                , m_State(ALBUMS_STATE_NO_FLAGS)
-                , m_TypeState(RT_ALL)
+                , m_State_New(ALBUMS_STATE_NO_FLAGS)
+                , m_State_Type(RT_ALL)
+                , m_Advanced(false)
                 {
                         for(int n = 0; n < N_STARS; ++n)
                         {
@@ -185,6 +230,16 @@ namespace MPX
                             m_LabelShowing = new RoundedLayout(xml, name_showing_label);
                         else
                             m_LabelShowing = 0;
+
+                        if( !name_advanced_cb.empty() )
+                        {
+                            m_Xml->get_widget( name_advanced_cb, m_AdvancedQueryCB ); 
+                            m_AdvancedQueryCB->signal_toggled().connect(
+                                sigc::mem_fun(
+                                    *this,
+                                    &AlbumTreeView::on_advanced_query_cb_toggled
+                            ));
+                        }
 
                         set_show_expanders( false );
                         set_level_indentation( 32 );
@@ -351,6 +406,88 @@ namespace MPX
 
                         album_list_load ();
                 }
+
+                void
+                        AlbumTreeView::parse_advanced_query ()
+                        {
+                                typedef std::vector< std::string > VectorType;
+
+                                std::string text = m_FilterEntry->get_text();
+
+                                m_Constraints.clear();
+                                VectorType non_attr_strings;
+
+                                VectorType v;
+                                boost::algorithm::split( v, text, boost::algorithm::is_any_of(" ") );
+
+                                for( VectorType::const_iterator i = v.begin(); i != v.end(); ++i )
+                                {
+                                    std::string const& token = *i;
+
+                                    VectorType v2;
+                                    boost::algorithm::split( v2, token, boost::algorithm::is_any_of(":") );
+
+                                    if( v2.size() == 1) 
+                                    {
+                                        non_attr_strings.push_back(v2[0]);
+                                    }
+                                    else
+                                    {
+                                        Constraint_t c;
+
+                                        if( v2[0] == "country" )
+                                        {
+                                            c.TargetAttr = ATTRIBUTE_MB_RELEASE_COUNTRY;
+                                            c.MatchType = MT_EQUAL;
+                                            c.TargetValue = v2[1];
+                                            m_Constraints.push_back(c);
+                                        }
+                                        else
+                                        if( v2[0] == "type" )
+                                        {
+                                            c.TargetAttr = ATTRIBUTE_MB_RELEASE_TYPE;
+                                            c.MatchType = MT_EQUAL;
+                                            c.TargetValue = v2[1];
+                                            m_Constraints.push_back(c);
+                                        }
+                                        else
+                                        if( v2[0] == "year" )
+                                        {
+                                            try{
+                                                    c.TargetValue = gint64(boost::lexical_cast<int>(v2[1]));
+                                                    c.TargetAttr = ATTRIBUTE_DATE;
+                                                    c.MatchType = MT_EQUAL;
+                                                    m_Constraints.push_back(c);
+                                            } catch( boost::bad_lexical_cast ) {
+                                            }
+                                        }
+                                    }
+                                }
+
+                                m_FilterText = Glib::ustring(boost::algorithm::join( non_attr_strings, " ")).lowercase();
+                        }
+
+                void
+                        AlbumTreeView::on_filter_entry_changed ()
+                        {
+                                if(m_Advanced)
+                                {
+                                    parse_advanced_query ();
+                                }
+                                else
+                                {
+                                    m_FilterText = m_FilterEntry->get_text().lowercase();
+                                }
+
+                                AlbumsTreeStoreFilter->refilter();
+                        }
+
+                void
+                        AlbumTreeView::on_advanced_query_cb_toggled ()
+                        {
+                                m_Advanced = m_AdvancedQueryCB->get_active();
+                                on_filter_entry_changed ();
+                        }
 
                 void
                         AlbumTreeView::on_row_activated (const TreeModel::Path& path, TreeViewColumn* column)
@@ -618,6 +755,8 @@ namespace MPX
                                 (*iter)[Columns.Image] = m_DiscDefault; 
                                 (*iter)[Columns.Id] = id; 
 
+                                MPX::Track track;
+
                                 std::string asin;
                                 std::string year; 
                                 std::string country;
@@ -627,13 +766,12 @@ namespace MPX
                                 std::string album = get<std::string>(r["album"]);
 
                                 gint64 rating = 0;
-
                                 try{
                                         rating = m_Lib.get().albumGetMeanRatingValue(id);
+                                        track[ATTRIBUTE_RATING] = rating;
                                 } catch( std::runtime_error )
                                 {
                                 }
-
                                 (*iter)[Columns.Rating] = rating;
 
                                 if(r.count("album_insert_date"))
@@ -644,6 +782,7 @@ namespace MPX
                                 if(r.count("amazon_asin"))
                                 {
                                         asin = get<std::string>(r["amazon_asin"]);
+                                        track[ATTRIBUTE_ASIN] = asin;
                                 }
 
                                 if(r.count("mb_album_id"))
@@ -654,12 +793,14 @@ namespace MPX
                                         s.insert(iter);
 
                                         (*iter)[Columns.MBID] = mbid; 
+                                        track[ATTRIBUTE_MB_ALBUM_ID] = mbid;
                                 }
 
                                 if(r.count("mb_album_artist_id"))
                                 {
                                         std::string mb_album_artist_id = get<std::string>(r["mb_album_artist_id"]);
                                         (*iter)[Columns.AlbumArtistMBID] = mb_album_artist_id; 
+                                        track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = mb_album_artist_id;
                                 }
 
                                 if(r.count("mb_release_date"))
@@ -670,6 +811,7 @@ namespace MPX
                                                 year = year.substr(0,4);
                                                 try{
                                                         (*iter)[Columns.Date] = boost::lexical_cast<int>(year);
+                                                        track[ATTRIBUTE_DATE] = gint64(boost::lexical_cast<int>(year));
                                                 } catch( boost::bad_lexical_cast ) {
                                                 } 
                                         }
@@ -682,20 +824,24 @@ namespace MPX
                                 if(r.count("mb_release_country"))
                                 {
                                         country = get<std::string>(r["mb_release_country"]); 
+                                        track[ATTRIBUTE_MB_RELEASE_COUNTRY] = country; 
                                 }
 
                                 if(r.count("mb_release_type"))
                                 {
                                         type = get<std::string>(r["mb_release_type"]); 
+                                        track[ATTRIBUTE_MB_RELEASE_TYPE] = type; 
                                 }
 
                                 if(r.find("album_artist_sortname") != r.end())
                                 {
                                         artist = get<std::string>(r["album_artist_sortname"]);
+                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
                                 }
                                 else
                                 {
                                         artist = get<std::string>(r["album_artist"]);
+                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
                                 }
 
                                 trim(country);
@@ -736,6 +882,7 @@ namespace MPX
                                 (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
                                 (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
                                 (*iter)[Columns.RT] = determine_release_type(type);
+                                (*iter)[Columns.AlbumTrack] = track;
 
                                 return iter;
                         } 
@@ -867,8 +1014,6 @@ namespace MPX
                 void
                         AlbumTreeView::album_list_load ()
                         {
-                                g_message("%s: Reloading.", G_STRLOC);
-
                                 AlbumsTreeStore->clear ();
                                 m_MBIDIterMap.clear();
                                 m_AlbumIterMap.clear();
@@ -1183,24 +1328,52 @@ namespace MPX
                         AlbumTreeView::album_visible_func (TreeIter const& iter)
                         {
                                 TreePath path = AlbumsTreeStore->get_path(iter);
-                                ustring filter = m_FilterEntry->get_text().lowercase();
 
-                                if( path.size() == 1 && (m_State & ALBUMS_STATE_SHOW_NEW) && !(*iter)[Columns.NewAlbum])
+                                if( path.size() == 1 && (m_State_New & ALBUMS_STATE_SHOW_NEW) && !(*iter)[Columns.NewAlbum])
                                 {
                                         return false;
                                 } 
 
-                                if( path.size() == 1 && !(m_TypeState & (*iter)[Columns.RT]))
+                                if( path.size() == 1 && !(m_State_Type & (*iter)[Columns.RT]))
                                 {
                                         return false;
                                 }
 
-                                if( path.size() > 1 || filter.empty()) 
+                                if( path.size() > 1 ) 
                                 {
                                         return true;
                                 }
 
-                                return (Util::match_keys (ustring((*iter)[Columns.Text]).lowercase(), filter)); 
+                                if( m_FilterText.empty() && m_Constraints.empty() ) 
+                                {
+                                        return true;
+                                }
+
+                                bool truthvalue = true;
+
+                                if( !m_Constraints.empty() )
+                                {
+                                    MPX::Track track = (*iter)[Columns.AlbumTrack]; 
+                                    for( Constraints_t::const_iterator i = m_Constraints.begin(); i != m_Constraints.end(); ++i )
+                                    {
+                                        Constraint_t const& c = *i;
+
+                                        if( !track.has(c.TargetAttr) )
+                                        {
+                                            return false;
+                                        }
+
+                                        if( c.TargetAttr >= ATTRIBUTE_TRACK )
+                                            truthvalue = determine_match<gint64>(c, track);
+                                        else
+                                            truthvalue = determine_match<std::string>(c, track);
+
+                                        if( !truthvalue )
+                                            return false;
+                                    }
+                                }
+
+                                return truthvalue && Util::match_keys (ustring((*iter)[Columns.Text]).lowercase(), m_FilterText); 
                         }
 
                 void
@@ -1221,12 +1394,6 @@ namespace MPX
                         }
 
                 void
-                        AlbumTreeView::on_filter_entry_changed ()
-                        {
-                                AlbumsTreeStoreFilter->refilter();
-                        }
-
-                void
                         AlbumTreeView::go_to_album(gint64 id)
                         {
                                 if(m_AlbumIterMap.count(id))
@@ -1240,16 +1407,16 @@ namespace MPX
                         AlbumTreeView::set_new_albums_state (bool state)
                         {
                                 if(state)
-                                        m_State |= ALBUMS_STATE_SHOW_NEW;
+                                        m_State_New |= ALBUMS_STATE_SHOW_NEW;
                                 else
-                                        m_State &= ~ALBUMS_STATE_SHOW_NEW;
+                                        m_State_New &= ~ALBUMS_STATE_SHOW_NEW;
                                 AlbumsTreeStoreFilter->refilter();
                         }
 
                 void
                         AlbumTreeView::set_release_type_filter (int state)
                         {
-                                m_TypeState = state; 
+                                m_State_Type = state; 
                                 AlbumsTreeStoreFilter->refilter();
                         }
 

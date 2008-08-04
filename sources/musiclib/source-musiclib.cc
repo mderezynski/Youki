@@ -2577,7 +2577,7 @@ namespace MPX
                         player.get_object(m_HAL);
 
                         m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, ui_manager, m_Lib, m_HAL, mlib);
-                        m_TreeViewAlbums = new AlbumTreeView(m_RefXml, "source-musiclib-treeview-albums", "albums-showing", "albums-filter-entry", ui_manager, m_Lib, m_Covers);
+                        m_TreeViewAlbums = new AlbumTreeView(m_RefXml, "source-musiclib-treeview-albums", "albums-showing", "albums-filter-entry", "musiclib-cb-advanced-query", ui_manager, m_Lib, m_Covers);
                         m_TreeViewLFM = new LFMTreeView(m_RefXml, m_Lib, m_Covers, mlib);
                         m_TreeViewFS = new FileSystemTree(m_RefXml, "musiclib-treeview-file-system");
                         m_ViewAllTracks = new AllTracksView(m_RefXml, m_Lib, m_HAL, mlib);
