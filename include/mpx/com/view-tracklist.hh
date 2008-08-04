@@ -66,7 +66,7 @@ namespace MPX
                 }
 
                 virtual void
-                append_track(SQL::Row & r)
+                append_track(SQL::Row & r, const MPX::Track& track)
                 {
                     using boost::get;
 
@@ -76,7 +76,7 @@ namespace MPX
                     if(r.count("id"))
                         id = get<gint64>(r["id"]); 
                     else
-                        g_critical("%s: No id for track, extremeley suspicious", G_STRLOC);
+                        g_critical("%s: No id for track, extremely suspicious", G_STRLOC);
 
                     if(r.count("artist"))
                         artist = get<std::string>(r["artist"]); 
@@ -85,7 +85,7 @@ namespace MPX
                     if(r.count("title"))
                         title = get<std::string>(r["title"]);
 
-                    Row5 row (title, artist, album, id);
+                    Row5 row (title, artist, album, id, track);
                     m_realmodel->push_back(row);
                 }
 
@@ -112,7 +112,7 @@ namespace MPX
                     if(track[ATTRIBUTE_TITLE])
                         title = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
 
-                    Row5 row (artist, album, title, id);
+                    Row5 row (artist, album, title, id, track);
                     m_realmodel->push_back(row);
                 }
         };
@@ -227,7 +227,7 @@ namespace MPX
                             MPX::Track track = get<4>(row);
                             bool truth = AQE::match_track(m_constraints, track);
 
-                            if( match && truth )
+                            if( (match || m_filter_effective.empty()) && truth )
                             {
                                 new_mapping.push_back(*i);
                             }

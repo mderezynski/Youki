@@ -2465,11 +2465,11 @@ namespace MPX
                                 DataModelP m (new DataModel);
 
                                 SQL::RowV v;
-                                m_Lib.get().getSQL(v, (boost::format("SELECT id, artist, album, title FROM track_view ORDER BY album_artist, album, track_view.track")).str()); 
+                                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY album_artist, album, track_view.track")).str()); 
                                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                                 {
                                         SQL::Row & r = *i;
-                                        m->append_track(r);
+                                        m->append_track(r, m_Lib.get().sqlToTrack(r));
                                 }
 
                                 m_FilterModel = DataModelFilterP (new DataModelFilter(m));
