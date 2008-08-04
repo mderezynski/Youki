@@ -830,27 +830,31 @@ namespace MPX
 #else
 
                                   m_actions->add (Action::create ("action-mlibmanager",
-                                                          _("Manage Music Library...")),
+                                                          _("Manage Music Library..."),
+                                                          _("Add or Remove Music")),
                                                   sigc::mem_fun (*m_MLibManager, &MLibManager::present));
 #endif
 
 
-                                  m_actions->add (Action::create ("action-vacuum-lib",
-                                                          _("Vacuum Music Library")),
+                                  m_actions->add (Action::create("action-vacuum-lib",
+                                                          _("Vacuum Music Library"),
+                                                          _("Remove dangling files")),
                                                   sigc::mem_fun (m_Library, &Library::vacuum));
 
 
 
                                   m_actions->add (Action::create (ACTION_PLUGINS,
                                                           Gtk::StockID(MPX_STOCK_PLUGIN),
-                                                          _("Manage Plugins...")),
+                                                          _("Manage Plugins..."),
+                                                          _("View and Enable or Disable Plugins")),
                                                   sigc::mem_fun (*this, &Player::on_action_cb_show_plugins ));
 
 
 
                                   m_actions->add (Action::create (ACTION_PREFERENCES,
                                                           Gtk::Stock::EXECUTE,
-                                                          _("Edit Preferences...")),
+                                                          _("Edit Preferences..."),
+                                                          _("Set up Audio and other Settings")),
                                                   sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
 
 
