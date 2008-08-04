@@ -66,7 +66,7 @@ libmpxsource_musiclibdir = $(PLUGIN_DIR)/sources
 
 glade_DATA = 						\
 	source-musiclib.glade			\
-	albuminfowindow.glade
+	album-info-window.glade
 
 gladedir = $(pkgdatadir)/glade
 
