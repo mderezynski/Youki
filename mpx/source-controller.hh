@@ -30,9 +30,9 @@
 #ifndef MPX_SOURCE_CONTROLLER_HH
 #define MPX_SOURCE_CONTROLLER_HH
 
-#include "config.h"
-#include <boost/optional.hpp>
 #include <boost/python.hpp>
+#include <boost/optional.hpp>
+#include "config.h"
 #include <glibmm.h>
 #include <Python.h>
 #include <pygobject.h>
