@@ -291,8 +291,11 @@ namespace MPX
         AboutDialog                   * m_AboutDialog;
         WidgetWidgetMap                 m_InfoWidgetMap;
 
+    // metadata
+
 		boost::optional<Metadata>       m_Metadata;
         Glib::Mutex                     m_MetadataLock;
+        int                             m_NewTrack;
 
         enum PlayDirection
         {

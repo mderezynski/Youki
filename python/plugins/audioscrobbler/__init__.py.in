@@ -36,6 +36,68 @@ class HttpRead(threading.Thread):
         self.response = self.urlhandle.readlines()
         self.finished.set()    
 
+class HttpPost(threading.Thread):
+
+    def __init__(self, req):
+
+        threading.Thread.__init__(self)   
+
+        self.request    = req 
+        self.finished   = threading.Event()
+        self.urlhandle  = None 
+
+        self.response   = None
+        self.code       = None
+        self.message    = None
+
+    def is_finished(self):
+
+        return self.finished.isSet()
+
+    def get_data(self):
+
+        return [self.response, self.code, self.message]
+       
+    def stop(self): 
+
+        self.finished.set()
+        self.join()
+
+    def run(self):
+
+        try:
+            self.url_handle = urllib2.urlopen(self.request)
+        except urllib2.HTTPError, error:
+            self.code = error.code
+            self.message = error.msg
+            self.finished.set()
+            return
+        except urllib2.URLError, error:
+            args = getattr(error.reason, 'args', None)
+            code = '000'
+            message = str(error)
+            if args is not None:
+                if len(args) == 1:
+                    message = error.reason.args[0]
+                elif len(args) == 2:
+                    code = error.reason.args[0]
+                    message = error.reason.args[1]
+
+            self.code = code
+            self.message = message 
+            self.finished.set()
+            return
+        except:
+            code = '000'
+            message = sys.exc_info()[1]
+            self.code = code
+            self.message = message 
+            self.finished.set()
+            return
+
+        self.response = self.url_handle.readlines()
+        self.finished.set()    
+
 try:
     # Python 2.5, module bundled:
     from xml.etree import ElementTree
@@ -581,28 +643,18 @@ class AudioScrobblerPost:
         
         req = urllib2.Request(url=self.npurl, data=npdata)
     
-        print npdata
-        
-        try:
-            url_handle = urllib2.urlopen(req)
-        except urllib2.HTTPError, error:
-            self.authenticated = False
-            print AudioScrobblerConnectionError('http', error.code, error.msg)
-            return
-        except:
-            code = '000'
-            message = sys.exc_info()[1]
-            print AudioScrobblerConnectionError('network', code, message)
-            return
-                
-        instance = HttpRead(url_handle) 
+        instance = HttpPost(req) 
         instance.start()
 
         while not instance.is_finished():
             while gtk.events_pending():
                 gtk.main_iteration()
 
-        response = instance.get_data() 
+        response, code, message = instance.get_data() 
+
+        if code:
+            print AudioScrobblerConnectionError('http/network', code, message)
+            return
 
         if response[0].startswith('OK'):
             self.log("Now playing track updated ('%s' by '%s')." % (p['t'], p['a']))
@@ -640,40 +692,21 @@ class AudioScrobblerPost:
         postdata = urllib.urlencode(params)
         req = urllib2.Request(url=self.posturl, data=postdata)
 
-        print postdata
-
         now = datetime.datetime.utcnow()
-        
-        try:
-            url_handle = urllib2.urlopen(req)
-        except urllib2.HTTPError, error:
-            raise AudioScrobblerConnectionError('http', error.code, error.msg)
-        except urllib2.URLError, error:
-            args = getattr(error.reason, 'args', None)
-            code = '000'
-            message = str(error)
-            if args is not None:
-                if len(args) == 1:
-                    message = error.reason.args[0]
-                elif len(args) == 2:
-                    code = error.reason.args[0]
-                    message = error.reason.args[1]
-            raise AudioScrobblerConnectionError('network', code, message)
-        except:
-            code = '000'
-            message = sys.exc_info()[1]
-            raise AudioScrobblerConnectionError('network', code, message)
-        
         self.last_post = now
 
-        instance = HttpRead(url_handle) 
+        instance = HttpPost(req) 
         instance.start()
 
         while not instance.is_finished():
             while gtk.events_pending():
                 gtk.main_iteration()
 
-        response = instance.get_data() 
+        response, code, message = instance.get_data() 
+
+        if code:
+            print AudioScrobblerConnectionError('http/network', code, message)
+            return
             
         # Test the various responses possibilities:
         if response[0].startswith('OK'):

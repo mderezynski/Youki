@@ -137,25 +137,38 @@ namespace MPX
           reset ();
 
           void
-          set_info ( const Glib::ustring& text );
+          set_info(
+            const Glib::ustring&
+          );
 
           void
           clear_info ();
 
           void
-          set_metadata( Metadata & metadata );
+          set_metadata(
+            Metadata&,
+            bool
+          );
 
           void
-          set_cover (Glib::RefPtr<Gdk::Pixbuf> const& pixbuf);
+          set_cover(
+            const Glib::RefPtr<Gdk::Pixbuf>&,
+            bool
+          );
 
           void
-          set_cover (Cairo::RefPtr<Cairo::ImageSurface> const& surface);
+          set_cover(
+            const Cairo::RefPtr<Cairo::ImageSurface>&,
+            bool
+          );
 
           void
           clear_cover ();
 
           void
-          update_spectrum (Spectrum const& spectrum);
+          update_spectrum(
+            const Spectrum&
+          );
 
     private:
 
@@ -169,19 +182,19 @@ namespace MPX
           slide_in_cover ();
 
           void
-          draw_background (Cairo::RefPtr<Cairo::Context> & cr);
+          draw_background(Cairo::RefPtr<Cairo::Context>&);
 
           void
-          draw_cover (Cairo::RefPtr<Cairo::Context> & cr);
+          draw_cover(Cairo::RefPtr<Cairo::Context>&);
 
           void
-          draw_text (Cairo::RefPtr<Cairo::Context> const& cr);
+          draw_text(Cairo::RefPtr<Cairo::Context>&);
 
           void
-          draw_spectrum (Cairo::RefPtr<Cairo::Context> & cr);
+          draw_spectrum(Cairo::RefPtr<Cairo::Context>&);
 
           void
-          draw_info (Cairo::RefPtr<Cairo::Context> & cr);
+          draw_info(Cairo::RefPtr<Cairo::Context>&);
 
     protected:
 
@@ -191,7 +204,7 @@ namespace MPX
     public:
 
           static InfoArea*
-          create(Glib::RefPtr<Gnome::Glade::Xml> & xml, std::string const&);
+          create(const Glib::RefPtr<Gnome::Glade::Xml>&, const std::string&);
   };
 }
 

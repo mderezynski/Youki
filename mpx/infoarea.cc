@@ -5,12 +5,18 @@
 namespace MPX
 {
   InfoArea*
-  InfoArea::create(Glib::RefPtr<Gnome::Glade::Xml> & xml, std::string const& name)
+  InfoArea::create(
+    const Glib::RefPtr<Gnome::Glade::Xml>&      xml,
+    const std::string&                          name
+  )
   {
        return new InfoArea(xml, name);
   } 
 
-  InfoArea::InfoArea(Glib::RefPtr<Gnome::Glade::Xml> const& xml, std::string const& name)
+  InfoArea::InfoArea(
+    const Glib::RefPtr<Gnome::Glade::Xml>&      xml,
+    const std::string&                          name
+  )
   : Gnome::Glade::WidgetLoader<Gtk::EventBox>(xml, name)
   , m_spectrum_data(SPECT_BANDS, 0)
   , m_cover_alpha(0.)
@@ -81,21 +87,18 @@ namespace MPX
   }
 
   void
-  InfoArea::set_metadata( Metadata & metadata )
+  InfoArea::set_metadata( Metadata & metadata, bool first )
   {
     Glib::Mutex::Lock L (m_layout_lock);
 
-    if( !m_cover_surface_cur && metadata.Image )
+    if( metadata.Image )
     {
-        set_cover (metadata.Image->scale_simple (72, 72, Gdk::INTERP_BILINEAR));
+        set_cover (metadata.Image->scale_simple (72, 72, Gdk::INTERP_BILINEAR), first);
     }
-
-#if 0
-    else
+    else if( first )
     {
         clear_cover ();
     }
-#endif
 
     TextSet set;
     parse_metadata( metadata, set ); 
@@ -116,17 +119,33 @@ namespace MPX
   }
 
   void
-  InfoArea::set_cover (Glib::RefPtr<Gdk::Pixbuf> const& pixbuf)
+  InfoArea::set_cover(
+    const Glib::RefPtr<Gdk::Pixbuf>& pixbuf,
+    bool first
+  )
   {
-    set_cover (Util::cairo_image_surface_round(Util::cairo_image_surface_from_pixbuf (pixbuf), 6.));
+    if( pixbuf ) 
+    {
+        set_cover (Util::cairo_image_surface_round(Util::cairo_image_surface_from_pixbuf (pixbuf), 6.), first);
+    }
+    else if( first )
+    {
+        clear_cover ();
+    }
   }
 
   void
-  InfoArea::set_cover (Cairo::RefPtr<Cairo::ImageSurface> const& surface)
+  InfoArea::set_cover(
+    const Cairo::RefPtr<Cairo::ImageSurface>& surface,
+    bool first
+  )
   {
     Glib::Mutex::Lock L (m_surface_lock);
 
-    g_message(G_STRFUNC);
+    if( !surface && !first )
+    {
+        return;
+    }
 
     m_cover_pos           = cover_anim_initial_pos;
     m_cover_velocity      = cover_anim_initial_velocity;

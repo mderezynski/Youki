@@ -563,12 +563,13 @@ namespace MPX
                   , m_Caps(C_NONE)
                   , m_NextSourceId(0)
                   , m_SourceUI(0)
+                  , m_NewTrack(false)
                   , m_Covers(*(services.get<Covers>("mpx-service-covers")))
 #ifdef HAVE_HAL
                   , m_HAL(*(services.get<HAL>("mpx-service-hal")))
 #endif // HAVE_HAL
-                          , m_Library(*(services.get<Library>("mpx-service-library")))
-                          , m_Play(*(services.get<Play>("mpx-service-play")))
+                  , m_Library(*(services.get<Library>("mpx-service-library")))
+                  , m_Play(*(services.get<Play>("mpx-service-play")))
                           {
                                   m_MarkovThread = new MarkovAnalyzerThread(m_Library);
 
@@ -1385,15 +1386,18 @@ SET_SEEK_POSITION:
                                         if(!m_Metadata.get().Image)
                                         {
                                                 m_Metadata.get().Image = m.m_image.get();
+
                                                 if(m_Metadata.get().Image)
                                                 {
-                                                        m_InfoArea->set_cover (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER));
+                                                        m_InfoArea->set_cover (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER), m_NewTrack);
 
                                                         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
                                                         g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_COVERART], 0);
                                                         check_py_error();
                                                         pyg_gil_state_release(state);
                                                 }
+
+                                                g_atomic_int_set(&m_NewTrack, 0);
                                         }
                                         return;
 
@@ -1524,7 +1528,7 @@ SET_SEEK_POSITION:
                 {
                         g_return_if_fail(m_PreparingSource || m_ActiveSource);
 
-                        m_InfoArea->reset();
+                        g_atomic_int_set(&m_NewTrack, 1);
 
                         m_TrackPlayedSeconds = 0;
                         m_TrackSeekedSeconds = 0;
@@ -2055,7 +2059,12 @@ rerun_import_share_dialog:
         void
                 Player::metadata_reparse ()
                 {
-                        m_InfoArea->set_metadata(m_Metadata.get());
+                        m_InfoArea->set_metadata(m_Metadata.get(), m_NewTrack );
+
+                        if( m_NewTrack && m_Metadata.get().Image )
+                        {
+                            g_atomic_int_set(&m_NewTrack, 0);
+                        }
 
                         if(m_Metadata.get()[ATTRIBUTE_TITLE] && m_Metadata.get()[ATTRIBUTE_ARTIST])
                         {

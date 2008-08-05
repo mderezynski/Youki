@@ -18,6 +18,7 @@ import urllib
 import random
 import threading
 from mpxapi import lastfm
+from gettext import gettext as _
 #import musicbrainz2
 #import musicbrainz2.webservice as ws
 

@@ -107,7 +107,7 @@ namespace MPX
 
                 AlbumRatingsList        * m_AlbumRatingsList;
                 Gtk::Image              * m_ImageCover;
-                Gtk::Label              * m_l1, *m_l2;
+                Gtk::Label              * m_l1, *m_l2, *m_l3, *m_l4, *m_l5;
                 Gtk::Button             * m_delete_rating;
 
                 public:

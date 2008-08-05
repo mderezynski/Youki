@@ -189,6 +189,9 @@ namespace MPX
                         m_Xml->get_widget("album-info-window-cover", m_ImageCover); 
                         m_Xml->get_widget("album-info-window-label-artist", m_l1);
                         m_Xml->get_widget("album-info-window-label-album", m_l2);
+                        m_Xml->get_widget("album-info-window-label-release", m_l3);
+                        m_Xml->get_widget("album-info-window-label-mbid", m_l4);
+                        m_Xml->get_widget("album-info-window-label-tracks", m_l5);
                         m_Xml->get_widget("album-info-window-delete-rating", m_delete_rating);
 
                         m_delete_rating->signal_clicked().connect(
@@ -237,19 +240,22 @@ namespace MPX
                 {
                         m_AlbumRatingsList->load_ratings(id, m_Lib);
 
-                        SQL::RowV v;
+                        SQL::RowV v, v2;
                         m_Lib.getSQL(v, (boost::format ("SELECT * FROM album JOIN album_artist ON album_artist_j = album_artist.id WHERE album.id = '%lld'") % id).str());
+                        m_Lib.getSQL(v2, (boost::format ("SELECT count(*) FROM track WHERE album_j = '%lld'") % id).str());
+                        gint64 count = get<gint64>(v2[0]["count(*)"]);
+
                         if( !v.empty ())
                         {
-                                std::string mbid = get<std::string>(v[0]["mb_album_id"]);
-                                Cairo::RefPtr<Cairo::ImageSurface> surface;
-                                m_Covers.fetch(mbid, surface, COVER_SIZE_DEFAULT);
+                                std::string mbid, country, year;
 
-                                if( surface )
+                                mbid = get<std::string>(v[0]["mb_album_id"]);
+                                country = get<std::string>(v[0]["mb_release_country"]);
+                                year = get<std::string>(v[0]["mb_release_date"]);
+
+                                if(year.size())
                                 {
-                                        surface = Util::cairo_image_surface_round(surface, 9.5);
-                                        Util::cairo_image_surface_rounded_border(surface, 1., 9.5);
-                                        m_ImageCover->set(Util::cairo_image_surface_to_pixbuf(surface));
+                                    year = year.substr(0,4);
                                 }
 
                                 m_l1->set_markup((boost::format ("<big>%s</big>")
@@ -259,6 +265,19 @@ namespace MPX
                                 m_l2->set_markup((boost::format ("<big><b>%s</b></big>")
                                                         % Glib::Markup::escape_text(get<std::string>(v[0]["album"])).raw()
                                                  ).str());
+
+                                m_l3->set_markup((boost::format ("<b>Release: </b>%s %s") % country % year).str()); 
+                                m_l4->set_markup((boost::format ("<b>MBID: </b>%s") % mbid).str());
+                                m_l5->set_markup((boost::format ("%lld %s") % count % _("Tracks")).str());
+
+                                Cairo::RefPtr<Cairo::ImageSurface> surface;
+                                m_Covers.fetch(mbid, surface, COVER_SIZE_DEFAULT);
+                                if( surface )
+                                {
+                                    surface = Util::cairo_image_surface_round(surface, 9.5);
+                                    Util::cairo_image_surface_rounded_border(surface, 1., 9.5);
+                                    m_ImageCover->set(Util::cairo_image_surface_to_pixbuf(surface));
+                                }
                         }
                 }
 }

@@ -173,8 +173,8 @@ namespace MPX
     Mutex::Lock L (m_surface_lock);
 
     m_cover_alpha = fmax(m_cover_alpha - 0.1, 0.);
-    bool cond = m_cover_alpha >= 0.2;
-    if(m_cover_alpha < 0.2 && m_cover_surface_new)
+    bool cond = m_cover_alpha >= 0.1;
+    if(m_cover_alpha < 0.1 && m_cover_surface_new)
     {
         if(!m_cover_anim_conn_slide.connected())
         {
@@ -276,7 +276,10 @@ namespace MPX
                                                              cover_anim_area_height+(m_pressed?1:0));
           cr->clip ();
           double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface_new.get()->get_height ()) / 2;
-          Util::draw_cairo_image (cr, m_cover_surface_new.get(), m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), 1.);
+          try{
+              Util::draw_cairo_image (cr, m_cover_surface_new.get(), m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), 1.);
+          } catch( ... ) {
+          }
           cr->restore ();
         }
 
@@ -292,13 +295,17 @@ namespace MPX
 
         //cr->rotate((2*M_PI)*(1. - m_cover_alpha));
         cr->scale(wh/72., wh/72.);
-        Util::draw_cairo_image(
-            cr,
-            m_cover_surface_cur.get(),
-            (cover_anim_area_x0 + ((72.-wh)/2.)) + pow((1./m_cover_alpha),9),
-            (cover_anim_area_y0 + ((72.-wh)/2.)),
-            m_cover_alpha/2.
-        );
+        try{
+                Util::draw_cairo_image(
+                    cr,
+                    m_cover_surface_cur.get(),
+                    (cover_anim_area_x0 + ((72.-wh)/2.)) - pow((1./m_cover_alpha),9),
+                    (cover_anim_area_y0 + ((72.-wh)/2.)),
+                    m_cover_alpha/2.
+                );
+        } catch( ... )
+        {
+        }
         cr->restore ();
     }
     else
@@ -320,7 +327,7 @@ namespace MPX
   }
 
   void
-  InfoArea::draw_text (Cairo::RefPtr<Cairo::Context> const& cr)
+  InfoArea::draw_text (Cairo::RefPtr<Cairo::Context>& cr)
   {
     Mutex::Lock L (m_layout_lock);
 
