@@ -36,33 +36,20 @@ class HttpRead(threading.Thread):
         self.response = self.urlhandle.readlines()
         self.finished.set()    
 
-class HttpPost(threading.Thread):
+class HttpPost():
 
     def __init__(self, req):
 
-        threading.Thread.__init__(self)   
-
         self.request    = req 
-        self.finished   = threading.Event()
         self.urlhandle  = None 
-
         self.response   = None
         self.code       = None
         self.message    = None
-
-    def is_finished(self):
-
-        return self.finished.isSet()
 
     def get_data(self):
 
         return [self.response, self.code, self.message]
        
-    def stop(self): 
-
-        self.finished.set()
-        self.join()
-
     def run(self):
 
         try:
@@ -70,7 +57,6 @@ class HttpPost(threading.Thread):
         except urllib2.HTTPError, error:
             self.code = error.code
             self.message = error.msg
-            self.finished.set()
             return
         except urllib2.URLError, error:
             args = getattr(error.reason, 'args', None)
@@ -85,18 +71,15 @@ class HttpPost(threading.Thread):
 
             self.code = code
             self.message = message 
-            self.finished.set()
             return
         except:
             code = '000'
             message = sys.exc_info()[1]
             self.code = code
             self.message = message 
-            self.finished.set()
             return
 
         self.response = self.url_handle.readlines()
-        self.finished.set()    
 
 try:
     # Python 2.5, module bundled:
@@ -440,7 +423,6 @@ class AudioScrobblerPost(threading.Thread):
         self.npurl = None
         self.stop = threading.Event()
         self.newtracks = threading.Event()
-        self.cachelock = threading.Lock()
 
         try:
                 input = open(os.path.join(mpx.get_config_dir(), "audioscrobbler.cache"))
@@ -629,9 +611,7 @@ class AudioScrobblerPost(threading.Thread):
                         'n[%s]': tracknumber.encode('utf8'),
                         'o[%s]': source.encode('utf8'),
                         }
-            self.cachelock.acquire()
             self.cache.append(track)
-            self.cachelock.release()
             self.newtracks.set()
     
     def nowplaying(self, 
@@ -668,12 +648,7 @@ class AudioScrobblerPost(threading.Thread):
         req = urllib2.Request(url=self.npurl, data=npdata)
     
         instance = HttpPost(req) 
-        instance.start()
-
-        while not instance.is_finished():
-            while gtk.events_pending():
-                gtk.main_iteration()
-
+        instance.run()
         response, code, message = instance.get_data() 
 
         if code:
@@ -709,11 +684,8 @@ class AudioScrobblerPost(threading.Thread):
             self.log("Not authenticated")
             return
 
-        self.cachelock.acquire()
-        
         if len(self.cache) == 0:
             self.log("Empty cache")
-            self.cachelock.release()
             return
 
         if len(self.cache) > 10:
@@ -737,17 +709,11 @@ class AudioScrobblerPost(threading.Thread):
         self.last_post = now
 
         instance = HttpPost(req) 
-        instance.start()
-
-        while not instance.is_finished():
-            while gtk.events_pending():
-                gtk.main_iteration()
-
+        instance.run()
         response, code, message = instance.get_data() 
 
         if code:
             print AudioScrobblerConnectionError('http/network', code, message)
-            self.cachelock.release() 
             return
             
         # Test the various responses possibilities:
@@ -765,8 +731,6 @@ class AudioScrobblerPost(threading.Thread):
             msg = "Server returned something unexpected."
             print AudioScrobblerPostFailed(msg)
 
-        self.cachelock.release() 
-        
     def flushcache(self):
         
         """ Post all the tracks in the cache """
