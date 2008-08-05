@@ -1524,6 +1524,8 @@ SET_SEEK_POSITION:
                 {
                         g_return_if_fail(m_PreparingSource || m_ActiveSource);
 
+                        m_InfoArea->reset();
+
                         m_TrackPlayedSeconds = 0;
                         m_TrackSeekedSeconds = 0;
 
