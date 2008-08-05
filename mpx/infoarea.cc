@@ -85,14 +85,17 @@ namespace MPX
   {
     Glib::Mutex::Lock L (m_layout_lock);
 
-    if( metadata.Image )
+    if( !m_cover_surface_cur && metadata.Image )
     {
         set_cover (metadata.Image->scale_simple (72, 72, Gdk::INTERP_BILINEAR));
     }
+
+#if 0
     else
     {
         clear_cover ();
     }
+#endif
 
     TextSet set;
     parse_metadata( metadata, set ); 
@@ -123,6 +126,8 @@ namespace MPX
   {
     Glib::Mutex::Lock L (m_surface_lock);
 
+    g_message(G_STRFUNC);
+
     m_cover_pos           = cover_anim_initial_pos;
     m_cover_velocity      = cover_anim_initial_velocity;
     m_cover_accel         = cover_anim_gravity;
@@ -131,7 +136,6 @@ namespace MPX
     if(!m_cover_surface_cur)
     {
         m_cover_surface_cur = surface; 
-
         m_cover_anim_conn_slide.disconnect ();
         m_cover_anim_conn_slide = Glib::signal_timeout ().connect(
             sigc::mem_fun( *this, &InfoArea::slide_in_cover ), cover_anim_interval
@@ -142,7 +146,6 @@ namespace MPX
         m_cover_surface_new = surface;
 
         m_cover_anim_conn_slide.disconnect ();
-
         m_cover_anim_conn_fade.disconnect ();
         m_cover_anim_conn_fade = Glib::signal_timeout ().connect(
             sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 25 

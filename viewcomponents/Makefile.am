@@ -22,7 +22,6 @@ INCLUDES = 							\
 		-I$(top_srcdir)/include		\
 		-I$(top_srcdir)				
 
-libmpx_view_components_la_LDFLAGS = -fPIC -module
 libmpx_view_components_la_LIBADD =  	\
 		$(BOOST_LDFLAGS)			\
 		$(BOOST_REGEX_LIB)			\
