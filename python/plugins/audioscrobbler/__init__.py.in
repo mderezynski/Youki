@@ -399,7 +399,7 @@ class AudioScrobblerItem:
         return self._element
 
 
-class AudioScrobblerPost:
+class AudioScrobblerPost(threading.Thread):
     
     """
     Provide the ability to post tracks played to a user's Last.fm
@@ -415,6 +415,8 @@ class AudioScrobblerPost:
                  protocol_version=audioscrobbler_post_version,
                  host=audioscrobbler_post_host,
                  verbose=False):
+
+        threading.Thread.__init__(self)
     
         # Capture the information passed for future use
         self.params = dict(username=username,
@@ -436,6 +438,9 @@ class AudioScrobblerPost:
         self.updateurl = None
         self.posturl = None
         self.npurl = None
+        self.stop = threading.Event()
+        self.newtracks = threading.Event()
+        self.cachelock = threading.Lock()
 
         try:
                 input = open(os.path.join(mpx.get_config_dir(), "audioscrobbler.cache"))
@@ -571,7 +576,7 @@ class AudioScrobblerPost:
                       album=album,
                       mbid=mbid,
                       source=source)
-        self.post()
+        #self.post()
         
     __call__ = posttrack
     
@@ -624,7 +629,10 @@ class AudioScrobblerPost:
                         'n[%s]': tracknumber.encode('utf8'),
                         'o[%s]': source.encode('utf8'),
                         }
+            self.cachelock.acquire()
             self.cache.append(track)
+            self.cachelock.release()
+            self.newtracks.set()
     
     def nowplaying(self, 
                   artist_name,
@@ -676,6 +684,19 @@ class AudioScrobblerPost:
             self.log("Now playing track updated ('%s' by '%s')." % (p['t'], p['a']))
         elif response[0].startswith('BADSESSION'):
             self.authenticated = False
+    
+    def stop(self):
+
+        self.stop.set()
+        self.join()
+
+    def run(self):
+
+        while not self.stop.isSet():
+            self.newtracks.wait(0.1)
+            self.newtracks.clear()
+            while len(self.cache):
+                self.post()
         
     def post(self):
         
@@ -687,10 +708,14 @@ class AudioScrobblerPost:
         if not self.authenticated:
             self.log("Not authenticated")
             return
+
+        self.cachelock.acquire()
         
         if len(self.cache) == 0:
             self.log("Empty cache")
+            self.cachelock.release()
             return
+
         if len(self.cache) > 10:
             number = 10
         else:
@@ -722,6 +747,7 @@ class AudioScrobblerPost:
 
         if code:
             print AudioScrobblerConnectionError('http/network', code, message)
+            self.cachelock.release() 
             return
             
         # Test the various responses possibilities:
@@ -734,10 +760,12 @@ class AudioScrobblerPost:
             self.authenticated = False
         elif response[0].startswith('FAILED'):
             reason = response[0][6:].strip()
-            raise AudioScrobblerPostFailed(reason)
+            print AudioScrobblerPostFailed(reason)
         else:
             msg = "Server returned something unexpected."
-            raise AudioScrobblerPostFailed(msg)
+            print AudioScrobblerPostFailed(msg)
+
+        self.cachelock.release() 
         
     def flushcache(self):
         
@@ -857,6 +885,7 @@ class MPXAudioScrobbler(mpx.Plugin):
 
         self.as = AudioScrobbler()
         self.post = self.as.post(self.mcs.key_get_string("lastfm", "username"), self.mcs.key_get_string("lastfm", "password"))
+        self.post.start()
         
         try:
             self.post.auth()
@@ -887,6 +916,7 @@ class MPXAudioScrobbler(mpx.Plugin):
         self.player.gobj().disconnect(self.hand2)
         self.as = None
         self.post.save()
+        self.post.stop()
         self.post = None
 
     def pstate_changed(self, blah, state):
