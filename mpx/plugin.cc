@@ -137,7 +137,7 @@ namespace MPX
             return;	
         }
 
-		PyObject * sys_path = PySys_GetObject ("path");
+		PyObject * sys_path = PySys_GetObject ((char*)"path");
 
         {
             std::string pyapi_path = build_filename(DATA_DIR, "pyapi");
@@ -294,7 +294,7 @@ namespace MPX
                 try{
                     object instance = object((handle<>(borrowed(i->second->m_PluginInstance))));
                     object callable = instance.attr("deactivate");
-                    result = boost::python::call<bool>(callable.ptr());
+                    boost::python::call<bool>(callable.ptr());
                     i->second->m_Active = false;
                 } catch( error_already_set ) 
                 {
