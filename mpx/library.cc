@@ -207,13 +207,13 @@ namespace MPX
                         m_Flags |= (use_hal ? F_USING_HAL : 0); 
 #endif // HAVE_HAL
 
-                        m_SQL->exec_sql("CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0);");
-                        m_SQL->exec_sql((boost::format ("INSERT INTO meta (flags) VALUES(%lld);") % m_Flags).str());
+                        m_SQL->exec_sql("CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0)");
+                        m_SQL->exec_sql((boost::format ("INSERT INTO meta (flags) VALUES(%lld)") % m_Flags).str());
                 }
                 else
                 {
                         RowV rows;
-                        m_SQL->get (rows, "SELECT flags FROM meta;"); 
+                        m_SQL->get (rows, "SELECT flags FROM meta"); 
                         m_Flags |= get<gint64>(rows[0].find("flags")->second); 
                 }
 
@@ -232,7 +232,7 @@ namespace MPX
                 static boost::format
                         artist_table_f ("CREATE TABLE IF NOT EXISTS artist "
                                         "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, '%s' TEXT, "
-                                        "UNIQUE ('%s', '%s', '%s'));");
+                                        "UNIQUE ('%s', '%s', '%s'))");
 
                 m_SQL->exec_sql ((artist_table_f  % attrs[ATTRIBUTE_ARTIST].id
                                         % attrs[ATTRIBUTE_MB_ARTIST_ID].id
@@ -244,7 +244,7 @@ namespace MPX
                 static boost::format
                         album_artist_table_f ("CREATE TABLE IF NOT EXISTS album_artist "
                                         "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
-                                        "'%s' TEXT, '%s' INTEGER, UNIQUE ('%s', '%s', '%s', '%s'));");
+                                        "'%s' TEXT, '%s' INTEGER, UNIQUE ('%s', '%s', '%s', '%s'))");
 
                 m_SQL->exec_sql ((album_artist_table_f  % attrs[ATTRIBUTE_ALBUM_ARTIST].id
                                         % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id
@@ -260,7 +260,7 @@ namespace MPX
                                         "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
                                         "'%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, "
                                         "'%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, UNIQUE "
-                                        "('%s', '%s', '%s', '%s', '%s', '%s', '%s'));");
+                                        "('%s', '%s', '%s', '%s', '%s', '%s', '%s'))");
 
                 m_SQL->exec_sql ((album_table_f % attrs[ATTRIBUTE_ALBUM].id
                                         % attrs[ATTRIBUTE_MB_ALBUM_ID].id
@@ -284,7 +284,7 @@ namespace MPX
                 static boost::format
                         tag_table_f ("CREATE TABLE IF NOT EXISTS tag "
                                         "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, " 
-                                        "UNIQUE ('%s'));");
+                                        "UNIQUE ('%s'))");
 
                 m_SQL->exec_sql ((tag_table_f  % "tag" % "tag").str()); 
 
@@ -293,7 +293,7 @@ namespace MPX
                         tags_table_f ("CREATE TABLE IF NOT EXISTS tags "
                                         "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' INTEGER NOT NULL, '%s' INTEGER NOT NULL, " 
                                         " '%s' INTEGER DEFAULT 1, "
-                                        "UNIQUE ('%s', '%s'));");
+                                        "UNIQUE ('%s', '%s'))");
 
                 m_SQL->exec_sql ((tags_table_f  % "tagid" % "trackid" % "amplitude" 
                                         % "tagid" % "trackid").str()); 
@@ -301,7 +301,7 @@ namespace MPX
 
                 static boost::format
                         album_rating_history_f ("CREATE TABLE IF NOT EXISTS album_rating_history "
-                                        "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT NOT NULL, '%s' INTEGER NOT NULL, '%s' TEXT DEFAULT NULL, '%s' INTEGER NOT NULL);"); 
+                                        "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT NOT NULL, '%s' INTEGER NOT NULL, '%s' TEXT DEFAULT NULL, '%s' INTEGER NOT NULL)"); 
 
                 m_SQL->exec_sql(
                                 (album_rating_history_f
@@ -337,7 +337,7 @@ namespace MPX
 
                 static boost::format
                         track_table_f ("CREATE TABLE IF NOT EXISTS track (id INTEGER PRIMARY KEY AUTOINCREMENT, %s, %s, %s, "
-                                        "UNIQUE (%s, %s, %s, %s));");
+                                        "UNIQUE (%s, %s, %s, %s))");
 
                 m_SQL->exec_sql ((track_table_f
                                         % column_names
@@ -357,10 +357,10 @@ namespace MPX
                                 ", album_artist.id AS mpx_album_artist_id "
                                 " FROM track "
                                 "JOIN album ON album.id = track.album_j JOIN artist "
-                                "ON artist.id = track.artist_j JOIN album_artist ON album.album_artist_j = album_artist.id;");
+                                "ON artist.id = track.artist_j JOIN album_artist ON album.album_artist_j = album_artist.id");
 
-                m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS devices (id INTEGER PRIMARY KEY AUTOINCREMENT, device_udi TEXT, volume_udi TEXT);");
-                m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS markov (id INTEGER PRIMARY KEY AUTOINCREMENT, count INTEGER DEFAULT 0, track_id_a INTEGER DEFAULT NULL, track_id_b INTEGER DEFAULT NULL);");
+                m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS devices (id INTEGER PRIMARY KEY AUTOINCREMENT, device_udi TEXT, volume_udi TEXT)");
+                m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS markov (id INTEGER PRIMARY KEY AUTOINCREMENT, count INTEGER DEFAULT 0, track_id_a INTEGER DEFAULT NULL, track_id_b INTEGER DEFAULT NULL)");
         }
 
         Library::Library(
@@ -571,20 +571,20 @@ namespace MPX
                         player.push_message(_("Finding Lost Artists..."));
 
                         typedef std::set <gint64> IdSet;
-                        static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld';");
+                        static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld'");
 
                         IdSet idset1;
                         IdSet idset2;
 
                         idset1.clear();
                         rows.clear();
-                        getSQL(rows, "SELECT DISTINCT artist_j FROM track;");
+                        getSQL(rows, "SELECT DISTINCT artist_j FROM track");
                         for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
                                 idset1.insert (get<gint64>(i->find ("artist_j")->second));
 
                         idset2.clear();
                         rows.clear();
-                        getSQL(rows, "SELECT DISTINCT id FROM artist;");
+                        getSQL(rows, "SELECT DISTINCT id FROM artist");
                         for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
                                 idset2.insert (get<gint64>(i->find ("id")->second));
 
@@ -600,13 +600,13 @@ namespace MPX
 
                         idset1.clear();
                         rows.clear();
-                        getSQL(rows, "SELECT DISTINCT album_j FROM track;");
+                        getSQL(rows, "SELECT DISTINCT album_j FROM track");
                         for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
                                 idset1.insert (get<gint64>(i->find ("album_j")->second));
 
                         idset2.clear();
                         rows.clear();
-                        getSQL(rows, "SELECT DISTINCT id FROM album;");
+                        getSQL(rows, "SELECT DISTINCT id FROM album");
                         for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
                                 idset2.insert (get<gint64>(i->find ("id")->second));
 
@@ -620,13 +620,13 @@ namespace MPX
 
                         idset1.clear();
                         rows.clear();
-                        getSQL(rows, "SELECT DISTINCT album_artist_j FROM album;");
+                        getSQL(rows, "SELECT DISTINCT album_artist_j FROM album");
                         for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
                                 idset1.insert (get<gint64>(i->find ("album_artist_j")->second));
 
                         idset2.clear();
                         rows.clear();
-                        getSQL(rows, "SELECT DISTINCT id FROM album_artist;");
+                        getSQL(rows, "SELECT DISTINCT id FROM album_artist");
                         for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
                                 idset2.insert (get<gint64>(i->find ("id")->second));
 
@@ -648,7 +648,7 @@ namespace MPX
                 {
                         RowV rows ;
 
-                        char const get_f[] = "SELECT tagid, amplitude FROM tags WHERE trackid = %lld;" ;
+                        char const get_f[] = "SELECT tagid, amplitude FROM tags WHERE trackid = %lld" ;
 
                         getSQL(rows, mprintf(get_f, id)) ; 
 
@@ -815,8 +815,8 @@ namespace MPX
                 {
                         gint64 tag_id = get_tag_id( tag );
 
-                        char const insert_f[] = "INSERT INTO tags (tagid, trackid) VALUES (%lld, %lld);";
-                        char const update_f[] = "UPDATE tags SET amplitude = amplitude + 1 WHERE trackid = %lld AND tagid = %lld;";
+                        char const insert_f[] = "INSERT INTO tags (tagid, trackid) VALUES (%lld, %lld)";
+                        char const update_f[] = "UPDATE tags SET amplitude = amplitude + 1 WHERE trackid = %lld AND tagid = %lld";
                         try{
                                 execSQL(mprintf(insert_f, id, tag_id)); 
                         } catch( SqlConstraintError & cxe )
@@ -969,7 +969,7 @@ namespace MPX
 
 get_tag_id:
 
-                        char const* select_tag_f ("SELECT id FROM tag WHERE tag = '%q';"); 
+                        char const* select_tag_f ("SELECT id FROM tag WHERE tag = '%q'"); 
                         sql = mprintf(select_tag_f, tag.c_str());
                         m_SQL->get (rows, sql); 
 
@@ -979,7 +979,7 @@ get_tag_id:
                         }
                         else
                         {
-                                char const* set_tag_f ("INSERT INTO tag (tag) VALUES (%q);");
+                                char const* set_tag_f ("INSERT INTO tag (tag) VALUES (%q)");
 
                                 sql = mprintf(set_tag_f, tag.c_str());
                                 m_SQL->exec_sql (sql);
@@ -992,7 +992,7 @@ get_tag_id:
         void
                 Library::set_mean_genre_for_album (gint64 id)
                 {
-                        static boost::format select_f ("SELECT DISTINCT genre FROM track WHERE album_j = %lld AND genre IS NOT NULL;"); 
+                        static boost::format select_f ("SELECT DISTINCT genre FROM track WHERE album_j = %lld AND genre IS NOT NULL"); 
                         RowV rows;
                         m_SQL->get (rows, (select_f % id).str()); 
 
@@ -1007,7 +1007,7 @@ get_tag_id:
         void
                 Library::initScan (const Util::FileList & list)
                 {
-                        execSQL("UPDATE album SET album_new = 0;");
+                        execSQL("UPDATE album SET album_new = 0");
                         m_ScannerThread->scan(list);
                 }
 

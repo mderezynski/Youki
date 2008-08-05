@@ -221,7 +221,7 @@ namespace MPX
     if (m_cover_pos + m_cover_surface_cur.get()->get_width () >= cover_anim_wall)
     {
         m_cover_pos       = cover_anim_wall - m_cover_surface_cur.get()->get_width ();
-        m_cover_velocity *= - (cover_anim_wall_elasticity + g_random_double_range(0.0, 0.08));
+        m_cover_velocity *= - cover_anim_wall_elasticity; 
 
         // FIXME: Need a better test. This runs into stability problems when
         // dt or acceleration is too high
