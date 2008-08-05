@@ -553,7 +553,7 @@ namespace mpxpy
     std::string
     get_config_dir ()
     {
-        return build_filename(Glib::get_user_config_dir(), "mpx");
+        return Glib::build_filename(Glib::get_user_config_dir(), "mpx");
     }
 }
 
@@ -953,8 +953,8 @@ namespace MPX
         if(!py_initialized)
         {
             try {
-                PyImport_AppendInittab((const char*)"gtkmm", initgtkmm);
-                PyImport_AppendInittab((const char*)"mpx", initmpx);
+                PyImport_AppendInittab((char*)"gtkmm", initgtkmm);
+                PyImport_AppendInittab((char*)"mpx", initmpx);
                 Py_Initialize();
                 init_pygobject();
                 init_pygtk();
