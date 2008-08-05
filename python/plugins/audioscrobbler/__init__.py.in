@@ -7,7 +7,7 @@ __version__ = "$Revision$"[11:-2]
 __docformat__ = "restructuredtext"
 
 
-import datetime, locale, md5, site, sys, time, urllib, urllib2, os, mpx, threading, gtk
+import datetime, locale, md5, site, sys, time, urllib, urllib2, os, mpx, threading, gtk, pickle
 
 class HttpRead(threading.Thread):
 
@@ -436,6 +436,22 @@ class AudioScrobblerPost:
         self.updateurl = None
         self.posturl = None
         self.npurl = None
+
+        try:
+                input = open(os.path.join(mpx.get_config_dir(), "audioscrobbler.cache"))
+                self.cache = pickle.load(input)
+                input.close()
+        except Exception, error:
+                print "AudioScrobbler: Error loading cache: %s" % str(error)
+
+    def save(self):
+
+        try:
+                output = open(os.path.join(mpx.get_config_dir(), "audioscrobbler.cache"))
+                pickle.dump(self.cache, output)
+                output.close()
+        except Exception, error:
+                print "AudioScrobbler: Error saving cache: %s" % str(error)
 
     def set_credentials(self, username, password):
 
@@ -870,6 +886,7 @@ class MPXAudioScrobbler(mpx.Plugin):
         self.player.gobj().disconnect(self.hand1)
         self.player.gobj().disconnect(self.hand2)
         self.as = None
+        self.post.save()
         self.post = None
 
     def pstate_changed(self, blah, state):

@@ -282,6 +282,27 @@ namespace MPX
 
 	PluginManager::~PluginManager ()
 	{
+        for(PluginHoldMap::iterator i = m_Map.begin(); i != m_Map.end(); ++i)
+        {
+                if(!i->second->m_Active)
+                {
+                    continue;
+                }
+
+                PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+
+                try{
+                    object instance = object((handle<>(borrowed(i->second->m_PluginInstance))));
+                    object callable = instance.attr("deactivate");
+                    result = boost::python::call<bool>(callable.ptr());
+                    i->second->m_Active = false;
+                } catch( error_already_set ) 
+                {
+                }
+
+                pyg_gil_state_release (state);
+        }
+
         delete mcs_plugins;
 	}
 

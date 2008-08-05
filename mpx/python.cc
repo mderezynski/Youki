@@ -550,6 +550,11 @@ namespace pysigc
 
 namespace mpxpy
 {
+    std::string
+    get_config_dir ()
+    {
+        return build_filename(Glib::get_user_config_dir(), "mpx");
+    }
 }
 
 BOOST_PYTHON_MODULE(mpx)
@@ -582,6 +587,7 @@ BOOST_PYTHON_MODULE(mpx)
     ;
 
     def ("rand", &MPX::rand);
+    def ("get_config_dir", &mpxpy::get_config_dir);
 
 	/*-------------------------------------------------------------------------------------*/
 
