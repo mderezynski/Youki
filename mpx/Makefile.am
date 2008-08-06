@@ -1,4 +1,4 @@
-libexec_PROGRAMS = mpx-bin 
+libexec_PROGRAMS = audiosource-bin 
 
 mpx_bin_LDFLAGS = -Wl,--export-dynamic 
 

@@ -1,17 +1,14 @@
-bin_PROGRAMS = mpx 
+bin_PROGRAMS = audiosource 
 
-dist_bin_SCRIPTS =		\
-	mpx-play-uris 
-
-mpx_LDADD =				\
+audiosource_LDADD =				\
 	$(GLIBMM_LIBS)		\
 	$(GTK_LIBS)			\
 	$(DBUS_LIBS)
 
-mpx_CXXFLAGS =			\
+audiosource_CXXFLAGS =			\
 	$(GLIBMM_CFLAGS)	\
 	$(GTK_CFLAGS)		\
 	$(DBUS_CFLAGS)		
 
-mpx_SOURCES =			\
+audiosource_SOURCES =			\
     mpx.cc
