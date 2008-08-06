@@ -143,7 +143,6 @@ audiosource_bin_SOURCES =				\
 								\
 	main.cc						\
 								\
-	markov-analyzer-thread.hh	\
 	markov-analyzer-thread.cc	\
 								\
 	messages.hh					\
