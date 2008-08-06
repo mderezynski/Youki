@@ -258,10 +258,12 @@ namespace MPX
         mcs->key_register("Preferences-CoverArtSources", "Source1", int(1));
         mcs->key_register("Preferences-CoverArtSources", "Source2", int(2));
         mcs->key_register("Preferences-CoverArtSources", "Source3", int(3));
+        mcs->key_register("Preferences-CoverArtSources", "Source4", int(4));
         mcs->key_register("Preferences-CoverArtSources", "SourceActive0", bool(true));
         mcs->key_register("Preferences-CoverArtSources", "SourceActive1", bool(true));
         mcs->key_register("Preferences-CoverArtSources", "SourceActive2", bool(true));
         mcs->key_register("Preferences-CoverArtSources", "SourceActive3", bool(true));
+        mcs->key_register("Preferences-CoverArtSources", "SourceActive4", bool(true));
 
         mcs->domain_register("PlaybackSourceMusicLib");
         mcs->key_register("PlaybackSourceMusicLib", "divider-position", 250);

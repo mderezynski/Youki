@@ -139,6 +139,18 @@ namespace MPX
         void
         load_artwork(CoverFetchData*);
     };
+
+    class InlineCovers : public CoverStore,
+                         public sigx::glib_auto_dispatchable
+    {
+    public:
+       InlineCovers(Covers& c) : CoverStore(c)
+        { }
+
+        void
+        load_artwork(CoverFetchData*);
+    };
+
 }
 
 #endif

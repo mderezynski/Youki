@@ -168,9 +168,6 @@ namespace MPX
       void
       rebuild_stores ();
 
-      bool
-      cache_inline (const std::string& mbid, const std::string& uri);
-
       RequestKeeperT              RequestKeeper;
       MPixbufCache                m_pixbuf_cache;
       MSurfaceCache               m_surface_cache[N_COVER_SIZES];

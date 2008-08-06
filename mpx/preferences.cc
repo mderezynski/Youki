@@ -151,9 +151,10 @@ namespace MPX
     char const* sources[] =
     {
         N_("Local files (folder.jpg, cover.jpg, etc)"),
-        N_("Amazon ASIN"),
         N_("MusicBrainz AR"),
+        N_("Amazon ASIN"),
         N_("Amazon search")
+        N_("Inline covers")
     };
   } // <anonymous> namespace
     
@@ -213,7 +214,7 @@ namespace MPX
 
                   append_column(_("Column"), Columns.Name);            
 
-                  for( int i = 0; i < 4; ++i )
+                  for( int i = 0; i < G_N_ELEMENTS(sources); ++i )
                   {
                       TreeIter iter = Store->append();
                       

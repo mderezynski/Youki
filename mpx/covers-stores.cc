@@ -30,6 +30,17 @@
 
 #include <boost/format.hpp>
 
+#include <taglib-gio.h>
+#include <fileref.h>
+#include <tfile.h>
+#include <tag.h>
+#include <id3v2tag.h>
+#include <mpegfile.h>
+#include <id3v2framefactory.h>
+#include <textidentificationframe.h>
+#include <uniquefileidentifierframe.h>
+#include <attachedpictureframe.h>
+
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-covers-stores.hh"
 
@@ -60,6 +71,7 @@ namespace
 }
 
 using namespace Glib;
+using namespace TagLib;
 
 namespace MPX
 {
@@ -372,4 +384,61 @@ namespace MPX
             delete data;
         }
     }
+
+    // --------------------------------------------------
+    //
+    // Inline covers 
+    //
+    // --------------------------------------------------
+    void
+    InlineCovers::load_artwork(CoverFetchData* data)
+    {
+        Glib::RefPtr<Gdk::Pixbuf> cover;
+
+        try{
+            MPEG::File opfile (data->uri.c_str());
+            if(opfile.isOpen() && opfile.isValid())
+            {
+                using TagLib::ID3v2::FrameList;
+                ID3v2::Tag * tag = opfile.ID3v2Tag (false);
+                if( tag )
+                {
+                    FrameList const& list = tag->frameList();
+                    for(FrameList::ConstIterator i = list.begin(); i != list.end(); ++i)
+                    {
+                        TagLib::ID3v2::Frame const* frame = *i;
+                        if( frame )
+                        {
+                            TagLib::ID3v2::AttachedPictureFrame const* picture =
+                                dynamic_cast<TagLib::ID3v2::AttachedPictureFrame const*>(frame);
+
+                            if( picture && picture->type() == TagLib::ID3v2::AttachedPictureFrame::FrontCover )
+                            {
+                                RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
+                                ByteVector picdata = picture->picture();
+                                loader->write (reinterpret_cast<const guint8*>(picdata.data()), picdata.size());
+                                loader->close ();
+                                cover = loader->get_pixbuf();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch( ... )
+        {
+        }
+
+        if( cover )
+        {
+            cover->save( covers.get_thumb_path( data->mbid ), "png" );
+            covers.cache_artwork( data->mbid, cover );
+            covers.Signals.GotCover.emit( data->mbid );
+            delete data;
+        }
+        else
+        {
+            Signals.NotFound.emit(data);
+        }
+    }
+
 }

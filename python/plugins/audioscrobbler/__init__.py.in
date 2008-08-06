@@ -875,13 +875,13 @@ class MPXAudioScrobbler(mpx.Plugin):
     def deactivate(self):
 
         """ Deactivate plugin """
-
-        self.player.gobj().disconnect(self.hand1)
-        self.player.gobj().disconnect(self.hand2)
-        self.as = None
-        self.post.save()
-        self.post.stop()
-        self.post = None
+        pass
+        #self.player.gobj().disconnect(self.hand1)
+        #self.player.gobj().disconnect(self.hand2)
+        #self.as = None
+        #self.post.save()
+        #self.post.stop()
+        #self.post = None
 
     def pstate_changed(self, blah, state):
 

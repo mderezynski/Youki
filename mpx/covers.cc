@@ -109,6 +109,7 @@ namespace MPX
         m_all_stores.push_back(StoreP(new MusicBrainzCovers(*this)));
         m_all_stores.push_back(StoreP(new AmazonCovers(*this)));
         m_all_stores.push_back(StoreP(new AmapiCovers(*this)));
+        m_all_stores.push_back(StoreP(new InlineCovers(*this)));
 
         for( size_t i = 0; i < m_all_stores.size(); i++ )
         {
@@ -116,7 +117,7 @@ namespace MPX
         }
 
         rebuild_stores();
-        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "SourceActive3", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
+        mcs->subscribe ("CoversSubscription0", "Preferences-CoverArtSources",  "SourceActive4", sigc::mem_fun( *this, &Covers::source_pref_changed_callback ));
     }
 
     void
@@ -135,16 +136,19 @@ namespace MPX
         int at1 = mcs->key_get<int>("Preferences-CoverArtSources", "Source1");
         int at2 = mcs->key_get<int>("Preferences-CoverArtSources", "Source2");
         int at3 = mcs->key_get<int>("Preferences-CoverArtSources", "Source3");
+        int at4 = mcs->key_get<int>("Preferences-CoverArtSources", "Source4");
 
         bool use0 = mcs->key_get<bool>("Preferences-CoverArtSources", "SourceActive0");
         bool use1 = mcs->key_get<bool>("Preferences-CoverArtSources", "SourceActive1");
         bool use2 = mcs->key_get<bool>("Preferences-CoverArtSources", "SourceActive2");
         bool use3 = mcs->key_get<bool>("Preferences-CoverArtSources", "SourceActive3");
+        bool use4 = mcs->key_get<bool>("Preferences-CoverArtSources", "SourceActive4");
 
         if (use0) { m_current_stores[0] = m_all_stores[at0]; }
         if (use1) { m_current_stores[1] = m_all_stores[at1]; }
         if (use2) { m_current_stores[2] = m_all_stores[at2]; }
         if (use3) { m_current_stores[3] = m_all_stores[at3]; }
+        if (use4) { m_current_stores[4] = m_all_stores[at4]; }
     }
  
     void
@@ -234,58 +238,6 @@ namespace MPX
                 m_current_stores[0]->load_artwork(new CoverFetchData(asin, mbid, uri, artist, album, m_current_stores));
             }
         }
-    }
-
-    bool
-    Covers::cache_inline(
-        const std::string& mbid,
-        const std::string& uri
-    )
-    {
-        Glib::RefPtr<Gdk::Pixbuf> cover;
-
-        try{
-            MPEG::File opfile (uri.c_str());
-            if(opfile.isOpen() && opfile.isValid())
-            {
-                using TagLib::ID3v2::FrameList;
-                ID3v2::Tag * tag = opfile.ID3v2Tag (false);
-                if( tag )
-                {
-                    FrameList const& list = tag->frameList();
-                    for(FrameList::ConstIterator i = list.begin(); i != list.end(); ++i)
-                    {
-                        TagLib::ID3v2::Frame const* frame = *i;
-                        if( frame )
-                        {
-                            TagLib::ID3v2::AttachedPictureFrame const* picture =
-                                dynamic_cast<TagLib::ID3v2::AttachedPictureFrame const*>(frame);
-
-                            if( picture && picture->type() == TagLib::ID3v2::AttachedPictureFrame::FrontCover )
-                            {
-                                RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
-                                ByteVector picdata = picture->picture();
-                                loader->write (reinterpret_cast<const guint8*>(picdata.data()), picdata.size());
-                                loader->close ();
-                                cover = loader->get_pixbuf();
-                            }
-                        }
-                    }
-                }
-            }
-        } catch( ... )
-        {
-        }
-
-        if( cover )
-        {
-            cover->save (get_thumb_path(mbid), "png");
-            m_pixbuf_cache.insert (std::make_pair (mbid, cover));
-            Signals.GotCover.emit(mbid);
-            return true;
-        }
-
-        return false;
     }
 
     bool
