@@ -167,9 +167,8 @@ namespace MPX
         m_cover_surface_new = surface;
         m_cover_anim_conn_slide.disconnect ();
 
-        if( !m_cover_anim_fade )
+        if( !m_cover_anim_conn_fade )
         {
-                m_cover_anim_conn_fade.disconnect ();
                 m_cover_anim_conn_fade = Glib::signal_timeout ().connect(
                     sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 25 
                 );
