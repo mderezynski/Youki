@@ -153,7 +153,7 @@ namespace MPX
         N_("Local files (folder.jpg, cover.jpg, etc)"),
         N_("MusicBrainz AR"),
         N_("Amazon ASIN"),
-        N_("Amazon search")
+        N_("Amazon search"),
         N_("Inline covers")
     };
   } // <anonymous> namespace
