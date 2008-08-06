@@ -75,11 +75,6 @@ MPX::MarkovAnalyzerThread::on_append (MPX::Track & track)
     ThreadData * pthreaddata = m_ThreadData.get();
     pthreaddata->m_trackQueue.push_back(track);
 
-    m_Library->trackPlayed(
-        get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()),
-        time(NULL)
-    );
-
     if(! m_idleConnection )
     {
         m_idleConnection = maincontext()->signal_idle().connect(

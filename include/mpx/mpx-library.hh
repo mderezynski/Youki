@@ -113,7 +113,7 @@ namespace MPX
 			trackRated(gint64, int);
 		
 			void
-			trackPlayed(gint64, time_t);
+			trackPlayed(gint64, gint64, time_t);
 
             void
             trackTagged(gint64, std::string const&);

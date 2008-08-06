@@ -259,10 +259,11 @@ namespace MPX
                         album_table_f ("CREATE TABLE IF NOT EXISTS album "
                                         "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
                                         "'%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, "
-                                        "'%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, UNIQUE "
+                                        "'%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' FLOAT DEFAULT 0, UNIQUE "
                                         "('%s', '%s', '%s', '%s', '%s', '%s', '%s'))");
 
-                m_SQL->exec_sql ((album_table_f % attrs[ATTRIBUTE_ALBUM].id
+                m_SQL->exec_sql ((album_table_f
+                                        % attrs[ATTRIBUTE_ALBUM].id
                                         % attrs[ATTRIBUTE_MB_ALBUM_ID].id
                                         % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
                                         % attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id
@@ -273,6 +274,7 @@ namespace MPX
                                         % "album_artist_j"
                                         % "album_insert_date"
                                         % "album_new"
+                                        % "album_playscore"
                                         % attrs[ATTRIBUTE_ALBUM].id
                                         % attrs[ATTRIBUTE_MB_ALBUM_ID].id
                                         % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
@@ -803,11 +805,26 @@ namespace MPX
                 }
 
         void	
-                Library::trackPlayed(gint64 id, time_t time_)
+                Library::trackPlayed(gint64 id, gint64 album_id, time_t time_)
                 {
                         execSQL((boost::format ("UPDATE track SET pdate = '%lld' WHERE id = %lld") % gint64(time_) % id).str());
                         execSQL((boost::format ("UPDATE track SET pcount = ifnull(pcount,0) + 1 WHERE Id =%lld") % id).str());
+
+                        SQL::RowV v;
+
+                        getSQL(v, (boost::format ("SELECT SUM(pcount) AS count FROM track_view WHERE album_j = '%lld'") % album_id).str());
+                        gint64 count1 = get<gint64>(v[0]["count"]);
+                        v.clear();
+
+                        getSQL(v, (boost::format ("SELECT count(id) AS count FROM track_view WHERE album_j = '%lld'") % album_id).str());
+                        gint64 count2 = get<gint64>(v[0]["count"]);
+
+                        double score = double(count1) / double(count2);
+
+                        execSQL((boost::format ("UPDATE album SET album_playscore = '%f' WHERE album.id = '%lld'") % score % album_id).str());
+
                         Signals.TrackUpdated.emit(id);
+                        Signals.AlbumUpdated.emit(album_id);
                 }
 
         void

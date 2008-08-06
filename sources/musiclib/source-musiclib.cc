@@ -110,10 +110,13 @@ namespace
                 "         <menuitem action='musiclib-show-collections'/>"
                 "         <menuitem action='musiclib-show-file-system-tree'/>"
                 "         <separator/>"
-                "         <menuitem action='musiclib-sort-by-name'/>"
-                "         <menuitem action='musiclib-sort-by-date'/>"
-                "         <menuitem action='musiclib-sort-by-rating'/>"
-                "         <menuitem action='musiclib-sort-by-alphabet'/>"
+                "         <menu action='menu-musiclib-sort'>"
+                "           <menuitem action='musiclib-sort-by-name'/>"
+                "           <menuitem action='musiclib-sort-by-date'/>"
+                "           <menuitem action='musiclib-sort-by-rating'/>"
+                "           <menuitem action='musiclib-sort-by-alphabet'/>"
+                "           <menuitem action='musiclib-sort-by-playscore'/>"
+                "         </menu>"
                 "         <separator/>"
                 "         <menu action='menu-musiclib-albums'>"
                 "           <menuitem action='musiclib-albums-show-all'/>"
@@ -2693,12 +2696,13 @@ namespace MPX
 
                         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
                         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
-                        m_MainActionGroup->add(Action::create("menu-musiclib-albums", _("Release Types...")));
+                        m_MainActionGroup->add(Action::create("menu-musiclib-albums", _("Show Release Types...")));
+                        m_MainActionGroup->add(Action::create("menu-musiclib-sort", _("Sort Albums By...")));
 
                         Gtk::RadioButtonGroup gr1;
 
                         m_MainActionGroup->add(
-                                        RadioAction::create( gr1, "musiclib-sort-by-name", _("Sort Albums by Album/Date/Artist")),
+                                        RadioAction::create( gr1, "musiclib-sort-by-name", _("Sort Albums by Album, Date, Artist")),
                                         sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_albums_sort_column_change ));
 
                         m_MainActionGroup->add(
@@ -2710,7 +2714,11 @@ namespace MPX
                                         sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_albums_sort_column_change ));
 
                         m_MainActionGroup->add(
-                                        RadioAction::create( gr1, "musiclib-sort-by-alphabet", _("Sort Albums Alphabetically")),
+                                        RadioAction::create( gr1, "musiclib-sort-by-alphabet", _("Sort Albums by Alphabet")),
+                                        sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_albums_sort_column_change ));
+
+                        m_MainActionGroup->add(
+                                        RadioAction::create( gr1, "musiclib-sort-by-playscore", _("Sort Albums by PlayScore")),
                                         sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_albums_sort_column_change ));
 
                         m_MainActionGroup->add(
@@ -2721,6 +2729,7 @@ namespace MPX
                         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-date"))->property_value() = 1;
                         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-rating"))->property_value() = 2;
                         RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-alphabet"))->property_value() = 3;
+                        RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action("musiclib-sort-by-playscore"))->property_value() = 4;
 
 
                         Gtk::RadioButtonGroup gr2;

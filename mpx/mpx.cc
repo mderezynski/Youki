@@ -554,23 +554,23 @@ namespace MPX
         Player::Player(
                         const Glib::RefPtr<Gnome::Glade::Xml>&  xml,
                         MPX::Service::Manager&                  services
-                      )
-                : WidgetLoader<Gtk::Window>(xml, "mpx")
-                  , sigx::glib_auto_dispatchable()
-                  , Service::Base("mpx-service-player")
-                  , m_ref_xml(xml)
-                  , m_startup_complete(false)
-                  , m_Caps(C_NONE)
-                  , m_NextSourceId(0)
-                  , m_SourceUI(0)
-                  , m_NewTrack(false)
-                  , m_Covers(*(services.get<Covers>("mpx-service-covers")))
+        )
+        : WidgetLoader<Gtk::Window>(xml, "mpx")
+        , sigx::glib_auto_dispatchable()
+        , Service::Base("mpx-service-player")
+        , m_ref_xml(xml)
+        , m_startup_complete(false)
+        , m_Caps(C_NONE)
+        , m_NextSourceId(0)
+        , m_SourceUI(0)
+        , m_NewTrack(false)
+        , m_Covers(*(services.get<Covers>("mpx-service-covers")))
 #ifdef HAVE_HAL
-                  , m_HAL(*(services.get<HAL>("mpx-service-hal")))
+        , m_HAL(*(services.get<HAL>("mpx-service-hal")))
 #endif // HAVE_HAL
-                  , m_Library(*(services.get<Library>("mpx-service-library")))
-                  , m_Play(*(services.get<Play>("mpx-service-play")))
-                          {
+        , m_Library(*(services.get<Library>("mpx-service-library")))
+        , m_Play(*(services.get<Play>("mpx-service-play")))
+        {
                                   m_MarkovThread = new MarkovAnalyzerThread(m_Library);
 
                                   m_ErrorManager = new ErrorManager;
@@ -1512,7 +1512,11 @@ SET_SEEK_POSITION:
                                     ((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_TrackDuration/2))
                           )
                         {
-                                m_MarkovThread->append( m_Metadata.get() );
+                                m_Library.trackPlayed(
+                                    get<gint64>(m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID].get()),
+                                    get<gint64>(m_Metadata.get()[ATTRIBUTE_MPX_ALBUM_ID].get()),
+                                    time(NULL)
+                                );
 
                                 PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
                                 g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_TRACK_PLAYED], 0);

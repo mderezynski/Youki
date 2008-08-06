@@ -669,9 +669,9 @@ class AudioScrobblerPost(threading.Thread):
 
         while not self.stop.isSet():
             self.newtracks.wait(0.1)
-            self.newtracks.clear()
-            while len(self.cache):
+            if self.newtracks.isSet():
                 self.post()
+            self.newtracks.clear()
         
     def post(self):
         
@@ -897,9 +897,6 @@ class MPXAudioScrobbler(mpx.Plugin):
         m = self.player.get_metadata()
         if m[mpx.AttributeId.LOCATION].get()[:7] == "http://":
             return
-
-        print m[mpx.AttributeId.TIME]
-        print m[mpx.AttributeId.TIME].get()
 
         p_artist      = m[mpx.AttributeId.ARTIST].get()
         p_title       = m[mpx.AttributeId.TITLE].get()

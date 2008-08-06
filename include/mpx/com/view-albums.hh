@@ -122,6 +122,7 @@ namespace MPX
                                 Gtk::TreeModelColumn<gint64>                                Date;
                                 Gtk::TreeModelColumn<gint64>                                InsertDate;
                                 Gtk::TreeModelColumn<gint64>                                Rating;
+                                Gtk::TreeModelColumn<double>                                PlayScore;
 
                                 Gtk::TreeModelColumn<Glib::ustring>                         TrackTitle;
                                 Gtk::TreeModelColumn<Glib::ustring>                         TrackArtist;
@@ -152,6 +153,7 @@ namespace MPX
                                         add (Date);
                                         add (InsertDate);
                                         add (Rating);
+                                        add (PlayScore);
 
                                         add (TrackTitle);
                                         add (TrackArtist);
@@ -319,6 +321,12 @@ namespace MPX
 
                         virtual int
                                 slotSortStrictAlpha(const Gtk::TreeIter&, const Gtk::TreeIter&);
+
+                        virtual int
+                                slotSortPlayScore(const Gtk::TreeIter&, const Gtk::TreeIter&);
+
+                        virtual int
+                                sortTracks(const Gtk::TreeIter&, const Gtk::TreeIter&);
 
                         virtual void
                                 cellDataFuncCover (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);

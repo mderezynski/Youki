@@ -266,9 +266,9 @@ namespace MPX
                                                         % Glib::Markup::escape_text(get<std::string>(v[0]["album"])).raw()
                                                  ).str());
 
-                                m_l3->set_markup((boost::format ("<b>Release: </b>%s %s") % country % year).str()); 
-                                m_l4->set_markup((boost::format ("<b>MBID: </b>%s") % mbid).str());
-                                m_l5->set_markup((boost::format ("%lld %s") % count % _("Tracks")).str());
+                                m_l3->set_text((boost::format ("%s %s") % country % year).str()); 
+                                m_l4->set_text(mbid);
+                                m_l5->set_text((boost::format ("%lld") % count).str());
 
                                 Cairo::RefPtr<Cairo::ImageSurface> surface;
                                 m_Covers.fetch(mbid, surface, COVER_SIZE_DEFAULT);

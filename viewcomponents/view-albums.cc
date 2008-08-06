@@ -173,17 +173,40 @@ namespace MPX
                                                         build_filename(
                                                                 DATA_DIR,
                                                                 "images"
-                                                                ),
+                                                        ),
                                                         (boost::format("stars%d.png") % n).str()
-                                                        ));
+                                ));
                         }
 
-                        m_Lib.get().signal_new_album().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_album ));
-                        m_Lib.get().signal_new_track().connect( sigc::mem_fun( *this, &AlbumTreeView::on_new_track ));
-                        m_Lib.get().signal_album_updated().connect( sigc::mem_fun( *this, &AlbumTreeView::on_album_updated ));
-                        m_Lib.get().signal_reload().connect( sigc::mem_fun( *this, &AlbumTreeView::album_list_load ));
+                        m_Lib.get().signal_new_album().connect(
+                            sigc::mem_fun(
+                                *this,
+                                &AlbumTreeView::on_new_album
+                        ));
 
-                        m_Covers.get().signal_got_cover().connect( sigc::mem_fun( *this, &AlbumTreeView::on_got_cover ));
+                        m_Lib.get().signal_new_track().connect(
+                            sigc::mem_fun(
+                                *this,
+                                &AlbumTreeView::on_new_track
+                        ));
+
+                        m_Lib.get().signal_album_updated().connect(
+                            sigc::mem_fun(
+                                *this,
+                                &AlbumTreeView::on_album_updated
+                        ));
+
+                        m_Lib.get().signal_reload().connect(
+                            sigc::mem_fun(
+                                *this,
+                                &AlbumTreeView::album_list_load
+                        ));
+
+                        m_Covers.get().signal_got_cover().connect(
+                            sigc::mem_fun(
+                                *this,
+                                &AlbumTreeView::on_got_cover
+                        ));
 
                         if( !name_showing_label.empty() )
                             m_LabelShowing = new RoundedLayout(xml, name_showing_label);
@@ -315,6 +338,7 @@ namespace MPX
                         AlbumsTreeStore->set_sort_func(1 , sigc::mem_fun( *this, &AlbumTreeView::slotSortDate ));
                         AlbumsTreeStore->set_sort_func(2 , sigc::mem_fun( *this, &AlbumTreeView::slotSortRating ));
                         AlbumsTreeStore->set_sort_func(3 , sigc::mem_fun( *this, &AlbumTreeView::slotSortStrictAlpha ));
+                        //AlbumsTreeStore->set_sort_func(4 , sigc::mem_fun( *this, &AlbumTreeView::slotSortPlayScore ));
 
                         AlbumsTreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
 
@@ -662,10 +686,11 @@ namespace MPX
                                 std::string country;
                                 std::string artist;
                                 std::string type;
+                                double playscore = 0;
+                                gint64 rating = 0;
 
                                 std::string album = get<std::string>(r["album"]);
 
-                                gint64 rating = 0;
                                 try{
                                         rating = m_Lib.get().albumGetMeanRatingValue(id);
                                         track[ATTRIBUTE_RATING] = rating;
@@ -673,6 +698,11 @@ namespace MPX
                                 {
                                 }
                                 (*iter)[Columns.Rating] = rating;
+
+                                if(r.count("album_playscore"))
+                                {
+                                        playscore = get<double>(r["album_playscore"]);
+                                }
 
                                 if(r.count("album_insert_date"))
                                 {
@@ -759,22 +789,24 @@ namespace MPX
                                 if( !country.empty() )
                                 {
                                         (*iter)[Columns.Text] =
-                                                (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4%</span>\n<span size='8000'>%5%</span>")
+        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4% (%5%)</span>\n<span size='8000'>PlayScore: %6%</span></span>")
                                                  % Markup::escape_text(album).c_str()
                                                  % Markup::escape_text(artist).c_str()
                                                  % country
                                                  % year
                                                  % type
+                                                 % playscore
                                                 ).str();
                                 }
                                 else
                                 {
                                         (*iter)[Columns.Text] =
-                                                (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%</span>\n<span size='8000'>%4%</span>")
+        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% (%4%)</span>\n<span size='8000'>PlayScore: %5%</span></span>")
                                                  % Markup::escape_text(album).c_str()
                                                  % Markup::escape_text(artist).c_str()
                                                  % year
                                                  % type
+                                                 % playscore
                                                 ).str();
                                 }
 
@@ -782,6 +814,7 @@ namespace MPX
                                 (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
                                 (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
                                 (*iter)[Columns.RT] = determine_release_type(type);
+                                (*iter)[Columns.PlayScore] = playscore; 
                                 (*iter)[Columns.AlbumTrack] = track;
 
                                 return iter;
@@ -790,31 +823,41 @@ namespace MPX
                 void
                         AlbumTreeView::update_album (SQL::Row & r, gint64 id)
                         {
+                                g_message(G_STRFUNC);
+
                                 IdIterMap::iterator i = m_AlbumIterMap.find(id);
-                                if(i  == m_AlbumIterMap.end())
-                                        return;
+                                if (i == m_AlbumIterMap.end()) return;
+
+                                g_message(G_STRFUNC);
 
                                 TreeIter iter = (*i).second; 
 
                                 (*iter)[Columns.NewAlbum] = get<gint64>(r["album_new"]);
+
+                                MPX::Track track;
 
                                 std::string asin;
                                 std::string year; 
                                 std::string country;
                                 std::string artist;
                                 std::string type;
+                                double playscore = 0;
+                                gint64 rating = 0;
 
                                 std::string album = get<std::string>(r["album"]);
 
-                                gint64 rating = 0;
-
                                 try{
                                         rating = m_Lib.get().albumGetMeanRatingValue(id);
+                                        track[ATTRIBUTE_RATING] = rating;
                                 } catch( std::runtime_error )
                                 {
                                 }
-
                                 (*iter)[Columns.Rating] = rating;
+
+                                if(r.count("album_playscore"))
+                                {
+                                        playscore = get<double>(r["album_playscore"]);
+                                }
 
                                 if(r.count("album_insert_date"))
                                 {
@@ -824,6 +867,7 @@ namespace MPX
                                 if(r.count("amazon_asin"))
                                 {
                                         asin = get<std::string>(r["amazon_asin"]);
+                                        track[ATTRIBUTE_ASIN] = asin;
                                 }
 
                                 if(r.count("mb_album_id"))
@@ -834,6 +878,14 @@ namespace MPX
                                         s.insert(iter);
 
                                         (*iter)[Columns.MBID] = mbid; 
+                                        track[ATTRIBUTE_MB_ALBUM_ID] = mbid;
+                                }
+
+                                if(r.count("mb_album_artist_id"))
+                                {
+                                        std::string mb_album_artist_id = get<std::string>(r["mb_album_artist_id"]);
+                                        (*iter)[Columns.AlbumArtistMBID] = mb_album_artist_id; 
+                                        track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = mb_album_artist_id;
                                 }
 
                                 if(r.count("mb_release_date"))
@@ -844,6 +896,7 @@ namespace MPX
                                                 year = year.substr(0,4);
                                                 try{
                                                         (*iter)[Columns.Date] = boost::lexical_cast<int>(year);
+                                                        track[ATTRIBUTE_DATE] = gint64(boost::lexical_cast<int>(year));
                                                 } catch( boost::bad_lexical_cast ) {
                                                 } 
                                         }
@@ -856,20 +909,24 @@ namespace MPX
                                 if(r.count("mb_release_country"))
                                 {
                                         country = get<std::string>(r["mb_release_country"]); 
+                                        track[ATTRIBUTE_MB_RELEASE_COUNTRY] = country; 
                                 }
 
                                 if(r.count("mb_release_type"))
                                 {
                                         type = get<std::string>(r["mb_release_type"]); 
+                                        track[ATTRIBUTE_MB_RELEASE_TYPE] = type; 
                                 }
 
                                 if(r.find("album_artist_sortname") != r.end())
                                 {
                                         artist = get<std::string>(r["album_artist_sortname"]);
+                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
                                 }
                                 else
                                 {
                                         artist = get<std::string>(r["album_artist"]);
+                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
                                 }
 
                                 trim(country);
@@ -884,31 +941,37 @@ namespace MPX
                                         type = type_1st.uppercase() + type_2nd;
                                 }
 
+
                                 if( !country.empty() )
                                 {
                                         (*iter)[Columns.Text] =
-                                                (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4%</span>\n<span size='8000'>%5%</span>")
+        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4% (%5%)</span>\n<span size='8000'>PlayScore: %6%</span></span>")
                                                  % Markup::escape_text(album).c_str()
                                                  % Markup::escape_text(artist).c_str()
                                                  % country
                                                  % year
                                                  % type
+                                                 % playscore
                                                 ).str();
                                 }
                                 else
                                 {
                                         (*iter)[Columns.Text] =
-                                                (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%</span>\n<span size='8000'>%4%</span>")
+        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% (%4%)</span>\n<span size='8000'>PlayScore: %5%</span></span>")
                                                  % Markup::escape_text(album).c_str()
                                                  % Markup::escape_text(artist).c_str()
                                                  % year
                                                  % type
+                                                 % playscore
                                                 ).str();
                                 }
 
 
                                 (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
                                 (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
+                                (*iter)[Columns.RT] = determine_release_type(type);
+                                (*iter)[Columns.PlayScore] = playscore; 
+                                (*iter)[Columns.AlbumTrack] = track;
                         } 
 
                 void
@@ -932,6 +995,8 @@ namespace MPX
                 void
                         AlbumTreeView::on_album_updated(gint64 id)
                         {
+                                g_message(G_STRFUNC);
+
                                 SQL::RowV v;
                                 m_Lib.get().getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
 
@@ -984,6 +1049,16 @@ namespace MPX
                         }
 
                 int
+                        
+                        AlbumTreeView::sortTracks(const TreeIter& iter_a, const TreeIter& iter_b)
+                        {
+                                gint64 trk_a = (*iter_a)[Columns.TrackNumber];
+                                gint64 trk_b = (*iter_b)[Columns.TrackNumber];
+
+                                return trk_a - trk_b;
+                        }
+
+                int
                         AlbumTreeView::slotSortRating(const TreeIter& iter_a, const TreeIter& iter_b)
                         {
                                 AlbumRowType rt_a = (*iter_a)[Columns.RowType];
@@ -998,10 +1073,7 @@ namespace MPX
                                 }
                                 else if((rt_a == ROW_TRACK) && (rt_b == ROW_TRACK))
                                 {
-                                        gint64 trk_a = (*iter_a)[Columns.TrackNumber];
-                                        gint64 trk_b = (*iter_b)[Columns.TrackNumber];
-
-                                        return trk_a - trk_b;
+                                        return sortTracks( iter_a, iter_b );
                                 }
 
                                 return 0;
@@ -1027,10 +1099,7 @@ namespace MPX
                                 }
                                 else if((rt_a == ROW_TRACK) && (rt_b == ROW_TRACK))
                                 {
-                                        gint64 trk_a = (*iter_a)[Columns.TrackNumber];
-                                        gint64 trk_b = (*iter_b)[Columns.TrackNumber];
-
-                                        return trk_a - trk_b;
+                                        return sortTracks( iter_a, iter_b );
                                 }
 
                                 return 0;
@@ -1051,14 +1120,12 @@ namespace MPX
                                 }
                                 else if((rt_a == ROW_TRACK) && (rt_b == ROW_TRACK))
                                 {
-                                        gint64 trk_a = (*iter_a)[Columns.TrackNumber];
-                                        gint64 trk_b = (*iter_b)[Columns.TrackNumber];
-
-                                        return trk_a - trk_b;
+                                        return sortTracks( iter_a, iter_b );
                                 }
 
                                 return 0;
                         }
+
 
                 int
                         AlbumTreeView::slotSortStrictAlpha(const TreeIter& iter_a, const TreeIter& iter_b)
@@ -1080,14 +1147,39 @@ namespace MPX
                                 }
                                 else if((rt_a == ROW_TRACK) && (rt_b == ROW_TRACK))
                                 {
-                                        gint64 trk_a = (*iter_a)[Columns.TrackNumber];
-                                        gint64 trk_b = (*iter_b)[Columns.TrackNumber];
-
-                                        return trk_a - trk_b;
+                                        return sortTracks( iter_a, iter_b );
                                 }
 
                                 return 0;
                         }
+
+                int
+                        AlbumTreeView::slotSortPlayScore(const TreeIter& iter_a, const TreeIter& iter_b)
+                        {
+                                AlbumRowType rt_a = (*iter_a)[Columns.RowType];
+                                AlbumRowType rt_b = (*iter_b)[Columns.RowType];
+
+                                if((rt_a == ROW_ALBUM) && (rt_b == ROW_ALBUM))
+                                {
+                                        double score_a = (*iter_a)[Columns.PlayScore];
+                                        double score_b = (*iter_b)[Columns.PlayScore];
+
+                                        if( score_a < score_b )
+                                            return -1;
+    
+                                        if( score_a > score_b )
+                                            return  1;
+
+                                        return 0;
+                                }
+                                else if((rt_a == ROW_TRACK) && (rt_b == ROW_TRACK))
+                                {
+                                        return sortTracks( iter_a, iter_b );
+                                }
+
+                                return 0;
+                        }
+
                 void
                         AlbumTreeView::cellDataFuncCover (CellRenderer * basecell, TreeModel::iterator const &iter)
                         {
