@@ -307,7 +307,7 @@ main (int argc, char ** argv)
     services = new Service::Manager;
 
 #ifdef HAVE_HAL
-    try{
+/*    try{*/
         boost::shared_ptr<HAL> ptr_halobj
             (new MPX::HAL(*services)); services->add(ptr_halobj);
 #endif
@@ -342,11 +342,13 @@ main (int argc, char ** argv)
         gtk->run (*ptr_player.get());
 
 #ifdef HAVE_HAL
+    /*
     }
     catch( HAL::NotInitializedError& cxe )
     {
-        // TODO: Handle this
+        g_message("%s: Critical! HAL Error: %s", G_STRLOC, cxe.what());
     }
+    */
 #endif
 
     delete gtk;

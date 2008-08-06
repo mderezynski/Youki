@@ -305,7 +305,7 @@ namespace MPX
             sigc::mem_fun (this, &MPX::HAL::device_removed
           ));
 
-          m_SQL = new SQL::SQLDB ("hal", build_filename(g_get_user_data_dir(), "mpx"), SQL::SQLDB_OPEN);
+          m_SQL = new SQL::SQLDB ("hal", build_filename(g_get_user_data_dir(), "audiosource"), SQL::SQLDB_OPEN);
 
           try{
               static boost::format sql_create_table_f("CREATE TABLE IF NOT EXISTS %s (%s, PRIMARY KEY ('%s','%s') ON CONFLICT REPLACE);");

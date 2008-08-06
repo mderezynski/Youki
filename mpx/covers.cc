@@ -102,7 +102,7 @@ namespace MPX
     , m_rebuild(0)
     , m_rebuilt(0)
     {
-        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", NULL));
+        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), PACKAGE, "covers", NULL));
         g_mkdir(path.get(), 0700);
 
         m_all_stores.push_back(StoreP(new LocalCovers(*this)));
@@ -144,18 +144,43 @@ namespace MPX
         bool use3 = mcs->key_get<bool>("Preferences-CoverArtSources", "SourceActive3");
         bool use4 = mcs->key_get<bool>("Preferences-CoverArtSources", "SourceActive4");
 
-        if (use0) { m_current_stores[0] = m_all_stores[at0]; }
-        if (use1) { m_current_stores[1] = m_all_stores[at1]; }
-        if (use2) { m_current_stores[2] = m_all_stores[at2]; }
-        if (use3) { m_current_stores[3] = m_all_stores[at3]; }
-        if (use4) { m_current_stores[4] = m_all_stores[at4]; }
+        if (use0)
+            {
+                m_current_stores[0] = m_all_stores[at0];
+            }
+
+        if (use1)
+            {
+                m_current_stores[1] = m_all_stores[at1];
+            }
+
+        if (use2)
+            {
+                m_current_stores[2] = m_all_stores[at2];
+            }
+
+        if (use3)
+            {
+                m_current_stores[3] = m_all_stores[at3];
+            }
+
+        if (use4)
+            {
+                m_current_stores[4] = m_all_stores[at4];
+            }
     }
  
     void
     Covers::store_not_found_cb (CoverFetchData* data)
     {
+        g_message(G_STRFUNC);
+
         if( g_atomic_int_get(&m_rebuilt) )
         {
+            g_message(G_STRLOC ": Erasing MBID [%s] from RequestKeeper", data->mbid.c_str());
+            RequestKeeperT::iterator i = RequestKeeper.find(data->mbid);
+            RequestKeeper.erase(i);
+            delete data;
             return;
         }
 
@@ -164,18 +189,29 @@ namespace MPX
 
         if(i < data->m_req_stores.size())
         {
-            StoreP store = data->m_req_stores[i]; // to avoid race conditions
-            if( store )
+            while( !data->m_req_stores[i] )
             {
+                i++;
+            }
+        
+
+            if(i < data->m_req_stores.size())
+            { 
+                g_message(G_STRLOC ": Trying next store, m_req_stores size is %d", int(data->m_req_stores.size()));
+                RequestKeeperT::iterator iter = RequestKeeper.find(data->mbid);
+                RequestKeeper.erase(iter);
                 RequestKeeper[data->mbid] = i;
+
+                StoreP store = data->m_req_stores[i]; // to avoid race conditions
                 store->load_artwork(data);
+                return;
             }
         }
-        else
-        {
-            // No more stores to try
-            delete data;
-        }
+
+        g_message(G_STRLOC ": Erasing MBID [%s] from RequestKeeper", data->mbid.c_str());
+        RequestKeeperT::iterator iter = RequestKeeper.find(data->mbid);
+        RequestKeeper.erase(iter);
+        delete data;
     }
 
     void
@@ -195,7 +231,7 @@ namespace MPX
         using boost::algorithm::replace_all;
         replace_all(mbid, "/","_");
         std::string basename = (boost::format ("%s.png") % mbid).str ();
-        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", basename.c_str(), NULL));
+        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), PACKAGE, "covers", basename.c_str(), NULL));
         return std::string(path.get());
     }
 
@@ -213,11 +249,13 @@ namespace MPX
 
         if( RequestKeeper.count(mbid) )
         {
+            g_message(G_STRLOC ": Request for MBID '%s' is running", mbid.c_str());
             return;
         }
 
         if( g_atomic_int_get(&m_rebuild) )
         {
+            g_message(G_STRLOC ": Rebuilding Stores"); 
             rebuild_stores();
             g_atomic_int_set(&m_rebuild, 0);
             g_atomic_int_set(&m_rebuilt, 1);
@@ -226,6 +264,7 @@ namespace MPX
         std::string thumb_path = get_thumb_path (mbid);
         if( file_test( thumb_path, FILE_TEST_EXISTS ))
         {
+            g_message(G_STRLOC ": Cover is already cached"); 
             Signals.GotCover.emit(mbid);
             return; 
         }
@@ -234,9 +273,13 @@ namespace MPX
         {
             if(m_current_stores.size())
             {
+                g_message(G_STRLOC ": Acquiring Cover"); 
                 RequestKeeper[mbid] = 0;
-                m_current_stores[0]->load_artwork(new CoverFetchData(asin, mbid, uri, artist, album, m_current_stores));
+                CoverFetchData * data = new CoverFetchData(asin, mbid, uri, artist, album, m_current_stores);
+                data->m_req_stores[0]->load_artwork(data);
             }
+            else
+                g_message(G_STRLOC ": No Stores to Query"); 
         }
     }
 
@@ -307,7 +350,7 @@ namespace MPX
     void
     Covers::purge()
     {
-        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), "mpx", "covers", NULL));
+        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), PACKAGE, "covers", NULL));
 
         Glib::Dir dir (path.get());
         StrV v (dir.begin(), dir.end());

@@ -118,7 +118,6 @@ namespace MPX
 
             if (cover->get_width() == 1 && cover->get_height() == 1)
             {
-                g_message("%s: 1x1px, Trying Next Image", G_STRFUNC);
                 goto next_image;
             }
             else
@@ -128,7 +127,6 @@ namespace MPX
                 try{
                         cover->save( covers.get_thumb_path( cb_data->mbid ), "png" );
                         covers.cache_artwork( cb_data->mbid, cover );
-                        g_message("%s: Got Image", G_STRFUNC);
                         covers.Signals.GotCover.emit( cb_data->mbid );
                 } catch( Glib::FileError & cxe )
                 {
@@ -140,8 +138,6 @@ namespace MPX
         }
         else
         {
-            g_message("%s: Image Retrieval: FAILED", G_STRFUNC);
-
             next_image:
 
             ++(cb_data->n);
@@ -217,7 +213,7 @@ namespace MPX
 			} 
             catch (std::runtime_error & cxe)
 			{
-                g_message(cxe.what());
+                //g_message(cxe.what());
 			}
 
             if(!got_image)
@@ -235,7 +231,7 @@ namespace MPX
     			}
                 catch (std::runtime_error & cxe)
 			    {
-                    g_message(cxe.what());
+                    //g_message(cxe.what());
     			}
             }
 
@@ -254,13 +250,13 @@ namespace MPX
     			}
                 catch (std::runtime_error & cxe)
 	    		{
-                    g_message(cxe.what());
+                    //g_message(cxe.what());
     			}
             }
 
             if( got_image && image_url.length() )
             {
-                g_message("Fetching Image from URL: %s", image_url.c_str());
+                //g_message("Fetching Image from URL: %s", image_url.c_str());
 
     	        cb_data->request = Soup::Request::create(image_url);
 	    	    cb_data->request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &RemoteStore::save_image ), cb_data ));
@@ -412,13 +408,14 @@ namespace MPX
                             TagLib::ID3v2::AttachedPictureFrame const* picture =
                                 dynamic_cast<TagLib::ID3v2::AttachedPictureFrame const*>(frame);
 
-                            if( picture && picture->type() == TagLib::ID3v2::AttachedPictureFrame::FrontCover )
+                            if( picture /*&& picture->type() == TagLib::ID3v2::AttachedPictureFrame::FrontCover*/ )
                             {
                                 RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
                                 ByteVector picdata = picture->picture();
                                 loader->write (reinterpret_cast<const guint8*>(picdata.data()), picdata.size());
                                 loader->close ();
                                 cover = loader->get_pixbuf();
+                                break;
                             }
                         }
                     }

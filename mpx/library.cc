@@ -192,7 +192,7 @@ namespace MPX
                         m_SQL = new SQL::SQLDB ((boost::format ("mpxdb-%d-%d-%d")
                                                 % MLIB_VERSION_CUR 
                                                 % MLIB_VERSION_REV
-                                                % MLIB_VERSION_AGE).str(), build_filename(g_get_user_data_dir(),"mpx"), SQLDB_OPEN);
+                                                % MLIB_VERSION_AGE).str(), build_filename(g_get_user_data_dir(),PACKAGE), SQLDB_OPEN);
                 }
                 catch (DbInitError & cxe)
                 {
