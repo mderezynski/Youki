@@ -130,7 +130,7 @@ namespace MPX
     void
     Covers::rebuild_stores()
     {
-        m_current_stores = StoresT (4, StoreP());
+        m_current_stores = StoresT (m_all_stores.size(), StoreP());
 
         int at0 = mcs->key_get<int>("Preferences-CoverArtSources", "Source0");
         int at1 = mcs->key_get<int>("Preferences-CoverArtSources", "Source1");
