@@ -2944,7 +2944,7 @@ namespace MPX
                 void
                         PlaybackSourceMusicLib::on_albums_sort_column_change ()
                         {
-                                bool value = RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action ("musiclib-sort-by-name"))->get_current_value();
+                                int value = RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action ("musiclib-sort-by-name"))->get_current_value();
                                 m_Private->m_TreeViewAlbums->AlbumsTreeStore->set_sort_column(value, Gtk::SORT_ASCENDING);    
                         }
 
