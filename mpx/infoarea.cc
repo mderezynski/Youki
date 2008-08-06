@@ -95,7 +95,8 @@ namespace MPX
     {
         set_cover (metadata.Image->scale_simple (72, 72, Gdk::INTERP_BILINEAR), first);
     }
-    else if( first )
+    else
+    if( first )
     {
         clear_cover ();
     }
@@ -128,7 +129,8 @@ namespace MPX
     {
         set_cover (Util::cairo_image_surface_round(Util::cairo_image_surface_from_pixbuf (pixbuf), 6.), first);
     }
-    else if( first )
+    else
+    if( first )
     {
         clear_cover ();
     }
@@ -163,23 +165,29 @@ namespace MPX
     else
     {
         m_cover_surface_new = surface;
-
         m_cover_anim_conn_slide.disconnect ();
-        m_cover_anim_conn_fade.disconnect ();
-        m_cover_anim_conn_fade = Glib::signal_timeout ().connect(
-            sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 25 
-        );
+
+        if( !m_cover_anim_fade )
+        {
+                m_cover_anim_conn_fade.disconnect ();
+                m_cover_anim_conn_fade = Glib::signal_timeout ().connect(
+                    sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 25 
+                );
+        }
     }
   }
 
   void
   InfoArea::clear_cover ()
   {
+    if( m_cover_surface_cur )
+    {
         m_cover_surface_new.reset();
         m_cover_anim_conn_fade.disconnect ();
         m_cover_anim_conn_fade = Glib::signal_timeout ().connect(
             sigc::mem_fun( *this, &InfoArea::fade_out_cover ), 25
         );
+    }
   }
 
   void

@@ -666,8 +666,173 @@ namespace MPX
                                 }
                         }
 
+                void
+                        AlbumTreeView::place_album_iter_real(
+                            Gtk::TreeIter&  iter,
+                            SQL::Row&       r,
+                            gint64          id
+                        )
+                        {
+                                MPX::Track track;
+
+                                std::string asin;
+                                std::string year; 
+                                std::string country;
+                                std::string artist;
+                                std::string type;
+                                double playscore = 0;
+                                gint64 rating = 0;
+                                ReleaseType rt;
+
+                                std::string album = get<std::string>(r["album"]);
+
+                                try{
+                                        rating = m_Lib.get().albumGetMeanRatingValue(id);
+                                        track[ATTRIBUTE_RATING] = rating;
+                                } catch( std::runtime_error )
+                                {
+                                }
+                                (*iter)[Columns.Rating] = rating;
+
+                                if(r.count("album_playscore"))
+                                {
+                                        playscore = get<double>(r["album_playscore"]);
+                                }
+
+                                if(r.count("album_insert_date"))
+                                {
+                                        (*iter)[Columns.InsertDate] = get<gint64>(r["album_insert_date"]);
+                                }
+
+                                if(r.count("amazon_asin"))
+                                {
+                                        asin = get<std::string>(r["amazon_asin"]);
+                                        track[ATTRIBUTE_ASIN] = asin;
+                                }
+
+                                if(r.count("mb_album_id"))
+                                {
+                                        std::string mbid = get<std::string>(r["mb_album_id"]);
+
+                                        IterSet & s = m_MBIDIterMap[mbid];
+                                        s.insert(iter);
+
+                                        (*iter)[Columns.MBID] = mbid; 
+                                        track[ATTRIBUTE_MB_ALBUM_ID] = mbid;
+                                }
+
+                                if(r.count("mb_album_artist_id"))
+                                {
+                                        std::string mb_album_artist_id = get<std::string>(r["mb_album_artist_id"]);
+                                        (*iter)[Columns.AlbumArtistMBID] = mb_album_artist_id; 
+                                        track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = mb_album_artist_id;
+                                }
+
+                                if(r.count("mb_release_date"))
+                                {
+                                        year = get<std::string>(r["mb_release_date"]);
+                                        if(year.size())
+                                        {
+                                                year = year.substr(0,4);
+                                                try{
+                                                        (*iter)[Columns.Date] = boost::lexical_cast<int>(year);
+                                                        track[ATTRIBUTE_DATE] = gint64(boost::lexical_cast<int>(year));
+                                                } catch( boost::bad_lexical_cast ) {
+                                                } 
+                                        }
+                                }
+                                else
+                                {
+                                        (*iter)[Columns.Date] = 0; 
+                                }
+
+                                if(r.count("mb_release_country"))
+                                {
+                                        country = get<std::string>(r["mb_release_country"]); 
+                                        track[ATTRIBUTE_MB_RELEASE_COUNTRY] = country; 
+                                }
+
+                                if(r.count("mb_release_type"))
+                                {
+                                        type = get<std::string>(r["mb_release_type"]); 
+                                        track[ATTRIBUTE_MB_RELEASE_TYPE] = type; 
+                                }
+
+                                if(r.find("album_artist_sortname") != r.end())
+                                {
+                                        artist = get<std::string>(r["album_artist_sortname"]);
+                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
+                                }
+                                else
+                                {
+                                        artist = get<std::string>(r["album_artist"]);
+                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
+                                }
+
+                                trim(country);
+                                trim(year);
+                                trim(type);
+
+                                rt = determine_release_type(type);
+
+                                if( type.length() > 1 )
+                                {
+                                        Glib::ustring type_1st = type.substr(0, 1);
+                                        Glib::ustring type_2nd = type.substr(1, type.length());
+
+                                        type = "[" + type_1st.uppercase() + type_2nd + "]";
+                                }
+
+                                if( !country.empty() )
+                                {
+                                        (*iter)[Columns.Text] =
+        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4% %5%</span>\n<span size='8000'>PlayScore: %6%</span></span>")
+                                                 % Markup::escape_text(album).c_str()
+                                                 % Markup::escape_text(artist).c_str()
+                                                 % country
+                                                 % year
+                                                 % type
+                                                 % playscore
+                                                ).str();
+                                }
+                                else
+                                {
+                                        (*iter)[Columns.Text] =
+        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4%</span>\n<span size='8000'>PlayScore: %5%</span></span>")
+                                                 % Markup::escape_text(album).c_str()
+                                                 % Markup::escape_text(artist).c_str()
+                                                 % year
+                                                 % type
+                                                 % playscore
+                                                ).str();
+                                }
+
+
+                                (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
+                                (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
+                                (*iter)[Columns.RT] = rt; 
+                                (*iter)[Columns.PlayScore] = playscore; 
+                                (*iter)[Columns.AlbumTrack] = track;
+                        } 
+
+                void
+                        AlbumTreeView::update_album (SQL::Row & r, gint64 id)
+                        {
+                                IdIterMap::iterator i = m_AlbumIterMap.find(id);
+                                if (i == m_AlbumIterMap.end()) return;
+
+                                TreeIter iter = (*i).second; 
+
+                                (*iter)[Columns.NewAlbum] = get<gint64>(r["album_new"]);
+
+                                place_album_iter_real(iter, r, id);
+                        } 
+
                 Gtk::TreeIter
-                        AlbumTreeView::place_album (SQL::Row & r, gint64 id)
+                        AlbumTreeView::place_album(
+                            SQL::Row&   r,
+                            gint64      id
+                        )
                         {
                                 TreeIter iter = AlbumsTreeStore->append();
                                 m_AlbumIterMap.insert(std::make_pair(id, iter));
@@ -679,300 +844,10 @@ namespace MPX
                                 (*iter)[Columns.Image] = m_DiscDefault; 
                                 (*iter)[Columns.Id] = id; 
 
-                                MPX::Track track;
-
-                                std::string asin;
-                                std::string year; 
-                                std::string country;
-                                std::string artist;
-                                std::string type;
-                                double playscore = 0;
-                                gint64 rating = 0;
-
-                                std::string album = get<std::string>(r["album"]);
-
-                                try{
-                                        rating = m_Lib.get().albumGetMeanRatingValue(id);
-                                        track[ATTRIBUTE_RATING] = rating;
-                                } catch( std::runtime_error )
-                                {
-                                }
-                                (*iter)[Columns.Rating] = rating;
-
-                                if(r.count("album_playscore"))
-                                {
-                                        playscore = get<double>(r["album_playscore"]);
-                                }
-
-                                if(r.count("album_insert_date"))
-                                {
-                                        (*iter)[Columns.InsertDate] = get<gint64>(r["album_insert_date"]);
-                                }
-
-                                if(r.count("amazon_asin"))
-                                {
-                                        asin = get<std::string>(r["amazon_asin"]);
-                                        track[ATTRIBUTE_ASIN] = asin;
-                                }
-
-                                if(r.count("mb_album_id"))
-                                {
-                                        std::string mbid = get<std::string>(r["mb_album_id"]);
-
-                                        IterSet & s = m_MBIDIterMap[mbid];
-                                        s.insert(iter);
-
-                                        (*iter)[Columns.MBID] = mbid; 
-                                        track[ATTRIBUTE_MB_ALBUM_ID] = mbid;
-                                }
-
-                                if(r.count("mb_album_artist_id"))
-                                {
-                                        std::string mb_album_artist_id = get<std::string>(r["mb_album_artist_id"]);
-                                        (*iter)[Columns.AlbumArtistMBID] = mb_album_artist_id; 
-                                        track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = mb_album_artist_id;
-                                }
-
-                                if(r.count("mb_release_date"))
-                                {
-                                        year = get<std::string>(r["mb_release_date"]);
-                                        if(year.size())
-                                        {
-                                                year = year.substr(0,4);
-                                                try{
-                                                        (*iter)[Columns.Date] = boost::lexical_cast<int>(year);
-                                                        track[ATTRIBUTE_DATE] = gint64(boost::lexical_cast<int>(year));
-                                                } catch( boost::bad_lexical_cast ) {
-                                                } 
-                                        }
-                                }
-                                else
-                                {
-                                        (*iter)[Columns.Date] = 0; 
-                                }
-
-                                if(r.count("mb_release_country"))
-                                {
-                                        country = get<std::string>(r["mb_release_country"]); 
-                                        track[ATTRIBUTE_MB_RELEASE_COUNTRY] = country; 
-                                }
-
-                                if(r.count("mb_release_type"))
-                                {
-                                        type = get<std::string>(r["mb_release_type"]); 
-                                        track[ATTRIBUTE_MB_RELEASE_TYPE] = type; 
-                                }
-
-                                if(r.find("album_artist_sortname") != r.end())
-                                {
-                                        artist = get<std::string>(r["album_artist_sortname"]);
-                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
-                                }
-                                else
-                                {
-                                        artist = get<std::string>(r["album_artist"]);
-                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
-                                }
-
-                                trim(country);
-                                trim(year);
-                                trim(type);
-
-                                if( type.length() > 1 )
-                                {
-                                        Glib::ustring type_1st = type.substr(0, 1);
-                                        Glib::ustring type_2nd = type.substr(1, type.length());
-
-                                        type = type_1st.uppercase() + type_2nd;
-                                }
-
-                                if( !country.empty() )
-                                {
-                                        (*iter)[Columns.Text] =
-        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4% (%5%)</span>\n<span size='8000'>PlayScore: %6%</span></span>")
-                                                 % Markup::escape_text(album).c_str()
-                                                 % Markup::escape_text(artist).c_str()
-                                                 % country
-                                                 % year
-                                                 % type
-                                                 % playscore
-                                                ).str();
-                                }
-                                else
-                                {
-                                        (*iter)[Columns.Text] =
-        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% (%4%)</span>\n<span size='8000'>PlayScore: %5%</span></span>")
-                                                 % Markup::escape_text(album).c_str()
-                                                 % Markup::escape_text(artist).c_str()
-                                                 % year
-                                                 % type
-                                                 % playscore
-                                                ).str();
-                                }
-
-
-                                (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
-                                (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
-                                (*iter)[Columns.RT] = determine_release_type(type);
-                                (*iter)[Columns.PlayScore] = playscore; 
-                                (*iter)[Columns.AlbumTrack] = track;
+                                place_album_iter_real(iter, r, id);
 
                                 return iter;
-                        } 
-
-                void
-                        AlbumTreeView::update_album (SQL::Row & r, gint64 id)
-                        {
-                                g_message(G_STRFUNC);
-
-                                IdIterMap::iterator i = m_AlbumIterMap.find(id);
-                                if (i == m_AlbumIterMap.end()) return;
-
-                                g_message(G_STRFUNC);
-
-                                TreeIter iter = (*i).second; 
-
-                                (*iter)[Columns.NewAlbum] = get<gint64>(r["album_new"]);
-
-                                MPX::Track track;
-
-                                std::string asin;
-                                std::string year; 
-                                std::string country;
-                                std::string artist;
-                                std::string type;
-                                double playscore = 0;
-                                gint64 rating = 0;
-
-                                std::string album = get<std::string>(r["album"]);
-
-                                try{
-                                        rating = m_Lib.get().albumGetMeanRatingValue(id);
-                                        track[ATTRIBUTE_RATING] = rating;
-                                } catch( std::runtime_error )
-                                {
-                                }
-                                (*iter)[Columns.Rating] = rating;
-
-                                if(r.count("album_playscore"))
-                                {
-                                        playscore = get<double>(r["album_playscore"]);
-                                }
-
-                                if(r.count("album_insert_date"))
-                                {
-                                        (*iter)[Columns.InsertDate] = get<gint64>(r["album_insert_date"]);
-                                }
-
-                                if(r.count("amazon_asin"))
-                                {
-                                        asin = get<std::string>(r["amazon_asin"]);
-                                        track[ATTRIBUTE_ASIN] = asin;
-                                }
-
-                                if(r.count("mb_album_id"))
-                                {
-                                        std::string mbid = get<std::string>(r["mb_album_id"]);
-
-                                        IterSet & s = m_MBIDIterMap[mbid];
-                                        s.insert(iter);
-
-                                        (*iter)[Columns.MBID] = mbid; 
-                                        track[ATTRIBUTE_MB_ALBUM_ID] = mbid;
-                                }
-
-                                if(r.count("mb_album_artist_id"))
-                                {
-                                        std::string mb_album_artist_id = get<std::string>(r["mb_album_artist_id"]);
-                                        (*iter)[Columns.AlbumArtistMBID] = mb_album_artist_id; 
-                                        track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = mb_album_artist_id;
-                                }
-
-                                if(r.count("mb_release_date"))
-                                {
-                                        year = get<std::string>(r["mb_release_date"]);
-                                        if(year.size())
-                                        {
-                                                year = year.substr(0,4);
-                                                try{
-                                                        (*iter)[Columns.Date] = boost::lexical_cast<int>(year);
-                                                        track[ATTRIBUTE_DATE] = gint64(boost::lexical_cast<int>(year));
-                                                } catch( boost::bad_lexical_cast ) {
-                                                } 
-                                        }
-                                }
-                                else
-                                {
-                                        (*iter)[Columns.Date] = 0; 
-                                }
-
-                                if(r.count("mb_release_country"))
-                                {
-                                        country = get<std::string>(r["mb_release_country"]); 
-                                        track[ATTRIBUTE_MB_RELEASE_COUNTRY] = country; 
-                                }
-
-                                if(r.count("mb_release_type"))
-                                {
-                                        type = get<std::string>(r["mb_release_type"]); 
-                                        track[ATTRIBUTE_MB_RELEASE_TYPE] = type; 
-                                }
-
-                                if(r.find("album_artist_sortname") != r.end())
-                                {
-                                        artist = get<std::string>(r["album_artist_sortname"]);
-                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
-                                }
-                                else
-                                {
-                                        artist = get<std::string>(r["album_artist"]);
-                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
-                                }
-
-                                trim(country);
-                                trim(year);
-                                trim(type);
-
-                                if( type.length() > 1 )
-                                {
-                                        Glib::ustring type_1st = type.substr(0, 1);
-                                        Glib::ustring type_2nd = type.substr(1, type.length());
-
-                                        type = type_1st.uppercase() + type_2nd;
-                                }
-
-
-                                if( !country.empty() )
-                                {
-                                        (*iter)[Columns.Text] =
-        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4% (%5%)</span>\n<span size='8000'>PlayScore: %6%</span></span>")
-                                                 % Markup::escape_text(album).c_str()
-                                                 % Markup::escape_text(artist).c_str()
-                                                 % country
-                                                 % year
-                                                 % type
-                                                 % playscore
-                                                ).str();
-                                }
-                                else
-                                {
-                                        (*iter)[Columns.Text] =
-        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% (%4%)</span>\n<span size='8000'>PlayScore: %5%</span></span>")
-                                                 % Markup::escape_text(album).c_str()
-                                                 % Markup::escape_text(artist).c_str()
-                                                 % year
-                                                 % type
-                                                 % playscore
-                                                ).str();
-                                }
-
-
-                                (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
-                                (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
-                                (*iter)[Columns.RT] = determine_release_type(type);
-                                (*iter)[Columns.PlayScore] = playscore; 
-                                (*iter)[Columns.AlbumTrack] = track;
-                        } 
+                        }
 
                 void
                         AlbumTreeView::album_list_load ()
@@ -1165,10 +1040,10 @@ namespace MPX
                                         double score_b = (*iter_b)[Columns.PlayScore];
 
                                         if( score_a < score_b )
-                                            return -1;
+                                            return  1;
     
                                         if( score_a > score_b )
-                                            return  1;
+                                            return -1;
 
                                         return 0;
                                 }

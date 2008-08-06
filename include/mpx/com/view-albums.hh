@@ -299,6 +299,13 @@ namespace MPX
                                 update_album (SQL::Row&, gint64);
 
                         virtual void
+                                place_album_iter_real(
+                                    Gtk::TreeIter&  iter,
+                                    SQL::Row&       r,
+                                    gint64          id
+                                );
+
+                        virtual void
                                 album_list_load ();
 
                         virtual void
