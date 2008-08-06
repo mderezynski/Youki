@@ -1,8 +1,8 @@
 libexec_PROGRAMS = audiosource-bin 
 
-mpx_bin_LDFLAGS = -Wl,--export-dynamic 
+audiosource_bin_LDFLAGS = -Wl,--export-dynamic 
 
-mpx_bin_CXXFLAGS = 									\
+audiosource_bin_CXXFLAGS = 									\
 		$(ALSA_CFLAGS)								\
 		$(BOOST_CPPFLAGS)							\
 		$(CAIROMM_CFLAGS)   						\
@@ -36,7 +36,7 @@ mpx_bin_CXXFLAGS = 									\
 		-I$(top_srcdir)								\
 		-I$(top_srcdir)/include	
 
-mpx_bin_LDADD =										\
+audiosource_bin_LDADD =										\
 		$(ALSA_LIBS)								\
 		$(BOOST_LDFLAGS)							\
 		$(BOOST_REGEX_LIB)							\
@@ -82,23 +82,23 @@ mpx_bin_LDADD =										\
 		$(top_builddir)/musicbrainz/libmpx-musicbrainz.la			\
 		$(top_builddir)/viewcomponents/libmpx-view-components.la
 
-mpx_bin_CFLAGS =				\
+audiosource_bin_CFLAGS =				\
     $(GLIB_CFLAGS) $(GST_CFLAGS) -I$(top_srcdir)/include
 
 if HAVE_HAL
-mpx_bin_LDADD += $(top_builddir)/libhal++/libhalcc.la
-mpx_bin_CXXFLAGS += -I$(top_srcdir)/libhal++
+audiosource_bin_LDADD += $(top_builddir)/libhal++/libhalcc.la
+audiosource_bin_CXXFLAGS += -I$(top_srcdir)/libhal++
 endif # HAVE_HAL
 
-mpx_bin_CXXFLAGS += -D__USE_POSIX199309
-mpx_bin_CFLAGS += -D__USE_POSIX199309
+audiosource_bin_CXXFLAGS += -D__USE_POSIX199309
+audiosource_bin_CFLAGS += -D__USE_POSIX199309
 
 if HAVE_LINUX 
-mpx_bin_CXXFLAGS += -D_XOPEN_SOURCE=600
-mpx_bin_CFLAGS += -D_XOPEN_SOURCE=600
+audiosource_bin_CXXFLAGS += -D_XOPEN_SOURCE=600
+audiosource_bin_CFLAGS += -D_XOPEN_SOURCE=600
 endif
 
-mpx_bin_SOURCES =				\
+audiosource_bin_SOURCES =				\
 								\
 	audio.cc					\
 	audio-types.hh				\
@@ -216,7 +216,7 @@ mpx_bin_SOURCES =				\
 	video-widget.cc				
 
 if HAVE_HAL								
-mpx_bin_SOURCES += hal.cc
+audiosource_bin_SOURCES += hal.cc
 endif
 
 BUILT_SOURCES = 			\
@@ -268,7 +268,7 @@ dbus-marshalers.h: dbus-marshalers.list
 
 
 BUILT_SOURCES += dbus-marshalers.c dbus-marshalers.h
-mpx_bin_SOURCES += dbus-marshalers.c
+audiosource_bin_SOURCES += dbus-marshalers.c
 
 CLEANFILES = $(BUILT_SOURCES)
 DISTCLEANFILES = $(BUILT_SOURCES)
