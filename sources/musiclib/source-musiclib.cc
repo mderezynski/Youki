@@ -170,6 +170,33 @@ namespace
                         }
                 }
 
+        ReleaseType
+                determine_release_type (const std::string& type)
+                {
+                        if( type == "Album" )
+                                return RT_ALBUM;
+
+                        if( type == "Single" )
+                                return RT_SINGLE;
+
+                        if( type == "Compilation" )
+                                return RT_COMPILATION;
+
+                        if( type == "Ep" )
+                                return RT_EP;
+
+                        if( type == "Live" )
+                                return RT_LIVE;
+
+                        if( type == "Remix" )
+                                return RT_REMIX;
+
+                        if( type == "Soundtrack" )
+                                return RT_SOUNDTRACK;
+
+                        return RT_OTHER;
+                }
+
         enum Order
         {
                 NO_ORDER,
@@ -1414,62 +1441,12 @@ namespace MPX
                         typedef std::map<std::string, IterSet>    MBIDIterMap;
                         typedef std::map<gint64, TreeIter>        IdIterMap; 
 
-                        struct ColumnsT : public Gtk::TreeModel::ColumnRecord 
+                        struct ColumnsT : public MPX::AlbumTreeView::ColumnsT 
                         {
-                                Gtk::TreeModelColumn<AlbumRowType>                          RowType;
-                                Gtk::TreeModelColumn<Glib::RefPtr<Gdk::Pixbuf> >            Image;
-                                Gtk::TreeModelColumn<Glib::ustring>                         Text;
-
-                                Gtk::TreeModelColumn<bool>                                  HasTracks;
-                                Gtk::TreeModelColumn<bool>                                  NewAlbum;
-
-                                Gtk::TreeModelColumn<std::string>                           AlbumSort;
-                                Gtk::TreeModelColumn<std::string>                           ArtistSort;
-
-                                Gtk::TreeModelColumn<gint64>                                Id;
-                                Gtk::TreeModelColumn<std::string>                           MBID;
-                                Gtk::TreeModelColumn<std::string>                           AlbumArtistMBID;
-
-                                Gtk::TreeModelColumn<gint64>                                Date;
-                                Gtk::TreeModelColumn<gint64>                                InsertDate;
-                                Gtk::TreeModelColumn<gint64>                                Rating;
-
-                                Gtk::TreeModelColumn<Glib::ustring>                         TrackTitle;
-                                Gtk::TreeModelColumn<Glib::ustring>                         TrackArtist;
-                                Gtk::TreeModelColumn<std::string>                           TrackArtistMBID;
-                                Gtk::TreeModelColumn<gint64>                                TrackNumber;
-                                Gtk::TreeModelColumn<gint64>                                TrackLength;
-                                Gtk::TreeModelColumn<gint64>                                TrackId;
-
-                                Gtk::TreeModelColumn<int>                                   IsMPXAlbum;
+                                Gtk::TreeModelColumn<int>                           IsMPXAlbum;
 
                                 ColumnsT ()
                                 {
-                                        add (RowType);
-                                        add (Image);
-                                        add (Text);
-
-                                        add (HasTracks);
-                                        add (NewAlbum);
-
-                                        add (AlbumSort);
-                                        add (ArtistSort);
-
-                                        add (Id);
-                                        add (MBID);
-                                        add (AlbumArtistMBID);
-
-                                        add (Date);
-                                        add (InsertDate);
-                                        add (Rating);
-
-                                        add (TrackTitle);
-                                        add (TrackArtist);
-                                        add (TrackArtistMBID);
-                                        add (TrackNumber);
-                                        add (TrackLength);
-                                        add (TrackId);
-
                                         add (IsMPXAlbum);
                                 }
                         };
@@ -1739,41 +1716,42 @@ namespace MPX
                                         IterSet & set = m_MBIDIterMap[mbid];
                                         for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
                                         {
-                                                (*(*i))[Columns.Image] = Util::cairo_image_surface_to_pixbuf(surface);
+                                                (*(*i))[Columns.Image] = surface; 
                                         }
                                 }
 
                         void
-                                place_album (SQL::Row & r, gint64 id)
+                                place_album_iter_real(
+                                    Gtk::TreeIter&  iter,
+                                    SQL::Row&       r,
+                                    gint64          id
+                                )
                                 {
-                                        TreeIter iter = TreeStore->append();
-                                        m_AlbumIterMap.insert(std::make_pair(id, iter));
-                                        TreeStore->append(iter->children()); //create dummy/placeholder row for tracks
-
-                                        (*iter)[Columns.RowType] = ROW_ALBUM; 
-                                        (*iter)[Columns.HasTracks] = false; 
-                                        (*iter)[Columns.NewAlbum] = get<gint64>(r["album_new"]);
-                                        (*iter)[Columns.Image] = m_DiscDefault_Pixbuf; 
-                                        (*iter)[Columns.Id] = id; 
-                                        (*iter)[Columns.IsMPXAlbum] = 1; 
+                                        MPX::Track track;
 
                                         std::string asin;
                                         std::string year; 
                                         std::string country;
                                         std::string artist;
                                         std::string type;
+                                        double playscore = 0;
+                                        gint64 rating = 0;
+                                        ReleaseType rt;
 
                                         std::string album = get<std::string>(r["album"]);
 
-                                        gint64 rating = 0;
-
                                         try{
                                                 rating = m_Lib.get().albumGetMeanRatingValue(id);
+                                                track[ATTRIBUTE_RATING] = rating;
                                         } catch( std::runtime_error )
                                         {
                                         }
-
                                         (*iter)[Columns.Rating] = rating;
+
+                                        if(r.count("album_playscore"))
+                                        {
+                                                playscore = get<double>(r["album_playscore"]);
+                                        }
 
                                         if(r.count("album_insert_date"))
                                         {
@@ -1783,6 +1761,7 @@ namespace MPX
                                         if(r.count("amazon_asin"))
                                         {
                                                 asin = get<std::string>(r["amazon_asin"]);
+                                                track[ATTRIBUTE_ASIN] = asin;
                                         }
 
                                         if(r.count("mb_album_id"))
@@ -1791,14 +1770,16 @@ namespace MPX
 
                                                 IterSet & s = m_MBIDIterMap[mbid];
                                                 s.insert(iter);
+
                                                 (*iter)[Columns.MBID] = mbid; 
+                                                track[ATTRIBUTE_MB_ALBUM_ID] = mbid;
 
                                                 Cairo::RefPtr<Cairo::ImageSurface> surface;
                                                 if( m_Covers.get().fetch( mbid, surface, COVER_SIZE_ALBUM ))
                                                 {
-                                                        surface = Util::cairo_image_surface_round(surface, 9.5);
-                                                        Util::cairo_image_surface_rounded_border(surface, .5, 9.5);
-                                                        (*iter)[Columns.Image] = Util::cairo_image_surface_to_pixbuf(surface);
+                                                    surface = Util::cairo_image_surface_round(surface, 9.5);
+                                                    Util::cairo_image_surface_rounded_border(surface, .5, 9.5);
+                                                    (*iter)[Columns.Image] = surface; 
                                                 }
                                         }
 
@@ -1806,6 +1787,7 @@ namespace MPX
                                         {
                                                 std::string mb_album_artist_id = get<std::string>(r["mb_album_artist_id"]);
                                                 (*iter)[Columns.AlbumArtistMBID] = mb_album_artist_id; 
+                                                track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = mb_album_artist_id;
                                         }
 
                                         if(r.count("mb_release_date"))
@@ -1816,6 +1798,7 @@ namespace MPX
                                                         year = year.substr(0,4);
                                                         try{
                                                                 (*iter)[Columns.Date] = boost::lexical_cast<int>(year);
+                                                                track[ATTRIBUTE_DATE] = gint64(boost::lexical_cast<int>(year));
                                                         } catch( boost::bad_lexical_cast ) {
                                                         } 
                                                 }
@@ -1828,60 +1811,106 @@ namespace MPX
                                         if(r.count("mb_release_country"))
                                         {
                                                 country = get<std::string>(r["mb_release_country"]); 
+                                                track[ATTRIBUTE_MB_RELEASE_COUNTRY] = country; 
                                         }
 
                                         if(r.count("mb_release_type"))
                                         {
                                                 type = get<std::string>(r["mb_release_type"]); 
+                                                track[ATTRIBUTE_MB_RELEASE_TYPE] = type; 
                                         }
 
                                         if(r.find("album_artist_sortname") != r.end())
                                         {
                                                 artist = get<std::string>(r["album_artist_sortname"]);
+                                                track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
                                         }
                                         else
                                         {
                                                 artist = get<std::string>(r["album_artist"]);
+                                                track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
                                         }
 
                                         trim(country);
                                         trim(year);
                                         trim(type);
 
+                                        rt = determine_release_type(type);
+
                                         if( type.length() > 1 )
                                         {
                                                 Glib::ustring type_1st = type.substr(0, 1);
                                                 Glib::ustring type_2nd = type.substr(1, type.length());
 
-                                                type = type_1st.uppercase() + type_2nd;
+                                                type = "[" + type_1st.uppercase() + type_2nd + "]";
                                         }
 
                                         if( !country.empty() )
                                         {
                                                 (*iter)[Columns.Text] =
-                                                        (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4%</span>\n<span size='8000'>%5%</span>")
+                (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4% %5%</span>\n<span size='8000'>PlayScore: %6%</span></span>")
                                                          % Markup::escape_text(album).c_str()
                                                          % Markup::escape_text(artist).c_str()
                                                          % country
                                                          % year
                                                          % type
+                                                         % playscore
                                                         ).str();
                                         }
                                         else
                                         {
                                                 (*iter)[Columns.Text] =
-                                                        (boost::format("<span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%</span>\n<span size='8000'>%4%</span>")
+                (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4%</span>\n<span size='8000'>PlayScore: %5%</span></span>")
                                                          % Markup::escape_text(album).c_str()
                                                          % Markup::escape_text(artist).c_str()
                                                          % year
                                                          % type
+                                                         % playscore
                                                         ).str();
                                         }
 
 
                                         (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
                                         (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
+                                        (*iter)[Columns.RT] = rt; 
+                                        (*iter)[Columns.PlayScore] = playscore; 
+                                        (*iter)[Columns.AlbumTrack] = track;
                                 } 
+
+                        void
+                                update_album (SQL::Row & r, gint64 id)
+                                {
+                                        IdIterMap::iterator i = m_AlbumIterMap.find(id);
+                                        if (i == m_AlbumIterMap.end()) return;
+
+                                        TreeIter iter = (*i).second; 
+
+                                        (*iter)[Columns.NewAlbum] = get<gint64>(r["album_new"]);
+
+                                        place_album_iter_real(iter, r, id);
+                                } 
+
+                        Gtk::TreeIter
+                                place_album(
+                                    SQL::Row&   r,
+                                    gint64      id
+                                )
+                                {
+                                        TreeIter iter = TreeStore->append();
+                                        m_AlbumIterMap.insert(std::make_pair(id, iter));
+                                        TreeStore->append(iter->children()); //create dummy/placeholder row for tracks
+
+                                        (*iter)[Columns.RowType] = ROW_ALBUM; 
+                                        (*iter)[Columns.HasTracks] = false; 
+                                        (*iter)[Columns.NewAlbum] = get<gint64>(r["album_new"]);
+                                        (*iter)[Columns.Image] = m_DiscDefault; 
+                                        (*iter)[Columns.Id] = id; 
+                                        (*iter)[Columns.IsMPXAlbum] = true;
+
+                                        place_album_iter_real(iter, r, id);
+
+                                        return iter;
+                                }
 
                         void
                                 on_new_track(Track & track, gint64 album_id, gint64 artist_id)
@@ -2016,15 +2045,17 @@ namespace MPX
 
                                         return 0;
                                 }
+
+                        template <typename T>
                         void
                                 cellDataFuncCover (CellRenderer * basecell, TreeModel::iterator const &iter)
                                 {
                                         TreePath path (iter);
-                                        CellRendererPixbuf *cell = dynamic_cast<CellRendererPixbuf*>(basecell);
+                                        T* cell = dynamic_cast<T*>(basecell);
                                         if(path.get_depth() == ROW_ALBUM)
                                         {
                                                 cell->property_visible() = true;
-                                                cell->property_pixbuf() = (*iter)[Columns.Image]; 
+                                                cell->property_surface() = (*iter)[Columns.Image]; 
                                                 cell->property_sensitive() = (*iter)[Columns.IsMPXAlbum];
                                         }
                                         else
@@ -2037,31 +2068,18 @@ namespace MPX
                                 cellDataFuncText1 (CellRenderer * basecell, TreeModel::iterator const &iter)
                                 {
                                         TreePath path (iter);
-                                        CellRendererVBox *cvbox = dynamic_cast<CellRendererVBox*>(basecell);
-                                        CellRendererText *cell1 = dynamic_cast<CellRendererText*>(cvbox->property_renderer1().get_value());
-                                        CellRendererPixbuf *cell2 = dynamic_cast<CellRendererPixbuf*>(cvbox->property_renderer2().get_value());
+
+                                        CellRendererText *cell1 = dynamic_cast<CellRendererText*>(basecell);
+
                                         if(path.get_depth() == ROW_ALBUM)
                                         {
-                                                cvbox->property_visible() = true; 
-
-                                                if(cell1)
-                                                {
-                                                        cell1->property_markup() = (*iter)[Columns.Text]; 
-                                                }
-
-                                                if(cell2)
-                                                {
-                                                        gint64 i = ((*iter)[Columns.Rating]);
-                                                        g_return_if_fail((i >= 0) && (i <= 5));
-                                                        cell2->property_pixbuf() = m_Stars[i];
-                                                }
-
+                                                cell1->property_markup() = (*iter)[Columns.Text]; 
+                                                cell1->property_visible() = true; 
                                                 cell1->property_sensitive() = (*iter)[Columns.IsMPXAlbum];
-                                                cell2->property_sensitive() = (*iter)[Columns.IsMPXAlbum];
                                         }
                                         else
                                         {
-                                                cvbox->property_visible() = false; 
+                                                cell1->property_visible() = false; 
                                         }
                                 }
 
@@ -2204,17 +2222,17 @@ namespace MPX
                                 }
 
                         LFMTreeView(
-                                        const Glib::RefPtr<Gnome::Glade::Xml>&  xml,    
-                                        const PAccess<MPX::Library>&            lib,
-                                        const PAccess<MPX::Covers>&             amzn,
-                                        MPX::Source::PlaybackSourceMusicLib&    mlib
-                                   )
-                                : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-lfm")
-                                  , m_Lib(lib)
-                                  , m_Covers(amzn)
-                                  , m_MLib(mlib)
-                                  , m_ButtonPressed(false)
-                                  , m_DragSource(true)
+                            const Glib::RefPtr<Gnome::Glade::Xml>&  xml,    
+                            const PAccess<MPX::Library>&            lib,
+                            const PAccess<MPX::Covers>&             amzn,
+                            MPX::Source::PlaybackSourceMusicLib&    mlib
+                        )
+                        : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-lfm")
+                        , m_Lib(lib)
+                        , m_Covers(amzn)
+                        , m_MLib(mlib)
+                        , m_ButtonPressed(false)
+                        , m_DragSource(true)
                         {
                                 for(int n = 0; n < 6; ++n)
                                         m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename(DATA_DIR,"images"),
@@ -2239,31 +2257,20 @@ namespace MPX
                                                 this,
                                                 NULL);
 
-                                CellRendererPixbuf * cellpixbuf = manage (new CellRendererPixbuf);
-                                col->pack_start(*cellpixbuf, false);
-                                col->set_cell_data_func(*cellpixbuf, sigc::mem_fun( *this, &LFMTreeView::cellDataFuncCover ));
-                                cellpixbuf->property_xpad() = 4;
-                                cellpixbuf->property_ypad() = 4;
-                                cellpixbuf->property_yalign() = 0.;
-                                cellpixbuf->property_xalign() = 0.;
-
-                                CellRendererVBox *cvbox = manage (new CellRendererVBox);
+                                CellRendererCairoSurface * cellcairo = manage (new CellRendererCairoSurface);
+                                col->pack_start(*cellcairo, false);
+                                col->set_cell_data_func(*cellcairo, sigc::mem_fun( *this, &LFMTreeView::cellDataFuncCover<CellRendererCairoSurface> ));
+                                cellcairo->property_xpad() = 4;
+                                cellcairo->property_ypad() = 4;
+                                cellcairo->property_yalign() = 0.;
+                                cellcairo->property_xalign() = 0.;
 
                                 CellRendererText *celltext = manage (new CellRendererText);
                                 celltext->property_yalign() = 0.;
                                 celltext->property_ypad() = 4;
-                                celltext->property_height() = 52;
                                 celltext->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE;
-                                cvbox->property_renderer1() = celltext;
-
-                                cellpixbuf = manage (new CellRendererPixbuf);
-                                cellpixbuf->property_xalign() = 0.;
-                                cellpixbuf->property_ypad() = 2;
-                                cellpixbuf->property_xpad() = 2;
-                                cvbox->property_renderer2() = cellpixbuf;
-
-                                col->pack_start(*cvbox, true);
-                                col->set_cell_data_func(*cvbox, sigc::mem_fun( *this, &LFMTreeView::cellDataFuncText1 ));
+                                col->pack_start(*celltext, true);
+                                col->set_cell_data_func(*celltext, sigc::mem_fun( *this, &LFMTreeView::cellDataFuncText1 ));
 
                                 CellRendererCount *cellcount = manage (new CellRendererCount);
                                 col->pack_start(*cellcount, false);
@@ -2353,6 +2360,8 @@ namespace MPX
                                                 SQL::Row & r = v[0];
                                                 place_album (r, get<gint64>(r["id"])); 
                                         }
+
+                                        /*
                                         else
                                         {
                                                 if( icon )
@@ -2370,7 +2379,7 @@ namespace MPX
                                                         surface = Util::cairo_image_surface_round(surface, 9.5);
                                                         Util::cairo_image_surface_rounded_border(surface, .5, 9.5);
 
-                                                        (*iter)[Columns.Image]       = Util::cairo_image_surface_to_pixbuf(surface);
+                                                        (*iter)[Columns.Image]       = surface; 
                                                         (*iter)[Columns.RowType]     = ROW_ALBUM;
                                                         (*iter)[Columns.HasTracks]   = false;
                                                         (*iter)[Columns.Id]          = 0;
@@ -2386,6 +2395,7 @@ namespace MPX
                                                         (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
                                                 }
                                         }
+                                        */
                                 }
 
                         void

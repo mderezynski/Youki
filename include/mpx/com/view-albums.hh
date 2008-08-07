@@ -95,6 +95,8 @@ namespace MPX
                 class AlbumTreeView
                         :   public Gnome::Glade::WidgetLoader<Gtk::TreeView>
                 {
+                    public:
+
                         typedef std::set<Gtk::TreeIter>                 IterSet;
                         typedef std::map<std::string, IterSet>          MBIDIterMap;
                         typedef std::map<gint64, Gtk::TreeIter>         IdIterMap; 

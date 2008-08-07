@@ -909,10 +909,11 @@ namespace MPX
                                 if (GST_IS_ELEMENT (spectrum))
                                 {
                                         g_object_set (G_OBJECT (spectrum),
-                                                        "interval", guint64 (20 * GST_MSECOND),
+                                                        "interval", guint64 (50 * GST_MSECOND),
                                                         "bands", SPECT_BANDS,
                                                         "threshold", int (-72),
                                                         "message-magnitude", gboolean (TRUE),
+                                                        "message-phase", gboolean (FALSE),
                                                         "message", gboolean (TRUE), NULL);
                                 }
 

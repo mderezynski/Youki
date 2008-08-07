@@ -404,7 +404,7 @@ namespace MPX
 
       cr->set_operator(Cairo::OPERATOR_ATOP);
 
-      for (int n = 0; n < SPECT_BANDS; ++n)
+      for (int n = 0; n < SPECT_BANDS; ++n) 
       {
         int x = 0, y = 0, w = 0, h = 0;
 

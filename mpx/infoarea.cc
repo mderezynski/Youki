@@ -195,7 +195,17 @@ namespace MPX
   void
   InfoArea::update_spectrum (Spectrum const& spectrum)
   {
-      m_spectrum_data = spectrum;
+      for( int n = 0; n < SPECT_BANDS; ++n )
+      {
+        if( fabs(spectrum[n] - m_spectrum_data[n]) <= 2)
+        {
+            /* do nothing */
+        }
+        else if( spectrum[n] > m_spectrum_data[n] )
+            m_spectrum_data[n] = spectrum[n];
+        else
+            m_spectrum_data[n] = fmin(m_spectrum_data[n] - 2, 0);
+      }
 
       for( int n = 0; n < SPECT_BANDS; ++n )
       {
