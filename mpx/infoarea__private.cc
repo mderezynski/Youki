@@ -398,23 +398,39 @@ namespace MPX
       const int WIDTH = 6;
       const int SPACING = 2;
       const int HEIGHT = 72;
-      const double ALPHA = 0.3;
+      const double ALPHA = 0.4;
 
       Gtk::Allocation allocation = get_allocation ();
+
+      cr->set_operator(Cairo::OPERATOR_ATOP);
 
       for (int n = 0; n < SPECT_BANDS; ++n)
       {
         int x = 0, y = 0, w = 0, h = 0;
 
-        // Bar
         x = allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS + (WIDTH+SPACING)*n - RIGHT_MARGIN;
-        y = TOP_MARGIN + (HEIGHT - (m_spectrum_data[n]+HEIGHT)); 
         w = WIDTH; 
-        h = m_spectrum_data[n]+HEIGHT;
+
+        // Peak
+        int peak = (int(m_spectrum_peak[n]) / 3) * 3;
+        y = TOP_MARGIN + (HEIGHT - (peak+HEIGHT)); 
+        h = peak+HEIGHT;
 
         if( w>0 && h>0)
         {
-            cr->set_source_rgba (double(colors[n/2].red)/255., double(colors[n/2].green)/255., double(colors[n/2].blue)/255., ALPHA);
+            cr->set_source_rgba(1., 1., 1., 0.1);
+            Util::cairo_rounded_rect(cr, x, y, w, h, 1.);
+            cr->fill ();
+        }
+
+        // Bar
+        int data = (int(m_spectrum_data[n]) / 3) * 3;
+        y = TOP_MARGIN + (HEIGHT - (data+HEIGHT)); 
+        h = data+HEIGHT;
+
+        if( w>0 && h>0)
+        {
+            cr->set_source_rgba (double(colors[n/6].red)/255., double(colors[n/6].green)/255., double(colors[n/6].blue)/255., ALPHA);
             Util::cairo_rounded_rect(cr, x, y, w, h, 1.);
             cr->fill ();
         }

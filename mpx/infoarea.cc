@@ -1,6 +1,7 @@
 #include "config.h"
 #include "infoarea.hh"
 #include <glibmm/i18n.h>
+#include <cmath>
 
 namespace MPX
 {
@@ -19,6 +20,7 @@ namespace MPX
   )
   : Gnome::Glade::WidgetLoader<Gtk::EventBox>(xml, name)
   , m_spectrum_data(SPECT_BANDS, 0)
+  , m_spectrum_peak(SPECT_BANDS, 0)
   , m_cover_alpha(0.)
   , m_layout_alpha(0.)
   , m_pressed(false)
@@ -49,6 +51,7 @@ namespace MPX
   InfoArea::reset ()
   {
     std::fill (m_spectrum_data.begin (), m_spectrum_data.end (), 0.);
+    std::fill (m_spectrum_peak.begin (), m_spectrum_peak.end (), 0.);
 
     m_cover_surface_new.reset();
     m_cover_surface_cur.reset();
@@ -193,6 +196,16 @@ namespace MPX
   InfoArea::update_spectrum (Spectrum const& spectrum)
   {
       m_spectrum_data = spectrum;
+
+      for( int n = 0; n < SPECT_BANDS; ++n )
+      {
+        if( spectrum[n] < m_spectrum_peak[n] ) 
+            m_spectrum_peak[n] = fmin(m_spectrum_peak[n] - 0.5, 0);
+        else if( spectrum[n] == m_spectrum_peak[n] ) 
+            m_spectrum_peak[n] = fmin(m_spectrum_peak[n] + 2.0, 72);
+        else
+            m_spectrum_peak[n] = spectrum[n];
+      }
       queue_draw ();
 
   }

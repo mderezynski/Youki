@@ -563,13 +563,13 @@ namespace MPX
         , m_Caps(C_NONE)
         , m_NextSourceId(0)
         , m_SourceUI(0)
-        , m_NewTrack(false)
         , m_Covers(*(services.get<Covers>("mpx-service-covers")))
 #ifdef HAVE_HAL
         , m_HAL(*(services.get<HAL>("mpx-service-hal")))
 #endif // HAVE_HAL
         , m_Library(*(services.get<Library>("mpx-service-library")))
         , m_Play(*(services.get<Play>("mpx-service-play")))
+        , m_NewTrack(false)
         {
                                   m_MarkovThread = new MarkovAnalyzerThread(m_Library);
 

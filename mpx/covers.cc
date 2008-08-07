@@ -249,13 +249,11 @@ namespace MPX
 
         if( RequestKeeper.count(mbid) )
         {
-            g_message(G_STRLOC ": Request for MBID '%s' is running", mbid.c_str());
             return;
         }
 
         if( g_atomic_int_get(&m_rebuild) )
         {
-            g_message(G_STRLOC ": Rebuilding Stores"); 
             rebuild_stores();
             g_atomic_int_set(&m_rebuild, 0);
             g_atomic_int_set(&m_rebuilt, 1);
@@ -264,7 +262,6 @@ namespace MPX
         std::string thumb_path = get_thumb_path (mbid);
         if( file_test( thumb_path, FILE_TEST_EXISTS ))
         {
-            g_message(G_STRLOC ": Cover is already cached"); 
             Signals.GotCover.emit(mbid);
             return; 
         }
@@ -273,13 +270,10 @@ namespace MPX
         {
             if(m_current_stores.size())
             {
-                g_message(G_STRLOC ": Acquiring Cover"); 
                 RequestKeeper[mbid] = 0;
                 CoverFetchData * data = new CoverFetchData(asin, mbid, uri, artist, album, m_current_stores);
                 data->m_req_stores[0]->load_artwork(data);
             }
-            else
-                g_message(G_STRLOC ": No Stores to Query"); 
         }
     }
 

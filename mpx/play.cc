@@ -56,7 +56,6 @@ namespace
         static boost::format band_f ("band%d");
 
         char const* NAME_CONVERT    = N_("Raw Audio Format Converter");
-        char const* NAME_QUEUE      = N_("Data Buffer (Queue)");
         char const* NAME_VOLUME     = N_("Volume Adjustment");
         char const* NAME_RESAMPLE   = N_("Resampler");
         char const* NAME_EQUALIZER  = N_("Equalizer");
@@ -97,18 +96,18 @@ namespace
 namespace MPX
 {
         Play::Play(MPX::Service::Manager& services)
-                : ObjectBase              ("MPXPlaybackEngine")
-                  , Service::Base           ("mpx-service-play")
-                  , property_stream_        (*this, "stream", "")
-                  , property_stream_type_   (*this, "stream-type", "")
-                  , property_volume_        (*this, "volume", 50)
-                  , property_status_        (*this, "playstatus", PLAYSTATUS_STOPPED)
-                  , property_sane_          (*this, "sane", false)
-                  , property_position_      (*this, "position", 0)
-                  , property_duration_      (*this, "duration", 0)
-                  , m_play_elmt             (0)
+        : ObjectBase              ("MPXPlaybackEngine")
+        , Service::Base           ("mpx-service-play")
+        , m_play_elmt             (0)
+        , property_stream_        (*this, "stream", "")
+        , property_stream_type_   (*this, "stream-type", "")
+        , property_volume_        (*this, "volume", 50)
+        , property_status_        (*this, "playstatus", PLAYSTATUS_STOPPED)
+        , property_sane_          (*this, "sane", false)
+        , property_position_      (*this, "position", 0)
+        , property_duration_      (*this, "duration", 0)
         {
-                m_MessageQueue = g_async_queue_new ();
+                m_message_queue = g_async_queue_new ();
 
                 for (int n = 0; n < SPECT_BANDS; ++n)
                 {
@@ -136,7 +135,7 @@ namespace MPX
         //dtor
         Play::~Play ()
         {
-                g_async_queue_unref (m_MessageQueue);
+                g_async_queue_unref (m_message_queue);
                 stop_stream ();
                 destroy_bins ();
         }
@@ -646,13 +645,37 @@ namespace MPX
                         gst_object_unref (pad2);
                 }
 
+        gboolean
+                Play::clock_callback(
+                    GstClock*       clock,
+                    GstClockTime    time,
+                    GstClockID      id,
+                    gpointer        data
+                )
+                {
+                        Play & play = *(static_cast<Play*> (data));
+
+                        GstStructure const* s = gst_message_get_structure (play.m_spectrum_message);
+                        GValue const* mags = gst_structure_get_value (s, "magnitude");
+                        for (int i = 0; i < SPECT_BANDS; ++i)
+                        {
+                                play.m_spectrum[i] = g_value_get_float(gst_value_list_get_value(mags, i)); 
+                        }
+                        play.signal_spectrum_.emit (play.m_spectrum);
+
+                        gst_object_unref(play.m_spectrum_message);
+
+                        return FALSE;
+                }
+
         void 
                 Play::bus_watch (GstBus*     bus,
                                 GstMessage* message,
                                 gpointer    data)
                 {
                         Play & play = *(static_cast<Play*> (data));
-                        Glib::Mutex::Lock L (play.m_BusLock);
+
+                        Glib::Mutex::Lock L (play.m_bus_lock);
 
                         static GstState old_state = GstState (0), new_state = GstState (0), pending_state = GstState (0);
 
@@ -679,12 +702,22 @@ namespace MPX
                                                 GstStructure const* s = gst_message_get_structure (message);
                                                 if (std::string (gst_structure_get_name (s)) == "spectrum")
                                                 {
-                                                        GValue const* mags = gst_structure_get_value (s, "magnitude");
-                                                        for (int i = 0; i < SPECT_BANDS; ++i)
-                                                        {
-                                                                play.m_spectrum[i] = g_value_get_float(gst_value_list_get_value(mags, i)); 
-                                                        }
-                                                        play.signal_spectrum_.emit (play.m_spectrum);
+                                                    GstClockTime endtime;
+
+                                                    if(gst_structure_get_clock_time (s, "endtime", &endtime))
+                                                    {
+                                                      GstClockID clock_id;
+                                                      GstClockReturn clock_ret;
+                                                      GstClockTimeDiff jitter;
+                                                      GstClockTime basetime=gst_element_get_base_time(GST_ELEMENT(GST_MESSAGE_SRC(message)));
+                                                      GstClockTime curtime=gst_clock_get_time(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())))-basetime;
+                                                      GstClockTimeDiff waittime=GST_CLOCK_DIFF(curtime,endtime);
+                                                      
+                                                      clock_id=gst_clock_new_single_shot_id(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())),basetime+endtime);
+                                                      play.m_spectrum_message = gst_message_copy(message);
+                                                      gst_clock_id_wait_async(clock_id,clock_callback,data);
+                                                      gst_clock_id_unref(clock_id);
+                                                    }
                                                 }
                                                 break;
                                         }
@@ -770,7 +803,7 @@ namespace MPX
                 Play::eq_band_changed (MCS_CB_DEFAULT_SIGNATURE, unsigned int band)
 
                 {
-                        g_object_set (G_OBJECT (m_Equalizer), (band_f % band).str().c_str (), boost::get<double> (value), NULL);
+                        g_object_set (G_OBJECT (m_equalizer), (band_f % band).str().c_str (), boost::get<double> (value), NULL);
                 }
 
         void
@@ -876,7 +909,7 @@ namespace MPX
                                 if (GST_IS_ELEMENT (spectrum))
                                 {
                                         g_object_set (G_OBJECT (spectrum),
-                                                        "interval", guint64 (50 * GST_MSECOND),
+                                                        "interval", guint64 (20 * GST_MSECOND),
                                                         "bands", SPECT_BANDS,
                                                         "threshold", int (-72),
                                                         "message-magnitude", gboolean (TRUE),
@@ -885,33 +918,30 @@ namespace MPX
 
                                 if (Audio::test_element ("equalizer-10bands") && mcs->key_get<bool>("audio","enable-eq"))
                                 {
-                                        m_Equalizer = gst_element_factory_make ("equalizer-10bands", (NAME_EQUALIZER));
+                                        m_equalizer = gst_element_factory_make ("equalizer-10bands", (NAME_EQUALIZER));
 
                                         if (GST_IS_ELEMENT (spectrum))
                                         {
-                                                GstElement* tee = gst_element_factory_make ("tee", "tee1"); 
                                                 GstElement* idn = gst_element_factory_make ("identity", "identity1"); 
 
                                                 gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]),
                                                                 convert,
                                                                 resample,
                                                                 idn,
-                                                                m_Equalizer,
-                                                                tee,
+                                                                m_equalizer,
                                                                 spectrum,
                                                                 volume,
                                                                 vol_fade,
                                                                 sink_element,
                                                                 NULL);
 
-                                                gst_element_link_many (convert, resample, idn, m_Equalizer, tee, volume, vol_fade, sink_element, NULL);
-                                                gst_element_link_many (tee, spectrum, NULL);
+                                                gst_element_link_many (convert, resample, idn, m_equalizer, spectrum, volume, vol_fade, sink_element, NULL);
                                         }
                                         else
                                         {
                                                 GstElement* idn = gst_element_factory_make ("identity", "identity1"); 
-                                                gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, idn, m_Equalizer, volume, vol_fade, sink_element, NULL);
-                                                gst_element_link_many (convert, resample, idn, m_Equalizer, volume, vol_fade, sink_element, NULL);
+                                                gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, idn, m_equalizer, volume, vol_fade, sink_element, NULL);
+                                                gst_element_link_many (convert, resample, idn, m_equalizer, volume, vol_fade, sink_element, NULL);
                                         }
 
                                         // Connect MCS to Equalizer Bands
@@ -919,7 +949,7 @@ namespace MPX
                                         {
                                                 mcs->subscribe ("PlaybackEngine", "audio",
                                                                 (band_f % n).str(), sigc::bind (sigc::mem_fun (*this, &Play::eq_band_changed), n));
-                                                g_object_set (G_OBJECT (m_Equalizer),
+                                                g_object_set (G_OBJECT (m_equalizer),
                                                                 (band_f % n).str().c_str(), mcs->key_get <double> ("audio", (band_f % n).str()), NULL);
                                         }
                                 }
@@ -927,22 +957,19 @@ namespace MPX
                                 {
                                         if (GST_IS_ELEMENT (spectrum))
                                         {
-                                                GstElement* tee = gst_element_factory_make ("tee", "tee1"); 
                                                 GstElement* idn = gst_element_factory_make ("identity", "identity1"); 
 
                                                 gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]),
                                                                 convert,
                                                                 resample,
                                                                 idn,
-                                                                tee,
                                                                 spectrum,
                                                                 volume,
                                                                 vol_fade,
                                                                 sink_element,
                                                                 NULL);
 
-                                                gst_element_link_many (convert, resample, idn, tee, volume, vol_fade, sink_element, NULL);
-                                                gst_element_link_many (tee, spectrum, NULL);
+                                                gst_element_link_many (convert, resample, idn, spectrum, volume, vol_fade, sink_element, NULL);
                                         }
                                         else
                                         {
@@ -1405,9 +1432,9 @@ namespace MPX
         void
                 Play::process_queue ()
                 {
-                        while (g_async_queue_length (m_MessageQueue) > 0)
+                        while (g_async_queue_length (m_message_queue) > 0)
                         {
-                                gpointer data = g_async_queue_pop (m_MessageQueue);
+                                gpointer data = g_async_queue_pop (m_message_queue);
                                 Audio::Message *message = reinterpret_cast<Audio::Message*>(data);
 
                                 switch (message->id)
@@ -1428,8 +1455,8 @@ namespace MPX
         void
                 Play::push_message (Audio::Message const& message)
                 {
-                        //Glib::Mutex::Lock L (m_QueueLock);
-                        g_async_queue_push (m_MessageQueue, (gpointer)(new Audio::Message (message)));
+                        //Glib::Mutex::Lock L (m_queue_lock);
+                        g_async_queue_push (m_message_queue, (gpointer)(new Audio::Message (message)));
                         process_queue ();
                 }
 }

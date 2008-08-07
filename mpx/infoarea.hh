@@ -28,7 +28,7 @@ namespace MPX
   {
     private:
 
-          Spectrum                              m_spectrum_data;
+          Spectrum                              m_spectrum_data, m_spectrum_peak;
           boost::optional<Glib::ustring>        m_info_text;
           boost::optional<TextSet>              m_text_cur;
           boost::optional<TextSet>              m_text_new;
