@@ -110,10 +110,9 @@ namespace
 #ifdef HAVE_HAL
                 "         <menuitem action='action-mlibmanager'/>"
 #endif // HAVE_HAL
-                "			<menuitem action='action-vacuum-lib'/>"
+                "	      <menuitem action='action-vacuum-lib'/>"
                 "         <separator/>"
                 "         <menuitem action='action-plugins'/>"
-                "         <separator/>"
                 "         <menuitem action='action-preferences'/>"
                 "   </menu>"
                 "   <menu action='MenuView'>"
@@ -831,14 +830,14 @@ namespace MPX
 #else
 
                                   m_actions->add (Action::create ("action-mlibmanager",
-                                                          _("Manage Music Library..."),
+                                                          _("_Manage Music Library..."),
                                                           _("Add or Remove Music")),
                                                   sigc::mem_fun (*m_MLibManager, &MLibManager::present));
 #endif
 
 
                                   m_actions->add (Action::create("action-vacuum-lib",
-                                                          _("Vacuum Music Library"),
+                                                          _("_Vacuum Music Library"),
                                                           _("Remove dangling files")),
                                                   sigc::mem_fun (m_Library, &Library::vacuum));
 
@@ -846,7 +845,7 @@ namespace MPX
 
                                   m_actions->add (Action::create (ACTION_PLUGINS,
                                                           Gtk::StockID(MPX_STOCK_PLUGIN),
-                                                          _("Manage Plugins..."),
+                                                          _("Plugins..."),
                                                           _("View and Enable or Disable Plugins")),
                                                   sigc::mem_fun (*this, &Player::on_action_cb_show_plugins ));
 
@@ -854,7 +853,7 @@ namespace MPX
 
                                   m_actions->add (Action::create (ACTION_PREFERENCES,
                                                           Gtk::Stock::EXECUTE,
-                                                          _("Edit Preferences..."),
+                                                          _("_Preferences..."),
                                                           _("Set up Audio and other Settings")),
                                                   sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
 
