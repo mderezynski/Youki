@@ -315,7 +315,6 @@ namespace MPX
     }
     mcs->key_set <int> ("audio", "video-output", m_cbox_video_out->get_active_row_number());
     m_Play.reset();
-    setup_audio();
   }
 
 #ifdef HAVE_ALSA
