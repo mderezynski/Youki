@@ -96,7 +96,7 @@ namespace MPX
 
 
             void
-            on_volumes_cbox_changed ();
+            on_volumes_changed ();
 
             void
             on_volumes_row_activated (const Gtk::TreePath&, Gtk::TreeViewColumn*);
