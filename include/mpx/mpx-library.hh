@@ -131,6 +131,9 @@ namespace MPX
                 gint64 /*album id*/>                            SignalNewAlbum; 
 
             typedef sigc::signal<void,
+                gint64 /*album id*/>                            SignalAlbumDeleted; 
+
+            typedef sigc::signal<void,
                 gint64 /*album id*/>                            SignalAlbumUpdated;
 
             typedef sigc::signal<void,
@@ -140,6 +143,9 @@ namespace MPX
                 Track&,
                 gint64 /*albumid*/,
                 gint64/*artistid*/>                             SignalNewTrack;
+
+            typedef sigc::signal<void,
+                gint64/*artistid*/>                             SignalTrackDeleted;
 
 			typedef sigc::signal<void,
                 gint64 /*id*/>                                  SignalTrackUpdated;
@@ -168,13 +174,20 @@ namespace MPX
                 SignalNewAlbum      NewAlbum;
                 SignalNewArtist     NewArtist;
                 SignalNewTrack      NewTrack;
+
 				SignalTrackUpdated	TrackUpdated;
                 SignalTrackTagged   TrackTagged;
+
                 SignalScanStart     ScanStart;  
                 SignalScanRun       ScanRun;
                 SignalScanEnd       ScanEnd;
-				SignalAlbumUpdated	AlbumUpdated;
+
 				SignalReload        Reload;
+
+                SignalAlbumDeleted  AlbumDeleted;
+				SignalAlbumUpdated	AlbumUpdated;
+
+                SignalTrackDeleted  TrackDeleted;
             };
 
             SignalsT Signals;
@@ -183,6 +196,10 @@ namespace MPX
             signal_new_album()
             { return Signals.NewAlbum ; }
             
+            SignalAlbumDeleted&
+            signal_album_deleted()
+            { return Signals.AlbumDeleted ; }
+
             SignalNewArtist&
             signal_new_artist()
             { return Signals.NewArtist ; }
@@ -190,6 +207,10 @@ namespace MPX
             SignalNewTrack&
             signal_new_track()
             { return Signals.NewTrack ; }
+
+            SignalTrackDeleted&
+            signal_track_deleted()
+            { return Signals.TrackDeleted ; }
 
             SignalTrackUpdated&
             signal_track_updated()

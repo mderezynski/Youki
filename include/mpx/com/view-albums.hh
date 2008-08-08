@@ -23,9 +23,7 @@
 #ifndef MPX_MUSICLIB_VIEW_ALBUMS_HH
 #define MPX_MUSICLIB_VIEW_ALBUMS_HH
 #include "config.h"
-#ifdef HAVE_TR1
 #include <tr1/unordered_map>
-#endif //HAVE_TR1
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include <glib.h>
@@ -97,9 +95,9 @@ namespace MPX
                 {
                     public:
 
-                        typedef std::set<Gtk::TreeIter>                 IterSet;
-                        typedef std::map<std::string, IterSet>          MBIDIterMap;
-                        typedef std::map<gint64, Gtk::TreeIter>         IdIterMap; 
+                        typedef std::set<Gtk::TreeIter>                         IterSet;
+                        typedef std::tr1::unordered_map<std::string, IterSet>   MBIDIterMap;
+                        typedef std::tr1::unordered_map<gint64, Gtk::TreeIter>  IdIterMap; 
 
                         struct ColumnsT : public Gtk::TreeModel::ColumnRecord 
                         {
@@ -170,9 +168,9 @@ namespace MPX
 
                         // treemodel stuff
 
-                        Glib::RefPtr<Gtk::TreeStore>          AlbumsTreeStore;
-                        Glib::RefPtr<Gtk::TreeModelFilter>    AlbumsTreeStoreFilter;
-                        ColumnsT                              Columns;
+                          Glib::RefPtr<Gtk::TreeStore>          AlbumsTreeStore;
+                          Glib::RefPtr<Gtk::TreeModelFilter>    AlbumsTreeStoreFilter;
+                          ColumnsT                              Columns;
 
                         protected:
 
@@ -190,6 +188,7 @@ namespace MPX
 
                           MBIDIterMap                           m_MBIDIterMap;
                           IdIterMap                             m_AlbumIterMap;
+                          IdIterMap                             m_TrackIterMap;
 
                         // disc+rating pixbufs
 
@@ -318,6 +317,12 @@ namespace MPX
 
                         virtual void
                                 on_new_track(Track&, gint64, gint64);
+
+                        virtual void
+                                on_album_deleted(gint64);
+
+                        virtual void
+                                on_track_deleted(gint64);
 
                         virtual int
                                 slotSortRating(const Gtk::TreeIter&, const Gtk::TreeIter&);

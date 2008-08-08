@@ -142,11 +142,11 @@ struct MPX::LibraryScannerThread::ThreadData
     LibraryScannerThread::SignalScanStart_t         ScanStart ;
     LibraryScannerThread::SignalScanRun_t           ScanRun ;
     LibraryScannerThread::SignalScanEnd_t           ScanEnd ;
-    LibraryScannerThread::SignalReload_t            Reload ;
     LibraryScannerThread::SignalNewAlbum_t          NewAlbum ;
     LibraryScannerThread::SignalNewArtist_t         NewArtist ;
+    LibraryScannerThread::SignalNewTrack_t          NewTrack ;
     LibraryScannerThread::SignalCacheCover_t        CacheCover ;
-    LibraryScannerThread::SignalTrack_t             NewTrack ;
+    LibraryScannerThread::SignalReload_t            Reload ;
 
     int m_ScanStop;
 };
@@ -158,11 +158,11 @@ MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::
 , signal_scan_start(*this, m_ThreadData, &ThreadData::ScanStart)
 , signal_scan_run(*this, m_ThreadData, &ThreadData::ScanRun)
 , signal_scan_end(*this, m_ThreadData, &ThreadData::ScanEnd)
-, signal_reload(*this, m_ThreadData, &ThreadData::Reload)
 , signal_new_album(*this, m_ThreadData, &ThreadData::NewAlbum)
 , signal_new_artist(*this, m_ThreadData, &ThreadData::NewArtist)
+, signal_new_track(*this, m_ThreadData, &ThreadData::NewTrack)
 , signal_cache_cover(*this, m_ThreadData, &ThreadData::CacheCover)
-, signal_track(*this, m_ThreadData, &ThreadData::NewTrack)
+, signal_reload(*this, m_ThreadData, &ThreadData::Reload)
 , m_SQL(obj_sql)
 , m_MetadataReaderTagLib(obj_tagreader)
 , m_HAL(obj_hal)
@@ -172,11 +172,11 @@ MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::
             signal_scan_start,
             signal_scan_run,
             signal_scan_end,
-            signal_reload,
             signal_new_album,
             signal_new_artist,
+            signal_new_track,
             signal_cache_cover,
-            signal_track
+            signal_reload
     );
 }
 
@@ -272,7 +272,6 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
             if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
             {
                 pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, collection.size());
-                pthreaddata->Reload.emit();
                 return;
             }
 

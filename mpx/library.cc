@@ -27,6 +27,8 @@
 #include <gio/gio.h>
 #include <giomm.h>
 
+#include <tr1/unordered_set>
+
 #include "mpx/mpx-audio.hh"
 #ifdef HAVE_HAL
 #include "mpx/mpx-hal.hh"
@@ -224,6 +226,8 @@ namespace MPX
                                 sigc::mem_fun( *this, &Library::on_new_album ));
                 m_ScannerThread->connect().signal_new_artist().connect(
                                 sigc::mem_fun( *this, &Library::on_new_artist ));
+                m_ScannerThread->connect().signal_new_track().connect(
+                                sigc::mem_fun( *this, &Library::on_new_track ));
                 m_ScannerThread->connect().signal_cache_cover().connect(
                                 sigc::bind( sigc::mem_fun( m_Covers, &Covers::cache ), true ));
                 m_ScannerThread->connect().signal_reload().connect(
@@ -518,8 +522,6 @@ namespace MPX
 
                         for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
                         {
-                                player.push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
-
                                 Row & r = *i;
 
                                 std::string uri;
@@ -544,7 +546,6 @@ namespace MPX
                                                         uri = filename_to_uri(build_filename(mount_point, hal_vrp));
                                                 } catch (...) {
                                                         g_message("%s: Couldn't get mount point for track MPX-ID [%lld]", G_STRLOC, get<gint64>(r["id"]));
-                                                        continue; // Not mounted or HAL error, skip it
                                                 }
                                         }
                                         else
@@ -559,25 +560,28 @@ namespace MPX
                                 }
 #endif
 
+                                player.push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+
+                                if( !uri.empty() )
                                 try{
                                         Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
-                                        if (!file->query_exists())
+                                        if( !file->query_exists() )
                                         {
                                                 execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(r["id"])).str()); 
+                                                Signals.TrackDeleted.emit( get<gint64>(r["id"]) );
                                         }
                                 } catch(...) {
                                         g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
                                 }
                         }
 
-                        player.push_message(_("Finding Lost Artists..."));
-
-                        typedef std::set <gint64> IdSet;
+                        typedef std::tr1::unordered_set <gint64> IdSet;
                         static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld'");
-
                         IdSet idset1;
                         IdSet idset2;
 
+                        /// CLEAR DANGLING ARTISTS
+                        player.push_message(_("Finding Lost Artists..."));
                         idset1.clear();
                         rows.clear();
                         getSQL(rows, "SELECT DISTINCT artist_j FROM track");
@@ -590,16 +594,17 @@ namespace MPX
                         for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
                                 idset2.insert (get<gint64>(i->find ("id")->second));
 
-                        // If the artist is unused in the track table, delete it
                         for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
                         {
                                 if (idset1.find (*i) == idset1.end())
+                                {
                                         execSQL((delete_f % "artist" % (*i)).str());
+                                }
                         }
 
 
+                        /// CLEAR DANGLING ALBUMS
                         player.push_message(_("Finding Lost Albums..."));
-
                         idset1.clear();
                         rows.clear();
                         getSQL(rows, "SELECT DISTINCT album_j FROM track");
@@ -615,11 +620,14 @@ namespace MPX
                         for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
                         {
                                 if (idset1.find (*i) == idset1.end())
+                                {
                                         execSQL((delete_f % "album" % (*i)).str());
+                                        Signals.AlbumDeleted.emit( *i );
+                                }
                         }
 
+                        /// CLEAR DANGLING ALBUM ARTISTS
                         player.push_message(_("Finding Lost Album Artists..."));
-
                         idset1.clear();
                         rows.clear();
                         getSQL(rows, "SELECT DISTINCT album_artist_j FROM album");
@@ -638,11 +646,7 @@ namespace MPX
                                         execSQL((delete_f % "album_artist" % (*i)).str());
                         }
 
-                        player.push_message(_("Reloading..."));
-
-                        reload ();
-
-                        player.push_message(_("Vacuum process DONE."));
+                        player.push_message(_("Vacuum process done."));
                 }
 
         RowV

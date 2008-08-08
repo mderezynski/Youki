@@ -718,7 +718,6 @@ namespace MPX
                                         m_MLib.check_nextprev_caps();
                                         m_MLib.send_caps ();
                                         columns_autosize();
-                                        m_MLib.plist_end(true);
                                 }
 
                         void
@@ -2329,6 +2328,10 @@ namespace MPX
                                                 sigc::mem_fun(*this, &LFMTreeView::on_thread_stopped
                                                         ));
 
+                                m_Thread->SignalProgress().connect(
+                                                sigc::mem_fun(*this, &LFMTreeView::on_thread_progress
+                                                        ));
+
                                 get_selection()->set_select_function(
                                                 sigc::mem_fun(
                                                         *this,
@@ -2402,6 +2405,13 @@ namespace MPX
                                 on_thread_stopped ()
                                 {
                                         TreeStore->clear();
+                                }
+
+                        void
+                                on_thread_progress (gint64 n, gint64 total)
+                                {
+                                    MPX::Player & player = (*(services->get<Player>("mpx-service-player")));
+                                    player.push_message((boost::format(_("Displaying Tag Albums: %lld / %lld")) % n % total).str());
                                 }
 
                 };

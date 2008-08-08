@@ -190,6 +190,18 @@ namespace MPX
                                 &AlbumTreeView::on_new_track
                         ));
 
+                        m_Lib.get().signal_album_deleted().connect(
+                            sigc::mem_fun(
+                                *this,
+                                &AlbumTreeView::on_album_deleted
+                        ));
+
+                        m_Lib.get().signal_track_deleted().connect(
+                            sigc::mem_fun(
+                                *this,
+                                &AlbumTreeView::on_track_deleted
+                        ));
+
                         m_Lib.get().signal_album_updated().connect(
                             sigc::mem_fun(
                                 *this,
@@ -452,6 +464,8 @@ namespace MPX
 
                                                 TreeIter child = AlbumsTreeStore->append(iter->children());
 
+                                                gint64 id = get<gint64>(r["id"]);
+
                                                 if(r.count("mb_artist_id"))
                                                 {
                                                         track_artist_mb_id = get<std::string>(r["mb_artist_id"]);
@@ -459,7 +473,7 @@ namespace MPX
 
                                                 if( album_artist_mb_id != track_artist_mb_id )
                                                 {
-                                                        (*child)[Columns.TrackArtist] = (boost::format (_("<small>by</small> %s")) % Markup::escape_text(get<std::string>(r["artist"]))).str();;
+                                                        (*child)[Columns.TrackArtist] = Markup::escape_text(get<std::string>(r["artist"]));
                                                 }
 
                                                 (*child)[Columns.TrackTitle] = get<std::string>(r["title"]);
@@ -467,6 +481,8 @@ namespace MPX
                                                 (*child)[Columns.TrackLength] = get<gint64>(r["time"]);
                                                 (*child)[Columns.TrackId] = get<gint64>(r["id"]);
                                                 (*child)[Columns.RowType] = ROW_TRACK; 
+
+                                                m_TrackIterMap.insert(std::make_pair(id, child));
                                         }
 
                                         if(v.size())
@@ -921,6 +937,28 @@ namespace MPX
                                 }
                                 else
                                         g_warning("%s: Got new track without associated album! Consistency error!", G_STRLOC);
+                        }
+
+                void
+                        AlbumTreeView::on_album_deleted(gint64 id)
+                        {
+                            IdIterMap::iterator i = m_AlbumIterMap.find(id);
+                            if( i != m_AlbumIterMap.end() )
+                            {
+                                AlbumsTreeStore->erase( i->second );
+                                m_AlbumIterMap.erase( i );
+                            }
+                        }
+
+                void
+                        AlbumTreeView::on_track_deleted(gint64 id)
+                        {
+                            IdIterMap::iterator i = m_TrackIterMap.find(id);
+                            if( i != m_TrackIterMap.end() )
+                            {
+                                AlbumsTreeStore->erase( i->second );
+                                m_TrackIterMap.erase( i );
+                            }
                         }
 
                 int

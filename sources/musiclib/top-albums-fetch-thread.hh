@@ -44,15 +44,18 @@ namespace MPX
 
             typedef sigc::signal< void, Glib::RefPtr<Gdk::Pixbuf>, std::string const&, std::string const& > SignalAlbum_t;
             typedef sigc::signal< void >                                                                    SignalStopped_t;
+            typedef sigc::signal< void, gint64, gint64 >                                                    SignalProgress_t;
 
             typedef sigx::signal_f< SignalAlbum_t >                                                         SignalAlbum_x;
             typedef sigx::signal_f< SignalStopped_t >                                                       SignalStopped_x;
+            typedef sigx::signal_f< SignalProgress_t >                                                      SignalProgress_x;
 
             RequestLoad_t           RequestLoad;
             RequestStop_t           RequestStop;
 
             SignalAlbum_x           SignalAlbum;
             SignalStopped_x         SignalStopped;
+            SignalProgress_x        SignalProgress;
 
         protected:
 
