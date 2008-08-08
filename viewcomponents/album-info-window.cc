@@ -247,11 +247,22 @@ namespace MPX
 
                         if( !v.empty ())
                         {
-                                std::string mbid, country, year;
+                                std::string mbid, country, year, album_artist, album;
 
-                                mbid = get<std::string>(v[0]["mb_album_id"]);
-                                country = get<std::string>(v[0]["mb_release_country"]);
-                                year = get<std::string>(v[0]["mb_release_date"]);
+                                if(v[0].count("mb_album_id"))
+                                    mbid = get<std::string>(v[0]["mb_album_id"]);
+
+                                if(v[0].count("mb_release_country"))
+                                    country = get<std::string>(v[0]["mb_release_country"]);
+
+                                if(v[0].count("mb_release_date"))
+                                    year = get<std::string>(v[0]["mb_release_date"]);
+
+                                if(v[0].count("album_artist"))
+                                    album_artist = get<std::string>(v[0]["album_artist"]);
+
+                                if(v[0].count("album"))
+                                    album = get<std::string>(v[0]["album"]);
 
                                 if(year.size())
                                 {
@@ -259,16 +270,16 @@ namespace MPX
                                 }
 
                                 m_l1->set_markup((boost::format ("<big>%s</big>")
-                                                        % Glib::Markup::escape_text(get<std::string>(v[0]["album_artist"])).raw()
+                                                        % Glib::Markup::escape_text(album_artist).raw()
                                                  ).str());
 
                                 m_l2->set_markup((boost::format ("<big><b>%s</b></big>")
-                                                        % Glib::Markup::escape_text(get<std::string>(v[0]["album"])).raw()
+                                                        % Glib::Markup::escape_text(album).raw()
                                                  ).str());
 
                                 m_l3->set_text((boost::format ("%s %s") % country % year).str()); 
-                                m_l4->set_text(mbid);
                                 m_l5->set_text((boost::format ("%lld") % count).str());
+                                m_l4->set_text(mbid);
 
                                 Cairo::RefPtr<Cairo::ImageSurface> surface;
                                 m_Covers.fetch(mbid, surface, COVER_SIZE_DEFAULT);
