@@ -67,6 +67,8 @@ namespace MPX
 
             MLibManager (Glib::RefPtr<Gnome::Glade::Xml> const& xml, MPX::HAL & obj_hal, MPX::Library & obj_library);
 
+
+
             void
             scan_end (gint64,gint64,gint64,gint64,gint64);
 
@@ -92,8 +94,12 @@ namespace MPX
             has_active_parent (Gtk::TreeIter &);
 
 
+
             void
             on_volumes_cbox_changed ();
+
+            void
+            on_volumes_row_activated (const Gtk::TreePath&, Gtk::TreeViewColumn*);
 
             void
             on_fstree_row_expanded (const Gtk::TreeIter & iter, const Gtk::TreePath & path);

@@ -945,7 +945,10 @@ namespace MPX
                             IdIterMap::iterator i = m_AlbumIterMap.find(id);
                             if( i != m_AlbumIterMap.end() )
                             {
+                                std::string mbid = (*i->second)[Columns.MBID];
                                 AlbumsTreeStore->erase( i->second );
+                                IterSet & set = m_MBIDIterMap[mbid];
+                                set.erase( i->second );
                                 m_AlbumIterMap.erase( i );
                             }
                         }

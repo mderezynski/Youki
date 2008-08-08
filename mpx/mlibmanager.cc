@@ -105,7 +105,12 @@ namespace MPX
         m_VolumesView->get_selection()->signal_changed().connect(
             sigc::mem_fun(
                 *this,
-                &MLibManager::on_volumes_cbox_changed
+                &MLibManager::on_volumes_changed
+        ));
+        m_VolumesView->signal_row_activated().connect(
+            sigc::mem_fun(
+                *this,
+                &MLibManager::on_volumes_row_activated
         ));
 
         populate_volumes();
@@ -252,29 +257,6 @@ namespace MPX
     {
         static boost::format volume_label_f1 ("%1%: %2%");
 
-#if 0
-        try{
-                typedef std::vector<Glib::RefPtr<Gio::Volume> > GVolumeV;
-
-                //
-                Glib::RefPtr<Gio::VolumeMonitor> Monitor = Gio::VolumeMonitor::get();
-                GVolumeV Volumes = Monitor->get_volumes(); 
-    
-                for(GVolumeV::const_iterator i = Volumes.begin(); i != Volumes.end(); ++i)
-                {
-                    Glib::RefPtr<Gio::Volume> const& Volume = *i;
-
-                    (*iter)[VolumeColumns.Name] = Volume->get_name();
-                    (*iter)[VolumeColumns.Mountpoint] = Volume->get_mount()->get_name(); 
-                    (*iter)[VolumeColumns.GioVolume] = *i; 
-                }
-
-        } catch(...) {
-            MessageDialog dialog (_("An error occured trying to populate volumes"));
-            dialog.run();
-        }
-#endif
-           
         try { 
                 Hal::RefPtr<Hal::Context> Ctx = m_HAL.get_context();
                 HAL::VolumesV volumes;
@@ -418,7 +400,13 @@ namespace MPX
     }
 
     void
-    MLibManager::on_volumes_cbox_changed ()
+    MLibManager::on_volumes_row_activated (const Gtk::TreePath&, Gtk::TreeViewColumn*)
+    {
+        on_rescan_volume ();
+    }
+
+    void
+    MLibManager::on_volumes_changed ()
     {
         bool has_selection = m_VolumesView->get_selection()->count_selected_rows();
         m_Rescan->set_sensitive( has_selection );
@@ -518,7 +506,7 @@ namespace MPX
         }
         else
         {
-            /*MessageDialog dialog(
+            MessageDialog dialog(
                 (boost::format ("Are you sure you want <b>add</b> Music <b>from this path</b> to the Library:\n\n'<b>%s</b>'")
                     % Markup::escape_text(filename_to_utf8(full_path)).c_str()
                 ).str(),
@@ -526,9 +514,9 @@ namespace MPX
                 MESSAGE_QUESTION,
                 BUTTONS_YES_NO,
                 true
-            );*/
+            );
 
-            //if( dialog.run() == GTK_RESPONSE_YES )
+            if( dialog.run() == GTK_RESPONSE_YES )
             {
                     m_ManagedPaths.insert(full_path);
                     recreate_path_frags ();
@@ -551,8 +539,6 @@ namespace MPX
         }
         m_Library.initScan(v);
     }
-
-
 
     void
     MLibManager::cell_data_func_active (CellRenderer * basecell, TreeIter const& iter)
