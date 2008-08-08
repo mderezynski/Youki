@@ -2532,12 +2532,6 @@ namespace MPX
                                                         &AllTracksView::on_track_activated
                                                         ));
 
-                                m_Lib.get().signal_new_track().connect( 
-                                                sigc::mem_fun(
-                                                        *this,
-                                                        &AllTracksView::on_new_track
-                                                        ));
-
                                 Gtk::CheckButton * cb;
                                 xml->get_widget("alltracks-highlight", cb);
 
@@ -2551,6 +2545,19 @@ namespace MPX
                                                                 ),
 
                                                         cb
+                                                        ));
+
+                                m_Lib.get().signal_new_track().connect( 
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AllTracksView::on_new_track
+                                                        ));
+
+
+                                m_Lib.get().signal_track_deleted().connect( 
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AllTracksView::on_track_deleted
                                                         ));
                         }
 
@@ -2570,6 +2577,12 @@ namespace MPX
                                 on_new_track(Track & track, gint64 album_id, gint64 artist_id)
                                 {
                                         m_FilterModel->append_track( track );
+                                }
+
+                        void
+                                on_track_deleted(gint64 id)
+                                {
+                                        m_FilterModel->erase_track( id );
                                 }
 
                         void

@@ -24,11 +24,13 @@ namespace MPX
         typedef std::vector<Row5>                                                       ModelT;
         typedef boost::shared_ptr<ModelT>                                               ModelP;
         typedef sigc::signal<void>                                                      Signal0;
+        typedef std::map<gint64, ModelT::iterator>                                      IdIterMap;
 
         struct DataModel
         {
                 ModelP          m_realmodel;
                 Signal0         m_changed;
+                IdIterMap       m_iter_map;
 
                 DataModel()
                 {
@@ -74,7 +76,9 @@ namespace MPX
                     gint64 id = 0;
 
                     if(r.count("id"))
+                    { 
                         id = get<gint64>(r["id"]); 
+                    }
                     else
                         g_critical("%s: No id for track, extremely suspicious", G_STRLOC);
 
@@ -87,6 +91,10 @@ namespace MPX
 
                     Row5 row (title, artist, album, id, track);
                     m_realmodel->push_back(row);
+
+                    ModelT::iterator i = m_realmodel->end();
+                    std::advance( i, -1 );
+                    m_iter_map.insert(std::make_pair(id, i)); 
                 }
 
                 virtual void
@@ -114,6 +122,20 @@ namespace MPX
 
                     Row5 row (artist, album, title, id, track);
                     m_realmodel->push_back(row);
+
+                    ModelT::iterator i = m_realmodel->end();
+                    std::advance( i, -1 );
+                    m_iter_map.insert(std::make_pair(id, i)); 
+                }
+
+                void
+                erase_track(gint64 id)
+                {
+                    ModelT::iterator i = m_iter_map.find(id);
+                    if( i != m_realmodel->end() )
+                    {
+                        m_realmodel->erase( i );
+                    }
                 }
         };
 
@@ -155,6 +177,13 @@ namespace MPX
                     regen_mapping();
                 }
                 
+                void
+                erase_track(gint64 id)
+                {
+                    DataModel::erase_track(id);
+                    regen_mapping();
+                }
+
                 virtual void
                 set_filter(std::string const& filter)
                 { 
