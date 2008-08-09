@@ -361,15 +361,6 @@ namespace mpxpy
 
 namespace mpxpy
 {
-	PyObject*
-	tag_view_get_gobject (MPX::TagView & obj)
-	{
-		return pygobject_new((GObject*)(obj.gobj()));
-	}
-}
-
-namespace mpxpy
-{
     Glib::RefPtr<Gdk::Pixbuf>
 	covers_fetch (MPX::Covers & obj, std::string const& mbid)
 	{
@@ -746,6 +737,8 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("get_metadata",        &MPX::Player::get_metadata,
                                     return_internal_reference<>())
 
+        // FIXME: Deprecate the object getters by providing an interface to Services
+
 		.def("get_library",         &mpxpy::player_get_library,
                                     return_internal_reference<>()) 
 
@@ -853,16 +846,24 @@ BOOST_PYTHON_MODULE(mpx)
 
 	class_<MPX::Library, boost::noncopyable>("Library", boost::python::no_init)
 
-		.def("getSQL",                          &MPX::Library::getSQL)
-		.def("execSQL",                         &MPX::Library::execSQL)
-		.def("getMetadata",                     &MPX::Library::getMetadata)
-        .def("sqlToTrack",                      &MPX::Library::sqlToTrack)
-        .def("getTrackTags",                    &MPX::Library::getTrackTags)
-        .def("trackRated",                      &MPX::Library::trackRated)
-        .def("trackPlayed",                     &MPX::Library::trackPlayed) // can't see how plugins could possibly need this
-        .def("trackTagged",                     &MPX::Library::trackTagged)
-        .def("markovUpdate",                    &MPX::Library::markovUpdate)
-        .def("markovGetRandomProbableTrack",    &MPX::Library::markovGetRandomProbableTrack)
+		.def("getSQL", &MPX::Library::getSQL)
+		.def("execSQL", &MPX::Library::execSQL)
+
+		.def("getMetadata", &MPX::Library::getMetadata)
+
+        .def("sqlToTrack", &MPX::Library::sqlToTrack)
+
+        .def("getTrackTags", &MPX::Library::getTrackTags)
+
+        .def("trackRated", &MPX::Library::trackRated)
+        .def("trackPlayed", &MPX::Library::trackPlayed) // can't see how plugins could possibly need this
+        .def("trackTagged", &MPX::Library::trackTagged)
+
+        .def("markovUpdate", &MPX::Library::markovUpdate)
+        .def("markovGetRandomProbableTrack", &MPX::Library::markovGetRandomProbableTrack)
+
+        .def("collectionCreate", &MPX::Library::collectionCreate) 
+        .def("collectionAppend", &MPX::Library::collectionAppend) 
 
         .def("signal_new_album",        &MPX::Library::signal_new_album, return_value_policy<return_by_value>())
         .def("signal_new_artist",       &MPX::Library::signal_new_artist, return_value_policy<return_by_value>())
@@ -898,7 +899,7 @@ BOOST_PYTHON_MODULE(mpx)
         .def("get_active_tag", &MPX::TagView::get_active_tag, return_internal_reference<>())
         .def("clear", &MPX::TagView::clear)
         .def("add_tag", &MPX::TagView::add_tag)
-        .def("get_widget", &mpxpy::tag_view_get_gobject)
+        .def("get_widget", &mpxpy::get_gobject<MPX::TagView>)
         .def("display", &MPX::TagView::display)
     ;
 

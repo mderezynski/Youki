@@ -3049,7 +3049,7 @@ namespace MPX
                         }
 
                 PyObject*
-                        PlaybackSourceMusicLib::get_playlist_current_iter ()
+                        PlaybackSourceMusicLib::get_playlist_current_path ()
                         {
                                 MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
@@ -3058,9 +3058,9 @@ namespace MPX
                                         Py_INCREF(Py_None);
                                         return Py_None;
                                 }
-
-                                GtkTreeIter  * iter = playlist.m_CurrentIter.get().gobj();
-                                return pyg_boxed_new(GTK_TYPE_TREE_ITER, iter, TRUE, FALSE);
+        
+                                TreePath path (playlist.m_CurrentIter.get());
+                                return pygtk_tree_path_to_pyobject(path.gobj());
                         }
 
                 Glib::RefPtr<Gtk::TreeStore>
@@ -3072,7 +3072,7 @@ namespace MPX
                         }
 
                 PyObject*
-                        PlaybackSourceMusicLib::get_albums_selected_iter ()
+                        PlaybackSourceMusicLib::get_albums_selected_path ()
                         {
                                 AlbumTreeView & albums (*m_Private->m_TreeViewAlbums);
 
@@ -3082,14 +3082,8 @@ namespace MPX
                                     return Py_None;
                                 }
 
-                                GtkTreeIter  * iter = albums.get_selection()->get_selected().gobj();
-                                return pyg_boxed_new(GTK_TYPE_TREE_ITER, iter, TRUE, FALSE);
-                        }
-
-                Glib::RefPtr<Gtk::ActionGroup>
-                        PlaybackSourceMusicLib::get_action_group ()
-                        {
-                                return m_MainActionGroup;
+                                TreePath path (albums.get_selection()->get_selected());
+                                return pygtk_tree_path_to_pyobject(path.gobj());
                         }
 
 

@@ -67,10 +67,9 @@ namespace
         const char ui_collections_popup [] =
                 "<ui>"
                 ""
-                "<menubar name='popup-collectionlist-list'>"
+                "<menubar name='popup-collectionlist-list-%1%'>"
                 ""
-                "   <menu action='dummy' name='menu-collectionlist-list'>"
-                "       <menuitem action='action-collection-info'/>"
+                "   <menu action='dummy' name='menu-collectionlist-list-%1%'>"
                 "   </menu>"
                 ""
                 "</menubar>"
@@ -125,20 +124,21 @@ namespace MPX
                         const PAccess<MPX::Library>&            lib
                 )
                 : WidgetLoader<Gtk::TreeView>(xml,name)
+                , m_Name(name)
                 , m_Lib(lib)
                 , m_ButtonPressed(false)
                 {
+                        m_Lib.get().signal_collection_new_track().connect(
+                            sigc::mem_fun(
+                                *this,
+                                &CollectionTreeView::on_new_track
+                        ));
+
 #if 0
                         m_Lib.get().signal_new_collection().connect(
                             sigc::mem_fun(
                                 *this,
                                 &CollectionTreeView::on_new_collection
-                        ));
-
-                        m_Lib.get().signal_new_track().connect(
-                            sigc::mem_fun(
-                                *this,
-                                &CollectionTreeView::on_new_track
                         ));
 
                         m_Lib.get().signal_collection_deleted().connect(
@@ -280,9 +280,6 @@ namespace MPX
 
                         set_model(CollectionsTreeStoreFilter);
 
-                        CollectionsTreeStore->set_sort_func(0 , sigc::mem_fun( *this, &CollectionTreeView::slotSortStrictAlpha ));
-                        CollectionsTreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
-
                         Glib::RefPtr<Gdk::Pixbuf> pixbuf =
                                 Gdk::Pixbuf::create_from_file(
                                                 build_filename(
@@ -328,7 +325,7 @@ namespace MPX
                         */
 
                         m_UIManager->insert_action_group(m_ActionGroup);
-                        m_UIManager->add_ui_from_string(ui_collections_popup);
+                        m_UIManager->add_ui_from_string((boost::format(ui_collections_popup) % m_Name).str());
 
                         collection_list_load ();
                 }
@@ -379,7 +376,6 @@ namespace MPX
 
                                                 SQL::RowV v;
                                                 m_Lib.get().getSQL(v, (boost::format ("SELECT * from track_view WHERE id = '%lld'") % id).str());
-                                        
                                                 SQL::Row & r = v[0];
 
                                                 TreeIter child = CollectionsTreeStore->append(iter->children());
@@ -390,7 +386,7 @@ namespace MPX
                                                 (*child)[Columns.TrackId] = get<gint64>(r["id"]);
                                                 (*child)[Columns.RowType] = CRT_ROW_TRACK; 
 
-                                                m_TrackIterMap.insert(std::make_pair(id, child));
+//                                                m_TrackIterMap.insert(std::make_pair(id, child));
                                         }
 
                                         if(v.size())
@@ -492,7 +488,7 @@ namespace MPX
                                                         Gtk::Menu * menu = dynamic_cast < Gtk::Menu* > (
                                                                         Util::get_popup(
                                                                                 m_UIManager,
-                                                                                "/popup-collectionlist-list/menu-collectionlist-list"
+                                                                                (boost::format ("/popup-collectionlist-list-%1%/menu-collectionlist-list-%1%") % m_Name).str()
                                                                                 ));
 
                                                         if (menu) // better safe than screwed
@@ -606,33 +602,28 @@ namespace MPX
                         }
 
                 void
-                        CollectionTreeView::on_new_track(Track & track, gint64 collection_id, gint64 artist_id)
+                        CollectionTreeView::on_new_track(gint64 collection_id, gint64 track_id)
                         {
-#if 0
                                 if(m_CollectionIterMap.count(collection_id))
                                 {
                                         TreeIter iter = m_CollectionIterMap[collection_id];
                                         if (((*iter)[Columns.HasTracks]))
                                         {
-                                                TreeIter child = CollectionsTreeStore->append(iter->children());
-                                                if(track[ATTRIBUTE_TITLE])
-                                                        (*child)[Columns.TrackTitle] = get<std::string>(track[ATTRIBUTE_TITLE].get());
-                                                if(track[ATTRIBUTE_ARTIST])
-                                                        (*child)[Columns.TrackArtist] = get<std::string>(track[ATTRIBUTE_ARTIST].get());
-                                                if(track[ATTRIBUTE_MB_ARTIST_ID])
-                                                        (*child)[Columns.TrackArtistMBID] = get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get());
-                                                if(track[ATTRIBUTE_TRACK])
-                                                        (*child)[Columns.TrackNumber] = get<gint64>(track[ATTRIBUTE_TRACK].get());
-                                                if(track[ATTRIBUTE_TIME])
-                                                        (*child)[Columns.TrackLength] = get<gint64>(track[ATTRIBUTE_TIME].get());
+                                                SQL::RowV v;
+                                                m_Lib.get().getSQL(v, (boost::format ("SELECT * from track_view WHERE id = '%lld'") % track_id).str());
+                                                SQL::Row & r = v[0];
 
-                                                (*child)[Columns.TrackId] = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get());
+                                                TreeIter child = CollectionsTreeStore->append(iter->children());
+                                                (*child)[Columns.TrackArtist] = Markup::escape_text(get<std::string>(r["artist"]));
+                                                (*child)[Columns.TrackTitle] = get<std::string>(r["title"]);
+                                                (*child)[Columns.TrackNumber] = get<gint64>(r["track"]);
+                                                (*child)[Columns.TrackLength] = get<gint64>(r["time"]);
+                                                (*child)[Columns.TrackId] = get<gint64>(r["id"]);
                                                 (*child)[Columns.RowType] = CRT_ROW_TRACK; 
                                         }
                                 }
                                 else
                                         g_warning("%s: Got new track without associated collection! Consistency error!", G_STRLOC);
-#endif
                         }
 
                 void

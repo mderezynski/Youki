@@ -1060,6 +1060,8 @@ namespace MPX
                     ));
 
                     execSQL("COMMIT");
+
+                    Signals.Collection.New.emit( id );
                    
                     return id; 
                 }
@@ -1087,6 +1089,8 @@ namespace MPX
                     ));
 
                     execSQL("COMMIT");
+
+                    Signals.Collection.Deleted.emit( id );
                 }
 
         void
@@ -1106,6 +1110,8 @@ namespace MPX
                                     id,
                                     *i
                             ));
+                            // XXX: We can afford to emit the signal here even though we are in a transaction, because the tracks already exist in the library
+                            Signals.Collection.NewTrack.emit( id, *i );
                     }
 
                     execSQL("COMMIT");
@@ -1126,6 +1132,8 @@ namespace MPX
                                     id,
                                     *i
                             ));
+
+                            Signals.Collection.TrackDeleted.emit( id, *i );
                     }
                 }
 

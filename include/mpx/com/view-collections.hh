@@ -122,6 +122,8 @@ namespace MPX
 
                         protected:
 
+                          std::string                           m_Name;
+
                         // ui
 
                           Glib::RefPtr<Gtk::UIManager>          m_UIManager;
@@ -236,7 +238,7 @@ namespace MPX
                                 on_new_collection(gint64);
 
                         virtual void
-                                on_new_track(Track&, gint64, gint64);
+                                on_new_track(gint64, gint64);
 
                         virtual void
                                 on_collection_deleted(gint64);

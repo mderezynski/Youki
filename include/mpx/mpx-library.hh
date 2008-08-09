@@ -171,6 +171,23 @@ namespace MPX
             typedef sigc::signal<void,
                 gint64 /*artist id*/>                           SignalNewArtist;
 
+
+            typedef sigc::signal<void,
+                gint64 /*collection id*/>                       SignalCollectionNew; 
+
+            typedef sigc::signal<void,
+                gint64 /*collection id*/>                       SignalCollectionDeleted; 
+
+            typedef sigc::signal<void,
+                gint64 /*collection id*/,
+                gint64 /*track id*/>                            SignalCollectionNewTrack;
+
+            typedef sigc::signal<void,
+                gint64 /*collection id*/,
+                gint64 /*track id*/>                            SignalCollectionTrackDeleted;
+
+
+
             typedef sigc::signal<void,
                 Track&,
                 gint64 /*albumid*/,
@@ -185,6 +202,8 @@ namespace MPX
 			typedef sigc::signal<void,
                 gint64 /*id*/,
                 gint64 /*tagid*/>                               SignalTrackTagged;
+
+
 
             typedef sigc::signal<void>                          SignalScanStart;
 
@@ -201,28 +220,54 @@ namespace MPX
 
             typedef sigc::signal<void>                          SignalReload;
 
+            struct CollectionSignalsT
+            {
+                SignalCollectionNew             New; 
+                SignalCollectionDeleted         Deleted;
+                SignalCollectionNewTrack        NewTrack;
+                SignalCollectionTrackDeleted    TrackDeleted;
+            };
+
             struct SignalsT
             {
-                SignalNewAlbum      NewAlbum;
-                SignalNewArtist     NewArtist;
-                SignalNewTrack      NewTrack;
+                SignalNewAlbum                  NewAlbum;
+                SignalNewArtist                 NewArtist;
+                SignalNewTrack                  NewTrack;
 
-				SignalTrackUpdated	TrackUpdated;
-                SignalTrackTagged   TrackTagged;
+				SignalTrackUpdated              TrackUpdated;
+                SignalTrackTagged               TrackTagged;
 
-                SignalScanStart     ScanStart;  
-                SignalScanRun       ScanRun;
-                SignalScanEnd       ScanEnd;
+                SignalScanStart                 ScanStart;  
+                SignalScanRun                   ScanRun;
+                SignalScanEnd                   ScanEnd;
 
-				SignalReload        Reload;
+				SignalReload                    Reload;
 
-                SignalAlbumDeleted  AlbumDeleted;
-				SignalAlbumUpdated	AlbumUpdated;
+                SignalAlbumDeleted              AlbumDeleted;
+				SignalAlbumUpdated	            AlbumUpdated;
 
-                SignalTrackDeleted  TrackDeleted;
+                SignalTrackDeleted              TrackDeleted;
+
+                CollectionSignalsT              Collection;
             };
 
             SignalsT Signals;
+
+            SignalCollectionNew&
+            signal_collection_new()
+            { return Signals.Collection.New ; }
+            
+            SignalCollectionDeleted&
+            signal_collection_deleted()
+            { return Signals.Collection.Deleted ; }
+
+            SignalCollectionNewTrack&
+            signal_collection_new_track()
+            { return Signals.Collection.NewTrack ; }
+            
+            SignalCollectionTrackDeleted&
+            signal_collection_track_deleted()
+            { return Signals.Collection.TrackDeleted ; }
 
             SignalNewAlbum&
             signal_new_album()

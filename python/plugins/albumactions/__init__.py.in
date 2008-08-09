@@ -33,10 +33,14 @@ class AlbumActions(mpx.Plugin):
         self.id = id
         self.player = player
         self.mcs = mcs
+		self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/albumactions/albumactions.glade")
         self.mlib = player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd");
-        self.actiongroup = gtk.ActionGroup("AlbumActions-Actions") 
+
+        # Actions
 
         self.action = []
+
+        self.actiongroup = gtk.ActionGroup("AlbumActions-Actions") 
 
         action = gtk.Action("albumlist-actions-action-add-to-collection", "Add to Collection", "", gtk.STOCK_ADD)
         action.connect("activate", self.on_action_add_cb)
@@ -53,9 +57,42 @@ class AlbumActions(mpx.Plugin):
         self.ui.insert_action_group(action_group=self.actiongroup, pos=-1)
         self.merge_id = 0
 
+        # GUI stuffs
+
+        self.dialog = self.xml.get_widget("dialog")
+
+        self.treeview = self.xml.get_widget("treeview")
+        cell = gtk.CellRendererText()
+        column = gtk.TreeViewColumn()
+        column.pack_start(cell, True)
+        column.add_attribute(cell, "text", 0)
+        self.treeview.append_column(column)
+
+        self.model = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_INT)
+        self.treeview.set_model(self.model)
+
     def on_action_add_cb(self, action):
 
-        print "Action #1 CB"
+        self.model.clear()
+
+        rv = mpx.SQLRowV()
+        self.player.get_library().getSQL(rv, str("SELECT id, name FROM collection")) 
+
+        for row in rv:
+                self.model.append([row["name"].get_string(), row["id"].get_int()]) 
+
+        response_id = self.dialog.run()
+        self.dialog.hide()
+
+        if response_id == gtk.RESPONSE_OK:
+
+            name, id = self.model.get(self.treeview.get_selection().get_selected()[1], 0, 1)
+            path = self.mlib.get_albums_selected_path()
+            iter = self.mlib.get_albums_model().get_iter(path)
+            track_id = self.mlib.get_albums_model().get(iter, 21)
+            idv = mpx.IdVector()
+            idv.append(track_id[0])
+            self.player.get_library().collectionAppend(id, idv)
 
     def on_action_add_new_cb(self, action):
 
