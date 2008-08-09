@@ -16,10 +16,10 @@
 //
 //  --
 //
-//  The MPXx project hereby grants permission for non-GPL compatible GStreamer
-//  plugins to be used and distributed together with GStreamer and MPXx. This
+//  The MPX project hereby grants permission for non-GPL compatible GStreamer
+//  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
-//  MPXx is covered by.
+//  MPX is covered by.
 #ifndef MPX_LIBRARY_CLASS_HH
 #define MPX_LIBRARY_CLASS_HH
 
@@ -35,10 +35,20 @@
 
 namespace MPX
 {
-  class HAL;
-  class MetadataReaderTagLib;
-  class Library : public sigx::glib_auto_dispatchable, public Service::Base
-  {
+    struct Collection
+    {
+        gint64          Id;
+        std::string     Name;
+        std::string     Blurb;
+        std::string     Cover_URL;
+    };
+
+    typedef std::vector<Collection> CollectionV;
+
+    class HAL;
+    class MetadataReaderTagLib;
+    class Library : public sigx::glib_auto_dispatchable, public Service::Base
+    {
         friend class LibraryScannerThread;
 
         public:
@@ -124,6 +134,28 @@ namespace MPX
 
             gint64 
             markovGetRandomProbableTrack(gint64 /* track a*/); 
+
+
+            gint64
+            collectionCreate(const std::string& /*name*/, const std::string& /*blurb*/);
+    
+            void
+            collectionDelete(gint64 /*id*/);
+
+            void
+            collectionAppend(gint64 /*id*/, const IdV&);
+
+            void
+            collectionErase(gint64 /*id*/, const IdV&);
+
+            void
+            collectionGetMeta(gint64 /*id*/, Collection& /*collection*/);
+
+            void
+            collectionGetAll(IdV& /*collections*/);
+
+            void
+            collectionGetTracks(gint64 id, IdV& /*collections*/);
 
         public:
 
@@ -279,7 +311,6 @@ namespace MPX
             bool
             recache_covers_handler (SQL::RowV *, int*); 
     };
-
 } // namespace MPX
 
 #endif // !MPX_LIBRARY_CLASS_HH

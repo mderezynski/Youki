@@ -63,7 +63,7 @@ namespace
 
   char const* credit_text[] =
   {
-      N_("<big>MPX is brought to you by</big>"),
+      N_("<big>AudioSource is brought to you by</big>"),
       "Milosz Derezynski",
       "David Le Brun",
       "Chong Kai Xiong",
@@ -249,7 +249,7 @@ namespace MPX
           int width, height;
           layout->get_pixel_size (width, height);
 
-          cr->move_to ((m_background->get_width () - width) / 2,
+          cr->move_to ((m_background->get_width () - 50 - width) / 2 + 50,
                         m_background->get_height () - height - text_bottom_margin);
           cr->set_source_rgba (text_colour[0], text_colour[1], text_colour[2], alpha);
           cr->set_operator (Cairo::OPERATOR_ATOP);

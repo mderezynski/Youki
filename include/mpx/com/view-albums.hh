@@ -186,9 +186,9 @@ namespace MPX
 
                         // view mappings
 
-                          MBIDIterMap                           m_MBIDIterMap;
-                          IdIterMap                             m_AlbumIterMap;
-                          IdIterMap                             m_TrackIterMap;
+                          MBIDIterMap                           m_Album_MBID_Iter_Map;
+                          IdIterMap                             m_Album_Iter_Map;
+                          IdIterMap                             m_Track_Iter_Map;
 
                         // disc+rating pixbufs
 

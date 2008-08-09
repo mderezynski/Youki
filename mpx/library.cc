@@ -178,37 +178,40 @@ namespace MPX
                         bool                      use_hal
 #endif // HAVE_HAL
                         )
-                : sigx::glib_auto_dispatchable()
-                  , Service::Base("mpx-service-library")
-                  , m_Services(services)
-                  , m_HAL(*(services.get<HAL>("mpx-service-hal")))
-                  , m_Covers(*(services.get<Covers>("mpx-service-covers")))
-                  , m_MetadataReaderTagLib(*(services.get<MetadataReaderTagLib>("mpx-service-taglib")))
-                  , m_Flags (0)
+        : sigx::glib_auto_dispatchable()
+        , Service::Base("mpx-service-library")
+        , m_Services(services)
+        , m_HAL(*(services.get<HAL>("mpx-service-hal")))
+        , m_Covers(*(services.get<Covers>("mpx-service-covers")))
+        , m_MetadataReaderTagLib(*(services.get<MetadataReaderTagLib>("mpx-service-taglib")))
+        , m_Flags (0)
         {
                 const int MLIB_VERSION_CUR = 1;
                 const int MLIB_VERSION_REV = 0;
                 const int MLIB_VERSION_AGE = 0;
 
                 try{
-                        m_SQL = new SQL::SQLDB ((boost::format ("mpxdb-%d-%d-%d")
-                                                % MLIB_VERSION_CUR 
-                                                % MLIB_VERSION_REV
-                                                % MLIB_VERSION_AGE).str(), build_filename(g_get_user_data_dir(),PACKAGE), SQLDB_OPEN);
+                        m_SQL = new SQL::SQLDB(
+                                (boost::format ("mpxdb-%d-%d-%d")
+                                    % MLIB_VERSION_CUR 
+                                    % MLIB_VERSION_REV
+                                    % MLIB_VERSION_AGE
+                                ).str(),
+                                build_filename(g_get_user_data_dir(),PACKAGE),
+                                SQLDB_OPEN
+                        );
                 }
                 catch (DbInitError & cxe)
                 {
                         g_message("%s: Error Opening the DB", G_STRLOC);
+                        throw;
                 }
 
                 if(!m_SQL->table_exists("meta"))
                 {
-                        m_Flags = 0;
-
 #ifdef HAVE_HAL
                         m_Flags |= (use_hal ? F_USING_HAL : 0); 
 #endif // HAVE_HAL
-
                         m_SQL->exec_sql("CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0)");
                         m_SQL->exec_sql((boost::format ("INSERT INTO meta (flags) VALUES(%lld)") % m_Flags).str());
                 }
@@ -218,6 +221,8 @@ namespace MPX
                         m_SQL->get (rows, "SELECT flags FROM meta"); 
                         m_Flags |= get<gint64>(rows[0].find("flags")->second); 
                 }
+
+
 
                 m_ScannerThread = (new LibraryScannerThread(new SQL::SQLDB(*m_SQL), m_MetadataReaderTagLib, m_HAL, m_Flags));
                 m_ScannerThread->run();
@@ -232,6 +237,11 @@ namespace MPX
                                 sigc::bind( sigc::mem_fun( m_Covers, &Covers::cache ), true ));
                 m_ScannerThread->connect().signal_reload().connect(
                                 sigc::mem_fun( *this, &Library::reload ));
+
+
+                ///////////////////////////////////////////////////////////////
+                /// ARTIST TABLE 
+                ///////////////////////////////////////////////////////////////
 
                 static boost::format
                         artist_table_f ("CREATE TABLE IF NOT EXISTS artist "
@@ -258,6 +268,10 @@ namespace MPX
                                         % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id
                                         % attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id
                                         % attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id).str());
+
+                ///////////////////////////////////////////////////////////////
+                /// ALBUM TABLE 
+                ///////////////////////////////////////////////////////////////
 
                 static boost::format
                         album_table_f ("CREATE TABLE IF NOT EXISTS album "
@@ -287,6 +301,11 @@ namespace MPX
                                         % attrs[ATTRIBUTE_ASIN].id
                                         % "album_artist_j").str());
 
+
+                ///////////////////////////////////////////////////////////////
+                /// TAG TABLE 
+                ///////////////////////////////////////////////////////////////
+
                 static boost::format
                         tag_table_f ("CREATE TABLE IF NOT EXISTS tag "
                                         "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, " 
@@ -294,6 +313,10 @@ namespace MPX
 
                 m_SQL->exec_sql ((tag_table_f  % "tag" % "tag").str()); 
 
+
+                ///////////////////////////////////////////////////////////////
+                /// TAGS TABLE 
+                ///////////////////////////////////////////////////////////////
 
                 static boost::format
                         tags_table_f ("CREATE TABLE IF NOT EXISTS tags "
@@ -304,6 +327,10 @@ namespace MPX
                 m_SQL->exec_sql ((tags_table_f  % "tagid" % "trackid" % "amplitude" 
                                         % "tagid" % "trackid").str()); 
 
+
+                ///////////////////////////////////////////////////////////////
+                /// ALBUM RATING HISTORY TABLE 
+                ///////////////////////////////////////////////////////////////
 
                 static boost::format
                         album_rating_history_f ("CREATE TABLE IF NOT EXISTS album_rating_history "
@@ -317,6 +344,10 @@ namespace MPX
                                  % "time"
                                 ).str()); 
 
+
+                ///////////////////////////////////////////////////////////////
+                /// TRACK TABLE 
+                ///////////////////////////////////////////////////////////////
 
                 StrV columns;
                 for (unsigned int n = 0; n < G_N_ELEMENTS(attrs); ++n)
@@ -354,6 +385,10 @@ namespace MPX
                                         % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id
                                         % attrs[ATTRIBUTE_LOCATION].id).str());
 
+                ///////////////////////////////////////////////////////////////
+                /// TRACK VIEW VIEW 
+                ///////////////////////////////////////////////////////////////
+
                 m_SQL->exec_sql ("CREATE VIEW IF NOT EXISTS track_view AS " 
                                 "SELECT"
                                 "  track.* "
@@ -365,31 +400,47 @@ namespace MPX
                                 "JOIN album ON album.id = track.album_j JOIN artist "
                                 "ON artist.id = track.artist_j JOIN album_artist ON album.album_artist_j = album_artist.id");
 
+                ///////////////////////////////////////////////////////////////
+                /// DEVICES TABLE 
+                ///////////////////////////////////////////////////////////////
+
                 m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS devices (id INTEGER PRIMARY KEY AUTOINCREMENT, device_udi TEXT, volume_udi TEXT)");
+
+                ///////////////////////////////////////////////////////////////
+                /// MARKOV TABLE 
+                ///////////////////////////////////////////////////////////////
+
                 m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS markov (id INTEGER PRIMARY KEY AUTOINCREMENT, count INTEGER DEFAULT 0, track_id_a INTEGER DEFAULT NULL, track_id_b INTEGER DEFAULT NULL)");
+
+                ///////////////////////////////////////////////////////////////
+                /// COLLECTIONS TABLE 
+                ///////////////////////////////////////////////////////////////
+
+                m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS collection (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, blurb TEXT NOT NULL, cover_url TEXT)");
+
         }
 
         Library::Library(
-                        Library const& other
-                        )
-                : sigx::glib_auto_dispatchable()
-                  , Service::Base("mpx-service-library-copy")
-                  , m_Services(other.m_Services)
+            Library const& other
+        )
+        : sigx::glib_auto_dispatchable()
+        , Service::Base("mpx-service-library-copy")
+        , m_Services(other.m_Services)
 #ifdef HAVE_HAL
-                  , m_HAL(other.m_HAL)
+        , m_HAL(other.m_HAL)
 #endif
-                          , m_Covers(other.m_Covers)
-                          , m_MetadataReaderTagLib(other.m_MetadataReaderTagLib)
-                          , m_Flags(0)
-                          {
-                                  try{
-                                          m_SQL = new SQL::SQLDB (*other.m_SQL);
-                                  }
-                                  catch (DbInitError & cxe)
-                                  {
-                                          g_message("%s: Error Opening the DB", G_STRLOC);
-                                  }
-                          }
+        , m_Covers(other.m_Covers)
+        , m_MetadataReaderTagLib(other.m_MetadataReaderTagLib)
+        , m_Flags(0)
+        {
+                  try{
+                          m_SQL = new SQL::SQLDB (*other.m_SQL);
+                  }
+                  catch (DbInitError & cxe)
+                  {
+                          g_message("%s: Error Opening the DB", G_STRLOC);
+                  }
+        }
 
 
         Library::~Library ()
@@ -979,6 +1030,185 @@ namespace MPX
                                 track[ATTRIBUTE_SAMPLERATE] = get<gint64>(row["samplerate"]);
 
                         return track;
+                }
+
+
+        gint64
+                Library::collectionCreate(
+                    const std::string& name,
+                    const std::string& blurb
+                )
+                {
+
+                    static std::string 
+                            collection_table_create_f ("CREATE TABLE collection_%lld (track_id INTEGER NOT NULL)");
+
+                    static std::string 
+                            collection_create_f ("INSERT INTO TABLE collection (name, blurb) VALUES ('%q', '%q')");
+
+                    execSQL("BEGIN");
+
+                    execSQL(mprintf(collection_create_f.c_str(),
+                            name.c_str(),
+                            blurb.c_str()
+                    ));
+
+                    gint64 id = m_SQL->last_insert_rowid(); // FIXME: NOT MULTIPLE CONNECTION SAFE
+
+                    execSQL(mprintf(collection_table_create_f.c_str(),
+                            id
+                    ));
+
+                    execSQL("COMMIT");
+                   
+                    return id; 
+                }
+
+        void
+                Library::collectionDelete(
+                    gint64 id
+                )
+                {
+
+                    static std::string
+                            collection_table_delete_f ("DROP TABLE collection_%lld");    
+                        
+                    static std::string
+                            collection_delete_f ("DELETE FROM collection WHERE id = '%lld'");
+
+                    execSQL("BEGIN");
+
+                    execSQL(mprintf(collection_delete_f.c_str(),
+                            id
+                    ));
+
+                    execSQL(mprintf(collection_table_delete_f.c_str(),
+                            id
+                    ));
+
+                    execSQL("COMMIT");
+                }
+
+        void
+                Library::collectionAppend(
+                    gint64      id,
+                    const IdV&  tracks
+                )
+                {
+                    static std::string
+                            collection_append_f ("INSERT INTO collection_%lld (track_id) VALUES ('%lld')");
+
+                    execSQL("BEGIN");
+
+                    for( IdV::const_iterator i = tracks.begin(); i != tracks.end(); ++i )
+                    {
+                            execSQL(mprintf(collection_append_f.c_str(),
+                                    id,
+                                    *i
+                            ));
+                    }
+
+                    execSQL("COMMIT");
+                } 
+
+        void
+                Library::collectionErase(
+                    gint64      id,
+                    const IdV&  tracks
+                )
+                {
+                    static std::string
+                            collection_erase_f ("DELETE FROM collection_%lld WHERE track_id ='%lld'");
+
+                    for( IdV::const_iterator i = tracks.begin(); i != tracks.end(); ++i )
+                    {
+                            execSQL(mprintf(collection_erase_f.c_str(),
+                                    id,
+                                    *i
+                            ));
+                    }
+                }
+
+        void
+                Library::collectionGetMeta(
+                    gint64          id,
+                    Collection&     collection
+                )
+                {
+                    static std::string
+                            collection_acquire_meta ("SELECT * FROM collection WHERE id ='%lld'");
+
+                    static std::string
+                            collection_acquire_tracks ("SELECT track_id FROM collection_%lld");
+
+                    SQL::RowV v;
+
+                    getSQL(
+                        v,
+                        mprintf(
+                            collection_acquire_meta.c_str(),
+                            id
+                        )
+                    );
+
+                    collection = Collection();
+
+                    collection.Id = get<gint64>(v[0]["id"]);
+
+                    if( v[0].count("name") )
+                        collection.Name         = get<std::string>(v[0]["name"]);
+
+                    if( v[0].count("blurb") )
+                        collection.Blurb        = get<std::string>(v[0]["blurb"]);
+
+                    if( v[0].count("cover_url") )
+                        collection.Cover_URL    = get<std::string>(v[0]["cover_url"]);
+                }
+
+        void
+                Library::collectionGetAll(
+                    IdV&   collections
+                )
+                {
+                    static std::string
+                           collections_get_f ("SELECT id FROM collection");
+
+                    SQL::RowV v;
+
+                    getSQL(
+                        v,
+                        collections_get_f.c_str()
+                    );
+                         
+                    for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )   
+                    {
+                        collections.push_back(get<gint64>((*i)["id"]));
+                    }
+                }
+
+        void
+                Library::collectionGetTracks(
+                    gint64          id,
+                    IdV&            tracks
+                )
+                {
+                    static std::string
+                            collection_acquire_tracks ("SELECT track_id FROM collection_%lld");
+
+                    SQL::RowV v;
+
+                    getSQL(
+                        v,
+                        mprintf(
+                            collection_acquire_tracks.c_str(),
+                            id
+                        )
+                    );
+
+                    for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
+                    {
+                        tracks.push_back( get<gint64>((*i)["track_id"]));
+                    }
                 }
 
         gint64

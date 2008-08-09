@@ -59,6 +59,7 @@
 #include "mpx/com/file-system-tree.hh"
 #include "mpx/com/view-tracklist.hh"
 #include "mpx/com/view-albums.hh"
+#include "mpx/com/view-collections.hh"
 
 #include "source-musiclib.hh"
 #include "musiclib-py.hh"
@@ -2602,9 +2603,10 @@ namespace MPX
 
                 PlaylistTreeView        *   m_TreeViewPlaylist;
                 AlbumTreeView           *   m_TreeViewAlbums;
+                CollectionTreeView      *   m_TreeViewCollections;
+                AllTracksView           *   m_ViewAllTracks;
                 LFMTreeView             *   m_TreeViewLFM;
                 FileSystemTree          *   m_TreeViewFS;
-                AllTracksView           *   m_ViewAllTracks;
 
                 PAccess<MPX::Library>       m_Lib;
                 PAccess<MPX::Covers>        m_Covers;
@@ -2627,9 +2629,10 @@ namespace MPX
 
                         m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, ui_manager, m_Lib, m_HAL, mlib);
                         m_TreeViewAlbums = new AlbumTreeView(m_RefXml, "source-musiclib-treeview-albums", "albums-showing", "albums-filter-entry", "musiclib-cb-advanced-query", ui_manager, m_Lib, m_Covers);
+                        m_TreeViewCollections = new CollectionTreeView(m_RefXml, "source-musiclib-treeview-collections", "collections-showing", "collections-filter-entry", ui_manager, m_Lib);
+                        m_ViewAllTracks = new AllTracksView(m_RefXml, m_Lib, m_HAL, mlib);
                         m_TreeViewLFM = new LFMTreeView(m_RefXml, m_Lib, m_Covers, mlib);
                         m_TreeViewFS = new FileSystemTree(m_RefXml, "musiclib-treeview-file-system");
-                        m_ViewAllTracks = new AllTracksView(m_RefXml, m_Lib, m_HAL, mlib);
 
                         m_TreeViewFS->build_file_system_tree("/");
                         m_TreeViewFS->signal_uri().connect(

@@ -825,8 +825,6 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
   std::string column_values;
   column_values.reserve (0x400);
 
-  m_SQL->exec_sql("BEGIN");
-
   try{
       gint64 artist_j = get_track_artist_id (track);
       gint64 album_j = get_album_id (track, get_album_artist_id (track));
@@ -859,7 +857,6 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
       column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
       m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
       track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->last_insert_rowid ();
-      m_SQL->exec_sql("COMMIT");
       pthreaddata->NewTrack.emit( track, album_j, artist_j ); 
   }
   catch (SqlConstraintError & cxe)

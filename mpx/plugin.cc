@@ -84,7 +84,7 @@ namespace MPX
 	, m_Player(player)
 	{
         try{
-            mcs_plugins = new Mcs::Mcs (Glib::build_filename (Glib::build_filename (Glib::get_user_config_dir (), "mpx"), "plugins.xml"), "mpx", 0.01);
+            mcs_plugins = new Mcs::Mcs (Glib::build_filename (Glib::build_filename (Glib::get_user_config_dir (), PACKAGE), "plugins.xml"), "mpx", 0.01);
         } catch (Mcs::Mcs::Exceptions & cxe)
         {
         }

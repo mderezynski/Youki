@@ -179,7 +179,6 @@ namespace MPX
           }
     };
 
-    typedef boost::optional<std::string> ostring;
     typedef std::vector< gint64 > IdV;
 
     namespace SQL

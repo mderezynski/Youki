@@ -482,7 +482,7 @@ namespace MPX
                                                 (*child)[Columns.TrackId] = get<gint64>(r["id"]);
                                                 (*child)[Columns.RowType] = ROW_TRACK; 
 
-                                                m_TrackIterMap.insert(std::make_pair(id, child));
+                                                m_Track_Iter_Map.insert(std::make_pair(id, child));
                                         }
 
                                         if(v.size())
@@ -674,7 +674,7 @@ namespace MPX
                                 surface = Util::cairo_image_surface_round(surface, 9.5);
                                 Util::cairo_image_surface_rounded_border(surface, .5, 9.5);
 
-                                IterSet & set = m_MBIDIterMap[mbid];
+                                IterSet & set = m_Album_MBID_Iter_Map[mbid];
 
                                 for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
                                 {
@@ -730,7 +730,7 @@ namespace MPX
                                 {
                                         std::string mbid = get<std::string>(r["mb_album_id"]);
 
-                                        IterSet & s = m_MBIDIterMap[mbid];
+                                        IterSet & s = m_Album_MBID_Iter_Map[mbid];
                                         s.insert(iter);
 
                                         (*iter)[Columns.MBID] = mbid; 
@@ -834,8 +834,8 @@ namespace MPX
                 void
                         AlbumTreeView::update_album (SQL::Row & r, gint64 id)
                         {
-                                IdIterMap::iterator i = m_AlbumIterMap.find(id);
-                                if (i == m_AlbumIterMap.end()) return;
+                                IdIterMap::iterator i = m_Album_Iter_Map.find(id);
+                                if (i == m_Album_Iter_Map.end()) return;
 
                                 TreeIter iter = (*i).second; 
 
@@ -851,7 +851,7 @@ namespace MPX
                         )
                         {
                                 TreeIter iter = AlbumsTreeStore->append();
-                                m_AlbumIterMap.insert(std::make_pair(id, iter));
+                                m_Album_Iter_Map.insert(std::make_pair(id, iter));
                                 AlbumsTreeStore->append(iter->children()); //create dummy/placeholder row for tracks
 
                                 (*iter)[Columns.RowType] = ROW_ALBUM; 
@@ -869,8 +869,9 @@ namespace MPX
                         AlbumTreeView::album_list_load ()
                         {
                                 AlbumsTreeStore->clear ();
-                                m_MBIDIterMap.clear();
-                                m_AlbumIterMap.clear();
+                                m_Album_MBID_Iter_Map.clear();
+                                m_Album_Iter_Map.clear();
+                                m_Track_Iter_Map.clear();
 
                                 SQL::RowV v;
                                 m_Lib.get().getSQL(v, "SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id;");
@@ -914,9 +915,9 @@ namespace MPX
                 void
                         AlbumTreeView::on_new_track(Track & track, gint64 album_id, gint64 artist_id)
                         {
-                                if(m_AlbumIterMap.count(album_id))
+                                if(m_Album_Iter_Map.count(album_id))
                                 {
-                                        TreeIter iter = m_AlbumIterMap[album_id];
+                                        TreeIter iter = m_Album_Iter_Map[album_id];
                                         if (((*iter)[Columns.HasTracks]))
                                         {
                                                 TreeIter child = AlbumsTreeStore->append(iter->children());
@@ -942,25 +943,25 @@ namespace MPX
                 void
                         AlbumTreeView::on_album_deleted(gint64 id)
                         {
-                            IdIterMap::iterator i = m_AlbumIterMap.find(id);
-                            if( i != m_AlbumIterMap.end() )
+                            IdIterMap::iterator i = m_Album_Iter_Map.find(id);
+                            if( i != m_Album_Iter_Map.end() )
                             {
                                 std::string mbid = (*i->second)[Columns.MBID];
                                 AlbumsTreeStore->erase( i->second );
-                                IterSet & set = m_MBIDIterMap[mbid];
+                                IterSet & set = m_Album_MBID_Iter_Map[mbid];
                                 set.erase( i->second );
-                                m_AlbumIterMap.erase( i );
+                                m_Album_Iter_Map.erase( i );
                             }
                         }
 
                 void
                         AlbumTreeView::on_track_deleted(gint64 id)
                         {
-                            IdIterMap::iterator i = m_TrackIterMap.find(id);
-                            if( i != m_TrackIterMap.end() )
+                            IdIterMap::iterator i = m_Track_Iter_Map.find(id);
+                            if( i != m_Track_Iter_Map.end() )
                             {
                                 AlbumsTreeStore->erase( i->second );
-                                m_TrackIterMap.erase( i );
+                                m_Track_Iter_Map.erase( i );
                             }
                         }
 
@@ -1288,9 +1289,9 @@ namespace MPX
                 void
                         AlbumTreeView::go_to_album(gint64 id)
                         {
-                                if(m_AlbumIterMap.count(id))
+                                if(m_Album_Iter_Map.count(id))
                                 {
-                                        TreeIter iter = m_AlbumIterMap.find(id)->second;
+                                        TreeIter iter = m_Album_Iter_Map.find(id)->second;
                                         scroll_to_row (AlbumsTreeStore->get_path(iter), 0.);
                                 }
                         }
