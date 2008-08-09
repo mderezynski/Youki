@@ -730,6 +730,7 @@ AC_OUTPUT([
 	python/plugins/osd/__init__.py
 	python/plugins/mpxdj/Makefile
 	python/plugins/mpxdj/__init__.py
+    python/plugins/albumactions/Makefile
 	python/plugins/audioscrobbler/Makefile
 	python/plugins/audioscrobbler/__init__.py
 	python/plugins/puid-scan/Makefile

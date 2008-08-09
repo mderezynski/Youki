@@ -1,4 +1,5 @@
 SUBDIRS =			        \
+		albumactions		\
 		audioscrobbler		\
 		lastfmstuff			\
 		mpxdj			    \

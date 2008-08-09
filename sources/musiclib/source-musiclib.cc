@@ -2687,9 +2687,9 @@ namespace MPX
                 bool PlaybackSourceMusicLib::m_signals_installed = false;
 
                 PlaybackSourceMusicLib::PlaybackSourceMusicLib (const Glib::RefPtr<Gtk::UIManager>& ui_manager, MPX::Player & player)
-                        : PlaybackSource(ui_manager, _("Music Library"), C_CAN_SEEK)
-                          , m_MainUIManager(ui_manager)
-                          , m_Skipped(false)
+                : PlaybackSource(ui_manager, _("Music Library"), C_CAN_SEEK)
+                , m_MainUIManager(ui_manager)
+                , m_Skipped(false)
                 {
                         add_cap(C_CAN_SEEK);
 
@@ -3062,6 +3062,36 @@ namespace MPX
                                 GtkTreeIter  * iter = playlist.m_CurrentIter.get().gobj();
                                 return pyg_boxed_new(GTK_TYPE_TREE_ITER, iter, TRUE, FALSE);
                         }
+
+                Glib::RefPtr<Gtk::TreeStore>
+                        PlaybackSourceMusicLib::get_albums_model ()
+                        {
+                                AlbumTreeView & albums (*m_Private->m_TreeViewAlbums);
+
+                                return albums.AlbumsTreeStore;
+                        }
+
+                PyObject*
+                        PlaybackSourceMusicLib::get_albums_selected_iter ()
+                        {
+                                AlbumTreeView & albums (*m_Private->m_TreeViewAlbums);
+
+                                if(! albums.get_selection()->count_selected_rows() )
+                                {
+                                    Py_INCREF(Py_None);
+                                    return Py_None;
+                                }
+
+                                GtkTreeIter  * iter = albums.get_selection()->get_selected().gobj();
+                                return pyg_boxed_new(GTK_TYPE_TREE_ITER, iter, TRUE, FALSE);
+                        }
+
+                Glib::RefPtr<Gtk::ActionGroup>
+                        PlaybackSourceMusicLib::get_action_group ()
+                        {
+                                return m_MainActionGroup;
+                        }
+
 
                 void
                         PlaybackSourceMusicLib::play_album(gint64 id, bool play)

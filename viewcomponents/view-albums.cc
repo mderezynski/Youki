@@ -69,10 +69,11 @@ namespace
         const char ui_albums_popup [] =
                 "<ui>"
                 ""
-                "<menubar name='popup-albumlist-list'>"
+                "<menubar name='popup-albumlist-%1%'>"
                 ""
-                "   <menu action='dummy' name='menu-albumlist-list'>"
-                "       <menuitem action='action-album-info'/>"
+                "   <menu action='dummy' name='menu-albumlist-%1%'>"
+                "       <menuitem action='action-album-info-%1%'/>"
+                "       <placeholder name='action-album-placeholder-%1%'/>"
                 "   </menu>"
                 ""
                 "</menubar>"
@@ -159,6 +160,7 @@ namespace MPX
                         const PAccess<MPX::Covers>&             amzn
                 )
                 : WidgetLoader<Gtk::TreeView>(xml,name)
+                , m_Name(name)
                 , m_Lib(lib)
                 , m_Covers(amzn)
                 , m_ButtonPressed(false)
@@ -386,7 +388,7 @@ namespace MPX
                         m_ActionGroup->add(
 
                                         Gtk::Action::create(
-                                                "action-album-info", 
+                                                (boost::format ("action-album-info-%s") % m_Name).str(),
                                                 Gtk::StockID (GTK_STOCK_INFO),
                                                 _("Album _Info")
                                                 ),
@@ -397,7 +399,7 @@ namespace MPX
                                                 ));
 
                         m_UIManager->insert_action_group(m_ActionGroup);
-                        m_UIManager->add_ui_from_string(ui_albums_popup);
+                        m_UIManager->add_ui_from_string((boost::format(ui_albums_popup) % m_Name).str());
 
                         album_list_load ();
                 }
@@ -638,7 +640,7 @@ namespace MPX
                                                         Gtk::Menu * menu = dynamic_cast < Gtk::Menu* > (
                                                                         Util::get_popup(
                                                                                 m_UIManager,
-                                                                                "/popup-albumlist-list/menu-albumlist-list"
+                                                                                (boost::format ("/popup-albumlist-%s/menu-albumlist-%s") % m_Name % m_Name).str()
                                                                                 ));
 
                                                         if (menu) // better safe than screwed

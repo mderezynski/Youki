@@ -174,6 +174,8 @@ namespace MPX
 
                         protected:
 
+                          std::string                           m_Name;
+
                         // ui
 
                           Glib::RefPtr<Gtk::UIManager>          m_UIManager;

@@ -571,6 +571,19 @@ BOOST_PYTHON_MODULE(mpx)
 #endif
 		    >();
 
+    to_python_converter<Glib::RefPtr<Gtk::TreeStore>, mpxpy::refptr_to_gobject<Gtk::TreeStore>
+#if defined BOOST_PYTHON_SUPPORTS_PY_SIGNATURES
+	    , true
+#endif
+		    >();
+
+    to_python_converter<Glib::RefPtr<Gtk::ActionGroup>, mpxpy::refptr_to_gobject<Gtk::ActionGroup>
+#if defined BOOST_PYTHON_SUPPORTS_PY_SIGNATURES
+	    , true
+#endif
+		    >();
+
+
     to_python_converter<Glib::RefPtr<Gtk::UIManager>, mpxpy::refptr_to_gobject<Gtk::UIManager>
 #if defined BOOST_PYTHON_SUPPORTS_PY_SIGNATURES
 	    , true

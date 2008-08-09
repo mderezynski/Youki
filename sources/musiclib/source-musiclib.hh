@@ -145,6 +145,16 @@ namespace Source
                 get_playlist_current_iter ();
 
 
+                Glib::RefPtr<Gtk::TreeStore> 
+                get_albums_model ();
+
+                PyObject*
+                get_albums_selected_iter ();
+
+
+                Glib::RefPtr<Gtk::ActionGroup> 
+                get_action_group();
+
                 void
                 play_album(gint64, bool = true);
 

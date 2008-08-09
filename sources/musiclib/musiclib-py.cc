@@ -44,10 +44,18 @@ using namespace Glib;
 BOOST_PYTHON_MODULE(mpx_musiclib)
 {
     class_<MPX::Source::PlaybackSourceMusicLib, boost::noncopyable>("MusicLib", boost::python::no_init)
+
             .def("play_tracks", &MPX::Source::PlaybackSourceMusicLib::play_tracks)
             .def("play_album", &MPX::Source::PlaybackSourceMusicLib::play_album)
+
             .def("get_playlist_model", &MPX::Source::PlaybackSourceMusicLib::get_playlist_model)
             .def("get_playlist_current_iter", &MPX::Source::PlaybackSourceMusicLib::get_playlist_current_iter)
+
+            .def("get_albums_model", &MPX::Source::PlaybackSourceMusicLib::get_albums_model)
+            .def("get_albums_selected_iter", &MPX::Source::PlaybackSourceMusicLib::get_albums_selected_iter)
+
+            .def("get_action_group", &MPX::Source::PlaybackSourceMusicLib::get_action_group)
+
             .def("set_sensitive", &MPX::Source::PlaybackSourceMusicLib::plist_sensitive)
             .def("gobj", &mpxpy::get_gobject<MPX::Source::PlaybackSourceMusicLib>)
     ;
