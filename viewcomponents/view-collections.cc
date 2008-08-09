@@ -134,13 +134,13 @@ namespace MPX
                                 &CollectionTreeView::on_new_track
                         ));
 
-#if 0
-                        m_Lib.get().signal_new_collection().connect(
+                        m_Lib.get().signal_collection_new().connect(
                             sigc::mem_fun(
                                 *this,
                                 &CollectionTreeView::on_new_collection
                         ));
 
+#if 0
                         m_Lib.get().signal_collection_deleted().connect(
                             sigc::mem_fun(
                                 *this,
@@ -589,16 +589,14 @@ namespace MPX
                 void
                         CollectionTreeView::on_new_collection(gint64 id)
                         {
-#if 0
                                 SQL::RowV v;
-                                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM collection JOIN collection_artist ON collection.collection_artist_j = collection_artist.id WHERE collection.id = %lld;") % id).str());
+                                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM collection WHERE collection.id = %lld;") % id).str());
 
                                 g_return_if_fail(!v.empty());
 
                                 SQL::Row & r = v[0];
 
                                 place_collection (r, id); 
-#endif
                         }
 
                 void

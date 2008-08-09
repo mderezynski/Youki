@@ -108,6 +108,8 @@ namespace MPX
             try{
                 bool active = mcs_plugins->key_get<bool>("pyplugs", item->get_name());
 
+                g_message("Name: [%s], Active: %d", item->get_name().c_str(), int(active));
+
                 if (active)
                 {
                     try{    

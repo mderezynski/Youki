@@ -2974,7 +2974,6 @@ namespace MPX
                                 MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
                                 playlist.m_CurrentIter = playlist.ListStore->get_iter( path );
-                                playlist.m_CurrentId = (*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.RowId];
 
                                 Signals.PlayRequest.emit();
                         }
@@ -3318,6 +3317,8 @@ namespace MPX
                         {
                                 MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
+                                playlist.m_CurrentId = (*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.RowId];
+
                                 add_cap(C_CAN_PAUSE);
                                 add_cap(C_CAN_PROVIDE_METADATA);
                                 check_nextprev_caps ();
@@ -3338,6 +3339,8 @@ namespace MPX
                         PlaybackSourceMusicLib::next_post () 
                         { 
                                 MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
+
+                                playlist.m_CurrentId = (*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.RowId];
 
                                 playlist.queue_draw();
                                 check_nextprev_caps ();
@@ -3360,6 +3363,8 @@ namespace MPX
                         PlaybackSourceMusicLib::prev_post ()
                         {
                                 MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
+
+                                playlist.m_CurrentId = (*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.RowId];
 
                                 playlist.queue_draw();
                                 check_nextprev_caps ();

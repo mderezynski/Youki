@@ -1044,13 +1044,13 @@ namespace MPX
                             collection_table_create_f ("CREATE TABLE collection_%lld (track_id INTEGER NOT NULL)");
 
                     static std::string 
-                            collection_create_f ("INSERT INTO TABLE collection (name, blurb) VALUES ('%q', '%q')");
+                            collection_create_f ("INSERT INTO collection (name, blurb) VALUES ('%q', '%q')");
 
                     execSQL("BEGIN");
 
                     execSQL(mprintf(collection_create_f.c_str(),
-                            name.c_str(),
-                            blurb.c_str()
+                        name.c_str(),
+                        blurb.c_str()
                     ));
 
                     gint64 id = m_SQL->last_insert_rowid(); // FIXME: NOT MULTIPLE CONNECTION SAFE

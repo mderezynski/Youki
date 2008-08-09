@@ -19,7 +19,6 @@ albumlist_actions_ui_string = """
             <menu name='menu-albumlist-source-musiclib-treeview-albums' action='dummy'>
             <placeholder name='action-album-placeholder-source-musiclib-treeview-albums'>
                 <menuitem action='albumlist-actions-action-add-to-collection'/>
-                <menuitem action='albumlist-actions-action-add-to-new-collection'/>
             </placeholder>
             </menu>
         </menubar>
@@ -46,12 +45,7 @@ class AlbumActions(mpx.Plugin):
         action.connect("activate", self.on_action_add_cb)
         self.action.append(action)
 
-        action = gtk.Action("albumlist-actions-action-add-to-new-collection", "Add to New Collection", "", gtk.STOCK_ADD)
-        action.connect("activate", self.on_action_add_new_cb)
-        self.action.append(action)
-
         self.actiongroup.add_action(self.action[0])
-        self.actiongroup.add_action(self.action[1])
 
         self.ui = self.player.ui()
         self.ui.insert_action_group(action_group=self.actiongroup, pos=-1)
@@ -60,6 +54,9 @@ class AlbumActions(mpx.Plugin):
         # GUI stuffs
 
         self.dialog = self.xml.get_widget("dialog")
+        self.dialog_enter_name = self.xml.get_widget("dialog-enter-name")
+        self.entry_collection = self.xml.get_widget("entry-collection")
+        self.textview_collection = self.xml.get_widget("textview-collection")
 
         self.treeview = self.xml.get_widget("treeview")
         cell = gtk.CellRendererText()
@@ -70,6 +67,10 @@ class AlbumActions(mpx.Plugin):
 
         self.model = gtk.ListStore(gobject.TYPE_STRING, gobject.TYPE_INT)
         self.treeview.set_model(self.model)
+
+    def get_idv(self):
+
+        return idv
 
     def on_action_add_cb(self, action):
 
@@ -84,19 +85,34 @@ class AlbumActions(mpx.Plugin):
         response_id = self.dialog.run()
         self.dialog.hide()
 
+        iter = self.treeview.get_selection().get_selected()[1]
+        name, id = self.model.get(iter, 0, 1)
+        path = self.mlib.get_albums_selected_path()
+        iter = self.mlib.get_albums_model().get_iter(path)
+        track_id = self.mlib.get_albums_model().get(iter, 21)
+        idv = mpx.IdVector()
+        idv.append(track_id[0])
+
         if response_id == gtk.RESPONSE_OK:
 
-            name, id = self.model.get(self.treeview.get_selection().get_selected()[1], 0, 1)
-            path = self.mlib.get_albums_selected_path()
-            iter = self.mlib.get_albums_model().get_iter(path)
-            track_id = self.mlib.get_albums_model().get(iter, 21)
-            idv = mpx.IdVector()
-            idv.append(track_id[0])
             self.player.get_library().collectionAppend(id, idv)
 
-    def on_action_add_new_cb(self, action):
+        elif response_id == 0:
+    
+            self.textview_collection.props.buffer.text = ""
+            self.entry_collection.props.text = ""
 
-        print "Action #2 CB"
+            response_id_name = self.dialog_enter_name.run()
+            self.dialog_enter_name.hide()
+
+            if response_id_name == gtk.RESPONSE_OK:
+
+                name = self.entry_collection.props.text
+                b = self.textview_collection.get_buffer()
+                text = b.get_text(b.get_start_iter(), b.get_end_iter())
+
+                id = self.player.get_library().collectionCreate( str(name), str(text) )
+                self.player.get_library().collectionAppend(id, idv) 
 
     def activate(self):
 
