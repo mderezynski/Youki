@@ -2113,6 +2113,12 @@ rerun_import_share_dialog:
                 }
 
         void
+                Player::activate_plugin(gint64 id)
+                {
+                        m_PluginManager->activate(id);
+                }
+
+        void
                 Player::info_set (const std::string& info)
                 {
                         m_InfoArea->set_info(info);

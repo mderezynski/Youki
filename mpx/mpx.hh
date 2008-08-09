@@ -127,6 +127,8 @@ namespace MPX
 
         void
         deactivate_plugin(gint64);
+        void
+        activate_plugin(gint64);
 
         void
         push_message (const std::string&);

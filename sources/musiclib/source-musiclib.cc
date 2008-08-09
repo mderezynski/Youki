@@ -78,22 +78,24 @@ namespace
 {
         const int N_STARS = 6;
 
-        const char ACTION_CLEAR [] = "action-clear";
-        const char ACTION_REMOVE_ITEMS [] = "action-remove-items";
-        const char ACTION_REMOVE_REMAINING [] = "action-remove-remaining";
-        const char ACTION_PLAY [] = "action-play";
+        const char ACTION_CLEAR [] = "musiclib-playlist-action-clear";
+        const char ACTION_REMOVE_ITEMS [] = "musiclib-playlist-action-remove-items";
+        const char ACTION_REMOVE_REMAINING [] = "musiclib-playlist-action-remove-remaining";
+        const char ACTION_PLAY [] = "musiclib-playlist-action-play";
 
         const char ui_playlist_popup [] =
                 "<ui>"
                 ""
-                "<menubar name='popup-playlist-list'>"
+                "<menubar name='musiclib-playlist-popup-playlist-list'>"
                 ""
-                "   <menu action='dummy' name='menu-playlist-list'>"
-                "       <menuitem action='action-play' name='action-play'/>"
-                "       <menuitem action='action-remove-remaining'/>"
+                "   <menu action='dummy' name='musiclib-playlist-menu-playlist-list'>"
+                "       <menuitem action='musiclib-playlist-action-play' name='musiclib-playlist-action-play'/>"
+                "       <menuitem action='musiclib-playlist-action-remove-remaining'/>"
                 "     <separator/>"
-                "       <menuitem action='action-remove-items'/>"
-                "       <menuitem action='action-clear'/>"
+                "       <menuitem action='musiclib-playlist-action-remove-items'/>"
+                "       <menuitem action='musiclib-playlist-action-clear'/>"
+                "     <separator/>"
+                "       <placeholder name='musiclib-playlist-placeholder-playlist'/>"
                 "   </menu>"
                 ""
                 "</menubar>"
@@ -133,7 +135,7 @@ namespace
                 "         <menuitem action='musiclib-show-only-new'/>"
                 "         <separator/>"
                 "         <menuitem action='musiclib-show-ccdialog'/>"
-                "         <menuitem action='musiclib-action-recache-covers'/>"
+                "         <menuitem action='musiclib-recache-covers'/>"
                 "     </menu>"
                 "   </placeholder>"
                 "</menubar>"
@@ -585,7 +587,7 @@ namespace MPX
                                 m_UIManager->insert_action_group (m_ActionGroup);
                                 m_UIManager->add_ui_from_string (ui_playlist_popup);
 
-                                Gtk::Widget * item = m_UIManager->get_widget("/ui/popup-playlist-list/menu-playlist-list/action-play");
+                                Gtk::Widget * item = m_UIManager->get_widget("/ui/musiclib-playlist-popup-playlist-list/musiclib-playlist-menu-playlist-list/musiclib-playlist-action-play");
                                 Gtk::Label * label = dynamic_cast<Gtk::Label*>(dynamic_cast<Gtk::Bin*>(item)->get_child());
                                 label->set_markup(_("<b>Play</b>"));
 
@@ -1128,7 +1130,7 @@ namespace MPX
                                                                         m_ActionGroup->get_action (ACTION_PLAY)->set_sensitive
                                                                                 (get_selection()->count_selected_rows());
 
-                                                                        Gtk::Menu * menu = dynamic_cast < Gtk::Menu* > (Util::get_popup (m_UIManager, "/popup-playlist-list/menu-playlist-list"));
+                                                                        Gtk::Menu * menu = dynamic_cast < Gtk::Menu* > (Util::get_popup (m_UIManager, "/musiclib-playlist-popup-playlist-list/musiclib-playlist-menu-playlist-list"));
                                                                         if (menu) // better safe than screwed
                                                                         {
                                                                                 menu->popup (event->button, event->time);
@@ -2854,7 +2856,7 @@ namespace MPX
                         m_MainActionGroup->add(
 
                                         Action::create(
-                                                "musiclib-action-recache-covers",
+                                                "musiclib-recache-covers",
                                                 _("Refresh Album Covers")
                                                 ),
 

@@ -27,6 +27,31 @@ def extract_ids(rv, v):
     for val in rv:
         v.append(val["id"].get_int())
 
+
+ui_playlist_popup = """ 
+        <ui>
+        <menubar name='musiclib-playlist-popup-playlist-list'>
+           <menu action='dummy' name='musiclib-playlist-menu-playlist-list'>
+               <placeholder name='musiclib-playlist-placeholder-playlist'>
+               <menuitem action='mpxdj-enable'/>
+               <menu action='mpxdj-playmode'>
+                    <menuitem action='mpxdj-mode-analyzer'/>
+                    <menuitem action='mpxdj-mode-entertain'/>
+                    <menuitem action='mpxdj-mode-toptunes'/>
+                    <menuitem action='mpxdj-mode-random'/>
+                    <menuitem action='mpxdj-mode-memorylane'/>
+                    <menuitem action='mpxdj-mode-soundsof'/>
+                    <menuitem action='mpxdj-mode-gems'/>
+                    <menuitem action='mpxdj-mode-dejavu'/>
+                    <menuitem action='mpxdj-mode-lastfmtag'/>
+               </menu>
+               </placeholder>
+           </menu>
+        </menubar>
+        </ui>
+"""
+
+
 class BaseOPTION__(threading.Thread):
 
     def __init__(self, lib, v, xml, mlib, mcs):
@@ -451,6 +476,9 @@ class MPXDJ(mpx.Plugin):
         self.mlib = player.get_source("36068e19-dfb3-49cd-85b4-52cea16fe0fd"); 
         self.mcs = mcs
         self.player = player
+        self.actiongroup = gtk.ActionGroup("Actions-MPXDJ")
+        self.ui = self.player.ui()
+        self.playmode = 0
 
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj.glade")
         self.widget = self.xml.get_widget("widget")
@@ -466,68 +494,112 @@ class MPXDJ(mpx.Plugin):
         self.header_image = self.xml.get_widget("header-image")
         self.header_image.set_from_file("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj.png")
 
+        self.notebook = self.xml.get_widget("notebook")
+
+
         try:
             self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj-icon.png")
         except:
             self.icon = None
+
             
-        options = [
-                    "Analyzer",
-                    "Entertain Me!",
-                    "Play All",
-                    "Top Tunes",
-                    "Random Mix",
-                    "Memory Lane",
-                    "Sounds Of...",
-                    "Forgotten Gems",
-                    "Deja Vu",
-                    "Last.fm Tag"
-                   ]
-
         self.callables = [
-                            OPTION__Analyzer,
-                            OPTION__EntertainMe, 
-                            OPTION__PlayAll, 
-                            OPTION__TopTunes, 
-                            OPTION__RandomMix, 
-                            None,
-                            OPTION__SoundsOf, 
-                            None,
-                            None,
-                            OPTION__LastFmTag 
-                         ]
-
+            OPTION__Analyzer,
+            OPTION__EntertainMe, 
+            OPTION__TopTunes, 
+            OPTION__RandomMix, 
+            None,
+            OPTION__SoundsOf, 
+            None,
+            None,
+            OPTION__LastFmTag 
+        ]
 
         self.helptexts = [
-                "Analyzes the playlist and plays similar Music",
-                "Creates a running order composed of the most frequently played tracks.",
-                "Plays all tracks in the library",
-                "Plays a set number of the most frequently played tracks.",
-                "Plays random, but similar tracks",
-                "",
-                "Plays tracks from a specific decade.",
-                "",
-                "",
-                "Creates a playlist from your music library based on a Last.fm tag"
+            "Analyzes the playlist and plays similar Music",
+            "Creates a running order composed of the most frequently played tracks.",
+            "Plays a set number of the most frequently played tracks.",
+            "Plays random, but similar tracks",
+            "",
+            "Plays tracks from a specific decade.",
+            "",
+            "",
+            "Creates a playlist from your music library based on a Last.fm tag"
         ]   
+
+        self.actionnames = [
+            "mpxdj-mode-analyzer",
+            "mpxdj-mode-entertain",
+            "mpxdj-mode-toptunes",
+            "mpxdj-mode-random",
+            "mpxdj-mode-memorylane",
+            "mpxdj-mode-soundsof",
+            "mpxdj-mode-gems",
+            "mpxdj-mode-dejavu",
+            "mpxdj-mode-lastfmtag",
+        ] 
+
+        self.options = [
+            "Analyzer",
+            "Entertain Me!",
+            "Top Tunes",
+            "Random Mix",
+            "Memory Lane",
+            "Sounds Of...",
+            "Forgotten Gems",
+            "Deja Vu",
+            "Last.fm Tag"
+        ]
+
+        action1 = gtk.ToggleAction('mpxdj-enable', "Enable MPXDJ", "", "")
+        action2 = gtk.Action('mpxdj-playmode', "MPXDJ Play Mode", "", "")
+        
+        self.actiongroup.add_action(action1)
+        self.actiongroup.add_action(action2)
+
+        action1.connect("toggled", self.on_enable_toggled)
+
+        self.action = []
+        idx = 0
+
+        for action in self.actionnames:
+
+                a = gtk.RadioAction(self.actionnames[idx], self.options[idx], "", "", idx)
+                if not self.callables[idx]: a.set_sensitive(False)
+                self.action.append(a)
+                if idx is not 0: a.set_group(self.action[0])
+                self.actiongroup.add_action(a)
+                idx = idx + 1
+
+        self.action[0].connect("changed", self.on_mode_changed)
+        self.action[0].set_active(True)
+
+        self.ui.insert_action_group(self.actiongroup, pos=-1)
+        self.ui.add_ui_from_string(ui_playlist_popup)
 
         cell = gtk.CellRendererText()
         self.combo.pack_start(cell)
         self.combo.add_attribute(cell, "text", 0)
 
         self.store = gtk.ListStore(gobject.TYPE_STRING)
-        self.combo.set_model(self.store)
-    
-        for option in options:
-            self.store.append([option])
+        for option in self.options: self.store.append([option])
 
-        self.notebook = self.xml.get_widget("notebook")
-
-
-        # Finally:
         self.combo.connect("changed", self.on_mode_cbox_changed)
+        self.combo.set_model(self.store)
         self.combo.set_active(0)
+
         self.working = False
+
+    def on_mode_changed(self, action, current):
+
+        self.playmode = current.get_current_value()
+
+    def on_enable_toggled(self, action):
+
+        if action.get_active():
+            self.player.activate_plugin(self.id)
+        else:
+            self.player.deactivate_plugin(self.id)
 
     def get_icon(self):
 
@@ -561,7 +633,7 @@ class MPXDJ(mpx.Plugin):
         self.mlib.set_sensitive(False)
 
         idv = mpx.IdVector()
-        klass = self.callables[self.combo.get_active()]
+        klass = self.callables[self.playmode]
         if klass:
             instance = klass(self.lib, idv, self.xml, self.mlib, self.mcs)
             instance.start () 
@@ -577,7 +649,7 @@ class MPXDJ(mpx.Plugin):
             else:
                 self.player.push_message(_("Failed to produce track"))
 
-        self.go.set_label("Go!")
+        self.go.set_label("Go! (one-shot)")
         self.go.set_sensitive(True)
         self.mlib.set_sensitive(True)
         self.working = False
