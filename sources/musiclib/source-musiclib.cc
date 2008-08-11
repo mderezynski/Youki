@@ -371,6 +371,63 @@ namespace
                         }
         };
 
+
+        class ArtistSelectView : public WidgetLoader<Gtk::TreeView>
+        {
+                public:
+            
+                        typedef sigc::signal<void, gint64> SignalAlbumArtistSelected;
+
+                        struct Signals_t 
+                        {
+                                SignalAlbumArtistSelected   AlbumArtistSelected;
+                        };
+
+                        Signals_t Signals;
+
+                        class Columns_t : public Gtk::TreeModelColumnRecord
+                {
+                        public: 
+
+                                Gtk::TreeModelColumn<Glib::ustring> Name;
+                                Gtk::TreeModelColumn<int>           ID;
+
+                                Columns_t ()
+                                {
+                                        add(Name);
+                                        add(ID);
+                                };
+                };
+
+
+                        Columns_t                       Columns;
+                        Glib::RefPtr<Gtk::ListStore>    Store;
+
+                        ArtistSelectView(
+                            const Glib::RefPtr<Gnome::Glade::Xml>&  xml,
+                            const std::string&                      name,
+                            MPX::Library&                           lib
+                        )
+                        : WidgetLoader<Gtk::TreeView>(xml, name)
+                        {
+                                using boost::get;
+    
+                                Store = Gtk::ListStore::create(Columns); 
+                                append_column(_("Column"), Columns.Name);            
+
+                                SQL::RowV v;
+                                lib.getSQL(v, "SELECT * FROM album_artist");
+                                for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                                {
+                                    TreeIter iter = Store->append();
+
+                                    (*iter)[Columns.ID] = get<gint64>((*i)["id"]);
+                                    (*iter)[Columns.Name] = get<std::string>((*i)["album_artist"]);
+                                }
+                                
+                                set_model(Store);
+                        };
+        };
 }
 
 namespace MPX
@@ -538,6 +595,18 @@ namespace MPX
                                 get_column(4)->set_resizable(true);
                                 get_column(5)->set_resizable(false);
                                 get_column(6)->set_resizable(false);
+
+                                /*
+                                for( int n = 1; n <= 5; ++ n)
+                                {
+                                    CellRenderer * cell = get_column( n )->get_first_cell_renderer();
+                                    get_column( n )->set_cell_data_func(
+                                        *cell,
+                                        sigc::mem_fun(
+                                            *this,
+                                            &PlaylistTreeView::cellDataFuncCurrentRow
+                                    ));
+                                }*/
 
                                 ListStore = Gtk::ListStore::create(PlaylistColumns);
 
@@ -1329,6 +1398,17 @@ namespace MPX
                                         }
                                 }
 
+                        void
+                                cellDataFuncCurrentRow (CellRenderer * basecell, TreeModel::iterator const &iter)
+                                {
+                                        CellRendererText *cell_t = dynamic_cast<CellRendererText*>(basecell);
+                                        if( m_CurrentIter && m_CurrentIter.get() == iter )
+                                                cell_t->property_weight() = Pango::WEIGHT_BOLD;
+                                        else
+                                                cell_t->property_weight() = Pango::WEIGHT_NORMAL;
+                                }
+
+
                         int
                                 slotSortDefault(const TreeIter& iter_a, const TreeIter& iter_b)
                                 {
@@ -1713,7 +1793,7 @@ namespace MPX
                                         m_Covers.get().fetch(mbid, surface, COVER_SIZE_ALBUM);
 
                                         Util::cairo_image_surface_border(surface, 2.);
-                                        surface = Util::cairo_image_surface_round(surface, 6.);
+                                        surface = Util::cairo_image_surface_round(surface, 2.);
 
                                         IterSet & set = m_MBIDIterMap[mbid];
                                         for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
@@ -1779,8 +1859,8 @@ namespace MPX
                                                 Cairo::RefPtr<Cairo::ImageSurface> surface;
                                                 if( m_Covers.get().fetch( mbid, surface, COVER_SIZE_ALBUM ))
                                                 {
-                                                    surface = Util::cairo_image_surface_round(surface, 9.5);
-                                                    Util::cairo_image_surface_rounded_border(surface, .5, 9.5);
+                                                    surface = Util::cairo_image_surface_round(surface, 2.);
+                                                    Util::cairo_image_surface_rounded_border(surface, .5, 2.);
                                                     (*iter)[Columns.Image] = surface; 
                                                 }
                                         }
@@ -2247,7 +2327,7 @@ namespace MPX
                                 xml->get_widget("lfm-artist-entry", m_FilterEntry);
 
                                 set_show_expanders( false );
-                                set_level_indentation( 32 );
+                                set_level_indentation( 52 );
 
                                 TreeViewColumn * col = manage (new TreeViewColumn());
 

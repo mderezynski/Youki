@@ -763,6 +763,7 @@ AC_OUTPUT([
 
     sources/Makefile
     sources/musiclib/Makefile
+    sources/musiclib2/Makefile
     sources/radio/Makefile
     sources/lastfm/Makefile
 

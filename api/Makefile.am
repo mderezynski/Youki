@@ -78,6 +78,8 @@ libmpx_api_la_CFLAGS =								\
 
 libmpx_api_la_SOURCES = 							\
 													\
+		aque.cc										\
+													\
 		base64.c									\
 		md5.c										\
 		random.cc									\

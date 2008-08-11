@@ -22,8 +22,8 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 
-#ifndef MPX_MLIBMANAGER_HH 
-#define MPX_MLIBMANAGER_HH
+#ifndef MPX_FILE_SYSTEM_TREE_HH 
+#define MPX_FILE_SYSTEM_TREE_HH
 
 #ifdef HAVE_CONFIG_H
 #  include <config.h>

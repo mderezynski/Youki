@@ -959,7 +959,7 @@ namespace MPX
                             Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
                             cairo->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.8);
                             //RoundedRectangle(cairo, 2, y_pos+2, alloc.get_width()-4, m_row_height-4, 4.);
-                            cairo->rectangle(0, y_pos+2, alloc.get_width(), m_row_height-4.);
+                            RoundedRectangle (cairo, 1, y_pos+2, alloc.get_width()-2, m_row_height-4., 2.);
                             cairo->fill_preserve(); 
                             cairo->set_source_rgb(c.get_red_p(), c.get_green_p(), c.get_blue_p());
                             cairo->stroke();

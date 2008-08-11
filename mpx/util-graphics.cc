@@ -339,30 +339,41 @@ namespace MPX
       cr->set_source (source, 0., 0.);
       cr->fill_preserve ();
 
-      cr->set_source_rgba (0., 0., 0., .5);
-      cr->set_line_width (.7);
-      cr->stroke ();
-
       return dest;
     }
 
     void 
-    cairo_image_surface_border (Cairo::RefPtr<Cairo::ImageSurface> & source, double width)
+    cairo_image_surface_border(
+        Cairo::RefPtr<Cairo::ImageSurface> &    source,
+        double                                  width,
+        double                                  r,
+        double                                  g,
+        double                                  b,
+        double                                  a
+    )
     {
       Cairo::RefPtr< ::Cairo::Context> cr = Cairo::Context::create (source);
       cr->set_operator (Cairo::OPERATOR_SOURCE); 
       cr->rectangle (0, 0, source->get_width(), source->get_height());
-      cr->set_source_rgba (0., 0., 0., 1.);
+      cr->set_source_rgba(r, g, b, a);
       cr->set_line_width (width);
       cr->stroke ();
     }
 
     void 
-    cairo_image_surface_rounded_border (Cairo::RefPtr<Cairo::ImageSurface> & source, double width, double radius)
+    cairo_image_surface_rounded_border(
+        Cairo::RefPtr<Cairo::ImageSurface> &    source,
+        double                                  width,
+        double                                  radius,
+        double                                  r,
+        double                                  g,
+        double                                  b,
+        double                                  a
+    )
     {
       Cairo::RefPtr< ::Cairo::Context> cr = Cairo::Context::create (source);
       cairo_rounded_rect(cr, 0, 0, source->get_width(), source->get_height(), radius);
-      cr->set_source_rgba (0., 0., 0., 1.);
+      cr->set_source_rgba(r, g, b, a);
       cr->set_line_width (width);
       cr->stroke ();
     }

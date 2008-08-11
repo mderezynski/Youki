@@ -346,8 +346,6 @@ namespace MPX
                                                                 ))));
 
 
-                        set_model(AlbumsTreeStoreFilter);
-
                         AlbumsTreeStore->set_sort_func(0 , sigc::mem_fun( *this, &AlbumTreeView::slotSortAlpha ));
                         AlbumsTreeStore->set_sort_func(1 , sigc::mem_fun( *this, &AlbumTreeView::slotSortDate ));
                         AlbumsTreeStore->set_sort_func(2 , sigc::mem_fun( *this, &AlbumTreeView::slotSortRating ));
@@ -401,7 +399,11 @@ namespace MPX
                         m_UIManager->insert_action_group(m_ActionGroup);
                         m_UIManager->add_ui_from_string((boost::format(ui_albums_popup) % m_Name).str());
 
+                        gtk_widget_realize(GTK_WIDGET(gobj()));
+
                         album_list_load ();
+
+                        set_model(AlbumsTreeStoreFilter);
                 }
 
                 void
@@ -670,14 +672,13 @@ namespace MPX
                         AlbumTreeView::on_got_cover(const Glib::ustring& mbid)
                         {
                                 Cairo::RefPtr<Cairo::ImageSurface> surface;
-
                                 m_Covers.get().fetch(mbid, surface, COVER_SIZE_ALBUM);
+                                surface = Util::cairo_image_surface_round(surface, 6.);
 
-                                surface = Util::cairo_image_surface_round(surface, 9.5);
-                                Util::cairo_image_surface_rounded_border(surface, .5, 9.5);
+                                Gdk::Color c = get_style()->get_black();
+                                Util::cairo_image_surface_rounded_border(surface, .5, 6., c.get_red_p(), c.get_green_p(), c.get_blue_p(), 1.);
 
                                 IterSet & set = m_Album_MBID_Iter_Map[mbid];
-
                                 for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
                                 {
                                         (*(*i))[Columns.Image] = surface;

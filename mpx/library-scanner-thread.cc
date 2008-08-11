@@ -481,29 +481,20 @@ MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exist
 
     if( track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] )   
     {
-      char const* select_artist_f ("SELECT id FROM album_artist WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s %s);"); 
+      char const* select_artist_f ("SELECT id FROM album_artist WHERE (%s %s) AND (%s %s);"); 
       m_SQL->get (rows, (mprintf (select_artist_f, 
-
-         attrs[ATTRIBUTE_ALBUM_ARTIST].id,
-        (track[ATTRIBUTE_ALBUM_ARTIST]
-            ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str()).c_str()
-            : "IS NULL"), 
 
          attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
         (track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]
             ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()).c_str()
             : "IS NULL"), 
 
-         attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id,
-        (track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME]
-            ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()).c_str()).c_str()
-            : "IS NULL"), 
-
          attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id,
         (get<gint64>(track[ATTRIBUTE_IS_MB_ALBUM_ARTIST].get())
             ? "= '1'"
-            : "IS NULL")))
-      );
+            : "IS NULL"))
+
+      ));
     }
     else // TODO: MB lookup to fix sortname, etc, for a given ID (and possibly even retag files on the fly?)
     {
@@ -515,10 +506,12 @@ MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exist
             ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str()).c_str()
             : "IS NULL"), 
 
-         attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
-        (track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]
-            ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()).c_str()
-            : "IS NULL")))) ; 
+         attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id,
+        (get<gint64>(track[ATTRIBUTE_IS_MB_ALBUM_ARTIST].get())
+            ? "= '1'"
+            : "IS NULL"))
+
+       )) ; 
     }
 
     gint64 artist_j = 0;
@@ -572,14 +565,9 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
     if( track[ATTRIBUTE_MB_ALBUM_ID] )
     {
-      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
+      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
 
       sql = mprintf (select_album_f,
-
-             attrs[ATTRIBUTE_ALBUM].id,
-            (track[ATTRIBUTE_ALBUM]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()).c_str()
-                : "IS NULL"), 
 
              attrs[ATTRIBUTE_MB_ALBUM_ID].id,
             (track[ATTRIBUTE_MB_ALBUM_ID]
@@ -594,16 +582,6 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
              attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id,
             (track[ATTRIBUTE_MB_RELEASE_COUNTRY]
                 ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_RELEASE_COUNTRY].get()).c_str()).c_str()
-                : "IS NULL"), 
-
-             attrs[ATTRIBUTE_MB_RELEASE_TYPE].id,
-            (track[ATTRIBUTE_MB_RELEASE_TYPE]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_RELEASE_TYPE].get()).c_str()).c_str()
-                : "IS NULL"), 
-
-            attrs[ATTRIBUTE_ASIN].id,
-            (track[ATTRIBUTE_ASIN]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()).c_str()
                 : "IS NULL"), 
 
             "album_artist_j",
