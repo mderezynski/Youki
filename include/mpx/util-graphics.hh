@@ -115,6 +115,9 @@ namespace MPX
     void 
     cairo_image_surface_rounded_border (Cairo::RefPtr<Cairo::ImageSurface> & source, double width, double radius, double r = 0., double g = 0., double b = 0., double a = 1.);
 
+    Cairo::RefPtr<Cairo::ImageSurface>
+    cairo_image_surface_overlay (Cairo::RefPtr<Cairo::ImageSurface> source, Cairo::RefPtr<Cairo::ImageSurface> overlay, double x, double y); 
+
     void
     draw_cairo_image (Cairo::RefPtr<Cairo::Context> const&      cr,
                       Cairo::RefPtr<Cairo::ImageSurface> const& image,

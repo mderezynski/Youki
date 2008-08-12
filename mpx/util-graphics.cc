@@ -290,18 +290,18 @@ namespace MPX
       Cairo::RefPtr< ::Cairo::ImageSurface> surface =
         Cairo::ImageSurface::create (Cairo::FORMAT_ARGB32, pixbuf->get_width(), pixbuf->get_height());
 
-      Cairo::RefPtr< ::Cairo::Context> cr =
+      Cairo::RefPtr< ::Cairo::Context> cairo =
         Cairo::Context::create (surface);
 
-      cr->set_operator (Cairo::OPERATOR_SOURCE);
-      Gdk::Cairo::set_source_pixbuf (cr, pixbuf, 0, 0);
-      cr->rectangle (0, 0, pixbuf->get_width(), pixbuf->get_height());
-      cr->fill ();
+      cairo->set_operator (Cairo::OPERATOR_SOURCE);
+      Gdk::Cairo::set_source_pixbuf (cairo, pixbuf, 0, 0);
+      cairo->rectangle (0, 0, pixbuf->get_width(), pixbuf->get_height());
+      cairo->fill ();
       return surface;
     }
 
     void
-    cairo_rounded_rect (Cairo::RefPtr<Cairo::Context>& cr,
+    cairo_rounded_rect (Cairo::RefPtr<Cairo::Context>& cairo,
                         double                         x,
                         double                         y,
                         double                         width,
@@ -310,20 +310,20 @@ namespace MPX
     {
       g_return_if_fail (width > 0 && height > 0 && radius >= 0);
 
-      RoundedRectangle( cr, x + 1, y + 1, width - 2, height - 2, radius );
+      RoundedRectangle( cairo, x + 1, y + 1, width - 2, height - 2, radius );
     }
 
     Cairo::RefPtr<Cairo::ImageSurface>
     cairo_image_surface_scale (Cairo::RefPtr<Cairo::ImageSurface> source, double width, double height)
     {
       Cairo::RefPtr< ::Cairo::ImageSurface> dest = Cairo::ImageSurface::create (source->get_format(), int (width), int (height));
-      Cairo::RefPtr< ::Cairo::Context> cr = Cairo::Context::create (dest);
+      Cairo::RefPtr< ::Cairo::Context> cairo = Cairo::Context::create (dest);
 
-      cr->set_operator (Cairo::OPERATOR_SOURCE); 
-      cr->scale (width / source->get_width(), height / source->get_height());
-      cr->set_source (source, 0., 0.);
-      cr->rectangle (0., 0., source->get_width(), source->get_height());
-      cr->fill ();
+      cairo->set_operator (Cairo::OPERATOR_SOURCE); 
+      cairo->scale (width / source->get_width(), height / source->get_height());
+      cairo->set_source (source, 0., 0.);
+      cairo->rectangle (0., 0., source->get_width(), source->get_height());
+      cairo->fill ();
       return dest;
     }
 
@@ -331,16 +331,36 @@ namespace MPX
     cairo_image_surface_round (Cairo::RefPtr<Cairo::ImageSurface> source, double radius)
     {
       Cairo::RefPtr< ::Cairo::ImageSurface> dest = Cairo::ImageSurface::create (source->get_format(), source->get_width(), source->get_height()); 
-      Cairo::RefPtr< ::Cairo::Context> cr = Cairo::Context::create (dest);
+      Cairo::RefPtr< ::Cairo::Context> cairo = Cairo::Context::create (dest);
 
-      cr->set_operator (Cairo::OPERATOR_SOURCE); 
-      cairo_rounded_rect (cr, 0, 0, source->get_width(), source->get_height(), radius);
+      cairo->set_operator (Cairo::OPERATOR_SOURCE); 
+      cairo_rounded_rect (cairo, 0, 0, source->get_width(), source->get_height(), radius);
 
-      cr->set_source (source, 0., 0.);
-      cr->fill_preserve ();
+      cairo->set_source (source, 0., 0.);
+      cairo->fill_preserve ();
 
       return dest;
     }
+
+    Cairo::RefPtr<Cairo::ImageSurface>
+    cairo_image_surface_overlay (Cairo::RefPtr<Cairo::ImageSurface> source, Cairo::RefPtr<Cairo::ImageSurface> overlay, double x, double y); 
+    {
+      Cairo::RefPtr< ::Cairo::ImageSurface> dest = Cairo::ImageSurface::create (source->get_format(), source->get_width(), source->get_height()); 
+      Cairo::RefPtr< ::Cairo::Context> cairo = Cairo::Context::create (dest);
+
+      cairo->set_operator (Cairo::OPERATOR_SOURCE); 
+
+      cairo->rectangle (cairo, 0, 0, source->get_width(), source->get_height());
+      cairo->set_source (source, 0., 0.);
+      cairo->fill ();
+
+      cairo->rectangle (cairo, x, y, overlay->get_width(), overlay->get_height());
+      cairo->set_source (overlay, x, y);
+      cairo->fill ();
+
+      return dest;
+    }
+
 
     void 
     cairo_image_surface_border(
@@ -352,12 +372,12 @@ namespace MPX
         double                                  a
     )
     {
-      Cairo::RefPtr< ::Cairo::Context> cr = Cairo::Context::create (source);
-      cr->set_operator (Cairo::OPERATOR_SOURCE); 
-      cr->rectangle (0, 0, source->get_width(), source->get_height());
-      cr->set_source_rgba(r, g, b, a);
-      cr->set_line_width (width);
-      cr->stroke ();
+      Cairo::RefPtr< ::Cairo::Context> cairo = Cairo::Context::create (source);
+      cairo->set_operator (Cairo::OPERATOR_SOURCE); 
+      cairo->rectangle (0, 0, source->get_width(), source->get_height());
+      cairo->set_source_rgba(r, g, b, a);
+      cairo->set_line_width (width);
+      cairo->stroke ();
     }
 
     void 
@@ -371,32 +391,32 @@ namespace MPX
         double                                  a
     )
     {
-      Cairo::RefPtr< ::Cairo::Context> cr = Cairo::Context::create (source);
-      cairo_rounded_rect(cr, 0, 0, source->get_width(), source->get_height(), radius);
-      cr->set_source_rgba(r, g, b, a);
-      cr->set_line_width (width);
-      cr->stroke ();
+      Cairo::RefPtr< ::Cairo::Context> cairo = Cairo::Context::create (source);
+      cairo_rounded_rect(cairo, 0, 0, source->get_width(), source->get_height(), radius);
+      cairo->set_source_rgba(r, g, b, a);
+      cairo->set_line_width (width);
+      cairo->stroke ();
     }
 
 
     void
-    draw_cairo_image (Cairo::RefPtr<Cairo::Context> const&      cr,
+    draw_cairo_image (Cairo::RefPtr<Cairo::Context> const&      cairo,
                       Cairo::RefPtr<Cairo::ImageSurface> const& image,
                       double                                    x,
                       double                                    y,
                       double                                    alpha)
     {
-        cr->save ();
+        cairo->save ();
 
-        cr->translate (x, y);
+        cairo->translate (x, y);
 
-        cr->set_operator (Cairo::OPERATOR_ATOP);
-        cr->set_source (image, 0.0, 0.0);
-        cr->rectangle (0.0, 0.0, image->get_width (), image->get_height ());
-        cr->clip ();
-        cr->paint_with_alpha (alpha);
+        cairo->set_operator (Cairo::OPERATOR_ATOP);
+        cairo->set_source (image, 0.0, 0.0);
+        cairo->rectangle (0.0, 0.0, image->get_width (), image->get_height ());
+        cairo->clip ();
+        cairo->paint_with_alpha (alpha);
 
-        cr->restore ();
+        cairo->restore ();
     }
 
     Glib::RefPtr<Gdk::Pixbuf>
