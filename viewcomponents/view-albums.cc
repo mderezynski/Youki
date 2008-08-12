@@ -122,29 +122,57 @@ namespace
         ReleaseType
                 determine_release_type (const std::string& type)
                 {
-                        if( type == "Album" )
+                        if( type == "album" )
                                 return RT_ALBUM;
 
-                        if( type == "Single" )
+                        if( type == "single" )
                                 return RT_SINGLE;
 
-                        if( type == "Compilation" )
+                        if( type == "compilation" )
                                 return RT_COMPILATION;
 
-                        if( type == "Ep" )
+                        if( type == "ep" )
                                 return RT_EP;
 
-                        if( type == "Live" )
+                        if( type == "live" )
                                 return RT_LIVE;
 
-                        if( type == "Remix" )
+                        if( type == "remix" )
                                 return RT_REMIX;
 
-                        if( type == "Soundtrack" )
+                        if( type == "soundtrack" )
                                 return RT_SOUNDTRACK;
 
                         return RT_OTHER;
                 }
+
+        std::string
+                get_release_string (ReleaseType rt, bool plural = false)
+                {
+                            if( rt == RT_ALBUM )
+                                return plural ? N_("albums") : N_("Album");
+
+                            if( rt == RT_SINGLE )
+                                return plural ? N_("singles") : N_("Single");
+
+                            if( rt == RT_COMPILATION )
+                                return plural ? N_("compilations") : N_("Compilation");
+
+                            if( rt == RT_EP )
+                                return plural ? N_("EPs") : N_("EP");
+
+                            if( rt == RT_LIVE )
+                                return plural ? N_("live recordings") : N_("Live Recording");
+
+                            if( rt == RT_REMIX )
+                                return plural ? N_("remixes") : N_("Remix");
+
+                            if( rt == RT_SOUNDTRACK )
+                                return plural ? N_("soundtracks") : N_("Soundtrack");
+
+                        return "Other";
+                }
+
 }
 
 namespace MPX
@@ -700,6 +728,7 @@ namespace MPX
                                 std::string country;
                                 std::string artist;
                                 std::string type;
+                                std::string rt_string;
                                 double playscore = 0;
                                 gint64 rating = 0;
                                 ReleaseType rt;
@@ -794,14 +823,7 @@ namespace MPX
                                 trim(type);
 
                                 rt = determine_release_type(type);
-
-                                if( type.length() > 1 )
-                                {
-                                        Glib::ustring type_1st = type.substr(0, 1);
-                                        Glib::ustring type_2nd = type.substr(1, type.length());
-
-                                        type = type_1st.uppercase() + type_2nd; 
-                                }
+                                rt_string = _(get_release_string(rt).c_str());
 
                                 if( !country.empty() )
                                 {
@@ -811,7 +833,7 @@ namespace MPX
                                                  % Markup::escape_text(artist).c_str()
                                                  % country
                                                  % year
-                                                 % type
+                                                 % rt_string
                                                 ).str();
                                 }
                                 else
@@ -821,7 +843,7 @@ namespace MPX
                                                  % Markup::escape_text(album).c_str()
                                                  % Markup::escape_text(artist).c_str()
                                                  % year
-                                                 % type
+                                                 % rt_string
                                                 ).str();
                                 }
 
@@ -1305,7 +1327,23 @@ namespace MPX
                                 TreeNodeChildren::size_type n2 = AlbumsTreeStore->children().size();
                                 if( m_LabelShowing )
                                 {
-                                    m_LabelShowing->set_text ((boost::format (_("%lld of %lld")) % n1 % n2).str());
+                                    static boost::format showing_f ("Out of %lld, showing %lld %s%s");
+
+                                    std::string extra = "";
+                                    if (Options.HighlightMode != HIGHLIGHT_EQUAL)
+                                    {
+                                        if( Options.HighlightMode == HIGHLIGHT_PLAYED )
+                                            extra = _(", highlighting played releases");
+                                        else
+                                            extra = _(", highlighting unplayed releases");
+                                    }
+
+                                    m_LabelShowing->set_text( (showing_f
+                                        % n2
+                                        % n1
+                                        % ((Options.Type == RT_ALL) ? _("releases of all kind") : get_release_string(ReleaseType(Options.Type), true))
+                                        % extra
+                                    ).str());
                                 }
                         }
 
@@ -1339,6 +1377,7 @@ namespace MPX
                         AlbumTreeView::set_release_type_filter (int state)
                         {
                                 Options.Type = state; 
+                                update_album_count_display();
                                 AlbumsTreeStoreFilter->refilter();
                         }
 
@@ -1346,6 +1385,7 @@ namespace MPX
                         AlbumTreeView::set_highlight_mode (AlbumHighlightMode mode)
                         {
                                 Options.HighlightMode = mode;
+                                update_album_count_display();
                                 queue_draw ();
                         }
 } // end namespace MPX 
