@@ -164,10 +164,11 @@ namespace MPX
                 , m_Lib(lib)
                 , m_Covers(amzn)
                 , m_ButtonPressed(false)
-                , m_State_New(ALBUMS_STATE_NO_FLAGS)
-                , m_State_Type(RT_ALL)
-                , m_Advanced(false)
                 {
+                        Options.Flags = ALBUMS_STATE_NO_FLAGS;
+                        Options.Type = RT_ALL;
+                        Options.Advanced = false;
+
                         for(int n = 0; n < N_STARS; ++n)
                         {
                                 m_Stars[n] = Gdk::Pixbuf::create_from_file(
@@ -409,7 +410,7 @@ namespace MPX
                 void
                         AlbumTreeView::on_filter_entry_changed ()
                         {
-                                if(m_Advanced)
+                                if(Options.Advanced)
                                 {
                                     m_Constraints.clear();
                                     m_FilterText = AQE::parse_advanced_query (m_Constraints, m_FilterEntry->get_text());
@@ -425,7 +426,7 @@ namespace MPX
                 void
                         AlbumTreeView::on_advanced_query_cb_toggled ()
                         {
-                                m_Advanced = m_AdvancedQueryCB->get_active();
+                                Options.Advanced = m_AdvancedQueryCB->get_active();
                                 on_filter_entry_changed ();
                         }
 
@@ -799,30 +800,28 @@ namespace MPX
                                         Glib::ustring type_1st = type.substr(0, 1);
                                         Glib::ustring type_2nd = type.substr(1, type.length());
 
-                                        type = "[" + type_1st.uppercase() + type_2nd + "]";
+                                        type = type_1st.uppercase() + type_2nd; 
                                 }
 
                                 if( !country.empty() )
                                 {
                                         (*iter)[Columns.Text] =
-        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4% %5%</span>\n<span size='8000'>PlayScore: %6%</span></span>")
+        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4%\n%5%</span></span>")
                                                  % Markup::escape_text(album).c_str()
                                                  % Markup::escape_text(artist).c_str()
                                                  % country
                                                  % year
                                                  % type
-                                                 % playscore
                                                 ).str();
                                 }
                                 else
                                 {
                                         (*iter)[Columns.Text] =
-        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3% %4%</span>\n<span size='8000'>PlayScore: %5%</span></span>")
+        (boost::format("<span size='8000'><span size='12000'><b>%2%</b></span>\n<span size='12000'>%1%</span>\n<span size='9000'>%3%\n%4%</span></span>")
                                                  % Markup::escape_text(album).c_str()
                                                  % Markup::escape_text(artist).c_str()
                                                  % year
                                                  % type
-                                                 % playscore
                                                 ).str();
                                 }
 
@@ -1109,6 +1108,33 @@ namespace MPX
                                 {
                                         cell->property_visible() = true;
                                         cell->property_surface() = (*iter)[Columns.Image]; 
+
+                                        double score = (*iter)[Columns.PlayScore]; 
+
+                                        if( Options.HighlightMode == HIGHLIGHT_EQUAL )
+                                        {
+                                            cell->property_alpha() = 1.0;
+                                        }
+                                        else if( Options.HighlightMode == HIGHLIGHT_UNPLAYED )
+                                        {
+                                            if( score < 1 )
+                                            {
+                                                cell->property_alpha() = 1.;
+                                                return;
+                                            }
+
+                                            cell->property_alpha() = 0.1; 
+                                        }
+                                        else if( Options.HighlightMode == HIGHLIGHT_PLAYED )
+                                        {
+                                            if( score >= 1 )
+                                            {
+                                                cell->property_alpha() = 1.;
+                                                return;
+                                            }
+
+                                            cell->property_alpha() = 0.1; 
+                                        }
                                 }
                                 else
                                 {
@@ -1241,12 +1267,12 @@ namespace MPX
                         {
                                 TreePath path = AlbumsTreeStore->get_path(iter);
 
-                                if( path.size() == 1 && (m_State_New & ALBUMS_STATE_SHOW_NEW) && !(*iter)[Columns.NewAlbum])
+                                if( path.size() == 1 && (Options.Flags & ALBUMS_STATE_SHOW_NEW) && !(*iter)[Columns.NewAlbum])
                                 {
                                         return false;
                                 } 
 
-                                if( path.size() == 1 && !(m_State_Type & (*iter)[Columns.RT]))
+                                if( path.size() == 1 && !(Options.Type & (*iter)[Columns.RT]))
                                 {
                                         return false;
                                 }
@@ -1303,17 +1329,23 @@ namespace MPX
                         AlbumTreeView::set_new_albums_state (bool state)
                         {
                                 if(state)
-                                        m_State_New |= ALBUMS_STATE_SHOW_NEW;
+                                        Options.Flags |= ALBUMS_STATE_SHOW_NEW;
                                 else
-                                        m_State_New &= ~ALBUMS_STATE_SHOW_NEW;
+                                        Options.Flags &= ~ALBUMS_STATE_SHOW_NEW;
                                 AlbumsTreeStoreFilter->refilter();
                         }
 
                 void
                         AlbumTreeView::set_release_type_filter (int state)
                         {
-                                m_State_Type = state; 
+                                Options.Type = state; 
                                 AlbumsTreeStoreFilter->refilter();
                         }
 
+                void
+                        AlbumTreeView::set_highlight_mode (AlbumHighlightMode mode)
+                        {
+                                Options.HighlightMode = mode;
+                                queue_draw ();
+                        }
 } // end namespace MPX 

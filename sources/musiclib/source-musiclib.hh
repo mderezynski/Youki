@@ -124,6 +124,9 @@ namespace Source
                 on_view_option_show_new_albums ();
 
                 void
+                on_view_option_album_highlight ();
+
+                void
                 on_view_change ();
 
                 void

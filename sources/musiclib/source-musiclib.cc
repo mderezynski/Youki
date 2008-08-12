@@ -132,6 +132,11 @@ namespace
                 "           <menuitem action='musiclib-albums-show-soundtracks'/>"
                 "           <menuitem action='musiclib-albums-show-other'/>"
                 "         </menu>"
+                "         <menu action='menu-musiclib-highlight'>"
+                "           <menuitem action='musiclib-highlight-equal'/>"
+                "           <menuitem action='musiclib-highlight-unplayed'/>"
+                "           <menuitem action='musiclib-highlight-played'/>"
+                "         </menu>"
                 "         <menuitem action='musiclib-show-only-new'/>"
                 "         <separator/>"
                 "         <menuitem action='musiclib-show-ccdialog'/>"
@@ -2815,6 +2820,7 @@ namespace MPX
                         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
                         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
                         m_MainActionGroup->add(Action::create("menu-musiclib-albums", _("Show Release Types...")));
+                        m_MainActionGroup->add(Action::create("menu-musiclib-highlight", _("Highlight...")));
                         m_MainActionGroup->add(Action::create("menu-musiclib-sort", _("Sort Albums By...")));
 
                         Gtk::RadioButtonGroup gr1;
@@ -2978,6 +2984,53 @@ namespace MPX
 
                         RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-albums-show-all"))->set_current_value(RT_ALL);
 
+                        Gtk::RadioButtonGroup gr4;
+
+                        m_MainActionGroup->add(
+
+                                        RadioAction::create(
+                                                gr4,
+                                                "musiclib-highlight-equal",
+                                                _("Do Not Highlight")
+                                                ),
+
+                                        sigc::mem_fun(
+                                                *this,
+                                                &PlaybackSourceMusicLib::on_view_option_album_highlight
+                                                )
+                                        );
+                        RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-highlight-equal"))->property_value() = 0;
+
+                        m_MainActionGroup->add(
+
+                                        RadioAction::create(
+                                                gr4,
+                                                "musiclib-highlight-unplayed",
+                                                _("Unplayed")
+                                                ),
+
+                                        sigc::mem_fun(
+                                                *this,
+                                                &PlaybackSourceMusicLib::on_view_option_album_highlight
+                                                )
+                                        );
+                        RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-highlight-unplayed"))->property_value() = 1;
+
+                        m_MainActionGroup->add(
+
+                                        RadioAction::create(
+                                                gr4,
+                                                "musiclib-highlight-played",
+                                                _("Played")
+                                                ),
+
+                                        sigc::mem_fun(
+                                                *this,
+                                                &PlaybackSourceMusicLib::on_view_option_album_highlight
+                                                )
+                                        );
+                        RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-highlight-played"))->property_value() = 2;
+
                         m_MainUIManager->insert_action_group(m_MainActionGroup);
                 }
 
@@ -3070,6 +3123,13 @@ namespace MPX
                         {
                                 bool value = RefPtr<Gtk::ToggleAction>::cast_static (m_MainActionGroup->get_action ("musiclib-show-only-new"))->get_active();
                                 m_Private->m_TreeViewAlbums->set_new_albums_state(value);
+                        }
+
+                void
+                        PlaybackSourceMusicLib::on_view_option_album_highlight ()
+                        {
+                                int value = RefPtr<Gtk::RadioAction>::cast_static (m_MainActionGroup->get_action ("musiclib-highlight-equal"))->get_current_value();
+                                m_Private->m_TreeViewAlbums->set_highlight_mode(AlbumHighlightMode(value));
                         }
 
                 void

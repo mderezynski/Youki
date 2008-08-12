@@ -37,6 +37,7 @@ namespace MPX
     CellRendererCairoSurface::CellRendererCairoSurface ()
         : ObjectBase              (typeid(CellRendererCairoSurface))
         , property_surface_       (*this, "surface", RefSurface(0))
+        , property_alpha_         (*this, "alpha",   1.)
     {
     }
 
@@ -126,7 +127,8 @@ namespace MPX
       cr->set_operator (Cairo::OPERATOR_ATOP);
       cr->set_source (surface, r.x, r.y);
       cr->rectangle (r.x, r.y, surface->get_width(), surface->get_height());
-      cr->fill ();
+      cr->clip();
+      cr->paint_with_alpha (property_alpha_.get_value());
     }
 
     ///////////////////////////////////////////////
@@ -138,4 +140,11 @@ namespace MPX
     {
       return ProxyOf<PropSurface>::ReadWrite (this, "surface");
     }
+
+    ProxyOf<PropFloat>::ReadWrite
+    CellRendererCairoSurface::property_alpha()
+    {
+      return ProxyOf<PropFloat>::ReadWrite (this, "alpha");
+    }
+
 };

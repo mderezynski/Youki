@@ -68,6 +68,20 @@ namespace MPX
                         ROW_TRACK   =   2,
                 };
 
+                enum AlbumHighlightMode
+                {
+                        HIGHLIGHT_EQUAL,
+                        HIGHLIGHT_UNPLAYED,
+                        HIGHLIGHT_PLAYED
+                };
+
+                enum AlbumFlags
+                {
+                    ALBUMS_STATE_NO_FLAGS                =   0,
+                    ALBUMS_STATE_SHOW_NEW                =   1 << 0,
+                };
+
+
                 enum ReleaseType
                 {
                         RT_NONE             =   0,   
@@ -166,7 +180,7 @@ namespace MPX
 
                         public:
 
-                        // treemodel stuff
+                        // Treemodel stuff
 
                           Glib::RefPtr<Gtk::TreeStore>          AlbumsTreeStore;
                           Glib::RefPtr<Gtk::TreeModelFilter>    AlbumsTreeStoreFilter;
@@ -176,23 +190,23 @@ namespace MPX
 
                           std::string                           m_Name;
 
-                        // ui
+                        // UI
 
                           Glib::RefPtr<Gtk::UIManager>          m_UIManager;
                           Glib::RefPtr<Gtk::ActionGroup>        m_ActionGroup;      
 
-                        // objects
+                        // Objects
 
                           PAccess<MPX::Library>                 m_Lib;
                           PAccess<MPX::Covers>                  m_Covers;
 
-                        // view mappings
+                        // View mappings
 
                           MBIDIterMap                           m_Album_MBID_Iter_Map;
                           IdIterMap                             m_Album_Iter_Map;
                           IdIterMap                             m_Track_Iter_Map;
 
-                        // disc+rating pixbufs
+                        // Disc+rating pixbufs
 
                           Cairo::RefPtr<Cairo::ImageSurface>    m_DiscDefault;
                           Glib::RefPtr<Gdk::Pixbuf>             m_DiscDefault_Pixbuf;
@@ -203,31 +217,34 @@ namespace MPX
                           boost::optional<std::string>          m_DragAlbumMBID;
                           boost::optional<gint64>               m_DragAlbumId;
                           boost::optional<gint64>               m_DragTrackId;
+
+                        // Event handling data
+
                           Gtk::TreePath                         m_PathButtonPress;
-
-                        // state variables
-
-                          enum AState
-                          {
-                                  ALBUMS_STATE_NO_FLAGS                =   0,
-                                  ALBUMS_STATE_SHOW_NEW                =   1 << 0,
-                                  ALBUMS_STATE_IGNORE_SINGLE_TRACKS    =   1 << 1
-                          };
-
                           bool                                  m_ButtonPressed;
-                          int                                   m_State_New;
-                          int                                   m_State_Type;
-                          bool                                  m_Advanced;
+
+                        // State variables
+
                           Glib::ustring                         m_FilterText;
                           AQE::Constraints_t                    m_Constraints;
 
-                        // widgets
+                          struct Options_t
+                          {
+                                  AlbumHighlightMode    HighlightMode;
+                                  int                   Flags;
+                                  int                   Type;
+                                  int                   Advanced;
+                          };
+
+                          Options_t                             Options;
+
+                        // Widgets
 
                           Gtk::Entry*                           m_FilterEntry;
                           RoundedLayout*                        m_LabelShowing;
                           Gtk::CheckButton*                     m_AdvancedQueryCB;
 
-                        // signals
+                        // Signals
 
                           struct Signals_t
                           {
@@ -396,6 +413,9 @@ namespace MPX
 
                         virtual void
                                 set_release_type_filter (int);
+
+                        virtual void
+                                set_highlight_mode (AlbumHighlightMode);
                 };
 
 } // end namespace MPX 

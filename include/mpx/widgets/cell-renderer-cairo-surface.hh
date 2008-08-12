@@ -37,8 +37,7 @@ namespace MPX
     typedef Cairo::RefPtr<Cairo::ImageSurface>  RefSurface;
     typedef Glib::Property<RefSurface>          PropSurface;
 
-    class CellRendererCairoSurface
-      : public Gtk::CellRenderer
+    class CellRendererCairoSurface : public Gtk::CellRenderer
     {
       public:
 
@@ -48,9 +47,13 @@ namespace MPX
         ProxyOf<PropSurface>::ReadWrite
         property_surface ();
 
+        ProxyOf<PropFloat>::ReadWrite
+        property_alpha ();
+
       private:
 
         PropSurface property_surface_;
+        PropFloat   property_alpha_;
 
       protected:
 
