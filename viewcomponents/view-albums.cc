@@ -718,7 +718,7 @@ namespace MPX
 
                                 IterSet & set = m_Album_MBID_Iter_Map[mbid];
                                 for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
-                                {
+                                {       
                                         if( (*(*i))[Columns.RT] == RT_COMPILATION ) 
                                         {
                                             (*(*i))[Columns.Image] = Util::cairo_image_surface_overlay( surface, Util::cairo_image_surface_from_pixbuf(m_Emblem_Compilation), 0., 0., 1.); 
