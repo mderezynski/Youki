@@ -209,6 +209,15 @@ namespace MPX
                                 ));
                         }
 
+                        m_Emblem_Compilation = Gdk::Pixbuf::create_from_file(
+                                        build_filename(
+                                                build_filename(
+                                                        DATA_DIR,
+                                                        "images"
+                                                ),
+                                               "emblem-compilation.png" 
+                        ));
+
                         m_Lib.get().signal_new_album().connect(
                             sigc::mem_fun(
                                 *this,
@@ -710,7 +719,14 @@ namespace MPX
                                 IterSet & set = m_Album_MBID_Iter_Map[mbid];
                                 for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
                                 {
-                                        (*(*i))[Columns.Image] = surface;
+                                        if( (*(*i))[Columns.RT] == RT_COMPILATION ) 
+                                        {
+                                            (*(*i))[Columns.Image] = Util::cairo_image_surface_overlay( surface, Util::cairo_image_surface_from_pixbuf(m_Emblem_Compilation), 0., 0., 1.); 
+                                        }
+                                        else
+                                        {
+                                            (*(*i))[Columns.Image] = surface;
+                                        }
                                 }
                         }
 
@@ -1333,9 +1349,9 @@ namespace MPX
                                     if (Options.HighlightMode != HIGHLIGHT_EQUAL)
                                     {
                                         if( Options.HighlightMode == HIGHLIGHT_PLAYED )
-                                            extra = _(", highlighting played releases");
+                                            extra = _(", highlighting played");
                                         else
-                                            extra = _(", highlighting unplayed releases");
+                                            extra = _(", highlighting unplayed");
                                     }
 
                                     m_LabelShowing->set_text( (showing_f

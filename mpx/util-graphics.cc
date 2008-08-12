@@ -343,20 +343,20 @@ namespace MPX
     }
 
     Cairo::RefPtr<Cairo::ImageSurface>
-    cairo_image_surface_overlay (Cairo::RefPtr<Cairo::ImageSurface> source, Cairo::RefPtr<Cairo::ImageSurface> overlay, double x, double y); 
+    cairo_image_surface_overlay (Cairo::RefPtr<Cairo::ImageSurface> source, Cairo::RefPtr<Cairo::ImageSurface> overlay, double x, double y, double alpha)
     {
       Cairo::RefPtr< ::Cairo::ImageSurface> dest = Cairo::ImageSurface::create (source->get_format(), source->get_width(), source->get_height()); 
       Cairo::RefPtr< ::Cairo::Context> cairo = Cairo::Context::create (dest);
 
       cairo->set_operator (Cairo::OPERATOR_SOURCE); 
-
-      cairo->rectangle (cairo, 0, 0, source->get_width(), source->get_height());
+      cairo->rectangle (0., 0., double(source->get_width()), double(source->get_height()));
       cairo->set_source (source, 0., 0.);
       cairo->fill ();
 
-      cairo->rectangle (cairo, x, y, overlay->get_width(), overlay->get_height());
+      cairo->set_operator (Cairo::OPERATOR_ATOP); 
+      cairo->rectangle (x, y, overlay->get_width(), overlay->get_height());
       cairo->set_source (overlay, x, y);
-      cairo->fill ();
+      cairo->paint_with_alpha (alpha);
 
       return dest;
     }

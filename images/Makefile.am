@@ -2,6 +2,7 @@ images_DATA =						\
 									\
 		about.png					\
 		disc-default.png 			\
+		emblem-compilation.png		\
 		icon-plugins-tab.png		\
 		icon-now-playing-tab.png	\
 		splash.png					\

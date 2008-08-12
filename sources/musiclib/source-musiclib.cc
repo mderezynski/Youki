@@ -506,6 +506,7 @@ namespace MPX
                                 C_ALBUM,
                                 C_TRACK,
                                 C_RATING,
+                                C_COUNT
                         };
 
                         static const int N_FIRST_CUSTOM = 7;
@@ -572,6 +573,8 @@ namespace MPX
                                 col->set_cell_data_func(*cell, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncRating ));
                                 append_column(*col);
 
+                                append_column(_("Count"), PlaylistColumns.Playcount);
+
                                 //////////////////////////////// 
 
                                 cell2 = manage (new CellRendererText);
@@ -592,6 +595,7 @@ namespace MPX
                                 get_column(C_ALBUM)->set_sort_column_id(PlaylistColumns.Album);
                                 get_column(C_TRACK)->set_sort_column_id(PlaylistColumns.Track);
                                 get_column(C_RATING)->set_sort_column_id(PlaylistColumns.Rating);
+                                get_column(C_COUNT)->set_sort_column_id(PlaylistColumns.Playcount);
 
                                 get_column(0)->set_resizable(false);
                                 get_column(1)->set_resizable(true);
@@ -600,6 +604,7 @@ namespace MPX
                                 get_column(4)->set_resizable(true);
                                 get_column(5)->set_resizable(false);
                                 get_column(6)->set_resizable(false);
+                                get_column(7)->set_resizable(false);
 
                                 /*
                                 for( int n = 1; n <= 5; ++ n)
@@ -841,6 +846,9 @@ namespace MPX
                                         if(r.count("rating"))
                                                 (*iter)[PlaylistColumns.Rating] = get<gint64>(r["rating"]);
 
+                                        if(r.count("pcount"))
+                                                (*iter)[PlaylistColumns.Playcount] = get<gint64>(r["pcount"]);
+
                                         (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
                                         (*iter)[PlaylistColumns.MPXTrack] = m_Lib.get().sqlToTrack(r); 
                                         (*iter)[PlaylistColumns.IsMPXTrack] = true; 
@@ -873,6 +881,9 @@ namespace MPX
 
                                         if(track[ATTRIBUTE_RATING])
                                                 (*iter)[PlaylistColumns.Rating] = get<gint64>(track[ATTRIBUTE_RATING].get());
+
+                                        if(track[ATTRIBUTE_COUNT])
+                                                (*iter)[PlaylistColumns.Playcount] = get<gint64>(track[ATTRIBUTE_COUNT].get());
 
                                         if(track[ATTRIBUTE_MPX_TRACK_ID])
                                         {

@@ -210,6 +210,7 @@ namespace MPX
 
                           Cairo::RefPtr<Cairo::ImageSurface>    m_DiscDefault;
                           Glib::RefPtr<Gdk::Pixbuf>             m_DiscDefault_Pixbuf;
+                          Glib::RefPtr<Gdk::Pixbuf>             m_Emblem_Compilation;
                           Glib::RefPtr<Gdk::Pixbuf>             m_Stars[N_STARS];
 
                         // DND state variables

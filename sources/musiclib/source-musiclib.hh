@@ -68,6 +68,7 @@ namespace MPX
             Gtk::TreeModelColumn<std::string>   Location;
             Gtk::TreeModelColumn< ::MPX::Track> MPXTrack;
             Gtk::TreeModelColumn<gint64>        Rating;
+            Gtk::TreeModelColumn<gint64>        Playcount;
             Gtk::TreeModelColumn<bool>          IsMPXTrack;
             Gtk::TreeModelColumn<bool>          IsBad;
 
@@ -84,6 +85,7 @@ namespace MPX
                 add (Location);
                 add (MPXTrack);
                 add (Rating);
+                add (Playcount);
                 add (IsMPXTrack);
                 add (IsBad);
             };
