@@ -368,6 +368,8 @@ namespace MPX
                         void  request_status_real (PlayStatus status);
                         void  switch_stream_real (Glib::ustring const& stream, Glib::ustring const& type = Glib::ustring());
 
+                        bool  clock_idle_handler();
+
                         static gboolean clock_callback(
                                         GstClock *clock,
                                         GstClockTime time,

@@ -645,6 +645,13 @@ namespace MPX
                         gst_object_unref (pad2);
                 }
 
+        bool
+                Play::clock_idle_handler ()
+                {
+                        signal_spectrum_.emit( m_spectrum );
+                        return false;
+                }
+    
         gboolean
                 Play::clock_callback(
                     GstClock*       clock,
@@ -653,17 +660,23 @@ namespace MPX
                     gpointer        data
                 )
                 {
-                        Play & play = *(static_cast<Play*> (data));
+                        Play & play = *(static_cast<Play*>( data ));
 
                         GstStructure const* s = gst_message_get_structure (play.m_spectrum_message);
-                        GValue const* mags = gst_structure_get_value (s, "magnitude");
+                        GValue const* m = gst_structure_get_value (s, "magnitude");
+
                         for (int i = 0; i < SPECT_BANDS; ++i)
                         {
-                                play.m_spectrum[i] = g_value_get_float(gst_value_list_get_value(mags, i)); 
+                                play.m_spectrum[i] = g_value_get_float(gst_value_list_get_value( m, i )); 
                         }
-                        play.signal_spectrum_.emit (play.m_spectrum);
 
                         gst_object_unref(play.m_spectrum_message);
+
+                        Glib::signal_idle().connect(
+                                sigc::mem_fun(
+                                        play,
+                                        &Play::clock_idle_handler
+                        ));
 
                         return FALSE;
                 }
