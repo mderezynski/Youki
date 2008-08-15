@@ -929,6 +929,22 @@ namespace MPX
 
                                   add_accel_group (m_ui_manager->get_accel_group());
 
+                                  /*- Setup Window Geometry -----------------------------------------*/ 
+
+                                  resize(
+                                                  mcs->key_get<int>("mpx","window-w"),
+                                                  mcs->key_get<int>("mpx","window-h")
+                                        );
+
+                                  move(
+                                                  mcs->key_get<int>("mpx","window-x"),
+                                                  mcs->key_get<int>("mpx","window-y")
+                                      );
+
+
+                                  while (gtk_events_pending())
+                                    gtk_main_iteration();
+
                                   /*- Load Sources --------------------------------------------------*/ 
 
                                   splash.set_message(_("Loading Sources"), 0.8);
@@ -1046,23 +1062,6 @@ namespace MPX
                                   splash.set_message(_("Ready"), 1.0);
 
                                   show ();
-
-                                  while (gtk_events_pending())
-                                    gtk_main_iteration();
-
-                                  resize(
-                                                  mcs->key_get<int>("mpx","window-w"),
-                                                  mcs->key_get<int>("mpx","window-h")
-                                        );
-
-                                  move(
-                                                  mcs->key_get<int>("mpx","window-x"),
-                                                  mcs->key_get<int>("mpx","window-y")
-                                      );
-
-
-                                  while (gtk_events_pending())
-                                    gtk_main_iteration();
 
                                   DBusObjects.mpx->startup_complete(DBusObjects.mpx);
                           }
