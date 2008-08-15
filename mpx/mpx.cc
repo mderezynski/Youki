@@ -1077,6 +1077,11 @@ namespace MPX
 
         Player::~Player()
         {
+                for( SourcesMap::iterator i = m_Sources.begin(); i != m_Sources.end(); ++i )
+                {
+                    delete (*i).second;
+                }
+
                 Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-y")));
                 Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-h")));
                 DBusObjects.mpx->shutdown_complete(DBusObjects.mpx); 

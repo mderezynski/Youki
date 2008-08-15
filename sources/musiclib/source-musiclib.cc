@@ -3047,6 +3047,7 @@ namespace MPX
 
                 PlaybackSourceMusicLib::~PlaybackSourceMusicLib ()
                 {
+                        mcs->key_set<int>("PlaybackSourceMusicLib", "divider-position", int((dynamic_cast<Gtk::HPaned*>(m_Private->m_UI))->get_position()));
                         delete m_Private;
                 }
 
