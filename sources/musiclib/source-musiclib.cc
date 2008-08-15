@@ -2825,8 +2825,11 @@ namespace MPX
                         m_Private->m_TreeViewPlaylist->signal_row_activated().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_row_activated ) );
                         m_Private->m_TreeViewPlaylist->signal_query_tooltip().connect( sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_plist_query_tooltip ) );
 
-                        (dynamic_cast<Gtk::HPaned*>(m_Private->m_UI))->set_position(mcs->key_get<int>("PlaybackSourceMusicLib", "divider-position"));
 
+                        gtk_widget_realize(GTK_WIDGET((dynamic_cast<Gtk::Widget*>(m_Private->m_UI))->gobj()));
+                        gtk_widget_show(GTK_WIDGET((dynamic_cast<Gtk::Widget*>(m_Private->m_UI))->gobj()));
+
+                        (dynamic_cast<Gtk::HPaned*>(m_Private->m_UI))->set_position(mcs->key_get<int>("PlaybackSourceMusicLib", "divider-position"));
 
                         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
                         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
@@ -3047,6 +3050,7 @@ namespace MPX
 
                 PlaybackSourceMusicLib::~PlaybackSourceMusicLib ()
                 {
+                        g_message("Saving divider position");
                         mcs->key_set<int>("PlaybackSourceMusicLib", "divider-position", int((dynamic_cast<Gtk::HPaned*>(m_Private->m_UI))->get_position()));
                         delete m_Private;
                 }
