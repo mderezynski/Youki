@@ -170,7 +170,7 @@ namespace
                             if( rt == RT_SOUNDTRACK )
                                 return plural ? N_("soundtracks") : N_("Soundtrack");
 
-                        return "Other";
+                        return "";
                 }
 
 }

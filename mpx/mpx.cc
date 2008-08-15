@@ -1037,7 +1037,18 @@ namespace MPX
                                   m_PluginManager->activate_plugins();
                                   m_PluginManagerGUI = PluginManagerGUI::create(*m_PluginManager);
 
+                                  m_MarkovThread->run();
+
+                                  translate_caps(); // sets all actions intially insensitive as we have C_NONE
+
+
+
                                   splash.set_message(_("Ready"), 1.0);
+
+                                  show ();
+
+                                  while (gtk_events_pending())
+                                    gtk_main_iteration();
 
                                   resize(
                                                   mcs->key_get<int>("mpx","window-w"),
@@ -1050,11 +1061,8 @@ namespace MPX
                                       );
 
 
-                                  m_MarkovThread->run();
-
-                                  translate_caps(); // sets all actions intially insensitive as we have C_NONE
-
-                                  show ();
+                                  while (gtk_events_pending())
+                                    gtk_main_iteration();
 
                                   DBusObjects.mpx->startup_complete(DBusObjects.mpx);
                           }

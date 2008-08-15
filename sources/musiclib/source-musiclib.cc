@@ -2972,7 +2972,7 @@ namespace MPX
                                 {N_("Show Live Recordings"), "musiclib-albums-show-live", RT_LIVE},
                                 {N_("Show Remixes"), "musiclib-albums-show-remix", RT_REMIX},
                                 {N_("Show Soundtracks"), "musiclib-albums-show-soundtracks", RT_SOUNDTRACK},
-                                {N_("Show Other Release Types"), "musiclib-albums-show-other", RT_OTHER},
+                                {N_("Show Releases of Unknown Type"), "musiclib-albums-show-other", RT_OTHER},
                         };
 
                         Gtk::RadioButtonGroup gr3;
