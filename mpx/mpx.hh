@@ -153,7 +153,7 @@ namespace MPX
     
         virtual ~Player ();
 
-    // XXX: Public API needed when we split of SourceController
+    // XXX: Public API needed when we split off SourceController
 
         void
         set_metadata(Metadata const&, ItemKey const&);
@@ -364,6 +364,9 @@ namespace MPX
         void
         on_play_update_spectrum (Spectrum const& spectrum);
 
+		void
+		on_play_stream_switched ();
+
 
 
 		void
@@ -414,13 +417,10 @@ namespace MPX
 		next_async_cb (ItemKey const&);
 
         void
-        play_tracks (Util::FileList const& uris);
+        play_tracks (Util::FileList const&, bool);
 
         void
         switch_stream (std::string const&, std::string const&);
-
-		void
-		on_stream_switched ();
 
 		void
 		track_played ();

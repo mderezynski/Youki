@@ -672,11 +672,14 @@ namespace MPX
 
                         gst_object_unref(play.m_spectrum_message);
 
+                        play.signal_spectrum_.emit( play.m_spectrum );
+
+                        /*
                         Glib::signal_idle().connect(
                                 sigc::mem_fun(
                                         play,
                                         &Play::clock_idle_handler
-                        ));
+                        ));*/
 
                         return FALSE;
                 }

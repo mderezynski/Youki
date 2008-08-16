@@ -17,7 +17,7 @@ namespace
   LayoutData const layout_info[] =
   {
     {1.  , 84,  6},
-    {0.65, 84, 20},
+    {0.65, 84, 22},
     {1.  , 84, 54},
   };
 

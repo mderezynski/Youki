@@ -10,6 +10,7 @@
 
       <method name="PlayTracks">
             <arg type="as"/>
+            <arg type="b"/>
       </method>
 
   </interface>

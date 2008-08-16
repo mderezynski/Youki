@@ -276,7 +276,7 @@ namespace MPX
                         }
 
                         set_show_expanders( false );
-                        set_level_indentation( 32 );
+                        set_level_indentation( 48 );
 
                         TreeViewColumn * col = manage (new TreeViewColumn());
                         GtkCellRenderer * renderer = gossip_cell_renderer_expander_new ();

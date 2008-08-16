@@ -369,6 +369,7 @@ namespace MPX
                 static gboolean
                         play_tracks (DBusPlayer* self,
                                         char** uris,
+                                        gboolean play,
                                         GError** error);
         };
 
@@ -534,6 +535,7 @@ namespace MPX
         gboolean
                 Player::DBusPlayer::play_tracks (DBusPlayer* self,
                                 char** uris,
+                                gboolean play,
                                 GError** error)
                 {
                         Util::FileList list;
@@ -545,7 +547,7 @@ namespace MPX
                                         ++uris;
                                 }
                         }
-                        self->player->play_tracks(list);
+                        self->player->play_tracks(list, bool(play));
                         return TRUE;
                 }
 
@@ -656,7 +658,7 @@ namespace MPX
                                                           ));
 
                                   m_Play.signal_stream_switched().connect(
-                                                  sigc::mem_fun( *this, &MPX::Player::on_stream_switched
+                                                  sigc::mem_fun( *this, &MPX::Player::on_play_stream_switched
                                                           ));
 
                                   m_Play.signal_spectrum().connect(
@@ -1020,13 +1022,20 @@ namespace MPX
 
                                   m_InfoArea = InfoArea::create(m_ref_xml, "infoarea");
 
-                                  m_InfoArea->signal_cover_clicked().connect
-                                          (sigc::mem_fun( *this, &Player::on_cb_album_cover_clicked
-                                                        ));
+                                  m_InfoArea->signal_cover_clicked().connect(
+                                        sigc::mem_fun(
+                                                *this,
+                                                &Player::on_cb_album_cover_clicked
+                                  ));
 
-                                  m_InfoArea->signal_uris_dropped().connect
-                                          (sigc::mem_fun( *this, &MPX::Player::play_tracks
-                                                        ));
+                                  m_InfoArea->signal_uris_dropped().connect(
+                                        sigc::bind(
+                                                sigc::mem_fun(
+                                                    *this,
+                                                    &Player::play_tracks
+                                                ),
+                                                true
+                                  ));
 
                                   /*- Load Plugins -------------------------------------------------*/
 
@@ -1140,7 +1149,7 @@ namespace MPX
                 }
 
         void
-                Player::play_tracks (Util::FileList const& uris)
+                Player::play_tracks (Util::FileList const& uris, bool play)
                 {
                         if( uris.size() )
                         {
@@ -1149,7 +1158,7 @@ namespace MPX
                                         UriSchemeMap::const_iterator i = m_UriMap.find (u.scheme);
                                         if( i != m_UriMap.end ())
                                         {
-                                                m_Sources[i->second]->process_uri_list( uris, true );
+                                                m_Sources[i->second]->process_uri_list( uris, play );
                                         }
                                 }
                                 catch (URI::ParseError & cxe)
@@ -1539,7 +1548,7 @@ SET_SEEK_POSITION:
                 }
 
         void
-                Player::on_stream_switched ()
+                Player::on_play_stream_switched ()
                 {
                         g_return_if_fail(m_PreparingSource || m_ActiveSource);
 

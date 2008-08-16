@@ -49,8 +49,11 @@ namespace
 
   GMainLoop* mainloop = NULL;
 
+  gboolean arg_play = FALSE;
+
   GOptionEntry options[] =
   {
+      {"play",  'p', 0, G_OPTION_ARG_NONE, &arg_play, N_("Play files/URIs after enqueueing"), NULL},
   };
 
   void
@@ -342,6 +345,7 @@ main (int    argc,
 
       if (!dbus_g_proxy_call (o_player, "PlayTracks", &error,
                               G_TYPE_STRV, uri_list,
+                              G_TYPE_BOOLEAN, arg_play,
                               G_TYPE_INVALID,
                               G_TYPE_INVALID))
       {
