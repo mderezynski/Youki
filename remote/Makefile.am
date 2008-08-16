@@ -1,14 +1,14 @@
-bin_PROGRAMS = audiosource 
+bin_PROGRAMS = mpx 
 
-audiosource_LDADD =				\
+mpx_LDADD =				\
 	$(GLIBMM_LIBS)		\
 	$(GTK_LIBS)			\
 	$(DBUS_LIBS)
 
-audiosource_CXXFLAGS =			\
+mpx_CXXFLAGS =			\
 	$(GLIBMM_CFLAGS)	\
 	$(GTK_CFLAGS)		\
 	$(DBUS_CFLAGS)		
 
-audiosource_SOURCES =			\
+mpx_SOURCES =			\
     mpx.cc
