@@ -37,6 +37,7 @@
 
 	  <child>
 	    <widget class="GtkVBox" id="vbox5">
+	      <property name="border_width">4</property>
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
 	      <property name="spacing">4</property>
@@ -190,6 +191,7 @@
 
 	  <child>
 	    <widget class="GtkVBox" id="vbox9">
+	      <property name="border_width">4</property>
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
 	      <property name="spacing">2</property>
@@ -352,6 +354,7 @@
 
 	  <child>
 	    <widget class="GtkVBox" id="vbox10">
+	      <property name="border_width">4</property>
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
 	      <property name="spacing">4</property>
@@ -486,9 +489,10 @@
 
 	  <child>
 	    <widget class="GtkVBox" id="vbox7">
+	      <property name="border_width">4</property>
 	      <property name="visible">True</property>
 	      <property name="homogeneous">False</property>
-	      <property name="spacing">2</property>
+	      <property name="spacing">4</property>
 
 	      <child>
 		<widget class="GtkHBox" id="hbox5">
@@ -608,6 +612,7 @@
 
 	  <child>
 	    <widget class="GtkScrolledWindow" id="scrolledwindow7">
+	      <property name="border_width">4</property>
 	      <property name="visible">True</property>
 	      <property name="can_focus">True</property>
 	      <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>

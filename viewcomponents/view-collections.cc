@@ -284,7 +284,7 @@ namespace MPX
                                 Gdk::Pixbuf::create_from_file(
                                                 build_filename(
                                                         DATA_DIR,
-                                                        build_filename("images","disc-default.png")
+                                                        build_filename("images","disc.png")
                                                         )
                                                 )->scale_simple(90,90,Gdk::INTERP_BILINEAR);
 

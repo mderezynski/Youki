@@ -113,14 +113,6 @@ namespace
                 "         <menuitem action='musiclib-show-collections'/>"
                 "         <menuitem action='musiclib-show-file-system-tree'/>"
                 "         <separator/>"
-                "         <menu action='menu-musiclib-sort'>"
-                "           <menuitem action='musiclib-sort-by-name'/>"
-                "           <menuitem action='musiclib-sort-by-alphabet'/>"
-                "           <menuitem action='musiclib-sort-by-date'/>"
-                "           <menuitem action='musiclib-sort-by-playscore'/>"
-                "           <menuitem action='musiclib-sort-by-rating'/>"
-                "         </menu>"
-                "         <separator/>"
                 "         <menu action='menu-musiclib-albums'>"
                 "           <menuitem action='musiclib-albums-show-all'/>"
                 "           <menuitem action='musiclib-albums-show-albums'/>"
@@ -131,6 +123,13 @@ namespace
                 "           <menuitem action='musiclib-albums-show-remix'/>"
                 "           <menuitem action='musiclib-albums-show-soundtracks'/>"
                 "           <menuitem action='musiclib-albums-show-other'/>"
+                "         </menu>"
+                "         <menu action='menu-musiclib-sort'>"
+                "           <menuitem action='musiclib-sort-by-name'/>"
+                "           <menuitem action='musiclib-sort-by-alphabet'/>"
+                "           <menuitem action='musiclib-sort-by-date'/>"
+                "           <menuitem action='musiclib-sort-by-playscore'/>"
+                "           <menuitem action='musiclib-sort-by-rating'/>"
                 "         </menu>"
                 "         <menu action='menu-musiclib-highlight'>"
                 "           <menuitem action='musiclib-highlight-equal'/>"
@@ -2400,7 +2399,7 @@ namespace MPX
                                 TreeStore->set_sort_func(2 , sigc::mem_fun( *this, &LFMTreeView::slotSortRating ));
                                 TreeStore->set_sort_func(3 , sigc::mem_fun( *this, &LFMTreeView::slotSortStrictAlpha ));
 
-                                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")))->scale_simple(90,90,Gdk::INTERP_BILINEAR);
+                                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc.png")))->scale_simple(90,90,Gdk::INTERP_BILINEAR);
                                 m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(90,90,Gdk::INTERP_BILINEAR));
 
                                 std::vector<TargetEntry> Entries;

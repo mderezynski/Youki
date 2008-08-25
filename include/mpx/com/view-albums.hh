@@ -208,215 +208,223 @@ namespace MPX
 
                         // Disc+rating pixbufs
 
-                          Cairo::RefPtr<Cairo::ImageSurface>    m_DiscDefault;
-                          Glib::RefPtr<Gdk::Pixbuf>             m_DiscDefault_Pixbuf;
-                          Glib::RefPtr<Gdk::Pixbuf>             m_Emblem_Compilation;
-                          Glib::RefPtr<Gdk::Pixbuf>             m_Stars[N_STARS];
+                            enum EmblemType
+                            {
+                                EM_COMPILATION,
+                                EM_SOUNDTRACK,
+    
+                                N_EMS
+                            };
+
+                            Cairo::RefPtr<Cairo::ImageSurface>    m_DiscDefault;
+                            Glib::RefPtr<Gdk::Pixbuf>             m_DiscDefault_Pixbuf;
+                            Glib::RefPtr<Gdk::Pixbuf>             m_Emblem[N_EMS];
+                            Glib::RefPtr<Gdk::Pixbuf>             m_Stars[N_STARS];
 
                         // DND state variables
 
-                          boost::optional<std::string>          m_DragAlbumMBID;
-                          boost::optional<gint64>               m_DragAlbumId;
-                          boost::optional<gint64>               m_DragTrackId;
+                            boost::optional<std::string>          m_DragAlbumMBID;
+                            boost::optional<gint64>               m_DragAlbumId;
+                            boost::optional<gint64>               m_DragTrackId;
 
                         // Event handling data
 
-                          Gtk::TreePath                         m_PathButtonPress;
-                          bool                                  m_ButtonPressed;
+                            Gtk::TreePath                         m_PathButtonPress;
+                            bool                                  m_ButtonPressed;
 
                         // State variables
 
-                          Glib::ustring                         m_FilterText;
-                          AQE::Constraints_t                    m_Constraints;
+                            Glib::ustring                         m_FilterText;
+                            AQE::Constraints_t                    m_Constraints;
 
-                          struct Options_t
-                          {
-                                  AlbumHighlightMode    HighlightMode;
-                                  int                   Flags;
-                                  int                   Type;
-                                  int                   Advanced;
-                          };
+                            struct Options_t
+                            {
+                                    AlbumHighlightMode    HighlightMode;
+                                    int                   Flags;
+                                    int                   Type;
+                                    int                   Advanced;
+                            };
 
-                          Options_t                             Options;
+                            Options_t                             Options;
 
                         // Widgets
 
-                          Gtk::Entry*                           m_FilterEntry;
-                          RoundedLayout*                        m_LabelShowing;
-                          Gtk::CheckButton*                     m_AdvancedQueryCB;
+                            Gtk::Entry*                           m_FilterEntry;
+                            RoundedLayout*                        m_LabelShowing;
+                            Gtk::CheckButton*                     m_AdvancedQueryCB;
 
                         // Signals
 
-                          struct Signals_t
-                          {
-                              SignalPlayAlbum         PlayAlbum;
-                              SignalPlayTracks        PlayTracks; 
-                          };
+                            struct Signals_t
+                            {
+                                SignalPlayAlbum         PlayAlbum;
+                                SignalPlayTracks        PlayTracks; 
+                            };
 
-                          Signals_t Signals;
+                            Signals_t Signals;
 
                         public:
 
-                        SignalPlayTracks&
-                        signal_play_tracks()
-                        {
-                            return Signals.PlayTracks;
-                        }
+                            SignalPlayTracks&
+                            signal_play_tracks()
+                            {
+                                return Signals.PlayTracks;
+                            }
 
-                        SignalPlayAlbum&
-                        signal_play_album()
-                        {
-                            return Signals.PlayAlbum;
-                        }
+                            SignalPlayAlbum&
+                            signal_play_album()
+                            {
+                                return Signals.PlayAlbum;
+                            }
 
-                        AlbumTreeView(
-                            const Glib::RefPtr<Gnome::Glade::Xml>&,    
-                            const std::string&,
-                            const std::string&,
-                            const std::string&,
-                            const std::string&,
-                            Glib::RefPtr<Gtk::UIManager>,
-                            const PAccess<MPX::Library>&,
-                            const PAccess<MPX::Covers>&
-                        );
+                            AlbumTreeView(
+                                const Glib::RefPtr<Gnome::Glade::Xml>&,    
+                                const std::string&,
+                                const std::string&,
+                                const std::string&,
+                                const std::string&,
+                                Glib::RefPtr<Gtk::UIManager>,
+                                const PAccess<MPX::Library>&,
+                                const PAccess<MPX::Covers>&
+                            );
 
                         protected:
 
-                        virtual void
-                                on_row_activated (const Gtk::TreeModel::Path&, Gtk::TreeViewColumn*);
+                            virtual void
+                                    on_row_activated (const Gtk::TreeModel::Path&, Gtk::TreeViewColumn*);
 
-                        virtual void
-                                on_row_expanded (const Gtk::TreeIter &iter_filter,
-                                                 const Gtk::TreePath &path);
+                            virtual void
+                                    on_row_expanded (const Gtk::TreeIter &iter_filter,
+                                                     const Gtk::TreePath &path);
 
-                        virtual void
-                                on_drag_data_get (const Glib::RefPtr<Gdk::DragContext>&, Gtk::SelectionData&, guint, guint);
+                            virtual void
+                                    on_drag_data_get (const Glib::RefPtr<Gdk::DragContext>&, Gtk::SelectionData&, guint, guint);
 
-                        virtual void
-                                on_drag_begin (const Glib::RefPtr<Gdk::DragContext>&);
+                            virtual void
+                                    on_drag_begin (const Glib::RefPtr<Gdk::DragContext>&);
 
-                        virtual bool
-                                on_button_press_event (GdkEventButton*);
+                            virtual bool
+                                    on_button_press_event (GdkEventButton*);
 
-                        virtual bool
-                                on_button_release_event (GdkEventButton*);
+                            virtual bool
+                                    on_button_release_event (GdkEventButton*);
 
-                        virtual bool
-                                on_event (GdkEvent * ev);
+                            virtual bool
+                                    on_event (GdkEvent * ev);
 
-                        virtual void
-                                run_rating_comment_dialog(int, gint64);
+                            virtual void
+                                    run_rating_comment_dialog(int, gint64);
 
-                        virtual void
-                                on_album_show_info ();
+                            virtual void
+                                    on_album_show_info ();
 
-                        virtual void
-                                on_got_cover(const Glib::ustring&);
+                            virtual void
+                                    on_got_cover(const Glib::ustring&);
 
-                        virtual Gtk::TreeIter 
-                                place_album (SQL::Row&, gint64);
+                            virtual Gtk::TreeIter 
+                                    place_album (SQL::Row&, gint64);
 
-                        virtual void
-                                update_album (SQL::Row&, gint64);
+                            virtual void
+                                    update_album (SQL::Row&, gint64);
 
-                        virtual void
-                                place_album_iter_real(
-                                    Gtk::TreeIter&  iter,
-                                    SQL::Row&       r,
-                                    gint64          id
-                                );
+                            virtual void
+                                    place_album_iter_real(
+                                        Gtk::TreeIter&  iter,
+                                        SQL::Row&       r,
+                                        gint64          id
+                                    );
 
-                        virtual void
-                                album_list_load ();
+                            virtual void
+                                    album_list_load ();
 
-                        virtual void
-                                on_album_updated(gint64);
+                            virtual void
+                                    on_album_updated(gint64);
 
-                        virtual void
-                                on_new_album(gint64);
+                            virtual void
+                                    on_new_album(gint64);
 
-                        virtual void
-                                on_new_track(Track&, gint64, gint64);
+                            virtual void
+                                    on_new_track(Track&, gint64, gint64);
 
-                        virtual void
-                                on_album_deleted(gint64);
+                            virtual void
+                                    on_album_deleted(gint64);
 
-                        virtual void
-                                on_track_deleted(gint64);
+                            virtual void
+                                    on_track_deleted(gint64);
 
-                        virtual int
-                                slotSortRating(const Gtk::TreeIter&, const Gtk::TreeIter&);
+                            virtual int
+                                    slotSortRating(const Gtk::TreeIter&, const Gtk::TreeIter&);
 
-                        virtual int
-                                slotSortAlpha(const Gtk::TreeIter&, const Gtk::TreeIter&);
+                            virtual int
+                                    slotSortAlpha(const Gtk::TreeIter&, const Gtk::TreeIter&);
 
-                        virtual int
-                                slotSortDate(const Gtk::TreeIter&, const Gtk::TreeIter&);
+                            virtual int
+                                    slotSortDate(const Gtk::TreeIter&, const Gtk::TreeIter&);
 
-                        virtual int
-                                slotSortStrictAlpha(const Gtk::TreeIter&, const Gtk::TreeIter&);
+                            virtual int
+                                    slotSortStrictAlpha(const Gtk::TreeIter&, const Gtk::TreeIter&);
 
-                        virtual int
-                                slotSortPlayScore(const Gtk::TreeIter&, const Gtk::TreeIter&);
+                            virtual int
+                                    slotSortPlayScore(const Gtk::TreeIter&, const Gtk::TreeIter&);
 
-                        virtual int
-                                sortTracks(const Gtk::TreeIter&, const Gtk::TreeIter&);
+                            virtual int
+                                    sortTracks(const Gtk::TreeIter&, const Gtk::TreeIter&);
 
-                        virtual void
-                                cellDataFuncCover (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
+                            virtual void
+                                    cellDataFuncCover (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
 
-                        virtual void
-                                cellDataFuncText1 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
+                            virtual void
+                                    cellDataFuncText1 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
 
-                        virtual void
-                                cellDataFuncText2 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
+                            virtual void
+                                    cellDataFuncText2 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
 
-                        virtual void
-                                cellDataFuncText3 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
+                            virtual void
+                                    cellDataFuncText3 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
 
-                        virtual void
-                                cellDataFuncText4 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
+                            virtual void
+                                    cellDataFuncText4 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
 
-                        virtual void
-                                cellDataFuncText5 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
+                            virtual void
+                                    cellDataFuncText5 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
 
-                        static void
-                                rb_sourcelist_expander_cell_data_func(
-                                    GtkTreeViewColumn*,
-                                    GtkCellRenderer*,
-                                    GtkTreeModel*,
-                                    GtkTreeIter*,
-                                    gpointer 
-                                ); 
+                            static void
+                                    rb_sourcelist_expander_cell_data_func(
+                                        GtkTreeViewColumn*,
+                                        GtkCellRenderer*,
+                                        GtkTreeModel*,
+                                        GtkTreeIter*,
+                                        gpointer 
+                                    ); 
 
-                        virtual bool
-                                album_visible_func (Gtk::TreeIter const&);
+                            virtual bool
+                                    album_visible_func (Gtk::TreeIter const&);
 
-                        virtual void
-                                update_album_count_display ();
+                            virtual void
+                                    update_album_count_display ();
 
-                        virtual void
-                                on_row_added_or_deleted ();
+                            virtual void
+                                    on_row_added_or_deleted ();
 
-                        virtual void
-                                on_filter_entry_changed ();
+                            virtual void
+                                    on_filter_entry_changed ();
 
-                        virtual void
-                                on_advanced_query_cb_toggled ();
+                            virtual void
+                                    on_advanced_query_cb_toggled ();
 
                         public:
 
-                        virtual void
-                                go_to_album(gint64 id);
+                            virtual void
+                                    go_to_album(gint64 id);
 
-                        virtual void
-                                set_new_albums_state (bool);
+                            virtual void
+                                    set_new_albums_state (bool);
 
-                        virtual void
-                                set_release_type_filter (int);
+                            virtual void
+                                    set_release_type_filter (int);
 
-                        virtual void
-                                set_highlight_mode (AlbumHighlightMode);
+                            virtual void
+                                    set_highlight_mode (AlbumHighlightMode);
                 };
 
 } // end namespace MPX 

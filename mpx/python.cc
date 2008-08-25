@@ -774,6 +774,8 @@ BOOST_PYTHON_MODULE(mpx)
 
 		.def("add_widget",          &mpxpy::player_add_widget)
 		.def("remove_widget",       &mpxpy::player_remove_widget)
+
+		.def("metadata_reparse",    &MPX::Player::metadata_reparse_with_lock)
 	;
 
 	/*-------------------------------------------------------------------------------------*/

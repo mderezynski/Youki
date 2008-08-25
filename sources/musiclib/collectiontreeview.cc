@@ -825,7 +825,7 @@
                 TreeStore->set_sort_func(3 , sigc::mem_fun( *this, &CollectionTreeView::slotSortStrictAlpha ));
                 TreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
 
-                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc-default.png")));
+                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc.png")));
                 m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(72,72,Gdk::INTERP_BILINEAR));
 
                 album_list_load ();

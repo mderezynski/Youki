@@ -98,7 +98,7 @@ namespace MPX
         if( state & Gtk::CELL_RENDERER_SELECTED )
             Gdk::Cairo::set_source_color(cr, widget.get_style()->get_text (Gtk::STATE_NORMAL));
         else
-            Gdk::Cairo::set_source_color(cr, widget.get_style()->get_text (Gtk::STATE_SELECTED));
+            cr->set_source_rgba(1., 1., 1., 1.);
 
         pango_cairo_show_layout (cr->cobj(), layout->gobj());
     }

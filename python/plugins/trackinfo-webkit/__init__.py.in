@@ -1038,7 +1038,7 @@ class TrackInfoDispatcher(mpx.Plugin):
 
     def activate(self):
 
-        self.player_infoarea_click_id = self.player.gobj().connect("infoarea-click", self.metadata_updated)
+        self.player_infoarea_click_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
         self.player.add_info_widget(self.vbox, _("Browser"))
 
         try:

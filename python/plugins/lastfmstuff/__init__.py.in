@@ -52,25 +52,25 @@ class LoveTrack():
 
 class TagTrack():
 
-    def __init__(self, track, mcs):
+    def __init__(self, track, mcs, lib):
 
-        self.title   = track[mpx.AttributeId.TITLE].get()
-        self.artist  = track[mpx.AttributeId.ARTIST].get()
+        self.title      = track[mpx.AttributeId.TITLE].get()
+        self.artist     = track[mpx.AttributeId.ARTIST].get()
+        self.id         = track[mpx.AttributeId.MPX_TRACK_ID].get()
 
-        self.mcs = mcs
+        self.mcs        = mcs
+        self.lib        = lib
 
-        self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/lastfmstuff/tag-track.glade")
+        self.model      = gtk.ListStore(gobject.TYPE_STRING)
+        self.tags       = {}
 
-        self.dialog = self.xml.get_widget("dialog")
+        self.xml        = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/lastfmstuff/tag-track.glade")
+        self.dialog     = self.xml.get_widget("dialog")
+        self.box        = self.xml.get_widget("entry")
+        self.entry      = self.box.child
 
-        self.model = gtk.ListStore(gobject.TYPE_STRING)
-
-        self.box = self.xml.get_widget("entry")
-        self.entry = self.box.child
         self.box.set_model(self.model)
         self.box.set_text_column(0)
-
-        self.tags = {}
 
     def run(self):
 
@@ -101,9 +101,12 @@ class TagTrack():
                     else:
                         method = "set"
 
-                    print rpcsvr.tagTrack(head[0], head[1], head[2], artist, title, [tag], method)
-        except:
-                pass
+                    print rpcsvr.tagTrack(head[0], head[1], head[2], self.artist, self.title, [tag], method)
+                    self.lib.trackTagged(self.id, tag)
+
+        except Exception, e:
+
+                print "Error tagging track: " + str(e)
 
 
 class LastFmActions(mpx.Plugin):
@@ -199,6 +202,6 @@ class LastFmActions(mpx.Plugin):
 
     def on_action_tagtrack(self, action):
 
-        d = TagTrack(self.player.get_metadata(), self.mcs)
+        d = TagTrack(self.player.get_metadata(), self.mcs, self.lib)
         d.run()
 

@@ -5,7 +5,7 @@
 
 <widget class="GtkDialog" id="dialog">
   <property name="border_width">8</property>
-  <property name="title" translatable="yes">LastFM Tag Track - MPX</property>
+  <property name="title" translatable="yes">Tag Track - MPX</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>

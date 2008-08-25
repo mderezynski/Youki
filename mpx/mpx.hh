@@ -127,6 +127,7 @@ namespace MPX
 
         void
         deactivate_plugin(gint64);
+
         void
         activate_plugin(gint64);
 
@@ -154,6 +155,9 @@ namespace MPX
         virtual ~Player ();
 
     // XXX: Public API needed when we split off SourceController
+
+        void
+        metadata_reparse_with_lock ();
 
         void
         set_metadata(Metadata const&, ItemKey const&);

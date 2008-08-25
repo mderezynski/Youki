@@ -120,29 +120,18 @@ class PuidScan():
                     if len(tracks) > 0:
 
                         self.track[mpx.AttributeId.MB_TRACK_ID].set_string(str(tracks[0].getTrack().getId()))
-
                         mbtrack = self.query.getTrackById(tracks[0].getTrack().getId(), self.wsinc) 
                         artist = mbtrack.getArtist()
 
                         self.track[mpx.AttributeId.MB_ARTIST_ID].set_string(str(artist.getId()))
-
-                        if not self.track[mpx.AttributeId.ARTIST]:
-                            self.track[mpx.AttributeId.ARTIST].set_string(str(artist.getName()))
-                        
-                        if not self.track[mpx.AttributeId.TITLE]:
-                            self.track[mpx.AttributeId.TITLE].set_string(str(mbtrack.getTitle()))
-
-                        if not self.track[mpx.AttributeId.ALBUM]:
-                            self.track[mpx.AttributeId.ALBUM].set_string(str(mbtrack.getReleases()[0].getTitle()))
+                        self.track[mpx.AttributeId.ARTIST].set_string(str(artist.getName()))
+                        self.track[mpx.AttributeId.TITLE].set_string(str(mbtrack.getTitle()))
+                        self.track[mpx.AttributeId.ALBUM].set_string(str(mbtrack.getReleases()[0].getTitle()))
                 else:
                         artist = ctx.xpathEval("//mmd:artist/mmd:name")[0].getContent()
                         title  = ctx.xpathEval("//mmd:title")[0].getContent()
-
-                        if not self.track[mpx.AttributeId.ARTIST]:
-                            self.track[mpx.AttributeId.ARTIST].set_string(artist)
-                        
-                        if not self.track[mpx.AttributeId.TITLE]:
-                            self.track[mpx.AttributeId.TITLE].set_string(title)
+                        self.track[mpx.AttributeId.ARTIST].set_string(artist)
+                        self.track[mpx.AttributeId.TITLE].set_string(title)
         except:
                 pass
 
@@ -171,15 +160,21 @@ class PuidScanExec(mpx.Plugin):
         self.player = player
         self.id = id
         self.mcs = mcs
+        self.newTrack = True
 
     def activate(self):
 
         self.metadata_prepare_id = self.player.gobj().connect("metadata-prepare", self.on_metadata_prepare)
+        self.new_track_id = self.player.gobj().connect("new-track", self.on_new_track)
         return True
 
     def deactivate(self):
 
         self.player.gobj().disconnect(self.metadata_prepare_id)
+
+    def on_new_track(self,blah):
+
+        self.newTrack = True
 
     def on_metadata_prepare(self, blah):
 
@@ -188,7 +183,12 @@ class PuidScanExec(mpx.Plugin):
 
     def run(self,track):
 
+        if not self.newTrack:
+            return
+
         if not track[mpx.AttributeId.MB_TRACK_ID] and track.get(mpx.AttributeId.LOCATION).get()[:7] == "file://":
+
+                self.newTrack = False
 
                 self.player.info_set("Analyzing File")
 
@@ -204,3 +204,5 @@ class PuidScanExec(mpx.Plugin):
 
                 scan.dispose_pipeline()
                 self.player.info_clear()
+                self.player.metadata_reparse()
+

@@ -183,22 +183,21 @@ namespace MPX
 
     namespace SQL
     {
-      enum ValueType
-      {
-          VALUE_TYPE_INT,
-          VALUE_TYPE_REAL,
-          VALUE_TYPE_STRING  
-      }; 
+        enum ValueType
+        {
+            VALUE_TYPE_INT,
+            VALUE_TYPE_REAL,
+            VALUE_TYPE_STRING  
+        }; 
 
 #ifdef HAVE_TR1
-      typedef std::tr1::unordered_map< std::string, Variant >  Row;
+        typedef std::tr1::unordered_map< std::string, Variant >  Row;
 #else //!HAVE_TR1
-      typedef std::map< std::string, Variant >                 Row;
+        typedef std::map< std::string, Variant >                 Row;
 #endif //HAVE_TR1
-      typedef Row::value_type                                  VariantPair;
-      typedef std::vector< Row >                               RowV;
-      typedef std::vector< std::string >                       ColumnV;
 
+        typedef std::vector< Row >                               RowV;
+        typedef std::vector< std::string >                       ColumnV;
     } // namespace SQL
 } //namespace MPX 
 

@@ -48,7 +48,7 @@ namespace
   char const*  text_font          = "Sans";
   int const    text_size_px       = 10;
   double const text_colour[3]     = { 1.0, 1.0, 1.0 };
-  double const text_bottom_margin = 8;
+  double const text_bottom_margin = 24;
   double const text_fade_in_time  = 0.2;
   double const text_fade_out_time = 0.05;
   double const text_hold_time     = 0.8;
@@ -249,7 +249,7 @@ namespace MPX
           int width, height;
           layout->get_pixel_size (width, height);
 
-          cr->move_to ((m_background->get_width () - 50 - width) / 2 + 50,
+          cr->move_to ((m_background->get_width () - width) / 2,
                         m_background->get_height () - height - text_bottom_margin);
           cr->set_source_rgba (text_colour[0], text_colour[1], text_colour[2], alpha);
           cr->set_operator (Cairo::OPERATOR_ATOP);

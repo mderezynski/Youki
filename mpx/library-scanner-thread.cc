@@ -389,9 +389,11 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
             } catch(URI::ParseError)
             {
             }
-
-
-            pthreaddata->ScanRun.emit(std::distance(collection.begin(), i), collection.size());
+            
+            if( std::distance( collection.begin(), i ) % 50 )
+            {
+                pthreaddata->ScanRun.emit(std::distance(collection.begin(), i), collection.size());
+            }
         }
     }
 

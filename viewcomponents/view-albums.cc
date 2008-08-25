@@ -197,25 +197,27 @@ namespace MPX
                         Options.Type = RT_ALL;
                         Options.Advanced = false;
 
+                        const std::string image_base_path = build_filename( DATA_DIR, "images" );
+
                         for(int n = 0; n < N_STARS; ++n)
                         {
                                 m_Stars[n] = Gdk::Pixbuf::create_from_file(
                                                 build_filename(
-                                                        build_filename(
-                                                                DATA_DIR,
-                                                                "images"
-                                                        ),
+                                                        image_base_path,
                                                         (boost::format("stars%d.png") % n).str()
                                 ));
                         }
 
-                        m_Emblem_Compilation = Gdk::Pixbuf::create_from_file(
+                        m_Emblem[EM_COMPILATION] = Gdk::Pixbuf::create_from_file(
                                         build_filename(
-                                                build_filename(
-                                                        DATA_DIR,
-                                                        "images"
-                                                ),
+                                               image_base_path,
                                                "emblem-compilation.png" 
+                        ));
+
+                        m_Emblem[EM_SOUNDTRACK] = Gdk::Pixbuf::create_from_file(
+                                        build_filename(
+                                               image_base_path,
+                                               "emblem-soundtrack.png" 
                         ));
 
                         m_Lib.get().signal_new_album().connect(
@@ -396,7 +398,7 @@ namespace MPX
                                 Gdk::Pixbuf::create_from_file(
                                                 build_filename(
                                                         DATA_DIR,
-                                                        build_filename("images","disc-default.png")
+                                                        build_filename("images","disc.png")
                                                         )
                                                 )->scale_simple(90,90,Gdk::INTERP_BILINEAR);
 
@@ -719,13 +721,19 @@ namespace MPX
                                 IterSet & set = m_Album_MBID_Iter_Map[mbid];
                                 for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
                                 {       
-                                        if( (*(*i))[Columns.RT] == RT_COMPILATION ) 
+                                        switch( (*(*i))[Columns.RT] ) 
                                         {
-                                            (*(*i))[Columns.Image] = Util::cairo_image_surface_overlay( surface, Util::cairo_image_surface_from_pixbuf(m_Emblem_Compilation), 0., 0., 1.); 
-                                        }
-                                        else
-                                        {
-                                            (*(*i))[Columns.Image] = surface;
+                                            case RT_COMPILATION:
+                                                (*(*i))[Columns.Image] = Util::cairo_image_surface_overlay( surface, Util::cairo_image_surface_from_pixbuf(m_Emblem[EM_COMPILATION]), 0., 0., 1.); 
+                                                break;
+
+                                            case RT_SOUNDTRACK:
+                                                (*(*i))[Columns.Image] = Util::cairo_image_surface_overlay( surface, Util::cairo_image_surface_from_pixbuf(m_Emblem[EM_SOUNDTRACK]), 0., 0., 1.); 
+                                                break;
+
+                                            default:
+                                                (*(*i))[Columns.Image] = surface;
+                                                break;
                                         }
                                 }
                         }
@@ -897,10 +905,24 @@ namespace MPX
                                 (*iter)[Columns.RowType] = ROW_ALBUM; 
                                 (*iter)[Columns.HasTracks] = false; 
                                 (*iter)[Columns.NewAlbum] = get<gint64>(r["album_new"]);
-                                (*iter)[Columns.Image] = m_DiscDefault; 
                                 (*iter)[Columns.Id] = id; 
 
                                 place_album_iter_real(iter, r, id);
+
+                                switch( (*iter)[Columns.RT] ) 
+                                {
+                                    case RT_COMPILATION:
+                                        (*iter)[Columns.Image] = Util::cairo_image_surface_overlay( m_DiscDefault, Util::cairo_image_surface_from_pixbuf(m_Emblem[EM_COMPILATION]), 0., 0., 1.); 
+                                        break;
+
+                                    case RT_SOUNDTRACK:
+                                        (*iter)[Columns.Image] = Util::cairo_image_surface_overlay( m_DiscDefault, Util::cairo_image_surface_from_pixbuf(m_Emblem[EM_SOUNDTRACK]), 0., 0., 1.); 
+                                        break;
+
+                                    default:
+                                        (*iter)[Columns.Image] = m_DiscDefault; 
+                                        break;
+                                }
 
                                 return iter;
                         }
@@ -1194,6 +1216,23 @@ namespace MPX
                                         if(cell1)
                                         {
                                                 cell1->property_markup() = (*iter)[Columns.Text]; 
+
+                                                double score = (*iter)[Columns.PlayScore]; 
+
+                                                if( Options.HighlightMode == HIGHLIGHT_UNPLAYED )
+                                                {
+                                                    if( score < 1 )
+                                                        cell1->property_sensitive() = true;
+                                                    else
+                                                        cell1->property_sensitive() = false; 
+                                                }
+                                                else if( Options.HighlightMode == HIGHLIGHT_PLAYED )
+                                                {
+                                                    if( score >= 1 )
+                                                        cell1->property_sensitive() = true; 
+                                                    else
+                                                        cell1->property_sensitive() = false; 
+                                                }
                                         }
 
                                         if(cell2)

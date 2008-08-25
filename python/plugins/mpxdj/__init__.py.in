@@ -136,7 +136,7 @@ class OPTION__Analyzer(BaseOPTION__):
 
                 if self.count_previous_artist_presence(playlist, track.getArtist().getName()) <= 1:
 
-                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' AND title = '%s' ORDER BY mpxrand() LIMIT 1" % ( track.getArtist().getName().replace("'", "''") , track.getName().replace("'","''") ) ))
+                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' AND title = '%s' ORDER BY random() LIMIT 1" % ( track.getArtist().getName().replace("'", "''") , track.getName().replace("'","''") ) ))
                         extract_ids(rv, self.v)
 
                         if len(self.v) > 0:
@@ -196,7 +196,7 @@ class OPTION__Analyzer(BaseOPTION__):
                     rv = mpx.SQLRowV()
 
                     if self.count_previous_mbid_presence(playlist, id) <= 1:
-                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY mpxrand() LIMIT 1" % id))
+                        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY random() LIMIT 1" % id))
                         extract_ids(rv, self.v)
 
                     if len(rv) > 0: return
@@ -225,7 +225,7 @@ class OPTION__Analyzer(BaseOPTION__):
 
                         if self.count_previous_artist_presence(playlist, name) <= 1:
 
-                                self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' ORDER BY mpxrand() LIMIT 1" % name.replace("'","''") ))
+                                self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' ORDER BY random() LIMIT 1" % name.replace("'","''") ))
                                 extract_ids(rv, self.v)
                                 if len(self.v): return
 
@@ -242,62 +242,30 @@ class OPTION__Analyzer(BaseOPTION__):
         track_id  = playlist[len(playlist)-1][7] 
         markov_id = self.lib.markovGetRandomProbableTrack(track_id)
 
-        if markov_id != -1:
-                self.v.append(markov_id)
+        self.v.append(markov_id)
 
     def run(self):
 
-        playlist  = self.mlib.get_playlist_model()
+        playlist = self.mlib.get_playlist_model()
+        callables = [self.run_accumulate_tags, self.run_similar_track, self.run_similar_artist]
 
         if not len(playlist):
             self.finished.set()
             return
 
-        callables = [self.run_accumulate_tags, self.run_similar_track, self.run_similar_artist]
-
-        tries = 3
+        tries = 5
 
         while tries:
 
-                #try:
-                callables[0]()
+                choice = random.randint(0,2)
+
+                callables[choice]()
                 if len(self.v):
-                        self.finished.set()
-                        return
-                #except Exception, e:
-                #        print e 
+                    self.finished.set()
+                    return
 
-                #try:
-                callables[1]()
-                if len(self.v):
-                        self.finished.set()
-                        return
-                #except Exception, e:
-                #        print e 
+                tries -= 1
 
-                #try:
-                callables[2]()
-                if len(self.v):
-                        self.finished.set()
-                        return
-                #except Exception, e:
-                #        print e 
-
-
-                #try:
-                self.run_markov()
-                if len(self.v):
-                        self.finished.set()
-                        return
-                #except Exception, e:
-                #        print e 
-
-                tries = tries - 1
-
-        # Pick one track at random
-        rv = mpx.SQLRowV()
-        self.lib.getSQL(rv, str("SELECT id FROM track_view ORDER BY mpxrand() LIMIT 1"))
-        extract_ids(rv, self.v)
         self.finished.set()
 
 class OPTION__LastFmTag(BaseOPTION__):    
@@ -316,7 +284,7 @@ class OPTION__LastFmTag(BaseOPTION__):
         a = r.get()
 
         for artist in a:
-            self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY mpxrand() LIMIT 1" % artist.getMBID()))
+            self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY random() LIMIT 1" % artist.getMBID()))
 
         #except Exception, e:
         #        print e
@@ -341,33 +309,33 @@ class OPTION__RandomMix(BaseOPTION__):
 
     def RANDOM_genre(self, lib, v):
 
-        choice = random.randint(0,2)
-        genre = ""
-        rv = mpx.SQLRowV()
+        choice = random.randint(0,1)
         playlist = self.mlib.get_playlist_model()
 
-        if not len(playlist) or choice == 0:
+        rv = mpx.SQLRowV()
 
-            lib.getSQL(rv, "SELECT id, genre FROM track_view WHERE genre IS NOT NULL ORDER BY mpxrand() LIMIT 1")
+        if not len(playlist):
+
+            lib.getSQL(rv, "SELECT id, genre FROM track_view WHERE genre IS NOT NULL ORDER BY random() LIMIT 1")
             genre = rv[0]["genre"].get_string()
-            lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY mpxrand() LIMIT 2" % genre)
+            lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY random() LIMIT 2" % genre)
 
-        elif choice == 1: 
+        elif choice == 0: 
 
             track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
             genre = track[mpx.AttributeId.GENRE].get()
-            lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY mpxrand() LIMIT 2" % genre)
+            lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY random() LIMIT 2" % genre)
         
-        elif choice == 2:
+        elif choice == 1:
 
-            lib.getSQL(rv, "SELECT id FROM track_view ORDER BY mpxrand() LIMIT 2")
+            lib.getSQL(rv, "SELECT id FROM track_view ORDER BY random() LIMIT 2")
 
         extract_ids(rv, v)
 
     def RANDOM_toptune(self, lib, v):
     
         rv = mpx.SQLRowV()
-        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY mpxrand() LIMIT 1")
+        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY random() LIMIT 1")
         extract_ids(rv, v)
 
     def RANDOM_markov(self, lib, v):
@@ -376,9 +344,7 @@ class OPTION__RandomMix(BaseOPTION__):
         track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
         id = track[mpx.AttributeId.MPX_TRACK_ID].get()
         markov_id = lib.markovGetRandomProbableTrack(id)
-
-        if markov_id != -1:
-            v.append(markov_id)
+        v.append(markov_id)
 
 class OPTION__TopTunes(BaseOPTION__):
 
@@ -389,7 +355,7 @@ class OPTION__TopTunes(BaseOPTION__):
     def run(self):
     
         rv = mpx.SQLRowV()
-        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY mpxrand() LIMIT 10")
+        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY random() LIMIT 10")
         extract_ids(rv, self.v)
         self.finished.set()
 
@@ -423,7 +389,7 @@ class OPTION__EntertainMe(BaseOPTION__):
     def ENTERTAIN_Local(self):
 
         rv = mpx.SQLRowV()
-        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC, rating DESC, mpxrand() LIMIT 2")
+        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC, rating DESC, random() LIMIT 2")
         extract_ids(rv, self.v)
   
     def ENTERTAIN_LastFm(self):
@@ -448,6 +414,7 @@ class OPTION__SoundsOf(BaseOPTION__):
         active = self.xml.get_widget("cbox-decade").get_active()
         upper = 0
         lower = 0
+
         if(active == 6):
             lower = 2000
             upper = 3000
@@ -455,14 +422,12 @@ class OPTION__SoundsOf(BaseOPTION__):
             lower = 1940 + (active * 10)
             upper = 1950 + (active * 10)
         
-        
         rv = mpx.SQLRowV()
         for x in range(10):
-            self.lib.getSQL(rv, "SELECT id FROM track_view WHERE date >= " + str(lower) + " AND date < " + str(upper) + " ORDER BY mpxrand() LIMIT 1")
+            self.lib.getSQL(rv, "SELECT id FROM track_view WHERE date >= " + str(lower) + " AND date < " + str(upper) + " ORDER BY random() LIMIT 1")
+
         extract_ids(rv, self.v)
-
         self.finished.set()
-
 
 class MPXDJ(mpx.Plugin):
 

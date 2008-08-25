@@ -213,7 +213,7 @@ namespace MPX
                         m_Flags |= (use_hal ? F_USING_HAL : 0); 
 #endif // HAVE_HAL
                         m_SQL->exec_sql("CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0)");
-                        m_SQL->exec_sql((boost::format ("INSERT INTO meta (flags) VALUES(%lld)") % m_Flags).str());
+                        m_SQL->exec_sql((boost::format ("INSERT INTO meta (flags) VALUES (%lld)") % m_Flags).str());
                 }
                 else
                 {
@@ -324,8 +324,13 @@ namespace MPX
                                         " '%s' INTEGER DEFAULT 1, "
                                         "UNIQUE ('%s', '%s'))");
 
-                m_SQL->exec_sql ((tags_table_f  % "tagid" % "trackid" % "amplitude" 
-                                        % "tagid" % "trackid").str()); 
+                m_SQL->exec_sql ((tags_table_f 
+                                    % "tagid"
+                                    % "trackid"
+                                    % "amplitude" 
+                                    % "tagid"
+                                    % "trackid"
+                ).str()); 
 
 
                 ///////////////////////////////////////////////////////////////
@@ -934,7 +939,10 @@ namespace MPX
                         } catch( ... ) {
                         }
 
-                        return -1;
+                        RowV rows;
+                        getSQL (rows, "SELECT count(*) AS count FROM track");
+                        gint64 count = get <gint64> (rows[0].find("count")->second);
+                        return gint64(g_random_double_range(0, double(count))); 
                 }
 
         Track
@@ -1226,7 +1234,7 @@ namespace MPX
                         RowV rows;
                         std::string sql;
 
-get_tag_id:
+                        get_tag_id:
 
                         char const* select_tag_f ("SELECT id FROM tag WHERE tag = '%q'"); 
                         sql = mprintf(select_tag_f, tag.c_str());
@@ -1238,8 +1246,7 @@ get_tag_id:
                         }
                         else
                         {
-                                char const* set_tag_f ("INSERT INTO tag (tag) VALUES (%q)");
-
+                                char const* set_tag_f ("INSERT INTO tag (tag) VALUES ('%q')");
                                 sql = mprintf(set_tag_f, tag.c_str());
                                 m_SQL->exec_sql (sql);
                                 goto get_tag_id; // threadsafe, as opposed to getting last insert rowid

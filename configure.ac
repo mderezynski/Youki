@@ -1,7 +1,7 @@
 #libxml (C) 2003-2007 MPX developers, see AUTHORS
 
 AC_PREREQ([2.60])
-AC_INIT([audiosource], [alpha5], [http://mpx.backtrace.info/report])
+AC_INIT([audiosource], [alpha6], [http://mpx.backtrace.info/report])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET

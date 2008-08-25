@@ -350,6 +350,7 @@ namespace MPX
                 {
                     using boost::get;
 
+                    cairo->set_operator(Cairo::OPERATOR_ATOP);
                     Gdk::Color c = widget.get_style()->get_text(Gtk::STATE_NORMAL);
                     cairo->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.2);
                     //RoundedRectangle(cairo, x_pos+2, y_pos+2, m_width-4, rowheight-2, 4.);
@@ -984,8 +985,8 @@ namespace MPX
                             get_allocation(),
                             *this,
                             "treeview",
-                            get_allocation().get_x(), 
-                            get_allocation().get_y(), 
+                            0, 
+                            0, 
                             get_allocation().get_width(), 
                             get_allocation().get_height()
                         );

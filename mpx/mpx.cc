@@ -2188,6 +2188,13 @@ rerun_import_share_dialog:
         // XXX: Public API we need when we split off SourceController
 
         void
+                Player::metadata_reparse_with_lock ()
+                {
+                        Glib::Mutex::Lock L (m_MetadataLock);
+                        metadata_reparse ();
+                }
+
+        void
                 Player::set_metadata (Metadata const& metadata, ItemKey const& source_id)
                 {
                         g_return_if_fail(m_ActiveSource && m_ActiveSource.get() == source_id);
