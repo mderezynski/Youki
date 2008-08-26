@@ -173,8 +173,6 @@ namespace MPX
     void
     Covers::store_not_found_cb (CoverFetchData* data)
     {
-        g_message(G_STRFUNC);
-
         if( g_atomic_int_get(&m_rebuilt) )
         {
             g_message(G_STRLOC ": Erasing MBID [%s] from RequestKeeper", data->mbid.c_str());
@@ -194,10 +192,8 @@ namespace MPX
                 i++;
             }
         
-
             if(i < data->m_req_stores.size())
             { 
-                g_message(G_STRLOC ": Trying next store, m_req_stores size is %d", int(data->m_req_stores.size()));
                 RequestKeeperT::iterator iter = RequestKeeper.find(data->mbid);
                 RequestKeeper.erase(iter);
                 RequestKeeper[data->mbid] = i;
@@ -208,7 +204,6 @@ namespace MPX
             }
         }
 
-        g_message(G_STRLOC ": Erasing MBID [%s] from RequestKeeper", data->mbid.c_str());
         RequestKeeperT::iterator iter = RequestKeeper.find(data->mbid);
         RequestKeeper.erase(iter);
         delete data;
@@ -246,9 +241,10 @@ namespace MPX
     )
     {
         Glib::Mutex::Lock L (RequestKeeperLock);
-
+    
         if( RequestKeeper.count(mbid) )
         {
+            g_message("Request for mbid [%s] already running", mbid.c_str());
             return;
         }
 
@@ -270,11 +266,16 @@ namespace MPX
         {
             if(m_current_stores.size())
             {
+                g_message("%s: Caching cover", G_STRLOC);
                 RequestKeeper[mbid] = 0;
                 CoverFetchData * data = new CoverFetchData(asin, mbid, uri, artist, album, m_current_stores);
                 data->m_req_stores[0]->load_artwork(data);
             }
+            else
+                g_message("%s: No current stores", G_STRLOC);
         }
+        else
+            g_message("%s: Not acquiring cover", G_STRLOC);
     }
 
     bool

@@ -1066,7 +1066,11 @@ namespace MPX
 
                                   translate_caps(); // sets all actions intially insensitive as we have C_NONE
 
-
+                                  m_Covers.signal_got_cover().connect(
+                                    sigc::mem_fun(
+                                        *this,
+                                        &Player::on_got_cover
+                                  ));
 
                                   splash.set_message(_("Ready"), 1.0);
 
@@ -2109,6 +2113,22 @@ rerun_import_share_dialog:
                                                 *this,
                                                 &Player::metadata_updated
                                                 ));
+                }
+
+        void
+                Player::on_got_cover (const Glib::ustring& mbid)
+                {
+                    g_message("%s: Got Cover: %s", G_STRLOC, mbid.c_str());
+        
+                    if( m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID] && get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()) == mbid)
+                    {
+                        Glib::RefPtr<Gdk::Pixbuf> cover;
+                        m_Covers.fetch(mbid, cover);
+                        m_InfoArea->set_cover( cover->scale_simple(72,72, Gdk::INTERP_HYPER), m_NewTrack );
+                        g_atomic_int_set(&m_NewTrack, 0);
+                    }
+                    else
+                        g_message("%s: Not identical MBID", G_STRLOC);
                 }
 
         bool

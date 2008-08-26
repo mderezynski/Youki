@@ -85,9 +85,12 @@ namespace MPX
     {
         if(!can_load_artwork(data))
         {
+            g_message("%s: Cover NotFound: Insuficcient data", G_STRFUNC);
             Signals.NotFound.emit(data);
             return;
         }
+        
+        g_message("%s: Trying URL [%s]", G_STRLOC, get_url(data).c_str());
 
         data->request = Soup::Request::create ( get_url(data) );
         data->request->request_callback().connect(sigc::bind(sigc::mem_fun(*this, &RemoteStore::save_image), data));
@@ -127,6 +130,7 @@ namespace MPX
                 try{
                         cover->save( covers.get_thumb_path( cb_data->mbid ), "png" );
                         covers.cache_artwork( cb_data->mbid, cover );
+                        g_message("%s: GotCover", G_STRFUNC);
                         covers.Signals.GotCover.emit( cb_data->mbid );
                 } catch( Glib::FileError & cxe )
                 {
@@ -148,6 +152,7 @@ namespace MPX
                 return;
             }
 
+            g_message("%s: Cover NotFound", G_STRFUNC);
             Signals.NotFound.emit(cb_data);
         }
     }
@@ -188,6 +193,7 @@ namespace MPX
 
                 if( ld_distance<std::string>(album, cb_data->album) > 3 )
                 {
+                    g_message("%s: Cover NotFound", G_STRFUNC);
                     Signals.NotFound.emit(cb_data);
                     return;
                 }
@@ -266,6 +272,7 @@ namespace MPX
             }
             else
             {
+                g_message("%s: Cover NotFound", G_STRFUNC);
                 Signals.NotFound.emit(cb_data);
                 return;
             }
@@ -308,6 +315,7 @@ namespace MPX
 			}
             catch (std::runtime_error & cxe)
 			{
+                g_message("%s: Cover NotFound", G_STRFUNC);
                 Signals.NotFound(cb_data);
 				return;
 			}
@@ -318,6 +326,7 @@ namespace MPX
         }
         else
         {
+            g_message("%s: Cover NotFound", G_STRFUNC);
             Signals.NotFound(cb_data);
         }
     }
@@ -368,6 +377,7 @@ namespace MPX
 
         if(cover_art.empty())
         {
+            g_message("%s: Cover NotFound", G_STRFUNC);
             Signals.NotFound.emit(data);
         }
         else
@@ -375,6 +385,7 @@ namespace MPX
             RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cover_art );
             cover->save( covers.get_thumb_path( data->mbid ), "png" );
             covers.cache_artwork( data->mbid, cover );
+            g_message("%s: GotCover", G_STRFUNC);
             covers.Signals.GotCover.emit( data->mbid );
 
             delete data;
@@ -391,6 +402,7 @@ namespace MPX
     {
         Glib::RefPtr<Gdk::Pixbuf> cover;
 
+        if( !data->uri.empty() )
         try{
             MPEG::File opfile (data->uri.c_str());
             if(opfile.isOpen() && opfile.isValid())
@@ -429,11 +441,13 @@ namespace MPX
         {
             cover->save( covers.get_thumb_path( data->mbid ), "png" );
             covers.cache_artwork( data->mbid, cover );
+            g_message("%s: GotCover", G_STRFUNC);
             covers.Signals.GotCover.emit( data->mbid );
             delete data;
         }
         else
         {
+            g_message("%s: Cover NotFound", G_STRFUNC);
             Signals.NotFound.emit(data);
         }
     }

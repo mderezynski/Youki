@@ -934,6 +934,7 @@ BOOST_PYTHON_MODULE(mpx)
 
     class_<MPX::Covers, boost::noncopyable>("Covers", boost::python::no_init)
         .def("fetch", &mpxpy::covers_fetch)
+        .def("cache", &MPX::Covers::cache)
     ;
 
     /*-------------------------------------------------------------------------------------*/

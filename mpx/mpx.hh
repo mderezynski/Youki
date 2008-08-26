@@ -453,6 +453,8 @@ namespace MPX
         bool
         metadata_updated ();
 
+        void
+        on_got_cover(const Glib::ustring&);
 
 
         void

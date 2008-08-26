@@ -28,6 +28,13 @@ import logging
 import time
 from gettext import gettext as _
 
+def realId(entityId):
+
+    if (entityId[:7] == "http://"):
+        return string.split(entityId,"/")[-1]
+    else:
+        return entityId
+
 class PuidScan():
 
     def __init__(self, track):
@@ -60,6 +67,7 @@ class PuidScan():
         self.bus.connect('message', self.on_gst_bus_message)
     
         self.puid_str = None
+        self.cover_tuple = None
 
     def demuxer_callback(self, demuxer, pad, arg):
 
@@ -119,21 +127,40 @@ class PuidScan():
 
                     if len(tracks) > 0:
 
-                        self.track[mpx.AttributeId.MB_TRACK_ID].set_string(str(tracks[0].getTrack().getId()))
-                        mbtrack = self.query.getTrackById(tracks[0].getTrack().getId(), self.wsinc) 
-                        artist = mbtrack.getArtist()
+                        print "Got PUID+MB metadata"
 
-                        self.track[mpx.AttributeId.MB_ARTIST_ID].set_string(str(artist.getId()))
+                        mbtrack = self.query.getTrackById(realId(tracks[0].getTrack().getId()), self.wsinc) 
+                        artist  = mbtrack.getArtist()
+                        release = self.query.getReleaseById(mbtrack.getReleases()[0].getId(), self.wsinc_release)
+                        asin    = ""
+
+                        relations = release.getRelations( Relation.TO_URL )
+                        for rel in relations:
+                                url, delim, type = rel.getType().partition("#")
+                                if type == "AmazonAsin":
+                                    asin = str(realId(rel.getTargetId()))
+                                    self.track[mpx.AttributeId.ASIN].set_string(asin)
+                                    print "Got ASIN: %s" % asin
+
+                        self.track[mpx.AttributeId.MB_TRACK_ID].set_string(str(realId(tracks[0].getTrack().getId())))
+                        self.track[mpx.AttributeId.MB_ARTIST_ID].set_string(str(realId(artist.getId())))
+                        self.track[mpx.AttributeId.MB_ALBUM_ID].set_string(str(realId(release.getId())))
+
                         self.track[mpx.AttributeId.ARTIST].set_string(str(artist.getName()))
                         self.track[mpx.AttributeId.TITLE].set_string(str(mbtrack.getTitle()))
-                        self.track[mpx.AttributeId.ALBUM].set_string(str(mbtrack.getReleases()[0].getTitle()))
+                        self.track[mpx.AttributeId.ALBUM].set_string(str(release.getTitle()))
+
+                        self.cover_tuple = [ str(realId(release.getId())), asin, str(artist.getName()), str(release.getTitle()) ]
                 else:
+                        print "Got PUID+MusicIP metadata"
+
                         artist = ctx.xpathEval("//mmd:artist/mmd:name")[0].getContent()
                         title  = ctx.xpathEval("//mmd:title")[0].getContent()
                         self.track[mpx.AttributeId.ARTIST].set_string(artist)
                         self.track[mpx.AttributeId.TITLE].set_string(title)
-        except:
-                pass
+
+        except Exception, e:
+                print "Error in PUID extraction handler: %s" % str(e)
 
         self.finished.set()
 
@@ -203,6 +230,11 @@ class PuidScanExec(mpx.Plugin):
                     self.player.info_set("Analyzing File: %f" % scan.progress)
 
                 scan.dispose_pipeline()
+
+                if scan.cover_tuple:
+                    print scan.cover_tuple
+                    self.player.get_covers().cache( scan.cover_tuple[0], scan.cover_tuple[1], "", scan.cover_tuple[2], scan.cover_tuple[3], True )
+
                 self.player.info_clear()
                 self.player.metadata_reparse()
 
