@@ -193,6 +193,7 @@ class PuidScanExec(mpx.Plugin):
 
         self.metadata_prepare_id = self.player.gobj().connect("metadata-prepare", self.on_metadata_prepare)
         self.new_track_id = self.player.gobj().connect("new-track", self.on_new_track)
+
         return True
 
     def deactivate(self):

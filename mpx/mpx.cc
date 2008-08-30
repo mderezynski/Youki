@@ -2120,7 +2120,7 @@ rerun_import_share_dialog:
                 {
                     g_message("%s: Got Cover: %s", G_STRLOC, mbid.c_str());
         
-                    if( m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID] && get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()) == mbid)
+                    if( m_Metadata && m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID] && get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()) == mbid)
                     {
                         Glib::RefPtr<Gdk::Pixbuf> cover;
                         m_Covers.fetch(mbid, cover);
@@ -2211,6 +2211,11 @@ rerun_import_share_dialog:
                 Player::metadata_reparse_with_lock ()
                 {
                         Glib::Mutex::Lock L (m_MetadataLock);
+
+                        if( (m_Play.property_status() == PLAYSTATUS_STOPPED ) ||
+                            (m_Play.property_status() == PLAYSTATUS_WAITING ))
+                            return;
+
                         metadata_reparse ();
                 }
 
@@ -2221,6 +2226,10 @@ rerun_import_share_dialog:
 
                         Glib::Mutex::Lock L (m_MetadataLock);
 
+                        if( (m_Play.property_status() == PLAYSTATUS_STOPPED ) ||
+                            (m_Play.property_status() == PLAYSTATUS_WAITING ))
+                            return;
+ 
                         m_Metadata = metadata;
 
                         if( !m_Metadata.get().Image && m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 

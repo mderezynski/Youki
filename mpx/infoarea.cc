@@ -220,6 +220,5 @@ namespace MPX
                                                   m_spectrum_peak[n] = spectrum[n];
                                   }
                                   queue_draw ();
-
                           }
 }

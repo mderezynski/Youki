@@ -111,8 +111,10 @@ namespace MPX
         bool
                 InfoArea::on_expose_event (GdkEventExpose * event)
                 {
-                        Widget::on_expose_event (event);
+                        //Widget::on_expose_event (event);
+
                         Cairo::RefPtr<Cairo::Context> cr = get_window ()->create_cairo_context ();
+
                         draw_background (cr);
                         draw_cover (cr);
                         draw_spectrum (cr);

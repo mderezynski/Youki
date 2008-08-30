@@ -266,16 +266,11 @@ namespace MPX
         {
             if(m_current_stores.size())
             {
-                g_message("%s: Caching cover", G_STRLOC);
                 RequestKeeper[mbid] = 0;
                 CoverFetchData * data = new CoverFetchData(asin, mbid, uri, artist, album, m_current_stores);
                 data->m_req_stores[0]->load_artwork(data);
             }
-            else
-                g_message("%s: No current stores", G_STRLOC);
         }
-        else
-            g_message("%s: Not acquiring cover", G_STRLOC);
     }
 
     bool

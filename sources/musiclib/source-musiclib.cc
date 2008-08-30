@@ -92,8 +92,8 @@ namespace
                 "       <menuitem action='musiclib-playlist-action-play' name='musiclib-playlist-action-play'/>"
                 "       <menuitem action='musiclib-playlist-action-remove-remaining'/>"
                 "     <separator/>"
-                "       <menuitem action='musiclib-playlist-action-remove-items'/>"
                 "       <menuitem action='musiclib-playlist-action-clear'/>"
+                "       <menuitem action='musiclib-playlist-action-remove-items'/>"
                 "     <separator/>"
                 "       <placeholder name='musiclib-playlist-placeholder-playlist'/>"
                 "   </menu>"
@@ -3238,7 +3238,7 @@ namespace MPX
                                     return Py_None;
                                 }
 
-                                TreePath path (albums.get_selection()->get_selected());
+                                TreePath path (albums.AlbumsTreeStoreFilter->convert_path_to_child_path(TreePath(albums.get_selection()->get_selected())));
                                 return pygtk_tree_path_to_pyobject(path.gobj());
                         }
 

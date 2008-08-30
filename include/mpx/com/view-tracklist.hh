@@ -382,13 +382,14 @@ namespace MPX
                     int                             x_pos,
                     int                             y_pos,
                     int                             rowheight,
+                    bool                            selected,
                     bool                            highlight
                 )
                 {
                     using boost::get;
 
                     cairo->set_operator(Cairo::OPERATOR_SOURCE);
-                    Gdk::Cairo::set_source_color(cairo, widget.get_style()->get_text(Gtk::STATE_NORMAL));
+                    Gdk::Cairo::set_source_color(cairo, widget.get_style()->get_text(selected ? Gtk::STATE_SELECTED : Gtk::STATE_NORMAL ));
 
                     cairo->rectangle( x_pos, y_pos, m_width, rowheight);
                     cairo->clip();
@@ -953,22 +954,23 @@ namespace MPX
 
 
                         ModelT::iterator selected = m_model->m_mapping[row];
+                        bool iter_is_selected = false;
 
                         if( !m_selection.empty() && m_selection.count(std::make_pair(selected, row))) 
                         {
                             cairo->set_operator(Cairo::OPERATOR_ATOP);
                             Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
                             cairo->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.8);
-                            //RoundedRectangle(cairo, 2, y_pos+2, alloc.get_width()-4, m_row_height-4, 4.);
-                            RoundedRectangle (cairo, 1, y_pos+2, alloc.get_width()-2, m_row_height-4., 2.);
+                            RoundedRectangle (cairo, 1, y_pos+1, alloc.get_width()-2, m_row_height-2., 1.);
                             cairo->fill_preserve(); 
                             cairo->set_source_rgb(c.get_red_p(), c.get_green_p(), c.get_blue_p());
                             cairo->stroke();
+                            iter_is_selected = true;
                         }
 
                         for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                         {
-                            (*i)->render(cairo, m_model->row(row), m_model->m_filter_effective, *this, row, x_pos, y_pos, m_row_height, m_highlight);
+                            (*i)->render(cairo, m_model->row(row), m_model->m_filter_effective, *this, row, x_pos, y_pos, m_row_height, iter_is_selected, m_highlight);
                             x_pos += (*i)->get_width();
                         }
 

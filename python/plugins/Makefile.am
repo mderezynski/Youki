@@ -3,6 +3,7 @@ SUBDIRS =			        \
 		audioscrobbler		\
 		lastfmstuff			\
 		mpxdj			    \
+		mtpplayer			\
 		osd			        \
 		puid-scan			\
 		trackcover			\

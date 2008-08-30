@@ -154,7 +154,26 @@ namespace mpxpy
 				obj = PyString_FromString((boost::get<std::string>(self.get())).c_str());
                 break;
 		}
+        return obj;
+    }
 
+    PyObject*
+    variant_get (MPX::Variant &self)
+    {
+        PyObject * obj = 0;
+
+		switch(self.which())
+		{
+			case 0:
+				obj = PyLong_FromLongLong((boost::get<gint64>(self)));
+                break;
+			case 1:
+				obj = PyFloat_FromDouble((boost::get<double>(self)));
+                break;
+			case 2:
+				obj = PyString_FromString((boost::get<std::string>(self)).c_str());
+                break;
+		}
         return obj;
     }
 }
@@ -797,6 +816,9 @@ BOOST_PYTHON_MODULE(mpx)
 
 	class_<MPX::Variant >("Variant")
 
+        .def("get",         &mpxpy::variant_get,
+                            return_value_policy<return_by_value>())
+
 		.def("set_int",     &mpxpy::variant_setint)
 		.def("set_string",  &mpxpy::variant_setstring)
 		.def("set_double",  &mpxpy::variant_setdouble)
@@ -926,6 +948,7 @@ BOOST_PYTHON_MODULE(mpx)
     ;
 
     class_<MPX::HAL>("MPXHal", boost::python::no_init)
+        .def("get_mount_point_for_volume", &MPX::HAL::get_mount_point_for_volume)
     ;
 
     /*-------------------------------------------------------------------------------------*/
