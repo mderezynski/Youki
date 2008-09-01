@@ -7,7 +7,7 @@ __version__ = "$Revision$"[11:-2]
 __docformat__ = "restructuredtext"
 
 
-import datetime, locale, md5, site, sys, time, urllib, urllib2, os, mpx, threading, gtk, pickle
+import datetime, locale, md5, site, sys, time, urllib, urllib2, os, mpx, threading, gtk.glade, pickle
 
 class HttpRead(threading.Thread):
 
