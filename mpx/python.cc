@@ -563,7 +563,7 @@ namespace mpxpy
     std::string
     get_config_dir ()
     {
-        return Glib::build_filename(Glib::get_user_config_dir(), "mpx");
+        return Glib::build_filename(Glib::get_user_config_dir(), "audiosource");
     }
 }
 
