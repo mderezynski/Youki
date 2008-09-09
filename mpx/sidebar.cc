@@ -87,9 +87,9 @@ namespace MPX
 
         column->pack_start( *cell2, true );
         column->set_cell_data_func( *cell2, sigc::bind( sigc::mem_fun( *this, &Sidebar::cell_data_func ), 1));
-        append_column( *column );
+        //append_column( *column );
 
-        column = manage (new TreeViewColumn);
+        //column = manage (new TreeViewColumn);
         column->pack_start( *cell3, true );
         column->set_cell_data_func( *cell3, sigc::bind( sigc::mem_fun( *this, &Sidebar::cell_data_func ), 2));
         append_column( *column );
