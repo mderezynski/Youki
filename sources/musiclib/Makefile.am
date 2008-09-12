@@ -45,6 +45,8 @@ libmpxsource_musiclib_la_LIBADD =  	\
 libmpxsource_musiclib_la_SOURCES = 		\
 		plugin.cc						\
 		glib-marshalers.c				\
+		model.hh						\
+		model.cc						\
 		musiclib-py.cc					\
 		musiclib-py.hh					\
 		source-musiclib.hh				\
@@ -54,7 +56,8 @@ libmpxsource_musiclib_la_SOURCES = 		\
 		xsd-tag-topalbums.hxx			\
 		xsd-tag-topalbums.cxx			\
 		top-albums-fetch-thread.cc		\
-		top-albums-fetch-thread.hh
+		top-albums-fetch-thread.hh		\
+		view.hh
 
 libmpxsource_musiclibdir = $(PLUGIN_DIR)/sources
 
