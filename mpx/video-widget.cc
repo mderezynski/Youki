@@ -68,6 +68,8 @@ namespace MPX
       property_playing().signal_changed().connect( sigc::mem_fun( *this, &VideoWidget::queue_resize ) );
       property_aspect_ratio().signal_changed().connect( sigc::mem_fun( *this, &VideoWidget::queue_resize ) );
       property_playing().signal_changed().connect( sigc::mem_fun( *this, &VideoWidget::on_playing_changed ));
+
+      modify_bg( Gtk::STATE_NORMAL, get_style()->get_black() );
     }
 
     VideoWidget::~VideoWidget ()

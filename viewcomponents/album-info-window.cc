@@ -209,12 +209,13 @@ namespace MPX
                                                 ));
 
                         m_Lib.signal_album_updated().connect(
-                                        sigc::mem_fun(
-                                                *this,
-                                                &AlbumInfoWindow::display_album
-                                                ));
+                                        sigc::hide(
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AlbumInfoWindow::display_album
+                                                        )));
 
-                        display_album(id);
+                        display_album();
                 }
 
         void
@@ -231,18 +232,27 @@ namespace MPX
                                 TreeIter iter = m_AlbumRatingsList->get_selection()->get_selected();
                                 gint64 rating_id = (*iter)[m_AlbumRatingsList->Columns.Id];
                                 m_Lib.albumDeleteRating(rating_id, m_Id);
-                                display_album(m_Id);
+                                display_album();
                         }
                 }
 
         void
-                AlbumInfoWindow::display_album(gint64 id)
+                AlbumInfoWindow::on_album_updated(gint64 id)
                 {
-                        m_AlbumRatingsList->load_ratings(id, m_Lib);
+                        if( id == m_Id )
+                        {
+                            display_album();
+                        }
+                }
+
+        void
+                AlbumInfoWindow::display_album()
+                {
+                        m_AlbumRatingsList->load_ratings(m_Id, m_Lib);
 
                         SQL::RowV v, v2;
-                        m_Lib.getSQL(v, (boost::format ("SELECT * FROM album JOIN album_artist ON album_artist_j = album_artist.id WHERE album.id = '%lld'") % id).str());
-                        m_Lib.getSQL(v2, (boost::format ("SELECT count(*) FROM track WHERE album_j = '%lld'") % id).str());
+                        m_Lib.getSQL(v, (boost::format ("SELECT * FROM album JOIN album_artist ON album_artist_j = album_artist.id WHERE album.id = '%lld'") % m_Id).str());
+                        m_Lib.getSQL(v2, (boost::format ("SELECT count(*) FROM track WHERE album_j = '%lld'") % m_Id).str());
                         gint64 count = get<gint64>(v2[0]["count(*)"]);
 
                         if( !v.empty ())

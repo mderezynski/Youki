@@ -63,10 +63,12 @@
 
 #include "source-musiclib.hh"
 #include "musiclib-py.hh"
-
 #include "top-albums-fetch-thread.hh"
-
 #include "glib-marshalers.h"
+
+#include "view.hh"
+#include "model.hh"
+
 using namespace Gtk;
 using namespace Glib;
 using namespace Gnome::Glade;
@@ -90,10 +92,10 @@ namespace
                 ""
                 "   <menu action='dummy' name='musiclib-playlist-menu-playlist-list'>"
                 "       <menuitem action='musiclib-playlist-action-play' name='musiclib-playlist-action-play'/>"
-                "       <menuitem action='musiclib-playlist-action-remove-remaining'/>"
+                "       <menuitem action='musiclib-playlist-action-remove-items'/>"
                 "     <separator/>"
                 "       <menuitem action='musiclib-playlist-action-clear'/>"
-                "       <menuitem action='musiclib-playlist-action-remove-items'/>"
+                "       <menuitem action='musiclib-playlist-action-remove-remaining'/>"
                 "     <separator/>"
                 "       <placeholder name='musiclib-playlist-placeholder-playlist'/>"
                 "   </menu>"
@@ -2704,6 +2706,8 @@ namespace MPX
                 AllTracksView           *   m_ViewAllTracks;
                 LFMTreeView             *   m_TreeViewLFM;
                 FileSystemTree          *   m_TreeViewFS;
+                View                    *   m_View;
+                ViewModel               *   m_ViewModel;
 
                 PAccess<MPX::Library>       m_Lib;
                 PAccess<MPX::Covers>        m_Covers;
@@ -2729,7 +2733,47 @@ namespace MPX
                         m_TreeViewCollections = new CollectionTreeView(m_RefXml, "source-musiclib-treeview-collections", "collections-showing", "collections-filter-entry", ui_manager, m_Lib);
                         m_ViewAllTracks = new AllTracksView(m_RefXml, m_Lib, m_HAL, mlib);
                         m_TreeViewLFM = new LFMTreeView(m_RefXml, m_Lib, m_Covers, mlib);
-                        m_TreeViewFS = new FileSystemTree(m_RefXml, "musiclib-treeview-file-system");
+                        //m_TreeViewFS = new FileSystemTree(m_RefXml, "musiclib-treeview-file-system");
+
+                        /*
+                        m_View = new View;
+                        m_ViewModel = new ViewModel;
+                        m_ViewModel->set_metrics( 90, 24 );
+
+                        Gtk::ScrolledWindow * win;
+                        m_RefXml->get_widget("albums2-sw", win);
+                        win->add(*m_View);
+
+                        SQL::RowV v;
+                        m_Lib.get().getSQL(v, "SELECT * FROM album JOIN album_artist ON album.album_artist_j;");
+
+                        for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                        {
+                            SQL::Row & r = *i;
+
+                            Row_p r1 (new Row_t);
+                            r1->AlbumData = r;
+                            m_Covers.get().fetch(get<std::string>(r["mb_album_id"]), r1->Cover, COVER_SIZE_ALBUM);
+                            if( r1->Cover )
+                            {
+                                r1->Cover = Util::cairo_image_surface_round(r1->Cover, 6.);
+                                Gdk::Color c = m_View->get_style()->get_black();
+                                Util::cairo_image_surface_rounded_border(r1->Cover, .5, 6., c.get_red_p(), c.get_green_p(), c.get_blue_p(), 1.);
+                            }
+
+                            SQL::RowV v2;
+                            m_Lib.get().getSQL(v2, (boost::format ("SELECT * FROM track_view WHERE album_j = '%lld'") % get<gint64>(r["id"])).str());
+
+                            for(SQL::RowV::iterator n = v2.begin(); n != v2.end(); ++n)
+                            {
+                                r1->ChildData.push_back(m_Lib.get().sqlToTrack(*n));
+                            }
+
+                            m_ViewModel->append_row( r1 );
+                        }
+
+                        m_View->set_model( m_ViewModel );
+                        m_View->show_all();
 
                         m_TreeViewFS->build_file_system_tree("/");
                         m_TreeViewFS->signal_uri().connect(
@@ -2737,6 +2781,7 @@ namespace MPX
                                                 mlib,
                                                 &::MPX::Source::PlaybackSourceMusicLib::play_uri
                         ));
+                        */
 
                         m_TreeViewAlbums->signal_play_tracks().connect(
                                         sigc::bind(
@@ -2766,7 +2811,6 @@ namespace MPX
                                 ),
                                 cb
                         ));
-                            
                 }
 
                 void

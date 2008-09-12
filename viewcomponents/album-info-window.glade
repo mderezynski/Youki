@@ -20,7 +20,7 @@
   <property name="gravity">GDK_GRAVITY_NORTH_WEST</property>
   <property name="focus_on_map">True</property>
   <property name="urgency_hint">False</property>
-  <signal name="delete_event" handler="gtk_widget_destroy" object="albuminfowindow" last_modification_time="Mon, 28 Jul 2008 23:47:58 GMT"/>
+  <signal name="delete_event" handler="gtk_widget_destroy" object="album-info-window" last_modification_time="Mon, 28 Jul 2008 23:47:58 GMT"/>
 
   <child>
     <widget class="GtkVBox" id="vbox126">

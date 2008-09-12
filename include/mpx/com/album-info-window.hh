@@ -131,10 +131,13 @@ namespace MPX
                         on_rating_list_selection_changed ();
 
                 void
+                        on_album_updated (gint64);
+
+                void
                         delete_rating ();
 
                 void
-                        display_album(gint64 id);
+                        display_album ();
         };
 }
 

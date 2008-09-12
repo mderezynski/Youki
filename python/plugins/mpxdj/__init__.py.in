@@ -27,6 +27,10 @@ def extract_ids(rv, v):
     for val in rv:
         v.append(val["id"].get_int())
 
+def extract_ids_n(rv, v, n):
+
+    for n in range(0, n):
+        v.append(rv[n]["id"].get_int())
 
 ui_playlist_popup = """ 
         <ui>
@@ -389,8 +393,9 @@ class OPTION__EntertainMe(BaseOPTION__):
     def ENTERTAIN_Local(self):
 
         rv = mpx.SQLRowV()
-        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 0 ORDER BY pcount DESC, rating DESC, random() LIMIT 2")
-        extract_ids(rv, self.v)
+        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 20")
+        random.shuffle(rv)
+        extract_ids(rv[0:1], self.v)
   
     def ENTERTAIN_LastFm(self):
 

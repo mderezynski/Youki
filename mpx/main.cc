@@ -43,7 +43,10 @@
 #include "play.hh"
 #include "signals.hh"
 
+#if 0
 #include <clutter/clutter.h>
+#endif
+
 #include <glib/gi18n.h>
 #include <glibmm/miscutils.h>
 #include <giomm.h>
@@ -301,7 +304,7 @@ main (int argc, char ** argv)
     }
 
     gst_init(&argc, &argv);
-    clutter_init(&argc, &argv);
+    //clutter_init(&argc, &argv);
     Gtk::GL::init(argc, argv);
 
     services = new Service::Manager;
