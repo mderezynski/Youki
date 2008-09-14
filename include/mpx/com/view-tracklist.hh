@@ -448,7 +448,7 @@ namespace MPX
 
                                     if( i_begin.size() == 1 && (*(i_begin.begin())).first == 0 && (*(i_end.begin())).first == str.size() )    
                                     {
-                                        output += "<span color='#ffff80'>" + Glib::Markup::escape_text(str).raw() + "</span>";
+                                        output += "<span color='#ff3030'>" + Glib::Markup::escape_text(str).raw() + "</span>";
                                     }
                                     else
                                     {
@@ -474,7 +474,7 @@ namespace MPX
                                                     {
                                                         output += Glib::Markup::escape_text(chunk).raw();
                                                         chunk.clear();
-                                                        output += "<span color='#ffff80'>";
+                                                        output += "<span color='#ff3030'>";
                                                     }
                                                 }
                                                 else

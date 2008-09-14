@@ -7,6 +7,5 @@ python/plugins/audioscrobbler/audioscrobbler.glade
 python/plugins/lastfmstuff/__init__.py
 python/plugins/lastfmstuff/tag-track.glade
 python/plugins/trackinfo-webkit/__init__.py
-sources/musiclib/albuminfowindow.glade
 python/plugins/lastfmstuff/__init__.py
 python/plugins/trackinfo-webkit/__init__.py

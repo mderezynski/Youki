@@ -111,7 +111,7 @@ class TagTrack():
 
 class LastFmActions(mpx.Plugin):
         
-    """Last.fm Actions provides actions based on Last.fm, e.g. 'I Love this Track'"""
+    """Last.fm Actions provides actions based on Last.fm, e.g. 'I Love this Track'. Tagging a track also tags it locally (this functionality can currently not be used in reverse, i.e. finding tracks by local tags is not yet implemented)"""
 
     def activate(self):
 

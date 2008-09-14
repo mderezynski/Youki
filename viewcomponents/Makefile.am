@@ -3,6 +3,8 @@ lib_LTLIBRARIES = libmpx-view-components.la
 glade_DATA = 						\
 	album-info-window.glade
 
+EXTRA_DIST = $(glade_DATA)
+
 gladedir = $(pkgdatadir)/glade
 
 INCLUDES = 							\

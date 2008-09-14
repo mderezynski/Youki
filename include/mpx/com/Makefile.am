@@ -4,4 +4,5 @@ noinst_HEADERS =					\
 		tagview.hh					\
 		treeview-popup.hh			\
 		view-albums.hh				\
+		view-collections.hh			\
 		view-tracklist.hh

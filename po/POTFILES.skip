@@ -33,3 +33,13 @@ sources/radio/source-radio.cc
 sources/radio/source-radio.glade
 sources/radio/streams-shoutcast.cc
 widgets/bmp_status_icon.c
+python/plugins/mpxdj/__init__.py
+mpx/library.cc
+python/plugins/albumactions/albumactions.glade
+python/plugins/mpxdj/__init__.py
+python/plugins/mtpplayer/mtpplayer.glade
+viewcomponents/album-info-window.cc
+viewcomponents/album-info-window.glade
+viewcomponents/view-albums.cc
+viewcomponents/view-collections.cc
+python/plugins/mpxdj/__init__.py

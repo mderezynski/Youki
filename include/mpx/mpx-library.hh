@@ -54,9 +54,9 @@ namespace MPX
         public:
 
             Library(
-                Service::Manager&,
+                Service::Manager&
 #ifdef HAVE_HAL
-                bool
+                , bool
 #endif //HAVE_HAL
             );
 
