@@ -332,6 +332,23 @@ namespace MPX
                                     % "trackid"
                 ).str()); 
 
+                ///////////////////////////////////////////////////////////////
+                /// ALBUM TAGS TABLE 
+                ///////////////////////////////////////////////////////////////
+
+                static boost::format
+                        album_tags_table_f ("CREATE TABLE IF NOT EXISTS tags_album "
+                                        "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' INTEGER NOT NULL, '%s' INTEGER NOT NULL, " 
+                                        " '%s' INTEGER DEFAULT 1, "
+                                        "UNIQUE ('%s', '%s'))");
+
+                m_SQL->exec_sql ((album_tags_table_f 
+                                    % "tagid"
+                                    % "albumid"
+                                    % "amplitude" 
+                                    % "tagid"
+                                    % "albumid"
+                ).str()); 
 
                 ///////////////////////////////////////////////////////////////
                 /// ALBUM RATING HISTORY TABLE 
@@ -855,6 +872,21 @@ namespace MPX
                 {
                         execSQL((boost::format ("DELETE FROM album_rating_history WHERE id = %lld") % rating_id).str());
                         Signals.AlbumUpdated.emit(album_id);
+                }
+
+        void
+                Library::albumTagged(gint64 id, std::string const& tag)
+                {
+                        gint64 tag_id = get_tag_id( tag );
+
+                        char const insert_f[] = "INSERT INTO tags_album (tagid, albumid) VALUES (%lld, %lld)";
+                        char const update_f[] = "UPDATE tags SET amplitude = amplitude + 1 WHERE albumid = %lld AND tagid = %lld";
+                        try{
+                                execSQL(mprintf(insert_f, id, tag_id)); 
+                        } catch( SqlConstraintError & cxe )
+                        {
+                                execSQL(mprintf(update_f, id, tag_id));
+                        }
                 }
 
         void	

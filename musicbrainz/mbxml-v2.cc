@@ -66,7 +66,6 @@ namespace MPX
       else if( artist.empty() && !album.empty() )
         path = (query_album_f % MPX::URI::escape_string (album)).str();
      
-     
       URI u ((boost::format ("http://musicbrainz.org/%s") % path).str());
 
       Soup::RequestSyncRefP request = Soup::RequestSync::create (ustring (u));

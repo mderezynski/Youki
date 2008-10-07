@@ -80,7 +80,7 @@ audiosource_bin_LDADD =										\
 		$(top_builddir)/api/libmpx-api.la							\
 		$(top_builddir)/widgets/libmpx-widgets.la					\
 		$(top_builddir)/musicbrainz/libmpx-musicbrainz.la			\
-		$(top_builddir)/viewcomponents/libmpx-view-components.la
+		$(top_builddir)/com/libmpx-view-components.la
 
 audiosource_bin_CFLAGS =				\
     $(GLIB_CFLAGS) $(GST_CFLAGS) -I$(top_srcdir)/include

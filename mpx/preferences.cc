@@ -855,50 +855,49 @@ namespace MPX
       /* various toggle buttons */ 
       struct DomainKeyPair
       {
-        char const * domain;
-        char const * key;
-        char const * widget;
+          char const * domain;
+          char const * key;
+          char const * widget;
       };
 
       DomainKeyPair buttons[] =
       {
-        { "audio", "enable-eq", "enable-eq" },
+          { "audio", "enable-eq", "enable-eq" },
       };
 
       for (unsigned int n = 0; n < G_N_ELEMENTS (buttons); ++n)
       {
-        ToggleButton* button = dynamic_cast<ToggleButton*> (m_ref_xml->get_widget (buttons[n].widget));
+          ToggleButton* button = dynamic_cast<ToggleButton*> (m_ref_xml->get_widget (buttons[n].widget));
 
-        if (button)
-            mcs_bind->bind_toggle_button (*button, buttons[n].domain, buttons[n].key);
-        else
-            g_warning ("%s: Widget '%s' not found in 'preferences.glade'", G_STRLOC, buttons[n].widget);
-
+          if (button)
+              mcs_bind->bind_toggle_button (*button, buttons[n].domain, buttons[n].key);
+          else
+              g_warning ("%s: Widget '%s' not found in 'preferences.glade'", G_STRLOC, buttons[n].widget);
       }
 
-     /* mm-keys */
+      /* mm-keys */
       for(int n = 1; n < 6; ++n)
       {
-        Gtk::Entry * entry;
-        m_ref_xml->get_widget ((boost::format ("mm-entry-%d") % n).str(), entry);
-        entry->signal_key_press_event().connect( sigc::bind( sigc::mem_fun( *this, &Preferences::on_entry_key_press_event ), n));
-        entry->signal_key_release_event().connect( sigc::bind( sigc::mem_fun( *this, &Preferences::on_entry_key_release_event ), n));
-        Gtk::Button * button;
-        m_ref_xml->get_widget ((boost::format ("mm-clear-%d") % n).str(), button);
-        button->signal_clicked().connect( sigc::bind( sigc::mem_fun( *this, &Preferences::on_clear_keyboard ), n));
-        m_mm_key_controls.resize( n );
+          Gtk::Entry * entry;
+          m_ref_xml->get_widget ((boost::format ("mm-entry-%d") % n).str(), entry);
+          entry->signal_key_press_event().connect( sigc::bind( sigc::mem_fun( *this, &Preferences::on_entry_key_press_event ), n));
+          entry->signal_key_release_event().connect( sigc::bind( sigc::mem_fun( *this, &Preferences::on_entry_key_release_event ), n));
+          Gtk::Button * button;
+          m_ref_xml->get_widget ((boost::format ("mm-clear-%d") % n).str(), button);
+          button->signal_clicked().connect( sigc::bind( sigc::mem_fun( *this, &Preferences::on_clear_keyboard ), n));
+          m_mm_key_controls.resize( n );
       }
 
       int active = mcs->key_get<int>("hotkeys","system") + 1;
       for(int n = 1; n < 4; ++n)
       {
-        Gtk::RadioButton * button;
-        m_ref_xml->get_widget ((boost::format ("mm-rb-%d") % n).str(), button);
-        button->signal_toggled().connect( sigc::bind( sigc::mem_fun( *this, &Preferences::on_mm_option_changed), n));
-        if( n == active )
-        {
-          button->set_active ();
-        }
+          Gtk::RadioButton * button;
+          m_ref_xml->get_widget ((boost::format ("mm-rb-%d") % n).str(), button);
+          button->signal_toggled().connect( sigc::bind( sigc::mem_fun( *this, &Preferences::on_mm_option_changed), n));
+          if( n == active )
+          {
+            button->set_active ();
+          }
       }
 
       dynamic_cast<Gtk::Button*>(m_ref_xml->get_widget ("mm-revert"))->signal_clicked().connect(
@@ -913,10 +912,11 @@ namespace MPX
       mm_enable->set_active(mm_enabled);
       m_ref_xml->get_widget("mm-vbox")->set_sensitive(mm_enabled);
       mm_enable->signal_toggled().connect(sigc::mem_fun( *this, &Preferences::mm_toggled ));
-
       mm_load ();
 
       m_CoverArtSources = new CoverArtSourceView(m_ref_xml);
+
+      mcs_bind->bind_filechooser(*dynamic_cast<Gtk::FileChooser*>(m_ref_xml->get_widget("preferences-fc-music-import-path")), "mpx","music-import-path");
   }
 
   void

@@ -1,7 +1,8 @@
 lib_LTLIBRARIES = libmpx-view-components.la
 
 glade_DATA = 						\
-	album-info-window.glade
+	album-info-window.glade			\
+	mb-import-album.glade
 
 EXTRA_DIST = $(glade_DATA)
 
@@ -37,12 +38,14 @@ libmpx_view_components_la_LIBADD =  	\
 		$(HAL_LIBS)					\
 		$(PYTHON_LIBS)				\
 		$(PYGTK_LIBS)				\
-		$(SEXYMM_LIBS)				
+		$(SEXYMM_LIBS)				\
+		$(top_builddir)/musicbrainz/libmpx-musicbrainz.la
 
 libmpx_view_components_la_SOURCES =	\
 	album-info-window.cc			\
 	view-albums.cc					\
 	view-collections.cc				\
 	file-system-tree.cc				\
+	mb-import-album.cc				\
 	tagview.cc						\
 	treeview-popup.cc				

@@ -38,7 +38,6 @@
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/widgets/widgetloader.hh"
-
 #include "mpx/i-playbacksource.hh"
 #include "mpx/util-file.hh"
 
@@ -68,6 +67,7 @@ namespace MPX
     class AboutDialog;
     class ErrorManager;
     class InfoArea;
+    class MB_ImportAlbum;
     class MLibManager;
     class Play;
     class PluginManager;
@@ -283,6 +283,7 @@ namespace MPX
         VideoWidget                   * m_VideoWidget; 
         ErrorManager                  * m_ErrorManager;
         MarkovAnalyzerThread          * m_MarkovThread;
+        MB_ImportAlbum                * m_MB_ImportAlbum;
 
     // widgets
 
@@ -460,6 +461,8 @@ namespace MPX
         void
         check_py_error ();
 
+        void
+        on_import_album();
 
       protected:
 

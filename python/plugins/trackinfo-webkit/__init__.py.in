@@ -624,15 +624,25 @@ class TrackInfoQuery (threading.Thread):
 
     def run (self):
 
+        self.html += "<html><head><style type='text/css'>" + CSS + "</style></head><body>"
+
         try:
-            self.html += "<html><head><style type='text/css'>" + CSS + "</style></head><body>"
             self.APPEND_ArtistInfo()
-            self.APPEND_Lyrics()
-            self.APPEND_MBData()
-            self.html += "</body></html>"
-            self.finished.set()
         except Exception, e:
-            print "Error in TrackInfoQuery.run: " +str(e)
+            print "Error in TrackInfoQuery.run ArtistInfo: " +str(e)
+
+        try:
+            self.APPEND_Lyrics()
+        except Exception, e:
+            print "Error in TrackInfoQuery.run Lyrics: " +str(e)
+    
+        try:
+            self.APPEND_MBData()
+        except Exception, e:
+            print "Error in TrackInfoQuery.run MBData: " +str(e)
+
+        self.html += "</body></html>"
+        self.finished.set()
 
     def APPEND_ArtistInfo(self):
 
@@ -676,6 +686,9 @@ class TrackInfoQuery (threading.Thread):
 
             self.html += Template(tmpl_section_header).render(header='Lyrics')
             self.html += "<div class='SectionContent'>"
+            self.html += "<a href='%s'>(Edit Lyrics on LyricWiki)</a>" % ("http://lyricwiki.org/index.php?title=%s:%s&action=edit" % (urllib.quote(self.track[mpx.AttributeId.ARTIST].get()), urllib.quote(self.track[mpx.AttributeId.TITLE].get())))
+            self.html += "<br/>"
+            self.html += "<br/>"
             self.html += lyrics.replace("\n","<br/>")
             self.html += "</div>"
 
@@ -985,9 +998,13 @@ class TrackInfo:
                     splitsegment = string.split(segment,"=")
                     mydict[splitsegment[0]] = splitsegment[1]
         except:
-                pre, sep, post = uri.partition("?")        
-                splitsegment = string.split(post,"=")
-                mydict[splitsegment[0]] = splitsegment[1]
+
+                try:
+                        pre, sep, post = uri.partition("?")        
+                        splitsegment = string.split(post,"=")
+                        mydict[splitsegment[0]] = splitsegment[1]
+                except:
+                        pass 
 
         return mydict
 
@@ -1013,14 +1030,25 @@ class TrackInfo:
                
                         self.display_track( self.track ) 
                         return
-        except:
-                print "TRACKINFO-WEBKIT: openUri exception" 
+
+        except Exception, e:
+                print "TRACKINFO-WEBKIT: openUri exception: " + str(e) 
 
     def on_webkit_navigation_requested(self, webview, webframe, request):
-    
-        self.current_uri = request.get_uri()
-        self.openUri(self.current_uri)
-        return webkit.NAVIGATION_RESPONSE_ACCEPT
+   
+        try: 
+                self.current_uri = request.get_uri()
+
+                if self.current_uri[:3] == "mpx":
+                   self.openUri(self.current_uri)
+
+                return 0
+
+        except Exception, e:
+
+                print str(e)
+
+        return 1
 
 
 class TrackInfoDispatcher(mpx.Plugin):

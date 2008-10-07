@@ -749,7 +749,7 @@ AC_OUTPUT([
 	remote/Makefile
     scripts/Makefile
     widgets/Makefile
-    viewcomponents/Makefile
+    com/Makefile
     api/Makefile
     xmlcpp/Makefile
     musicbrainz/Makefile

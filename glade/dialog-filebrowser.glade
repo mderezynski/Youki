@@ -11,7 +11,7 @@
   <property name="select_multiple">True</property>
   <property name="show_hidden">False</property>
   <property name="do_overwrite_confirmation">False</property>
-  <property name="title" translatable="yes">Play Files - BMP</property>
+  <property name="title" translatable="yes">AudioSource: Play Files</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>

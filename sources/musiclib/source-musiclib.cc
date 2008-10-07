@@ -446,11 +446,13 @@ namespace MPX
         {
                 public:
 
-                        ReferenceCollect (Glib::RefPtr<Gtk::TreeModel> const& model,
-                                        ReferenceV & references)
+                                ReferenceCollect(
+                                    const Glib::RefPtr<Gtk::TreeModel>& model,
+                                    ReferenceV&                         references
+                                )
                                 : m_model       (model)
-                                  , m_references  (references)
-                {} 
+                                , m_references  (references)
+                                {} 
 
                         void
                                 operator()(Gtk::TreePath const& p)
@@ -528,7 +530,8 @@ namespace MPX
                                 set_has_tooltip();
                                 set_rules_hint();
 
-                                m_Playing = Gdk::Pixbuf::create_from_file(Glib::build_filename(Glib::build_filename(DATA_DIR,"images"),"play.png"));
+                                m_Playing = /*Gdk::Pixbuf::create_from_file(Glib::build_filename(Glib::build_filename(DATA_DIR,"images"),"play.png"));*/
+                                            render_icon(Gtk::StockID(GTK_STOCK_MEDIA_PLAY), Gtk::ICON_SIZE_MENU)->scale_simple(16,16,Gdk::INTERP_HYPER);
                                 m_Bad = render_icon (StockID (MPX_STOCK_ERROR), ICON_SIZE_SMALL_TOOLBAR);
 
                                 for(int n = 0; n < N_STARS; ++n)
@@ -627,7 +630,6 @@ namespace MPX
                                                 sigc::mem_fun( *this, &PlaylistTreeView::slotSortByAlbum ));
                                 ListStore->set_sort_func(PlaylistColumns.Track,
                                                 sigc::mem_fun( *this, &PlaylistTreeView::slotSortByTrack ));
-
                                 ListStore->set_default_sort_func(
                                                 sigc::mem_fun( *this, &PlaylistTreeView::slotSortDefault ));
 

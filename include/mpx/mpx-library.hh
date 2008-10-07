@@ -102,6 +102,7 @@ namespace MPX
             void
             getMetadata(const std::string&, Track&) ;
 
+
             void
             albumAddNewRating(gint64 id, int rating, std::string const& comment);
 
@@ -114,6 +115,10 @@ namespace MPX
             void
             albumDeleteRating(gint64 rating_id, gint64 album_idd);
 
+            void
+            albumTagged(gint64, std::string const&);
+
+
 			void
 			trackRated(gint64, int);
 		
@@ -123,11 +128,13 @@ namespace MPX
             void
             trackTagged(gint64, std::string const&);
 
+
             void
             markovUpdate(gint64 /* track a */, gint64 /* track b */);
 
             gint64 
             markovGetRandomProbableTrack(gint64 /* track a*/); 
+
 
             gint64
             collectionCreate(const std::string& /*name*/, const std::string& /*blurb*/);
@@ -149,6 +156,7 @@ namespace MPX
 
             void
             collectionGetTracks(gint64 id, IdV& /*collections*/);
+
 
         public:
 

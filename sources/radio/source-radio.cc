@@ -26,6 +26,8 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
+#include "mpx/mpx-library.hh"
+
 #include "source-radio.hh"
 
 #include <gtkmm.h>
@@ -36,7 +38,6 @@
 #include <map>
 
 #include "mpx/mpx-public-mpx.hh"
-#include "mpx/mpx-library.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/mpx-minisoup.hh"
 
@@ -259,6 +260,8 @@ namespace Source
 		m_shoutcast_base->queue_draw ();
 		m_shoutcast_base->set_sensitive (1);
 		m_notebook_shoutcast->set_current_page (0);
+        m_filter_entry->grab_focus();
+        m_filter_entry->select_region(0,-1);
     }
 
     std::string

@@ -81,7 +81,8 @@ class OPTION__Analyzer(BaseOPTION__):
 
     def __init__(self, lib, v, xml, mlib, mcs):
 
-         BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
+        self.range = xml.get_widget("analyzer-range")
 
     def get_similartracks(self, mpxtrack):
 
@@ -130,7 +131,7 @@ class OPTION__Analyzer(BaseOPTION__):
         playlist = self.mlib.get_playlist_model()
         if not len(playlist): return
 
-        tracks = self.get_similartracks(mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9]))
+        tracks = self.get_similartracks(mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9]))[:(int(self.range.get_value())*2)]
           
         random.shuffle(tracks)
 
@@ -138,7 +139,7 @@ class OPTION__Analyzer(BaseOPTION__):
 
                 rv = mpx.SQLRowV()
 
-                if self.count_previous_artist_presence(playlist, track.getArtist().getName()) <= 1:
+                if self.count_previous_artist_presence(playlist, track.getArtist().getName()) < 1:
 
                         self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' AND title = '%s' ORDER BY random() LIMIT 1" % ( track.getArtist().getName().replace("'", "''") , track.getName().replace("'","''") ) ))
                         extract_ids(rv, self.v)
@@ -199,7 +200,7 @@ class OPTION__Analyzer(BaseOPTION__):
                     id = artist.getMBID() 
                     rv = mpx.SQLRowV()
 
-                    if self.count_previous_mbid_presence(playlist, id) <= 1:
+                    if self.count_previous_mbid_presence(playlist, id) < 1:
                         self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY random() LIMIT 1" % id))
                         extract_ids(rv, self.v)
 
@@ -216,18 +217,19 @@ class OPTION__Analyzer(BaseOPTION__):
         rv = mpx.SQLRowV()
 
         try:
+                tries  = int(self.range.get_value())
+                max    = tries
+
                 m = lastfm.SimilarArtists(artist)
-                a = m.get()
+                a = m.get()[:tries]
 
                 random.shuffle(a)
 
-                tries = 3
-
                 while tries > 0:
 
-                        name = str(a[3-tries].getName())
+                        name = str(a[max-tries].getName())
 
-                        if self.count_previous_artist_presence(playlist, name) <= 1:
+                        if self.count_previous_artist_presence(playlist, name) < 1:
 
                                 self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' ORDER BY random() LIMIT 1" % name.replace("'","''") ))
                                 extract_ids(rv, self.v)

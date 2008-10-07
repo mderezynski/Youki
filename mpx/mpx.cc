@@ -46,6 +46,7 @@
 #include "mpx/util-string.hh"
 #include "mpx/util-ui.hh"
 #include "mpx/xml/xspf.hh"
+#include "mpx/com/mb-import-album.hh"
  
 #include "dialog-about.hh"
 #include "dialog-filebrowser.hh"
@@ -100,17 +101,18 @@ namespace
                 "   <menu action='MenuMusic'>"
                 "         <menuitem action='action-play-files'/>"
                 "         <separator name='sep00'/>"
-#ifndef HAVE_HAL
-                "         <menuitem action='action-import-folder'/>"
-                "         <menuitem action='action-import-share'/>"
-#endif // !HAVE_HAL
                 "         <menuitem action='action-quit'/>"
                 "   </menu>"
                 "   <menu action='MenuEdit'>"
 #ifdef HAVE_HAL
                 "         <menuitem action='action-mlibmanager'/>"
+#else
+                "         <menuitem action='action-import-folder'/>"
+                "         <menuitem action='action-import-share'/>"
 #endif // HAVE_HAL
                 "	      <menuitem action='action-vacuum-lib'/>"
+                "         <separator/>"
+                "	      <menuitem action='action-mb-import'/>"
                 "         <separator/>"
                 "         <menuitem action='action-plugins'/>"
                 "         <menuitem action='action-preferences'/>"
@@ -844,6 +846,11 @@ namespace MPX
                                                   sigc::mem_fun (m_Library, &Library::vacuum));
 
 
+                                  m_actions->add (Action::create("action-mb-import",
+                                                          _("MusicBrainz: Import Album"),
+                                                          _("Import an album using MusicBrainz")),
+                                                  sigc::mem_fun (*this, &Player::on_import_album));
+
 
                                   m_actions->add (Action::create (ACTION_PLUGINS,
                                                           Gtk::StockID(MPX_STOCK_PLUGIN),
@@ -1071,6 +1078,8 @@ namespace MPX
                                         *this,
                                         &Player::on_got_cover
                                   ));
+
+                                  m_MB_ImportAlbum = MB_ImportAlbum::create(m_Library,m_Covers);
 
                                   splash.set_message(_("Ready"), 1.0);
 
@@ -1885,6 +1894,12 @@ SET_SEEK_POSITION:
                                 return true;
                         }
                         return Widget::on_key_press_event (event);
+                }
+
+        void
+                Player::on_import_album ()
+                {
+                        m_MB_ImportAlbum->run();
                 }
 
         void

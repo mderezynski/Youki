@@ -144,7 +144,7 @@
                             <child>
                               <widget class="GtkImage" id="image3">
                                 <property name="visible">True</property>
-                                <property name="sensitive">False</property>
+                                <property name="sensitive">True</property>
                                 <property name="xpad">8</property>
                                 <property name="stock">gtk-media-play</property>
                               </widget>
