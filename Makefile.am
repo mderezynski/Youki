@@ -34,8 +34,8 @@ SUBDIRS =			\
 	include			\
 	xsd				\
 	widgets			\
-	com				\
 	musicbrainz		\
+	com				\
 	xmlcpp			\
 	taglib		
 

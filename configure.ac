@@ -749,10 +749,10 @@ AC_OUTPUT([
 	remote/Makefile
     scripts/Makefile
     widgets/Makefile
-    com/Makefile
-    api/Makefile
-    xmlcpp/Makefile
     musicbrainz/Makefile
+    com/Makefile
+    xmlcpp/Makefile
+    api/Makefile
 
     include/Makefile
     include/mpx/Makefile
