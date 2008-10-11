@@ -670,7 +670,8 @@ namespace MPX
                                 play.m_spectrum[i] = g_value_get_float(gst_value_list_get_value( m, i )); 
                         }
 
-                        gst_message_unref(play.m_spectrum_message);
+                        // Unrefrencing the message will break the spectrum and memory will leak
+                        //gst_message_unref(play.m_spectrum_message);
 
                         play.signal_spectrum_.emit( play.m_spectrum );
 
