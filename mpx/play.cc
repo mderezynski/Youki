@@ -730,7 +730,7 @@ namespace MPX
                                                       GstClockTime curtime=gst_clock_get_time(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())))-basetime;
                                                       GstClockTimeDiff waittime=GST_CLOCK_DIFF(curtime,endtime);
                                                       
-                                                     clock_id=gst_clock_new_single_shot_id(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())),/*basetime+endtime*/waittime);
+                                                      clock_id=gst_clock_new_single_shot_id(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())),basetime+endtime);
                                                       play.m_spectrum_message = gst_message_copy(message);
                                                       gst_clock_id_wait_async(clock_id,clock_callback,data);
                                                       gst_clock_id_unref(clock_id);

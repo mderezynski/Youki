@@ -55,10 +55,44 @@ ui_playlist_popup = """
         </ui>
 """
 
+class BaseMODEL__():
+
+    def __init__(self):
+        pass
+
+class MODEL_List(BaseMODEL__):
+
+    def __init__(self, l):
+
+        BaseMODEL__.__init__(self)
+        self.l = l
+
+    def __getitem__(self, index):
+
+        return self.l[index]
+
+    def __len__(self):
+
+        return len(self.l)
+
+class MODEL_TreeModel(BaseMODEL__):
+
+    def __init__(self, m):
+
+        BaseMODEL__.__init__(self)
+        self.m = m
+
+    def __getitem__(self, index):
+
+        return mpx.unwrap_boxed_mpxtrack(self.m[index][9])
+
+    def __len__(self):
+
+        return len(self.m)
 
 class BaseOPTION__(threading.Thread):
 
-    def __init__(self, lib, v, xml, mlib, mcs):
+    def __init__(self, lib, v, xml, mlib, mcs, model):
 
         threading.Thread.__init__(self)
         self.lib = lib
@@ -67,6 +101,7 @@ class BaseOPTION__(threading.Thread):
         self.v = v
         self.mcs = mcs
         self.finished = threading.Event()
+        self.model = model
 
     def stop(self):
 
@@ -79,9 +114,9 @@ class BaseOPTION__(threading.Thread):
 
 class OPTION__Analyzer(BaseOPTION__):    
 
-    def __init__(self, lib, v, xml, mlib, mcs):
+    def __init__(self, lib, v, xml, mlib, mcs, model):
 
-        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
         self.range = xml.get_widget("analyzer-range")
 
     def get_similartracks(self, mpxtrack):
@@ -90,36 +125,36 @@ class OPTION__Analyzer(BaseOPTION__):
         t = m.get()
         return t
 
-    def count_previous_mbid_presence(self, playlist, mbid):
+    def count_previous_mbid_presence(self, mbid):
 
         count = 0
         items = 0
 
-        if (len(playlist)-1) < items:
+        if (len(self.model)-1) < items:
 
-                items = len(playlist)-1
+                items = len(self.model)-1
 
         for i in range(0,items):
 
-                track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-items+i][9])
+                track = self.model[len(self.model)-items+i]
                 mbid_track = track[mpx.AttributeId.MB_ARTIST_ID].get()
                 if mbid_track == mbid: 
                         count = count +1
 
         return count
 
-    def count_previous_artist_presence(self, playlist, artist):
+    def count_previous_artist_presence(self, artist):
 
         count = 0
         items = 9
 
-        if (len(playlist)-1) < items:
+        if (len(self.model)-1) < items:
 
-                items = len(playlist)-1
+                items = len(self.model)-1
 
         for i in range(0,items):
 
-                track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-items+i][9])
+                track = self.model[len(self.model)-items+i]
                 artist_track = track[mpx.AttributeId.ARTIST].get()
                 if artist_track == artist: 
                         count = count +1
@@ -128,10 +163,10 @@ class OPTION__Analyzer(BaseOPTION__):
 
     def run_similar_track(self):
 
-        playlist = self.mlib.get_playlist_model()
-        if not len(playlist): return
+        if not len(self.model):
+            return
 
-        tracks = self.get_similartracks(mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9]))[:(int(self.range.get_value())*2)]
+        tracks = self.get_similartracks(self.model[len(self.model)-1])[:(int(self.range.get_value())*2)]
           
         random.shuffle(tracks)
 
@@ -139,7 +174,7 @@ class OPTION__Analyzer(BaseOPTION__):
 
                 rv = mpx.SQLRowV()
 
-                if self.count_previous_artist_presence(playlist, track.getArtist().getName()) < 1:
+                if self.count_previous_artist_presence(track.getArtist().getName()) < 1:
 
                         self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' AND title = '%s' ORDER BY random() LIMIT 1" % ( track.getArtist().getName().replace("'", "''") , track.getName().replace("'","''") ) ))
                         extract_ids(rv, self.v)
@@ -150,18 +185,18 @@ class OPTION__Analyzer(BaseOPTION__):
 
     def run_accumulate_tags(self):
 
-        playlist = self.mlib.get_playlist_model()
-        if not len(playlist): return
+        if not len(self.model):
+            return
 
         tags = {} 
         items = 10 
 
-        if len(playlist) < items:
-            items = len(playlist)
+        if len(self.model) < items:
+            items = len(self.model)
 
-        for i in range(len(playlist)-items,len(playlist)-1):
+        for i in range(len(self.model)-items,len(self.model)-1):
 
-            track = mpx.unwrap_boxed_mpxtrack(playlist[i][9])
+            track = self.model[i]
             t = lastfm.TrackTopTags(track[mpx.AttributeId.ARTIST].get(), track[mpx.AttributeId.TITLE].get())
             ttags = t.get()
            
@@ -200,7 +235,7 @@ class OPTION__Analyzer(BaseOPTION__):
                     id = artist.getMBID() 
                     rv = mpx.SQLRowV()
 
-                    if self.count_previous_mbid_presence(playlist, id) < 1:
+                    if self.count_previous_mbid_presence(id) < 1:
                         self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY random() LIMIT 1" % id))
                         extract_ids(rv, self.v)
 
@@ -209,11 +244,12 @@ class OPTION__Analyzer(BaseOPTION__):
 
     def run_similar_artist(self):
 
-        playlist = self.mlib.get_playlist_model()
-        if not len(playlist): return
+        if not len(self.model): return
 
-        track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
+        track = self.model[len(self.model)-1]
+
         artist = track[mpx.AttributeId.ARTIST].get()
+
         rv = mpx.SQLRowV()
 
         try:
@@ -229,7 +265,7 @@ class OPTION__Analyzer(BaseOPTION__):
 
                         name = str(a[max-tries].getName())
 
-                        if self.count_previous_artist_presence(playlist, name) < 1:
+                        if self.count_previous_artist_presence(name) < 1:
 
                                 self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' ORDER BY random() LIMIT 1" % name.replace("'","''") ))
                                 extract_ids(rv, self.v)
@@ -240,22 +276,11 @@ class OPTION__Analyzer(BaseOPTION__):
         except Exception, e:
                 print "Error running run_similar_artist: " + str(e) 
 
-    def run_markov(self):
-
-        # Find a track based on Markov
-
-        playlist  = self.mlib.get_playlist_model()
-        track_id  = playlist[len(playlist)-1][7] 
-        markov_id = self.lib.markovGetRandomProbableTrack(track_id)
-
-        self.v.append(markov_id)
-
     def run(self):
 
-        playlist = self.mlib.get_playlist_model()
         callables = [self.run_accumulate_tags, self.run_similar_track, self.run_similar_artist]
 
-        if not len(playlist):
+        if not len(self.model):
             self.finished.set()
             return
 
@@ -264,8 +289,8 @@ class OPTION__Analyzer(BaseOPTION__):
         while tries:
 
                 choice = random.randint(0,2)
-
                 callables[choice]()
+
                 if len(self.v):
                     self.finished.set()
                     return
@@ -276,9 +301,9 @@ class OPTION__Analyzer(BaseOPTION__):
 
 class OPTION__LastFmTag(BaseOPTION__):    
 
-    def __init__(self, lib, v, xml, mlib, mcs):
+    def __init__(self, lib, v, xml, mlib, mcs, model):
 
-         BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
+         BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
 
     def run(self):
         
@@ -300,9 +325,9 @@ class OPTION__LastFmTag(BaseOPTION__):
 
 class OPTION__RandomMix(BaseOPTION__):
 
-    def __init__(self, lib, v, xml, mlib, mcs):
+    def __init__(self, lib, v, xml, mlib, mcs, model):
 
-        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
 
     def run(self):
 
@@ -354,9 +379,9 @@ class OPTION__RandomMix(BaseOPTION__):
 
 class OPTION__TopTunes(BaseOPTION__):
 
-    def __init__(self, lib, v, xml, mlib, mcs):
+    def __init__(self, lib, v, xml, mlib, mcs, model):
 
-        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
 
     def run(self):
     
@@ -367,9 +392,9 @@ class OPTION__TopTunes(BaseOPTION__):
 
 class OPTION__PlayAll(BaseOPTION__):
 
-    def __init__(self, lib, v, xml, mlib, mcs):
+    def __init__(self, lib, v, xml, mlib, mcs, model):
 
-        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
 
     def run(self):
 
@@ -380,9 +405,9 @@ class OPTION__PlayAll(BaseOPTION__):
 
 class OPTION__EntertainMe(BaseOPTION__):
 
-    def __init__(self, lib, v, xml, mlib, mcs):
+    def __init__(self, lib, v, xml, mlib, mcs, model):
 
-        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
 
     def run(self):
 
@@ -412,9 +437,9 @@ class OPTION__EntertainMe(BaseOPTION__):
 
 class OPTION__SoundsOf(BaseOPTION__):
 
-    def __init__(self, lib, v, xml, mlib, mcs):
+    def __init__(self, lib, v, xml, mlib, mcs, model):
 
-        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs)
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
  
     def run(self):
     
@@ -606,8 +631,10 @@ class MPXDJ(mpx.Plugin):
 
         idv = mpx.IdVector()
         klass = self.callables[self.playmode]
+
         if klass:
-            instance = klass(self.lib, idv, self.xml, self.mlib, self.mcs)
+
+            instance = klass(self.lib, idv, self.xml, self.mlib, self.mcs, MODEL_TreeModel(self.mlib.get_playlist_model()))
             instance.start () 
         
             while not instance.is_done():
