@@ -956,7 +956,7 @@ namespace MPX
                         try{
                                 std::vector<double> ratios;
                                 RowV rows;
-                                getSQL (rows, (boost::format("SELECT * FROM markov WHERE track_id_a = %lld AND count > 0") % a).str());
+                                getSQL (rows, (boost::format("SELECT * FROM markov WHERE track_id_a = '%lld' AND count > 0") % a).str());
                                 if( !rows.empty() )
                                 {
                                         for( RowV::const_iterator i = rows.begin(); i != rows.end(); ++i )
@@ -965,10 +965,14 @@ namespace MPX
                                                 ratios.push_back(double(count) / double(rows.size()));
                                         }
                                         int row = MPX::rand(ratios);
-                                        gint64 id = get <gint64> (rows[row].find ("id")->second);
+                                        g_assert( row < rows.size() );
+                                        gint64 id = get <gint64> (rows[row].find ("track_id_b")->second);
+                                        g_message("Determined Markov-track-chain-ID [%lld], for track [%lld]", id, a);
                                         return id;
                                 }
+                                g_message("No rows based on Markov chain for track [%lld]", a);
                         } catch( ... ) {
+                                g_message("Exception in %s", G_STRFUNC);
                         }
 
                         RowV rows;

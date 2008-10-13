@@ -341,11 +341,10 @@ class OPTION__RandomMix(BaseOPTION__):
     def RANDOM_genre(self, lib, v):
 
         choice = random.randint(0,1)
-        playlist = self.mlib.get_playlist_model()
 
         rv = mpx.SQLRowV()
 
-        if not len(playlist):
+        if not len(self.model):
 
             lib.getSQL(rv, "SELECT id, genre FROM track_view WHERE genre IS NOT NULL ORDER BY random() LIMIT 1")
             genre = rv[0]["genre"].get_string()
@@ -353,7 +352,7 @@ class OPTION__RandomMix(BaseOPTION__):
 
         elif choice == 0: 
 
-            track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
+            track = self.model[len(self.model)-1]
             genre = track[mpx.AttributeId.GENRE].get()
             lib.getSQL(rv, "SELECT id FROM track_view WHERE genre ='%s' ORDER BY random() LIMIT 2" % genre)
         
@@ -371,11 +370,11 @@ class OPTION__RandomMix(BaseOPTION__):
 
     def RANDOM_markov(self, lib, v):
         
-        playlist = self.mlib.get_playlist_model()
-        track = mpx.unwrap_boxed_mpxtrack(playlist[len(playlist)-1][9])
+        track = self.model[len(self.model)-1]
         id = track[mpx.AttributeId.MPX_TRACK_ID].get()
         markov_id = lib.markovGetRandomProbableTrack(id)
-        v.append(markov_id)
+        if markov_id and markov_id != 0:
+            v.append(markov_id)
 
 class OPTION__TopTunes(BaseOPTION__):
 
