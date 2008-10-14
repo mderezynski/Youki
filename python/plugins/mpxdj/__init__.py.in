@@ -331,11 +331,13 @@ class OPTION__RandomMix(BaseOPTION__):
 
     def run(self):
 
-        [self.RANDOM_genre,
-         self.RANDOM_toptune,
-         self.RANDOM_markov
-        ][ random.randint(0,2) ](self.lib, self.v)
+        self.RANDOM_markov(self.lib, self.v)
 
+        if not len(self.v):
+            [self.RANDOM_genre,
+             self.RANDOM_toptune,
+            ][ random.randint(0,1) ](self.lib, self.v)
+    
         self.finished.set()
 
     def RANDOM_genre(self, lib, v):

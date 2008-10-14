@@ -975,10 +975,13 @@ namespace MPX
                                 g_message("Exception in %s", G_STRFUNC);
                         }
 
+                        /*
                         RowV rows;
                         getSQL (rows, "SELECT count(*) AS count FROM track");
                         gint64 count = get <gint64> (rows[0].find("count")->second);
                         return gint64(g_random_double_range(0, double(count))); 
+                        */
+                        return 0;
                 }
 
         Track
