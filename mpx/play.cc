@@ -662,14 +662,6 @@ namespace MPX
                 {
                         Play & play = *(static_cast<Play*>( data ));
 
-                        GstStructure const* s = gst_message_get_structure (play.m_spectrum_message);
-                        GValue const* m = gst_structure_get_value (s, "magnitude");
-
-                        for (int i = 0; i < SPECT_BANDS; ++i)
-                        {
-                                play.m_spectrum[i] = g_value_get_float(gst_value_list_get_value( m, i )); 
-                        }
-
                         // Unrefrencing the message will break the spectrum and memory will leak
                         //gst_message_unref(play.m_spectrum_message);
 
@@ -731,7 +723,15 @@ namespace MPX
                                                       GstClockTimeDiff waittime=GST_CLOCK_DIFF(curtime,endtime);
                                                       
                                                       clock_id=gst_clock_new_single_shot_id(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())),basetime+endtime);
-                                                      play.m_spectrum_message = gst_message_copy(message);
+
+                                                      GstStructure const* s = gst_message_get_structure (message);
+                                                      GValue const* m = gst_structure_get_value (s, "magnitude");
+
+                                                      for (int i = 0; i < SPECT_BANDS; ++i)
+                                                      {
+                                                        play.m_spectrum[i] = g_value_get_float(gst_value_list_get_value( m, i )); 
+                                                      }
+
                                                       gst_clock_id_wait_async(clock_id,clock_callback,data);
                                                       gst_clock_id_unref(clock_id);
                                                     }
