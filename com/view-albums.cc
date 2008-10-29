@@ -53,6 +53,9 @@
 #include "mpx/com/view-albums.hh"
 #include "mpx/com/album-info-window.hh"
 
+#undef DATA_DIR
+#define DATA_DIR "/usr/share/audiosource"
+
 using namespace Gtk;
 using namespace Glib;
 using namespace Gnome::Glade;
@@ -197,7 +200,7 @@ namespace MPX
                         Options.Type = RT_ALL;
                         Options.Advanced = false;
 
-                        const std::string image_base_path = build_filename( DATA_DIR, "images" );
+                        const std::string image_base_path = build_filename( "/usr/share/audiosource", "images" );
 
                         for(int n = 0; n < N_STARS; ++n)
                         {
@@ -397,7 +400,7 @@ namespace MPX
                         m_DiscDefault_Pixbuf =
                                 Gdk::Pixbuf::create_from_file(
                                                 build_filename(
-                                                        DATA_DIR,
+                                                        "/usr/share/audiosource",
                                                         build_filename("images","disc.png")
                                                         )
                                                 )->scale_simple(90,90,Gdk::INTERP_BILINEAR);
@@ -467,23 +470,6 @@ namespace MPX
                         {
                                 Options.Advanced = m_AdvancedQueryCB->get_active();
                                 on_filter_entry_changed ();
-                        }
-
-                void
-                        AlbumTreeView::on_row_activated (const TreeModel::Path& path, TreeViewColumn* column)
-                        {
-                                TreeIter iter = AlbumsTreeStore->get_iter (AlbumsTreeStoreFilter->convert_path_to_child_path(path));
-                                if(path.get_depth() == ROW_ALBUM)
-                                {
-                                        gint64 id = (*iter)[Columns.Id];
-                                        Signals.PlayAlbum.emit(id);
-                                }
-                                else
-                                {
-                                        gint64 id = (*iter)[Columns.TrackId];
-                                        IdV v (1, id);
-                                        Signals.PlayTracks.emit(v);
-                                }
                         }
 
                 void
@@ -694,6 +680,34 @@ namespace MPX
                                                 }
                                         }
                                 }
+                                else if( ev->type == GDK_2BUTTON_PRESS)
+                                {
+                                        GdkEventButton * event = reinterpret_cast <GdkEventButton *> (ev);
+                                        if( event->button == 1 )
+                                        {
+                                                int cell_x, cell_y ;
+                                                TreeViewColumn *col ;
+                                                TreePath path;
+
+                                                if(get_path_at_pos (event->x, event->y, path, col, cell_x, cell_y))
+                                                {
+                                                        TreeIter iter = AlbumsTreeStore->get_iter (AlbumsTreeStoreFilter->convert_path_to_child_path(path));
+                                                        bool play = event->state & GDK_CONTROL_MASK;
+                                                        if( path.get_depth() == ROW_ALBUM )
+                                                        {
+                                                                gint64 id = (*iter)[Columns.Id];
+                                                                Signals.PlayAlbum.emit(id, !play);
+                                                        }
+                                                        else
+                                                        {
+                                                                gint64 id = (*iter)[Columns.TrackId];
+                                                                IdV v (1, id);
+                                                                Signals.PlayTracks.emit(v, !play);
+                                                        }
+                                                }
+                                        }
+                                }
+
                                 return false;
                         }
 

@@ -86,7 +86,7 @@ namespace MPX
                                 Stars[n] = Gdk::Pixbuf::create_from_file(
                                                 build_filename(
                                                         build_filename(
-                                                                DATA_DIR,
+                                                                "/usr/share/audiosource",
                                                                 "images"
                                                                 ),
                                                         (boost::format("stars%d.png") % n).str()

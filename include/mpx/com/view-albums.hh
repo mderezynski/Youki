@@ -57,8 +57,8 @@
 
 namespace MPX
 {
-                typedef sigc::signal<void, gint64>      SignalPlayAlbum;
-                typedef sigc::signal<void, IdV>         SignalPlayTracks;
+                typedef sigc::signal<void, gint64, bool>      SignalPlayAlbum;
+                typedef sigc::signal<void, IdV, bool>         SignalPlayTracks;
 
                 const int N_STARS = 6;
 
@@ -289,9 +289,6 @@ namespace MPX
                             );
 
                         protected:
-
-                            virtual void
-                                    on_row_activated (const Gtk::TreeModel::Path&, Gtk::TreeViewColumn*);
 
                             virtual void
                                     on_row_expanded (const Gtk::TreeIter &iter_filter,

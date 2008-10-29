@@ -55,8 +55,8 @@
 
 namespace MPX
 {
-                typedef sigc::signal<void, gint64>      SignalPlayCollection;
-                typedef sigc::signal<void, IdV>         SignalPlayTracks;
+                typedef sigc::signal<void, gint64>          SignalPlayCollection;
+                typedef sigc::signal<void, IdV, bool>       SignalPlayTracks;
 
                 enum CollectionRowType
                 {
