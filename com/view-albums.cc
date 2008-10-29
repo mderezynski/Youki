@@ -652,7 +652,34 @@ namespace MPX
                 bool
                         AlbumTreeView::on_event (GdkEvent * ev)
                         {
-                                if( ev->type == GDK_BUTTON_PRESS )
+                                if( ev->type == GDK_KEY_PRESS )
+                                {
+                                        GdkEventKey * event = reinterpret_cast <GdkEventKey *> (ev);
+                                        if( (event->keyval == GDK_KP_Enter) || (event->keyval == GDK_ISO_Enter)
+                                           || (event->keyval == GDK_3270_Enter) || (event->keyval == GDK_Return))
+                                        {
+                                                if( get_selection()->count_selected_rows() )
+                                                {
+                                                        TreeIter iter = AlbumsTreeStoreFilter->convert_iter_to_child_iter(get_selection()->get_selected());
+                                                        TreePath path = AlbumsTreeStore->get_path( iter );
+
+                                                        bool play = event->state & GDK_CONTROL_MASK;
+
+                                                        if( path.get_depth() == ROW_ALBUM )
+                                                        {
+                                                                gint64 id = (*iter)[Columns.Id];
+                                                                Signals.PlayAlbum.emit(id, !play);
+                                                        }
+                                                        else
+                                                        {
+                                                                gint64 id = (*iter)[Columns.TrackId];
+                                                                IdV v (1, id);
+                                                                Signals.PlayTracks.emit(v, !play);
+                                                        }
+                                                }
+                                        }
+                                }
+                                else if( ev->type == GDK_BUTTON_PRESS )
                                 {
                                         GdkEventButton * event = reinterpret_cast <GdkEventButton *> (ev);
                                         if( event->button == 3 )
@@ -963,15 +990,10 @@ namespace MPX
                 void
                         AlbumTreeView::on_album_updated(gint64 id)
                         {
-                                g_message(G_STRFUNC);
-
                                 SQL::RowV v;
                                 m_Lib.get().getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
-
                                 g_return_if_fail(!v.empty());
-
                                 SQL::Row & r = v[0];
-
                                 update_album (r, id); 
                         }
 
@@ -980,11 +1002,8 @@ namespace MPX
                         {
                                 SQL::RowV v;
                                 m_Lib.get().getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
-
                                 g_return_if_fail(!v.empty());
-
                                 SQL::Row & r = v[0];
-
                                 place_album (r, id); 
                         }
 
