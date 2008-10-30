@@ -539,7 +539,7 @@ namespace MPX
                                         m_Stars[n] = Gdk::Pixbuf::create_from_file(
                                                         build_filename(
                                                                 build_filename(
-                                                                        "/usr/share/audiosource",
+                                                                        DATA_DIR,
                                                                         "images"
                                                                         ),
                                                                 (boost::format("stars%d.png") % n).str()
@@ -2336,7 +2336,7 @@ namespace MPX
                         , m_DragSource(true)
                         {
                                 for(int n = 0; n < 6; ++n)
-                                        m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename("/usr/share/audiosource","images"),
+                                        m_Stars[n] = Gdk::Pixbuf::create_from_file(build_filename(build_filename(DATA_DIR,"images"),
                                                                 (boost::format("stars%d.png") % n).str()));
 
                                 m_Lib.get().signal_new_track().connect( 
@@ -2403,7 +2403,7 @@ namespace MPX
                                 TreeStore->set_sort_func(2 , sigc::mem_fun( *this, &LFMTreeView::slotSortRating ));
                                 TreeStore->set_sort_func(3 , sigc::mem_fun( *this, &LFMTreeView::slotSortStrictAlpha ));
 
-                                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename("/usr/share/audiosource", build_filename("images","disc.png")))->scale_simple(90,90,Gdk::INTERP_BILINEAR);
+                                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc.png")))->scale_simple(90,90,Gdk::INTERP_BILINEAR);
                                 m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(90,90,Gdk::INTERP_BILINEAR));
 
                                 std::vector<TargetEntry> Entries;
@@ -2857,7 +2857,7 @@ namespace MPX
                         player.get_object(m_HAL);
                         player.get_object(m_Covers);
 
-                        const std::string path (build_filename("/usr/share/audiosource", build_filename("glade","source-musiclib.glade")));
+                        const std::string path (build_filename(DATA_DIR, build_filename("glade","source-musiclib.glade")));
                         m_RefXml = Gnome::Glade::Xml::create (path);
 
                         m_Private = new MusicLibPrivate(player,*this,m_RefXml,ui_manager);
