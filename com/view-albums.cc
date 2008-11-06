@@ -54,7 +54,7 @@
 #include "mpx/com/album-info-window.hh"
 
 #undef DATA_DIR
-#define DATA_DIR "/usr/share/audiosource"
+#define DATA_DIR DATA_DIR
 
 using namespace Gtk;
 using namespace Glib;
@@ -200,7 +200,7 @@ namespace MPX
                         Options.Type = RT_ALL;
                         Options.Advanced = false;
 
-                        const std::string image_base_path = build_filename( "/usr/share/audiosource", "images" );
+                        const std::string image_base_path = build_filename( DATA_DIR, "images" );
 
                         for(int n = 0; n < N_STARS; ++n)
                         {
@@ -400,7 +400,7 @@ namespace MPX
                         m_DiscDefault_Pixbuf =
                                 Gdk::Pixbuf::create_from_file(
                                                 build_filename(
-                                                        "/usr/share/audiosource",
+                                                        DATA_DIR,
                                                         build_filename("images","disc.png")
                                                         )
                                                 )->scale_simple(90,90,Gdk::INTERP_BILINEAR);
