@@ -53,9 +53,6 @@
 #include "mpx/com/view-albums.hh"
 #include "mpx/com/album-info-window.hh"
 
-#undef DATA_DIR
-#define DATA_DIR DATA_DIR
-
 using namespace Gtk;
 using namespace Glib;
 using namespace Gnome::Glade;
