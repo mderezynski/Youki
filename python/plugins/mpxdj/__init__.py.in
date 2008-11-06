@@ -276,6 +276,14 @@ class OPTION__Analyzer(BaseOPTION__):
         except Exception, e:
                 print "Error running run_similar_artist: " + str(e) 
 
+    def run_markov(self, lib, v):
+        
+        track = self.model[len(self.model)-1]
+        id = track[mpx.AttributeId.MPX_TRACK_ID].get()
+        markov_id = lib.markovGetRandomProbableTrack(id)
+        if markov_id and markov_id != 0:
+            v.append(markov_id)
+
     def run(self):
 
         callables = [self.run_accumulate_tags, self.run_similar_track, self.run_similar_artist]
@@ -284,9 +292,8 @@ class OPTION__Analyzer(BaseOPTION__):
             self.finished.set()
             return
 
-        tries = 5
-
-        while tries:
+        # I know this is really lazy, i should just create a list of indexes instead and call the subroutines in sequence
+        for n in range(0,5):
 
                 choice = random.randint(0,2)
                 callables[choice]()
@@ -295,7 +302,8 @@ class OPTION__Analyzer(BaseOPTION__):
                     self.finished.set()
                     return
 
-                tries -= 1
+        if not len(self.v):
+            self.run_markov(self.lib, self.v)
 
         self.finished.set()
 
