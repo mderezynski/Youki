@@ -8,7 +8,7 @@
 #include <queue>
 #include <boost/ref.hpp>
 #include <boost/format.hpp>
-#include <gio/gio.h>
+#include <giomm.h>
 
 using boost::get;
 using namespace MPX;
@@ -232,6 +232,7 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
                 {
                     HAL::Volume const& volume (m_HAL.get_volume_for_uri (*i));
                     insert_path_sql = Glib::filename_from_uri(*i).substr (volume.mount_point.length()) ;
+		    std::cout << "insert_path_sql = " << Glib::filename_from_uri(*i).substr (volume.mount_point.length()) << std::endl;
                 }
                 else
 #endif
@@ -338,17 +339,10 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
 
                             track[ATTRIBUTE_TYPE] = type ;
 
-                            GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), (*i).c_str()); 
-                            GFileInfo * info = g_file_query_info(file,
-                                                              G_FILE_ATTRIBUTE_TIME_MODIFIED,
-                                                              GFileQueryInfoFlags(0),
-                                                              NULL,
-                                                              NULL);
+                            Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri((*i).c_str()); 
+                            Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_MODIFIED, Gio::FILE_QUERY_INFO_NONE);
 
-                            track[ATTRIBUTE_MTIME] = gint64 (g_file_info_get_attribute_uint64(info,G_FILE_ATTRIBUTE_TIME_MODIFIED));
-
-                            g_object_unref(file);
-                            g_object_unref(info);
+                            track[ATTRIBUTE_MTIME] = gint64 (info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_MODIFIED));
 
                             time_t mtime = get_track_mtime (track);
                             if (mtime != 0 && mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()))
