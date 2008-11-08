@@ -512,7 +512,7 @@ namespace MPX
                                 C_COUNT
                         };
 
-                        static const int N_FIRST_CUSTOM = 7;
+                        static const int N_FIRST_CUSTOM = 8;
 
                         PlaylistTreeView(
                                         Glib::RefPtr<Gnome::Glade::Xml> const& xml,
@@ -2950,7 +2950,7 @@ namespace MPX
                                         RadioAction::create(
                                                 gr2,
                                                 "musiclib-show-collections",
-                                                _("_Last.fm Albums-by-Tag Display")
+                                                _("_Collections")
                                                 ),
 
                                         AccelKey("<alt>3"),
@@ -2967,7 +2967,7 @@ namespace MPX
                                         RadioAction::create(
                                                 gr2,
                                                 "musiclib-show-file-system-tree",
-                                                _("File _System Tree")
+                                                _("_Last.fm View")
                                                 ),
 
                                         AccelKey("<alt>4"),
