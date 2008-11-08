@@ -573,7 +573,7 @@ namespace MPX
                                 cell = manage (new CellRendererPixbuf);
                                 col->pack_start(*cell, false);
                                 col->set_min_width(66);
-                                //col->set_max_width(66);
+                                col->set_max_width(66);
                                 col->set_cell_data_func(*cell, sigc::mem_fun( *this, &PlaylistTreeView::cellDataFuncRating ));
                                 append_column(*col);
 
