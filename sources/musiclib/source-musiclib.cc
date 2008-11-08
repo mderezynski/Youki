@@ -2736,8 +2736,15 @@ namespace MPX
                         m_ViewAllTracks = new AllTracksView(m_RefXml, m_Lib, m_HAL, mlib);
                         m_TreeViewLFM = new LFMTreeView(m_RefXml, m_Lib, m_Covers, mlib);
                         //m_TreeViewFS = new FileSystemTree(m_RefXml, "musiclib-treeview-file-system");
-
                         /*
+                        m_TreeViewFS->build_file_system_tree("/");
+                        m_TreeViewFS->signal_uri().connect(
+                                        sigc::mem_fun(
+                                                mlib,
+                                                &::MPX::Source::PlaybackSourceMusicLib::play_uri
+                        ));
+                        */
+
                         m_View = new View;
                         m_ViewModel = new ViewModel;
                         m_ViewModel->set_metrics( 90, 24 );
@@ -2747,7 +2754,7 @@ namespace MPX
                         win->add(*m_View);
 
                         SQL::RowV v;
-                        m_Lib.get().getSQL(v, "SELECT * FROM album JOIN album_artist ON album.album_artist_j;");
+                        m_Lib.get().getSQL(v, "SELECT * FROM album ORDER BY id;");
 
                         for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                         {
@@ -2772,18 +2779,12 @@ namespace MPX
                             }
 
                             m_ViewModel->append_row( r1 );
+
+                            g_message("%s: Appended album %lld out of %lld", G_STRFUNC, gint64(std::distance(v.begin(), i)), gint64(v.size()));
                         }
 
                         m_View->set_model( m_ViewModel );
                         m_View->show_all();
-
-                        m_TreeViewFS->build_file_system_tree("/");
-                        m_TreeViewFS->signal_uri().connect(
-                                        sigc::mem_fun(
-                                                mlib,
-                                                &::MPX::Source::PlaybackSourceMusicLib::play_uri
-                        ));
-                        */
 
                         m_TreeViewAlbums->signal_play_tracks().connect(
                                                 sigc::mem_fun(

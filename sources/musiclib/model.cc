@@ -3,7 +3,7 @@
 #include <glib/gmessages.h>
 
 #define NOOP
-#define DEBUG NOOP
+#define DEBUG g_message
 
 ViewModel::ViewModel ()
 : m_rowheight_parent(0)

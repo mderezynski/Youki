@@ -177,8 +177,7 @@ namespace MPX
                                             cairo->stroke();
                                     }
 
-                                    cairo->scale(1.2, 1.2);
-
+                                    /*
                                     {
                                             Glib::RefPtr<Pango::Layout> layout = create_pango_layout(boost::get<std::string>(row->AlbumData["album"]));
                                             cairo->move_to( x + 98, y );
@@ -190,8 +189,7 @@ namespace MPX
                                             cairo->move_to( x + 98, y + 30 );
                                             pango_cairo_show_layout(cairo->cobj(), layout->gobj());
                                     }
-
-                                    cairo->scale(1.0, 1.0);
+                                    */
 
                                     y += m_model->m_rowheight_parent;
                                     pd.Child_Index = 0;
