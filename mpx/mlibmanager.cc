@@ -535,7 +535,8 @@ namespace MPX
         StrV v;
         for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
         {
-            v.push_back(filename_to_uri(build_filename(m_MountPoint, *i)));
+            //v.push_back(filename_to_uri(build_filename(m_MountPoint, *i)));
+            v.push_back(filename_to_uri(*i));
         }
         m_Library.initScan(v);
     }
