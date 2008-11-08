@@ -24,7 +24,6 @@
 #include <boost/format.hpp>
 #include <glibmm.h>
 #include <glibmm/i18n.h>
-#include <gio/gio.h>
 #include <giomm.h>
 
 #include <tr1/unordered_set>

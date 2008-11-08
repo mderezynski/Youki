@@ -37,7 +37,7 @@
 
 #include <glib/gstdio.h>
 #include <glibmm.h>
-#include <gio/gio.h>
+#include <giomm.h>
 
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-uri.hh"
@@ -82,26 +82,25 @@ namespace MPX
       if (clear)
         collection.clear ();
 
-      GFile * file = g_vfs_get_file_for_uri(g_vfs_get_default(), uri.c_str());
-      GFileEnumerator * enm = g_file_enumerate_children(file, G_FILE_ATTRIBUTE_STANDARD_NAME "," G_FILE_ATTRIBUTE_STANDARD_TYPE, GFileQueryInfoFlags(0), NULL, NULL);
+      Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+      Glib::RefPtr<Gio::FileEnumerator> enm = file->enumerate_children(G_FILE_ATTRIBUTE_STANDARD_NAME "," G_FILE_ATTRIBUTE_STANDARD_TYPE, Gio::FILE_QUERY_INFO_NONE);
 
       gboolean iterate = TRUE;
-      while(iterate && G_IS_FILE_ENUMERATOR(enm))
+      while(iterate && enm)
       {
-        GFileInfo * f = g_file_enumerator_next_file(enm, NULL, NULL);
+        Glib::RefPtr<Gio::FileInfo> f = enm->next_file();
         if(f)
         {
-            std::string full_path = uri + G_DIR_SEPARATOR_S + URI::escape_string(g_file_info_get_name(f));
-            GFileType t = g_file_info_get_file_type(f);
-            g_object_unref(f);
-            if (t == G_FILE_TYPE_REGULAR)
+            std::string full_path = uri + G_DIR_SEPARATOR_S + URI::escape_string(f->get_name());
+            Gio::FileType t = f->get_file_type();
+            if (t == Gio::FILE_TYPE_REGULAR)
             {
                 if (pred (full_path))
                 {
                   collection.push_back (full_path);
                 }
             }
-            else if (t == G_FILE_TYPE_DIRECTORY)
+            else if (t == Gio::FILE_TYPE_DIRECTORY)
             {
                 // pred is getting repeatedly copied for no good reason!
                 collect_paths (full_path, collection, pred, false);
@@ -110,8 +109,6 @@ namespace MPX
         else
             iterate = FALSE;
       }
-      g_object_unref(enm);
-      g_object_unref(file);
     }
 
     void
