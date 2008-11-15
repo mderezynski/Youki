@@ -544,7 +544,7 @@ namespace MPX
                     FSTreeStore->row_changed(path, iter_copy);
                     StrV v;
                     v.push_back(filename_to_uri(full_path));
-                    m_Library.initScan(v);
+                    m_Library.initScan(v, true);
             }
         }
     }
