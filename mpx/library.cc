@@ -211,7 +211,7 @@ namespace MPX
 #ifdef HAVE_HAL
                         m_Flags |= (use_hal ? F_USING_HAL : 0); 
 #endif // HAVE_HAL
-                        m_SQL->exec_sql("CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0)");
+                        m_SQL->exec_sql("CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0, last_scan_date INTEGER DEFAULT 0)");
                         m_SQL->exec_sql((boost::format ("INSERT INTO meta (flags) VALUES (%lld)") % m_Flags).str());
                 }
                 else
@@ -236,7 +236,6 @@ namespace MPX
                                 sigc::bind( sigc::mem_fun( m_Covers, &Covers::cache ), true ));
                 m_ScannerThread->connect().signal_reload().connect(
                                 sigc::mem_fun( *this, &Library::reload ));
-
 
                 ///////////////////////////////////////////////////////////////
                 /// ARTIST TABLE 
@@ -553,6 +552,11 @@ namespace MPX
                 Library::reload ()
                 {
                         Signals.Reload.emit();
+                }
+
+        void
+                Library::on_scan_end ()
+                {
                 }
 
         void

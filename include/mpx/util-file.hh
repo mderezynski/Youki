@@ -42,6 +42,11 @@ namespace MPX
                         FilePred           slot);
 
     void
+    collect_dirs (std::string const& dir_path,
+                   FileList&          collection,
+                   bool               clear = true);
+
+    void
     collect_paths (std::string const& dir_path,
                    FileList&          collection,
                    bool               clear = true);

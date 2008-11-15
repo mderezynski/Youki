@@ -2070,6 +2070,7 @@ rerun_import_share_dialog:
                 {
                         m_Statusbar->pop();        
                         m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Files, %2% added, %3% up to date, %4% updated, %5% erroneous)")) % s % x % y % a % b).str());
+                        m_Library.execSQL((boost::format ("INSERT INTO meta (last_scan_date) VALUES (%lld)") % (gint64(time(NULL)))).str());
                 }
 
         /*static*/ bool

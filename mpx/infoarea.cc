@@ -34,7 +34,7 @@ namespace MPX
                   , cover_anim_initial_velocity(473.3)
                   , cover_anim_gravity(359.1)
                   , cover_anim_wall(cover_anim_area_x1)
-                  , cover_anim_wall_elasticity(0.09) //0.120;
+                  , cover_anim_wall_elasticity(/*0.09*/ 0.0) //0.120;
                   , cover_anim_time_scale(1.0)
                   , cover_anim_fps(25)
                   , cover_anim_interval(1000 / cover_anim_fps)

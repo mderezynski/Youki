@@ -2745,6 +2745,7 @@ namespace MPX
                         ));
                         */
 
+                        /*
                         m_View = new View;
                         m_ViewModel = new ViewModel;
                         m_ViewModel->set_metrics( 90, 24 );
@@ -2785,6 +2786,7 @@ namespace MPX
 
                         m_View->set_model( m_ViewModel );
                         m_View->show_all();
+                        */
 
                         m_TreeViewAlbums->signal_play_tracks().connect(
                                                 sigc::mem_fun(

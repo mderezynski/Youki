@@ -48,11 +48,18 @@ namespace MPX
       layout->set_markup( property_text().get_value() );
       layout->get_pixel_size( text_width, text_height );
 
-      if(width)
-        *width = text_width + 2 * XPAD; 
-
       if(height)
         *height = text_height + 2 * YPAD;
+
+      if(width)
+      {
+        *width = text_width + 2 * XPAD; 
+
+        if ((*width) < (*height))
+        {
+            *width = *height;
+        }
+      }
     }
 
     void

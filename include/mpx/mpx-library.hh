@@ -346,6 +346,9 @@ namespace MPX
 			set_mean_genre_for_album (gint64 id);
 
             void
+            on_scan_end ();
+
+            void
             on_new_album (gint64);
 
             void
