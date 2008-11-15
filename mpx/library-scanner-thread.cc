@@ -292,8 +292,6 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
             Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_CHANGED, Gio::FILE_QUERY_INFO_NONE);
             gint64 ctime = (info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_CHANGED));
 
-            g_message("ctime: %lld, last_scan_date: %lld", ctime, last_scan_date);
-
             if( ctime > last_scan_date )
             {
                 Util::FileList collection2;
