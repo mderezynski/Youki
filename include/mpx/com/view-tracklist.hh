@@ -131,12 +131,14 @@ namespace MPX
                 void
                 erase_track(gint64 id)
                 {
+#if 0
                     IdIterMap::iterator i = m_iter_map.find(id);
                     if( i != m_iter_map.end() )
                     {
                         m_realmodel->erase( i->second );
                         m_iter_map.erase( i );
                     }
+#endif
                 }
         };
 
