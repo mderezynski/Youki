@@ -85,6 +85,7 @@ namespace MPX
         ));
 
         m_ref_xml->get_widget("volumes-view", m_VolumesView);
+        m_VolumesView->get_selection()->set_mode( Gtk::SELECTION_BROWSE );
 
         cell = manage (new Gtk::CellRendererText());
         col = manage (new Gtk::TreeViewColumn(_("Device Name")));
@@ -189,6 +190,22 @@ namespace MPX
             &MLibManager::on_rescan_volume
         ));
         m_Rescan->set_sensitive( false );
+
+        m_ref_xml->get_widget("b-deep-rescan", m_DeepRescan);
+        m_DeepRescan->signal_clicked().connect(
+            sigc::mem_fun(
+            *this,
+            &MLibManager::on_rescan_volume_deep
+        ));
+        m_DeepRescan->set_sensitive( false );
+
+        m_ref_xml->get_widget("b-vacuum", m_Vacuum);
+        m_Vacuum->signal_clicked().connect(
+            sigc::mem_fun(
+            *this,
+            &MLibManager::on_vacuum_volume
+        ));
+        m_Vacuum->set_sensitive( false );
     }
 
     /* ------------------------------------------------------------------------------------------------*/
@@ -539,6 +556,24 @@ namespace MPX
             v.push_back(filename_to_uri(*i));
         }
         m_Library.initScan(v);
+    }
+
+    void
+    MLibManager::on_rescan_volume_deep ()
+    {
+        StrV v;
+        for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
+        {
+            //v.push_back(filename_to_uri(build_filename(m_MountPoint, *i)));
+            v.push_back(filename_to_uri(*i));
+        }
+        m_Library.initScan(v, true);
+    }
+
+    void
+    MLibManager::on_vacuum_volume ()
+    {
+        m_Library.vacuum_volume(m_DeviceUDI, m_VolumeUDI);
     }
 
     void

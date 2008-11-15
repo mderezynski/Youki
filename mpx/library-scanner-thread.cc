@@ -203,13 +203,22 @@ MPX::LibraryScannerThread::on_cleanup ()
 }
 
 void
-MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
+MPX::LibraryScannerThread::on_scan (Util::FileList const& list, bool deep)
 {
     if(list.empty())
     {
         return;
     }
 
+    if( deep )
+        on_scan_list_deep( list );
+    else
+        on_scan_list_paths( list ); 
+}
+
+void
+MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
+{
     ThreadData * pthreaddata = m_ThreadData.get();
     g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
 
@@ -412,6 +421,193 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list)
 
     pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, total);
 }
+
+void
+MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
+{
+    ThreadData * pthreaddata = m_ThreadData.get();
+    g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
+
+    pthreaddata->ScanStart.emit();
+    m_SQL->exec_sql( "UPDATE album SET album_new = 0" );
+
+    gint64 added = 0, erroneous = 0, uptodate = 0, updated = 0, total = 0;
+
+    for(Util::FileList::const_iterator i = list.begin(); i != list.end(); ++i)
+    {  
+        std::string insert_path ;
+        std::string insert_path_sql ;
+        Util::FileList collection;
+
+        try{
+            insert_path = *i; 
+#ifdef HAVE_HAL
+            try{
+                if (m_Flags & Library::F_USING_HAL)
+                {
+                    HAL::Volume const& volume (m_HAL.get_volume_for_uri (*i));
+                    insert_path_sql = Glib::filename_from_uri(*i).substr (volume.mount_point.length()) ;
+                }
+                else
+#endif
+                {
+                    insert_path_sql = *i; 
+                }
+#ifdef HAVE_HAL
+            }
+          catch (HAL::Exception & cxe)
+            {
+              g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+              return;
+            }
+          catch (Glib::ConvertError & cxe)
+            {
+              g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+              return;
+            }
+#endif // HAVE_HAL
+            collection.clear();
+            Util::collect_audio_paths_recursive( insert_path, collection );
+            total += collection.size();
+        }
+        catch( Glib::ConvertError & cxe )
+        {
+            g_warning("%s: %s", G_STRLOC, cxe.what().c_str());
+            return;
+        }
+
+        if(collection.empty())
+        {
+            pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, collection.size());
+            return;
+        }
+
+        for(Util::FileList::iterator i3 = collection.begin(); i3 != collection.end(); ++i3)
+        {
+            if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
+            {
+                pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, collection.size());
+                return;
+            }
+
+            Track track;
+            std::string type;
+
+            track[ATTRIBUTE_LOCATION] = *i3 ;
+
+            try{
+
+                URI u (*i, true);
+
+                if(u.get_protocol() == URI::PROTOCOL_FILE)
+                {
+
+                    bool err_occured = false;
+
+#ifdef HAVE_HAL
+                    try{
+
+                        if (m_Flags & Library::F_USING_HAL)
+                        {
+                          HAL::Volume const& volume (m_HAL.get_volume_for_uri (*i3));
+
+                          track[ATTRIBUTE_HAL_VOLUME_UDI] =
+                                        volume.volume_udi ;
+
+                          track[ATTRIBUTE_HAL_DEVICE_UDI] =
+                                        volume.device_udi ;
+
+                          track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
+                                        Glib::filename_from_uri (*i3).substr (volume.mount_point.length()) ;
+                        }
+
+                    }
+                  catch (HAL::Exception & cxe)
+                    {
+                      g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+                      ++(erroneous);
+                      err_occured  = true;
+                    }
+                  catch (Glib::ConvertError & cxe)
+                    {
+                      g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+                      ++(erroneous);
+                      err_occured  = true;
+                    }
+#endif
+
+                    if( !err_occured )
+                    {
+                            try{ 
+                                if (!Audio::typefind(*i3, type))  
+                                {
+                                  ++(erroneous) ;
+                                  continue;
+                                }
+                              }  
+                            catch (Glib::ConvertError & cxe)
+                              {
+                                  ++(erroneous) ;
+                                  continue;
+                              }   
+
+                            track[ATTRIBUTE_TYPE] = type ;
+
+                            Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri((*i3).c_str()); 
+                            Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_MODIFIED, Gio::FILE_QUERY_INFO_NONE);
+
+                            track[ATTRIBUTE_MTIME] = gint64 (info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_MODIFIED));
+
+                            time_t mtime = get_track_mtime (track);
+                            if (mtime != 0 && mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()))
+                            {
+                                ++(uptodate);
+                            }
+                            else
+                            {
+                                if( !m_MetadataReaderTagLib.get( *i3, track ) )
+                                {
+                                   ++(erroneous) ;
+                                }
+                                else try{
+                                    ScanResult status = insert( track, *i3, insert_path_sql );
+
+                                    switch(status)
+                                    {
+                                        case SCAN_RESULT_OK:
+                                            ++(added) ;
+                                            break;
+
+                                        case SCAN_RESULT_ERROR:
+                                            ++(erroneous) ;
+                                            break;
+
+                                        case SCAN_RESULT_UPDATE:
+                                            ++(updated) ;
+                                            break;
+                                    }
+                                }
+                                catch( Glib::ConvertError & cxe )
+                                {
+                                    g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+                                }
+                            }
+                    }
+                }
+            } catch(URI::ParseError)
+            {
+            }
+                            
+            if (! (std::distance(collection.begin(), i3) % 50) )
+            {
+                pthreaddata->ScanRun.emit(std::distance(collection.begin(), i3), collection.size());
+            }
+        }
+    }
+
+    pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, total);
+}
+
 
 void
 MPX::LibraryScannerThread::on_scan_stop ()

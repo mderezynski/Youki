@@ -555,11 +555,6 @@ namespace MPX
                 }
 
         void
-                Library::on_scan_end ()
-                {
-                }
-
-        void
                 Library::on_new_album(
                                 gint64 album_id
                                 )
@@ -588,7 +583,9 @@ namespace MPX
         void
                 Library::vacuum ()
                 {
+#ifdef HAVE_HAL
                         typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
+#endif
 
                         MPX::Player & player = (*(m_Services.get<Player>("mpx-service-player")));
 
@@ -599,7 +596,6 @@ namespace MPX
                         for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
                         {
                                 Row & r = *i;
-
                                 std::string uri;
 
 #ifdef HAVE_HAL
@@ -609,7 +605,7 @@ namespace MPX
                                         std::string device_udi = get<std::string>(r["hal_device_udi"]); 
                                         std::string hal_vrp	 = get<std::string>(r["hal_vrp"]);
 
-                                        // FIXME: More intelliget scanning by prefetching grouped data from the DB
+                                        // FIXME: More intelligent scanning by prefetching grouped data from the DB
 
                                         HAL::VolumeKey key (volume_udi, device_udi);
                                         VolMountPointMap::const_iterator i = m.find(key);
@@ -724,6 +720,147 @@ namespace MPX
 
                         player.push_message(_("Vacuum process done."));
                 }
+
+#ifdef HAVE_HAL
+        void
+                Library::vacuum_volume (const std::string& hal_device_udi, const std::string& hal_volume_udi)
+                {
+                        typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
+
+                        MPX::Player & player = (*(m_Services.get<Player>("mpx-service-player")));
+
+                        VolMountPointMap m;
+                        RowV rows;
+                        getSQL(
+                            rows,
+                            (boost::format ("SELECT * FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
+                                    % hal_device_udi
+                                    % hal_volume_udi
+                            ).str());
+
+                        for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
+                        {
+                                Row & r = *i;
+
+                                std::string uri;
+
+                                if( m_Flags & F_USING_HAL )
+                                {
+                                        std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
+                                        std::string device_udi = get<std::string>(r["hal_device_udi"]); 
+                                        std::string hal_vrp	 = get<std::string>(r["hal_vrp"]);
+
+                                        // FIXME: More intelligent scanning by prefetching grouped data from the DB
+
+                                        HAL::VolumeKey key (volume_udi, device_udi);
+                                        VolMountPointMap::const_iterator i = m.find(key);
+
+                                        if(i == m.end())
+                                        {
+                                                try{		
+                                                        std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
+                                                        m[key] = mount_point;
+                                                        uri = filename_to_uri(build_filename(mount_point, hal_vrp));
+                                                } catch (...) {
+                                                        g_message("%s: Couldn't get mount point for track MPX-ID [%lld]", G_STRLOC, get<gint64>(r["id"]));
+                                                }
+                                        }
+                                        else
+                                        {
+                                                uri = filename_to_uri(build_filename(i->second, hal_vrp));
+                                        }
+                                } 
+                                else
+
+                                player.push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+
+                                if( !uri.empty() )
+                                try{
+                                        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+                                        if( !file->query_exists() )
+                                        {
+                                                execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(r["id"])).str()); 
+                                                Signals.TrackDeleted.emit( get<gint64>(r["id"]) );
+                                        }
+                                } catch(...) {
+                                        g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
+                                }
+                        }
+
+                        typedef std::tr1::unordered_set <gint64> IdSet;
+                        static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld'");
+                        IdSet idset1;
+                        IdSet idset2;
+
+                        /// CLEAR DANGLING ARTISTS
+                        player.push_message(_("Finding Lost Artists..."));
+                        idset1.clear();
+                        rows.clear();
+                        getSQL(rows, "SELECT DISTINCT artist_j FROM track");
+                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+                                idset1.insert (get<gint64>(i->find ("artist_j")->second));
+
+                        idset2.clear();
+                        rows.clear();
+                        getSQL(rows, "SELECT DISTINCT id FROM artist");
+                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+                                idset2.insert (get<gint64>(i->find ("id")->second));
+
+                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
+                        {
+                                if (idset1.find (*i) == idset1.end())
+                                {
+                                        execSQL((delete_f % "artist" % (*i)).str());
+                                }
+                        }
+
+
+                        /// CLEAR DANGLING ALBUMS
+                        player.push_message(_("Finding Lost Albums..."));
+                        idset1.clear();
+                        rows.clear();
+                        getSQL(rows, "SELECT DISTINCT album_j FROM track");
+                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+                                idset1.insert (get<gint64>(i->find ("album_j")->second));
+
+                        idset2.clear();
+                        rows.clear();
+                        getSQL(rows, "SELECT DISTINCT id FROM album");
+                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+                                idset2.insert (get<gint64>(i->find ("id")->second));
+
+                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
+                        {
+                                if (idset1.find (*i) == idset1.end())
+                                {
+                                        execSQL((delete_f % "album" % (*i)).str());
+                                        Signals.AlbumDeleted.emit( *i );
+                                }
+                        }
+
+                        /// CLEAR DANGLING ALBUM ARTISTS
+                        player.push_message(_("Finding Lost Album Artists..."));
+                        idset1.clear();
+                        rows.clear();
+                        getSQL(rows, "SELECT DISTINCT album_artist_j FROM album");
+                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+                                idset1.insert (get<gint64>(i->find ("album_artist_j")->second));
+
+                        idset2.clear();
+                        rows.clear();
+                        getSQL(rows, "SELECT DISTINCT id FROM album_artist");
+                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+                                idset2.insert (get<gint64>(i->find ("id")->second));
+
+                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
+                        {
+                                if (idset1.find (*i) == idset1.end())
+                                        execSQL((delete_f % "album_artist" % (*i)).str());
+                        }
+
+                        player.push_message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
+                }
+#endif
 
         RowV
                 Library::getTrackTags (gint64 id)
@@ -1313,10 +1450,10 @@ namespace MPX
                 }
 
         void
-                Library::initScan (const Util::FileList & list)
+                Library::initScan (const Util::FileList & list, bool deep)
                 {
                         execSQL("UPDATE album SET album_new = 0");
-                        m_ScannerThread->scan(list);
+                        m_ScannerThread->scan(list, deep);
                 }
 
 } // namespace MPX

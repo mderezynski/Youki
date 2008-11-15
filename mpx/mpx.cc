@@ -109,8 +109,8 @@ namespace
 #else
                 "         <menuitem action='action-import-folder'/>"
                 "         <menuitem action='action-import-share'/>"
-#endif // HAVE_HAL
                 "	      <menuitem action='action-vacuum-lib'/>"
+#endif // HAVE_HAL
                 "         <separator/>"
                 "	      <menuitem action='action-mb-import'/>"
                 "         <separator/>"
@@ -831,6 +831,11 @@ namespace MPX
                                                           Gtk::Stock::NETWORK,
                                                           _("Import _Share")),
                                                   sigc::mem_fun (*this, &Player::on_import_share));
+
+                                  m_actions->add (Action::create("action-vacuum-lib",
+                                                          _("_Vacuum Music Library"),
+                                                          _("Remove dangling files")),
+                                                  sigc::mem_fun (m_Library, &Library::vacuum));
 #else
 
                                   m_actions->add (Action::create ("action-mlibmanager",
@@ -838,13 +843,6 @@ namespace MPX
                                                           _("Add or Remove Music")),
                                                   sigc::mem_fun (*m_MLibManager, &MLibManager::present));
 #endif
-
-
-                                  m_actions->add (Action::create("action-vacuum-lib",
-                                                          _("_Vacuum Music Library"),
-                                                          _("Remove dangling files")),
-                                                  sigc::mem_fun (m_Library, &Library::vacuum));
-
 
                                   m_actions->add (Action::create("action-mb-import",
                                                           _("MusicBrainz: Import Album"),
@@ -2069,7 +2067,7 @@ rerun_import_share_dialog:
                 Player::on_library_scan_end(gint64 x, gint64 y, gint64 a, gint64 b, gint64 s)
                 {
                         m_Statusbar->pop();        
-                        m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Files, %2% added, %3% up to date, %4% updated, %5% erroneous)")) % s % x % y % a % b).str());
+                        m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Folders, %2% files added, %3% up to date, %4% updated, %5% erroneous)")) % s % x % y % a % b).str());
                         m_Library.execSQL((boost::format ("INSERT INTO meta (last_scan_date) VALUES (%lld)") % (gint64(time(NULL)))).str());
                 }
 

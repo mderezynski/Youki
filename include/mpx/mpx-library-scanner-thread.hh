@@ -110,7 +110,7 @@ namespace MPX
 
         public:
 
-            sigx::request_f<Util::FileList const&> scan ;
+            sigx::request_f<Util::FileList const&, bool> scan ;
             sigx::request_f<> scan_stop ;
 
             signal_scan_start_x         signal_scan_start ;
@@ -135,8 +135,10 @@ namespace MPX
             virtual void on_startup () ; 
             virtual void on_cleanup () ;
 
-            void on_scan (Util::FileList const&) ;
+            void on_scan (Util::FileList const&, bool) ;
             void on_scan_stop () ;
+            void on_scan_list_deep (Util::FileList const&); // on_scan delegate
+            void on_scan_list_paths (Util::FileList const&); // on_scan delegate
 
             gint64
             get_track_artist_id (Track& row, bool only_if_exists = false);

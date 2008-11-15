@@ -106,6 +106,45 @@ namespace MPX
     }
 
     void
+    collect_paths_recursive (std::string const& uri,
+                   FileList&          collection,
+                   FilePred           pred,
+                   bool               clear)
+    {
+      if (clear)
+        collection.clear ();
+
+      Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+      Glib::RefPtr<Gio::FileEnumerator> enm = file->enumerate_children(G_FILE_ATTRIBUTE_STANDARD_NAME "," G_FILE_ATTRIBUTE_STANDARD_TYPE, Gio::FILE_QUERY_INFO_NONE);
+
+      gboolean iterate = TRUE;
+      while(iterate && enm)
+      {
+        Glib::RefPtr<Gio::FileInfo> f = enm->next_file();
+        if(f)
+        {
+            std::string full_path = uri + G_DIR_SEPARATOR_S + URI::escape_string(f->get_name());
+            Gio::FileType t = f->get_file_type();
+            if (t == Gio::FILE_TYPE_REGULAR)
+            {
+                if (pred (full_path))
+                {
+                  collection.push_back (full_path);
+                }
+            }
+            else if (t == Gio::FILE_TYPE_DIRECTORY)
+            {
+                // pred is getting repeatedly copied for no good reason!
+                collect_paths (full_path, collection, pred, false);
+            }
+        }
+        else
+            iterate = FALSE;
+      }
+    }
+
+
+    void
     collect_paths (std::string const& uri,
                    FileList&          collection,
                    FilePred           pred,
@@ -159,6 +198,14 @@ namespace MPX
                          bool               clear)
     {
       collect_paths (dir_path, collection, sigc::ptr_fun (&::MPX::Audio::is_audio_file), clear);
+    }
+
+    void
+    collect_audio_paths_recursive (std::string const& dir_path,
+                                   FileList&          collection,
+                                   bool               clear)
+    {
+      collect_paths_recursive (dir_path, collection, sigc::ptr_fun (&::MPX::Audio::is_audio_file), clear);
     }
 
     void

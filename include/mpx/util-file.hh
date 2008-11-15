@@ -58,7 +58,18 @@ namespace MPX
                    bool               clear = true);
 
     void
+    collect_paths_recursive (std::string const& dir_path,
+                   FileList&          collection,
+                   FilePred           pred,
+                   bool               clear = true);
+
+    void
     collect_audio_paths (std::string const &dir_path,
+                         FileList          &collection,
+                         bool               clear = true);
+
+    void
+    collect_audio_paths_recursive (std::string const &dir_path,
                          FileList          &collection,
                          bool               clear = true);
 

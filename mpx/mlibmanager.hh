@@ -101,14 +101,23 @@ namespace MPX
             void
             on_volumes_row_activated (const Gtk::TreePath&, Gtk::TreeViewColumn*);
 
+
             void
             on_fstree_row_expanded (const Gtk::TreeIter & iter, const Gtk::TreePath & path);
 
             void
             on_path_toggled (const Glib::ustring &);
 
+
+
             void
             on_rescan_volume ();
+
+            void
+            on_deep_rescan_volume ();
+
+            void
+            on_vacuum_volume ();
 
             void
             on_volume_added (const HAL::Volume&);

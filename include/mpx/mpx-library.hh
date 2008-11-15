@@ -76,7 +76,20 @@ namespace MPX
             }
 
             void
-            initScan (const Util::FileList& list); 
+            vacuum();
+
+#ifdef HAVE_HAL    
+			void
+			vacuum_volume(const std::string&, const std::string&);
+#endif
+
+            void
+            reload();
+
+
+            void
+            initScan (const Util::FileList& list, bool deep = false); 
+
 
             void
             getSQL(SQL::RowV&, const std::string&) ;
@@ -84,20 +97,17 @@ namespace MPX
 			void
 			execSQL(const std::string&);
 
-			void
-			vacuum();
-
-            void
-            reload();
 
             void
             recacheCovers();
+
 
             Track
             sqlToTrack (SQL::Row&);
 
             SQL::RowV
             getTrackTags (gint64);
+
 
             void
             getMetadata(const std::string&, Track&) ;
@@ -344,9 +354,6 @@ namespace MPX
 
 			void
 			set_mean_genre_for_album (gint64 id);
-
-            void
-            on_scan_end ();
 
             void
             on_new_album (gint64);
