@@ -526,7 +526,7 @@ namespace MPX
         }
         else
         {
-            /*MessageDialog dialog(
+            MessageDialog dialog(
                 (boost::format ("Are you sure you want <b>add</b> Music <b>from this path</b> to the Library:\n\n'<b>%s</b>'")
                     % Markup::escape_text(filename_to_utf8(full_path)).c_str()
                 ).str(),
@@ -536,7 +536,7 @@ namespace MPX
                 true
             );
 
-            if( dialog.run() == GTK_RESPONSE_YES )*/
+            if( dialog.run() == GTK_RESPONSE_YES )
             {
                     m_ManagedPaths.insert(full_path);
                     recreate_path_frags ();
