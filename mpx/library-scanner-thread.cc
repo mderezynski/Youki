@@ -431,11 +431,12 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
 
     gint64 added = 0, erroneous = 0, uptodate = 0, updated = 0, total = 0;
 
+    Util::FileList collection;
+
     for(Util::FileList::const_iterator i = list.begin(); i != list.end(); ++i)
     {  
         std::string insert_path ;
         std::string insert_path_sql ;
-        Util::FileList collection;
 
         try{
             insert_path = *i; 
@@ -464,7 +465,6 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
               return;
             }
 #endif // HAVE_HAL
-            collection.clear();
             Util::collect_audio_paths_recursive( insert_path, collection );
             total += collection.size();
         }
