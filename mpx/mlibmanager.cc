@@ -426,7 +426,10 @@ namespace MPX
     MLibManager::on_volumes_changed ()
     {
         bool has_selection = m_VolumesView->get_selection()->count_selected_rows();
+
         m_Rescan->set_sensitive( has_selection );
+        m_DeepRescan->set_sensitive( has_selection );
+        m_Vacuum->set_sensitive( has_selection );
 
         if( has_selection )
         {
