@@ -114,7 +114,7 @@ namespace MPX
             on_rescan_volume ();
 
             void
-            on_deep_rescan_volume ();
+            on_rescan_volume_deep ();
 
             void
             on_vacuum_volume ();
@@ -169,6 +169,7 @@ namespace MPX
             FSTreeColumnsT FSTreeColumns;
             Glib::RefPtr<Gtk::TreeStore> FSTreeStore;
 
+
             void
             cell_data_func_active (Gtk::CellRenderer * basecell, Gtk::TreeIter const& iter);
 
@@ -181,23 +182,26 @@ namespace MPX
             void
             recreate_path_frags ();
 
-            typedef std::set<std::string> StrSetT;
-            typedef std::vector<std::string> PathFrags;
-            typedef std::vector<PathFrags> PathFragsV;
 
-            StrSetT m_ManagedPaths;
-            PathFragsV m_ManagedPathFrags;
-            std::string m_VolumeUDI;
-            std::string m_DeviceUDI;
-            std::string m_MountPoint;
+            typedef std::set<std::string>       StrSetT;
+            typedef std::vector<std::string>    PathFrags;
+            typedef std::vector<PathFrags>      PathFragsV;
 
+            StrSetT     m_ManagedPaths;
+            PathFragsV  m_ManagedPathFrags;
+
+            std::string m_VolumeUDI;  // holds current VUDI
+            std::string m_DeviceUDI;  //     - " -     DUDI
+            std::string m_MountPoint; //     - " -     mount point
 
             Gtk::Button * m_Close;
             Gtk::Button * m_Rescan;
+            Gtk::Button * m_DeepRescan;
+            Gtk::Button * m_Vacuum;
 
+            MPX::HAL        & m_HAL;
+            MPX::Library    & m_Library;
 
-            MPX::HAL & m_HAL;
-            MPX::Library & m_Library;
             Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
     };
 }
