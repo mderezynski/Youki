@@ -135,7 +135,7 @@ namespace MPX
             else if (t == Gio::FILE_TYPE_DIRECTORY)
             {
                 // pred is getting repeatedly copied for no good reason!
-                collect_paths (full_path, collection, pred, false);
+                collect_paths_recursive (full_path, collection, pred, false);
             }
         }
         else

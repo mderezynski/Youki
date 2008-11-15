@@ -2067,7 +2067,7 @@ rerun_import_share_dialog:
                 Player::on_library_scan_end(gint64 x, gint64 y, gint64 a, gint64 b, gint64 s)
                 {
                         m_Statusbar->pop();        
-                        m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Folders, %2% files added, %3% up to date, %4% updated, %5% erroneous)")) % s % x % y % a % b).str());
+                        m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Items (files/folders) scanned, %2% files added, %3% files up to date, %4% updated, %5% erroneous)")) % s % x % y % a % b).str());
                         m_Library.execSQL((boost::format ("INSERT INTO meta (last_scan_date) VALUES (%lld)") % (gint64(time(NULL)))).str());
                 }
 
