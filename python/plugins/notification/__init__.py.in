@@ -26,6 +26,10 @@ class Notification(mpx.Plugin):
 
         self.id = id
         self.player = player
+        self.mcs = mcs
+
+        self.mcs.domain_register("MPX-notification-plugin")
+        self.mcs.key_register("MPX-notification-plugin", "notification-enabled", False)
 
         self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/notification/notification.glade")
 

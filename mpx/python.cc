@@ -218,7 +218,6 @@ namespace mpxpy
 		self = value;
 	}
 
-
 	std::string	
 	variant_getstring(MPX::Variant &self)
 	{
@@ -373,7 +372,6 @@ namespace mpxpy
     {
         return "mpx.Metadata";
     }
-
 }
 
 namespace mpxpy

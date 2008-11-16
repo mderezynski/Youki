@@ -83,14 +83,7 @@ namespace MPX
 	: m_Id(1)
 	, m_Player(player)
 	{
-        try{
-            mcs_plugins = new Mcs::Mcs (Glib::build_filename (Glib::build_filename (Glib::get_user_config_dir (), PACKAGE), "plugins.xml"), "mpx", 0.01);
-        } catch (Mcs::Mcs::Exceptions & cxe)
-        {
-        }
-
-        mcs_plugins->domain_register("pyplugs");
-
+        mcs->domain_register("pyplugs");
 	}
 
 	void
@@ -106,7 +99,7 @@ namespace MPX
         {
             PluginHolderRefP & item = i->second;
             try{
-                bool active = mcs_plugins->key_get<bool>("pyplugs", item->get_name());
+                bool active = mcs->key_get<bool>("pyplugs", item->get_name());
 
                 g_message("Name: [%s], Active: %d", item->get_name().c_str(), int(active));
 
@@ -242,7 +235,7 @@ namespace MPX
 
                                 /* TODO: Query MCS for active state */
 
-                                mcs_plugins->key_register("pyplugs", ptr->m_Name, false);
+                                mcs->key_register("pyplugs", ptr->m_Name, false);
 
                                 ptr->m_Active = false; 
                                 ptr->m_HasGUI = PyObject_HasAttrString(instance.ptr(), "get_gui");
@@ -273,13 +266,6 @@ namespace MPX
                     pyg_gil_state_release(state);
 			}
 		}
-        
-        try{
-            mcs_plugins->load();
-        } catch(...)
-        {
-            g_message("%s: Couldn't load plugin activation states", G_STRLOC);
-        }
 	}
 
 	PluginManager::~PluginManager ()
@@ -305,7 +291,7 @@ namespace MPX
                 pyg_gil_state_release (state);
         }
 
-        delete mcs_plugins;
+        delete mcs;
 	}
 
 	PluginHoldMap const&
@@ -337,7 +323,7 @@ namespace MPX
 		}
 
         try{
-            mcs_plugins->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
+            mcs->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
         } catch(...) {
             g_message("%s: Failed saving plugin state for '%s'", G_STRLOC, i->second->get_name().c_str());
         }
@@ -377,7 +363,7 @@ namespace MPX
 		}
 
         try{
-            mcs_plugins->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
+            mcs->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
         } catch(...) {
             g_message("%s: Failed saving plugin state for '%s'", G_STRLOC, i->second->get_name().c_str());
         }
@@ -419,7 +405,7 @@ namespace MPX
 		pyg_gil_state_release (state);
 
         try{
-            mcs_plugins->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
+            mcs->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
         } catch(...) {
             g_message("%s: Failed saving plugin state for '%s'", G_STRLOC, i->second->get_name().c_str());
         }

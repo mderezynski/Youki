@@ -208,7 +208,6 @@ namespace MPX
 			Player		        * m_Player;
 			Glib::Mutex		      m_StateChangeLock;
 			std::list<Traceback>  m_TracebackList;
-            Mcs::Mcs            * mcs_plugins;
     };
 }
 
