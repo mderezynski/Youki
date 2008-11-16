@@ -33,6 +33,7 @@
 #include "mpx/mpx-main.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
+#include "mpx/mpx-uri.hh"
 #include "libhal++/hal++.hh"
 #include "mpx/mpx-sql.hh"
 
@@ -63,6 +64,10 @@ namespace MPX
     , m_Library(obj_library)
     , m_ref_xml(xml)
     {
+        Gtk::TextView * text_view_details;
+        m_ref_xml->get_widget("textview-details", text_view_details );
+        m_TextBufferDetails = text_view_details->get_buffer(); 
+
         Gtk::CellRendererText * cell = 0; 
         Gtk::TreeViewColumn * col = 0; 
 
@@ -211,8 +216,31 @@ namespace MPX
     /* ------------------------------------------------------------------------------------------------*/
 
     void
-    MLibManager::scan_end( ScanSummary const& )
+    MLibManager::scan_end( ScanSummary const& summary )
     {
+        m_TextBufferDetails->set_text("");
+
+        Glib::ustring text;
+
+        text.append("Erroneous Files:\n");
+        for(std::vector<SSFileInfo>::const_iterator i = summary.FileListErroneous.begin(); i != summary.FileListErroneous.end(); ++i) 
+        {
+            URI u ((*i).second);
+            u.unescape();
+            Glib::ustring u_unescaped (u);
+            text.append((boost::format ("\t%2%: '%1%'\n") % (*i).first % u_unescaped.c_str()).str());
+        }
+
+        text.append("\nUpdated Files:\n");
+        for(std::vector<SSFileInfo>::const_iterator i = summary.FileListUpdated.begin(); i != summary.FileListUpdated.end(); ++i) 
+        {
+            URI u ((*i).second);
+            u.unescape();
+            Glib::ustring u_unescaped (u);
+            text.append((boost::format ("\t%2%: '%1%'\n") % (*i).first % u_unescaped.c_str()).str());
+        }
+
+        m_TextBufferDetails->set_text(text);
         Gtk::Widget::set_sensitive(true);
     }
     

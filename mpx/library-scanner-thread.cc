@@ -335,14 +335,14 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                             {
                               g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
                               ++(m_ScanSummary.FilesErroneous);
-                              m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("HAL error/No HAL data for this file.")));
+                              m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("HAL error/No HAL data for this file")));
                               err_occured  = true;
                             }
                           catch (Glib::ConvertError & cxe)
                             {
                               g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
                               ++(m_ScanSummary.FilesErroneous);
-                              m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("URI Conversion Error.")));
+                              m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("URI Conversion Error")));
                               err_occured  = true;
                             }
 #endif
@@ -364,7 +364,7 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                                         if( !m_MetadataReaderTagLib.get( *i2, track ) )
                                         {
                                            ++m_ScanSummary.FilesErroneous;
-                                           m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Could not acquire metadata using taglib-gio.")));
+                                           m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Could not acquire metadata using taglib-gio")));
                                         }
                                         else try{
                                             ScanResult status = insert( track, *i2, insert_path_sql );
@@ -377,12 +377,12 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
 
                                                 case SCAN_RESULT_ERROR:
                                                     ++m_ScanSummary.FilesErroneous;
-                                                    m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Error inserting file into database.")));
+                                                    m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Error inserting file into database or incomplete metadata")));
                                                     break;
 
                                                 case SCAN_RESULT_UPDATE:
                                                     ++m_ScanSummary.FilesUpdated;
-                                                    m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i2, _("Updated.")));
+                                                    m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i2, _("Updated")));
                                                     break;
                                             }
                                         }
@@ -535,7 +535,7 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
                                     if( !m_MetadataReaderTagLib.get( *i3, track ) )
                                     {
                                         ++m_ScanSummary.FilesErroneous;
-                                        m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i3, _("Could not acquire metadata using taglib-gio.")));
+                                        m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i3, _("Could not acquire metadata using taglib-gio")));
                                     }
                                     else try{
                                         ScanResult status = insert( track, *i3, insert_path_sql );
@@ -548,12 +548,12 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
 
                                             case SCAN_RESULT_ERROR:
                                                 ++m_ScanSummary.FilesErroneous;
-                                                m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i3, _("Error inserting file into database.")));
+                                                m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i3, _("Error inserting file into database")));
                                                 break;
 
                                             case SCAN_RESULT_UPDATE:
                                                 ++m_ScanSummary.FilesUpdated;
-                                                m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i3, _("Updated.")));
+                                                m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i3, _("Updated")));
                                                 break;
                                         }
                                      }

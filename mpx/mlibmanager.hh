@@ -201,6 +201,8 @@ namespace MPX
             Gtk::Button * m_DeepRescan;
             Gtk::Button * m_Vacuum;
 
+            Glib::RefPtr<Gtk::TextBuffer> m_TextBufferDetails;
+
             MPX::HAL        & m_HAL;
             MPX::Library    & m_Library;
 
