@@ -548,7 +548,7 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
 
                                             case SCAN_RESULT_ERROR:
                                                 ++m_ScanSummary.FilesErroneous;
-                                                m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i3, _("Error inserting file into database")));
+                                                m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Error inserting file into database or incomplete metadata")));
                                                 break;
 
                                             case SCAN_RESULT_UPDATE:

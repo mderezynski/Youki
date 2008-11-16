@@ -230,7 +230,7 @@ namespace MPX
                     URI u ((*i).first);
                     u.unescape();
                     Glib::ustring u_unescaped (u);
-                    text.append((boost::format ("\t%1%:\t%2%\n") % (*i).second % u_unescaped.c_str()).str());
+                    text.append((boost::format ("\t%1%:  %2%\n") % (*i).second % u_unescaped.c_str()).str());
                 }
         }
 
@@ -242,7 +242,7 @@ namespace MPX
                     URI u ((*i).first);
                     u.unescape();
                     Glib::ustring u_unescaped (u);
-                    text.append((boost::format ("\t%1%:\t%2%\n") % (*i).second % u_unescaped.c_str()).str());
+                    text.append((boost::format ("\t%1%:  %2%\n") % (*i).second % u_unescaped.c_str()).str());
                 }
         }
 
