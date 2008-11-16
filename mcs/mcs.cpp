@@ -261,15 +261,14 @@ namespace Mcs
       {
       	g_return_if_fail( domains.find(domain) != domains.end() );
 
+        KeyType             type          = KeyType(key_default.which());
+        KeyVariant          variant       = key_default;
+
         if( !m_doc )
         {
-      	    domains.find( domain )->second[key] = Key( domain, key, key_default, KeyType(key_default.which()) );
+      	    domains.find( domain )->second[key] = Key( domain, key, variant, type );
             return;
         }
-
-        KeyVariant          variant       = key_default;
-        Key               & key_instance  = domains.find( domain )->second[key]; 
-        KeyType             type          = key_instance.get_type ();
 
         std::stringstream   xpath;
         xmlXPathObjectPtr   xpathObj;
@@ -336,7 +335,7 @@ namespace Mcs
 
         }
 
-        domains.find( domain )->second[key] = Key( domain, key, variant, KeyType(variant.which()) );
+        domains.find( domain )->second[key] = Key( domain, key, variant, type );
 
         clear_xpathobj:
         xmlXPathFreeObject( xpathObj );
