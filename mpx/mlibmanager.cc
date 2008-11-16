@@ -461,10 +461,6 @@ namespace MPX
     {
         bool has_selection = m_VolumesView->get_selection()->count_selected_rows();
 
-        m_Rescan->set_sensitive( has_selection );
-        m_DeepRescan->set_sensitive( has_selection );
-        m_Vacuum->set_sensitive( has_selection );
-
         if( has_selection )
         {
             TreeIter iter = m_VolumesView->get_selection()->get_selected();
@@ -489,6 +485,10 @@ namespace MPX
             {
                 m_ManagedPaths.insert(build_filename(m_MountPoint, boost::get<std::string>((*i)["insert_path"])));
             }
+
+            m_Rescan->set_sensitive( has_selection && !m_ManagedPaths.empty() );
+            m_DeepRescan->set_sensitive( has_selection && !m_ManagedPaths.empty() );
+            m_Vacuum->set_sensitive( has_selection && !m_ManagedPaths.empty() );
 
             recreate_path_frags ();
             build_fstree(Vol->get_mount_point());
@@ -556,6 +556,10 @@ namespace MPX
                 recreate_path_frags ();
                 TreePath path = FSTreeStore->get_path(iter_copy); 
                 FSTreeStore->row_changed(path, iter_copy);
+
+                m_Rescan->set_sensitive( !m_ManagedPaths.empty() ); 
+                m_DeepRescan->set_sensitive( !m_ManagedPaths.empty() ); 
+                m_Vacuum->set_sensitive( !m_ManagedPaths.empty() ); 
             }
         }
         else
@@ -579,6 +583,10 @@ namespace MPX
                     StrV v;
                     v.push_back(filename_to_uri(full_path));
                     m_Library.initScan(v, true);
+
+                    m_Rescan->set_sensitive( true ); 
+                    m_DeepRescan->set_sensitive( true ); 
+                    m_Vacuum->set_sensitive( true ); 
             }
         }
     }
