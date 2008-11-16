@@ -284,26 +284,31 @@ namespace Mcs
 
         if (!xpathObj)
         {
+            g_message("No xpathobj");
             goto clear_xpathobj;
         }
 
         if (!xpathObj->nodesetval)
         {
+            g_message("No nodes");
             goto clear_xpathobj;
         }
 
         if (!xpathObj->nodesetval->nodeNr)
         {
+            g_message("No nodeNr");
             goto clear_xpathobj;
         }
 
         if (xpathObj->nodesetval->nodeNr > 1) //XXX: There can only be ONE node!
         {
+            g_message("More than 1 key with the same name");
             goto clear_xpathobj;
         }
 
         if (!xpathObj->nodesetval->nodeTab[0]->children)
         {
+            g_message("Key is empty");
             goto clear_xpathobj;
         }
 

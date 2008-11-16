@@ -129,14 +129,18 @@ namespace MPX
     setup_mcs ()
     {
         try{
+
             mcs = new Mcs::Mcs (Glib::build_filename (get_app_config_dir (), "config.xml"), "mpx", 0.01);
-        } catch( Mcs::Mcs::Exceptions & cxe )
-        {
+
+        } catch( Mcs::Mcs::Exceptions & cxe ) {
+
             if (cxe == Mcs::Mcs::PARSE_ERROR)
             {
                 g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, _("Unable to parse configuration file!"));
             }
         }
+
+        mcs->load (Mcs::Mcs::VERSION_IGNORE);
 
         mcs->domain_register ("main-window");
         mcs->key_register ("main-window", "width", 0); //FIXME:
@@ -274,8 +278,6 @@ namespace MPX
 
         mcs->domain_register("PlaybackSourceMusicLib");
         mcs->key_register("PlaybackSourceMusicLib", "divider-position", 250);
-
-        mcs->load (Mcs::Mcs::VERSION_IGNORE);
     }
 
   } // anonymous namespace
