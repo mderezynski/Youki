@@ -222,22 +222,28 @@ namespace MPX
 
         Glib::ustring text;
 
-        text.append("Erroneous Files:\n");
-        for(std::vector<SSFileInfo>::const_iterator i = summary.FileListErroneous.begin(); i != summary.FileListErroneous.end(); ++i) 
+        if( !summary.FileListErroneous.empty() )
         {
-            URI u ((*i).second);
-            u.unescape();
-            Glib::ustring u_unescaped (u);
-            text.append((boost::format ("\t%2%: '%1%'\n") % (*i).first % u_unescaped.c_str()).str());
+                text.append("Erroneous Files:\n");
+                for(std::vector<SSFileInfo>::const_iterator i = summary.FileListErroneous.begin(); i != summary.FileListErroneous.end(); ++i) 
+                {
+                    URI u ((*i).second);
+                    u.unescape();
+                    Glib::ustring u_unescaped (u);
+                    text.append((boost::format ("\t%2%: '%1%'\n") % (*i).first % u_unescaped.c_str()).str());
+                }
         }
 
-        text.append("\nUpdated Files:\n");
-        for(std::vector<SSFileInfo>::const_iterator i = summary.FileListUpdated.begin(); i != summary.FileListUpdated.end(); ++i) 
+        if( !summary.FileListUpdated.empty() )
         {
-            URI u ((*i).second);
-            u.unescape();
-            Glib::ustring u_unescaped (u);
-            text.append((boost::format ("\t%2%: '%1%'\n") % (*i).first % u_unescaped.c_str()).str());
+                text.append("\nUpdated Files:\n");
+                for(std::vector<SSFileInfo>::const_iterator i = summary.FileListUpdated.begin(); i != summary.FileListUpdated.end(); ++i) 
+                {
+                    URI u ((*i).second);
+                    u.unescape();
+                    Glib::ustring u_unescaped (u);
+                    text.append((boost::format ("\t%2%: '%1%'\n") % (*i).first % u_unescaped.c_str()).str());
+                }
         }
 
         m_TextBufferDetails->set_text(text);
