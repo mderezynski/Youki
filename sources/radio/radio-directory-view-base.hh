@@ -109,6 +109,8 @@ namespace MPX
         void        
         on_bitrate_changed (MCS_CB_DEFAULT_SIGNATURE);
 
+        static int instance_counter;
+
     };  // class ViewBase
   }  // namespace RadioDirectory 
 }  // namespace MPX 

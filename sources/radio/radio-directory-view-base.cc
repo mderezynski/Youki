@@ -31,6 +31,7 @@
 #include <glib.h>
 #include <gtk/gtkliststore.h>
 #include <gtkmm.h>
+#include <boost/format.hpp>
 #include "mpx/util-string.hh"
 using namespace Glib;
 using namespace Gtk;
@@ -42,6 +43,8 @@ namespace MPX
 {
   namespace RadioDirectory
   {
+      int ViewBase::instance_counter = 0;
+
       SignalStartStop&
       ViewBase::signal_start ()
       {
@@ -75,7 +78,7 @@ namespace MPX
       bool
       ViewBase::visible_func (TreeModel::iterator const& m_iter)
       {
-        unsigned int bitrate = (*m_iter)[columns.bitrate];
+        int bitrate = (*m_iter)[columns.bitrate];
 
         if( bitrate < BaseData.MinimalBitrate )
         {
@@ -168,7 +171,7 @@ namespace MPX
 
         BaseData.MinimalBitrate = mcs->key_get<int>("radio","minimal-bitrate");
         mcs->subscribe(
-            "RadioStreamsSource0",
+            (boost::format ("RadioStreamsSource%d") % instance_counter++).str(),
             "radio",
             "minimal-bitrate",
             sigc::mem_fun(

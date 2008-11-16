@@ -230,7 +230,7 @@ namespace MPX
       Gtk::Entry                        * m_alsa_device_string;
       Glib::RefPtr<Gtk::ListStore>        m_list_store_alsa_cards;
       Glib::RefPtr<Gtk::ListStore>        m_list_store_alsa_device;
-      bool                                m_ignore_device_string_set;
+      sigc::connection                    m_conn_alsa_device_string_changed;
 
       AlsaCards get_alsa_cards ();
       void on_alsa_card_changed ();
