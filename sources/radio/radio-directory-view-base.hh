@@ -31,6 +31,7 @@
 #include <gtkmm/treemodelfilter.h>
 #include <gtkmm/treeview.h>
 #include "mpx/mpx-minisoup.hh"
+#include "mpx/mpx-main.hh"
 #include <libglademm.h>
 
 namespace MPX
@@ -100,9 +101,13 @@ namespace MPX
           Glib::RefPtr<Gtk::ListStore>        Streams;
           Glib::RefPtr<Gtk::TreeModelFilter>  Filtered;
           Glib::ustring                       Filter;
+          int                                 MinimalBitrate;
         };
 
         BaseDataT BaseData;
+
+        void        
+        on_bitrate_changed (MCS_CB_DEFAULT_SIGNATURE);
 
     };  // class ViewBase
   }  // namespace RadioDirectory 

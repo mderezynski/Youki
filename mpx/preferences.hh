@@ -315,6 +315,8 @@ namespace MPX
 
     private:
 
+        Gtk::SpinButton * m_RadioMinimalBitrate;
+
         Mcs::Bind * mcs_bind;
   }; // class Preferences
 } // namespace MPX

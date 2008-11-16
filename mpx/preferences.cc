@@ -214,7 +214,7 @@ namespace MPX
 
                   append_column(_("Column"), Columns.Name);            
 
-                  for( int i = 0; i < G_N_ELEMENTS(sources); ++i )
+                  for( unsigned i = 0; i < G_N_ELEMENTS(sources); ++i )
                   {
                       TreeIter iter = Store->append();
                       
@@ -463,7 +463,7 @@ namespace MPX
 
     std::string sink = mcs->key_get<std::string> ("audio", "sink");
     int cbox_counter = 0;
-    for (unsigned int n = 0; n < G_N_ELEMENTS (audiosystems); n++)
+    for (unsigned n = 0; n < G_N_ELEMENTS (audiosystems); n++)
     {
         if (test_element (audiosystems[n].name))
         {
@@ -648,7 +648,7 @@ namespace MPX
     dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_ogg"))->set
       (get_plugin_stock (test_element ("oggdemux") && test_element("vorbisdec")), ICON_SIZE_SMALL_TOOLBAR);
 
-    for (unsigned int n = 0; n < G_N_ELEMENTS (support_check); ++n)
+    for (unsigned n = 0; n < G_N_ELEMENTS (support_check); ++n)
     {
       dynamic_cast<Image*> (m_ref_xml->get_widget (support_check[n].widget))->set
         (get_plugin_stock (test_element (support_check[n].element)), ICON_SIZE_SMALL_TOOLBAR);
@@ -673,7 +673,7 @@ namespace MPX
     std::string sink = mcs->key_get<std::string> ("audio", "sink");
     int x = NONE_SINK;
 
-    for (unsigned int n = 0; n < G_N_ELEMENTS (audiosystems); n++)
+    for (unsigned n = 0; n < G_N_ELEMENTS (audiosystems); n++)
     {
       if (PRESENT_SINK(audiosystems[n].name) && CURRENT_SINK(audiosystems[n].name))
       {
@@ -865,7 +865,7 @@ namespace MPX
           { "audio", "enable-eq", "enable-eq" },
       };
 
-      for (unsigned int n = 0; n < G_N_ELEMENTS (buttons); ++n)
+      for (unsigned n = 0; n < G_N_ELEMENTS (buttons); ++n)
       {
           ToggleButton* button = dynamic_cast<ToggleButton*> (m_ref_xml->get_widget (buttons[n].widget));
 
@@ -917,6 +917,9 @@ namespace MPX
       m_CoverArtSources = new CoverArtSourceView(m_ref_xml);
 
       mcs_bind->bind_filechooser(*dynamic_cast<Gtk::FileChooser*>(m_ref_xml->get_widget("preferences-fc-music-import-path")), "mpx","music-import-path");
+
+      m_ref_xml->get_widget("radio-minimal-bitrate", m_RadioMinimalBitrate);
+      mcs_bind->bind_spin_button(*m_RadioMinimalBitrate, "radio", "minimal-bitrate");
   }
 
   void
@@ -992,7 +995,7 @@ namespace MPX
       text = (_("(none)"));
     } else {
       char const* modifier_string[] = { "Control", "Shift", "Alt", "Mod2", "Mod3", "Super", "Mod5" };
-      const unsigned int modifiers[] = { ControlMask, ShiftMask, Mod1Mask, Mod2Mask, Mod3Mask, Mod4Mask, Mod5Mask };
+      const unsigned modifiers[] = { ControlMask, ShiftMask, Mod1Mask, Mod2Mask, Mod3Mask, Mod4Mask, Mod5Mask };
 
       std::string keytext;
       std::vector<std::string> strings;

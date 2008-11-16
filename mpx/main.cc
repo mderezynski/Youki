@@ -235,6 +235,9 @@ namespace MPX
         mcs->key_register ("podcasts", "update-interval", 0);
         mcs->key_register ("podcasts", "cache-policy", 0);
 
+        mcs->domain_register ("radio");
+        mcs->key_register ("radio", "minimal-bitrate", 96); 
+
         mcs->domain_register ("playlist");
         mcs->key_register ("playlist", "rootpath", Glib::get_home_dir ());
 

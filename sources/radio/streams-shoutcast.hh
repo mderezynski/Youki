@@ -105,7 +105,8 @@ namespace MPX
           Soup::RequestRefP             Request; 
         };
 
-        DataT Data;
+        DataT   Data;
+
 
     }; // end class Shoutcast
   } // end namespace RadioDirectory

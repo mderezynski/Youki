@@ -75,16 +75,19 @@ namespace MPX
       bool
       ViewBase::visible_func (TreeModel::iterator const& m_iter)
       {
-        if (!BaseData.Filter.length ())
-          return true;
+        unsigned int bitrate = (*m_iter)[columns.bitrate];
 
-        ustring name    ((*m_iter)[columns.name]);
-        ustring genre   ((*m_iter)[columns.genre]);
-        ustring needle  (BaseData.Filter.casefold ());
+        if( bitrate < BaseData.MinimalBitrate )
+        {
+            return false;
+        }
 
-        name.casefold();
-        genre.casefold();
+        if( BaseData.Filter.empty() )
+        {
+            return true;
+        }
 
+        ustring name ( ustring((*m_iter)[columns.name]).casefold()), genre ( ustring((*m_iter)[columns.genre]).casefold()), needle (BaseData.Filter.casefold ());
         return ((Util::match_keys (name, needle)) || (Util::match_keys (genre, needle)));
       }
 
@@ -92,6 +95,13 @@ namespace MPX
       ViewBase::set_filter (Glib::ustring const& text)
       {
         BaseData.Filter = text;
+        BaseData.Filtered->refilter ();
+      }
+
+      void        
+      ViewBase::on_bitrate_changed (MCS_CB_DEFAULT_SIGNATURE)
+      {
+        BaseData.MinimalBitrate = mcs->key_get<int>("radio","minimal-bitrate");
         BaseData.Filtered->refilter ();
       }
 
@@ -155,6 +165,16 @@ namespace MPX
         get_selection()->set_mode (SELECTION_SINGLE);
         set_headers_clickable (true);
         set_model (BaseData.Filtered);
+
+        BaseData.MinimalBitrate = mcs->key_get<int>("radio","minimal-bitrate");
+        mcs->subscribe(
+            "RadioStreamsSource0",
+            "radio",
+            "minimal-bitrate",
+            sigc::mem_fun(
+                *this,
+                &ViewBase::on_bitrate_changed
+        ));
       }
   }
 };
