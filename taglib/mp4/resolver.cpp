@@ -11,13 +11,6 @@ TagLib::File *MP4FileTypeResolver::createFile (const char*                      
                                                bool                               read_properties,
                                                TagLib::AudioProperties::ReadStyle properties_style) const
 {
-    std::string type;
-
-    if (!MPX::Audio::typefind (filename, type))
-      return 0;
-
-    if (type == "audio/x-m4a")
-      return new TagLib::MP4::File (filename, read_properties, properties_style);
-
+    return new(std::nothrow)TagLib::MP4::File (filename, read_properties, properties_style);
     return 0;
 }

@@ -36,15 +36,15 @@ namespace MPX
   {
     typedef std::vector<std::string>      FileList;
     typedef sigc::slot<bool, std::string> FilePred;
+    typedef sigc::slot<void, std::string> FileCallback;
 
     void
     dir_for_each_entry (const std::string &path,
                         FilePred           slot);
 
     void
-    collect_dirs (std::string const& dir_path,
-                   FileList&          collection,
-                   bool               clear = true);
+    collect_dirs (std::string  const& dir_path,
+                  FileCallback const& callback);
 
     void
     collect_paths (std::string const& dir_path,

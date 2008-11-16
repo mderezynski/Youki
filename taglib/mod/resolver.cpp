@@ -11,20 +11,12 @@ TagLib::File * MODFileTypeResolver::createFile (const char                      
                                                 bool                               read_properties,
                                                 TagLib::AudioProperties::ReadStyle properties_style) const 
 {
-    std::string type;
-
-    if (!MPX::Audio::typefind (filename, type))
-      return 0;
-
-    if (type == "audio/x-mod")
-    {
       TagLib::MOD::File * p = new TagLib::MOD::File(filename, read_properties, properties_style);
 
       if (p->isValid())
           return p;
       else
           delete p;
-    }
 
     return 0;
 }

@@ -74,14 +74,10 @@ namespace MPX
     }
 
     void
-    collect_dirs (std::string const& uri,
-                   FileList&         collection,
-                   bool              clear)
+    collect_dirs (std::string  const& uri,
+                  FileCallback const& callback) 
     {
-      if (clear)
-        collection.clear ();
-
-      collection.push_back (uri);
+      callback( uri );
 
       Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
       Glib::RefPtr<Gio::FileEnumerator> enm = file->enumerate_children(G_FILE_ATTRIBUTE_STANDARD_NAME "," G_FILE_ATTRIBUTE_STANDARD_TYPE, Gio::FILE_QUERY_INFO_NONE);
@@ -97,7 +93,7 @@ namespace MPX
 
             if (t == Gio::FILE_TYPE_DIRECTORY)
             {
-                collect_dirs (full_path, collection, false);
+                collect_dirs (full_path, callback);
             }
         }
         else

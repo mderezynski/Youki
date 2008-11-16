@@ -10,20 +10,12 @@ TagLib::File *SIDFileTypeResolver::createFile (const char                       
                                                bool                               read_properties,
                                                TagLib::AudioProperties::ReadStyle properties_style) const 
 {
-    std::string type;
-    
-    if (!MPX::Audio::typefind (filename, type))
-      return 0;
-
-    if (type == "audio/x-sid")
-    {
       TagLib::SID::File * p = new TagLib::SID::File(filename, read_properties, properties_style);
 
       if (p->isValid())
           return p;
       else
           delete p;
-    }
 
     return 0;
 }

@@ -879,16 +879,10 @@ namespace MPX
                 {
                         m_MetadataReaderTagLib.get(uri, track);
 
-                        std::string type;
-                        if(Audio::typefind(uri, type))
-                        {
-                                track[ATTRIBUTE_TYPE] = type; 
-                        }
-
 #ifdef HAVE_HAL
                         try{
                                 URI u (uri);
-                                if(u.get_protocol() == URI::PROTOCOL_FILE)
+                                if( u.get_protocol() == URI::PROTOCOL_FILE )
                                 {
                                         try{
                                                 if (m_Flags & F_USING_HAL)

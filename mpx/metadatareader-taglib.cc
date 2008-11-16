@@ -120,12 +120,15 @@ namespace MPX
     {
         std::string type;
         try{
-            MPX::Audio::typefind(uri, type);
-            TaglibPluginsMap::const_iterator i = m_taglib_plugins.find (type);
-            if (i != m_taglib_plugins.end() && i->second->get && i->second->get (uri, track))
+            if( MPX::Audio::typefind( uri, type ))
             {
-              track[ATTRIBUTE_LOCATION] = uri;
-              return true;
+                    TaglibPluginsMap::const_iterator i = m_taglib_plugins.find( type );
+                    if (i != m_taglib_plugins.end() && i->second->get && i->second->get( uri, track ))
+                    {
+                      track[ATTRIBUTE_LOCATION] = uri;
+                      track[ATTRIBUTE_TYPE] = type;
+                      return true;
+                    }
             }
           }
         catch (Glib::ConvertError & cxe)

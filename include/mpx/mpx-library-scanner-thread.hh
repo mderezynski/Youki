@@ -140,6 +140,9 @@ namespace MPX
             void on_scan_list_deep (Util::FileList const&); // on_scan delegate
             void on_scan_list_paths (Util::FileList const&); // on_scan delegate
 
+            void
+            on_scan_list_paths_callback( std::string const& , gint64 const& , std::string const& );
+
             gint64
             get_track_artist_id (Track& row, bool only_if_exists = false);
 
@@ -169,6 +172,11 @@ namespace MPX
             Glib::Private<ThreadData>     m_ThreadData ;
             gint64                        m_Flags;
             
+            gint64                        m_added;
+            gint64                        m_erroneous;
+            gint64                        m_uptodate;
+            gint64                        m_updated;
+            gint64                        m_total;
 	};
 }
 
