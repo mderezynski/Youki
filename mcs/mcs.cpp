@@ -139,9 +139,9 @@ namespace Mcs
       Mcs::~Mcs ()
       {
         //Serialize the configuration into XML
-        xmlDocPtr	  doc;
-        xmlNodePtr	root_node;
-        std::stringstream version_str;
+        xmlDocPtr	        doc;
+        xmlNodePtr          root_node;
+        std::stringstream   version_str;
 
         doc = xmlNewDoc (BAD_CAST "1.0");
         version_str << this->version;
@@ -219,104 +219,21 @@ namespace Mcs
         xmlKeepBlanksDefault (0);
 
         g_message ("Saving XML to %s", xml_filename.c_str());
-        int ret = xmlSaveFormatFileEnc (xml_filename.c_str(), doc, "utf-8", 1);
-        g_message ("Saved %d characters", ret);
+        g_message ("Saved %d characters", xmlSaveFormatFileEnc (xml_filename.c_str(), doc, "utf-8", 1));
+
         xmlFreeDoc (doc);
+        xmlFreeDoc (m_doc);
       } 
 
       void
       Mcs::load (VersionIgnore version_ignore)
       {
         if (!Glib::file_test (xml_filename, Glib::FILE_TEST_EXISTS))
-          return;
-  
-        xmlDocPtr doc;
-        doc = xmlParseFile (xml_filename.c_str ());
-      
-        //Traverse all registered keys and set the default value
-        for (DomainsT::iterator iter = domains.begin (); iter != domains.end (); iter++)
         {
-          std::string domain = (iter->first); 
-          KeysT &keys = (iter->second);
-
-          for (KeysT::iterator iter = keys.begin (); iter !=  keys.end(); iter++)
-            {
-                KeyType type = iter->second.get_type ();
-                std::string const& key  (iter->first); 
-                Key & mkey (iter->second);
-                KeyVariant variant;
-
-                std::stringstream xpath;
-                xmlXPathObjectPtr xpathObj;
-
-                std::string nodeval;
-                char * nodeval_C;
-                
-                xpath << "/" << root_node_name << "/domain[@id='" << domain << "']/key[@id='" << key << "']";
-                xpathObj = xml_execute_xpath_expression (doc,
-                              BAD_CAST (xpath.str ().c_str ()),
-                              BAD_CAST ("mcs=http://backtrace.info/ns/0/mcs"));
-
-                if (!xpathObj)
-                  {
-                    mkey.unset ();
-                    continue;
-                  }
-
-                if (!xpathObj->nodesetval)
-                  {
-                    mkey.unset ();
-                    continue;
-                  }
-
-                if (!xpathObj->nodesetval->nodeNr)
-                  {
-                    mkey.unset ();
-                    continue;
-                  }
-
-                if (xpathObj->nodesetval->nodeNr > 1) //XXX: There can only be ONE node!
-                  {
-                    mkey.unset ();
-                    continue;
-                  }
-
-                if (!xpathObj->nodesetval->nodeTab[0]->children)
-                  {
-                    mkey.unset ();
-                    continue;
-                  }
-
-                nodeval_C = reinterpret_cast<char*>(XML_GET_CONTENT(xpathObj->nodesetval->nodeTab[0]->children));
-                nodeval = nodeval_C;
-                g_free (nodeval_C);
-
-                switch (type)
-                {
-                  case KEY_TYPE_INT:
-                      variant = boost::lexical_cast<int>(nodeval);
-                      break;
-
-                  case KEY_TYPE_BOOL:
-                      variant = (!nodeval.compare ("TRUE")) ? true : false;
-                      break;
-
-                  case KEY_TYPE_STRING:
-                      variant = std::string(nodeval);
-                      break;
-
-                  case KEY_TYPE_FLOAT:
-                      variant = boost::lexical_cast<double>(nodeval);
-                      break;
-
-                } // switch (type)	
-
-              mkey.set_value (variant);
-              xmlXPathFreeObject (xpathObj);
-          }
-        } 
-
-        //xmlFreeDoc (doc);
+            return;
+        }
+  
+        m_doc = xmlParseFile (xml_filename.c_str ());
       }
 
       bool
@@ -340,10 +257,84 @@ namespace Mcs
       void
       Mcs::key_register (std::string const& domain, //Must be registered
                          std::string const& key,
-                         KeyVariant const& key_default)
+                         KeyVariant  const& key_default)
       {
-      	g_return_if_fail(domains.find(domain) != domains.end());
-      	domains.find (domain)->second[key] = Key( domain, key, key_default, KeyType(key_default.which()) );
+      	g_return_if_fail( domains.find(domain) != domains.end() );
+
+        if( !m_doc )
+        {
+      	    domains.find( domain )->second[key] = Key( domain, key, key_default, KeyType(key_default.which()) );
+            return;
+        }
+
+        KeyVariant          variant       = key_default;
+        Key               & key_instance  = domains.find( domain )->second[key]; 
+        KeyType             type          = key_instance.get_type ();
+
+        std::stringstream   xpath;
+        xmlXPathObjectPtr   xpathObj;
+        std::string         nodeval;
+        char*               nodeval_C;
+                
+        xpath << "/" << root_node_name << "/domain[@id='" << domain << "']/key[@id='" << key << "']";
+
+        xpathObj = xml_execute_xpath_expression (m_doc,
+                    BAD_CAST (xpath.str ().c_str ()),
+                    BAD_CAST ("mcs=http://backtrace.info/ns/0/mcs"));
+
+        if (!xpathObj)
+        {
+            goto clear_xpathobj;
+        }
+
+        if (!xpathObj->nodesetval)
+        {
+            goto clear_xpathobj;
+        }
+
+        if (!xpathObj->nodesetval->nodeNr)
+        {
+            goto clear_xpathobj;
+        }
+
+        if (xpathObj->nodesetval->nodeNr > 1) //XXX: There can only be ONE node!
+        {
+            goto clear_xpathobj;
+        }
+
+        if (!xpathObj->nodesetval->nodeTab[0]->children)
+        {
+            goto clear_xpathobj;
+        }
+
+        nodeval_C = reinterpret_cast<char*>(XML_GET_CONTENT(xpathObj->nodesetval->nodeTab[0]->children));
+        nodeval = nodeval_C;
+        g_free (nodeval_C);
+
+        switch( type )
+        {
+          case KEY_TYPE_INT:
+              variant = boost::lexical_cast<int>(nodeval);
+              break;
+
+          case KEY_TYPE_BOOL:
+              variant = (!nodeval.compare ("TRUE")) ? true : false;
+              break;
+
+          case KEY_TYPE_STRING:
+              variant = std::string(nodeval);
+              break;
+
+          case KEY_TYPE_FLOAT:
+              variant = boost::lexical_cast<double>(nodeval);
+              break;
+
+        }
+
+        domains.find( domain )->second[key] = Key( domain, key, variant, KeyType(variant.which()) );
+
+        clear_xpathobj:
+        xmlXPathFreeObject( xpathObj );
       }
 
       void 

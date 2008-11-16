@@ -104,6 +104,12 @@ namespace
                 "         <menuitem action='action-quit'/>"
                 "   </menu>"
                 "   <menu action='MenuEdit'>"
+#if 0
+                "	      <menuitem action='action-mb-import'/>"
+                "         <separator/>"
+#endif
+                "         <menuitem action='action-preferences'/>"
+                "         <menuitem action='action-plugins'/>"
 #ifdef HAVE_HAL
                 "         <menuitem action='action-mlibmanager'/>"
 #else
@@ -111,11 +117,6 @@ namespace
                 "         <menuitem action='action-import-share'/>"
                 "	      <menuitem action='action-vacuum-lib'/>"
 #endif // HAVE_HAL
-                "         <separator/>"
-                "	      <menuitem action='action-mb-import'/>"
-                "         <separator/>"
-                "         <menuitem action='action-plugins'/>"
-                "         <menuitem action='action-preferences'/>"
                 "   </menu>"
                 "   <menu action='MenuView'>"
                 "   </menu>"
@@ -839,7 +840,7 @@ namespace MPX
 #else
 
                                   m_actions->add (Action::create ("action-mlibmanager",
-                                                          _("_Manage Music Library..."),
+                                                          _("_Music Library..."),
                                                           _("Add or Remove Music")),
                                                   sigc::mem_fun (*m_MLibManager, &MLibManager::present));
 #endif
@@ -1079,11 +1080,11 @@ namespace MPX
 
                                   m_MB_ImportAlbum = MB_ImportAlbum::create(m_Library,m_Covers);
 
-                                  splash.set_message(_("Ready"), 1.0);
-
                                   show ();
 
                                   DBusObjects.mpx->startup_complete(DBusObjects.mpx);
+
+                                  splash.set_message(_("Ready"), 1.0);
                           }
 
         Player*

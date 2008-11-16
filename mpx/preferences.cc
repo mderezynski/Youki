@@ -285,7 +285,6 @@ namespace MPX
         m_conn_alsa_device_string_changed.block();
 
         std::string device = AlsaDevice ((*iter)[m_alsa_device_columns.device]).m_handle;
-
         m_alsa_device_string->set_text( device );
 
         m_conn_alsa_device_string_changed.unblock();
@@ -297,9 +296,6 @@ namespace MPX
   Preferences::audio_system_apply ()
   {
     m_Play.request_status (PLAYSTATUS_STOPPED);
-    m_warning_audio_system_changed->set_sensitive (false);
-    m_button_audio_system_apply->set_sensitive (false);
-    m_button_audio_system_reset->set_sensitive (false);
 
     TreeModel::iterator iter (m_cbox_audio_system->get_active ());
     Sink sink = (*iter)[audio_system_columns.sink];
@@ -368,8 +364,14 @@ namespace MPX
 #endif //HAVE_ALSA
       default: ;
     }
+
     mcs->key_set <int> ("audio", "video-output", m_cbox_video_out->get_active_row_number());
-    m_Play.reset();
+
+    m_warning_audio_system_changed->set_sensitive(false);
+    m_button_audio_system_apply->set_sensitive(false);
+    m_button_audio_system_reset->set_sensitive(false);
+
+    m_Play.reset(); // the final important thing
   }
 
 #ifdef HAVE_ALSA

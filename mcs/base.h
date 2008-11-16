@@ -29,6 +29,12 @@
 #ifndef MCS_BASE_H 
 #define MCS_BASE_H 
 
+#include <libxml/tree.h>
+#include <libxml/parser.h>
+#include <libxml/xmlreader.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
+
 #include <boost/variant.hpp>
 #include <sigc++/sigc++.h>
 #include <glibmm.h>
@@ -136,6 +142,7 @@ namespace Mcs
             DomainsT domains;
             std::string xml_filename;
             std::string root_node_name;
+            xmlDocPtr m_doc;
             double version;
       };
 };
