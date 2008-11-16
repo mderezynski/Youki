@@ -70,25 +70,27 @@ namespace MPX
 
 
             void
-            scan_end (gint64,gint64,gint64,gint64,gint64);
+            scan_end( ScanSummary const& );
 
             void
             scan_start ();
 
+
             void
             populate_volumes ();
 
+
             void
             build_fstree (std::string const& root_path);
+
+            int
+            fstree_sort (const Gtk::TreeIter & iter_a, const Gtk::TreeIter & iter_b);
 
             void
             append_path (std::string const& root_path, Gtk::TreeIter & root_iter);
 
             void
             prescan_path (std::string const& path, Gtk::TreeIter & iter);
-
-            int
-            fstree_sort (const Gtk::TreeIter & iter_a, const Gtk::TreeIter & iter_b);
 
             bool
             has_active_parent (Gtk::TreeIter &);

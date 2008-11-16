@@ -2045,7 +2045,7 @@ rerun_import_share_dialog:
                 }
 
         void
-                Player::unmount_ready_callback (Glib::RefPtr<Gio::AsyncResult>& res)
+                Player::unmount_ready_callback( Glib::RefPtr<Gio::AsyncResult>& res )
                 {
                 }
 
@@ -2057,17 +2057,17 @@ rerun_import_share_dialog:
                 }
 
         void
-                Player::on_library_scan_run(gint64 x, gint64 y)
+                Player::on_library_scan_run( gint64 a, gint64 b )
                 {
                         m_Statusbar->pop();
-                        m_Statusbar->push((boost::format(_("Library Scan: %1% / %2%")) % x % y).str());
+                        m_Statusbar->push((boost::format(_("Library Scan: %1% Items")) % a).str());
                 }
 
         void
-                Player::on_library_scan_end(gint64 x, gint64 y, gint64 a, gint64 b, gint64 s)
+                Player::on_library_scan_end( ScanSummary const& summary )
                 {
                         m_Statusbar->pop();        
-                        m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Items (files/folders) scanned, %2% files added, %3% files up to date, %4% updated, %5% erroneous)")) % s % x % y % a % b).str());
+                        m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Items scanned, %2% Files added, %3% Files up to date, %4% updated, %5% erroneous)")) % summary.FilesTotal % summary.FilesAdded % summary.FilesUpToDate % summary.FilesUpdated % summary.FilesErroneous ).str());
                         m_Library.execSQL((boost::format ("INSERT INTO meta (last_scan_date) VALUES (%lld)") % (gint64(time(NULL)))).str());
                 }
 

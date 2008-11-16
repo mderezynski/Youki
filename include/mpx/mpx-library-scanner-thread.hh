@@ -36,33 +36,56 @@
 
 namespace MPX
 {
-   enum ScanResult {
+    enum ScanResult {
         SCAN_RESULT_OK,
         SCAN_RESULT_ERROR,
         SCAN_RESULT_UPDATE,
         SCAN_RESULT_UPTODATE
     };
-    
+
+    typedef std::pair<std::string, std::string> SSFileInfo;
+
+    struct ScanSummary
+    {
+        gint64  FilesAdded;
+        gint64  FilesErroneous;
+        gint64  FilesUpToDate;
+        gint64  FilesUpdated;
+        gint64  FilesTotal;
+
+        std::vector<SSFileInfo> FileListErroneous;
+        std::vector<SSFileInfo> FileListUpdated;
+
+        ScanSummary ()
+        : FilesAdded(0)
+        , FilesErroneous(0)
+        , FilesUpToDate(0)
+        , FilesUpdated(0)
+        , FilesTotal(0)
+        {
+        }
+    };
+
     class HAL;
     class MetadataReaderTagLib;
 	class LibraryScannerThread : public sigx::glib_threadable
 	{
         public:
 
-            typedef sigc::signal<void>                                     SignalScanStart_t ;
-            typedef sigc::signal<void, gint64,gint64>                      SignalScanRun_t ;
-            typedef sigc::signal<void, gint64,gint64,gint64,gint64,gint64> SignalScanEnd_t ;
-            typedef sigc::signal<void>                                     SignalReload_t ;
-            typedef sigc::signal<void, gint64>                             SignalNewAlbum_t ;
-            typedef sigc::signal<void, gint64>                             SignalNewArtist_t ;
-            typedef sigc::signal<void, Track&, gint64, gint64>             SignalNewTrack_t ;
+            typedef sigc::signal<void>                              SignalScanStart_t ;
+            typedef sigc::signal<void, gint64,gint64>               SignalScanRun_t ;
+            typedef sigc::signal<void, ScanSummary const&>          SignalScanEnd_t ;
+            typedef sigc::signal<void>                              SignalReload_t ;
+            typedef sigc::signal<void, gint64>                      SignalNewAlbum_t ;
+            typedef sigc::signal<void, gint64>                      SignalNewArtist_t ;
+            typedef sigc::signal<void, Track&, gint64, gint64>      SignalNewTrack_t ;
 
             typedef sigc::signal<void,
                 std::string const&,
                 std::string const&,
                 std::string const&,
                 std::string const&,
-                std::string const&>                                         SignalCacheCover_t ;
+                std::string const&>                                 SignalCacheCover_t ;
             
             typedef sigx::signal_f<SignalScanStart_t>           signal_scan_start_x ;
             typedef sigx::signal_f<SignalScanRun_t>             signal_scan_run_x ; 
@@ -172,11 +195,7 @@ namespace MPX
             Glib::Private<ThreadData>     m_ThreadData ;
             gint64                        m_Flags;
             
-            gint64                        m_added;
-            gint64                        m_erroneous;
-            gint64                        m_uptodate;
-            gint64                        m_updated;
-            gint64                        m_total;
+            ScanSummary                   m_ScanSummary;
 	};
 }
 

@@ -211,7 +211,7 @@ namespace MPX
     /* ------------------------------------------------------------------------------------------------*/
 
     void
-    MLibManager::scan_end (gint64,gint64,gint64,gint64,gint64)
+    MLibManager::scan_end( ScanSummary const& )
     {
         Gtk::Widget::set_sensitive(true);
     }

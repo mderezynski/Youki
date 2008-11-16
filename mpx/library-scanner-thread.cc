@@ -9,6 +9,7 @@
 #include <boost/ref.hpp>
 #include <boost/format.hpp>
 #include <giomm.h>
+#include <glibmm/i18n.h>
 
 using boost::get;
 using namespace MPX;
@@ -229,11 +230,7 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
     m_SQL->get(rows, "SELECT last_scan_date FROM meta");
     gint64 last_scan_date = boost::get<gint64>(rows[1]["last_scan_date"]);
 
-    m_added = 0;
-    m_erroneous = 0;
-    m_uptodate = 0;
-    m_updated = 0;
-    m_total = 0;
+    m_ScanSummary = ScanSummary();
 
     for(Util::FileList::const_iterator i = list.begin(); i != list.end(); ++i)
     {  
@@ -278,8 +275,6 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
                     last_scan_date,
                     insert_path_sql
             ));
-
-            pthreaddata->ScanEnd.emit( m_added, m_uptodate, m_updated, m_erroneous, m_total);
         }
         catch( Glib::ConvertError & cxe )
         {
@@ -287,6 +282,8 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
             return;
         }
     }
+
+    pthreaddata->ScanEnd.emit( m_ScanSummary );
 }
 
 void
@@ -337,34 +334,21 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                           catch (HAL::Exception & cxe)
                             {
                               g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
-                              ++(m_erroneous);
+                              ++(m_ScanSummary.FilesErroneous);
+                              m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("HAL error/No HAL data for this file.")));
                               err_occured  = true;
                             }
                           catch (Glib::ConvertError & cxe)
                             {
                               g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-                              ++(m_erroneous);
+                              ++(m_ScanSummary.FilesErroneous);
+                              m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("URI Conversion Error.")));
                               err_occured  = true;
                             }
 #endif
 
                             if( !err_occured )
                             {
-                                    try{ 
-                                        if (!Audio::typefind(*i2, type))  
-                                        {
-                                          ++(m_erroneous) ;
-                                          continue;
-                                        }
-                                      }  
-                                    catch (Glib::ConvertError & cxe)
-                                      {
-                                          ++(m_erroneous) ;
-                                          continue;
-                                      }   
-
-                                    track[ATTRIBUTE_TYPE] = type ;
-
                                     Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri((*i2).c_str()); 
                                     Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_MODIFIED, Gio::FILE_QUERY_INFO_NONE);
 
@@ -373,13 +357,14 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                                     time_t mtime = get_track_mtime (track);
                                     if (mtime != 0 && mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()))
                                     {
-                                        ++m_uptodate;
+                                        ++m_ScanSummary.FilesUpToDate;
                                     }
                                     else
                                     {
                                         if( !m_MetadataReaderTagLib.get( *i2, track ) )
                                         {
-                                           ++m_erroneous;
+                                           ++m_ScanSummary.FilesErroneous;
+                                           m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Could not acquire metadata using taglib-gio.")));
                                         }
                                         else try{
                                             ScanResult status = insert( track, *i2, insert_path_sql );
@@ -387,15 +372,17 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                                             switch( status )
                                             {
                                                 case SCAN_RESULT_OK:
-                                                    ++m_added;
+                                                    ++m_ScanSummary.FilesAdded;
                                                     break;
 
                                                 case SCAN_RESULT_ERROR:
-                                                    ++m_erroneous;
+                                                    ++m_ScanSummary.FilesErroneous;
+                                                    m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Error inserting file into database.")));
                                                     break;
 
                                                 case SCAN_RESULT_UPDATE:
-                                                    ++m_updated;
+                                                    ++m_ScanSummary.FilesUpdated;
+                                                    m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i2, _("Updated.")));
                                                     break;
                                             }
                                         }
@@ -413,8 +400,13 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                     
         }
     }
+    
+    m_ScanSummary.FilesTotal++;
 
-    pthreaddata->ScanRun.emit( m_total++, 0 );
+    if( m_ScanSummary.FilesTotal % 50 )
+    {
+        pthreaddata->ScanRun.emit( m_ScanSummary.FilesTotal, 0 );
+    }
 }
 
 void
@@ -426,7 +418,7 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
     pthreaddata->ScanStart.emit();
     m_SQL->exec_sql( "UPDATE album SET album_new = 0" );
 
-    gint64 added = 0, erroneous = 0, uptodate = 0, updated = 0, total = 0;
+    m_ScanSummary = ScanSummary();
 
     Util::FileList collection;
 
@@ -465,7 +457,7 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
 #endif // HAVE_HAL
             collection.clear();
             Util::collect_audio_paths_recursive( insert_path, collection );
-            total += collection.size();
+            m_ScanSummary.FilesTotal += collection.size();
         }
         catch( Glib::ConvertError & cxe )
         {
@@ -477,7 +469,7 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
             {
                 if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
                 {
-                    pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, collection.size());
+                    pthreaddata->ScanEnd.emit( m_ScanSummary ); 
                     return;
                 }
 
@@ -488,14 +480,13 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
 
                 try{
 
-                    URI u (*i, true);
+                    URI u( *i3, true );
 
-                    if(u.get_protocol() == URI::PROTOCOL_FILE)
+                    if( u.get_protocol() == URI::PROTOCOL_FILE )
                     {
-
                         bool err_occured = false;
 
-        #ifdef HAVE_HAL
+#ifdef HAVE_HAL
                         try{
 
                             if (m_Flags & Library::F_USING_HAL)
@@ -516,34 +507,19 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
                       catch (HAL::Exception & cxe)
                         {
                           g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
-                          ++(erroneous);
+                          ++(m_ScanSummary.FilesErroneous);
                           err_occured  = true;
                         }
                       catch (Glib::ConvertError & cxe)
                         {
                           g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-                          ++(erroneous);
+                          ++(m_ScanSummary.FilesErroneous);
                           err_occured  = true;
                         }
-        #endif
+#endif
 
                         if( !err_occured )
                         {
-                                try{ 
-                                    if (!Audio::typefind(*i3, type))  
-                                    {
-                                      ++(erroneous) ;
-                                      continue;
-                                    }
-                                  }  
-                                catch (Glib::ConvertError & cxe)
-                                  {
-                                      ++(erroneous) ;
-                                      continue;
-                                  }   
-
-                                track[ATTRIBUTE_TYPE] = type ;
-
                                 Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri((*i3).c_str()); 
                                 Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_MODIFIED, Gio::FILE_QUERY_INFO_NONE);
 
@@ -552,36 +528,39 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
                                 time_t mtime = get_track_mtime (track);
                                 if (mtime != 0 && mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()))
                                 {
-                                    ++(uptodate);
+                                    ++(m_ScanSummary.FilesUpToDate);
                                 }
                                 else
                                 {
                                     if( !m_MetadataReaderTagLib.get( *i3, track ) )
                                     {
-                                       ++(erroneous) ;
+                                        ++m_ScanSummary.FilesErroneous;
+                                        m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i3, _("Could not acquire metadata using taglib-gio.")));
                                     }
                                     else try{
                                         ScanResult status = insert( track, *i3, insert_path_sql );
 
-                                        switch(status)
+                                        switch( status )
                                         {
                                             case SCAN_RESULT_OK:
-                                                ++(added) ;
+                                                ++m_ScanSummary.FilesAdded;
                                                 break;
 
                                             case SCAN_RESULT_ERROR:
-                                                ++(erroneous) ;
+                                                ++m_ScanSummary.FilesErroneous;
+                                                m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i3, _("Error inserting file into database.")));
                                                 break;
 
                                             case SCAN_RESULT_UPDATE:
-                                                ++(updated) ;
+                                                ++m_ScanSummary.FilesUpdated;
+                                                m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i3, _("Updated.")));
                                                 break;
                                         }
-                                    }
-                                    catch( Glib::ConvertError & cxe )
-                                    {
+                                     }
+                                     catch( Glib::ConvertError & cxe )
+                                     {
                                         g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-                                    }
+                                     }
                                 }
                         }
                     }
@@ -596,7 +575,7 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
             }
     }
 
-    pthreaddata->ScanEnd.emit(added, uptodate, updated, erroneous, total);
+    pthreaddata->ScanEnd.emit( m_ScanSummary );
 }
 
 
