@@ -14,6 +14,7 @@
 #include <libglademm/xml.h>
 #include <Python.h>
 #include "mcs/mcs.h"
+#include "mcs/types.h"
 
 #include "mpx.hh"
 #include "mpx/mpx-covers.hh"
@@ -176,26 +177,34 @@ namespace mpxpy
 		}
         return obj;
     }
+
+    PyObject*
+    mcs_variant_get (Mcs::KeyVariant &self)
+    {
+        PyObject * obj = 0;
+
+		switch(self.which())
+		{
+			case 0:
+				obj = PyBool_FromLong(long ((boost::get<bool>(self))));
+                break;
+			case 1:
+				obj = PyInt_FromLong(long ((boost::get<int>(self))));
+                break;
+			case 2:
+				obj = PyFloat_FromDouble((boost::get<double>(self)));
+                break;
+			case 3:
+				obj = PyString_FromString((boost::get<std::string>(self)).c_str());
+                break;
+		}
+        return obj;
+    }
+
 }
 
 namespace mpxpy
 {
-	std::string
-	variant_repr(MPX::Variant &self)
-	{
-		switch(self.which())
-		{
-			case 0:
-				return boost::lexical_cast<std::string>(boost::get<gint64>(self));
-			case 1:
-				return boost::lexical_cast<std::string>(boost::get<double>(self));
-			case 2:
-				return boost::get<std::string>(self); 
-		}
-
-		return std::string();
-	}
-	
 	gint64
 	variant_getint(MPX::Variant &self)
 	{
@@ -235,7 +244,10 @@ namespace mpxpy
 	{
 		self = value;
 	}
+}
 
+namespace mpxpy
+{
 	void
 	ovariant_setint(MPX::OVariant & self, gint64 value)
 	{
@@ -253,6 +265,63 @@ namespace mpxpy
 	{
 		self = value;
 	}
+}
+
+namespace mpxpy
+{
+	int
+	mcs_variant_getint(Mcs::KeyVariant &self)
+	{
+		gint64 i = boost::get<gint64>(self);
+        return i;
+	}
+
+	void
+	mcs_variant_setint(Mcs::KeyVariant &self, gint64 value)
+	{
+		self = value;
+	}
+
+
+	std::string	
+	mcs_variant_getstring(Mcs::KeyVariant &self)
+	{
+		std::string s = boost::get<std::string>(self);
+        return s;
+	}
+
+	void
+	mcs_variant_setstring(Mcs::KeyVariant &self, std::string const& value)
+	{
+		self = value;
+	}
+
+	double
+	mcs_variant_getdouble(Mcs::KeyVariant &self)
+	{
+		double d = boost::get<double>(self);
+        return d;
+	}
+
+	void
+	mcs_variant_setdouble(Mcs::KeyVariant &self, double const& value)
+	{
+		self = value;
+	}
+
+    bool
+	mcs_variant_getbool(Mcs::KeyVariant &self)
+	{
+		bool d = boost::get<bool>(self);
+        return d;
+	}
+
+	void
+	mcs_variant_setbool(Mcs::KeyVariant &self, bool const& value)
+	{
+		self = value;
+	}
+
 }
 
 namespace mpxpy
@@ -903,6 +972,30 @@ BOOST_PYTHON_MODULE(mpx)
 	;
 
 	/*-------------------------------------------------------------------------------------*/
+
+	class_<Mcs::KeyVariant >("McsKeyVariant")
+
+        .def("get",         &mpxpy::mcs_variant_get,
+                            return_value_policy<return_by_value>())
+
+		.def("set_int",     &mpxpy::mcs_variant_setint)
+		.def("set_string",  &mpxpy::mcs_variant_setstring)
+		.def("set_double",  &mpxpy::mcs_variant_setdouble)
+		.def("set_bool",    &mpxpy::mcs_variant_setbool)
+
+		.def("get_int",     &mpxpy::mcs_variant_getint,
+                            return_value_policy<return_by_value>()) 
+
+		.def("get_string",  &mpxpy::mcs_variant_getstring,
+                            return_value_policy<return_by_value>()) 
+
+		.def("get_double",  &mpxpy::mcs_variant_getdouble,
+                            return_value_policy<return_by_value>()) 
+
+		.def("get_bool"  ,  &mpxpy::mcs_variant_getbool,
+                            return_value_policy<return_by_value>()) 
+
+	;
 
 	class_<Mcs::Mcs, boost::noncopyable>("MCS", boost::python::no_init)
 		.def("domain_register", &Mcs::Mcs::domain_register)
