@@ -272,12 +272,12 @@ namespace mpxpy
 	int
 	mcs_variant_getint(Mcs::KeyVariant &self)
 	{
-		gint64 i = boost::get<gint64>(self);
+		int i = boost::get<int>(self);
         return i;
 	}
 
 	void
-	mcs_variant_setint(Mcs::KeyVariant &self, gint64 value)
+	mcs_variant_setint(Mcs::KeyVariant &self, int value)
 	{
 		self = value;
 	}
