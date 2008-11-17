@@ -65,97 +65,117 @@ namespace MPX
 {
 	namespace
 	{
-	  static boost::format gbyte_f  (_("%.2Lf GiB"));
-	  static boost::format mbyte_f  (_("%.2f MiB"));
-	  static boost::format uint64_f ("%llu");
+        class SignalBlocker
+        {
+            public:
 
-	  const double MBYTE = 1048576;
+              SignalBlocker (sigc::connection & connection)
+              : m_conn(connection)
+              {
+                  m_conn.block ();
+              }
 
-	  std::string
-	  get_size_string (guint64 size_)
-	  {
-		double size = size_/MBYTE;
-		return (mbyte_f % size).str();
+              ~SignalBlocker ()
+              {
+                  m_conn.unblock();
+              }
 
-		/* FIXME
-		if (size > 1024)
-		  return (gbyte_f % (size / 1024.)).str();
-		else
-		  return (mbyte_f % size).str();
-		*/ 
-	  }
+            private:
+                sigc::connection & m_conn;
+        };
 
-	  struct AudioSystem
-	  {
-		  char const* description;
-		  char const* name;
-		  gint        tab;
-		  Sink        sink;
-	  };
 
-	  AudioSystem audiosystems[] =
-	  {
-		  {"Automatic Choice",
-		   "autoaudiosink",
-		   0,
-		   SINK_AUTO},
+        static boost::format gbyte_f  (_("%.2Lf GiB"));
+        static boost::format mbyte_f  (_("%.2f MiB"));
+        static boost::format uint64_f ("%llu");
 
-		  {"GNOME Configured Audio Output",
-		   "gconfaudiosink",
-		   1,
-		   SINK_GCONF},
+        const double MBYTE = 1048576;
 
-  #ifdef HAVE_ALSA
-		  {"ALSA Audio Output",
-		   "alsasink",
-		   2,
-		   SINK_ALSA},
-  #endif //HAVE_ALSA
+        std::string
+        get_size_string (guint64 size_)
+        {
+          double size = size_/MBYTE;
+          return (mbyte_f % size).str();
 
-		  {"OSS",
-		   "osssink",
-		   3,
-		   SINK_OSS},
+          /* FIXME
+          if (size > 1024)
+            return (gbyte_f % (size / 1024.)).str();
+          else
+            return (mbyte_f % size).str();
+          */ 
+        }
 
-  #ifdef HAVE_SUN
-		  {"Sun/Solaris Audio",
-		   "sunaudiosink",
-		   4,
-		   SINK_SUNAUDIO},
-  #endif // HAVE_SUN
+        struct AudioSystem
+        {
+            char const* description;
+            char const* name;
+            gint        tab;
+            Sink        sink;
+        };
 
-		  {"ESD",
-		   "esdsink",
-		   5,
-		   SINK_ESD},
+        AudioSystem audiosystems[] =
+        {
+            {"Automatic Choice",
+             "autoaudiosink",
+             0,
+             SINK_AUTO},
 
-  #ifdef HAVE_HAL
-		  {"HAL",
-		   "halaudiosink",
-		   6,
-		   SINK_HAL},
-  #endif // HAVE_HAL
+            {"GNOME Configured Audio Output",
+             "gconfaudiosink",
+             1,
+             SINK_GCONF},
 
-		  {"PulseAudio",
-		   "pulsesink",
-		   7,
-		   SINK_PULSEAUDIO},
+    #ifdef HAVE_ALSA
+            {"ALSA Audio Output",
+             "alsasink",
+             2,
+             SINK_ALSA},
+    #endif //HAVE_ALSA
 
-		  {"JACK",
-		   "jackaudiosink",
-		   8,
-		   SINK_JACKSINK},
+            {"OSS",
+             "osssink",
+             3,
+             SINK_OSS},
 
-	  };
+    #ifdef HAVE_SUN
+            {"Sun/Solaris Audio",
+             "sunaudiosink",
+             4,
+             SINK_SUNAUDIO},
+    #endif // HAVE_SUN
 
-	  char const* sources[] =
-	  {
-		  N_("Local files (folder.jpg, cover.jpg, etc)"),
-		  N_("MusicBrainz AR"),
-		  N_("Amazon ASIN"),
-		  N_("Amazon search"),
-		  N_("Inline covers")
-	  };
+            {"ESD",
+             "esdsink",
+             5,
+             SINK_ESD},
+
+    #ifdef HAVE_HAL
+            {"HAL",
+             "halaudiosink",
+             6,
+             SINK_HAL},
+    #endif // HAVE_HAL
+
+            {"PulseAudio",
+             "pulsesink",
+             7,
+             SINK_PULSEAUDIO},
+
+            {"JACK",
+             "jackaudiosink",
+             8,
+             SINK_JACKSINK},
+
+        };
+
+        char const* sources[] =
+        {
+            N_("Local files (folder.jpg, cover.jpg, etc)"),
+            N_("MusicBrainz AR"),
+            N_("Amazon ASIN"),
+            N_("Amazon search"),
+            N_("Inline covers")
+        };
 	} // <anonymous> namespace
 	  
 
@@ -268,28 +288,30 @@ namespace MPX
 	  m_notebook_audio_system->set_current_page ((*m_cbox_audio_system->get_active ())[audio_system_columns.tab]);
 	}
 
+    void
+	Preferences::audio_system_apply_set_insensitive ()
+    {
+	  m_warning_audio_system_changed->set_sensitive(false);
+	  m_button_audio_system_apply->set_sensitive(false);
+	  m_button_audio_system_reset->set_sensitive(true);
+    }
+
 	void
 	Preferences::audio_system_apply_set_sensitive ()
 	{
+#ifdef HAVE_ALSA
+	  if( m_notebook_audio_system->get_current_page() == 2 ) 
+      {
+            if( m_cbox_alsa_device->get_active_row_number () == -1 && m_cbox_alsa_device->is_sensitive() )
+            {
+	            m_button_audio_system_reset->set_sensitive (true);
+                return; // user must choose a device when there is also a device to choose
+            }
+      }
+#endif
 	  m_warning_audio_system_changed->set_sensitive (true);
-
 	  m_button_audio_system_apply->set_sensitive (true);
 	  m_button_audio_system_reset->set_sensitive (true);
-
-  #ifdef HAVE_ALSA
-	  if ((m_cbox_alsa_card->get_active_row_number () != -1)
-		 && (m_cbox_alsa_device->get_active_row_number () != -1))
-	  {
-		  TreeModel::iterator iter (m_cbox_alsa_device->get_active ());
-
-		  m_conn_alsa_device_string_changed.block();
-
-		  std::string device = AlsaDevice ((*iter)[m_alsa_device_columns.device]).m_handle;
-		  m_alsa_device_string->set_text( device );
-
-		  m_conn_alsa_device_string_changed.unblock();
-	  }
-  #endif // HAVE_ALSA
 	}
 
 	void
@@ -330,20 +352,20 @@ namespace MPX
 	{
         std::string device = m_alsa_device_string->get_text();
 
-        if (device.substr(0,2) == "hw")
+        if( device.size()>=2 && device.substr(0,2) == "hw" )
         {
+            SignalBlocker B1 ( m_conn_alsa_card_changed );
+            SignalBlocker B2 ( m_conn_alsa_device_changed );
+
             std::vector<std::string> subs;
 
             using namespace boost::algorithm;
             split (subs, device, is_any_of (":,"));
 
-            if (subs.size() && subs[0] == "hw")
+            if (subs.size()==3 && subs[0] == "hw")
             {
-                int card (atoi (subs[1].c_str ()));
-                int device (atoi (subs[2].c_str ()));
-
-                m_cbox_alsa_card->set_active (-1);
-                m_cbox_alsa_device->set_active (-1);
+                int card (atoi(subs[1].c_str()));
+                int device (atoi(subs[2].c_str()));
 
                 Glib::RefPtr<Gtk::TreeModel> model = m_cbox_alsa_card->get_model();
                 for( Gtk::TreeNodeChildren::const_iterator iter = ++(model->children().begin()); iter != model->children().end(); ++iter)
@@ -353,6 +375,26 @@ namespace MPX
                     {
                         m_cbox_alsa_card->set_active( iter );
 
+                        m_list_store_alsa_device->clear ();
+                        AlsaCard const& card = (*m_cbox_alsa_card->get_active ())[m_alsa_card_columns.card];
+                        for (AlsaDevices::const_iterator i = card.m_devices.begin () ; i != card.m_devices.end() ; ++i)
+                        {
+                          TreeModel::iterator iter (m_list_store_alsa_device->append ());
+                          (*iter)[m_alsa_device_columns.name]   = i->m_name;
+                          (*iter)[m_alsa_device_columns.device] = *i;
+                        }
+
+                        if( subs[2].empty() )
+                        {
+                            m_cbox_alsa_device->set_active( -1 );
+                            m_cbox_alsa_device->set_sensitive( !card.m_devices.empty() );
+                            if( !card.m_devices.empty() )
+                            {
+                                audio_system_apply_set_insensitive();
+                            }
+                            return;
+                        }
+
                         Glib::RefPtr<Gtk::TreeModel> model_device = m_cbox_alsa_device->get_model();
                         for( Gtk::TreeNodeChildren::const_iterator iter2 = model_device->children().begin(); iter2 != model_device->children().end(); ++iter2)
                         {
@@ -360,16 +402,18 @@ namespace MPX
                             if( id == device )
                             {
                                 m_cbox_alsa_device->set_active( iter2 );
-                                break;
+                                m_cbox_alsa_device->set_sensitive( true );
+                                return;
                             }
                         }
-                        break;
+                        m_cbox_alsa_device->set_active (-1);
+                        return;
                     }
                 }
+                m_cbox_alsa_card->set_active (-1);
             }
         }
-        else
-        if (device == "default")
+        else if( device == "default" )
         {
             m_cbox_alsa_card->set_active (0);
         }
@@ -377,33 +421,41 @@ namespace MPX
         {
             m_cbox_alsa_card->set_active (-1);
             m_cbox_alsa_device->set_active (-1);
+            audio_system_apply_set_sensitive();
         }
 	} 
+
+    void
+    Preferences::on_alsa_device_changed ()
+    {
+        int row = m_cbox_alsa_device->get_active_row_number ();
+
+        if( row == -1 )
+        {
+            return;
+        }
+
+        TreeModel::iterator iter (m_cbox_alsa_device->get_active ());
+        if( iter )
+        {
+                SignalBlocker B1 ( m_conn_alsa_device_string_changed );
+                m_alsa_device_string->set_text( (AlsaDevice ((*iter)[m_alsa_device_columns.device]).m_handle));
+        }
+    }
 
 	void
 	Preferences::on_alsa_card_changed ()
 	{
         m_list_store_alsa_device->clear ();
+
         int row = m_cbox_alsa_card->get_active_row_number ();
 
         if( row == -1 )
-          return;
+        {
+            return;
+        }
 
         AlsaCard const& card = (*m_cbox_alsa_card->get_active ())[m_alsa_card_columns.card];
-
-        if (row == 0)
-        {
-            m_conn_alsa_device_string_changed.block();
-            m_alsa_device_string->set_text("default");
-            m_conn_alsa_device_string_changed.unblock();
-        }
-
-        if ((row == 0) || card.m_devices.empty())
-        {
-          m_cbox_alsa_device->set_sensitive (false);
-          return;
-        }
-
         for (AlsaDevices::const_iterator i = card.m_devices.begin () ; i != card.m_devices.end() ; ++i)
         {
           TreeModel::iterator iter (m_list_store_alsa_device->append ());
@@ -411,8 +463,27 @@ namespace MPX
           (*iter)[m_alsa_device_columns.device] = *i;
         }
 
-        m_cbox_alsa_device->set_active (0);
-        m_cbox_alsa_device->set_sensitive (true);
+        if (row == 0 || card.m_devices.empty())
+        {
+            m_cbox_alsa_device->set_active(-1);
+            m_cbox_alsa_device->set_sensitive(false);
+
+            SignalBlocker B1 ( m_conn_alsa_device_string_changed );
+            m_alsa_device_string->set_text("default");
+            return;
+        }
+
+        SignalBlocker B1 ( m_conn_alsa_device_string_changed );
+
+        m_cbox_alsa_device->set_active(0);
+        m_cbox_alsa_device->set_sensitive(true);
+
+        TreeModel::iterator iter (m_cbox_alsa_device->get_active ());
+
+        if( iter )
+        {
+            m_alsa_device_string->set_text((AlsaDevice ((*iter)[m_alsa_device_columns.device]).m_handle));
+	    }
 	}
 
 	Preferences::AlsaCards
@@ -545,23 +616,23 @@ namespace MPX
             m_cbox_alsa_device->set_model (m_list_store_alsa_device);
             m_cbox_alsa_card->set_model (m_list_store_alsa_cards);
 
-            m_cbox_alsa_card->signal_changed ().connect
+            m_conn_alsa_card_changed = m_cbox_alsa_card->signal_changed ().connect
               (sigc::mem_fun (*this, &Preferences::on_alsa_card_changed));
-
-            m_conn_alsa_device_string_changed = m_alsa_device_string->signal_changed().connect(
-              sigc::mem_fun (*this, &Preferences::on_alsa_device_string_changed
+            m_cbox_alsa_card->signal_changed().connect(
+              sigc::mem_fun (*this, &Preferences::audio_system_apply_set_sensitive
             ));
 
-            mcs_bind->bind_spin_button (*m_alsa_buffer_time, "audio", "alsa-buffer-time");
-
-            m_alsa_buffer_time->signal_value_changed().connect
-              (sigc::mem_fun (*this, &Preferences::audio_system_apply_set_sensitive));
-
+            m_conn_alsa_device_changed = m_cbox_alsa_device->signal_changed().connect
+              (sigc::mem_fun (*this, &Preferences::on_alsa_device_changed));
             m_cbox_alsa_device->signal_changed().connect
               (sigc::mem_fun (*this, &Preferences::audio_system_apply_set_sensitive));
 
-            m_cbox_alsa_card->signal_changed().connect(
-              sigc::mem_fun (*this, &Preferences::audio_system_apply_set_sensitive
+            mcs_bind->bind_spin_button (*m_alsa_buffer_time, "audio", "alsa-buffer-time");
+            m_alsa_buffer_time->signal_value_changed().connect
+              (sigc::mem_fun (*this, &Preferences::audio_system_apply_set_sensitive));
+
+            m_conn_alsa_device_string_changed = m_alsa_device_string->signal_changed().connect(
+              sigc::mem_fun (*this, &Preferences::on_alsa_device_string_changed
             ));
         }
     #endif //HAVE_ALSA
@@ -763,20 +834,20 @@ namespace MPX
           {
             std::string device (mcs->key_get<std::string> ("audio", "device-alsa"));
 
-            if (device.substr(0,2) == "hw")
+            if( device.size()>=2 && device.substr(0,2) == "hw" )
             {
+                SignalBlocker B1 ( m_conn_alsa_card_changed );
+                SignalBlocker B2 ( m_conn_alsa_device_changed );
+
                 std::vector<std::string> subs;
 
                 using namespace boost::algorithm;
                 split (subs, device, is_any_of (":,"));
 
-                if (subs.size() && subs[0] == "hw")
+                if (subs.size()==3 && subs[0] == "hw")
                 {
-                    int card (atoi (subs[1].c_str ()));
-                    int device (atoi (subs[2].c_str ()));
-                
-                    m_cbox_alsa_card->set_active (-1);
-                    m_cbox_alsa_device->set_active (-1);
+                    int card (atoi(subs[1].c_str()));
+                    int device (atoi(subs[2].c_str()));
 
                     Glib::RefPtr<Gtk::TreeModel> model = m_cbox_alsa_card->get_model();
                     for( Gtk::TreeNodeChildren::const_iterator iter = ++(model->children().begin()); iter != model->children().end(); ++iter)
@@ -786,6 +857,26 @@ namespace MPX
                         {
                             m_cbox_alsa_card->set_active( iter );
 
+                            m_list_store_alsa_device->clear ();
+                            AlsaCard const& card = (*m_cbox_alsa_card->get_active ())[m_alsa_card_columns.card];
+                            for (AlsaDevices::const_iterator i = card.m_devices.begin () ; i != card.m_devices.end() ; ++i)
+                            {
+                              TreeModel::iterator iter (m_list_store_alsa_device->append ());
+                              (*iter)[m_alsa_device_columns.name]   = i->m_name;
+                              (*iter)[m_alsa_device_columns.device] = *i;
+                            }
+
+                            if( subs[2].empty() )
+                            {
+                                m_cbox_alsa_device->set_active( -1 );
+                                m_cbox_alsa_device->set_sensitive( !card.m_devices.empty() );
+                                if( !card.m_devices.empty() )
+                                {
+                                    audio_system_apply_set_insensitive();
+                                }
+                                return;
+                            }
+
                             Glib::RefPtr<Gtk::TreeModel> model_device = m_cbox_alsa_device->get_model();
                             for( Gtk::TreeNodeChildren::const_iterator iter2 = model_device->children().begin(); iter2 != model_device->children().end(); ++iter2)
                             {
@@ -793,16 +884,18 @@ namespace MPX
                                 if( id == device )
                                 {
                                     m_cbox_alsa_device->set_active( iter2 );
-                                    break;
+                                    m_cbox_alsa_device->set_sensitive( true );
+                                    return;
                                 }
                             }
-                            break;
+                            m_cbox_alsa_device->set_active (-1);
+                            return;
                         }
                     }
+                    m_cbox_alsa_card->set_active (-1);
                 }
             }
-            else
-            if (device == "default")
+            else if( device == "default" )
             {
                 m_cbox_alsa_card->set_active (0);
             }
@@ -810,10 +903,8 @@ namespace MPX
             {
                 m_cbox_alsa_card->set_active (-1);
                 m_cbox_alsa_device->set_active (-1);
-
-                m_conn_alsa_device_string_changed.block();
+                SignalBlocker B1 ( m_conn_alsa_device_string_changed );
                 m_alsa_device_string->set_text(device);
-                m_conn_alsa_device_string_changed.unblock();
             }
           }
         }

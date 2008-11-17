@@ -111,6 +111,9 @@ namespace MPX
 
       void
       audio_system_apply_set_sensitive ();
+    
+      void
+      audio_system_apply_set_insensitive ();
 
       void
       audio_system_changed ();
@@ -228,10 +231,13 @@ namespace MPX
       Gtk::Entry                        * m_alsa_device_string;
       Glib::RefPtr<Gtk::ListStore>        m_list_store_alsa_cards;
       Glib::RefPtr<Gtk::ListStore>        m_list_store_alsa_device;
+      sigc::connection                    m_conn_alsa_card_changed;
+      sigc::connection                    m_conn_alsa_device_changed;
       sigc::connection                    m_conn_alsa_device_string_changed;
 
       AlsaCards get_alsa_cards ();
       void on_alsa_card_changed ();
+      void on_alsa_device_changed ();
       void on_alsa_device_string_changed ();
 #endif //HAVE_ALSA
 
@@ -316,12 +322,12 @@ namespace MPX
         Gtk::SpinButton*	m_Radio_MinimalBitrate;
       	CoverArtSourceView*	m_Covers_CoverArtSources; 
 
-	Gtk::CheckButton*	m_Library_RescanAtStartup;
-	Gtk::CheckButton*	m_Library_RescanInIntervals;
-	Gtk::SpinButton*	m_Library_RescanInterval;
-	Gtk::HBox*		m_Library_RescanIntervalBox;
+        Gtk::CheckButton*	m_Library_RescanAtStartup;
+        Gtk::CheckButton*	m_Library_RescanInIntervals;
+        Gtk::SpinButton*	m_Library_RescanInterval;
+        Gtk::HBox*          m_Library_RescanIntervalBox;
 
-        Mcs::Bind*		mcs_bind;
+        Mcs::Bind*          mcs_bind;
 
   }; // class Preferences
 } // namespace MPX
