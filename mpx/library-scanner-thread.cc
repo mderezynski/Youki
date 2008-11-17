@@ -231,6 +231,7 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
     gint64 last_scan_date = boost::get<gint64>(rows[1]["last_scan_date"]);
 
     m_ScanSummary = ScanSummary();
+    m_ScanSummary.DeepRescan = false;
 
     for(Util::FileList::const_iterator i = list.begin(); i != list.end(); ++i)
     {  
@@ -405,7 +406,7 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
 
     if( m_ScanSummary.FilesTotal % 50 )
     {
-        pthreaddata->ScanRun.emit( m_ScanSummary.FilesTotal, 0 );
+        pthreaddata->ScanRun.emit( m_ScanSummary.FilesTotal, false );
     }
 }
 
@@ -419,6 +420,7 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
     m_SQL->exec_sql( "UPDATE album SET album_new = 0" );
 
     m_ScanSummary = ScanSummary();
+    m_ScanSummary.DeepRescan = true;
 
     Util::FileList collection;
 
@@ -570,7 +572,7 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
                                 
                 if (! (std::distance(collection.begin(), i3) % 50) )
                 {
-                    pthreaddata->ScanRun.emit(std::distance(collection.begin(), i3), collection.size());
+                    pthreaddata->ScanRun.emit(std::distance(collection.begin(), i3), true ); 
                 }
             }
     }

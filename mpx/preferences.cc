@@ -170,11 +170,11 @@ namespace MPX
 
         char const* sources[] =
         {
-            N_("Local files (folder.jpg, cover.jpg, etc)"),
-            N_("MusicBrainz AR"),
+            N_("Local files (folder.jpg, cover.jpg, etc.)"),
+            N_("MusicBrainz Advanced Relations"),
             N_("Amazon ASIN"),
-            N_("Amazon search"),
-            N_("Inline covers")
+            N_("Amazon Search API"),
+            N_("Inline Covers (File Metadata)")
         };
 	} // <anonymous> namespace
 	  

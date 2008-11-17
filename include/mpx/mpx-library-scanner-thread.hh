@@ -52,6 +52,7 @@ namespace MPX
         gint64  FilesUpToDate;
         gint64  FilesUpdated;
         gint64  FilesTotal;
+        bool    DeepRescan;
 
         std::vector<SSFileInfo> FileListErroneous;
         std::vector<SSFileInfo> FileListUpdated;
@@ -73,7 +74,7 @@ namespace MPX
         public:
 
             typedef sigc::signal<void>                              SignalScanStart_t ;
-            typedef sigc::signal<void, gint64,gint64>               SignalScanRun_t ;
+            typedef sigc::signal<void, gint64,bool>                 SignalScanRun_t ;
             typedef sigc::signal<void, ScanSummary const&>          SignalScanEnd_t ;
             typedef sigc::signal<void>                              SignalReload_t ;
             typedef sigc::signal<void, gint64>                      SignalNewAlbum_t ;

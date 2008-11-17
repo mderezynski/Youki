@@ -1609,7 +1609,7 @@ namespace MPX
                         IdIterMap                             m_AlbumIterMap;
 
                         Cairo::RefPtr<Cairo::ImageSurface>    m_DiscDefault;
-                        Glib::RefPtr<Gdk::Pixbuf>             m_DiscDefault_Pixbuf;
+                        Glib::RefPtr<Gdk::Pixbuf>             m_DiscDefault_DND;
                         Glib::RefPtr<Gdk::Pixbuf>             m_Stars[6];
 
                         boost::optional<std::string>          m_DragAlbumMBID;
@@ -1722,7 +1722,7 @@ namespace MPX
                                                         }
                                                 }
 
-                                                drag_source_set_icon(m_DiscDefault_Pixbuf->scale_simple(128,128,Gdk::INTERP_BILINEAR));
+                                                drag_source_set_icon(m_DiscDefault_DND);
                                         }
                                         else
                                         if(m_DragTrackId)
@@ -2444,8 +2444,8 @@ namespace MPX
                                 TreeStore->set_sort_func(2 , sigc::mem_fun( *this, &LFMTreeView::slotSortRating ));
                                 TreeStore->set_sort_func(3 , sigc::mem_fun( *this, &LFMTreeView::slotSortStrictAlpha ));
 
-                                m_DiscDefault_Pixbuf = Gdk::Pixbuf::create_from_file(build_filename(DATA_DIR, build_filename("images","disc.png")))->scale_simple(90,90,Gdk::INTERP_BILINEAR);
-                                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(90,90,Gdk::INTERP_BILINEAR));
+                                m_DiscDefault_DND = IconTheme::get_default()->load_icon("gnome-dev-cdrom-audio", 128);
+                                m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_DND->scale_simple(90,90,Gdk::INTERP_BILINEAR));
 
                                 std::vector<TargetEntry> Entries;
                                 Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));

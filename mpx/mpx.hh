@@ -344,7 +344,7 @@ namespace MPX
         on_library_scan_start();
 
         void
-        on_library_scan_run(gint64,gint64);
+        on_library_scan_run(gint64,bool);
 
         void
         on_library_scan_end(ScanSummary const&);
@@ -556,6 +556,8 @@ namespace MPX
         bool
         on_rescan_timeout();
 
+        void
+        on_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE);
     };
 }
 

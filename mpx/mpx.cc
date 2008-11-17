@@ -1089,10 +1089,18 @@ namespace MPX
                                     m_MLibManager->rescan_all_volumes();
                                   }
 
-                                  sigc::slot<bool> slot = sigc::mem_fun(*this, &Player::on_rescan_timeout);
-                                  sigc::connection conn = Glib::signal_timeout().connect(slot, 300000);
-                                  m_rescan_timer.start();
+                                  mcs->subscribe(
+                                    "MPX-Player-RescanSubscription",
+                                    "library",
+                                    "rescan-in-intervals",
+                                    sigc::mem_fun(
+                                        *this,
+                                        &Player::on_rescan_in_intervals_changed
+                                  ));
 
+                                  sigc::slot<bool> slot = sigc::mem_fun(*this, &Player::on_rescan_timeout);
+                                  sigc::connection conn = Glib::signal_timeout().connect(slot, 1000);
+                                  m_rescan_timer.start();
 
                                   show ();
 
@@ -2068,21 +2076,42 @@ rerun_import_share_dialog:
                 Player::on_library_scan_start()
                 {
                         m_Statusbar->pop();        
-                        m_Statusbar->push(_("Library Scan Started"));
+                        m_Statusbar->push(_("Library Scan Starting..."));
                 }
 
         void
-                Player::on_library_scan_run( gint64 a, gint64 b )
+                Player::on_library_scan_run( gint64 n, bool deep )
                 {
                         m_Statusbar->pop();
-                        m_Statusbar->push((boost::format(_("Library Scan: %1% Items")) % a).str());
+                        m_Statusbar->push((
+                            boost::format(_("Library Scan: %1% %2%"))
+                            % n
+                            % (deep ? _("Files") : _("Folders"))
+                        ).str());
                 }
 
         void
                 Player::on_library_scan_end( ScanSummary const& summary )
                 {
                         m_Statusbar->pop();        
-                        m_Statusbar->push((boost::format(_("Library Scan: Done (%1% Items scanned, %2% Files added, %3% Files up to date, %4% updated, %5% erroneous)")) % summary.FilesTotal % summary.FilesAdded % summary.FilesUpToDate % summary.FilesUpdated % summary.FilesErroneous ).str());
+
+                        time_t curtime = time(NULL);
+                        localtime_r(&curtime, &ctm)
+
+                        char bdate[256];
+                        strftime(bdate, 256, "%a %d %b %Y %H:%M", ctm);
+
+                        m_Statusbar->push((boost::format(
+                            _("Library Scan finished on %1%: %2% %3% scanned, %4% Files added, %5% Files up to date, %6% updated, %7% erroneous (see log)"))
+                            % bdate 
+                            % summary.FilesTotal
+                            % (summary.DeepRescan ? _("Files") : _("Folders"))
+                            % summary.FilesAdded
+                            % summary.FilesUpToDate
+                            % summary.FilesUpdated
+                            % summary.FilesErroneous
+                        ).str());
+
                         m_Library.execSQL((boost::format ("INSERT INTO meta (last_scan_date) VALUES (%lld)") % (gint64(time(NULL)))).str());
                 }
 
@@ -2284,6 +2313,12 @@ rerun_import_share_dialog:
                         m_Statusbar->push(message);
                         while (gtk_events_pending())
                             gtk_main_iteration();
+                }
+
+        void
+                Player::on_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE)
+                {
+                        m_rescan_timer.reset();
                 }
 
         bool
