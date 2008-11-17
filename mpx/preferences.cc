@@ -350,9 +350,9 @@ namespace MPX
 	void
 	Preferences::on_alsa_device_string_changed ()
 	{
-        std::string device = m_alsa_device_string->get_text();
+        std::string alsa_device = m_alsa_device_string->get_text();
 
-        if( device.size()>=2 && device.substr(0,2) == "hw" )
+        if( alsa_device.size()>=2 && alsa_device.substr(0,2) == "hw" )
         {
             SignalBlocker B1 ( m_conn_alsa_card_changed );
             SignalBlocker B2 ( m_conn_alsa_device_changed );
@@ -360,7 +360,7 @@ namespace MPX
             std::vector<std::string> subs;
 
             using namespace boost::algorithm;
-            split (subs, device, is_any_of (":,"));
+            split (subs, alsa_device, is_any_of (":,"));
 
             if (subs.size()==3 && subs[0] == "hw")
             {
@@ -832,9 +832,9 @@ namespace MPX
 
           if (CURRENT_SINK ("alsasink"))
           {
-            std::string device (mcs->key_get<std::string> ("audio", "device-alsa"));
+            std::string alsa_device (mcs->key_get<std::string> ("audio", "device-alsa"));
 
-            if( device.size()>=2 && device.substr(0,2) == "hw" )
+            if( alsa_device.size()>=2 && alsa_device.substr(0,2) == "hw" )
             {
                 SignalBlocker B1 ( m_conn_alsa_card_changed );
                 SignalBlocker B2 ( m_conn_alsa_device_changed );
@@ -842,7 +842,7 @@ namespace MPX
                 std::vector<std::string> subs;
 
                 using namespace boost::algorithm;
-                split (subs, device, is_any_of (":,"));
+                split (subs, alsa_device, is_any_of (":,"));
 
                 if (subs.size()==3 && subs[0] == "hw")
                 {
@@ -874,7 +874,7 @@ namespace MPX
                                 {
                                     audio_system_apply_set_insensitive();
                                 }
-                                return;
+                                goto out1;
                             }
 
                             Glib::RefPtr<Gtk::TreeModel> model_device = m_cbox_alsa_device->get_model();
@@ -885,11 +885,14 @@ namespace MPX
                                 {
                                     m_cbox_alsa_device->set_active( iter2 );
                                     m_cbox_alsa_device->set_sensitive( true );
-                                    return;
+
+                                    SignalBlocker B1 ( m_conn_alsa_device_string_changed );
+                                    m_alsa_device_string->set_text(alsa_device);
+                                    goto out1;
                                 }
                             }
                             m_cbox_alsa_device->set_active (-1);
-                            return;
+                            goto out1;
                         }
                     }
                     m_cbox_alsa_card->set_active (-1);
@@ -904,19 +907,21 @@ namespace MPX
                 m_cbox_alsa_card->set_active (-1);
                 m_cbox_alsa_device->set_active (-1);
                 SignalBlocker B1 ( m_conn_alsa_device_string_changed );
-                m_alsa_device_string->set_text(device);
+                m_alsa_device_string->set_text(alsa_device);
             }
+
+            out1:
           }
         }
     #endif //HAVE_ALSA
 
-    #ifdef HAVE_SUN
+#ifdef HAVE_SUN
         if (PRESENT_SINK("sunaudiosink"))
         {
           mcs->key_push ("audio", "device-sun");
           mcs->key_push ("audio", "sun-buffer-time");
         }
-    #endif //HAVE_SUN
+#endif //HAVE_SUN
 
         if (PRESENT_SINK("osssink"))
         {
@@ -943,18 +948,18 @@ namespace MPX
           mcs->key_push ("audio", "jack-buffer-time");
         }
 
-    #ifdef HAVE_HAL
+#ifdef HAVE_HAL
         if (PRESENT_SINK("halaudiosink"))
         {
           mcs->key_push ("audio", "hal-udi");
         }
-    #endif // HAVE_HAL
+#endif // HAVE_HAL
 
         m_cbox_video_out->set_active (mcs->key_get <int> ("audio", "video-output"));
 
-        m_warning_audio_system_changed->set_sensitive (0);
-        m_button_audio_system_apply->set_sensitive (0);
-        m_button_audio_system_reset->set_sensitive (0);
+        m_warning_audio_system_changed->set_sensitive(false);
+        m_button_audio_system_apply->set_sensitive(false);
+        m_button_audio_system_reset->set_sensitive(false);
 	}
 
 
