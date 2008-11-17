@@ -63,6 +63,12 @@ namespace MPX
             void
             hide ();
 
+            bool
+            is_present();
+
+            void
+            rescan_all_volumes ();
+
         private:
 
             MLibManager (Glib::RefPtr<Gnome::Glade::Xml> const& xml, MPX::HAL & obj_hal, MPX::Library & obj_library);
@@ -184,6 +190,7 @@ namespace MPX
             void
             recreate_path_frags ();
 
+            bool m_present;
 
             typedef std::set<std::string>       StrSetT;
             typedef std::vector<std::string>    PathFrags;

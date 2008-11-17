@@ -1080,6 +1080,20 @@ namespace MPX
 
                                   m_MB_ImportAlbum = MB_ImportAlbum::create(m_Library,m_Covers);
 
+
+                                  /*- Auto Rescanning Volumes -------------------------------------------------*/
+
+                                  if(mcs->key_get<bool>("library","rescan-at-startup"))
+                                  {
+                                    splash.set_message(_("Rescanning Volumes"), 1.0);
+                                    m_MLibManager->rescan_all_volumes();
+                                  }
+
+                                  sigc::slot<bool> slot = sigc::mem_fun(*this, &Player::on_rescan_timeout);
+                                  sigc::connection conn = Glib::signal_timeout().connect(slot, 300000);
+                                  m_rescan_timer.start();
+
+
                                   show ();
 
                                   DBusObjects.mpx->startup_complete(DBusObjects.mpx);
@@ -2271,4 +2285,16 @@ rerun_import_share_dialog:
                         while (gtk_events_pending())
                             gtk_main_iteration();
                 }
+
+        bool
+                Player::on_rescan_timeout()
+                {
+                        if(!m_MLibManager->is_present() && mcs->key_get<bool>("library","rescan-in-intervals") && m_rescan_timer.elapsed() >= mcs->key_get<int>("library","rescan-interval") * 60)
+                        {
+                          m_MLibManager->rescan_all_volumes();
+                          m_rescan_timer.reset();
+                        }
+                        return true;
+                }
+
 }

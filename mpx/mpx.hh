@@ -549,6 +549,13 @@ namespace MPX
 
         bool mm_active;
         sigc::connection mWindowFocusConn;
+
+        // auto rescanning timeout
+        Glib::Timer m_rescan_timer;
+
+        bool
+        on_rescan_timeout();
+
     };
 }
 

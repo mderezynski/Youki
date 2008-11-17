@@ -63,6 +63,7 @@ namespace MPX
     , m_HAL(obj_hal)
     , m_Library(obj_library)
     , m_ref_xml(xml)
+    , m_present(false)
     {
         Gtk::TextView * text_view_details;
         m_ref_xml->get_widget("textview-details", text_view_details );
@@ -259,13 +260,64 @@ namespace MPX
     void
     MLibManager::hide ()
     {
+        m_present = false;
         Gtk::Widget::hide();
     }
 
     void
     MLibManager::present ()
     {
+        m_present = true;
         Gtk::Window::present ();
+    }
+
+
+    bool
+    MLibManager::is_present()
+    {
+        return m_present;
+    }
+
+    void
+    MLibManager::rescan_all_volumes()
+    {
+          Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
+          for(Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); ++iter)
+          {
+                Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
+
+                m_VolumeUDI     = Vol->get_udi();
+                m_DeviceUDI     = Vol->get_storage_device_udi();
+                m_MountPoint    = Vol->get_mount_point();
+                m_ManagedPaths  = StrSetT();
+
+                SQL::RowV v;
+                m_Library.getSQL(
+                        v,
+                        (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
+                         % m_DeviceUDI
+                         % m_VolumeUDI
+                         ).str()
+                );
+
+                StrSetT m_ManagedPaths;
+                for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                {
+                  m_ManagedPaths.insert(build_filename(m_MountPoint, boost::get<std::string>((*i)["insert_path"])));
+                }
+
+                if(!m_ManagedPaths.empty())
+                {
+                  StrV v;
+                  for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
+                  {
+                    //v.push_back(filename_to_uri(build_filename(m_MountPoint, *i)));
+                    v.push_back(filename_to_uri(*i));
+                  }
+                  m_Library.initScan(v);                  
+                }
+          }
+
     }
 
     void
