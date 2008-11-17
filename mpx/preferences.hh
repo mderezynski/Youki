@@ -78,8 +78,6 @@ namespace MPX
 
     private:
 
-      CoverArtSourceView      * m_CoverArtSources; 
-
       class AudioSystemColumnRecord
         : public Gtk::TreeModel::ColumnRecord
       {
@@ -315,9 +313,16 @@ namespace MPX
 
     private:
 
-        Gtk::SpinButton * m_RadioMinimalBitrate;
+        Gtk::SpinButton*	m_Radio_MinimalBitrate;
+      	CoverArtSourceView*	m_Covers_CoverArtSources; 
 
-        Mcs::Bind * mcs_bind;
+	Gtk::CheckButton*	m_Library_RescanAtStartup;
+	Gtk::CheckButton*	m_Library_RescanInIntervals;
+	Gtk::SpinButton*	m_Library_RescanInterval;
+	Gtk::HBox*		m_Library_RescanIntervalBox;
+
+        Mcs::Bind*		mcs_bind;
+
   }; // class Preferences
 } // namespace MPX
 
