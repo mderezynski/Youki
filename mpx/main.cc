@@ -247,6 +247,8 @@ namespace MPX
 
         mcs->domain_register ("library");
         mcs->key_register ("library", "rootpath", std::string (Glib::build_filename (Glib::get_home_dir (), "Music")));
+	mcs->key_register ("library", "scan-at-startup", true);
+	mcs->key_register ("library", "rescan-interval", 30); // in minutes
 
         mcs->domain_register ("hotkeys");
         mcs->key_register ("hotkeys", "enable", bool (true));

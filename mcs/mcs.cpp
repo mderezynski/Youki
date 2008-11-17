@@ -230,6 +230,7 @@ namespace Mcs
       {
         if (!Glib::file_test (xml_filename, Glib::FILE_TEST_EXISTS))
         {
+            m_doc = 0;
             return;
         }
   

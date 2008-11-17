@@ -34,7 +34,7 @@ namespace MPX
                   , cover_anim_initial_velocity(473.3)
                   , cover_anim_gravity(359.1)
                   , cover_anim_wall(cover_anim_area_x1)
-                  , cover_anim_wall_elasticity(/*0.09*/ 0.0) //0.120;
+                  , cover_anim_wall_elasticity(0.11) //0.120;
                   , cover_anim_time_scale(1.0)
                   , cover_anim_fps(25)
                   , cover_anim_interval(1000 / cover_anim_fps)
@@ -132,7 +132,7 @@ namespace MPX
                                   {
                                           Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
                                           Cairo::RefPtr<Cairo::ImageSurface> surface = Util::cairo_image_surface_from_pixbuf (pixbuf);
-                                          surface = Util::cairo_image_surface_round(surface, 6.);
+                                          surface = Util::cairo_image_surface_round(surface, 3.5);
                                           set_cover( surface, first );
                                   }
                                   else
