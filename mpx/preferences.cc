@@ -413,7 +413,7 @@ namespace MPX
                 m_cbox_alsa_card->set_active (-1);
             }
         }
-        else if( device == "default" )
+        else if( alsa_device == "default" )
         {
             m_cbox_alsa_card->set_active (0);
         }
@@ -898,7 +898,7 @@ namespace MPX
                     m_cbox_alsa_card->set_active (-1);
                 }
             }
-            else if( device == "default" )
+            else if( alsa_device == "default" )
             {
                 m_cbox_alsa_card->set_active (0);
             }
@@ -911,6 +911,7 @@ namespace MPX
             }
 
             out1:
+            ;
           }
         }
     #endif //HAVE_ALSA
