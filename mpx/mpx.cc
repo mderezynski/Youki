@@ -2093,16 +2093,16 @@ rerun_import_share_dialog:
         void
                 Player::on_library_scan_end( ScanSummary const& summary )
                 {
-                        m_Statusbar->pop();        
-
                         time_t curtime = time(NULL);
-                        localtime_r(&curtime, &ctm)
+                        struct tm ctm;
+                        localtime_r(&curtime, &ctm);
 
                         char bdate[256];
-                        strftime(bdate, 256, "%a %d %b %Y %H:%M", ctm);
+                        strftime(bdate, 256, "%a %b %d %H:%M:%S %Z %Y", &ctm);
 
+                        m_Statusbar->pop();        
                         m_Statusbar->push((boost::format(
-                            _("Library Scan finished on %1%: %2% %3% scanned, %4% Files added, %5% Files up to date, %6% updated, %7% erroneous (see log)"))
+                            _("Library Scan finished on %1% (%2% %3% scanned, %4% Files added, %5% Files up to date, %6% updated, %7% erroneous, see log)"))
                             % bdate 
                             % summary.FilesTotal
                             % (summary.DeepRescan ? _("Files") : _("Folders"))
