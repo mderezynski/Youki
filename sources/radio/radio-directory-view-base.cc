@@ -141,10 +141,12 @@ namespace MPX
         }
 
         void
-        ViewBase::cell_data_func_text1 (CellRenderer * basecell, TreeModel::iterator const &iter)
+        ViewBase::cell_data_func_text (CellRenderer * basecell, TreeModel::iterator const &iter, const ColumnStringT& column)
         {
             CellRendererText *cell_p = dynamic_cast<CellRendererText*>(basecell);
-            std::string str = (*iter)[columns.name];
+
+            std::string str = (*iter)[column];
+
             if( BaseData.Highlight )
             {
                 cell_text_highlight( cell_p, str );
@@ -155,36 +157,6 @@ namespace MPX
             }
         }
     
-        void
-        ViewBase::cell_data_func_text2 (CellRenderer * basecell, TreeModel::iterator const &iter)
-        {
-            CellRendererText *cell_p = dynamic_cast<CellRendererText*>(basecell);
-            std::string str = (*iter)[columns.genre];
-            if( BaseData.Highlight )
-            {
-                cell_text_highlight( cell_p, str );
-            }
-            else
-            {
-                cell_p->property_text() = str; 
-            }
-        }
-
-        void
-        ViewBase::cell_data_func_text3 (CellRenderer * basecell, TreeModel::iterator const &iter)
-        {
-            CellRendererText *cell_p = dynamic_cast<CellRendererText*>(basecell);
-            std::string str = (*iter)[columns.current];
-            if( BaseData.Highlight )
-            {
-                cell_text_highlight( cell_p, str );
-            }
-            else
-            {
-                cell_p->property_text() = str; 
-            }
-        }
-
         void
         ViewBase::cell_text_highlight( CellRendererText *cell_p, std::string& str)
         {
@@ -325,9 +297,12 @@ namespace MPX
                     case 0:
                         get_column(n)->set_cell_data_func(
                             *cell,
-                            sigc::mem_fun(
-                                *this,
-                                &ViewBase::cell_data_func_text1
+                            sigc::bind(
+                                    sigc::mem_fun(
+                                        *this,
+                                        &ViewBase::cell_data_func_text
+                                    ),
+                                    columns.name
                         ));
                         get_column (n)->set_resizable (true);
                         break;
@@ -340,9 +315,12 @@ namespace MPX
                     case 2:
                         get_column(n)->set_cell_data_func(
                             *cell,
-                            sigc::mem_fun(
-                                *this,
-                                &ViewBase::cell_data_func_text2
+                            sigc::bind(
+                                    sigc::mem_fun(
+                                        *this,
+                                        &ViewBase::cell_data_func_text
+                                    ),
+                                    columns.genre
                         ));
                         get_column (n)->set_resizable (true);
                         break;
@@ -350,9 +328,12 @@ namespace MPX
                     case 3:
                         get_column(n)->set_cell_data_func(
                             *cell,
-                            sigc::mem_fun(
-                                *this,
-                                &ViewBase::cell_data_func_text3
+                            sigc::bind(
+                                    sigc::mem_fun(
+                                        *this,
+                                        &ViewBase::cell_data_func_text
+                                    ),
+                                    columns.current
                         ));
                         get_column (n)->set_resizable (true);
                         break;

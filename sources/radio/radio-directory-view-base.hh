@@ -73,16 +73,17 @@ namespace MPX
 
       protected:
 
+        typedef Gtk::TreeModelColumn<std::string> ColumnStringT;
         class Columns
           : public Gtk::TreeModel::ColumnRecord
         {
           public:
 
-            Gtk::TreeModelColumn<std::string>   name;
+            ColumnStringT                       name;
             Gtk::TreeModelColumn<unsigned int>  bitrate;
-            Gtk::TreeModelColumn<std::string>   genre;
-            Gtk::TreeModelColumn<std::string>   current;
-            Gtk::TreeModelColumn<std::string>   uri;
+            ColumnStringT                       genre;
+            ColumnStringT                       current;
+            ColumnStringT                       uri;
 
             Columns ()
             {
@@ -114,13 +115,7 @@ namespace MPX
         on_bitrate_changed(MCS_CB_DEFAULT_SIGNATURE);
 
         void
-        cell_data_func_text1(Gtk::CellRenderer*, const Gtk::TreeIter&);
-
-        void
-        cell_data_func_text2(Gtk::CellRenderer*, const Gtk::TreeIter&);
-
-        void
-        cell_data_func_text3(Gtk::CellRenderer*, const Gtk::TreeIter&);
+        cell_data_func_text(Gtk::CellRenderer*, const Gtk::TreeIter&, const ColumnStringT&);
 
         void
         cell_text_highlight(Gtk::CellRendererText *cell_p, std::string& str);
