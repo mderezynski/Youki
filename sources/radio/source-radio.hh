@@ -99,7 +99,7 @@ namespace Source
         on_row_activated (Gtk::TreePath const&, Gtk::TreeViewColumn*);
 
         void
-        on_shoutcast_list_updated (RadioDirectory::StreamListT const& list);
+        on_shoutcast_list_updated (RadioDirectory::StreamListT const& list, boost::optional<std::string> const& );
 
         void
         on_icecast_list_updated ();

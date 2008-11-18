@@ -151,37 +151,42 @@ namespace MPX
       {
         if( get_selection()->count_selected_rows() )
         {
-          TreeIter iter = get_selection()->get_selected();
-          TreePath path = Data.Genres->get_path (iter);
+            TreeIter iter = get_selection()->get_selected();
+            TreePath path = Data.Genres->get_path (iter);
 
-          if( (path.get_indices().data()[0] != 1 )
-               && (!Data.CurrentIter || (Data.CurrentIter != get_selection()->get_selected())))
-          {
-            Data.CurrentIter = iter; 
-            rebuild_list(false); 
-          }
-          else
-          if( path.get_indices().data()[0] == 1 )
-          {
-            boost::shared_ptr<DialogSimpleEntry> p = boost::shared_ptr<DialogSimpleEntry> (DialogSimpleEntry::create());
-            p->set_title (_("AudioSource: Custom Search (ShoutCast)"));
-            p->set_heading (_("Please enter search terms to search for stations:"));
-            ustring text;
-            int response = p->run (text);
-            p->hide ();
-            if( response == GTK_RESPONSE_OK )
-            { 
-              Data.StreamList.clear ();
-              Signals.Start.emit ();
-              TreePath path (TreePath::size_type (1), TreePath::value_type (1));    
-              TreeIter iter = Data.Genres->get_iter (path);
-              (*iter)[columns.name] = (boost::format("%s: %s") % (_(CUSTOM_SEARCH)) % text.c_str()).str();
-              URI u ((boost::format ("http://%s/%s?search=%s") % SHOUTCAST_HOST % SHOUTCAST_PATH % URI::escape_string (text).c_str()).str());
-              Data.Request = Soup::Request::create (ustring (u));
-              Data.Request->request_callback().connect (sigc::bind (sigc::mem_fun (*this, &Shoutcast::refresh_callback), std::string()));
-              Data.Request->run ();
+            if( (path.get_indices().data()[0] != 1 )
+                 && (!Data.CurrentIter || (Data.CurrentIter != get_selection()->get_selected())))
+            {
+                Data.CustomSearch.reset();
+                Data.CurrentIter = iter; 
+                rebuild_list(false); 
             }
-          }
+            else
+            if( path.get_indices().data()[0] == 1 )
+            {
+                boost::shared_ptr<DialogSimpleEntry> p = boost::shared_ptr<DialogSimpleEntry>(DialogSimpleEntry::create());
+
+                p->set_title (_("AudioSource: Custom Search (ShoutCast)"));
+                p->set_heading (_("Please enter search terms to search for stations:"));
+
+                ustring text;
+                int response = p->run (text);
+                p->hide ();
+
+                if( response == GTK_RESPONSE_OK )
+                { 
+                  Data.CustomSearch = text;
+                  Data.StreamList.clear();
+                  Signals.Start.emit ();
+
+                  (*iter)[columns.name] = (boost::format("%s: %s") % (_(CUSTOM_SEARCH)) % text.c_str()).str();
+
+                  URI u ((boost::format ("http://%s/%s?search=%s") % SHOUTCAST_HOST % SHOUTCAST_PATH % URI::escape_string (text).c_str()).str());
+                  Data.Request = Soup::Request::create (ustring (u));
+                  Data.Request->request_callback().connect (sigc::bind (sigc::mem_fun (*this, &Shoutcast::refresh_callback), std::string()));
+                  Data.Request->run ();
+              }
+            }
         }
       }
 
@@ -230,7 +235,7 @@ namespace MPX
           while (gtk_events_pending()) gtk_main_iteration();
         }
         xmlXPathFreeObject (xpathobj);
-        Signals.ListUpdated.emit (Data.StreamList);
+        Signals.ListUpdated.emit(Data.StreamList, Data.CustomSearch);
       }
 
       void

@@ -265,10 +265,11 @@ namespace Source
     }
 
     void
-    Radio::on_shoutcast_list_updated (RadioDirectory::StreamListT const& list)
+    Radio::on_shoutcast_list_updated (RadioDirectory::StreamListT const& list, boost::optional<std::string> const& highlight )
     {
 		m_shoutcast_list->set_stream_list (list);
 		m_shoutcast_list->set_filter (m_filter_entry->get_text());
+        highlight ? m_shoutcast_list->highlight_set( highlight.get() ) : m_shoutcast_list->highlight_clear();
 		m_shoutcast_base->queue_draw ();
 		m_shoutcast_base->set_sensitive (1);
 		m_notebook_shoutcast->set_current_page (0);

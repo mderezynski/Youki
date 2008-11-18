@@ -2097,12 +2097,12 @@ rerun_import_share_dialog:
                         struct tm ctm;
                         localtime_r(&curtime, &ctm);
 
-                        char bdate[256];
-                        strftime(bdate, 256, "%a %b %d %H:%M:%S %Z %Y", &ctm);
+                        char bdate[64];
+                        strftime(bdate, 64, "%H:%M:%S", &ctm);
 
                         m_Statusbar->pop();        
                         m_Statusbar->push((boost::format(
-                            _("Library Scan finished on %1% (%2% %3% scanned, %4% Files added, %5% Files up to date, %6% updated, %7% erroneous, see log)"))
+                            _("Library Scan finished at %1% (%2% %3% scanned, %4% Files added, %5% Files up to date, %6% updated, %7% erroneous, see log)"))
                             % bdate 
                             % summary.FilesTotal
                             % (summary.DeepRescan ? _("Files") : _("Folders"))

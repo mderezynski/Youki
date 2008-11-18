@@ -30,9 +30,10 @@
 #include <gtkmm/liststore.h>
 #include <gtkmm/treemodelfilter.h>
 #include <gtkmm/treeview.h>
+#include <libglademm.h>
+#include <boost/optional.hpp>
 #include "mpx/mpx-minisoup.hh"
 #include "mpx/mpx-main.hh"
-#include <libglademm.h>
 
 namespace MPX
 {
@@ -61,6 +62,8 @@ namespace MPX
         void set_filter (Glib::ustring const& filter);
         void set_stream_list (StreamListT const& entries);
         void get (Glib::ustring & title, Glib::ustring & uri);
+        void highlight_set (const std::string&);
+        void highlight_clear ();
 
         SignalStartStop&
         signal_start ();
@@ -75,11 +78,11 @@ namespace MPX
         {
           public:
 
-            Gtk::TreeModelColumn<Glib::ustring> name;
+            Gtk::TreeModelColumn<std::string>   name;
             Gtk::TreeModelColumn<unsigned int>  bitrate;
-            Gtk::TreeModelColumn<Glib::ustring> genre;
-            Gtk::TreeModelColumn<Glib::ustring> current;
-            Gtk::TreeModelColumn<Glib::ustring> uri;
+            Gtk::TreeModelColumn<std::string>   genre;
+            Gtk::TreeModelColumn<std::string>   current;
+            Gtk::TreeModelColumn<std::string>   uri;
 
             Columns ()
             {
@@ -102,12 +105,25 @@ namespace MPX
           Glib::RefPtr<Gtk::TreeModelFilter>  Filtered;
           Glib::ustring                       Filter;
           int                                 MinimalBitrate;
+          boost::optional<std::string>        Highlight;
         };
 
         BaseDataT BaseData;
 
         void        
-        on_bitrate_changed (MCS_CB_DEFAULT_SIGNATURE);
+        on_bitrate_changed(MCS_CB_DEFAULT_SIGNATURE);
+
+        void
+        cell_data_func_text1(Gtk::CellRenderer*, const Gtk::TreeIter&);
+
+        void
+        cell_data_func_text2(Gtk::CellRenderer*, const Gtk::TreeIter&);
+
+        void
+        cell_data_func_text3(Gtk::CellRenderer*, const Gtk::TreeIter&);
+
+        void
+        cell_text_highlight(Gtk::CellRendererText *cell_p, std::string& str);
 
         static int instance_counter;
 

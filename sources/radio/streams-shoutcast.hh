@@ -31,6 +31,7 @@
 #include <gtkmm/treeview.h>
 #include <libglademm/xml.h>
 #include <sigc++/signal.h>
+#include <boost/optional.hpp>
 #include "mpx/mpx-minisoup.hh"
 #include "mpx/xml/xml.hh"
 #include "radio-directory-types.hh"
@@ -39,7 +40,7 @@ namespace MPX
 {
   namespace RadioDirectory
   {
-    typedef sigc::signal <void, StreamListT const&> SignalListUpdated;
+    typedef sigc::signal <void, StreamListT const&, boost::optional<std::string> const& > SignalListUpdated;
 
     class Columns
       : public Gtk::TreeModel::ColumnRecord
@@ -103,6 +104,7 @@ namespace MPX
           GHashTable*                   Cache;
           StreamListT                   StreamList;
           Soup::RequestRefP             Request; 
+          boost::optional<std::string>  CustomSearch;
         };
 
         DataT   Data;
