@@ -93,9 +93,6 @@ namespace Source
         on_selection_changed (RadioDirectory::ViewBase * view);
 
         void
-        on_update_list ();
-
-        void
         on_set_notebook_page ();
 
         void

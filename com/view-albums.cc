@@ -394,15 +394,8 @@ namespace MPX
 
                         AlbumsTreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
 
-                        m_DiscDefault_Pixbuf =
-                                Gdk::Pixbuf::create_from_file(
-                                                build_filename(
-                                                        DATA_DIR,
-                                                        build_filename("images","disc.png")
-                                                        )
-                                                )->scale_simple(90,90,Gdk::INTERP_BILINEAR);
-
-                        m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_Pixbuf->scale_simple(90,90,Gdk::INTERP_BILINEAR));
+                        m_DiscDefault_DND = IconTheme::get_default()->load_icon("gnome-dev-cdrom-audio", 128);
+                        m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_DND->scale_simple(90,90,Gdk::INTERP_BILINEAR));
 
                         std::vector<TargetEntry> Entries;
                         Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
@@ -564,7 +557,7 @@ namespace MPX
                                                 }
                                         }
 
-                                        drag_source_set_icon(m_DiscDefault_Pixbuf->scale_simple(128,128,Gdk::INTERP_BILINEAR));
+                                        drag_source_set_icon(m_DiscDefault_DND->scale_simple(128,128,Gdk::INTERP_BILINEAR));
                                 }
                                 else
                                 {

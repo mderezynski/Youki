@@ -62,7 +62,19 @@ namespace MPX
       : TreeView (obj)
       {
         Data.Cache = g_hash_table_new_full (g_str_hash,g_str_equal,GDestroyNotify(g_free),GDestroyNotify(xmlFreeDoc));
-        build_genre_list ();
+
+        CellRendererText *cell;
+        cell = manage ( new CellRendererText() );
+        append_column (_("Genre"), *cell);
+        get_column (0)->set_resizable (false);
+        get_column (0)->set_sizing (TREE_VIEW_COLUMN_AUTOSIZE);
+        Data.Genres = ListStore::create (columns);
+        set_model (Data.Genres);
+        get_column (0)->set_cell_data_func (*cell, sigc::mem_fun (this, &MPX::RadioDirectory::Shoutcast::Shoutcast::genre_cell_data_func));
+        get_selection()->set_mode (SELECTION_BROWSE);
+        get_selection()->signal_changed().connect (sigc::mem_fun (this, &MPX::RadioDirectory::Shoutcast::Shoutcast::refresh_wrapper));
+
+        refresh ();
       }
 
       Shoutcast::~Shoutcast ()
@@ -102,7 +114,7 @@ namespace MPX
       }
 
       void
-      Shoutcast::build_genre_list ()
+      Shoutcast::refresh ()
       {
         xmlDocPtr             doc;
         xmlXPathObjectPtr     xpathobj;
@@ -120,13 +132,7 @@ namespace MPX
         xpathobj = xpath_query (doc, BAD_CAST "//genre", NULL);
         nv = xpathobj->nodesetval;
 
-        CellRendererText *cell;
-        cell = manage ( new CellRendererText() );
-        append_column (_("Genre"), *cell);
-        get_column (0)->set_resizable (false);
-        get_column (0)->set_sizing (TREE_VIEW_COLUMN_AUTOSIZE);
-
-        Data.Genres = ListStore::create (columns);
+        Data.Genres->clear();
         (*Data.Genres->append())[columns.name] = "Top500";
         (*Data.Genres->append())[columns.name] = _(CUSTOM_SEARCH);
         for (int n = 0; n < nv->nodeNr; n++)
@@ -135,12 +141,6 @@ namespace MPX
           (*Data.Genres->append())[columns.name] = reinterpret_cast<char*>(prop);
           g_free (prop);
         }
-
-        set_model (Data.Genres);
-
-        get_column (0)->set_cell_data_func (*cell, sigc::mem_fun (this, &MPX::RadioDirectory::Shoutcast::Shoutcast::genre_cell_data_func));
-        get_selection()->set_mode (SELECTION_BROWSE);
-        get_selection()->signal_changed().connect (sigc::mem_fun (this, &MPX::RadioDirectory::Shoutcast::Shoutcast::refresh_wrapper));
 
         xmlXPathFreeObject (xpathobj);
         xmlFreeDoc (doc);
@@ -158,7 +158,7 @@ namespace MPX
                && (!Data.CurrentIter || (Data.CurrentIter != get_selection()->get_selected())))
           {
             Data.CurrentIter = iter; 
-            refresh (0); // FIXME: Use an enum here that says something
+            rebuild_list(false); 
           }
           else
           if( path.get_indices().data()[0] == 1 )
@@ -262,7 +262,7 @@ namespace MPX
       }
 
       void
-      Shoutcast::refresh (bool force)
+      Shoutcast::rebuild_list (bool force)
       {
         if (!get_selection()->count_selected_rows())
           return;
@@ -298,7 +298,7 @@ namespace MPX
         ustring genre = (*iter)[columns.name];
         if (g_hash_table_lookup (Data.Cache, genre.c_str()))
         {
-          refresh (1);
+          rebuild_list(true);
         }
       }
     }

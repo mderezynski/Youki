@@ -49,15 +49,17 @@
 using namespace Glib;
 using namespace Gtk;
 
-#define RADIO_ACTION_UPDATE_LIST    "radio-action-update-list"
-
 namespace
 {
-  enum Page
-  {
-    PAGE_SHOUTCAST,
-    PAGE_ICECAST,
-  };
+    enum Page
+    {
+      PAGE_SHOUTCAST,
+      PAGE_ICECAST,
+    };
+
+    const char RADIO_ACTION_UPDATE_XIPH[] = "radio-action-update-xiph";
+    const char RADIO_ACTION_UPDATE_SHOUT[] = "radio-action-update-shout";
+
 
     char const * ui_source =
     "<ui>"
@@ -65,7 +67,8 @@ namespace
     "<menubar name='MenubarMain'>"
     "   <placeholder name='placeholder-source'>"
     "     <menu action='menu-source-radio'>"
-    "         <menuitem action='radio-action-update-list'/>"
+    "         <menuitem action='radio-action-update-xiph'/>"
+    "         <menuitem action='radio-action-update-shout'/>"
     "     </menu>"
     "   </placeholder>"
     "</menubar>"
@@ -162,13 +165,32 @@ namespace Source
 		  (sigc::bind (sigc::mem_fun (*this, &Radio::on_selection_changed), dynamic_cast<RadioDirectory::ViewBase*>(m_icecast_list) ) );
 
 		m_ui_manager = ui_manager; 
-		m_actions = ActionGroup::create ("Actions_Radio");
-		m_actions->add (Action::create ("menu-source-radio", _("Radio")));
 
-		m_actions->add  (Action::create (RADIO_ACTION_UPDATE_LIST,
-										  Gtk::Stock::REFRESH,
-										  _("Update Icecast List")),
-										  (sigc::mem_fun (*this, &Radio::on_update_list)));
+		m_actions = ActionGroup::create ("Actions_Radio");
+
+		m_actions->add (Action::create(
+                            "menu-source-radio",
+                            _("Radio")
+        ));
+
+		m_actions->add (Action::create(
+                            RADIO_ACTION_UPDATE_XIPH,
+							Gtk::Stock::REFRESH,
+							_("Icecast: Update List")),
+							sigc::mem_fun(
+                                *m_icecast_list,
+                                &RadioDirectory::Icecast::refresh
+        ));
+
+		m_actions->add (Action::create(
+                            RADIO_ACTION_UPDATE_SHOUT,
+							Gtk::Stock::REFRESH,
+							_("SHOUTcast: Update List")),
+							sigc::mem_fun(
+                                *m_shoutcast_base,
+                                &RadioDirectory::Shoutcast::refresh
+        ));
+
 
 		m_ui_manager->insert_action_group (m_actions);
 
@@ -208,16 +230,6 @@ namespace Source
 		else
 			  m_Caps = Caps (m_Caps & ~C_CAN_PLAY);
 		Signals.Caps.emit (m_Caps);
-    }
-
-    void
-    Radio::on_update_list ()
-    {
-		if( m_notebook_radio->get_current_page() == 1)
-		{
-		  m_notebook_icecast->set_current_page(1);
-		  m_icecast_list->refresh();
-		}
     }
 
     void

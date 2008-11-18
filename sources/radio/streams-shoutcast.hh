@@ -71,7 +71,7 @@ namespace MPX
 
         virtual ~Shoutcast ();
 
-        void refresh (bool force = false);
+        void  refresh ();
 
         SignalListUpdated&
         signal_list_updated ();
@@ -91,10 +91,10 @@ namespace MPX
         Columns columns;
 
         void  genre_cell_data_func (Gtk::CellRenderer *cell, Gtk::TreeIter const& iter);
-        void  build_genre_list ();
         void  refresh_wrapper ();
         void  refresh_parse_and_emit_updated (xmlDocPtr doc);
         void  refresh_callback (char const* data, guint size, guint code, std::string const& genre);
+        void  rebuild_list (bool force = false);
 
         struct DataT
         {

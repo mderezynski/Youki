@@ -217,7 +217,7 @@ namespace MPX
                             };
 
                             Cairo::RefPtr<Cairo::ImageSurface>    m_DiscDefault;
-                            Glib::RefPtr<Gdk::Pixbuf>             m_DiscDefault_Pixbuf;
+                            Glib::RefPtr<Gdk::Pixbuf>             m_DiscDefault_DND;
                             Glib::RefPtr<Gdk::Pixbuf>             m_Emblem[N_EMS];
                             Glib::RefPtr<Gdk::Pixbuf>             m_Stars[N_STARS];
 
