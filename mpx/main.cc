@@ -62,6 +62,7 @@ using namespace MPX;
 namespace MPX
 {
   Mcs::Mcs         * mcs      = 0;
+  Mcs::Bind        * mcs_bind = 0;
   Service::Manager * services = 0;
 
   namespace
@@ -139,6 +140,8 @@ namespace MPX
                 g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, _("Unable to parse configuration file!"));
             }
         }
+
+        mcs_bind = new Mcs::Bind(mcs);
 
         mcs->load (Mcs::Mcs::VERSION_IGNORE);
 
@@ -250,6 +253,7 @@ namespace MPX
         mcs->key_register ("library", "rescan-at-startup", true);
         mcs->key_register ("library", "rescan-in-intervals", true);
         mcs->key_register ("library", "rescan-interval", 30); // in minutes
+        mcs->key_register ("library", "always-vacuum", false);
 
         mcs->domain_register ("hotkeys");
         mcs->key_register ("hotkeys", "enable", bool (true));

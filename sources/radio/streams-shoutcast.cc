@@ -176,15 +176,24 @@ namespace MPX
                 if( response == GTK_RESPONSE_OK )
                 { 
                   Data.CustomSearch = text;
-                  Data.StreamList.clear();
-                  Signals.Start.emit ();
 
                   (*iter)[columns.name] = (boost::format("%s: %s") % (_(CUSTOM_SEARCH)) % text.c_str()).str();
 
-                  URI u ((boost::format ("http://%s/%s?search=%s") % SHOUTCAST_HOST % SHOUTCAST_PATH % URI::escape_string (text).c_str()).str());
-                  Data.Request = Soup::Request::create (ustring (u));
+                  Signals.Start.emit ();
+
+                  Data.Request = Soup::Request::create(
+                    ustring(
+                        URI((boost::format ("http://%s/%s?search=%s") % SHOUTCAST_HOST % SHOUTCAST_PATH % URI::escape_string (text).c_str()).str()))
+                  );
+
                   Data.Request->request_callback().connect (sigc::bind (sigc::mem_fun (*this, &Shoutcast::refresh_callback), std::string()));
                   Data.Request->run ();
+              }
+              else
+              {
+                  Data.StreamList.clear();
+                  Data.CustomSearch.reset(); 
+                  Signals.ListUpdated.emit(Data.StreamList, Data.CustomSearch);
               }
             }
         }
@@ -193,6 +202,8 @@ namespace MPX
       void
       Shoutcast::refresh_parse_and_emit_updated (xmlDocPtr doc)
       {
+        Data.StreamList.clear ();
+
         xmlXPathObjectPtr     xpathobj;
         xmlNodeSetPtr         nv;
         xmlNodePtr            node;
@@ -272,7 +283,6 @@ namespace MPX
         if (!get_selection()->count_selected_rows())
           return;
 
-        Data.StreamList.clear ();
         Signals.Start.emit ();
 
         TreeModel::iterator iter = get_selection()->get_selected ();

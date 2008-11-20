@@ -5,7 +5,6 @@
 
 #include "resolver.h"
 #include "asffile.h"
-#include "mpx/mpx-audio.hh"
 
 TagLib::File *ASFFileTypeResolver::createFile (const char                        *filename,
                                                bool                               read_properties,

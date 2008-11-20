@@ -17,12 +17,12 @@
 #include "mcs/types.h"
 
 #include "mpx.hh"
+#include "mpx/mpx-lyrics.hh"
 #include "mpx/mpx-covers.hh"
 #ifdef HAVE_HAL
 #include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
 #include "mpx/mpx-library.hh"
-#include "mpx/mpx-lyrics.hh"
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/algorithm/random.hh"
 #include "mpx/mpx-types.hh"

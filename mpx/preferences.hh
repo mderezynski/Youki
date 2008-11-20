@@ -327,8 +327,6 @@ namespace MPX
         Gtk::SpinButton*	m_Library_RescanInterval;
         Gtk::HBox*          m_Library_RescanIntervalBox;
 
-        Mcs::Bind*          mcs_bind;
-
   }; // class Preferences
 } // namespace MPX
 

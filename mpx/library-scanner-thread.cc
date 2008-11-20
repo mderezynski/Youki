@@ -376,16 +376,16 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                                                     ++m_ScanSummary.FilesAdded;
                                                     break;
 
-                                                case SCAN_RESULT_ERROR:
-                                                    ++m_ScanSummary.FilesErroneous;
-                                                    m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Error inserting file into database or incomplete metadata")));
-                                                    break;
-
                                                 case SCAN_RESULT_UPDATE:
                                                     ++m_ScanSummary.FilesUpdated;
                                                     m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i2, _("Updated")));
                                                     break;
                                             }
+                                        }
+                                        catch( ScanError & cxe )
+                                        {
+                                            ++m_ScanSummary.FilesErroneous;
+                                            m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
                                         }
                                         catch( Glib::ConvertError & cxe )
                                         {
@@ -548,16 +548,16 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
                                                 ++m_ScanSummary.FilesAdded;
                                                 break;
 
-                                            case SCAN_RESULT_ERROR:
-                                                ++m_ScanSummary.FilesErroneous;
-                                                m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i3, _("Error inserting file into database or incomplete metadata")));
-                                                break;
-
                                             case SCAN_RESULT_UPDATE:
                                                 ++m_ScanSummary.FilesUpdated;
                                                 m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i3, _("Updated")));
                                                 break;
                                         }
+                                     }
+                                     catch( ScanError & cxe )
+                                     {
+                                        ++m_ScanSummary.FilesErroneous;
+                                        m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i3, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
                                      }
                                      catch( Glib::ConvertError & cxe )
                                      {
@@ -955,13 +955,16 @@ MPX::LibraryScannerThread::get_track_id (Track& track) const
 ScanResult
 MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const std::string& insert_path)
 {
-  g_return_val_if_fail(!uri.empty(), SCAN_RESULT_ERROR);
+  if( uri.empty() )
+  {
+    throw ScanError(_("Empty URI/no URI given"));
+  }
 
   ThreadData * pthreaddata = m_ThreadData.get();
 
   if( !(track[ATTRIBUTE_ALBUM] && track[ATTRIBUTE_ARTIST] && track[ATTRIBUTE_TITLE]) )
   {
-    return SCAN_RESULT_ERROR ;
+    throw ScanError(_("Insufficient Metadata (artist, album and title must be given)"));
   }
 
   if( (!track[ATTRIBUTE_DATE]) && (track[ATTRIBUTE_MB_RELEASE_DATE]))
@@ -1035,14 +1038,13 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
       else
       {
           g_warning("%s: Got track ID 0 for internal track! Highly supicious! Please report!", G_STRLOC);
-          return SCAN_RESULT_ERROR ;
+          throw ScanError(_("Got track ID 0 for internal track! Highly supicious! Please report!"));
       }
   }
   catch (SqlExceptionC & cxe)
   {
       g_message("%s: SQL Error: %s", G_STRFUNC, cxe.what());
-      m_SQL->exec_sql("ROLLBACK");
-      return SCAN_RESULT_ERROR ;
+      throw ScanError(cxe.what());
   }
 
   return SCAN_RESULT_OK ; 

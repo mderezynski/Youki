@@ -67,6 +67,10 @@ namespace MPX
         }
     };
 
+#include "mpx/exception.hh"
+
+    EXCEPTION(ScanError)
+
     class HAL;
     class MetadataReaderTagLib;
 	class LibraryScannerThread : public sigx::glib_threadable

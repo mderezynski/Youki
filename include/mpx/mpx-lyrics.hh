@@ -28,18 +28,17 @@
 #ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif //HAVE_CONFIG_H
+#include <exception>
 
 #include "mpx/mpx-minisoup.hh"
 
 namespace MPX
 {
 
-#include "mpx/exception.hh"
-
-  class LyricsReturnNotOK : public MPX::Exception 
+  class LyricsReturnNotOK : public std::runtime_error 
   { 
 	public: 
-        LyricsReturnNotOK (std::string const& msg = std::string()) : MPX::Exception(msg) {} 
+        LyricsReturnNotOK (std::string const& msg = std::string()) : std::runtime_error(msg) {} 
   };
 
   namespace LyricWiki

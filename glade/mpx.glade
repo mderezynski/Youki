@@ -41,6 +41,7 @@
                   <widget class="GtkHPaned" id="hpaned2">
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
+            		<property name="position">220</property>
                     <child>
                       <widget class="GtkScrolledWindow" id="scrolledwindow-sidebar">
                         <property name="visible">True</property>

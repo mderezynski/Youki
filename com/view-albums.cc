@@ -883,7 +883,7 @@ namespace MPX
                                 if( !country.empty() )
                                 {
                                         (*iter)[Columns.Text] =
-        (boost::format("<span size='8000'><span size='12000'><b>%2%</b>: %1%</span>\n<span size='9000'>%3% %4%\n%5%</span></span>")
+        (boost::format("<span size='8000'><span size='12000'><b>%1%</b>\n<i>%2%</i></span>\n<span size='9000'>%3% %4%\n%5%</span></span>")
                                                  % Markup::escape_text(album).c_str()
                                                  % Markup::escape_text(artist).c_str()
                                                  % country
@@ -894,7 +894,7 @@ namespace MPX
                                 else
                                 {
                                         (*iter)[Columns.Text] =
-        (boost::format("<span size='8000'><span size='12000'><b>%2%</b>: %1%</span>\n<span size='9000'>%3%\n%4%</span></span>")
+        (boost::format("<span size='8000'><span size='12000'><b>%1%</b>\n<i>%2%</i></span>\n<span size='9000'>%3%\n%4%</span></span>")
                                                  % Markup::escape_text(album).c_str()
                                                  % Markup::escape_text(artist).c_str()
                                                  % year

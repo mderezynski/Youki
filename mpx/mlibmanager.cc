@@ -60,10 +60,10 @@ namespace MPX
                               MPX::HAL & obj_hal, MPX::Library & obj_library)
     : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
     , sigx::glib_auto_dispatchable()
+    , m_present(false)
     , m_HAL(obj_hal)
     , m_Library(obj_library)
     , m_ref_xml(xml)
-    , m_present(false)
     {
         Gtk::TextView * text_view_details;
         m_ref_xml->get_widget("textview-details", text_view_details );
@@ -212,6 +212,9 @@ namespace MPX
             &MLibManager::on_vacuum_volume
         ));
         m_Vacuum->set_sensitive( false );
+
+        m_ref_xml->get_widget( "always-vacuum", m_AlwaysVacuum );
+        mcs_bind->bind_toggle_button(*m_AlwaysVacuum, "library","always-vacuum");
     }
 
     /* ------------------------------------------------------------------------------------------------*/
@@ -281,6 +284,7 @@ namespace MPX
     void
     MLibManager::rescan_all_volumes()
     {
+          Gtk::Widget::set_sensitive(false);
           Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
           for(Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); ++iter)
           {
@@ -316,7 +320,7 @@ namespace MPX
                   m_Library.initScan(v);                  
                 }
           }
-
+          Gtk::Widget::set_sensitive(true);
     }
 
     void
@@ -648,10 +652,14 @@ namespace MPX
         StrV v;
         for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
         {
-            //v.push_back(filename_to_uri(build_filename(m_MountPoint, *i)));
             v.push_back(filename_to_uri(*i));
         }
         m_Library.initScan(v);
+
+        if( m_AlwaysVacuum->get_active() )
+        {
+            on_vacuum_volume ();
+        }
     }
 
     void
@@ -660,16 +668,22 @@ namespace MPX
         StrV v;
         for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
         {
-            //v.push_back(filename_to_uri(build_filename(m_MountPoint, *i)));
             v.push_back(filename_to_uri(*i));
         }
         m_Library.initScan(v, true);
+
+        if( m_AlwaysVacuum->get_active() )
+        {
+            on_vacuum_volume ();
+        }
     }
 
     void
     MLibManager::on_vacuum_volume ()
     {
+        Gtk::Widget::set_sensitive(false);
         m_Library.vacuum_volume(m_DeviceUDI, m_VolumeUDI);
+        Gtk::Widget::set_sensitive(true);
     }
 
     void

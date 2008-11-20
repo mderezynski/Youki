@@ -38,10 +38,8 @@ extern "C" bool _set (std::string const& filename, Track & track)
 {
   TagLib::ASF::File opfile (filename.c_str());
 
-#if 0
   if (!metadata_check_file (&opfile))
     return false;
-#endif
 
   TagLib::ASF::Tag * tag = dynamic_cast<TagLib::ASF::Tag*>(opfile.tag());
 
@@ -111,10 +109,10 @@ extern "C" bool _get (std::string const& filename, Track & track)
 {
   TagLib::ASF::File opfile (filename.c_str());
 
-#if 0
   if (!metadata_check_file (&opfile))
     return false;
-#endif
+
+  metadata_get_common(&opfile, track);
 
   ASF::Tag* tag = dynamic_cast<ASF::Tag*>(opfile.tag());
   if (!tag)
