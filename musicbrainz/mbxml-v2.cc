@@ -33,6 +33,7 @@
 
 #include "mpx/mpx-minisoup.hh"
 #include "mpx/mpx-uri.hh"
+#include "mpx/mpx-types.hh"
 #include "mb-libxml2-sax-release-list.hh"
 #include "mb-libxml2-sax-release.hh"
 #include "mb-libxml2-sax-tracks.hh"
@@ -40,10 +41,122 @@
 
 using namespace Glib;
 
+namespace
+{
+  inline void opt_assign_string(
+        MPX::OVariant&                  var,
+        const std::string&              str
+  )
+  {
+    if( !str.empty() )
+      var = str;
+    else
+      var.reset ();
+  }
+}
+
+
 namespace MPX
 {
   namespace MusicBrainzXml
   {
+    void
+    imbue_track(
+        const MusicBrainzTrack& m,
+        Track&                  x
+    )
+    {
+      x[ATTRIBUTE_TRACK] = gint64(m.trackTrackNumber);
+      x[ATTRIBUTE_TIME] = gint64(m.trackDuration/1000);
+
+      opt_assign_string(
+          x[ATTRIBUTE_MB_TRACK_ID],
+          m.trackId
+      );
+
+      opt_assign_string(
+          x[ATTRIBUTE_TITLE],
+          m.trackTitle
+      );
+
+      opt_assign_string(
+          x[ATTRIBUTE_MB_ARTIST_ID],
+          m.artistId
+      );
+
+      opt_assign_string(
+          x[ATTRIBUTE_ARTIST],
+          m.artistName
+      );
+
+      opt_assign_string(
+          x[ATTRIBUTE_ARTIST_SORTNAME],
+          m.artistSortName
+      );
+    }
+
+    void
+    imbue_album(
+        const MusicBrainzRelease& m,
+        Track&                    x,
+        MusicBrainzReleaseV::size_type release_event_index)
+    {
+      opt_assign_string(
+            x[ATTRIBUTE_MB_ALBUM_ID],
+            m.releaseId
+      );
+
+      opt_assign_string(
+            x[ATTRIBUTE_ALBUM],
+            m.releaseTitle
+      );
+
+      opt_assign_string(
+            x[ATTRIBUTE_MB_ALBUM_ARTIST_ID],
+            m.mArtist.artistId
+      );
+
+      opt_assign_string(
+            x[ATTRIBUTE_ALBUM_ARTIST],
+            m.mArtist.artistName
+      );
+
+      opt_assign_string(
+            x[ATTRIBUTE_ALBUM_ARTIST_SORTNAME],
+            m.mArtist.artistSortName
+      );
+
+      opt_assign_string(
+            x[ATTRIBUTE_ASIN],
+            m.releaseASIN
+      );
+
+      x[ATTRIBUTE_DATE].reset();
+      x[ATTRIBUTE_MB_RELEASE_DATE].reset();
+
+      if( m.mReleaseEventV.size() ) 
+      {
+        std::string release_date = m.mReleaseEventV[release_event_index].releaseEventDate;
+
+        if( release_date.length() == 10 )
+        {
+          x[ATTRIBUTE_MB_RELEASE_DATE] = release_date; 
+        }
+        else if( release_date.length() == 7 )
+        {
+          static boost::format date_f ("%s-01");
+          x[ATTRIBUTE_MB_RELEASE_DATE] = (date_f % release_date.c_str()).str();
+          x[ATTRIBUTE_DATE] = gint64(g_ascii_strtoull (release_date.substr (0, 4).c_str(), NULL, 10));
+        }
+        else if( release_date.length() == 4 )
+        {
+          static boost::format date_f ("%s-01-01");
+          x[ATTRIBUTE_MB_RELEASE_DATE] = (date_f % release_date.c_str()).str();
+          x[ATTRIBUTE_DATE] = gint64(g_ascii_strtoull (release_date.substr (0, 4).c_str(), NULL, 10));
+        }
+      }
+    }
+
     void
     mb_releases_query (Glib::ustring const& artist,
                        Glib::ustring const& album,

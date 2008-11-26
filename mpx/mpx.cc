@@ -104,10 +104,8 @@ namespace
                 "         <menuitem action='action-quit'/>"
                 "   </menu>"
                 "   <menu action='MenuEdit'>"
-#if 0
                 "	      <menuitem action='action-mb-import'/>"
                 "         <separator/>"
-#endif
                 "         <menuitem action='action-preferences'/>"
                 "         <menuitem action='action-plugins'/>"
 #ifdef HAVE_HAL
@@ -846,7 +844,7 @@ namespace MPX
 #endif
 
                                   m_actions->add (Action::create("action-mb-import",
-                                                          _("MusicBrainz: Import Album"),
+                                                          _("MusicBrainz-Import Album"),
                                                           _("Import an album using MusicBrainz")),
                                                   sigc::mem_fun (*this, &Player::on_import_album));
 

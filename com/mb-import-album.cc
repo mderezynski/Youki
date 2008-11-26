@@ -92,17 +92,29 @@ namespace MPX
                         m_Xml->get_widget("treeview-tracks", m_tTracks);
                         m_Xml->get_widget("treeview-release", m_tRelease);
 
-                        m_Xml->get_widget("cbe-artist", m_cbeArtist);
-                        m_Xml->get_widget("cbe-album", m_cbeAlbum);
-                        m_Xml->get_widget("cbe-genre", m_cbeGenre);
+                        m_Xml->get_widget("cbe-artist", m_CBE_Artist);
+                        m_Xml->get_widget("cbe-album", m_CBE_Album);
+                        m_Xml->get_widget("cbe-genre", m_CBE_Genre);
                         m_Xml->get_widget("e-mbid", m_eMBID);
 
-                        m_Model_CBE_Artist = Gtk::ListStore::create( m_CBE_Text_ID_Columns );
-                        m_Model_CBE_Album  = Gtk::ListStore::create( m_CBE_Text_ID_Columns );
+                        m_Model_CBE_Artist = Gtk::ListStore::create( m_Columns_CBE );
+                        m_Model_CBE_Album  = Gtk::ListStore::create( m_Columns_CBE );
 
-                        m_cbeArtist->set_model( m_Model_CBE_Artist );
-                        m_cbeAlbum->set_model( m_Model_CBE_Album );
+                        m_CBE_Artist->set_model( m_Model_CBE_Artist );
+                        m_CBE_Album->set_model( m_Model_CBE_Album );
        
+                        m_CBE_Artist->signal_changed().connect(
+                            sigc::mem_fun(
+                                    *this,
+                                    &MB_ImportAlbum::on_artist_changed
+                        ));
+
+                        m_CBE_Album->signal_changed().connect(
+                            sigc::mem_fun(
+                                    *this,
+                                    &MB_ImportAlbum::on_album_changed
+                        ));
+
                         m_bSearch->signal_clicked().connect(
                             sigc::mem_fun(
                                 *this,
@@ -128,8 +140,8 @@ namespace MPX
                                 &MB_ImportAlbum::on_button_add_files
                         ));
 
-                        m_Model_Release = Gtk::ListStore::create(m_ModelColumns);
-                        m_Model_Tracks = Gtk::ListStore::create(m_ModelColumns);
+                        m_Model_Release = Gtk::ListStore::create(m_Columns_Release);
+                        m_Model_Tracks = Gtk::ListStore::create(m_Columns_Release);
 
                         m_tRelease->set_model(m_Model_Release);
                         m_tTracks->set_model(m_Model_Tracks);
@@ -175,7 +187,7 @@ namespace MPX
                 { 
                         Gtk::CellRendererText & cell = *(dynamic_cast<Gtk::CellRendererText*>(basecell));
 
-                        MPX::Track track = (*iter)[m_ModelColumns.Track];
+                        MPX::Track track = (*iter)[m_Columns_Release.Track];
 
                         std::string text;
                         text.reserve(256);
@@ -234,17 +246,18 @@ namespace MPX
         void
                 MB_ImportAlbum::on_button_search ()
                 {
-                   MusicBrainzReleaseV releases; 
+                    MusicBrainzReleaseV releases; 
                 
-                   if( !m_eMBID->get_text().empty() )
-                   {
-                        mb_releases_by_id (m_eMBID->get_text(), releases);
-                   }
-                   else
-                   {
-                        mb_releases_query (m_cbeArtist->get_entry()->get_text(), m_cbeAlbum->get_entry()->get_text(), releases);
-                   }
+                    if( !m_eMBID->get_text().empty() )
+                    {
+                         mb_releases_by_id (m_eMBID->get_text(), releases);
+                    }
+                    else
+                    {
+                         mb_releases_query (m_CBE_Artist->get_entry()->get_text(), m_CBE_Album->get_entry()->get_text(), releases);
+                    }
 
+                    std::sort( releases.begin(), releases.end() );
                     populate_matches( releases );
                 }
 
@@ -292,15 +305,17 @@ namespace MPX
                     {
                             Track track;
                             reader.get( *i, track );
-                            (*m_Model_Tracks->append())[m_ModelColumns.Track] = track;
+                            (*m_Model_Tracks->append())[m_Columns_Release.Track] = track;
                     }
                 }
 
         void
                 MB_ImportAlbum::populate_matches( const MusicBrainzReleaseV& releases )
                 {
-                      m_cbeArtist->get_entry()->set_text ("");
-                      m_cbeAlbum->get_entry()->set_text ("");
+                      g_message("Got %lld releases.", gint64(releases.size()));
+
+                      m_CBE_Artist->get_entry()->set_text ("");
+                      m_CBE_Album->get_entry()->set_text ("");
                       m_eMBID->set_text ("");
 
                       m_Model_CBE_Artist->clear ();
@@ -312,18 +327,112 @@ namespace MPX
                       {
                         const MusicBrainzRelease& release = *i; 
 
-                        if( !set_artists.count( release.mArtist.artistId ) )
+                        m_Releases.insert( std::make_pair( release.releaseId, release ));
+
+                        ArtistIdToReleasesMap::iterator atri = m_Artist_To_Releases_Map.find( release.mArtist.artistId );
+
+                        if( atri != m_Artist_To_Releases_Map.end() ) 
                         {
-                          set_artists.insert( release.mArtist.artistId );
+                            (*atri).second.push_back( release.releaseId );
+                        }
+                        else
+                        {
+                            TreeIter iter = m_Model_CBE_Artist->append ();
+                            (*iter)[m_Columns_CBE.Text] = release.mArtist.artistName;
+                            (*iter)[m_Columns_CBE.ID]   = release.mArtist.artistId;
 
-                          TreeIter iter = m_Model_CBE_Artist->append ();
-                          (*iter)[m_CBE_Text_ID_Columns.Text] = release.mArtist.artistName;
-                          (*iter)[m_CBE_Text_ID_Columns.ID]   = release.mArtist.artistId;
-
+                            Uris_t id_v;
+                            id_v.push_back( release.releaseId );
+                            m_Artist_To_Releases_Map.insert( std::make_pair( release.mArtist.artistId, id_v ));
                         }
                       }
 
-                      m_cbeArtist->set_active (0);
-                      m_cbeAlbum->set_active (0);
+                      m_CBE_Artist->set_active (0);
+                      m_CBE_Album->set_active (0);
+                }
+
+        void
+                MB_ImportAlbum::on_artist_changed()
+                {
+                      if( m_CBE_Artist->get_active_row_number () >= 0 )
+                      {
+                        m_Model_CBE_Album->clear ();
+                        m_CBE_Album->get_entry()->set_text ("");
+
+                        m_Model_Release->clear ();
+
+                        const TreeIter& i = m_CBE_Artist->get_active ();
+                        const Uris_t& id_v = m_Artist_To_Releases_Map.find((*i)[m_Columns_CBE.ID])->second;
+
+                        std::set<std::string> ReleaseSet;
+
+                        for (Uris_t::const_iterator i  = id_v.begin(); i != id_v.end(); ++i)
+                        {
+                          const MusicBrainzRelease& release = m_Releases.find(*i)->second;
+                          if( ReleaseSet.find( release.releaseId ) == ReleaseSet.end() )
+                          {
+                            ReleaseSet.insert( release.releaseId );
+
+                            TreeIter iter = m_Model_CBE_Album->append ();
+                            (*iter)[m_Columns_CBE.Text] = release.releaseTitle;
+                            (*iter)[m_Columns_CBE.ID]   = release.releaseId;
+                          }
+                        }
+
+                        //populate_local_store (ORDERING_AUTO);
+                        m_CBE_Album->set_active(0);
+                        m_bImport->set_sensitive(m_Model_Release->children().size());
+                      }
+                }
+
+        void
+                MB_ImportAlbum::on_album_changed()
+                {
+                        m_Model_Release->clear ();
+
+                        std::string id = m_Releases.find((*m_CBE_Album->get_active())[m_Columns_CBE.ID])->second.releaseId;
+                        MusicBrainzReleaseV v;
+                        mb_releases_by_id( id, v );
+
+                        if(v.empty())
+                        {
+                          g_warning("%s: Couldn't fetch release %s from musicbrainz!", G_STRLOC, id.c_str());
+                          return;
+                        }
+
+                        m_Release = v[0];
+                        m_eMBID->set_text( m_Release.releaseId );
+
+                        const MusicBrainzTrackV& x ( m_Release.mTrackV );
+                        for (MusicBrainzTrackV::const_iterator i = x.begin(); i != x.end() ; ++i)
+                        {
+                              TreeIter iter = m_Model_Release->append();
+                              MPX::Track t;
+                              imbue_track( *i, t );
+                              (*iter)[m_Columns_Release.Track] = t;
+                        }
+
+    #if 0
+                        m_cb_release_date->set_sensitive (0);
+                        m_cb_release_event_store->clear ();
+
+                        if( m_Release.mReleaseEventV.size() )
+                        {
+                          for (MusicBrainzReleaseEventV::const_iterator i = m_Release.mReleaseEventV.begin(); i != m_Release.mReleaseEventV.end(); ++i)
+                          {
+                            TreeIter iter = m_cb_release_event_store->append ();
+                            if (! i->releaseEventCountry.empty())
+                              (*iter)[mCrEvents.event_string] = (boost::format ("%s (%s)") % i->releaseEventDate % i->releaseEventCountry).str();
+                            else
+                              (*iter)[mCrEvents.event_string] = i->releaseEventDate;
+                          }
+                          m_cb_release_date->set_active (0);
+                          m_cb_release_date->set_sensitive (1);
+                        }
+    #endif
+
+                        m_tRelease->columns_autosize ();
+                        //populate_local_store (ORDERING_AUTO);
+                        m_bImport->set_sensitive();
                 }
 }

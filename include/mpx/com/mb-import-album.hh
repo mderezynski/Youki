@@ -76,12 +76,12 @@ namespace MPX
             }
         };
 
-        typedef std::map<std::string, MusicBrainzXml::MusicBrainzReleaseV>  ArtistReleaseMap_t;
+        typedef std::vector<std::string>                                  Uris_t;
+        typedef std::map<std::string, MusicBrainzXml::MusicBrainzRelease> ReleaseIdToReleaseMap;
+        typedef std::map<std::string, Uris_t>                             ArtistIdToReleasesMap;
 
         class MB_ImportAlbum : public Gnome::Glade::WidgetLoader<Gtk::Window>
         {
-                typedef std::vector<Glib::ustring>  Uris_t;
-                
                 enum Columns
                 {
                     COL_TRACK,
@@ -101,10 +101,10 @@ namespace MPX
                                               * m_bAddFiles,
                                               * m_bSearch;
 
-                Gtk::ComboBox                 * m_cbEvents;
-                Gtk::ComboBoxEntry            * m_cbeArtist,
-                                              * m_cbeAlbum,
-                                              * m_cbeGenre;
+                Gtk::ComboBox                 * m_CB_Events;
+                Gtk::ComboBoxEntry            * m_CBE_Artist,
+                                              * m_CBE_Album,
+                                              * m_CBE_Genre;
 
                 Gtk::Entry                    * m_eMBID;
                 Gtk::TreeView                 * m_tTracks,
@@ -115,11 +115,13 @@ namespace MPX
                 Glib::RefPtr<Gtk::ListStore>    m_Model_CBE_Artist;
                 Glib::RefPtr<Gtk::ListStore>    m_Model_CBE_Album;
                     
-                MB_ImportAlbum_Model            m_ModelColumns;
-                CBE_Model_Text_ID               m_CBE_Text_ID_Columns;
+                MB_ImportAlbum_Model            m_Columns_Release;
+                CBE_Model_Text_ID               m_Columns_CBE;
 
-                Uris_t                          m_Uris;
-
+                Uris_t                              m_Uris;
+                MusicBrainzXml::MusicBrainzRelease  m_Release;
+                ReleaseIdToReleaseMap               m_Releases;
+                ArtistIdToReleasesMap               m_Artist_To_Releases_Map;
 
                 void
                 setup_view(Gtk::TreeView&);
@@ -132,6 +134,12 @@ namespace MPX
 
                 void
                 populate_matches (const MusicBrainzXml::MusicBrainzReleaseV&);
+
+                void
+                on_artist_changed ();
+        
+                void
+                on_album_changed ();
 
 
                 void

@@ -2912,6 +2912,7 @@ namespace MPX
                         gtk_widget_realize(GTK_WIDGET((dynamic_cast<Gtk::Widget*>(m_Private->m_UI))->gobj()));
                         gtk_widget_show(GTK_WIDGET((dynamic_cast<Gtk::Widget*>(m_Private->m_UI))->gobj()));
 
+                        gtk_widget_realize(GTK_WIDGET(m_Private->m_UI->gobj()));
                         (dynamic_cast<Gtk::HPaned*>(m_Private->m_UI))->set_position(mcs->key_get<int>("PlaybackSourceMusicLib", "divider-position"));
 
                         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");

@@ -37,6 +37,25 @@ namespace MPX
 {
   namespace MusicBrainzXml
   {
+    inline bool operator<( const MusicBrainzRelease& a,
+                    const MusicBrainzRelease& b)
+    {
+            return a.releaseTitle < b.releaseTitle;
+    }
+
+    void
+    imbue_track(
+        const MusicBrainzTrack& m,
+        MPX::Track&             t
+    );
+
+    void
+    imbue_album(
+        const MusicBrainzRelease& m,
+        MPX::Track&               t,
+        int                       release_event_index = 0
+    );
+
     void
     mb_releases_query (Glib::ustring const& artist,
                        Glib::ustring const& album,
