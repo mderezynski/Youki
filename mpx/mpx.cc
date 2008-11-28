@@ -1177,7 +1177,8 @@ namespace MPX
                 Player::on_action_cb_show_plugins ()
                 {
                         MPX::PluginManagerGUI & plugins = (*(services->get<PluginManagerGUI>("mpx-service-plugins-gui")));
-                        plugins.present ();
+                        plugins.show ();
+                        plugins.raise ();
                 }
 
         void
