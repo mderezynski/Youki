@@ -894,6 +894,10 @@ class MPXAudioScrobbler(mpx.Plugin):
         
     def track_played(self, blah):
 
+        if not self.post.authenticated:
+            self.player.deactivate_plugin(self.id)
+            return
+
         m = self.player.get_metadata()
         if m[mpx.AttributeId.LOCATION].get()[:7] == "http://":
             return
@@ -919,6 +923,10 @@ class MPXAudioScrobbler(mpx.Plugin):
         self.player.info_clear()
 
     def now_playing(self, blah):
+
+        if not self.post.authenticated:
+            self.player.deactivate_plugin(self.id)
+            return
 
         if not self.newTrack:
             return
