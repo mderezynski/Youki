@@ -1122,6 +1122,7 @@ namespace MPX
                 DBusObjects.mpx->shutdown_complete(DBusObjects.mpx); 
                 g_object_unref(G_OBJECT(DBusObjects.mpx));
                 delete m_PluginManager;
+                delete m_MLibManager;
         }
 
         void

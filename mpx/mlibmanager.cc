@@ -54,6 +54,8 @@ namespace MPX
 
     MLibManager::~MLibManager ()
     {
+        Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-y")));
+        Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-h")));
     }
 
     MLibManager::MLibManager (RefPtr<Gnome::Glade::Xml> const& xml,
@@ -215,6 +217,25 @@ namespace MPX
 
         m_ref_xml->get_widget( "always-vacuum", m_AlwaysVacuum );
         mcs_bind->bind_toggle_button(*m_AlwaysVacuum, "library","always-vacuum");
+
+        gtk_widget_realize(GTK_WIDGET(gobj()));
+
+        /*- Setup Window Geometry -----------------------------------------*/ 
+    
+        mcs->key_register("mpx","window-mlib-w", 600);
+        mcs->key_register("mpx","window-mlib-h", 400);
+        mcs->key_register("mpx","window-mlib-x", 100);
+        mcs->key_register("mpx","window-mlib-y", 100);
+
+        resize(
+           mcs->key_get<int>("mpx","window-mlib-w"),
+           mcs->key_get<int>("mpx","window-mlib-h")
+        );
+
+        move(
+            mcs->key_get<int>("mpx","window-mlib-x"),
+            mcs->key_get<int>("mpx","window-mlib-y")
+        );
     }
 
     /* ------------------------------------------------------------------------------------------------*/

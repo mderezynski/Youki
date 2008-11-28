@@ -683,7 +683,7 @@ class MPXDJ(mpx.Plugin):
             if len(idv):
                 self.mlib.play_tracks(idv, False) 
             else:
-                self.player.push_message(_("Failed to produce track"))
+                self.player.push_message(_("Unable to Create New Track!"))
 
         self.go.set_label("Go One-Shot!")
         self.go.set_sensitive(self.gooneshot[self.combo.get_active()] is not False)

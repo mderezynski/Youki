@@ -83,7 +83,7 @@ namespace
         const char ACTION_CLEAR [] = "musiclib-playlist-action-clear";
         const char ACTION_REMOVE_ITEMS [] = "musiclib-playlist-action-remove-items";
         const char ACTION_REMOVE_REMAINING [] = "musiclib-playlist-action-remove-remaining";
-        const char ACTION_CROP_PLAYING [] = "musiclib-playlist-action-crop-playing";
+        const char ACTION_REMOVE_PRECEDING [] = "musiclib-playlist-action-remove-preceding";
         const char ACTION_PLAY [] = "musiclib-playlist-action-play";
 
         const char ui_playlist_popup [] =
@@ -97,7 +97,7 @@ namespace
                 "     <separator/>"
                 "       <menuitem action='musiclib-playlist-action-clear'/>"
                 "       <menuitem action='musiclib-playlist-action-remove-remaining'/>"
-                "       <menuitem action='musiclib-playlist-action-crop-playing'/>"
+                "       <menuitem action='musiclib-playlist-action-remove-preceding'/>"
                 "     <separator/>"
                 "       <placeholder name='musiclib-playlist-placeholder-playlist'/>"
                 "   </menu>"
@@ -668,10 +668,10 @@ namespace MPX
                                                 AccelKey("<ctrl>r"),
                                                 sigc::mem_fun( *this, &PlaylistTreeView::action_cb_playlist_remove_remaining ));
 
-                                m_ActionGroup->add  (Gtk::Action::create (ACTION_CROP_PLAYING,
-                                                        _("Crop Playing Track")),
-                                                AccelKey("<ctrl>x"),
-                                                sigc::mem_fun( *this, &PlaylistTreeView::action_cb_playlist_crop_playing ));
+                                m_ActionGroup->add  (Gtk::Action::create (ACTION_REMOVE_PRECEDING,
+                                                        _("Remove preceding Tracks")),
+                                                AccelKey("<ctrl>p"),
+                                                sigc::mem_fun( *this, &PlaylistTreeView::action_cb_playlist_remove_preceding ));
 
                                 m_UIManager->insert_action_group (m_ActionGroup);
                                 m_UIManager->add_ui_from_string (ui_playlist_popup);
@@ -784,11 +784,11 @@ namespace MPX
                                 }
 
                         virtual void
-                                action_cb_playlist_crop_playing ()
+                                action_cb_playlist_remove_preceding ()
                                 {
                                         TreeIter iter = m_CurrentIter.get();
-					TreePath path_iter (ListStore->get_path(iter));
-					TreePath path (TreePath::size_type(1), TreePath::value_type(0));
+                    					TreePath path_iter (ListStore->get_path(iter));
+                    					TreePath path (TreePath::size_type(1), TreePath::value_type(0));
 
                                         PathV p; 
                                         while( path < path_iter ) 
@@ -808,14 +808,11 @@ namespace MPX
                                                 i = v.erase (i);
                                         }
 
-					action_cb_playlist_remove_remaining ();
-
                                         m_MLib.check_nextprev_caps();
                                         m_MLib.send_caps ();
 
                                         check_for_end ();
                                 }
-
 
                         void
                                 on_selection_changed ()
