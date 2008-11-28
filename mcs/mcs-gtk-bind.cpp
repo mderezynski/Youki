@@ -117,7 +117,7 @@ namespace Mcs
                                                        sigc::ref (range), domain, key));
     range.set_value (double (mcs->key_get<int> (domain, key)));
 
-    mcs->subscribe ("MCSBIND_INTERNAL_bind_range", domain, key,
+    mcs->subscribe (domain, key,
                     sigc::bind (sigc::mem_fun (this, &Bind::rebind_range),
                                 sigc::ref (range)));
   }
@@ -144,7 +144,7 @@ namespace Mcs
                                                        sigc::ref (range), domain, key));
     range.set_value (mcs->key_get <double> (domain, key));
 
-    mcs->subscribe ("MCSBIND_INTERNAL_bind_range_float", domain, key,
+    mcs->subscribe (domain, key,
                     sigc::bind (sigc::mem_fun (this, &Bind::rebind_range_float),
                                 sigc::ref (range)));
   }
@@ -173,7 +173,7 @@ namespace Mcs
 
     spin_button.set_value (double (mcs->key_get<int> (domain, key)));
 
-    mcs->subscribe ("MCSBIND_INTERNAL_bind_spinbutton", domain, key,
+    mcs->subscribe (domain, key,
                     sigc::bind (sigc::mem_fun (this, &Bind::rebind_spin_button),
                                 sigc::ref (spin_button)));
   }
@@ -246,7 +246,7 @@ namespace Mcs
       (sigc::bind (sigc::mem_fun (this, &Bind::button_toggled_cb),
                    sigc::ref (toggle_button), domain, key));
     toggle_button.set_active (mcs->key_get<bool> (domain, key));
-    mcs->subscribe ("MCSBIND_INTERNAL_bind_toggle_button", domain, key,
+    mcs->subscribe (domain, key,
                     sigc::bind (sigc::mem_fun (this, &Bind::rebind_toggle_button),
                                 sigc::ref (toggle_button)));
   }
@@ -314,7 +314,7 @@ namespace Mcs
     cbox_entry.signal_changed ().connect (sigc::bind (sigc::mem_fun (this, &Bind::cbox_entry_changed_cb),
                                                       sigc::ref (cbox_entry), domain, key));
 
-    mcs->subscribe ("MCSBIND_INTERNAL_bind_cbox_entry", domain, key,
+    mcs->subscribe (domain, key,
                     sigc::bind (sigc::mem_fun (this, &Bind::rebind_cbox_entry),
                                 sigc::ref (cbox_entry)));
   }
@@ -341,7 +341,7 @@ namespace Mcs
     cbox.signal_changed ().connect (sigc::bind (sigc::mem_fun (this, &Bind::cbox_changed_cb),
                                                 sigc::ref (cbox), domain, key));
     cbox.set_active (mcs->key_get<int> (domain, key));
-    mcs->subscribe ("MCSBIND_INTERNAL_bind_cbox", domain, key,
+    mcs->subscribe (domain, key,
                     sigc::bind (sigc::mem_fun (this, &Bind::rebind_cbox),
                                 sigc::ref (cbox)));
   }

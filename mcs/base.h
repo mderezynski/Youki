@@ -76,8 +76,8 @@ namespace Mcs
             };
 
             Mcs(
-                std::string const& /* xml_filename*/,
-                std::string const& /*root_node_name*/,
+                std::string const& /* m_xml*/,
+                std::string const& /*m_root_node_name*/,
                 double             /*version*/
             );
 
@@ -104,11 +104,14 @@ namespace Mcs
                 KeyVariant  const& /*key_default*/
             );
 
-            bool
+            inline bool
             domain_key_exist(
-                std::string const& /*domain*/,
-                std::string const& /*key*/
-            );
+                std::string const& domain,
+                std::string const& key
+            )
+            {
+                return (m_domains.find (domain) != m_domains.end()) && (m_domains.find (domain)->second.find(key) != m_domains.find(domain)->second.end ());
+            }
 
             Key&
             key(
@@ -121,7 +124,7 @@ namespace Mcs
                 throw NoKeyException((boost::format ("MCS key() : Domain [%s] Key [%s] does not exist") % domain % key).str());
               }
 
-              return domains.find(domain)->second.find(key)->second;
+              return m_domains.find(domain)->second.find(key)->second;
             }
                 
             template <typename T>
@@ -134,7 +137,7 @@ namespace Mcs
             {
               g_return_if_fail(domain_key_exist (domain, key));
 
-              domains.find(domain)->second.find(key)->second.set_value<T>(value);
+              m_domains.find(domain)->second.find(key)->second.set_value<T>(value);
             }
 
             template <typename T>
@@ -147,7 +150,7 @@ namespace Mcs
                     throw NoKeyException((boost::format ("MCS: key_get() Domain [%s] Key [%s] does not exist") % domain % key).str());
               }
 
-              return T (domains.find(domain)->second.find(key)->second);
+              return T (m_domains.find(domain)->second.find(key)->second);
             }
 
             void
@@ -158,7 +161,7 @@ namespace Mcs
                 throw NoKeyException((boost::format ("MCS: key_push() Domain [%s] Key [%s] does not exist") % domain % key).str());
               }
 
-              domains.find(domain)->second.find(key)->second.push();
+              m_domains.find(domain)->second.find(key)->second.push();
             }
             
             void
@@ -167,9 +170,8 @@ namespace Mcs
                 std::string const& key
             );
 
-            void
+            int
             subscribe(
-                std::string const& name,        //Must be unique
                 std::string const& domain,      //Must be registered 
                 std::string const& key,         //Must be registered,
                 SubscriberNotify const& notify
@@ -177,7 +179,7 @@ namespace Mcs
 
             void
             unsubscribe(
-                std::string const& name,        //Must be unique
+                int                id,          //Must be unique
                 std::string const& domain,      //Must be registered 
                 std::string const& key          //Must be registered,
             );
@@ -187,11 +189,12 @@ namespace Mcs
             typedef std::map<std::string /* Key Name */, Key>   KeysT;
             typedef std::map<std::string /* Domain name */, KeysT>  DomainsT;
 
-            DomainsT        domains;
-            std::string     xml_filename;
-            std::string     root_node_name;
+            DomainsT        m_domains;
+            std::string     m_xml;
+            std::string     m_root_node_name;
             xmlDocPtr       m_doc;
-            double          version;
+            double          m_version;
+            int             m_subscriber_id;
       };
 };
 

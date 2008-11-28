@@ -10,16 +10,23 @@ namespace Mcs
   {
     public:
 
-      Subscriber  (SubscriberNotify const& notify);
-	  Subscriber  ();
-	  ~Subscriber ();
+      Subscriber(
+        SubscriberNotify const& notify
+      );
+
+	  Subscriber();
+	  ~Subscriber();
 
       void
-	  notify (const std::string& domain, const std::string& key, const KeyVariant& key_value);
+	  notify(
+            const std::string& domain,
+            const std::string& key,
+            const KeyVariant&  value
+      );
 
     private:
 
-      SubscriberNotify m_notify;
+      SubscriberNotify & m_notify;
   };
 };
 

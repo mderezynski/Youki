@@ -3,16 +3,17 @@
 
 namespace Mcs
 {
-    Key::Key (std::string const& domain,
-              std::string const& key,
-              KeyVariant  const& key_default,
-              KeyType		     key_type)
-
+    Key::Key(
+        std::string const& domain,
+        std::string const& key,
+        KeyVariant  const& def,
+        KeyType		       type
+    )
 	: m_domain(domain) 
     , m_key(key)
-    , m_default(key_default)
-    , m_value(key_default)
-    , m_type(key_type)
+    , m_default(def)
+    , m_value(def)
+    , m_type(type)
     {
 	}
 
@@ -25,18 +26,22 @@ namespace Mcs
 	}
 
     void 
-    Key::subscriber_add(std::string const& name, SubscriberNotify const& notify)
+    Key::subscriber_add(
+        int id, 
+        SubscriberNotify const& notify
+    )
     {
-        g_return_if_fail(m_subscribers.find (name) == m_subscribers.end());
-        m_subscribers[name] = Subscriber(notify);
+        g_return_if_fail(m_subscribers.find(id) == m_subscribers.end());
+        m_subscribers[id] = Subscriber(notify);
     }
 
     void 
-    Key::subscriber_del(std::string const& name)
-              
+    Key::subscriber_del(
+        int id 
+    )
     {
-        g_return_if_fail (m_subscribers.find (name) != m_subscribers.end());
-        m_subscribers.erase(name);
+        g_return_if_fail (m_subscribers.find(id) != m_subscribers.end());
+        m_subscribers.erase(id);
     }
 
     KeyVariant 

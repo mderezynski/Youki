@@ -132,13 +132,14 @@ namespace
 namespace Mcs
 {
       Mcs::Mcs(
-            std::string const& xml_filename_,
-            std::string const& root_node_name_,
-            double             version_
+            std::string const& xml,
+            std::string const& root_node_name,
+            double             version
       )
-      : xml_filename(xml_filename_)
-      , root_node_name(root_node_name_)
-      , version(version_)
+      : m_xml(xml)
+      , m_root_node_name(root_node_name)
+      , m_version(version)
+      , m_subscriber_id(1)
       {
       }
 
@@ -153,17 +154,15 @@ namespace Mcs
         //Serialize the configuration into XML
         xmlDocPtr	        doc;
         xmlNodePtr          root_node;
-        std::stringstream   version_str;
 
         doc = xmlNewDoc (BAD_CAST "1.0");
-        version_str << this->version;
 
         //root node
-        root_node = xmlNewNode (0, BAD_CAST root_node_name.c_str ());
-        xmlSetProp (root_node, BAD_CAST "version", BAD_CAST (version_str.str().c_str()));
+        root_node = xmlNewNode (0, BAD_CAST m_root_node_name.c_str ());
+        xmlSetProp (root_node, BAD_CAST "version", BAD_CAST ((boost::format("%f") % m_version).str().c_str()));
         xmlDocSetRootElement (doc, root_node);
           
-        for (DomainsT::iterator iter = domains.begin (); iter != domains.end (); iter++)
+        for (DomainsT::iterator iter = m_domains.begin (); iter != m_domains.end (); iter++)
         {
           std::string domain = (iter->first); 
           KeysT & keys = (iter->second);
@@ -230,8 +229,8 @@ namespace Mcs
         xmlThrDefIndentTreeOutput (1);
         xmlKeepBlanksDefault (0);
 
-        g_message ("Saving XML to %s", xml_filename.c_str());
-        g_message ("Saved %d characters", xmlSaveFormatFileEnc (xml_filename.c_str(), doc, "utf-8", 1));
+        g_message ("Saving XML to %s", m_xml.c_str());
+        g_message ("Saved %d characters", xmlSaveFormatFileEnc (m_xml.c_str(), doc, "utf-8", 1));
 
         xmlFreeDoc (doc);
         xmlFreeDoc (m_doc);
@@ -242,27 +241,13 @@ namespace Mcs
         VersionIgnore version_ignore
       )
       {
-        if (!Glib::file_test (xml_filename, Glib::FILE_TEST_EXISTS))
+        if (!Glib::file_test (m_xml, Glib::FILE_TEST_EXISTS))
         {
             m_doc = 0;
             return;
         }
   
-        m_doc = xmlParseFile(xml_filename.c_str());
-      }
-
-      bool
-      Mcs::domain_key_exist(
-        std::string const& domain,
-        std::string const& key
-      )
-      {
-        if (domains.find (domain) == domains.end())
-            return false;
-        if (domains.find (domain)->second.find (key) == domains.find (domain)->second.end ())
-            return false;
-
-        return true;
+        m_doc = xmlParseFile(m_xml.c_str());
       }
 
       void 
@@ -270,13 +255,13 @@ namespace Mcs
         std::string const& domain
       )
       {
-        if( domains.find (domain) != domains.end() )
+        if( m_domains.find (domain) != m_domains.end() )
         {
             g_message("MCS: domain_register() Domain [%s] has already been registered", domain.c_str());
-            g_return_if_fail (domains.find (domain) == domains.end());
+            g_return_if_fail (m_domains.find (domain) == m_domains.end());
         }
 
-		domains[domain] = KeysT();
+		m_domains[domain] = KeysT();
       }
 
       void
@@ -286,26 +271,26 @@ namespace Mcs
             KeyVariant  const& key_default
       )
       {
-        if( domains.find(domain) == domains.end() )
+        if( m_domains.find(domain) == m_domains.end() )
         {
             g_message("MCS: key_register() Domain [%s] has not yet been registered", domain.c_str());
-      	    g_return_if_fail( domains.find(domain) != domains.end() );
+      	    g_return_if_fail( m_domains.find(domain) != m_domains.end() );
         }
 
-        if( domains.find(domain)->second.find(key) != domains.find(domain)->second.end() )
+        if( m_domains.find(domain)->second.find(key) != m_domains.find(domain)->second.end() )
         {
             g_message("MCS: key_register() Domain [%s] Key [%s] has already been registered", domain.c_str(), key.c_str());
-            g_return_if_fail( domains.find(domain)->second.find(key) == domains.find(domain)->second.end() );
+            g_return_if_fail( m_domains.find(domain)->second.find(key) == m_domains.find(domain)->second.end() );
         }
 
-        domains.find( domain )->second[key] = Key( domain, key, key_default, KeyType(key_default.which()) );
+        m_domains.find( domain )->second[key] = Key( domain, key, key_default, KeyType(key_default.which()) );
 
         if( !m_doc )
         {
             return;
         }
 
-        Key               & key_instance = domains.find( domain )->second[key];
+        Key               & key_instance = m_domains.find( domain )->second[key];
         KeyType             type         = key_instance.get_type(); 
         KeyVariant          variant;
         std::stringstream   xpath;
@@ -313,7 +298,7 @@ namespace Mcs
         std::string         nodeval;
         char*               nodeval_C;
                 
-        xpath << "/" << root_node_name << "/domain[@id='" << domain << "']/key[@id='" << key << "']";
+        xpath << "/" << m_root_node_name << "/domain[@id='" << domain << "']/key[@id='" << key << "']";
 
         xpathObj = xml_execute_xpath_expression (m_doc,
                     BAD_CAST (xpath.str ().c_str ()),
@@ -385,30 +370,37 @@ namespace Mcs
             std::string const& key
       )
       {
-        g_return_if_fail (domain_key_exist(domain, key));
-        return domains.find(domain)->second.find(key)->second.unset ();
+        if(!domain_key_exist(domain,key))
+            throw NoKeyException((boost::format ("MCS key_unset() : Domain [%s] Key [%s] does not exist") % domain % key).str());
+
+        return m_domains.find(domain)->second.find(key)->second.unset ();
       } 
 
-      void 
+      int
       Mcs::subscribe(
-            std::string const& name,   //Must be unique
             std::string const& domain, //Must be registered 
             std::string const& key,    //Must be registered,
             SubscriberNotify const& notify
       )
       {
-        g_return_if_fail (domain_key_exist(domain, key));
-        return domains.find (domain)->second.find (key)->second.subscriber_add(name, notify);
+        if(!domain_key_exist(domain,key))
+            throw NoKeyException((boost::format ("MCS subscribe() : Domain [%s] Key [%s] does not exist") % domain % key).str());
+
+        m_domains.find (domain)->second.find (key)->second.subscriber_add(m_subscriber_id, notify);
+        int cur = m_subscriber_id++;
+        return cur;
       }
 
       void 
       Mcs::unsubscribe(
-            std::string const& name,   //Must be unique
+            int                id,     //Must be unique
             std::string const& domain, //Must be registered 
             std::string const& key     //Must be registered,
       ) 
       {
-        g_return_if_fail (domain_key_exist(domain, key));
-        return domains.find(domain)->second.find(key)->second.subscriber_del(name);
+        if(!domain_key_exist(domain,key))
+            throw NoKeyException((boost::format ("MCS unsubscribe() : Domain [%s] Key [%s] does not exist") % domain % key).str());
+
+        return m_domains.find(domain)->second.find(key)->second.subscriber_del(id);
       }
 }

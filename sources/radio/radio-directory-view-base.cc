@@ -354,7 +354,6 @@ namespace MPX
 
             BaseData.MinimalBitrate = mcs->key_get<int>("radio","minimal-bitrate");
             mcs->subscribe(
-                (boost::format ("RadioStreamsSource%d") % instance_counter++).str(),
                 "radio",
                 "minimal-bitrate",
                 sigc::mem_fun(

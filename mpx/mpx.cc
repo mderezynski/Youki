@@ -1083,7 +1083,6 @@ namespace MPX
                                   }
 
                                   mcs->subscribe(
-                                    "MPX-Player-RescanSubscription",
                                     "library",
                                     "rescan-in-intervals",
                                     sigc::mem_fun(

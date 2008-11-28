@@ -3,8 +3,10 @@
 
 namespace Mcs
 {
-    Subscriber::Subscriber (SubscriberNotify const& notify)
-    : m_notify (notify)
+    Subscriber::Subscriber(
+        SubscriberNotify const& notify
+    )
+    : m_notify(notify)
     {
 	}
 
@@ -18,7 +20,11 @@ namespace Mcs
     }
 
     void
-    Subscriber::notify (const std::string& domain, const std::string& key, const KeyVariant& value)
+    Subscriber::notify(
+        const std::string& domain,
+        const std::string& key,
+        const KeyVariant& value
+    )
     {
       m_notify (domain, key, value);
     }

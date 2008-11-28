@@ -160,7 +160,6 @@ namespace MPX
         rebuild_stores();
 
         mcs->subscribe(
-                "CoversSubscription0",
                 "Preferences-CoverArtSources",
                 "SourceActive4",
                 sigc::mem_fun(

@@ -13,16 +13,24 @@ namespace Mcs
     {
       public:
 
-        Key (std::string const& domain,
-             std::string const& key,
-             KeyVariant  const& m_default,
-             KeyType m_type);
+        Key(
+            std::string const& domain,
+            std::string const& key,
+            KeyVariant  const& def,
+            KeyType            type
+        );
 
 		Key ();
 		~Key ();
 
-        void subscriber_add (std::string const& name, SubscriberNotify const& notify);  
-        void subscriber_del (std::string const& name);
+        void subscriber_add(
+            int id,
+            SubscriberNotify const& notify
+        );  
+
+        void subscriber_del(
+            int id
+        );
 
         template <typename T>
         class adaptor
@@ -95,18 +103,15 @@ namespace Mcs
 
       private:
       
-        typedef std::map<std::string, Subscriber> Subscribers;
+        typedef std::map<int, Subscriber> Subscribers;
       
         std::string	m_domain;
         std::string	m_key;
-
         KeyVariant	m_default; 
         KeyVariant	m_value;
         KeyType     m_type;
         Subscribers m_subscribers;
-
     };
-
 };
 
 #endif // MCS_KEY_H

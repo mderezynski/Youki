@@ -965,7 +965,7 @@ namespace MPX
                                         // Connect MCS to Equalizer Bands
                                         for (unsigned int n = 0; n < 10; ++n)
                                         {
-                                                mcs->subscribe ("PlaybackEngine", "audio",
+                                                mcs->subscribe ("audio",
                                                                 (band_f % n).str(), sigc::bind (sigc::mem_fun (*this, &Play::eq_band_changed), n));
                                                 g_object_set (G_OBJECT (m_equalizer),
                                                                 (band_f % n).str().c_str(), mcs->key_get <double> ("audio", (band_f % n).str()), NULL);
