@@ -569,13 +569,13 @@ class MPXDJ(mpx.Plugin):
             "Last.fm Tag"
         ]
 
-        action1 = gtk.ToggleAction('mpxdj-enable', "Enable MPXDJ", "", "")
-        action2 = gtk.Action('mpxdj-playmode', "MPXDJ Play Mode", "", "")
+        self.action1 = gtk.ToggleAction('mpxdj-enable', "Enable MPXDJ", "", "")
+        self.action2 = gtk.Action('mpxdj-playmode', "MPXDJ Play Mode", "", "")
         
-        self.actiongroup.add_action(action1)
-        self.actiongroup.add_action(action2)
+        self.actiongroup.add_action(self.action1)
+        self.actiongroup.add_action(self.action2)
 
-        action1.connect("toggled", self.on_enable_toggled)
+        self.action_handler1 = self.action1.connect("toggled", self.on_enable_toggled)
 
         self.action = []
         idx = 0
@@ -589,7 +589,7 @@ class MPXDJ(mpx.Plugin):
                 self.actiongroup.add_action(a)
                 idx = idx + 1
 
-        self.action[0].connect("changed", self.on_mode_changed)
+        self.action_handler2 = self.action[0].connect("changed", self.on_mode_changed)
         self.action[0].set_active(True)
 
         self.ui.insert_action_group(self.actiongroup, pos=-1)
@@ -634,10 +634,16 @@ class MPXDJ(mpx.Plugin):
     def activate(self):
 
         self.conn_playlist_end = self.mlib.gobj().connect("playlist-end", self.on_playlist_end)
+        self.action1.handler_block(self.action_handler1)
+        self.action1.set_active(True) 
+        self.action1.handler_unblock(self.action_handler1)
 
     def deactivate(self):
 
         self.mlib.gobj().disconnect(self.conn_playlist_end)
+        self.action1.handler_block(self.action_handler1)
+        self.action1.set_active(False) 
+        self.action1.handler_unblock(self.action_handler1)
 
     def on_mode_cbox_changed(self, cbox):
 
@@ -646,6 +652,10 @@ class MPXDJ(mpx.Plugin):
 
         if not self.working:
             self.go.set_sensitive(self.gooneshot[self.combo.get_active()] is not False)
+
+        self.action[0].handler_block(self.action_handler2)
+        self.action[self.combo.get_active()].set_active(True) 
+        self.action[0].handler_unblock(self.action_handler2)
 
     def on_playlist_end(self, object, empty):
 
