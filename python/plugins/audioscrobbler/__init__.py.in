@@ -667,7 +667,7 @@ class AudioScrobblerPost(threading.Thread):
 
     def run(self):
 
-        while not self.stop.isSet():
+        while not self.stop.isSet() and self.post.authenticated:
             self.newtracks.wait(0.1)
             if self.newtracks.isSet():
                 self.post()
@@ -738,7 +738,7 @@ class AudioScrobblerPost(threading.Thread):
         if not self.authenticated:
             return
 
-        while len(self.cache) > 0:
+        while len(self.cache) > 0 and self.post.authenticated:
             self.post()
     
     def savecache(self, filename):
