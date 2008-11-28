@@ -318,17 +318,29 @@ class OPTION__LastFmTag(BaseOPTION__):
         text = self.xml.get_widget("entry-lastfm-tag").get_text()
         rv = mpx.SQLRowV()
 
-        #try:
         r = lastfm.TagTopArtists(text)
         a = r.get()
+        random.shuffle(a)
 
-        for artist in a:
-            self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY random() LIMIT 1" % artist.getMBID()))
+        idx = 0
 
-        #except Exception, e:
-        #        print e
+        while not len(rv):
 
-        extract_ids(rv, self.v)
+                r = lastfm.SimilarArtists(a[idx].getName())
+                s = r.get()
+
+                random.shuffle(s)
+                self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY random() LIMIT 1" % a[0].getMBID()))
+
+                l = 10
+                if len(s) < 10: l = len(s)
+                   
+                for x in range(l):
+                    self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY random() LIMIT 1" % s[x].getMBID()))
+
+                extract_ids(rv, self.v)
+                idx = idx + 1
+
         self.finished.set()
 
 class OPTION__RandomMix(BaseOPTION__):
