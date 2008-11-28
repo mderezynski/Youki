@@ -922,6 +922,11 @@ class MPXAudioScrobbler(mpx.Plugin):
                             str(p_mbid))
         self.player.info_clear()
 
+        if not self.post.authenticated:
+            self.player.deactivate_plugin(self.id)
+            return
+
+
     def now_playing(self, blah):
 
         if not self.post.authenticated:
@@ -958,3 +963,7 @@ class MPXAudioScrobbler(mpx.Plugin):
                              str(p_album),
                              str(p_mbid))
         self.player.info_clear()
+
+        if not self.post.authenticated:
+            self.player.deactivate_plugin(self.id)
+            return
