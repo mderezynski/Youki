@@ -232,10 +232,17 @@ namespace MPX
                                 sigc::mem_fun( *this, &Library::on_new_artist ));
                 m_ScannerThread->connect().signal_new_track().connect(
                                 sigc::mem_fun( *this, &Library::on_new_track ));
-                m_ScannerThread->connect().signal_cache_cover().connect(
-                                sigc::bind( sigc::mem_fun( m_Covers, &Covers::cache ), true ));
                 m_ScannerThread->connect().signal_reload().connect(
                                 sigc::mem_fun( *this, &Library::reload ));
+
+                m_ScannerThread->connect().signal_cache_cover().connect(
+                                sigc::bind(
+                                    sigc::mem_fun(
+                                        m_Covers,
+                                        &Covers::cache
+                                )
+                                , true
+                )); 
 
                 ///////////////////////////////////////////////////////////////
                 /// ARTIST TABLE 
@@ -511,14 +518,17 @@ namespace MPX
                         if( r.count("album.album") )
                                 album = get<std::string>(r["album.album"]);
 
+                        RequestQualifier rq;
+                        rq.mbid   = mb_album_id;
+                        rq.asin   = amazon_asin;
+                        rq.uri    = location;
+                        rq.artist = album_artist;
+                        rq.album  = album;
+
                         m_Covers.cache(
-                                        mb_album_id,
-                                        amazon_asin,
-                                        location,
-                                        album_artist,
-                                        album,
-                                        true
-                                      );
+                              rq
+                            , true
+                        );
 
                         (*position)++;
 
@@ -545,7 +555,7 @@ namespace MPX
                         int * position = new int;
                         *position = 0;
 
-                        signal_timeout().connect( sigc::bind( sigc::mem_fun( *this, &Library::recache_covers_handler ), v, position), 300);
+                        signal_timeout().connect( sigc::bind( sigc::mem_fun( *this, &Library::recache_covers_handler ), v, position), 500);
                 }
 
         void

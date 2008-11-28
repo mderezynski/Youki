@@ -30,6 +30,7 @@
 #include <sigx/sigx.h>
 
 #include "mpx/mpx-covers.hh"
+#include "mpx/mpx-minisoup.hh"
 
 namespace MPX
 {
@@ -39,19 +40,28 @@ namespace MPX
     class CoverStore
     {
     protected:
+
         Covers& covers;
 
         typedef sigc::signal<void, CoverFetchData*> SignalNotFoundT;
+        typedef sigc::signal<void, CoverFetchData*> SignalHasFoundT;
 
         struct SignalsT
         {
           // Fired if a store could not find artwork
           SignalNotFoundT NotFound;
+          SignalHasFoundT HasFound;
         };
 
         SignalsT Signals;
 
     public:
+        SignalHasFoundT&
+        has_found_callback()
+        {
+            return Signals.HasFound;
+        }
+
         SignalNotFoundT&
         not_found_callback()
         {
@@ -74,24 +84,36 @@ namespace MPX
         load_artwork(CoverFetchData*);
 
         virtual std::string
-        get_url(CoverFetchData*) { return ""; }
+        get_url(CoverFetchData*) = 0; 
 
         virtual bool
         can_load_artwork(CoverFetchData*);
 
         void
-        save_image(
-            char const*,
-            guint,
-            guint,
-            CoverFetchData*
+        request_cb(
+              char const*     data
+            , guint           size
+            , guint           code
+            , CoverFetchData* cb_data
         );
+
+        void
+        save_image(
+              char const*
+            , guint
+            , CoverFetchData*
+        );
+
+        virtual void
+        request_failed( CoverFetchData* );
+
+        Soup::RequestRefP request;
     };
 
     class AmazonCovers : public RemoteStore
     {
     public:
-        AmazonCovers(Covers& c) : RemoteStore(c)
+        AmazonCovers(Covers& c) : RemoteStore(c), n(0)
         { }
 
         bool
@@ -99,6 +121,13 @@ namespace MPX
 
         std::string
         get_url(CoverFetchData*);
+
+        virtual void
+        request_failed( CoverFetchData* );
+
+    private:
+
+        unsigned int n;
     };
 
     class AmapiCovers : public RemoteStore
@@ -109,7 +138,12 @@ namespace MPX
         
         void
         load_artwork(CoverFetchData*);
-        
+
+    protected:        
+
+        virtual std::string
+        get_url(CoverFetchData*);
+
     private:
         void
         reply_cb(char const*, guint, guint, CoverFetchData*);
@@ -123,6 +157,11 @@ namespace MPX
 
         void
         load_artwork(CoverFetchData*);
+
+    protected:
+
+        virtual std::string
+        get_url(CoverFetchData*); 
 
     private:
         void

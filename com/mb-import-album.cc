@@ -388,6 +388,8 @@ namespace MPX
         void
                 MB_ImportAlbum::on_album_changed()
                 {
+                    if( m_CBE_Album->get_active_row_number () >= 0 )
+                    {
                         m_Model_Release->clear ();
 
                         std::string id = m_Releases.find((*m_CBE_Album->get_active())[m_Columns_CBE.ID])->second.releaseId;
@@ -434,5 +436,6 @@ namespace MPX
                         m_tRelease->columns_autosize ();
                         //populate_local_store (ORDERING_AUTO);
                         m_bImport->set_sensitive();
+                    }
                 }
 }

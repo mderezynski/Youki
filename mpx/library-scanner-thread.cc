@@ -863,23 +863,20 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
       pthreaddata->NewAlbum.emit( album_j );
 
-      pthreaddata->CacheCover(
-
-                       get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get())
-
-                     , track[ATTRIBUTE_ASIN]
+      RequestQualifier rq;
+      rq.mbid       = get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get());
+      rq.asin       = track[ATTRIBUTE_ASIN]
                             ? get<std::string>(track[ATTRIBUTE_ASIN].get())
-                            : ""
+                            : "";
 
-                     , get<std::string>(track[ATTRIBUTE_LOCATION].get())
-
-                     , track[ATTRIBUTE_ALBUM_ARTIST]
+      rq.uri        = get<std::string>(track[ATTRIBUTE_LOCATION].get());
+      rq.artist     = track[ATTRIBUTE_ALBUM_ARTIST]
                             ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get())
-                            : get<std::string>(track[ATTRIBUTE_ARTIST].get())
+                            : get<std::string>(track[ATTRIBUTE_ARTIST].get());
 
-                     , get<std::string>(track[ATTRIBUTE_ALBUM].get()) 
-      );
+      rq.album      = get<std::string>(track[ATTRIBUTE_ALBUM].get());
 
+      pthreaddata->CacheCover( rq );
     }
     return album_j;
 }

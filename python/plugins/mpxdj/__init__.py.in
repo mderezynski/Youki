@@ -521,6 +521,18 @@ class MPXDJ(mpx.Plugin):
             OPTION__LastFmTag 
         ]
 
+        self.gooneshot = [
+            False,
+            True,
+            True,
+            True,
+            False,
+            True,
+            False,
+            False,
+            True
+        }
+
         self.helptexts = [
             "Analyzes the playlist and plays similar Music",
             "Creates a running order composed of the most frequently played tracks.",
@@ -598,12 +610,16 @@ class MPXDJ(mpx.Plugin):
 
     def on_mode_changed(self, action, current):
 
+        self.combo.set_active(current.get_current_value())
         self.playmode = current.get_current_value()
 
     def on_enable_toggled(self, action):
 
         if action.get_active():
             self.player.activate_plugin(self.id)
+            model = self.mlib.get_playlist_model()
+            if (len(model)-1) == self.mlib.get_playlist_current_path()[0]:
+                on_button_go([])
         else:
             self.player.deactivate_plugin(self.id)
 
@@ -627,7 +643,9 @@ class MPXDJ(mpx.Plugin):
 
         self.label.set_text(self.helptexts[cbox.get_active()])      
         self.notebook.set_current_page(cbox.get_active())       
-        self.go.set_sensitive(self.callables[self.combo.get_active()] is not None)
+
+        if not self.working:
+            self.go.set_sensitive(self.gooneshot[self.combo.get_active()] is not False)
 
     def on_playlist_end(self, object, empty):
 
@@ -657,8 +675,8 @@ class MPXDJ(mpx.Plugin):
             else:
                 self.player.push_message(_("Failed to produce track"))
 
-        self.go.set_label("Go! (one-shot)")
-        self.go.set_sensitive(True)
+        self.go.set_label("Go One-Shot!)")
+        self.go.set_sensitive(self.gooneshot[self.combo.get_active()] is not False)
         self.mlib.set_sensitive(True)
         self.working = False
 
@@ -686,9 +704,9 @@ class MPXDJ(mpx.Plugin):
             if len(idv):
                 self.mlib.play_tracks(idv, True)
             else:
-                self.player.push_message(_("Failed to produce track"))
+                self.player.push_message(_("Unable to Create New Track!"))
 
-        self.go.set_label("Go!")
-        self.go.set_sensitive(True)
+        self.go.set_label("Go One-Shot!")
+        self.go.set_sensitive(self.gooneshot[self.combo.get_active()] is not False)
         self.mlib.set_sensitive(True)
         self.working = False

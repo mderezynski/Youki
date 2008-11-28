@@ -29,6 +29,7 @@
 #include <sigx/sigx.h>
 #include <sigx/signal_f.h>
 #include <sigx/request_f.h>
+#include "mpx/mpx-covers.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/util-string.hh"
@@ -85,12 +86,7 @@ namespace MPX
             typedef sigc::signal<void, gint64>                      SignalNewArtist_t ;
             typedef sigc::signal<void, Track&, gint64, gint64>      SignalNewTrack_t ;
 
-            typedef sigc::signal<void,
-                std::string const&,
-                std::string const&,
-                std::string const&,
-                std::string const&,
-                std::string const&>                                 SignalCacheCover_t ;
+            typedef sigc::signal<void, const RequestQualifier&>     SignalCacheCover_t ;
             
             typedef sigx::signal_f<SignalScanStart_t>           signal_scan_start_x ;
             typedef sigx::signal_f<SignalScanRun_t>             signal_scan_run_x ; 

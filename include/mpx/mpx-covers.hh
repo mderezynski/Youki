@@ -30,7 +30,6 @@
 #endif
 
 #include "mpx/mpx-minisoup.hh"
-
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-covers-stores.hh"
 #include "mpx/mpx-network.hh"
@@ -58,69 +57,67 @@ namespace MPX
     N_COVER_SIZES
   };
 
-  typedef std::map <std::string, int>                                   RequestKeeperT;
-  typedef std::map <std::string, Glib::RefPtr<Gdk::Pixbuf> >            MPixbufCache;
-  typedef std::map <std::string, Cairo::RefPtr<Cairo::ImageSurface> >   MSurfaceCache;
-  typedef boost::shared_ptr<CoverStore>                                 StoreP;
-  typedef std::vector<StoreP>                                           StoresT;
+  typedef std::map <std::string, int>                                   RequestStoreCounter;
+  typedef std::map <std::string, Glib::RefPtr<Gdk::Pixbuf> >            PixbufCache;
+  typedef boost::shared_ptr<CoverStore>                                 StorePtr;
+  typedef std::vector<StorePtr>                                         StoresVec;
+  typedef boost::shared_ptr<Glib::RecMutex>                             MutexPtr;
+  typedef std::map<std::string, MutexPtr>                               MutexMap; // TODO: Use shared_ptr
+  typedef sigc::slot<void, const std::string&>                          SlotGotCover; 
 
-  struct CoverFetchData
+  struct RequestQualifier
   {
-      Soup::RequestRefP request;
       std::string asin;
       std::string mbid;
       std::string uri;
       std::string artist;
       std::string album;
-      int n;
-      StoresT m_req_stores;
+  };
+
+  struct CoverFetchData
+  {
+      RequestQualifier      qualifier;
+      StoresVec             stores;
+      StoresVec::iterator   stores_i;
 
       CoverFetchData(
-            const std::string& asin_    = std::string(),
-            const std::string& mbid_    = std::string(),
-            const std::string& uri_     = std::string(),
-            const std::string& artist_  = std::string(),
-            const std::string& album_   = std::string(),
-            StoresT            stores   = StoresT()
+              const RequestQualifier& qual
+            , StoresVec               stores 
       )
-      : asin(asin_)
-      , mbid(mbid_)
-      , uri(uri_)
-      , artist(artist_)
-      , album(album_)
-      , n(0)
-      , m_req_stores(stores) // we COPY intentionally
+      : qualifier(qual)
+      , stores(stores) // we COPY intentionally
+      , stores_i(stores.begin())
       {
       }
   };
+
+  typedef sigc::signal<void, const std::string&> SignalGotCover;
 
   class CoverStore;
 
   class Covers : public sigx::glib_auto_dispatchable, public Service::Base
   {
     public:
-      Glib::Mutex                 RequestKeeperLock;
+
       Glib::Mutex                 StoresLock;
-
-      typedef sigc::signal<void, const std::string&> SignalGotCover;
-
-      struct SignalsT
-      {
-          // Fired if a store found cover artwork
-          SignalGotCover GotCover;
-      };
-
-      SignalsT Signals;
-
-      SignalGotCover&
-      signal_got_cover()
-      {
-        return Signals.GotCover ;
-      }
 
       typedef bool (Covers::*FetchFunc) (const std::string&, Glib::RefPtr<Gdk::Pixbuf>&);
 
       Covers (MPX::Service::Manager&);
+
+      struct Signals_t
+      {
+            SignalGotCover      GotCover;
+
+      };
+
+      Signals_t Signals;
+
+      SignalGotCover&
+      signal_got_cover()
+      {
+            return Signals.GotCover;
+      }
 
       bool
       fetch(
@@ -137,12 +134,8 @@ namespace MPX
 
       void
       cache(
-        const std::string& /*mbid*/,
-        const std::string& /*uri*/      = std::string(),
-        const std::string& /*asin*/     = std::string(),
-        const std::string& /*artist*/   = std::string(),
-        const std::string& /*album*/    = std::string(),
-        bool               /*acquire*/  = false
+          const RequestQualifier&     rql
+        , bool                        acquire  = false
       );
 
       void
@@ -160,6 +153,9 @@ namespace MPX
     private:
 
       void
+      store_has_found_cb (CoverFetchData*);
+
+      void
       store_not_found_cb (CoverFetchData*);
 
       void
@@ -168,12 +164,13 @@ namespace MPX
       void
       rebuild_stores ();
 
-      RequestKeeperT              RequestKeeper;
-      MPixbufCache                m_pixbuf_cache;
-      MSurfaceCache               m_surface_cache[N_COVER_SIZES];
-      StoresT                     m_all_stores, m_current_stores;
+      RequestStoreCounter         m_req_store_ctr;
+      PixbufCache                 m_pixbuf_cache;
+      StoresVec                   m_stores_all,
+                                  m_stores_cur;
       int                         m_rebuild;
       int                         m_rebuilt;
+      MutexMap                    m_mutexes;
   };
 }
 

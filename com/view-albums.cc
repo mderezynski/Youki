@@ -260,7 +260,7 @@ namespace MPX
                             sigc::mem_fun(
                                 *this,
                                 &AlbumTreeView::on_got_cover
-                        ));
+                        )); 
 
                         if( !name_showing_label.empty() )
                             m_LabelShowing = new RoundedLayout(xml, name_showing_label);
@@ -740,7 +740,7 @@ namespace MPX
                         }
 
                 void
-                        AlbumTreeView::on_got_cover(const Glib::ustring& mbid)
+                        AlbumTreeView::on_got_cover(const std::string& mbid)
                         {
                                 Cairo::RefPtr<Cairo::ImageSurface> surface;
                                 m_Covers.get().fetch(mbid, surface, COVER_SIZE_ALBUM);
@@ -973,7 +973,14 @@ namespace MPX
                                 {
                                         SQL::Row & r = *i; 
                                         place_album(r, get<gint64>(r["id"]));
-                                        m_Covers.get().cache(get<std::string>(r["mb_album_id"]));
+
+                                        RequestQualifier rq;
+                                        rq.mbid = get<std::string>(r["mb_album_id"]);
+
+                                        m_Covers.get().cache(
+                                              rq
+                                            , false 
+                                        );
                                 }
                         }
 

@@ -316,7 +316,7 @@ namespace MPX
                                     on_album_show_info ();
 
                             virtual void
-                                    on_got_cover(const Glib::ustring&);
+                                    on_got_cover(const std::string&);
 
                             virtual Gtk::TreeIter 
                                     place_album (SQL::Row&, gint64);

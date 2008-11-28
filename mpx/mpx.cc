@@ -101,11 +101,11 @@ namespace
                 "   <menu action='MenuMusic'>"
                 "         <menuitem action='action-play-files'/>"
                 "         <separator name='sep00'/>"
+                "	      <menuitem action='action-mb-import'/>"
+                "         <separator name='sep01'/>"
                 "         <menuitem action='action-quit'/>"
                 "   </menu>"
                 "   <menu action='MenuEdit'>"
-                "	      <menuitem action='action-mb-import'/>"
-                "         <separator/>"
                 "         <menuitem action='action-preferences'/>"
                 "         <menuitem action='action-plugins'/>"
 #ifdef HAVE_HAL
@@ -844,7 +844,8 @@ namespace MPX
 #endif
 
                                   m_actions->add (Action::create("action-mb-import",
-                                                          _("MusicBrainz-Import Album"),
+                                                          Gtk::Stock::ADD,
+                                                          _("Import Album"),
                                                           _("Import an album using MusicBrainz")),
                                                   sigc::mem_fun (*this, &Player::on_import_album));
 
@@ -1069,12 +1070,6 @@ namespace MPX
                                   m_MarkovThread->run();
 
                                   translate_caps(); // sets all actions intially insensitive as we have C_NONE
-
-                                  m_Covers.signal_got_cover().connect(
-                                    sigc::mem_fun(
-                                        *this,
-                                        &Player::on_got_cover
-                                  ));
 
                                   m_MB_ImportAlbum = MB_ImportAlbum::create(m_Library,m_Covers);
 
@@ -2172,7 +2167,7 @@ rerun_import_share_dialog:
                 }
 
         void
-                Player::on_got_cover (const Glib::ustring& mbid)
+                Player::on_got_cover (const std::string& mbid)
                 {
                     g_message("%s: Got Cover: %s", G_STRLOC, mbid.c_str());
         

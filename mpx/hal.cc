@@ -332,11 +332,13 @@ namespace MPX
                   if (n < (G_N_ELEMENTS(volume_attributes)-1)) attrs.append (", ");
               }
 
-              m_SQL->exec_sql ((sql_create_table_f
-                                            % "hal_volumes"
-                                            % attrs
-                                            % volume_attributes[VATTR_DEVICE_UDI].id
-                                            % volume_attributes[VATTR_VOLUME_UDI].id).str());
+              m_SQL->exec_sql((
+                sql_create_table_f
+                    % "hal_volumes"
+                    % attrs
+                    % volume_attributes[VATTR_DEVICE_UDI].id
+                    % volume_attributes[VATTR_VOLUME_UDI].id
+              ).str());
           }
           catch (MPX::SQL::SqlExceptionC & cxe)
           {

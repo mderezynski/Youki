@@ -25,6 +25,7 @@ extern "C" const char ** _mimetypes ()
   {
     "audio/x-m4a",
     "audio/mp4",
+    "video/quicktime",
      NULL 
   };
   return types;
