@@ -820,7 +820,7 @@ namespace MPX
                                                           _("Remove dangling files")),
                                                   sigc::mem_fun (m_Library, &Library::vacuum));
 #else
-                                  MPX::MLibManager & mlibman = (*(services->get<MLibManager>("mpx-service-mlibman")));
+                                  MPX::MLibManager & mlibman = (*(services.get<MLibManager>("mpx-service-mlibman")));
                                   m_actions->add (Action::create ("action-mlibmanager",
                                                           _("_Music Library..."),
                                                           _("Add or Remove Music")),
@@ -1049,6 +1049,8 @@ namespace MPX
                 DBusObjects.mpx->shutdown_complete(DBusObjects.mpx); 
                 g_object_unref(G_OBJECT(DBusObjects.mpx));
                 delete m_Preferences;
+                MPX::PluginManager & plugins = (*(services->get<PluginManager>("mpx-service-plugins")));
+                plugins.shutdown(); //fIXME: We have to do it while the mainloop is still running
         }
 
         void
@@ -1487,9 +1489,8 @@ SET_SEEK_POSITION:
                                     ((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_TrackDuration/2))
                           )
                         {
-                                MPX::MarkovAnalyzerThread & markov = (*(services->get<MarkovAnalyzerThread>("mpx-service-markov")));
-    
-                                markov.append( m_Metadata.get() );
+                                //MPX::MarkovAnalyzerThread & markov = (*(services->get<MarkovAnalyzerThread>("mpx-service-markov")));
+                                //markov.append( m_Metadata.get() );
 
                                 m_Library.trackPlayed(
                                     get<gint64>(m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID].get()),

@@ -288,8 +288,9 @@ namespace MPX
 		}
 	}
 
-	PluginManager::~PluginManager ()
-	{
+    void
+    PluginManager::shutdown ()
+    {
         for(PluginHoldMap::iterator i = m_Map.begin(); i != m_Map.end(); ++i)
         {
                 if(!i->second->m_Active)
@@ -310,6 +311,10 @@ namespace MPX
 
                 pyg_gil_state_release (state);
         }
+    }
+
+	PluginManager::~PluginManager ()
+	{
 	}
 
 	PluginHoldMap const&

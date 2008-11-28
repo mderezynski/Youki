@@ -976,6 +976,7 @@ namespace MPX
     {
         Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-y")));
         Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-h")));
+        mcs->key_set<int>("mpx","preferences-notebook-page", m_notebook_preferences->get_current_page());
     }
 
 	Preferences::Preferences (RefPtr<Gnome::Glade::Xml> const& xml, MPX::Play & play)
@@ -988,6 +989,8 @@ namespace MPX
 			  *this,
 			  &Preferences::hide
 		));
+
+        m_ref_xml->get_widget ("notebook", m_notebook_preferences);
 
 		m_ref_xml->get_widget ("cbox_audio_system", m_cbox_audio_system);
 
@@ -1124,6 +1127,9 @@ namespace MPX
             mcs->key_get<int>("mpx","window-prefs-x"),
             mcs->key_get<int>("mpx","window-prefs-y")
         );
+
+        mcs->key_register("mpx","preferences-notebook-page", 0);
+        m_notebook_preferences->set_current_page( mcs->key_get<int>("mpx","preferences-notebook-page") );
 	}
 
 	void

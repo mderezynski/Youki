@@ -289,6 +289,12 @@ namespace MPX
         }
 
         m_TextBufferDetails->set_text(text);
+
+        if( m_AlwaysVacuum->get_active() )
+        {
+            on_vacuum_volume ();
+        }
+
         Gtk::Widget::set_sensitive(true);
     }
     
@@ -693,11 +699,6 @@ namespace MPX
             v.push_back(filename_to_uri(*i));
         }
         m_Library.initScan(v);
-
-        if( m_AlwaysVacuum->get_active() )
-        {
-            on_vacuum_volume ();
-        }
     }
 
     void
@@ -787,7 +788,7 @@ namespace MPX
     bool
     MLibManager::on_rescan_timeout()
     {
-        if(!m_MLibManager->is_present() && mcs->key_get<bool>("library","rescan-in-intervals") && m_rescan_timer.elapsed() >= mcs->key_get<int>("library","rescan-interval") * 60)
+        if(!is_present() && mcs->key_get<bool>("library","rescan-in-intervals") && m_rescan_timer.elapsed() >= mcs->key_get<int>("library","rescan-interval") * 60)
         {
           rescan_all_volumes();
           m_rescan_timer.reset();

@@ -365,6 +365,12 @@ main (int argc, char ** argv)
             (new MPX::Play(*services));
         services->add(ptr_play);
 
+#ifdef HAVE_HAL
+        boost::shared_ptr<MLibManager> ptr_mlibman
+            (MPX::MLibManager::create(*ptr_halobj.get(), *ptr_library.get()));
+        services->add(ptr_mlibman);
+#endif // HAVE_HAL
+
         boost::shared_ptr<Player> ptr_player
             (MPX::Player::create(*services));
         services->add(ptr_player);
@@ -383,12 +389,6 @@ main (int argc, char ** argv)
             (MPX::MB_ImportAlbum::create(*ptr_library.get(), *ptr_covers.get()));
         services->add(ptr_mbimport);
 
-#ifdef HAVE_HAL
-        boost::shared_ptr<MLibManager> ptr_mlibman
-            (MPX::MLibManager::create(*ptr_halobj.get(), *ptr_library.get()));
-        services->add(ptr_mlibman);
-#endif // HAVE_HAL
-
         splash->set_message(_("Done"), 1.0);
         delete splash;
 
@@ -404,10 +404,10 @@ main (int argc, char ** argv)
     */
 #endif
 
-    ptr_mlibmanr.reset()
-    ptr_mbimport.reset();
     ptr_plugins_gui.reset();
     ptr_plugins.reset();
+    ptr_mlibman.reset();
+    ptr_mbimport.reset();
     ptr_player.reset();
     ptr_play.reset();
     ptr_markov.reset();

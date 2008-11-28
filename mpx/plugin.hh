@@ -158,6 +158,9 @@ namespace MPX
 			append_search_path(
                 std::string const& /*path*/
             );
+    
+            void
+            shutdown();
 
 			void
 			load_plugins ();

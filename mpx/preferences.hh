@@ -124,6 +124,7 @@ namespace MPX
       Gtk::ComboBox                     * m_cbox_audio_system;
       Gtk::HBox                         * m_warning_audio_system_changed;
       Gtk::Notebook                     * m_notebook_audio_system;
+      Gtk::Notebook                     * m_notebook_preferences;
       std::set<std::string>               m_sinks;
       Glib::RefPtr<Gtk::ListStore>        m_list_store_audio_systems;
 
