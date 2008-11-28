@@ -1110,6 +1110,9 @@ namespace MPX
 				sigc::mem_fun(*m_Library_RescanInIntervals, &Gtk::ToggleButton::get_active)
 		));
 
+        m_ref_xml->get_widget( "always-vacuum", m_Library_RescanAlwaysVacuum );
+        mcs_bind->bind_toggle_button(*m_Library_RescanAlwaysVacuum, "library","always-vacuum");
+
 		// Radio
 		m_ref_xml->get_widget("radio-minimal-bitrate", m_Radio_MinimalBitrate);
 		mcs_bind->bind_spin_button(*m_Radio_MinimalBitrate, "radio", "minimal-bitrate");

@@ -63,10 +63,10 @@ namespace MPX
     : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
     , sigx::glib_auto_dispatchable()
     , Service::Base("mpx-service-mlibman")
-    , m_present(false)
     , m_HAL(obj_hal)
     , m_Library(obj_library)
     , m_ref_xml(xml)
+    , m_present(false)
     {
         Gtk::TextView * text_view_details;
         m_ref_xml->get_widget("textview-details", text_view_details );
@@ -216,11 +216,6 @@ namespace MPX
         ));
         m_Vacuum->set_sensitive( false );
 
-        m_ref_xml->get_widget( "always-vacuum", m_AlwaysVacuum );
-        mcs_bind->bind_toggle_button(*m_AlwaysVacuum, "library","always-vacuum");
-
-
-
         if(mcs->key_get<bool>("library","rescan-at-startup"))
         {
           rescan_all_volumes();
@@ -290,7 +285,7 @@ namespace MPX
 
         m_TextBufferDetails->set_text(text);
 
-        if( m_AlwaysVacuum->get_active() )
+        if( mcs->key_get<bool>("library","always-vacuum") )
         {
             on_vacuum_volume ();
         }
@@ -710,11 +705,6 @@ namespace MPX
             v.push_back(filename_to_uri(*i));
         }
         m_Library.initScan(v, true);
-
-        if( m_AlwaysVacuum->get_active() )
-        {
-            on_vacuum_volume ();
-        }
     }
 
     void

@@ -277,6 +277,8 @@ namespace MPX
 {
 		PluginManagerGUI::~PluginManagerGUI ()
 		{
+            Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-y")));
+            Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-h")));
 			delete m_PTV;
 		}
 
@@ -312,6 +314,20 @@ namespace MPX
                     *this,
                     &PluginManagerGUI::check_traceback
             ));
+
+            /*- Setup Window Geometry -----------------------------------------*/ 
+
+            gtk_widget_realize(GTK_WIDGET(gobj()));
+        
+            resize(
+               mcs->key_get<int>("mpx","window-plugins-w"),
+               mcs->key_get<int>("mpx","window-plugins-h")
+            );
+
+            move(
+                mcs->key_get<int>("mpx","window-plugins-x"),
+                mcs->key_get<int>("mpx","window-plugins-y")
+            );
 		}
 
 		PluginManagerGUI*

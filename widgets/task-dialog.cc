@@ -92,14 +92,20 @@ namespace MPX
   {
   }
 
-  TaskDialog::TaskDialog (Gtk::Widget        * parent,
-                          Glib::ustring const& window_title,
-                          Glib::ustring const& title,
-                          Gtk::MessageType type,
-                          Glib::ustring const& desc)
+  TaskDialog::TaskDialog(
+
+        Gtk::Widget        * parent,
+        const Glib::ustring& window_title,
+        const Glib::ustring& title,
+        Gtk::MessageType     type,
+        const Glib::ustring& desc
+
+  )
+
   : Gtk::Window     (Gtk::WINDOW_TOPLEVEL)
   , m_last_response (0)
   , m_mainloop      (0)
+
   {
     set_title (window_title);
 
@@ -196,12 +202,12 @@ namespace MPX
   void
   TaskDialog::set_default_response (int response)
   {
-    for (MTaskButtons::iterator b = m_buttons.begin(), e = m_buttons.end(); b != e; ++b)
+    for (TaskButton_map::iterator b = m_buttons.begin(), e = m_buttons.end(); b != e; ++b)
     {
       b->second->property_can_default() = false;
     }
 
-    for (MTaskButtons::iterator b = m_buttons.begin(), e = m_buttons.end(); b != e; ++b)
+    for (TaskButton_map::iterator b = m_buttons.begin(), e = m_buttons.end(); b != e; ++b)
     {
       if (b->first == response)
       {
@@ -260,7 +266,7 @@ namespace MPX
                           Gtk::StockID         stock,
                           int                  response)
   {
-    ShPTaskButton b (new TaskButton (title, description, stock, response));
+    TaskButton_ptr b (new TaskButton (title, description, stock, response));
     b->show_all ();
     m_vbox_buttons.pack_start ((*(b.get())), false, false, 0);
     m_buttons.insert (std::make_pair (response, b));

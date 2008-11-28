@@ -109,18 +109,18 @@ namespace MPX
         SignalResponse signal_response_;
         void emit_response (int response);
        
-        typedef boost::shared_ptr<TaskButton> ShPTaskButton;
-        typedef std::map<int, ShPTaskButton>  MTaskButtons;
-        typedef MTaskButtons::value_type      PTaskButton;
+        typedef boost::shared_ptr<TaskButton>   TaskButton_ptr;
+        typedef std::map<int, TaskButton_ptr>   TaskButton_map;
+        typedef TaskButton_map::value_type      TaskButton_map_pair;
 
-        MTaskButtons    m_buttons;
-        Gtk::Image      m_image;
-        Gtk::Label      m_main_text;
-        Gtk::Label      m_sub_text;
-        Gtk::HBox       m_hbox_main;
-        Gtk::VBox       m_vbox_main;
-        Gtk::VBox       m_vbox_buttons;
-        int             m_last_response;
+        TaskButton_map      m_buttons;
+        Gtk::Image          m_image;
+        Gtk::Label          m_main_text;
+        Gtk::Label          m_sub_text;
+        Gtk::HBox           m_hbox_main;
+        Gtk::VBox           m_vbox_main;
+        Gtk::VBox           m_vbox_buttons;
+        int                 m_last_response;
 
         Glib::RefPtr <Glib::MainLoop> m_mainloop;
   };

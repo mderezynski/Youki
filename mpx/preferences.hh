@@ -325,6 +325,7 @@ namespace MPX
         Gtk::CheckButton*	m_Library_RescanInIntervals;
         Gtk::SpinButton*	m_Library_RescanInterval;
         Gtk::HBox*          m_Library_RescanIntervalBox;
+        Gtk::ToggleButton*  m_Library_RescanAlwaysVacuum;
 
   }; // class Preferences
 } // namespace MPX
