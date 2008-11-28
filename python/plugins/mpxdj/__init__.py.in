@@ -619,7 +619,7 @@ class MPXDJ(mpx.Plugin):
             self.player.activate_plugin(self.id)
             model = self.mlib.get_playlist_model()
             if (len(model)-1) == self.mlib.get_playlist_current_path()[0]:
-                self.on_button_go([])
+                self.on_playlist_end([],[])
         else:
             self.player.deactivate_plugin(self.id)
 
