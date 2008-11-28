@@ -174,30 +174,7 @@ namespace MPX
                 gint64 /*album id*/>                            SignalNewAlbum; 
 
             typedef sigc::signal<void,
-                gint64 /*album id*/>                            SignalAlbumDeleted; 
-
-            typedef sigc::signal<void,
-                gint64 /*album id*/>                            SignalAlbumUpdated;
-
-            typedef sigc::signal<void,
                 gint64 /*artist id*/>                           SignalNewArtist;
-
-
-            typedef sigc::signal<void,
-                gint64 /*collection id*/>                       SignalCollectionNew; 
-
-            typedef sigc::signal<void,
-                gint64 /*collection id*/>                       SignalCollectionDeleted; 
-
-            typedef sigc::signal<void,
-                gint64 /*collection id*/,
-                gint64 /*track id*/>                            SignalCollectionNewTrack;
-
-            typedef sigc::signal<void,
-                gint64 /*collection id*/,
-                gint64 /*track id*/>                            SignalCollectionTrackDeleted;
-
-
 
             typedef sigc::signal<void,
                 Track&,
@@ -205,10 +182,40 @@ namespace MPX
                 gint64/*artistid*/>                             SignalNewTrack;
 
             typedef sigc::signal<void,
+                gint64 /*collection id*/>                       SignalNewCollection; 
+
+            typedef sigc::signal<void,
+                gint64 /*collection id*/,
+                gint64 /*track id*/>                            SignalNewCollectionTrack;
+
+
+
+            typedef sigc::signal<void,
+                gint64 /*collection id*/>                       SignalCollectionDeleted; 
+
+            typedef sigc::signal<void,
+                gint64 /*album id*/>                            SignalAlbumDeleted; 
+
+            typedef sigc::signal<void,
+                gint64/*artistid*/>                             SignalAlbumArtistDeleted;
+
+            typedef sigc::signal<void,
+                gint64/*artistid*/>                             SignalArtistDeleted;
+
+            typedef sigc::signal<void,
+                gint64 /*collection id*/,
+                gint64 /*track id*/>                            SignalCollectionTrackDeleted;
+
+            typedef sigc::signal<void,
                 gint64/*artistid*/>                             SignalTrackDeleted;
+
 
 			typedef sigc::signal<void,
                 gint64 /*id*/>                                  SignalTrackUpdated;
+
+            typedef sigc::signal<void,
+                gint64 /*album id*/>                            SignalAlbumUpdated;
+
 
 			typedef sigc::signal<void,
                 gint64 /*id*/,
@@ -233,9 +240,9 @@ namespace MPX
 
             struct CollectionSignalsT
             {
-                SignalCollectionNew             New; 
+                SignalNewCollection             New; 
                 SignalCollectionDeleted         Deleted;
-                SignalCollectionNewTrack        NewTrack;
+                SignalNewCollectionTrack        NewTrack;
                 SignalCollectionTrackDeleted    TrackDeleted;
             };
 
@@ -245,7 +252,14 @@ namespace MPX
                 SignalNewArtist                 NewArtist;
                 SignalNewTrack                  NewTrack;
 
+				SignalAlbumUpdated	            AlbumUpdated;
 				SignalTrackUpdated              TrackUpdated;
+
+                SignalAlbumDeleted              AlbumDeleted;
+                SignalTrackDeleted              TrackDeleted;
+                SignalArtistDeleted             ArtistDeleted;
+                SignalAlbumArtistDeleted        AlbumArtistDeleted;
+
                 SignalTrackTagged               TrackTagged;
 
                 SignalScanStart                 ScanStart;  
@@ -254,17 +268,12 @@ namespace MPX
 
 				SignalReload                    Reload;
 
-                SignalAlbumDeleted              AlbumDeleted;
-				SignalAlbumUpdated	            AlbumUpdated;
-
-                SignalTrackDeleted              TrackDeleted;
-
                 CollectionSignalsT              Collection;
             };
 
             SignalsT Signals;
 
-            SignalCollectionNew&
+            SignalNewCollection&
             signal_collection_new()
             { return Signals.Collection.New ; }
             
@@ -272,7 +281,7 @@ namespace MPX
             signal_collection_deleted()
             { return Signals.Collection.Deleted ; }
 
-            SignalCollectionNewTrack&
+            SignalNewCollectionTrack&
             signal_collection_new_track()
             { return Signals.Collection.NewTrack ; }
             
@@ -328,6 +337,14 @@ namespace MPX
             signal_reload()
             { return Signals.Reload ; }
 
+            SignalArtistDeleted&
+            signal_artist_deleted()
+            { return Signals.ArtistDeleted ; }
+
+            SignalAlbumArtistDeleted&
+            signal_album_artist_deleted()
+            { return Signals.AlbumArtistDeleted ; }
+
         private:
 
             enum Flags
@@ -366,6 +383,9 @@ namespace MPX
 
             bool
             recache_covers_handler (SQL::RowV *, int*); 
+
+            void
+            remove_dangling();
     };
 } // namespace MPX
 

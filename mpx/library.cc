@@ -479,8 +479,10 @@ namespace MPX
                 {
                         Row & r = (*v)[*position]; 
 
-                        MPX::Player & player = (*(m_Services.get<Player>("mpx-service-player")));
-                        player.push_message((boost::format(_("Refreshing album covers: %lld / %lld")) % *position % (*v).size()).str());
+                        boost::shared_ptr<MPX::Player> player = m_Services.get<Player>("mpx-service-player");
+
+                        if( player )
+                            player->push_message((boost::format(_("Refreshing album covers: %lld / %lld")) % *position % (*v).size()).str());
 
                         std::string location;
 #ifdef HAVE_HAL
@@ -534,7 +536,9 @@ namespace MPX
 
                         if((*position) == (*v).size())
                         {
-                                player.push_message("");
+                                if( player )
+                                    player->push_message("");
+
                                 delete v;
                                 delete position;
                                 return false;
@@ -589,6 +593,90 @@ namespace MPX
                 {
                         Signals.NewTrack.emit(track, album_id, artist_id);
                 }
+    
+        void
+                Library::remove_dangling () 
+                {
+                        boost::shared_ptr<MPX::Player> player = m_Services.get<Player>("mpx-service-player");
+
+                        typedef std::tr1::unordered_set <gint64> IdSet;
+                        static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld'");
+                        IdSet idset1;
+                        IdSet idset2;
+                        RowV rows;
+
+                        /// CLEAR DANGLING ARTISTS
+                        if( player )
+                            player->push_message(_("Finding Lost Artists..."));
+
+                        idset1.clear();
+                        rows.clear();
+                        getSQL(rows, "SELECT DISTINCT artist_j FROM track");
+                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+                                idset1.insert (get<gint64>(i->find ("artist_j")->second));
+
+                        idset2.clear();
+                        rows.clear();
+                        getSQL(rows, "SELECT DISTINCT id FROM artist");
+                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+                                idset2.insert (get<gint64>(i->find ("id")->second));
+
+                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
+                        {
+                                if (idset1.find (*i) == idset1.end())
+                                {
+                                        execSQL((delete_f % "artist" % (*i)).str());
+                                        Signals.ArtistDeleted.emit( *i );
+                                }
+                        }
+
+
+                        /// CLEAR DANGLING ALBUMS
+                        if( player )
+                            player->push_message(_("Finding Lost Albums..."));
+                        idset1.clear();
+                        rows.clear();
+                        getSQL(rows, "SELECT DISTINCT album_j FROM track");
+                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+                                idset1.insert (get<gint64>(i->find ("album_j")->second));
+
+                        idset2.clear();
+                        rows.clear();
+                        getSQL(rows, "SELECT DISTINCT id FROM album");
+                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+                                idset2.insert (get<gint64>(i->find ("id")->second));
+
+                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
+                        {
+                                if (idset1.find (*i) == idset1.end())
+                                {
+                                        execSQL((delete_f % "album" % (*i)).str());
+                                        Signals.AlbumDeleted.emit( *i );
+                                }
+                        }
+
+                        /// CLEAR DANGLING ALBUM ARTISTS
+                        if( player )
+                            player->push_message(_("Finding Lost Album Artists..."));
+                        idset1.clear();
+                        rows.clear();
+                        getSQL(rows, "SELECT DISTINCT album_artist_j FROM album");
+                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+                                idset1.insert (get<gint64>(i->find ("album_artist_j")->second));
+
+                        idset2.clear();
+                        rows.clear();
+                        getSQL(rows, "SELECT DISTINCT id FROM album_artist");
+                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+                                idset2.insert (get<gint64>(i->find ("id")->second));
+
+                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
+                        {
+                                if (idset1.find (*i) == idset1.end())
+                                        execSQL((delete_f % "album_artist" % (*i)).str());
+                                        Signals.AlbumArtistDeleted.emit( *i );
+                        }
+                }
 
         void
                 Library::vacuum ()
@@ -596,8 +684,7 @@ namespace MPX
 #ifdef HAVE_HAL
                         typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
 #endif
-
-                        MPX::Player & player = (*(m_Services.get<Player>("mpx-service-player")));
+                        boost::shared_ptr<MPX::Player> player = m_Services.get<Player>("mpx-service-player");
 
                         VolMountPointMap m;
                         RowV rows;
@@ -642,7 +729,8 @@ namespace MPX
                                 }
 #endif
 
-                                player.push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+                                if( player )
+                                    player->push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
 
                                 if( !uri.empty() )
                                 try{
@@ -657,78 +745,10 @@ namespace MPX
                                 }
                         }
 
-                        typedef std::tr1::unordered_set <gint64> IdSet;
-                        static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld'");
-                        IdSet idset1;
-                        IdSet idset2;
+                        remove_dangling ();
 
-                        /// CLEAR DANGLING ARTISTS
-                        player.push_message(_("Finding Lost Artists..."));
-                        idset1.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT artist_j FROM track");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset1.insert (get<gint64>(i->find ("artist_j")->second));
-
-                        idset2.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT id FROM artist");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset2.insert (get<gint64>(i->find ("id")->second));
-
-                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
-                        {
-                                if (idset1.find (*i) == idset1.end())
-                                {
-                                        execSQL((delete_f % "artist" % (*i)).str());
-                                }
-                        }
-
-
-                        /// CLEAR DANGLING ALBUMS
-                        player.push_message(_("Finding Lost Albums..."));
-                        idset1.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT album_j FROM track");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset1.insert (get<gint64>(i->find ("album_j")->second));
-
-                        idset2.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT id FROM album");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset2.insert (get<gint64>(i->find ("id")->second));
-
-                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
-                        {
-                                if (idset1.find (*i) == idset1.end())
-                                {
-                                        execSQL((delete_f % "album" % (*i)).str());
-                                        Signals.AlbumDeleted.emit( *i );
-                                }
-                        }
-
-                        /// CLEAR DANGLING ALBUM ARTISTS
-                        player.push_message(_("Finding Lost Album Artists..."));
-                        idset1.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT album_artist_j FROM album");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset1.insert (get<gint64>(i->find ("album_artist_j")->second));
-
-                        idset2.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT id FROM album_artist");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset2.insert (get<gint64>(i->find ("id")->second));
-
-                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
-                        {
-                                if (idset1.find (*i) == idset1.end())
-                                        execSQL((delete_f % "album_artist" % (*i)).str());
-                        }
-
-                        player.push_message(_("Vacuum process done."));
+                        if( player )
+                            player->push_message(_("Vacuum process done."));
                 }
 
 #ifdef HAVE_HAL
@@ -737,7 +757,7 @@ namespace MPX
                 {
                         typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
 
-                        MPX::Player & player = (*(m_Services.get<Player>("mpx-service-player")));
+                        boost::shared_ptr<MPX::Player> player = m_Services.get<Player>("mpx-service-player");
 
                         VolMountPointMap m;
                         RowV rows;
@@ -782,7 +802,8 @@ namespace MPX
                                 } 
                                 else
 
-                                player.push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+                                if( player )
+                                    player->push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
 
                                 if( !uri.empty() )
                                 try{
@@ -797,78 +818,10 @@ namespace MPX
                                 }
                         }
 
-                        typedef std::tr1::unordered_set <gint64> IdSet;
-                        static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld'");
-                        IdSet idset1;
-                        IdSet idset2;
+                        remove_dangling ();
 
-                        /// CLEAR DANGLING ARTISTS
-                        player.push_message(_("Finding Lost Artists..."));
-                        idset1.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT artist_j FROM track");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset1.insert (get<gint64>(i->find ("artist_j")->second));
-
-                        idset2.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT id FROM artist");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset2.insert (get<gint64>(i->find ("id")->second));
-
-                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
-                        {
-                                if (idset1.find (*i) == idset1.end())
-                                {
-                                        execSQL((delete_f % "artist" % (*i)).str());
-                                }
-                        }
-
-
-                        /// CLEAR DANGLING ALBUMS
-                        player.push_message(_("Finding Lost Albums..."));
-                        idset1.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT album_j FROM track");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset1.insert (get<gint64>(i->find ("album_j")->second));
-
-                        idset2.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT id FROM album");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset2.insert (get<gint64>(i->find ("id")->second));
-
-                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
-                        {
-                                if (idset1.find (*i) == idset1.end())
-                                {
-                                        execSQL((delete_f % "album" % (*i)).str());
-                                        Signals.AlbumDeleted.emit( *i );
-                                }
-                        }
-
-                        /// CLEAR DANGLING ALBUM ARTISTS
-                        player.push_message(_("Finding Lost Album Artists..."));
-                        idset1.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT album_artist_j FROM album");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset1.insert (get<gint64>(i->find ("album_artist_j")->second));
-
-                        idset2.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT id FROM album_artist");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset2.insert (get<gint64>(i->find ("id")->second));
-
-                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
-                        {
-                                if (idset1.find (*i) == idset1.end())
-                                        execSQL((delete_f % "album_artist" % (*i)).str());
-                        }
-
-                        player.push_message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
+                        if( player )
+                            player->push_message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
                 }
 #endif
 

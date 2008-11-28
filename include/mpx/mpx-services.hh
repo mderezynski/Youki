@@ -49,7 +49,11 @@ namespace Service
             boost::shared_ptr<T>
             get(std::string const& guid)
             {
-                return boost::dynamic_pointer_cast<T, Base>(m_services.find(guid)->second);
+                try{
+                    return boost::dynamic_pointer_cast<T, Base>(m_services.find(guid)->second);
+                } catch(...) {
+                    return boost::shared_ptr<T>();
+                }
             }
     };
 }

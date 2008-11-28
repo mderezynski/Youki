@@ -500,44 +500,107 @@ namespace MPX
 
               // Show the relocate dialog and process the result
 
+              rerun_taskdialog:
+
               int result = dialog.run();
 
-              std::string volume_udi;
-              std::string device_udi;
-              std::string vrp;
-              HAL::Volume volume;
+              std::string volume_udi_source, device_udi_source;
+              std::string volume_udi_target, device_udi_target;
+              std::string vrp_source, vrp_target;
+              HAL::Volume volume_source, volume_target;
+              std::string uri;
+
+              FileChooserDialog fcdialog (
+                    _("AudioSource: Select relocated path target"),
+                    FILE_CHOOSER_ACTION_SELECT_FOLDER
+              );
+
+              fcdialog.add_button(
+                    Gtk::Stock::CANCEL,
+                    Gtk::RESPONSE_CANCEL
+              );
+
+              fcdialog.add_button(
+                    Gtk::Stock::OK,
+                    Gtk::RESPONSE_OK
+              );
+
+              int response;
 
               switch(result)
               {
                 case 0:
+                    response = fcdialog.run();
+                    fcdialog.hide();
+
+                    if( response == Gtk::RESPONSE_CANCEL ) 
+                        goto rerun_taskdialog;
+
+                    uri = fcdialog.get_current_folder_uri();
+
+                    volume_source = m_HAL.get_volume_for_uri(Glib::filename_to_uri(path));
+                    volume_udi_source =
+                        volume_source.volume_udi ;
+                    device_udi_source =  
+                        volume_source.device_udi ;
+                    vrp_source = 
+                        path.substr(volume_source.mount_point.length()) ;
+
+                    volume_target = m_HAL.get_volume_for_uri(uri);
+                    volume_udi_target =
+                        volume_target.volume_udi ;
+                    device_udi_target =  
+                        volume_target.device_udi ;
+                    vrp_target = 
+                        Glib::filename_from_uri(uri).substr(volume_target.mount_point.length()) ;
+
+                    m_Library.execSQL(
+                        (boost::format("UPDATE track SET hal_device_udi = '%s', hal_volume_udi = '%s', insert_path = '%s' "
+                                       "WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path = '%s'")
+                            % device_udi_target
+                            % volume_udi_target
+                            % vrp_target
+                            % device_udi_source
+                            % volume_udi_source
+                            % vrp_source
+                    ).str());
+
+                    on_volumes_changed ();
+
+                    m_Library.vacuum_volume(
+                        device_udi_target,
+                        volume_udi_target 
+                    );
+
                     return RELOCATED;
                   break;
 
                 case 1:
-                    volume = m_HAL.get_volume_for_uri(Glib::filename_to_uri(path));
 
-                    volume_udi =
-                        volume.volume_udi ;
+                    volume_target = m_HAL.get_volume_for_uri(Glib::filename_to_uri(path));
 
-                    device_udi =  
-                        volume.device_udi ;
+                    volume_udi_target =
+                        volume_target.volume_udi ;
 
-                    vrp = 
-                        path.substr(volume.mount_point.length()) ;
+                    device_udi_target =  
+                        volume_target.device_udi ;
+
+                    vrp_target = 
+                        path.substr(volume_target.mount_point.length()) ;
 
                     m_Library.execSQL(
                         (boost::format("DELETE FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path LIKE '%s%%'")
-                            % device_udi
-                            % volume_udi
-                            % vrp
+                            % device_udi_target
+                            % volume_udi_target
+                            % vrp_target
                     ).str());
 
-                    m_Library.vacuum_volume(
-                        device_udi,
-                        volume_udi 
-                    );
-
                     on_volumes_changed();
+
+                    m_Library.vacuum_volume(
+                        device_udi_target,
+                        volume_udi_target 
+                    );
 
                     return DELETED;
                   break;
