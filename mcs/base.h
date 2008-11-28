@@ -36,6 +36,7 @@
 #include <libxml/xpathInternals.h>
 
 #include <boost/variant.hpp>
+#include <boost/format.hpp>
 #include <sigc++/sigc++.h>
 #include <glibmm.h>
 
@@ -60,41 +61,80 @@ namespace Mcs
               VERSION_IGNORE      //Ignores the version and just attempts to load the configuration 'as is'
             };
 
-            enum Exceptions
+            struct NoKeyException : public std::runtime_error
             {
-              PARSE_ERROR,
-              NO_KEY,
+                NoKeyException(const std::string& message)
+                : std::runtime_error(message)
+                {}
             };
 
-            Mcs (std::string const& xml_filename, std::string const& root_node_name, double version);
+            struct ParseException : public std::runtime_error
+            {
+                ParseException(const std::string& message)
+                : std::runtime_error(message)
+                {}
+            };
+
+            Mcs(
+                std::string const& /* xml_filename*/,
+                std::string const& /*root_node_name*/,
+                double             /*version*/
+            );
+
             ~Mcs ();
 
-            void load (Mcs::VersionIgnore version_ignore = VERSION_CHECK); 
-            void domain_register (std::string const& domain);
-            bool domain_key_exist (std::string const& domain, std::string const& key);
-            void key_register (std::string const& domain, std::string const& key, KeyVariant const& key_default);
+            void
+            load(
+                Mcs::VersionIgnore /*version_ignore*/ = VERSION_CHECK
+            ); 
+
+            void
+            save(
+            );
+
+            void
+            domain_register(
+                std::string const& /*domain*/
+            );
+
+            void
+            key_register(
+                std::string const& /*domain*/,
+                std::string const& /*key*/,
+                KeyVariant  const& /*key_default*/
+            );
+
+            bool
+            domain_key_exist(
+                std::string const& /*domain*/,
+                std::string const& /*key*/
+            );
 
             Key&
-            key (std::string const& domain, std::string const& key)
+            key(
+                std::string const& domain,
+                std::string const& key
+            )
             {   
-                if(!domain_key_exist(domain, key))
-                    throw NO_KEY;
+              if(!domain_key_exist(domain, key))
+              {
+                throw NoKeyException((boost::format ("MCS key() : Domain [%s] Key [%s] does not exist") % domain % key).str());
+              }
 
-              KeysT & keys = domains.find(domain)->second;
-              Key & k = keys.find(key)->second;
-              return k;
+              return domains.find(domain)->second.find(key)->second;
             }
                 
             template <typename T>
             void 
-            key_set (std::string const& domain,
-                     std::string const& key, T value) 
+            key_set(
+                std::string const& domain,
+                std::string const& key,
+                T const&           value
+            ) 
             {
               g_return_if_fail(domain_key_exist (domain, key));
 
-              KeysT & keys = domains.find(domain)->second;
-              Key & k = keys.find(key)->second;
-              k.set_value<T>(value);
+              domains.find(domain)->second.find(key)->second.set_value<T>(value);
             }
 
             template <typename T>
@@ -103,7 +143,9 @@ namespace Mcs
                      std::string const& key)
             {
               if(!domain_key_exist(domain,key))
-                  throw NO_KEY;
+              {
+                    throw NoKeyException((boost::format ("MCS: key_get() Domain [%s] Key [%s] does not exist") % domain % key).str());
+              }
 
               return T (domains.find(domain)->second.find(key)->second);
             }
@@ -112,38 +154,44 @@ namespace Mcs
             key_push (std::string const& domain, std::string const& key)
             {
               if(!domain_key_exist(domain,key))
-                  throw NO_KEY;
+              {
+                throw NoKeyException((boost::format ("MCS: key_push() Domain [%s] Key [%s] does not exist") % domain % key).str());
+              }
 
-              KeysT & keys = domains.find (domain)->second;
-              Key & k = keys.find (key)->second;
-              k.push ();
+              domains.find(domain)->second.find(key)->second.push();
             }
             
             void
-            key_unset (std::string const& domain,
-                       std::string const& key);
+            key_unset(
+                std::string const& domain,
+                std::string const& key
+            );
 
             void
-            subscribe (std::string const& name,   //Must be unique
-                       std::string const& domain, //Must be registered 
-                       std::string const& key,  //Must be registered,
-                       SubscriberNotify const& notify);  
+            subscribe(
+                std::string const& name,        //Must be unique
+                std::string const& domain,      //Must be registered 
+                std::string const& key,         //Must be registered,
+                SubscriberNotify const& notify
+            );  
 
             void
-            unsubscribe (std::string const& name,   //Must be unique
-                         std::string const& domain, //Must be registered 
-                         std::string const& key); //Must be registered,
+            unsubscribe(
+                std::string const& name,        //Must be unique
+                std::string const& domain,      //Must be registered 
+                std::string const& key          //Must be registered,
+            );
 
           private:
 
             typedef std::map<std::string /* Key Name */, Key>   KeysT;
             typedef std::map<std::string /* Domain name */, KeysT>  DomainsT;
 
-            DomainsT domains;
-            std::string xml_filename;
-            std::string root_node_name;
-            xmlDocPtr m_doc;
-            double version;
+            DomainsT        domains;
+            std::string     xml_filename;
+            std::string     root_node_name;
+            xmlDocPtr       m_doc;
+            double          version;
       };
 };
 

@@ -972,6 +972,12 @@ namespace MPX
 		return new Preferences (Gnome::Glade::Xml::create (build_filename(DATA_DIR, "glade" G_DIR_SEPARATOR_S "preferences.glade")), play); 
 	}
 
+    Preferences::~Preferences ()
+    {
+        Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-y")));
+        Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-h")));
+    }
+
 	Preferences::Preferences (RefPtr<Gnome::Glade::Xml> const& xml, MPX::Play & play)
 	: Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "preferences")
 	, m_ref_xml(xml)
@@ -1104,6 +1110,25 @@ namespace MPX
 		// Radio
 		m_ref_xml->get_widget("radio-minimal-bitrate", m_Radio_MinimalBitrate);
 		mcs_bind->bind_spin_button(*m_Radio_MinimalBitrate, "radio", "minimal-bitrate");
+
+        /*- Setup Window Geometry -----------------------------------------*/ 
+
+        gtk_widget_realize(GTK_WIDGET(gobj()));
+    
+        mcs->key_register("mpx","window-prefs-w", 700);
+        mcs->key_register("mpx","window-prefs-h", 600);
+        mcs->key_register("mpx","window-prefs-x", 120);
+        mcs->key_register("mpx","window-prefs-y", 120);
+
+        resize(
+           mcs->key_get<int>("mpx","window-prefs-w"),
+           mcs->key_get<int>("mpx","window-prefs-h")
+        );
+
+        move(
+            mcs->key_get<int>("mpx","window-prefs-x"),
+            mcs->key_get<int>("mpx","window-prefs-y")
+        );
 	}
 
 	void

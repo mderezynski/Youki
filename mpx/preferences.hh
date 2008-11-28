@@ -72,9 +72,7 @@ namespace MPX
       create (MPX::Play&);
 
       virtual
-      ~Preferences()
-      {
-      }
+      ~Preferences();
 
     private:
 

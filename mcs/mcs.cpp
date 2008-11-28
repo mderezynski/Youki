@@ -131,12 +131,24 @@ namespace
 
 namespace Mcs
 {
-      Mcs::Mcs (std::string const& xml_filename, std::string const& root_node_name, double version)
-          : xml_filename (xml_filename), root_node_name (root_node_name), version (version)
+      Mcs::Mcs(
+            std::string const& xml_filename_,
+            std::string const& root_node_name_,
+            double             version_
+      )
+      : xml_filename(xml_filename_)
+      , root_node_name(root_node_name_)
+      , version(version_)
       {
       }
 
       Mcs::~Mcs ()
+      {
+        save ();
+      }
+
+      void
+      Mcs::save ()
       {
         //Serialize the configuration into XML
         xmlDocPtr	        doc;
@@ -226,7 +238,9 @@ namespace Mcs
       } 
 
       void
-      Mcs::load (VersionIgnore version_ignore)
+      Mcs::load(
+        VersionIgnore version_ignore
+      )
       {
         if (!Glib::file_test (xml_filename, Glib::FILE_TEST_EXISTS))
         {
@@ -234,11 +248,14 @@ namespace Mcs
             return;
         }
   
-        m_doc = xmlParseFile (xml_filename.c_str ());
+        m_doc = xmlParseFile(xml_filename.c_str());
       }
 
       bool
-      Mcs::domain_key_exist (std::string const& domain, std::string const& key)
+      Mcs::domain_key_exist(
+        std::string const& domain,
+        std::string const& key
+      )
       {
         if (domains.find (domain) == domains.end())
             return false;
@@ -249,18 +266,37 @@ namespace Mcs
       }
 
       void 
-      Mcs::domain_register (std::string const& domain)
+      Mcs::domain_register(
+        std::string const& domain
+      )
       {
-        g_return_if_fail (domains.find (domain) == domains.end());
+        if( domains.find (domain) != domains.end() )
+        {
+            g_message("MCS: domain_register() Domain [%s] has already been registered", domain.c_str());
+            g_return_if_fail (domains.find (domain) == domains.end());
+        }
+
 		domains[domain] = KeysT();
       }
 
       void
-      Mcs::key_register (std::string const& domain, //Must be registered
-                         std::string const& key,
-                         KeyVariant  const& key_default)
+      Mcs::key_register(
+            std::string const& domain, //Must be registered
+            std::string const& key,
+            KeyVariant  const& key_default
+      )
       {
-      	g_return_if_fail( domains.find(domain) != domains.end() );
+        if( domains.find(domain) == domains.end() )
+        {
+            g_message("MCS: key_register() Domain [%s] has not yet been registered", domain.c_str());
+      	    g_return_if_fail( domains.find(domain) != domains.end() );
+        }
+
+        if( domains.find(domain)->second.find(key) != domains.find(domain)->second.end() )
+        {
+            g_message("MCS: key_register() Domain [%s] Key [%s] has already been registered", domain.c_str(), key.c_str());
+            g_return_if_fail( domains.find(domain)->second.find(key) == domains.find(domain)->second.end() );
+        }
 
         domains.find( domain )->second[key] = Key( domain, key, key_default, KeyType(key_default.which()) );
 
@@ -344,28 +380,33 @@ namespace Mcs
       }
 
       void 
-      Mcs::key_unset (std::string const& domain,
-                      std::string const& key)
+      Mcs::key_unset(
+            std::string const& domain,
+            std::string const& key
+      )
       {
         g_return_if_fail (domain_key_exist(domain, key));
         return domains.find(domain)->second.find(key)->second.unset ();
       } 
 
       void 
-      Mcs::subscribe (std::string const& name,   //Must be unique
-                      std::string const& domain, //Must be registered 
-                      std::string const& key,    //Must be registered,
-                      SubscriberNotify const& notify)
+      Mcs::subscribe(
+            std::string const& name,   //Must be unique
+            std::string const& domain, //Must be registered 
+            std::string const& key,    //Must be registered,
+            SubscriberNotify const& notify
+      )
       {
         g_return_if_fail (domain_key_exist(domain, key));
         return domains.find (domain)->second.find (key)->second.subscriber_add(name, notify);
       }
 
       void 
-      Mcs::unsubscribe (std::string const& name,   //Must be unique
-                        std::string const& domain, //Must be registered 
-                        std::string const& key)    //Must be registered,
-                        
+      Mcs::unsubscribe(
+            std::string const& name,   //Must be unique
+            std::string const& domain, //Must be registered 
+            std::string const& key     //Must be registered,
+      ) 
       {
         g_return_if_fail (domain_key_exist(domain, key));
         return domains.find(domain)->second.find(key)->second.subscriber_del(name);
