@@ -361,6 +361,7 @@ namespace MPX
 
       HAL::~HAL ()
       {
+        m_context.clear();
         delete m_SQL;
       }
 

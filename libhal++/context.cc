@@ -221,9 +221,11 @@ namespace Hal
     try{
         //add_property_watch (device->get_udi());
         m_devices.insert (std::make_pair (device->get_udi(), device));
+        /*
         device->add_destroy_notify_callback
             (reinterpret_cast<void*>(new DestroyData (this, device->get_udi())),
              &Hal::Context::device_destroyed);
+        */
       }
     catch (WatchSetupError)
       {
@@ -571,6 +573,7 @@ namespace Hal
   Hal::RefPtr<Context>
   Context::create (DBusConnection * connection)
   {
+    dbus_connection_ref(connection);
     return Hal::RefPtr<Context>(new Context(connection));
   }
 

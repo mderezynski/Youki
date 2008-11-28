@@ -363,14 +363,14 @@ main (int argc, char ** argv)
     */
 #endif
 
+    ptr_player.reset();
+    ptr_play.reset();
+    ptr_library.reset();
+    ptr_taglib.reset();
+    ptr_covers.reset();
 #ifdef HAVE_HAL
     ptr_halobj.reset();
 #endif
-    ptr_covers.reset();
-    ptr_taglib.reset();
-    ptr_library.reset();
-    ptr_play.reset();
-    ptr_player.reset();
 
     delete services;
     delete gtk;
