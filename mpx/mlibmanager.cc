@@ -354,7 +354,8 @@ namespace MPX
                   StrV v;
                   for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
                   {
-                    v.push_back(filename_to_uri(*i));
+                    if(path_test(*i))
+                      v.push_back(filename_to_uri(*i));
                   }
                   m_Library.initScan(v);                  
                 }
@@ -439,6 +440,35 @@ namespace MPX
         Glib::ustring a = (*iter_a)[FSTreeColumns.SegName];
         Glib::ustring b = (*iter_b)[FSTreeColumns.SegName];
         return a.compare(b);
+    }
+
+    bool
+    MLibManger::path_test(const std::string& path)
+    {
+      if(Glib::file_test(path, Glib::FLIE_TEST_EXISTS))
+      {
+        return true;
+      }
+      else
+      {
+        // Show the relocate dialog and process the result
+        int result = dialog.run;
+        switch(result)
+        {
+          case RELOCATE:
+            // Show the filechooser dialog, I'll add it later ;-)
+            break;
+
+          case REMOVE:
+            // Remove the path
+            break;
+
+          case WARNLATER:
+            // Do nothing
+            break;
+        }
+      }
+      return false;
     }
 
     void
@@ -691,6 +721,7 @@ namespace MPX
         StrV v;
         for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
         {
+          if(path_test(*i))
             v.push_back(filename_to_uri(*i));
         }
         m_Library.initScan(v);
@@ -702,6 +733,7 @@ namespace MPX
         StrV v;
         for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
         {
+          if(path_test(*i))
             v.push_back(filename_to_uri(*i));
         }
         m_Library.initScan(v, true);
