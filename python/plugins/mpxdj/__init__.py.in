@@ -675,7 +675,7 @@ class MPXDJ(mpx.Plugin):
             else:
                 self.player.push_message(_("Failed to produce track"))
 
-        self.go.set_label("Go One-Shot!)")
+        self.go.set_label("Go One-Shot!")
         self.go.set_sensitive(self.gooneshot[self.combo.get_active()] is not False)
         self.mlib.set_sensitive(True)
         self.working = False
@@ -691,8 +691,10 @@ class MPXDJ(mpx.Plugin):
 
         idv = mpx.IdVector()
         klass = self.callables[self.combo.get_active()]
+
         if klass:
-            instance = klass(self.lib, idv, self.xml, self.mlib, self.mcs)
+
+            instance = klass(self.lib, idv, self.xml, self.mlib, self.mcs, MODEL_TreeModel(self.mlib.get_playlist_model()))
             instance.start () 
        
             while not instance.is_done():
