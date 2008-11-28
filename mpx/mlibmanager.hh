@@ -50,6 +50,14 @@
 
 namespace MPX
 {
+    enum PathTestResult
+    {
+        IS_PRESENT,
+        RELOCATED,
+        DELETED,
+        IGNORED
+    };
+
     class MLibManager
       : public Gnome::Glade::WidgetLoader<Gtk::Window>
       , public sigx::glib_auto_dispatchable
@@ -76,10 +84,10 @@ namespace MPX
 
             MLibManager (Glib::RefPtr<Gnome::Glade::Xml> const& xml, MPX::HAL & obj_hal, MPX::Library & obj_library);
 
-
-
             void
-            scan_end( ScanSummary const& );
+            scan_end(
+                const ScanSummary&
+            );
 
             void
             scan_start ();
@@ -90,58 +98,68 @@ namespace MPX
 
 
             void
-            build_fstree (std::string const& root_path);
+            build_fstree(
+                const std::string&
+            );
 
             int
-            fstree_sort (const Gtk::TreeIter & iter_a, const Gtk::TreeIter & iter_b);
+            fstree_sort(
+                const Gtk::TreeIter&,
+                const Gtk::TreeIter&
+            );
 
             void
-            append_path (std::string const& root_path, Gtk::TreeIter & root_iter);
+            append_path(
+                const std::string&,
+                Gtk::TreeIter&
+            );
 
             void
-            prescan_path (std::string const& path, Gtk::TreeIter & iter);
+            prescan_path(
+                const std::string&,
+                Gtk::TreeIter& iter
+            );
 
             bool
-            has_active_parent (Gtk::TreeIter &);
+            has_active_parent(
+                Gtk::TreeIter&
+            );
 
-
+            PathTestResult
+            path_test(
+                const std::string&
+            );
 
             void
             on_volumes_changed ();
 
             void
-            on_volumes_row_activated (const Gtk::TreePath&, Gtk::TreeViewColumn*);
+            on_fstree_row_expanded(
+                const Gtk::TreeIter&,
+                const Gtk::TreePath&
+            );
+
+            void
+            on_path_toggled(
+                const Glib::ustring&
+            );
 
 
             void
-            on_fstree_row_expanded (const Gtk::TreeIter & iter, const Gtk::TreePath & path);
-
-            void
-            on_path_toggled (const Glib::ustring &);
-
-
-
-            void
-            on_rescan_volume ();
-
-            void
-            on_rescan_volume_deep ();
+            on_rescan_volume(bool /*deep*/);
 
             void
             on_vacuum_volume ();
 
             void
-            on_volume_added (const HAL::Volume&);
+            on_volume_added(
+                const HAL::Volume&
+            );
 
             void
-            on_volume_removed (const HAL::Volume&);
-
-
-
-            MPX::HAL        & m_HAL;
-            MPX::Library    & m_Library;
-
-            Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
+            on_volume_removed(
+                const HAL::Volume&
+            );
 
             // auto rescanning
 
@@ -151,10 +169,7 @@ namespace MPX
             void
             on_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE);
 
-            Glib::Timer m_rescan_timer;
-
             // ui stuff
-
             Gtk::TreeView * m_VolumesView;
 
             struct VolumeColumnsT : public Gtk::TreeModel::ColumnRecord
@@ -199,18 +214,26 @@ namespace MPX
 
 
             void
-            cell_data_func_active (Gtk::CellRenderer * basecell, Gtk::TreeIter const& iter);
+            cell_data_func_active(
+                Gtk::CellRenderer*,
+                const Gtk::TreeIter&
+            );
 
             void
-            cell_data_func_text (Gtk::CellRenderer * basecell, Gtk::TreeIter const& iter);
+            cell_data_func_text(
+                Gtk::CellRenderer*,
+                const Gtk::TreeIter&
+            );
 
             bool
-            slot_select (const Glib::RefPtr<Gtk::TreeModel>&model, const Gtk::TreePath &path, bool was_selected);
+            slot_select(
+                const Glib::RefPtr<Gtk::TreeModel>&,
+                const Gtk::TreePath&,
+                bool was_selected
+            );
 
             void
             recreate_path_frags ();
-
-            bool m_present;
 
             typedef std::set<std::string>       StrSetT;
             typedef std::vector<std::string>    PathFrags;
@@ -227,7 +250,12 @@ namespace MPX
             Gtk::Button * m_Rescan;
             Gtk::Button * m_DeepRescan;
             Gtk::Button * m_Vacuum;
+            bool          m_present;
+            Glib::Timer   m_rescan_timer;
     
+            MPX::HAL        & m_HAL;
+            MPX::Library    & m_Library;
+
             Glib::RefPtr<Gtk::TextBuffer> m_TextBufferDetails;
     };
 }

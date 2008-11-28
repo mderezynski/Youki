@@ -122,7 +122,7 @@
 			      <child>
 				<widget class="GtkTreeView" id="volumes-view">
 				  <property name="visible">True</property>
-				  <property name="tooltip" translatable="yes">Select a volume (partition, USB storage, etc) here to perform an action below.</property>
+				  <property name="tooltip" translatable="yes">Select a volume (partition, USB storage, etc) here to perform an action below. Double-click a volume to reread the tree.</property>
 				  <property name="can_focus">True</property>
 				  <property name="headers_visible">True</property>
 				  <property name="rules_hint">False</property>

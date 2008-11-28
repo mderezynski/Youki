@@ -34,6 +34,7 @@
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
 #include "mpx/mpx-uri.hh"
+#include "mpx/widgets/task-dialog.hh"
 #include "libhal++/hal++.hh"
 #include "mpx/mpx-sql.hh"
 
@@ -63,13 +64,12 @@ namespace MPX
     : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
     , sigx::glib_auto_dispatchable()
     , Service::Base("mpx-service-mlibman")
+    , m_present(false)
     , m_HAL(obj_hal)
     , m_Library(obj_library)
-    , m_ref_xml(xml)
-    , m_present(false)
     {
         Gtk::TextView * text_view_details;
-        m_ref_xml->get_widget("textview-details", text_view_details );
+        m_Xml->get_widget("textview-details", text_view_details );
         m_TextBufferDetails = text_view_details->get_buffer(); 
 
         Gtk::CellRendererText * cell = 0; 
@@ -93,7 +93,7 @@ namespace MPX
                 &MLibManager::scan_end
         ));
 
-        m_ref_xml->get_widget("volumes-view", m_VolumesView);
+        m_Xml->get_widget("volumes-view", m_VolumesView);
         m_VolumesView->get_selection()->set_mode( Gtk::SELECTION_BROWSE );
 
         cell = manage (new Gtk::CellRendererText());
@@ -118,17 +118,18 @@ namespace MPX
                 &MLibManager::on_volumes_changed
         ));
         m_VolumesView->signal_row_activated().connect(
+            sigc::hide( sigc::hide (
             sigc::mem_fun(
                 *this,
-                &MLibManager::on_volumes_row_activated
-        ));
+                &MLibManager::on_volumes_changed
+        ))));
 
         populate_volumes();
 
 
         /* FSTREE VIEW */
 
-        m_ref_xml->get_widget("fstree-view", m_FSTree);
+        m_Xml->get_widget("fstree-view", m_FSTree);
 
         cell = manage (new Gtk::CellRendererText());
         Gtk::CellRendererToggle * cell2 = manage (new Gtk::CellRendererToggle());
@@ -185,30 +186,36 @@ namespace MPX
 
         /* BUTTONS */
 
-        m_ref_xml->get_widget("b-close", m_Close);
+        m_Xml->get_widget("b-close", m_Close);
         m_Close->signal_clicked().connect(
             sigc::mem_fun(
             *this,
             &MLibManager::hide
         ));
 
-        m_ref_xml->get_widget("b-rescan", m_Rescan);
+        m_Xml->get_widget("b-rescan", m_Rescan);
         m_Rescan->signal_clicked().connect(
-            sigc::mem_fun(
-            *this,
-            &MLibManager::on_rescan_volume
+            sigc::bind(
+                sigc::mem_fun(
+                    *this,
+                    &MLibManager::on_rescan_volume
+                ),
+                false
         ));
         m_Rescan->set_sensitive( false );
 
-        m_ref_xml->get_widget("b-deep-rescan", m_DeepRescan);
+        m_Xml->get_widget("b-deep-rescan", m_DeepRescan);
         m_DeepRescan->signal_clicked().connect(
-            sigc::mem_fun(
-            *this,
-            &MLibManager::on_rescan_volume_deep
+            sigc::bind(
+                sigc::mem_fun(
+                    *this,
+                    &MLibManager::on_rescan_volume
+                ),
+                true
         ));
         m_DeepRescan->set_sensitive( false );
 
-        m_ref_xml->get_widget("b-vacuum", m_Vacuum);
+        m_Xml->get_widget("b-vacuum", m_Vacuum);
         m_Vacuum->signal_clicked().connect(
             sigc::mem_fun(
             *this,
@@ -329,33 +336,44 @@ namespace MPX
           {
                 Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
 
-                m_VolumeUDI     = Vol->get_udi();
-                m_DeviceUDI     = Vol->get_storage_device_udi();
-                m_MountPoint    = Vol->get_mount_point();
-                m_ManagedPaths  = StrSetT();
+                std::string VolumeUDI     = Vol->get_udi();
+                std::string DeviceUDI     = Vol->get_storage_device_udi();
+                std::string MountPoint    = Vol->get_mount_point();
+
+                reread_paths:
 
                 SQL::RowV v;
                 m_Library.getSQL(
                         v,
                         (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
-                         % m_DeviceUDI
-                         % m_VolumeUDI
+                         % DeviceUDI
+                         % VolumeUDI
                          ).str()
                 );
 
-                StrSetT m_ManagedPaths;
+                StrSetT ManagedPaths; 
                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                 {
-                  m_ManagedPaths.insert(build_filename(m_MountPoint, boost::get<std::string>((*i)["insert_path"])));
+                  ManagedPaths.insert(build_filename(MountPoint, boost::get<std::string>((*i)["insert_path"])));
                 }
 
-                if(!m_ManagedPaths.empty())
+                if(!ManagedPaths.empty())
                 {
                   StrV v;
-                  for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
+                  for(StrSetT::const_iterator i = ManagedPaths.begin(); i != ManagedPaths.end(); ++i)
                   {
-                    if(path_test(*i))
-                      v.push_back(filename_to_uri(*i));
+                    PathTestResult r = path_test(*i);
+                    switch( r )
+                    {
+                        case IS_PRESENT:
+                        case IGNORED:
+                            v.push_back(filename_to_uri(*i));
+                            break;
+
+                        case RELOCATED:
+                        case DELETED:
+                            goto reread_paths;
+                    }
                   }
                   m_Library.initScan(v);                  
                 }
@@ -442,33 +460,94 @@ namespace MPX
         return a.compare(b);
     }
 
-    bool
-    MLibManger::path_test(const std::string& path)
+    PathTestResult
+    MLibManager::path_test(const std::string& path)
     {
-      if(Glib::file_test(path, Glib::FLIE_TEST_EXISTS))
+      if( Glib::file_test(path, Glib::FILE_TEST_EXISTS) )
       {
-        return true;
+        return IS_PRESENT;
       }
       else
       {
-        // Show the relocate dialog and process the result
-        int result = dialog.run;
-        switch(result)
-        {
-          case RELOCATE:
-            // Show the filechooser dialog, I'll add it later ;-)
-            break;
+              TaskDialog dialog(
+                    this,
+                    _("AudioSource: Music Path is missing"),
+                    _("Music Path is missing"),
+                    Gtk::MESSAGE_WARNING,
+                    (boost::format (_("A path managed by AudioSource containing music can not be found.\nYour intervention is required.\n\nPath: %s")) % path).str()
+              );
 
-          case REMOVE:
-            // Remove the path
-            break;
+              dialog.add_button(
+                    _("Relocate Path"),
+                    _("The path has been moved somewhere else, and AudioSource needs to know the new location."),
+                    Gtk::Stock::HARDDISK,
+                    0
+              );
+            
+              dialog.add_button(
+                    _("Delete Path from Library"),
+                    _("The path has been permanently deleted, and AudioSource should not manage it anymore."),
+                    Gtk::Stock::DELETE,
+                    1
+              );
 
-          case WARNLATER:
-            // Do nothing
-            break;
-        }
+              dialog.add_button(
+                    _("Check Next Time"),
+                    _("The situation is different than described above, and deeper intervention is neccessary.\nAudioSource will check the path at the next rescan again."),
+                    Gtk::Stock::OK,
+                    2
+              );
+
+              // Show the relocate dialog and process the result
+
+              int result = dialog.run();
+
+              std::string volume_udi;
+              std::string device_udi;
+              std::string vrp;
+              HAL::Volume volume;
+
+              switch(result)
+              {
+                case 0:
+                    return RELOCATED;
+                  break;
+
+                case 1:
+                    volume = m_HAL.get_volume_for_uri(Glib::filename_to_uri(path));
+
+                    volume_udi =
+                        volume.volume_udi ;
+
+                    device_udi =  
+                        volume.device_udi ;
+
+                    vrp = 
+                        path.substr(volume.mount_point.length()) ;
+
+                    m_Library.execSQL(
+                        (boost::format("DELETE FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path LIKE '%s%%'")
+                            % device_udi
+                            % volume_udi
+                            % vrp
+                    ).str());
+
+                    m_Library.vacuum_volume(
+                        device_udi,
+                        volume_udi 
+                    );
+
+                    on_volumes_changed();
+
+                    return DELETED;
+                  break;
+
+                case 2:
+                    return IGNORED;
+                  break;
+              }
       }
-      return false;
+      return IGNORED;
     }
 
     void
@@ -538,6 +617,8 @@ namespace MPX
         FSTreeStore->append(root_iter->children());
         (*root_iter)[FSTreeColumns.SegName] = root_path;
         (*root_iter)[FSTreeColumns.FullPath] = root_path;
+        TreePath path (TreePath::size_type(1), TreePath::value_type(0));
+        m_FSTree->scroll_to_row(path, 0.0);
     }
 
     bool
@@ -575,14 +656,13 @@ namespace MPX
     }
 
     void
-    MLibManager::on_volumes_row_activated (const Gtk::TreePath&, Gtk::TreeViewColumn*)
-    {
-        on_rescan_volume ();
-    }
-
-    void
     MLibManager::on_volumes_changed ()
     {
+        m_ManagedPaths  = StrSetT();
+        m_VolumeUDI     = std::string(); 
+        m_DeviceUDI     = std::string(); 
+        m_MountPoint    = std::string();
+
         bool has_selection = m_VolumesView->get_selection()->count_selected_rows();
 
         if( has_selection )
@@ -594,7 +674,6 @@ namespace MPX
             m_VolumeUDI     = Vol->get_udi();
             m_DeviceUDI     = Vol->get_storage_device_udi();
             m_MountPoint    = Vol->get_mount_point();
-            m_ManagedPaths  = StrSetT();
 
             SQL::RowV v;
             m_Library.getSQL(
@@ -716,27 +795,27 @@ namespace MPX
     }
 
     void
-    MLibManager::on_rescan_volume ()
+    MLibManager::on_rescan_volume(bool deep)
     {
+        restart_rescan_volume:
+    
         StrV v;
         for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
         {
-          if(path_test(*i))
-            v.push_back(filename_to_uri(*i));
-        }
-        m_Library.initScan(v);
-    }
+            PathTestResult r = path_test(*i);
+            switch( r )
+            {
+                case IS_PRESENT:
+                case IGNORED:
+                    v.push_back(filename_to_uri(*i));
+                    break;
 
-    void
-    MLibManager::on_rescan_volume_deep ()
-    {
-        StrV v;
-        for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
-        {
-          if(path_test(*i))
-            v.push_back(filename_to_uri(*i));
+                case RELOCATED:
+                case DELETED:
+                    goto restart_rescan_volume;
+            }
         }
-        m_Library.initScan(v, true);
+        m_Library.initScan(v, deep);
     }
 
     void
