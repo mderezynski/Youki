@@ -669,6 +669,8 @@ class MPXDJ(mpx.Plugin):
         self.action[self.combo.get_active()].set_active(True) 
         self.action[0].handler_unblock(self.action_handler2)
 
+        self.playmode = self.combo.get_active() 
+
     def on_playlist_end(self, object, empty):
 
         if self.working: return
