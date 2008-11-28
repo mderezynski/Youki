@@ -2160,6 +2160,13 @@ rerun_import_share_dialog:
                 }
 
         void
+                Player::show_plugin(gint64 id)
+                {
+                        MPX::PluginManager & plugins = (*(services->get<PluginManager>("mpx-service-plugins")));
+                        plugins.show(id);
+                }
+
+        void
                 Player::info_set (const std::string& info)
                 {
                         m_InfoArea->set_info(info);

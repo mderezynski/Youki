@@ -63,6 +63,8 @@ class TrackCover(mpx.Plugin):
 
     def metadata_updated(self, blah):
 
+        self.regen_box()
+
         try:
             pixbuf = self.player.get_metadata().get_image()
             if pixbuf:

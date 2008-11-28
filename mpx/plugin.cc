@@ -435,6 +435,12 @@ namespace MPX
         return result;
 	}
 
+    void
+	PluginManager::show(gint64 id)
+	{
+        signal_plugin_show_gui_.emit(id);
+	}
+
 	void
 	PluginManager::push_traceback(gint64 id, const std::string& method)
 	{
