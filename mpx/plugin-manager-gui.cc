@@ -80,12 +80,20 @@ namespace MPX
 			PluginManager                 & m_Manager;
             Gtk::CellRendererPixbuf       * m_pRendererPixbuf;
             IdIterMap_t                     m_IdIterMap;
+            Gtk::Window                   & m_GUI;
 
 		public:
 
-			PTV (const Glib::RefPtr<Gnome::Glade::Xml> &xml, PluginManager & manager)
-                        : Gnome::Glade::WidgetLoader<Gtk::TreeView>(xml, "treeview")
+			PTV(
+                  const Glib::RefPtr<Gnome::Glade::Xml>&  xml
+                , PluginManager&                          manager
+                , Gtk::Window&                            gui
+            )
+
+            : Gnome::Glade::WidgetLoader<Gtk::TreeView>(xml, "treeview")
 			, m_Manager(manager)
+            , m_GUI(gui)
+
 			{
 				Store = Gtk::ListStore::create(Columns);
 
@@ -147,6 +155,12 @@ namespace MPX
                 Store->set_default_sort_func( sigc::mem_fun( *this, &PTV::plugin_sort_func ));
                 Store->set_sort_column(-1, Gtk::SORT_ASCENDING);
 				set_model (Store);
+
+                manager.signal_plugin_show_gui().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &PTV::on_plugin_show_gui
+                ));
             
                 manager.signal_plugin_activated().connect(
                     sigc::mem_fun(
@@ -160,6 +174,14 @@ namespace MPX
                         &PTV::on_plugin_deactivated
                 ));
 			}
+
+            void
+            on_plugin_show_gui(gint64 id)
+            {
+                TreeIter iter = m_IdIterMap.find(id)->second;
+                m_GUI.present();
+                get_selection()->select( iter );
+            }
 
             void
             on_plugin_activated(gint64 id)
@@ -286,7 +308,7 @@ namespace MPX
         : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
         , Service::Base("mpx-service-plugins-gui")
 		, m_Manager(obj_manager)
-		, m_PTV(new PTV(xml, obj_manager))
+		, m_PTV(new PTV(xml, obj_manager, *this))
 		{
 			m_PTV->get_selection()->signal_changed().connect( sigc::mem_fun( *this, &PluginManagerGUI::on_selection_changed ) );
 
@@ -370,9 +392,13 @@ namespace MPX
 					options->add(*widget);
 					widget->show();
 				}
+                notebook->set_current_page(1);
 			}
 			else
+            {
 				notebook->get_nth_page(1)->hide();
+                notebook->set_current_page(0);
+            }
 		}
 
         void

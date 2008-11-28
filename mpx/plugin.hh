@@ -128,6 +128,7 @@ namespace MPX
 
         SignalPlugin signal_activated_;
         SignalPlugin signal_deactivated_;
+        SignalPlugin signal_plugin_show_gui_;
         Signal       signal_traceback_;
 
 		public:
@@ -135,6 +136,11 @@ namespace MPX
 			PluginManager (MPX::Player* /*player*/);
 			~PluginManager ();
 
+            SignalPlugin&	
+            signal_plugin_show_gui()
+            {
+                return signal_plugin_show_gui_;
+            }
 
             SignalPlugin&	
             signal_plugin_activated()
@@ -179,6 +185,11 @@ namespace MPX
 	
 			bool
 			deactivate(
+                gint64 /*id*/
+            );
+
+            void
+            show(
                 gint64 /*id*/
             );
 

@@ -351,7 +351,8 @@ class OPTION__RandomMix(BaseOPTION__):
 
     def run(self):
 
-        self.RANDOM_markov(self.lib, self.v)
+        if len(self.model):
+            self.RANDOM_markov(self.lib, self.v)
 
         if not len(self.v):
             [self.RANDOM_genre,
@@ -482,6 +483,34 @@ class OPTION__SoundsOf(BaseOPTION__):
         extract_ids(rv, self.v)
         self.finished.set()
 
+class OPTION__ForgottenGems(BaseOPTION__):
+
+    def __init__(self, lib, v, xml, mlib, mcs, model):
+
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
+ 
+    def run(self):
+   
+        rv = mpx.SQLRowV() 
+        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE pdate IS NOT NULL AND pcount > 3 ORDER BY pdate ASC")
+        random.shuffle(rv)
+        extract_ids_n(rv, self.v, 5)
+        self.finished.set()
+
+class OPTION__DejaVu(BaseOPTION__):
+
+    def __init__(self, lib, v, xml, mlib, mcs, model):
+
+        BaseOPTION__.__init__(self, lib, v, xml, mlib, mcs, model)
+ 
+    def run(self):
+   
+        rv = mpx.SQLRowV() 
+        self.lib.getSQL(rv, "SELECT id FROM track_view ORDER BY pcount DESC LIMIT 10")
+        random.shuffle(rv)
+        extract_ids_n(rv, self.v, 5)
+        self.finished.set()
+
 class MPXDJ(mpx.Plugin):
 
     """MPXDJ DJs your music library for you!"""
@@ -514,7 +543,6 @@ class MPXDJ(mpx.Plugin):
 
         self.notebook = self.xml.get_widget("notebook")
 
-
         try:
             self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj-icon.png")
         except:
@@ -528,8 +556,8 @@ class MPXDJ(mpx.Plugin):
             OPTION__RandomMix, 
             None,
             OPTION__SoundsOf, 
-            None,
-            None,
+            OPTION__ForgottenGems,
+            OPTION__DejaVu,
             OPTION__LastFmTag 
         ]
 
@@ -540,20 +568,20 @@ class MPXDJ(mpx.Plugin):
             True,
             False,
             True,
-            False,
-            False,
+            True,
+            True,
             True
        ] 
 
         self.helptexts = [
             "Analyzes the playlist and plays similar Music",
             "Creates a running order composed of the most frequently played tracks.",
-            "Plays a set number of the most frequently played tracks.",
+            "Plays some of the best rated tracks",
             "Plays random, but similar tracks",
             "",
             "Plays tracks from a specific decade.",
-            "",
-            "",
+            "Plays long forgotten but popular tracks.",
+            "Plays a set number of the most frequently played tracks.",
             "Creates a playlist from your music library based on a Last.fm tag"
         ]   
 
@@ -624,14 +652,24 @@ class MPXDJ(mpx.Plugin):
 
         self.combo.set_active(current.get_current_value())
         self.playmode = current.get_current_value()
+        self.player.show_plugin(self.id)
 
     def on_enable_toggled(self, action):
 
         if action.get_active():
+
             self.player.activate_plugin(self.id)
+
             model = self.mlib.get_playlist_model()
-            if (len(model)-1) == self.mlib.get_playlist_current_path()[0]:
-                self.on_playlist_end([],[])
+            path  = self.mlib.get_playlist_current_path()
+
+            if (not path) or (not len(model)) or ((len(model)-1) == path[0]):
+
+                if (not path) or (not len(model)) and self.gooneshot[self.combo.get_active()]:
+                    self.on_button_go([])
+                else:
+                    self.on_playlist_end([],[])
+
         else:
             self.player.deactivate_plugin(self.id)
 
