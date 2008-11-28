@@ -172,8 +172,8 @@ namespace Mcs
 
             int
             subscribe(
-                std::string const& domain,      //Must be registered 
-                std::string const& key,         //Must be registered,
+                std::string const&      domain,      //Must be registered 
+                std::string const&      key,         //Must be registered,
                 SubscriberNotify const& notify
             );  
 

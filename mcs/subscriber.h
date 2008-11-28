@@ -14,7 +14,6 @@ namespace Mcs
         SubscriberNotify const& notify
       );
 
-	  Subscriber();
 	  ~Subscriber();
 
       void
@@ -26,7 +25,7 @@ namespace Mcs
 
     private:
 
-      SubscriberNotify & m_notify;
+      SubscriberNotify m_notify;
   };
 };
 

@@ -129,20 +129,8 @@ namespace MPX
     void
     setup_mcs ()
     {
-        try{
-
-            mcs = new Mcs::Mcs (Glib::build_filename (get_app_config_dir (), "config.xml"), "mpx", 0.01);
-
-        } catch( Mcs::Mcs::Exceptions & cxe ) {
-
-            if (cxe == Mcs::Mcs::PARSE_ERROR)
-            {
-                g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, _("Unable to parse configuration file!"));
-            }
-        }
-
+        mcs = new Mcs::Mcs (Glib::build_filename (get_app_config_dir (), "config.xml"), "mpx", 0.01);
         mcs_bind = new Mcs::Bind(mcs);
-
         mcs->load (Mcs::Mcs::VERSION_IGNORE);
 
         mcs->domain_register ("main-window");
@@ -175,7 +163,15 @@ namespace MPX
         mcs->key_register ("mpx", "window-x", 20);
         mcs->key_register ("mpx", "window-y", 20);
         mcs->key_register ("mpx", "window-w", 400);
-        mcs->key_register ("mpx", "window-h", 5000);
+        mcs->key_register ("mpx", "window-h", 500);
+        mcs->key_register ("mpx", "window-mlib-w", 600);
+        mcs->key_register ("mpx", "window-mlib-h", 400);
+        mcs->key_register ("mpx", "window-mlib-x", 100);
+        mcs->key_register ("mpx", "window-mlib-y", 100);
+        mcs->key_register ("mpx", "window-prefs-w", 700);
+        mcs->key_register ("mpx", "window-prefs-h", 600);
+        mcs->key_register ("mpx", "window-prefs-x", 120);
+        mcs->key_register ("mpx", "window-prefs-y", 120);
         mcs->key_register ("mpx", "music-import-path", Glib::build_filename(Glib::get_home_dir (),"Music"));
 
         mcs->domain_register ("audio");

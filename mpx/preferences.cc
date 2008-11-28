@@ -1115,11 +1115,6 @@ namespace MPX
 
         gtk_widget_realize(GTK_WIDGET(gobj()));
     
-        mcs->key_register("mpx","window-prefs-w", 700);
-        mcs->key_register("mpx","window-prefs-h", 600);
-        mcs->key_register("mpx","window-prefs-x", 120);
-        mcs->key_register("mpx","window-prefs-y", 120);
-
         resize(
            mcs->key_get<int>("mpx","window-prefs-w"),
            mcs->key_get<int>("mpx","window-prefs-h")

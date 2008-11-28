@@ -10,10 +10,6 @@ namespace Mcs
     {
 	}
 
-	Subscriber::Subscriber ()
-	{
-	}
-
     Subscriber::~Subscriber ()
     {
       m_notify.disconnect ();
@@ -23,7 +19,7 @@ namespace Mcs
     Subscriber::notify(
         const std::string& domain,
         const std::string& key,
-        const KeyVariant& value
+        const KeyVariant&  value
     )
     {
       m_notify (domain, key, value);

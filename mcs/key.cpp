@@ -32,7 +32,7 @@ namespace Mcs
     )
     {
         g_return_if_fail(m_subscribers.find(id) == m_subscribers.end());
-        m_subscribers[id] = Subscriber(notify);
+        m_subscribers.insert( std::make_pair(id, Subscriber(notify)));
     }
 
     void 

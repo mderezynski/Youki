@@ -290,8 +290,6 @@ namespace MPX
 
                 pyg_gil_state_release (state);
         }
-
-        delete mcs;
 	}
 
 	PluginHoldMap const&

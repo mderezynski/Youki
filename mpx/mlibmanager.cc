@@ -222,11 +222,6 @@ namespace MPX
 
         /*- Setup Window Geometry -----------------------------------------*/ 
     
-        mcs->key_register("mpx","window-mlib-w", 600);
-        mcs->key_register("mpx","window-mlib-h", 400);
-        mcs->key_register("mpx","window-mlib-x", 100);
-        mcs->key_register("mpx","window-mlib-y", 100);
-
         resize(
            mcs->key_get<int>("mpx","window-mlib-w"),
            mcs->key_get<int>("mpx","window-mlib-h")

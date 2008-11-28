@@ -283,7 +283,9 @@ namespace Mcs
             g_return_if_fail( m_domains.find(domain)->second.find(key) == m_domains.find(domain)->second.end() );
         }
 
-        m_domains.find( domain )->second[key] = Key( domain, key, key_default, KeyType(key_default.which()) );
+        m_domains.find( domain )->second.insert( std::make_pair( key, Key( domain, key, key_default, KeyType(key_default.which()) )));
+
+        g_message("MCS: key_register !: registered Domain [%s] Key [%s]", domain.c_str(), key.c_str());
 
         if( !m_doc )
         {
@@ -378,15 +380,15 @@ namespace Mcs
 
       int
       Mcs::subscribe(
-            std::string const& domain, //Must be registered 
-            std::string const& key,    //Must be registered,
+            std::string const&      domain, //Must be registered 
+            std::string const&      key,    //Must be registered,
             SubscriberNotify const& notify
       )
       {
         if(!domain_key_exist(domain,key))
             throw NoKeyException((boost::format ("MCS subscribe() : Domain [%s] Key [%s] does not exist") % domain % key).str());
 
-        m_domains.find (domain)->second.find (key)->second.subscriber_add(m_subscriber_id, notify);
+        m_domains.find(domain)->second.find (key)->second.subscriber_add(m_subscriber_id, notify);
         int cur = m_subscriber_id++;
         return cur;
       }

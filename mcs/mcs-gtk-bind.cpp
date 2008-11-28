@@ -118,7 +118,7 @@ namespace Mcs
     range.set_value (double (mcs->key_get<int> (domain, key)));
 
     mcs->subscribe (domain, key,
-                    sigc::bind (sigc::mem_fun (this, &Bind::rebind_range),
+                    sigc::bind (sigc::mem_fun (*this, &Bind::rebind_range),
                                 sigc::ref (range)));
   }
 
