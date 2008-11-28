@@ -43,8 +43,7 @@ namespace MPX
 
     public:
 
-        Sidebar (Glib::RefPtr<Gnome::Glade::Xml> const& xml,
-                 MPX::PluginManager&);
+        Sidebar (Glib::RefPtr<Gnome::Glade::Xml> const& xml);
         virtual ~Sidebar ();
 
         ItemKey const&
@@ -169,7 +168,6 @@ namespace MPX
         boost::optional<ItemKey> m_ActiveId;
         ItemKey                  m_VisibleId;
         Gtk::Notebook          * m_Notebook;
-        PluginManager          & m_PluginManager;
 
         struct Signals_T
         {

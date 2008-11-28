@@ -13,6 +13,7 @@ struct MPX::MarkovAnalyzerThread::ThreadData
 
 MPX::MarkovAnalyzerThread::MarkovAnalyzerThread (MPX::Library & obj_library)
 : sigx::glib_threadable()
+, Service::Base("mpx-service-markov")
 , append(sigc::mem_fun(*this, &MarkovAnalyzerThread::on_append))
 , m_Library(new MPX::Library(obj_library))
 {

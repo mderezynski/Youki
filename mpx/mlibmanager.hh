@@ -35,6 +35,8 @@
 #include "mpx/widgets/widgetloader.hh"
 #include "mpx/mpx-hal.hh"
 #include "mpx/mpx-library.hh"
+#include "mpx/mpx-main.hh"
+#include "mpx/mpx-services.hh"
 
 #include "libhal++/hal++.hh"
 
@@ -51,6 +53,7 @@ namespace MPX
     class MLibManager
       : public Gnome::Glade::WidgetLoader<Gtk::Window>
       , public sigx::glib_auto_dispatchable
+      , public Service::Base
     {
         public:
 
@@ -135,6 +138,23 @@ namespace MPX
 
 
 
+            MPX::HAL        & m_HAL;
+            MPX::Library    & m_Library;
+
+            Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
+
+            // auto rescanning
+
+            bool
+            on_rescan_timeout();
+
+            void
+            on_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE);
+
+            Glib::Timer m_rescan_timer;
+
+            // ui stuff
+
             Gtk::TreeView * m_VolumesView;
 
             struct VolumeColumnsT : public Gtk::TreeModel::ColumnRecord
@@ -208,14 +228,9 @@ namespace MPX
             Gtk::Button * m_DeepRescan;
             Gtk::Button * m_Vacuum;
     
-            Gtk::ToggleButton   * m_AlwaysVacuum;
+            Gtk::ToggleButton * m_AlwaysVacuum;
 
             Glib::RefPtr<Gtk::TextBuffer> m_TextBufferDetails;
-
-            MPX::HAL        & m_HAL;
-            MPX::Library    & m_Library;
-
-            Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
     };
 }
 #endif

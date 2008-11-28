@@ -281,7 +281,8 @@ namespace MPX
 		}
 
 		PluginManagerGUI::PluginManagerGUI (const Glib::RefPtr<Gnome::Glade::Xml> &xml, PluginManager &obj_manager)
-                : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
+        : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
+        , Service::Base("mpx-service-plugins-gui")
 		, m_Manager(obj_manager)
 		, m_PTV(new PTV(xml, obj_manager))
 		{

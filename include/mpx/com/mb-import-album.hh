@@ -37,6 +37,7 @@
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-covers.hh"
+#include "mpx/mpx-services.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/util-graphics.hh"
 #include "mpx/util-ui.hh"
@@ -80,7 +81,7 @@ namespace MPX
         typedef std::map<std::string, MusicBrainzXml::MusicBrainzRelease> ReleaseIdToReleaseMap;
         typedef std::map<std::string, Uris_t>                             ArtistIdToReleasesMap;
 
-        class MB_ImportAlbum : public Gnome::Glade::WidgetLoader<Gtk::Window>
+        class MB_ImportAlbum : public Gnome::Glade::WidgetLoader<Gtk::Window>, public Service::Base
         {
                 enum Columns
                 {

@@ -79,6 +79,7 @@ namespace MPX
                     MPX::Covers                           & obj_covers
                 )
                 : WidgetLoader<Gtk::Window>(xml, "mb-import-album")
+                , Service::Base("mpx-service-mbimport")
                 , m_Lib(obj_library)
                 , m_Covers(obj_covers)
                 {

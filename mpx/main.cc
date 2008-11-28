@@ -30,7 +30,6 @@
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
-#include "mpx/metadatareader-taglib.hh"
 #include "mpx/mpx-network.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/mpx-types.hh"
@@ -39,9 +38,18 @@
 #include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
 
+#include "mpx/metadatareader-taglib.hh"
+
+#include "mpx/com/mb-import-album.hh"
+#include "mpx/mpx-markov-analyzer-thread.hh"
+
+#include "mlibmanager.hh"
 #include "paths.hh"
 #include "play.hh"
+#include "plugin.hh"
+#include "plugin-manager-gui.hh"
 #include "signals.hh"
+#include "splash-screen.hh"
 
 #if 0
 #include <clutter/clutter.h>
@@ -58,6 +66,7 @@
 #include <string>
 
 using namespace MPX;
+using namespace Glib;
 
 namespace MPX
 {
@@ -316,12 +325,17 @@ main (int argc, char ** argv)
     //clutter_init(&argc, &argv);
     Gtk::GL::init(argc, argv);
 
+    Splashscreen * splash = new Splashscreen;
+
+    splash->set_message(_("Starting Services..."), 0.5);
+
     services = new Service::Manager;
 
 #ifdef HAVE_HAL
 /*    try{*/
         boost::shared_ptr<HAL> ptr_halobj
-            (new MPX::HAL(*services)); services->add(ptr_halobj);
+            (new MPX::HAL(*services));
+        services->add(ptr_halobj);
 #endif
         //       MPX::NM *obj_netman = new MPX::NM;
 
@@ -343,6 +357,10 @@ main (int argc, char ** argv)
         services->add(ptr_library);
 #endif
 
+        boost::shared_ptr<MarkovAnalyzerThread> ptr_markov
+            (new MarkovAnalyzerThread(*ptr_library.get()));
+        services->add(ptr_markov);
+
         boost::shared_ptr<Play> ptr_play
             (new MPX::Play(*services));
         services->add(ptr_play);
@@ -350,6 +368,29 @@ main (int argc, char ** argv)
         boost::shared_ptr<Player> ptr_player
             (MPX::Player::create(*services));
         services->add(ptr_player);
+
+        boost::shared_ptr<PluginManager> ptr_plugins
+            (new MPX::PluginManager(ptr_player.get()));
+        services->add(ptr_plugins);
+        ptr_plugins->load_plugins();
+        ptr_plugins->activate_plugins();
+
+        boost::shared_ptr<PluginManagerGUI> ptr_plugins_gui
+            (MPX::PluginManagerGUI::create(*ptr_plugins.get()));
+        services->add(ptr_plugins_gui);
+
+        boost::shared_ptr<MB_ImportAlbum> ptr_mbimport
+            (MPX::MB_ImportAlbum::create(*ptr_library.get(), *ptr_covers.get()));
+        services->add(ptr_mbimport);
+
+#ifdef HAVE_HAL
+        boost::shared_ptr<MLibManager> ptr_mlibman
+            (MPX::MLibManager::create(*ptr_halobj.get(), *ptr_library.get()));
+        services->add(ptr_mlibman);
+#endif // HAVE_HAL
+
+        splash->set_message(_("Done"), 1.0);
+        delete splash;
 
         gtk->run (*ptr_player.get());
 
@@ -363,8 +404,13 @@ main (int argc, char ** argv)
     */
 #endif
 
+    ptr_mlibmanr.reset()
+    ptr_mbimport.reset();
+    ptr_plugins_gui.reset();
+    ptr_plugins.reset();
     ptr_player.reset();
     ptr_play.reset();
+    ptr_markov.reset();
     ptr_library.reset();
     ptr_taglib.reset();
     ptr_covers.reset();

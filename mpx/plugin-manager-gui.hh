@@ -30,6 +30,7 @@
 
 #include "plugin.hh"
 #include "mpx/widgets/widgetloader.hh"
+#include "mpx/mpx-services.hh"
 
 #include <libglademm/xml.h>
 #include <boost/python.hpp>
@@ -39,6 +40,7 @@ namespace MPX
     class PTV;
     class PluginManagerGUI
       : public Gnome::Glade::WidgetLoader<Gtk::Window>
+      , public Service::Base
     {
 		public:
 

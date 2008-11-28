@@ -39,6 +39,7 @@
 #include <mcs/mcs.h>
 #include <Python.h>
 
+#include "mpx/mpx-services.hh"
 
 namespace MPX
 {
@@ -121,7 +122,7 @@ namespace MPX
 
 
 	class Player;
-    class PluginManager
+    class PluginManager : public Service::Base
     {
         friend class PluginActivate;
 

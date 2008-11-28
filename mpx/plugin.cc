@@ -80,10 +80,30 @@ namespace MPX
 	}
 
 	PluginManager::PluginManager (MPX::Player *player)
-	: m_Id(1)
+    : Service::Base("mpx-service-plugins")
+	, m_Id(1)
 	, m_Player(player)
 	{
         mcs->domain_register("pyplugs");
+
+        std::string const user_path =
+                build_filename(
+                                build_filename(
+                                        g_get_user_data_dir(),
+                                        "mpx"),
+                                "python-plugins"
+                              );
+
+        if(file_test(user_path, FILE_TEST_EXISTS))
+        {
+                append_search_path (user_path);
+        }
+
+        append_search_path
+                (build_filename(
+                                DATA_DIR,
+                                "python-plugins"
+                               ));
 	}
 
 	void

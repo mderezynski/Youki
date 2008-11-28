@@ -47,7 +47,10 @@
 #include "mpx/util-ui.hh"
 #include "mpx/xml/xspf.hh"
 #include "mpx/com/mb-import-album.hh"
- 
+#include "mpx/mpx-markov-analyzer-thread.hh"
+#include "plugin.hh"
+#include "plugin-manager-gui.hh"
+
 #include "dialog-about.hh"
 #include "dialog-filebrowser.hh"
 #include "import-share.hh"
@@ -55,12 +58,9 @@
 #include "infoarea.hh"
 #include "mlibmanager.hh"
 #include "play.hh"
-#include "plugin.hh"
-#include "plugin-manager-gui.hh"
 #include "preferences.hh"
 #include "request-value.hh"
 #include "sidebar.hh"
-#include "splash-screen.hh"
 
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
@@ -573,13 +573,8 @@ namespace MPX
         , m_Play(*(services.get<Play>("mpx-service-play")))
         , m_NewTrack(false)
         {
-                                  m_MarkovThread = new MarkovAnalyzerThread(m_Library);
-
                                   m_ErrorManager = new ErrorManager;
                                   m_AboutDialog = new AboutDialog;
-
-                                  Splashscreen splash;
-                                  splash.set_message(_("Startup..."), 0.);
 
                                   mpx_py_init ();
 
@@ -589,8 +584,7 @@ namespace MPX
                                   m_ref_xml->get_widget("label-time", m_TimeLabel);
                                   m_ref_xml->get_widget("scale-seek", m_Seek);
 
-                                  m_PluginManager = new PluginManager(this);
-                                  m_Sidebar = new Sidebar(m_ref_xml, *m_PluginManager);
+                                  m_Sidebar = new Sidebar(m_ref_xml);
 
                                   try{
 
@@ -636,8 +630,6 @@ namespace MPX
                                   IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
                                   register_default_stock_icons();
 
-                                  splash.set_message(_("Initializing Playback Engine"), 0.2);
-
                                   m_Play.signal_eos().connect(
                                                   sigc::mem_fun( *this, &MPX::Player::on_play_eos
                                                           ));
@@ -679,10 +671,6 @@ namespace MPX
                                   }
 
                                   m_Preferences = Preferences::create(m_Play);
-
-#ifdef HAVE_HAL
-                                  m_MLibManager = MLibManager::create(m_HAL, m_Library);
-#endif // HAVE_HAL
 
                                   m_scrolllock_mask   = 0;
                                   m_numlock_mask      = 0;
@@ -762,13 +750,9 @@ namespace MPX
                                                           NULL, NULL,
                                                           g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE, 1, g_type_from_name("PyObject")); 
 
-                                  splash.set_message(_("Setting up DBus"), 0.4);
-
                                   init_dbus ();
                                   DBusObjects.mpx = DBusMPX::create(*this, m_SessionBus);
                                   DBusObjects.player = DBusPlayer::create(*this, m_SessionBus);
-
-                                  splash.set_message(_("Loading Plugins"), 0.6);
 
                                   /*- Connect Library -----------------------------------------------*/ 
 
@@ -836,11 +820,11 @@ namespace MPX
                                                           _("Remove dangling files")),
                                                   sigc::mem_fun (m_Library, &Library::vacuum));
 #else
-
+                                  MPX::MLibManager & mlibman = (*(services->get<MLibManager>("mpx-service-mlibman")));
                                   m_actions->add (Action::create ("action-mlibmanager",
                                                           _("_Music Library..."),
                                                           _("Add or Remove Music")),
-                                                  sigc::mem_fun (*m_MLibManager, &MLibManager::present));
+                                                  sigc::mem_fun (mlibman, &MLibManager::present));
 #endif
 
                                   m_actions->add (Action::create("action-mb-import",
@@ -954,8 +938,6 @@ namespace MPX
 
                                   /*- Load Sources --------------------------------------------------*/ 
 
-                                  splash.set_message(_("Loading Sources"), 0.8);
-
                                   m_Sidebar->signal_id_changed().connect(
                                                   sigc::mem_fun(
                                                           *this,
@@ -1042,63 +1024,9 @@ namespace MPX
                                                 true
                                   ));
 
-                                  /*- Load Plugins -------------------------------------------------*/
-
-                                  std::string const user_path =
-                                          build_filename(
-                                                          build_filename(
-                                                                  g_get_user_data_dir(),
-                                                                  "mpx"),
-                                                          "python-plugins"
-                                                        );
-
-                                  if(file_test(user_path, FILE_TEST_EXISTS))
-                                  {
-                                          m_PluginManager->append_search_path (user_path);
-                                  }
-
-                                  m_PluginManager->append_search_path
-                                          (build_filename(
-                                                          DATA_DIR,
-                                                          "python-plugins"
-                                                         ));
-
-                                  m_PluginManager->load_plugins();
-                                  m_PluginManager->activate_plugins();
-                                  m_PluginManagerGUI = PluginManagerGUI::create(*m_PluginManager);
-
-                                  m_MarkovThread->run();
-
-                                  translate_caps(); // sets all actions intially insensitive as we have C_NONE
-
-                                  m_MB_ImportAlbum = MB_ImportAlbum::create(m_Library,m_Covers);
-
-
-                                  /*- Auto Rescanning Volumes -------------------------------------------------*/
-
-                                  if(mcs->key_get<bool>("library","rescan-at-startup"))
-                                  {
-                                    splash.set_message(_("Rescanning Volumes"), 1.0);
-                                    m_MLibManager->rescan_all_volumes();
-                                  }
-
-                                  mcs->subscribe(
-                                    "library",
-                                    "rescan-in-intervals",
-                                    sigc::mem_fun(
-                                        *this,
-                                        &Player::on_rescan_in_intervals_changed
-                                  ));
-
-                                  sigc::slot<bool> slot = sigc::mem_fun(*this, &Player::on_rescan_timeout);
-                                  sigc::connection conn = Glib::signal_timeout().connect(slot, 1000);
-                                  m_rescan_timer.start();
-
-                                  show ();
-
                                   DBusObjects.mpx->startup_complete(DBusObjects.mpx);
 
-                                  splash.set_message(_("Ready"), 1.0);
+                                  translate_caps(); // sets all actions intially insensitive as we have C_NONE
                           }
 
         Player*
@@ -1120,8 +1048,7 @@ namespace MPX
                 Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-h")));
                 DBusObjects.mpx->shutdown_complete(DBusObjects.mpx); 
                 g_object_unref(G_OBJECT(DBusObjects.mpx));
-                delete m_PluginManager;
-                delete m_MLibManager;
+                delete m_Preferences;
         }
 
         void
@@ -1247,7 +1174,8 @@ namespace MPX
         void
                 Player::on_action_cb_show_plugins ()
                 {
-                        m_PluginManagerGUI->present ();
+                        MPX::PluginManagerGUI & plugins = (*(services->get<PluginManagerGUI>("mpx-service-plugins-gui")));
+                        plugins.present ();
                 }
 
         void
@@ -1559,6 +1487,10 @@ SET_SEEK_POSITION:
                                     ((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_TrackDuration/2))
                           )
                         {
+                                MPX::MarkovAnalyzerThread & markov = (*(services->get<MarkovAnalyzerThread>("mpx-service-markov")));
+    
+                                markov.append( m_Metadata.get() );
+
                                 m_Library.trackPlayed(
                                     get<gint64>(m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID].get()),
                                     get<gint64>(m_Metadata.get()[ATTRIBUTE_MPX_ALBUM_ID].get()),
@@ -1910,10 +1842,20 @@ SET_SEEK_POSITION:
                         return Widget::on_key_press_event (event);
                 }
 
+        bool
+                Player::on_delete_event (GdkEventAny* event)
+                {
+                    m_quit_blocked.lock();
+                    m_quit_blocked.unlock();
+                    Gtk::Main::quit();
+                    return true;
+                }
+
         void
                 Player::on_import_album ()
                 {
-                        m_MB_ImportAlbum->run();
+                        MPX::MB_ImportAlbum & mbimport = (*(services->get<MB_ImportAlbum>("mpx-service-mbimport")));
+                        mbimport.run();
                 }
 
         void
@@ -2068,6 +2010,7 @@ rerun_import_share_dialog:
         void
                 Player::on_library_scan_start()
                 {
+                        m_quit_blocked.lock();
                         m_Statusbar->pop();        
                         m_Statusbar->push(_("Library Scan Starting..."));
                 }
@@ -2106,6 +2049,8 @@ rerun_import_share_dialog:
                         ).str());
 
                         m_Library.execSQL((boost::format ("INSERT INTO meta (last_scan_date) VALUES (%lld)") % (gint64(time(NULL)))).str());
+
+                        m_quit_blocked.unlock();
                 }
 
         /*static*/ bool
@@ -2201,13 +2146,15 @@ rerun_import_share_dialog:
         void
                 Player::deactivate_plugin(gint64 id)
                 {
-                        m_PluginManager->deactivate(id);
+                        MPX::PluginManager & plugins = (*(services->get<PluginManager>("mpx-service-plugins")));
+                        plugins.deactivate(id);
                 }
 
         void
                 Player::activate_plugin(gint64 id)
                 {
-                        m_PluginManager->activate(id);
+                        MPX::PluginManager & plugins = (*(services->get<PluginManager>("mpx-service-plugins")));
+                        plugins.activate(id);
                 }
 
         void
@@ -2306,23 +2253,6 @@ rerun_import_share_dialog:
                         m_Statusbar->push(message);
                         while (gtk_events_pending())
                             gtk_main_iteration();
-                }
-
-        void
-                Player::on_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE)
-                {
-                        m_rescan_timer.reset();
-                }
-
-        bool
-                Player::on_rescan_timeout()
-                {
-                        if(!m_MLibManager->is_present() && mcs->key_get<bool>("library","rescan-in-intervals") && m_rescan_timer.elapsed() >= mcs->key_get<int>("library","rescan-interval") * 60)
-                        {
-                          m_MLibManager->rescan_all_volumes();
-                          m_rescan_timer.reset();
-                        }
-                        return true;
                 }
 
 }

@@ -34,7 +34,6 @@
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-library.hh"
-#include "mpx/mpx-markov-analyzer-thread.hh"
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/widgets/widgetloader.hh"
@@ -67,11 +66,8 @@ namespace MPX
     class AboutDialog;
     class ErrorManager;
     class InfoArea;
-    class MB_ImportAlbum;
     class MLibManager;
     class Play;
-    class PluginManager;
-    class PluginManagerGUI;
     class Preferences;
 
     class Player
@@ -252,6 +248,7 @@ namespace MPX
 		DBusObjectsT                    DBusObjects;
 		DBusGConnection               * m_SessionBus;
         bool                            m_startup_complete;
+        Glib::RecMutex                  m_quit_blocked;
 
 		int                             m_Seeking;
 		gdouble                         m_TrackPlayedSeconds;
@@ -274,16 +271,12 @@ namespace MPX
         HAL                           & m_HAL;
         Library                       & m_Library;
 		Play                          & m_Play;
-		PluginManager                 * m_PluginManager;
+        // TODO: Make these all external services
         Preferences                   * m_Preferences;
-        MLibManager                   * m_MLibManager;
-		PluginManagerGUI              * m_PluginManagerGUI;
         Sidebar                       * m_Sidebar;
         InfoArea                      * m_InfoArea;
         VideoWidget                   * m_VideoWidget; 
         ErrorManager                  * m_ErrorManager;
-        MarkovAnalyzerThread          * m_MarkovThread;
-        MB_ImportAlbum                * m_MB_ImportAlbum;
 
     // widgets
 
@@ -462,12 +455,15 @@ namespace MPX
         check_py_error ();
 
         void
-        on_import_album();
+        on_import_album ();
 
       protected:
 
         virtual bool
         on_key_press_event (GdkEventKey*);
+
+        virtual bool
+        on_delete_event (GdkEventAny*);
 
       private:
 
@@ -550,14 +546,6 @@ namespace MPX
         bool mm_active;
         sigc::connection mWindowFocusConn;
 
-        // auto rescanning timeout
-        Glib::Timer m_rescan_timer;
-
-        bool
-        on_rescan_timeout();
-
-        void
-        on_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE);
     };
 }
 

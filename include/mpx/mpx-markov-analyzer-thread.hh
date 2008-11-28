@@ -30,12 +30,13 @@
 #include <sigx/signal_f.h>
 #include <sigx/request_f.h>
 #include "mpx/mpx-library.hh"
+#include "mpx/mpx-services.hh"
 #include "mpx/mpx-types.hh"
 #include <deque>
 
 namespace MPX
 {
-	class MarkovAnalyzerThread : public sigx::glib_threadable
+	class MarkovAnalyzerThread : public sigx::glib_threadable, public Service::Base
 	{
         public:
 

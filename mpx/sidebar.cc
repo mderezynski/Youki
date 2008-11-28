@@ -55,12 +55,9 @@ namespace
 
 namespace MPX
 {
-    Sidebar::Sidebar (RefPtr<Gnome::Glade::Xml> const& xml,
-                      PluginManager                  & obj_plugin_manager)
-                      
+    Sidebar::Sidebar (RefPtr<Gnome::Glade::Xml> const& xml)
     : Gnome::Glade::WidgetLoader<MPX::TreeViewPopup>(xml, "sidebar") 
     , m_ref_xml(xml)
-    , m_PluginManager(obj_plugin_manager)
     {
         m_default_path = "/popup-sidebar/menu-sidebar";
 

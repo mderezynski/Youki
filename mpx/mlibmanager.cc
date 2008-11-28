@@ -62,6 +62,7 @@ namespace MPX
                               MPX::HAL & obj_hal, MPX::Library & obj_library)
     : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
     , sigx::glib_auto_dispatchable()
+    , Service::Base("mpx-service-mlibman")
     , m_present(false)
     , m_HAL(obj_hal)
     , m_Library(obj_library)
@@ -217,6 +218,27 @@ namespace MPX
 
         m_ref_xml->get_widget( "always-vacuum", m_AlwaysVacuum );
         mcs_bind->bind_toggle_button(*m_AlwaysVacuum, "library","always-vacuum");
+
+
+
+        if(mcs->key_get<bool>("library","rescan-at-startup"))
+        {
+          rescan_all_volumes();
+        }
+
+        mcs->subscribe(
+          "library",
+          "rescan-in-intervals",
+          sigc::mem_fun(
+              *this,
+              &MLibManager::on_rescan_in_intervals_changed
+        ));
+
+        sigc::slot<bool> slot = sigc::mem_fun(*this, &MLibManager::on_rescan_timeout);
+        sigc::connection conn = Glib::signal_timeout().connect(slot, 1000);
+        m_rescan_timer.start();
+
+
 
         gtk_widget_realize(GTK_WIDGET(gobj()));
 
@@ -754,5 +776,22 @@ namespace MPX
     {
         TreeIter iter = FSTreeStore->get_iter(path);
         return !(has_active_parent(iter));
+    }
+
+    void
+    MLibManager::on_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE)
+    {
+        m_rescan_timer.reset();
+    }
+
+    bool
+    MLibManager::on_rescan_timeout()
+    {
+        if(!m_MLibManager->is_present() && mcs->key_get<bool>("library","rescan-in-intervals") && m_rescan_timer.elapsed() >= mcs->key_get<int>("library","rescan-interval") * 60)
+        {
+          rescan_all_volumes();
+          m_rescan_timer.reset();
+        }
+        return true;
     }
 }
