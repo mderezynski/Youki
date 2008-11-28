@@ -394,7 +394,7 @@ namespace MPX
 
                         AlbumsTreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
 
-                        m_DiscDefault_DND = IconTheme::get_default()->load_icon("gnome-dev-cdrom-audio", 128);
+                        m_DiscDefault_DND = IconTheme::get_default()->load_icon("gnome-dev-cdrom-audio", 128, Gtk::ICON_LOOKUP_USE_BUILTIN);
                         m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_DND->scale_simple(90,90,Gdk::INTERP_BILINEAR));
 
                         std::vector<TargetEntry> Entries;
