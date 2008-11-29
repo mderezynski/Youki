@@ -1263,6 +1263,8 @@ namespace MPX
                                                     else
                                                         cell1->property_sensitive() = false; 
                                                 }
+                                                else
+                                                    cell1->property_sensitive() = true; 
                                         }
 
                                         if(cell2)

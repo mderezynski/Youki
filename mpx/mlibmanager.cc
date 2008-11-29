@@ -68,9 +68,9 @@ namespace MPX
     , m_HAL(obj_hal)
     , m_Library(obj_library)
     {
-        Gtk::TextView * text_view_details;
-        m_Xml->get_widget("textview-details", text_view_details );
-        m_TextBufferDetails = text_view_details->get_buffer(); 
+        m_Xml->get_widget("statusbar", m_Statusbar );
+
+        m_TextBufferDetails = (dynamic_cast<Gtk::TextView*>(m_Xml->get_widget("textview-details")))->get_buffer();
 
         Gtk::CellRendererText * cell = 0; 
         Gtk::TreeViewColumn * col = 0; 
@@ -317,14 +317,24 @@ namespace MPX
     MLibManager::present ()
     {
         m_present = true;
-        Gtk::Window::present ();
+        Gtk::Window::show ();
+        Gtk::Window::raise ();
     }
-
 
     bool
     MLibManager::is_present()
     {
         return m_present;
+    }
+
+    void
+    MLibManager::push_message(std::string const& message)
+    {
+        m_Statusbar->pop();
+        m_Statusbar->push(message);
+
+        while (gtk_events_pending())
+            gtk_main_iteration();
     }
 
     void

@@ -33,12 +33,15 @@
 #include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
 #include "mpx/mpx-library.hh"
-#include "mpx/metadatareader-taglib.hh"
-#include "mpx/algorithm/random.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-uri.hh"
-#include "mpx/util-string.hh"
 #include "mpx/mpx-public-mpx.hh"
+
+#include "mpx/algorithm/random.hh"
+#include "mpx/metadatareader-taglib.hh"
+#include "mpx/util-string.hh"
+
+#include "mlibmanager.hh"
 
 using namespace Glib;
 using boost::get;
@@ -479,10 +482,8 @@ namespace MPX
                 {
                         Row & r = (*v)[*position]; 
 
-                        boost::shared_ptr<MPX::Player> player = m_Services.get<Player>("mpx-service-player");
-
-                        if( player )
-                            player->push_message((boost::format(_("Refreshing album covers: %lld / %lld")) % *position % (*v).size()).str());
+                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
+                        mm->push_message((boost::format(_("Refreshing album covers: %lld / %lld")) % *position % (*v).size()).str());
 
                         std::string location;
 #ifdef HAVE_HAL
@@ -536,8 +537,7 @@ namespace MPX
 
                         if((*position) == (*v).size())
                         {
-                                if( player )
-                                    player->push_message("");
+                                mm->push_message("");
 
                                 delete v;
                                 delete position;
@@ -597,7 +597,7 @@ namespace MPX
         void
                 Library::remove_dangling () 
                 {
-                        boost::shared_ptr<MPX::Player> player = m_Services.get<Player>("mpx-service-player");
+                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
 
                         typedef std::tr1::unordered_set <gint64> IdSet;
                         static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld'");
@@ -606,8 +606,7 @@ namespace MPX
                         RowV rows;
 
                         /// CLEAR DANGLING ARTISTS
-                        if( player )
-                            player->push_message(_("Finding Lost Artists..."));
+                        mm->push_message(_("Finding Lost Artists..."));
 
                         idset1.clear();
                         rows.clear();
@@ -632,8 +631,8 @@ namespace MPX
 
 
                         /// CLEAR DANGLING ALBUMS
-                        if( player )
-                            player->push_message(_("Finding Lost Albums..."));
+                        mm->push_message(_("Finding Lost Albums..."));
+
                         idset1.clear();
                         rows.clear();
                         getSQL(rows, "SELECT DISTINCT album_j FROM track");
@@ -656,8 +655,8 @@ namespace MPX
                         }
 
                         /// CLEAR DANGLING ALBUM ARTISTS
-                        if( player )
-                            player->push_message(_("Finding Lost Album Artists..."));
+                        mm->push_message(_("Finding Lost Album Artists..."));
+
                         idset1.clear();
                         rows.clear();
                         getSQL(rows, "SELECT DISTINCT album_artist_j FROM album");
@@ -684,7 +683,7 @@ namespace MPX
 #ifdef HAVE_HAL
                         typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
 #endif
-                        boost::shared_ptr<MPX::Player> player = m_Services.get<Player>("mpx-service-player");
+                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
 
                         VolMountPointMap m;
                         RowV rows;
@@ -729,8 +728,7 @@ namespace MPX
                                 }
 #endif
 
-                                if( player )
-                                    player->push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+                                mm->push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
 
                                 if( !uri.empty() )
                                 try{
@@ -747,8 +745,7 @@ namespace MPX
 
                         remove_dangling ();
 
-                        if( player )
-                            player->push_message(_("Vacuum process done."));
+                        mm->push_message(_("Vacuum process done."));
                 }
 
 #ifdef HAVE_HAL
@@ -757,7 +754,7 @@ namespace MPX
                 {
                         typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
 
-                        boost::shared_ptr<MPX::Player> player = m_Services.get<Player>("mpx-service-player");
+                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
 
                         VolMountPointMap m;
                         RowV rows;
@@ -802,8 +799,7 @@ namespace MPX
                                 } 
                                 else
 
-                                if( player )
-                                    player->push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+                                mm->push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
 
                                 if( !uri.empty() )
                                 try{
@@ -820,8 +816,7 @@ namespace MPX
 
                         remove_dangling ();
 
-                        if( player )
-                            player->push_message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
+                        mm->push_message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
                 }
 #endif
 

@@ -2263,5 +2263,4 @@ rerun_import_share_dialog:
                         while (gtk_events_pending())
                             gtk_main_iteration();
                 }
-
 }

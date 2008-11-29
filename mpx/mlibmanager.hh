@@ -80,6 +80,9 @@ namespace MPX
             void
             rescan_all_volumes ();
 
+            void
+            push_message (const std::string&);
+
         private:
 
             MLibManager (Glib::RefPtr<Gnome::Glade::Xml> const& xml, MPX::HAL & obj_hal, MPX::Library & obj_library);
@@ -246,12 +249,13 @@ namespace MPX
             std::string m_DeviceUDI;  //     - " -     DUDI
             std::string m_MountPoint; //     - " -     mount point
 
-            Gtk::Button * m_Close;
-            Gtk::Button * m_Rescan;
-            Gtk::Button * m_DeepRescan;
-            Gtk::Button * m_Vacuum;
-            bool          m_present;
-            Glib::Timer   m_rescan_timer;
+            Gtk::Button     * m_Close;
+            Gtk::Button     * m_Rescan;
+            Gtk::Button     * m_DeepRescan;
+            Gtk::Button     * m_Vacuum;
+            Gtk::Statusbar  * m_Statusbar;
+            bool              m_present;
+            Glib::Timer       m_rescan_timer;
     
             MPX::HAL        & m_HAL;
             MPX::Library    & m_Library;

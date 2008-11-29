@@ -18,7 +18,7 @@ namespace
   {
     {1.  , 84,  6},
     {0.65, 84, 22},
-    {1.  , 84, 54},
+    {1.  , 84, 52},
   };
 
   struct Color
@@ -54,25 +54,28 @@ namespace MPX
     using namespace MPX;
 
     static char const *
-      text_b_f ("<span size='12500'><b>%s</b></span>");
+      text_big_f ("<span size='15000'><b>%s</b></span>");
+
+
+    static char const *
+      text_b_f ("<span size='12500'><b><i>%s</i></b></span>");
+
+    static char const *
+      text_b_f2 ("<span size='12500'><b><i>%s</i></b> (<i>%s</i>)</span>");
+
 
     static char const *
       text_i_f ("<span size='12500'><i>%s</i></span>");
 
-    static char const *
-      text_b_f2 ("<span size='12500'><b>%s</b> (%s)</span>");
 
     static char const *
-      text_big_f ("<span size='15000'><b>%s</b></span>");
+      text_album_artist_f ("<span color='#a6a6a6'><span size='12500'><b>%s</b> (<i>%s</i>)</span></span>");
 
     static char const *
-      text_album_artist_f ("<span size='12500'><b>%s</b> (%s)</span>");
+      text_album_f ("<span size='12500' color='#a6a6a6'><b>%s</b></span>");
 
     static char const *
-      text_album_f ("<span size='12500'><b>%s</b></span>");
-
-    static char const *
-      text_artist_f ("<span size='12500'>(%s)</span>");
+      text_artist_f ("<span size='12500'>(<i>%s</i>)</span>");
 
     if( (metadata[ATTRIBUTE_MB_ALBUM_ARTIST_ID] != metadata[ATTRIBUTE_MB_ARTIST_ID]) && metadata[ATTRIBUTE_ALBUM_ARTIST] )
     {
@@ -127,6 +130,9 @@ namespace MPX
     {
       set.Genre = Util::gprintf (text_i_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_GENRE].get())).c_str());
     }
+
+     set.Artist = set.Artist + " " + set.Album;
+     set.Album  = "";
   }
 
   void

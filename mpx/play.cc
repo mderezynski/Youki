@@ -722,7 +722,7 @@ namespace MPX
                                                       GstClockTime curtime=gst_clock_get_time(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())))-basetime;
                                                       GstClockTimeDiff waittime=GST_CLOCK_DIFF(curtime,endtime);
                                                       
-                                                      clock_id=gst_clock_new_single_shot_id(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())),basetime+endtime);
+                                                      clock_id=gst_clock_new_single_shot_id(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())),waittime);
 
                                                       GstStructure const* s = gst_message_get_structure (message);
                                                       GValue const* m = gst_structure_get_value (s, "magnitude");
@@ -836,84 +836,84 @@ namespace MPX
                                         /* nothing to do for it */
                                 }
                                 else
-                                        if (sink == "gconfaudiosink")
-                                        {
-                                                g_object_set (G_OBJECT (sink_element), "profile", int (1) /* music/video */, NULL);
-                                        }
-                                        else
-                                                if (sink == "osssink")
-                                                {
-                                                        g_object_set (G_OBJECT (sink_element), "device",
-                                                                        nullify_string (mcs->key_get <std::string> ("audio", "device-oss")),
-                                                                        NULL);
-                                                        g_object_set (G_OBJECT (sink_element), "buffer-time",
-                                                                        guint64(mcs->key_get <int> ("audio", "oss-buffer-time")), NULL);
-                                                }
-                                                else
-                                                        if (sink == "esdsink")
-                                                        {
-                                                                g_object_set (G_OBJECT (sink_element), "host",
-                                                                                nullify_string (mcs->key_get <std::string> ("audio", "device-esd")),
-                                                                                NULL);
-                                                                g_object_set (G_OBJECT (sink_element), "buffer-time",
-                                                                                guint64(mcs->key_get <int> ("audio", "esd-buffer-time")),
-                                                                                NULL);
-                                                        }
-                                                        else
-                                                                if (sink == "pulsesink")
-                                                                {
-                                                                        g_object_set (G_OBJECT (sink_element), "server",
-                                                                                        nullify_string (mcs->key_get <std::string> ("audio", "pulse-server")),
-                                                                                        NULL);
-                                                                        g_object_set (G_OBJECT (sink_element), "device",
-                                                                                        nullify_string (mcs->key_get <std::string> ("audio", "pulse-device")),
-                                                                                        NULL);
-                                                                        g_object_set (G_OBJECT (sink_element), "buffer-time",
-                                                                                        guint64(mcs->key_get <int> ("audio", "pulse-buffer-time")),
-                                                                                        NULL);
-                                                                }
-                                                                else
-                                                                        if (sink == "jackaudiosink")
-                                                                        {
-                                                                                g_object_set (G_OBJECT (sink_element), "server",
-                                                                                                nullify_string (mcs->key_get <std::string> ("audio", "jack-server")),
-                                                                                                NULL);
-                                                                                g_object_set (G_OBJECT (sink_element), "buffer-time",
-                                                                                                guint64(mcs->key_get <int> ("audio", "jack-buffer-time")),
-                                                                                                NULL);
-                                                                        }
+                                if (sink == "gconfaudiosink")
+                                {
+                                        g_object_set (G_OBJECT (sink_element), "profile", int (1) /* music/video */, NULL);
+                                }
+                                else
+                                if (sink == "osssink")
+                                {
+                                        g_object_set (G_OBJECT (sink_element), "device",
+                                                        nullify_string (mcs->key_get <std::string> ("audio", "device-oss")),
+                                                        NULL);
+                                        g_object_set (G_OBJECT (sink_element), "buffer-time",
+                                                        guint64(mcs->key_get <int> ("audio", "oss-buffer-time")), NULL);
+                                }
+                                else
+                                if (sink == "esdsink")
+                                {
+                                        g_object_set (G_OBJECT (sink_element), "host",
+                                                        nullify_string (mcs->key_get <std::string> ("audio", "device-esd")),
+                                                        NULL);
+                                        g_object_set (G_OBJECT (sink_element), "buffer-time",
+                                                        guint64(mcs->key_get <int> ("audio", "esd-buffer-time")),
+                                                        NULL);
+                                }
+                                else
+                                if (sink == "pulsesink")
+                                {
+                                        g_object_set (G_OBJECT (sink_element), "server",
+                                                        nullify_string (mcs->key_get <std::string> ("audio", "pulse-server")),
+                                                        NULL);
+                                        g_object_set (G_OBJECT (sink_element), "device",
+                                                        nullify_string (mcs->key_get <std::string> ("audio", "pulse-device")),
+                                                        NULL);
+                                        g_object_set (G_OBJECT (sink_element), "buffer-time",
+                                                        guint64(mcs->key_get <int> ("audio", "pulse-buffer-time")),
+                                                        NULL);
+                                }
+                                else
+                                if (sink == "jackaudiosink")
+                                {
+                                        g_object_set (G_OBJECT (sink_element), "server",
+                                                        nullify_string (mcs->key_get <std::string> ("audio", "jack-server")),
+                                                        NULL);
+                                        g_object_set (G_OBJECT (sink_element), "buffer-time",
+                                                        guint64(mcs->key_get <int> ("audio", "jack-buffer-time")),
+                                                        NULL);
+                                }
 #ifdef HAVE_ALSA
-                                                                        else
-                                                                                if (sink == "alsasink")
-                                                                                {
-                                                                                        g_object_set (G_OBJECT (sink_element), "device",
-                                                                                                        nullify_string (mcs->key_get <std::string> ("audio", "device-alsa")),
-                                                                                                        NULL);
-                                                                                        g_object_set (G_OBJECT (sink_element), "buffer-time",
-                                                                                                        guint64(mcs->key_get <int> ("audio", "alsa-buffer-time")),
-                                                                                                        NULL);
-                                                                                }
+                                else
+                                if (sink == "alsasink")
+                                {
+                                        g_object_set (G_OBJECT (sink_element), "device",
+                                                        nullify_string (mcs->key_get <std::string> ("audio", "device-alsa")),
+                                                        NULL);
+                                        g_object_set (G_OBJECT (sink_element), "buffer-time",
+                                                        guint64(mcs->key_get <int> ("audio", "alsa-buffer-time")),
+                                                        NULL);
+                                }
 #endif //HAVE_ALSA
 #ifdef HAVE_SUN
-                                                                                else
-                                                                                        if (sink == "sunaudiosink")
-                                                                                        {
-                                                                                                g_object_set (G_OBJECT (sink_element), "device",
-                                                                                                                nullify_string (mcs->key_get <std::string> ("audio", "device-sun")),
-                                                                                                                NULL);
-                                                                                                g_object_set (G_OBJECT (sink_element), "buffer-time",
-                                                                                                                guint64(mcs->key_get <int> ("audio", "sun-buffer-time")),
-                                                                                                                NULL);
-                                                                                        }
+                                else
+                                if (sink == "sunaudiosink")
+                                {
+                                        g_object_set (G_OBJECT (sink_element), "device",
+                                                        nullify_string (mcs->key_get <std::string> ("audio", "device-sun")),
+                                                        NULL);
+                                        g_object_set (G_OBJECT (sink_element), "buffer-time",
+                                                        guint64(mcs->key_get <int> ("audio", "sun-buffer-time")),
+                                                        NULL);
+                                }
 #endif //HAVE_SUN
 #ifdef HAVE_HAL
-                                                                                        else
-                                                                                                if (sink == "halaudiosink")
-                                                                                                {
-                                                                                                        g_object_set (G_OBJECT (sink_element), "udi",
-                                                                                                                        nullify_string (mcs->key_get <std::string> ("audio", "hal-udi")),
-                                                                                                                        NULL);
-                                                                                                }
+                                else
+                                if (sink == "halaudiosink")
+                                {
+                                        g_object_set (G_OBJECT (sink_element), "udi",
+                                                        nullify_string (mcs->key_get <std::string> ("audio", "hal-udi")),
+                                                        NULL);
+                                }
 #endif //HAVE_HAL
 
                                 m_bin[BIN_OUTPUT]     = gst_bin_new ("output");
