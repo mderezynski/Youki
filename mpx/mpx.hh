@@ -336,17 +336,6 @@ namespace MPX
 
 
 
-        void
-        on_library_scan_start();
-
-        void
-        on_library_scan_run(gint64,bool);
-
-        void
-        on_library_scan_end(ScanSummary const&);
-
-		
-
 		void
 		on_play_status_changed ();
 

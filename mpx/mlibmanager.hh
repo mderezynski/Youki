@@ -93,12 +93,17 @@ namespace MPX
             );
 
             void
-            scan_start ();
+            scan_start(
+            );
 
+            void
+            scan_run(
+                gint64,
+                bool
+            );
 
             void
             populate_volumes ();
-
 
             void
             build_fstree(
@@ -147,7 +152,6 @@ namespace MPX
                 const Glib::ustring&
             );
 
-
             void
             on_rescan_volume(bool /*deep*/);
 
@@ -165,7 +169,6 @@ namespace MPX
             );
 
             // auto rescanning
-
             bool
             on_rescan_timeout();
 
@@ -254,6 +257,7 @@ namespace MPX
             Gtk::Button     * m_DeepRescan;
             Gtk::Button     * m_Vacuum;
             Gtk::Statusbar  * m_Statusbar;
+            Gtk::Widget     * m_VboxInner;
             bool              m_present;
             Glib::Timer       m_rescan_timer;
     

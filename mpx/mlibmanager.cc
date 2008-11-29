@@ -69,6 +69,7 @@ namespace MPX
     , m_Library(obj_library)
     {
         m_Xml->get_widget("statusbar", m_Statusbar );
+        m_Xml->get_widget("vbox-inner", m_VboxInner );
 
         m_TextBufferDetails = (dynamic_cast<Gtk::TextView*>(m_Xml->get_widget("textview-details")))->get_buffer();
 
@@ -91,6 +92,12 @@ namespace MPX
             sigc::mem_fun(
                 *this,
                 &MLibManager::scan_end
+        ));
+
+        m_Library.scanner().signal_scan_run().connect(
+            sigc::mem_fun(
+                *this,
+                &MLibManager::scan_run
         ));
 
         m_Xml->get_widget("volumes-view", m_VolumesView);
@@ -262,10 +269,29 @@ namespace MPX
     void
     MLibManager::scan_end( ScanSummary const& summary )
     {
+        time_t curtime = time(NULL);
+        struct tm ctm;
+        localtime_r(&curtime, &ctm);
+
+        char bdate[64];
+        strftime(bdate, 64, "%H:%M:%S", &ctm);
+
+        m_Statusbar->pop();        
+        m_Statusbar->push((boost::format(
+            _("Library Scan finished at %1% (%2% %3% scanned, %4% Files added, %5% Files up to date, %6% updated, %7% erroneous, see log)"))
+            % bdate 
+            % summary.FilesTotal
+            % (summary.DeepRescan ? _("Files") : _("Folders"))
+            % summary.FilesAdded
+            % summary.FilesUpToDate
+            % summary.FilesUpdated
+            % summary.FilesErroneous
+        ).str());
+
+        m_Library.execSQL((boost::format ("INSERT INTO meta (last_scan_date) VALUES (%lld)") % (gint64(time(NULL)))).str());
+
         m_TextBufferDetails->set_text("");
-
         Glib::ustring text;
-
         if( !summary.FileListErroneous.empty() )
         {
                 text.append("Erroneous Files:\n");
@@ -297,13 +323,27 @@ namespace MPX
             on_vacuum_volume ();
         }
 
-        Gtk::Widget::set_sensitive(true);
+        m_VboxInner->set_sensitive(true);
     }
     
     void
     MLibManager::scan_start ()
     {
-        Gtk::Widget::set_sensitive(false);
+        m_VboxInner->set_sensitive(false);
+
+        m_Statusbar->pop();        
+        m_Statusbar->push(_("Library Scan Starting..."));
+    }
+
+    void
+    MLibManager::scan_run( gint64 n, bool deep )
+    {
+        m_Statusbar->pop();
+        m_Statusbar->push((
+            boost::format(_("Library Scan: %1% %2%"))
+            % n
+            % (deep ? _("Files") : _("Folders"))
+        ).str());
     }
 
     void
@@ -340,7 +380,7 @@ namespace MPX
     void
     MLibManager::rescan_all_volumes()
     {
-          Gtk::Widget::set_sensitive(false);
+          m_VboxInner->set_sensitive(false);
           Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
           for(Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); ++iter)
           {
@@ -388,7 +428,7 @@ namespace MPX
                   m_Library.initScan(v);                  
                 }
           }
-          Gtk::Widget::set_sensitive(true);
+          m_VboxInner->set_sensitive(true);
     }
 
     void
@@ -894,9 +934,9 @@ namespace MPX
     void
     MLibManager::on_vacuum_volume ()
     {
-        Gtk::Widget::set_sensitive(false);
+        m_VboxInner->set_sensitive(false);
         m_Library.vacuum_volume(m_DeviceUDI, m_VolumeUDI);
-        Gtk::Widget::set_sensitive(true);
+        m_VboxInner->set_sensitive(true);
     }
 
     void
@@ -907,6 +947,7 @@ namespace MPX
         TreeIter iter_copy = iter;
 
         std::string full_path = (*iter)[FSTreeColumns.FullPath];
+
         if(m_ManagedPaths.count(full_path))
             cell.property_active() = true; 
         else

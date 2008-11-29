@@ -754,20 +754,6 @@ namespace MPX
                                   DBusObjects.mpx = DBusMPX::create(*this, m_SessionBus);
                                   DBusObjects.player = DBusPlayer::create(*this, m_SessionBus);
 
-                                  /*- Connect Library -----------------------------------------------*/ 
-
-                                  m_Library.scanner().signal_scan_start().connect(
-                                                  sigc::mem_fun( *this, &Player::on_library_scan_start
-                                                          ));
-
-                                  m_Library.scanner().signal_scan_run().connect(
-                                                  sigc::mem_fun( *this, &Player::on_library_scan_run
-                                                          ));
-
-                                  m_Library.scanner().signal_scan_end().connect(
-                                                  sigc::mem_fun( *this, &Player::on_library_scan_end
-                                                          ));
-
                                   /*- UIManager + Menus + Proxy Widgets -----------------------------*/
 
                                   m_ui_manager = UIManager::create ();
@@ -1847,8 +1833,6 @@ SET_SEEK_POSITION:
         bool
                 Player::on_delete_event (GdkEventAny* event)
                 {
-                    m_quit_blocked.lock();
-                    m_quit_blocked.unlock();
                     Gtk::Main::quit();
                     return true;
                 }
@@ -2007,52 +1991,6 @@ rerun_import_share_dialog:
         void
                 Player::unmount_ready_callback( Glib::RefPtr<Gio::AsyncResult>& res )
                 {
-                }
-
-        void
-                Player::on_library_scan_start()
-                {
-                        m_quit_blocked.lock();
-                        m_Statusbar->pop();        
-                        m_Statusbar->push(_("Library Scan Starting..."));
-                }
-
-        void
-                Player::on_library_scan_run( gint64 n, bool deep )
-                {
-                        m_Statusbar->pop();
-                        m_Statusbar->push((
-                            boost::format(_("Library Scan: %1% %2%"))
-                            % n
-                            % (deep ? _("Files") : _("Folders"))
-                        ).str());
-                }
-
-        void
-                Player::on_library_scan_end( ScanSummary const& summary )
-                {
-                        time_t curtime = time(NULL);
-                        struct tm ctm;
-                        localtime_r(&curtime, &ctm);
-
-                        char bdate[64];
-                        strftime(bdate, 64, "%H:%M:%S", &ctm);
-
-                        m_Statusbar->pop();        
-                        m_Statusbar->push((boost::format(
-                            _("Library Scan finished at %1% (%2% %3% scanned, %4% Files added, %5% Files up to date, %6% updated, %7% erroneous, see log)"))
-                            % bdate 
-                            % summary.FilesTotal
-                            % (summary.DeepRescan ? _("Files") : _("Folders"))
-                            % summary.FilesAdded
-                            % summary.FilesUpToDate
-                            % summary.FilesUpdated
-                            % summary.FilesErroneous
-                        ).str());
-
-                        m_Library.execSQL((boost::format ("INSERT INTO meta (last_scan_date) VALUES (%lld)") % (gint64(time(NULL)))).str());
-
-                        m_quit_blocked.unlock();
                 }
 
         /*static*/ bool
