@@ -1597,7 +1597,10 @@ SET_SEEK_POSITION:
         void
                 Player::pause ()
                 {
-                        g_return_if_fail(m_ActiveSource);
+                        if( !m_ActiveSource )
+                        {
+                            return; // We return here if we got called just because on_play_status_changed wants to unset the pause button
+                        }
 
                         Caps c = m_source_c[m_ActiveSource.get()];
 
