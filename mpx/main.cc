@@ -361,8 +361,8 @@ main (int argc, char ** argv)
         services->add(ptr_library);
 #endif
 
-        boost::shared_ptr<MarkovAnalyzerThread> ptr_markov
-            (new MarkovAnalyzerThread(*ptr_library.get()));
+        boost::shared_ptr<MarkovAnalyzer> ptr_markov
+            (new MarkovAnalyzer(*ptr_library.get()));
         services->add(ptr_markov);
 
         boost::shared_ptr<Play> ptr_play

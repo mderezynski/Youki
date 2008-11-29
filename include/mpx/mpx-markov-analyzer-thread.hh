@@ -23,8 +23,8 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
-#ifndef MPX_MARKOV_ANALYZER_THREAD_HH
-#define MPX_MARKOV_ANALYZER_THREAD_HH
+#ifndef MPX_MARKOV_ANALYZER_HH
+#define MPX_MARKOV_ANALYZER_HH
 #include <glibmm.h>
 #include <sigx/sigx.h>
 #include <sigx/signal_f.h>
@@ -36,23 +36,17 @@
 
 namespace MPX
 {
-	class MarkovAnalyzerThread : public sigx::glib_threadable, public Service::Base
+	class MarkovAnalyzer : public Service::Base
 	{
-        public:
-
-            sigx::request_f<MPX::Track&>  append ;
-
         public:	
 
-            MarkovAnalyzerThread (MPX::Library&) ;
-            ~MarkovAnalyzerThread () ;
+            MarkovAnalyzer (MPX::Library&) ;
+            ~MarkovAnalyzer () ;
+
+            void append (MPX::Track&) ;
 
         protected:
 
-            virtual void on_startup () ; 
-            virtual void on_cleanup () ;
-
-            void on_append (MPX::Track&) ;
             bool process_idle();
 
             void
@@ -65,11 +59,10 @@ namespace MPX
     
             typedef std::deque<MPX::Track>  TrackQueue_t;
 
-            struct ThreadData;
-
             MPX::Library                * m_Library ;
-            Glib::Private<ThreadData>     m_ThreadData ;
+            TrackQueue_t                  m_trackQueue;
             sigc::connection              m_idleConnection;
+            Glib::Mutex                   m_queueLock;
 	};
 }
 

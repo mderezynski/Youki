@@ -6,36 +6,18 @@ using boost::get;
 using namespace MPX;
 using namespace MPX::SQL;
 
-struct MPX::MarkovAnalyzerThread::ThreadData
-{
-    TrackQueue_t                m_trackQueue;
-};
-
-MPX::MarkovAnalyzerThread::MarkovAnalyzerThread (MPX::Library & obj_library)
-: sigx::glib_threadable()
-, Service::Base("mpx-service-markov")
-, append(sigc::mem_fun(*this, &MarkovAnalyzerThread::on_append))
+MPX::MarkovAnalyzer::MarkovAnalyzer (MPX::Library & obj_library)
+: Service::Base("mpx-service-markov")
 , m_Library(new MPX::Library(obj_library))
 {
 }
 
-MPX::MarkovAnalyzerThread::~MarkovAnalyzerThread ()
+MPX::MarkovAnalyzer::~MarkovAnalyzer ()
 {
 }
 
 void
-MPX::MarkovAnalyzerThread::on_startup ()
-{
-    m_ThreadData.set(new ThreadData);
-}
-
-void
-MPX::MarkovAnalyzerThread::on_cleanup ()
-{
-}
-
-void
-MPX::MarkovAnalyzerThread::process_tracks(
+MPX::MarkovAnalyzer::process_tracks(
     MPX::Track & track1,
     MPX::Track & track2
 )
@@ -54,16 +36,16 @@ MPX::MarkovAnalyzerThread::process_tracks(
 }
 
 bool
-MPX::MarkovAnalyzerThread::process_idle()
+MPX::MarkovAnalyzer::process_idle()
 {
-    ThreadData * pthreaddata = m_ThreadData.get();
-    while( pthreaddata->m_trackQueue.size() > 1 )
+    Glib::Mutex::Lock L (m_queueLock);
+
+    while( m_trackQueue.size() > 1 )
     {
-        MPX::Track track1 = pthreaddata->m_trackQueue.front();
-        pthreaddata->m_trackQueue.pop_front();
+        MPX::Track track1 = m_trackQueue.front();
+        m_trackQueue.pop_front();
 
-        MPX::Track track2 = pthreaddata->m_trackQueue.front();
-
+        MPX::Track track2 = m_trackQueue.front();
         process_tracks (track1, track2);
     }
 
@@ -71,17 +53,18 @@ MPX::MarkovAnalyzerThread::process_idle()
 }
 
 void
-MPX::MarkovAnalyzerThread::on_append (MPX::Track & track)
+MPX::MarkovAnalyzer::append (MPX::Track & track)
 {
-    ThreadData * pthreaddata = m_ThreadData.get();
-    pthreaddata->m_trackQueue.push_back(track);
+    Glib::Mutex::Lock L (m_queueLock);
+
+    m_trackQueue.push_back(track);
 
     if(! m_idleConnection )
     {
-        m_idleConnection = maincontext()->signal_idle().connect(
+        m_idleConnection = Glib::signal_idle().connect(
             sigc::mem_fun(
                 *this,
-                &MarkovAnalyzerThread::process_idle
+                &MarkovAnalyzer::process_idle
         ));
     }
 }

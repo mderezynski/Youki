@@ -1476,8 +1476,8 @@ SET_SEEK_POSITION:
                                     ((m_TrackPlayedSeconds >= 240) || (m_TrackPlayedSeconds >= m_TrackDuration/2))
                           )
                         {
-                                //MPX::MarkovAnalyzerThread & markov = (*(services->get<MarkovAnalyzerThread>("mpx-service-markov")));
-                                //markov.append( m_Metadata.get() );
+                                MPX::MarkovAnalyzer & markov = (*(services->get<MarkovAnalyzer>("mpx-service-markov")));
+                                markov.append( m_Metadata.get() );
 
                                 m_Library.trackPlayed(
                                     get<gint64>(m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID].get()),

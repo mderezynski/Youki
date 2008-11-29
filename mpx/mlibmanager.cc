@@ -340,7 +340,7 @@ namespace MPX
     {
         m_Statusbar->pop();
         m_Statusbar->push((
-            boost::format(_("Library Scan: %1% %2%"))
+            boost::format(_("Scanning: %1% %2%"))
             % n
             % (deep ? _("Files") : _("Folders"))
         ).str());
