@@ -835,7 +835,6 @@ namespace MPX
                                                   sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
 
 
-
                                   m_actions->add (Action::create ("action-quit",
                                                           Gtk::Stock::QUIT,
                                                           _("_Quit")),
@@ -853,7 +852,6 @@ namespace MPX
                                                           Gtk::Stock::MEDIA_PLAY,
                                                           _("Play")),
                                                   sigc::mem_fun (*this, &Player::on_controls_play ));
-
 
 
                                   m_actions->add (ToggleAction::create (ACTION_PAUSE,
@@ -880,7 +878,8 @@ namespace MPX
                                                   sigc::mem_fun (*this, &Player::on_controls_prev ));
 
 
-                                  m_ui_manager->insert_action_group (m_actions);
+                                  m_ui_manager->insert_action_group(m_actions);
+
 
                                   if(Util::ui_manager_add_ui(m_ui_manager, MenubarMain, *this, _("Main Menubar")))
                                   {
@@ -1689,7 +1688,6 @@ SET_SEEK_POSITION:
                 Player::stop ()
                 {
                         //del_caps(C_CAN_PAUSE);
-                        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
                         if(m_PreparingSource)
                         {
@@ -1754,6 +1752,8 @@ SET_SEEK_POSITION:
                                                 m_ActiveSource.reset();
                                                 m_PreparingSource.reset();
                                                 m_Sidebar->clearActiveId();
+
+                                                RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
 
                                                 break;
                                         }
