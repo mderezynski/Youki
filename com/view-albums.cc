@@ -1078,7 +1078,10 @@ namespace MPX
                                         gint64 alb_a = (*iter_a)[Columns.Rating];
                                         gint64 alb_b = (*iter_b)[Columns.Rating];
 
-                                        return alb_b - alb_a;
+                                        if( !(alb_b - alb_a) )
+                                            return slotSortDate( iter_a, iter_b );
+                                        else
+                                            return alb_b - alb_a;
                                 }
                                 else if((rt_a == ROW_TRACK) && (rt_b == ROW_TRACK))
                                 {

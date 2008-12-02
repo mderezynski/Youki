@@ -302,7 +302,7 @@ class OPTION__Analyzer(BaseOPTION__):
                     self.finished.set()
                     return
 
-        if not len(self.v):
+        if not len(self.v) and id:
             self.run_markov(self.lib, self.v)
 
         self.finished.set()
