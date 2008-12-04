@@ -436,6 +436,7 @@ namespace MPX
                         Entries = std::vector<TargetEntry>();
                         Entries.push_back(TargetEntry("image/png"));
                         Entries.push_back(TargetEntry("image/jpeg"));
+                        Entries.push_back(TargetEntry("text/x-moz-url"));
                         drag_dest_set(Entries, DEST_DEFAULT_ALL);
                         drag_dest_add_uri_targets();
 
@@ -578,19 +579,23 @@ namespace MPX
                         AlbumTreeView::on_drag_data_received (const Glib::RefPtr<Gdk::DragContext>&, int x, int y,
                                                 const Gtk::SelectionData& data, guint, guint)
                         {
-                            Glib::ustring target = data.get_target();
-            
-                            if( target == "text/uri-list" )
-                            {
+                                std::string uri;
                                 std::vector<Glib::ustring> uris = data.get_uris();
+                                if( uris.empty() )
+                                {
+                                    uri = data.get_text();
+                                }
+                                else
+                                {
+                                    uri = uris[0];
+                                }
 
-                                if( !uris.empty() )
                                 try{
                                     TreeModel::Path path;
                                     TreeViewDropPosition pos;
                                     if( get_dest_row_at_pos (x, y, path, pos) )
                                     {
-                                        Glib::RefPtr<Gdk::Pixbuf> cover = Util::get_image_from_uri( uris[0] );
+                                        Glib::RefPtr<Gdk::Pixbuf> cover = Util::get_image_from_uri( uri ); 
                                         Cairo::RefPtr<Cairo::ImageSurface> surface = Util::cairo_image_surface_from_pixbuf( cover->scale_simple( 90, 90, Gdk::INTERP_BILINEAR) );
                                         surface = Util::cairo_image_surface_round(surface, 6.);
                                         Gdk::Color c = get_style()->get_black();
@@ -617,7 +622,6 @@ namespace MPX
                                 } catch(...) {
                                     g_message("%s: Error saving Pixbuf", G_STRLOC);
                                 }
-                            }
                         }
 
                 void
