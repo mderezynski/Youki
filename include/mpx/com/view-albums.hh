@@ -253,6 +253,9 @@ namespace MPX
                             RoundedLayout*                        m_LabelShowing;
                             Gtk::CheckButton*                     m_AdvancedQueryCB;
 
+                            int                                   m_motion_x,
+                                                                  m_motion_y;
+
                         // Signals
 
                             struct Signals_t
@@ -299,6 +302,14 @@ namespace MPX
 
                             virtual void
                                     on_drag_begin (const Glib::RefPtr<Gdk::DragContext>&);
+
+
+                            virtual void
+                                    on_drag_data_received (const Glib::RefPtr<Gdk::DragContext>&, int x, int y,
+                                                const Gtk::SelectionData& data, guint, guint);
+
+                            virtual bool
+                                    on_motion_notify_event(GdkEventMotion*);
 
                             virtual bool
                                     on_button_press_event (GdkEventButton*);

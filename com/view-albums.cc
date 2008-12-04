@@ -193,6 +193,9 @@ namespace MPX
                 , m_Covers(amzn)
                 , m_ButtonPressed(false)
                 {
+                        m_DiscDefault_DND = IconTheme::get_default()->load_icon("gnome-dev-cdrom-audio", 128, Gtk::ICON_LOOKUP_USE_BUILTIN);
+                        m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_DND->scale_simple(90,90,Gdk::INTERP_BILINEAR));
+
                         Options.Flags = ALBUMS_STATE_NO_FLAGS;
                         Options.Type = RT_ALL;
                         Options.Advanced = false;
@@ -394,14 +397,6 @@ namespace MPX
 
                         AlbumsTreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
 
-                        m_DiscDefault_DND = IconTheme::get_default()->load_icon("gnome-dev-cdrom-audio", 128, Gtk::ICON_LOOKUP_USE_BUILTIN);
-                        m_DiscDefault = Util::cairo_image_surface_from_pixbuf(m_DiscDefault_DND->scale_simple(90,90,Gdk::INTERP_BILINEAR));
-
-                        std::vector<TargetEntry> Entries;
-                        Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
-                        Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
-                        drag_source_set(Entries); 
-
                         xml->get_widget(name_filter_entry, m_FilterEntry);
 
                         m_FilterEntry->signal_changed().connect(
@@ -431,6 +426,18 @@ namespace MPX
 
                         m_UIManager->insert_action_group(m_ActionGroup);
                         m_UIManager->add_ui_from_string((boost::format(ui_albums_popup) % m_Name).str());
+
+
+                        std::vector<TargetEntry> Entries;
+                        Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
+                        Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
+                        drag_source_set(Entries); 
+
+                        Entries = std::vector<TargetEntry>();
+                        Entries.push_back(TargetEntry("image/png"));
+                        Entries.push_back(TargetEntry("image/jpeg"));
+                        drag_dest_set(Entries, DEST_DEFAULT_ALL);
+                        drag_dest_add_uri_targets();
 
                         gtk_widget_realize(GTK_WIDGET(gobj()));
 
@@ -566,6 +573,53 @@ namespace MPX
                                 }
                         }
 
+
+                void
+                        AlbumTreeView::on_drag_data_received (const Glib::RefPtr<Gdk::DragContext>&, int x, int y,
+                                                const Gtk::SelectionData& data, guint, guint)
+                        {
+                            Glib::ustring target = data.get_target();
+            
+                            if( target == "text/uri-list" )
+                            {
+                                std::vector<Glib::ustring> uris = data.get_uris();
+
+                                if( !uris.empty() )
+                                try{
+                                    TreeModel::Path path;
+                                    TreeViewDropPosition pos;
+                                    if( get_dest_row_at_pos (x, y, path, pos) )
+                                    {
+                                        Glib::RefPtr<Gdk::Pixbuf> cover = Util::get_image_from_uri( uris[0] );
+                                        Cairo::RefPtr<Cairo::ImageSurface> surface = Util::cairo_image_surface_from_pixbuf( cover->scale_simple( 90, 90, Gdk::INTERP_BILINEAR) );
+                                        surface = Util::cairo_image_surface_round(surface, 6.);
+                                        Gdk::Color c = get_style()->get_black();
+                                        Util::cairo_image_surface_rounded_border(surface, .5, 6., c.get_red_p(), c.get_green_p(), c.get_blue_p(), 1.);
+
+                                        TreeIter iter = AlbumsTreeStoreFilter->convert_iter_to_child_iter( AlbumsTreeStoreFilter->get_iter( path ) );
+                                        switch( (*iter)[Columns.RT] ) 
+                                        {
+                                            case RT_COMPILATION:
+                                                (*iter)[Columns.Image] = Util::cairo_image_surface_overlay( surface, Util::cairo_image_surface_from_pixbuf(m_Emblem[EM_COMPILATION]), 0., 0., 1.); 
+                                                break;
+
+                                            case RT_SOUNDTRACK:
+                                                (*iter)[Columns.Image] = Util::cairo_image_surface_overlay( surface, Util::cairo_image_surface_from_pixbuf(m_Emblem[EM_SOUNDTRACK]), 0., 0., 1.); 
+                                                break;
+
+                                            default:
+                                                (*iter)[Columns.Image] = surface;
+                                                break;
+                                        }
+    
+                                       m_Covers.get().cache_artwork( (*iter)[Columns.MBID], cover ); 
+                                    }
+                                } catch(...) {
+                                    g_message("%s: Error saving Pixbuf", G_STRLOC);
+                                }
+                            }
+                        }
+
                 void
                         AlbumTreeView::run_rating_comment_dialog(int rating, gint64 id)
                         {
@@ -638,6 +692,28 @@ namespace MPX
                                 g_atomic_int_set(&m_ButtonPressed, 0);
                                 return false;
                         }
+
+                bool
+                        AlbumTreeView::on_motion_notify_event (GdkEventMotion* event)
+                        {
+                            int x, y;
+                            GdkModifierType state;
+
+                            if (event->is_hint)
+                            {
+                                gdk_window_get_pointer (event->window, &x, &y, &state);
+                            }
+                            else
+                            {
+                                x = event->x;
+                                y = event->y;
+                            }
+
+                            m_motion_x = x;
+                            m_motion_y = y; 
+        
+                            return false;
+                        } 
 
                 bool
                         AlbumTreeView::on_event (GdkEvent * ev)

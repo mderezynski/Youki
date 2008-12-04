@@ -517,17 +517,17 @@ namespace MPX
                         static const int N_FIRST_CUSTOM = 8;
 
                         PlaylistTreeView(
-                                        Glib::RefPtr<Gnome::Glade::Xml> const& xml,
-                                        Glib::RefPtr<Gtk::UIManager>    const& ui_manager,
-                                        PAccess<MPX::Library>           const& lib,
-                                        PAccess<MPX::HAL>               const& hal,
-                                        MPX::Source::PlaybackSourceMusicLib  & mlib
-                                        )
-                                : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-playlist")
-                                  , m_MLib(mlib)
-                                  , m_Lib(lib)
-                                  , m_HAL(hal)
-                                  , m_ButtonDepressed(0)
+                            Glib::RefPtr<Gnome::Glade::Xml> const& xml,
+                            Glib::RefPtr<Gtk::UIManager>    const& ui_manager,
+                            PAccess<MPX::Library>           const& lib,
+                            PAccess<MPX::HAL>               const& hal,
+                            MPX::Source::PlaybackSourceMusicLib  & mlib
+                        )
+                        : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-playlist")
+                        , m_MLib(mlib)
+                        , m_Lib(lib)
+                        , m_HAL(hal)
+                        , m_ButtonDepressed(0)
                         {
                                 set_has_tooltip();
                                 set_rules_hint();
@@ -545,7 +545,7 @@ namespace MPX
                                                                         "images"
                                                                         ),
                                                                 (boost::format("stars%d.png") % n).str()
-                                                                ));
+                                        ));
                                 }
 
                                 TreeViewColumn * col = manage (new TreeViewColumn(""));
@@ -1183,7 +1183,7 @@ namespace MPX
                                         return false;
                                 }
 
-                        bool
+                        virtual bool
                                 on_drag_motion (RefPtr<Gdk::DragContext> const& context, int x, int y, guint time)
                                 {
                                         TreeModel::Path path;

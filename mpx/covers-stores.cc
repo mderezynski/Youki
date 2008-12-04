@@ -145,7 +145,6 @@ namespace MPX
         else
         { 
             try{
-                    cover->save( covers.get_thumb_path( cb_data->qualifier.mbid ), "png" );
                     covers.cache_artwork( cb_data->qualifier.mbid, cover );
             } catch( Glib::FileError & cxe )
             {
@@ -423,7 +422,6 @@ namespace MPX
         else
         {
             RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cover_art );
-            cover->save( covers.get_thumb_path( data->qualifier.mbid ), "png" );
             covers.cache_artwork( data->qualifier.mbid, cover );
             Signals.HasFound.emit( data );
         }
@@ -476,7 +474,6 @@ namespace MPX
 
         if( cover )
         {
-            cover->save( covers.get_thumb_path( data->qualifier.mbid ), "png" );
             covers.cache_artwork( data->qualifier.mbid, cover );
             Signals.HasFound.emit( data );
         }

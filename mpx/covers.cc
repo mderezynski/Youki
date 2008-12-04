@@ -261,7 +261,8 @@ namespace MPX
         RefPtr<Gdk::Pixbuf> cover
     )
     {
-        m_pixbuf_cache.insert(std::make_pair(mbid, cover));
+        cover->save( get_thumb_path( mbid ), "png" );
+        m_pixbuf_cache[mbid] = cover;
     }
 
     std::string

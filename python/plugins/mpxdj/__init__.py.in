@@ -543,6 +543,8 @@ class MPXDJ(mpx.Plugin):
 
         self.notebook = self.xml.get_widget("notebook")
 
+        self.working = False
+
         try:
             self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj-icon.png")
         except:
