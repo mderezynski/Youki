@@ -584,11 +584,17 @@ namespace MPX
                                 if( uris.empty() )
                                 {
                                     uri = data.get_text();
+                                    if( uri.empty() )
+                                    {
+                                        uri = data.get_data_as_string();
+                                    }
                                 }
                                 else
                                 {
                                     uri = uris[0];
                                 }
+
+                                g_message("URI: '%s'", uri.c_str());
 
                                 try{
                                     TreeModel::Path path;
