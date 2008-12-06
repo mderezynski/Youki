@@ -234,7 +234,7 @@ class PuidScanExec(mpx.Plugin):
 
                 if scan.cover_tuple:
                     print scan.cover_tuple
-                    self.player.get_covers().cache( scan.cover_tuple[0], scan.cover_tuple[1], "", scan.cover_tuple[2], scan.cover_tuple[3], True )
+                    #self.player.get_covers().cache( scan.cover_tuple[0], scan.cover_tuple[1], "", scan.cover_tuple[2], scan.cover_tuple[3], True )
 
                 self.player.info_clear()
                 self.player.metadata_reparse()

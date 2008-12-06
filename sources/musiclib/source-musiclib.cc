@@ -114,7 +114,6 @@ namespace
                 "         <menuitem action='musiclib-show-albums'/>"
                 "         <menuitem action='musiclib-show-alltracks'/>"
                 "         <menuitem action='musiclib-show-collections'/>"
-                "         <menuitem action='musiclib-show-file-system-tree'/>"
                 "         <separator/>"
                 "         <menu action='menu-musiclib-albums'>"
                 "           <menuitem action='musiclib-albums-show-all'/>"
@@ -2017,24 +2016,6 @@ namespace MPX
                                                 )
                                         );
                         RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-show-collections"))->property_value() = 2;
-
-                        m_MainActionGroup->add(
-
-                                        RadioAction::create(
-                                                gr2,
-                                                "musiclib-show-file-system-tree",
-                                                _("_Last.fm View")
-                                                ),
-
-                                        AccelKey("<alt>4"),
-
-                                        sigc::mem_fun(
-                                                *this,
-                                                &PlaybackSourceMusicLib::on_view_change
-                                                )
-                                        );
-                        RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-show-file-system-tree"))->property_value() = 3;
-
 
                         m_MainActionGroup->add(
 

@@ -408,7 +408,7 @@ namespace MPX
 
 		if(!i->second->m_Active)
 		{
-			g_message("%s: Requested deactivate from plugin %lld, but is deactivated.", G_STRLOC, id);	
+			g_message("%s: Deactivate requested for plugin %lld, but is already deactivated.", G_STRLOC, id);	
 			g_return_val_if_reached(false);
 		}
 
