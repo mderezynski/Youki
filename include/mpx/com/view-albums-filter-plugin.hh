@@ -220,8 +220,9 @@ namespace MPX
                     get_ui ();
 
                 private:
-
-                    typedef std::tr1::unordered_set<std::string> StringSet_t;
+            
+                    typedef std::pair<std::string, std::string> AlbumQualifier_t;
+                    typedef std::set<AlbumQualifier_t> StringSet_t;
         
                     StringSet_t         m_Names;
                     Glib::ustring       m_FilterText;

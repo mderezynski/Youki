@@ -154,7 +154,7 @@ namespace MPX
 
                                 for( topalbums::album_sequence::const_iterator i = Xml->xml().topalbums().album().begin(); i != Xml->xml().topalbums().album().end(); ++i )
                                 {
-                                    m_Names.insert( (*i).name() );
+                                    m_Names.insert( AlbumQualifier_t((*i).name(),(*i).artist().name()));
                                 }
 
                                 delete Xml;
@@ -175,7 +175,7 @@ namespace MPX
             bool
             LFMTopAlbums::filter_delegate(const Gtk::TreeIter& iter, const ViewAlbumsColumnsT& columns)
             {
-                return m_FilterText.empty() || m_Names.count( (*iter)[columns.Album] );
+                return m_FilterText.empty() || m_Names.count( AlbumQualifier_t((*iter)[columns.Album], (*iter)[columns.Artist]));
             }
     }
 } // end namespace MPX 

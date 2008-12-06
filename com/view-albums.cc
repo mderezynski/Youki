@@ -180,8 +180,9 @@ namespace MPX
                         const Glib::RefPtr<Gnome::Glade::Xml>&  xml,    
                         const std::string&                      name,
                         const std::string&                      name_showing_label,
-                        const std::string&                      name_filter_entry,
-                        const std::string&                      name_search_alignment,
+                        const std::string&                      name_search_entry,
+                        const std::string&                      name_search_plugin_ui_alignment,
+                        const std::string&                      name_search_plugin_choice_cbox,
                         Glib::RefPtr<Gtk::UIManager>            ui_manager,
                         const PAccess<MPX::Library>&            lib,
                         const PAccess<MPX::Covers>&             amzn
@@ -360,37 +361,57 @@ namespace MPX
 
                         // Filter Widgets   
 
-                        xml->get_widget(name_filter_entry, m_FilterEntry);
-                        xml->get_widget(name_search_alignment, m_FilterPluginUI_Alignment);
+                        xml->get_widget(name_search_entry, m_FilterEntry);
+                        xml->get_widget(name_search_plugin_ui_alignment, m_FilterPluginUI_Alignment);
 
                         // Filter Plugins
 
-                        //Plugin_p p (new MPX::ViewAlbumsFilterPlugin::TextMatch);
-                        Plugin_p p (new MPX::ViewAlbumsFilterPlugin::LFMTopAlbums);
-                        p->signal_refilter().connect(
-                                        sigc::mem_fun(
-                                                *this,
-                                                &AlbumTreeView::refilter
-                        ));
-                        m_FilterPlugins.push_back( p );
-                        m_FilterPlugin_Current = p;
-                        m_FilterPluginUI = p->get_ui();
-                        if( m_FilterPluginUI )
-                            m_FilterPluginUI_Alignment->add( *m_FilterPluginUI );
-                    
+                        xml->get_widget(name_search_plugin_choice_cbox, m_FilterPluginsCBox);
+ 
+                        {
+                                Plugin_p p (new MPX::ViewAlbumsFilterPlugin::TextMatch);
+                                p->signal_refilter().connect(
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AlbumTreeView::refilter
+                                ));
+                                m_FilterPlugins.push_back( p );
+                        } 
 
-                        m_FilterEntry->signal_changed().connect(
+                        {
+                                Plugin_p p (new MPX::ViewAlbumsFilterPlugin::LFMTopAlbums);
+                                p->signal_refilter().connect(
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AlbumTreeView::refilter
+                                ));
+                                m_FilterPlugins.push_back( p );
+                        } 
+
+                        m_ConnFilterEntry_Changed = m_FilterEntry->signal_changed().connect(
                                         sigc::mem_fun(
                                                 *this,
                                                 &AlbumTreeView::on_filter_entry_changed
                         ));
 
-                        m_FilterEntry->signal_activate().connect(
+                        m_ConnFilterEntry_Activate = m_FilterEntry->signal_activate().connect(
                                         sigc::mem_fun(
                                                 *this,
                                                 &AlbumTreeView::on_filter_entry_activate
                         ));
 
+                        m_FilterPluginUI = 0;
+                        m_FilterPluginsCBox->set_active( 0 );
+
+                        m_FilterPluginsCBox->signal_changed().connect(
+                                sigc::mem_fun(
+                                        *this,
+                                        &AlbumTreeView::on_plugin_cbox_changed
+                        ));
+
+                        on_plugin_cbox_changed();
+
+                        // UI Manager
 
                         m_UIManager = ui_manager;
                         m_ActionGroup = Gtk::ActionGroup::create ((boost::format ("Actions-%s") % name).str());
@@ -411,6 +432,8 @@ namespace MPX
                         m_UIManager->insert_action_group(m_ActionGroup);
                         m_UIManager->add_ui_from_string((boost::format(ui_albums_popup) % m_Name).str());
 
+                        // DND
+
                         std::vector<TargetEntry> Entries;
                         Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
                         Entries.push_back(TargetEntry("mpx-track", TARGET_SAME_APP, 0x81));
@@ -423,9 +446,13 @@ namespace MPX
                         drag_dest_set(Entries, DEST_DEFAULT_ALL);
                         drag_dest_add_uri_targets();
 
+                        // Init album list
+
                         gtk_widget_realize(GTK_WIDGET(gobj()));
                         album_list_load ();
                         set_model(AlbumsTreeStoreFilter);
+
+                        // Setup sorting
 
                         AlbumsTreeStoreFilter->set_visible_func(
                                         sigc::mem_fun(
@@ -444,7 +471,6 @@ namespace MPX
                                                                 *this,
                                                                 &AlbumTreeView::on_row_added_or_deleted
                                                                 ))));
-
 
                         AlbumsTreeStore->set_sort_func(0 , sigc::mem_fun( *this, &AlbumTreeView::slotSortAlpha ));
                         AlbumsTreeStore->set_sort_func(1 , sigc::mem_fun( *this, &AlbumTreeView::slotSortDate ));
@@ -471,6 +497,47 @@ namespace MPX
                         AlbumTreeView::refilter ()
                         {
                                 AlbumsTreeStoreFilter->refilter();
+                        }
+
+            void
+                        AlbumTreeView::on_plugin_cbox_changed ()
+                        {
+                                if( m_FilterPluginUI && m_FilterPluginUI_Alignment->get_child() )
+                                {
+                                    m_FilterPluginUI_Alignment->remove();
+                                }
+
+                                g_message("Current Plugin: %d", m_FilterPluginsCBox->get_active_row_number());
+
+                                m_FilterPlugin_Current = m_FilterPlugins[m_FilterPluginsCBox->get_active_row_number()];
+                                m_FilterPluginUI = m_FilterPlugin_Current->get_ui();
+                                if( m_FilterPluginUI )
+                                    m_FilterPluginUI_Alignment->add( *m_FilterPluginUI );
+
+                                m_FilterEntry->set_text("");
+                        }
+
+                bool
+                        AlbumTreeView::album_visible_func (TreeIter const& iter)
+                        {
+                                TreePath path = AlbumsTreeStore->get_path(iter);
+
+                                if( path.size() == 1 && (Options.Flags & ALBUMS_STATE_SHOW_NEW) && !(*iter)[Columns.NewAlbum])
+                                {
+                                        return false;
+                                } 
+
+                                if( path.size() == 1 && !(Options.Type & (*iter)[Columns.RT]))
+                                {
+                                        return false;
+                                }
+
+                                if( path.size() > 1 ) // track row 
+                                {
+                                        return true;
+                                }
+
+                                return m_FilterPlugin_Current->filter_delegate( iter, Columns );
                         }
 
                 void
@@ -1494,30 +1561,6 @@ namespace MPX
                                 }
                         }
 
-                bool
-                        AlbumTreeView::album_visible_func (TreeIter const& iter)
-                        {
-                                TreePath path = AlbumsTreeStore->get_path(iter);
-
-                                if( path.size() == 1 && (Options.Flags & ALBUMS_STATE_SHOW_NEW) && !(*iter)[Columns.NewAlbum])
-                                {
-                                        return false;
-                                } 
-
-                                if( path.size() == 1 && !(Options.Type & (*iter)[Columns.RT]))
-                                {
-                                        return false;
-                                }
-
-                                if( path.size() > 1 ) // track row 
-                                {
-                                        return true;
-                                }
-
-
-                                return m_FilterPlugin_Current->filter_delegate( iter, Columns );
-                        }
-
                 void
                         AlbumTreeView::update_album_count_display ()
                         {
@@ -1548,7 +1591,7 @@ namespace MPX
                 void
                         AlbumTreeView::on_row_added_or_deleted ()
                         {
-                                update_album_count_display ();
+                                //update_album_count_display ();
                         }
 
                 void

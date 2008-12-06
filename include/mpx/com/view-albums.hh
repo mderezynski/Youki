@@ -156,6 +156,12 @@ namespace MPX
                             Plugin_p                              m_FilterPlugin_Current;
                             Gtk::Widget                         * m_FilterPluginUI;
                             Gtk::Alignment                      * m_FilterPluginUI_Alignment;
+                            Gtk::ComboBox                       * m_FilterPluginsCBox;
+                            sigc::connection                      m_ConnFilterEntry_Changed, m_ConnFilterEntry_Activate;
+
+                            void
+                            on_plugin_cbox_changed ();
+                        
 
                         // State variables
 
@@ -204,6 +210,7 @@ namespace MPX
 
                             AlbumTreeView(
                                 const Glib::RefPtr<Gnome::Glade::Xml>&,    
+                                const std::string&,
                                 const std::string&,
                                 const std::string&,
                                 const std::string&,
