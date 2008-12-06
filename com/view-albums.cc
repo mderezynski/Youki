@@ -57,7 +57,6 @@ using namespace Gtk;
 using namespace Glib;
 using namespace Gnome::Glade;
 using namespace MPX;
-using namespace MPX::AQE;
 using boost::get;
 using boost::algorithm::trim;
 using boost::algorithm::split;
@@ -182,7 +181,7 @@ namespace MPX
                         const std::string&                      name,
                         const std::string&                      name_showing_label,
                         const std::string&                      name_filter_entry,
-                        const std::string&                      name_advanced_cb,
+                        const std::string&                      name_search_alignment,
                         Glib::RefPtr<Gtk::UIManager>            ui_manager,
                         const PAccess<MPX::Library>&            lib,
                         const PAccess<MPX::Covers>&             amzn
@@ -198,7 +197,6 @@ namespace MPX
 
                         Options.Flags = ALBUMS_STATE_NO_FLAGS;
                         Options.Type = RT_ALL;
-                        Options.Advanced = false;
 
                         const std::string image_base_path = build_filename( DATA_DIR, "images" );
 
@@ -269,16 +267,6 @@ namespace MPX
                             m_LabelShowing = new RoundedLayout(xml, name_showing_label);
                         else
                             m_LabelShowing = 0;
-
-                        if( !name_advanced_cb.empty() )
-                        {
-                            m_Xml->get_widget( name_advanced_cb, m_AdvancedQueryCB ); 
-                            m_AdvancedQueryCB->signal_toggled().connect(
-                                sigc::mem_fun(
-                                    *this,
-                                    &AlbumTreeView::on_advanced_query_cb_toggled
-                            ));
-                        }
 
                         set_show_expanders( false );
                         set_level_indentation( 56 );
@@ -394,23 +382,43 @@ namespace MPX
                         AlbumsTreeStore->set_sort_func(2 , sigc::mem_fun( *this, &AlbumTreeView::slotSortRating ));
                         AlbumsTreeStore->set_sort_func(3 , sigc::mem_fun( *this, &AlbumTreeView::slotSortStrictAlpha ));
                         AlbumsTreeStore->set_sort_func(4 , sigc::mem_fun( *this, &AlbumTreeView::slotSortPlayScore ));
-
                         AlbumsTreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
 
+                        // Filter Widgets   
+
                         xml->get_widget(name_filter_entry, m_FilterEntry);
+                        xml->get_widget(name_search_alignment, m_FilterPluginUI_Alignment);
+
+                        // Filter Plugins
+
+                        Plugin_p p (new MPX::ViewAlbumsFilterPlugin::TextMatch);
+                        p->signal_refilter().connect(
+                                        sigc::mem_fun(
+                                                *this,
+                                                &AlbumTreeView::refilter
+                        ));
+                        m_FilterPlugins.push_back( p );
+                        m_FilterPlugin_Current = p;
+                        m_FilterPluginUI = p->get_ui();
+                        m_FilterPluginUI_Alignment->add( *m_FilterPluginUI );
+                    
 
                         m_FilterEntry->signal_changed().connect(
                                         sigc::mem_fun(
                                                 *this,
                                                 &AlbumTreeView::on_filter_entry_changed
-                                                ));
+                        ));
+
+                        m_FilterEntry->signal_activate().connect(
+                                        sigc::mem_fun(
+                                                *this,
+                                                &AlbumTreeView::on_filter_entry_activate
+                        ));
+
 
                         m_UIManager = ui_manager;
-
                         m_ActionGroup = Gtk::ActionGroup::create ((boost::format ("Actions-%s") % name).str());
-
                         m_ActionGroup->add(Gtk::Action::create("dummy","dummy"));
-
                         m_ActionGroup->add(
 
                                         Gtk::Action::create(
@@ -422,11 +430,10 @@ namespace MPX
                                         sigc::mem_fun(
                                                 *this,
                                                 &AlbumTreeView::on_album_show_info
-                                                ));
+                        ));
 
                         m_UIManager->insert_action_group(m_ActionGroup);
                         m_UIManager->add_ui_from_string((boost::format(ui_albums_popup) % m_Name).str());
-
 
                         std::vector<TargetEntry> Entries;
                         Entries.push_back(TargetEntry("mpx-album", TARGET_SAME_APP, 0x80));
@@ -441,38 +448,31 @@ namespace MPX
                         drag_dest_add_uri_targets();
 
                         gtk_widget_realize(GTK_WIDGET(gobj()));
-
                         album_list_load ();
-
                         set_model(AlbumsTreeStoreFilter);
                 }
 
                 void
                         AlbumTreeView::on_filter_entry_changed ()
                         {
-                                if(Options.Advanced)
-                                {
-                                    m_Constraints.clear();
-                                    m_FilterText = AQE::parse_advanced_query (m_Constraints, m_FilterEntry->get_text());
-                                }
-                                else
-                                {
-                                    m_FilterText = m_FilterEntry->get_text().lowercase();
-                                }
+                                m_FilterText = m_FilterEntry->get_text().lowercase();
+                                m_FilterPlugin_Current->on_filter_changed( m_FilterText );
+                        }
+        
+                void
+                        AlbumTreeView::on_filter_entry_activate ()
+                        {
+                                m_FilterPlugin_Current->on_filter_issued( m_FilterText );
+                        }
 
+                void
+                        AlbumTreeView::refilter ()
+                        {
                                 AlbumsTreeStoreFilter->refilter();
                         }
 
                 void
-                        AlbumTreeView::on_advanced_query_cb_toggled ()
-                        {
-                                Options.Advanced = m_AdvancedQueryCB->get_active();
-                                on_filter_entry_changed ();
-                        }
-
-                void
-                        AlbumTreeView::on_row_expanded (const TreeIter &iter_filter,
-                                        const TreePath &path) 
+                        AlbumTreeView::on_row_expanded (const TreeIter &iter_filter,const TreePath &path) 
                         {
                                 TreeIter iter = AlbumsTreeStoreFilter->convert_iter_to_child_iter(iter_filter);
                                 if(!(*iter)[Columns.HasTracks])
@@ -574,27 +574,55 @@ namespace MPX
                                 }
                         }
 
+                bool
+                        AlbumTreeView::on_drag_motion (const Glib::RefPtr<Gdk::DragContext>& context_, int x, int y, guint time)
+                        {
+                            return true;
+                        }
 
                 void
                         AlbumTreeView::on_drag_data_received (const Glib::RefPtr<Gdk::DragContext>&, int x, int y,
                                                 const Gtk::SelectionData& data, guint, guint)
                         {
                                 std::string uri;
-                                std::vector<Glib::ustring> uris = data.get_uris();
-                                if( uris.empty() )
-                                {
-                                    uri = data.get_text();
-                                    if( uri.empty() )
-                                    {
-                                        uri = data.get_data_as_string();
-                                    }
-                                }
-                                else
-                                {
-                                    uri = uris[0];
-                                }
 
-                                g_message("URI: '%s'", uri.c_str());
+                                if( data.get_data_type() == "text/x-moz-url" )
+                                {
+                                        gchar *out;
+                                        gsize bytes_read = 0;
+                                        gsize bytes_written = 0;
+                                        GError *error = NULL;
+
+                                        out = g_convert ((char*)data.get_data(), data.get_length(), "UTF-8", "UTF-16", 
+                                           &bytes_read, &bytes_written, &error);
+
+                                        std::string text = out;
+                                        g_free(out);
+
+                                        using boost::algorithm::split;
+                                        using boost::algorithm::is_any_of;
+                                        using boost::algorithm::replace_all;
+
+                                        replace_all (text, "\r", "");
+
+                                        StrV v;
+                                        split (v, text, is_any_of ("\n"));
+    
+                                        uri = v[0]; 
+                                }
+                                else if( data.get_data_type() == "text/uri-list" )
+                                {
+                                        std::vector<Glib::ustring> uris = data.get_uris();
+
+                                        if( uris.empty() )
+                                        {
+                                            uri = data.get_data_as_string(); 
+                                        }
+                                        else
+                                        {
+                                            uri = uris[0];
+                                        }
+                                }
 
                                 try{
                                     TreeModel::Path path;
@@ -1475,25 +1503,13 @@ namespace MPX
                                         return false;
                                 }
 
-                                if( path.size() > 1 ) 
+                                if( path.size() > 1 ) // track row 
                                 {
                                         return true;
                                 }
 
-                                if( m_FilterText.empty() && m_Constraints.empty() ) 
-                                {
-                                        return true;
-                                }
 
-                                bool truthvalue = true;
-
-                                if( !m_Constraints.empty() )
-                                {
-                                    MPX::Track track = (*iter)[Columns.AlbumTrack]; 
-                                    truthvalue = AQE::match_track(m_Constraints, track);
-                                }
-
-                                return truthvalue && Util::match_keys (ustring((*iter)[Columns.Text]).lowercase(), m_FilterText); 
+                                return m_FilterPlugin_Current->filter_delegate( iter, Columns );
                         }
 
                 void

@@ -44,6 +44,7 @@ libmpx_view_components_la_LIBADD =  	\
 libmpx_view_components_la_SOURCES =	\
 	album-info-window.cc			\
 	view-albums.cc					\
+	view-albums-filter-plugin.cc	\
 	view-collections.cc				\
 	file-system-tree.cc				\
 	mb-import-album.cc				\

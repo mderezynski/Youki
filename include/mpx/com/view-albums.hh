@@ -55,18 +55,14 @@
 
 #include "mpx/algorithm/aque.hh"
 
+#include "mpx/com/view-albums-filter-plugin.hh"
+
 namespace MPX
 {
                 typedef sigc::signal<void, gint64, bool>      SignalPlayAlbum;
                 typedef sigc::signal<void, IdV, bool>         SignalPlayTracks;
 
                 const int N_STARS = 6;
-
-                enum AlbumRowType
-                {
-                        ROW_ALBUM   =   1,
-                        ROW_TRACK   =   2,
-                };
 
                 enum AlbumHighlightMode
                 {
@@ -81,22 +77,6 @@ namespace MPX
                     ALBUMS_STATE_SHOW_NEW                =   1 << 0,
                 };
 
-
-                enum ReleaseType
-                {
-                        RT_NONE             =   0,   
-                        RT_ALBUM            =   1 << 0,
-                        RT_SINGLE           =   1 << 1,
-                        RT_COMPILATION      =   1 << 2,
-                        RT_EP               =   1 << 3,
-                        RT_LIVE             =   1 << 4,
-                        RT_REMIX            =   1 << 5,
-                        RT_SOUNDTRACK       =   1 << 6,
-                        RT_OTHER            =   1 << 7,
-                        RT_ALL              =   (RT_ALBUM|RT_SINGLE|RT_COMPILATION|RT_EP|RT_LIVE|RT_REMIX|RT_SOUNDTRACK|RT_OTHER)
-
-                };
-
                 struct ReleaseTypeActionInfo
                 {
                         char const*     Label;
@@ -104,107 +84,45 @@ namespace MPX
                         int             Value;
                 };
 
+                typedef boost::shared_ptr<ViewAlbumsFilterPlugin::Base> Plugin_p;
+                typedef std::vector<Plugin_p> Plugin_pv;
+
                 class AlbumTreeView
                         :   public Gnome::Glade::WidgetLoader<Gtk::TreeView>
                 {
-                    public:
+                        public:
 
-                        typedef std::set<Gtk::TreeIter>                         IterSet;
-                        typedef std::tr1::unordered_map<std::string, IterSet>   MBIDIterMap;
-                        typedef std::tr1::unordered_map<gint64, Gtk::TreeIter>  IdIterMap; 
-
-                        struct ColumnsT : public Gtk::TreeModel::ColumnRecord 
-                        {
-                                Gtk::TreeModelColumn<AlbumRowType>                          RowType;
-                                Gtk::TreeModelColumn<ReleaseType>                           RT;
-                                // we use an MPX::Track to store album attributes
-                                Gtk::TreeModelColumn<MPX::Track>                            AlbumTrack;
-
-                                Gtk::TreeModelColumn<Cairo::RefPtr<Cairo::ImageSurface> >   Image;
-                                Gtk::TreeModelColumn<Glib::ustring>                         Text;
-
-                                Gtk::TreeModelColumn<bool>                                  HasTracks;
-                                Gtk::TreeModelColumn<bool>                                  NewAlbum;
-
-                                Gtk::TreeModelColumn<std::string>                           AlbumSort;
-                                Gtk::TreeModelColumn<std::string>                           ArtistSort;
-
-                                Gtk::TreeModelColumn<gint64>                                Id;
-                                Gtk::TreeModelColumn<std::string>                           MBID;
-                                Gtk::TreeModelColumn<std::string>                           AlbumArtistMBID;
-
-                                Gtk::TreeModelColumn<gint64>                                Date;
-                                Gtk::TreeModelColumn<gint64>                                InsertDate;
-                                Gtk::TreeModelColumn<gint64>                                Rating;
-                                Gtk::TreeModelColumn<double>                                PlayScore;
-
-                                Gtk::TreeModelColumn<Glib::ustring>                         TrackTitle;
-                                Gtk::TreeModelColumn<Glib::ustring>                         TrackArtist;
-                                Gtk::TreeModelColumn<std::string>                           TrackArtistMBID;
-                                Gtk::TreeModelColumn<gint64>                                TrackNumber;
-                                Gtk::TreeModelColumn<gint64>                                TrackLength;
-                                Gtk::TreeModelColumn<gint64>                                TrackId;
-
-                                ColumnsT ()
-                                {
-                                        add (RowType);
-                                        add (RT);
-                                        add (AlbumTrack);
-
-                                        add (Image);
-                                        add (Text);
-
-                                        add (HasTracks);
-                                        add (NewAlbum);
-
-                                        add (AlbumSort);
-                                        add (ArtistSort);
-
-                                        add (Id);
-                                        add (MBID);
-                                        add (AlbumArtistMBID);
-
-                                        add (Date);
-                                        add (InsertDate);
-                                        add (Rating);
-                                        add (PlayScore);
-
-                                        add (TrackTitle);
-                                        add (TrackArtist);
-                                        add (TrackArtistMBID);
-                                        add (TrackNumber);
-                                        add (TrackLength);
-                                        add (TrackId);
-                                }
-                        };
+                            typedef std::set<Gtk::TreeIter>                         IterSet;
+                            typedef std::tr1::unordered_map<std::string, IterSet>   MBIDIterMap;
+                            typedef std::tr1::unordered_map<gint64, Gtk::TreeIter>  IdIterMap; 
 
                         public:
 
                         // Treemodel stuff
 
-                          Glib::RefPtr<Gtk::TreeStore>          AlbumsTreeStore;
-                          Glib::RefPtr<Gtk::TreeModelFilter>    AlbumsTreeStoreFilter;
-                          ColumnsT                              Columns;
+                            Glib::RefPtr<Gtk::TreeStore>          AlbumsTreeStore;
+                            Glib::RefPtr<Gtk::TreeModelFilter>    AlbumsTreeStoreFilter;
+                            ViewAlbumsColumnsT                    Columns;
 
                         protected:
 
-                          std::string                           m_Name;
+                            std::string                           m_Name;
 
                         // UI
 
-                          Glib::RefPtr<Gtk::UIManager>          m_UIManager;
-                          Glib::RefPtr<Gtk::ActionGroup>        m_ActionGroup;      
+                            Glib::RefPtr<Gtk::UIManager>          m_UIManager;
+                            Glib::RefPtr<Gtk::ActionGroup>        m_ActionGroup;      
 
                         // Objects
 
-                          PAccess<MPX::Library>                 m_Lib;
-                          PAccess<MPX::Covers>                  m_Covers;
+                            PAccess<MPX::Library>                 m_Lib;
+                            PAccess<MPX::Covers>                  m_Covers;
 
                         // View mappings
 
-                          MBIDIterMap                           m_Album_MBID_Iter_Map;
-                          IdIterMap                             m_Album_Iter_Map;
-                          IdIterMap                             m_Track_Iter_Map;
+                            MBIDIterMap                           m_Album_MBID_Iter_Map;
+                            IdIterMap                             m_Album_Iter_Map;
+                            IdIterMap                             m_Track_Iter_Map;
 
                         // Disc+rating pixbufs
 
@@ -232,17 +150,22 @@ namespace MPX
                             Gtk::TreePath                         m_PathButtonPress;
                             bool                                  m_ButtonPressed;
 
+                        // Filter Plugins
+
+                            Plugin_pv                             m_FilterPlugins;
+                            Plugin_p                              m_FilterPlugin_Current;
+                            Gtk::Widget                         * m_FilterPluginUI;
+                            Gtk::Alignment                      * m_FilterPluginUI_Alignment;
+
                         // State variables
 
                             Glib::ustring                         m_FilterText;
-                            AQE::Constraints_t                    m_Constraints;
 
                             struct Options_t
                             {
                                     AlbumHighlightMode    HighlightMode;
                                     int                   Flags;
                                     int                   Type;
-                                    int                   Advanced;
                             };
 
                             Options_t                             Options;
@@ -251,7 +174,6 @@ namespace MPX
 
                             Gtk::Entry*                           m_FilterEntry;
                             RoundedLayout*                        m_LabelShowing;
-                            Gtk::CheckButton*                     m_AdvancedQueryCB;
 
                             int                                   m_motion_x,
                                                                   m_motion_y;
@@ -307,6 +229,9 @@ namespace MPX
                             virtual void
                                     on_drag_data_received (const Glib::RefPtr<Gdk::DragContext>&, int x, int y,
                                                 const Gtk::SelectionData& data, guint, guint);
+
+                            virtual bool
+                                    on_drag_motion (const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time);
 
                             virtual bool
                                     on_motion_notify_event(GdkEventMotion*);
@@ -405,8 +330,20 @@ namespace MPX
                                         gpointer 
                                     ); 
 
+
+                            virtual void
+                                    on_filter_entry_changed ();
+    
+                            virtual void
+                                    on_filter_entry_activate ();
+
                             virtual bool
                                     album_visible_func (Gtk::TreeIter const&);
+
+                            virtual void
+                                    refilter ();
+
+
 
                             virtual void
                                     update_album_count_display ();
@@ -414,11 +351,6 @@ namespace MPX
                             virtual void
                                     on_row_added_or_deleted ();
 
-                            virtual void
-                                    on_filter_entry_changed ();
-
-                            virtual void
-                                    on_advanced_query_cb_toggled ();
 
                         public:
 
