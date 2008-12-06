@@ -51,6 +51,6 @@ libmpx_view_components_la_SOURCES =	\
 									\
 	album-info-window.cc			\
 	view-albums.cc					\
-	view-albums-filter-plugin.cc	\
-	xsd-tag-topalbums.cxx
+	view-albums-filter-plugin.cc	
+
 
