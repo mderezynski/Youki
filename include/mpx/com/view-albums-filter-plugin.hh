@@ -227,6 +227,35 @@ namespace MPX
                     StringSet_t         m_Names;
                     Glib::ustring       m_FilterText;
             };
+
+            class LFMSimilarArtists : public Base
+            {
+                public:                    
+
+                    LFMSimilarArtists ();
+
+                    virtual ~LFMSimilarArtists ();
+
+                    virtual void 
+                    on_filter_issued( const Glib::ustring& );
+
+                    virtual void
+                    on_filter_changed( const Glib::ustring& );
+
+                    virtual bool
+                    filter_delegate(const Gtk::TreeIter&, const ViewAlbumsColumnsT& columns);
+
+                    virtual Gtk::Widget*
+                    get_ui ();
+
+                private:
+            
+                    typedef std::set<std::string> StringSet_t;
+        
+                    StringSet_t         m_Names;
+                    Glib::ustring       m_FilterText;
+            };
+
     }
 } // end namespace MPX 
 

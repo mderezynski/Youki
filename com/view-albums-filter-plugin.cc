@@ -30,6 +30,7 @@
 #include "mpx/mpx-uri.hh"
 #include "mpx/xml/xmltoc++.hh"
 #include "xmlcpp/xsd-topalbums-2.0.hxx"
+#include "xmlcpp/xsd-artist-similar-2.0.hxx"
 
 #include <boost/format.hpp>
 
@@ -176,6 +177,64 @@ namespace MPX
             LFMTopAlbums::filter_delegate(const Gtk::TreeIter& iter, const ViewAlbumsColumnsT& columns)
             {
                 return m_FilterText.empty() || m_Names.count( AlbumQualifier_t((*iter)[columns.Album], (*iter)[columns.Artist]));
+            }
+    }
+} // end namespace MPX 
+
+namespace MPX
+{
+    namespace ViewAlbumsFilterPlugin
+    {
+            LFMSimilarArtists::LFMSimilarArtists ()
+            {
+            }
+
+            LFMSimilarArtists::~LFMSimilarArtists ()
+            {
+            }
+
+            Gtk::Widget*
+            LFMSimilarArtists::get_ui ()
+            {
+                return 0;
+            }
+
+            void
+            LFMSimilarArtists::on_filter_issued( const Glib::ustring& text )
+            {
+                m_FilterText = text;
+                m_Names.clear();
+
+                if( !m_FilterText.empty() )
+                {
+                        try{
+                                URI u ((boost::format ("http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=%s&api_key=b25b959554ed76058ac220b7b2e0a026") % m_FilterText.c_str()).str(), true);
+                                MPX::XmlInstance<LastFM_SimilarArtists::lfm> * Xml = new MPX::XmlInstance<LastFM_SimilarArtists::lfm>(Glib::ustring(u));
+
+                                for( LastFM_SimilarArtists::similarartists::artist_sequence::const_iterator i = Xml->xml().similarartists().artist().begin(); i != Xml->xml().similarartists().artist().end(); ++i )
+                                {
+                                    m_Names.insert( (*i).name() );
+                                }
+
+                                delete Xml;
+                        }
+                        catch( ... ) {
+                                g_message("Exception!");
+                        }
+                }
+
+                Signals.Refilter.emit();
+            }
+
+            void
+            LFMSimilarArtists::on_filter_changed( const Glib::ustring& G_GNUC_UNUSED )
+            {
+            }
+
+            bool
+            LFMSimilarArtists::filter_delegate(const Gtk::TreeIter& iter, const ViewAlbumsColumnsT& columns)
+            {
+                return m_FilterText.empty() || m_Names.count( (*iter)[columns.Artist] );
             }
     }
 } // end namespace MPX 

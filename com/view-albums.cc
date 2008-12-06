@@ -388,6 +388,16 @@ namespace MPX
                                 m_FilterPlugins.push_back( p );
                         } 
 
+                        {
+                                Plugin_p p (new MPX::ViewAlbumsFilterPlugin::LFMSimilarArtists);
+                                p->signal_refilter().connect(
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AlbumTreeView::refilter
+                                ));
+                                m_FilterPlugins.push_back( p );
+                        } 
+
                         m_ConnFilterEntry_Changed = m_FilterEntry->signal_changed().connect(
                                         sigc::mem_fun(
                                                 *this,

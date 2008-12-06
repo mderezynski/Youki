@@ -8,4 +8,6 @@ libmpx_parsers_la_SOURCES = 	\
 	xspf.hxx					\
 	xspf.cxx					\
 	xsd-topalbums-2.0.hxx		\
-	xsd-topalbums-2.0.cxx
+	xsd-topalbums-2.0.cxx		\
+	xsd-artist-similar-2.0.hxx	\
+	xsd-artist-similar-2.0.cxx
