@@ -15,13 +15,15 @@
 
 namespace MPX
 {
+  typedef std::vector<std::string> TextSet; 
+  /*
   struct TextSet
   {
     std::string     Artist;
     std::string     Album;
     std::string     Title;
     std::string     Genre;
-  };
+  };*/
 
   class InfoArea
     : public Gnome::Glade::WidgetLoader<Gtk::EventBox>
@@ -38,11 +40,11 @@ namespace MPX
           double                                m_cover_velocity;
           double                                m_cover_accel;
           double                                m_cover_alpha;
-          double                                m_layout_alpha;
+          double                                m_layout_alpha[3];
           sigc::connection                      m_cover_anim_conn_fade;
           sigc::connection                      m_cover_anim_conn_slide;
           sigc::connection                      m_decay_conn;
-          sigc::connection                      m_fade_conn;
+          sigc::connection                      m_fade_conn[3];
 
           bool                                  m_pressed;
           Glib::Mutex                           m_surface_lock;
@@ -66,6 +68,8 @@ namespace MPX
           int    cover_anim_fps;
           int    cover_anim_interval;
           double cover_anim_dt;
+
+          Pango::Rectangle layout_extents[3];
 
     public:
 
@@ -173,7 +177,7 @@ namespace MPX
     private:
 
           bool
-          fade_out_layout ();
+          fade_out_layout(int);
 
           bool
           fade_out_cover ();

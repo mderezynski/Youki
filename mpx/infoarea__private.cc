@@ -69,10 +69,10 @@ namespace MPX
 
 
     static char const *
-      text_album_artist_f ("<span color='#a6a6a6'><span size='12500'><b>%s</b> (<i>%s</i>)</span></span>");
+      text_album_artist_f ("<span size='12500'><b>%s</b> (<i>%s</i>)</span>");
 
     static char const *
-      text_album_f ("<span size='12500' color='#a6a6a6'><b>%s</b></span>");
+      text_album_f ("<span size='12500'><b>%s</b></span>");
 
     static char const *
       text_artist_f ("<span size='12500'>(<i>%s</i>)</span>");
@@ -81,7 +81,7 @@ namespace MPX
     {
         if( metadata[ATTRIBUTE_ALBUM] )
         {
-          set.Album = Util::gprintf(
+          set[1] = Util::gprintf(
             text_album_artist_f,
             Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM].get())).c_str(),
             Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM_ARTIST].get())).c_str()
@@ -89,7 +89,7 @@ namespace MPX
         }
         else
         {
-          set.Album = Util::gprintf(
+          set[1] = Util::gprintf(
             text_artist_f,
             Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM_ARTIST].get())).c_str()
           );
@@ -99,7 +99,7 @@ namespace MPX
     {
         if( metadata[ATTRIBUTE_ALBUM] )
         {
-          set.Album = Util::gprintf(
+          set[1] = Util::gprintf(
             text_album_f,
             Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM].get())).c_str()
           );
@@ -109,7 +109,7 @@ namespace MPX
     if ((metadata[ATTRIBUTE_ARTIST_SORTNAME] && metadata[ATTRIBUTE_ARTIST]) &&
         (metadata[ATTRIBUTE_ARTIST_SORTNAME] != metadata[ATTRIBUTE_ARTIST])) /* let's display the artist if it's not identical to the sortname */
     {
-      set.Artist = Util::gprintf(
+      set[0] = Util::gprintf(
         text_b_f2,
         Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST_SORTNAME].get())).c_str(),
         Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str()
@@ -118,21 +118,18 @@ namespace MPX
     else
     if( metadata[ATTRIBUTE_ARTIST] )
     {
-      set.Artist = Util::gprintf (text_b_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str());
+      set[0] = Util::gprintf (text_b_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str());
     }
 
     if( metadata[ATTRIBUTE_TITLE] )
     {
-      set.Title = Util::gprintf (text_big_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_TITLE].get())).c_str());
+      set[2] = Util::gprintf (text_big_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_TITLE].get())).c_str());
     }
 
     if( metadata[ATTRIBUTE_GENRE] )
     {
-      set.Genre = Util::gprintf (text_i_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_GENRE].get())).c_str());
+      set[2] = Util::gprintf (text_i_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_GENRE].get())).c_str());
     }
-
-     set.Artist = set.Artist + " " + set.Album;
-     set.Album  = "";
   }
 
   void
@@ -152,25 +149,38 @@ namespace MPX
   }
 
   bool
-  InfoArea::fade_out_layout ()
+  InfoArea::fade_out_layout (int n)
   {
-    Mutex::Lock L (m_layout_lock);
+    Glib::Mutex::Lock L (m_layout_lock);
 
-    m_layout_alpha = fmax(m_layout_alpha - 0.1, 0.);
-    bool cond = m_layout_alpha > 0;
-    if(!cond && m_text_new)
+    std::string text_cur = m_text_cur.get()[n];
+    std::string text_new;
+
+    if(m_text_new)
     {
-        m_text_cur = m_text_new.get();
-        m_layout_alpha = 1.;
+        text_new = m_text_new.get()[n];
     }
-    else
-    if(!cond && !m_text_new)
+
+    m_layout_alpha[n] = fmax(m_layout_alpha[n] - 0.1, 0.);
+    bool cond = m_layout_alpha[n] > 0; 
+    if( !cond ) 
     {
-        m_text_cur.reset();
-        m_layout_alpha = 1.;
+        m_layout_alpha[n] = 1.;
+
+        if( m_text_new )
+            m_text_cur.get()[n] = m_text_new.get()[n];
+        else
+            m_text_cur.get()[n] = "";
     }
+
     queue_draw ();
-    return cond;
+    
+    if( !cond )
+    {
+        m_fade_conn[n].disconnect();
+    }
+
+    return cond; 
   }
 
   bool
@@ -344,36 +354,12 @@ namespace MPX
 
     for( int n = 0; n < 3; ++n )
     {
-      std::string text_cur;
+      std::string text_cur = m_text_cur.get()[n];
       std::string text_new;
 
-      switch(n)
+      if( m_text_new )
       {
-          case 0:
-              text_cur = m_text_cur.get().Artist; 
-              break;
-          case 1:
-              text_cur = m_text_cur.get().Album; 
-              break;
-          case 2:
-              text_cur = m_text_cur.get().Title; 
-              break;
-      }
-
-      if(m_text_new)
-      {
-          switch(n)
-          {
-              case 0:
-                  text_new = m_text_new.get().Artist; 
-                  break;
-              case 1:
-                  text_new = m_text_new.get().Album; 
-                  break;
-              case 2:
-                  text_new = m_text_new.get().Title; 
-                  break;
-          }
+          text_new = m_text_new.get()[n];
       }
 
       if( text_new == text_cur )
@@ -382,7 +368,7 @@ namespace MPX
       }
       else    
       {
-          cr->set_source_rgba (1.0, 1.0, 1.0, m_layout_alpha * layout_info[n].amod); 
+          cr->set_source_rgba (1.0, 1.0, 1.0, m_layout_alpha[n] * layout_info[n].amod); 
       }
 
       cr->set_operator (Cairo::OPERATOR_ATOP);
@@ -391,7 +377,19 @@ namespace MPX
       layout->set_markup(text_cur);
       layout->set_single_paragraph_mode (true);
       layout->set_wrap(Pango::WRAP_CHAR);
-      cr->move_to(layout_info[n].x, layout_info[n].y);
+
+      Pango::Rectangle Ink;
+      layout->get_pixel_extents(Ink, layout_extents[n]);
+
+      if( n == 1 )
+      {
+        cr->move_to(layout_info[0].x + layout_extents[0].get_width() + 6, layout_info[0].y);
+      }
+      else
+      {
+        cr->move_to(layout_info[n].x, layout_info[n].y);
+      }
+
       pango_cairo_show_layout (cr->cobj(), layout->gobj());
     }
   }
