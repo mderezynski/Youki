@@ -358,32 +358,6 @@ namespace MPX
                         AlbumsTreeStore = Gtk::TreeStore::create(Columns);
                         AlbumsTreeStoreFilter = Gtk::TreeModelFilter::create(AlbumsTreeStore);
 
-                        AlbumsTreeStoreFilter->set_visible_func(
-                                        sigc::mem_fun(
-                                                *this,
-                                                &AlbumTreeView::album_visible_func
-                                                ));
-
-                        AlbumsTreeStoreFilter->signal_row_inserted().connect((
-                                                sigc::hide(sigc::hide(sigc::mem_fun(
-                                                                        *this,
-                                                                        &AlbumTreeView::on_row_added_or_deleted
-                                                                        )))));
-
-                        AlbumsTreeStoreFilter->signal_row_deleted().connect((
-                                                sigc::hide(sigc::mem_fun(
-                                                                *this,
-                                                                &AlbumTreeView::on_row_added_or_deleted
-                                                                ))));
-
-
-                        AlbumsTreeStore->set_sort_func(0 , sigc::mem_fun( *this, &AlbumTreeView::slotSortAlpha ));
-                        AlbumsTreeStore->set_sort_func(1 , sigc::mem_fun( *this, &AlbumTreeView::slotSortDate ));
-                        AlbumsTreeStore->set_sort_func(2 , sigc::mem_fun( *this, &AlbumTreeView::slotSortRating ));
-                        AlbumsTreeStore->set_sort_func(3 , sigc::mem_fun( *this, &AlbumTreeView::slotSortStrictAlpha ));
-                        AlbumsTreeStore->set_sort_func(4 , sigc::mem_fun( *this, &AlbumTreeView::slotSortPlayScore ));
-                        AlbumsTreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
-
                         // Filter Widgets   
 
                         xml->get_widget(name_filter_entry, m_FilterEntry);
@@ -391,7 +365,8 @@ namespace MPX
 
                         // Filter Plugins
 
-                        Plugin_p p (new MPX::ViewAlbumsFilterPlugin::TextMatch);
+                        //Plugin_p p (new MPX::ViewAlbumsFilterPlugin::TextMatch);
+                        Plugin_p p (new MPX::ViewAlbumsFilterPlugin::LFMTopAlbums);
                         p->signal_refilter().connect(
                                         sigc::mem_fun(
                                                 *this,
@@ -451,6 +426,32 @@ namespace MPX
                         gtk_widget_realize(GTK_WIDGET(gobj()));
                         album_list_load ();
                         set_model(AlbumsTreeStoreFilter);
+
+                        AlbumsTreeStoreFilter->set_visible_func(
+                                        sigc::mem_fun(
+                                                *this,
+                                                &AlbumTreeView::album_visible_func
+                                                ));
+
+                        AlbumsTreeStoreFilter->signal_row_inserted().connect((
+                                                sigc::hide(sigc::hide(sigc::mem_fun(
+                                                                        *this,
+                                                                        &AlbumTreeView::on_row_added_or_deleted
+                                                                        )))));
+
+                        AlbumsTreeStoreFilter->signal_row_deleted().connect((
+                                                sigc::hide(sigc::mem_fun(
+                                                                *this,
+                                                                &AlbumTreeView::on_row_added_or_deleted
+                                                                ))));
+
+
+                        AlbumsTreeStore->set_sort_func(0 , sigc::mem_fun( *this, &AlbumTreeView::slotSortAlpha ));
+                        AlbumsTreeStore->set_sort_func(1 , sigc::mem_fun( *this, &AlbumTreeView::slotSortDate ));
+                        AlbumsTreeStore->set_sort_func(2 , sigc::mem_fun( *this, &AlbumTreeView::slotSortRating ));
+                        AlbumsTreeStore->set_sort_func(3 , sigc::mem_fun( *this, &AlbumTreeView::slotSortStrictAlpha ));
+                        AlbumsTreeStore->set_sort_func(4 , sigc::mem_fun( *this, &AlbumTreeView::slotSortPlayScore ));
+                        AlbumsTreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
                 }
 
                 void

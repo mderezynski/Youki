@@ -6,4 +6,6 @@ libmpx_parsers_la_LIBADD = -lxerces-c
 
 libmpx_parsers_la_SOURCES = 	\
 	xspf.hxx					\
-	xspf.cxx
+	xspf.cxx					\
+	xsd-topalbums-2.0.hxx		\
+	xsd-topalbums-2.0.cxx

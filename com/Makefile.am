@@ -40,6 +40,7 @@ libmpx_view_components_la_LIBADD =  	\
 		$(PYGTK_LIBS)				\
 		$(SEXYMM_LIBS)				\
 		$(top_builddir)/musicbrainz/libmpx-musicbrainz.la
+		$(top_builddir)/xmlcpp/libmpx-parsers.la
 
 libmpx_view_components_la_SOURCES =	\
 	view-collections.cc				\

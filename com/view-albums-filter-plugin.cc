@@ -29,7 +29,7 @@
 
 #include "mpx/mpx-uri.hh"
 #include "mpx/xml/xmltoc++.hh"
-#include "xsd-tag-topalbums.hxx"
+#include "xmlcpp/xsd-topalbums-2.0.hxx"
 
 #include <boost/format.hpp>
 
@@ -144,24 +144,25 @@ namespace MPX
             LFMTopAlbums::on_filter_issued( const Glib::ustring& text )
             {
                 m_FilterText = text;
-
-
                 m_Names.clear();
 
-                try{
-                        URI u ((boost::format ("http://ws.audioscrobbler.com/1.0/tag/%s/topalbums.xml") % m_FilterText.c_str()).str(), true);
-                        MPX::XmlInstance<LastFM::lfm> * Xml = new MPX::XmlInstance<LastFM::lfm>(Glib::ustring(u));
+                if( !m_FilterText.empty() )
+                {
+                        try{
+                                URI u ((boost::format ("http://ws.audioscrobbler.com/2.0/?method=tag.gettopalbums&tag=%s&api_key=b25b959554ed76058ac220b7b2e0a026") % m_FilterText.c_str()).str(), true);
+                                MPX::XmlInstance<lfm> * Xml = new MPX::XmlInstance<lfm>(Glib::ustring(u));
 
-                        for( LastFM::topalbums::album_sequence::const_iterator i = Xml->xml().topalbums().album().begin(); i != Xml->xml().topalbums().album().end(); ++i )
-                        {
-                            m_Names.insert( (*i).name() );
+                                for( topalbums::album_sequence::const_iterator i = Xml->xml().topalbums().album().begin(); i != Xml->xml().topalbums().album().end(); ++i )
+                                {
+                                    m_Names.insert( (*i).name() );
+                                }
+
+                                delete Xml;
                         }
-
-                        delete Xml;
+                        catch( ... ) {
+                                g_message("Exception!");
+                        }
                 }
-                catch( ... ) {
-                }
-
 
                 Signals.Refilter.emit();
             }
@@ -174,7 +175,7 @@ namespace MPX
             bool
             LFMTopAlbums::filter_delegate(const Gtk::TreeIter& iter, const ViewAlbumsColumnsT& columns)
             {
-                return m_Names.count( (*iter)[columns.Album] );
+                return m_FilterText.empty() || m_Names.count( (*iter)[columns.Album] );
             }
     }
 } // end namespace MPX 
