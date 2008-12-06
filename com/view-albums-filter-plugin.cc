@@ -150,7 +150,7 @@ namespace MPX
                 if( !m_FilterText.empty() )
                 {
                         try{
-                                URI u ((boost::format ("http://ws.audioscrobbler.com/2.0/?method=tag.gettopalbums&tag=%s&api_key=b25b959554ed76058ac220b7b2e0a026") % m_FilterText.c_str()).str(), true);
+                                URI u ((boost::format ("http://ws.audioscrobbler.com/2.0/?method=tag.gettopalbums&tag=%s&api_key=37cd50ae88b85b764b72bb4fe4041fe4") % m_FilterText.c_str()).str(), true);
                                 MPX::XmlInstance<lfm> * Xml = new MPX::XmlInstance<lfm>(Glib::ustring(u));
 
                                 for( topalbums::album_sequence::const_iterator i = Xml->xml().topalbums().album().begin(); i != Xml->xml().topalbums().album().end(); ++i )
@@ -208,7 +208,7 @@ namespace MPX
                 if( !m_FilterText.empty() )
                 {
                         try{
-                                URI u ((boost::format ("http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=%s&api_key=b25b959554ed76058ac220b7b2e0a026") % m_FilterText.c_str()).str(), true);
+                                URI u ((boost::format ("http://ws.audioscrobbler.com/2.0/?method=artist.getsimilar&artist=%s&api_key=37cd50ae88b85b764b72bb4fe4041fe4") % m_FilterText.c_str()).str(), true);
                                 MPX::XmlInstance<LastFM_SimilarArtists::lfm> * Xml = new MPX::XmlInstance<LastFM_SimilarArtists::lfm>(Glib::ustring(u));
 
                                 for( LastFM_SimilarArtists::similarartists::artist_sequence::const_iterator i = Xml->xml().similarartists().artist().begin(); i != Xml->xml().similarartists().artist().end(); ++i )
