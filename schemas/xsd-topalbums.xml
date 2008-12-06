@@ -2,6 +2,9 @@
 <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
 elementFormDefault="qualified" targetNamespace="LastFM">
 
+<xsd:element name="lfm">
+<xsd:complexType>
+<xsd:sequence>
 <xsd:element name="topalbums">
 <xsd:complexType>
     
@@ -10,31 +13,17 @@ elementFormDefault="qualified" targetNamespace="LastFM">
     <xsd:complexType>
       <xsd:sequence>
 
-        <xsd:element name="artist" type="xsd:string"/>
         <xsd:element name="name" type="xsd:string"/>
         <xsd:element name="mbid" type="xsd:string"/>
-        <xsd:element name="playcount" type="xsd:integer"/>
-        <xsd:element name="rank" type="xsd:integer"/>
-        <xsd:element name="url" type="xsd:string"/>
 
-        <xsd:element name="image">
-        <xsd:complexType>
-        <xsd:sequence>
-            <xsd:element name="large" type="xsd:string"/>
-            <xsd:element name="medium" type="xsd:string"/>
-            <xsd:element name="small" type="xsd:string"/>
-        </xsd:sequence>
-        </xsd:complexType>
-        </xsd:element>
-        
       </xsd:sequence>
     </xsd:complexType>
     </xsd:element>
     </xsd:sequence>
 
-    <xsd:attribute name="user" type="xsd:string"/>
-    <xsd:attribute name="type" type="xsd:string"/>
-
+</xsd:complexType>
+</xsd:element>
+</xsd:sequence>
 </xsd:complexType>
 </xsd:element>
 </xsd:schema>

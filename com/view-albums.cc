@@ -400,7 +400,8 @@ namespace MPX
                         m_FilterPlugins.push_back( p );
                         m_FilterPlugin_Current = p;
                         m_FilterPluginUI = p->get_ui();
-                        m_FilterPluginUI_Alignment->add( *m_FilterPluginUI );
+                        if( m_FilterPluginUI )
+                            m_FilterPluginUI_Alignment->add( *m_FilterPluginUI );
                     
 
                         m_FilterEntry->signal_changed().connect(
@@ -903,6 +904,7 @@ namespace MPX
                                 ReleaseType rt;
 
                                 std::string album = get<std::string>(r["album"]);
+                                track[ATTRIBUTE_ALBUM] = album;
 
                                 try{
                                         rating = m_Lib.get().albumGetMeanRatingValue(id);
@@ -1022,6 +1024,9 @@ namespace MPX
                                 (*iter)[Columns.RT] = rt; 
                                 (*iter)[Columns.PlayScore] = playscore; 
                                 (*iter)[Columns.AlbumTrack] = track;
+
+                                (*iter)[Columns.Album] = album;
+                                (*iter)[Columns.Artist] = artist;
                         } 
 
                 void

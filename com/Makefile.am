@@ -42,11 +42,14 @@ libmpx_view_components_la_LIBADD =  	\
 		$(top_builddir)/musicbrainz/libmpx-musicbrainz.la
 
 libmpx_view_components_la_SOURCES =	\
-	album-info-window.cc			\
-	view-albums.cc					\
-	view-albums-filter-plugin.cc	\
 	view-collections.cc				\
 	file-system-tree.cc				\
 	mb-import-album.cc				\
 	tagview.cc						\
-	treeview-popup.cc				
+	treeview-popup.cc				\
+									\
+	album-info-window.cc			\
+	view-albums.cc					\
+	view-albums-filter-plugin.cc	\
+	xsd-tag-topalbums.cxx
+
