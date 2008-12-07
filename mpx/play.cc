@@ -711,7 +711,7 @@ namespace MPX
                                 case GST_MESSAGE_ELEMENT:
                                         {
                                                 GstStructure const* s = gst_message_get_structure (message);
-                                                if (std::string (gst_structure_get_name (s)) == "spectrum")
+                                                if(std::string (gst_structure_get_name (s)) == "spectrum" && !g_atomic_int_get(&play.m_FadeStop))
                                                 {
                                                     GstClockTime endtime;
 
@@ -1429,8 +1429,7 @@ namespace MPX
                         m_FadeVolume = 1.;
                         update_fade_volume();
                         g_atomic_int_set(&m_FadeStop, 1);
-
-                        m_FadeConn = Glib::signal_timeout().connect( sigc::mem_fun( *this, &Play::fade_timeout ), 20);
+                        m_FadeConn = Glib::signal_timeout().connect( sigc::mem_fun( *this, &Play::fade_timeout ), 15);
                 }
 
         void
@@ -1439,7 +1438,6 @@ namespace MPX
                         Glib::Mutex::Lock L (m_FadeLock);
 
                         m_FadeConn.disconnect();
-
                         m_FadeVolume = 1.; 
                         update_fade_volume();
                         g_atomic_int_set(&m_FadeStop, 0);
@@ -1463,11 +1461,11 @@ namespace MPX
 
                         if(m_FadeVolume < 0.1)
                         {
-                                stop_stream ();  
-                                m_FadeVolume = 1.0;
-                                update_fade_volume ();
-                                g_atomic_int_set(&m_FadeStop, 0);
-                                return false;
+                            stop_stream ();  
+                            m_FadeVolume = 1.0;
+                            update_fade_volume ();
+                            g_atomic_int_set(&m_FadeStop, 0);
+                            return false;
                         }
 
                         return true;
