@@ -783,25 +783,26 @@ class TrackInfoQuery (threading.Thread):
 
             if len(Entities) > 0:
 
-                self.html += Template(tmpl_section_header).render(header=_('Track Contributors'))
+                self.html += Template(tmpl_section_header).render(header=_('Track Artists'))
                 self.html += "<div class='SectionContent'>"
 
                 for id in Entities:
 
                     entity = self.query.getArtistById(id, self.wsinc)   
 
-                    self.html += "<span style='font-weight:bold; font-size: large'>%s:</span><br/>" % entity.getName()
+                    self.html += "<span style='font-weight:bold; font-size: large; text-decoration: underline'>%s</span><br/><br/>" % entity.getName()
 
                     artist_rels = append_artist_rels(entity)
 
                     if len(artist_rels):
                         self.html += artist_rels 
-                        self.html += "<br/><br/>"
+                        self.html += "<br/>"
 
                     self.html += "<a href='http://www.google.com/search?q=%s'>Google</a>, " % urllib.quote(entity.getName())
                     self.html += "<a href='http://www.last.fm/music/%s'>Last.fm</a>, " % urllib.quote_plus(entity.getName())
                     self.html += "<a href='http://www.bbc.co.uk/music/artists/%s'>BBC</a>, " % id 
                     self.html += append_url_rels(entity)
+                    self.html += "<br/><br/>"
 
 
                 self.html += "</div>"

@@ -521,16 +521,18 @@ namespace MPX
                                                                 TRUE, NULL); 
                                         }
                                         else
-                                                if (BinId (m_pipeline_id) == BIN_HTTP_MP3)
-                                                {
-                                                        g_object_set (G_OBJECT (gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP_MP3]), "src")),
-                                                                        "abort",
-                                                                        TRUE, NULL); 
-                                                }
+                                        if (BinId (m_pipeline_id) == BIN_HTTP_MP3)
+                                        {
+                                                g_object_set (G_OBJECT (gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP_MP3]), "src")),
+                                                                "abort",
+                                                                TRUE, NULL); 
+                                        }
 
                                         m_metadata.reset();
                                         property_stream_type_ = ustring();
-                                        stop_stream ();
+                                        //stop_stream ();
+                                        property_status_ = PLAYSTATUS_STOPPED;
+                                        fade_init ();
                                         break;
 
                                 case PLAYSTATUS_WAITING:
@@ -965,10 +967,34 @@ namespace MPX
                                         // Connect MCS to Equalizer Bands
                                         for (unsigned int n = 0; n < 10; ++n)
                                         {
-                                                mcs->subscribe ("audio",
-                                                                (band_f % n).str(), sigc::bind (sigc::mem_fun (*this, &Play::eq_band_changed), n));
-                                                g_object_set (G_OBJECT (m_equalizer),
-                                                                (band_f % n).str().c_str(), mcs->key_get <double> ("audio", (band_f % n).str()), NULL);
+                                                mcs->subscribe(
+
+                                                          "audio"
+
+                                                        , (band_f % n).str()
+
+                                                        , sigc::bind(
+                                                            sigc::mem_fun(
+                                                                *this,
+                                                                &Play::eq_band_changed
+                                                          )
+
+                                                        , n
+                                                ));
+
+                                                g_object_set(
+
+                                                          G_OBJECT (m_equalizer)
+
+                                                        , (band_f % n).str().c_str()
+
+                                                        , mcs->key_get<double>(
+                                                              "audio"
+                                                            , (band_f % n).str()
+                                                          )
+
+                                                        , NULL
+                                                );
                                         }
                                 }
                                 else
@@ -1404,7 +1430,7 @@ namespace MPX
                         update_fade_volume();
                         g_atomic_int_set(&m_FadeStop, 1);
 
-                        m_FadeConn = Glib::signal_timeout().connect( sigc::mem_fun( *this, &Play::fade_timeout ), 100);
+                        m_FadeConn = Glib::signal_timeout().connect( sigc::mem_fun( *this, &Play::fade_timeout ), 20);
                 }
 
         void

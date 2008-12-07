@@ -48,13 +48,17 @@
 #include "mpx/xml/xspf.hh"
 #include "mpx/com/mb-import-album.hh"
 #include "mpx/mpx-markov-analyzer-thread.hh"
+
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
 
 #include "dialog-about.hh"
+#include "dialog-equalizer.hh"
 #include "dialog-filebrowser.hh"
+
 #include "import-share.hh"
 #include "import-folder.hh"
+
 #include "infoarea.hh"
 #include "mlibmanager.hh"
 #include "play.hh"
@@ -81,7 +85,6 @@
 #include <X11/Xlib.h>
 #include <X11/XF86keysym.h>
 #include <gdk/gdkx.h>
-#include <gdl/gdl.h>
 
 using namespace Glib;
 using namespace Gtk;
@@ -94,7 +97,27 @@ using namespace boost::python;
 
 namespace
 {
-        char const * MenubarMain =
+        char const ACTION_PLAY []           = "action-play";
+        char const ACTION_STOP []           = "action-stop";
+        char const ACTION_NEXT []           = "action-next";
+        char const ACTION_PREV []           = "action-prev";
+        char const ACTION_PAUSE []          = "action-pause";
+        char const ACTION_PLUGINS []        = "action-plugins";
+        char const ACTION_EQUALIZER []      = "action-equalizer";
+        char const ACTION_PREFERENCES []    = "action-preferences";
+        char const ACTION_SHOW_INFO []      = "action-show-info";
+        char const ACTION_SHOW_VIDEO []     = "action-show-video";
+        char const ACTION_SHOW_SOURCES []   = "action-show-sources";
+        char const ACTION_MLIBMANAGER []    = "action-mlibmanager";
+        char const ACTION_IMPORT_FOLDER []  = "action-import-folder";
+        char const ACTION_IMPORT_SHARE []   = "action-import-share";
+        char const ACTION_VACUUM_LIB []     = "action-vacuum-lib";
+        char const ACTION_ABOUT []          = "action-about";
+        char const ACTION_QUIT []           = "action-quit";
+        char const ACTION_MB_IMPORT []      = "action-mb-import";
+        char const ACTION_PLAY_FILES []     = "action-play-files";
+
+        char MenubarMain [] =
                 "<ui>"
                 ""
                 "<menubar name='MenubarMain'>"
@@ -106,6 +129,7 @@ namespace
                 "         <menuitem action='action-quit'/>"
                 "   </menu>"
                 "   <menu action='MenuEdit'>"
+                "         <menuitem action='action-equalizer'/>"
                 "         <menuitem action='action-preferences'/>"
                 "         <menuitem action='action-plugins'/>"
 #ifdef HAVE_HAL
@@ -130,16 +154,6 @@ namespace
                 "</ui>"
                 "";
 
-        char const ACTION_PLAY [] = "action-play";
-        char const ACTION_STOP [] = "action-stop";
-        char const ACTION_NEXT [] = "action-next";
-        char const ACTION_PREV [] = "action-prev";
-        char const ACTION_PAUSE [] = "action-pause";
-        char const ACTION_PLUGINS [] = "action-plugins";
-        char const ACTION_PREFERENCES[] ="action-preferences";
-        char const ACTION_SHOW_INFO[] = "action-show-info";
-        char const ACTION_SHOW_VIDEO[] = "action-show-video";
-        char const ACTION_SHOW_SOURCES[] = "action-show-sources";
 }
 
 namespace MPX
@@ -573,8 +587,9 @@ namespace MPX
         , m_Play(*(services.get<Play>("mpx-service-play")))
         , m_NewTrack(false)
         {
-                                  m_ErrorManager = new ErrorManager;
-                                  m_AboutDialog = new AboutDialog;
+                                  m_ErrorManager    = new ErrorManager;
+                                  m_AboutDialog     = new AboutDialog;
+                                  m_Equalizer       = MPX::Equalizer::create();
 
                                   mpx_py_init ();
 
@@ -785,109 +800,154 @@ namespace MPX
                                                           _("_Help")
                                                           ));
 
-                                  m_actions->add (Action::create ("action-play-files",
-                                                          Gtk::Stock::OPEN,
-                                                          _("_Play Files...")),
-                                                  sigc::mem_fun (*this, &Player::on_action_cb_play_files));
+                                  m_actions->add( Action::create(
+
+                                                    ACTION_PLAY_FILES,
+
+                                                    Gtk::Stock::OPEN,
+                                                    _("_Play Files...")),
+                                                    sigc::mem_fun( *this, &Player::on_action_cb_play_files ));
 
 #ifndef HAVE_HAL
-                                  m_actions->add (Action::create ("action-import-folder",
-                                                          Gtk::Stock::HARDDISK,
-                                                          _("Import _Folder")),
-                                                  sigc::mem_fun (*this, &Player::on_import_folder));
+                                  m_actions->add( Action::create(
+    
+                                                    ACTION_IMPORT_FOLDER,
 
-                                  m_actions->add (Action::create ("action-import-share",
-                                                          Gtk::Stock::NETWORK,
-                                                          _("Import _Share")),
-                                                  sigc::mem_fun (*this, &Player::on_import_share));
+                                                    Gtk::Stock::HARDDISK,
+                                                    _("Import _Folder")),
+                                                    sigc::mem_fun (*this, &Player::on_import_folder));
 
-                                  m_actions->add (Action::create("action-vacuum-lib",
-                                                          _("_Vacuum Music Library"),
-                                                          _("Remove dangling files")),
-                                                  sigc::mem_fun (m_Library, &Library::vacuum));
+                                  m_actions->add( Action::create( 
+    
+                                                    ACTION_IMPORT_SHARE,
+
+                                                    Gtk::Stock::NETWORK,
+                                                    _("Import _Share")),
+                                                    sigc::mem_fun (*this, &Player::on_import_share));
+
+                                  m_actions->add( Action::create(
+
+                                                    ACTION_VACUUM_LIB,
+
+                                                    _("_Vacuum Music Library"),
+                                                    _("Remove dangling files")),
+                                                    sigc::mem_fun( m_Library, &Library::vacuum ));
+
 #else
                                   MPX::MLibManager & mlibman = (*(services.get<MLibManager>("mpx-service-mlibman")));
-                                  m_actions->add (Action::create ("action-mlibmanager",
-                                                          _("_Music Library..."),
-                                                          _("Add or Remove Music")),
-                                                  sigc::mem_fun (mlibman, &MLibManager::present));
+
+                                  m_actions->add( Action::create(
+    
+                                                    ACTION_MLIBMANAGER,
+
+                                                    _("_Music Library..."),
+                                                    _("Add or Remove Music")),
+                                                    sigc::mem_fun(mlibman, &MLibManager::present));
 #endif
 
-                                  m_actions->add (Action::create("action-mb-import",
-                                                          Gtk::Stock::ADD,
-                                                          _("Import Album"),
-                                                          _("Import an album using MusicBrainz")),
-                                                  sigc::mem_fun (*this, &Player::on_import_album));
+                                  m_actions->add( Action::create( 
+
+                                                    ACTION_MB_IMPORT,
+
+                                                    Gtk::Stock::ADD,
+                                                    _("Import Album"),
+                                                    _("Import an album using MusicBrainz")),
+                                                    sigc::mem_fun (*this, &Player::on_import_album));
+
+                                  m_actions->add( Action::create(
+
+                                                    ACTION_PLUGINS,
+
+                                                    Gtk::StockID(MPX_STOCK_PLUGIN),
+                                                    _("Plugins..."),
+                                                    _("View and Enable or Disable Plugins")),
+                                                    sigc::mem_fun (*this, &Player::on_action_cb_show_plugins ));
+
+                                  m_actions->add( Action::create(
+
+                                                    ACTION_EQUALIZER,
+
+                                                    Gtk::StockID( MPX_STOCK_EQUALIZER ),
+                                                    _("Equalizer..."),
+                                                    _("Adjust audio bands")),
+                                                    sigc::mem_fun (*m_Equalizer, &Gtk::Widget::show ));
 
 
-                                  m_actions->add (Action::create (ACTION_PLUGINS,
-                                                          Gtk::StockID(MPX_STOCK_PLUGIN),
-                                                          _("Plugins..."),
-                                                          _("View and Enable or Disable Plugins")),
-                                                  sigc::mem_fun (*this, &Player::on_action_cb_show_plugins ));
+                                  m_actions->add( Action::create(
 
+                                                    ACTION_PREFERENCES,
 
+                                                    Gtk::Stock::EXECUTE,
+                                                    _("_Preferences..."),
+                                                    _("Set up Audio and other Settings")),
+                                                    sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
 
-                                  m_actions->add (Action::create (ACTION_PREFERENCES,
-                                                          Gtk::Stock::EXECUTE,
-                                                          _("_Preferences..."),
-                                                          _("Set up Audio and other Settings")),
-                                                  sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
+                                  m_actions->add( Action::create(
 
+                                                    ACTION_QUIT, 
 
-                                  m_actions->add (Action::create ("action-quit",
-                                                          Gtk::Stock::QUIT,
-                                                          _("_Quit")),
-                                                  AccelKey("<ctrl>Q"),
-                                                  sigc::ptr_fun ( &Gtk::Main::quit ));
+                                                    Gtk::Stock::QUIT,
+                                                    _("_Quit")),
+                                                    AccelKey("<ctrl>Q"),
+                                                    sigc::ptr_fun ( &Gtk::Main::quit ));
 
+                                  m_actions->add( Action::create( 
 
-                                  m_actions->add (Action::create ("action-about",
-                                                          Gtk::Stock::ABOUT,
-                                                          _("_About")),
-                                                  sigc::mem_fun ( *m_AboutDialog, &AboutDialog::present ));
+                                                    ACTION_ABOUT,
 
+                                                    Gtk::Stock::ABOUT,
+                                                    _("_About")),
+                                                    sigc::mem_fun ( *m_AboutDialog, &AboutDialog::present ));
 
-                                  m_actions->add (Action::create (ACTION_PLAY,
-                                                          Gtk::Stock::MEDIA_PLAY,
-                                                          _("Play")),
-                                                  sigc::mem_fun (*this, &Player::on_controls_play ));
+                                  m_actions->add( Action::create( 
 
+                                                    ACTION_PLAY,
 
-                                  m_actions->add (ToggleAction::create (ACTION_PAUSE,
-                                                          Gtk::Stock::MEDIA_PAUSE,
-                                                          _("Pause")),
-                                                  sigc::mem_fun (*this, &Player::on_controls_pause ));
+                                                    Gtk::Stock::MEDIA_PLAY,
+                                                    _("Play")),
+                                                    sigc::mem_fun (*this, &Player::on_controls_play ));
 
+                                  m_actions->add( ToggleAction::create(
 
-                                  m_actions->add (Action::create (ACTION_STOP,
-                                                          Gtk::Stock::MEDIA_STOP,
-                                                          _("Stop")),
-                                                  sigc::mem_fun (*this, &Player::stop ));
+                                                    ACTION_PAUSE,
 
+                                                    Gtk::Stock::MEDIA_PAUSE,
+                                                    _("Pause")),
+                                                    sigc::mem_fun (*this, &Player::on_controls_pause ));
 
-                                  m_actions->add (Action::create (ACTION_NEXT,
-                                                          Gtk::Stock::MEDIA_NEXT,
-                                                          _("Next")),
-                                                  sigc::mem_fun (*this, &Player::on_controls_next ));
+                                  m_actions->add( Action::create(
 
+                                                    ACTION_STOP,
 
-                                  m_actions->add (Action::create (ACTION_PREV,
-                                                          Gtk::Stock::MEDIA_PREVIOUS,
-                                                          _("Prev")),
-                                                  sigc::mem_fun (*this, &Player::on_controls_prev ));
+                                                    Gtk::Stock::MEDIA_STOP,
+                                                    _("Stop")),
+                                                    sigc::mem_fun (*this, &Player::stop ));
 
+                                  m_actions->add( Action::create(
+
+                                                    ACTION_NEXT,
+
+                                                    Gtk::Stock::MEDIA_NEXT,
+                                                    _("Next")),
+                                                    sigc::mem_fun (*this, &Player::on_controls_next ));
+
+                                  m_actions->add( Action::create(
+
+                                                    ACTION_PREV,
+
+                                                    Gtk::Stock::MEDIA_PREVIOUS,
+                                                    _("Prev")),
+                                                    sigc::mem_fun (*this, &Player::on_controls_prev ));
 
                                   m_ui_manager->insert_action_group(m_actions);
-
 
                                   if(Util::ui_manager_add_ui(m_ui_manager, MenubarMain, *this, _("Main Menubar")))
                                   {
                                           dynamic_cast<Alignment*>(
-                                                          m_ref_xml->get_widget("alignment-menu")
-                                                          )->add(
-                                                                  *(m_ui_manager->get_widget ("/MenubarMain"))
-                                                                );
+                                                m_ref_xml->get_widget("alignment-menu")
+                                          )->add(
+                                                *(m_ui_manager->get_widget ("/MenubarMain"))
+                                          );
                                   }
 
                                   /*- Playback Controls ---------------------------------------------*/ 

@@ -64,6 +64,7 @@ class CoverFlowWidget;
 namespace MPX
 {
     class AboutDialog;
+    class Equalizer;
     class ErrorManager;
     class InfoArea;
     class MLibManager;
@@ -284,15 +285,21 @@ namespace MPX
     // widgets
 
         Gtk::Statusbar                * m_Statusbar;
+
 		Gtk::Notebook                 * m_MainNotebook;
         Gtk::Notebook                 * m_OuterNotebook;
+
 		Gtk::VolumeButton             * m_Volume;
 		Gtk::HScale                   * m_Seek;
 		Gtk::Label                    * m_TimeLabel;
+
         Gtk::Notebook                 * m_InfoNotebook;
         Gtk::Expander                 * m_InfoExpander;
-        AboutDialog                   * m_AboutDialog;
+
         WidgetWidgetMap                 m_InfoWidgetMap;
+
+        AboutDialog                   * m_AboutDialog;
+        Equalizer                     * m_Equalizer;
 
     // metadata
 

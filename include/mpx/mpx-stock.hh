@@ -34,6 +34,7 @@
 #  define MPX_STOCK_LASTFM          "mpx-stock-lastfm"
 #  define MPX_STOCK_PLUGIN_DISABLED "mpx-stock-plugin-disabled"
 #  define MPX_STOCK_ERROR           "mpx-stock-error"
+#  define MPX_STOCK_EQUALIZER       "mpx-stock-equalizer"
 
 namespace MPX
 {

@@ -2640,6 +2640,7 @@ namespace MPX
                         {
                                 UriSchemes s;
                                 s.push_back("file");
+                                s.push_back("lastfm-tag");
                                 return s;
                         }
 

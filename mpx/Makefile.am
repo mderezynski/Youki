@@ -110,6 +110,9 @@ audiosource_bin_SOURCES =				\
 	dialog-about.hh				\
 	dialog-about.cc				\
 								\
+	dialog-equalizer.hh			\
+	dialog-equalizer.cc			\
+								\
 	dialog-filebrowser.hh		\
 	dialog-filebrowser.cc		\
 								\

@@ -17,37 +17,46 @@ namespace MPX
         InfoArea::InfoArea(
                         const Glib::RefPtr<Gnome::Glade::Xml>&      xml,
                         const std::string&                          name
-                        )
-                : Gnome::Glade::WidgetLoader<Gtk::EventBox>(xml, name)
-                  , m_spectrum_data(SPECT_BANDS, 0)
-                  , m_spectrum_peak(SPECT_BANDS, 0)
-                  , m_cover_alpha(0.)
-                  , m_pressed(false)
-                  , cover_anim_area_width(72.0)
-                  , cover_anim_area_height(72.0)
-                  , cover_anim_area_x0(6.0)
-                  , cover_anim_area_y0(6.0)
-                  , cover_anim_area_x1(cover_anim_area_x0 + cover_anim_area_width)
-                  , cover_anim_area_y1(cover_anim_area_y0 + cover_anim_area_height)
-                  , cover_anim_initial_pos(6.0 - 72.0)
-                  , cover_anim_initial_velocity(473.3)
-                  , cover_anim_gravity(359.1)
-                  , cover_anim_wall(cover_anim_area_x1)
-                  , cover_anim_wall_elasticity(0.11) //0.120;
-                  , cover_anim_time_scale(1.0)
-                  , cover_anim_fps(25)
-                  , cover_anim_interval(1000 / cover_anim_fps)
-                  , cover_anim_dt(InfoArea::cover_anim_time_scale / InfoArea::cover_anim_fps)
+        )
+        : Gnome::Glade::WidgetLoader<Gtk::EventBox>(xml, name)
+        , m_spectrum_data(SPECT_BANDS, 0)
+        , m_spectrum_peak(SPECT_BANDS, 0)
+        , m_cover_alpha(0.)
+        , m_pressed(false)
+        , cover_anim_area_width(78.0)
+        , cover_anim_area_height(78.0)
+        , cover_anim_area_x0(3.0)
+        , cover_anim_area_y0(3.0)
+        , cover_anim_area_x1(cover_anim_area_x0 + cover_anim_area_width)
+        , cover_anim_area_y1(cover_anim_area_y0 + cover_anim_area_height)
+        , cover_anim_initial_pos(3.0 - 78.0)
+        , cover_anim_initial_velocity(473.3)
+        , cover_anim_gravity(359.1)
+        , cover_anim_wall(cover_anim_area_x1)
+        , cover_anim_wall_elasticity(0.11) //0.120;
+        , cover_anim_time_scale(1.0)
+        , cover_anim_fps(25)
+        , cover_anim_interval(1000 / cover_anim_fps)
+        , cover_anim_dt(InfoArea::cover_anim_time_scale / InfoArea::cover_anim_fps)
         {
-                m_layout_alpha[0] = 0;
-                m_layout_alpha[1] = 0;
-                m_layout_alpha[2] = 0;
+            /*
+            gtk_widget_realize(GTK_WIDGET(gobj()));
 
-                add_events (Gdk::BUTTON_PRESS_MASK);
+            m_layout_dot = create_pango_layout ("");
+            m_layout_dot->set_markup("<small>●</small>");
+            Pango::Rectangle Ink;
+            m_layout_dot->get_pixel_extents(Ink, layout_extents[4]); 
+            */
 
-                enable_drag_dest ();
+            m_layout_alpha[0] = 0;
+            m_layout_alpha[1] = 0;
+            m_layout_alpha[2] = 0;
 
-                set_tooltip_text(_("Drag and drop files here to play them."));
+            add_events (Gdk::BUTTON_PRESS_MASK);
+
+            enable_drag_dest ();
+
+            set_tooltip_text(_("Drag and drop files here to play them."));
         }
 
   void
@@ -105,7 +114,7 @@ namespace MPX
 
                   if( metadata.Image )
                   {
-                          set_cover (metadata.Image->scale_simple (72, 72, Gdk::INTERP_BILINEAR), first);
+                          set_cover (metadata.Image->scale_simple (78, 78, Gdk::INTERP_BILINEAR), first);
                   }
                   else if( first )
                   {
@@ -160,7 +169,7 @@ namespace MPX
                   {
                           Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
                           Cairo::RefPtr<Cairo::ImageSurface> surface = Util::cairo_image_surface_from_pixbuf (pixbuf);
-                          surface = Util::cairo_image_surface_round(surface, 3.5);
+                          //surface = Util::cairo_image_surface_round(surface, 3.5);
                           set_cover( surface, first );
                   }
                   else

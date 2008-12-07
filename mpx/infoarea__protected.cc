@@ -12,7 +12,7 @@ namespace MPX
 
                         if ((event->window == get_window()->gobj()) && (x >= 6) && (x <= (m_cover_pos+72)) && (y >= 3) && (y <= 75))
                         {
-                                m_pressed = true;
+                                //m_pressed = true;
                                 queue_draw ();
                         }
 
@@ -25,7 +25,7 @@ namespace MPX
                         int x = int (event->x);
                         int y = int (event->y);
 
-                        m_pressed = false;
+                        //m_pressed = false;
                         queue_draw ();
 
                         if ((event->window == get_window()->gobj()) && (x >= 6) && (x <= (m_cover_pos+72)) && (y >= 3) && (y <= 75))

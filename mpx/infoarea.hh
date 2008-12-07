@@ -44,7 +44,7 @@ namespace MPX
           sigc::connection                      m_cover_anim_conn_fade;
           sigc::connection                      m_cover_anim_conn_slide;
           sigc::connection                      m_decay_conn;
-          sigc::connection                      m_fade_conn[3];
+          sigc::connection                      m_fade_conn[5];
 
           bool                                  m_pressed;
           Glib::Mutex                           m_surface_lock;
@@ -69,7 +69,8 @@ namespace MPX
           int    cover_anim_interval;
           double cover_anim_dt;
 
-          Pango::Rectangle layout_extents[3];
+          Pango::Rectangle layout_extents[5];
+          Glib::RefPtr<Pango::Layout> m_layout_dot;
 
     public:
 

@@ -1,6 +1,7 @@
 #include "config.h"
 #include "infoarea.hh"
 #include <glibmm.h>
+#include "mpx/widgets/cairo-extensions.hh"
 
 using namespace Glib;
 using boost::get;
@@ -16,9 +17,9 @@ namespace
 
   LayoutData const layout_info[] =
   {
-    {1.  , 84,  6},
-    {0.65, 84, 22},
-    {1.  , 84, 52},
+    {1.  , 89,  6},
+    {0.65, 89, 22},
+    {1.  , 89, 53},
   };
 
   struct Color
@@ -58,10 +59,10 @@ namespace MPX
 
 
     static char const *
-      text_b_f ("<span size='12500'><b><i>%s</i></b></span>");
+      text_b_f ("<span size='12500'><i>%s</i></span>");
 
     static char const *
-      text_b_f2 ("<span size='12500'><b><i>%s</i></b> (<i>%s</i>)</span>");
+      text_b_f2 ("<span size='12500'><i>%s</i> (<i>%s</i>)</span>");
 
 
     static char const *
@@ -69,10 +70,10 @@ namespace MPX
 
 
     static char const *
-      text_album_artist_f ("<span size='12500'><b>%s</b> (<i>%s</i>)</span>");
+      text_album_artist_f ("<span size='12500'>%s (<i>%s</i>)</span>");
 
     static char const *
-      text_album_f ("<span size='12500'><b>%s</b></span>");
+      text_album_f ("<span size='12500'>%s</span>");
 
     static char const *
       text_artist_f ("<span size='12500'>(<i>%s</i>)</span>");
@@ -128,7 +129,7 @@ namespace MPX
 
     if( metadata[ATTRIBUTE_GENRE] )
     {
-      set[2] = Util::gprintf (text_i_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_GENRE].get())).c_str());
+      set[4] = Util::gprintf (text_i_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_GENRE].get())).c_str());
     }
   }
 
@@ -268,13 +269,39 @@ namespace MPX
   InfoArea::draw_background (Cairo::RefPtr<Cairo::Context> & cr)
   {
     Gtk::Allocation allocation = get_allocation ();
-    cr->set_source_rgb(0., 0., 0.);
+
+    /*
+    cr->set_line_width(1.);
+
+    Cairo::RefPtr<Cairo::LinearGradient> gr = Cairo::LinearGradient::create(
+            allocation.get_width()/2, 
+            0,
+            allocation.get_width()/2,
+            allocation.get_height()
+    );
+
+    gr->add_color_stop_rgb( 0.0, 0.30, 0.30, 0.30 );
+    gr->add_color_stop_rgb( 0.1, 0.00, 0.00, 0.00 );
+    gr->add_color_stop_rgb( 0.95, 0.20, 0.20, 0.20 );
+
+    cr->set_source( gr );
+    */
+
+    cr->set_source_rgb(0.,0.,0.);
     Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 7.);
     cr->fill ();
 
-    /*Gdk::Cairo::set_source_color(cr, get_style()->get_background(get_state()));
-    cr->set_line_width(2);
-    cr->stroke();*/
+    cr->set_line_width(0.5);
+
+    Util::cairo_rounded_rect(cr, 0.5, 0.5, allocation.get_width()-1, allocation.get_height()-1, 7.);
+    cr->set_source_rgb(0.6, 0.6, 0.6);
+    cr->stroke();
+
+    Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 7.);
+    cr->set_source_rgb(0.05, 0.05, 0.05);
+    cr->stroke();
+
+    cr->set_line_width(1.);
   }
 
   void
@@ -287,21 +314,42 @@ namespace MPX
         if( m_cover_pos >= cover_anim_area_x0 - m_cover_surface_new.get()->get_width ())
         {
           cr->save ();
-          cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
+
+          RoundedRectangle( cr, cover_anim_area_x0+(m_pressed?1:0),
                          cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-                                                             cover_anim_area_height+(m_pressed?1:0));
+                                                             cover_anim_area_height+(m_pressed?1:0), 4.5,
+            CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )
+          );
+
           cr->clip ();
+
           double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface_new.get()->get_height ()) / 2;
-          try{
-              Util::draw_cairo_image (cr, m_cover_surface_new.get(), m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), 1.);
-          } catch( ... ) {
-          }
+
+          Util::draw_cairo_image (cr, m_cover_surface_new.get(), m_cover_pos + (m_pressed?1:0), y + (m_pressed?1:0), 1.);
+
           cr->restore ();
         }
 
+          cr->save ();
+
+          RoundedRectangle( cr, cover_anim_area_x0+(m_pressed?1:0),
+                         cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
+                                                             cover_anim_area_height+(m_pressed?1:0), 4.5,
+            CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )
+          );
+
+          cr->clip ();
+
+          double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface_cur.get()->get_height ()) / 2;
+
+          Util::draw_cairo_image (cr, m_cover_surface_cur.get(), cover_anim_area_x0 + (m_pressed?1:0), cover_anim_area_y0 + (m_pressed?1:0), m_cover_alpha/2.);
+
+          cr->restore ();
+
+        /*
         cr->save ();
 
-        double wh = 72 - (15*m_cover_alpha);
+        double wh = 78 - (15*m_cover_alpha);
 
         cr->save ();
         cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
@@ -310,28 +358,32 @@ namespace MPX
         cr->clip ();
 
         //cr->rotate((2*M_PI)*(1. - m_cover_alpha));
-        cr->scale(wh/72., wh/72.);
+        cr->scale(wh/78., wh/78.);
         try{
                 Util::draw_cairo_image(
                     cr,
                     m_cover_surface_cur.get(),
-                    (cover_anim_area_x0 + ((72.-wh)/2.)) - pow((1./m_cover_alpha),9),
-                    (cover_anim_area_y0 + ((72.-wh)/2.)),
+                    (cover_anim_area_x0 + ((78.-wh)/2.)) - pow((1./m_cover_alpha),9),
+                    (cover_anim_area_y0 + ((78.-wh)/2.)),
                     m_cover_alpha/2.
                 );
         } catch( ... )
         {
         }
         cr->restore ();
+        */
     }
     else
     if( m_cover_surface_cur && (m_cover_pos >= cover_anim_area_x0 - m_cover_surface_cur.get()->get_width ()) )
     {
           cr->save ();
 
-          cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
+          RoundedRectangle( cr, cover_anim_area_x0+(m_pressed?1:0),
                          cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-                                                             cover_anim_area_height+(m_pressed?1:0));
+                                                             cover_anim_area_height+(m_pressed?1:0), 4.5,
+            CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )
+          );
+
           cr->clip ();
 
           double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface_cur.get()->get_height ()) / 2;
@@ -362,17 +414,6 @@ namespace MPX
           text_new = m_text_new.get()[n];
       }
 
-      if( text_new == text_cur )
-      {
-          cr->set_source_rgba (1.0, 1.0, 1.0, 1. * layout_info[n].amod); 
-      }
-      else    
-      {
-          cr->set_source_rgba (1.0, 1.0, 1.0, m_layout_alpha[n] * layout_info[n].amod); 
-      }
-
-      cr->set_operator (Cairo::OPERATOR_ATOP);
-
       Glib::RefPtr<Pango::Layout> layout = create_pango_layout ("");
       layout->set_markup(text_cur);
       layout->set_single_paragraph_mode (true);
@@ -390,6 +431,16 @@ namespace MPX
         cr->move_to(layout_info[n].x, layout_info[n].y);
       }
 
+      if( text_new == text_cur )
+      {
+          cr->set_source_rgba (1.0, 1.0, 1.0, 1. * layout_info[n].amod); 
+      }
+      else    
+      {
+          cr->set_source_rgba (1.0, 1.0, 1.0, m_layout_alpha[n] * layout_info[n].amod); 
+      }
+
+      cr->set_operator (Cairo::OPERATOR_ATOP);
       pango_cairo_show_layout (cr->cobj(), layout->gobj());
     }
   }

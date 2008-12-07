@@ -3,6 +3,7 @@ gladedir = $(pkgdatadir)/glade
 glade_DATA = 							\
 		dialog-filebrowser.glade		\
 		dialog-simple-entry.glade		\
+		equalizer.glade					\
 		import-folder.glade				\
 		import-share.glade				\
 		mlibmanager.glade				\
