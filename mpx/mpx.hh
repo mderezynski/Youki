@@ -70,6 +70,7 @@ namespace MPX
     class MLibManager;
     class Play;
     class Preferences;
+    class VolumeControl;
 
     class Player
      : public Gnome::Glade::WidgetLoader<Gtk::Window>
@@ -227,8 +228,8 @@ namespace MPX
         CapsMap_t                       m_source_c;
 
 
-		typedef std::map<ItemKey, PlaybackSource*>       SourcesMap;
 		typedef std::map<std::string, ItemKey>           UriSchemeMap;
+		typedef std::map<ItemKey, PlaybackSource*>       SourcesMap;
 
 		UriSchemeMap                    m_UriMap;
 		SourcesMap                      m_Sources;
@@ -252,7 +253,6 @@ namespace MPX
 		DBusObjectsT                    DBusObjects;
 		DBusGConnection               * m_SessionBus;
         bool                            m_startup_complete;
-        Glib::RecMutex                  m_quit_blocked;
 
 		int                             m_Seeking;
 		gdouble                         m_TrackPlayedSeconds;
@@ -300,6 +300,7 @@ namespace MPX
 
         AboutDialog                   * m_AboutDialog;
         Equalizer                     * m_Equalizer;
+        VolumeControl                 * m_VolumeControl;
 
     // metadata
 

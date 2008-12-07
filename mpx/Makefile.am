@@ -215,7 +215,10 @@ audiosource_bin_SOURCES =				\
 	video-playback.cc			\
 								\
 	video-widget.hh				\
-	video-widget.cc				
+	video-widget.cc				\
+								\
+	volume-control.hh			\
+	volume-control.cc
 
 if HAVE_HAL								
 audiosource_bin_SOURCES += hal.cc

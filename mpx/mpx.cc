@@ -61,10 +61,13 @@
 
 #include "infoarea.hh"
 #include "mlibmanager.hh"
-#include "play.hh"
 #include "preferences.hh"
-#include "request-value.hh"
 #include "sidebar.hh"
+#include "volume-control.hh"
+
+#include "play.hh"
+
+#include "request-value.hh"
 
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
@@ -129,16 +132,18 @@ namespace
                 "         <menuitem action='action-quit'/>"
                 "   </menu>"
                 "   <menu action='MenuEdit'>"
-                "         <menuitem action='action-equalizer'/>"
                 "         <menuitem action='action-preferences'/>"
                 "         <menuitem action='action-plugins'/>"
+                "         <separator name='sep02'/>"
 #ifdef HAVE_HAL
                 "         <menuitem action='action-mlibmanager'/>"
 #else
                 "         <menuitem action='action-import-folder'/>"
                 "         <menuitem action='action-import-share'/>"
                 "	      <menuitem action='action-vacuum-lib'/>"
+                "         <separator name='sep03'/>"
 #endif // HAVE_HAL
+                "         <menuitem action='action-equalizer'/>"
                 "   </menu>"
                 "   <menu action='MenuView'>"
                 "   </menu>"
@@ -587,15 +592,18 @@ namespace MPX
         , m_Play(*(services.get<Play>("mpx-service-play")))
         , m_NewTrack(false)
         {
+                                  IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
+                                  register_default_stock_icons();
+
                                   m_ErrorManager    = new ErrorManager;
                                   m_AboutDialog     = new AboutDialog;
                                   m_Equalizer       = MPX::Equalizer::create();
+                                  m_VolumeControl   = new VolumeControl( xml );
 
                                   mpx_py_init ();
 
                                   m_ref_xml->get_widget("statusbar", m_Statusbar);
                                   m_ref_xml->get_widget("notebook-info", m_InfoNotebook);
-                                  m_ref_xml->get_widget("volumebutton", m_Volume);
                                   m_ref_xml->get_widget("label-time", m_TimeLabel);
                                   m_ref_xml->get_widget("scale-seek", m_Seek);
 
@@ -641,9 +649,6 @@ namespace MPX
                                   {
                                           g_warning("%s: Couldn't set main window icon", G_STRLOC);
                                   }
-
-                                  IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
-                                  register_default_stock_icons();
 
                                   m_Play.signal_eos().connect(
                                                   sigc::mem_fun( *this, &MPX::Player::on_play_eos
@@ -1028,19 +1033,11 @@ namespace MPX
 
                                   /*- Volume ---------------------------------------------------------*/
 
-                                  std::vector<Glib::ustring> Icons;
-                                  Icons.push_back("audio-volume-muted");
-                                  Icons.push_back("audio-volume-high");
-                                  Icons.push_back("audio-volume-low");
-                                  Icons.push_back("audio-volume-medium");
-                                  m_Volume->property_size() = Gtk::ICON_SIZE_SMALL_TOOLBAR;
-                                  m_Volume->set_icons(Icons);
-
-                                  m_Volume->signal_value_changed().connect(
+                                  m_VolumeControl->signal_value_changed().connect(
                                                   sigc::mem_fun( *this, &Player::on_volume_value_changed
                                                           ));
 
-                                  m_Volume->set_value(double(mcs->key_get<int>("mpx", "volume")));
+                                  m_VolumeControl->set_volume(double(mcs->key_get<int>("mpx", "volume")));
 
                                   /*- Seek -----------------------------------------------------------*/
 
@@ -1311,10 +1308,10 @@ namespace MPX
                 }
 
         void
-                Player::on_volume_value_changed (double volume)
+                Player::on_volume_value_changed(double volume)
                 {
-                        m_Play.property_volume() = volume*100;	
-                        mcs->key_set("mpx","volume", int(volume*100));
+                        m_Play.property_volume() = volume;
+                        mcs->key_set("mpx","volume", int(volume)); 
                 }
 
         bool
