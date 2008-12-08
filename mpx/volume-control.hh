@@ -62,15 +62,19 @@ namespace MPX
 
         Glib::Timer         m_keypress_timer;
         sigc::connection    m_hide_conn;
+        int                 m_inside;
 
 
         bool
         volume_window_button_press_event_cb(GdkEventButton*);
 
-
+        bool
+        volume_window_enter_notify_event_cb(GdkEventCrossing*);
 
         bool
-        volume_toggle_clicked_cb_idle();
+        volume_window_leave_notify_event_cb(GdkEventCrossing*);
+
+
 
         void
         volume_toggle_clicked_cb();
@@ -78,10 +82,16 @@ namespace MPX
         bool
         volume_toggle_key_press_event_cb(GdkEventKey*);
 
+        bool
+        volume_toggle_scroll_event_cb(GdkEventScroll*);
+
 
 
         bool
         volume_range_focus_out_event_cb(GdkEventFocus*);
+
+        bool
+        volume_range_button_press_cb(GdkEventButton*);
 
         bool
         volume_range_button_release_cb(GdkEventButton*);

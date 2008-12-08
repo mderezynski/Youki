@@ -713,6 +713,7 @@ class AudioScrobblerPost(threading.Thread):
         response, code, message = instance.get_data() 
 
         if code:
+            self.authenticated = False
             print AudioScrobblerConnectionError('http/network', code, message)
             return
             
@@ -722,12 +723,14 @@ class AudioScrobblerPost(threading.Thread):
                 self.log("Uploaded track successfully ('%s' by '%s')." % (song['t[%s]'], song['a[%s]']))
             del self.cache[:number]
         elif response[0].startswith('BADSESSION'):
-            self.log("Got BADSESSION.")
             self.authenticated = False
+            self.log("Got BADSESSION.")
         elif response[0].startswith('FAILED'):
+            self.authenticated = False
             reason = response[0][6:].strip()
             print AudioScrobblerPostFailed(reason)
         else:
+            self.authenticated = False
             msg = "Server returned something unexpected."
             print AudioScrobblerPostFailed(msg)
 

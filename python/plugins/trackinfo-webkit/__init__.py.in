@@ -702,6 +702,8 @@ class TrackInfoQuery (threading.Thread):
                      "Lyricist"          :   [self.append_ar_singleperson, _("has lyrics by")],
                      "Producer"          :   [self.append_ar_singleperson, _("was produced by")],
                      "Performer"         :   [self.append_ar_singleperson, _("was performed by")],
+                     "Orchestrator"      :   [self.append_ar_singleperson, _("was orchestrated by")],
+                     "Conductor"         :   [self.append_ar_singleperson, _("was conducted by")],
                      "Vocal"             :   [self.append_ar_singleperson, _("has vocals performed by")],
                      "Engineer"          :   [self.append_ar_singleperson, _("was engineered by")],
                      "Mix"               :   [self.append_ar_singleperson, _("was mixed by")],

@@ -317,7 +317,7 @@ namespace MPX
 
           RoundedRectangle( cr, cover_anim_area_x0+(m_pressed?1:0),
                          cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-                                                             cover_anim_area_height+(m_pressed?1:0), 4.5,
+                                                             cover_anim_area_height+(m_pressed?1:0), 3.5,
             CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )
           );
 
@@ -334,7 +334,7 @@ namespace MPX
 
           RoundedRectangle( cr, cover_anim_area_x0+(m_pressed?1:0),
                          cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-                                                             cover_anim_area_height+(m_pressed?1:0), 4.5,
+                                                             cover_anim_area_height+(m_pressed?1:0), 3.5,
             CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )
           );
 
@@ -349,7 +349,7 @@ namespace MPX
         /*
         cr->save ();
 
-        double wh = 80 - (15*m_cover_alpha);
+        double wh = 82 - (15*m_cover_alpha);
 
         cr->save ();
         cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
@@ -358,13 +358,13 @@ namespace MPX
         cr->clip ();
 
         //cr->rotate((2*M_PI)*(1. - m_cover_alpha));
-        cr->scale(wh/80., wh/80.);
+        cr->scale(wh/82., wh/82.);
         try{
                 Util::draw_cairo_image(
                     cr,
                     m_cover_surface_cur.get(),
-                    (cover_anim_area_x0 + ((80.-wh)/2.)) - pow((1./m_cover_alpha),9),
-                    (cover_anim_area_y0 + ((80.-wh)/2.)),
+                    (cover_anim_area_x0 + ((82.-wh)/2.)) - pow((1./m_cover_alpha),9),
+                    (cover_anim_area_y0 + ((82.-wh)/2.)),
                     m_cover_alpha/2.
                 );
         } catch( ... )
@@ -380,7 +380,7 @@ namespace MPX
 
           RoundedRectangle( cr, cover_anim_area_x0+(m_pressed?1:0),
                          cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-                                                             cover_anim_area_height+(m_pressed?1:0), 4.5,
+                                                             cover_anim_area_height+(m_pressed?1:0), 3.5,
             CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )
           );
 

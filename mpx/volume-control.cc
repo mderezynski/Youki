@@ -50,6 +50,7 @@ namespace MPX
         VolumeControl::VolumeControl(
             const Glib::RefPtr<Gnome::Glade::Xml>& xml
         ) 
+        : m_inside( 0 )
         {
             xml->get_widget( "volume-button", m_volume_toggle ) ;
             xml->get_widget( "volume-range",  m_volume_range ) ;
@@ -85,6 +86,12 @@ namespace MPX
                         &VolumeControl::volume_window_button_press_event_cb
             ));
 
+            m_volume_window->signal_enter_notify_event().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &VolumeControl::volume_window_enter_notify_event_cb
+            ));
+
 
             m_volume_toggle->signal_clicked().connect(
                     sigc::mem_fun(
@@ -98,11 +105,25 @@ namespace MPX
                         &VolumeControl::volume_toggle_key_press_event_cb
             ));
 
+            m_volume_toggle->signal_scroll_event().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &VolumeControl::volume_toggle_scroll_event_cb
+            ));
+
+
+
 
             m_volume_range->signal_button_release_event().connect(
                     sigc::mem_fun(
                         *this,
                         &VolumeControl::volume_range_button_release_cb
+            ));
+
+            m_volume_range->signal_button_press_event().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &VolumeControl::volume_range_button_press_cb
             ));
 
             m_volume_range->signal_value_changed().connect(
@@ -129,7 +150,15 @@ namespace MPX
             GdkEventButton* G_GNUC_UNUSED
         )
         {
-            m_volume_window->hide_all();
+            return false;
+        }
+
+        bool
+        VolumeControl::volume_range_button_press_cb(
+            GdkEventButton* G_GNUC_UNUSED
+        )
+        {
+            g_atomic_int_set(&m_inside, 1);
             return false;
         }
 
@@ -137,8 +166,12 @@ namespace MPX
         VolumeControl::volume_range_value_changed_cb()
         {
             ValueChanged( m_volume_range->get_value() );
-            volume_hide_timeout_readd();
             adapt_image();
+
+            if(! g_atomic_int_get(&m_inside) )
+            {
+                volume_hide_timeout_readd();
+            }
         }
 
         void
@@ -184,14 +217,6 @@ namespace MPX
             m_volume_window->move( pos_x, pos_y );
             m_volume_window->show_all();
             m_volume_range->grab_focus();
-
-            volume_hide_timeout_readd();
-        }
-
-        bool
-        VolumeControl::volume_toggle_clicked_cb_idle()
-        {
-            return false;
         }
 
         void
@@ -203,7 +228,7 @@ namespace MPX
         bool
         VolumeControl::volume_hide ()
         {
-            if( m_keypress_timer.elapsed() > HIDE_TIMEOUT ) 
+            if( (m_keypress_timer.elapsed() > HIDE_TIMEOUT) && (! g_atomic_int_get(&m_inside)))
             {
                 m_hide_conn.disconnect();
                 volume_hide_real ();
@@ -217,14 +242,30 @@ namespace MPX
             GdkEventButton* G_GNUC_UNUSED
         )
         {
+            m_hide_conn.disconnect();
             volume_hide_real ();
+
             return true;
+        }
+
+        bool
+        VolumeControl::volume_window_enter_notify_event_cb(GdkEventCrossing*)
+        {
+            g_atomic_int_set(&m_inside, 1);
+            m_keypress_timer.stop();
+            m_hide_conn.disconnect();
+        }
+
+        bool
+        VolumeControl::volume_window_leave_notify_event_cb(GdkEventCrossing*)
+        {
         }
 
         void
         VolumeControl::volume_hide_timeout_readd()
         {
             m_keypress_timer.reset();
+            m_keypress_timer.start();
 
             if( !m_hide_conn )
             {
@@ -256,6 +297,7 @@ namespace MPX
             GdkEventFocus* G_GNUC_UNUSED
         )
         {
+            g_atomic_int_set(&m_inside, 0);
             m_volume_window->hide_all();
             return false;
         }
@@ -300,13 +342,52 @@ namespace MPX
                             g_assert_not_reached ();
                 }
 
-                volume_show ();
                 m_volume_range->set_value( clamp_value( 0, mcs->key_get<int>("mpx","volume") + offset, 100 ) );
+
+                volume_show ();
+                volume_hide_timeout_readd();
 
                 return true;
             }
 
             return false;
+        }
+
+        bool
+        VolumeControl::volume_toggle_scroll_event_cb(
+            GdkEventScroll* event
+        )
+        {
+            int offset;
+                    
+            switch( event->direction )
+            {
+                    case GDK_SCROLL_UP:
+                        offset = +1;
+                        break
+                        ;
+
+                    case GDK_SCROLL_DOWN:
+                        offset = -1;
+                        break
+                        ;
+
+                    default:
+                        return true
+                        ;
+            }
+
+            if( event->state & GDK_CONTROL_MASK )
+            {
+                offset *= 10;
+            }
+
+            m_volume_range->set_value( clamp_value( 0, mcs->key_get<int>("mpx","volume") + offset, 100 ) );
+
+            volume_show ();
+            volume_hide_timeout_readd();
+
+            return true;
         }
 
         void
