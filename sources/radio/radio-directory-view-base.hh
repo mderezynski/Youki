@@ -117,9 +117,6 @@ namespace MPX
         void
         cell_data_func_text(Gtk::CellRenderer*, const Gtk::TreeIter&, const ColumnStringT&);
 
-        void
-        cell_text_highlight(Gtk::CellRendererText *cell_p, std::string& str);
-
         static int instance_counter;
 
     };  // class ViewBase

@@ -39,33 +39,80 @@ namespace MPX
   namespace Util
   {
     time_t
-    parseRFC822Date (const char * date);
+    parseRFC822Date(
+        const char * date
+    ) ;
 
     std::string
-    hex_string (void const* data,
-                std::size_t len);
+    hex_string(
+        void const* data,
+        std::size_t len
+    ) ;
 
     std::string
-    md5_hex_string (void const* data,
-                    std::size_t len);
-
-    bool str_has_prefix_nocase    (std::string const& str, std::string const& prefix);
-    bool str_has_suffix_nocase    (std::string const& str, std::string const& suffix);
-    bool str_has_suffixes_nocase  (std::string const& str, char const**       suffixes);
-    bool str_has_suffixes_nocase  (std::string const& str, StrV const&        suffixes);
+    md5_hex_string(
+        void const* data,
+        std::size_t len
+    ) ;
 
     bool
-    match_keys (Glib::ustring const& haystack,
-                Glib::ustring const& needle);
+    str_has_prefix_nocase(
+        const std::string& str,
+        const std::string& prefix
+    ) ;
 
-    std::string stdstrjoin (StrV const&, std::string const&);
-	std::string sanitize_lastfm (std::string const&);
+    bool
+    str_has_suffix_nocase(
+        const std::string& str,
+        const std::string& suffix
+    ) ;
 
-    Glib::ustring utf8_string_normalize (Glib::ustring const&);
+    bool
+    str_has_suffixes_nocase(
+        const std::string& str,
+        char const**       suffixes
+    ) ;
+
+    bool
+    str_has_suffixes_nocase(
+        const std::string& str,
+        const StrV&        suffixes
+    ) ;
+
+    bool
+    match_keys(
+        const Glib::ustring& haystack,
+        const Glib::ustring& needle
+    ) ;
 
     std::string
-    gprintf (const char *format, ...);
+    stdstrjoin(
+        const StrV&,
+        const std::string&
+    ) ;
 
+	std::string
+    sanitize_lastfm(
+        const std::string&
+    ) ;
+
+    Glib::ustring
+    utf8_string_normalize(
+        const Glib::ustring&
+    ) ;
+
+    std::string
+    gprintf(
+        const char *format,
+        ...
+    ) ;
+
+    std::string
+    text_match_highlight(
+            const std::string& text,
+            const std::string& matches,
+            const std::string& color
+    ) ;
   } // Util namespace
 } // MPX namespace
 

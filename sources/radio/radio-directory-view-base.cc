@@ -149,7 +149,11 @@ namespace MPX
 
             if( BaseData.Highlight )
             {
-                cell_text_highlight( cell_p, str );
+                cell_p->property_text() = Util::text_match_highlight(
+                    str,
+                    BaseData.Highlight.get(),
+                    "#ff3030"
+                ) ;
             }
             else
             {
@@ -157,106 +161,6 @@ namespace MPX
             }
         }
     
-        void
-        ViewBase::cell_text_highlight( CellRendererText *cell_p, std::string& str)
-        {
-                    using namespace boost::algorithm;
-
-                    typedef boost::iterator_range<std::string::iterator>    Range;
-                    typedef std::vector< std::string >                      SplitVectorType;
-                    typedef std::map<std::string::size_type, int>           IndexSet; 
-                    typedef std::list<Range>                                Results;
-
-                    SplitVectorType split_vec; // #2: Search for tokens
-                    boost::algorithm::split( split_vec, BaseData.Highlight.get(), boost::algorithm::is_any_of(" ") );
-
-                    std::sort( split_vec.begin(), split_vec.end() );
-                    std::reverse( split_vec.begin(), split_vec.end());
-
-                    IndexSet i_begin;
-                    IndexSet i_end;
-
-                    for( SplitVectorType::const_iterator i = split_vec.begin(); i != split_vec.end(); ++i )
-                    {
-                        Results x; 
-                        ifind_all(x, str, *i);
-
-                        for(Results::const_iterator i = x.begin(); i != x.end(); ++i )
-                        {
-                            i_begin[std::distance(str.begin(), (*i).begin())] ++;
-                            i_end[std::distance(str.begin(), (*i).end())] ++;
-                        }
-                    }
-
-                    if( ! i_begin.empty() )
-                    {
-                            std::string output;
-                            output.reserve(1024);
-
-                            if( i_begin.size() == 1 && (*(i_begin.begin())).first == 0 && (*(i_end.begin())).first == str.size() )    
-                            {
-                                output += "<span color='#ff3030'>" + Glib::Markup::escape_text(str).raw() + "</span>";
-                            }
-                            else
-                            {
-                                    std::string chunk;
-                                    chunk.reserve(1024);
-                                    int c_open = 0;
-                                    int c_close = 0;
-
-                                    for(std::string::iterator i = str.begin(); i != str.end(); ++i)
-                                    {
-                                        std::string::size_type idx = std::distance(str.begin(), i);
-
-                                        if( i_begin.count(idx) && i_end.count(idx) )
-                                        {
-                                            /* do nothing */
-                                        }
-                                        else
-                                        if( i_begin.count(idx) )
-                                        {
-                                            int c_open_prev = c_open;
-                                            c_open += (*(i_begin.find(idx))).second;
-                                            if( !c_open_prev && c_open >= 1 )
-                                            {
-                                                output += Glib::Markup::escape_text(chunk).raw();
-                                                chunk.clear();
-                                                output += "<span color='#ff3030'>";
-                                            }
-                                        }
-                                        else
-                                        if( i_end.count(idx) )
-                                        {
-                                            c_close += (*(i_end.find(idx))).second;
-                                            if( c_close == c_open )
-                                            {
-                                                output += Glib::Markup::escape_text(chunk).raw();
-                                                chunk.clear();
-                                                output += "</span>"; 
-                                                c_close = 0;
-                                                c_open  = 0;
-                                            }
-                                        }
-
-                                        chunk += *i;
-                                    }
-
-                                    output += Glib::Markup::escape_text(chunk).raw();
-
-                                    if( c_open )
-                                    {
-                                        output += "</span>";
-                                    }
-                            }
-
-                            cell_p->property_markup() = output; 
-                    }
-                    else
-                    {
-                        cell_p->property_text() = str; 
-                    }
-        }
-
         void
         ViewBase::highlight_set (const std::string& highlight)
         {
