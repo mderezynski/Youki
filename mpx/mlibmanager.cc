@@ -278,7 +278,7 @@ namespace MPX
         m_actions->add( Action::create(
             "action-mlib-rescan",
             Gtk::Stock::REFRESH,
-            _("_Rescan Entire Library")),
+            _("_Rescan")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,
@@ -289,8 +289,8 @@ namespace MPX
 
         m_actions->add( Action::create(
             "action-mlib-rescan-deep",
-            Gtk::Stock::REFRESH,
-            _("_Deep Rescan Entire Library")),
+            Gtk::Stock::HARDDISK,
+            _("_Deep Rescan")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,
@@ -302,7 +302,7 @@ namespace MPX
         m_actions->add( Action::create(
             "action-mlib-vacuum",
             Gtk::Stock::UNDO,
-            _("_Vacuum Entire Library")),
+            _("_Vacuum")),
             sigc::mem_fun(
                 m_Library,
                 &Library::vacuum
@@ -311,7 +311,7 @@ namespace MPX
         m_actions->add( Action::create(
             "action-volume-rescan",
             Gtk::Stock::REFRESH,
-            _("_Rescan Volume")),
+            _("_Rescan")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,
@@ -325,7 +325,7 @@ namespace MPX
             "action-volume-rescan-deep",
 
             Gtk::Stock::HARDDISK,
-            _("_Deep Rescan Volume")),
+            _("_Deep Rescan")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,
@@ -337,7 +337,7 @@ namespace MPX
         m_actions->add( Action::create(
             "action-volume-vacuum",
             Gtk::Stock::UNDO,
-            _("_Vacuum Volume")),
+            _("_Vacuum")),
             sigc::mem_fun(
                 *this,
                 &MLibManager::on_vacuum_volume
@@ -488,6 +488,16 @@ namespace MPX
     void
     MLibManager::present ()
     {
+        resize(
+           mcs->key_get<int>("mpx","window-mlib-w"),
+           mcs->key_get<int>("mpx","window-mlib-h")
+        );
+
+        move(
+            mcs->key_get<int>("mpx","window-mlib-x"),
+            mcs->key_get<int>("mpx","window-mlib-y")
+        );
+
         Gtk::Window::show ();
         Gtk::Window::raise ();
     }
