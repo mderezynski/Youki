@@ -718,7 +718,6 @@ AC_OUTPUT([
     jnetlib/Makefile
     libhal++/Makefile
     mcs/Makefile
-    libfileschanged/Makefile
 
 	boost/Makefile
 	boost/python/Makefile

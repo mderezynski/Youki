@@ -38,7 +38,6 @@ SUBDIRS =			\
 	com				\
 	xmlcpp			\
 	taglib			\
-	libfileschanged
 
 if HAVE_HAL
 SUBDIRS += libhal++

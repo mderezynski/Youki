@@ -138,6 +138,7 @@ namespace MPX
     else
     if( metadata[ATTRIBUTE_ARTIST] )
     {
+      g_message("NO sortname");
       set[0] = Util::gprintf(
         text_b_f,
         Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str()
