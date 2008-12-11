@@ -90,21 +90,29 @@ namespace MPX
       text_artist_f ("<span size='12500'>(<i>%s</i>)</span>");
 
 
-    if( (metadata[ATTRIBUTE_MB_ALBUM_ARTIST_ID] != metadata[ATTRIBUTE_MB_ARTIST_ID]) && metadata[ATTRIBUTE_ALBUM_ARTIST] )
+    if( metadata[ATTRIBUTE_MB_ALBUM_ARTIST_ID] != metadata[ATTRIBUTE_MB_ARTIST_ID] )
     {
         if( metadata[ATTRIBUTE_ALBUM] )
         {
           set[1] = Util::gprintf(
             text_album_artist_f,
             Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM].get())).c_str(),
-            Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM_ARTIST].get())).c_str()
+            Markup::escape_text (get<std::string>(
+                metadata[ATTRIBUTE_ALBUM_ARTIST_SORTNAME]
+                ? metadata[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()
+                : metadata[ATTRIBUTE_ALBUM_ARTIST].get()
+            )).c_str()
           );
         }
         else
         {
           set[1] = Util::gprintf(
             text_artist_f,
-            Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM_ARTIST].get())).c_str()
+            Markup::escape_text(get<std::string>(
+                metadata[ATTRIBUTE_ALBUM_ARTIST_SORTNAME]
+                ? metadata[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()
+                : metadata[ATTRIBUTE_ALBUM_ARTIST].get()
+            )).c_str()
           );
         }
     }
@@ -119,8 +127,7 @@ namespace MPX
         }
     }
 
-    if ((metadata[ATTRIBUTE_ARTIST_SORTNAME] && metadata[ATTRIBUTE_ARTIST]) &&
-        (metadata[ATTRIBUTE_ARTIST_SORTNAME] != metadata[ATTRIBUTE_ARTIST])) /* let's display the artist if it's not identical to the sortname */
+    if (metadata[ATTRIBUTE_ARTIST_SORTNAME]) 
     {
       set[0] = Util::gprintf(
         text_b_f2,
@@ -131,7 +138,10 @@ namespace MPX
     else
     if( metadata[ATTRIBUTE_ARTIST] )
     {
-      set[0] = Util::gprintf (text_b_f, Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str());
+      set[0] = Util::gprintf(
+        text_b_f,
+        Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str()
+      );
     }
 
     if( metadata[ATTRIBUTE_TITLE] )

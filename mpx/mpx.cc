@@ -1367,7 +1367,7 @@ namespace MPX
                                         }
                                 }
 
-                                m_LastSeeked = m_Seek->get_value();
+                                m_LastSeeked = gint64(m_Seek->get_value());
                                 m_Play.seek (gint64(m_Seek->get_value()));
                         }
                         else if( event->type == GDK_MOTION_NOTIFY && g_atomic_int_get(&m_Seeking))
@@ -1464,7 +1464,7 @@ SET_SEEK_POSITION:
                         if( g_atomic_int_get(&m_Seeking) )
                             return;
 
-                        if( position < m_LastSeeked )
+                        if( position <= m_LastSeeked )
                             return;
 
                         guint64 duration = m_Play.property_duration().get_value();
