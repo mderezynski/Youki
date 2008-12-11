@@ -1927,7 +1927,7 @@ namespace MPX
 
                         m_MainActionGroup = ActionGroup::create("ActionsMusicLib");
                         m_MainActionGroup->add(Action::create("menu-source-musiclib", _("Music _Library")));
-                        m_MainActionGroup->add(Action::create("menu-musiclib-albums", _("Show Release Types...")));
+                        m_MainActionGroup->add(Action::create("menu-musiclib-albums", _("Release Types...")));
                         m_MainActionGroup->add(Action::create("menu-musiclib-highlight", _("Highlight...")));
                         m_MainActionGroup->add(Action::create("menu-musiclib-sort", _("Sort Albums By...")));
 
@@ -1971,7 +1971,7 @@ namespace MPX
                                         RadioAction::create(
                                                 gr2,
                                                 "musiclib-show-albums",
-                                                _("All _Albums")
+                                                _("_Albums")
                                                 ),
 
                                         AccelKey("<alt>1"),
@@ -1988,7 +1988,7 @@ namespace MPX
                                         RadioAction::create(
                                                 gr2,
                                                 "musiclib-show-alltracks",
-                                                _("All _Tracks")
+                                                _("_Tracks")
                                                 ),
 
                                         AccelKey("<alt>2"),
