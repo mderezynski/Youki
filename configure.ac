@@ -498,6 +498,11 @@ PKG_CHECK_MODULES([SIGX], [sigx-2.0])
 # GTKGLEXT
 PKG_CHECK_MODULES([GTKGLEXT], [gtkglextmm-1.2])
 
+# GAMIN
+AC_CHECK_LIB(fam,FAMOpen,,[echo "To build this software, you must install the FAM development package"; exit 1])
+AC_CHECK_LIB(fam,FAMNoExists,[AC_DEFINE(HAVE_FAMNOEXISTS, 1, [Define if you have gamin instead of fam])],)
+AC_CHECK_HEADER(fam.h,,[echo "To build this software, you must install the FAM development package"; exit 1])
+
 #########################################
 ######### PLATFORM SPECIFITIES ##########
 #########################################
@@ -713,6 +718,7 @@ AC_OUTPUT([
     jnetlib/Makefile
     libhal++/Makefile
     mcs/Makefile
+    libfileschanged/Makefile
 
 	boost/Makefile
 	boost/python/Makefile

@@ -59,22 +59,22 @@ namespace MPX
 
             m_volume_pixbufs[0] = m_volume_toggle->render_icon( 
                 Gtk::StockID( "audio-volume-muted" ),
-                Gtk::ICON_SIZE_BUTTON
+                Gtk::ICON_SIZE_MENU
             );
 
             m_volume_pixbufs[1] = m_volume_toggle->render_icon( 
                 Gtk::StockID( "audio-volume-low" ),
-                Gtk::ICON_SIZE_BUTTON
+                Gtk::ICON_SIZE_MENU
             );
 
             m_volume_pixbufs[2] = m_volume_toggle->render_icon( 
                 Gtk::StockID( "audio-volume-medium" ),
-                Gtk::ICON_SIZE_BUTTON
+                Gtk::ICON_SIZE_MENU
             );
 
             m_volume_pixbufs[3] = m_volume_toggle->render_icon( 
                 Gtk::StockID( "audio-volume-high" ),
-                Gtk::ICON_SIZE_BUTTON
+                Gtk::ICON_SIZE_MENU
             );
 
             gtk_widget_realize( GTK_WIDGET( m_volume_window->gobj() ));

@@ -76,20 +76,20 @@ namespace MPX
             }
 
             void
+            removeDupes();
+
+            void
             vacuum();
 
 #ifdef HAVE_HAL    
 			void
-			vacuum_volume(const std::string&, const std::string&);
+			vacuumVolume(const std::string&, const std::string&);
 #endif
-
             void
             reload();
 
-
             void
             initScan (const Util::FileList& list, bool deep = false); 
-
 
             void
             getSQL(SQL::RowV&, const std::string&) ;
@@ -97,10 +97,8 @@ namespace MPX
 			void
 			execSQL(const std::string&);
 
-
             void
             recacheCovers();
-
 
             Track
             sqlToTrack (SQL::Row&);
@@ -108,10 +106,8 @@ namespace MPX
             SQL::RowV
             getTrackTags (gint64);
 
-
             void
             getMetadata(const std::string&, Track&) ;
-
 
             void
             albumAddNewRating(gint64 id, int rating, std::string const& comment);

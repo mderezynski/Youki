@@ -973,14 +973,14 @@ namespace MPX
                                   /*- Setup Window Geometry -----------------------------------------*/ 
 
                                   resize(
-                                                  mcs->key_get<int>("mpx","window-w"),
-                                                  mcs->key_get<int>("mpx","window-h")
-                                        );
+                                        mcs->key_get<int>("mpx","window-w"),
+                                        mcs->key_get<int>("mpx","window-h")
+                                  );
 
                                   move(
-                                                  mcs->key_get<int>("mpx","window-x"),
-                                                  mcs->key_get<int>("mpx","window-y")
-                                      );
+                                        mcs->key_get<int>("mpx","window-x"),
+                                        mcs->key_get<int>("mpx","window-y")
+                                  );
 
 
                                   while (gtk_events_pending())

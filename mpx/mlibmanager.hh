@@ -78,7 +78,7 @@ namespace MPX
             is_present();
 
             void
-            rescan_all_volumes ();
+            rescan_all_volumes (bool /*deep*/ = false);
 
             void
             push_message (const std::string&);
@@ -258,13 +258,30 @@ namespace MPX
             Gtk::Button     * m_Vacuum;
             Gtk::Statusbar  * m_Statusbar;
             Gtk::Widget     * m_VboxInner;
-            bool              m_present;
             Glib::Timer       m_rescan_timer;
     
             MPX::HAL        & m_HAL;
             MPX::Library    & m_Library;
 
-            Glib::RefPtr<Gtk::TextBuffer> m_TextBufferDetails;
+            Glib::RefPtr<Gtk::TextBuffer>   m_TextBufferDetails;
+
+            Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
+            Glib::RefPtr<Gtk::ActionGroup>  m_actions;
+
+            void
+            on_mlib_remove_dupes();
+
+            void
+            on_mlib_rescan_library();
+
+            void
+            on_mlib_vacuum_library();
+
+            void
+            on_volume_rescan_volume();
+
+            void
+            on_volume_vacuum_volume();
     };
 }
 #endif

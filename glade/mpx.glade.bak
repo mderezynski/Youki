@@ -626,7 +626,7 @@
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
-  <property name="resizable">True</property>
+  <property name="resizable">False</property>
   <property name="destroy_with_parent">False</property>
   <property name="decorated">False</property>
   <property name="skip_taskbar_hint">False</property>
@@ -638,11 +638,9 @@
 
   <child>
     <widget class="GtkVScale" id="volume-range">
-      <property name="width_request">32</property>
       <property name="height_request">200</property>
       <property name="visible">True</property>
       <property name="can_focus">True</property>
-      <property name="has_focus">True</property>
       <property name="draw_value">True</property>
       <property name="value_pos">GTK_POS_TOP</property>
       <property name="digits">0</property>

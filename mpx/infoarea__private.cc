@@ -17,9 +17,14 @@ namespace
 
   LayoutData const layout_info[] =
   {
-    {1.  , 89,  6},
+/*
+    {1.  , 91,  6},
     {0.65, 89, 22},
     {1.  , 89, 53},
+*/
+    {1.  , 91, 39},
+    {0.65, 89, 57},
+    {1.  , 89, 11},
   };
 
   struct Color
@@ -44,6 +49,11 @@ namespace
         { 0xee, 0xaa, 0xb7 },
         { 0xec, 0xce, 0xb6 },
   };
+
+  const int RIGHT_MARGIN = 16; 
+  const int TOP_MARGIN = 6;
+  const int WIDTH = 6;
+  const int SPACING = 2;
 }
 
 namespace MPX
@@ -54,19 +64,20 @@ namespace MPX
   {
     using namespace MPX;
 
+
     static char const *
       text_big_f ("<span size='15000'><b>%s</b></span>");
 
 
     static char const *
-      text_b_f ("<span size='12500'><i>%s</i></span>");
+      text_b_f ("<span size='12500'>%s</span>");
 
     static char const *
-      text_b_f2 ("<span size='12500'><i>%s</i> (<i>%s</i>)</span>");
+      text_b_f2 ("<span size='12500'>%s (<i>%s</i>)</span>");
 
 
     static char const *
-      text_i_f ("<span size='12500'><i>%s</i></span>");
+      text_i_f ("<span size='12500'>%s</span>");
 
 
     static char const *
@@ -77,6 +88,7 @@ namespace MPX
 
     static char const *
       text_artist_f ("<span size='12500'>(<i>%s</i>)</span>");
+
 
     if( (metadata[ATTRIBUTE_MB_ALBUM_ARTIST_ID] != metadata[ATTRIBUTE_MB_ARTIST_ID]) && metadata[ATTRIBUTE_ALBUM_ARTIST] )
     {
@@ -317,7 +329,7 @@ namespace MPX
 
           RoundedRectangle( cr, cover_anim_area_x0+(m_pressed?1:0),
                          cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-                                                             cover_anim_area_height+(m_pressed?1:0), 3.5,
+                                                             cover_anim_area_height+(m_pressed?1:0), 6.,
             CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )
           );
 
@@ -334,13 +346,13 @@ namespace MPX
 
           RoundedRectangle( cr, cover_anim_area_x0+(m_pressed?1:0),
                          cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-                                                             cover_anim_area_height+(m_pressed?1:0), 3.5,
+                                                             cover_anim_area_height+(m_pressed?1:0), 6.,
             CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )
           );
 
           cr->clip ();
 
-          double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface_cur.get()->get_height ()) / 2;
+          //double y = (cover_anim_area_y0 + cover_anim_area_y1 - m_cover_surface_cur.get()->get_height ()) / 2;
 
           Util::draw_cairo_image (cr, m_cover_surface_cur.get(), cover_anim_area_x0 + (m_pressed?1:0), cover_anim_area_y0 + (m_pressed?1:0), m_cover_alpha/2.);
 
@@ -349,7 +361,7 @@ namespace MPX
         /*
         cr->save ();
 
-        double wh = 82 - (15*m_cover_alpha);
+        double wh = 80 - (15*m_cover_alpha);
 
         cr->save ();
         cr->rectangle (cover_anim_area_x0+(m_pressed?1:0),
@@ -358,13 +370,13 @@ namespace MPX
         cr->clip ();
 
         //cr->rotate((2*M_PI)*(1. - m_cover_alpha));
-        cr->scale(wh/82., wh/82.);
+        cr->scale(wh/80., wh/80.);
         try{
                 Util::draw_cairo_image(
                     cr,
                     m_cover_surface_cur.get(),
-                    (cover_anim_area_x0 + ((82.-wh)/2.)) - pow((1./m_cover_alpha),9),
-                    (cover_anim_area_y0 + ((82.-wh)/2.)),
+                    (cover_anim_area_x0 + ((80.-wh)/2.)) - pow((1./m_cover_alpha),9),
+                    (cover_anim_area_y0 + ((80.-wh)/2.)),
                     m_cover_alpha/2.
                 );
         } catch( ... )
@@ -380,7 +392,7 @@ namespace MPX
 
           RoundedRectangle( cr, cover_anim_area_x0+(m_pressed?1:0),
                          cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-                                                             cover_anim_area_height+(m_pressed?1:0), 3.5,
+                                                             cover_anim_area_height+(m_pressed?1:0), 6.,
             CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )
           );
 
@@ -404,6 +416,9 @@ namespace MPX
 
     Gtk::Allocation allocation = get_allocation ();
 
+    int x1 = cover_anim_area_x0;
+    int width = (allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS - RIGHT_MARGIN) - 10;
+
     for( int n = 0; n < 3; ++n )
     {
       std::string text_cur = m_text_cur.get()[n];
@@ -422,14 +437,7 @@ namespace MPX
       Pango::Rectangle Ink;
       layout->get_pixel_extents(Ink, layout_extents[n]);
 
-      if( n == 1 )
-      {
-        cr->move_to(layout_info[0].x + layout_extents[0].get_width() + 6, layout_info[0].y);
-      }
-      else
-      {
-        cr->move_to(layout_info[n].x, layout_info[n].y);
-      }
+      cr->move_to( x1 + (width - layout_extents[n].get_width())/2, layout_info[n].y);
 
       if( text_new == text_cur )
       {
@@ -448,10 +456,6 @@ namespace MPX
   void
   InfoArea::draw_spectrum (Cairo::RefPtr<Cairo::Context> & cr)
   {
-      const int RIGHT_MARGIN = 16; 
-      const int TOP_MARGIN = 6;
-      const int WIDTH = 6;
-      const int SPACING = 2;
       const int HEIGHT = 72;
       const double ALPHA = 0.4;
 

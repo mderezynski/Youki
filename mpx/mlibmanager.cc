@@ -30,18 +30,46 @@
 #include <glibmm/i18n.h>
 #include <boost/format.hpp>
 
+#include "libhal++/hal++.hh"
+
 #include "mpx/mpx-main.hh"
+#include "mpx/mpx-sql.hh"
+#include "mpx/mpx-uri.hh"
+
+#include "mpx/widgets/task-dialog.hh"
+
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
-#include "mpx/mpx-uri.hh"
-#include "mpx/widgets/task-dialog.hh"
-#include "libhal++/hal++.hh"
-#include "mpx/mpx-sql.hh"
+#include "mpx/util-ui.hh"
 
 #include "mlibmanager.hh"
 
 using namespace Glib;
 using namespace Gtk;
+
+namespace
+{
+        char MenubarMLibMan [] =
+
+                "<ui>"
+                "<menubar name='MenubarMLibMan'>"
+                "   <menu action='MenuMLib'>"
+                "         <menuitem action='action-mlib-remove-dupes'/>"
+                "         <menuitem action='action-mlib-rescan'/>"
+                "         <menuitem action='action-mlib-rescan-deep'/>"
+                "         <menuitem action='action-mlib-vacuum'/>"
+                "         <separator/>"
+                "         <menuitem action='action-close'/>"
+                "   </menu>"
+                "   <menu action='MenuVolume'>"
+                "         <menuitem action='action-volume-rescan'/>"
+                "         <menuitem action='action-volume-rescan-deep'/>"
+                "         <menuitem action='action-volume-vacuum'/>"
+                "   </menu>"
+                "</menubar>"
+                "</ui>"
+                "";
+}
 
 namespace MPX
 {
@@ -59,19 +87,27 @@ namespace MPX
         Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-h")));
     }
 
-    MLibManager::MLibManager (RefPtr<Gnome::Glade::Xml> const& xml,
-                              MPX::HAL & obj_hal, MPX::Library & obj_library)
+    MLibManager::MLibManager(
+        const RefPtr<Gnome::Glade::Xml>&    xml,
+        MPX::HAL&                           obj_hal,
+        MPX::Library&                       obj_library
+    )
     : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
     , sigx::glib_auto_dispatchable()
     , Service::Base("mpx-service-mlibman")
-    , m_present(false)
     , m_HAL(obj_hal)
     , m_Library(obj_library)
     {
+        /*- Widgets -------------------------------------------------------*/ 
+
         m_Xml->get_widget("statusbar", m_Statusbar );
         m_Xml->get_widget("vbox-inner", m_VboxInner );
 
+        /*- Details Textview/Buffer ---------------------------------------*/ 
+
         m_TextBufferDetails = (dynamic_cast<Gtk::TextView*>(m_Xml->get_widget("textview-details")))->get_buffer();
+
+        /*- Volumes View --------------------------------------------------*/ 
 
         Gtk::CellRendererText * cell = 0; 
         Gtk::TreeViewColumn * col = 0; 
@@ -133,8 +169,7 @@ namespace MPX
 
         populate_volumes();
 
-
-        /* FSTREE VIEW */
+        /*- FSTree --------------------------------------------------------*/ 
 
         m_Xml->get_widget("fstree-view", m_FSTree);
 
@@ -191,48 +226,18 @@ namespace MPX
 
         m_FSTree->set_model(FSTreeStore);
 
-        /* BUTTONS */
+        /*- Buttons -------------------------------------------------------*/ 
 
         m_Xml->get_widget("b-close", m_Close);
-        m_Close->signal_clicked().connect(
-            sigc::mem_fun(
-            *this,
-            &MLibManager::hide
-        ));
-
         m_Xml->get_widget("b-rescan", m_Rescan);
-        m_Rescan->signal_clicked().connect(
-            sigc::bind(
-                sigc::mem_fun(
-                    *this,
-                    &MLibManager::on_rescan_volume
-                ),
-                false
-        ));
-        m_Rescan->set_sensitive( false );
-
-        m_Xml->get_widget("b-deep-rescan", m_DeepRescan);
-        m_DeepRescan->signal_clicked().connect(
-            sigc::bind(
-                sigc::mem_fun(
-                    *this,
-                    &MLibManager::on_rescan_volume
-                ),
-                true
-        ));
-        m_DeepRescan->set_sensitive( false );
-
+        m_Xml->get_widget("b-rescan-deep", m_DeepRescan);
         m_Xml->get_widget("b-vacuum", m_Vacuum);
-        m_Vacuum->signal_clicked().connect(
-            sigc::mem_fun(
-            *this,
-            &MLibManager::on_vacuum_volume
-        ));
-        m_Vacuum->set_sensitive( false );
 
-        if(mcs->key_get<bool>("library","rescan-at-startup"))
+        /*- Rescanning ----------------------------------------------------*/ 
+
+        if( mcs->key_get<bool>("library","rescan-at-startup") )
         {
-          rescan_all_volumes();
+            rescan_all_volumes();
         }
 
         mcs->subscribe(
@@ -247,12 +252,137 @@ namespace MPX
         sigc::connection conn = Glib::signal_timeout().connect(slot, 1000);
         m_rescan_timer.start();
 
+        /*- Actions -------------------------------------------------------*/ 
 
+        m_ui_manager    = UIManager::create ();
+        m_actions       = ActionGroup::create ("Actions_MLibMan");
 
-        gtk_widget_realize(GTK_WIDGET(gobj()));
+        m_actions->add(Action::create(
+            "MenuMLib",
+            _("_Music Library")
+        ));
+
+        m_actions->add(Action::create(
+            "MenuVolume",
+            _("_Volume")
+        ));
+
+        m_actions->add( Action::create(
+            "action-mlib-remove-dupes",
+            _("_Remove Duplicates")),
+            sigc::mem_fun(
+                *this,
+                &MLibManager::on_mlib_remove_dupes
+        ));
+
+        m_actions->add( Action::create(
+            "action-mlib-rescan",
+            Gtk::Stock::REFRESH,
+            _("_Rescan Entire Library")),
+            sigc::bind(
+                    sigc::mem_fun(
+                        *this,
+                        &MLibManager::rescan_all_volumes
+                    ),
+                    false
+        ));
+
+        m_actions->add( Action::create(
+            "action-mlib-rescan-deep",
+            Gtk::Stock::REFRESH,
+            _("_Deep Rescan Entire Library")),
+            sigc::bind(
+                    sigc::mem_fun(
+                        *this,
+                        &MLibManager::rescan_all_volumes
+                    ),
+                    true
+        ));
+
+        m_actions->add( Action::create(
+            "action-mlib-vacuum",
+            Gtk::Stock::UNDO,
+            _("_Vacuum Entire Library")),
+            sigc::mem_fun(
+                m_Library,
+                &Library::vacuum
+        ));
+
+        m_actions->add( Action::create(
+            "action-volume-rescan",
+            Gtk::Stock::REFRESH,
+            _("_Rescan Volume")),
+            sigc::bind(
+                    sigc::mem_fun(
+                        *this,
+                        &MLibManager::on_rescan_volume
+                    ),
+                    false
+        ));
+
+        m_actions->add( Action::create(
+
+            "action-volume-rescan-deep",
+
+            Gtk::Stock::HARDDISK,
+            _("_Deep Rescan Volume")),
+            sigc::bind(
+                    sigc::mem_fun(
+                        *this,
+                        &MLibManager::on_rescan_volume
+                    ),
+                    true
+        ));
+
+        m_actions->add( Action::create(
+            "action-volume-vacuum",
+            Gtk::Stock::UNDO,
+            _("_Vacuum Volume")),
+            sigc::mem_fun(
+                *this,
+                &MLibManager::on_vacuum_volume
+        ));
+
+        m_actions->add( Action::create(
+            "action-close",
+            Gtk::Stock::CLOSE,
+            _("_Close")),
+            sigc::mem_fun(
+                *this,
+                &MLibManager::hide
+        ));
+
+        m_actions->get_action("action-volume-rescan")->set_sensitive( false );
+        m_actions->get_action("action-volume-rescan-deep")->set_sensitive( false );
+        m_actions->get_action("action-volume-vacuum")->set_sensitive( false );
+
+        m_actions->get_action("action-volume-rescan")->connect_proxy( *m_Rescan );
+        m_actions->get_action("action-volume-rescan-deep")->connect_proxy( *m_DeepRescan );
+        m_actions->get_action("action-volume-vacuum")->connect_proxy( *m_Vacuum );
+
+        m_actions->get_action("action-close")->connect_proxy( *m_Close );
+
+        m_ui_manager->insert_action_group(m_actions);
+
+        if(
+            Util::ui_manager_add_ui(
+                  m_ui_manager
+                , MenubarMLibMan
+                , *this
+                , _("MLibMan Menubar")
+        ))
+        {
+                  dynamic_cast<Alignment*>(
+                        m_Xml->get_widget("alignment-menu")
+                  )->add(
+                        *(m_ui_manager->get_widget ("/MenubarMLibMan"))
+                  );
+        }
 
         /*- Setup Window Geometry -----------------------------------------*/ 
     
+        gtk_widget_realize(GTK_WIDGET(gobj()));
+
         resize(
            mcs->key_get<int>("mpx","window-mlib-w"),
            mcs->key_get<int>("mpx","window-mlib-h")
@@ -349,14 +479,15 @@ namespace MPX
     void
     MLibManager::hide ()
     {
-        m_present = false;
+        Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-y")));
+        Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-h")));
+
         Gtk::Widget::hide();
     }
 
     void
     MLibManager::present ()
     {
-        m_present = true;
         Gtk::Window::show ();
         Gtk::Window::raise ();
     }
@@ -364,7 +495,7 @@ namespace MPX
     bool
     MLibManager::is_present()
     {
-        return m_present;
+        return is_visible();
     }
 
     void
@@ -378,7 +509,7 @@ namespace MPX
     }
 
     void
-    MLibManager::rescan_all_volumes()
+    MLibManager::rescan_all_volumes(bool deep)
     {
           m_VboxInner->set_sensitive(false);
           Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
@@ -425,7 +556,7 @@ namespace MPX
                             goto reread_paths;
                     }
                   }
-                  m_Library.initScan(v);                  
+                  m_Library.initScan(v, deep);                  
                 }
           }
           m_VboxInner->set_sensitive(true);
@@ -617,7 +748,7 @@ namespace MPX
 
                     on_volumes_changed ();
 
-                    m_Library.vacuum_volume(
+                    m_Library.vacuumVolume(
                         device_udi_target,
                         volume_udi_target 
                     );
@@ -647,7 +778,7 @@ namespace MPX
 
                     on_volumes_changed();
 
-                    m_Library.vacuum_volume(
+                    m_Library.vacuumVolume(
                         device_udi_target,
                         volume_udi_target 
                     );
@@ -802,9 +933,17 @@ namespace MPX
                 m_ManagedPaths.insert(build_filename(m_MountPoint, boost::get<std::string>((*i)["insert_path"])));
             }
 
-            m_Rescan->set_sensitive( has_selection && !m_ManagedPaths.empty() );
-            m_DeepRescan->set_sensitive( has_selection && !m_ManagedPaths.empty() );
-            m_Vacuum->set_sensitive( has_selection && !m_ManagedPaths.empty() );
+            m_actions->get_action("action-volume-rescan")->set_sensitive( 
+                has_selection && !m_ManagedPaths.empty()
+            );
+
+            m_actions->get_action("action-volume-rescan-deep")->set_sensitive( 
+                has_selection && !m_ManagedPaths.empty()
+            );
+
+            m_actions->get_action("action-volume-vacuum")->set_sensitive( 
+                has_selection && !m_ManagedPaths.empty()
+            );
 
             recreate_path_frags ();
             build_fstree(Vol->get_mount_point());
@@ -873,9 +1012,17 @@ namespace MPX
                 TreePath path = FSTreeStore->get_path(iter_copy); 
                 FSTreeStore->row_changed(path, iter_copy);
 
-                m_Rescan->set_sensitive( !m_ManagedPaths.empty() ); 
-                m_DeepRescan->set_sensitive( !m_ManagedPaths.empty() ); 
-                m_Vacuum->set_sensitive( !m_ManagedPaths.empty() ); 
+                m_actions->get_action("action-volume-rescan")->set_sensitive( 
+                    !m_ManagedPaths.empty()
+                );
+
+                m_actions->get_action("action-volume-rescan-deep")->set_sensitive( 
+                    !m_ManagedPaths.empty()
+                );
+
+                m_actions->get_action("action-volume-vacuum")->set_sensitive( 
+                    !m_ManagedPaths.empty()
+                );
             }
         }
         else
@@ -900,10 +1047,18 @@ namespace MPX
                     v.push_back(filename_to_uri(full_path));
                     m_Library.initScan(v, true);
 
-                    m_Rescan->set_sensitive( true ); 
-                    m_DeepRescan->set_sensitive( true ); 
-                    m_Vacuum->set_sensitive( true ); 
-            }
+                    m_actions->get_action("action-volume-rescan")->set_sensitive( 
+                        true 
+                    );
+
+                    m_actions->get_action("action-volume-rescan-deep")->set_sensitive( 
+                        true 
+                    );
+
+                    m_actions->get_action("action-volume-vacuum")->set_sensitive( 
+                        true 
+                    );
+                }
         }
     }
 
@@ -935,7 +1090,7 @@ namespace MPX
     MLibManager::on_vacuum_volume ()
     {
         m_VboxInner->set_sensitive(false);
-        m_Library.vacuum_volume(m_DeviceUDI, m_VolumeUDI);
+        m_Library.vacuumVolume(m_DeviceUDI, m_VolumeUDI);
         m_VboxInner->set_sensitive(true);
     }
 
@@ -1009,5 +1164,11 @@ namespace MPX
           m_rescan_timer.reset();
         }
         return true;
+    }
+
+    void
+    MLibManager::on_mlib_remove_dupes ()
+    {
+        m_Library.removeDupes();
     }
 }

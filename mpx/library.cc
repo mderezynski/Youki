@@ -678,6 +678,97 @@ namespace MPX
                 }
 
         void
+                Library::removeDupes ()
+                {
+                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
+
+                        RowV rows_tracks;
+                        getSQL(
+                            rows_tracks,
+                            "SELECT id FROM (track NATURAL JOIN (SELECT artist, album, title FROM track GROUP BY artist, album, title HAVING count(title) > 1)) EXCEPT SELECT id FROM track GROUP BY artist, album, title HAVING count(title) > 1" 
+                        );
+    
+#ifdef HAVE_HAL
+                        typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
+#endif
+                        VolMountPointMap m;
+
+                        for( RowV::iterator i = rows_tracks.begin(); i != rows_tracks.end(); ++i )
+                        {
+                                Row & rt = *i;
+
+                                RowV rows;
+                                getSQL(
+                                    rows,
+#ifdef HAVE_HAL
+                                    mprintf("SELECT hal_volume_udi, hal_device_udi, hal_vrp FROM track WHERE id = '%lld'", get<gint64>(rt["id"])) 
+#else
+                                    mprintf("SELECT location FROM track WHERE id = '%lld'", get<gint64>(rt["id"])) 
+#endif
+                                );
+
+                                if( rows.empty() )
+                                {
+                                    continue; //FIXME: Maybe it was vacuumed during this operation, so let's just continue. We really need proper high-level locking for the database
+                                }
+
+                                Row & r = rows[0]; 
+
+                                std::string uri;
+
+#ifdef HAVE_HAL
+                                if( m_Flags & F_USING_HAL )
+                                {
+                                        std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
+                                        std::string device_udi = get<std::string>(r["hal_device_udi"]); 
+                                        std::string hal_vrp    = get<std::string>(r["hal_vrp"]);
+
+                                        HAL::VolumeKey key ( volume_udi, device_udi );
+                                        VolMountPointMap::const_iterator i = m.find(key);
+
+                                        if(i == m.end())
+                                        {
+                                                try{		
+                                                        std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
+                                                        m[key] = mount_point;
+                                                        uri = filename_to_uri(build_filename(mount_point, hal_vrp));
+                                                } catch (...) {
+                                                        g_message("%s: Couldn't get mount point for track MPX-ID [%lld]", G_STRLOC, get<gint64>(r["id"]));
+                                                }
+                                        }
+                                        else
+                                        {
+                                                uri = filename_to_uri(build_filename(i->second, hal_vrp));
+                                        }
+                                } 
+                                else
+#endif
+                                {
+                                        uri = get<std::string>(r["location"]);
+                                }
+
+                                if( !uri.empty() )
+                                {
+                                        mm->push_message((boost::format(_("Removing duplicates: %s")) % filename_from_uri(uri)).str());
+                                        try{
+                                                Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+                                                if( file->remove() )
+                                                {
+                                                        execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(rt["id"])).str()); 
+                                                        Signals.TrackDeleted.emit( get<gint64>(rt["id"]) );
+                                                }
+                                        } catch(Glib::Error) {
+                                                g_message(G_STRLOC ": Error while trying to remove track at URI '%s'", uri.c_str());
+                                        }
+                                } 
+                                else
+                                    g_message("URI empty!");
+                        }
+
+                        mm->push_message( _("Removing duplicates: Done") );
+                }
+
+        void
                 Library::vacuum ()
                 {
 #ifdef HAVE_HAL
@@ -699,7 +790,7 @@ namespace MPX
                                 {
                                         std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
                                         std::string device_udi = get<std::string>(r["hal_device_udi"]); 
-                                        std::string hal_vrp	 = get<std::string>(r["hal_vrp"]);
+                                        std::string hal_vrp	   = get<std::string>(r["hal_vrp"]);
 
                                         // FIXME: More intelligent scanning by prefetching grouped data from the DB
 
@@ -722,24 +813,24 @@ namespace MPX
                                         }
                                 } 
                                 else
-#else
+#endif
                                 {
                                         uri = get<std::string>(r["location"]);
                                 }
-#endif
-
-                                mm->push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
 
                                 if( !uri.empty() )
-                                try{
-                                        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
-                                        if( !file->query_exists() )
-                                        {
-                                                execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(r["id"])).str()); 
-                                                Signals.TrackDeleted.emit( get<gint64>(r["id"]) );
+                                {
+                                        mm->push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+                                        try{
+                                                Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+                                                if( !file->query_exists() )
+                                                {
+                                                        execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(r["id"])).str()); 
+                                                        Signals.TrackDeleted.emit( get<gint64>(r["id"]) );
+                                                }
+                                        } catch(Glib::Error) {
+                                                g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
                                         }
-                                } catch(...) {
-                                        g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
                                 }
                         }
 
@@ -750,7 +841,7 @@ namespace MPX
 
 #ifdef HAVE_HAL
         void
-                Library::vacuum_volume (const std::string& hal_device_udi, const std::string& hal_volume_udi)
+                Library::vacuumVolume (const std::string& hal_device_udi, const std::string& hal_volume_udi)
                 {
                         typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
 
