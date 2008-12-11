@@ -84,7 +84,7 @@ namespace
         break;
 
       case MPX::COVER_SIZE_DEFAULT:
-        pixel_size = 256;
+        pixel_size = 384;
         break;
 
       default:

@@ -255,6 +255,7 @@ namespace MPX
         bool                            m_startup_complete;
 
 		int                             m_Seeking;
+        int                             m_LastSeeked;
 		gdouble                         m_TrackPlayedSeconds;
 		gdouble                         m_TrackSeekedSeconds;
 		gdouble                         m_PreSeekPosition;

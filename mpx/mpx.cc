@@ -1366,6 +1366,8 @@ namespace MPX
                                             m_TrackSeekedSeconds = 0;
                                         }
                                 }
+
+                                m_LastSeeked = m_Seek->get_value();
                                 m_Play.seek (gint64(m_Seek->get_value()));
                         }
                         else if( event->type == GDK_MOTION_NOTIFY && g_atomic_int_get(&m_Seeking))
@@ -1459,18 +1461,21 @@ SET_SEEK_POSITION:
         void
                 Player::on_play_position (guint64 position)
                 {
-                        if (g_atomic_int_get(&m_Seeking))
-                                return;
+                        if( g_atomic_int_get(&m_Seeking) )
+                            return;
+
+                        if( position < m_LastSeeked )
+                            return;
 
                         guint64 duration = m_Play.property_duration().get_value();
 
                         if( (duration > 0) && (position <= duration) && (position >= 0) )
                         {
                                 if (duration <= 0)
-                                        return;
+                                    return;
 
                                 if (position < 0)
-                                        return;
+                                    return;
 
                                 guint64 m_pos = position / 60;
                                 guint64 s_pos = position % 60;
@@ -1559,6 +1564,7 @@ SET_SEEK_POSITION:
 
                         m_TrackPlayedSeconds = 0;
                         m_TrackSeekedSeconds = 0;
+                        m_LastSeeked         = 0;
 
                         if(m_PreparingSource)
                         {

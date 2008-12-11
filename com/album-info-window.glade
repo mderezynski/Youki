@@ -36,8 +36,8 @@
 
 	  <child>
 	    <widget class="GtkImage" id="album-info-window-cover">
-	      <property name="width_request">256</property>
-	      <property name="height_request">256</property>
+	      <property name="width_request">384</property>
+	      <property name="height_request">384</property>
 	      <property name="visible">True</property>
 	      <property name="xalign">0.5</property>
 	      <property name="yalign">0.5</property>

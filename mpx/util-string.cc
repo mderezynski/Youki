@@ -363,11 +363,14 @@ namespace MPX
 
     std::string
     text_match_highlight(
-            const std::string& text,
-            const std::string& matches,
+            const std::string& text_,
+            const std::string& matches_,
             const std::string& color
     )  
     {
+            std::string text ( text_ );
+            std::string matches ( matches_ );
+
             using namespace boost::algorithm;
 
             typedef boost::iterator_range<std::string::iterator>    Range;
@@ -463,6 +466,7 @@ namespace MPX
             {
                 return text;
             }
+    }
   }
 }
 
