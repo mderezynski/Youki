@@ -407,7 +407,7 @@ namespace MPX
             on_entity_deleted( gint64 , EntityType ) ;
 
             void
-            on_message( const& std::string );
+            on_message( const std::string& );
         
 
             bool
