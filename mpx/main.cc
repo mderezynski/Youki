@@ -36,6 +36,7 @@
 #include "mpx/util-file.hh"
 #ifdef HAVE_HAL
 #include "mpx/mpx-hal.hh"
+#include "mlibmanager.hh"
 #endif // HAVE_HAL
 
 #include "mpx/metadatareader-taglib.hh"
@@ -43,7 +44,6 @@
 #include "mpx/com/mb-import-album.hh"
 #include "mpx/mpx-markov-analyzer-thread.hh"
 
-#include "mlibmanager.hh"
 #include "paths.hh"
 #include "play.hh"
 #include "plugin.hh"

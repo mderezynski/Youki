@@ -149,7 +149,7 @@ namespace MPX
 
             if( BaseData.Highlight )
             {
-                cell_p->property_text() = Util::text_match_highlight(
+                cell_p->property_markup() = Util::text_match_highlight(
                     str,
                     BaseData.Highlight.get(),
                     "#ff3030"

@@ -37,7 +37,7 @@ SUBDIRS =			\
 	musicbrainz		\
 	com				\
 	xmlcpp			\
-	taglib			\
+	taglib			
 
 if HAVE_HAL
 SUBDIRS += libhal++

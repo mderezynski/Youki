@@ -1012,11 +1012,15 @@ namespace MPX
                 true
             );
 
-            if( dialog.run() == GTK_RESPONSE_YES )
+            int response = dialog.run();
+            dialog.hide();
+
+            if( response == GTK_RESPONSE_YES )
             {
-                std::string insert_path = full_path.substr(m_MountPoint.length());
-                m_Library.execSQL(mprintf("DELETE FROM track WHERE hal_device_udi = '%q' AND hal_volume_udi = '%q' AND insert_path = '%q'", m_DeviceUDI.c_str(), m_VolumeUDI.c_str(), insert_path.c_str()));
-                m_Library.vacuum();
+                m_VboxInner->set_sensitive( false );
+
+                m_Library.deletePath( m_DeviceUDI, m_VolumeUDI, full_path.substr(m_MountPoint.length()) );
+
                 m_ManagedPaths.erase(full_path);
                 recreate_path_frags ();
                 TreePath path = FSTreeStore->get_path(iter_copy); 
@@ -1033,6 +1037,8 @@ namespace MPX
                 m_actions->get_action("action-volume-vacuum")->set_sensitive( 
                     !m_ManagedPaths.empty()
                 );
+
+                m_VboxInner->set_sensitive( true );
             }
         }
         else
@@ -1047,28 +1053,36 @@ namespace MPX
                 true
             );
 
-            if( dialog.run() == GTK_RESPONSE_YES )
+            int response = dialog.run();
+            dialog.hide();
+
+            if( response == GTK_RESPONSE_YES )
             {
-                    m_ManagedPaths.insert(full_path);
-                    recreate_path_frags ();
-                    TreePath path = FSTreeStore->get_path(iter_copy); 
-                    FSTreeStore->row_changed(path, iter_copy);
-                    StrV v;
-                    v.push_back(filename_to_uri(full_path));
-                    m_Library.initScan(v, true);
+                m_VboxInner->set_sensitive( false );
 
-                    m_actions->get_action("action-volume-rescan")->set_sensitive( 
-                        true 
-                    );
+                StrV v;
+                v.push_back(filename_to_uri(full_path));
+                m_Library.initScan(v, true);
 
-                    m_actions->get_action("action-volume-rescan-deep")->set_sensitive( 
-                        true 
-                    );
+                m_ManagedPaths.insert(full_path);
+                recreate_path_frags ();
+                TreePath path = FSTreeStore->get_path(iter_copy); 
+                FSTreeStore->row_changed(path, iter_copy);
 
-                    m_actions->get_action("action-volume-vacuum")->set_sensitive( 
-                        true 
-                    );
-                }
+                m_actions->get_action("action-volume-rescan")->set_sensitive( 
+                    !m_ManagedPaths.empty()
+                );
+
+                m_actions->get_action("action-volume-rescan-deep")->set_sensitive( 
+                    !m_ManagedPaths.empty()
+                );
+
+                m_actions->get_action("action-volume-vacuum")->set_sensitive( 
+                    !m_ManagedPaths.empty()
+                );
+
+                m_VboxInner->set_sensitive( true );
+            }
         }
     }
 

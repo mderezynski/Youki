@@ -60,7 +60,9 @@
 #include "import-folder.hh"
 
 #include "infoarea.hh"
+#ifdef HAVE_HAL
 #include "mlibmanager.hh"
+#endif
 #include "preferences.hh"
 #include "sidebar.hh"
 #include "volume-control.hh"

@@ -58,10 +58,12 @@ namespace MPX
 #ifdef HAVE_HAL
                 , bool
 #endif //HAVE_HAL
-            );
+            ) ;
 
-            Library (const Library& other);
+            Library (const Library& other) ;
             ~Library () ;
+
+
 
             SQL::SQLDB*
             get_sql_db ()
@@ -72,96 +74,120 @@ namespace MPX
             LibraryScannerThread::ScannerConnectable&
             scanner()
             {
-                return m_ScannerThread->connect();
+                return m_ScannerThread->connect() ;
             }
 
-            void
-            removeDupes();
+
 
             void
-            vacuum();
+            removeDupes() ;
+
+            void
+            vacuum() ;
 
 #ifdef HAVE_HAL    
 			void
-			vacuumVolume(const std::string&, const std::string&);
+			vacuumVolume(
+                const std::string&,
+                const std::string&
+            ) ;
+
+            void
+            deletePath(
+                const std::string& /*hal_device_udi*/,
+                const std::string& /*hal_volume_udi*/,
+                const std::string& /*insert_path*/
+            ) ;
 #endif
             void
-            reload();
+            reload() ;
 
             void
-            initScan (const Util::FileList& list, bool deep = false); 
+            initScan(
+                const Util::FileList& /*list*/,
+                bool                  /*deep*/ = false
+            ); 
 
             void
-            getSQL(SQL::RowV&, const std::string&) ;
+            getSQL(
+                SQL::RowV&,
+                const std::string&
+            ) ;
 
 			void
-			execSQL(const std::string&);
+			execSQL(
+                const std::string&
+            ) ;
 
             void
-            recacheCovers();
+            recacheCovers() ;
 
             Track
-            sqlToTrack (SQL::Row&);
+            sqlToTrack(
+                SQL::Row&
+            ) ;
 
             SQL::RowV
-            getTrackTags (gint64);
+            getTrackTags(
+                gint64
+            ) ;
 
             void
             getMetadata(const std::string&, Track&) ;
 
             void
-            albumAddNewRating(gint64 id, int rating, std::string const& comment);
+            albumAddNewRating(gint64 id, int rating, std::string const& comment) ;
 
             void
-            albumGetAllRatings(gint64 id, SQL::RowV & v);
+            albumGetAllRatings(gint64 id, SQL::RowV & v) ;
 
             int
-            albumGetMeanRatingValue(gint64 id);
+            albumGetMeanRatingValue(gint64 id) ;
 
             void
-            albumDeleteRating(gint64 rating_id, gint64 album_idd);
+            albumDeleteRating(gint64 rating_id, gint64 album_idd) ;
 
             void
-            albumTagged(gint64, std::string const&);
+            albumTagged(gint64, std::string const&) ;
 
 
 			void
-			trackRated(gint64, int);
+			trackRated(gint64, int) ;
 		
 			void
-			trackPlayed(gint64, gint64, time_t);
+			trackPlayed(gint64, gint64, time_t) ;
 
             void
-            trackTagged(gint64, std::string const&);
+            trackTagged(gint64, std::string const&) ;
 
 
             void
-            markovUpdate(gint64 /* track a */, gint64 /* track b */);
+            markovUpdate(gint64 /* track a */, gint64 /* track b */) ;
 
             gint64 
             markovGetRandomProbableTrack(gint64 /* track a*/); 
 
 
             gint64
-            collectionCreate(const std::string& /*name*/, const std::string& /*blurb*/);
+            collectionCreate(const std::string& /*name*/, const std::string& /*blurb*/) ;
     
             void
-            collectionDelete(gint64 /*id*/);
+            collectionDelete(gint64 /*id*/) ;
 
             void
-            collectionAppend(gint64 /*id*/, const IdV&);
+            collectionAppend(gint64 /*id*/, const IdV&) ;
 
             void
-            collectionErase(gint64 /*id*/, const IdV&);
+            collectionErase(gint64 /*id*/, const IdV&) ;
 
             void
-            collectionGetMeta(gint64 /*id*/, Collection& /*collection*/);
+            collectionGetMeta(gint64 /*id*/, Collection& /*collection*/) ;
 
             void
-            collectionGetAll(IdV& /*collections*/);
+            collectionGetAll(IdV& /*collections*/) ;
 
             void
-            collectionGetTracks(gint64 id, IdV& /*collections*/);
+            collectionGetTracks(gint64 id, IdV& /*collections*/) ;
 
 
         public:
@@ -345,13 +371,16 @@ namespace MPX
 
             enum Flags
             {
-                F_NONE      =       0,
-                F_USING_HAL =       1 << 0,
+                  F_NONE      =       0
+#ifdef HAVE_HAL
+                , F_USING_HAL =       1 << 0,
+#endif
             };
 
 #ifdef HAVE_HAL
             HAL                     & m_HAL;
 #endif //HAVE_HAL 
+
             Service::Manager        & m_Services;
             Covers                  & m_Covers;
             MetadataReaderTagLib    & m_MetadataReaderTagLib ;
@@ -363,25 +392,25 @@ namespace MPX
         protected:
 
             gint64
-            get_tag_id (std::string const&);
+            get_tag_id (std::string const&) ;
 
 			void
-			set_mean_genre_for_album (gint64 id);
+			set_mean_genre_for_album (gint64 id) ;
 
             void
-            on_new_album (gint64);
+            on_new_album (gint64) ;
 
             void
-            on_new_artist (gint64);
+            on_new_artist (gint64) ;
 
             void
-            on_new_track (Track&,gint64,gint64);
+            on_new_track (Track&,gint64,gint64) ;
 
             bool
             recache_covers_handler (SQL::RowV *, int*); 
 
             void
-            remove_dangling();
+            remove_dangling() ;
     };
 } // namespace MPX
 

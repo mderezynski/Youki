@@ -678,14 +678,14 @@ namespace MPX
                 }
 
         void
-                Library::removeDupes ()
+                Library::removeDupes()
                 {
                         boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
 
                         RowV rows_tracks;
                         getSQL(
                             rows_tracks,
-                            "SELECT id FROM (track NATURAL JOIN (SELECT artist, album, title FROM track GROUP BY artist, album, title HAVING count(title) > 1)) EXCEPT SELECT id FROM track GROUP BY artist, album, title HAVING count(title) > 1" 
+                            "SELECT id FROM (track NATURAL JOIN (SELECT artist, album, title, track FROM track GROUP BY artist, album, title, track HAVING count(title) > 1)) EXCEPT SELECT id FROM track GROUP BY artist, album, title, track HAVING count(title) > 1" 
                         );
     
 #ifdef HAVE_HAL
@@ -908,6 +908,38 @@ namespace MPX
                         remove_dangling ();
 
                         mm->push_message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
+                }
+
+        void
+                Library::deletePath(
+                    const std::string& hal_device_udi,
+                    const std::string& hal_volume_udi,
+                    const std::string& insert_path 
+                )
+                {
+                    boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
+
+                    SQL::RowV rows;
+
+                    getSQL(
+                        rows,
+                        (boost::format(
+                            "SELECT id FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path = '%s'"
+                         )
+                         % hal_device_udi
+                         % hal_volume_udi
+                         % insert_path).str()
+                    );
+
+                    for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
+                    {
+                        Row & r = *i;
+                        mm->push_message((boost::format(_("Deleting Track: %lld")) % get<gint64>(r["id"])).str());
+                        execSQL( mprintf("DELETE FROM track WHERE id = '%lld'", get<gint64>(r["id"]))); 
+                        Signals.TrackDeleted.emit( get<gint64>(r["id"]) );
+                    }
+
+                    vacuumVolume( hal_device_udi, hal_volume_udi );
                 }
 #endif
 

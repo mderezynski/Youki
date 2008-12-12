@@ -154,9 +154,6 @@ audiosource_bin_SOURCES =				\
 								\
 	minisoup.cc					\
 								\
-	mlibmanager.hh				\
-	mlibmanager.cc				\
-								\
 	mpx.hh						\
 	mpx.cc						\
 	mpx-mmkeys.cc				\
@@ -221,7 +218,9 @@ audiosource_bin_SOURCES =				\
 	volume-control.cc
 
 if HAVE_HAL								
-audiosource_bin_SOURCES += hal.cc
+audiosource_bin_SOURCES += hal.cc	\
+	mlibmanager.hh				\
+	mlibmanager.cc				
 endif
 
 BUILT_SOURCES = 			\
