@@ -310,7 +310,6 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
     }
 
     pthreaddata->ScanSummary.emit( m_ScanSummary );
-    pthreaddata->ScanEnd.emit();
 }
 
 void
@@ -340,12 +339,11 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                         track[ATTRIBUTE_LOCATION] = *i2 ;
 
                         try{
-
                             URI u (*i2, true);
                             if( u.get_protocol() == URI::PROTOCOL_FILE )
                             {
                                 bool err_occured = false;
-    #ifdef HAVE_HAL
+#ifdef HAVE_HAL
                                 try{
                                     if (m_Flags & Library::F_USING_HAL)
                                     {
@@ -382,7 +380,7 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                                   m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Error Handling File/Directory")));
                                   err_occured  = true;
                                 }
-    #endif
+#endif
 
                                 if( !err_occured )
                                 {
@@ -393,7 +391,7 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
 
                                             time_t mtime = get_track_mtime (track);
 
-                                            if (mtime != 0 && mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()))
+                                            if( mtime != 0 && mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) )
                                             {
                                                 ++m_ScanSummary.FilesUpToDate;
                                             }
@@ -401,10 +399,11 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                                             {
                                                 if( !m_MetadataReaderTagLib.get( *i2, track ) )
                                                 {
-                                                   ++m_ScanSummary.FilesErroneous;
-                                                   m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Could not acquire metadata using taglib-gio")));
+                                                    ++m_ScanSummary.FilesErroneous;
+                                                    m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Could not acquire metadata using taglib-gio")));
                                                 }
                                                 else try{
+
                                                     ScanResult status = insert( track, *i2, insert_path_sql );
 
                                                     switch( status )
@@ -520,7 +519,6 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
                 if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
                 {
                     pthreaddata->ScanSummary.emit( m_ScanSummary );
-                    pthreaddata->ScanEnd.emit(); 
                     return;
                 }
 
@@ -632,7 +630,6 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
     }
 
     pthreaddata->ScanSummary.emit( m_ScanSummary );
-    pthreaddata->ScanEnd.emit();
 }
 
 

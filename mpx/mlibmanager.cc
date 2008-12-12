@@ -461,18 +461,15 @@ namespace MPX
         m_TextBufferDetails->set_text(text);
 
         if( mcs->key_get<bool>("library","always-vacuum") )
-        {
             on_vacuum_volume ();
-        }
+        else
+            m_VboxInner->set_sensitive(true);
     }
     
     void
     MLibManager::scan_start ()
     {
         m_VboxInner->set_sensitive(false);
-
-        m_Statusbar->pop();        
-        m_Statusbar->push(_("Library Scan Starting..."));
     }
 
     void
