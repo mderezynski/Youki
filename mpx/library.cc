@@ -648,7 +648,7 @@ namespace MPX
 
         void
                 Library::on_message(
-                    const& std::string msg
+                    const std::string& msg
                 )
                 {
                         boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
