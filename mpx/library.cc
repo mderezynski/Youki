@@ -230,11 +230,38 @@ namespace MPX
                 m_ScannerThread->run();
 
                 m_ScannerThread->connect().signal_new_album().connect(
-                                sigc::mem_fun( *this, &Library::on_new_album ));
+                    sigc::mem_fun(
+                        *this,
+                        &Library::on_new_album
+                ));
+
                 m_ScannerThread->connect().signal_new_artist().connect(
-                                sigc::mem_fun( *this, &Library::on_new_artist ));
+                    sigc::mem_fun(
+                        *this,
+                        &Library::on_new_artist
+                ));
+
                 m_ScannerThread->connect().signal_new_track().connect(
-                                sigc::mem_fun( *this, &Library::on_new_track ));
+                    sigc::mem_fun(
+                        *this,
+                        &Library::on_new_track
+                ));
+
+                m_ScannerThread->connect().signal_entity_deleted().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &Library::on_entity_deleted
+                ));
+
+                boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
+
+                m_ScannerThread->connect().signal_message().connect(
+                    sigc::mem_fun(
+                        mm.get(),
+                        &MPX::MLibManager::push_message
+                ));
+
+                // FIXME: Deprecated
                 m_ScannerThread->connect().signal_reload().connect(
                                 sigc::mem_fun( *this, &Library::reload ));
 
@@ -570,111 +597,55 @@ namespace MPX
 
         void
                 Library::on_new_album(
-                                gint64 album_id
-                                )
+                    gint64 album_id
+                )
                 {
-                        Signals.NewAlbum.emit(album_id);
+                        Signals.NewAlbum.emit( album_id );
                 }
 
         void
                 Library::on_new_artist(
-                                gint64 artist_id
-                                )
+                    gint64 artist_id
+                )
                 {
-                        Signals.NewArtist.emit(artist_id);
+                        Signals.NewArtist.emit( artist_id );
                 }
 
         void
                 Library::on_new_track(
-                                Track& track,
-                                gint64 album_id,
-                                gint64 artist_id
-                                )
+                      Track& track
+                    , gint64 album_id
+                    , gint64 artist_id
+                )
                 {
-                        Signals.NewTrack.emit(track, album_id, artist_id);
+                        Signals.NewTrack.emit( track, album_id, artist_id );
                 }
     
         void
-                Library::remove_dangling () 
+                Library::on_entity_deleted(
+                      gint64      id
+                    , EntityType  type
+                )
                 {
-                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
+                    switch( type )
+                    {
+                        case ENTITY_TRACK:
+                            Signals.TrackDeleted.emit( id );
+                            break;
 
-                        typedef std::tr1::unordered_set <gint64> IdSet;
-                        static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld'");
-                        IdSet idset1;
-                        IdSet idset2;
-                        RowV rows;
+                        case ENTITY_ALBUM:
+                            Signals.AlbumDeleted.emit( id );
+                            break;
 
-                        /// CLEAR DANGLING ARTISTS
-                        mm->push_message(_("Finding Lost Artists..."));
+                        case ENTITY_ARTIST:
+                            Signals.ArtistDeleted.emit( id );
+                            break;
 
-                        idset1.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT artist_j FROM track");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset1.insert (get<gint64>(i->find ("artist_j")->second));
+                        case ENTITY_ALBUM_ARTIST:
+                            Signals.AlbumArtistDeleted.emit( id );
+                            break;
 
-                        idset2.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT id FROM artist");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset2.insert (get<gint64>(i->find ("id")->second));
-
-                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
-                        {
-                                if (idset1.find (*i) == idset1.end())
-                                {
-                                        execSQL((delete_f % "artist" % (*i)).str());
-                                        Signals.ArtistDeleted.emit( *i );
-                                }
-                        }
-
-
-                        /// CLEAR DANGLING ALBUMS
-                        mm->push_message(_("Finding Lost Albums..."));
-
-                        idset1.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT album_j FROM track");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset1.insert (get<gint64>(i->find ("album_j")->second));
-
-                        idset2.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT id FROM album");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset2.insert (get<gint64>(i->find ("id")->second));
-
-                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
-                        {
-                                if (idset1.find (*i) == idset1.end())
-                                {
-                                        execSQL((delete_f % "album" % (*i)).str());
-                                        Signals.AlbumDeleted.emit( *i );
-                                }
-                        }
-
-                        /// CLEAR DANGLING ALBUM ARTISTS
-                        mm->push_message(_("Finding Lost Album Artists..."));
-
-                        idset1.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT album_artist_j FROM album");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset1.insert (get<gint64>(i->find ("album_artist_j")->second));
-
-                        idset2.clear();
-                        rows.clear();
-                        getSQL(rows, "SELECT DISTINCT id FROM album_artist");
-                        for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
-                                idset2.insert (get<gint64>(i->find ("id")->second));
-
-                        for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
-                        {
-                                if (idset1.find (*i) == idset1.end())
-                                        execSQL((delete_f % "album_artist" % (*i)).str());
-                                        Signals.AlbumArtistDeleted.emit( *i );
-                        }
+                    }
                 }
 
         void
@@ -768,148 +739,7 @@ namespace MPX
                         mm->push_message( _("Removing duplicates: Done") );
                 }
 
-        void
-                Library::vacuum ()
-                {
 #ifdef HAVE_HAL
-                        typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
-#endif
-                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
-
-                        VolMountPointMap m;
-                        RowV rows;
-                        getSQL (rows, "SELECT * FROM track");
-
-                        for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
-                        {
-                                Row & r = *i;
-                                std::string uri;
-
-#ifdef HAVE_HAL
-                                if( m_Flags & F_USING_HAL )
-                                {
-                                        std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
-                                        std::string device_udi = get<std::string>(r["hal_device_udi"]); 
-                                        std::string hal_vrp	   = get<std::string>(r["hal_vrp"]);
-
-                                        // FIXME: More intelligent scanning by prefetching grouped data from the DB
-
-                                        HAL::VolumeKey key (volume_udi, device_udi);
-                                        VolMountPointMap::const_iterator i = m.find(key);
-
-                                        if(i == m.end())
-                                        {
-                                                try{		
-                                                        std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
-                                                        m[key] = mount_point;
-                                                        uri = filename_to_uri(build_filename(mount_point, hal_vrp));
-                                                } catch (...) {
-                                                        g_message("%s: Couldn't get mount point for track MPX-ID [%lld]", G_STRLOC, get<gint64>(r["id"]));
-                                                }
-                                        }
-                                        else
-                                        {
-                                                uri = filename_to_uri(build_filename(i->second, hal_vrp));
-                                        }
-                                } 
-                                else
-#endif
-                                {
-                                        uri = get<std::string>(r["location"]);
-                                }
-
-                                if( !uri.empty() )
-                                {
-                                        mm->push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
-                                        try{
-                                                Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
-                                                if( !file->query_exists() )
-                                                {
-                                                        execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(r["id"])).str()); 
-                                                        Signals.TrackDeleted.emit( get<gint64>(r["id"]) );
-                                                }
-                                        } catch(Glib::Error) {
-                                                g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
-                                        }
-                                }
-                        }
-
-                        remove_dangling ();
-
-                        mm->push_message(_("Vacuum process done."));
-                }
-
-#ifdef HAVE_HAL
-        void
-                Library::vacuumVolume (const std::string& hal_device_udi, const std::string& hal_volume_udi)
-                {
-                        typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
-
-                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
-
-                        VolMountPointMap m;
-                        RowV rows;
-                        getSQL(
-                            rows,
-                            (boost::format ("SELECT * FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
-                                    % hal_device_udi
-                                    % hal_volume_udi
-                            ).str());
-
-                        for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
-                        {
-                                Row & r = *i;
-
-                                std::string uri;
-
-                                if( m_Flags & F_USING_HAL )
-                                {
-                                        std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
-                                        std::string device_udi = get<std::string>(r["hal_device_udi"]); 
-                                        std::string hal_vrp	 = get<std::string>(r["hal_vrp"]);
-
-                                        // FIXME: More intelligent scanning by prefetching grouped data from the DB
-
-                                        HAL::VolumeKey key (volume_udi, device_udi);
-                                        VolMountPointMap::const_iterator i = m.find(key);
-
-                                        if(i == m.end())
-                                        {
-                                                try{		
-                                                        std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
-                                                        m[key] = mount_point;
-                                                        uri = filename_to_uri(build_filename(mount_point, hal_vrp));
-                                                } catch (...) {
-                                                        g_message("%s: Couldn't get mount point for track MPX-ID [%lld]", G_STRLOC, get<gint64>(r["id"]));
-                                                }
-                                        }
-                                        else
-                                        {
-                                                uri = filename_to_uri(build_filename(i->second, hal_vrp));
-                                        }
-                                } 
-                                else
-
-                                mm->push_message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
-
-                                if( !uri.empty() )
-                                try{
-                                        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
-                                        if( !file->query_exists() )
-                                        {
-                                                execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(r["id"])).str()); 
-                                                Signals.TrackDeleted.emit( get<gint64>(r["id"]) );
-                                        }
-                                } catch(...) {
-                                        g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
-                                }
-                        }
-
-                        remove_dangling ();
-
-                        mm->push_message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
-                }
-
         void
                 Library::deletePath(
                     const std::string& hal_device_udi,
@@ -941,7 +771,24 @@ namespace MPX
 
                     vacuumVolume( hal_device_udi, hal_volume_udi );
                 }
-#endif
+#endif // HAVE_HAL
+
+        void
+                Library::vacuum()
+                {
+                        m_ScannerThread->vacuum();
+                }
+
+#ifdef HAVE_HAL    
+        void
+		        Library::vacuumVolume(
+                      const std::string& device_udi
+                    , const std::string& volume_udi
+                )
+                {
+                        m_ScannerThread->vacuum_volume( device_udi, volume_udi );
+                }
+#endif // HAVE_HAL
 
         RowV
                 Library::getTrackTags (gint64 id)

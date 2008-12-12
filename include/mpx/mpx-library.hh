@@ -392,22 +392,25 @@ namespace MPX
         protected:
 
             gint64
-            get_tag_id (std::string const&) ;
+            get_tag_id( std::string const& ) ;
 
 			void
-			set_mean_genre_for_album (gint64 id) ;
+			set_mean_genre_for_album( gint64 ) ;
 
             void
-            on_new_album (gint64) ;
+            on_new_album( gint64 ) ;
 
             void
-            on_new_artist (gint64) ;
+            on_new_artist( gint64 ) ;
 
             void
-            on_new_track (Track&,gint64,gint64) ;
+            on_new_track( Track&,gint64,gint64 ) ;
+
+            void
+            on_entity_deleted( gint64 , EntityType ) ;
 
             bool
-            recache_covers_handler (SQL::RowV *, int*); 
+            recache_covers_handler( SQL::RowV *, int* ) ; 
 
             void
             remove_dangling() ;

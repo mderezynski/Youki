@@ -9,11 +9,14 @@
 #include <boost/ref.hpp>
 #include <boost/format.hpp>
 #include <giomm.h>
+#include <glibmm.h>
 #include <glibmm/i18n.h>
+#include <tr1/unordered_set>
 
 using boost::get;
 using namespace MPX;
 using namespace MPX::SQL;
+using namespace Glib;
 
 namespace
 {
@@ -146,44 +149,55 @@ struct MPX::LibraryScannerThread::ThreadData
     LibraryScannerThread::SignalNewAlbum_t          NewAlbum ;
     LibraryScannerThread::SignalNewArtist_t         NewArtist ;
     LibraryScannerThread::SignalNewTrack_t          NewTrack ;
-    LibraryScannerThread::SignalTrackDeleted_t      TrackDeleted ;
+    LibraryScannerThread::SignalEntityDeleted_t     EntityDeleted ;
     LibraryScannerThread::SignalCacheCover_t        CacheCover ;
     LibraryScannerThread::SignalReload_t            Reload ;
+    LibraryScannerThread::SignalMessage_t           Message ;
 
     int m_ScanStop;
 };
 
-MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::MetadataReaderTagLib & obj_tagreader, MPX::HAL & obj_hal, gint64 flags)
+MPX::LibraryScannerThread::LibraryScannerThread(
+    MPX::SQL::SQLDB*            obj_sql
+  , MPX::MetadataReaderTagLib&  obj_tagreader
+  , MPX::HAL&                   obj_hal
+  , gint64                      flags
+)
 : sigx::glib_threadable()
 , scan(sigc::mem_fun(*this, &LibraryScannerThread::on_scan))
 , scan_stop(sigc::mem_fun(*this, &LibraryScannerThread::on_scan_stop))
+, vacuum(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum))
+#ifdef HAVE_HAL
+, vacuum_volume(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum_volume))
+#endif // HAVE_HAL
 , signal_scan_start(*this, m_ThreadData, &ThreadData::ScanStart)
 , signal_scan_run(*this, m_ThreadData, &ThreadData::ScanRun)
 , signal_scan_end(*this, m_ThreadData, &ThreadData::ScanEnd)
 , signal_new_album(*this, m_ThreadData, &ThreadData::NewAlbum)
 , signal_new_artist(*this, m_ThreadData, &ThreadData::NewArtist)
 , signal_new_track(*this, m_ThreadData, &ThreadData::NewTrack)
-, signal_track_deleted(*this, m_ThreadData, &ThreadData::TrackDeleted)
+, signal_entity_deleted(*this, m_ThreadData, &ThreadData::EntityDeleted)
 , signal_cache_cover(*this, m_ThreadData, &ThreadData::CacheCover)
 , signal_reload(*this, m_ThreadData, &ThreadData::Reload)
+, signal_message(*this, m_ThreadData, &ThreadData::Message)
 , m_SQL(obj_sql)
 , m_MetadataReaderTagLib(obj_tagreader)
 , m_HAL(obj_hal)
 , m_Flags(flags)
 {
     m_Connectable =
-
-    new ScannerConnectable(
-        signal_scan_start
-      , signal_scan_run
-      , signal_scan_end
-      , signal_new_album
-      , signal_new_artist
-      , signal_new_track
-      , signal_track_deleted
-      , signal_cache_cover
-      , signal_reload
-    );
+        new ScannerConnectable(
+                  signal_scan_start
+                , signal_scan_run
+                , signal_scan_end
+                , signal_new_album
+                , signal_new_artist
+                , signal_new_track
+                , signal_entity_deleted
+                , signal_cache_cover
+                , signal_reload
+                , signal_message
+    ); 
 }
 
 MPX::LibraryScannerThread::~LibraryScannerThread ()
@@ -195,7 +209,7 @@ MPX::LibraryScannerThread::ScannerConnectable&
 MPX::LibraryScannerThread::connect ()
 {
     return *m_Connectable;
-}
+} 
 
 void
 MPX::LibraryScannerThread::on_startup ()
@@ -1005,7 +1019,7 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
     if( id != 0 )
     {
         m_SQL->exec_sql ((delete_track_f % id).str()); 
-        pthreaddata->TrackDeleted.emit( id ); 
+        pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
     }
 
     // FIXME/TODO: Still throw if deleted?
@@ -1094,5 +1108,232 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
   return SCAN_RESULT_OK ; 
 }
 
+void
+MPX::LibraryScannerThread::remove_dangling () 
+{
+  ThreadData * pthreaddata = m_ThreadData.get();
+
+  typedef std::tr1::unordered_set <gint64> IdSet;
+  static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld'");
+  IdSet idset1;
+  IdSet idset2;
+  RowV rows;
+
+  /// CLEAR DANGLING ARTISTS
+  pthreaddata->Message.emit(_("Finding Lost Artists..."));
+
+  idset1.clear();
+  rows.clear();
+  m_SQL->get(rows, "SELECT DISTINCT artist_j FROM track");
+  for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+          idset1.insert (get<gint64>(i->find ("artist_j")->second));
+
+  idset2.clear();
+  rows.clear();
+  m_SQL->get(rows, "SELECT DISTINCT id FROM artist");
+  for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+          idset2.insert (get<gint64>(i->find ("id")->second));
+
+  for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
+  {
+          if (idset1.find (*i) == idset1.end())
+          {
+                  m_SQL->exec_sql((delete_f % "artist" % (*i)).str());
+                  pthreaddata->EntityDeleted( *i , ENTITY_ARTIST );
+          }
+  }
 
 
+  /// CLEAR DANGLING ALBUMS
+  pthreaddata->Message.emit(_("Finding Lost Albums..."));
+
+  idset1.clear();
+  rows.clear();
+  m_SQL->get(rows, "SELECT DISTINCT album_j FROM track");
+  for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+          idset1.insert (get<gint64>(i->find ("album_j")->second));
+
+  idset2.clear();
+  rows.clear();
+  m_SQL->get(rows, "SELECT DISTINCT id FROM album");
+  for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+          idset2.insert (get<gint64>(i->find ("id")->second));
+
+  for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
+  {
+          if (idset1.find (*i) == idset1.end())
+          {
+                  m_SQL->exec_sql((delete_f % "album" % (*i)).str());
+                  pthreaddata->EntityDeleted( *i , ENTITY_ALBUM );
+          }
+  }
+
+  /// CLEAR DANGLING ALBUM ARTISTS
+  pthreaddata->Message.emit(_("Finding Lost Album Artists..."));
+
+  idset1.clear();
+  rows.clear();
+  m_SQL->get(rows, "SELECT DISTINCT album_artist_j FROM album");
+  for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+          idset1.insert (get<gint64>(i->find ("album_artist_j")->second));
+
+  idset2.clear();
+  rows.clear();
+  m_SQL->get(rows, "SELECT DISTINCT id FROM album_artist");
+  for (RowV::const_iterator i = rows.begin(); i != rows.end(); ++i)
+          idset2.insert (get<gint64>(i->find ("id")->second));
+
+  for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
+  {
+          if (idset1.find (*i) == idset1.end())
+                  m_SQL->exec_sql((delete_f % "album_artist" % (*i)).str());
+                  pthreaddata->EntityDeleted( *i , ENTITY_ALBUM_ARTIST );
+  }
+}
+
+void
+MPX::LibraryScannerThread::on_vacuum() 
+{
+  ThreadData * pthreaddata = m_ThreadData.get();
+
+#ifdef HAVE_HAL
+  typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
+#endif
+
+  VolMountPointMap m;
+  RowV rows;
+  m_SQL->get (rows, "SELECT * FROM track");
+
+  for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
+  {
+          Row & r = *i;
+          std::string uri;
+
+#ifdef HAVE_HAL
+          if( m_Flags & Library::F_USING_HAL )
+          {
+                  std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
+                  std::string device_udi = get<std::string>(r["hal_device_udi"]); 
+                  std::string hal_vrp	 = get<std::string>(r["hal_vrp"]);
+
+                  // FIXME: More intelligent scanning by prefetching grouped data from the DB
+
+                  HAL::VolumeKey key (volume_udi, device_udi);
+                  VolMountPointMap::const_iterator i = m.find(key);
+
+                  if(i == m.end())
+                  {
+                          try{		
+                                  std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
+                                  m[key] = mount_point;
+                                  uri = filename_to_uri(build_filename(mount_point, hal_vrp));
+                          } catch (...) {
+                                  g_message("%s: Couldn't get mount point for track MPX-ID [%lld]", G_STRLOC, get<gint64>(r["id"]));
+                          }
+                  }
+                  else
+                  {
+                          uri = filename_to_uri(build_filename(i->second, hal_vrp));
+                  }
+          } 
+          else
+#endif
+          {
+                  uri = get<std::string>(r["location"]);
+          }
+
+          if( !uri.empty() )
+          {
+                  pthreaddata->Message.emit((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+                  try{
+                          Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+                          if( !file->query_exists() )
+                          {
+                                  m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(r["id"])).str()); 
+                                  pthreaddata->EntityDeleted( get<gint64>(r["id"]) , ENTITY_TRACK );
+                          }
+                  } catch(Glib::Error) {
+                          g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
+                  }
+          }
+  }
+
+  remove_dangling ();
+
+  pthreaddata->Message.emit(_("Vacuum process done."));
+}
+
+#ifdef HAVE_HAL
+void
+MPX::LibraryScannerThread::on_vacuum_volume(
+    const std::string& hal_device_udi,
+    const std::string& hal_volume_udi
+)
+{
+  ThreadData * pthreaddata = m_ThreadData.get();
+
+  typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
+
+  VolMountPointMap m;
+  RowV rows;
+  m_SQL->get(
+      rows,
+      (boost::format ("SELECT * FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
+              % hal_device_udi
+              % hal_volume_udi
+      ).str());
+
+  for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
+  {
+          Row & r = *i;
+
+          std::string uri;
+
+          if( m_Flags & Library::F_USING_HAL )
+          {
+                  std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
+                  std::string device_udi = get<std::string>(r["hal_device_udi"]); 
+                  std::string hal_vrp	 = get<std::string>(r["hal_vrp"]);
+
+                  // FIXME: More intelligent scanning by prefetching grouped data from the DB
+
+                  HAL::VolumeKey key (volume_udi, device_udi);
+                  VolMountPointMap::const_iterator i = m.find(key);
+
+                  if(i == m.end())
+                  {
+                          try{		
+                                  std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
+                                  m[key] = mount_point;
+                                  uri = filename_to_uri(build_filename(mount_point, hal_vrp));
+                          } catch (...) {
+                                  g_message("%s: Couldn't get mount point for track MPX-ID [%lld]", G_STRLOC, get<gint64>(r["id"]));
+                          }
+                  }
+                  else
+                  {
+                          uri = filename_to_uri(build_filename(i->second, hal_vrp));
+                  }
+          } 
+          else
+
+          pthreaddata->Message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+
+          if( !uri.empty() )
+          try{
+                  Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+                  if( !file->query_exists() )
+                  {
+                          m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(r["id"])).str()); 
+                          pthreaddata->EntityDeleted( get<gint64>(r["id"]), ENTITY_TRACK );
+                  }
+          } catch(...) {
+                  g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
+          }
+  }
+
+  remove_dangling ();
+
+  pthreaddata->Message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
+}
+#endif // HAVE_HAL

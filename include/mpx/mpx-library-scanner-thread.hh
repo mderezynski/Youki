@@ -25,6 +25,7 @@
 //  MPX is covered by.
 #ifndef MPX_LIBRARY_SCANNER_THREAD_HH
 #define MPX_LIBRARY_SCANNER_THREAD_HH
+#include <config.h>
 #include <glibmm.h>
 #include <sigx/sigx.h>
 #include <sigx/signal_f.h>
@@ -37,11 +38,18 @@
 
 namespace MPX
 {
-    enum ScanResult {
+    enum ScanResult
+    {
         SCAN_RESULT_OK,
-        SCAN_RESULT_ERROR,
         SCAN_RESULT_UPDATE,
-        SCAN_RESULT_UPTODATE
+    };
+
+    enum EntityType
+    {
+        ENTITY_TRACK,
+        ENTITY_ALBUM,
+        ENTITY_ARTIST,
+        ENTITY_ALBUM_ARTIST
     };
 
     typedef std::pair<std::string, std::string> SSFileInfo;
@@ -81,37 +89,58 @@ namespace MPX
             typedef sigc::signal<void>                              SignalScanStart_t ;
             typedef sigc::signal<void, gint64,bool>                 SignalScanRun_t ;
             typedef sigc::signal<void, ScanSummary const&>          SignalScanEnd_t ;
-            typedef sigc::signal<void>                              SignalReload_t ;
             typedef sigc::signal<void, gint64>                      SignalNewAlbum_t ;
             typedef sigc::signal<void, gint64>                      SignalNewArtist_t ;
             typedef sigc::signal<void, Track&, gint64, gint64>      SignalNewTrack_t ;
-            typedef sigc::signal<void, gint64>                      SignalTrackDeleted_t ;
-
+            typedef sigc::signal<void, gint64, EntityType>          SignalEntityDeleted_t ;
             typedef sigc::signal<void, const RequestQualifier&>     SignalCacheCover_t ;
+            typedef sigc::signal<void>                              SignalReload_t ;
+            typedef sigc::signal<void, const std::string&>          SignalMessage_t ;
             
-            typedef sigx::signal_f<SignalScanStart_t>           signal_scan_start_x ;
-            typedef sigx::signal_f<SignalScanRun_t>             signal_scan_run_x ; 
-            typedef sigx::signal_f<SignalScanEnd_t>             signal_scan_end_x ;
-            typedef sigx::signal_f<SignalReload_t>              signal_reload_x ;
-            typedef sigx::signal_f<SignalNewAlbum_t>            signal_new_album_x ;
-            typedef sigx::signal_f<SignalNewArtist_t>           signal_new_artist_x ;
-            typedef sigx::signal_f<SignalCacheCover_t>          signal_cache_cover_x ;
-            typedef sigx::signal_f<SignalNewTrack_t>            signal_new_track_x ;
-            typedef sigx::signal_f<SignalTrackDeleted_t>        signal_track_deleted_x ;
+            typedef sigx::signal_f<SignalScanStart_t>               signal_scan_start_x ;
+            typedef sigx::signal_f<SignalScanRun_t>                 signal_scan_run_x ; 
+            typedef sigx::signal_f<SignalScanEnd_t>                 signal_scan_end_x ;
+            typedef sigx::signal_f<SignalNewAlbum_t>                signal_new_album_x ;
+            typedef sigx::signal_f<SignalNewArtist_t>               signal_new_artist_x ;
+            typedef sigx::signal_f<SignalNewTrack_t>                signal_new_track_x ;
+            typedef sigx::signal_f<SignalEntityDeleted_t>           signal_entity_deleted_x ;
+            typedef sigx::signal_f<SignalCacheCover_t>              signal_cache_cover_x ;
+            typedef sigx::signal_f<SignalReload_t>                  signal_reload_x ;
+            typedef sigx::signal_f<SignalMessage_t>                 signal_message_x ;
 
+        public:
+
+            sigx::request_f<Util::FileList const&, bool> scan ;
+            sigx::request_f<> scan_stop ;
+            sigx::request_f<> vacuum ;
+#ifdef HAVE_HAL
+            sigx::request_f< const std::string&, const std::string& > vacuum_volume ;
+#endif // HAVE_HAL
+
+            signal_scan_start_x             signal_scan_start ;
+            signal_scan_run_x               signal_scan_run ; 
+            signal_scan_end_x               signal_scan_end ;
+            signal_new_album_x              signal_new_album ;
+            signal_new_artist_x             signal_new_artist ;
+            signal_new_track_x              signal_new_track ;
+            signal_entity_deleted_x         signal_entity_deleted ;
+            signal_cache_cover_x            signal_cache_cover ;
+            signal_reload_x                 signal_reload ;
+            signal_message_x                signal_message ;
 
             struct ScannerConnectable
             {
                 ScannerConnectable(
-                    signal_scan_start_x & start_x,
-                    signal_scan_run_x & run_x,
-                    signal_scan_end_x & end_x,
-                    signal_new_album_x & album_x,
-                    signal_new_artist_x & artist_x,
-                    signal_new_track_x & track_x,
-                    signal_track_deleted_x & track_deleted_x,
-                    signal_cache_cover_x & cover_x,
-                    signal_reload_x & reload_x
+                      signal_scan_start_x&            start_x
+                    , signal_scan_run_x&              run_x
+                    , signal_scan_end_x&              end_x
+                    , signal_new_album_x&             album_x
+                    , signal_new_artist_x&            artist_x
+                    , signal_new_track_x&             track_x
+                    , signal_entity_deleted_x&        entity_deleted_x
+                    , signal_cache_cover_x&           cover_x
+                    , signal_reload_x&                reload_x
+                    , signal_message_x&               message_x 
                 )
                 : signal_scan_start(start_x)
                 , signal_scan_run(run_x)
@@ -119,40 +148,24 @@ namespace MPX
                 , signal_new_album(album_x)
                 , signal_new_artist(artist_x)
                 , signal_new_track(track_x)
-                , signal_track_deleted(track_deleted_x)
+                , signal_entity_deleted(entity_deleted_x)
                 , signal_cache_cover(cover_x)
                 , signal_reload(reload_x)
+                , signal_message(message_x)
                 {
                 }
 
                 signal_scan_start_x         & signal_scan_start ;
                 signal_scan_run_x           & signal_scan_run ; 
                 signal_scan_end_x           & signal_scan_end ;
-                signal_reload_x             & signal_reload ;
                 signal_new_album_x          & signal_new_album ;
                 signal_new_artist_x         & signal_new_artist ;
-                signal_cache_cover_x        & signal_cache_cover ;
                 signal_new_track_x          & signal_new_track ;
-                signal_track_deleted_x      & signal_track_deleted ;
+                signal_entity_deleted_x     & signal_entity_deleted ;
+                signal_cache_cover_x        & signal_cache_cover ;
+                signal_reload_x             & signal_reload ;
+                signal_message_x            & signal_message ;
             };
-
-
-        public:
-
-            sigx::request_f<Util::FileList const&, bool> scan ;
-            sigx::request_f<> scan_stop ;
-
-            signal_scan_start_x         signal_scan_start ;
-            signal_scan_run_x           signal_scan_run ; 
-            signal_scan_end_x           signal_scan_end ;
-            signal_reload_x             signal_reload ;
-            signal_new_album_x          signal_new_album ;
-            signal_new_artist_x         signal_new_artist ;
-            signal_cache_cover_x        signal_cache_cover ;
-            signal_new_track_x          signal_new_track ;
-            signal_track_deleted_x      signal_track_deleted ;
-
-        public:	
 
             LibraryScannerThread (MPX::SQL::SQLDB*,MPX::MetadataReaderTagLib&,MPX::HAL&,gint64) ;
             ~LibraryScannerThread () ;
@@ -165,6 +178,13 @@ namespace MPX
             virtual void on_startup () ; 
             virtual void on_cleanup () ;
 
+            void on_vacuum ();
+#ifdef HAVE_HAL
+            void on_vacuum_volume(
+                const std::string&,
+                const std::string&
+            );
+#endif // HAVE_HAL
             void on_scan (Util::FileList const&, bool) ;
             void on_scan_stop () ;
             void on_scan_list_deep (Util::FileList const&); // on_scan delegate
@@ -191,18 +211,21 @@ namespace MPX
             ScanResult
             insert (Track&, const std::string& uri, const std::string& insert_path);
 
+            void
+            remove_dangling ();
+
         private:
 
             struct ThreadData;
 
             MPX::SQL::SQLDB             * m_SQL ;
-            MetadataReaderTagLib        & m_MetadataReaderTagLib;
             MPX::HAL                    & m_HAL ;
-            ScannerConnectable          * m_Connectable ; 
+            ScannerConnectable          * m_Connectable ;
+            MetadataReaderTagLib        & m_MetadataReaderTagLib ;
             Glib::Private<ThreadData>     m_ThreadData ;
-            gint64                        m_Flags;
+            gint64                        m_Flags ;
             
-            ScanSummary                   m_ScanSummary;
+            ScanSummary                   m_ScanSummary ;
 	};
 }
 
