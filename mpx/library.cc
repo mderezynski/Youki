@@ -253,12 +253,10 @@ namespace MPX
                         &Library::on_entity_deleted
                 ));
 
-                boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
-
                 m_ScannerThread->connect().signal_message().connect(
                     sigc::mem_fun(
-                        mm.get(),
-                        &MPX::MLibManager::push_message
+                        *this, 
+                        &Library::on_message
                 ));
 
                 // FIXME: Deprecated
@@ -646,6 +644,15 @@ namespace MPX
                             break;
 
                     }
+                }
+
+        void
+                Library::on_message(
+                    const& std::string msg
+                )
+                {
+                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
+                        mm->push_message( msg );
                 }
 
         void

@@ -391,9 +391,6 @@ namespace MPX
 
         protected:
 
-            gint64
-            get_tag_id( std::string const& ) ;
-
 			void
 			set_mean_genre_for_album( gint64 ) ;
 
@@ -409,11 +406,19 @@ namespace MPX
             void
             on_entity_deleted( gint64 , EntityType ) ;
 
+            void
+            on_message( const& std::string );
+        
+
             bool
             recache_covers_handler( SQL::RowV *, int* ) ; 
 
             void
             remove_dangling() ;
+
+
+            gint64
+            get_tag_id( std::string const& ) ;
     };
 } // namespace MPX
 
