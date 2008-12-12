@@ -34,6 +34,8 @@ class TrackCover(mpx.Plugin):
         self.player_metadata_updated_handler_id = self.player.gobj().connect("new-track", self.new_track)
         self.player_playstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
 
+        self.metadata_updated(None)
+
         return True
 
     def deactivate(self):
