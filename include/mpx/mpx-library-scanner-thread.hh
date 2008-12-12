@@ -88,7 +88,8 @@ namespace MPX
 
             typedef sigc::signal<void>                              SignalScanStart_t ;
             typedef sigc::signal<void, gint64,bool>                 SignalScanRun_t ;
-            typedef sigc::signal<void, ScanSummary const&>          SignalScanEnd_t ;
+            typedef sigc::signal<void>                              SignalScanEnd_t ;
+            typedef sigc::signal<void, ScanSummary const&>          SignalScanSummary_t ;
             typedef sigc::signal<void, gint64>                      SignalNewAlbum_t ;
             typedef sigc::signal<void, gint64>                      SignalNewArtist_t ;
             typedef sigc::signal<void, Track&, gint64, gint64>      SignalNewTrack_t ;
@@ -100,6 +101,7 @@ namespace MPX
             typedef sigx::signal_f<SignalScanStart_t>               signal_scan_start_x ;
             typedef sigx::signal_f<SignalScanRun_t>                 signal_scan_run_x ; 
             typedef sigx::signal_f<SignalScanEnd_t>                 signal_scan_end_x ;
+            typedef sigx::signal_f<SignalScanSummary_t>             signal_scan_summary_x ;
             typedef sigx::signal_f<SignalNewAlbum_t>                signal_new_album_x ;
             typedef sigx::signal_f<SignalNewArtist_t>               signal_new_artist_x ;
             typedef sigx::signal_f<SignalNewTrack_t>                signal_new_track_x ;
@@ -120,6 +122,7 @@ namespace MPX
             signal_scan_start_x             signal_scan_start ;
             signal_scan_run_x               signal_scan_run ; 
             signal_scan_end_x               signal_scan_end ;
+            signal_scan_summary_x           signal_scan_summary ;
             signal_new_album_x              signal_new_album ;
             signal_new_artist_x             signal_new_artist ;
             signal_new_track_x              signal_new_track ;
@@ -134,6 +137,7 @@ namespace MPX
                       signal_scan_start_x&            start_x
                     , signal_scan_run_x&              run_x
                     , signal_scan_end_x&              end_x
+                    , signal_scan_summary_x&          summary_x
                     , signal_new_album_x&             album_x
                     , signal_new_artist_x&            artist_x
                     , signal_new_track_x&             track_x
@@ -145,6 +149,7 @@ namespace MPX
                 : signal_scan_start(start_x)
                 , signal_scan_run(run_x)
                 , signal_scan_end(end_x)
+                , signal_scan_summary(summary_x)
                 , signal_new_album(album_x)
                 , signal_new_artist(artist_x)
                 , signal_new_track(track_x)
@@ -158,6 +163,7 @@ namespace MPX
                 signal_scan_start_x         & signal_scan_start ;
                 signal_scan_run_x           & signal_scan_run ; 
                 signal_scan_end_x           & signal_scan_end ;
+                signal_scan_summary_x       & signal_scan_summary ;
                 signal_new_album_x          & signal_new_album ;
                 signal_new_artist_x         & signal_new_artist ;
                 signal_new_track_x          & signal_new_track ;

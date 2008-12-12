@@ -146,6 +146,7 @@ struct MPX::LibraryScannerThread::ThreadData
     LibraryScannerThread::SignalScanStart_t         ScanStart ;
     LibraryScannerThread::SignalScanRun_t           ScanRun ;
     LibraryScannerThread::SignalScanEnd_t           ScanEnd ;
+    LibraryScannerThread::SignalScanSummary_t       ScanSummary ;
     LibraryScannerThread::SignalNewAlbum_t          NewAlbum ;
     LibraryScannerThread::SignalNewArtist_t         NewArtist ;
     LibraryScannerThread::SignalNewTrack_t          NewTrack ;
@@ -173,6 +174,7 @@ MPX::LibraryScannerThread::LibraryScannerThread(
 , signal_scan_start(*this, m_ThreadData, &ThreadData::ScanStart)
 , signal_scan_run(*this, m_ThreadData, &ThreadData::ScanRun)
 , signal_scan_end(*this, m_ThreadData, &ThreadData::ScanEnd)
+, signal_scan_summary(*this, m_ThreadData, &ThreadData::ScanSummary)
 , signal_new_album(*this, m_ThreadData, &ThreadData::NewAlbum)
 , signal_new_artist(*this, m_ThreadData, &ThreadData::NewArtist)
 , signal_new_track(*this, m_ThreadData, &ThreadData::NewTrack)
@@ -190,6 +192,7 @@ MPX::LibraryScannerThread::LibraryScannerThread(
                   signal_scan_start
                 , signal_scan_run
                 , signal_scan_end
+                , signal_scan_summary
                 , signal_new_album
                 , signal_new_artist
                 , signal_new_track
@@ -306,7 +309,8 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
         }
     }
 
-    pthreaddata->ScanEnd.emit( m_ScanSummary );
+    pthreaddata->ScanSummary.emit( m_ScanSummary );
+    pthreaddata->ScanEnd.emit();
 }
 
 void
@@ -515,7 +519,8 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
             {
                 if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
                 {
-                    pthreaddata->ScanEnd.emit( m_ScanSummary ); 
+                    pthreaddata->ScanSummary.emit( m_ScanSummary );
+                    pthreaddata->ScanEnd.emit(); 
                     return;
                 }
 
@@ -626,7 +631,8 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
             }
     }
 
-    pthreaddata->ScanEnd.emit( m_ScanSummary );
+    pthreaddata->ScanSummary.emit( m_ScanSummary );
+    pthreaddata->ScanEnd.emit();
 }
 
 

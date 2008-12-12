@@ -89,6 +89,10 @@ namespace MPX
 
             void
             scan_end(
+            );
+
+            void
+            scan_summary(
                 const ScanSummary&
             );
 

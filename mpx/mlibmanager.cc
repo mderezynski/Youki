@@ -130,6 +130,12 @@ namespace MPX
                 &MLibManager::scan_end
         ));
 
+        m_Library.scanner().signal_scan_summary().connect(
+            sigc::mem_fun(
+                *this,
+                &MLibManager::scan_summary
+        ));
+
         m_Library.scanner().signal_scan_run().connect(
             sigc::mem_fun(
                 *this,
@@ -397,7 +403,18 @@ namespace MPX
     /* ------------------------------------------------------------------------------------------------*/
 
     void
-    MLibManager::scan_end( ScanSummary const& summary )
+    MLibManager::scan_end ()
+    {
+        m_VboxInner->set_sensitive(true);
+
+        if( mcs->key_get<bool>("library","always-vacuum") )
+        {
+            on_vacuum_volume ();
+        }
+    }
+
+    void
+    MLibManager::scan_summary( ScanSummary const& summary )
     {
         time_t curtime = time(NULL);
         struct tm ctm;
@@ -447,13 +464,6 @@ namespace MPX
         }
 
         m_TextBufferDetails->set_text(text);
-
-        if( mcs->key_get<bool>("library","always-vacuum") )
-        {
-            on_vacuum_volume ();
-        }
-
-        m_VboxInner->set_sensitive(true);
     }
     
     void
@@ -758,10 +768,11 @@ namespace MPX
 
                     on_volumes_changed ();
 
+                    /*
                     m_Library.vacuumVolume(
                         device_udi_target,
                         volume_udi_target 
-                    );
+                    );*/
 
                     return RELOCATED;
                   break;
@@ -788,10 +799,11 @@ namespace MPX
 
                     on_volumes_changed();
 
+                    /*
                     m_Library.vacuumVolume(
                         device_udi_target,
                         volume_udi_target 
-                    );
+                    );*/
 
                     return DELETED;
                   break;
