@@ -406,11 +406,6 @@ namespace MPX
     MLibManager::scan_end ()
     {
         m_VboxInner->set_sensitive(true);
-
-        if( mcs->key_get<bool>("library","always-vacuum") )
-        {
-            on_vacuum_volume ();
-        }
     }
 
     void
@@ -464,6 +459,11 @@ namespace MPX
         }
 
         m_TextBufferDetails->set_text(text);
+
+        if( mcs->key_get<bool>("library","always-vacuum") )
+        {
+            on_vacuum_volume ();
+        }
     }
     
     void
