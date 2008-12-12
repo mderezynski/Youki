@@ -660,6 +660,8 @@ namespace MPX
                 {
                         boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
 
+                        execSQL("BEGIN");
+
                         RowV rows_tracks;
                         getSQL(
                             rows_tracks,
@@ -742,6 +744,8 @@ namespace MPX
                                 else
                                     g_message("URI empty!");
                         }
+
+                        execSQL("COMMIT");
 
                         mm->push_message( _("Removing duplicates: Done") );
                 }

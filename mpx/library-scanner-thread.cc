@@ -1209,6 +1209,8 @@ MPX::LibraryScannerThread::on_vacuum()
   RowV rows;
   m_SQL->get (rows, "SELECT * FROM track");
 
+  m_SQL->exec_sql("BEGIN");
+
   for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
   {
           Row & r = *i;
@@ -1265,8 +1267,9 @@ MPX::LibraryScannerThread::on_vacuum()
 
   remove_dangling ();
 
-  pthreaddata->Message.emit(_("Vacuum process done."));
+  m_SQL->exec_sql("COMMIT");
 
+  pthreaddata->Message.emit(_("Vacuum process done."));
   pthreaddata->ScanEnd.emit();
 }
 
@@ -1291,6 +1294,8 @@ MPX::LibraryScannerThread::on_vacuum_volume(
               % hal_device_udi
               % hal_volume_udi
       ).str());
+
+  m_SQL->exec_sql("BEGIN");
 
   for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
   {
@@ -1343,8 +1348,9 @@ MPX::LibraryScannerThread::on_vacuum_volume(
 
   remove_dangling ();
 
-  pthreaddata->Message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
+  m_SQL->exec_sql("COMMIT");
 
+  pthreaddata->Message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
   pthreaddata->ScanEnd.emit();
 }
 #endif // HAVE_HAL
