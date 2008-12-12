@@ -1194,6 +1194,8 @@ MPX::LibraryScannerThread::remove_dangling ()
 void
 MPX::LibraryScannerThread::on_vacuum() 
 {
+  pthreaddata->ScanStart.emit();
+
   ThreadData * pthreaddata = m_ThreadData.get();
 
 #ifdef HAVE_HAL
@@ -1261,6 +1263,8 @@ MPX::LibraryScannerThread::on_vacuum()
   remove_dangling ();
 
   pthreaddata->Message.emit(_("Vacuum process done."));
+
+  pthreaddata->ScanEnd.emit();
 }
 
 #ifdef HAVE_HAL
@@ -1270,6 +1274,8 @@ MPX::LibraryScannerThread::on_vacuum_volume(
     const std::string& hal_volume_udi
 )
 {
+  pthreaddata->ScanStart.emit();
+
   ThreadData * pthreaddata = m_ThreadData.get();
 
   typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
@@ -1335,5 +1341,7 @@ MPX::LibraryScannerThread::on_vacuum_volume(
   remove_dangling ();
 
   pthreaddata->Message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
+
+  pthreaddata->ScanEnd.emit();
 }
 #endif // HAVE_HAL

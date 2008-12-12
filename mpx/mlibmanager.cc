@@ -1113,9 +1113,7 @@ namespace MPX
     void
     MLibManager::on_vacuum_volume ()
     {
-        m_VboxInner->set_sensitive(false);
-        m_Library.vacuumVolume(m_DeviceUDI, m_VolumeUDI);
-        m_VboxInner->set_sensitive(true);
+        m_Library.vacuumVolume( m_DeviceUDI, m_VolumeUDI );
     }
 
     void
