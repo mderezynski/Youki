@@ -1248,8 +1248,15 @@ namespace MPX
                             IdIterMap::iterator i = m_Track_Iter_Map.find(id);
                             if( i != m_Track_Iter_Map.end() )
                             {
+                                TreeIter parent = i->second->parent();
+
                                 AlbumsTreeStore->erase( i->second );
                                 m_Track_Iter_Map.erase( i );
+
+                                if( !parent->children().size() )
+                                {
+                                    on_album_deleted( gint64((*parent)[Columns.Id]) );
+                                }
                             }
                         }
 

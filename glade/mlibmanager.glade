@@ -336,7 +336,7 @@
 			  <child>
 			    <widget class="GtkButton" id="b-rescan">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Quick rescan, finds new folders and new files, but ignores changes in existing files.</property>
+			      <property name="tooltip" translatable="yes">Finds new files. If you changed existing files, use 'Deep Rescan'.</property>
 			      <property name="can_default">True</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -411,7 +411,7 @@
 			  <child>
 			    <widget class="GtkButton" id="b-rescan-deep">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Rescans everything, finds also changes in existing files, but is also slower.</property>
+			      <property name="tooltip" translatable="yes">Finds all changes, potentially slow.</property>
 			      <property name="can_default">True</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>

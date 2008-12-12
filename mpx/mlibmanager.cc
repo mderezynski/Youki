@@ -653,8 +653,8 @@ namespace MPX
     int
     MLibManager::fstree_sort (const TreeIter & iter_a, const TreeIter & iter_b)
     {
-        Glib::ustring a = (*iter_a)[FSTreeColumns.SegName];
-        Glib::ustring b = (*iter_b)[FSTreeColumns.SegName];
+        Glib::ustring a ((*iter_a)[FSTreeColumns.SegName]);
+        Glib::ustring b ((*iter_b)[FSTreeColumns.SegName]);
         return a.compare(b);
     }
 
@@ -1143,34 +1143,32 @@ namespace MPX
     void
     MLibManager::cell_data_func_text (CellRenderer * basecell, TreeIter const& iter)
     {
+        TreePath path = FSTreeStore->get_path(iter); 
+
+        if( path.size() < 1 )
+        {
+            return;
+        }
+
+        std::string FullPath = (*iter)[FSTreeColumns.FullPath];
+        std::string SegName  = (*iter)[FSTreeColumns.SegName];
+
         CellRendererText & cell = *(dynamic_cast<CellRendererText*>(basecell));
 
-        TreePath path = FSTreeStore->get_path(iter); 
-        if(path.size() < 1)
-            return;
-
-        Glib::ustring segName = (*iter)[FSTreeColumns.SegName];
-
-        for(PathFragsV::const_iterator i = m_ManagedPathFrags.begin(); i != m_ManagedPathFrags.end(); ++i)
-        {
-            PathFrags const& frags = *i;
-
-            if(!(frags.size() < path.size()))
+        for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
+        { 
+            if( (*i).substr( 0, FullPath.size() ) == FullPath ) 
             {
-                std::string const& frag = frags[path.size()-1];
-                if( frag == segName ) 
-                {
-                    cell.property_markup() = (boost::format("<span foreground='#0000ff'><b>%s</b></span>") % Markup::escape_text(segName)).str();
-                    return;
-                }
+                cell.property_markup() = (boost::format("<span foreground='#0000ff'><b>%s</b></span>") % Markup::escape_text(SegName)).str();
+                return;
             }
         }
 
         TreeIter iter_copy = iter;
         if(has_active_parent(iter_copy))
-            cell.property_markup() = (boost::format("<span foreground='#a0a0a0'>%s</span>") % Markup::escape_text(segName)).str();
+            cell.property_markup() = (boost::format("<span foreground='#a0a0a0'>%s</span>") % Markup::escape_text(SegName)).str();
         else
-            cell.property_text() = segName; 
+            cell.property_text() = SegName; 
     }
 
     bool

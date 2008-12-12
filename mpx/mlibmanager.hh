@@ -181,11 +181,10 @@ namespace MPX
 
             // ui stuff
             Gtk::TreeView * m_VolumesView;
-
             struct VolumeColumnsT : public Gtk::TreeModel::ColumnRecord
             {
-                Gtk::TreeModelColumn<Glib::ustring>                 Name;
-                Gtk::TreeModelColumn<Glib::ustring>                 Mountpoint;
+                Gtk::TreeModelColumn<std::string>                   Name;
+                Gtk::TreeModelColumn<std::string>                   Mountpoint;
                 Gtk::TreeModelColumn<Hal::RefPtr<Hal::Volume> >     Volume;
                 Gtk::TreeModelColumn<Glib::RefPtr<Gio::Volume> >    GioVolume;
 
@@ -197,17 +196,13 @@ namespace MPX
                     add (GioVolume);
                 };
             };
-
             VolumeColumnsT VolumeColumns;
             Glib::RefPtr<Gtk::ListStore> VolumeStore;
 
-
-
             Gtk::TreeView * m_FSTree;
-
             struct FSTreeColumnsT : public Gtk::TreeModel::ColumnRecord
             {
-                Gtk::TreeModelColumn<Glib::ustring>   SegName;
+                Gtk::TreeModelColumn<std::string>     SegName;
                 Gtk::TreeModelColumn<std::string>     FullPath;
                 Gtk::TreeModelColumn<bool>            WasExpanded;
 
@@ -218,7 +213,6 @@ namespace MPX
                     add (WasExpanded);
                 };
             };
-
             FSTreeColumnsT FSTreeColumns;
             Glib::RefPtr<Gtk::TreeStore> FSTreeStore;
 
