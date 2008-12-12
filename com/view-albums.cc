@@ -604,7 +604,6 @@ namespace MPX
                                         }
 
                                 }
-                                scroll_to_row (path, 0.);
                         }
 
                 void

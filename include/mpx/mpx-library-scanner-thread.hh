@@ -85,6 +85,7 @@ namespace MPX
             typedef sigc::signal<void, gint64>                      SignalNewAlbum_t ;
             typedef sigc::signal<void, gint64>                      SignalNewArtist_t ;
             typedef sigc::signal<void, Track&, gint64, gint64>      SignalNewTrack_t ;
+            typedef sigc::signal<void, gint64>                      SignalTrackDeleted_t ;
 
             typedef sigc::signal<void, const RequestQualifier&>     SignalCacheCover_t ;
             
@@ -96,6 +97,7 @@ namespace MPX
             typedef sigx::signal_f<SignalNewArtist_t>           signal_new_artist_x ;
             typedef sigx::signal_f<SignalCacheCover_t>          signal_cache_cover_x ;
             typedef sigx::signal_f<SignalNewTrack_t>            signal_new_track_x ;
+            typedef sigx::signal_f<SignalTrackDeleted_t>        signal_track_deleted_x ;
 
 
             struct ScannerConnectable
@@ -107,6 +109,7 @@ namespace MPX
                     signal_new_album_x & album_x,
                     signal_new_artist_x & artist_x,
                     signal_new_track_x & track_x,
+                    signal_track_deleted_x & track_deleted_x,
                     signal_cache_cover_x & cover_x,
                     signal_reload_x & reload_x
                 )
@@ -116,6 +119,7 @@ namespace MPX
                 , signal_new_album(album_x)
                 , signal_new_artist(artist_x)
                 , signal_new_track(track_x)
+                , signal_track_deleted(track_deleted_x)
                 , signal_cache_cover(cover_x)
                 , signal_reload(reload_x)
                 {
@@ -129,6 +133,7 @@ namespace MPX
                 signal_new_artist_x         & signal_new_artist ;
                 signal_cache_cover_x        & signal_cache_cover ;
                 signal_new_track_x          & signal_new_track ;
+                signal_track_deleted_x      & signal_track_deleted ;
             };
 
 
@@ -145,6 +150,7 @@ namespace MPX
             signal_new_artist_x         signal_new_artist ;
             signal_cache_cover_x        signal_cache_cover ;
             signal_new_track_x          signal_new_track ;
+            signal_track_deleted_x      signal_track_deleted ;
 
         public:	
 

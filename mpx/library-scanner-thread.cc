@@ -146,6 +146,7 @@ struct MPX::LibraryScannerThread::ThreadData
     LibraryScannerThread::SignalNewAlbum_t          NewAlbum ;
     LibraryScannerThread::SignalNewArtist_t         NewArtist ;
     LibraryScannerThread::SignalNewTrack_t          NewTrack ;
+    LibraryScannerThread::SignalTrackDeleted_t      TrackDeleted ;
     LibraryScannerThread::SignalCacheCover_t        CacheCover ;
     LibraryScannerThread::SignalReload_t            Reload ;
 
@@ -162,6 +163,7 @@ MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::
 , signal_new_album(*this, m_ThreadData, &ThreadData::NewAlbum)
 , signal_new_artist(*this, m_ThreadData, &ThreadData::NewArtist)
 , signal_new_track(*this, m_ThreadData, &ThreadData::NewTrack)
+, signal_track_deleted(*this, m_ThreadData, &ThreadData::TrackDeleted)
 , signal_cache_cover(*this, m_ThreadData, &ThreadData::CacheCover)
 , signal_reload(*this, m_ThreadData, &ThreadData::Reload)
 , m_SQL(obj_sql)
@@ -169,15 +171,18 @@ MPX::LibraryScannerThread::LibraryScannerThread (MPX::SQL::SQLDB* obj_sql, MPX::
 , m_HAL(obj_hal)
 , m_Flags(flags)
 {
-    m_Connectable = new ScannerConnectable(
-            signal_scan_start,
-            signal_scan_run,
-            signal_scan_end,
-            signal_new_album,
-            signal_new_artist,
-            signal_new_track,
-            signal_cache_cover,
-            signal_reload
+    m_Connectable =
+
+    new ScannerConnectable(
+        signal_scan_start
+      , signal_scan_run
+      , signal_scan_end
+      , signal_new_album
+      , signal_new_artist
+      , signal_new_track
+      , signal_track_deleted
+      , signal_cache_cover
+      , signal_reload
     );
 }
 
@@ -950,6 +955,7 @@ gint64
 MPX::LibraryScannerThread::get_track_id (Track& track) const
 {
   RowV rows;
+#ifdef HAVE_HAL
   if ((m_Flags & Library::F_USING_HAL) == Library::F_USING_HAL)
   {
     static boost::format
@@ -963,6 +969,7 @@ MPX::LibraryScannerThread::get_track_id (Track& track) const
                                 % mprintf ("%q", get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()).c_str())).str());
   }
   else
+#endif
   {
     static boost::format
       select_f ("SELECT id FROM track WHERE %s='%s';");
@@ -982,6 +989,8 @@ MPX::LibraryScannerThread::get_track_id (Track& track) const
 ScanResult
 MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const std::string& insert_path)
 {
+  static boost::format delete_track_f ("DELETE FROM track WHERE id='%lld';");
+
   if( uri.empty() )
   {
     throw ScanError(_("Empty URI/no URI given"));
@@ -991,6 +1000,15 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
 
   if( !(track[ATTRIBUTE_ALBUM] && track[ATTRIBUTE_ARTIST] && track[ATTRIBUTE_TITLE]) )
   {
+    // check if the track already exists; if so, metadata has been removed
+    gint64 id = get_track_id( track );
+    if( id != 0 )
+    {
+        m_SQL->exec_sql ((delete_track_f % id).str()); 
+        pthreaddata->TrackDeleted.emit( id ); 
+    }
+
+    // FIXME/TODO: Still throw if deleted?
     throw ScanError(_("Insufficient Metadata (artist, album and title must be given)"));
   }
 
@@ -1055,7 +1073,6 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
       gint64 id = get_track_id (track);
       if( id != 0 )
       {
-          static boost::format delete_track_f ("DELETE FROM track WHERE id='%lld';");
           m_SQL->exec_sql ((delete_track_f % id).str()); 
           m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
           gint64 new_id = m_SQL->last_insert_rowid ();
