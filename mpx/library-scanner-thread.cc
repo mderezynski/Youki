@@ -1194,9 +1194,9 @@ MPX::LibraryScannerThread::remove_dangling ()
 void
 MPX::LibraryScannerThread::on_vacuum() 
 {
-  pthreaddata->ScanStart.emit();
-
   ThreadData * pthreaddata = m_ThreadData.get();
+
+  pthreaddata->ScanStart.emit();
 
 #ifdef HAVE_HAL
   typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
@@ -1274,9 +1274,9 @@ MPX::LibraryScannerThread::on_vacuum_volume(
     const std::string& hal_volume_udi
 )
 {
-  pthreaddata->ScanStart.emit();
-
   ThreadData * pthreaddata = m_ThreadData.get();
+
+  pthreaddata->ScanStart.emit();
 
   typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
 
