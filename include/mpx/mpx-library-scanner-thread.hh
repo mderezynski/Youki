@@ -279,7 +279,7 @@ namespace MPX
 
 
             void
-            remove_dangling();
+            do_remove_dangling();
 
         private:
 

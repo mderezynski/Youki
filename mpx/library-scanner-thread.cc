@@ -1039,7 +1039,7 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
 }
 
 void
-MPX::LibraryScannerThread::remove_dangling () 
+MPX::LibraryScannerThread::do_remove_dangling () 
 {
   ThreadData * pthreaddata = m_ThreadData.get();
 
@@ -1157,7 +1157,7 @@ MPX::LibraryScannerThread::on_vacuum()
           }
   }
 
-  remove_dangling ();
+  do_remove_dangling ();
 
   m_SQL->exec_sql("COMMIT");
 
@@ -1213,7 +1213,7 @@ MPX::LibraryScannerThread::on_vacuum_volume(
         }
   }
 
-  remove_dangling ();
+  do_remove_dangling ();
 
   m_SQL->exec_sql("COMMIT");
 
