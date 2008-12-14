@@ -114,9 +114,10 @@ namespace MPX
 
         public:
 
-            sigx::request_f<Util::FileList const&, bool> scan ;
-            sigx::request_f<> scan_stop ;
-            sigx::request_f<> vacuum ;
+            sigx::request_f<Util::FileList const&, bool>    scan ;
+            sigx::request_f<Util::FileList const&>          scan_direct ;
+            sigx::request_f<>                               scan_stop ;
+            sigx::request_f<>                               vacuum ;
 #ifdef HAVE_HAL
             sigx::request_f< const std::string&, const std::string& > vacuum_volume ;
 #endif // HAVE_HAL
@@ -197,34 +198,78 @@ namespace MPX
                 const std::string&
             );
 #endif // HAVE_HAL
-            void on_scan (Util::FileList const&, bool) ;
-            void on_scan_stop () ;
-            void on_scan_list_deep (Util::FileList const&); // on_scan delegate
-            void on_scan_list_paths (Util::FileList const&); // on_scan delegate
+
+            void on_scan(
+                const Util::FileList&,
+                bool
+            ) ;
+
+            void on_scan_direct(
+                const Util::FileList&
+            ) ;
+
+            void on_scan_stop() ;
+
+            void on_scan_list_deep(
+                const Util::FileList&
+            ); // on_scan delegate
+
+            void on_scan_list_paths(
+                const Util::FileList&
+            ); // on_scan delegate
 
             void
-            on_scan_list_paths_callback( std::string const& , gint64 const& , std::string const& );
+            on_scan_list_paths_callback(
+                const std::string&,
+                const gint64&,
+                const std::string&
+            );
 
             gint64
-            get_track_artist_id (Track& row, bool only_if_exists = false);
+            get_track_artist_id(
+                Track&,
+                bool = false
+            );
 
             gint64
-            get_album_artist_id (Track& row, bool only_if_exists = false);
+            get_album_artist_id(
+                Track&,
+                bool = false
+            );
 
             gint64
-            get_album_id (Track& row, gint64 album_artist_id, bool only_if_exists = false);
+            get_album_id(
+                Track&,
+                gint64,
+                bool = false
+            );
 
             gint64
-            get_track_mtime (Track& track) const;
+            get_track_mtime(
+                Track&
+            ) const;
 
             gint64
-            get_track_id (Track& track) const;
+            get_track_id(
+                Track&
+            ) const;
 
             ScanResult
-            insert (Track&, const std::string& uri, const std::string& insert_path);
+            insert(
+                Track&,
+                const std::string& /*uri*/,
+                const std::string& /*insert_path*/
+            );
 
             void
-            remove_dangling ();
+            insert_file(
+                const std::string& uri
+              , const std::string& insert_path_sql
+            );
+
+
+            void
+            remove_dangling();
 
         private:
 

@@ -61,11 +61,13 @@ namespace
                 "         <separator/>"
                 "         <menuitem action='action-close'/>"
                 "   </menu>"
+#ifdef HAVE_HAL
                 "   <menu action='MenuVolume'>"
                 "         <menuitem action='action-volume-rescan'/>"
                 "         <menuitem action='action-volume-rescan-deep'/>"
                 "         <menuitem action='action-volume-vacuum'/>"
                 "   </menu>"
+#endif
                 "</menubar>"
                 "</ui>"
                 "";
@@ -74,11 +76,22 @@ namespace
 namespace MPX
 {
     MLibManager*
-    MLibManager::create (MPX::HAL & obj_hal, MPX::Library & obj_library)
+    MLibManager::create(
+#ifdef HAVE_HAL
+        MPX::HAL& obj_hal,
+#endif
+        MPX::Library & obj_library
+    )
     {
-      const std::string path (build_filename (DATA_DIR, "glade" G_DIR_SEPARATOR_S "mlibmanager.glade"));
-      MLibManager *p = new MLibManager(Gnome::Glade::Xml::create (path), obj_hal, obj_library);
-      return p;
+        const std::string path (build_filename (DATA_DIR, "glade" G_DIR_SEPARATOR_S "mlibmanager.glade"));
+        MLibManager *p = new MLibManager(
+            Gnome::Glade::Xml::create(path),
+#ifdef HAVE_HAL
+            obj_hal,
+#endif
+            obj_library
+        );
+        return p;
     }
 
     MLibManager::~MLibManager ()
@@ -89,16 +102,20 @@ namespace MPX
 
     MLibManager::MLibManager(
         const RefPtr<Gnome::Glade::Xml>&    xml,
+#ifdef HAVE_HAL
         MPX::HAL&                           obj_hal,
+#endif
         MPX::Library&                       obj_library
     )
     : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
     , sigx::glib_auto_dispatchable()
     , Service::Base("mpx-service-mlibman")
+#ifdef HAVE_HAL
     , m_HAL(obj_hal)
+#endif
     , m_Library(obj_library)
     {
-        /*- Widgets -------------------------------------------------------*/ 
+       /*- Widgets -------------------------------------------------------*/ 
 
         m_Xml->get_widget("statusbar", m_Statusbar );
         m_Xml->get_widget("vbox-inner", m_VboxInner );
@@ -131,6 +148,7 @@ namespace MPX
 
         m_TextBufferDetails = (dynamic_cast<Gtk::TextView*>(m_Xml->get_widget("textview-details")))->get_buffer();
 
+#ifdef HAVE_HAL
         /*- Volumes View --------------------------------------------------*/ 
 
         Gtk::CellRendererText * cell = 0; 
@@ -196,9 +214,9 @@ namespace MPX
                 *this,
                 &MLibManager::on_volumes_changed
         ))));
+#endif
 
-        populate_volumes();
-
+#ifdef HAVE_HAL
         /*- FSTree --------------------------------------------------------*/ 
 
         m_Xml->get_widget("fstree-view", m_FSTree);
@@ -255,13 +273,17 @@ namespace MPX
         ); 
 
         m_FSTree->set_model(FSTreeStore);
+#endif
 
         /*- Buttons -------------------------------------------------------*/ 
 
         m_Xml->get_widget("b-close", m_Close);
+
+#ifdef HAVE_HAL
         m_Xml->get_widget("b-rescan", m_Rescan);
         m_Xml->get_widget("b-rescan-deep", m_DeepRescan);
         m_Xml->get_widget("b-vacuum", m_Vacuum);
+#endif
 
         /*- Rescanning ----------------------------------------------------*/ 
 
@@ -278,6 +300,7 @@ namespace MPX
               &MLibManager::on_library_rescan_in_intervals_changed
         ));
 
+#ifdef HAVE_HAL
         mcs->subscribe(
           "library",
           "use-hal",
@@ -285,6 +308,7 @@ namespace MPX
               *this,
               &MLibManager::on_library_use_hal_changed
         ));
+#endif
 
         sigc::slot<bool> slot = sigc::mem_fun(*this, &MLibManager::on_rescan_timeout);
         sigc::connection conn = Glib::signal_timeout().connect(slot, 1000);
@@ -300,10 +324,12 @@ namespace MPX
             _("_Music Library")
         ));
 
+#ifdef HAVE_HAL
         m_Actions->add(Action::create(
             "MenuVolume",
             _("_Volume")
         ));
+#endif
 
         m_Actions->add( Action::create(
             "action-mlib-remove-dupes",
@@ -346,8 +372,11 @@ namespace MPX
                 &Library::vacuum
         ));
 
+#ifdef HAVE_HAL
         m_Actions->add( Action::create(
+
             "action-volume-rescan",
+
             Gtk::Stock::REFRESH,
             _("_Rescan")),
             sigc::bind(
@@ -380,6 +409,7 @@ namespace MPX
                 *this,
                 &MLibManager::on_vacuum_volume
         ));
+#endif
 
         m_Actions->add( Action::create(
             "action-close",
@@ -390,6 +420,7 @@ namespace MPX
                 &MLibManager::hide
         ));
 
+#ifdef HAVE_HAL
         m_Actions->get_action("action-volume-rescan")->set_sensitive( false );
         m_Actions->get_action("action-volume-rescan-deep")->set_sensitive( false );
         m_Actions->get_action("action-volume-vacuum")->set_sensitive( false );
@@ -397,6 +428,7 @@ namespace MPX
         m_Actions->get_action("action-volume-rescan")->connect_proxy( *m_Rescan );
         m_Actions->get_action("action-volume-rescan-deep")->connect_proxy( *m_DeepRescan );
         m_Actions->get_action("action-volume-vacuum")->connect_proxy( *m_Vacuum );
+#endif
 
         m_Actions->get_action("action-close")->connect_proxy( *m_Close );
 
@@ -411,13 +443,27 @@ namespace MPX
                 , *this
                 , _("MLibMan Menubar")
                 , dummy
-        ))
+            )
+        )
         {
-                  dynamic_cast<Alignment*>(
-                        m_Xml->get_widget("alignment-menu")
-                  )->add(
-                        *(m_UIManager->get_widget ("/MenubarMLibMan"))
-                  );
+            dynamic_cast<Alignment*>(
+                m_Xml->get_widget("alignment-menu")
+            )->add(
+                *(m_UIManager->get_widget ("/MenubarMLibMan"))
+            );
+        }
+
+        /*- Init the UI ---------------------------------------------------*/ 
+
+#ifdef HAVE_HAL
+        if( mcs->key_get<bool>("library", "use-hal"))
+        {
+            populate_volumes();
+        }
+        else
+#endif
+        {
+            m_Xml->get_widget("notebook1")->hide();
         }
 
         /*- Setup Window Geometry -----------------------------------------*/ 
@@ -435,17 +481,29 @@ namespace MPX
         );
     }
 
+#ifdef HAVE_HAL
     void
     MLibManager::on_library_use_hal_changed (MCS_CB_DEFAULT_SIGNATURE)
     {
         bool use_hal = mcs->key_get<bool>("library","use-hal");
 
-        m_VboxInner->set_sensitive( use_hal );
-        m_Actions->get_action("MenuVolume")->set_sensitive( use_hal ); 
+        if( use_hal )
+        {
+            populate_volumes(); 
+            m_Xml->get_widget("notebook1")->show();
+            set_resizable( true );
+        }
+        else
+        {
+            clear_volumes();
+            m_Xml->get_widget("notebook1")->hide();
+            set_resizable( false );
+        }
 
+        m_Actions->get_action("MenuVolume")->set_sensitive( use_hal ); 
         m_Actions->get_action("action-mlib-rescan")->set_visible( use_hal );
-        m_Actions->get_action("action-mlib-rescan-deep")->set_sensitive( !use_hal );
     }
+#endif
 
     void
     MLibManager::on_library_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE)
@@ -523,7 +581,11 @@ namespace MPX
         m_TextBufferDetails->set_text(text);
 
         if( mcs->key_get<bool>("library","always-vacuum") )
-            on_vacuum_volume ();
+#ifdef HAVE_HAL
+            on_vacuum_volume();
+#else
+            m_Library.vacuum();
+#endif
         else
             m_VboxInner->set_sensitive(true);
     }
@@ -592,6 +654,7 @@ namespace MPX
     {
           m_VboxInner->set_sensitive(false);
 
+#ifdef HAVE_HAL
           if( mcs->key_get<bool>("library","use-hal"))
           {
                 Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
@@ -643,12 +706,20 @@ namespace MPX
                 }
           }
           else
+#endif
           {
           }
 
           m_VboxInner->set_sensitive(true);
     }
 
+    void
+    MLibManager::on_mlib_remove_dupes ()
+    {
+        m_Library.removeDupes();
+    }
+
+#ifdef HAVE_HAL
     void
     MLibManager::on_volume_removed (const HAL::Volume& volume)
     {
@@ -685,9 +756,29 @@ namespace MPX
     } 
 
     void
+    MLibManager::clear_volumes ()
+    {
+        VolumeStore->clear();
+        FSTreeStore->clear();
+
+        m_ManagedPaths  = StrSetT();
+        m_VolumeUDI     = std::string(); 
+        m_DeviceUDI     = std::string(); 
+        m_MountPoint    = std::string();
+    }
+
+    void
     MLibManager::populate_volumes ()
     {
         static boost::format volume_label_f1 ("%1%: %2%");
+        
+        FSTreeStore->clear();
+        VolumeStore->clear();
+
+        m_ManagedPaths  = StrSetT();
+        m_VolumeUDI     = std::string(); 
+        m_DeviceUDI     = std::string(); 
+        m_MountPoint    = std::string();
 
         try { 
                 Hal::RefPtr<Hal::Context> Ctx = m_HAL.get_context();
@@ -1268,10 +1359,5 @@ namespace MPX
         }
         return true;
     }
-
-    void
-    MLibManager::on_mlib_remove_dupes ()
-    {
-        m_Library.removeDupes();
-    }
+#endif
 }

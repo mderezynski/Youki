@@ -166,6 +166,7 @@ MPX::LibraryScannerThread::LibraryScannerThread(
 )
 : sigx::glib_threadable()
 , scan(sigc::mem_fun(*this, &LibraryScannerThread::on_scan))
+, scan_direct(sigc::mem_fun(*this, &LibraryScannerThread::on_scan_direct))
 , scan_stop(sigc::mem_fun(*this, &LibraryScannerThread::on_scan_stop))
 , vacuum(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum))
 #ifdef HAVE_HAL
@@ -227,7 +228,10 @@ MPX::LibraryScannerThread::on_cleanup ()
 }
 
 void
-MPX::LibraryScannerThread::on_scan (Util::FileList const& list, bool deep)
+MPX::LibraryScannerThread::on_scan(
+    const Util::FileList&   list,
+    bool                    deep
+)
 {
     if(list.empty())
     {
@@ -241,6 +245,40 @@ MPX::LibraryScannerThread::on_scan (Util::FileList const& list, bool deep)
 }
 
 void
+MPX::LibraryScannerThread::on_scan_direct(
+    const Util::FileList&   list
+)
+{
+    ThreadData * pthreaddata = m_ThreadData.get();
+    g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
+
+    pthreaddata->ScanStart.emit();
+    m_SQL->exec_sql( "UPDATE album SET album_new = 0" );
+
+    m_ScanSummary = ScanSummary();
+    m_ScanSummary.DeepRescan = true;
+    m_ScanSummary.FilesTotal = list.size();
+
+    for(Util::FileList::const_iterator i = list.begin(); i != list.end(); ++i)
+    {  
+        if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
+        {
+            pthreaddata->ScanSummary.emit( m_ScanSummary );
+            return;
+        }
+
+        insert_file( *i, "" );
+                        
+        if (! (std::distance(list.begin(), i) % 50) )
+        {
+                pthreaddata->ScanRun.emit(std::distance(list.begin(), i), true ); 
+        }
+    }
+
+    pthreaddata->ScanSummary.emit( m_ScanSummary );
+}
+
+void
 MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
 {
     ThreadData * pthreaddata = m_ThreadData.get();
@@ -251,7 +289,7 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
 
     SQL::RowV rows;
     m_SQL->get(rows, "SELECT last_scan_date FROM meta");
-    gint64 last_scan_date = boost::get<gint64>(rows[1]["last_scan_date"]);
+    gint64 last_scan_date = boost::get<gint64>(rows[0]["last_scan_date"]);
 
     m_ScanSummary = ScanSummary();
     m_ScanSummary.DeepRescan = false;
@@ -314,7 +352,76 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
 }
 
 void
-MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, gint64 const& last_scan_date, std::string const& insert_path_sql )
+MPX::LibraryScannerThread::insert_file(
+      const std::string& uri
+    , const std::string& insert_path_sql
+)
+{
+        Track track;
+
+        try{
+            m_Library->trackSetLocation( track, uri );
+
+            try{
+                gint64 mtime1 = Util::get_file_mtime( uri );
+                gint64 mtime2 = get_track_mtime( track ) ;
+
+                if( mtime2 != 0 && mtime1 == mtime2 ) 
+                {
+                    ++m_ScanSummary.FilesUpToDate;
+                }
+                else
+                {
+                    track[ATTRIBUTE_MTIME] = mtime1; 
+
+                    if( !m_MetadataReaderTagLib->get( uri, track ) )
+                    {
+                        ++m_ScanSummary.FilesErroneous;
+                        m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, _("Could not acquire metadata using taglib-gio")));
+                    }
+                    else try{
+
+                        ScanResult status = insert( track, uri, insert_path_sql );
+
+                        switch( status )
+                        {
+                            case SCAN_RESULT_OK:
+                                ++m_ScanSummary.FilesAdded;
+                                break;
+
+                            case SCAN_RESULT_UPDATE:
+                                ++m_ScanSummary.FilesUpdated;
+                                m_ScanSummary.FileListUpdated.push_back( SSFileInfo( uri, _("Updated")));
+                                break;
+                        }
+                    }
+                    catch( ScanError & cxe )
+                    {
+                        ++m_ScanSummary.FilesErroneous;
+                        m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
+                    }
+                    catch( Glib::ConvertError & cxe )
+                    {
+                        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+                    }
+                }
+            } catch( Glib::Error & cxe ) { 
+                g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+            }
+        }
+        catch( Library::FileQualificationError & cxe )
+        {
+            ++(m_ScanSummary.FilesErroneous);
+            m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, cxe.what()));
+        }
+}
+
+void
+MPX::LibraryScannerThread::on_scan_list_paths_callback(
+    const std::string&  i3,
+    const gint64&       last_scan_date,
+    const std::string&  insert_path_sql
+)
 {
     ThreadData * pthreaddata = m_ThreadData.get();
 
@@ -337,63 +444,7 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                     return;
                 }
 
-                Track track;
-
-                try{
-                    m_Library->trackSetLocation( track, *i2 );
-
-                    try{
-                        gint64 mtime1 = Util::get_file_mtime(*i2);
-                        gint64 mtime2 = get_track_mtime( track ) ;
-
-                        if( mtime2 != 0 && mtime1 == mtime2 ) 
-                        {
-                            ++m_ScanSummary.FilesUpToDate;
-                        }
-                        else
-                        {
-                            track[ATTRIBUTE_MTIME] = mtime1; 
-
-                            if( !m_MetadataReaderTagLib->get( *i2, track ) )
-                            {
-                                ++m_ScanSummary.FilesErroneous;
-                                m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Could not acquire metadata using taglib-gio")));
-                            }
-                            else try{
-
-                                ScanResult status = insert( track, *i2, insert_path_sql );
-
-                                switch( status )
-                                {
-                                    case SCAN_RESULT_OK:
-                                        ++m_ScanSummary.FilesAdded;
-                                        break;
-
-                                    case SCAN_RESULT_UPDATE:
-                                        ++m_ScanSummary.FilesUpdated;
-                                        m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i2, _("Updated")));
-                                        break;
-                                }
-                            }
-                            catch( ScanError & cxe )
-                            {
-                                ++m_ScanSummary.FilesErroneous;
-                                m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
-                            }
-                            catch( Glib::ConvertError & cxe )
-                            {
-                                g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-                            }
-                        }
-                    } catch( Glib::Error & cxe ) { 
-                        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-                    }
-                }
-                catch( Library::FileQualificationError & cxe )
-                {
-                    ++(m_ScanSummary.FilesErroneous);
-                    m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, cxe.what()));
-                }
+                insert_file( *i2, insert_path_sql );
             }
         }
         
@@ -409,7 +460,9 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
 }
 
 void
-MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
+MPX::LibraryScannerThread::on_scan_list_deep(
+    const Util::FileList&   list
+)
 {
     ThreadData * pthreaddata = m_ThreadData.get();
     g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
@@ -444,16 +497,22 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
                 }
 #ifdef HAVE_HAL
             }
-          catch (HAL::Exception & cxe)
-            {
+          catch(
+            HAL::Exception&     cxe
+          )
+          {
               g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+              pthreaddata->ScanSummary.emit( m_ScanSummary );
               return;
-            }
-          catch (Glib::ConvertError & cxe)
-            {
+          }
+          catch(
+            Glib::ConvertError& cxe
+          )
+          {
               g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+              pthreaddata->ScanSummary.emit( m_ScanSummary );
               return;
-            }
+          }
 #endif // HAVE_HAL
             collection.clear();
 
@@ -467,6 +526,7 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
         catch( Glib::ConvertError & cxe )
         {
             g_warning("%s: %s", G_STRLOC, cxe.what().c_str());
+            pthreaddata->ScanSummary.emit( m_ScanSummary );
             return;
         }
 
@@ -478,64 +538,7 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
                 return;
             }
 
-            Track track;
-
-            try{
-                m_Library->trackSetLocation( track, *i2 );
-
-                try{
-                    gint64 mtime1 = Util::get_file_mtime(*i2);
-                    gint64 mtime2 = get_track_mtime( track ) ;
-
-                    if( mtime2 != 0 && mtime1 == mtime2 ) 
-                    {
-                        ++m_ScanSummary.FilesUpToDate;
-                    }
-                    else
-                    {
-                        track[ATTRIBUTE_MTIME] = mtime1; 
-
-                        if( !m_MetadataReaderTagLib->get( *i2, track ) )
-                        {
-                            ++m_ScanSummary.FilesErroneous;
-                            m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Could not acquire metadata using taglib-gio")));
-                        }
-                        else try{
-
-                            ScanResult status = insert( track, *i2, insert_path_sql );
-
-                            switch( status )
-                            {
-                                case SCAN_RESULT_OK:
-                                    ++m_ScanSummary.FilesAdded;
-                                    break;
-
-                                case SCAN_RESULT_UPDATE:
-                                    ++m_ScanSummary.FilesUpdated;
-                                    m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i2, _("Updated")));
-                                    break;
-                            }
-                        }
-                        catch( ScanError & cxe )
-                        {
-                            ++m_ScanSummary.FilesErroneous;
-                            m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
-                        }
-                        catch( Glib::ConvertError & cxe )
-                        {
-                            g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-                        }
-                    }
-                } catch( Glib::Error & cxe ) { 
-                    g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-                }
-            }
-            catch( Library::FileQualificationError & cxe )
-            {
-                ++(m_ScanSummary.FilesErroneous);
-                m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, cxe.what()));
-            }
-
+            insert_file( *i2, insert_path_sql );
                         
             if (! (std::distance(collection.begin(), i2) % 50) )
             {
@@ -1124,13 +1127,8 @@ MPX::LibraryScannerThread::on_vacuum()
 
   pthreaddata->ScanStart.emit();
 
-#ifdef HAVE_HAL
-  typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
-#endif
-
-  VolMountPointMap m;
   RowV rows;
-  m_SQL->get (rows, "SELECT * FROM track");
+  m_SQL->get (rows, "SELECT id, hal_volume_udi, hal_device_udi, hal_vrp, location FROM track"); // FIXME: We shouldn't need to do this here, it should be transparent (HAL vs. non HAL)
 
   m_SQL->exec_sql("BEGIN");
 

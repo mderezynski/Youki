@@ -65,7 +65,12 @@ namespace MPX
     {
         public:
 
-            static MLibManager* create (MPX::HAL & obj_hal, MPX::Library & obj_library) ;
+            static MLibManager* create(
+#ifdef HAVE_HAL
+                MPX::HAL& obj_hal,
+#endif
+                MPX::Library& obj_library
+            ) ;
             virtual ~MLibManager () ;
 
             void
@@ -85,7 +90,13 @@ namespace MPX
 
         private:
 
-            MLibManager (Glib::RefPtr<Gnome::Glade::Xml> const& xml, MPX::HAL & obj_hal, MPX::Library & obj_library) ;
+            MLibManager(
+                const Glib::RefPtr<Gnome::Glade::Xml>& xml,
+#ifdef HAVE_HAL
+                MPX::HAL& obj_hal,
+#endif
+                MPX::Library& obj_library
+            ) ;
 
             void
             scan_end(
@@ -105,6 +116,10 @@ namespace MPX
                 gint64,
                 bool
             ) ;
+
+#ifdef HAVE_HAL
+            void
+            clear_volumes () ;
 
             void
             populate_volumes () ;
@@ -171,10 +186,6 @@ namespace MPX
             on_volume_removed(
                 const HAL::Volume&
             ) ;
-
-            // auto rescanning
-            bool
-            on_rescan_timeout() ;
 
             // ui stuff
             Gtk::TreeView * m_VolumesView ;
@@ -246,17 +257,22 @@ namespace MPX
             std::string m_VolumeUDI;  // holds current VUDI
             std::string m_DeviceUDI;  //     - " -     DUDI
             std::string m_MountPoint; //     - " -     mount point
+#endif
 
             Gtk::Button     * m_Close ;
 
+#ifdef HAVE_HAL
             Gtk::Button     * m_Rescan ;
             Gtk::Button     * m_DeepRescan ;
             Gtk::Button     * m_Vacuum ;
+#endif
 
             Gtk::Statusbar  * m_Statusbar ;
             Gtk::Widget     * m_VboxInner ;
 
+#ifdef HAVE_HAL
             MPX::HAL        & m_HAL ;
+#endif
             MPX::Library    & m_Library ;
             Glib::Timer       m_RescanTimer ;
 
@@ -284,19 +300,26 @@ namespace MPX
             void
             on_mlib_vacuum_library() ;
 
+#ifdef HAVE_HAL
             void
             on_volume_rescan_volume() ;
 
             void
             on_volume_vacuum_volume() ;
+#endif
 
             // MCS Callbacks
 
+#ifdef HAVE_HAL
             void
             on_library_use_hal_changed (MCS_CB_DEFAULT_SIGNATURE) ;
+#endif
 
             void
             on_library_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE) ;
+
+            bool
+            on_rescan_timeout() ;
     } ;
 }
 #endif

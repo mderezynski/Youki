@@ -889,7 +889,6 @@ namespace MPX
                                         if(r.count("pcount"))
                                                 (*iter)[PlaylistColumns.Playcount] = get<gint64>(r["pcount"]);
 
-                                        (*iter)[PlaylistColumns.Location] = get<std::string>(r["location"]); 
                                         (*iter)[PlaylistColumns.MPXTrack] = m_Lib.get().sqlToTrack(r); 
                                         (*iter)[PlaylistColumns.IsMPXTrack] = true; 
                                         (*iter)[PlaylistColumns.IsBad] = false; 
@@ -934,11 +933,6 @@ namespace MPX
                                                         queue_draw();
                                                 }
                                         }
-
-                                        if(track[ATTRIBUTE_LOCATION])
-                                                (*iter)[PlaylistColumns.Location] = get<std::string>(track[ATTRIBUTE_LOCATION].get());
-                                        else
-                                                g_warning("Warning, no location given for track; this is totally wrong and should never happen.");
 
                                         (*iter)[PlaylistColumns.MPXTrack] = track; 
                                         (*iter)[PlaylistColumns.IsMPXTrack] = track[ATTRIBUTE_MPX_TRACK_ID] ? true : false; 

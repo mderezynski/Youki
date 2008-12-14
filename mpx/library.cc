@@ -200,7 +200,7 @@ namespace MPX
                                 SQLDB_OPEN
                         );
                 }
-                catch (DbInitError & cxe)
+                catch( DbInitError& cxe )
                 {
                         g_message("%s: Error Opening the DB", G_STRLOC);
                         throw;
@@ -217,7 +217,7 @@ namespace MPX
                 else
                 {
                         RowV rows;
-                        m_SQL->get( rows, "SELECT flags FROM meta" ) ; 
+                        m_SQL->get( rows, "SELECT flags FROM meta WHERE rowid = 1" ) ; 
                         m_Flags |= get<gint64>(rows[0].find("flags")->second); 
                 }
 
@@ -497,29 +497,71 @@ namespace MPX
                             SQL::RowV v;
                             getSQL(
                                 v,
-                                "SELECT hal_device_udi, hal_volume_udi, hal_vrp FROM track"
+                                "SELECT id, hal_device_udi, hal_volume_udi, hal_vrp FROM track"
                             );
 
                             for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
                             {
-                                Track t = sqlToTrack( *i );
+                                Track t = sqlToTrack( *i, false );
 
                                 mm->push_message((boost::format(_("Updating Track Locations: %lld / %lld")) % gint64(std::distance(v.begin(), i)) % v.size()).str());
 
+                                g_assert( t.has(ATTRIBUTE_LOCATION) );
+                                g_assert( (*i).count("id") );
+
                                 execSQL(
                                     mprintf(
-                                          "UPDATE track SET location = '%q' WHERE id ='%lld'"
+                                          "UPDATE track SET location = '%q', hal_device_udi = NULL, hal_volume_udi = NULL, hal_vrp = NULL WHERE id ='%lld'"
                                         , get<std::string>(t[ATTRIBUTE_LOCATION].get()).c_str()
                                         , get<gint64>((*i)["id"])
                                 ));
+
                             }
+
+                            m_Flags &= ~F_USING_HAL;
+
+                            mm->push_message(_("Updating Track Locations: Done")); 
+                        }
+                        else
+                        {
+                            // Update HAL data from locations 
+
+
+                            m_Flags |= F_USING_HAL;
+
+                            execSQL(
+                                "DELETE FROM track WHERE location NOT LIKE 'file:%'"
+                            ); // FIXME: Add warning to the GUI
+
+                            SQL::RowV v;
+                            getSQL(
+                                v,
+                                "SELECT id, location FROM track"
+                            );
+
+                            for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
+                            {
+                                Track t;
+
+                                trackSetLocation( t, get<std::string>((*i)["location"]));
+
+                                mm->push_message((boost::format(_("Updating Track HAL Data: %lld / %lld")) % gint64(std::distance(v.begin(), i)) % v.size()).str());
+
+                                execSQL(
+                                    mprintf(
+                                          "UPDATE track SET hal_device_udi = '%q', hal_volume_udi = '%q', hal_vrp = '%q', location = NULL WHERE id ='%lld'"
+                                        , get<std::string>(t[ATTRIBUTE_HAL_DEVICE_UDI].get()).c_str()
+                                        , get<std::string>(t[ATTRIBUTE_HAL_VOLUME_UDI].get()).c_str()
+                                        , get<std::string>(t[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()).c_str()
+                                        , get<gint64>((*i)["id"])
+                                ));
+                            }
+
+                            mm->push_message(_("Updating Track HAL Data: Done")); 
                         }
 
-                        mm->push_message(_("Updating Track Locations: Done")); 
 
-                        m_Flags &= ~F_USING_HAL;
-                        m_Flags |= (use_hal ? F_USING_HAL : 0); 
-                        m_SQL->exec_sql((boost::format ("UPDATE meta SET flags = '%lld'") % m_Flags).str());
+                        m_SQL->exec_sql((boost::format ("UPDATE meta SET flags = '%lld' WHERE rowid = 1") % m_Flags).str());
 
                         reload();
                 }
@@ -1104,12 +1146,6 @@ namespace MPX
                                 g_message("Exception in %s", G_STRFUNC);
                         }
 
-                        /*
-                        RowV rows;
-                        getSQL (rows, "SELECT count(*) AS count FROM track");
-                        gint64 count = get <gint64> (rows[0].find("count")->second);
-                        return gint64(g_random_double_range(0, double(count))); 
-                        */
                         return 0;
                 }
 
@@ -1134,6 +1170,8 @@ namespace MPX
                                     track[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);
 
                             track[ATTRIBUTE_LOCATION] = trackGetLocation( track ); 
+
+                            g_assert( track.has(ATTRIBUTE_LOCATION) );
                         }
                         else
 #endif
@@ -1202,6 +1240,8 @@ namespace MPX
                                 if (row.count("samplerate"))
                                         track[ATTRIBUTE_SAMPLERATE] = get<gint64>(row["samplerate"]);
                         }
+
+                        g_assert( track.has(ATTRIBUTE_LOCATION) );
 
                         return track;
                 }

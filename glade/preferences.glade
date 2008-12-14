@@ -956,8 +956,8 @@
 					      <child>
 						<widget class="GtkLabel" id="label492">
 						  <property name="visible">True</property>
-						  <property name="label" translatable="yes">&lt;small&gt;Change of this setting is applied immediately. Changing this setting will never cause any loss of data or information.
-However, disabling HAL is not recommended by default.&lt;/small&gt;</property>
+						  <property name="label" translatable="yes">&lt;small&gt;Change of this setting is applied immediately. Disabling HAL is not recommended. Switching from non-HAL to HAL mode
+will remove all information about non-locally stored tracks (i.e. non-file:/// URIs).&lt;/small&gt;</property>
 						  <property name="use_underline">False</property>
 						  <property name="use_markup">True</property>
 						  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -3670,7 +3670,7 @@ Non-accelerated (Use this when problems arise with Accelerated)</property>
 				  <property name="stock">gtk-dialog-warning</property>
 				  <property name="icon_size">2</property>
 				  <property name="xalign">0.5</property>
-				  <property name="yalign">0.5</property>
+				  <property name="yalign">0</property>
 				  <property name="xpad">4</property>
 				  <property name="ypad">0</property>
 				</widget>
@@ -3684,14 +3684,14 @@ Non-accelerated (Use this when problems arise with Accelerated)</property>
 			      <child>
 				<widget class="GtkLabel" id="label132">
 				  <property name="visible">True</property>
-				  <property name="label" translatable="yes">Changing the settings will interrupt playback.</property>
+				  <property name="label" translatable="yes">&lt;small&gt;Changing the settings will interrupt playback.&lt;/small&gt;</property>
 				  <property name="use_underline">False</property>
 				  <property name="use_markup">True</property>
 				  <property name="justify">GTK_JUSTIFY_LEFT</property>
 				  <property name="wrap">False</property>
 				  <property name="selectable">False</property>
 				  <property name="xalign">1</property>
-				  <property name="yalign">0.5</property>
+				  <property name="yalign">0</property>
 				  <property name="xpad">0</property>
 				  <property name="ypad">0</property>
 				  <property name="ellipsize">PANGO_ELLIPSIZE_NONE</property>
