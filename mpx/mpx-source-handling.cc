@@ -114,7 +114,7 @@ namespace MPX
 		}
 
 		
-        PlaybackSource * p = plugin->get_instance(m_ui_manager, *this); 
+        PlaybackSource * p = plugin->get_instance(m_UIManager, *this); 
         Gtk::Alignment * a = new Gtk::Alignment;
 
         if(p->get_ui()->get_parent())
@@ -375,7 +375,7 @@ namespace MPX
 
         if(m_SourceUI)
         {
-            m_ui_manager->remove_ui(m_SourceUI);
+            m_UIManager->remove_ui(m_SourceUI);
         }
 
         Caps caps = m_source_c[source_id];

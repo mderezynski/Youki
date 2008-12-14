@@ -44,6 +44,8 @@
 #include <mcs/mcs.h>
 #include <mcs/gtk-bind.h>
 
+#include <sigx/sigx.h>
+
 namespace MPX
 {
   class CoverArtSourceView;
@@ -55,13 +57,12 @@ namespace MPX
    * file.
    */
   class Preferences
-    : public Gnome::Glade::WidgetLoader<Gtk::Window>
+  : public Gnome::Glade::WidgetLoader<Gtk::Window>
+  , public sigx::glib_auto_dispatchable
   {
     protected:
 
       virtual void on_hide ();
-
-      Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
 
     public:
 
@@ -269,6 +270,7 @@ namespace MPX
       Gtk::Entry                        * m_halaudio_udi;
 #endif // HAVE_SUN
 
+
       // MM Keys
       struct KeyControls
       {
@@ -318,14 +320,31 @@ namespace MPX
 
     private:
 
+        // Misc
         Gtk::SpinButton*	m_Radio_MinimalBitrate;
       	CoverArtSourceView*	m_Covers_CoverArtSources; 
 
+        // Library
         Gtk::CheckButton*	m_Library_RescanAtStartup;
         Gtk::CheckButton*	m_Library_RescanInIntervals;
         Gtk::SpinButton*	m_Library_RescanInterval;
         Gtk::HBox*          m_Library_RescanIntervalBox;
         Gtk::ToggleButton*  m_Library_RescanAlwaysVacuum;
+
+        Gtk::RadioButton*   m_Library_UseHAL_Yes;
+        Gtk::RadioButton*   m_Library_UseHAL_No;
+
+        void
+        on_library_scan_start () ;
+
+        void
+        on_library_scan_end () ;
+
+        void
+        on_library_scan_summary ( const ScanSummary& G_GNUC_UNUSED ) ;
+
+        void
+        on_library_use_hal_toggled() ;
 
   }; // class Preferences
 } // namespace MPX

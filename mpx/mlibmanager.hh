@@ -176,9 +176,6 @@ namespace MPX
             bool
             on_rescan_timeout() ;
 
-            void
-            on_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE) ;
-
             // ui stuff
             Gtk::TreeView * m_VolumesView ;
             struct VolumeColumnsT : public Gtk::TreeModel::ColumnRecord
@@ -292,6 +289,14 @@ namespace MPX
 
             void
             on_volume_vacuum_volume() ;
+
+            // MCS Callbacks
+
+            void
+            on_library_use_hal_changed (MCS_CB_DEFAULT_SIGNATURE) ;
+
+            void
+            on_library_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE) ;
     } ;
 }
 #endif

@@ -259,26 +259,26 @@ namespace MPX
       }
 
       if (keycodes[0] == key->keycode) {
-          (dynamic_cast<Gtk::Button*>(player.m_ref_xml->get_widget("controls-play")))->clicked();
+          (dynamic_cast<Gtk::Button*>(player.m_Xml->get_widget("controls-play")))->clicked();
           //player.play ();
         return GDK_FILTER_REMOVE;
       } else if (keycodes[1] == key->keycode) {
         if( c & C_CAN_PAUSE )
-          (dynamic_cast<Gtk::ToggleButton*>(player.m_ref_xml->get_widget("controls-pause")))->set_active(!(dynamic_cast<Gtk::ToggleButton*>(player.m_ref_xml->get_widget("controls-pause")))->get_active());
+          (dynamic_cast<Gtk::ToggleButton*>(player.m_Xml->get_widget("controls-pause")))->set_active(!(dynamic_cast<Gtk::ToggleButton*>(player.m_Xml->get_widget("controls-pause")))->get_active());
           //player.pause ();
         return GDK_FILTER_REMOVE;
       } else if (keycodes[2] == key->keycode) {
         if( c & C_CAN_GO_PREV )
-          (dynamic_cast<Gtk::Button*>(player.m_ref_xml->get_widget("controls-previous")))->clicked();
+          (dynamic_cast<Gtk::Button*>(player.m_Xml->get_widget("controls-previous")))->clicked();
           //player.prev ();
         return GDK_FILTER_REMOVE;
       } else if (keycodes[3] == key->keycode) {
         if( c & C_CAN_GO_NEXT )
-          (dynamic_cast<Gtk::Button*>(player.m_ref_xml->get_widget("controls-next")))->clicked();
+          (dynamic_cast<Gtk::Button*>(player.m_Xml->get_widget("controls-next")))->clicked();
           //player.next ();
         return GDK_FILTER_REMOVE;
       } else if (keycodes[4] == key->keycode) {
-          (dynamic_cast<Gtk::Button*>(player.m_ref_xml->get_widget("controls-stop")))->clicked();
+          (dynamic_cast<Gtk::Button*>(player.m_Xml->get_widget("controls-stop")))->clicked();
           //player.stop ();
         return GDK_FILTER_REMOVE;
       } else {

@@ -263,6 +263,9 @@ namespace MPX
         mcs->key_register ("library", "rescan-in-intervals", true);
         mcs->key_register ("library", "rescan-interval", 30); // in minutes
         mcs->key_register ("library", "always-vacuum", false);
+#ifdef HAVE_HAL
+        mcs->key_register ("library", "use-hal", true);
+#endif // HAVE_HAL
 
         mcs->domain_register ("hotkeys");
         mcs->key_register ("hotkeys", "enable", bool (true));
@@ -353,7 +356,7 @@ main (int argc, char ** argv)
 
 #ifdef HAVE_HAL
         boost::shared_ptr<Library> ptr_library
-            (new MPX::Library(*services, true));
+            (new MPX::Library(*services));
         services->add(ptr_library);
 #else
         boost::shared_ptr<Library> ptr_library

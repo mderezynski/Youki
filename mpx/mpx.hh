@@ -31,14 +31,17 @@
 // FIXME: Must be here for some damn reason
 #include <giomm.h>
 
+#include "mpx/mpx-main.hh"
+
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/mpx-services.hh"
-#include "mpx/widgets/widgetloader.hh"
-#include "mpx/i-playbacksource.hh"
 #include "mpx/util-file.hh"
+#include "mpx/widgets/widgetloader.hh"
+
+#include "mpx/i-playbacksource.hh"
 
 #ifdef HAVE_HAL
 #include "mpx/mpx-hal.hh"
@@ -59,8 +62,6 @@
 #include <dbus/dbus-glib.h>
 #include <sigx/sigx.h>
 
-class CoverFlowWidget;
-
 namespace MPX
 {
     class AboutDialog;
@@ -73,9 +74,9 @@ namespace MPX
     class VolumeControl;
 
     class Player
-     : public Gnome::Glade::WidgetLoader<Gtk::Window>
-      , public sigx::glib_auto_dispatchable
-      , public Service::Base
+    : public Gnome::Glade::WidgetLoader<Gtk::Window>
+    , public sigx::glib_auto_dispatchable
+    , public Service::Base
     {
       public:
 
@@ -245,9 +246,10 @@ namespace MPX
             DBusTrackList   *tracklist;
 		};
 
-        Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
-        Glib::RefPtr<Gtk::ActionGroup>  m_actions;
-        Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
+        Glib::RefPtr<Gtk::ActionGroup>  m_Actions;
+        Glib::RefPtr<Gtk::UIManager>    m_UIManager;
+
+        guint                           m_MainUI;
 
 
 		DBusObjectsT                    DBusObjects;
@@ -318,6 +320,10 @@ namespace MPX
         };
 
         PlayDirection                   m_PlayDirection;
+
+    
+        void
+        on_library_use_hal_changed(MCS_CB_DEFAULT_SIGNATURE);
 
 
 		void

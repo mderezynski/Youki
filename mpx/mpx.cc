@@ -116,36 +116,63 @@ namespace
         char const ACTION_MLIBMANAGER []    = "action-mlibmanager";
         char const ACTION_IMPORT_FOLDER []  = "action-import-folder";
         char const ACTION_IMPORT_SHARE []   = "action-import-share";
-        char const ACTION_VACUUM_LIB []     = "action-vacuum-lib";
         char const ACTION_ABOUT []          = "action-about";
         char const ACTION_QUIT []           = "action-quit";
         char const ACTION_MB_IMPORT []      = "action-mb-import";
         char const ACTION_PLAY_FILES []     = "action-play-files";
 
-        char MenubarMain [] =
+        char MenubarMain_HAL [] =
                 "<ui>"
                 ""
                 "<menubar name='MenubarMain'>"
                 "   <menu action='MenuMusic'>"
                 "         <menuitem action='action-play-files'/>"
-                "         <separator name='sep00'/>"
+                "         <separator name='sep00-a'/>"
                 "	      <menuitem action='action-mb-import'/>"
-                "         <separator name='sep01'/>"
+                "         <separator name='sep01-a'/>"
                 "         <menuitem action='action-quit'/>"
                 "   </menu>"
                 "   <menu action='MenuEdit'>"
                 "         <menuitem action='action-preferences'/>"
                 "         <menuitem action='action-plugins'/>"
-                "         <separator name='sep02'/>"
-#ifdef HAVE_HAL
+                "         <separator name='sep02-a'/>"
+                "         <menuitem action='action-equalizer'/>"
+                "         <separator name='sep03-a'/>"
                 "         <menuitem action='action-mlibmanager'/>"
-#else
+                "   </menu>"
+                "   <menu action='MenuView'>"
+                "   </menu>"
+                "   <menu action='MenuTrack'>"
+                "         <placeholder name='placeholder-track-actions'/>"
+                "   </menu>"
+                "   <placeholder name='placeholder-source'/>"
+                "   <menu action='MenuHelp'>"
+                "         <menuitem action='action-about'/>"
+                "   </menu>"
+                "</menubar>"
+                ""
+                "</ui>"
+                "";
+
+        char MenubarMain_NoHAL [] =
+                "<ui>"
+                ""
+                "<menubar name='MenubarMain'>"
+                "   <menu action='MenuMusic'>"
+                "         <menuitem action='action-play-files'/>"
+                "         <separator name='sep00-b'/>"
+                "	      <menuitem action='action-mb-import'/>"
+                "         <separator name='sep01-b'/>"
+                "         <menuitem action='action-quit'/>"
+                "   </menu>"
+                "   <menu action='MenuEdit'>"
+                "         <menuitem action='action-preferences'/>"
+                "         <menuitem action='action-plugins'/>"
+                "         <separator name='sep02-b'/>"
+                "         <menuitem action='action-equalizer'/>"
+                "         <separator name='sep03-b'/>"
                 "         <menuitem action='action-import-folder'/>"
                 "         <menuitem action='action-import-share'/>"
-                "	      <menuitem action='action-vacuum-lib'/>"
-                "         <separator name='sep03'/>"
-#endif // HAVE_HAL
-                "         <menuitem action='action-equalizer'/>"
                 "   </menu>"
                 "   <menu action='MenuView'>"
                 "   </menu>"
@@ -574,504 +601,536 @@ namespace MPX
                 }
 
 
-        Player::Player(
-                        const Glib::RefPtr<Gnome::Glade::Xml>&  xml,
-                        MPX::Service::Manager&                  services
-        )
-        : WidgetLoader<Gtk::Window>(xml, "mpx")
-        , sigx::glib_auto_dispatchable()
-        , Service::Base("mpx-service-player")
-        , m_ref_xml(xml)
-        , m_startup_complete(false)
-        , m_Caps(C_NONE)
-        , m_NextSourceId(0)
-        , m_SourceUI(0)
-        , m_Covers(*(services.get<Covers>("mpx-service-covers")))
+                Player::Player(
+                                const Glib::RefPtr<Gnome::Glade::Xml>&  xml,
+                                MPX::Service::Manager&                  services
+                )
+                : WidgetLoader<Gtk::Window>(xml, "mpx")
+                , sigx::glib_auto_dispatchable()
+                , Service::Base("mpx-service-player")
+                , m_startup_complete(false)
+                , m_Caps(C_NONE)
+                , m_NextSourceId(0)
+                , m_SourceUI(0)
+                , m_Covers(*(services.get<Covers>("mpx-service-covers")))
+        #ifdef HAVE_HAL
+                , m_HAL(*(services.get<HAL>("mpx-service-hal")))
+        #endif // HAVE_HAL
+                , m_Library(*(services.get<Library>("mpx-service-library")))
+                , m_Play(*(services.get<Play>("mpx-service-play")))
+                , m_NewTrack(false)
+                {
+                        IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
+                        register_default_stock_icons();
+
+                        m_ErrorManager    = new ErrorManager;
+                        m_AboutDialog     = new AboutDialog;
+                        m_Equalizer       = MPX::Equalizer::create();
+                        m_VolumeControl   = new VolumeControl( xml );
+
+                        mpx_py_init ();
+
+                        m_Xml->get_widget("statusbar", m_Statusbar);
+                        m_Xml->get_widget("notebook-info", m_InfoNotebook);
+                        m_Xml->get_widget("label-time", m_TimeLabel);
+                        m_Xml->get_widget("scale-seek", m_Seek);
+
+                        m_Sidebar = new Sidebar(m_Xml);
+
+                        try{
+
+                                std::list<Glib::RefPtr<Gdk::Pixbuf> > icon_list;
+
+                                icon_list.push_back(Gdk::Pixbuf::create_from_file(
+                                                        build_filename(
+                                                                DATA_DIR,
+                                                                "icons" G_DIR_SEPARATOR_S "mpx.png"
+                                                                )));
+
+                                icon_list.push_back(Gdk::Pixbuf::create_from_file(
+                                                        build_filename(
+                                                                DATA_DIR,
+                                                                "icons" G_DIR_SEPARATOR_S "mpx_128.png"
+                                                                )));
+
+                                icon_list.push_back(Gdk::Pixbuf::create_from_file(
+                                                        build_filename(
+                                                                DATA_DIR,
+                                                                "icons" G_DIR_SEPARATOR_S "mpx_64.png"
+                                                                )));
+
+                                icon_list.push_back(Gdk::Pixbuf::create_from_file(
+                                                        build_filename(
+                                                                DATA_DIR,
+                                                                "icons" G_DIR_SEPARATOR_S "mpx_48.png"
+                                                                )));
+
+                                icon_list.push_back(Gdk::Pixbuf::create_from_file(
+                                                        build_filename(
+                                                                DATA_DIR,
+                                                                "icons" G_DIR_SEPARATOR_S "mpx_16.png"
+                                                                )));
+
+                                set_icon_list(icon_list);
+
+                        } catch (Gdk::PixbufError & cxe)
+                        {
+                                g_warning("%s: Couldn't set main window icon", G_STRLOC);
+                        }
+
+                        m_Play.signal_eos().connect(
+                                        sigc::mem_fun( *this, &MPX::Player::on_play_eos
+                                                ));
+
+                        m_Play.signal_position().connect(
+                                        sigc::mem_fun( *this, &MPX::Player::on_play_position
+                                                ));
+
+                        m_Play.signal_metadata().connect(
+                                        sigc::mem_fun( *this, &MPX::Player::on_play_metadata
+                                                ));
+
+                        m_Play.signal_buffering().connect(
+                                        sigc::mem_fun( *this, &MPX::Player::on_play_buffering
+                                                ));
+
+                        m_Play.property_status().signal_changed().connect(
+                                        sigc::mem_fun( *this, &MPX::Player::on_play_status_changed
+                                                ));
+
+                        m_Play.signal_stream_switched().connect(
+                                        sigc::mem_fun( *this, &MPX::Player::on_play_stream_switched
+                                                ));
+
+                        m_Play.signal_spectrum().connect(
+                                        sigc::mem_fun( *this, &MPX::Player::on_play_update_spectrum )
+                                        );
+
+                        m_VideoWidget = manage(new VideoWidget(&m_Play));
+                        m_VideoWidget->show ();
+                        gtk_widget_realize (GTK_WIDGET (m_VideoWidget->gobj()));
+
+                        if( m_Play.has_video() )
+                        {
+                                m_Play.signal_request_window_id ().connect
+                                        (sigc::mem_fun( *this, &Player::on_gst_set_window_id ));
+                                m_Play.signal_video_geom ().connect
+                                        (sigc::mem_fun( *this, &Player::on_gst_set_window_geom ));
+                        }
+
+                        m_Preferences = Preferences::create(m_Play);
+
+                        m_scrolllock_mask   = 0;
+                        m_numlock_mask      = 0;
+                        m_capslock_mask     = 0;
+                        mmkeys_get_offending_modifiers ();
+                        on_mm_edit_done (); // bootstraps the settings
+
+                        m_Preferences->signal_mm_edit_begin().connect(
+                                        sigc::mem_fun( *this, &Player::on_mm_edit_begin
+                                                ));
+
+                        m_Preferences->signal_mm_edit_done().connect(
+                                        sigc::mem_fun( *this, &Player::on_mm_edit_done
+                                                ));
+
+                        signals[PSIGNAL_NEW_TRACK] =
+                                g_signal_new ("new-track",
+                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
+                        signals[PSIGNAL_TRACK_PLAYED] =
+                                g_signal_new ("track-played",
+                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
+                        signals[PSIGNAL_INFOAREA_CLICK] =
+                                g_signal_new ("infoarea-click",
+                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
+                        signals[PSIGNAL_STATUS_CHANGED] =
+                                g_signal_new ("play-status-changed",
+                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT); 
+
+                        signals[PSIGNAL_METADATA_PREPARE] =
+                                g_signal_new ("metadata-prepare",
+                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
+                        signals[PSIGNAL_METADATA_UPDATED] =
+                                g_signal_new ("metadata-updated",
+                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
+                        signals[PSIGNAL_NEW_COVERART] =
+                                g_signal_new ("new-coverart",
+                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE, 0);
+
+                        signals[PSIGNAL_NEW_SOURCE] =
+                                g_signal_new ("new-source",
+                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE, 1, g_type_from_name("PyObject")); 
+
+                        /*- DBus ----------------------------------------------------------*/
+
+                        init_dbus ();
+                        DBusObjects.mpx = DBusMPX::create(*this, m_SessionBus);
+                        DBusObjects.player = DBusPlayer::create(*this, m_SessionBus);
+
+                        /*- UIManager + Menus + Proxy Widgets -----------------------------*/
+
+                        m_UIManager = UIManager::create ();
+
+                        m_Actions = ActionGroup::create ("Actions_Player");
+
+                        m_Actions->add(Action::create(
+                                                "MenuMusic",
+                                                _("_Music")
+                                                ));
+
+                        m_Actions->add(Action::create(
+                                                "MenuEdit",
+                                                _("_Edit")
+                                                ));
+
+                        m_Actions->add(Action::create(
+                                                "MenuView",
+                                                _("_View")
+                                                ));
+
+                        m_Actions->add(Action::create(
+                                                "MenuTrack",
+                                                _("_Track")
+                                                ));
+
+                        m_Actions->add(Action::create(
+                                                "MenuHelp",
+                                                _("_Help")
+                                                ));
+
+                        m_Actions->add( Action::create(
+
+                                          ACTION_PLAY_FILES,
+
+                                          Gtk::Stock::OPEN,
+                                          _("_Play Files...")),
+                                          sigc::mem_fun( *this, &Player::on_action_cb_play_files ));
+
+                        m_Actions->add( Action::create(
+
+                                          ACTION_IMPORT_FOLDER,
+
+                                          Gtk::Stock::HARDDISK,
+                                          _("Import _Folder")),
+                                          sigc::mem_fun (*this, &Player::on_import_folder));
+
+                        m_Actions->add( Action::create( 
+
+                                          ACTION_IMPORT_SHARE,
+
+                                          Gtk::Stock::NETWORK,
+                                          _("Import _Share")),
+                                          sigc::mem_fun (*this, &Player::on_import_share));
+
 #ifdef HAVE_HAL
-        , m_HAL(*(services.get<HAL>("mpx-service-hal")))
-#endif // HAVE_HAL
-        , m_Library(*(services.get<Library>("mpx-service-library")))
-        , m_Play(*(services.get<Play>("mpx-service-play")))
-        , m_NewTrack(false)
-        {
-                                  IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
-                                  register_default_stock_icons();
+                        MPX::MLibManager & mlibman = (*(services.get<MLibManager>("mpx-service-mlibman")));
 
-                                  m_ErrorManager    = new ErrorManager;
-                                  m_AboutDialog     = new AboutDialog;
-                                  m_Equalizer       = MPX::Equalizer::create();
-                                  m_VolumeControl   = new VolumeControl( xml );
+                        m_Actions->add( Action::create(
 
-                                  mpx_py_init ();
+                                          ACTION_MLIBMANAGER,
 
-                                  m_ref_xml->get_widget("statusbar", m_Statusbar);
-                                  m_ref_xml->get_widget("notebook-info", m_InfoNotebook);
-                                  m_ref_xml->get_widget("label-time", m_TimeLabel);
-                                  m_ref_xml->get_widget("scale-seek", m_Seek);
-
-                                  m_Sidebar = new Sidebar(m_ref_xml);
-
-                                  try{
-
-                                          std::list<Glib::RefPtr<Gdk::Pixbuf> > icon_list;
-
-                                          icon_list.push_back(Gdk::Pixbuf::create_from_file(
-                                                                  build_filename(
-                                                                          DATA_DIR,
-                                                                          "icons" G_DIR_SEPARATOR_S "mpx.png"
-                                                                          )));
-
-                                          icon_list.push_back(Gdk::Pixbuf::create_from_file(
-                                                                  build_filename(
-                                                                          DATA_DIR,
-                                                                          "icons" G_DIR_SEPARATOR_S "mpx_128.png"
-                                                                          )));
-
-                                          icon_list.push_back(Gdk::Pixbuf::create_from_file(
-                                                                  build_filename(
-                                                                          DATA_DIR,
-                                                                          "icons" G_DIR_SEPARATOR_S "mpx_64.png"
-                                                                          )));
-
-                                          icon_list.push_back(Gdk::Pixbuf::create_from_file(
-                                                                  build_filename(
-                                                                          DATA_DIR,
-                                                                          "icons" G_DIR_SEPARATOR_S "mpx_48.png"
-                                                                          )));
-
-                                          icon_list.push_back(Gdk::Pixbuf::create_from_file(
-                                                                  build_filename(
-                                                                          DATA_DIR,
-                                                                          "icons" G_DIR_SEPARATOR_S "mpx_16.png"
-                                                                          )));
-
-                                          set_icon_list(icon_list);
-
-                                  } catch (Gdk::PixbufError & cxe)
-                                  {
-                                          g_warning("%s: Couldn't set main window icon", G_STRLOC);
-                                  }
-
-                                  m_Play.signal_eos().connect(
-                                                  sigc::mem_fun( *this, &MPX::Player::on_play_eos
-                                                          ));
-
-                                  m_Play.signal_position().connect(
-                                                  sigc::mem_fun( *this, &MPX::Player::on_play_position
-                                                          ));
-
-                                  m_Play.signal_metadata().connect(
-                                                  sigc::mem_fun( *this, &MPX::Player::on_play_metadata
-                                                          ));
-
-                                  m_Play.signal_buffering().connect(
-                                                  sigc::mem_fun( *this, &MPX::Player::on_play_buffering
-                                                          ));
-
-                                  m_Play.property_status().signal_changed().connect(
-                                                  sigc::mem_fun( *this, &MPX::Player::on_play_status_changed
-                                                          ));
-
-                                  m_Play.signal_stream_switched().connect(
-                                                  sigc::mem_fun( *this, &MPX::Player::on_play_stream_switched
-                                                          ));
-
-                                  m_Play.signal_spectrum().connect(
-                                                  sigc::mem_fun( *this, &MPX::Player::on_play_update_spectrum )
-                                                  );
-
-                                  m_VideoWidget = manage(new VideoWidget(&m_Play));
-                                  m_VideoWidget->show ();
-                                  gtk_widget_realize (GTK_WIDGET (m_VideoWidget->gobj()));
-
-                                  if( m_Play.has_video() )
-                                  {
-                                          m_Play.signal_request_window_id ().connect
-                                                  (sigc::mem_fun( *this, &Player::on_gst_set_window_id ));
-                                          m_Play.signal_video_geom ().connect
-                                                  (sigc::mem_fun( *this, &Player::on_gst_set_window_geom ));
-                                  }
-
-                                  m_Preferences = Preferences::create(m_Play);
-
-                                  m_scrolllock_mask   = 0;
-                                  m_numlock_mask      = 0;
-                                  m_capslock_mask     = 0;
-                                  mmkeys_get_offending_modifiers ();
-                                  on_mm_edit_done (); // bootstraps the settings
-
-                                  m_Preferences->signal_mm_edit_begin().connect(
-                                                  sigc::mem_fun( *this, &Player::on_mm_edit_begin
-                                                          ));
-
-                                  m_Preferences->signal_mm_edit_done().connect(
-                                                  sigc::mem_fun( *this, &Player::on_mm_edit_done
-                                                          ));
-
-                                  signals[PSIGNAL_NEW_TRACK] =
-                                          g_signal_new ("new-track",
-                                                          G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                          GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                          0,
-                                                          NULL, NULL,
-                                                          g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
-
-                                  signals[PSIGNAL_TRACK_PLAYED] =
-                                          g_signal_new ("track-played",
-                                                          G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                          GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                          0,
-                                                          NULL, NULL,
-                                                          g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
-
-                                  signals[PSIGNAL_INFOAREA_CLICK] =
-                                          g_signal_new ("infoarea-click",
-                                                          G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                          GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                          0,
-                                                          NULL, NULL,
-                                                          g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
-
-                                  signals[PSIGNAL_STATUS_CHANGED] =
-                                          g_signal_new ("play-status-changed",
-                                                          G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                          GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                          0,
-                                                          NULL, NULL,
-                                                          g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT); 
-
-                                  signals[PSIGNAL_METADATA_PREPARE] =
-                                          g_signal_new ("metadata-prepare",
-                                                          G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                          GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                          0,
-                                                          NULL, NULL,
-                                                          g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
-
-                                  signals[PSIGNAL_METADATA_UPDATED] =
-                                          g_signal_new ("metadata-updated",
-                                                          G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                          GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                          0,
-                                                          NULL, NULL,
-                                                          g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
-
-                                  signals[PSIGNAL_NEW_COVERART] =
-                                          g_signal_new ("new-coverart",
-                                                          G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                          GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                          0,
-                                                          NULL, NULL,
-                                                          g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE, 0);
-
-                                  signals[PSIGNAL_NEW_SOURCE] =
-                                          g_signal_new ("new-source",
-                                                          G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                          GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                          0,
-                                                          NULL, NULL,
-                                                          g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE, 1, g_type_from_name("PyObject")); 
-
-                                  init_dbus ();
-                                  DBusObjects.mpx = DBusMPX::create(*this, m_SessionBus);
-                                  DBusObjects.player = DBusPlayer::create(*this, m_SessionBus);
-
-                                  /*- UIManager + Menus + Proxy Widgets -----------------------------*/
-
-                                  m_ui_manager = UIManager::create ();
-
-                                  m_actions = ActionGroup::create ("Actions_Player");
-
-                                  m_actions->add(Action::create(
-                                                          "MenuMusic",
-                                                          _("_Music")
-                                                          ));
-
-                                  m_actions->add(Action::create(
-                                                          "MenuEdit",
-                                                          _("_Edit")
-                                                          ));
-
-                                  m_actions->add(Action::create(
-                                                          "MenuView",
-                                                          _("_View")
-                                                          ));
-
-                                  m_actions->add(Action::create(
-                                                          "MenuTrack",
-                                                          _("_Track")
-                                                          ));
-
-                                  m_actions->add(Action::create(
-                                                          "MenuHelp",
-                                                          _("_Help")
-                                                          ));
-
-                                  m_actions->add( Action::create(
-
-                                                    ACTION_PLAY_FILES,
-
-                                                    Gtk::Stock::OPEN,
-                                                    _("_Play Files...")),
-                                                    sigc::mem_fun( *this, &Player::on_action_cb_play_files ));
-
-#ifndef HAVE_HAL
-                                  m_actions->add( Action::create(
-    
-                                                    ACTION_IMPORT_FOLDER,
-
-                                                    Gtk::Stock::HARDDISK,
-                                                    _("Import _Folder")),
-                                                    sigc::mem_fun (*this, &Player::on_import_folder));
-
-                                  m_actions->add( Action::create( 
-    
-                                                    ACTION_IMPORT_SHARE,
-
-                                                    Gtk::Stock::NETWORK,
-                                                    _("Import _Share")),
-                                                    sigc::mem_fun (*this, &Player::on_import_share));
-
-                                  m_actions->add( Action::create(
-
-                                                    ACTION_VACUUM_LIB,
-
-                                                    _("_Vacuum Music Library"),
-                                                    _("Remove dangling files")),
-                                                    sigc::mem_fun( m_Library, &Library::vacuum ));
-
-#else
-                                  MPX::MLibManager & mlibman = (*(services.get<MLibManager>("mpx-service-mlibman")));
-
-                                  m_actions->add( Action::create(
-    
-                                                    ACTION_MLIBMANAGER,
-
-                                                    _("_Music Library..."),
-                                                    _("Add or Remove Music")),
-                                                    sigc::mem_fun(mlibman, &MLibManager::present));
+                                          _("_Music Library..."),
+                                          _("Add or Remove Music")),
+                                          sigc::mem_fun(mlibman, &MLibManager::present));
 #endif
 
-                                  m_actions->add( Action::create( 
+                        m_Actions->add( Action::create( 
 
-                                                    ACTION_MB_IMPORT,
+                                          ACTION_MB_IMPORT,
 
-                                                    Gtk::Stock::ADD,
-                                                    _("Import Album"),
-                                                    _("Import an album using MusicBrainz")),
-                                                    sigc::mem_fun (*this, &Player::on_import_album));
+                                          Gtk::Stock::ADD,
+                                          _("Import Album"),
+                                          _("Import an album using MusicBrainz")),
+                                          sigc::mem_fun (*this, &Player::on_import_album));
 
-                                  m_actions->add( Action::create(
+                        m_Actions->add( Action::create(
 
-                                                    ACTION_PLUGINS,
+                                          ACTION_PLUGINS,
 
-                                                    Gtk::StockID(MPX_STOCK_PLUGIN),
-                                                    _("Plugins..."),
-                                                    _("View and Enable or Disable Plugins")),
-                                                    sigc::mem_fun (*this, &Player::on_action_cb_show_plugins ));
+                                          Gtk::StockID(MPX_STOCK_PLUGIN),
+                                          _("Plugins..."),
+                                          _("View and Enable or Disable Plugins")),
+                                          sigc::mem_fun (*this, &Player::on_action_cb_show_plugins ));
 
-                                  m_actions->add( Action::create(
+                        m_Actions->add( Action::create(
 
-                                                    ACTION_EQUALIZER,
+                                          ACTION_EQUALIZER,
 
-                                                    Gtk::StockID( MPX_STOCK_EQUALIZER ),
-                                                    _("Equalizer..."),
-                                                    _("Adjust audio bands")),
-                                                    sigc::mem_fun (*m_Equalizer, &Gtk::Widget::show ));
-
-
-                                  m_actions->add( Action::create(
-
-                                                    ACTION_PREFERENCES,
-
-                                                    Gtk::Stock::EXECUTE,
-                                                    _("_Preferences..."),
-                                                    _("Set up Audio and other Settings")),
-                                                    sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
-
-                                  m_actions->add( Action::create(
-
-                                                    ACTION_QUIT, 
-
-                                                    Gtk::Stock::QUIT,
-                                                    _("_Quit")),
-                                                    AccelKey("<ctrl>Q"),
-                                                    sigc::ptr_fun ( &Gtk::Main::quit ));
-
-                                  m_actions->add( Action::create( 
-
-                                                    ACTION_ABOUT,
-
-                                                    Gtk::Stock::ABOUT,
-                                                    _("_About")),
-                                                    sigc::mem_fun ( *m_AboutDialog, &AboutDialog::present ));
-
-                                  m_actions->add( Action::create( 
-
-                                                    ACTION_PLAY,
-
-                                                    Gtk::Stock::MEDIA_PLAY,
-                                                    _("Play")),
-                                                    sigc::mem_fun (*this, &Player::on_controls_play ));
-
-                                  m_actions->add( ToggleAction::create(
-
-                                                    ACTION_PAUSE,
-
-                                                    Gtk::Stock::MEDIA_PAUSE,
-                                                    _("Pause")),
-                                                    sigc::mem_fun (*this, &Player::on_controls_pause ));
-
-                                  m_actions->add( Action::create(
-
-                                                    ACTION_STOP,
-
-                                                    Gtk::Stock::MEDIA_STOP,
-                                                    _("Stop")),
-                                                    sigc::mem_fun (*this, &Player::stop ));
-
-                                  m_actions->add( Action::create(
-
-                                                    ACTION_NEXT,
-
-                                                    Gtk::Stock::MEDIA_NEXT,
-                                                    _("Next")),
-                                                    sigc::mem_fun (*this, &Player::on_controls_next ));
-
-                                  m_actions->add( Action::create(
-
-                                                    ACTION_PREV,
-
-                                                    Gtk::Stock::MEDIA_PREVIOUS,
-                                                    _("Prev")),
-                                                    sigc::mem_fun (*this, &Player::on_controls_prev ));
-
-                                  m_ui_manager->insert_action_group(m_actions);
-
-                                  if(Util::ui_manager_add_ui(m_ui_manager, MenubarMain, *this, _("Main Menubar")))
-                                  {
-                                          dynamic_cast<Alignment*>(
-                                                m_ref_xml->get_widget("alignment-menu")
-                                          )->add(
-                                                *(m_ui_manager->get_widget ("/MenubarMain"))
-                                          );
-                                  }
-
-                                  /*- Playback Controls ---------------------------------------------*/ 
-
-                                  m_actions->get_action (ACTION_PLAY)->connect_proxy
-                                          (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-play"))));
-                                  m_actions->get_action (ACTION_PREV)->connect_proxy
-                                          (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-previous"))));
-                                  m_actions->get_action (ACTION_NEXT)->connect_proxy
-                                          (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-next"))));
-                                  m_actions->get_action (ACTION_PAUSE)->connect_proxy
-                                          (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-pause"))));
-                                  m_actions->get_action (ACTION_STOP)->connect_proxy
-                                          (*(dynamic_cast<Button *>(m_ref_xml->get_widget ("controls-stop"))));
-
-                                  add_accel_group (m_ui_manager->get_accel_group());
-
-                                  /*- Setup Window Geometry -----------------------------------------*/ 
-
-                                  resize(
-                                        mcs->key_get<int>("mpx","window-w"),
-                                        mcs->key_get<int>("mpx","window-h")
-                                  );
-
-                                  move(
-                                        mcs->key_get<int>("mpx","window-x"),
-                                        mcs->key_get<int>("mpx","window-y")
-                                  );
+                                          Gtk::StockID( MPX_STOCK_EQUALIZER ),
+                                          _("Equalizer..."),
+                                          _("Adjust audio bands")),
+                                          sigc::mem_fun (*m_Equalizer, &Gtk::Widget::show ));
 
 
-                                  while (gtk_events_pending())
-                                    gtk_main_iteration();
+                        m_Actions->add( Action::create(
 
-                                  /*- Load Sources --------------------------------------------------*/ 
+                                          ACTION_PREFERENCES,
 
-                                  m_Sidebar->signal_id_changed().connect(
-                                                  sigc::mem_fun(
-                                                          *this,
-                                                          &Player::on_source_changed
-                                                          ));
+                                          Gtk::Stock::EXECUTE,
+                                          _("_Preferences..."),
+                                          _("Set up Audio and other Settings")),
+                                          sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
 
-                                  m_Sidebar->addItem(
-                                                  _("Now Playing"),
-                                                  m_VideoWidget,
-                                                  0,
-                                                  Gdk::Pixbuf::create_from_file(
-                                                          build_filename(
-                                                                  DATA_DIR,
-                                                                  "images" G_DIR_SEPARATOR_S "icon-now-playing-tab.png"
-                                                                  )
-                                                          )->scale_simple(20,20,Gdk::INTERP_BILINEAR),
-                                                  0 
-                                                  );
+                        m_Actions->add( Action::create(
 
-                                  m_Sidebar->addItem(
-                                                  _("Plugins"),
-                                                  m_InfoNotebook,
-                                                  0,
-                                                  Gdk::Pixbuf::create_from_file(
-                                                          build_filename(
-                                                                  DATA_DIR,
-                                                                  "images" G_DIR_SEPARATOR_S "icon-plugins-tab.png"
-                                                                  )
-                                                          )->scale_simple(20,20,Gdk::INTERP_BILINEAR),
-                                                  1 
-                                                  );
+                                          ACTION_QUIT, 
 
-                                  m_NextSourceId = 2;
+                                          Gtk::Stock::QUIT,
+                                          _("_Quit")),
+                                          AccelKey("<ctrl>Q"),
+                                          sigc::ptr_fun ( &Gtk::Main::quit ));
 
-                                  std::string sources_path = build_filename(PLUGIN_DIR, "sources");
-                                  if(file_test(sources_path, FILE_TEST_EXISTS))
-                                  {
-                                          Util::dir_for_each_entry(
-                                                          sources_path,
-                                                          sigc::mem_fun(*this, &MPX::Player::source_load)
-                                                          );  
-                                  }
+                        m_Actions->add( Action::create( 
 
-                                  /*- Volume ---------------------------------------------------------*/
+                                          ACTION_ABOUT,
 
-                                  m_VolumeControl->signal_value_changed().connect(
-                                                  sigc::mem_fun( *this, &Player::on_volume_value_changed
-                                                          ));
+                                          Gtk::Stock::ABOUT,
+                                          _("_About")),
+                                          sigc::mem_fun ( *m_AboutDialog, &AboutDialog::present ));
 
-                                  m_VolumeControl->set_volume(double(mcs->key_get<int>("mpx", "volume")));
+                        m_Actions->add( Action::create( 
 
-                                  /*- Seek -----------------------------------------------------------*/
+                                          ACTION_PLAY,
 
-                                  m_Seek->signal_event().connect(
-                                                  sigc::mem_fun( *this, &Player::on_seek_event
-                                                          ));
+                                          Gtk::Stock::MEDIA_PLAY,
+                                          _("Play")),
+                                          sigc::mem_fun (*this, &Player::on_controls_play ));
 
-                                  g_atomic_int_set(&m_Seeking,0);
+                        m_Actions->add( ToggleAction::create(
 
-                                  /*- Infoarea--------------------------------------------------------*/
+                                          ACTION_PAUSE,
 
-                                  m_InfoArea = InfoArea::create(m_ref_xml, "infoarea");
+                                          Gtk::Stock::MEDIA_PAUSE,
+                                          _("Pause")),
+                                          sigc::mem_fun (*this, &Player::on_controls_pause ));
 
-                                  m_InfoArea->signal_cover_clicked().connect(
+                        m_Actions->add( Action::create(
+
+                                          ACTION_STOP,
+
+                                          Gtk::Stock::MEDIA_STOP,
+                                          _("Stop")),
+                                          sigc::mem_fun (*this, &Player::stop ));
+
+                        m_Actions->add( Action::create(
+
+                                          ACTION_NEXT,
+
+                                          Gtk::Stock::MEDIA_NEXT,
+                                          _("Next")),
+                                          sigc::mem_fun (*this, &Player::on_controls_next ));
+
+                        m_Actions->add( Action::create(
+
+                                          ACTION_PREV,
+
+                                          Gtk::Stock::MEDIA_PREVIOUS,
+                                          _("Prev")),
+                                          sigc::mem_fun (*this, &Player::on_controls_prev ));
+
+                        m_UIManager->insert_action_group(m_Actions);
+
+                        if( Util::ui_manager_add_ui(
+                              m_UIManager,
+                              ( mcs->key_get<bool>("library","use-hal") ) ? MenubarMain_HAL : MenubarMain_NoHAL,
+                              *this,
+                              _("Main Menubar"),
+                              m_MainUI
+                        ))
+                        {
+                                dynamic_cast<Alignment*>(
+                                      m_Xml->get_widget("alignment-menu")
+                                )->add(
+                                      *(m_UIManager->get_widget ("/MenubarMain"))
+                                );
+                        }
+
+                        mcs->subscribe(
+                          "library",
+                          "use-hal",
+                          sigc::mem_fun(
+                              *this,
+                              &Player::on_library_use_hal_changed
+                        ));
+
+                        /*- Playback Controls ---------------------------------------------*/ 
+
+                        m_Actions->get_action (ACTION_PLAY)->connect_proxy
+                                (*(dynamic_cast<Button *>(m_Xml->get_widget ("controls-play"))));
+                        m_Actions->get_action (ACTION_PREV)->connect_proxy
+                                (*(dynamic_cast<Button *>(m_Xml->get_widget ("controls-previous"))));
+                        m_Actions->get_action (ACTION_NEXT)->connect_proxy
+                                (*(dynamic_cast<Button *>(m_Xml->get_widget ("controls-next"))));
+                        m_Actions->get_action (ACTION_PAUSE)->connect_proxy
+                                (*(dynamic_cast<Button *>(m_Xml->get_widget ("controls-pause"))));
+                        m_Actions->get_action (ACTION_STOP)->connect_proxy
+                                (*(dynamic_cast<Button *>(m_Xml->get_widget ("controls-stop"))));
+
+                        add_accel_group (m_UIManager->get_accel_group());
+
+                        /*- Setup Window Geometry -----------------------------------------*/ 
+
+                        resize(
+                              mcs->key_get<int>("mpx","window-w"),
+                              mcs->key_get<int>("mpx","window-h")
+                        );
+
+                        move(
+                              mcs->key_get<int>("mpx","window-x"),
+                              mcs->key_get<int>("mpx","window-y")
+                        );
+
+
+                        while (gtk_events_pending())
+                          gtk_main_iteration();
+
+                        /*- Load Sources --------------------------------------------------*/ 
+
+                        m_Sidebar->signal_id_changed().connect(
                                         sigc::mem_fun(
                                                 *this,
-                                                &Player::on_cb_album_cover_clicked
-                                  ));
+                                                &Player::on_source_changed
+                                                ));
 
-                                  m_InfoArea->signal_uris_dropped().connect(
-                                        sigc::bind(
-                                                sigc::mem_fun(
-                                                    *this,
-                                                    &Player::play_tracks
-                                                ),
-                                                true
-                                  ));
+                        m_Sidebar->addItem(
+                                        _("Now Playing"),
+                                        m_VideoWidget,
+                                        0,
+                                        Gdk::Pixbuf::create_from_file(
+                                                build_filename(
+                                                        DATA_DIR,
+                                                        "images" G_DIR_SEPARATOR_S "icon-now-playing-tab.png"
+                                                        )
+                                                )->scale_simple(20,20,Gdk::INTERP_BILINEAR),
+                                        0 
+                                        );
 
-                                  DBusObjects.mpx->startup_complete(DBusObjects.mpx);
+                        m_Sidebar->addItem(
+                                        _("Plugins"),
+                                        m_InfoNotebook,
+                                        0,
+                                        Gdk::Pixbuf::create_from_file(
+                                                build_filename(
+                                                        DATA_DIR,
+                                                        "images" G_DIR_SEPARATOR_S "icon-plugins-tab.png"
+                                                        )
+                                                )->scale_simple(20,20,Gdk::INTERP_BILINEAR),
+                                        1 
+                                        );
 
-                                  translate_caps(); // sets all actions intially insensitive as we have C_NONE
-                          }
+                        m_NextSourceId = 2;
+
+                        std::string sources_path = build_filename(PLUGIN_DIR, "sources");
+                        if(file_test(sources_path, FILE_TEST_EXISTS))
+                        {
+                                Util::dir_for_each_entry(
+                                                sources_path,
+                                                sigc::mem_fun(*this, &MPX::Player::source_load)
+                                                );  
+                        }
+
+                        /*- Volume ---------------------------------------------------------*/
+
+                        m_VolumeControl->signal_value_changed().connect(
+                                        sigc::mem_fun( *this, &Player::on_volume_value_changed
+                                                ));
+
+                        m_VolumeControl->set_volume(double(mcs->key_get<int>("mpx", "volume")));
+
+                        /*- Seek -----------------------------------------------------------*/
+
+                        m_Seek->signal_event().connect(
+                                        sigc::mem_fun( *this, &Player::on_seek_event
+                                                ));
+
+                        g_atomic_int_set(&m_Seeking,0);
+
+                        /*- Infoarea--------------------------------------------------------*/
+
+                        m_InfoArea = InfoArea::create(m_Xml, "infoarea");
+
+                        m_InfoArea->signal_cover_clicked().connect(
+                              sigc::mem_fun(
+                                      *this,
+                                      &Player::on_cb_album_cover_clicked
+                        ));
+
+                        m_InfoArea->signal_uris_dropped().connect(
+                              sigc::bind(
+                                      sigc::mem_fun(
+                                          *this,
+                                          &Player::play_tracks
+                                      ),
+                                      true
+                        ));
+
+                        DBusObjects.mpx->startup_complete(DBusObjects.mpx);
+
+                        translate_caps(); // sets all actions intially insensitive as we have C_NONE
+                }
+    
+        void
+                Player::on_library_use_hal_changed( MCS_CB_DEFAULT_SIGNATURE )
+                {
+                        dynamic_cast<Alignment*>(
+                              m_Xml->get_widget("alignment-menu")
+                        )->remove();
+
+                        m_UIManager->remove_ui( m_MainUI ); 
+
+                        if( Util::ui_manager_add_ui(
+                              m_UIManager,
+                              ( mcs->key_get<bool>("library","use-hal") ) ? MenubarMain_HAL : MenubarMain_NoHAL,
+                              *this,
+                              _("Main Menubar"),
+                              m_MainUI
+                        ))
+                        {
+                                dynamic_cast<Alignment*>(
+                                      m_Xml->get_widget("alignment-menu")
+                                )->add(
+                                      *(m_UIManager->get_widget ("/MenubarMain"))
+                                );
+                        }
+                }
+
 
         Player*
                 Player::create (MPX::Service::Manager&services)
@@ -1082,20 +1141,20 @@ namespace MPX
                 }
 
         Player::~Player()
-        {
-                for( SourcesMap::iterator i = m_Sources.begin(); i != m_Sources.end(); ++i )
                 {
-                    delete (*i).second;
-                }
+                        for( SourcesMap::iterator i = m_Sources.begin(); i != m_Sources.end(); ++i )
+                        {
+                            delete (*i).second;
+                        }
 
-                Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-y")));
-                Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-h")));
-                DBusObjects.mpx->shutdown_complete(DBusObjects.mpx); 
-                g_object_unref(G_OBJECT(DBusObjects.mpx));
-                delete m_Preferences;
-                MPX::PluginManager & plugins = (*(services->get<PluginManager>("mpx-service-plugins")));
-                plugins.shutdown(); //fIXME: We have to do it while the mainloop is still running
-        }
+                        Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-y")));
+                        Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-h")));
+                        DBusObjects.mpx->shutdown_complete(DBusObjects.mpx); 
+                        g_object_unref(G_OBJECT(DBusObjects.mpx));
+                        delete m_Preferences;
+                        MPX::PluginManager & plugins = (*(services->get<PluginManager>("mpx-service-plugins")));
+                        plugins.shutdown(); //fIXME: We have to do it while the mainloop is still running
+                }
 
         void
                 Player::init_dbus ()
@@ -1254,7 +1313,7 @@ namespace MPX
         Glib::RefPtr<Gtk::UIManager>&
                 Player::ui ()
                 {
-                        return m_ui_manager;
+                        return m_UIManager;
                 }
 
         PlayStatus
@@ -1280,7 +1339,7 @@ namespace MPX
         void
                 Player::add_widget (Gtk::Widget *widget)
                 {
-                        dynamic_cast<Gtk::Box*>(m_ref_xml->get_widget("vbox3"))->pack_start(*widget);
+                        dynamic_cast<Gtk::Box*>(m_Xml->get_widget("vbox3"))->pack_start(*widget);
                 }
 
         void
@@ -1295,7 +1354,7 @@ namespace MPX
                 Player::remove_widget (Gtk::Widget *widget)
                 {
                         Gtk::VBox * box;
-                        m_ref_xml->get_widget("vbox-top", box);
+                        m_Xml->get_widget("vbox-top", box);
                         box->remove(*widget);
                 }
 
@@ -1461,7 +1520,9 @@ SET_SEEK_POSITION:
                 }
 
         void
-                Player::on_play_position (guint64 position)
+                Player::on_play_position(
+                    guint64 position
+                )
                 {
                         if( g_atomic_int_get(&m_Seeking) )
                             return;
@@ -1575,7 +1636,7 @@ SET_SEEK_POSITION:
                         }
 
                         //del_caps(C_CAN_PAUSE);
-                        RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
+                        RefPtr<ToggleAction>::cast_static (m_Actions->get_action(ACTION_PAUSE))->set_active(false);
 
                         PlaybackSource* source = m_Sources[m_ActiveSource.get()];
                         m_Sidebar->setActiveId(m_ActiveSource.get());
@@ -1821,7 +1882,7 @@ SET_SEEK_POSITION:
                                                 m_PreparingSource.reset();
                                                 m_Sidebar->clearActiveId();
 
-                                                RefPtr<ToggleAction>::cast_static (m_actions->get_action(ACTION_PAUSE))->set_active(false);
+                                                RefPtr<ToggleAction>::cast_static (m_Actions->get_action(ACTION_PAUSE))->set_active(false);
 
                                                 break;
                                         }
@@ -2210,11 +2271,11 @@ rerun_import_share_dialog:
         void
                 Player::translate_caps ()
                 {
-                        m_actions->get_action( ACTION_PLAY )->set_sensitive( m_Caps & C_CAN_PLAY );
-                        m_actions->get_action( ACTION_PAUSE )->set_sensitive( m_Caps & C_CAN_PAUSE );
-                        m_actions->get_action( ACTION_PREV )->set_sensitive( m_Caps & C_CAN_GO_PREV );
-                        m_actions->get_action( ACTION_NEXT )->set_sensitive( m_Caps & C_CAN_GO_NEXT );
-                        m_actions->get_action( ACTION_STOP )->set_sensitive( m_Caps & C_CAN_STOP );
+                        m_Actions->get_action( ACTION_PLAY )->set_sensitive( m_Caps & C_CAN_PLAY );
+                        m_Actions->get_action( ACTION_PAUSE )->set_sensitive( m_Caps & C_CAN_PAUSE );
+                        m_Actions->get_action( ACTION_PREV )->set_sensitive( m_Caps & C_CAN_GO_PREV );
+                        m_Actions->get_action( ACTION_NEXT )->set_sensitive( m_Caps & C_CAN_GO_NEXT );
+                        m_Actions->get_action( ACTION_STOP )->set_sensitive( m_Caps & C_CAN_STOP );
                         m_Seek->set_sensitive( m_Caps & C_CAN_SEEK );
                 }
 

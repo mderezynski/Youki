@@ -175,18 +175,15 @@ namespace MPX
 {
 
         Library::Library(
-                        Service::Manager&         services,
-#ifdef HAVE_HAL
-                        bool                      use_hal
-#endif // HAVE_HAL
-                        )
+            Service::Manager& services
+        )
         : sigx::glib_auto_dispatchable()
         , Service::Base("mpx-service-library")
         , m_Services(services)
         , m_HAL(*(services.get<HAL>("mpx-service-hal")))
         , m_Covers(*(services.get<Covers>("mpx-service-covers")))
         , m_MetadataReaderTagLib(*(services.get<MetadataReaderTagLib>("mpx-service-taglib")))
-        , m_Flags (0)
+        , m_Flags(0)
         {
                 const int MLIB_VERSION_CUR = 1;
                 const int MLIB_VERSION_REV = 0;
@@ -212,7 +209,7 @@ namespace MPX
                 if(!m_SQL->table_exists("meta"))
                 {
 #ifdef HAVE_HAL
-                        m_Flags |= (use_hal ? F_USING_HAL : 0); 
+                        m_Flags |= ( mcs->key_get<bool>("library","use-hal") ? F_USING_HAL : 0) ; 
 #endif // HAVE_HAL
                         m_SQL->exec_sql("CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0, last_scan_date INTEGER DEFAULT 0)");
                         m_SQL->exec_sql((boost::format ("INSERT INTO meta (flags) VALUES (%lld)") % m_Flags).str());
@@ -220,11 +217,11 @@ namespace MPX
                 else
                 {
                         RowV rows;
-                        m_SQL->get (rows, "SELECT flags FROM meta"); 
+                        m_SQL->get( rows, "SELECT flags FROM meta" ) ; 
                         m_Flags |= get<gint64>(rows[0].find("flags")->second); 
                 }
 
-
+                mcs->key_set<bool>("library","use-hal", bool(m_Flags & F_USING_HAL));
 
                 m_ScannerThread = (
                         new LibraryScannerThread(
@@ -480,32 +477,53 @@ namespace MPX
 
         }
 
-        Library::Library(
-            Library const& other
-        )
-        : sigx::glib_auto_dispatchable()
-        , Service::Base("mpx-service-library-copy")
-        , m_Services(other.m_Services)
-#ifdef HAVE_HAL
-        , m_HAL(other.m_HAL)
-#endif
-        , m_Covers(other.m_Covers)
-        , m_MetadataReaderTagLib(other.m_MetadataReaderTagLib)
-        , m_Flags(0)
-        {
-                  try{
-                          m_SQL = new SQL::SQLDB (*other.m_SQL);
-                  }
-                  catch (DbInitError & cxe)
-                  {
-                          g_message("%s: Error Opening the DB", G_STRLOC);
-                  }
-        }
-
-
         Library::~Library ()
         {
         }
+
+#ifdef HAVE_HAL
+        void
+                Library::switch_mode(
+                    bool use_hal 
+                )
+                {
+                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
+
+                        if( !use_hal )
+                        {
+                            // Update locations from HAL data
+
+
+                            SQL::RowV v;
+                            getSQL(
+                                v,
+                                "SELECT hal_device_udi, hal_volume_udi, hal_vrp FROM track"
+                            );
+
+                            for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
+                            {
+                                Track t = sqlToTrack( *i );
+
+                                mm->push_message((boost::format(_("Updating Track Locations: %lld / %lld")) % gint64(std::distance(v.begin(), i)) % v.size()).str());
+
+                                execSQL(
+                                    mprintf(
+                                          "UPDATE track SET location = '%q' WHERE id ='%lld'"
+                                        , get<std::string>(t[ATTRIBUTE_LOCATION].get()).c_str()
+                                        , get<gint64>((*i)["id"])
+                                ));
+                            }
+                        }
+
+                        mm->push_message(_("Updating Track Locations: Done")); 
+
+                        m_Flags &= ~F_USING_HAL;
+                        m_Flags |= (use_hal ? F_USING_HAL : 0); 
+                        m_SQL->exec_sql((boost::format ("UPDATE meta SET flags = '%lld'") % m_Flags).str());
+
+                        reload();
+                }
+#endif // HAVE_HAL
 
         bool
                 Library::recache_covers_handler (SQL::RowV *v, int* position)

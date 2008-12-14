@@ -37,13 +37,16 @@ using namespace Gtk;
 namespace MPX
 {
     bool
-    Util::ui_manager_add_ui(Glib::RefPtr<Gtk::UIManager>& uimanager,
-                            char const* ui,
-                            Gtk::Window& window,
-                            const Glib::ustring& name)
+    Util::ui_manager_add_ui(
+        Glib::RefPtr<Gtk::UIManager>&   uimanager,
+        char const*                     ui,
+        Gtk::Window&                    window,
+        const Glib::ustring&            name,
+        guint&                          id
+    )
     {
         try{        
-            uimanager->add_ui_from_string(ui);
+            id = uimanager->add_ui_from_string(ui);
             return true;
         }
         catch(Glib::MarkupError & cxe)

@@ -33,7 +33,7 @@ namespace MPX
   namespace Util
   {
     bool
-    ui_manager_add_ui(Glib::RefPtr<Gtk::UIManager>&, char const*, Gtk::Window&, const Glib::ustring&);
+    ui_manager_add_ui(Glib::RefPtr<Gtk::UIManager>&, char const*, Gtk::Window&, const Glib::ustring&, guint&);
 
     Gtk::Widget*
     get_popup (Glib::RefPtr<Gtk::UIManager> ui_manager, Glib::ustring const& menupath);

@@ -1,6 +1,7 @@
 #include "mpx/mpx-markov-analyzer-thread.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
+#include "mpx/mpx-main.hh"
 
 using boost::get;
 using namespace MPX;
@@ -8,8 +9,8 @@ using namespace MPX::SQL;
 
 MPX::MarkovAnalyzer::MarkovAnalyzer (MPX::Library & obj_library)
 : Service::Base("mpx-service-markov")
-, m_Library(new MPX::Library(obj_library))
 {
+    m_Library = services->get<Library>("mpx-service-library");
 }
 
 MPX::MarkovAnalyzer::~MarkovAnalyzer ()

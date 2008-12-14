@@ -138,6 +138,7 @@ namespace
                 "           <menuitem action='musiclib-highlight-unplayed'/>"
                 "           <menuitem action='musiclib-highlight-played'/>"
                 "         </menu>"
+                "         <separator/>"
                 "         <menuitem action='musiclib-show-only-new'/>"
                 "         <separator/>"
                 "         <menuitem action='musiclib-show-ccdialog'/>"
@@ -1926,11 +1927,11 @@ namespace MPX
                         Gtk::RadioButtonGroup gr1;
 
                         m_MainActionGroup->add(
-                                        RadioAction::create( gr1, "musiclib-sort-by-name", _("Album, Date, Artist")),
+                                        RadioAction::create( gr1, "musiclib-sort-by-name", _("Artist, Album by Year")),
                                         sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_albums_sort_column_change ));
 
                         m_MainActionGroup->add(
-                                        RadioAction::create( gr1, "musiclib-sort-by-date", _("Date Added")),
+                                        RadioAction::create( gr1, "musiclib-sort-by-date", _("Time of Adding")),
                                         sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_albums_sort_column_change ));
 
                         m_MainActionGroup->add(
@@ -1938,7 +1939,7 @@ namespace MPX
                                         sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_albums_sort_column_change ));
 
                         m_MainActionGroup->add(
-                                        RadioAction::create( gr1, "musiclib-sort-by-alphabet", _("Alphabet")),
+                                        RadioAction::create( gr1, "musiclib-sort-by-alphabet", _("Artist, Album by Name")),
                                         sigc::mem_fun( *this, &PlaybackSourceMusicLib::on_albums_sort_column_change ));
 
                         m_MainActionGroup->add(
@@ -2357,6 +2358,8 @@ namespace MPX
                                 {
                                         g_message("%s: Error: What: %s", G_STRLOC, cxe.what());
                                 }
+
+                                return std::string();
                         }
 
                 std::string

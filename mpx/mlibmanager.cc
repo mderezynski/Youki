@@ -275,7 +275,15 @@ namespace MPX
           "rescan-in-intervals",
           sigc::mem_fun(
               *this,
-              &MLibManager::on_rescan_in_intervals_changed
+              &MLibManager::on_library_rescan_in_intervals_changed
+        ));
+
+        mcs->subscribe(
+          "library",
+          "use-hal",
+          sigc::mem_fun(
+              *this,
+              &MLibManager::on_library_use_hal_changed
         ));
 
         sigc::slot<bool> slot = sigc::mem_fun(*this, &MLibManager::on_rescan_timeout);
@@ -394,12 +402,15 @@ namespace MPX
 
         m_UIManager->insert_action_group(m_Actions);
 
+        guint dummy;
+
         if(
             Util::ui_manager_add_ui(
                   m_UIManager
                 , MenubarMLibMan
                 , *this
                 , _("MLibMan Menubar")
+                , dummy
         ))
         {
                   dynamic_cast<Alignment*>(
@@ -422,6 +433,24 @@ namespace MPX
             mcs->key_get<int>("mpx","window-mlib-x"),
             mcs->key_get<int>("mpx","window-mlib-y")
         );
+    }
+
+    void
+    MLibManager::on_library_use_hal_changed (MCS_CB_DEFAULT_SIGNATURE)
+    {
+        bool use_hal = mcs->key_get<bool>("library","use-hal");
+
+        m_VboxInner->set_sensitive( use_hal );
+        m_Actions->get_action("MenuVolume")->set_sensitive( use_hal ); 
+
+        m_Actions->get_action("action-mlib-rescan")->set_visible( use_hal );
+        m_Actions->get_action("action-mlib-rescan-deep")->set_sensitive( !use_hal );
+    }
+
+    void
+    MLibManager::on_library_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE)
+    {
+        m_RescanTimer.reset();
     }
 
     void
@@ -562,53 +591,61 @@ namespace MPX
     MLibManager::rescan_all_volumes(bool deep)
     {
           m_VboxInner->set_sensitive(false);
-          Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
-          for(Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); ++iter)
+
+          if( mcs->key_get<bool>("library","use-hal"))
           {
-                Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
-
-                std::string VolumeUDI     = Vol->get_udi();
-                std::string DeviceUDI     = Vol->get_storage_device_udi();
-                std::string MountPoint    = Vol->get_mount_point();
-
-                reread_paths:
-
-                SQL::RowV v;
-                m_Library.getSQL(
-                        v,
-                        (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
-                         % DeviceUDI
-                         % VolumeUDI
-                         ).str()
-                );
-
-                StrSetT ManagedPaths; 
-                for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
+                for(Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); ++iter)
                 {
-                  ManagedPaths.insert(build_filename(MountPoint, boost::get<std::string>((*i)["insert_path"])));
-                }
+                      Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
 
-                if(!ManagedPaths.empty())
-                {
-                  StrV v;
-                  for(StrSetT::const_iterator i = ManagedPaths.begin(); i != ManagedPaths.end(); ++i)
-                  {
-                    PathTestResult r = path_test(*i);
-                    switch( r )
-                    {
-                        case IS_PRESENT:
-                        case IGNORED:
-                            v.push_back(filename_to_uri(*i));
-                            break;
+                      std::string VolumeUDI     = Vol->get_udi();
+                      std::string DeviceUDI     = Vol->get_storage_device_udi();
+                      std::string MountPoint    = Vol->get_mount_point();
 
-                        case RELOCATED:
-                        case DELETED:
-                            goto reread_paths;
-                    }
-                  }
-                  m_Library.initScan(v, deep);                  
+                      reread_paths:
+
+                      SQL::RowV v;
+                      m_Library.getSQL(
+                              v,
+                              (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
+                               % DeviceUDI
+                               % VolumeUDI
+                               ).str()
+                      );
+
+                      StrSetT ManagedPaths; 
+                      for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                      {
+                          ManagedPaths.insert(build_filename(MountPoint, boost::get<std::string>((*i)["insert_path"])));
+                      }
+
+                      if(!ManagedPaths.empty())
+                      {
+                          StrV v;
+                          for(StrSetT::const_iterator i = ManagedPaths.begin(); i != ManagedPaths.end(); ++i)
+                          {
+                              PathTestResult r = path_test(*i);
+                              switch( r )
+                              {
+                                  case IS_PRESENT:
+                                  case IGNORED:
+                                      v.push_back(filename_to_uri(*i));
+                                      break;
+
+                                  case RELOCATED:
+                                  case DELETED:
+                                      goto reread_paths;
+                              }
+                        }
+                        m_Library.initScan(v, deep);                  
+                      }
                 }
           }
+          else
+          {
+          }
+
           m_VboxInner->set_sensitive(true);
     }
 
@@ -1219,12 +1256,6 @@ namespace MPX
     {
         TreeIter iter = FSTreeStore->get_iter(path);
         return !(has_active_parent(iter));
-    }
-
-    void
-    MLibManager::on_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE)
-    {
-        m_RescanTimer.reset();
     }
 
     bool

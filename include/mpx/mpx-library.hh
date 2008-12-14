@@ -59,13 +59,15 @@ namespace MPX
 
             Library(
                 Service::Manager&
-#ifdef HAVE_HAL
-                , bool
-#endif //HAVE_HAL
             ) ;
 
-            Library (const Library& other) ;
             ~Library () ;
+
+            gint64
+            get_flags ()
+            {
+                return m_Flags;
+            }
 
 
             SQL::SQLDB*
@@ -80,7 +82,6 @@ namespace MPX
                 return m_ScannerThread->connect() ;
             }
 
-
             void
             removeDupes() ;
 
@@ -88,6 +89,11 @@ namespace MPX
             vacuum() ;
 
 #ifdef HAVE_HAL    
+            void
+            switch_mode(
+                bool /* use hal */
+            );
+
 			void
 			vacuumVolume(
                 const std::string&,
@@ -382,13 +388,15 @@ namespace MPX
             signal_album_artist_deleted()
             { return Signals.AlbumArtistDeleted ; }
 
-        private:
+        public:
 
             enum Flags
             {
                   F_NONE      =       0
                 , F_USING_HAL =       1 << 0,
             };
+
+        private:
 
             Service::Manager        & m_Services;
 

@@ -50,6 +50,8 @@
 #include <mcs/mcs.h>
 
 #include "mpx/mpx-audio.hh"
+#include "mpx/mpx-library.hh"
+#include "mpx/mpx-library-scanner-thread.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-stock.hh"
 #include "mpx/util-string.hh"
@@ -282,6 +284,295 @@ namespace MPX
 				}
 	};
 
+	//// Preferences
+	Preferences*
+	Preferences::create (MPX::Play & play)
+	{
+		return new Preferences (Gnome::Glade::Xml::create (build_filename(DATA_DIR, "glade" G_DIR_SEPARATOR_S "preferences.glade")), play); 
+	}
+
+    Preferences::~Preferences ()
+    {
+        Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-y")));
+        Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-h")));
+        mcs->key_set<int>("mpx","preferences-notebook-page", m_notebook_preferences->get_current_page());
+    }
+
+	Preferences::Preferences (RefPtr<Gnome::Glade::Xml> const& xml, MPX::Play & play)
+	: Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "preferences")
+	, m_Play(play)
+	{
+        // Preferences
+		dynamic_cast<Button*>(m_Xml->get_widget ("close"))->signal_clicked().connect(
+		  sigc::mem_fun(
+			  *this,
+			  &Preferences::hide
+		));
+        m_Xml->get_widget ("notebook", m_notebook_preferences);
+
+		// Audio
+		m_Xml->get_widget ("cbox_audio_system", m_cbox_audio_system);
+
+#ifdef HAVE_ALSA
+		m_Xml->get_widget ("cbox_alsa_card", m_cbox_alsa_card);
+		m_Xml->get_widget ("cbox_alsa_device", m_cbox_alsa_device);
+		m_Xml->get_widget ("alsa_buffer_time", m_alsa_buffer_time);
+		m_Xml->get_widget ("alsa_device_string", m_alsa_device_string);
+#endif //HAVE_ALSA
+
+#ifdef HAVE_SUN
+		m_Xml->get_widget ("sun_cbe_device",  m_sun_cbe_device);
+		m_Xml->get_widget ("sun_buffer_time", m_sun_buffer_time);
+#endif //HAVE_SUN
+
+		m_Xml->get_widget ("oss_cbe_device", m_oss_cbe_device);
+		m_Xml->get_widget ("oss_buffer_time", m_oss_buffer_time);
+
+		m_Xml->get_widget ("esd_host", m_esd_host);
+		m_Xml->get_widget ("esd_buffer_time", m_esd_buffer_time);
+
+		m_Xml->get_widget ("pulse_server", m_pulse_server);
+		m_Xml->get_widget ("pulse_device", m_pulse_device);
+		m_Xml->get_widget ("pulse_buffer_time", m_pulse_buffer_time);
+
+		m_Xml->get_widget ("jack_server", m_jack_server);
+		m_Xml->get_widget ("jack_buffer_time", m_jack_buffer_time);
+
+		m_Xml->get_widget ("notebook_audio_system", m_notebook_audio_system);
+		m_Xml->get_widget ("audio-system-apply-changes", m_button_audio_system_apply);
+		m_Xml->get_widget ("audio-system-reset-changes", m_button_audio_system_reset);
+		m_Xml->get_widget ("audio-system-changed-warning", m_warning_audio_system_changed);
+
+		setup_audio_widgets ();
+		setup_audio ();
+
+		// Various Toggle Buttons
+		struct DomainKeyPair
+		{
+			char const * domain;
+			char const * key;
+			char const * widget;
+		};
+
+		DomainKeyPair buttons[] =
+		{
+			{ "audio", "enable-eq", "enable-eq" },
+		};
+
+		for (unsigned n = 0; n < G_N_ELEMENTS (buttons); ++n)
+		{
+			ToggleButton* button = dynamic_cast<ToggleButton*> (m_Xml->get_widget (buttons[n].widget));
+
+			if (button)
+				mcs_bind->bind_toggle_button (*button, buttons[n].domain, buttons[n].key);
+			else
+				g_warning ("%s: Widget '%s' not found in 'preferences.glade'", G_STRLOC, buttons[n].widget);
+		}
+
+		// MM-Keys
+        const int N_MM_KEYS = 6;
+        const int N_MM_KEY_SYSTEMS = 4;
+
+		for( int n = 1; n < N_MM_KEYS; ++n)
+		{
+			Gtk::Widget * entry = m_Xml->get_widget((boost::format ("mm-entry-%d") % n).str());
+
+			entry->signal_key_press_event().connect(
+                sigc::bind(
+                    sigc::mem_fun(
+                        *this,
+                        &Preferences::on_entry_key_press_event
+                    ),
+                    n
+            ));
+
+			entry->signal_key_release_event().connect(
+                sigc::bind(
+                    sigc::mem_fun(
+                        *this,
+                        &Preferences::on_entry_key_release_event
+                    ),
+                    n
+            ));
+
+			Gtk::Button * button = dynamic_cast<Gtk::Button*>(m_Xml->get_widget ((boost::format ("mm-clear-%d") % n).str()));
+			button->signal_clicked().connect(
+                sigc::bind(
+                    sigc::mem_fun(
+                        *this,
+                        &Preferences::on_clear_keyboard
+                    ),
+                    n
+            ));
+		}
+
+        m_mm_key_controls.resize( N_MM_KEYS );
+
+		int active = mcs->key_get<int>("hotkeys","system") ; 
+
+		for( int n = 1; n < N_MM_KEY_SYSTEMS; ++n )
+		{
+			Gtk::RadioButton * button = dynamic_cast<Gtk::RadioButton*>(m_Xml->get_widget ((boost::format ("mm-rb-%d") % n).str(), button));
+
+			button->signal_toggled().connect(
+                sigc::bind(
+                    sigc::mem_fun(
+                        *this,
+                        &Preferences::on_mm_option_changed
+                    ),
+                    n
+            ));
+
+			if( n == (active+1) )
+			{
+			  button->set_active ();
+			}
+		}
+
+		dynamic_cast<Gtk::Button*>(m_Xml->get_widget ("mm-revert"))->signal_clicked().connect(
+		  sigc::mem_fun( *this, &Preferences::mm_load ));
+		dynamic_cast<Gtk::Button*>(m_Xml->get_widget ("mm-apply"))->signal_clicked().connect(
+		  sigc::mem_fun( *this, &Preferences::mm_apply ));
+
+		Gtk::ToggleButton * mm_enable;
+		m_Xml->get_widget ("mm-enable", mm_enable);
+		bool mm_enabled = mcs->key_get<bool>("hotkeys","enable");
+		mm_enable->set_active(mm_enabled);
+		m_Xml->get_widget("mm-vbox")->set_sensitive(mm_enabled);
+		mm_enable->signal_toggled().connect(sigc::mem_fun( *this, &Preferences::mm_toggled ));
+		mm_load ();
+
+		// Coverart
+		m_Covers_CoverArtSources = new CoverArtSourceView(m_Xml);
+
+		// Library Stuff
+		mcs_bind->bind_filechooser(*dynamic_cast<Gtk::FileChooser*>(m_Xml->get_widget("preferences-fc-music-import-path")), "mpx","music-import-path");
+
+		m_Xml->get_widget("rescan-at-startup", m_Library_RescanAtStartup);
+		m_Xml->get_widget("rescan-in-intervals", m_Library_RescanInIntervals);
+		m_Xml->get_widget("rescan-interval", m_Library_RescanInterval);
+		m_Xml->get_widget("hbox-rescan-interval", m_Library_RescanIntervalBox);
+
+		mcs_bind->bind_spin_button(*m_Library_RescanInterval, "library", "rescan-interval");
+		mcs_bind->bind_toggle_button(*m_Library_RescanAtStartup, "library", "rescan-at-startup");
+		mcs_bind->bind_toggle_button(*m_Library_RescanInIntervals, "library", "rescan-in-intervals");
+	
+		m_Library_RescanInIntervals->signal_toggled().connect(
+			sigc::compose(
+				sigc::mem_fun(*m_Library_RescanIntervalBox, &Gtk::Widget::set_sensitive),
+				sigc::mem_fun(*m_Library_RescanInIntervals, &Gtk::ToggleButton::get_active)
+		));
+
+        m_Xml->get_widget( "always-vacuum", m_Library_RescanAlwaysVacuum );
+        mcs_bind->bind_toggle_button(*m_Library_RescanAlwaysVacuum, "library","always-vacuum");
+
+#ifdef HAVE_HAL
+        m_Xml->get_widget("lib-use-hal-rb1", m_Library_UseHAL_Yes);
+        m_Xml->get_widget("lib-use-hal-rb2", m_Library_UseHAL_No);
+
+        if( mcs->key_get<bool>("library","use-hal") )
+            m_Library_UseHAL_Yes->set_active();
+        else
+            m_Library_UseHAL_No->set_active();
+
+        m_Library_UseHAL_Yes->signal_toggled().connect(
+            sigc::mem_fun(
+                *this,
+                &Preferences::on_library_use_hal_toggled
+        ));
+
+        boost::shared_ptr<Library> l = services->get<Library>("mpx-service-library");
+
+        l->scanner().signal_scan_start().connect(
+            sigc::mem_fun(
+                *this,
+                &Preferences::on_library_scan_start
+        ));
+
+        l->scanner().signal_scan_end().connect(
+            sigc::mem_fun(
+                *this,
+                &Preferences::on_library_scan_end
+        ));
+
+        l->scanner().signal_scan_summary().connect(
+            sigc::mem_fun(
+                *this,
+                &Preferences::on_library_scan_summary
+        ));
+#else
+        m_Xml->get_widget("vbox135")->hide();
+#endif // HAVE_HAL
+
+		// Radio
+		m_Xml->get_widget("radio-minimal-bitrate", m_Radio_MinimalBitrate);
+		mcs_bind->bind_spin_button(*m_Radio_MinimalBitrate, "radio", "minimal-bitrate");
+
+        /*- Setup Window Geometry -----------------------------------------*/ 
+
+        gtk_widget_realize(GTK_WIDGET(gobj()));
+    
+        resize(
+           mcs->key_get<int>("mpx","window-prefs-w"),
+           mcs->key_get<int>("mpx","window-prefs-h")
+        );
+
+        move(
+            mcs->key_get<int>("mpx","window-prefs-x"),
+            mcs->key_get<int>("mpx","window-prefs-y")
+        );
+
+        mcs->key_register("mpx","preferences-notebook-page", 0);
+        m_notebook_preferences->set_current_page( mcs->key_get<int>("mpx","preferences-notebook-page") );
+	}
+
+#ifdef HAVE_HAL
+    void
+    Preferences::on_library_scan_start ()
+    {
+        m_Xml->get_widget("vbox135")->set_sensitive(false);
+    }
+
+    void
+    Preferences::on_library_scan_end ()
+    {
+        m_Xml->get_widget("vbox135")->set_sensitive(true);
+    }
+
+    void
+    Preferences::on_library_scan_summary ( const ScanSummary& G_GNUC_UNUSED )
+    {
+        if( !mcs->key_get<bool>("library","always-vacuum") )
+        {
+            m_Xml->get_widget("vbox135")->set_sensitive(true);
+        }
+    }
+
+    void
+    Preferences::on_library_use_hal_toggled()
+    {
+        boost::shared_ptr<Library> l = services->get<Library>("mpx-service-library");
+
+        if( m_Library_UseHAL_Yes->get_active() ) 
+        {
+            m_Xml->get_widget("vbox135")->set_sensitive( false );
+            g_message("%s: Switching to HAL mode", G_STRLOC);
+            l->switch_mode( true );
+            mcs->key_set("library","use-hal", true);
+            m_Xml->get_widget("vbox135")->set_sensitive( true );
+        }
+        else
+        if( m_Library_UseHAL_No->get_active() ) 
+        {
+            m_Xml->get_widget("vbox135")->set_sensitive( false );
+            g_message("%s: Switching to NO HAL mode", G_STRLOC);
+            l->switch_mode( false );
+            mcs->key_set("library","use-hal", false);
+            m_Xml->get_widget("vbox135")->set_sensitive( true );
+        }
+    }
+#endif
+
 	void
 	Preferences::audio_system_changed ()
 	{
@@ -326,14 +617,14 @@ namespace MPX
 
 	  switch (sink)
 	  {
-  #ifdef HAVE_ALSA
+#ifdef HAVE_ALSA
 		case SINK_ALSA:
 		{
 		  std::string device = m_alsa_device_string->get_text();
 		  mcs->key_set<std::string>( "audio", "device-alsa", device ); 
 		  break;
 		}
-  #endif //HAVE_ALSA
+#endif //HAVE_ALSA
 		default: ;
 	  }
 
@@ -346,7 +637,7 @@ namespace MPX
 	  m_Play.reset(); // the final important thing
 	}
 
-  #ifdef HAVE_ALSA
+#ifdef HAVE_ALSA
 	void
 	Preferences::on_alsa_device_string_changed ()
 	{
@@ -554,11 +845,11 @@ namespace MPX
         }
         return cards;
 	}
-  #endif //HAVE_ALSA
+#endif //HAVE_ALSA
 
-  #define PRESENT_SINK(n) ((m_sinks.find (n) != m_sinks.end()))
-  #define CURRENT_SINK(n) ((sink == n))
-  #define NONE_SINK (-1)
+#define PRESENT_SINK(n) ((m_sinks.find (n) != m_sinks.end()))
+#define CURRENT_SINK(n) ((sink == n))
+#define NONE_SINK (-1)
 
 	Gtk::StockID
 	Preferences::get_plugin_stock (bool truth)
@@ -571,7 +862,7 @@ namespace MPX
 	{
         audio_system_cbox_ids.resize(16);
      
-        m_ref_xml->get_widget ("cbox_video_out", m_cbox_video_out);
+        m_Xml->get_widget ("cbox_video_out", m_cbox_video_out);
 
         CellRendererText * cell;
         m_list_store_audio_systems = ListStore::create (audio_system_columns);
@@ -700,7 +991,7 @@ namespace MPX
     #ifdef HAVE_HAL
         if (PRESENT_SINK("halaudiosink"))
         {
-          m_ref_xml->get_widget("halaudio_udi", m_halaudio_udi);
+          m_Xml->get_widget("halaudio_udi", m_halaudio_udi);
           mcs_bind->bind_entry (*m_halaudio_udi, "audio", "hal-udi");
           m_halaudio_udi->signal_changed ().connect
             (sigc::mem_fun (*this, &Preferences::audio_system_apply_set_sensitive));
@@ -728,13 +1019,13 @@ namespace MPX
         bool has_mmsx = test_element ("mmssrc");
         bool has_http = true; // built-in http src 
 
-        dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_cdda"))->set
+        dynamic_cast<Image*> (m_Xml->get_widget ("img_status_cdda"))->set
            (get_plugin_stock (has_cdda), ICON_SIZE_SMALL_TOOLBAR);
 
-        dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_http"))->set
+        dynamic_cast<Image*> (m_Xml->get_widget ("img_status_http"))->set
            (get_plugin_stock (has_http), ICON_SIZE_SMALL_TOOLBAR);
 
-        dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_mms"))->set
+        dynamic_cast<Image*> (m_Xml->get_widget ("img_status_mms"))->set
            (get_plugin_stock (has_mmsx), ICON_SIZE_SMALL_TOOLBAR);
 
         struct SupportCheckTuple
@@ -756,30 +1047,30 @@ namespace MPX
         };
 
         // Check for either mad or flump3dec
-        dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_mp3"))->set
+        dynamic_cast<Image*> (m_Xml->get_widget ("img_status_mp3"))->set
             (get_plugin_stock ((test_element ("mad") ||
                       test_element ("flump3dec")) &&
                       test_element("id3demux") &&
                       test_element ("apedemux")),
             ICON_SIZE_SMALL_TOOLBAR);
 
-        dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_ogg"))->set
+        dynamic_cast<Image*> (m_Xml->get_widget ("img_status_ogg"))->set
           (get_plugin_stock (test_element ("oggdemux") && test_element("vorbisdec")), ICON_SIZE_SMALL_TOOLBAR);
 
         for (unsigned n = 0; n < G_N_ELEMENTS (support_check); ++n)
         {
-          dynamic_cast<Image*> (m_ref_xml->get_widget (support_check[n].widget))->set
+          dynamic_cast<Image*> (m_Xml->get_widget (support_check[n].widget))->set
             (get_plugin_stock (test_element (support_check[n].element)), ICON_SIZE_SMALL_TOOLBAR);
         }
 
         bool video = (test_element ("filesrc") && test_element ("decodebin") && test_element ("queue") &&
                       test_element ("ffmpegcolorspace") && test_element ("xvimagesink"));
         
-        dynamic_cast<Image*> (m_ref_xml->get_widget ("img_status_video"))->set (get_plugin_stock (video), ICON_SIZE_SMALL_TOOLBAR);
+        dynamic_cast<Image*> (m_Xml->get_widget ("img_status_video"))->set (get_plugin_stock (video), ICON_SIZE_SMALL_TOOLBAR);
         m_cbox_video_out->signal_changed().connect
           (sigc::mem_fun( *this, &Preferences::audio_system_apply_set_sensitive) );
 
-        dynamic_cast<ToggleButton *>(m_ref_xml->get_widget ("enable-eq"))->signal_toggled().connect
+        dynamic_cast<ToggleButton *>(m_Xml->get_widget ("enable-eq"))->signal_toggled().connect
           (sigc::mem_fun( *this, &Preferences::audio_system_apply_set_sensitive) );
 	}
 
@@ -964,177 +1255,6 @@ namespace MPX
 	}
 
 
-	//// Preferences
-
-	Preferences*
-	Preferences::create (MPX::Play & play)
-	{
-		return new Preferences (Gnome::Glade::Xml::create (build_filename(DATA_DIR, "glade" G_DIR_SEPARATOR_S "preferences.glade")), play); 
-	}
-
-    Preferences::~Preferences ()
-    {
-        Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-y")));
-        Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-h")));
-        mcs->key_set<int>("mpx","preferences-notebook-page", m_notebook_preferences->get_current_page());
-    }
-
-	Preferences::Preferences (RefPtr<Gnome::Glade::Xml> const& xml, MPX::Play & play)
-	: Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "preferences")
-	, m_ref_xml(xml)
-	, m_Play(play)
-	{
-		dynamic_cast<Button*>(m_ref_xml->get_widget ("close"))->signal_clicked().connect(
-		  sigc::mem_fun(
-			  *this,
-			  &Preferences::hide
-		));
-
-        m_ref_xml->get_widget ("notebook", m_notebook_preferences);
-
-		m_ref_xml->get_widget ("cbox_audio_system", m_cbox_audio_system);
-
-  #ifdef HAVE_ALSA
-		m_ref_xml->get_widget ("cbox_alsa_card", m_cbox_alsa_card);
-		m_ref_xml->get_widget ("cbox_alsa_device", m_cbox_alsa_device);
-		m_ref_xml->get_widget ("alsa_buffer_time", m_alsa_buffer_time);
-		m_ref_xml->get_widget ("alsa_device_string", m_alsa_device_string);
-  #endif //HAVE_ALSA
-
-  #ifdef HAVE_SUN
-		m_ref_xml->get_widget ("sun_cbe_device",  m_sun_cbe_device);
-		m_ref_xml->get_widget ("sun_buffer_time", m_sun_buffer_time);
-  #endif //HAVE_SUN
-
-		m_ref_xml->get_widget ("oss_cbe_device", m_oss_cbe_device);
-		m_ref_xml->get_widget ("oss_buffer_time", m_oss_buffer_time);
-
-		m_ref_xml->get_widget ("esd_host", m_esd_host);
-		m_ref_xml->get_widget ("esd_buffer_time", m_esd_buffer_time);
-
-		m_ref_xml->get_widget ("pulse_server", m_pulse_server);
-		m_ref_xml->get_widget ("pulse_device", m_pulse_device);
-		m_ref_xml->get_widget ("pulse_buffer_time", m_pulse_buffer_time);
-
-		m_ref_xml->get_widget ("jack_server", m_jack_server);
-		m_ref_xml->get_widget ("jack_buffer_time", m_jack_buffer_time);
-
-		m_ref_xml->get_widget ("notebook_audio_system", m_notebook_audio_system);
-		m_ref_xml->get_widget ("audio-system-apply-changes", m_button_audio_system_apply);
-		m_ref_xml->get_widget ("audio-system-reset-changes", m_button_audio_system_reset);
-		m_ref_xml->get_widget ("audio-system-changed-warning", m_warning_audio_system_changed);
-
-		// Audio
-		setup_audio_widgets ();
-		setup_audio ();
-
-		// Various Toggle Buttons
-		struct DomainKeyPair
-		{
-			char const * domain;
-			char const * key;
-			char const * widget;
-		};
-
-		DomainKeyPair buttons[] =
-		{
-			{ "audio", "enable-eq", "enable-eq" },
-		};
-
-		for (unsigned n = 0; n < G_N_ELEMENTS (buttons); ++n)
-		{
-			ToggleButton* button = dynamic_cast<ToggleButton*> (m_ref_xml->get_widget (buttons[n].widget));
-
-			if (button)
-				mcs_bind->bind_toggle_button (*button, buttons[n].domain, buttons[n].key);
-			else
-				g_warning ("%s: Widget '%s' not found in 'preferences.glade'", G_STRLOC, buttons[n].widget);
-		}
-
-		// MM-Keys
-		for(int n = 1; n < 6; ++n)
-		{
-			Gtk::Entry * entry;
-			m_ref_xml->get_widget ((boost::format ("mm-entry-%d") % n).str(), entry);
-			entry->signal_key_press_event().connect( sigc::bind( sigc::mem_fun( *this, &Preferences::on_entry_key_press_event ), n));
-			entry->signal_key_release_event().connect( sigc::bind( sigc::mem_fun( *this, &Preferences::on_entry_key_release_event ), n));
-			Gtk::Button * button;
-			m_ref_xml->get_widget ((boost::format ("mm-clear-%d") % n).str(), button);
-			button->signal_clicked().connect( sigc::bind( sigc::mem_fun( *this, &Preferences::on_clear_keyboard ), n));
-			m_mm_key_controls.resize( n );
-		}
-
-		int active = mcs->key_get<int>("hotkeys","system") + 1;
-		for(int n = 1; n < 4; ++n)
-		{
-			Gtk::RadioButton * button;
-			m_ref_xml->get_widget ((boost::format ("mm-rb-%d") % n).str(), button);
-			button->signal_toggled().connect( sigc::bind( sigc::mem_fun( *this, &Preferences::on_mm_option_changed), n));
-			if( n == active )
-			{
-			  button->set_active ();
-			}
-		}
-
-		dynamic_cast<Gtk::Button*>(m_ref_xml->get_widget ("mm-revert"))->signal_clicked().connect(
-		  sigc::mem_fun( *this, &Preferences::mm_load ));
-		dynamic_cast<Gtk::Button*>(m_ref_xml->get_widget ("mm-apply"))->signal_clicked().connect(
-		  sigc::mem_fun( *this, &Preferences::mm_apply ));
-
-		Gtk::ToggleButton * mm_enable;
-		m_ref_xml->get_widget ("mm-enable", mm_enable);
-		bool mm_enabled = mcs->key_get<bool>("hotkeys","enable");
-		mm_enable->set_active(mm_enabled);
-		m_ref_xml->get_widget("mm-vbox")->set_sensitive(mm_enabled);
-		mm_enable->signal_toggled().connect(sigc::mem_fun( *this, &Preferences::mm_toggled ));
-		mm_load ();
-
-		// Coverart
-		m_Covers_CoverArtSources = new CoverArtSourceView(m_ref_xml);
-
-		// Library Stuff
-		mcs_bind->bind_filechooser(*dynamic_cast<Gtk::FileChooser*>(m_ref_xml->get_widget("preferences-fc-music-import-path")), "mpx","music-import-path");
-
-		m_ref_xml->get_widget("rescan-at-startup", m_Library_RescanAtStartup);
-		m_ref_xml->get_widget("rescan-in-intervals", m_Library_RescanInIntervals);
-		m_ref_xml->get_widget("rescan-interval", m_Library_RescanInterval);
-		m_ref_xml->get_widget("hbox-rescan-interval", m_Library_RescanIntervalBox);
-
-		mcs_bind->bind_spin_button(*m_Library_RescanInterval, "library", "rescan-interval");
-		mcs_bind->bind_toggle_button(*m_Library_RescanAtStartup, "library", "rescan-at-startup");
-		mcs_bind->bind_toggle_button(*m_Library_RescanInIntervals, "library", "rescan-in-intervals");
-	
-		m_Library_RescanInIntervals->signal_toggled().connect(
-			sigc::compose(
-				sigc::mem_fun(*m_Library_RescanIntervalBox, &Gtk::Widget::set_sensitive),
-				sigc::mem_fun(*m_Library_RescanInIntervals, &Gtk::ToggleButton::get_active)
-		));
-
-        m_ref_xml->get_widget( "always-vacuum", m_Library_RescanAlwaysVacuum );
-        mcs_bind->bind_toggle_button(*m_Library_RescanAlwaysVacuum, "library","always-vacuum");
-
-		// Radio
-		m_ref_xml->get_widget("radio-minimal-bitrate", m_Radio_MinimalBitrate);
-		mcs_bind->bind_spin_button(*m_Radio_MinimalBitrate, "radio", "minimal-bitrate");
-
-        /*- Setup Window Geometry -----------------------------------------*/ 
-
-        gtk_widget_realize(GTK_WIDGET(gobj()));
-    
-        resize(
-           mcs->key_get<int>("mpx","window-prefs-w"),
-           mcs->key_get<int>("mpx","window-prefs-h")
-        );
-
-        move(
-            mcs->key_get<int>("mpx","window-prefs-x"),
-            mcs->key_get<int>("mpx","window-prefs-y")
-        );
-
-        mcs->key_register("mpx","preferences-notebook-page", 0);
-        m_notebook_preferences->set_current_page( mcs->key_get<int>("mpx","preferences-notebook-page") );
-	}
-
 	void
 	Preferences::on_hide ()
 	{
@@ -1147,12 +1267,12 @@ namespace MPX
 	Preferences::mm_toggled ()
 	{
         Gtk::ToggleButton * b;
-        m_ref_xml->get_widget ("mm-enable", b);
+        m_Xml->get_widget ("mm-enable", b);
         bool active = b->get_active();
 
         Signals.HotkeyEditBegin.emit();
         mcs->key_set<bool>("hotkeys","enable", active);
-        m_ref_xml->get_widget("mm-vbox")->set_sensitive(active);
+        m_Xml->get_widget("mm-vbox")->set_sensitive(active);
         Signals.HotkeyEditEnd.emit();
 	} 
 
@@ -1168,8 +1288,8 @@ namespace MPX
           mcs->key_set<int>("hotkeys", (boost::format ("key-%d-mask") % n).str(), c.mask);
         }
 
-        m_ref_xml->get_widget ("mm-apply")->set_sensitive (false);
-        m_ref_xml->get_widget ("mm-revert")->set_sensitive (false);
+        m_Xml->get_widget ("mm-apply")->set_sensitive (false);
+        m_Xml->get_widget ("mm-revert")->set_sensitive (false);
 
         Signals.HotkeyEditEnd.emit();
 	}
@@ -1188,10 +1308,10 @@ namespace MPX
 
         int sys = mcs->key_get<int>("hotkeys","system");
         if( sys < 0 || sys > 2) sys = 1;
-        dynamic_cast<Gtk::RadioButton*>(m_ref_xml->get_widget ((boost::format ("mm-rb-%d") % (sys+1)).str()))->set_active();
+        dynamic_cast<Gtk::RadioButton*>(m_Xml->get_widget ((boost::format ("mm-rb-%d") % (sys+1)).str()))->set_active();
 
-        m_ref_xml->get_widget ("mm-apply")->set_sensitive (false);
-        m_ref_xml->get_widget ("mm-revert")->set_sensitive (false);
+        m_Xml->get_widget ("mm-apply")->set_sensitive (false);
+        m_Xml->get_widget ("mm-revert")->set_sensitive (false);
 
         Signals.HotkeyEditEnd.emit();
 	}
@@ -1237,7 +1357,7 @@ namespace MPX
         }
 
         Gtk::Entry * entry;
-        m_ref_xml->get_widget ((boost::format ("mm-entry-%d") % entry_id).str(), entry); 
+        m_Xml->get_widget ((boost::format ("mm-entry-%d") % entry_id).str(), entry); 
 
         entry->set_text (text);
         entry->set_position(-1);
@@ -1275,8 +1395,8 @@ namespace MPX
         } else controls.key = 0;
 
         set_keytext (entry_id, is_mod ? 0 : event->hardware_keycode, mod);
-        m_ref_xml->get_widget ("mm-apply")->set_sensitive (true);
-        m_ref_xml->get_widget ("mm-revert")->set_sensitive (true);
+        m_Xml->get_widget ("mm-apply")->set_sensitive (true);
+        m_Xml->get_widget ("mm-revert")->set_sensitive (true);
         return false;
 	}
 
@@ -1289,8 +1409,8 @@ namespace MPX
           controls.mask = 0;
         }
         set_keytext (entry_id, controls.key, controls.mask);
-        m_ref_xml->get_widget ("mm-apply")->set_sensitive (true);
-        m_ref_xml->get_widget ("mm-revert")->set_sensitive (true);
+        m_Xml->get_widget ("mm-apply")->set_sensitive (true);
+        m_Xml->get_widget ("mm-revert")->set_sensitive (true);
         return false;
 	}
 
@@ -1301,8 +1421,8 @@ namespace MPX
         controls.key = 0;
         controls.mask = 0;
         set_keytext(entry_id, 0, 0);
-        m_ref_xml->get_widget ("mm-apply")->set_sensitive (true);
-        m_ref_xml->get_widget ("mm-revert")->set_sensitive (true);
+        m_Xml->get_widget ("mm-apply")->set_sensitive (true);
+        m_Xml->get_widget ("mm-revert")->set_sensitive (true);
 	}
 
 	void
@@ -1314,15 +1434,15 @@ namespace MPX
         {
           case 1:
           case 2:
-            m_ref_xml->get_widget ("mm-table")->set_sensitive (false);
+            m_Xml->get_widget ("mm-table")->set_sensitive (false);
             break;  
 
           case 3:
-            m_ref_xml->get_widget ("mm-table")->set_sensitive (true);
+            m_Xml->get_widget ("mm-table")->set_sensitive (true);
             break; 
         }
         m_mm_option = option - 1;
-        m_ref_xml->get_widget ("mm-apply")->set_sensitive (true);
+        m_Xml->get_widget ("mm-apply")->set_sensitive (true);
 	}
 
 } // namespace MPX
