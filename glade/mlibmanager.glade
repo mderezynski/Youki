@@ -154,9 +154,9 @@
 				      <property name="tooltip" translatable="yes">Select a volume (partition, USB storage, etc) here to perform an action below. Double-click a volume to reread the tree.</property>
 				      <property name="can_focus">True</property>
 				      <property name="headers_visible">True</property>
-				      <property name="rules_hint">False</property>
+				      <property name="rules_hint">True</property>
 				      <property name="reorderable">False</property>
-				      <property name="enable_search">True</property>
+				      <property name="enable_search">False</property>
 				      <property name="fixed_height_mode">False</property>
 				      <property name="hover_selection">False</property>
 				      <property name="hover_expand">False</property>
@@ -260,7 +260,7 @@
 				      <property name="tooltip" translatable="yes">Add or remove folders from the library by checking or unchecking them here.</property>
 				      <property name="can_focus">True</property>
 				      <property name="headers_visible">False</property>
-				      <property name="rules_hint">False</property>
+				      <property name="rules_hint">True</property>
 				      <property name="reorderable">False</property>
 				      <property name="enable_search">False</property>
 				      <property name="fixed_height_mode">False</property>
@@ -486,7 +486,7 @@
 			  <child>
 			    <widget class="GtkButton" id="b-vacuum">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Finds stale files, and removes associated tracks and albums from the library</property>
+			      <property name="tooltip" translatable="yes">Removes stale tracks, and associated artists and albums, if not needed anymore.</property>
 			      <property name="can_default">True</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -530,7 +530,7 @@
 				      <child>
 					<widget class="GtkLabel" id="label11">
 					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">Vacuum Volume</property>
+					  <property name="label" translatable="yes">Clean Up Volume</property>
 					  <property name="use_underline">True</property>
 					  <property name="use_markup">False</property>
 					  <property name="justify">GTK_JUSTIFY_LEFT</property>

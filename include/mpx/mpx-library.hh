@@ -53,6 +53,10 @@ namespace MPX
 
         public:
 
+#include "mpx/exception.hh"
+
+            EXCEPTION(FileQualificationError)
+
             Library(
                 Service::Manager&
 #ifdef HAVE_HAL
@@ -62,7 +66,6 @@ namespace MPX
 
             Library (const Library& other) ;
             ~Library () ;
-
 
 
             SQL::SQLDB*
@@ -76,7 +79,6 @@ namespace MPX
             {
                 return m_ScannerThread->connect() ;
             }
-
 
 
             void
@@ -124,12 +126,8 @@ namespace MPX
 
             Track
             sqlToTrack(
-                SQL::Row&
-            ) ;
-
-            SQL::RowV
-            getTrackTags(
-                gint64
+                  SQL::Row&
+                , bool /*all metadata?*/ = true
             ) ;
 
             void
@@ -159,6 +157,23 @@ namespace MPX
 
             void
             trackTagged(gint64, std::string const&) ;
+
+#ifndef HAVE_HAL
+            inline
+#endif //HAVE_HAL
+            void
+            trackSetLocation( Track&, const std::string& );
+
+#ifndef HAVE_HAL
+            inline
+#endif //HAVE_HAL
+            std::string
+            trackGetLocation( const Track& );
+
+            SQL::RowV
+            getTrackTags(
+                gint64
+            ) ;
 
 
             void
@@ -372,16 +387,15 @@ namespace MPX
             enum Flags
             {
                   F_NONE      =       0
-#ifdef HAVE_HAL
                 , F_USING_HAL =       1 << 0,
-#endif
             };
+
+            Service::Manager        & m_Services;
 
 #ifdef HAVE_HAL
             HAL                     & m_HAL;
 #endif //HAVE_HAL 
 
-            Service::Manager        & m_Services;
             Covers                  & m_Covers;
             MetadataReaderTagLib    & m_MetadataReaderTagLib ;
             SQL::SQLDB              * m_SQL;

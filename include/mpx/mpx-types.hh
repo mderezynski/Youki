@@ -165,7 +165,12 @@ namespace MPX
     
         public:
 
-          OVariant & operator[](DataT::size_type index)
+          const OVariant& operator[](DataT::size_type index) const
+          {
+              return data[index];
+          }
+
+          OVariant& operator[](DataT::size_type index)
           {
               return data[index];
           }

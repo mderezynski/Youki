@@ -226,7 +226,12 @@ namespace MPX
 
 
 
-                m_ScannerThread = (new LibraryScannerThread(new SQL::SQLDB(*m_SQL), m_MetadataReaderTagLib, m_HAL, m_Flags));
+                m_ScannerThread = (
+                        new LibraryScannerThread(
+                            this,
+                            m_Flags
+                ));
+
                 m_ScannerThread->run();
 
                 m_ScannerThread->connect().signal_new_album().connect(
@@ -510,25 +515,9 @@ namespace MPX
                         boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
                         mm->push_message((boost::format(_("Refreshing album covers: %lld / %lld")) % *position % (*v).size()).str());
 
-                        std::string location;
-#ifdef HAVE_HAL
-                        if (m_Flags & F_USING_HAL)
-                        {
-                                try{
-                                        std::string volume_udi  = get<std::string>(r["hal_volume_udi"]); 
-                                        std::string device_udi  = get<std::string>(r["hal_device_udi"]); 
-                                        std::string hal_vrp     = get<std::string>(r["hal_vrp"]);
-                                        std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
-                                        location = filename_to_uri(build_filename(mount_point, hal_vrp));
-                                } catch (...) {
-                                }
-                        }
-                        else
-#endif // HAVE_HAL
-                        {
-                                location = get<std::string>(r["location"]);
-                        }
+                        Track t = sqlToTrack( r, false );
 
+                        std::string location = get<std::string>(t[ATTRIBUTE_LOCATION].get()) ;
                         std::string mb_album_id;
                         std::string amazon_asin;
                         std::string album_artist;
@@ -692,40 +681,7 @@ namespace MPX
                                     continue; //FIXME: Maybe it was vacuumed during this operation, so let's just continue. We really need proper high-level locking for the database
                                 }
 
-                                Row & r = rows[0]; 
-
-                                std::string uri;
-
-#ifdef HAVE_HAL
-                                if( m_Flags & F_USING_HAL )
-                                {
-                                        std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
-                                        std::string device_udi = get<std::string>(r["hal_device_udi"]); 
-                                        std::string hal_vrp    = get<std::string>(r["hal_vrp"]);
-
-                                        HAL::VolumeKey key ( volume_udi, device_udi );
-                                        VolMountPointMap::const_iterator i = m.find(key);
-
-                                        if(i == m.end())
-                                        {
-                                                try{		
-                                                        std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
-                                                        m[key] = mount_point;
-                                                        uri = filename_to_uri(build_filename(mount_point, hal_vrp));
-                                                } catch (...) {
-                                                        g_message("%s: Couldn't get mount point for track MPX-ID [%lld]", G_STRLOC, get<gint64>(r["id"]));
-                                                }
-                                        }
-                                        else
-                                        {
-                                                uri = filename_to_uri(build_filename(i->second, hal_vrp));
-                                        }
-                                } 
-                                else
-#endif
-                                {
-                                        uri = get<std::string>(r["location"]);
-                                }
+                                std::string uri = get<std::string>( sqlToTrack( rows[0], false )[ATTRIBUTE_LOCATION].get() ) ;
 
                                 if( !uri.empty() )
                                 {
@@ -818,14 +774,16 @@ namespace MPX
                 {
                         m_MetadataReaderTagLib.get(uri, track);
 
+                        track[ATTRIBUTE_LOCATION] = uri; 
+  
 #ifdef HAVE_HAL
-                        try{
-                                URI u (uri);
-                                if( u.get_protocol() == URI::PROTOCOL_FILE )
-                                {
-                                        try{
-                                                if (m_Flags & F_USING_HAL)
-                                                {
+                        if( m_Flags & F_USING_HAL )
+                        {
+                                try{
+                                        URI u (uri);
+                                        if( u.get_protocol() == URI::PROTOCOL_FILE )
+                                        {
+                                                try{
                                                         HAL::Volume const& volume (m_HAL.get_volume_for_uri (uri));
 
                                                         track[ATTRIBUTE_HAL_VOLUME_UDI] =
@@ -836,26 +794,106 @@ namespace MPX
 
                                                         track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
                                                                 filename_from_uri (uri).substr (volume.mount_point.length()) ;
-
-                                                        std::string mount_point = m_HAL.get_mount_point_for_volume(volume.volume_udi, volume.device_udi);
-                                                        std::string path = build_filename(mount_point, get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()));
-
-                                                        track[ATTRIBUTE_LOCATION] = std::string(filename_to_uri(path));
+                                                }
+                                                catch( HAL::Exception& cxe )
+                                                {
+                                                        g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+                                                        throw FileQualificationError((boost::format("%s: %s") % uri % cxe.what()).str());
+                                                }
+                                                catch( Glib::ConvertError& cxe )
+                                                {
+                                                        g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+                                                        throw FileQualificationError((boost::format("%s: %s") % uri % cxe.what()).str());
                                                 }
                                         }
-                                        catch (HAL::Exception & cxe)
-                                        {
-                                                g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
-                                        }
-                                        catch (Glib::ConvertError & cxe)
-                                        {
-                                                g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-                                        }
+                                } catch( URI::ParseError )
+                                {
+                                        throw FileQualificationError((boost::format("URI Parse Error: %s") % uri).str());
                                 }
-                        } catch (URI::ParseError)
-                        {
                         }
 #endif // HAVE_HAL
+                }
+
+#ifndef HAVE_HAL
+        inline
+#endif //HAVE_HAL
+        void
+                Library::trackSetLocation(
+                    Track&              track,
+                    const std::string&  uri
+                )
+                {
+                        track[ATTRIBUTE_LOCATION] = uri;
+#ifdef HAVE_HAL
+                        if( m_Flags & F_USING_HAL )
+                        {
+                                try{
+                                        URI u (uri);
+                                        if( u.get_protocol() == URI::PROTOCOL_FILE )
+                                        {
+                                                try{
+                                                        {
+                                                                HAL::Volume const& volume ( m_HAL.get_volume_for_uri( uri ));
+
+                                                                track[ATTRIBUTE_HAL_VOLUME_UDI] =
+                                                                        volume.volume_udi ;
+
+                                                                track[ATTRIBUTE_HAL_DEVICE_UDI] =
+                                                                        volume.device_udi ;
+
+                                                                track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
+                                                                        filename_from_uri( uri ).substr( volume.mount_point.length() ) ;
+                                                        }
+                                                }
+                                                catch (HAL::Exception & cxe)
+                                                {
+                                                        g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+                                                        throw FileQualificationError((boost::format("%s: %s") % uri % cxe.what()).str());
+                                                }
+                                                catch (Glib::ConvertError & cxe)
+                                                {
+                                                        g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+                                                        throw FileQualificationError((boost::format("%s: %s") % uri % cxe.what()).str());
+                                                }
+                                        }
+                                        else
+                                        {
+                                            throw FileQualificationError((boost::format("Unable to handle non-file:/// URI using HAL: %s") % uri).str());
+                                        }
+
+                                } catch( URI::ParseError )
+                                {
+                                    throw FileQualificationError((boost::format("URI Parse Error: %s") % uri).str());
+                                }
+                        }
+#endif // HAVE_HAL
+                }
+
+        std::string
+                Library::trackGetLocation( const Track& track )
+                {
+#ifdef HAVE_HAL
+                        if( m_Flags & F_USING_HAL )
+                        {
+                                try{
+                                        const std::string& volume_udi  = get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get()) ;
+                                        const std::string& device_udi  = get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get()) ;
+                                        const std::string& vrp         = get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()) ;
+                                        const std::string& mount_point = m_HAL.get_mount_point_for_volume(volume_udi, device_udi) ;
+
+                                        return filename_to_uri( build_filename(mount_point, vrp) );
+
+                                } catch (HAL::NoMountPathForVolumeError & cxe)
+                                {
+                                        g_message("%s: Error: What: %s", G_STRLOC, cxe.what());
+                                        throw FileQualificationError((boost::format("No available mountpoint for Track %lld: %s") % get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) % cxe.what() ).str());
+                                }
+                        }
+                        else
+#endif // HAVE_HAL
+                        {
+                                return get<std::string>(track[ATTRIBUTE_LOCATION].get());
+                        }
                 }
 
         void
@@ -1058,96 +1096,94 @@ namespace MPX
                 }
 
         Track
-                Library::sqlToTrack (SQL::Row & row)
+                Library::sqlToTrack(
+                      SQL::Row & row
+                    , bool all_metadata
+                )
                 {
                         Track track;
 
-                        if (row.count("album_artist"))
-                                track[ATTRIBUTE_ALBUM_ARTIST] = get<std::string>(row["album_artist"]);
-
-                        if (row.count("artist"))
-                                track[ATTRIBUTE_ARTIST] = get<std::string>(row["artist"]);
-
-                        if (row.count("album"))
-                                track[ATTRIBUTE_ALBUM] = get<std::string>(row["album"]);
-
-                        if (row.count("track"))
-                                track[ATTRIBUTE_TRACK] = gint64(get<gint64>(row["track"]));
-
-                        if (row.count("title"))
-                                track[ATTRIBUTE_TITLE] = get<std::string>(row["title"]);
-
-                        if (row.count("time"))
-                                track[ATTRIBUTE_TIME] = gint64(get<gint64>(row["time"]));
-
-                        if (row.count("mb_artist_id"))
-                                track[ATTRIBUTE_MB_ARTIST_ID] = get<std::string>(row["mb_artist_id"]);
-
-                        if (row.count("mb_album_id"))
-                                track[ATTRIBUTE_MB_ALBUM_ID] = get<std::string>(row["mb_album_id"]);
-
-                        if (row.count("mb_track_id"))
-                                track[ATTRIBUTE_MB_TRACK_ID] = get<std::string>(row["mb_track_id"]);
-
-                        if (row.count("mb_album_artist_id"))
-                                track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = get<std::string>(row["mb_album_artist_id"]);
-
-                        if (row.count("mb_release_country"))
-                                track[ATTRIBUTE_MB_RELEASE_COUNTRY] = get<std::string>(row["mb_release_country"]);
-
-                        if (row.count("mb_release_type"))
-                                track[ATTRIBUTE_MB_RELEASE_TYPE] = get<std::string>(row["mb_release_type"]);
-
-                        if (row.count("date"))
-                                track[ATTRIBUTE_DATE] = get<gint64>(row["date"]);
-
-                        if (row.count("amazon_asin"))
-                                track[ATTRIBUTE_ASIN] = get<std::string>(row["amazon_asin"]);
-
-                        if (row.count("id"))
-                                track[ATTRIBUTE_MPX_TRACK_ID] = get<gint64>(row["id"]);
-
-                        if (row.count("album_j"))
-                                track[ATTRIBUTE_MPX_ALBUM_ID] = get<gint64>(row["album_j"]);
-
-                        if (row.count("hal_volume_udi"))
-                                track[ATTRIBUTE_HAL_VOLUME_UDI] = get<std::string>(row["hal_volume_udi"]);
-
-                        if (row.count("hal_device_udi"))
-                                track[ATTRIBUTE_HAL_DEVICE_UDI] = get<std::string>(row["hal_device_udi"]);
-
-                        if (row.count("hal_vrp"))
-                                track[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);
-
-                        if (row.count("type"))
-                                track[ATTRIBUTE_TYPE] = get<std::string>(row["type"]);
-
 #ifdef HAVE_HAL
-                        if (m_Flags & F_USING_HAL)
+                        if( m_Flags & F_USING_HAL )
                         {
-                                try{
-                                        std::string volume_udi = get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get());
-                                        std::string device_udi = get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get());
-                                        std::string vrp = get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get());
-                                        std::string mount_point = m_HAL.get_mount_point_for_volume(volume_udi, device_udi);
-                                        std::string path = build_filename(mount_point, vrp);
-                                        track[ATTRIBUTE_LOCATION] = std::string(filename_to_uri(path));
-                                } catch( boost::bad_get )
-                                {
-                                } catch( HAL::Exception )
-                                {
-                                }
+                            if (row.count("hal_volume_udi"))
+                                    track[ATTRIBUTE_HAL_VOLUME_UDI] = get<std::string>(row["hal_volume_udi"]);
+
+                            if (row.count("hal_device_udi"))
+                                    track[ATTRIBUTE_HAL_DEVICE_UDI] = get<std::string>(row["hal_device_udi"]);
+
+                            if (row.count("hal_vrp"))
+                                    track[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);
+
+                            track[ATTRIBUTE_LOCATION] = trackGetLocation( track ); 
                         }
                         else
 #endif
-                                if (row.count("location"))
-                                        track[ATTRIBUTE_LOCATION] = get<std::string>(row["location"]);
+                        if( row.count("location") )
+                        {
+                            track[ATTRIBUTE_LOCATION] = get<std::string>(row["location"]);
+                        }
 
-                        if (row.count("bitrate"))
-                                track[ATTRIBUTE_BITRATE] = get<gint64>(row["bitrate"]);
 
-                        if (row.count("samplerate"))
-                                track[ATTRIBUTE_SAMPLERATE] = get<gint64>(row["samplerate"]);
+                        if( all_metadata )
+                        {
+                                if (row.count("album_artist"))
+                                        track[ATTRIBUTE_ALBUM_ARTIST] = get<std::string>(row["album_artist"]);
+
+                                if (row.count("artist"))
+                                        track[ATTRIBUTE_ARTIST] = get<std::string>(row["artist"]);
+
+                                if (row.count("album"))
+                                        track[ATTRIBUTE_ALBUM] = get<std::string>(row["album"]);
+
+                                if (row.count("track"))
+                                        track[ATTRIBUTE_TRACK] = gint64(get<gint64>(row["track"]));
+
+                                if (row.count("title"))
+                                        track[ATTRIBUTE_TITLE] = get<std::string>(row["title"]);
+
+                                if (row.count("time"))
+                                        track[ATTRIBUTE_TIME] = gint64(get<gint64>(row["time"]));
+
+                                if (row.count("mb_artist_id"))
+                                        track[ATTRIBUTE_MB_ARTIST_ID] = get<std::string>(row["mb_artist_id"]);
+
+                                if (row.count("mb_album_id"))
+                                        track[ATTRIBUTE_MB_ALBUM_ID] = get<std::string>(row["mb_album_id"]);
+
+                                if (row.count("mb_track_id"))
+                                        track[ATTRIBUTE_MB_TRACK_ID] = get<std::string>(row["mb_track_id"]);
+
+                                if (row.count("mb_album_artist_id"))
+                                        track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = get<std::string>(row["mb_album_artist_id"]);
+
+                                if (row.count("mb_release_country"))
+                                        track[ATTRIBUTE_MB_RELEASE_COUNTRY] = get<std::string>(row["mb_release_country"]);
+
+                                if (row.count("mb_release_type"))
+                                        track[ATTRIBUTE_MB_RELEASE_TYPE] = get<std::string>(row["mb_release_type"]);
+
+                                if (row.count("date"))
+                                        track[ATTRIBUTE_DATE] = get<gint64>(row["date"]);
+
+                                if (row.count("amazon_asin"))
+                                        track[ATTRIBUTE_ASIN] = get<std::string>(row["amazon_asin"]);
+
+                                if (row.count("id"))
+                                        track[ATTRIBUTE_MPX_TRACK_ID] = get<gint64>(row["id"]);
+
+                                if (row.count("album_j"))
+                                        track[ATTRIBUTE_MPX_ALBUM_ID] = get<gint64>(row["album_j"]);
+
+                                if (row.count("type"))
+                                        track[ATTRIBUTE_TYPE] = get<std::string>(row["type"]);
+
+                                if (row.count("bitrate"))
+                                        track[ATTRIBUTE_BITRATE] = get<gint64>(row["bitrate"]);
+
+                                if (row.count("samplerate"))
+                                        track[ATTRIBUTE_SAMPLERATE] = get<gint64>(row["samplerate"]);
+                        }
 
                         return track;
                 }

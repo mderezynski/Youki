@@ -124,7 +124,7 @@ class AlbumActions(mpx.Plugin):
 
         path = self.mlib.get_albums_selected_path()
         iter = self.mlib.get_albums_model().get_iter(path)
-        id   = self.mlib.get_albums_model().get(iter, 9)
+        id   = self.mlib.get_albums_model().get(iter, 11)
         rv   = mpx.SQLRowV()
 
         self.lib.getSQL( rv, "SELECT * FROM track_view WHERE album_j = %d" % id )

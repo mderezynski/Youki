@@ -137,9 +137,10 @@ class OSD(gtk.Window):
 
                 cr.set_source_pixbuf(self.cover, self.INNER_PADDING, self.INNER_PADDING)
                 self.rounded_rect(cr, x + self.INNER_PADDING, y + self.INNER_PADDING, self.rect_side, self.rect_side, 8.)
-                cr.fill_preserve()
-                cr.set_source_rgba(1.00, 1.00, 1.00, 1.00)
-                cr.stroke()
+                cr.fill()
+
+                #cr.set_source_rgba(1.00, 1.00, 1.00, 1.00)
+                #cr.stroke()
             
             else:
 

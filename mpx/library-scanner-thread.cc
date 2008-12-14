@@ -1,10 +1,12 @@
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-hal.hh"
+#include "mpx/mpx-library.hh"
 #include "mpx/mpx-library-scanner-thread.hh"
 #include "mpx/mpx-library.hh"
-#include "mpx/metadatareader-taglib.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
+#include "mpx/metadatareader-taglib.hh"
+#include "mpx/util-file.hh"
 #include <queue>
 #include <boost/ref.hpp>
 #include <boost/format.hpp>
@@ -159,9 +161,7 @@ struct MPX::LibraryScannerThread::ThreadData
 };
 
 MPX::LibraryScannerThread::LibraryScannerThread(
-    MPX::SQL::SQLDB*            obj_sql
-  , MPX::MetadataReaderTagLib&  obj_tagreader
-  , MPX::HAL&                   obj_hal
+    MPX::Library*               obj_library
   , gint64                      flags
 )
 : sigx::glib_threadable()
@@ -182,9 +182,10 @@ MPX::LibraryScannerThread::LibraryScannerThread(
 , signal_cache_cover(*this, m_ThreadData, &ThreadData::CacheCover)
 , signal_reload(*this, m_ThreadData, &ThreadData::Reload)
 , signal_message(*this, m_ThreadData, &ThreadData::Message)
-, m_SQL(obj_sql)
-, m_MetadataReaderTagLib(obj_tagreader)
-, m_HAL(obj_hal)
+, m_Library(boost::shared_ptr<Library>(obj_library))
+, m_SQL(new SQL::SQLDB(*((m_Library->get_sql_db()))))
+, m_HAL(services->get<HAL>("mpx-service-hal"))
+, m_MetadataReaderTagLib(services->get<MetadataReaderTagLib>("mpx-service-taglib"))
 , m_Flags(flags)
 {
     m_Connectable =
@@ -266,7 +267,7 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
             try{
                 if (m_Flags & Library::F_USING_HAL)
                 {
-                    HAL::Volume const& volume (m_HAL.get_volume_for_uri (*i));
+                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (*i));
                     insert_path_sql = Glib::filename_from_uri(*i).substr (volume.mount_point.length()) ;
                 }
                 else
@@ -318,10 +319,7 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
     ThreadData * pthreaddata = m_ThreadData.get();
 
     try{
-        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(i3); 
-        Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_CHANGED, Gio::FILE_QUERY_INFO_NONE);
-        gint64 ctime = (info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_CHANGED));
-
+        gint64 ctime = Util::get_file_ctime( i3 );
         if( ctime > last_scan_date )
         {
             Util::FileList collection2;
@@ -333,111 +331,61 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
 
             for(Util::FileList::iterator i2 = collection2.begin(); i2 != collection2.end(); ++i2)
             {
-                        Track track;
-                        std::string type;
+                Track track;
 
-                        track[ATTRIBUTE_LOCATION] = *i2 ;
+                try{
+                    m_Library->trackSetLocation( track, *i2 );
 
-                        try{
-                            URI u (*i2, true);
-                            if( u.get_protocol() == URI::PROTOCOL_FILE )
+                    try{
+                        time_t mtime1 = Util::get_file_mtime(*i2);
+                        time_t mtime2 = get_track_mtime( track ) ;
+
+                        if( mtime2 != 0 && mtime1 == mtime2 ) 
+                        {
+                            ++m_ScanSummary.FilesUpToDate;
+                        }
+                        else
+                        {
+                            if( !m_MetadataReaderTagLib->get( *i2, track ) )
                             {
-                                bool err_occured = false;
-#ifdef HAVE_HAL
-                                try{
-                                    if (m_Flags & Library::F_USING_HAL)
-                                    {
-                                      HAL::Volume const& volume (m_HAL.get_volume_for_uri (*i2));
+                                ++m_ScanSummary.FilesErroneous;
+                                m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Could not acquire metadata using taglib-gio")));
+                            }
+                            else try{
 
-                                      track[ATTRIBUTE_HAL_VOLUME_UDI] =
-                                                    volume.volume_udi ;
+                                ScanResult status = insert( track, *i2, insert_path_sql );
 
-                                      track[ATTRIBUTE_HAL_DEVICE_UDI] =
-                                                    volume.device_udi ;
-
-                                      track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
-                                                    Glib::filename_from_uri (*i2).substr (volume.mount_point.length()) ;
-                                    }
-                                }
-                              catch (HAL::Exception & cxe)
+                                switch( status )
                                 {
-                                  g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
-                                  ++(m_ScanSummary.FilesErroneous);
-                                  m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("HAL error/No HAL data for this file")));
-                                  err_occured  = true;
-                                }
-                              catch (Glib::ConvertError & cxe)
-                                {
-                                  g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-                                  ++(m_ScanSummary.FilesErroneous);
-                                  m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("URI Conversion Error")));
-                                  err_occured  = true;
-                                }
-                              catch (Glib::Error & cxe)
-                                {
-                                  g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-                                  ++(m_ScanSummary.FilesErroneous);
-                                  m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Error Handling File/Directory")));
-                                  err_occured  = true;
-                                }
-#endif
+                                    case SCAN_RESULT_OK:
+                                        ++m_ScanSummary.FilesAdded;
+                                        break;
 
-                                if( !err_occured )
-                                {
-                                        try{
-                                            Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri((*i2).c_str()); 
-                                            Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_MODIFIED, Gio::FILE_QUERY_INFO_NONE);
-                                            track[ATTRIBUTE_MTIME] = gint64 (info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_MODIFIED));
-
-                                            time_t mtime = get_track_mtime (track);
-
-                                            if( mtime != 0 && mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()) )
-                                            {
-                                                ++m_ScanSummary.FilesUpToDate;
-                                            }
-                                            else
-                                            {
-                                                if( !m_MetadataReaderTagLib.get( *i2, track ) )
-                                                {
-                                                    ++m_ScanSummary.FilesErroneous;
-                                                    m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Could not acquire metadata using taglib-gio")));
-                                                }
-                                                else try{
-
-                                                    ScanResult status = insert( track, *i2, insert_path_sql );
-
-                                                    switch( status )
-                                                    {
-                                                        case SCAN_RESULT_OK:
-                                                            ++m_ScanSummary.FilesAdded;
-                                                            break;
-
-                                                        case SCAN_RESULT_UPDATE:
-                                                            ++m_ScanSummary.FilesUpdated;
-                                                            m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i2, _("Updated")));
-                                                            break;
-                                                    }
-                                                }
-                                                catch( ScanError & cxe )
-                                                {
-                                                    ++m_ScanSummary.FilesErroneous;
-                                                    m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
-                                                }
-                                                catch( Glib::ConvertError & cxe )
-                                                {
-                                                    g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-                                                }
-                                            }
-                                    } catch( Glib::Error & cxe ) { 
-                                        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-                                    }
+                                    case SCAN_RESULT_UPDATE:
+                                        ++m_ScanSummary.FilesUpdated;
+                                        m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i2, _("Updated")));
+                                        break;
                                 }
                             }
-                        } catch(URI::ParseError)
-                        {
-                            g_warning("%s: Error parsing URI: [%s]", G_STRLOC, (*i2).c_str());
+                            catch( ScanError & cxe )
+                            {
+                                ++m_ScanSummary.FilesErroneous;
+                                m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
+                            }
+                            catch( Glib::ConvertError & cxe )
+                            {
+                                g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+                            }
                         }
-                        
+                    } catch( Glib::Error & cxe ) { 
+                        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+                    }
+                }
+                catch( Library::FileQualificationError & cxe )
+                {
+                    ++(m_ScanSummary.FilesErroneous);
+                    m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, cxe.what()));
+                }
             }
         }
         
@@ -477,8 +425,8 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
 #ifdef HAVE_HAL
             try{
                 if (m_Flags & Library::F_USING_HAL)
-                {
-                    HAL::Volume const& volume (m_HAL.get_volume_for_uri (*i));
+                { 
+                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (*i));
                     insert_path_sql = Glib::filename_from_uri(*i).substr (volume.mount_point.length()) ;
                 }
                 else
@@ -514,119 +462,76 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
             return;
         }
 
-            for(Util::FileList::iterator i3 = collection.begin(); i3 != collection.end(); ++i3)
+        for(Util::FileList::iterator i2 = collection.begin(); i2 != collection.end(); ++i2)
+        {
+            if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
             {
-                if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
-                {
-                    pthreaddata->ScanSummary.emit( m_ScanSummary );
-                    return;
-                }
+                pthreaddata->ScanSummary.emit( m_ScanSummary );
+                return;
+            }
 
-                Track track;
-                std::string type;
+            Track track;
 
-                track[ATTRIBUTE_LOCATION] = *i3 ;
+            try{
+                m_Library->trackSetLocation( track, *i2 );
 
                 try{
+                    time_t mtime1 = Util::get_file_mtime(*i2);
+                    time_t mtime2 = get_track_mtime( track ) ;
 
-                    URI u( *i3, true );
-
-                    if( u.get_protocol() == URI::PROTOCOL_FILE )
+                    if( mtime2 != 0 && mtime1 == mtime2 ) 
                     {
-                        bool err_occured = false;
+                        ++m_ScanSummary.FilesUpToDate;
+                    }
+                    else
+                    {
+                        if( !m_MetadataReaderTagLib->get( *i2, track ) )
+                        {
+                            ++m_ScanSummary.FilesErroneous;
+                            m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, _("Could not acquire metadata using taglib-gio")));
+                        }
+                        else try{
 
-#ifdef HAVE_HAL
-                        try{
+                            ScanResult status = insert( track, *i2, insert_path_sql );
 
-                            if (m_Flags & Library::F_USING_HAL)
+                            switch( status )
                             {
-                              HAL::Volume const& volume (m_HAL.get_volume_for_uri( *i3 ));
+                                case SCAN_RESULT_OK:
+                                    ++m_ScanSummary.FilesAdded;
+                                    break;
 
-                              track[ATTRIBUTE_HAL_VOLUME_UDI] =
-                                            volume.volume_udi ;
-
-                              track[ATTRIBUTE_HAL_DEVICE_UDI] =
-                                            volume.device_udi ;
-
-                              track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
-                                            Glib::filename_from_uri( *i3 ).substr( volume.mount_point.length() );
+                                case SCAN_RESULT_UPDATE:
+                                    ++m_ScanSummary.FilesUpdated;
+                                    m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i2, _("Updated")));
+                                    break;
                             }
-
                         }
-                      catch (HAL::Exception & cxe)
+                        catch( ScanError & cxe )
                         {
-                          g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
-                          ++(m_ScanSummary.FilesErroneous);
-                          err_occured  = true;
+                            ++m_ScanSummary.FilesErroneous;
+                            m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
                         }
-                      catch (Glib::ConvertError & cxe)
+                        catch( Glib::ConvertError & cxe )
                         {
-                          g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-                          ++(m_ScanSummary.FilesErroneous);
-                          err_occured  = true;
-                        }
-#endif
-
-                        if( !err_occured )
-                        {
-                            try{
-                                Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri((*i3).c_str()); 
-                                Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_MODIFIED, Gio::FILE_QUERY_INFO_NONE);
-
-                                track[ATTRIBUTE_MTIME] = gint64 (info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_MODIFIED));
-
-                                time_t mtime = get_track_mtime (track);
-
-                                if (mtime != 0 && mtime == get<gint64>(track[ATTRIBUTE_MTIME].get()))
-                                {
-                                    ++(m_ScanSummary.FilesUpToDate);
-                                }
-                                else
-                                {
-                                    if( !m_MetadataReaderTagLib.get( *i3, track ) )
-                                    {
-                                        ++m_ScanSummary.FilesErroneous;
-                                        m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i3, _("Could not acquire metadata using taglib-gio")));
-                                    }
-                                    else try{
-                                        ScanResult status = insert( track, *i3, insert_path_sql );
-
-                                        switch( status )
-                                        {
-                                            case SCAN_RESULT_OK:
-                                                ++m_ScanSummary.FilesAdded;
-                                                break;
-
-                                            case SCAN_RESULT_UPDATE:
-                                                ++m_ScanSummary.FilesUpdated;
-                                                m_ScanSummary.FileListUpdated.push_back( SSFileInfo( *i3, _("Updated")));
-                                                break;
-                                        }
-                                     }
-                                     catch( ScanError & cxe )
-                                     {
-                                        ++m_ScanSummary.FilesErroneous;
-                                        m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i3, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
-                                     }
-                                     catch( Glib::ConvertError & cxe )
-                                     {
-                                        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-                                     }
-                                }
-                            } catch( Glib::Error & cxe ) {
-                                g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-                            }
+                            g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
                         }
                     }
-                } catch(URI::ParseError)
-                {
-                }
-                                
-                if (! (std::distance(collection.begin(), i3) % 50) )
-                {
-                    pthreaddata->ScanRun.emit(std::distance(collection.begin(), i3), true ); 
+                } catch( Glib::Error & cxe ) { 
+                    g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
                 }
             }
+            catch( Library::FileQualificationError & cxe )
+            {
+                ++(m_ScanSummary.FilesErroneous);
+                m_ScanSummary.FileListErroneous.push_back( SSFileInfo( *i2, cxe.what()));
+            }
+
+                        
+            if (! (std::distance(collection.begin(), i2) % 50) )
+            {
+                pthreaddata->ScanRun.emit(std::distance(collection.begin(), i2), true ); 
+            }
+        }
     }
 
     pthreaddata->ScanSummary.emit( m_ScanSummary );
@@ -937,7 +842,7 @@ gint64
 MPX::LibraryScannerThread::get_track_mtime (Track& track) const
 {
   RowV rows;
-  if (m_Flags & Library::Library::F_USING_HAL)
+  if( m_Flags & Library::Library::F_USING_HAL )
   {
     static boost::format
       select_f ("SELECT %s FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
@@ -973,7 +878,7 @@ MPX::LibraryScannerThread::get_track_id (Track& track) const
 {
   RowV rows;
 #ifdef HAVE_HAL
-  if ((m_Flags & Library::F_USING_HAL) == Library::F_USING_HAL)
+  if( m_Flags & Library::F_USING_HAL )
   {
     static boost::format
       select_f ("SELECT id FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
@@ -1213,41 +1118,7 @@ MPX::LibraryScannerThread::on_vacuum()
 
   for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
   {
-          Row & r = *i;
-          std::string uri;
-
-#ifdef HAVE_HAL
-          if( m_Flags & Library::F_USING_HAL )
-          {
-                  std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
-                  std::string device_udi = get<std::string>(r["hal_device_udi"]); 
-                  std::string hal_vrp	 = get<std::string>(r["hal_vrp"]);
-
-                  // FIXME: More intelligent scanning by prefetching grouped data from the DB
-
-                  HAL::VolumeKey key (volume_udi, device_udi);
-                  VolMountPointMap::const_iterator i = m.find(key);
-
-                  if(i == m.end())
-                  {
-                          try{		
-                                  std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
-                                  m[key] = mount_point;
-                                  uri = filename_to_uri(build_filename(mount_point, hal_vrp));
-                          } catch (...) {
-                                  g_message("%s: Couldn't get mount point for track MPX-ID [%lld]", G_STRLOC, get<gint64>(r["id"]));
-                          }
-                  }
-                  else
-                  {
-                          uri = filename_to_uri(build_filename(i->second, hal_vrp));
-                  }
-          } 
-          else
-#endif
-          {
-                  uri = get<std::string>(r["location"]);
-          }
+          std::string uri = get<std::string>(m_Library->sqlToTrack( *i, false )[ATTRIBUTE_LOCATION].get());
 
           if( !uri.empty() )
           {
@@ -1256,8 +1127,8 @@ MPX::LibraryScannerThread::on_vacuum()
                           Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
                           if( !file->query_exists() )
                           {
-                                  m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(r["id"])).str()); 
-                                  pthreaddata->EntityDeleted( get<gint64>(r["id"]) , ENTITY_TRACK );
+                                  m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
+                                  pthreaddata->EntityDeleted( get<gint64>((*i)["id"]) , ENTITY_TRACK );
                           }
                   } catch(Glib::Error) {
                           g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
@@ -1299,51 +1170,22 @@ MPX::LibraryScannerThread::on_vacuum_volume(
 
   for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
   {
-          Row & r = *i;
-
-          std::string uri;
-
-          if( m_Flags & Library::F_USING_HAL )
-          {
-                  std::string volume_udi = get<std::string>(r["hal_volume_udi"]); 
-                  std::string device_udi = get<std::string>(r["hal_device_udi"]); 
-                  std::string hal_vrp	 = get<std::string>(r["hal_vrp"]);
-
-                  // FIXME: More intelligent scanning by prefetching grouped data from the DB
-
-                  HAL::VolumeKey key (volume_udi, device_udi);
-                  VolMountPointMap::const_iterator i = m.find(key);
-
-                  if(i == m.end())
-                  {
-                          try{		
-                                  std::string mount_point = m_HAL.get_mount_point_for_volume (volume_udi, device_udi);
-                                  m[key] = mount_point;
-                                  uri = filename_to_uri(build_filename(mount_point, hal_vrp));
-                          } catch (...) {
-                                  g_message("%s: Couldn't get mount point for track MPX-ID [%lld]", G_STRLOC, get<gint64>(r["id"]));
-                          }
-                  }
-                  else
-                  {
-                          uri = filename_to_uri(build_filename(i->second, hal_vrp));
-                  }
-          } 
-          else
-
-          pthreaddata->Message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+          std::string uri = get<std::string>(m_Library->sqlToTrack( *i, false )[ATTRIBUTE_LOCATION].get());
 
           if( !uri.empty() )
-          try{
-                  Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
-                  if( !file->query_exists() )
-                  {
-                          m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(r["id"])).str()); 
-                          pthreaddata->EntityDeleted( get<gint64>(r["id"]), ENTITY_TRACK );
-                  }
-          } catch(...) {
-                  g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
-          }
+          {
+              pthreaddata->Message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+              try{
+                      Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+                      if( !file->query_exists() )
+                      {
+                              m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
+                              pthreaddata->EntityDeleted( get<gint64>((*i)["id"]), ENTITY_TRACK );
+                      }
+              } catch(...) {
+                      g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
+              }
+        }
   }
 
   remove_dangling ();

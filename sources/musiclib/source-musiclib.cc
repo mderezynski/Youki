@@ -95,8 +95,8 @@ namespace
                 "       <menuitem action='musiclib-playlist-action-remove-items'/>"
                 "     <separator/>"
                 "       <menuitem action='musiclib-playlist-action-clear'/>"
-                "       <menuitem action='musiclib-playlist-action-remove-remaining'/>"
                 "       <menuitem action='musiclib-playlist-action-remove-preceding'/>"
+                "       <menuitem action='musiclib-playlist-action-remove-remaining'/>"
                 "     <separator/>"
                 "       <placeholder name='musiclib-playlist-placeholder-playlist'/>"
                 "   </menu>"
@@ -1535,23 +1535,15 @@ namespace MPX
                                 {
                                         g_return_val_if_fail(m_CurrentIter,false);
 
+                                        MPX::Track t ((*m_CurrentIter.get())[PlaylistColumns.MPXTrack]);
                                         std::string location;
-#ifdef HAVE_HAL
+
                                         try{
-                                                MPX::Track t ((*m_CurrentIter.get())[PlaylistColumns.MPXTrack]);
-                                                std::string volume_udi = get<std::string>(t[ATTRIBUTE_HAL_VOLUME_UDI].get());
-                                                std::string device_udi = get<std::string>(t[ATTRIBUTE_HAL_DEVICE_UDI].get());
-                                                std::string vrp = get<std::string>(t[ATTRIBUTE_VOLUME_RELATIVE_PATH].get());
-                                                std::string mount_point = m_HAL.get().get_mount_point_for_volume(volume_udi, device_udi);
-                                                std::string uri = build_filename(mount_point, vrp);
-                                                location = filename_to_uri(uri);
-                                        } catch (HAL::NoMountPathForVolumeError & cxe)
+                                            location = m_Lib.get().trackGetLocation( t );
+                                        } catch( Library::FileQualificationError & cxe )
                                         {
-                                                g_message("%s: Error: What: %s", G_STRLOC, cxe.what());
+                                            g_message("%s: Error: What: %s", G_STRLOC, cxe.what());
                                         }
-#else
-                                        location = (*m_CurrentIter.get())[PlaylistColumns.Location];
-#endif // HAVE_HAL
 
                                         if( !location.empty() ) 
                                         {
@@ -2357,24 +2349,14 @@ namespace MPX
 
                                 g_return_val_if_fail(playlist.m_CurrentIter, std::string());
 
-#ifdef HAVE_HAL
+                                MPX::Track t ((*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.MPXTrack]);
+                                
                                 try{
-                                        MPX::Track t ((*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.MPXTrack]);
-                                        std::string volume_udi = get<std::string>(t[ATTRIBUTE_HAL_VOLUME_UDI].get());
-                                        std::string device_udi = get<std::string>(t[ATTRIBUTE_HAL_DEVICE_UDI].get());
-                                        std::string vrp = get<std::string>(t[ATTRIBUTE_VOLUME_RELATIVE_PATH].get());
-                                        std::string mount_point = m_HAL.get().get_mount_point_for_volume(volume_udi, device_udi);
-                                        std::string uri = build_filename(mount_point, vrp);
-                                        return filename_to_uri(uri);
-                                } catch (HAL::NoMountPathForVolumeError & cxe)
+                                    return m_Lib.get().trackGetLocation( t );
+                                } catch( Library::FileQualificationError & cxe ) 
                                 {
                                         g_message("%s: Error: What: %s", G_STRLOC, cxe.what());
                                 }
-
-                                return std::string();
-#else
-                                return Glib::ustring((*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.Location]);
-#endif // HAVE_HAL
                         }
 
                 std::string
@@ -2383,11 +2365,12 @@ namespace MPX
                                 MusicLibPrivate::PlaylistTreeView & playlist (*m_Private->m_TreeViewPlaylist);
 
                                 g_return_val_if_fail(playlist.m_CurrentIter, std::string());
+
                                 MPX::Track t ((*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.MPXTrack]);
-                                if(t[ATTRIBUTE_TYPE])
-                                        return get<std::string>(t[ATTRIBUTE_TYPE].get());
-                                else
-                                        return std::string();
+
+                                return t[ATTRIBUTE_TYPE] ? 
+                                         get<std::string>(t[ATTRIBUTE_TYPE].get())
+                                       : std::string() ;
                         }
 
                 bool

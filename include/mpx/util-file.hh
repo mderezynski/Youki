@@ -88,6 +88,17 @@ namespace MPX
     files_writable (const FileList &list,
                     FileList       &non_writable);
 
+
+    time_t
+    get_file_ctime(
+        const std::string& uri
+    ) ;
+
+    time_t
+    get_file_mtime(
+        const std::string& uri
+    ) ;
+ 
   } // namespace Util
 } // namespace MPX
 

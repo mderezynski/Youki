@@ -308,7 +308,7 @@ namespace MPX
         m_actions->add( Action::create(
             "action-mlib-vacuum",
             Gtk::Stock::UNDO,
-            _("_Vacuum")),
+            _("_Clean Up")),
             sigc::mem_fun(
                 m_Library,
                 &Library::vacuum
@@ -343,7 +343,7 @@ namespace MPX
         m_actions->add( Action::create(
             "action-volume-vacuum",
             Gtk::Stock::UNDO,
-            _("_Vacuum")),
+            _("_Clean Up")),
             sigc::mem_fun(
                 *this,
                 &MLibManager::on_vacuum_volume

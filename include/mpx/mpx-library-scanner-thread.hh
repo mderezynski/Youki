@@ -81,7 +81,9 @@ namespace MPX
     EXCEPTION(ScanError)
 
     class HAL;
+    class Library;
     class MetadataReaderTagLib;
+
 	class LibraryScannerThread : public sigx::glib_threadable
 	{
         public:
@@ -173,7 +175,11 @@ namespace MPX
                 signal_message_x            & signal_message ;
             };
 
-            LibraryScannerThread (MPX::SQL::SQLDB*,MPX::MetadataReaderTagLib&,MPX::HAL&,gint64) ;
+            LibraryScannerThread(
+                MPX::Library*,
+                gint64
+            ) ;
+
             ~LibraryScannerThread () ;
 
             ScannerConnectable&
@@ -222,16 +228,18 @@ namespace MPX
 
         private:
 
-            struct ThreadData;
+            ScannerConnectable                    * m_Connectable ;
 
-            MPX::SQL::SQLDB             * m_SQL ;
-            MPX::HAL                    & m_HAL ;
-            ScannerConnectable          * m_Connectable ;
-            MetadataReaderTagLib        & m_MetadataReaderTagLib ;
-            Glib::Private<ThreadData>     m_ThreadData ;
-            gint64                        m_Flags ;
-            
-            ScanSummary                   m_ScanSummary ;
+            struct ThreadData;
+            Glib::Private<ThreadData>               m_ThreadData ;
+
+            boost::shared_ptr<MPX::Library>         m_Library ;
+            boost::shared_ptr<MPX::SQL::SQLDB>      m_SQL ;
+            boost::shared_ptr<MPX::HAL>             m_HAL ;
+            boost::shared_ptr<MetadataReaderTagLib> m_MetadataReaderTagLib ;
+            gint64                                  m_Flags ;
+
+            ScanSummary                             m_ScanSummary ;
 	};
 }
 
