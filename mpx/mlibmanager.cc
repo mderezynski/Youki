@@ -1053,8 +1053,8 @@ namespace MPX
         while(path.up())
         {
             iter = FSTreeStore->get_iter(path);
-            std::string full_path = ((*iter)[FSTreeColumns.FullPath]);
-            if(m_ManagedPaths.count(full_path))
+            std::string FullPath = std::string((*iter)[FSTreeColumns.FullPath])+"/";
+            if(m_ManagedPaths.count(FullPath))
                 return true;
         }
         return false;
@@ -1110,7 +1110,7 @@ namespace MPX
 
             for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
             {
-                m_ManagedPaths.insert(build_filename(m_MountPoint, boost::get<std::string>((*i)["insert_path"])));
+                m_ManagedPaths.insert(build_filename(m_MountPoint, boost::get<std::string>((*i)["insert_path"]))+"/");
             }
 
             m_Actions->get_action("action-volume-rescan")->set_sensitive( 
@@ -1147,10 +1147,10 @@ namespace MPX
                 const_cast<GtkTreeIter*>(iter->gobj())
         ));
 
-        std::string full_path = (*iter)[FSTreeColumns.FullPath];
+        std::string FullPath = std::string((*iter)[FSTreeColumns.FullPath]);
         TreeIter iter_copy = iter;
 
-        append_path(full_path, iter_copy);
+        append_path(FullPath, iter_copy);
 
         if(has_children)
         {
@@ -1165,18 +1165,19 @@ namespace MPX
     {
         TreeIter iter = FSTreeStore->get_iter(path_str);
         TreeIter iter_copy = iter;
-        std::string full_path = (*iter)[FSTreeColumns.FullPath];
+
+        std::string FullPath = std::string((*iter)[FSTreeColumns.FullPath])+"/";
 
         if(has_active_parent(iter))
             return;
         
-        if(m_ManagedPaths.count(full_path))
+        if(m_ManagedPaths.count(FullPath))
         {
             dynamic_cast<Gtk::Label*>(m_Xml->get_widget("innerdialog-label-yes"))->set_text_with_mnemonic("_Remove");
             m_InnerdialogLabel->set_markup((
                 boost::format(
                     "<b>Remove</b> %s <b>?</b>")
-                    % Markup::escape_text(filename_to_utf8(full_path)).c_str()
+                    % Markup::escape_text(filename_to_utf8(FullPath)).c_str()
                 ).str()
             );
 
@@ -1194,10 +1195,11 @@ namespace MPX
             {
                 m_VboxInner->set_sensitive( false );
 
-                m_Library.deletePath( m_DeviceUDI, m_VolumeUDI, full_path.substr(m_MountPoint.length()) );
+                m_Library.deletePath( m_DeviceUDI, m_VolumeUDI, FullPath.substr(m_MountPoint.length()) );
 
-                m_ManagedPaths.erase(full_path);
-                recreate_path_frags ();
+                m_ManagedPaths.erase( FullPath );
+                recreate_path_frags();
+
                 TreePath path = FSTreeStore->get_path(iter_copy); 
                 FSTreeStore->row_changed(path, iter_copy);
 
@@ -1222,7 +1224,7 @@ namespace MPX
             m_InnerdialogLabel->set_markup((
                 boost::format(
                     "<b>Add</b> %s <b>?</b>")
-                    % Markup::escape_text(filename_to_utf8(full_path)).c_str()
+                    % Markup::escape_text(filename_to_utf8(FullPath)).c_str()
                 ).str()
             );
 
@@ -1238,13 +1240,8 @@ namespace MPX
 
             if( m_InnerdialogResponse == GTK_RESPONSE_YES )
             {
-                m_VboxInner->set_sensitive( false );
+                m_ManagedPaths.insert(FullPath);
 
-                StrV v;
-                v.push_back(filename_to_uri(full_path));
-                m_Library.initScan(v, true);
-
-                m_ManagedPaths.insert(full_path);
                 recreate_path_frags ();
                 TreePath path = FSTreeStore->get_path(iter_copy); 
                 FSTreeStore->row_changed(path, iter_copy);
@@ -1261,7 +1258,9 @@ namespace MPX
                     !m_ManagedPaths.empty()
                 );
 
-                m_VboxInner->set_sensitive( true );
+                StrV v;
+                v.push_back(filename_to_uri(FullPath));
+                m_Library.initScan(v, true);
             }
         }
     }
@@ -1301,14 +1300,8 @@ namespace MPX
     {
         CellRendererToggle & cell = *(dynamic_cast<CellRendererToggle*>(basecell));
 
-        TreeIter iter_copy = iter;
-
-        std::string full_path = (*iter)[FSTreeColumns.FullPath];
-
-        if(m_ManagedPaths.count(full_path))
-            cell.property_active() = true; 
-        else
-            cell.property_active() = false; 
+        std::string FullPath = std::string((*iter)[FSTreeColumns.FullPath])+"/";
+        cell.property_active() = m_ManagedPaths.count(FullPath);
     }
 
     void
@@ -1321,14 +1314,14 @@ namespace MPX
             return;
         }
 
-        std::string FullPath = (*iter)[FSTreeColumns.FullPath];
+        std::string FullPath = std::string((*iter)[FSTreeColumns.FullPath])+"/";
         std::string SegName  = (*iter)[FSTreeColumns.SegName];
 
         CellRendererText & cell = *(dynamic_cast<CellRendererText*>(basecell));
 
         for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
         { 
-            if( (*i).substr( 0, FullPath.size() ) == FullPath ) 
+            if( ((*i).substr( 0, FullPath.size() ) == FullPath) ) 
             {
                 cell.property_markup() = (boost::format("<span foreground='#0000ff'><b>%s</b></span>") % Markup::escape_text(SegName)).str();
                 return;

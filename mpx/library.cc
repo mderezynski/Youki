@@ -497,7 +497,7 @@ namespace MPX
                             SQL::RowV v;
                             getSQL(
                                 v,
-                                "SELECT id, hal_device_udi, hal_volume_udi, hal_vrp FROM track"
+                                "SELECT id, hal_device_udi, hal_volume_udi, hal_vrp, insert_path FROM track"
                             );
 
                             for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
@@ -509,10 +509,18 @@ namespace MPX
                                 g_assert( t.has(ATTRIBUTE_LOCATION) );
                                 g_assert( (*i).count("id") );
 
+                                const std::string& volume_udi  = get<std::string>((*i)["hal_volume_udi"]) ;
+                                const std::string& device_udi  = get<std::string>((*i)["hal_device_udi"]) ;
+                                const std::string& insert_path = get<std::string>((*i)["insert_path"]);
+                                const std::string& mount_point = m_HAL.get_mount_point_for_volume(volume_udi, device_udi) ;
+
+                                std::string insert_path_new = filename_to_uri( build_filename(mount_point, insert_path) );
+
                                 execSQL(
                                     mprintf(
-                                          "UPDATE track SET location = '%q', hal_device_udi = NULL, hal_volume_udi = NULL, hal_vrp = NULL WHERE id ='%lld'"
+                                          "UPDATE track SET location = '%q', insert_path = '%q', hal_device_udi = NULL, hal_volume_udi = NULL, hal_vrp = NULL WHERE id ='%lld'"
                                         , get<std::string>(t[ATTRIBUTE_LOCATION].get()).c_str()
+                                        , insert_path_new.c_str()
                                         , get<gint64>((*i)["id"])
                                 ));
 
@@ -536,7 +544,7 @@ namespace MPX
                             SQL::RowV v;
                             getSQL(
                                 v,
-                                "SELECT id, location FROM track"
+                                "SELECT id, location, insert_path FROM track"
                             );
 
                             for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
@@ -547,14 +555,25 @@ namespace MPX
 
                                 mm->push_message((boost::format(_("Updating Track HAL Data: %lld / %lld")) % gint64(std::distance(v.begin(), i)) % v.size()).str());
 
-                                execSQL(
-                                    mprintf(
-                                          "UPDATE track SET hal_device_udi = '%q', hal_volume_udi = '%q', hal_vrp = '%q', location = NULL WHERE id ='%lld'"
-                                        , get<std::string>(t[ATTRIBUTE_HAL_DEVICE_UDI].get()).c_str()
-                                        , get<std::string>(t[ATTRIBUTE_HAL_VOLUME_UDI].get()).c_str()
-                                        , get<std::string>(t[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()).c_str()
-                                        , get<gint64>((*i)["id"])
-                                ));
+                                try{
+                                        const std::string& insert_path = get<std::string>((*i)["insert_path"]);
+                                        const HAL::Volume& volume( m_HAL.get_volume_for_uri( insert_path )); 
+                                        const std::string& insert_path_new = 
+                                                filename_from_uri( insert_path ).substr( volume.mount_point.length() ) ;
+
+                                        execSQL(
+                                            mprintf(
+                                                  "UPDATE track SET insert_path = '%q', hal_device_udi = '%q', hal_volume_udi = '%q', hal_vrp = '%q', location = NULL WHERE id ='%lld'"
+                                                , insert_path_new.c_str()
+                                                , get<std::string>(t[ATTRIBUTE_HAL_DEVICE_UDI].get()).c_str()
+                                                , get<std::string>(t[ATTRIBUTE_HAL_VOLUME_UDI].get()).c_str()
+                                                , get<std::string>(t[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()).c_str()
+                                                , get<gint64>((*i)["id"])
+                                        ));
+                                } catch( HAL::NoVolumeForUriError & cxe )
+                                {
+                                        g_message("%s: Critical: Non-conversible!", G_STRFUNC);
+                                }
                             }
 
                             mm->push_message(_("Updating Track HAL Data: Done")); 
