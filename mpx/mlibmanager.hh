@@ -56,7 +56,7 @@ namespace MPX
         RELOCATED,
         DELETED,
         IGNORED
-    };
+    } ;
 
     class MLibManager
       : public Gnome::Glade::WidgetLoader<Gtk::Window>
@@ -65,221 +65,233 @@ namespace MPX
     {
         public:
 
-            static MLibManager* create (MPX::HAL & obj_hal, MPX::Library & obj_library);
-            virtual ~MLibManager ();
+            static MLibManager* create (MPX::HAL & obj_hal, MPX::Library & obj_library) ;
+            virtual ~MLibManager () ;
 
             void
-            present ();
+            present () ;
 
             void
-            hide ();
+            hide () ;
 
             bool
-            is_present();
+            is_present() ;
 
             void
-            rescan_all_volumes (bool /*deep*/ = false);
+            rescan_all_volumes (bool /*deep*/ = false) ;
 
             void
-            push_message (const std::string&);
+            push_message (const std::string&) ;
 
         private:
 
-            MLibManager (Glib::RefPtr<Gnome::Glade::Xml> const& xml, MPX::HAL & obj_hal, MPX::Library & obj_library);
+            MLibManager (Glib::RefPtr<Gnome::Glade::Xml> const& xml, MPX::HAL & obj_hal, MPX::Library & obj_library) ;
 
             void
             scan_end(
-            );
+            ) ;
 
             void
             scan_summary(
                 const ScanSummary&
-            );
+            ) ;
 
             void
             scan_start(
-            );
+            ) ;
 
             void
             scan_run(
                 gint64,
                 bool
-            );
+            ) ;
 
             void
-            populate_volumes ();
+            populate_volumes () ;
 
             void
             build_fstree(
                 const std::string&
-            );
+            ) ;
 
             int
             fstree_sort(
                 const Gtk::TreeIter&,
                 const Gtk::TreeIter&
-            );
+            ) ;
 
             void
             append_path(
                 const std::string&,
                 Gtk::TreeIter&
-            );
+            ) ;
 
             void
             prescan_path(
                 const std::string&,
                 Gtk::TreeIter& iter
-            );
+            ) ;
 
             bool
             has_active_parent(
                 Gtk::TreeIter&
-            );
+            ) ;
 
             PathTestResult
             path_test(
                 const std::string&
-            );
+            ) ;
 
             void
-            on_volumes_changed ();
+            on_volumes_changed () ;
 
             void
             on_fstree_row_expanded(
                 const Gtk::TreeIter&,
                 const Gtk::TreePath&
-            );
+            ) ;
 
             void
             on_path_toggled(
                 const Glib::ustring&
-            );
+            ) ;
 
             void
-            on_rescan_volume(bool /*deep*/);
+            on_rescan_volume(bool /*deep*/) ;
 
             void
-            on_vacuum_volume ();
+            on_vacuum_volume() ;
 
             void
             on_volume_added(
                 const HAL::Volume&
-            );
+            ) ;
 
             void
             on_volume_removed(
                 const HAL::Volume&
-            );
+            ) ;
 
             // auto rescanning
             bool
-            on_rescan_timeout();
+            on_rescan_timeout() ;
 
             void
-            on_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE);
+            on_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE) ;
 
             // ui stuff
-            Gtk::TreeView * m_VolumesView;
+            Gtk::TreeView * m_VolumesView ;
             struct VolumeColumnsT : public Gtk::TreeModel::ColumnRecord
             {
-                Gtk::TreeModelColumn<std::string>                   Name;
-                Gtk::TreeModelColumn<std::string>                   Mountpoint;
-                Gtk::TreeModelColumn<Hal::RefPtr<Hal::Volume> >     Volume;
-                Gtk::TreeModelColumn<Glib::RefPtr<Gio::Volume> >    GioVolume;
+                Gtk::TreeModelColumn<std::string>                   Name ;
+                Gtk::TreeModelColumn<std::string>                   Mountpoint ;
+                Gtk::TreeModelColumn<Hal::RefPtr<Hal::Volume> >     Volume ;
+                Gtk::TreeModelColumn<Glib::RefPtr<Gio::Volume> >    GioVolume ;
 
                 VolumeColumnsT ()
                 {
-                    add (Name);
-                    add (Mountpoint);
-                    add (Volume);
-                    add (GioVolume);
-                };
-            };
-            VolumeColumnsT VolumeColumns;
-            Glib::RefPtr<Gtk::ListStore> VolumeStore;
+                    add (Name) ;
+                    add (Mountpoint) ;
+                    add (Volume) ;
+                    add (GioVolume) ;
+                } ;
+            } ;
+            VolumeColumnsT VolumeColumns ;
+            Glib::RefPtr<Gtk::ListStore> VolumeStore ;
 
-            Gtk::TreeView * m_FSTree;
+            Gtk::TreeView * m_FSTree ;
             struct FSTreeColumnsT : public Gtk::TreeModel::ColumnRecord
             {
-                Gtk::TreeModelColumn<std::string>     SegName;
-                Gtk::TreeModelColumn<std::string>     FullPath;
-                Gtk::TreeModelColumn<bool>            WasExpanded;
+                Gtk::TreeModelColumn<std::string>     SegName ;
+                Gtk::TreeModelColumn<std::string>     FullPath ;
+                Gtk::TreeModelColumn<bool>            WasExpanded ;
 
                 FSTreeColumnsT ()
                 {
-                    add (SegName);
-                    add (FullPath);
-                    add (WasExpanded);
-                };
-            };
-            FSTreeColumnsT FSTreeColumns;
-            Glib::RefPtr<Gtk::TreeStore> FSTreeStore;
+                    add (SegName) ;
+                    add (FullPath) ;
+                    add (WasExpanded) ;
+                } ;
+            } ;
+            FSTreeColumnsT FSTreeColumns ;
+            Glib::RefPtr<Gtk::TreeStore> FSTreeStore ;
 
 
             void
             cell_data_func_active(
                 Gtk::CellRenderer*,
                 const Gtk::TreeIter&
-            );
+            ) ;
 
             void
             cell_data_func_text(
                 Gtk::CellRenderer*,
                 const Gtk::TreeIter&
-            );
+            ) ;
 
             bool
             slot_select(
                 const Glib::RefPtr<Gtk::TreeModel>&,
                 const Gtk::TreePath&,
                 bool was_selected
-            );
+            ) ;
 
             void
-            recreate_path_frags ();
+            recreate_path_frags () ;
 
-            typedef std::set<std::string>       StrSetT;
-            typedef std::vector<std::string>    PathFrags;
-            typedef std::vector<PathFrags>      PathFragsV;
+            typedef std::set<std::string>       StrSetT ;
+            typedef std::vector<std::string>    PathFrags ;
+            typedef std::vector<PathFrags>      PathFragsV ;
 
-            StrSetT     m_ManagedPaths;
-            PathFragsV  m_ManagedPathFrags;
+            StrSetT     m_ManagedPaths ;
+            PathFragsV  m_ManagedPathFrags ;
 
             std::string m_VolumeUDI;  // holds current VUDI
             std::string m_DeviceUDI;  //     - " -     DUDI
             std::string m_MountPoint; //     - " -     mount point
 
-            Gtk::Button     * m_Close;
-            Gtk::Button     * m_Rescan;
-            Gtk::Button     * m_DeepRescan;
-            Gtk::Button     * m_Vacuum;
-            Gtk::Statusbar  * m_Statusbar;
-            Gtk::Widget     * m_VboxInner;
-            Glib::Timer       m_rescan_timer;
-    
-            MPX::HAL        & m_HAL;
-            MPX::Library    & m_Library;
+            Gtk::Button     * m_Close ;
 
-            Glib::RefPtr<Gtk::TextBuffer>   m_TextBufferDetails;
+            Gtk::Button     * m_Rescan ;
+            Gtk::Button     * m_DeepRescan ;
+            Gtk::Button     * m_Vacuum ;
 
-            Glib::RefPtr<Gtk::UIManager>    m_ui_manager;
-            Glib::RefPtr<Gtk::ActionGroup>  m_actions;
+            Gtk::Statusbar  * m_Statusbar ;
+            Gtk::Widget     * m_VboxInner ;
 
-            void
-            on_mlib_remove_dupes();
+            MPX::HAL        & m_HAL ;
+            MPX::Library    & m_Library ;
+            Glib::Timer       m_RescanTimer ;
 
-            void
-            on_mlib_rescan_library();
+            Glib::RefPtr<Gtk::TextBuffer>   m_TextBufferDetails ;
+            Glib::RefPtr<Gtk::UIManager>    m_UIManager ;
+            Glib::RefPtr<Gtk::ActionGroup>  m_Actions ;
 
-            void
-            on_mlib_vacuum_library();
+            Gtk::HBox       * m_InnerdialogHBox ;
+            Gtk::Label      * m_InnerdialogLabel ;
+            Gtk::Button     * m_InnerdialogYes ;
+            Gtk::Button     * m_InnerdialogCancel ;
 
-            void
-            on_volume_rescan_volume();
+            Glib::RefPtr<Glib::MainLoop>    m_InnerdialogMainloop ;
+            int                             m_InnerdialogResponse ;
 
             void
-            on_volume_vacuum_volume();
-    };
+            innerdialog_response(int) ;
+
+            void
+            on_mlib_remove_dupes() ;
+
+            void
+            on_mlib_rescan_library() ;
+
+            void
+            on_mlib_vacuum_library() ;
+
+            void
+            on_volume_rescan_volume() ;
+
+            void
+            on_volume_vacuum_volume() ;
+    } ;
 }
 #endif

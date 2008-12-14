@@ -103,6 +103,30 @@ namespace MPX
         m_Xml->get_widget("statusbar", m_Statusbar );
         m_Xml->get_widget("vbox-inner", m_VboxInner );
 
+        m_Xml->get_widget("innerdialog-hbox", m_InnerdialogHBox );
+        m_Xml->get_widget("innerdialog-label", m_InnerdialogLabel );
+        m_Xml->get_widget("innerdialog-yes", m_InnerdialogYes );
+        m_Xml->get_widget("innerdialog-cancel", m_InnerdialogCancel );
+
+        m_InnerdialogYes->signal_clicked().connect(
+            sigc::bind(
+                sigc::mem_fun(
+                        *this,
+                        &MLibManager::innerdialog_response
+                ),
+                GTK_RESPONSE_YES
+        ));
+
+
+        m_InnerdialogCancel->signal_clicked().connect(
+            sigc::bind(
+                sigc::mem_fun(
+                        *this,
+                        &MLibManager::innerdialog_response
+                ),
+                GTK_RESPONSE_CANCEL
+        ));
+
         /*- Details Textview/Buffer ---------------------------------------*/ 
 
         m_TextBufferDetails = (dynamic_cast<Gtk::TextView*>(m_Xml->get_widget("textview-details")))->get_buffer();
@@ -256,24 +280,24 @@ namespace MPX
 
         sigc::slot<bool> slot = sigc::mem_fun(*this, &MLibManager::on_rescan_timeout);
         sigc::connection conn = Glib::signal_timeout().connect(slot, 1000);
-        m_rescan_timer.start();
+        m_RescanTimer.start();
 
         /*- Actions -------------------------------------------------------*/ 
 
-        m_ui_manager    = UIManager::create ();
-        m_actions       = ActionGroup::create ("Actions_MLibMan");
+        m_UIManager    = UIManager::create ();
+        m_Actions       = ActionGroup::create ("Actions_MLibMan");
 
-        m_actions->add(Action::create(
+        m_Actions->add(Action::create(
             "MenuMLib",
             _("_Music Library")
         ));
 
-        m_actions->add(Action::create(
+        m_Actions->add(Action::create(
             "MenuVolume",
             _("_Volume")
         ));
 
-        m_actions->add( Action::create(
+        m_Actions->add( Action::create(
             "action-mlib-remove-dupes",
             _("_Remove Duplicates")),
             sigc::mem_fun(
@@ -281,7 +305,7 @@ namespace MPX
                 &MLibManager::on_mlib_remove_dupes
         ));
 
-        m_actions->add( Action::create(
+        m_Actions->add( Action::create(
             "action-mlib-rescan",
             Gtk::Stock::REFRESH,
             _("_Rescan")),
@@ -293,7 +317,7 @@ namespace MPX
                     false
         ));
 
-        m_actions->add( Action::create(
+        m_Actions->add( Action::create(
             "action-mlib-rescan-deep",
             Gtk::Stock::HARDDISK,
             _("_Deep Rescan")),
@@ -305,7 +329,7 @@ namespace MPX
                     true
         ));
 
-        m_actions->add( Action::create(
+        m_Actions->add( Action::create(
             "action-mlib-vacuum",
             Gtk::Stock::UNDO,
             _("_Clean Up")),
@@ -314,7 +338,7 @@ namespace MPX
                 &Library::vacuum
         ));
 
-        m_actions->add( Action::create(
+        m_Actions->add( Action::create(
             "action-volume-rescan",
             Gtk::Stock::REFRESH,
             _("_Rescan")),
@@ -326,7 +350,7 @@ namespace MPX
                     false
         ));
 
-        m_actions->add( Action::create(
+        m_Actions->add( Action::create(
 
             "action-volume-rescan-deep",
 
@@ -340,7 +364,7 @@ namespace MPX
                     true
         ));
 
-        m_actions->add( Action::create(
+        m_Actions->add( Action::create(
             "action-volume-vacuum",
             Gtk::Stock::UNDO,
             _("_Clean Up")),
@@ -349,7 +373,7 @@ namespace MPX
                 &MLibManager::on_vacuum_volume
         ));
 
-        m_actions->add( Action::create(
+        m_Actions->add( Action::create(
             "action-close",
             Gtk::Stock::CLOSE,
             _("_Close")),
@@ -358,21 +382,21 @@ namespace MPX
                 &MLibManager::hide
         ));
 
-        m_actions->get_action("action-volume-rescan")->set_sensitive( false );
-        m_actions->get_action("action-volume-rescan-deep")->set_sensitive( false );
-        m_actions->get_action("action-volume-vacuum")->set_sensitive( false );
+        m_Actions->get_action("action-volume-rescan")->set_sensitive( false );
+        m_Actions->get_action("action-volume-rescan-deep")->set_sensitive( false );
+        m_Actions->get_action("action-volume-vacuum")->set_sensitive( false );
 
-        m_actions->get_action("action-volume-rescan")->connect_proxy( *m_Rescan );
-        m_actions->get_action("action-volume-rescan-deep")->connect_proxy( *m_DeepRescan );
-        m_actions->get_action("action-volume-vacuum")->connect_proxy( *m_Vacuum );
+        m_Actions->get_action("action-volume-rescan")->connect_proxy( *m_Rescan );
+        m_Actions->get_action("action-volume-rescan-deep")->connect_proxy( *m_DeepRescan );
+        m_Actions->get_action("action-volume-vacuum")->connect_proxy( *m_Vacuum );
 
-        m_actions->get_action("action-close")->connect_proxy( *m_Close );
+        m_Actions->get_action("action-close")->connect_proxy( *m_Close );
 
-        m_ui_manager->insert_action_group(m_actions);
+        m_UIManager->insert_action_group(m_Actions);
 
         if(
             Util::ui_manager_add_ui(
-                  m_ui_manager
+                  m_UIManager
                 , MenubarMLibMan
                 , *this
                 , _("MLibMan Menubar")
@@ -381,7 +405,7 @@ namespace MPX
                   dynamic_cast<Alignment*>(
                         m_Xml->get_widget("alignment-menu")
                   )->add(
-                        *(m_ui_manager->get_widget ("/MenubarMLibMan"))
+                        *(m_UIManager->get_widget ("/MenubarMLibMan"))
                   );
         }
 
@@ -398,6 +422,15 @@ namespace MPX
             mcs->key_get<int>("mpx","window-mlib-x"),
             mcs->key_get<int>("mpx","window-mlib-y")
         );
+    }
+
+    void
+    MLibManager::innerdialog_response(
+        int response
+    )
+    {
+        m_InnerdialogResponse = response;
+        m_InnerdialogMainloop->quit();
     }
 
     /* ------------------------------------------------------------------------------------------------*/
@@ -952,15 +985,15 @@ namespace MPX
                 m_ManagedPaths.insert(build_filename(m_MountPoint, boost::get<std::string>((*i)["insert_path"])));
             }
 
-            m_actions->get_action("action-volume-rescan")->set_sensitive( 
+            m_Actions->get_action("action-volume-rescan")->set_sensitive( 
                 has_selection && !m_ManagedPaths.empty()
             );
 
-            m_actions->get_action("action-volume-rescan-deep")->set_sensitive( 
+            m_Actions->get_action("action-volume-rescan-deep")->set_sensitive( 
                 has_selection && !m_ManagedPaths.empty()
             );
 
-            m_actions->get_action("action-volume-vacuum")->set_sensitive( 
+            m_Actions->get_action("action-volume-vacuum")->set_sensitive( 
                 has_selection && !m_ManagedPaths.empty()
             );
 
@@ -1011,20 +1044,25 @@ namespace MPX
         
         if(m_ManagedPaths.count(full_path))
         {
-            MessageDialog dialog(
-                (boost::format ("<b>Are you sure you want remove</b> Music from this path from the Library:\n\n'<b>%s</b>'")
+            dynamic_cast<Gtk::Label*>(m_Xml->get_widget("innerdialog-label-yes"))->set_text_with_mnemonic("_Remove");
+            m_InnerdialogLabel->set_markup((
+                boost::format(
+                    "<b>Remove</b> %s <b>?</b>")
                     % Markup::escape_text(filename_to_utf8(full_path)).c_str()
-                ).str(),
-                true,
-                MESSAGE_QUESTION,
-                BUTTONS_YES_NO,
-                true
+                ).str()
             );
 
-            int response = dialog.run();
-            dialog.hide();
+            m_InnerdialogHBox->show();
+            m_InnerdialogMainloop = Glib::MainLoop::create();
 
-            if( response == GTK_RESPONSE_YES )
+            GDK_THREADS_LEAVE();
+            m_InnerdialogMainloop->run();
+            GDK_THREADS_ENTER();
+            
+            m_InnerdialogHBox->hide();
+            m_InnerdialogLabel->set_text("");
+
+            if( m_InnerdialogResponse == GTK_RESPONSE_YES )
             {
                 m_VboxInner->set_sensitive( false );
 
@@ -1035,15 +1073,15 @@ namespace MPX
                 TreePath path = FSTreeStore->get_path(iter_copy); 
                 FSTreeStore->row_changed(path, iter_copy);
 
-                m_actions->get_action("action-volume-rescan")->set_sensitive( 
+                m_Actions->get_action("action-volume-rescan")->set_sensitive( 
                     !m_ManagedPaths.empty()
                 );
 
-                m_actions->get_action("action-volume-rescan-deep")->set_sensitive( 
+                m_Actions->get_action("action-volume-rescan-deep")->set_sensitive( 
                     !m_ManagedPaths.empty()
                 );
 
-                m_actions->get_action("action-volume-vacuum")->set_sensitive( 
+                m_Actions->get_action("action-volume-vacuum")->set_sensitive( 
                     !m_ManagedPaths.empty()
                 );
 
@@ -1052,20 +1090,25 @@ namespace MPX
         }
         else
         {
-            MessageDialog dialog(
-                (boost::format ("Are you sure you want <b>add</b> Music <b>from this path</b> to the Library:\n\n'<b>%s</b>'")
+            dynamic_cast<Gtk::Label*>(m_Xml->get_widget("innerdialog-label-yes"))->set_text_with_mnemonic("_Add");
+            m_InnerdialogLabel->set_markup((
+                boost::format(
+                    "<b>Add</b> %s <b>?</b>")
                     % Markup::escape_text(filename_to_utf8(full_path)).c_str()
-                ).str(),
-                true,
-                MESSAGE_QUESTION,
-                BUTTONS_YES_NO,
-                true
+                ).str()
             );
 
-            int response = dialog.run();
-            dialog.hide();
+            m_InnerdialogHBox->show();
+            m_InnerdialogMainloop = Glib::MainLoop::create();
 
-            if( response == GTK_RESPONSE_YES )
+            GDK_THREADS_LEAVE();
+            m_InnerdialogMainloop->run();
+            GDK_THREADS_ENTER();
+            
+            m_InnerdialogHBox->hide();
+            m_InnerdialogLabel->set_text("");
+
+            if( m_InnerdialogResponse == GTK_RESPONSE_YES )
             {
                 m_VboxInner->set_sensitive( false );
 
@@ -1078,15 +1121,15 @@ namespace MPX
                 TreePath path = FSTreeStore->get_path(iter_copy); 
                 FSTreeStore->row_changed(path, iter_copy);
 
-                m_actions->get_action("action-volume-rescan")->set_sensitive( 
+                m_Actions->get_action("action-volume-rescan")->set_sensitive( 
                     !m_ManagedPaths.empty()
                 );
 
-                m_actions->get_action("action-volume-rescan-deep")->set_sensitive( 
+                m_Actions->get_action("action-volume-rescan-deep")->set_sensitive( 
                     !m_ManagedPaths.empty()
                 );
 
-                m_actions->get_action("action-volume-vacuum")->set_sensitive( 
+                m_Actions->get_action("action-volume-vacuum")->set_sensitive( 
                     !m_ManagedPaths.empty()
                 );
 
@@ -1181,16 +1224,16 @@ namespace MPX
     void
     MLibManager::on_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE)
     {
-        m_rescan_timer.reset();
+        m_RescanTimer.reset();
     }
 
     bool
     MLibManager::on_rescan_timeout()
     {
-        if(!is_present() && mcs->key_get<bool>("library","rescan-in-intervals") && m_rescan_timer.elapsed() >= mcs->key_get<int>("library","rescan-interval") * 60)
+        if(!is_present() && mcs->key_get<bool>("library","rescan-in-intervals") && m_RescanTimer.elapsed() >= mcs->key_get<int>("library","rescan-interval") * 60)
         {
           rescan_all_volumes();
-          m_rescan_timer.reset();
+          m_RescanTimer.reset();
         }
         return true;
     }

@@ -1122,7 +1122,11 @@ MPX::LibraryScannerThread::on_vacuum()
 
           if( !uri.empty() )
           {
-                  pthreaddata->Message.emit((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+                  if (! (std::distance(rows.begin(), i) % 50) )
+                  {
+                          pthreaddata->Message.emit((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+                  }
+
                   try{
                           Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
                           if( !file->query_exists() )
@@ -1174,7 +1178,11 @@ MPX::LibraryScannerThread::on_vacuum_volume(
 
           if( !uri.empty() )
           {
-              pthreaddata->Message((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+              if (! (std::distance(rows.begin(), i) % 50) )
+              {
+                      pthreaddata->Message.emit((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+              }
+
               try{
                       Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
                       if( !file->query_exists() )
