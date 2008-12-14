@@ -118,6 +118,8 @@ namespace MPX
             sigx::request_f<Util::FileList const&>          scan_direct ;
             sigx::request_f<>                               scan_stop ;
             sigx::request_f<>                               vacuum ;
+            sigx::request_f<>                               remove_dangling ;
+
 #ifdef HAVE_HAL
             sigx::request_f< const std::string&, const std::string& > vacuum_volume ;
 #endif // HAVE_HAL
@@ -191,13 +193,7 @@ namespace MPX
             virtual void on_startup () ; 
             virtual void on_cleanup () ;
 
-            void on_vacuum ();
-#ifdef HAVE_HAL
-            void on_vacuum_volume(
-                const std::string&,
-                const std::string&
-            );
-#endif // HAVE_HAL
+// Requests /////////////
 
             void on_scan(
                 const Util::FileList&,
@@ -209,6 +205,20 @@ namespace MPX
             ) ;
 
             void on_scan_stop() ;
+
+            void on_vacuum ();
+
+#ifdef HAVE_HAL
+            void on_vacuum_volume(
+                const std::string&,
+                const std::string&
+            );
+#endif // HAVE_HAL
+
+            void on_remove_dangling(
+            );
+
+/////////////////////////
 
             void on_scan_list_deep(
                 const Util::FileList&

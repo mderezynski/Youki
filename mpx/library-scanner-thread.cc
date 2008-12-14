@@ -172,6 +172,7 @@ MPX::LibraryScannerThread::LibraryScannerThread(
 #ifdef HAVE_HAL
 , vacuum_volume(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum_volume))
 #endif // HAVE_HAL
+, remove_dangling(sigc::mem_fun(*this, &LibraryScannerThread::on_remove_dangling))
 , signal_scan_start(*this, m_ThreadData, &ThreadData::ScanStart)
 , signal_scan_run(*this, m_ThreadData, &ThreadData::ScanRun)
 , signal_scan_end(*this, m_ThreadData, &ThreadData::ScanEnd)
@@ -1218,5 +1219,12 @@ MPX::LibraryScannerThread::on_vacuum_volume(
 
   pthreaddata->Message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
   pthreaddata->ScanEnd.emit();
+}
+
+void
+MPX::LibraryScannerThread::on_remove_dangling(
+)
+{
+    remove_dangling();
 }
 #endif // HAVE_HAL

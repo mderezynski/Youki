@@ -815,7 +815,7 @@ namespace MPX
                         Signals.TrackDeleted.emit( get<gint64>(r["id"]) );
                     }
 
-                    vacuumVolume( hal_device_udi, hal_volume_udi );
+                    m_ScannerThread->remove_dangling();
                 }
 #endif // HAVE_HAL
 
