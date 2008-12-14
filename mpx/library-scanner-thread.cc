@@ -331,6 +331,12 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
 
             for(Util::FileList::iterator i2 = collection2.begin(); i2 != collection2.end(); ++i2)
             {
+                if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
+                {
+                    pthreaddata->ScanSummary.emit( m_ScanSummary );
+                    return;
+                }
+
                 Track track;
 
                 try{
@@ -346,6 +352,8 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                         }
                         else
                         {
+                            track[ATTRIBUTE_MTIME] = gint64( mtime1 );
+
                             if( !m_MetadataReaderTagLib->get( *i2, track ) )
                             {
                                 ++m_ScanSummary.FilesErroneous;
@@ -485,6 +493,8 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
                     }
                     else
                     {
+                        track[ATTRIBUTE_MTIME] = gint64( mtime1 );
+
                         if( !m_MetadataReaderTagLib->get( *i2, track ) )
                         {
                             ++m_ScanSummary.FilesErroneous;
@@ -554,17 +564,17 @@ MPX::LibraryScannerThread::get_track_artist_id (Track &track, bool only_if_exist
   m_SQL->get (rows, mprintf (select_artist_f,
 
          attrs[ATTRIBUTE_ARTIST].id,
-        (track[ATTRIBUTE_ARTIST]
+        (track.has(ATTRIBUTE_ARTIST)
             ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ARTIST].get()).c_str()).c_str()
             : "IS NULL"),
 
          attrs[ATTRIBUTE_MB_ARTIST_ID].id,
-        (track[ATTRIBUTE_MB_ARTIST_ID]
+        (track.has(ATTRIBUTE_MB_ARTIST_ID)
             ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get()).c_str()).c_str()
             : "IS NULL"),
 
          attrs[ATTRIBUTE_ARTIST_SORTNAME].id,
-        (track[ATTRIBUTE_ARTIST_SORTNAME]
+        (track.has(ATTRIBUTE_ARTIST_SORTNAME)
             ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ARTIST_SORTNAME].get()).c_str()).c_str()
             : "IS NULL")));
 
@@ -585,15 +595,15 @@ MPX::LibraryScannerThread::get_track_artist_id (Track &track, bool only_if_exist
          attrs[ATTRIBUTE_ARTIST_SORTNAME].id,
          attrs[ATTRIBUTE_MB_ARTIST_ID].id,
 
-        (track[ATTRIBUTE_ARTIST]
+        (track.has(ATTRIBUTE_ARTIST)
             ? get<std::string>(track[ATTRIBUTE_ARTIST].get()).c_str()
             : NULL) ,
 
-        (track[ATTRIBUTE_ARTIST_SORTNAME]
+        (track.has(ATTRIBUTE_ARTIST_SORTNAME)
             ? get<std::string>(track[ATTRIBUTE_ARTIST_SORTNAME].get()).c_str()
             : NULL) ,
 
-        (track[ATTRIBUTE_MB_ARTIST_ID]
+        (track.has(ATTRIBUTE_MB_ARTIST_ID)
             ? get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get()).c_str()
             : NULL))) ;
 
@@ -607,7 +617,7 @@ MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exist
 {
     ThreadData * pthreaddata = m_ThreadData.get();
 
-    if (track[ATTRIBUTE_ALBUM_ARTIST] && track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]) 
+    if( track.has(ATTRIBUTE_ALBUM_ARTIST) && track.has(ATTRIBUTE_MB_ALBUM_ARTIST_ID) )
     {
       track[ATTRIBUTE_IS_MB_ALBUM_ARTIST] = gint64(1); 
     }
@@ -619,13 +629,13 @@ MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exist
 
     RowV rows;
 
-    if( track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] )   
+    if( track.has(ATTRIBUTE_MB_ALBUM_ARTIST_ID) )
     {
       char const* select_artist_f ("SELECT id FROM album_artist WHERE (%s %s) AND (%s %s);"); 
       m_SQL->get (rows, (mprintf (select_artist_f, 
 
          attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
-        (track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]
+        (track.has(ATTRIBUTE_MB_ALBUM_ARTIST_ID)
             ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()).c_str()
             : "IS NULL"), 
 
@@ -642,7 +652,7 @@ MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exist
       m_SQL->get (rows, (mprintf (select_artist_f, 
 
          attrs[ATTRIBUTE_ALBUM_ARTIST].id,
-        (track[ATTRIBUTE_ALBUM_ARTIST]
+        (track.has(ATTRIBUTE_ALBUM_ARTIST)
             ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str()).c_str()
             : "IS NULL"), 
 
@@ -671,15 +681,15 @@ MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exist
         attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
         attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id,
 
-      (track[ATTRIBUTE_ALBUM_ARTIST]
+      (track.has(ATTRIBUTE_ALBUM_ARTIST)
           ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str() 
           : NULL) , 
 
-      (track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] 
+      (track.has(ATTRIBUTE_ALBUM_ARTIST_SORTNAME)
           ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()).c_str()
           : NULL) , 
 
-      (track[ATTRIBUTE_MB_ALBUM_ARTIST_ID]
+      (track.has(ATTRIBUTE_MB_ALBUM_ARTIST_ID)
           ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()
           : NULL) ,
 
@@ -703,24 +713,22 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
     RowV rows;
     std::string sql;
 
-    if( track[ATTRIBUTE_MB_ALBUM_ID] )
+    if( track.has(ATTRIBUTE_MB_ALBUM_ID) )
     {
-      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
+      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s = '%q') AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
 
       sql = mprintf (select_album_f,
 
              attrs[ATTRIBUTE_MB_ALBUM_ID].id,
-            (track[ATTRIBUTE_MB_ALBUM_ID]
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()).c_str()).c_str()
-                : "IS NULL"), 
+             get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()).c_str(),
 
              attrs[ATTRIBUTE_MB_RELEASE_DATE].id,
-            (track[ATTRIBUTE_MB_RELEASE_DATE]
+            (track.has(ATTRIBUTE_MB_RELEASE_DATE)
                 ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()).c_str()
                 : "IS NULL"), 
 
              attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id,
-            (track[ATTRIBUTE_MB_RELEASE_COUNTRY]
+            (track.has(ATTRIBUTE_MB_RELEASE_COUNTRY)
                 ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_RELEASE_COUNTRY].get()).c_str()).c_str()
                 : "IS NULL"), 
 
@@ -735,12 +743,12 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
       sql = mprintf (select_album_f,
 
              attrs[ATTRIBUTE_ALBUM].id,
-            (track[ATTRIBUTE_ALBUM]
+            (track.has(ATTRIBUTE_ALBUM)
                 ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()).c_str()
                 : "IS NULL"), 
 
             attrs[ATTRIBUTE_ASIN].id,
-            (track[ATTRIBUTE_ASIN]
+            (track.has(ATTRIBUTE_ASIN)
                 ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()).c_str()
                 : "IS NULL"), 
 
@@ -764,7 +772,7 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
     {
       bool custom_id = false;
 
-      if(!track[ATTRIBUTE_MB_ALBUM_ID])
+      if( !track.has(ATTRIBUTE_MB_ALBUM_ID) )
       {
         track[ATTRIBUTE_MB_ALBUM_ID] = "mpx-" + get<std::string>(track[ATTRIBUTE_ARTIST].get())
                                               + "-"
@@ -785,27 +793,27 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
           "album_artist_j",
           "album_insert_date",
 
-          (track[ATTRIBUTE_ALBUM]
+          (track.has(ATTRIBUTE_ALBUM)
               ? get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()
               : NULL) , 
 
-          (track[ATTRIBUTE_MB_ALBUM_ID]
+          (track.has(ATTRIBUTE_MB_ALBUM_ID)
               ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()).c_str()
               : NULL) , 
 
-          (track[ATTRIBUTE_MB_RELEASE_DATE]
+          (track.has(ATTRIBUTE_MB_RELEASE_DATE)
               ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get()).c_str()
               : NULL) , 
 
-          (track[ATTRIBUTE_MB_RELEASE_COUNTRY]
+          (track.has(ATTRIBUTE_MB_RELEASE_COUNTRY)
               ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_COUNTRY].get()).c_str()
               : NULL) , 
 
-          (track[ATTRIBUTE_MB_RELEASE_TYPE]
+          (track.has(ATTRIBUTE_MB_RELEASE_TYPE)
               ? get<std::string>(track[ATTRIBUTE_MB_RELEASE_TYPE].get()).c_str()
               : NULL) , 
 
-          (track[ATTRIBUTE_ASIN]
+          (track.has(ATTRIBUTE_ASIN)
               ? get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()
               : NULL) , 
 
@@ -822,12 +830,12 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
       RequestQualifier rq;
       rq.mbid       = get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get());
-      rq.asin       = track[ATTRIBUTE_ASIN]
+      rq.asin       = track.has(ATTRIBUTE_ASIN)
                             ? get<std::string>(track[ATTRIBUTE_ASIN].get())
                             : "";
 
       rq.uri        = get<std::string>(track[ATTRIBUTE_LOCATION].get());
-      rq.artist     = track[ATTRIBUTE_ALBUM_ARTIST]
+      rq.artist     = track.has(ATTRIBUTE_ALBUM_ARTIST)
                             ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get())
                             : get<std::string>(track[ATTRIBUTE_ARTIST].get());
 
@@ -847,25 +855,35 @@ MPX::LibraryScannerThread::get_track_mtime (Track& track) const
     static boost::format
       select_f ("SELECT %s FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
 
-    m_SQL->get (rows, (select_f  % attrs[ATTRIBUTE_MTIME].id
-                                % attrs[ATTRIBUTE_HAL_VOLUME_UDI].id
-                                % get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get())
-                                % attrs[ATTRIBUTE_HAL_DEVICE_UDI].id
-                                % get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get())
-                                % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id
-                                % mprintf ("%q", get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()).c_str())).str());
+    m_SQL->get(
+        rows,
+        ( select_f
+            % attrs[ATTRIBUTE_MTIME].id
+            % attrs[ATTRIBUTE_HAL_VOLUME_UDI].id
+            % get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get())
+            % attrs[ATTRIBUTE_HAL_DEVICE_UDI].id
+            % get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get())
+            % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id
+            % mprintf ("%q", get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()).c_str())
+        ).str()
+    );
   }
   else
   {
     static boost::format
       select_f ("SELECT %s FROM track WHERE %s='%s';");
 
-    m_SQL->get (rows, (select_f  % attrs[ATTRIBUTE_MTIME].id
-                                % attrs[ATTRIBUTE_LOCATION].id
-                                % mprintf ("%q", get<std::string>(track[ATTRIBUTE_LOCATION].get()).c_str())).str());
+    m_SQL->get(
+        rows,
+        ( select_f
+            % attrs[ATTRIBUTE_MTIME].id
+            % attrs[ATTRIBUTE_LOCATION].id
+            % mprintf ("%q", get<std::string>(track[ATTRIBUTE_LOCATION].get()).c_str())
+        ).str()
+    );
   }
 
-  if (rows.size() && (rows[0].count (attrs[ATTRIBUTE_MTIME].id) != 0))
+  if( rows.size() && (rows[0].count (attrs[ATTRIBUTE_MTIME].id) != 0))
   {
     return boost::get<gint64>( rows[0].find (attrs[ATTRIBUTE_MTIME].id)->second ) ;
   }
@@ -920,7 +938,7 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
 
   ThreadData * pthreaddata = m_ThreadData.get();
 
-  if( !(track[ATTRIBUTE_ALBUM] && track[ATTRIBUTE_ARTIST] && track[ATTRIBUTE_TITLE]) )
+  if( !(track.has(ATTRIBUTE_ALBUM) && track.has(ATTRIBUTE_ARTIST) && track.has(ATTRIBUTE_TITLE)) )
   {
     // check if the track already exists; if so, metadata has been removed
     gint64 id = get_track_id( track );
@@ -934,7 +952,7 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
     throw ScanError(_("Insufficient Metadata (artist, album and title must be given)"));
   }
 
-  if( (!track[ATTRIBUTE_DATE]) && (track[ATTRIBUTE_MB_RELEASE_DATE]))
+  if( !track.has(ATTRIBUTE_DATE) && track.has(ATTRIBUTE_MB_RELEASE_DATE) )
   {
     std::string mb_date = get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get());
     int mb_date_int = 0;
@@ -962,9 +980,9 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
 
       for (unsigned int n = 0; n < N_ATTRIBUTES_INT; ++n)
       {
-          if(track[n])
+          if( track.has(n) )
           {
-              switch (attrs[n].type)
+              switch( attrs[n].type )
               {
                 case VALUE_TYPE_STRING:
                   column_values += mprintf ("'%q'", get <std::string> (track[n].get()).c_str());
