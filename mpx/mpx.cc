@@ -56,20 +56,14 @@
 #include "dialog-equalizer.hh"
 #include "dialog-filebrowser.hh"
 
-#include "import-share.hh"
-#include "import-folder.hh"
-
 #include "infoarea.hh"
 #ifdef HAVE_HAL
 #include "mlibmanager.hh"
 #endif
+#include "play.hh"
 #include "preferences.hh"
 #include "sidebar.hh"
 #include "volume-control.hh"
-
-#include "play.hh"
-
-#include "request-value.hh"
 
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
@@ -121,7 +115,7 @@ namespace
         char const ACTION_MB_IMPORT []      = "action-mb-import";
         char const ACTION_PLAY_FILES []     = "action-play-files";
 
-        char MenubarMain_HAL [] =
+        char MenubarMain [] =
                 "<ui>"
                 ""
                 "<menubar name='MenubarMain'>"
@@ -153,42 +147,6 @@ namespace
                 ""
                 "</ui>"
                 "";
-
-        char MenubarMain_NoHAL [] =
-                "<ui>"
-                ""
-                "<menubar name='MenubarMain'>"
-                "   <menu action='MenuMusic'>"
-                "         <menuitem action='action-play-files'/>"
-                "         <separator name='sep00-a'/>"
-                "	      <menuitem action='action-mb-import'/>"
-                "         <separator name='sep01-a'/>"
-                "         <menuitem action='action-quit'/>"
-                "   </menu>"
-                "   <menu action='MenuEdit'>"
-                "         <menuitem action='action-preferences'/>"
-                "         <menuitem action='action-plugins'/>"
-                "         <separator name='sep02-a'/>"
-                "         <menuitem action='action-equalizer'/>"
-                "         <separator name='sep03-a'/>"
-                "         <menuitem action='action-import-folder'/>"
-                "         <menuitem action='action-import-share'/>"
-                "         <menuitem action='action-mlibmanager'/>"
-                "   </menu>"
-                "   <menu action='MenuView'>"
-                "   </menu>"
-                "   <menu action='MenuTrack'>"
-                "         <placeholder name='placeholder-track-actions'/>"
-                "   </menu>"
-                "   <placeholder name='placeholder-source'/>"
-                "   <menu action='MenuHelp'>"
-                "         <menuitem action='action-about'/>"
-                "   </menu>"
-                "</menubar>"
-                ""
-                "</ui>"
-                "";
-
 }
 
 namespace MPX
@@ -844,22 +802,6 @@ namespace MPX
                                           _("_Play Files...")),
                                           sigc::mem_fun( *this, &Player::on_action_cb_play_files ));
 
-                        m_Actions->add( Action::create(
-
-                                          ACTION_IMPORT_FOLDER,
-
-                                          Gtk::Stock::HARDDISK,
-                                          _("Import _Folder")),
-                                          sigc::mem_fun (*this, &Player::on_import_folder));
-
-                        m_Actions->add( Action::create( 
-
-                                          ACTION_IMPORT_SHARE,
-
-                                          Gtk::Stock::NETWORK,
-                                          _("Import _Share")),
-                                          sigc::mem_fun (*this, &Player::on_import_share));
-
 #ifdef HAVE_HAL
                         MPX::MLibManager & mlibman = (*(services.get<MLibManager>("mpx-service-mlibman")));
 
@@ -968,13 +910,15 @@ namespace MPX
 
                         m_UIManager->insert_action_group(m_Actions);
 
-                        if( Util::ui_manager_add_ui(
-                              m_UIManager,
-                              ( mcs->key_get<bool>("library","use-hal") ) ? MenubarMain_HAL : MenubarMain_NoHAL,
-                              *this,
-                              _("Main Menubar"),
-                              m_MainUI
-                        ))
+                        if(
+                            Util::ui_manager_add_ui(
+                                  m_UIManager
+                                , MenubarMain
+                                , *this
+                                , _("Main Menubar")
+                                , m_MainUI
+                            )
+                        )
                         {
                                 dynamic_cast<Alignment*>(
                                       m_Xml->get_widget("alignment-menu")
@@ -982,14 +926,6 @@ namespace MPX
                                       *(m_UIManager->get_widget ("/MenubarMain"))
                                 );
                         }
-
-                        mcs->subscribe(
-                          "library",
-                          "use-hal",
-                          sigc::mem_fun(
-                              *this,
-                              &Player::on_library_use_hal_changed
-                        ));
 
                         /*- Playback Controls ---------------------------------------------*/ 
 
@@ -1107,32 +1043,6 @@ namespace MPX
                         translate_caps(); // sets all actions intially insensitive as we have C_NONE
                 }
     
-        void
-                Player::on_library_use_hal_changed( MCS_CB_DEFAULT_SIGNATURE )
-                {
-                        dynamic_cast<Alignment*>(
-                              m_Xml->get_widget("alignment-menu")
-                        )->remove();
-
-                        m_UIManager->remove_ui( m_MainUI ); 
-
-                        if( Util::ui_manager_add_ui(
-                              m_UIManager,
-                              ( mcs->key_get<bool>("library","use-hal") ) ? MenubarMain_HAL : MenubarMain_NoHAL,
-                              *this,
-                              _("Main Menubar"),
-                              m_MainUI
-                        ))
-                        {
-                                dynamic_cast<Alignment*>(
-                                      m_Xml->get_widget("alignment-menu")
-                                )->add(
-                                      *(m_UIManager->get_widget ("/MenubarMain"))
-                                );
-                        }
-                }
-
-
         Player*
                 Player::create (MPX::Service::Manager&services)
                 {
@@ -1972,155 +1882,6 @@ SET_SEEK_POSITION:
                 {
                         MPX::MB_ImportAlbum & mbimport = (*(services->get<MB_ImportAlbum>("mpx-service-mbimport")));
                         mbimport.run();
-                }
-
-        void
-                Player::on_import_folder()
-                {
-                        boost::shared_ptr<DialogImportFolder> d = boost::shared_ptr<DialogImportFolder>(DialogImportFolder::create());
-
-                        if(d->run() == 0) // Import
-                        {
-                                Glib::ustring uri; 
-                                d->get_folder_infos(uri);
-                                d->hide();
-                                StrV v;
-                                v.push_back(uri);
-                                m_Library.initScan(v);
-                        }
-                }
-
-        void
-                Player::on_import_share()
-                {
-                        boost::shared_ptr<DialogImportShare> d = boost::shared_ptr<DialogImportShare>(DialogImportShare::create());
-
-rerun_import_share_dialog:
-
-                        if(d->run() == 0) // Import
-                        {
-                                Glib::ustring login, password;
-                                d->get_share_infos(m_Share, m_ShareName, login, password);
-                                d->hide ();
-
-                                if(m_ShareName.empty())
-                                {
-                                        MessageDialog dialog (*this, (_("The Share's name can not be empty")));
-                                        dialog.run();
-                                        goto rerun_import_share_dialog;
-                                }
-
-                                m_MountFile = Glib::wrap (g_vfs_get_file_for_uri (g_vfs_get_default(), m_Share.c_str()));
-                                if(!m_MountFile)
-                                {
-                                        MessageDialog dialog (*this, (boost::format (_("An Error occcured getting a handle for the share '%s'\n"
-                                                                                "Please veryify the share URI and credentials")) % m_Share.c_str()).str());
-                                        dialog.run();
-                                        goto rerun_import_share_dialog;
-                                }
-
-                                m_MountOperation = Gio::MountOperation::create();
-                                if(!m_MountOperation)
-                                {
-                                        MessageDialog dialog (*this, (boost::format (_("An Error occcured trying to mount the share '%s'")) % m_Share.c_str()).str());
-                                        dialog.run();
-                                        return; 
-                                }
-
-                                m_MountOperation->set_username(login);
-                                m_MountOperation->set_password(password);
-                                m_MountOperation->signal_ask_password().connect(sigc::mem_fun(*this, &Player::ask_password_cb));
-                                m_MountFile->mount_mountable(m_MountOperation, sigc::mem_fun(*this, &Player::mount_ready_callback));
-                        }
-                }
-
-        void
-                Player::ask_password_cb(
-                    const Glib::ustring& message,
-                    const Glib::ustring& default_user,
-                    const Glib::ustring& default_domain,
-                    Gio::AskPasswordFlags flags
-                )
-                {
-                        Glib::ustring value;
-                        if (flags & Gio::ASK_PASSWORD_NEED_USERNAME)
-                        {
-                                RequestValue * p = RequestValue::create();
-                                p->set_question(_("Please Enter the Username:"));
-                                int reply = p->run();
-                                if(reply == GTK_RESPONSE_CANCEL)
-                                {
-                                        m_MountOperation->reply (Gio::MOUNT_OPERATION_ABORTED /*abort*/);
-                                        return;
-                                }
-                                p->get_request_infos(value);
-                                m_MountOperation->set_username (value);
-                                delete p;
-                                value.clear();
-                        }
-
-                        if (flags & Gio::ASK_PASSWORD_NEED_DOMAIN)
-                        {
-                                RequestValue * p = RequestValue::create();
-                                p->set_question(_("Please Enter the Domain:"));
-                                int reply = p->run();
-                                if(reply == GTK_RESPONSE_CANCEL)
-                                {
-                                        m_MountOperation->reply (Gio::MOUNT_OPERATION_ABORTED /*abort*/);
-                                        return;
-                                }
-                                p->get_request_infos(value);
-                                m_MountOperation->set_domain (value);
-                                delete p;
-                                value.clear();
-                        }
-
-                        if (flags & Gio::ASK_PASSWORD_NEED_PASSWORD)
-                        {
-                                RequestValue * p = RequestValue::create();
-                                p->set_question(_("Please Enter the Password:"));
-                                int reply = p->run();
-                                if(reply == GTK_RESPONSE_CANCEL)
-                                {
-                                        m_MountOperation->reply (Gio::MOUNT_OPERATION_ABORTED /*abort*/);
-                                        return;
-                                }
-                                p->get_request_infos(value);
-                                m_MountOperation->set_password (value);
-                                delete p;
-                                value.clear();
-                        }
-
-                        m_MountOperation->reply (Gio::MOUNT_OPERATION_HANDLED);
-                }
-
-        void
-                Player::mount_ready_callback (Glib::RefPtr<Gio::AsyncResult>& res)
-                {
-                        try
-                        {
-                                m_MountFile->mount_mountable_finish(res);
-                        }
-                        catch(const Glib::Error& error)
-                        {
-                                if(error.code() != G_IO_ERROR_ALREADY_MOUNTED)
-                                {
-                                        MessageDialog dialog (*this, (boost::format ("An Error occcured while mounting the share: %s") % error.what()).str());
-                                        dialog.run();
-                                        return;
-                                }
-                                else
-                                        g_warning("%s: Location '%s' is already mounted", G_STRLOC, m_Share.c_str());
-
-                        }
-
-                        Util::FileList v (1, m_Share);
-                        m_Library.initScan(v);
-                }
-
-        void
-                Player::unmount_ready_callback( Glib::RefPtr<Gio::AsyncResult>& res )
-                {
                 }
 
         /*static*/ bool

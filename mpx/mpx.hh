@@ -322,10 +322,6 @@ namespace MPX
         PlayDirection                   m_PlayDirection;
 
     
-        void
-        on_library_use_hal_changed(MCS_CB_DEFAULT_SIGNATURE);
-
-
 		void
 		on_cb_album_cover_clicked ();
 
@@ -473,31 +469,6 @@ namespace MPX
         on_delete_event (GdkEventAny*);
 
       private:
-
-    // GIO import stuff
-
-        void
-        on_import_folder();
-
-        void
-        on_import_share();
-
-
-        Glib::RefPtr<Gio::File> m_MountFile;
-        Glib::RefPtr<Gio::MountOperation> m_MountOperation;
-        Glib::ustring m_Share, m_ShareName;
-
-        void
-        mount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
-
-        void
-        unmount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
-
-        void
-        ask_password_cb (const Glib::ustring& message,
-                         const Glib::ustring& default_user,
-                         const Glib::ustring& default_domain,
-                         Gio::AskPasswordFlags flags);
 
     // mmkeys stuff
 

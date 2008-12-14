@@ -42,6 +42,10 @@
 #include "mpx/util-string.hh"
 #include "mpx/util-ui.hh"
 
+#include "import-share.hh"
+#include "import-folder.hh"
+#include "request-value.hh"
+
 #include "mlibmanager.hh"
 
 using namespace Glib;
@@ -54,6 +58,9 @@ namespace
                 "<ui>"
                 "<menubar name='MenubarMLibMan'>"
                 "   <menu action='MenuMLib'>"
+                "         <menuitem action='action-import-folder'/>"
+                "         <menuitem action='action-import-share'/>"
+                "         <separator/>"
                 "         <menuitem action='action-mlib-remove-dupes'/>"
                 "         <menuitem action='action-mlib-rescan'/>"
                 "         <menuitem action='action-mlib-rescan-deep'/>"
@@ -354,7 +361,7 @@ namespace MPX
         m_Actions->add( Action::create(
             "action-mlib-rescan-deep",
             Gtk::Stock::HARDDISK,
-            _("_Deep Rescan")),
+            _("_Rescan (Deep Rescan)")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,
@@ -392,7 +399,7 @@ namespace MPX
             "action-volume-rescan-deep",
 
             Gtk::Stock::HARDDISK,
-            _("_Deep Rescan")),
+            _("_Rescan (Deep Rescan)")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,
@@ -410,6 +417,23 @@ namespace MPX
                 &MLibManager::on_vacuum_volume
         ));
 #endif
+
+        m_Actions->add( Action::create(
+
+                          "action-import-folder",
+
+                          Gtk::Stock::HARDDISK,
+                          _("Import _Folder")),
+                          sigc::mem_fun (*this, &MLibManager::on_import_folder));
+
+        m_Actions->add( Action::create( 
+
+                          "action-import-share",
+
+                          Gtk::Stock::NETWORK,
+                          _("Import _Share")),
+                          sigc::mem_fun (*this, &MLibManager::on_import_share));
+
 
         m_Actions->add( Action::create(
             "action-close",
@@ -459,6 +483,8 @@ namespace MPX
         if( mcs->key_get<bool>("library", "use-hal"))
         {
             populate_volumes();
+            m_Actions->get_action("action-import-folder")->set_visible( false );
+            m_Actions->get_action("action-import-share")->set_visible( false );
         }
         else
 #endif
@@ -491,12 +517,16 @@ namespace MPX
         {
             populate_volumes(); 
             m_Xml->get_widget("notebook1")->show();
+            m_Actions->get_action("action-import-folder")->set_visible( false );
+            m_Actions->get_action("action-import-share")->set_visible( false );
             set_resizable( true );
         }
         else
         {
             clear_volumes();
             m_Xml->get_widget("notebook1")->hide();
+            m_Actions->get_action("action-import-folder")->set_visible( true );
+            m_Actions->get_action("action-import-share")->set_visible( true );
             set_resizable( false );
         }
 
@@ -1353,4 +1383,153 @@ namespace MPX
         return true;
     }
 #endif
+
+    void
+            MLibManager::on_import_folder()
+            {
+                    boost::shared_ptr<DialogImportFolder> d = boost::shared_ptr<DialogImportFolder>(DialogImportFolder::create());
+
+                    if(d->run() == 0) // Import
+                    {
+                            Glib::ustring uri; 
+                            d->get_folder_infos(uri);
+                            d->hide();
+                            StrV v;
+                            v.push_back(uri);
+                            m_Library.initScan(v);
+                    }
+            }
+
+    void
+            MLibManager::on_import_share()
+            {
+                    boost::shared_ptr<DialogImportShare> d = boost::shared_ptr<DialogImportShare>(DialogImportShare::create());
+
+rerun_import_share_dialog:
+
+                    if(d->run() == 0) // Import
+                    {
+                            Glib::ustring login, password;
+                            d->get_share_infos(m_Share, m_ShareName, login, password);
+                            d->hide ();
+
+                            if(m_ShareName.empty())
+                            {
+                                    MessageDialog dialog (*this, (_("The Share's name can not be empty")));
+                                    dialog.run();
+                                    goto rerun_import_share_dialog;
+                            }
+
+                            m_MountFile = Glib::wrap (g_vfs_get_file_for_uri (g_vfs_get_default(), m_Share.c_str()));
+                            if(!m_MountFile)
+                            {
+                                    MessageDialog dialog (*this, (boost::format (_("An Error occcured getting a handle for the share '%s'\n"
+                                                                            "Please veryify the share URI and credentials")) % m_Share.c_str()).str());
+                                    dialog.run();
+                                    goto rerun_import_share_dialog;
+                            }
+
+                            m_MountOperation = Gio::MountOperation::create();
+                            if(!m_MountOperation)
+                            {
+                                    MessageDialog dialog (*this, (boost::format (_("An Error occcured trying to mount the share '%s'")) % m_Share.c_str()).str());
+                                    dialog.run();
+                                    return; 
+                            }
+
+                            m_MountOperation->set_username(login);
+                            m_MountOperation->set_password(password);
+                            m_MountOperation->signal_ask_password().connect(sigc::mem_fun(*this, &MLibManager::ask_password_cb));
+                            m_MountFile->mount_mountable(m_MountOperation, sigc::mem_fun(*this, &MLibManager::mount_ready_callback));
+                    }
+            }
+
+    void
+            MLibManager::ask_password_cb(
+                const Glib::ustring& message,
+                const Glib::ustring& default_user,
+                const Glib::ustring& default_domain,
+                Gio::AskPasswordFlags flags
+            )
+            {
+                    Glib::ustring value;
+                    if (flags & Gio::ASK_PASSWORD_NEED_USERNAME)
+                    {
+                            RequestValue * p = RequestValue::create();
+                            p->set_question(_("Please Enter the Username:"));
+                            int reply = p->run();
+                            if(reply == GTK_RESPONSE_CANCEL)
+                            {
+                                    m_MountOperation->reply (Gio::MOUNT_OPERATION_ABORTED /*abort*/);
+                                    return;
+                            }
+                            p->get_request_infos(value);
+                            m_MountOperation->set_username (value);
+                            delete p;
+                            value.clear();
+                    }
+
+                    if (flags & Gio::ASK_PASSWORD_NEED_DOMAIN)
+                    {
+                            RequestValue * p = RequestValue::create();
+                            p->set_question(_("Please Enter the Domain:"));
+                            int reply = p->run();
+                            if(reply == GTK_RESPONSE_CANCEL)
+                            {
+                                    m_MountOperation->reply (Gio::MOUNT_OPERATION_ABORTED /*abort*/);
+                                    return;
+                            }
+                            p->get_request_infos(value);
+                            m_MountOperation->set_domain (value);
+                            delete p;
+                            value.clear();
+                    }
+
+                    if (flags & Gio::ASK_PASSWORD_NEED_PASSWORD)
+                    {
+                            RequestValue * p = RequestValue::create();
+                            p->set_question(_("Please Enter the Password:"));
+                            int reply = p->run();
+                            if(reply == GTK_RESPONSE_CANCEL)
+                            {
+                                    m_MountOperation->reply (Gio::MOUNT_OPERATION_ABORTED /*abort*/);
+                                    return;
+                            }
+                            p->get_request_infos(value);
+                            m_MountOperation->set_password (value);
+                            delete p;
+                            value.clear();
+                    }
+
+                    m_MountOperation->reply (Gio::MOUNT_OPERATION_HANDLED);
+            }
+
+    void
+            MLibManager::mount_ready_callback (Glib::RefPtr<Gio::AsyncResult>& res)
+            {
+                    try
+                    {
+                            m_MountFile->mount_mountable_finish(res);
+                    }
+                    catch(const Glib::Error& error)
+                    {
+                            if(error.code() != G_IO_ERROR_ALREADY_MOUNTED)
+                            {
+                                    MessageDialog dialog (*this, (boost::format ("An Error occcured while mounting the share: %s") % error.what()).str());
+                                    dialog.run();
+                                    return;
+                            }
+                            else
+                                    g_warning("%s: Location '%s' is already mounted", G_STRLOC, m_Share.c_str());
+
+                    }
+
+                    Util::FileList v (1, m_Share);
+                    m_Library.initScan(v);
+            }
+
+    void
+            MLibManager::unmount_ready_callback( Glib::RefPtr<Gio::AsyncResult>& res )
+            {
+            }
 }
