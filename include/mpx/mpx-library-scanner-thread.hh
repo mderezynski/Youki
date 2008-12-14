@@ -118,7 +118,6 @@ namespace MPX
             sigx::request_f<Util::FileList const&>          scan_direct ;
             sigx::request_f<>                               scan_stop ;
             sigx::request_f<>                               vacuum ;
-            sigx::request_f<>                               remove_dangling ;
 
 #ifdef HAVE_HAL
             sigx::request_f< const std::string&, const std::string& > vacuum_volume ;
@@ -214,9 +213,6 @@ namespace MPX
                 const std::string&
             );
 #endif // HAVE_HAL
-
-            void on_remove_dangling(
-            );
 
 /////////////////////////
 

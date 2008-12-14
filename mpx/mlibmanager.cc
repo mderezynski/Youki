@@ -842,7 +842,10 @@ namespace MPX
     }
 
     int
-    MLibManager::fstree_sort (const TreeIter & iter_a, const TreeIter & iter_b)
+    MLibManager::fstree_sort(
+          const TreeIter & iter_a
+        , const TreeIter & iter_b
+    )
     {
         Glib::ustring a ((*iter_a)[FSTreeColumns.SegName]);
         Glib::ustring b ((*iter_b)[FSTreeColumns.SegName]);
@@ -850,158 +853,162 @@ namespace MPX
     }
 
     PathTestResult
-    MLibManager::path_test(const std::string& path)
+    MLibManager::path_test(
+        const std::string& path
+    )
     {
-      if( Glib::file_test(path, Glib::FILE_TEST_EXISTS) )
-      {
-        return IS_PRESENT;
-      }
-      else
-      {
-              TaskDialog dialog(
-                    this,
-                    _("AudioSource: Music Path is missing"),
-                    _("Music Path is missing"),
-                    Gtk::MESSAGE_WARNING,
-                    (boost::format (_("A path managed by AudioSource containing music can not be found.\nYour intervention is required.\n\nPath: %s")) % path).str()
-              );
+        g_message("%s: Path: '%s'", G_STRLOC, path.c_str());
 
-              dialog.add_button(
-                    _("Relocate Path"),
-                    _("The path has been moved somewhere else, and AudioSource needs to know the new location."),
-                    Gtk::Stock::HARDDISK,
-                    0
-              );
-            
-              dialog.add_button(
-                    _("Delete Path from Library"),
-                    _("The path has been permanently deleted, and AudioSource should not manage it anymore."),
-                    Gtk::Stock::DELETE,
-                    1
-              );
+        if( Glib::file_test(path, Glib::FILE_TEST_EXISTS) )
+        {
+          return IS_PRESENT;
+        }
+        else
+        {
+                TaskDialog dialog(
+                      this,
+                      _("AudioSource: Music Path is missing"),
+                      _("Music Path is missing"),
+                      Gtk::MESSAGE_WARNING,
+                      (boost::format (_("A path managed by AudioSource containing music can not be found.\nYour intervention is required.\n\nPath: %s")) % path).str()
+                );
 
-              dialog.add_button(
-                    _("Check Next Time"),
-                    _("The situation is different than described above, and deeper intervention is neccessary.\nAudioSource will check the path at the next rescan again."),
-                    Gtk::Stock::OK,
-                    2
-              );
+                dialog.add_button(
+                      _("Relocate Path"),
+                      _("The path has been moved somewhere else, and AudioSource needs to know the new location."),
+                      Gtk::Stock::HARDDISK,
+                      0
+                );
+              
+                dialog.add_button(
+                      _("Delete Path from Library"),
+                      _("The path has been permanently deleted, and AudioSource should not manage it anymore."),
+                      Gtk::Stock::DELETE,
+                      1
+                );
 
-              // Show the relocate dialog and process the result
+                dialog.add_button(
+                      _("Check Next Time"),
+                      _("The situation is different than described above, and deeper intervention is neccessary.\nAudioSource will check the path at the next rescan again."),
+                      Gtk::Stock::OK,
+                      2
+                );
 
-              rerun_taskdialog:
+                // Show the relocate dialog and process the result
 
-              int result = dialog.run();
+                rerun_taskdialog:
 
-              std::string volume_udi_source, device_udi_source;
-              std::string volume_udi_target, device_udi_target;
-              std::string vrp_source, vrp_target;
-              HAL::Volume volume_source, volume_target;
-              std::string uri;
+                int result = dialog.run();
 
-              FileChooserDialog fcdialog (
-                    _("AudioSource: Select relocated path target"),
-                    FILE_CHOOSER_ACTION_SELECT_FOLDER
-              );
+                std::string volume_udi_source, device_udi_source;
+                std::string volume_udi_target, device_udi_target;
+                std::string vrp_source, vrp_target;
+                HAL::Volume volume_source, volume_target;
+                std::string uri;
 
-              fcdialog.add_button(
-                    Gtk::Stock::CANCEL,
-                    Gtk::RESPONSE_CANCEL
-              );
+                FileChooserDialog fcdialog (
+                      _("AudioSource: Select relocated path target"),
+                      FILE_CHOOSER_ACTION_SELECT_FOLDER
+                );
 
-              fcdialog.add_button(
-                    Gtk::Stock::OK,
-                    Gtk::RESPONSE_OK
-              );
+                fcdialog.add_button(
+                      Gtk::Stock::CANCEL,
+                      Gtk::RESPONSE_CANCEL
+                );
 
-              int response;
+                fcdialog.add_button(
+                      Gtk::Stock::OK,
+                      Gtk::RESPONSE_OK
+                );
 
-              switch(result)
-              {
-                case 0:
-                    response = fcdialog.run();
-                    fcdialog.hide();
+                int response;
 
-                    if( response == Gtk::RESPONSE_CANCEL ) 
-                        goto rerun_taskdialog;
+                switch(result)
+                {
+                  case 0:
+                      response = fcdialog.run();
+                      fcdialog.hide();
 
-                    uri = fcdialog.get_current_folder_uri();
+                      if( response == Gtk::RESPONSE_CANCEL ) 
+                          goto rerun_taskdialog;
 
-                    volume_source = m_HAL.get_volume_for_uri(Glib::filename_to_uri(path));
-                    volume_udi_source =
-                        volume_source.volume_udi ;
-                    device_udi_source =  
-                        volume_source.device_udi ;
-                    vrp_source = 
-                        path.substr(volume_source.mount_point.length()) ;
+                      uri = fcdialog.get_current_folder_uri();
 
-                    volume_target = m_HAL.get_volume_for_uri(uri);
-                    volume_udi_target =
-                        volume_target.volume_udi ;
-                    device_udi_target =  
-                        volume_target.device_udi ;
-                    vrp_target = 
-                        Glib::filename_from_uri(uri).substr(volume_target.mount_point.length()) ;
+                      volume_source = m_HAL.get_volume_for_uri(Glib::filename_to_uri(path));
+                      volume_udi_source =
+                          volume_source.volume_udi ;
+                      device_udi_source =  
+                          volume_source.device_udi ;
+                      vrp_source = 
+                          path.substr(volume_source.mount_point.length()) ;
 
-                    m_Library.execSQL(
-                        (boost::format("UPDATE track SET hal_device_udi = '%s', hal_volume_udi = '%s', insert_path = '%s' "
-                                       "WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path = '%s'")
-                            % device_udi_target
-                            % volume_udi_target
-                            % vrp_target
-                            % device_udi_source
-                            % volume_udi_source
-                            % vrp_source
-                    ).str());
+                      volume_target = m_HAL.get_volume_for_uri(uri);
+                      volume_udi_target =
+                          volume_target.volume_udi ;
+                      device_udi_target =  
+                          volume_target.device_udi ;
+                      vrp_target = 
+                          Glib::filename_from_uri(uri).substr(volume_target.mount_point.length()) ;
 
-                    on_volumes_changed ();
+                      m_Library.execSQL(
+                          (boost::format("UPDATE track SET hal_device_udi = '%s', hal_volume_udi = '%s', insert_path = '%s' "
+                                         "WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path = '%s'")
+                              % device_udi_target
+                              % volume_udi_target
+                              % vrp_target
+                              % device_udi_source
+                              % volume_udi_source
+                              % vrp_source
+                      ).str());
 
-                    /*
-                    m_Library.vacuumVolume(
-                        device_udi_target,
-                        volume_udi_target 
-                    );*/
+                      on_volumes_changed ();
 
-                    return RELOCATED;
-                  break;
+                      /*
+                      m_Library.vacuumVolume(
+                          device_udi_target,
+                          volume_udi_target 
+                      );*/
 
-                case 1:
+                      return RELOCATED;
+                    break;
 
-                    volume_target = m_HAL.get_volume_for_uri(Glib::filename_to_uri(path));
+                  case 1:
 
-                    volume_udi_target =
-                        volume_target.volume_udi ;
+                      volume_target = m_HAL.get_volume_for_uri(Glib::filename_to_uri(path));
 
-                    device_udi_target =  
-                        volume_target.device_udi ;
+                      volume_udi_target =
+                          volume_target.volume_udi ;
 
-                    vrp_target = 
-                        path.substr(volume_target.mount_point.length()) ;
+                      device_udi_target =  
+                          volume_target.device_udi ;
 
-                    m_Library.execSQL(
-                        (boost::format("DELETE FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path LIKE '%s%%'")
-                            % device_udi_target
-                            % volume_udi_target
-                            % vrp_target
-                    ).str());
+                      vrp_target = 
+                          path.substr(volume_target.mount_point.length()) ;
 
-                    on_volumes_changed();
+                      m_Library.execSQL(
+                          (boost::format("DELETE FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path LIKE '%s%%'")
+                              % device_udi_target
+                              % volume_udi_target
+                              % vrp_target
+                      ).str());
 
-                    /*
-                    m_Library.vacuumVolume(
-                        device_udi_target,
-                        volume_udi_target 
-                    );*/
+                      on_volumes_changed();
 
-                    return DELETED;
-                  break;
+                      /*
+                      m_Library.vacuumVolume(
+                          device_udi_target,
+                          volume_udi_target 
+                      );*/
 
-                case 2:
-                    return IGNORED;
-                  break;
-              }
-      }
-      return IGNORED;
+                      return DELETED;
+                    break;
+
+                  case 2:
+                      return IGNORED;
+                    break;
+                }
+        }
+        return IGNORED;
     }
 
     void
@@ -1225,7 +1232,8 @@ namespace MPX
             {
                 m_VboxInner->set_sensitive( false );
 
-                m_Library.deletePath( m_DeviceUDI, m_VolumeUDI, FullPath.substr(m_MountPoint.length()) );
+                std::string FullPath_Sub = FullPath.substr(m_MountPoint.length()) ; 
+                m_Library.deletePath( m_DeviceUDI, m_VolumeUDI, FullPath_Sub.substr( 0, FullPath_Sub.size() - 1 ) );
 
                 m_ManagedPaths.erase( FullPath );
                 recreate_path_frags();
@@ -1396,6 +1404,7 @@ namespace MPX
                             d->hide();
                             StrV v;
                             v.push_back(uri);
+                            g_message("%s: initializing scan for: %s", G_STRLOC, uri.c_str());
                             m_Library.initScan(v);
                     }
             }

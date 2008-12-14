@@ -172,7 +172,6 @@ MPX::LibraryScannerThread::LibraryScannerThread(
 #ifdef HAVE_HAL
 , vacuum_volume(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum_volume))
 #endif // HAVE_HAL
-, remove_dangling(sigc::mem_fun(*this, &LibraryScannerThread::on_remove_dangling))
 , signal_scan_start(*this, m_ThreadData, &ThreadData::ScanStart)
 , signal_scan_run(*this, m_ThreadData, &ThreadData::ScanRun)
 , signal_scan_end(*this, m_ThreadData, &ThreadData::ScanEnd)
@@ -301,18 +300,18 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
         std::string insert_path_sql ;
 
         try{
-            insert_path = *i; 
+            insert_path = Util::normalize_path( *i ) ;
 #ifdef HAVE_HAL
             try{
                 if (m_Flags & Library::F_USING_HAL)
                 {
                     HAL::Volume const& volume (m_HAL->get_volume_for_uri (*i));
-                    insert_path_sql = Glib::filename_from_uri(*i).substr (volume.mount_point.length()) ;
+                    insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr (volume.mount_point.length())) ;
                 }
                 else
 #endif
                 {
-                    insert_path_sql = *i; 
+                    insert_path_sql = insert_path; 
                 }
 #ifdef HAVE_HAL
             }
@@ -482,38 +481,40 @@ MPX::LibraryScannerThread::on_scan_list_deep(
         std::string insert_path_sql ;
         Util::FileList collection;
 
+#ifdef HAVE_HAL
         try{
-            insert_path = *i; 
+#endif
+            insert_path = Util::normalize_path( *i ) ;
 #ifdef HAVE_HAL
             try{
                 if (m_Flags & Library::F_USING_HAL)
                 { 
                     HAL::Volume const& volume (m_HAL->get_volume_for_uri (*i));
-                    insert_path_sql = Glib::filename_from_uri(*i).substr (volume.mount_point.length()) ;
+                    insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr (volume.mount_point.length())) ;
                 }
                 else
 #endif
                 {
-                    insert_path_sql = *i; 
+                    insert_path_sql = insert_path; 
                 }
 #ifdef HAVE_HAL
             }
-          catch(
-            HAL::Exception&     cxe
-          )
-          {
-              g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
-              pthreaddata->ScanSummary.emit( m_ScanSummary );
-              return;
-          }
-          catch(
-            Glib::ConvertError& cxe
-          )
-          {
-              g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-              pthreaddata->ScanSummary.emit( m_ScanSummary );
-              return;
-          }
+            catch(
+              HAL::Exception&     cxe
+            )
+            {
+                g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+                pthreaddata->ScanSummary.emit( m_ScanSummary );
+                return;
+            }
+            catch(
+              Glib::ConvertError& cxe
+            )
+            {
+                g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+                pthreaddata->ScanSummary.emit( m_ScanSummary );
+                return;
+            }
 #endif // HAVE_HAL
             collection.clear();
 
@@ -966,7 +967,7 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
     }
   }
 
-  track[ATTRIBUTE_INSERT_PATH] = insert_path;
+  track[ATTRIBUTE_INSERT_PATH] = Util::normalize_path( insert_path ) ;
   track[ATTRIBUTE_INSERT_DATE] = gint64(time(NULL));
 
   char const* track_set_f ("INSERT INTO track (%s) VALUES (%s);");
@@ -1221,10 +1222,4 @@ MPX::LibraryScannerThread::on_vacuum_volume(
   pthreaddata->ScanEnd.emit();
 }
 
-void
-MPX::LibraryScannerThread::on_remove_dangling(
-)
-{
-    remove_dangling();
-}
 #endif // HAVE_HAL

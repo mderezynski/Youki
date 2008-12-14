@@ -302,5 +302,15 @@ namespace MPX
         return info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_MODIFIED) ;
     }
 
+    std::string
+    normalize_path(
+        const std::string& path
+    )
+    {
+        if( path[path.size()-1] == '/' )
+            return path.substr( 0, path.size() - 1 );
+        else
+            return path;
+    }
   } // namespace Util
 } // namespace MPX

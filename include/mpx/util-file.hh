@@ -34,59 +34,62 @@ namespace MPX
 {
   namespace Util
   {
-    typedef std::vector<std::string>      FileList;
-    typedef sigc::slot<bool, std::string> FilePred;
-    typedef sigc::slot<void, std::string> FileCallback;
+    typedef std::vector<std::string>      FileList ;
+    typedef sigc::slot<bool, std::string> FilePred ;
+    typedef sigc::slot<void, std::string> FileCallback ;
 
     void
     dir_for_each_entry (const std::string &path,
-                        FilePred           slot);
+                        FilePred           slot) ;
 
     void
     collect_dirs (std::string  const& dir_path,
-                  FileCallback const& callback);
+                  FileCallback const& callback) ;
 
     void
     collect_paths (std::string const& dir_path,
                    FileList&          collection,
-                   bool               clear = true);
+                   bool               clear = true) ;
 
     void
     collect_paths (std::string const& dir_path,
                    FileList&          collection,
                    FilePred           pred,
-                   bool               clear = true);
+                   bool               clear = true) ;
 
     void
     collect_paths_recursive (std::string const& dir_path,
                    FileList&          collection,
                    FilePred           pred,
-                   bool               clear = true);
+                   bool               clear = true) ;
 
     void
     collect_audio_paths (std::string const &dir_path,
                          FileList          &collection,
-                         bool               clear = true);
+                         bool               clear = true) ;
 
     void
     collect_audio_paths_recursive (std::string const &dir_path,
                          FileList          &collection,
-                         bool               clear = true);
+                         bool               clear = true) ;
 
     std::string
-    create_glob (const std::string &suffix);
+    create_glob (const std::string &suffix) ;
 
     bool
     compare_files (const std::string &file1,
-                   const std::string &file2);
+                   const std::string &file2) ;
 
     void
     copy_file (const std::string &source,
-               const std::string &dest);
+               const std::string &dest) ;
 
     void
     files_writable (const FileList &list,
-                    FileList       &non_writable);
+                    FileList       &non_writable) ;
+
+    std::string
+    normalize_path (const std::string&) ;
 
 
     gint64
