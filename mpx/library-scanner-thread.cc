@@ -343,8 +343,8 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                     m_Library->trackSetLocation( track, *i2 );
 
                     try{
-                        time_t mtime1 = Util::get_file_mtime(*i2);
-                        time_t mtime2 = get_track_mtime( track ) ;
+                        gint64 mtime1 = Util::get_file_mtime(*i2);
+                        gint64 mtime2 = get_track_mtime( track ) ;
 
                         if( mtime2 != 0 && mtime1 == mtime2 ) 
                         {
@@ -352,7 +352,7 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback( std::string const& i3, g
                         }
                         else
                         {
-                            track[ATTRIBUTE_MTIME] = gint64( mtime1 );
+                            track[ATTRIBUTE_MTIME] = mtime1; 
 
                             if( !m_MetadataReaderTagLib->get( *i2, track ) )
                             {
@@ -484,8 +484,8 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
                 m_Library->trackSetLocation( track, *i2 );
 
                 try{
-                    time_t mtime1 = Util::get_file_mtime(*i2);
-                    time_t mtime2 = get_track_mtime( track ) ;
+                    gint64 mtime1 = Util::get_file_mtime(*i2);
+                    gint64 mtime2 = get_track_mtime( track ) ;
 
                     if( mtime2 != 0 && mtime1 == mtime2 ) 
                     {
@@ -493,7 +493,7 @@ MPX::LibraryScannerThread::on_scan_list_deep (Util::FileList const& list)
                     }
                     else
                     {
-                        track[ATTRIBUTE_MTIME] = gint64( mtime1 );
+                        track[ATTRIBUTE_MTIME] = mtime1; 
 
                         if( !m_MetadataReaderTagLib->get( *i2, track ) )
                         {
@@ -819,7 +819,7 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
           album_artist_id,
 
-          get<gint64>(track[ATTRIBUTE_MTIME].get())
+          gint64(time(NULL))
 
       );
 

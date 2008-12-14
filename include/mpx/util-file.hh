@@ -89,12 +89,12 @@ namespace MPX
                     FileList       &non_writable);
 
 
-    time_t
+    gint64
     get_file_ctime(
         const std::string& uri
     ) ;
 
-    time_t
+    gint64
     get_file_mtime(
         const std::string& uri
     ) ;

@@ -282,7 +282,7 @@ namespace MPX
           i.close ();
     }
 
-    time_t
+    gint64
     get_file_ctime(
         const std::string& uri
     )
@@ -292,7 +292,7 @@ namespace MPX
         return info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_CHANGED) ;
     }
 
-    time_t
+    gint64
     get_file_mtime(
         const std::string& uri
     )
