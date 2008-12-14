@@ -287,7 +287,7 @@ namespace MPX
         const std::string& uri
     )
     {
-        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(i3); 
+        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri); 
         Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_CHANGED, Gio::FILE_QUERY_INFO_NONE);
         return info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_CHANGED) ;
     }
@@ -297,7 +297,7 @@ namespace MPX
         const std::string& uri
     )
     {
-        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(i3); 
+        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri); 
         Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_MODIFIED, Gio::FILE_QUERY_INFO_NONE);
         return info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_MODIFIED) ;
     }
