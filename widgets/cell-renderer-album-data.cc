@@ -162,7 +162,12 @@ namespace MPX
         std::string release_info;
 
         if( !info->Genre.empty() )
-            release_info = (boost::format("%s (%s)") % info->Type % info->Genre).str();
+        {
+            if( !info->Type.empty() )
+                release_info = (boost::format("%s (%s)") % info->Type % info->Genre).str();
+            else
+                release_info = (boost::format("(%s)") % info->Genre).str();
+        }
         else
             release_info = info->Type;
  
