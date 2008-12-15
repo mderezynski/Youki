@@ -5,7 +5,7 @@
 #include "mpx/mpx-types.hh"
 #include <vector>
 #include <glib.h>
-
+#include "mpx/util-string.hh"
 #include "mpx/algorithm/aque.hh"
 
 namespace MPX
@@ -95,6 +95,39 @@ namespace AQE
                     } catch( boost::bad_lexical_cast ) {
                     }
                 }
+                else
+                if( v2[0] == "genre" )
+                {
+                    try{
+                            c.TargetValue = boost::lexical_cast<std::string>(v2[1]);
+                            c.TargetAttr = ATTRIBUTE_GENRE;
+                            c.MatchType = MT_FUZZY_EQUAL;
+                            constraints.push_back(c);
+                    } catch( boost::bad_lexical_cast ) {
+                    }
+                }
+                else
+                if( v2[0] == "artist" )
+                {
+                    try{
+                            c.TargetValue = boost::lexical_cast<std::string>(v2[1]);
+                            c.TargetAttr = ATTRIBUTE_ARTIST;
+                            c.MatchType = MT_FUZZY_EQUAL;
+                            constraints.push_back(c);
+                    } catch( boost::bad_lexical_cast ) {
+                    }
+                }
+                else
+                if( v2[0] == "album" )
+                {
+                    try{
+                            c.TargetValue = boost::lexical_cast<std::string>(v2[1]);
+                            c.TargetAttr = ATTRIBUTE_ALBUM;
+                            c.MatchType = MT_FUZZY_EQUAL;
+                            constraints.push_back(c);
+                    } catch( boost::bad_lexical_cast ) {
+                    }
+                }
             }
         }
 
@@ -135,10 +168,55 @@ namespace AQE
                 truthvalue = boost::get<T>(track[c.TargetAttr].get()) <= boost::get<T>(c.TargetValue.get());
                 break;
 
+            case MT_FUZZY_EQUAL:
+                break;
         }
 
         return truthvalue;
     }
+
+    template <>
+    bool
+    determine_match<std::string>(const Constraint_t& c, MPX::Track& track)
+    {
+        g_return_val_if_fail(track.has(c.TargetAttr), false);
+
+        bool truthvalue = false;
+
+        switch( c.MatchType )
+        {
+            case MT_EQUAL:
+                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) == boost::get<std::string>(c.TargetValue.get());
+                break;
+
+            case MT_NOT_EQUAL:
+                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) != boost::get<std::string>(c.TargetValue.get());
+                break;
+
+            case MT_GREATER_THAN:
+                truthvalue = boost::get<std::string>(track[c.TargetAttr].get())  > boost::get<std::string>(c.TargetValue.get());
+                break;
+
+            case MT_LESSER_THAN:
+                truthvalue = boost::get<std::string>(track[c.TargetAttr].get())  < boost::get<std::string>(c.TargetValue.get());
+                break;
+
+            case MT_GREATER_THAN_OR_EQUAL:
+                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) >= boost::get<std::string>(c.TargetValue.get());
+                break;
+
+            case MT_LESSER_THAN_OR_EQUAL:
+                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) <= boost::get<std::string>(c.TargetValue.get());
+                break;
+
+            case MT_FUZZY_EQUAL:
+                truthvalue = Util::match_keys(boost::get<std::string>(track[c.TargetAttr].get()), boost::get<std::string>(c.TargetValue.get()));
+                break;
+        }
+
+        return truthvalue;
+    }
+
 
     bool
     match_track( const Constraints_t& c, MPX::Track& track)

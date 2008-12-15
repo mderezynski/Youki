@@ -20,6 +20,7 @@ namespace AQE
         MT_LESSER_THAN,
         MT_GREATER_THAN_OR_EQUAL,
         MT_LESSER_THAN_OR_EQUAL,
+        MT_FUZZY_EQUAL
     };
 
     struct Constraint_t
@@ -37,6 +38,9 @@ namespace AQE
     template <typename T>
     bool
     determine_match (const Constraint_t& c, MPX::Track& track);
+
+    template <>
+    bool determine_match<std::string>(const Constraint_t& c, MPX::Track& track);
 
     bool
     match_track( const Constraints_t& c, MPX::Track& track);
