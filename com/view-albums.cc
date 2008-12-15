@@ -1071,6 +1071,7 @@ namespace MPX
                                 rt = determine_release_type(type);
                                 rt_string = _(get_release_string(rt).c_str());
 
+                                (*iter)[Columns.Text] = (boost::format("%s %s") % album % artist).str();
                                 (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
                                 (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
                                 (*iter)[Columns.RT] = rt; 
