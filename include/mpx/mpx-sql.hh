@@ -294,8 +294,11 @@ namespace MPX
         del (std::string const& name,
              AttributeV  const& attributes);
 
-        unsigned int
-        exec_sql (std::string const& sql);
+        int64_t
+        exec_sql( std::string const& sql );
+
+        int
+        exec_sql_nothrow( std::string const& sql );
 
         unsigned int
         exec_sql_bind_blob (std::string const& sql, Blob const& b);
@@ -303,12 +306,18 @@ namespace MPX
         int64_t
         last_insert_rowid ()
         {
-          return sqlite3_last_insert_rowid (m_sqlite);
+          return sqlite3_last_insert_rowid( m_sqlite ) ;
         }
 
       private:
 
         typedef sqlite3_stmt* SQLite3Statement;
+
+        void
+        THROW_SQL_ERROR(
+            const std::string&  sql_,
+            int                 status
+        ) const;
 
         std::string
         list_columns_simple (ColumnV const& columns) const;

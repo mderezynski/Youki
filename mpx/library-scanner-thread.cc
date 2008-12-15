@@ -983,49 +983,58 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
   std::string column_values;
   column_values.reserve (0x400);
 
-  try{
-      gint64 artist_j = get_track_artist_id (track);
-      gint64 album_j = get_album_id (track, get_album_artist_id (track));
+  gint64 artist_j = get_track_artist_id (track);
+  gint64 album_j = get_album_id (track, get_album_artist_id (track));
 
-      for (unsigned int n = 0; n < N_ATTRIBUTES_INT; ++n)
+  for (unsigned int n = 0; n < N_ATTRIBUTES_INT; ++n)
+  {
+      if( track.has(n) )
       {
-          if( track.has(n) )
+          switch( attrs[n].type )
           {
-              switch( attrs[n].type )
-              {
-                case VALUE_TYPE_STRING:
-                  column_values += mprintf ("'%q'", get <std::string> (track[n].get()).c_str());
-                  break;
+            case VALUE_TYPE_STRING:
+              column_values += mprintf ("'%q'", get <std::string> (track[n].get()).c_str());
+              break;
 
-                case VALUE_TYPE_INT:
-                  column_values += mprintf ("'%lld'", get <gint64> (track[n].get()));
-                  break;
+            case VALUE_TYPE_INT:
+              column_values += mprintf ("'%lld'", get <gint64> (track[n].get()));
+              break;
 
-                case VALUE_TYPE_REAL:
-                  column_values += mprintf ("'%f'", get <double> (track[n].get()));
-                  break;
-              }
-
-              column_names += std::string (attrs[n].id) + ",";
-              column_values += ",";
+            case VALUE_TYPE_REAL:
+              column_values += mprintf ("'%f'", get <double> (track[n].get()));
+              break;
           }
-      }
 
-      column_names += "artist_j, album_j";
-      column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
-      m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
-      track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->last_insert_rowid ();
-      pthreaddata->NewTrack.emit( track, album_j, artist_j ); 
+          column_names += std::string (attrs[n].id) + ",";
+          column_values += ",";
+      }
   }
-  catch (SqlConstraintError & cxe)
+
+  column_names += "artist_j, album_j";
+  column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
+
+  if( m_SQL->exec_sql( mprintf(
+        track_set_f,
+        column_names.c_str(),
+        column_values.c_str()
+    )) == SQLITE_CONSTRAINT 
+  )
   {
       gint64 id = get_track_id (track);
+
       if( id != 0 )
       {
-          m_SQL->exec_sql ((delete_track_f % id).str()); 
-          m_SQL->exec_sql (mprintf (track_set_f, column_names.c_str(), column_values.c_str()));
-          gint64 new_id = m_SQL->last_insert_rowid ();
-          m_SQL->exec_sql (mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));
+          m_SQL->exec_sql((delete_track_f % id).str()); 
+
+          gint64 new_id = m_SQL->exec_sql( mprintf( 
+                track_set_f,
+                column_names.c_str(),
+                column_values.c_str()
+          ));
+
+          m_SQL->exec_sql(mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));
+
+          pthreaddata->EntityUpdated.emit( id, ENTITY_TRACK ) ; 
           return SCAN_RESULT_UPDATE ;
       }
       else
@@ -1034,11 +1043,10 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
           throw ScanError(_("Got track ID 0 for internal track! Highly supicious! Please report!"));
       }
   }
-  catch (SqlExceptionC & cxe)
-  {
-      g_message("%s: SQL Error: %s", G_STRFUNC, cxe.what());
-      throw ScanError(cxe.what());
-  }
+
+  track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->last_insert_rowid ();
+  pthreaddata->NewTrack.emit( track, album_j, artist_j ); 
+
 
   return SCAN_RESULT_OK ; 
 }
@@ -1254,7 +1262,7 @@ MPX::LibraryScannerThread::on_update_statistics()
             pthreaddata->Message.emit((boost::format(_("Statistics Update: Album Genre: %lld")) % std::distance(rows_albums.begin(), i)).str());
 
             m_SQL->exec_sql(mprintf("UPDATE album SET album_genre = '%q' WHERE id = '%lld'", get<std::string>(rows[0]["genre"]).c_str(), get<gint64>((*i)["album_j"])));
-            pthreaddata->EntityUpdated( get<gint64>((*i)["album_j"]) , ENTITY_ARTIST );
+            pthreaddata->EntityUpdated( get<gint64>((*i)["album_j"]) , ENTITY_ALBUM );
         }
     }
 
