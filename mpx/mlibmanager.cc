@@ -682,71 +682,110 @@ namespace MPX
     void
     MLibManager::rescan_all_volumes(bool deep)
     {
-          m_VboxInner->set_sensitive(false);
+        m_VboxInner->set_sensitive(false);
 
 #ifdef HAVE_HAL
-          if( mcs->key_get<bool>("library","use-hal"))
-          {
-                Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
-                for(Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); ++iter)
-                {
-                      Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
+        if( mcs->key_get<bool>("library","use-hal"))
+        {
+              Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
+              for(Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); ++iter)
+              {
+                    Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
 
-                      std::string VolumeUDI     = Vol->get_udi();
-                      std::string DeviceUDI     = Vol->get_storage_device_udi();
-                      std::string MountPoint    = Vol->get_mount_point();
+                    std::string VolumeUDI     = Vol->get_udi();
+                    std::string DeviceUDI     = Vol->get_storage_device_udi();
+                    std::string MountPoint    = Vol->get_mount_point();
 
-                      reread_paths:
+                    reread_paths:
 
-                      SQL::RowV v;
-                      m_Library.getSQL(
-                              v,
-                              (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
-                               % DeviceUDI
-                               % VolumeUDI
-                               ).str()
-                      );
+                    SQL::RowV v;
+                    m_Library.getSQL(
+                            v,
+                            (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
+                             % DeviceUDI
+                             % VolumeUDI
+                             ).str()
+                    );
 
-                      StrSetT ManagedPaths; 
-                      for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
-                      {
-                          ManagedPaths.insert(build_filename(MountPoint, boost::get<std::string>((*i)["insert_path"])));
+                    StrSetT ManagedPaths; 
+                    for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                    {
+                        ManagedPaths.insert(build_filename(MountPoint, boost::get<std::string>((*i)["insert_path"])));
+                    }
+
+                    if(!ManagedPaths.empty())
+                    {
+                        StrV v;
+                        for(StrSetT::const_iterator i = ManagedPaths.begin(); i != ManagedPaths.end(); ++i)
+                        {
+                            PathTestResult r = path_test(*i);
+                            switch( r )
+                            {
+                                case IS_PRESENT:
+                                case IGNORED:
+                                    v.push_back(filename_to_uri(*i));
+                                    break;
+
+                                case RELOCATED:
+                                case DELETED:
+                                    goto reread_paths;
+                            }
                       }
-
-                      if(!ManagedPaths.empty())
-                      {
-                          StrV v;
-                          for(StrSetT::const_iterator i = ManagedPaths.begin(); i != ManagedPaths.end(); ++i)
-                          {
-                              PathTestResult r = path_test(*i);
-                              switch( r )
-                              {
-                                  case IS_PRESENT:
-                                  case IGNORED:
-                                      v.push_back(filename_to_uri(*i));
-                                      break;
-
-                                  case RELOCATED:
-                                  case DELETED:
-                                      goto reread_paths;
-                              }
-                        }
-                        m_Library.initScan(v, deep);                  
-                      }
-                }
-          }
-          else
+                      m_Library.initScan(v, deep);                  
+                    }
+              }
+        }
+        else
 #endif
-          {
-          }
+        {
+        }
 
-          m_VboxInner->set_sensitive(true);
+        m_VboxInner->set_sensitive(true);
     }
 
     void
     MLibManager::on_mlib_remove_dupes ()
     {
-        m_Library.removeDupes();
+        SQL::RowV rows;
+        m_Library.getSQL(
+            rows,
+            "SELECT id FROM (track NATURAL JOIN (SELECT artist, album, title, track FROM track GROUP BY artist, album, title, track HAVING count(title) > 1)) EXCEPT SELECT id FROM track GROUP BY artist, album, title, track HAVING count(title) > 1" 
+        );
+
+        if( rows.empty() )
+        {
+                MessageDialog dialog (
+                      *this
+                    , _("No duplicates have been found. Click OK to close this dialog.") 
+                    , false
+                    , MESSAGE_INFO
+                    , BUTTONS_OK
+                    , true
+                );
+
+                dialog.set_title(_("AudioSource: Remove Duplicates"));
+                dialog.run();
+                return;
+        }
+
+        MessageDialog dialog (
+              *this
+            , (boost::format(_("Please confirm the deletion of <b>%lld</b> tracks from the Library <b>and the filesystem</b>. <i>This can not be undone!</i>\n\nClick OK to proceed.")) % gint64(rows.size())).str()
+            , true
+            , MESSAGE_WARNING
+            , BUTTONS_OK_CANCEL
+            , true
+        );
+
+        dialog.set_title(_("AudioSource: Remove Duplicates"));
+
+        int response = dialog.run();
+        dialog.hide();
+    
+        if( response == GTK_RESPONSE_OK )
+        {
+            m_Library.removeDupes();
+        }
     }
 
 #ifdef HAVE_HAL

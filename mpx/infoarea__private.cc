@@ -427,8 +427,8 @@ namespace MPX
 
     Gtk::Allocation allocation = get_allocation ();
 
-    int x1 = cover_anim_area_x0 /*+ cover_anim_area_width + 8*/;
-    int width = (allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS - RIGHT_MARGIN) - 8 /*- cover_anim_area_width*/;
+    int x1 = cover_anim_area_x0 + cover_anim_area_width + 8;
+    int width = (allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS - RIGHT_MARGIN) - 8 - cover_anim_area_width;
 
     for( int n = 0; n < 3; ++n )
     {
