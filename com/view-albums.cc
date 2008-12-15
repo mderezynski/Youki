@@ -993,6 +993,7 @@ namespace MPX
                                 if(r.count("album_genre"))
                                 {
                                         genre = get<std::string>(r["album_genre"]);
+                                        track[ATTRIBUTE_GENRE] = genre;
                                 }
 
                                 if(r.count("album_playscore"))
