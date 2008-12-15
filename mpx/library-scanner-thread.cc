@@ -1231,6 +1231,8 @@ MPX::LibraryScannerThread::on_update_statistics()
 {
     ThreadData * pthreaddata = m_ThreadData.get();
 
+    pthreaddata->ScanStart.emit();
+
     RowV rows_albums;
     m_SQL->get( 
         rows_albums,
@@ -1249,10 +1251,15 @@ MPX::LibraryScannerThread::on_update_statistics()
 
         if( !rows.empty() )
         {
-            m_SQL->exec_sql((boost::format ("UPDATE album SET album_genre = '%s' WHERE id = '%lld'") % get<std::string>(rows[0]["genre"]) % get<gint64>((*i)["album_j"])).str());
+            pthreaddata->Message.emit((boost::format(_("Statistics Update: Album Genre: %lld")) % std::distance(rows_albums.begin(), i)).str());
+
+            m_SQL->exec_sql(mprintf("UPDATE album SET album_genre = '%q' WHERE id = '%lld'", get<std::string>(rows[0]["genre"]).c_str(), get<gint64>((*i)["album_j"])));
             pthreaddata->EntityUpdated( get<gint64>((*i)["album_j"]) , ENTITY_ARTIST );
         }
     }
+
+    pthreaddata->Message(_("Statistics Update: Done"));
+    pthreaddata->ScanEnd.emit();
 }
 
 

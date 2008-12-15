@@ -66,6 +66,8 @@ namespace
                 "         <menuitem action='action-mlib-rescan-deep'/>"
                 "         <menuitem action='action-mlib-vacuum'/>"
                 "         <separator/>"
+                "         <menuitem action='action-mlib-update-statistics'/>"
+                "         <separator/>"
                 "         <menuitem action='action-close'/>"
                 "   </menu>"
 #ifdef HAVE_HAL
@@ -167,25 +169,25 @@ namespace MPX
                 &MLibManager::on_volume_added
         ));
 
-        m_Library.scanner().signal_scan_start().connect(
+        m_Library.scanner()->connect().signal_scan_start().connect(
             sigc::mem_fun(
                 *this,
                 &MLibManager::scan_start
         ));
 
-        m_Library.scanner().signal_scan_end().connect(
+        m_Library.scanner()->connect().signal_scan_end().connect(
             sigc::mem_fun(
                 *this,
                 &MLibManager::scan_end
         ));
 
-        m_Library.scanner().signal_scan_summary().connect(
+        m_Library.scanner()->connect().signal_scan_summary().connect(
             sigc::mem_fun(
                 *this,
                 &MLibManager::scan_summary
         ));
 
-        m_Library.scanner().signal_scan_run().connect(
+        m_Library.scanner()->connect().signal_scan_run().connect(
             sigc::mem_fun(
                 *this,
                 &MLibManager::scan_run
@@ -377,6 +379,15 @@ namespace MPX
             sigc::mem_fun(
                 m_Library,
                 &Library::vacuum
+        ));
+
+        m_Actions->add( Action::create(
+            "action-mlib-update-statistics",
+            Gtk::Stock::FIND,
+            _("_Update Statistics & Additional Metadata")),
+            sigc::mem_fun(
+                *this,
+                &MLibManager::on_update_statistics
         ));
 
 #ifdef HAVE_HAL
@@ -1368,6 +1379,12 @@ namespace MPX
     MLibManager::on_vacuum_volume ()
     {
         m_Library.vacuumVolume( m_DeviceUDI, m_VolumeUDI );
+    }
+
+    void
+    MLibManager::on_update_statistics()
+    {
+        m_Library.scanner()->update_statistics();
     }
 
     void

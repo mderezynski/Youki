@@ -5,6 +5,8 @@
 #include <glibmm.h>
 #include <gtkmm.h>
 
+#include <boost/format.hpp>
+
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/widgets/cell-renderer-album-data.hh"
 
@@ -154,15 +156,18 @@ namespace MPX
         pango_cairo_show_layout( cr->cobj(), layout[2]->gobj() );
 
         // Release Type
-        layout[3] = Pango::Layout::create( widget.get_pango_context() );
-        layout[3]->set_text( property_info_.get_value()->Type );
 
-        /*
-        list = Pango::AttrList();
-        attr = Pango::Attribute::create_attr_scale(1.1);
-        list.insert(attr);
-        layout[3]->set_attributes(list);
-        */
+        AlbumInfo_pt info = property_info_.get_value();      
+
+        std::string release_info;
+
+        if( !info->Genre.empty() )
+            release_info = (boost::format("%s (%s)") % info->Type % info->Genre).str();
+        else
+            release_info = info->Type;
+ 
+        layout[3] = Pango::Layout::create( widget.get_pango_context() );
+        layout[3]->set_text( release_info ); 
 
         layout[3]->get_pixel_size( text_width[3], text_height[3] );
 

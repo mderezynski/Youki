@@ -308,6 +308,9 @@ namespace MPX
             on_volume_vacuum_volume() ;
 #endif
 
+            void
+            on_update_statistics();
+
             // MCS Callbacks
 
 #ifdef HAVE_HAL
@@ -323,27 +326,27 @@ namespace MPX
 
     // GIO import stuff
 
-        void
-        on_import_folder();
+            void
+            on_import_folder();
 
-        void
-        on_import_share();
+            void
+            on_import_share();
 
-        void
-        mount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
+            void
+            mount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
 
-        void
-        unmount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
+            void
+            unmount_ready_callback (Glib::RefPtr<Gio::AsyncResult>&);
 
-        void
-        ask_password_cb (const Glib::ustring& message,
-                         const Glib::ustring& default_user,
-                         const Glib::ustring& default_domain,
-                         Gio::AskPasswordFlags flags);
+            void
+            ask_password_cb (const Glib::ustring& message,
+                             const Glib::ustring& default_user,
+                             const Glib::ustring& default_domain,
+                             Gio::AskPasswordFlags flags);
 
-        Glib::RefPtr<Gio::File> m_MountFile;
-        Glib::RefPtr<Gio::MountOperation> m_MountOperation;
-        Glib::ustring m_Share, m_ShareName;
+            Glib::RefPtr<Gio::File> m_MountFile;
+            Glib::RefPtr<Gio::MountOperation> m_MountOperation;
+            Glib::ustring m_Share, m_ShareName;
     } ;
 }
 #endif

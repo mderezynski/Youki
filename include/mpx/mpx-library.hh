@@ -76,10 +76,10 @@ namespace MPX
                 return m_SQL;
             }
 
-            LibraryScannerThread::ScannerConnectable&
+            boost::shared_ptr<LibraryScannerThread>
             scanner()
             {
-                return m_ScannerThread->connect() ;
+                return m_ScannerThread;
             }
 
             void
@@ -398,18 +398,15 @@ namespace MPX
 
         private:
 
-            Service::Manager        & m_Services;
-
+            Service::Manager                        & m_Services;
 #ifdef HAVE_HAL
-            HAL                     & m_HAL;
+            HAL                                     & m_HAL;
 #endif //HAVE_HAL 
-
-            Covers                  & m_Covers;
-            MetadataReaderTagLib    & m_MetadataReaderTagLib ;
-            SQL::SQLDB              * m_SQL;
-            LibraryScannerThread    * m_ScannerThread;
-
-            gint64                    m_Flags;
+            Covers                                  & m_Covers;
+            MetadataReaderTagLib                    & m_MetadataReaderTagLib ;
+            SQL::SQLDB                              * m_SQL;
+            boost::shared_ptr<LibraryScannerThread>   m_ScannerThread;
+            gint64                                    m_Flags;
 
         protected:
 

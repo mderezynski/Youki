@@ -80,6 +80,7 @@ namespace MPX
             Gtk::TreeModelColumn<gint64>                                InsertDate;
             Gtk::TreeModelColumn<gint64>                                Rating;
             Gtk::TreeModelColumn<double>                                PlayScore;
+            Gtk::TreeModelColumn<std::string>                           Genre;
 
             Gtk::TreeModelColumn<Glib::ustring>                         TrackTitle;
             Gtk::TreeModelColumn<Glib::ustring>                         TrackArtist;
@@ -118,6 +119,7 @@ namespace MPX
                     add (InsertDate);
                     add (Rating);
                     add (PlayScore);
+                    add (Genre);
 
                     add (TrackTitle);
                     add (TrackArtist);

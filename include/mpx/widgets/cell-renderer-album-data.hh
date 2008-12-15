@@ -18,6 +18,7 @@ namespace MPX
         std::string Artist;
         std::string Release;
         std::string Type;
+        std::string Genre;
     };
 
     typedef boost::shared_ptr<AlbumInfo> AlbumInfo_pt;

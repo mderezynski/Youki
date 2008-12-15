@@ -223,7 +223,7 @@ namespace MPX
 
                 mcs->key_set<bool>("library","use-hal", bool(m_Flags & F_USING_HAL));
 
-                m_ScannerThread = (
+                m_ScannerThread = boost::shared_ptr<LibraryScannerThread>(
                         new LibraryScannerThread(
                             this,
                             m_Flags

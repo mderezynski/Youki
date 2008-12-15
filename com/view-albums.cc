@@ -974,6 +974,7 @@ namespace MPX
                                 std::string artist;
                                 std::string type;
                                 std::string rt_string;
+                                std::string genre;
                                 double playscore = 0;
                                 gint64 rating = 0;
                                 ReleaseType rt;
@@ -988,6 +989,11 @@ namespace MPX
                                 {
                                 }
                                 (*iter)[Columns.Rating] = rating;
+
+                                if(r.count("album_genre"))
+                                {
+                                        genre = get<std::string>(r["album_genre"]);
+                                }
 
                                 if(r.count("album_playscore"))
                                 {
@@ -1067,18 +1073,20 @@ namespace MPX
                                 trim(country);
                                 trim(year);
                                 trim(type);
+                                trim(genre);
 
                                 rt = determine_release_type(type);
                                 rt_string = _(get_release_string(rt).c_str());
 
+                                (*iter)[Columns.RT] = rt; 
                                 (*iter)[Columns.Text] = (boost::format("%s %s") % album % artist).str();
                                 (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
                                 (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
-                                (*iter)[Columns.RT] = rt; 
                                 (*iter)[Columns.PlayScore] = playscore; 
                                 (*iter)[Columns.AlbumTrack] = track;
                                 (*iter)[Columns.Album] = album;
                                 (*iter)[Columns.Artist] = artist;
+                                (*iter)[Columns.Genre] = genre;
 
                                 AlbumInfo_pt renderdata (new AlbumInfo);
 
@@ -1086,6 +1094,7 @@ namespace MPX
                                 renderdata->Artist = artist;
                                 renderdata->Release = (boost::format("%s %s") % country % year).str();
                                 renderdata->Type = rt_string;
+                                renderdata->Genre = genre;
 
                                 (*iter)[Columns.RenderData] = renderdata;
                         } 

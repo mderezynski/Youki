@@ -483,19 +483,19 @@ namespace MPX
 
         boost::shared_ptr<Library> l = services->get<Library>("mpx-service-library");
 
-        l->scanner().signal_scan_start().connect(
+        l->scanner()->connect().signal_scan_start().connect(
             sigc::mem_fun(
                 *this,
                 &Preferences::on_library_scan_start
         ));
 
-        l->scanner().signal_scan_end().connect(
+        l->scanner()->connect().signal_scan_end().connect(
             sigc::mem_fun(
                 *this,
                 &Preferences::on_library_scan_end
         ));
 
-        l->scanner().signal_scan_summary().connect(
+        l->scanner()->connect().signal_scan_summary().connect(
             sigc::mem_fun(
                 *this,
                 &Preferences::on_library_scan_summary
