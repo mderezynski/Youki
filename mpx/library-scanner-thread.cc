@@ -152,6 +152,7 @@ struct MPX::LibraryScannerThread::ThreadData
     LibraryScannerThread::SignalNewAlbum_t          NewAlbum ;
     LibraryScannerThread::SignalNewArtist_t         NewArtist ;
     LibraryScannerThread::SignalNewTrack_t          NewTrack ;
+    LibraryScannerThread::SignalTrackUpdated_t      TrackUpdated ;
     LibraryScannerThread::SignalEntityDeleted_t     EntityDeleted ;
     LibraryScannerThread::SignalEntityUpdated_t     EntityUpdated ;
     LibraryScannerThread::SignalCacheCover_t        CacheCover ;
@@ -181,6 +182,7 @@ MPX::LibraryScannerThread::LibraryScannerThread(
 , signal_new_album(*this, m_ThreadData, &ThreadData::NewAlbum)
 , signal_new_artist(*this, m_ThreadData, &ThreadData::NewArtist)
 , signal_new_track(*this, m_ThreadData, &ThreadData::NewTrack)
+, signal_track_updated(*this, m_ThreadData, &ThreadData::TrackUpdated)
 , signal_entity_deleted(*this, m_ThreadData, &ThreadData::EntityDeleted)
 , signal_entity_updated(*this, m_ThreadData, &ThreadData::EntityUpdated)
 , signal_cache_cover(*this, m_ThreadData, &ThreadData::CacheCover)
@@ -201,6 +203,7 @@ MPX::LibraryScannerThread::LibraryScannerThread(
                 , signal_new_album
                 , signal_new_artist
                 , signal_new_track
+                , signal_track_updated
                 , signal_entity_deleted
                 , signal_entity_updated
                 , signal_cache_cover
@@ -1013,41 +1016,51 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
   column_names += "artist_j, album_j";
   column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
 
-  if( m_SQL->exec_sql( mprintf(
+  try{
+    m_SQL->exec_sql_nothrow( mprintf(
         track_set_f,
         column_names.c_str(),
         column_values.c_str()
-    )) == SQLITE_CONSTRAINT 
-  )
+    ));
+  } catch( SqlConstraintError & cxe )
   {
-      gint64 id = get_track_id (track);
+    gint64 id = get_track_id (track);
 
-      if( id != 0 )
-      {
-          m_SQL->exec_sql((delete_track_f % id).str()); 
+    if( id != 0 )
+    {
+        m_SQL->exec_sql((delete_track_f % id).str()); 
 
-          gint64 new_id = m_SQL->exec_sql( mprintf( 
-                track_set_f,
-                column_names.c_str(),
-                column_values.c_str()
-          ));
+        try{
+                gint64 new_id = m_SQL->exec_sql( mprintf( 
+                      track_set_f,
+                      column_names.c_str(),
+                      column_values.c_str()
+                ));
 
-          m_SQL->exec_sql(mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));
+                m_SQL->exec_sql(mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));
 
-          pthreaddata->EntityUpdated.emit( id, ENTITY_TRACK ) ; 
-          return SCAN_RESULT_UPDATE ;
-      }
-      else
-      {
-          g_warning("%s: Got track ID 0 for internal track! Highly supicious! Please report!", G_STRLOC);
-          throw ScanError(_("Got track ID 0 for internal track! Highly supicious! Please report!"));
-      }
+                track[ATTRIBUTE_MPX_TRACK_ID] = id; 
+                pthreaddata->TrackUpdated.emit( track, album_j, artist_j ) ; 
+                return SCAN_RESULT_UPDATE ;
+
+        } catch( SqlConstraintError & cxe )
+        {
+                throw ScanError((boost::format(_("Constraint error while trying to set new track data!: '%s'")) % cxe.what()).str());
+        }
+    }
+    else
+    {
+        g_warning("%s: Got track ID 0 for internal track! Highly supicious! Please report!", G_STRLOC);
+        throw ScanError(_("Got track ID 0 for internal track! Highly supicious! Please report!"));
+    }
+  }
+  catch( SqlExceptionC & cxe )
+  {
+        throw ScanError((boost::format(_("SQL error while inserting/updating track: '%s'")) % cxe.what()).str());
   }
 
   track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->last_insert_rowid ();
   pthreaddata->NewTrack.emit( track, album_j, artist_j ); 
-
-
   return SCAN_RESULT_OK ; 
 }
 
@@ -1132,6 +1145,8 @@ MPX::LibraryScannerThread::do_remove_dangling ()
                   m_SQL->exec_sql((delete_f % "album_artist" % (*i)).str());
                   pthreaddata->EntityDeleted( *i , ENTITY_ALBUM_ARTIST );
   }
+
+  pthreaddata->Message.emit(_("Cleanup Done."));
 }
 
 void

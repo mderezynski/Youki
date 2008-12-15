@@ -247,6 +247,12 @@ namespace MPX
                                 &AlbumTreeView::on_track_deleted
                         ));
 
+                        m_Lib.get().signal_track_updated().connect(
+                            sigc::mem_fun(
+                                *this,
+                                &AlbumTreeView::on_track_updated
+                        ));
+
                         m_Lib.get().signal_album_updated().connect(
                             sigc::mem_fun(
                                 *this,
@@ -1251,6 +1257,25 @@ namespace MPX
                                 {
                                     on_album_deleted( gint64((*parent)[Columns.Id]) );
                                 }
+                            }
+                        }
+
+                void
+                        AlbumTreeView::on_track_updated(
+                              Track&      t
+                            , gint64      id_album
+                            , gint64      id_artst
+                        )
+                        {
+                            IdIterMap::iterator i = m_Track_Iter_Map.find( get<gint64>(t[ATTRIBUTE_MPX_TRACK_ID].get()) );
+                            if( i != m_Track_Iter_Map.end() )
+                            {
+                                TreeIter parent = i->second->parent();
+
+                                AlbumsTreeStore->erase( i->second );
+                                m_Track_Iter_Map.erase( i );
+
+                                on_new_track( t, id_album, id_artst );
                             }
                         }
 

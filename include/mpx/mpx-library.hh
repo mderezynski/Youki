@@ -254,7 +254,9 @@ namespace MPX
 
 
 			typedef sigc::signal<void,
-                gint64 /*id*/>                                  SignalTrackUpdated;
+                Track&,
+                gint64 /*album_id*/,
+                gint64 /*artist id*/>                           SignalTrackUpdated;
 
             typedef sigc::signal<void,
                 gint64 /*album id*/>                            SignalAlbumUpdated;
@@ -424,6 +426,9 @@ namespace MPX
 
             void
             on_entity_updated( gint64 , EntityType ) ;
+
+            void
+            on_track_updated( Track&, gint64, gint64 ) ;
 
             void
             on_message( const std::string& );

@@ -576,53 +576,6 @@ namespace MPX
       rows.push_back (row);
     }
 
-    unsigned int
-    SQLDB::exec_sql_bind_blob(
-        const std::string&  sql,
-        const Blob&         blob
-    )
-    {
-      int              status     = 0;
-      SQLite3Statement statement  = 0;
-      unsigned int     rows       = 0;
-
-      statement_prepare( statement, sql ) ;
-
-      sqlite3_bind_blob(
-          statement
-        , 1
-        , blob.data()
-        , blob.size()
-        , SQLITE_STATIC
-      );
-
-      for( ; status != SQLITE_DONE ; )
-      {
-          status = sqlite3_step (statement);
-
-          if( status == SQLITE_BUSY )
-            continue;
-
-          if( status == SQLITE_DONE )
-            break;
-
-          if( status == SQLITE_ROW )
-          {
-            rows++;
-            continue;
-          }
-
-          if( status != SQLITE_OK )
-          {
-            sqlite3_finalize (statement);
-            THROW_SQL_ERROR(sql, status);
-          }
-      }
-
-      sqlite3_finalize (statement);
-      return rows;
-    }
-
     int64_t 
     SQLDB::exec_sql(
       const std::string& sql
@@ -653,31 +606,6 @@ namespace MPX
 
       sqlite3_finalize( statement ) ;
       return last_insert_rowid();
-    }
-
-    int
-    SQLDB::exec_sql_nothrow(
-      const std::string& sql
-    )
-    {
-      SQLite3Statement statement  = 0;
-      int              status     = 0;
-
-      statement_prepare( statement, sql ) ;
-
-      for( ; status != SQLITE_DONE ; )
-      {
-          status = sqlite3_step( statement ) ;
-
-          if( status == SQLITE_BUSY )
-            continue;
-
-          if( status == SQLITE_DONE )
-            break;
-      }
-
-      sqlite3_finalize( statement ) ;
-      return status;
     }
 
     SQLDB::SQLDB (const SQLDB& other)

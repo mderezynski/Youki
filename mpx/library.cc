@@ -261,6 +261,12 @@ namespace MPX
                         &Library::on_entity_updated
                 ));
 
+                m_ScannerThread->connect().signal_track_updated().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &Library::on_track_updated
+                ));
+
                 m_ScannerThread->connect().signal_message().connect(
                     sigc::mem_fun(
                         *this, 
@@ -728,12 +734,12 @@ namespace MPX
                 {
                     switch( type )
                     {
-                        case ENTITY_TRACK:
-                            Signals.TrackUpdated.emit( id );
-                            break;
-
                         case ENTITY_ALBUM:
                             Signals.AlbumUpdated.emit( id );
+                            break;
+
+                        case ENTITY_TRACK:
+                            g_warning("%s: Got ENTITY_TRACK in on_entity_updated!", G_STRLOC);
                             break;
 
                         case ENTITY_ARTIST:
@@ -742,6 +748,17 @@ namespace MPX
 
                     }
                 }
+
+        void
+                Library::on_track_updated(
+                        Track&      t
+                      , gint64      id_album
+                      , gint64      id_artst
+                )
+                {
+                    Signals.TrackUpdated.emit( t, id_album, id_artst );
+                }
+
 
         void
                 Library::on_message(
@@ -795,8 +812,10 @@ namespace MPX
                                 {
                                         mm->push_message((boost::format(_("Removing duplicates: %s")) % filename_from_uri(uri)).str());
                                         try{
+/*
                                                 Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
                                                 if( file->remove() )
+*/
                                                 {
                                                         execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(rt["id"])).str()); 
                                                         Signals.TrackDeleted.emit( get<gint64>(rt["id"]) );
@@ -1114,7 +1133,19 @@ namespace MPX
                 Library::trackRated(gint64 id, int rating)
                 {
                         execSQL((boost::format ("UPDATE track SET rating = '%d' WHERE id = %lld") % rating % id).str());
-                        Signals.TrackUpdated.emit(id);
+
+                        RowV v;
+                        getSQL(
+                              v
+                            , (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % id).str()
+                        );
+
+                        Track t = sqlToTrack( v[0] );
+
+                        gint64 id_album = get<gint64>(v[0]["album_j"]);
+                        gint64 id_artst = get<gint64>(v[0]["album_artist_j"]);
+
+                        Signals.TrackUpdated.emit( t, id_album, id_artst );
                 }
 
         void	
@@ -1123,7 +1154,7 @@ namespace MPX
                         execSQL((boost::format ("UPDATE track SET pdate = '%lld' WHERE id = %lld") % gint64(time_) % id).str());
                         execSQL((boost::format ("UPDATE track SET pcount = ifnull(pcount,0) + 1 WHERE Id =%lld") % id).str());
 
-                        SQL::RowV v;
+                        RowV v;
 
                         getSQL(v, (boost::format ("SELECT SUM(pcount) AS count FROM track_view WHERE album_j = '%lld'") % album_id).str());
                         gint64 count1 = get<gint64>(v[0]["count"]);
@@ -1136,8 +1167,19 @@ namespace MPX
 
                         execSQL((boost::format ("UPDATE album SET album_playscore = '%f' WHERE album.id = '%lld'") % score % album_id).str());
 
-                        Signals.TrackUpdated.emit(id);
-                        Signals.AlbumUpdated.emit(album_id);
+                        v.clear(); 
+                        getSQL(
+                              v
+                            , (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % id).str()
+                        );
+
+                        Track t = sqlToTrack( v[0] );
+
+                        gint64 id_album = get<gint64>(v[0]["album_j"]);
+                        gint64 id_artst = get<gint64>(v[0]["album_artist_j"]);
+
+                        Signals.TrackUpdated.emit( t, id_album, id_artst );
+                        Signals.AlbumUpdated.emit( album_id ) ;
                 }
 
         void
@@ -1230,6 +1272,10 @@ namespace MPX
                             track[ATTRIBUTE_LOCATION] = get<std::string>(row["location"]);
                         }
 
+                        if( row.count("id") )
+                        {
+                            track[ATTRIBUTE_MPX_TRACK_ID] = get<gint64>(row["id"]);
+                        }
 
                         if( all_metadata )
                         {

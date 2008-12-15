@@ -278,16 +278,19 @@ namespace MPX
                                     album_list_load ();
 
                             virtual void
-                                    on_album_updated(gint64);
-
-                            virtual void
                                     on_new_album(gint64);
 
                             virtual void
                                     on_new_track(Track&, gint64, gint64);
 
                             virtual void
+                                    on_track_updated(Track&, gint64, gint64);
+
+                            virtual void
                                     on_album_deleted(gint64);
+
+                            virtual void
+                                    on_album_updated(gint64);
 
                             virtual void
                                     on_track_deleted(gint64);
