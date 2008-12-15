@@ -95,7 +95,7 @@ namespace MPX
         }
         else
         {
-            cr->set_source_rgba(.4, .4, .4, 1.);
+            cr->set_source_rgba(.25, .25, .25, 1.);
             cr->fill ();
         }
 

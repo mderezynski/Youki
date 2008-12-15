@@ -153,6 +153,7 @@ struct MPX::LibraryScannerThread::ThreadData
     LibraryScannerThread::SignalNewArtist_t         NewArtist ;
     LibraryScannerThread::SignalNewTrack_t          NewTrack ;
     LibraryScannerThread::SignalEntityDeleted_t     EntityDeleted ;
+    LibraryScannerThread::SignalEntityUpdated_t     EntityUpdated ;
     LibraryScannerThread::SignalCacheCover_t        CacheCover ;
     LibraryScannerThread::SignalReload_t            Reload ;
     LibraryScannerThread::SignalMessage_t           Message ;
@@ -172,6 +173,7 @@ MPX::LibraryScannerThread::LibraryScannerThread(
 #ifdef HAVE_HAL
 , vacuum_volume(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum_volume))
 #endif // HAVE_HAL
+, update_statistics(sigc::mem_fun(*this, &LibraryScannerThread::on_update_statistics))
 , signal_scan_start(*this, m_ThreadData, &ThreadData::ScanStart)
 , signal_scan_run(*this, m_ThreadData, &ThreadData::ScanRun)
 , signal_scan_end(*this, m_ThreadData, &ThreadData::ScanEnd)
@@ -180,6 +182,7 @@ MPX::LibraryScannerThread::LibraryScannerThread(
 , signal_new_artist(*this, m_ThreadData, &ThreadData::NewArtist)
 , signal_new_track(*this, m_ThreadData, &ThreadData::NewTrack)
 , signal_entity_deleted(*this, m_ThreadData, &ThreadData::EntityDeleted)
+, signal_entity_updated(*this, m_ThreadData, &ThreadData::EntityUpdated)
 , signal_cache_cover(*this, m_ThreadData, &ThreadData::CacheCover)
 , signal_reload(*this, m_ThreadData, &ThreadData::Reload)
 , signal_message(*this, m_ThreadData, &ThreadData::Message)
@@ -199,6 +202,7 @@ MPX::LibraryScannerThread::LibraryScannerThread(
                 , signal_new_artist
                 , signal_new_track
                 , signal_entity_deleted
+                , signal_entity_updated
                 , signal_cache_cover
                 , signal_reload
                 , signal_message
@@ -1221,5 +1225,36 @@ MPX::LibraryScannerThread::on_vacuum_volume(
   pthreaddata->Message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
   pthreaddata->ScanEnd.emit();
 }
+
+void
+MPX::LibraryScannerThread::on_update_statistics()
+{
+    ThreadData * pthreaddata = m_ThreadData.get();
+
+    RowV rows_albums;
+    m_SQL->get( 
+        rows_albums,
+        "SELECT DISTINCT album_j FROM track"
+    );
+
+    for( RowV::iterator i = rows_albums.begin(); i != rows_albums.end(); ++i )
+    {
+        static boost::format select_f ("SELECT DISTINCT genre FROM track WHERE album_j = %lld AND genre IS NOT NULL AND genre != ''"); 
+
+        RowV rows;
+        m_SQL->get(
+            rows,
+            (select_f % get<gint64>((*i)["album_j"])).str()
+        ); 
+
+        if( !rows.empty() )
+        {
+            m_SQL->exec_sql((boost::format ("UPDATE album SET album_genre = '%s' WHERE id = '%lld'") % get<std::string>(rows[0]["genre"]) % get<gint64>((*i)["album_j"])).str());
+            pthreaddata->EntityUpdated( get<gint64>((*i)["album_j"]) , ENTITY_ARTIST );
+        }
+    }
+}
+
+
 
 #endif // HAVE_HAL

@@ -255,6 +255,12 @@ namespace MPX
                         &Library::on_entity_deleted
                 ));
 
+                m_ScannerThread->connect().signal_entity_updated().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &Library::on_entity_updated
+                ));
+
                 m_ScannerThread->connect().signal_message().connect(
                     sigc::mem_fun(
                         *this, 
@@ -514,8 +520,8 @@ namespace MPX
                                 const std::string& insert_path = Util::normalize_path(get<std::string>((*i)["insert_path"]));
                                 const std::string& mount_point = m_HAL.get_mount_point_for_volume(volume_udi, device_udi) ;
 
-                                std::string insert_path_new = filename_to_uri( build_filename(mount_point, insert_path) );
-
+                                std::string insert_path_new = filename_to_uri( build_filename( Util::normalize_path(mount_point), insert_path ));
+    
                                 execSQL(
                                     mprintf(
                                           "UPDATE track SET location = '%q', insert_path = '%q', hal_device_udi = NULL, hal_volume_udi = NULL, hal_vrp = NULL WHERE id ='%lld'"
@@ -559,7 +565,7 @@ namespace MPX
                                         const std::string& insert_path = Util::normalize_path(get<std::string>((*i)["insert_path"]));
                                         const HAL::Volume& volume( m_HAL.get_volume_for_uri( insert_path )); 
                                         const std::string& insert_path_new = 
-                                                filename_from_uri( insert_path ).substr( volume.mount_point.length() ) ;
+                                                Util::normalize_path(filename_from_uri( Util::normalize_path(insert_path) ).substr( volume.mount_point.length() ));
 
                                         execSQL(
                                             mprintf(
@@ -715,6 +721,29 @@ namespace MPX
                 }
 
         void
+                Library::on_entity_updated(
+                      gint64      id
+                    , EntityType  type
+                )
+                {
+                    switch( type )
+                    {
+                        case ENTITY_TRACK:
+                            Signals.TrackUpdated.emit( id );
+                            break;
+
+                        case ENTITY_ALBUM:
+                            Signals.AlbumUpdated.emit( id );
+                            break;
+
+                        case ENTITY_ARTIST:
+                        case ENTITY_ALBUM_ARTIST:
+                            break;
+
+                    }
+                }
+
+        void
                 Library::on_message(
                     const std::string& msg
                 )
@@ -767,7 +796,6 @@ namespace MPX
                                         mm->push_message((boost::format(_("Removing duplicates: %s")) % filename_from_uri(uri)).str());
                                         try{
                                                 Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
-
                                                 if( file->remove() )
                                                 {
                                                         execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(rt["id"])).str()); 
@@ -805,8 +833,6 @@ namespace MPX
                         % Util::normalize_path( insert_path )
                     ).str();
     
-                    g_message("%s: SQL: '%s'", G_STRLOC, sql.c_str());
-
                     getSQL(
                           rows
                         , sql
@@ -965,7 +991,7 @@ namespace MPX
                                         const std::string& vrp         = get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()) ;
                                         const std::string& mount_point = m_HAL.get_mount_point_for_volume(volume_udi, device_udi) ;
 
-                                        return filename_to_uri( build_filename(mount_point, vrp) );
+                                        return filename_to_uri( build_filename( Util::normalize_path(mount_point), vrp) );
 
                                 } catch (HAL::NoMountPathForVolumeError & cxe)
                                 {
@@ -1483,21 +1509,6 @@ namespace MPX
                         }
                         g_assert(tag_id != 0);
                         return tag_id;
-                }
-
-        void
-                Library::set_mean_genre_for_album (gint64 id)
-                {
-                        static boost::format select_f ("SELECT DISTINCT genre FROM track WHERE album_j = %lld AND genre IS NOT NULL"); 
-                        RowV rows;
-                        m_SQL->get (rows, (select_f % id).str()); 
-
-                        if(rows.empty())
-                        {
-                                return;
-                        }
-
-                        execSQL((boost::format ("UPDATE album SET album_genre = '%s' WHERE id = '%lld'") % get<std::string>(rows[0]["genre"]) % id).str());
                 }
 
         void

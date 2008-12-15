@@ -96,6 +96,7 @@ namespace MPX
             typedef sigc::signal<void, gint64>                      SignalNewArtist_t ;
             typedef sigc::signal<void, Track&, gint64, gint64>      SignalNewTrack_t ;
             typedef sigc::signal<void, gint64, EntityType>          SignalEntityDeleted_t ;
+            typedef sigc::signal<void, gint64, EntityType>          SignalEntityUpdated_t ;
             typedef sigc::signal<void, const RequestQualifier&>     SignalCacheCover_t ;
             typedef sigc::signal<void>                              SignalReload_t ;
             typedef sigc::signal<void, const std::string&>          SignalMessage_t ;
@@ -108,6 +109,7 @@ namespace MPX
             typedef sigx::signal_f<SignalNewArtist_t>               signal_new_artist_x ;
             typedef sigx::signal_f<SignalNewTrack_t>                signal_new_track_x ;
             typedef sigx::signal_f<SignalEntityDeleted_t>           signal_entity_deleted_x ;
+            typedef sigx::signal_f<SignalEntityUpdated_t>           signal_entity_updated_x ;
             typedef sigx::signal_f<SignalCacheCover_t>              signal_cache_cover_x ;
             typedef sigx::signal_f<SignalReload_t>                  signal_reload_x ;
             typedef sigx::signal_f<SignalMessage_t>                 signal_message_x ;
@@ -118,6 +120,7 @@ namespace MPX
             sigx::request_f<Util::FileList const&>          scan_direct ;
             sigx::request_f<>                               scan_stop ;
             sigx::request_f<>                               vacuum ;
+            sigx::request_f<>                               update_statistics ;
 
 #ifdef HAVE_HAL
             sigx::request_f< const std::string&, const std::string& > vacuum_volume ;
@@ -131,6 +134,7 @@ namespace MPX
             signal_new_artist_x             signal_new_artist ;
             signal_new_track_x              signal_new_track ;
             signal_entity_deleted_x         signal_entity_deleted ;
+            signal_entity_updated_x         signal_entity_updated ;
             signal_cache_cover_x            signal_cache_cover ;
             signal_reload_x                 signal_reload ;
             signal_message_x                signal_message ;
@@ -146,6 +150,7 @@ namespace MPX
                     , signal_new_artist_x&            artist_x
                     , signal_new_track_x&             track_x
                     , signal_entity_deleted_x&        entity_deleted_x
+                    , signal_entity_updated_x&        entity_updated_x
                     , signal_cache_cover_x&           cover_x
                     , signal_reload_x&                reload_x
                     , signal_message_x&               message_x 
@@ -158,6 +163,7 @@ namespace MPX
                 , signal_new_artist(artist_x)
                 , signal_new_track(track_x)
                 , signal_entity_deleted(entity_deleted_x)
+                , signal_entity_updated(entity_updated_x)
                 , signal_cache_cover(cover_x)
                 , signal_reload(reload_x)
                 , signal_message(message_x)
@@ -172,6 +178,7 @@ namespace MPX
                 signal_new_artist_x         & signal_new_artist ;
                 signal_new_track_x          & signal_new_track ;
                 signal_entity_deleted_x     & signal_entity_deleted ;
+                signal_entity_updated_x     & signal_entity_updated ;
                 signal_cache_cover_x        & signal_cache_cover ;
                 signal_reload_x             & signal_reload ;
                 signal_message_x            & signal_message ;
@@ -213,6 +220,8 @@ namespace MPX
                 const std::string&
             );
 #endif // HAVE_HAL
+
+            void on_update_statistics ();
 
 /////////////////////////
 

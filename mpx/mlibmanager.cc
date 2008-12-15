@@ -896,8 +896,6 @@ namespace MPX
         const std::string& path
     )
     {
-        g_message("%s: Path: '%s'", G_STRLOC, path.c_str());
-
         if( Glib::file_test(path, Glib::FILE_TEST_EXISTS) )
         {
           return IS_PRESENT;
@@ -1443,7 +1441,6 @@ namespace MPX
                             d->hide();
                             StrV v;
                             v.push_back(uri);
-                            g_message("%s: initializing scan for: %s", G_STRLOC, uri.c_str());
                             m_Library.initScan(v);
                     }
             }

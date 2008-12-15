@@ -413,9 +413,6 @@ namespace MPX
 
         protected:
 
-			void
-			set_mean_genre_for_album( gint64 ) ;
-
             void
             on_new_album( gint64 ) ;
 
@@ -427,6 +424,9 @@ namespace MPX
 
             void
             on_entity_deleted( gint64 , EntityType ) ;
+
+            void
+            on_entity_updated( gint64 , EntityType ) ;
 
             void
             on_message( const std::string& );

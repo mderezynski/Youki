@@ -307,7 +307,7 @@ namespace MPX
         const std::string& path
     )
     {
-        if( path[path.size()-1] == '/' )
+        if( path.size() > 1 && path[path.size()-1] == '/' )
             return path.substr( 0, path.size() - 1 );
         else
             return path;
