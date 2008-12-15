@@ -386,7 +386,8 @@ MPX::LibraryScannerThread::insert_file(
                         ++m_ScanSummary.FilesErroneous;
                         m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, _("Could not acquire metadata using taglib-gio")));
                     }
-                    else try{
+                    else
+                    try{
 
                         ScanResult status = insert( track, uri, insert_path_sql );
 
@@ -1017,7 +1018,7 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
   column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
 
   try{
-    m_SQL->exec_sql_nothrow( mprintf(
+    m_SQL->exec_sql( mprintf(
         track_set_f,
         column_names.c_str(),
         column_values.c_str()
@@ -1030,6 +1031,8 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
     {
         m_SQL->exec_sql((delete_track_f % id).str()); 
 
+        g_message("%s: Track Deleted: %lld", G_STRLOC, id);
+
         try{
                 gint64 new_id = m_SQL->exec_sql( mprintf( 
                       track_set_f,
@@ -1038,6 +1041,8 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
                 ));
 
                 m_SQL->exec_sql(mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));
+
+                g_message("%s: Track Updated: %lld", G_STRLOC, id);
 
                 track[ATTRIBUTE_MPX_TRACK_ID] = id; 
                 pthreaddata->TrackUpdated.emit( track, album_j, artist_j ) ; 
@@ -1060,6 +1065,7 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
   }
 
   track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->last_insert_rowid ();
+  g_message("%s: Track Inserted: %lld", G_STRLOC, get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()));
   pthreaddata->NewTrack.emit( track, album_j, artist_j ); 
   return SCAN_RESULT_OK ; 
 }
