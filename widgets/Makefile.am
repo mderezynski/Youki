@@ -20,6 +20,7 @@ libmpx_widgets_la_SOURCES = 			\
 										\
 		cairo-extensions.cc				\
 										\
+		cell-renderer-album-data.cc		\
 		cell-renderer-cairo-surface.cc	\
 		cell-renderer-count.cc			\
 		cell-renderer-expander.c		\

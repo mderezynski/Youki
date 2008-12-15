@@ -121,7 +121,7 @@ namespace MPX
                           clear_cover ();
                   }
 
-                  TextSet set (4);
+                  TextSet set (5);
                   parse_metadata( metadata, set ); 
 
                   if( m_text_cur )

@@ -1383,7 +1383,7 @@ SET_SEEK_POSITION:
 
                                                 if(m_Metadata.get().Image)
                                                 {
-                                                        m_InfoArea->set_cover (m.m_image.get()->scale_simple (72, 72, Gdk::INTERP_HYPER), m_NewTrack);
+                                                        m_InfoArea->set_cover (m.m_image.get()->scale_simple( 80, 80, Gdk::INTERP_BILINEAR), m_NewTrack );
 
                                                         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
                                                         g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_COVERART], 0);
@@ -1951,7 +1951,7 @@ SET_SEEK_POSITION:
                     {
                         Glib::RefPtr<Gdk::Pixbuf> cover;
                         m_Covers.fetch(mbid, cover);
-                        m_InfoArea->set_cover( cover->scale_simple(72,72, Gdk::INTERP_HYPER), m_NewTrack );
+                        m_InfoArea->set_cover( cover->scale_simple( 80, 80, Gdk::INTERP_BILINEAR), m_NewTrack );
                         g_atomic_int_set(&m_NewTrack, 0);
                     }
                     else

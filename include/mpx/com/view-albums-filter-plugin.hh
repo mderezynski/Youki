@@ -30,6 +30,7 @@
 #include "mpx/mpx-types.hh"
 #include "mpx/algorithm/aque.hh"
 #include <tr1/unordered_set>
+#include "mpx/widgets/cell-renderer-album-data.hh"
 
 namespace MPX
 {
@@ -89,6 +90,8 @@ namespace MPX
 
             Gtk::TreeModelColumn<bool>                                  Visible;
 
+            Gtk::TreeModelColumn<AlbumInfo_pt>                          RenderData;
+
             ViewAlbumsColumnsT ()
             {
                     add (RowType);
@@ -124,6 +127,8 @@ namespace MPX
                     add (TrackId);
     
                     add (Visible);
+
+                    add (RenderData);
             }
     };
 

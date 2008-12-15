@@ -90,7 +90,9 @@ namespace MPX
       text_artist_f ("<span size='12500'>(<i>%s</i>)</span>");
 
 
-    if( metadata[ATTRIBUTE_MB_ALBUM_ARTIST_ID] != metadata[ATTRIBUTE_MB_ARTIST_ID] )
+    if( (metadata.has(ATTRIBUTE_MB_ALBUM_ARTIST_ID) && metadata.has(ATTRIBUTE_MB_ARTIST_ID))
+            &&
+        (get<std::string>(metadata[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()) != get<std::string>(metadata[ATTRIBUTE_MB_ARTIST_ID].get())) )
     {
         if( metadata[ATTRIBUTE_ALBUM] )
         {
@@ -98,7 +100,7 @@ namespace MPX
             text_album_artist_f,
             Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ALBUM].get())).c_str(),
             Markup::escape_text (get<std::string>(
-                metadata[ATTRIBUTE_ALBUM_ARTIST_SORTNAME]
+                  metadata[ATTRIBUTE_ALBUM_ARTIST_SORTNAME]
                 ? metadata[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()
                 : metadata[ATTRIBUTE_ALBUM_ARTIST].get()
             )).c_str()
@@ -109,7 +111,7 @@ namespace MPX
           set[1] = Util::gprintf(
             text_artist_f,
             Markup::escape_text(get<std::string>(
-                metadata[ATTRIBUTE_ALBUM_ARTIST_SORTNAME]
+                  metadata[ATTRIBUTE_ALBUM_ARTIST_SORTNAME]
                 ? metadata[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()
                 : metadata[ATTRIBUTE_ALBUM_ARTIST].get()
             )).c_str()
@@ -127,22 +129,23 @@ namespace MPX
         }
     }
 
-    if (metadata[ATTRIBUTE_ARTIST_SORTNAME]) 
-    {
-      set[0] = Util::gprintf(
-        text_b_f2,
-        Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST_SORTNAME].get())).c_str(),
-        Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str()
-      );
-    }
-    else
     if( metadata[ATTRIBUTE_ARTIST] )
     {
-      g_message("NO sortname");
-      set[0] = Util::gprintf(
-        text_b_f,
-        Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str()
-      );
+        if( metadata[ATTRIBUTE_ARTIST_SORTNAME]) 
+        {
+            set[0] = Util::gprintf(
+                text_b_f2,
+                Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST_SORTNAME].get())).c_str(),
+                Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str()
+            );
+        }
+        else
+        {
+            set[0] = Util::gprintf(
+                text_b_f,
+                Markup::escape_text (get<std::string>(metadata[ATTRIBUTE_ARTIST].get())).c_str()
+            );
+        }
     }
 
     if( metadata[ATTRIBUTE_TITLE] )
@@ -427,8 +430,8 @@ namespace MPX
 
     Gtk::Allocation allocation = get_allocation ();
 
-    int x1 = cover_anim_area_x0 + cover_anim_area_width + 8;
-    int width = (allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS - RIGHT_MARGIN) - 8 - cover_anim_area_width;
+    int x1 = cover_anim_area_x0 + cover_anim_area_width; 
+    int width = (allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS - RIGHT_MARGIN) - cover_anim_area_width;
 
     for( int n = 0; n < 3; ++n )
     {

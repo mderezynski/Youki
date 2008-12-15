@@ -45,6 +45,7 @@
 
 #include "mpx/widgets/cell-renderer-cairo-surface.hh"
 #include "mpx/widgets/cell-renderer-count.hh"
+#include "mpx/widgets/cell-renderer-album-data.hh"
 #include "mpx/widgets/cell-renderer-vbox.hh"
 #include "mpx/widgets/cell-renderer-expander.h"
 #include "mpx/widgets/rounded-layout.hh"
@@ -284,18 +285,15 @@ namespace MPX
                         CellRendererCairoSurface * cellcairo = manage (new CellRendererCairoSurface);
                         col->pack_start(*cellcairo, false);
                         col->set_cell_data_func(*cellcairo, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncCover ));
-                        cellcairo->property_xpad() = 4;
+                        cellcairo->property_xpad() = 1;
                         cellcairo->property_ypad() = 4;
                         cellcairo->property_yalign() = 0.;
                         cellcairo->property_xalign() = 0.;
 
                         CellRendererVBox *cvbox = manage (new CellRendererVBox);
-                        CellRendererText *celltext = manage (new CellRendererText);
-                        celltext->property_yalign() = 0.;
-                        celltext->property_ypad() = 4;
-                        celltext->property_height() = 72;
-                        celltext->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE;
-                        cvbox->property_renderer1() = celltext;
+    
+                        CellRendererAlbumData *celldata = manage( new CellRendererAlbumData );
+                        cvbox->property_renderer1() = celldata;
 
                         CellRendererPixbuf *cellpixbuf = manage (new CellRendererPixbuf);
                         cellpixbuf->property_xalign() = 0.;
@@ -322,7 +320,7 @@ namespace MPX
                                                 &AlbumTreeView::cellDataFuncText2
                                                 ));
 
-                        celltext = manage (new CellRendererText);
+                        CellRendererText *celltext = manage (new CellRendererText);
                         col->pack_start(*celltext, false);
 
                         col->set_cell_data_func(
@@ -1073,37 +1071,22 @@ namespace MPX
                                 rt = determine_release_type(type);
                                 rt_string = _(get_release_string(rt).c_str());
 
-                                if( !country.empty() )
-                                {
-                                        (*iter)[Columns.Text] =
-        (boost::format("<span size='8000'><span size='12000'><b>%1%</b>\n<i>%2%</i></span>\n<span size='9000'>%3% %4%\n%5%</span></span>")
-                                                 % Markup::escape_text(album).c_str()
-                                                 % Markup::escape_text(artist).c_str()
-                                                 % country
-                                                 % year
-                                                 % rt_string
-                                                ).str();
-                                }
-                                else
-                                {
-                                        (*iter)[Columns.Text] =
-        (boost::format("<span size='8000'><span size='12000'><b>%1%</b>\n<i>%2%</i></span>\n<span size='9000'>%3%\n%4%</span></span>")
-                                                 % Markup::escape_text(album).c_str()
-                                                 % Markup::escape_text(artist).c_str()
-                                                 % year
-                                                 % rt_string
-                                                ).str();
-                                }
-
-
                                 (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
                                 (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
                                 (*iter)[Columns.RT] = rt; 
                                 (*iter)[Columns.PlayScore] = playscore; 
                                 (*iter)[Columns.AlbumTrack] = track;
-
                                 (*iter)[Columns.Album] = album;
                                 (*iter)[Columns.Artist] = artist;
+
+                                AlbumInfo_pt renderdata (new AlbumInfo);
+
+                                renderdata->Name = album; 
+                                renderdata->Artist = artist;
+                                renderdata->Release = (boost::format("%s %s") % country % year).str();
+                                renderdata->Type = rt_string;
+
+                                (*iter)[Columns.RenderData] = renderdata;
                         } 
 
                 void
@@ -1443,7 +1426,7 @@ namespace MPX
                         {
                                 TreePath path (iter);
                                 CellRendererVBox *cvbox = dynamic_cast<CellRendererVBox*>(basecell);
-                                CellRendererText *cell1 = dynamic_cast<CellRendererText*>(cvbox->property_renderer1().get_value());
+                                CellRendererAlbumData *cell1 = dynamic_cast<CellRendererAlbumData*>(cvbox->property_renderer1().get_value());
                                 CellRendererPixbuf *cell2 = dynamic_cast<CellRendererPixbuf*>(cvbox->property_renderer2().get_value());
                                 if(path.get_depth() == ROW_ALBUM)
                                 {
@@ -1451,7 +1434,7 @@ namespace MPX
 
                                         if(cell1)
                                         {
-                                                cell1->property_markup() = (*iter)[Columns.Text]; 
+                                                cell1->property_info() = (*iter)[Columns.RenderData]; 
 
                                                 double score = (*iter)[Columns.PlayScore]; 
 
