@@ -48,7 +48,7 @@ namespace MPX
       layout->get_pixel_size( text_width, text_height );
 
       if(height)
-        *height = 76; 
+        *height = 72; 
 
       if(width)
       {
@@ -173,7 +173,7 @@ namespace MPX
 
         cr->move_to(
               xoff + 2 + XPAD
-            , yoff + 76 - text_height[3]
+            , yoff + 72 - text_height[3]
         );
 
         pango_cairo_show_layout( cr->cobj(), layout[3]->gobj() );

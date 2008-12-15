@@ -298,7 +298,7 @@ namespace MPX
                         CellRendererPixbuf *cellpixbuf = manage (new CellRendererPixbuf);
                         cellpixbuf->property_xalign() = 0.;
                         cellpixbuf->property_ypad() = 2;
-                        cellpixbuf->property_xpad() = 2;
+                        cellpixbuf->property_xpad() = 4;
                         cvbox->property_renderer2() = cellpixbuf;
 
                         col->pack_start(*cvbox, true);
