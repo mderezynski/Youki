@@ -111,7 +111,7 @@ namespace MPX
         m_Library = services->get<Library>("mpx-service-library");
 
 #ifdef HAVE_HAL
-        m_HAL = services->get<HAL>("mpx-services-hal");
+        m_HAL = services->get<HAL>("mpx-service-hal");
 #endif // HAVE_HAL
 
        /*- Widgets -------------------------------------------------------*/ 
