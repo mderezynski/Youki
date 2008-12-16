@@ -96,6 +96,7 @@ namespace MPX
         }
         else
         {
+            g_message("%s: Not Found", G_STRLOC);
             Signals.NotFound.emit(data);
         }
     }
@@ -151,6 +152,7 @@ namespace MPX
                     g_message("File Error while trying to save cover image: %s", cxe.what().c_str());
             }
 
+            g_message("%s: Have Found", G_STRLOC);
             Signals.HasFound.emit( cb_data );
         }
     }
@@ -423,6 +425,7 @@ namespace MPX
         {
             RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cover_art );
             covers.cache_artwork( data->qualifier.mbid, cover );
+            g_message("%s: Cover HasFound", G_STRFUNC);
             Signals.HasFound.emit( data );
         }
     }
@@ -474,6 +477,7 @@ namespace MPX
 
         if( cover )
         {
+            g_message("%s: Cover HasFound", G_STRFUNC);
             covers.cache_artwork( data->qualifier.mbid, cover );
             Signals.HasFound.emit( data );
         }

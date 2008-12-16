@@ -1060,9 +1060,17 @@ namespace MPX
 
                         Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-y")));
                         Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-h")));
+
                         DBusObjects.mpx->shutdown_complete(DBusObjects.mpx); 
                         g_object_unref(G_OBJECT(DBusObjects.mpx));
+
                         delete m_Preferences;
+                        delete m_Sidebar;
+                        delete m_ErrorManager;
+                        delete m_AboutDialog;
+                        delete m_Equalizer;
+                        delete m_VolumeControl;
+
                         MPX::PluginManager & plugins = (*(services->get<PluginManager>("mpx-service-plugins")));
                         plugins.shutdown(); //fIXME: We have to do it while the mainloop is still running
                 }

@@ -11,10 +11,6 @@ namespace Service
 
     Manager::~Manager ()
     {
-        for(Services::iterator i = m_services.begin(); i != m_services.end(); ++i)
-        {
-            (*i).second.reset();
-        }
     }
 
     void

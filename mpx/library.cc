@@ -491,6 +491,7 @@ namespace MPX
 
         Library::~Library ()
         {
+            m_ScannerThread.reset();
         }
 
 #ifdef HAVE_HAL

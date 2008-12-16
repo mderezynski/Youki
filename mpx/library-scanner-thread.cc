@@ -919,7 +919,7 @@ MPX::LibraryScannerThread::get_track_id (Track& track) const
                                 % attrs[ATTRIBUTE_HAL_DEVICE_UDI].id
                                 % get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get())
                                 % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id
-                                % mprintf ("%q", get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()).c_str())).str());
+                                % mprintf ("%q", Util::normalize_path(get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get())).c_str())).str());
   }
   else
 #endif
@@ -1018,14 +1018,21 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
   column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
 
   try{
-    m_SQL->exec_sql( mprintf(
+    std::string sql_debug = mprintf(
         track_set_f,
         column_names.c_str(),
         column_values.c_str()
-    ));
+    );
+
+    g_message("%s: Inserting: '%s'", G_STRLOC, sql_debug.c_str());
+
+    track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->exec_sql( sql_debug ); 
+
   } catch( SqlConstraintError & cxe )
   {
     gint64 id = get_track_id (track);
+
+    g_message("%s: ConstraintError: %lld, %s", G_STRLOC, id, cxe.what()); 
 
     if( id != 0 )
     {
@@ -1064,7 +1071,6 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
         throw ScanError((boost::format(_("SQL error while inserting/updating track: '%s'")) % cxe.what()).str());
   }
 
-  track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->last_insert_rowid ();
   g_message("%s: Track Inserted: %lld", G_STRLOC, get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()));
   pthreaddata->NewTrack.emit( track, album_j, artist_j ); 
   return SCAN_RESULT_OK ; 

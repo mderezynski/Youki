@@ -229,6 +229,8 @@ namespace MPX
     void
     Covers::store_not_found_cb( CoverFetchData* data )
     {
+        g_message("%s: Cover Not Found", G_STRLOC);
+
         if( !g_atomic_int_get(&m_rebuilt) )
         {
                 int & i = m_req_store_ctr[data->qualifier.mbid];
@@ -243,6 +245,8 @@ namespace MPX
                 
                     if(i < data->stores.size())
                     { 
+                        g_message("%s: Using Next Store", G_STRLOC);
+
                         StorePtr store = data->stores[i]; // to avoid race conditions
                         store->load_artwork(data);
                         return;
@@ -297,15 +301,29 @@ namespace MPX
             return; 
         }
 
-        if( acquire )
+        if( acquire && m_stores_cur.size() )
         {
-            if(m_stores_cur.size())
+            int i = 0; 
+
+            CoverFetchData * data = new CoverFetchData( qual, m_stores_cur );
+
+            if(i < data->stores.size())
             {
-                m_req_store_ctr[qual.mbid] = 0;
-                CoverFetchData * data = new CoverFetchData( qual, m_stores_cur );
-                create_or_lock( data, m_mutexes );
-                data->stores[m_req_store_ctr[qual.mbid]]->load_artwork(data);
+                while( !data->stores[i] )
+                {
+                    i++;
+                }
+            
+                if(i < data->stores.size())
+                { 
+                    m_req_store_ctr[qual.mbid] = i;
+                    create_or_lock( data, m_mutexes );
+                    data->stores[m_req_store_ctr[qual.mbid]]->load_artwork(data);
+                    return;
+                }
             }
+
+            delete data;
         }
     }
 

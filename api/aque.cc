@@ -118,6 +118,17 @@ namespace AQE
                     }
                 }
                 else
+                if( v2[0] == "album-artist" )
+                {
+                    try{
+                            c.TargetValue = boost::lexical_cast<std::string>(v2[1]);
+                            c.TargetAttr = ATTRIBUTE_ALBUM_ARTIST;
+                            c.MatchType = MT_FUZZY_EQUAL;
+                            constraints.push_back(c);
+                    } catch( boost::bad_lexical_cast ) {
+                    }
+                }
+                else
                 if( v2[0] == "album" )
                 {
                     try{

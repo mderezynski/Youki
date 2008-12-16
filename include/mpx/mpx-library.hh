@@ -47,7 +47,9 @@ namespace MPX
 
     class HAL;
     class MetadataReaderTagLib;
-    class Library : public sigx::glib_auto_dispatchable, public Service::Base
+    class Library
+    : public Service::Base
+    , public sigx::glib_auto_dispatchable
     {
         friend class LibraryScannerThread;
 
