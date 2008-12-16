@@ -105,9 +105,6 @@ namespace MPX
                                 DATA_DIR,
                                 "python-plugins"
                                ));
-
-        load_plugins();
-        activate_plugins();
 	}
 
 	void

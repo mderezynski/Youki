@@ -390,6 +390,8 @@ main (int argc, char ** argv)
         boost::shared_ptr<PluginManager> ptr_plugins
             (new MPX::PluginManager());
         services->add(ptr_plugins);
+        ptr_plugins->load_plugins ();
+        ptr_plugins->activate_plugins ();
 
         boost::shared_ptr<PluginManagerGUI> ptr_plugins_gui
             (MPX::PluginManagerGUI::create());
@@ -404,6 +406,22 @@ main (int argc, char ** argv)
 
         gtk->run (*ptr_player.get());
 
+        ptr_plugins_gui.reset();
+        ptr_plugins.reset();
+
+        ptr_player.reset();
+
+        ptr_mlibman.reset();
+        ptr_mbimport.reset();
+        ptr_play.reset();
+        ptr_markov.reset();
+        ptr_library.reset();
+        ptr_taglib.reset();
+        ptr_covers.reset();
+#ifdef HAVE_HAL
+        ptr_halobj.reset();
+#endif
+
 #ifdef HAVE_HAL
     }
     catch( HAL::NotInitializedError& cxe )
@@ -413,22 +431,8 @@ main (int argc, char ** argv)
 #endif
 
 /*
-    ptr_plugins_gui.reset();
-    ptr_plugins.reset();
-    ptr_mlibman.reset();
-    ptr_mbimport.reset();
-    ptr_player.reset();
-    ptr_play.reset();
-    ptr_markov.reset();
-    ptr_library.reset();
-    ptr_taglib.reset();
-    ptr_covers.reset();
-#ifdef HAVE_HAL
-    ptr_halobj.reset();
-#endif
-*/
-
     delete services;
+*/
     delete gtk;
     delete mcs;
 

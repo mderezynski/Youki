@@ -318,7 +318,7 @@ namespace MPX
 			m_Notebook->get_nth_page(1)->hide();
 
 			xml->get_widget("overview", m_Overview);
-			xml->get_widget("m_Options->", m_Options);
+			xml->get_widget("options", m_Options);
 			xml->get_widget("error", m_Error);
 			xml->get_widget("traceback", m_Button_Traceback);
 			m_Button_Traceback->signal_clicked().connect( sigc::mem_fun( *this, &PluginManagerGUI::show_dialog ) );

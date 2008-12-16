@@ -232,8 +232,8 @@ namespace Mcs
         g_message ("Saving XML to %s", m_xml.c_str());
         g_message ("Saved %d characters", xmlSaveFormatFileEnc (m_xml.c_str(), doc, "utf-8", 1));
 
-        xmlFreeDoc (doc);
-        xmlFreeDoc (m_doc);
+        //xmlFreeDoc (doc);
+        //xmlFreeDoc (m_doc);
       } 
 
       void
