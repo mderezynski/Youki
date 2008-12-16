@@ -30,6 +30,7 @@
 #include <sigx/sigx.h>
 #include <sigx/signal_f.h>
 #include <sigx/request_f.h>
+#include <tr1/unordered_map> 
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
@@ -122,11 +123,10 @@ namespace MPX
             sigx::request_f<Util::FileList const&>          scan_direct ;
             sigx::request_f<>                               scan_stop ;
             sigx::request_f<>                               vacuum ;
-            sigx::request_f<>                               update_statistics ;
-
 #ifdef HAVE_HAL
             sigx::request_f< const std::string&, const std::string& > vacuum_volume ;
 #endif // HAVE_HAL
+            sigx::request_f<>                               update_statistics ;
 
             signal_scan_start_x             signal_scan_start ;
             signal_scan_run_x               signal_scan_run ; 
@@ -275,17 +275,55 @@ namespace MPX
                 Track&
             ) const;
 
-            ScanResult
-            insert(
-                Track&,
-                const std::string& /*uri*/,
-                const std::string& /*insert_path*/
-            );
+            /// INSERTION
+
+            typedef boost::shared_ptr<Track>        Track_p;
+           
+            struct TrackInfo
+            {
+                gint64          Artist;
+                gint64          Album;
+                std::string     Title;
+                gint64          TrackNumber;
+
+                std::string     Type;
+
+                Track_p         Track;
+
+                std::string     Insertion_SQL;
+            };
+ 
+            typedef boost::shared_ptr<TrackInfo>    TrackInfo_p;
+            typedef std::vector<TrackInfo_p>        TrackInfo_p_Vector;
+
+            typedef std::tr1::unordered_map<gint64,      TrackInfo_p_Vector>   Map_L4;
+            typedef std::tr1::unordered_map<std::string, Map_L4>               Map_L3;
+            typedef std::tr1::unordered_map<gint64,      Map_L3>               Map_L2;
+            typedef std::tr1::unordered_map<gint64,      Map_L2>               Map_L1;
+
+            //typedef std::map<gint64 , std::map<gint64, std::map<std::string, TrackInfo_p_Vector> > > InsertionTracks_t;
+
+            Map_L1   m_InsertionTracks;
 
             void
             insert_file(
                 const std::string& uri
-              , const std::string& insert_path_sql
+              , const std::string& insert_path
+            );
+
+            void
+            create_insertion_track(
+                Track&             track
+              , const std::string& uri
+              , const std::string& insert_path
+            );
+    
+            void
+            process_insertion_list();
+
+            ScanResult
+            insert(
+                const TrackInfo_p&
             );
 
 

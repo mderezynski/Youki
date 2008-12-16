@@ -357,73 +357,6 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
 
     pthreaddata->ScanSummary.emit( m_ScanSummary );
 }
-
-void
-MPX::LibraryScannerThread::insert_file(
-      const std::string& uri
-    , const std::string& insert_path_sql
-)
-{
-        Track track;
-
-        try{
-            m_Library->trackSetLocation( track, uri );
-
-            try{
-                gint64 mtime1 = Util::get_file_mtime( uri );
-                gint64 mtime2 = get_track_mtime( track ) ;
-
-                if( mtime2 != 0 && mtime1 == mtime2 ) 
-                {
-                    ++m_ScanSummary.FilesUpToDate;
-                }
-                else
-                {
-                    track[ATTRIBUTE_MTIME] = mtime1; 
-
-                    if( !m_MetadataReaderTagLib->get( uri, track ) )
-                    {
-                        ++m_ScanSummary.FilesErroneous;
-                        m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, _("Could not acquire metadata using taglib-gio")));
-                    }
-                    else
-                    try{
-
-                        ScanResult status = insert( track, uri, insert_path_sql );
-
-                        switch( status )
-                        {
-                            case SCAN_RESULT_OK:
-                                ++m_ScanSummary.FilesAdded;
-                                break;
-
-                            case SCAN_RESULT_UPDATE:
-                                ++m_ScanSummary.FilesUpdated;
-                                m_ScanSummary.FileListUpdated.push_back( SSFileInfo( uri, _("Updated")));
-                                break;
-                        }
-                    }
-                    catch( ScanError & cxe )
-                    {
-                        ++m_ScanSummary.FilesErroneous;
-                        m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
-                    }
-                    catch( Glib::ConvertError & cxe )
-                    {
-                        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-                    }
-                }
-            } catch( Glib::Error & cxe ) { 
-                g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-            }
-        }
-        catch( Library::FileQualificationError & cxe )
-        {
-            ++(m_ScanSummary.FilesErroneous);
-            m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, cxe.what()));
-        }
-}
-
 void
 MPX::LibraryScannerThread::on_scan_list_paths_callback(
     const std::string&  i3,
@@ -469,7 +402,7 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback(
 
 void
 MPX::LibraryScannerThread::on_scan_list_deep(
-    const Util::FileList&   list
+    const Util::FileList& list
 )
 {
     ThreadData * pthreaddata = m_ThreadData.get();
@@ -488,6 +421,8 @@ MPX::LibraryScannerThread::on_scan_list_deep(
         std::string insert_path ;
         std::string insert_path_sql ;
         Util::FileList collection;
+
+        // Collection from Filesystem
 
 #ifdef HAVE_HAL
         try{
@@ -540,6 +475,8 @@ MPX::LibraryScannerThread::on_scan_list_deep(
             return;
         }
 
+        // Collect + Process Tracks
+
         for(Util::FileList::iterator i2 = collection.begin(); i2 != collection.end(); ++i2)
         {
             if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
@@ -552,9 +489,16 @@ MPX::LibraryScannerThread::on_scan_list_deep(
                         
             if (! (std::distance(collection.begin(), i2) % 50) )
             {
-                pthreaddata->ScanRun.emit(std::distance(collection.begin(), i2), true ); 
+                pthreaddata->Message.emit(
+                    (boost::format(_("Collecting Tracks: %lld of %lld"))
+                        % gint64(std::distance(collection.begin(), i2))
+                        % gint64(m_ScanSummary.FilesTotal)
+                    ).str()
+                );
             }
         }
+
+        process_insertion_list ();
     }
 
     pthreaddata->ScanSummary.emit( m_ScanSummary );
@@ -939,10 +883,70 @@ MPX::LibraryScannerThread::get_track_id (Track& track) const
   return 0;
 }
 
-ScanResult
-MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const std::string& insert_path)
+void
+MPX::LibraryScannerThread::insert_file(
+      const std::string& uri
+    , const std::string& insert_path
+)
 {
-  static boost::format delete_track_f ("DELETE FROM track WHERE id='%lld';");
+        Track track;
+
+        try{
+            m_Library->trackSetLocation( track, uri );
+
+            try{
+                gint64 mtime1 = Util::get_file_mtime( uri );
+                gint64 mtime2 = get_track_mtime( track ) ;
+
+                if( mtime2 != 0 && mtime1 == mtime2 ) 
+                {
+                    ++m_ScanSummary.FilesUpToDate;
+                }
+                else
+                {
+                    track[ATTRIBUTE_MTIME] = mtime1; 
+
+                    if( !m_MetadataReaderTagLib->get( uri, track ) )
+                    {
+                        ++m_ScanSummary.FilesErroneous;
+                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, _("Could not acquire metadata (using taglib-gio)")));
+                    }
+                    else try{
+                        create_insertion_track( track, uri, insert_path );
+                    }
+                    catch( ScanError & cxe )
+                    {
+                        ++m_ScanSummary.FilesErroneous;
+                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
+                    }
+                    catch( Glib::ConvertError & cxe )
+                    {
+                        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+                        ++m_ScanSummary.FilesErroneous;
+                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
+                    }
+                }
+            } catch( Glib::Error & cxe ) { 
+                g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+            }
+        }
+        catch( Library::FileQualificationError & cxe )
+        {
+            ++(m_ScanSummary.FilesErroneous);
+               m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, cxe.what()));
+        }
+}
+
+
+void
+MPX::LibraryScannerThread::create_insertion_track(
+      Track&             track
+    , const std::string& uri
+    , const std::string& insert_path
+)
+{
+  char const delete_track_f[] = "DELETE FROM track WHERE id='%lld';";
+  char const track_set_f[] = "INSERT INTO track (%s) VALUES (%s);";
 
   if( uri.empty() )
   {
@@ -957,7 +961,7 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
     gint64 id = get_track_id( track );
     if( id != 0 )
     {
-        m_SQL->exec_sql ((delete_track_f % id).str()); 
+        m_SQL->exec_sql(mprintf( delete_track_f, id));
         pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
     }
 
@@ -978,81 +982,151 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
   track[ATTRIBUTE_INSERT_PATH] = Util::normalize_path( insert_path ) ;
   track[ATTRIBUTE_INSERT_DATE] = gint64(time(NULL));
 
-  char const* track_set_f ("INSERT INTO track (%s) VALUES (%s);");
+  std::string column_n;
+  std::string column_v;
 
-  /* Now let's prepare the SQL */
-  std::string column_names;
-  column_names.reserve (0x400);
+  column_n.reserve( 0x400 );
+  column_v.reserve( 0x400 );
 
-  std::string column_values;
-  column_values.reserve (0x400);
+  gint64 artist_j = get_track_artist_id( track ) ;
+  gint64 album_j  = get_album_id( track, get_album_artist_id( track ) ) ;
 
-  gint64 artist_j = get_track_artist_id (track);
-  gint64 album_j = get_album_id (track, get_album_artist_id (track));
-
-  for (unsigned int n = 0; n < N_ATTRIBUTES_INT; ++n)
+  for( unsigned int n = 0; n < N_ATTRIBUTES_INT; ++n )
   {
-      if( track.has(n) )
+      if( track.has( n ))
       {
           switch( attrs[n].type )
           {
-            case VALUE_TYPE_STRING:
-              column_values += mprintf ("'%q'", get <std::string> (track[n].get()).c_str());
-              break;
+                case VALUE_TYPE_STRING:
+                    column_v += mprintf ("'%q'", get <std::string> (track[n].get()).c_str());
+                    break;
 
-            case VALUE_TYPE_INT:
-              column_values += mprintf ("'%lld'", get <gint64> (track[n].get()));
-              break;
+                case VALUE_TYPE_INT:
+                    column_v += mprintf ("'%lld'", get <gint64> (track[n].get()));
+                    break;
 
-            case VALUE_TYPE_REAL:
-              column_values += mprintf ("'%f'", get <double> (track[n].get()));
-              break;
+                case VALUE_TYPE_REAL:
+                    column_v += mprintf ("'%f'", get <double> (track[n].get()));
+                    break;
           }
 
-          column_names += std::string (attrs[n].id) + ",";
-          column_values += ",";
+          column_n += std::string( attrs[n].id ) + ",";
+          column_v += ",";
       }
   }
 
-  column_names += "artist_j, album_j";
-  column_values += mprintf ("'%lld'", artist_j) + "," + mprintf ("'%lld'", album_j); 
+  column_n += "artist_j, album_j";
+  column_v += mprintf( "'%lld'", artist_j ) + "," + mprintf( "'%lld'", album_j ) ; 
+
+  TrackInfo_p p (new TrackInfo);
+
+  p->Artist         = artist_j;
+  p->Album          = album_j;
+  p->Title          = get<std::string>(track[ATTRIBUTE_TITLE].get());
+  p->TrackNumber    = get<gint64>(track[ATTRIBUTE_TRACK].get());
+  p->Track          = Track_p (new Track( track ));
+  p->Insertion_SQL  = mprintf( track_set_f, column_n.c_str(), column_v.c_str());
+
+  m_InsertionTracks[artist_j][album_j][p->Title][p->TrackNumber].push_back( p );
+}
+
+void
+MPX::LibraryScannerThread::process_insertion_list()
+{
+    ThreadData * pthreaddata = m_ThreadData.get();
+
+    gint64 tracks = 0;
+
+    for( Map_L1::const_iterator l1 = m_InsertionTracks.begin(); l1 != m_InsertionTracks.end(); ++l1 ) {
+
+    for( Map_L2::const_iterator l2 = (l1->second).begin(); l2 != (l1->second).end(); ++l2 ) {
+    for( Map_L3::const_iterator l3 = (l2->second).begin(); l3 != (l2->second).end(); ++l3 ) {
+    for( Map_L4::const_iterator l4 = (l3->second).begin(); l4 != (l3->second).end(); ++l4 ) {
+
+                    const TrackInfo_p_Vector& v = (*l4).second ; 
+    
+                    std::string uri;
+
+                    if( !v.empty() )
+                    try{
+                        const Track& track = *(v[0]->Track.get());
+
+                        uri = get<std::string>(track[ATTRIBUTE_LOCATION].get());
+
+                        pthreaddata->Message.emit(
+                            (boost::format(_("Inserting Tracks: %lld"))
+                                % ++tracks 
+                            ).str()
+                        );
+
+                        ScanResult status = insert( v[0] ); 
+
+                        switch( status )
+                        {
+                            case SCAN_RESULT_OK:
+                                ++m_ScanSummary.FilesAdded;
+                                break;
+
+                            case SCAN_RESULT_UPDATE:
+                                ++m_ScanSummary.FilesUpdated;
+                                  m_ScanSummary.FileListUpdated.push_back( SSFileInfo( uri, _("Updated")));
+                                break;
+                        }
+                    }
+                    catch( ScanError & cxe )
+                    {
+                        ++m_ScanSummary.FilesErroneous;
+                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri,( boost::format (_("Error inserting file: %s")) % cxe.what()).str() ) );
+                    }
+                    catch( Glib::ConvertError & cxe )
+                    {
+                        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+                        ++m_ScanSummary.FilesErroneous;
+                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri,( boost::format (_("Error inserting file: %s")) % cxe.what()).str() ) );
+                    }
+    }
+    }
+    }
+    }
+       
+    m_InsertionTracks.clear(); 
+}
+
+ScanResult
+MPX::LibraryScannerThread::insert(
+    const TrackInfo_p& p
+)
+{
+  ThreadData * pthreaddata = m_ThreadData.get();
+
+  const char delete_track_f[] = "DELETE FROM track WHERE id='%lld';";
+
+  Track & track = *(p->Track.get());
 
   try{
-    std::string sql_debug = mprintf(
-        track_set_f,
-        column_names.c_str(),
-        column_values.c_str()
-    );
-
-    g_message("%s: Inserting: '%s'", G_STRLOC, sql_debug.c_str());
-
-    track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->exec_sql( sql_debug ); 
+    track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->exec_sql( p->Insertion_SQL ); 
 
   } catch( SqlConstraintError & cxe )
   {
-    gint64 id = get_track_id (track);
+    gint64 id = get_track_id( track );
 
     g_message("%s: ConstraintError: %lld, %s", G_STRLOC, id, cxe.what()); 
 
     if( id != 0 )
     {
-        m_SQL->exec_sql((delete_track_f % id).str()); 
+        m_SQL->exec_sql( mprintf( delete_track_f, id ));
 
         g_message("%s: Track Deleted: %lld", G_STRLOC, id);
 
         try{
-                gint64 new_id = m_SQL->exec_sql( mprintf( 
-                      track_set_f,
-                      column_names.c_str(),
-                      column_values.c_str()
-                ));
+                gint64 new_id = m_SQL->exec_sql( p->Insertion_SQL ); 
 
                 m_SQL->exec_sql(mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));
 
                 g_message("%s: Track Updated: %lld", G_STRLOC, id);
 
                 track[ATTRIBUTE_MPX_TRACK_ID] = id; 
-                pthreaddata->TrackUpdated.emit( track, album_j, artist_j ) ; 
+                pthreaddata->TrackUpdated.emit( track, p->Album, p->Artist ) ; 
                 return SCAN_RESULT_UPDATE ;
 
         } catch( SqlConstraintError & cxe )
@@ -1072,7 +1146,7 @@ MPX::LibraryScannerThread::insert (Track & track, const std::string& uri, const 
   }
 
   g_message("%s: Track Inserted: %lld", G_STRLOC, get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()));
-  pthreaddata->NewTrack.emit( track, album_j, artist_j ); 
+  pthreaddata->NewTrack.emit( track, p->Album, p->Artist ); 
   return SCAN_RESULT_OK ; 
 }
 
