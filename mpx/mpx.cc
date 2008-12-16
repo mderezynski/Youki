@@ -1064,9 +1064,6 @@ namespace MPX
                         delete m_AboutDialog;
                         delete m_Equalizer;
                         delete m_VolumeControl;
-
-                        MPX::PluginManager & plugins = (*(services->get<PluginManager>("mpx-service-plugins")));
-                        plugins.shutdown(); //fIXME: We have to do it while the mainloop is still running
                 }
 
         void

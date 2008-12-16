@@ -316,6 +316,7 @@ namespace MPX
 
 	PluginManager::~PluginManager ()
 	{
+        shutdown();
 	}
 
 	PluginHoldMap const&
