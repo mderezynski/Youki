@@ -62,27 +62,24 @@ namespace MPX
 {
         MB_ImportAlbum*
                 MB_ImportAlbum::create(
-                    MPX::Library              & obj_library,
-                    MPX::Covers               & obj_covers
                 )
                 {
                         const std::string path = DATA_DIR G_DIR_SEPARATOR_S "glade" G_DIR_SEPARATOR_S "mb-import-album.glade";
                         Glib::RefPtr<Gnome::Glade::Xml> glade_xml = Gnome::Glade::Xml::create (path);
-                        MB_ImportAlbum * p = new MB_ImportAlbum(glade_xml, obj_library, obj_covers); 
+                        MB_ImportAlbum * p = new MB_ImportAlbum(glade_xml); 
                         return p;
                 }
 
 
                 MB_ImportAlbum::MB_ImportAlbum(
-                    const Glib::RefPtr<Gnome::Glade::Xml>&  xml,
-                    MPX::Library                          & obj_library,    
-                    MPX::Covers                           & obj_covers
+                    const Glib::RefPtr<Gnome::Glade::Xml>& xml
                 )
                 : WidgetLoader<Gtk::Window>(xml, "mb-import-album")
                 , Service::Base("mpx-service-mbimport")
-                , m_Lib(obj_library)
-                , m_Covers(obj_covers)
                 {
+                        m_Lib = services->get<Library>("mpx-service-library");
+                        m_Covers = services->get<Covers>("mpx-service-covers");
+    
                         glade_xml_signal_autoconnect(xml->gobj());
 
                         m_Xml->get_widget("mbrel-cover", m_iCover); 

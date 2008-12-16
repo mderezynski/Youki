@@ -112,19 +112,6 @@ namespace MPX
         N_ELEMENTS
     };
 
-    enum Caps
-    {
-      CAPS_NONE = 0,
-      CAPS_CDDA = 1 << 0,
-      CAPS_HTTP = 1 << 1,
-      CAPS_MMS  = 1 << 2,
-    };
-
-    /** Returns the current stream type playback capabilities
-    * @returns Playback Capabilities, see @link MPX::Audio::Caps@endlink
-    */
-    Caps get_caps ();
-
     /** An element consists of a a 'name' (std::string) and a
      *  list of attributes (@link MPX::Audio::Element::Attrs@endlink)
      */

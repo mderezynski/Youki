@@ -150,27 +150,6 @@ namespace MPX
       return exists;
     }
 
-    Caps
-    get_caps ()
-    {
-      Caps caps = CAPS_NONE;
-
-      if (test_element ("mpx-neonhttpsrc"))
-        caps = Caps (caps | CAPS_HTTP);
-
-#if defined (HAVE_CDPARANOIA)
-      if (test_element ("cdparanoiasrc"))
-#elif defined (HAVE_CDIO)
-      if (test_element ("cdiocddasrc"))
-#endif
-        caps = Caps (caps | CAPS_CDDA);
-
-      if (test_element ("mmssrc"))
-        caps = Caps (caps | CAPS_MMS);
-
-      return caps;
-    }
-
     void
     have_type_handler (GstElement*    typefind,
                        guint          probability,

@@ -79,11 +79,12 @@ namespace MPX
 		return traceback;
 	}
 
-	PluginManager::PluginManager (MPX::Player *player)
+	PluginManager::PluginManager ()
     : Service::Base("mpx-service-plugins")
 	, m_Id(1)
-	, m_Player(player)
 	{
+        m_Player = services->get<Player>("mpx-service-player");
+
         mcs->domain_register("pyplugs");
 
         std::string const user_path =
@@ -104,6 +105,9 @@ namespace MPX
                                 DATA_DIR,
                                 "python-plugins"
                                ));
+
+        load_plugins();
+        activate_plugins();
 	}
 
 	void
@@ -206,7 +210,7 @@ namespace MPX
 						if (PyObject_IsSubclass (value, (PyObject*) PyMPXPlugin_Type))
 						{
                             try{
-                                object instance = boost::python::call<object>(value, m_Id, boost::ref(m_Player), boost::ref(mcs));
+                                object instance = boost::python::call<object>(value, m_Id, boost::ref(*(m_Player.get())), boost::ref(*mcs));
                                 if(!instance)
                                 {
                                     PyErr_Print();

@@ -133,7 +133,7 @@ namespace MPX
 
 		public:
 	
-			PluginManager (MPX::Player* /*player*/);
+			PluginManager ();
 			~PluginManager ();
 
             SignalPlugin&	
@@ -217,10 +217,11 @@ namespace MPX
 
 		private:
 
+            boost::shared_ptr<Player> m_Player;
+
 			PluginHoldMap	      m_Map;	
 			Strings		          m_Paths;
 			gint64			      m_Id;
-			Player		        * m_Player;
 			Glib::Mutex		      m_StateChangeLock;
 			std::list<Traceback>  m_TracebackList;
     };

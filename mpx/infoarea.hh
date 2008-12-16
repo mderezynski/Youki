@@ -5,9 +5,10 @@
 #include "mpx/util-file.hh"
 #include "mpx/util-graphics.hh"
 #include "mpx/util-string.hh"
-#include "mpx/i-playbacksource.hh"
+#include "mpx/mpx-play.hh"
 #include "mpx/mpx-types.hh"
-#include "play.hh"
+
+#include "mpx/i-playbacksource.hh"
 
 #include <boost/optional.hpp>
 #include <gtkmm.h>

@@ -60,7 +60,6 @@ namespace MPX
             EXCEPTION(FileQualificationError)
 
             Library(
-                Service::Manager&
             ) ;
 
             ~Library () ;
@@ -402,12 +401,12 @@ namespace MPX
 
         private:
 
-            Service::Manager                        & m_Services;
 #ifdef HAVE_HAL
-            HAL                                     & m_HAL;
+            boost::shared_ptr<HAL>                    m_HAL ;
 #endif //HAVE_HAL 
-            Covers                                  & m_Covers;
-            MetadataReaderTagLib                    & m_MetadataReaderTagLib ;
+            boost::shared_ptr<Covers>                 m_Covers ;
+            boost::shared_ptr<MetadataReaderTagLib>   m_MetadataReaderTagLib ;
+
             SQL::SQLDB                              * m_SQL;
             boost::shared_ptr<LibraryScannerThread>   m_ScannerThread;
             gint64                                    m_Flags;

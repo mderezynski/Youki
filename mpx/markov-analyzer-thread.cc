@@ -7,7 +7,7 @@ using boost::get;
 using namespace MPX;
 using namespace MPX::SQL;
 
-MPX::MarkovAnalyzer::MarkovAnalyzer (MPX::Library & obj_library)
+MPX::MarkovAnalyzer::MarkovAnalyzer()
 : Service::Base("mpx-service-markov")
 {
     m_Library = services->get<Library>("mpx-service-library");

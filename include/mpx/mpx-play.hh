@@ -68,8 +68,8 @@ namespace MPX
          *
          */
         class Play
-                : public Glib::Object
-                  , public Service::Base
+        : public Glib::Object
+        , public Service::Base
         {
                 private:
 
@@ -146,7 +146,7 @@ namespace MPX
 
                 public:
 
-                        Play (MPX::Service::Manager&);
+                        Play ();
                         ~Play ();
 
                         ProxyOf<PropString>::ReadWrite  property_stream ();

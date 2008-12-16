@@ -26,8 +26,9 @@
 #include <gtkmm.h>
 #include <gst/video/video.h>
 
+#include "mpx/mpx-play.hh"
+
 #include "video-widget.hh"
-#include "play.hh"
 
 namespace MPX
 {

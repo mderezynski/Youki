@@ -41,7 +41,7 @@
 #include <gdl/gdl.h>
 #include <boost/algorithm/string.hpp>
 
-#include "preferences.hh"
+#include "mpx/mpx-preferences.hh"
 
 #include <X11/Xlib.h>
 #include <X11/XF86keysym.h>

@@ -38,10 +38,11 @@
 #include <glibmm.h>
 #include <Python.h>
 #include <pygobject.h>
-#include "mpx/util-string.hh"
 
 #include "mpx.hh"
-#include "play.hh"
+#include "mpx/mpx-play.hh"
+#include "mpx/util-string.hh"
+
 #include "sidebar.hh"
 #include "infoarea.hh"
 
@@ -384,7 +385,7 @@ namespace MPX
         {
             m_SourceUI = m_Sources[source_id]->add_menu();
 
-            if( (m_Play.property_status() == PLAYSTATUS_PLAYING)
+            if( (services->get<Play>("mpx-service-play")->property_status() == PLAYSTATUS_PLAYING)
                 && ( m_ActiveSource && m_ActiveSource.get() == source_id ))
             {
                 Caps caps = m_source_c[source_id];

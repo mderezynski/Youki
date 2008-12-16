@@ -40,7 +40,7 @@ using namespace Gtk;
 
 namespace MPX
 {
-	class PTV
+	class PluginTreeView
           : public Gnome::Glade::WidgetLoader<Gtk::TreeView>
 	{
             typedef std::map<gint64, Gtk::TreeIter> IdIterMap_t;
@@ -84,7 +84,7 @@ namespace MPX
 
 		public:
 
-			PTV(
+			PluginTreeView(
                   const Glib::RefPtr<Gnome::Glade::Xml>&  xml
                 , PluginManager&                          manager
                 , Gtk::Window&                            gui
@@ -115,7 +115,7 @@ namespace MPX
 				cell_toggle->signal_toggled().connect(
                     sigc::mem_fun(
                         *this,
-                        &PTV::on_cell_toggled
+                        &PluginTreeView::on_cell_toggled
                     )
                 );
 
@@ -123,7 +123,7 @@ namespace MPX
                     *renderers[0],
                     sigc::mem_fun(
                         *this,
-                        &PTV::cell_data_func_active
+                        &PluginTreeView::cell_data_func_active
                     )
                 );
 
@@ -152,26 +152,26 @@ namespace MPX
 
 				}
 
-                Store->set_default_sort_func( sigc::mem_fun( *this, &PTV::plugin_sort_func ));
+                Store->set_default_sort_func( sigc::mem_fun( *this, &PluginTreeView::plugin_sort_func ));
                 Store->set_sort_column(-1, Gtk::SORT_ASCENDING);
 				set_model (Store);
 
                 manager.signal_plugin_show_gui().connect(
                     sigc::mem_fun(
                         *this,
-                        &PTV::on_plugin_show_gui
+                        &PluginTreeView::on_plugin_show_gui
                 ));
             
                 manager.signal_plugin_activated().connect(
                     sigc::mem_fun(
                         *this,
-                        &PTV::on_plugin_activated
+                        &PluginTreeView::on_plugin_activated
                 ));
 
                 manager.signal_plugin_deactivated().connect(
                     sigc::mem_fun(
                         *this,
-                        &PTV::on_plugin_deactivated
+                        &PluginTreeView::on_plugin_deactivated
                 ));
 			}
 
@@ -234,7 +234,6 @@ namespace MPX
 
 				gint64 id = (*iter)[Columns.Id];
 				bool active = (*iter)[Columns.Active];
-				bool result = false;
 
 				if(active)
 					m_Manager.deactivate(id);
@@ -289,7 +288,7 @@ namespace MPX
 				return (*iter)[Columns.Website];
 			}
 
-			~PTV ()
+			~PluginTreeView ()
 			{
 			}
 	};
@@ -301,37 +300,40 @@ namespace MPX
 		{
             Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-y")));
             Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-h")));
-			delete m_PTV;
+			delete m_PluginTreeView;
 		}
 
-		PluginManagerGUI::PluginManagerGUI (const Glib::RefPtr<Gnome::Glade::Xml> &xml, PluginManager &obj_manager)
+		PluginManagerGUI::PluginManagerGUI(
+            const Glib::RefPtr<Gnome::Glade::Xml>& xml
+        )
         : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
         , Service::Base("mpx-service-plugins-gui")
-		, m_Manager(obj_manager)
-		, m_PTV(new PTV(xml, obj_manager, *this))
 		{
-			m_PTV->get_selection()->signal_changed().connect( sigc::mem_fun( *this, &PluginManagerGUI::on_selection_changed ) );
+            m_Manager = services->get<PluginManager>("mpx-service-plugins");
 
-			xml->get_widget("notebook", notebook);
-			notebook->get_nth_page(1)->hide();
+		    m_PluginTreeView = new PluginTreeView(xml, *(m_Manager.get()), *this);
+			m_PluginTreeView->get_selection()->signal_changed().connect( sigc::mem_fun( *this, &PluginManagerGUI::on_selection_changed ) );
 
-			xml->get_widget("overview", overview);
-			xml->get_widget("options", options);
-			xml->get_widget("error", error);
-			xml->get_widget("traceback", buTraceback);
-			buTraceback->signal_clicked().connect( sigc::mem_fun( *this, &PluginManagerGUI::show_dialog ) );
+			xml->get_widget("notebook", m_Notebook);
+			m_Notebook->get_nth_page(1)->hide();
 
-			if(obj_manager.get_traceback_count())
+			xml->get_widget("overview", m_Overview);
+			xml->get_widget("m_Options->", m_Options);
+			xml->get_widget("error", m_Error);
+			xml->get_widget("traceback", m_Button_Traceback);
+			m_Button_Traceback->signal_clicked().connect( sigc::mem_fun( *this, &PluginManagerGUI::show_dialog ) );
+
+			if(m_Manager->get_traceback_count())
 			{
 				set_error_text();
-				buTraceback->set_sensitive();
+				m_Button_Traceback->set_sensitive();
 			}
 
 			Gtk::Button * buClose;
 			xml->get_widget("close", buClose);
 			buClose->signal_clicked().connect( sigc::mem_fun( *this, &Gtk::Widget::hide ) );
 
-            obj_manager.signal_traceback().connect(
+            m_Manager->signal_traceback().connect(
                 sigc::mem_fun(
                     *this,
                     &PluginManagerGUI::check_traceback
@@ -353,10 +355,10 @@ namespace MPX
 		}
 
 		PluginManagerGUI*
-		PluginManagerGUI::create (PluginManager &obj_manager)
+		PluginManagerGUI::create ()
 		{
 			const std::string path (build_filename(DATA_DIR, build_filename("glade","plugin-manager.glade")));
-			PluginManagerGUI * p = new PluginManagerGUI(Gnome::Glade::Xml::create (path), obj_manager); 
+			PluginManagerGUI * p = new PluginManagerGUI(Gnome::Glade::Xml::create (path)); 
 			return p;
 		}
 
@@ -370,81 +372,81 @@ namespace MPX
 		void
 		PluginManagerGUI::on_selection_changed()
 		{
-			Glib::RefPtr<TreeSelection> sel = m_PTV->get_selection();
+			Glib::RefPtr<TreeSelection> sel = m_PluginTreeView->get_selection();
 			TreeModel::iterator iter = sel->get_selected();
-			overview->set_markup( (boost::format(_("%1%\n\n<b>Authors:</b> %2%\n<b>Copyright:</b> %3%\n<b>Website:</b> %4%"))
-										% Glib::Markup::escape_text(m_PTV->get_desc(iter)).c_str()
-										% Glib::Markup::escape_text(m_PTV->get_authors(iter)).c_str()
-										% Glib::Markup::escape_text(m_PTV->get_copyright(iter)).c_str()
-										% Glib::Markup::escape_text(m_PTV->get_website(iter)).c_str() ).str() );
+			m_Overview->set_markup( (boost::format(_("%1%\n\n<b>Authors:</b> %2%\n<b>Copyright:</b> %3%\n<b>Website:</b> %4%"))
+										% Glib::Markup::escape_text(m_PluginTreeView->get_desc(iter)).c_str()
+										% Glib::Markup::escape_text(m_PluginTreeView->get_authors(iter)).c_str()
+										% Glib::Markup::escape_text(m_PluginTreeView->get_copyright(iter)).c_str()
+										% Glib::Markup::escape_text(m_PluginTreeView->get_website(iter)).c_str() ).str() );
 
-			if(m_PTV->get_has_gui(iter))
+			if(m_PluginTreeView->get_has_gui(iter))
 			{
-				notebook->get_nth_page(1)->show();
-                Gtk::Widget* child = options->get_child();
+				m_Notebook->get_nth_page(1)->show();
+                Gtk::Widget* child = m_Options->get_child();
 				if(child)
 				{
-					options->remove();
+					m_Options->remove();
 				}
-				Gtk::Widget * widget = m_PTV->get_gui(iter);
+				Gtk::Widget * widget = m_PluginTreeView->get_gui(iter);
 				if(widget != 0)
 				{
-					options->add(*widget);
+					m_Options->add(*widget);
 					widget->show();
 				}
-                notebook->set_current_page(1);
+                m_Notebook->set_current_page(1);
 			}
 			else
             {
-				notebook->get_nth_page(1)->hide();
-                notebook->set_current_page(0);
+				m_Notebook->get_nth_page(1)->hide();
+                m_Notebook->set_current_page(0);
             }
 		}
 
         void
         PluginManagerGUI::check_traceback()
         {
-			if(m_Manager.get_traceback_count())
+			if(m_Manager->get_traceback_count())
 			{
 				set_error_text();
-				buTraceback->set_sensitive();
+				m_Button_Traceback->set_sensitive();
 			}
 			else
 			{
-				error->set_markup(" ");
-				buTraceback->set_sensitive(false);
+				m_Error->set_markup(" ");
+				m_Button_Traceback->set_sensitive(false);
 			}
         }
         
 		void
 		PluginManagerGUI::show_dialog()
 		{
-			Gtk::MessageDialog dialog ((boost::format(_("Failed to %1%: %2%")) % m_Manager.get_last_traceback().get_method() % m_Manager.get_last_traceback().get_name()).str(), false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_CLOSE);
+			Gtk::MessageDialog dialog ((boost::format(_("Failed to %1%: %2%")) % m_Manager->get_last_traceback().get_method() % m_Manager->get_last_traceback().get_name()).str(), false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_CLOSE);
 			dialog.set_title (_("Plugin traceback - MPX"));
-			dialog.set_secondary_text (m_Manager.pull_last_traceback().get_traceback());
+			dialog.set_secondary_text (m_Manager->pull_last_traceback().get_traceback());
 			dialog.run();
 
-			if(m_Manager.get_traceback_count())
+			if(m_Manager->get_traceback_count())
             {
 				set_error_text();
             }
 			else
 			{
-				error->set_markup(" ");
-				buTraceback->set_sensitive(false);
+				m_Error->set_markup(" ");
+				m_Button_Traceback->set_sensitive(false);
 			}
 		}
 
 		void
 		PluginManagerGUI::set_error_text()
 		{
-			std::string text = (boost::format(_("<b>Failed to %1%: %2%</b>")) % m_Manager.get_last_traceback().get_method() % m_Manager.get_last_traceback().get_name()).str();
+			std::string text = (boost::format(_("<b>Failed to %1%: %2%</b>")) % m_Manager->get_last_traceback().get_method() % m_Manager->get_last_traceback().get_name()).str();
 
-			unsigned int n = m_Manager.get_traceback_count();
+			unsigned int n = m_Manager->get_traceback_count();
 			if(n > 1)
 				text += (boost::format(_(" (%d more errors)")) % (n-1)).str();
 
-			error->set_markup(text);
+			m_Error->set_markup(text);
 		}
 
 }

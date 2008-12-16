@@ -40,7 +40,7 @@ namespace MPX
 	{
         public:	
 
-            MarkovAnalyzer (MPX::Library&) ;
+            MarkovAnalyzer () ;
             ~MarkovAnalyzer () ;
 
             void append (MPX::Track&) ;

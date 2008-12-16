@@ -36,6 +36,7 @@
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-library.hh"
+#include "mpx/mpx-play.hh"
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/util-file.hh"
@@ -47,7 +48,6 @@
 #include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
 
-#include "play.hh"
 #include "sidebar.hh"
 #include "video-widget.hh"
 
@@ -175,12 +175,12 @@ namespace MPX
 
       protected:
 
-        Player (const Glib::RefPtr<Gnome::Glade::Xml>&, MPX::Service::Manager&);
+        Player (const Glib::RefPtr<Gnome::Glade::Xml>&);
 
 	  public:
 
         static Player*
-        create (MPX::Service::Manager&);
+        create();
 
 		class DBusRoot; 
 		class DBusMPX; 
@@ -277,13 +277,11 @@ namespace MPX
         Covers                        & m_Covers;
         HAL                           & m_HAL;
         Library                       & m_Library;
+
 		Play                          & m_Play;
-        // TODO: Make these all external services
-        Preferences                   * m_Preferences;
         Sidebar                       * m_Sidebar;
         InfoArea                      * m_InfoArea;
         VideoWidget                   * m_VideoWidget; 
-        ErrorManager                  * m_ErrorManager;
 
     // widgets
 

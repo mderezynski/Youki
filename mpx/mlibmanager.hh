@@ -66,11 +66,8 @@ namespace MPX
         public:
 
             static MLibManager* create(
-#ifdef HAVE_HAL
-                MPX::HAL& obj_hal,
-#endif
-                MPX::Library& obj_library
             ) ;
+
             virtual ~MLibManager () ;
 
             void
@@ -91,11 +88,7 @@ namespace MPX
         private:
 
             MLibManager(
-                const Glib::RefPtr<Gnome::Glade::Xml>& xml,
-#ifdef HAVE_HAL
-                MPX::HAL& obj_hal,
-#endif
-                MPX::Library& obj_library
+                const Glib::RefPtr<Gnome::Glade::Xml>& 
             ) ;
 
             void
@@ -271,10 +264,10 @@ namespace MPX
             Gtk::Widget     * m_VboxInner ;
 
 #ifdef HAVE_HAL
-            MPX::HAL        & m_HAL ;
+            boost::shared_ptr<MPX::HAL>     m_HAL ;
 #endif
-            MPX::Library    & m_Library ;
-            Glib::Timer       m_RescanTimer ;
+            boost::shared_ptr<MPX::Library> m_Library ;
+            Glib::Timer                     m_RescanTimer ;
 
             Glib::RefPtr<Gtk::TextBuffer>   m_TextBufferDetails ;
             Glib::RefPtr<Gtk::UIManager>    m_UIManager ;

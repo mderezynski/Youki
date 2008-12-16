@@ -49,15 +49,16 @@
 
 #include <mcs/mcs.h>
 
+#include "mpx/mpx-preferences.hh"
+
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-library-scanner-thread.hh"
 #include "mpx/mpx-main.hh"
+#include "mpx/mpx-play.hh"
 #include "mpx/mpx-stock.hh"
 #include "mpx/util-string.hh"
 #include "mpx/widgets/widgetloader.hh"
-
-#include "preferences.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -286,9 +287,9 @@ namespace MPX
 
 	//// Preferences
 	Preferences*
-	Preferences::create (MPX::Play & play)
+	Preferences::create ()
 	{
-		return new Preferences (Gnome::Glade::Xml::create (build_filename(DATA_DIR, "glade" G_DIR_SEPARATOR_S "preferences.glade")), play); 
+		return new Preferences (Gnome::Glade::Xml::create (build_filename(DATA_DIR, "glade" G_DIR_SEPARATOR_S "preferences.glade"))); 
 	}
 
     Preferences::~Preferences ()
@@ -298,9 +299,11 @@ namespace MPX
         mcs->key_set<int>("mpx","preferences-notebook-page", m_notebook_preferences->get_current_page());
     }
 
-	Preferences::Preferences (RefPtr<Gnome::Glade::Xml> const& xml, MPX::Play & play)
+	Preferences::Preferences(
+        const Glib::RefPtr<Gnome::Glade::Xml>&  xml
+    )
 	: Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "preferences")
-	, m_Play(play)
+    , MPX::Service::Base("mpx-service-preferences")
 	{
         // Preferences
 		dynamic_cast<Button*>(m_Xml->get_widget ("close"))->signal_clicked().connect(
@@ -608,7 +611,7 @@ namespace MPX
 	void
 	Preferences::audio_system_apply ()
 	{
-	  m_Play.request_status (PLAYSTATUS_STOPPED);
+      services->get<Play>("mpx-service-play")->request_status( PLAYSTATUS_STOPPED ) ; 
 
 	  TreeModel::iterator iter (m_cbox_audio_system->get_active ());
 	  Sink sink = (*iter)[audio_system_columns.sink];
@@ -634,7 +637,7 @@ namespace MPX
 	  m_button_audio_system_apply->set_sensitive(false);
 	  m_button_audio_system_reset->set_sensitive(false);
 
-	  m_Play.reset(); // the final important thing
+      services->get<Play>("mpx-service-play")->reset();
 	}
 
 #ifdef HAVE_ALSA

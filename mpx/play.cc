@@ -38,12 +38,12 @@
 #include <boost/format.hpp>
 #include <boost/optional.hpp>
 
-#include "mcs/mcs.h"
+#include "mpx/mpx-play.hh"
 
+#include "mcs/mcs.h"
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-uri.hh"
-#include "play.hh"
 
 
 #define MPX_GST_BUFFER_TIME   ((gint64) 50000)
@@ -95,7 +95,7 @@ namespace
 
 namespace MPX
 {
-        Play::Play(MPX::Service::Manager& services)
+        Play::Play()
         : ObjectBase              ("MPXPlaybackEngine")
         , Service::Base           ("mpx-service-play")
         , m_play_elmt             (0)

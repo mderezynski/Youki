@@ -25,7 +25,7 @@ namespace
 
 namespace MPX
 {
-    MetadataReaderTagLib::MetadataReaderTagLib (MPX::Service::Manager&)
+    MetadataReaderTagLib::MetadataReaderTagLib ()
     : Service::Base("mpx-service-taglib")
     {
         std::string path = build_filename(PLUGIN_DIR, "taglib");

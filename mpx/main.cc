@@ -31,6 +31,8 @@
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-network.hh"
+#include "mpx/mpx-play.hh"
+#include "mpx/mpx-preferences.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/util-file.hh"
@@ -45,7 +47,6 @@
 #include "mpx/mpx-markov-analyzer-thread.hh"
 
 #include "paths.hh"
-#include "play.hh"
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
 #include "signals.hh"
@@ -341,59 +342,61 @@ main (int argc, char ** argv)
 #ifdef HAVE_HAL
     try{
         boost::shared_ptr<HAL> ptr_halobj
-            (new MPX::HAL(*services));
+            (new MPX::HAL());
         services->add(ptr_halobj);
 #endif
         //       MPX::NM *obj_netman = new MPX::NM;
 
         boost::shared_ptr<Covers> ptr_covers
-            (new MPX::Covers(*services));
+            (new MPX::Covers());
         services->add(ptr_covers);
 
         boost::shared_ptr<MetadataReaderTagLib> ptr_taglib
-            (new MPX::MetadataReaderTagLib(*services));
+            (new MPX::MetadataReaderTagLib());
         services->add(ptr_taglib);
 
 #ifdef HAVE_HAL
         boost::shared_ptr<Library> ptr_library
-            (new MPX::Library(*services));
+            (new MPX::Library());
         services->add(ptr_library);
 #else
         boost::shared_ptr<Library> ptr_library
-            (new MPX::Library(*services));
+            (new MPX::Library());
         services->add(ptr_library);
 #endif
 
         boost::shared_ptr<MarkovAnalyzer> ptr_markov
-            (new MarkovAnalyzer(*ptr_library.get()));
+            (new MarkovAnalyzer());
         services->add(ptr_markov);
 
         boost::shared_ptr<Play> ptr_play
-            (new MPX::Play(*services));
+            (new MPX::Play());
         services->add(ptr_play);
+
+        boost::shared_ptr<Preferences> ptr_preferences
+            (MPX::Preferences::create());
+        services->add(ptr_preferences);
 
 #ifdef HAVE_HAL
         boost::shared_ptr<MLibManager> ptr_mlibman
-            (MPX::MLibManager::create(*ptr_halobj.get(), *ptr_library.get()));
+            (MPX::MLibManager::create());
         services->add(ptr_mlibman);
 #endif // HAVE_HAL
 
         boost::shared_ptr<Player> ptr_player
-            (MPX::Player::create(*services));
+            (MPX::Player::create());
         services->add(ptr_player);
 
         boost::shared_ptr<PluginManager> ptr_plugins
-            (new MPX::PluginManager(ptr_player.get()));
+            (new MPX::PluginManager());
         services->add(ptr_plugins);
-        ptr_plugins->load_plugins();
-        ptr_plugins->activate_plugins();
 
         boost::shared_ptr<PluginManagerGUI> ptr_plugins_gui
-            (MPX::PluginManagerGUI::create(*ptr_plugins.get()));
+            (MPX::PluginManagerGUI::create());
         services->add(ptr_plugins_gui);
 
         boost::shared_ptr<MB_ImportAlbum> ptr_mbimport
-            (MPX::MB_ImportAlbum::create(*ptr_library.get(), *ptr_covers.get()));
+            (MPX::MB_ImportAlbum::create());
         services->add(ptr_mbimport);
 
         splash->set_message(_("Done"), 1.0);

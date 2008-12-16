@@ -34,7 +34,6 @@
 #include "mpx/util-file.hh"
 
 #include "dialog-filebrowser.hh"
-#include "play.hh"
 
 using namespace Glib;
 using namespace Gtk;

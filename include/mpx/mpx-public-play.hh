@@ -38,11 +38,6 @@ namespace MPX
     : public Glib::Object
     , public Service::Base
     {
-      private:
-
-        Play (MPX::Service::Manager&);
-        ~Play ();
-
       public:
 
         void  set_custom_httpheader (char const*);

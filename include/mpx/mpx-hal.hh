@@ -90,7 +90,7 @@ namespace MPX
             typedef sigc::signal  <void, std::string >                  SignalDeviceRemoved;
             typedef sigc::signal  <void, std::string >                  SignalEjected;
 
-            HAL (MPX::Service::Manager&);
+            HAL ();
             ~HAL ();
 
             Hal::RefPtr<Hal::Context>

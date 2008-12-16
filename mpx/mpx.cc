@@ -38,6 +38,8 @@
 #include "mpx/error.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-stock.hh"
+#include "mpx/mpx-play.hh"
+#include "mpx/mpx-preferences.hh"
 #include "mpx/mpx-python.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-uri.hh"
@@ -51,7 +53,6 @@
 
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
-
 #include "dialog-about.hh"
 #include "dialog-equalizer.hh"
 #include "dialog-filebrowser.hh"
@@ -60,9 +61,8 @@
 #ifdef HAVE_HAL
 #include "mlibmanager.hh"
 #endif
-#include "play.hh"
-#include "preferences.hh"
 #include "sidebar.hh"
+
 #include "volume-control.hh"
 
 #include <boost/format.hpp>
@@ -561,8 +561,7 @@ namespace MPX
 
 
                 Player::Player(
-                                const Glib::RefPtr<Gnome::Glade::Xml>&  xml,
-                                MPX::Service::Manager&                  services
+                    const Glib::RefPtr<Gnome::Glade::Xml>& xml
                 )
                 : WidgetLoader<Gtk::Window>(xml, "mpx")
                 , sigx::glib_auto_dispatchable()
@@ -571,18 +570,17 @@ namespace MPX
                 , m_Caps(C_NONE)
                 , m_NextSourceId(0)
                 , m_SourceUI(0)
-                , m_Covers(*(services.get<Covers>("mpx-service-covers")))
+                , m_Covers(*(services->get<Covers>("mpx-service-covers")))
         #ifdef HAVE_HAL
-                , m_HAL(*(services.get<HAL>("mpx-service-hal")))
+                , m_HAL(*(services->get<HAL>("mpx-service-hal")))
         #endif // HAVE_HAL
-                , m_Library(*(services.get<Library>("mpx-service-library")))
-                , m_Play(*(services.get<Play>("mpx-service-play")))
+                , m_Library(*(services->get<Library>("mpx-service-library")))
+                , m_Play(*(services->get<Play>("mpx-service-play")))
                 , m_NewTrack(false)
                 {
                         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
                         register_default_stock_icons();
 
-                        m_ErrorManager    = new ErrorManager;
                         m_AboutDialog     = new AboutDialog;
                         m_Equalizer       = MPX::Equalizer::create();
                         m_VolumeControl   = new VolumeControl( xml );
@@ -677,19 +675,17 @@ namespace MPX
                                         (sigc::mem_fun( *this, &Player::on_gst_set_window_geom ));
                         }
 
-                        m_Preferences = Preferences::create(m_Play);
-
                         m_scrolllock_mask   = 0;
                         m_numlock_mask      = 0;
                         m_capslock_mask     = 0;
                         mmkeys_get_offending_modifiers ();
                         on_mm_edit_done (); // bootstraps the settings
 
-                        m_Preferences->signal_mm_edit_begin().connect(
+                        (services->get<Preferences>("mpx-service-preferences"))->signal_mm_edit_begin().connect(
                                         sigc::mem_fun( *this, &Player::on_mm_edit_begin
                                                 ));
 
-                        m_Preferences->signal_mm_edit_done().connect(
+                        (services->get<Preferences>("mpx-service-preferences"))->signal_mm_edit_done().connect(
                                         sigc::mem_fun( *this, &Player::on_mm_edit_done
                                                 ));
 
@@ -803,7 +799,7 @@ namespace MPX
                                           sigc::mem_fun( *this, &Player::on_action_cb_play_files ));
 
 #ifdef HAVE_HAL
-                        MPX::MLibManager & mlibman = (*(services.get<MLibManager>("mpx-service-mlibman")));
+                        MPX::MLibManager & mlibman = (*(services->get<MLibManager>("mpx-service-mlibman")));
 
                         m_Actions->add( Action::create(
 
@@ -849,7 +845,7 @@ namespace MPX
                                           Gtk::Stock::EXECUTE,
                                           _("_Preferences..."),
                                           _("Set up Audio and other Settings")),
-                                          sigc::mem_fun (*m_Preferences, &Gtk::Widget::show ));
+                                          sigc::mem_fun (*(services->get<Preferences>("mpx-service-preferences").get()), &Gtk::Widget::show ));
 
                         m_Actions->add( Action::create(
 
@@ -1044,10 +1040,10 @@ namespace MPX
                 }
     
         Player*
-                Player::create (MPX::Service::Manager&services)
+                Player::create ()
                 {
                         const std::string path (build_filename(DATA_DIR, build_filename("glade","mpx.glade")));
-                        Player * p = new Player(Gnome::Glade::Xml::create (path), services);
+                        Player * p = new Player(Gnome::Glade::Xml::create (path));
                         return p;
                 }
 
@@ -1064,9 +1060,7 @@ namespace MPX
                         DBusObjects.mpx->shutdown_complete(DBusObjects.mpx); 
                         g_object_unref(G_OBJECT(DBusObjects.mpx));
 
-                        delete m_Preferences;
                         delete m_Sidebar;
-                        delete m_ErrorManager;
                         delete m_AboutDialog;
                         delete m_Equalizer;
                         delete m_VolumeControl;

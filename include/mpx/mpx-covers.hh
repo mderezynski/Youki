@@ -103,7 +103,7 @@ namespace MPX
 
       typedef bool (Covers::*FetchFunc) (const std::string&, Glib::RefPtr<Gdk::Pixbuf>&);
 
-      Covers (MPX::Service::Manager&);
+      Covers ();
 
       struct Signals_t
       {

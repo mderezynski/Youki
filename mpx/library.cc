@@ -175,14 +175,12 @@ namespace MPX
 {
 
         Library::Library(
-            Service::Manager& services
         )
         : sigx::glib_auto_dispatchable()
         , Service::Base("mpx-service-library")
-        , m_Services(services)
-        , m_HAL(*(services.get<HAL>("mpx-service-hal")))
-        , m_Covers(*(services.get<Covers>("mpx-service-covers")))
-        , m_MetadataReaderTagLib(*(services.get<MetadataReaderTagLib>("mpx-service-taglib")))
+        , m_HAL(services->get<HAL>("mpx-service-hal"))
+        , m_Covers(services->get<Covers>("mpx-service-covers"))
+        , m_MetadataReaderTagLib(services->get<MetadataReaderTagLib>("mpx-service-taglib"))
         , m_Flags(0)
         {
                 const int MLIB_VERSION_CUR = 1;
@@ -280,7 +278,7 @@ namespace MPX
                 m_ScannerThread->connect().signal_cache_cover().connect(
                                 sigc::bind(
                                     sigc::mem_fun(
-                                        m_Covers,
+                                        *(m_Covers.get()),
                                         &Covers::cache
                                 )
                                 , true
@@ -500,7 +498,7 @@ namespace MPX
                     bool use_hal 
                 )
                 {
-                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
+                        boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
 
                         if( !use_hal )
                         {
@@ -525,7 +523,7 @@ namespace MPX
                                 const std::string& volume_udi  = get<std::string>((*i)["hal_volume_udi"]) ;
                                 const std::string& device_udi  = get<std::string>((*i)["hal_device_udi"]) ;
                                 const std::string& insert_path = Util::normalize_path(get<std::string>((*i)["insert_path"]));
-                                const std::string& mount_point = m_HAL.get_mount_point_for_volume(volume_udi, device_udi) ;
+                                const std::string& mount_point = m_HAL->get_mount_point_for_volume(volume_udi, device_udi) ;
 
                                 std::string insert_path_new = filename_to_uri( build_filename( Util::normalize_path(mount_point), insert_path ));
     
@@ -570,7 +568,7 @@ namespace MPX
 
                                 try{
                                         const std::string& insert_path = Util::normalize_path(get<std::string>((*i)["insert_path"]));
-                                        const HAL::Volume& volume( m_HAL.get_volume_for_uri( insert_path )); 
+                                        const HAL::Volume& volume( m_HAL->get_volume_for_uri( insert_path )); 
                                         const std::string& insert_path_new = 
                                                 Util::normalize_path(filename_from_uri( Util::normalize_path(insert_path) ).substr( volume.mount_point.length() ));
 
@@ -604,7 +602,7 @@ namespace MPX
                 {
                         Row & r = (*v)[*position]; 
 
-                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
+                        boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
                         mm->push_message((boost::format(_("Refreshing album covers: %lld / %lld")) % *position % (*v).size()).str());
 
                         Track t = sqlToTrack( r, false );
@@ -634,7 +632,7 @@ namespace MPX
                         rq.artist = album_artist;
                         rq.album  = album;
 
-                        m_Covers.cache(
+                        m_Covers->cache(
                               rq
                             , true
                         );
@@ -656,7 +654,7 @@ namespace MPX
         void
                 Library::recacheCovers()
                 {
-                        m_Covers.purge();
+                        m_Covers->purge();
                         reload ();
 
                         RowV * v = new RowV;
@@ -766,14 +764,14 @@ namespace MPX
                     const std::string& msg
                 )
                 {
-                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
+                        boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
                         mm->push_message( msg );
                 }
 
         void
                 Library::removeDupes()
                 {
-                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
+                        boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
 
                         execSQL("BEGIN");
 
@@ -842,7 +840,7 @@ namespace MPX
                     const std::string& insert_path 
                 )
                 {
-                    boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
+                    boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
 
                     SQL::RowV rows;
 
@@ -902,7 +900,7 @@ namespace MPX
         void
                 Library::getMetadata (const std::string& uri, Track & track)
                 {
-                        m_MetadataReaderTagLib.get(uri, track);
+                        m_MetadataReaderTagLib->get(uri, track);
 
                         track[ATTRIBUTE_LOCATION] = uri; 
   
@@ -914,7 +912,7 @@ namespace MPX
                                         if( u.get_protocol() == URI::PROTOCOL_FILE )
                                         {
                                                 try{
-                                                        HAL::Volume const& volume (m_HAL.get_volume_for_uri (uri));
+                                                        HAL::Volume const& volume (m_HAL->get_volume_for_uri (uri));
 
                                                         track[ATTRIBUTE_HAL_VOLUME_UDI] =
                                                                 volume.volume_udi ;
@@ -963,7 +961,7 @@ namespace MPX
                                         {
                                                 try{
                                                         {
-                                                                HAL::Volume const& volume ( m_HAL.get_volume_for_uri( uri ));
+                                                                HAL::Volume const& volume ( m_HAL->get_volume_for_uri( uri ));
 
                                                                 track[ATTRIBUTE_HAL_VOLUME_UDI] =
                                                                         volume.volume_udi ;
@@ -1009,7 +1007,7 @@ namespace MPX
                                         const std::string& volume_udi  = get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get()) ;
                                         const std::string& device_udi  = get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get()) ;
                                         const std::string& vrp         = get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()) ;
-                                        const std::string& mount_point = m_HAL.get_mount_point_for_volume(volume_udi, device_udi) ;
+                                        const std::string& mount_point = m_HAL->get_mount_point_for_volume(volume_udi, device_udi) ;
 
                                         return filename_to_uri( build_filename( Util::normalize_path(mount_point), vrp) );
 
@@ -1567,7 +1565,7 @@ namespace MPX
         void
                 Library::remove_dangling () 
                 {
-                        boost::shared_ptr<MPX::MLibManager> mm = m_Services.get<MLibManager>("mpx-service-mlibman");
+                        boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
 
                         typedef std::tr1::unordered_set <gint64> IdSet;
                         static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld'");

@@ -92,8 +92,8 @@ namespace MPX
                     COL_TIME
                 };
 
-                MPX::Library                  & m_Lib;
-                MPX::Covers                   & m_Covers;
+                boost::shared_ptr<MPX::Library>   m_Lib;
+                boost::shared_ptr<MPX::Covers>    m_Covers;
 
                 Gtk::Image                    * m_iCover;
 
@@ -160,14 +160,10 @@ namespace MPX
 
                 static MB_ImportAlbum*
                 create(
-                    MPX::Library              & obj_library,
-                    MPX::Covers               & obj_covers
                 );
 
                 MB_ImportAlbum(
-                    const Glib::RefPtr<Gnome::Glade::Xml>&  xml,
-                    MPX::Library                          & obj_library,    
-                    MPX::Covers                           & obj_covers
+                    const Glib::RefPtr<Gnome::Glade::Xml>& xml
                 );
 
                 void

@@ -36,7 +36,7 @@ namespace MPX
 
         public:
 
-          MetadataReaderTagLib (MPX::Service::Manager&);
+          MetadataReaderTagLib();
           virtual ~MetadataReaderTagLib ();
 
           virtual bool

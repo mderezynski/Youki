@@ -30,8 +30,8 @@
 #endif //HAVE_CONFIG_H
 
 #include "mpx/mpx-audio.hh"
+#include "mpx/mpx-services.hh"
 #include "mpx/widgets/widgetloader.hh"
-#include "play.hh"
 
 #include <set>
 #include <string>
@@ -43,8 +43,9 @@
 #include <libglademm/xml.h>
 #include <mcs/mcs.h>
 #include <mcs/gtk-bind.h>
-
 #include <sigx/sigx.h>
+
+#include "mpx/mpx-library-scanner-thread.hh"
 
 namespace MPX
 {
@@ -58,6 +59,7 @@ namespace MPX
    */
   class Preferences
   : public Gnome::Glade::WidgetLoader<Gtk::Window>
+  , public MPX::Service::Base
   , public sigx::glib_auto_dispatchable
   {
     protected:
@@ -66,11 +68,11 @@ namespace MPX
 
     public:
 
-      Preferences (Glib::RefPtr<Gnome::Glade::Xml> const&, MPX::Play&);
+      Preferences (Glib::RefPtr<Gnome::Glade::Xml> const&);
 
       static
       Preferences*
-      create (MPX::Play&);
+      create ();
 
       virtual
       ~Preferences();
@@ -128,8 +130,6 @@ namespace MPX
       Gtk::Notebook                     * m_notebook_preferences;
       std::set<std::string>               m_sinks;
       Glib::RefPtr<Gtk::ListStore>        m_list_store_audio_systems;
-
-      Play & m_Play;
 
 #ifdef HAVE_ALSA
       // ALSA

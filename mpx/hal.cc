@@ -268,7 +268,7 @@ namespace MPX
         return m_context;
       }
 
-      HAL::HAL (MPX::Service::Manager& services)
+      HAL::HAL ()
       : Service::Base("mpx-service-hal")
       {
         if (!hal_init())

@@ -37,7 +37,7 @@
 
 namespace MPX
 {
-    class PTV;
+    class PluginTreeView;
     class PluginManagerGUI
       : public Gnome::Glade::WidgetLoader<Gtk::Window>
       , public Service::Base
@@ -48,13 +48,13 @@ namespace MPX
 
 		protected:
 
-			PluginManagerGUI (const Glib::RefPtr<Gnome::Glade::Xml>&, PluginManager &);
+			PluginManagerGUI (const Glib::RefPtr<Gnome::Glade::Xml>&);
 			virtual bool on_delete_event (GdkEventAny* G_GNUC_UNUSED);
 
 		public:
 
 			static PluginManagerGUI*
-			create (PluginManager &);
+			create ();
 
 			void
 			on_selection_changed();
@@ -76,12 +76,14 @@ namespace MPX
             void
             check_traceback();
 
-			PluginManager & m_Manager;
-			PTV * m_PTV;
-			Gtk::Notebook * notebook;
-			Gtk::Alignment * options;
-			Gtk::Button * buTraceback;
-			Gtk::Label * error, * overview;
+            boost::shared_ptr<PluginManager>     m_Manager;
+
+			PluginTreeView                     * m_PluginTreeView;
+			Gtk::Notebook                      * m_Notebook;
+			Gtk::Alignment                     * m_Options;
+			Gtk::Button                        * m_Button_Traceback;
+			Gtk::Label                         * m_Error,
+                                               * m_Overview;
     };
 }
 #endif
