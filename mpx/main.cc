@@ -341,7 +341,7 @@ main (int argc, char ** argv)
 
 #ifdef HAVE_HAL
     try{
-        services->add(boost::shared_ptr<HAL(new MPX::HAL));
+        services->add(boost::shared_ptr<HAL>(new MPX::HAL));
 #endif //HAVE_HAL
         services->add(boost::shared_ptr<Covers>(new MPX::Covers));
         services->add(boost::shared_ptr<MetadataReaderTagLib>(new MPX::MetadataReaderTagLib));
@@ -360,10 +360,10 @@ main (int argc, char ** argv)
         splash->set_message(_("Done"), 1.0);
         delete splash;
 
-        ptr_plugins->load_plugins ();
-        ptr_plugins->activate_plugins ();
+        services->get<PluginManager>("mpx-service-plugins")->load_plugins ();
+        services->get<PluginManager>("mpx-service-plugins")->activate_plugins ();
 
-        gtk->run (*ptr_player.get());
+        gtk->run (*(services->get<Player>("mpx-service-player").get()));
 
 #ifdef HAVE_HAL
     }
