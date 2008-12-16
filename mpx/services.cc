@@ -11,6 +11,20 @@ namespace Service
 
     Manager::~Manager ()
     {
+        m_services["mpx-service-plugins-gui"].reset();
+        m_services["mpx-service-plugins"].reset();
+        m_services["mpx-service-player"].reset();
+        m_services["mpx-service-mlibman"].reset();
+        m_services["mpx-service-mbimport"].reset();
+        m_services["mpx-service-play"].reset();
+        m_services["mpx-service-markov"].reset();
+        m_services["mpx-service-library"].reset();
+        m_services["mpx-service-taglib"].reset();
+        m_services["mpx-service-covers"].reset();
+
+#ifdef HAVE_HAL
+        m_services["mpx-service-hal"].reset();
+#endif // HAVE_HAL
     }
 
     void

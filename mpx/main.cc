@@ -341,86 +341,29 @@ main (int argc, char ** argv)
 
 #ifdef HAVE_HAL
     try{
-        boost::shared_ptr<HAL> ptr_halobj
-            (new MPX::HAL());
-        services->add(ptr_halobj);
-#endif
-        //       MPX::NM *obj_netman = new MPX::NM;
-
-        boost::shared_ptr<Covers> ptr_covers
-            (new MPX::Covers());
-        services->add(ptr_covers);
-
-        boost::shared_ptr<MetadataReaderTagLib> ptr_taglib
-            (new MPX::MetadataReaderTagLib());
-        services->add(ptr_taglib);
-
+        services->add(boost::shared_ptr<HAL(new MPX::HAL));
+#endif //HAVE_HAL
+        services->add(boost::shared_ptr<Covers>(new MPX::Covers));
+        services->add(boost::shared_ptr<MetadataReaderTagLib>(new MPX::MetadataReaderTagLib));
+        services->add(boost::shared_ptr<Library>(new MPX::Library));
+        services->add(boost::shared_ptr<MarkovAnalyzer>(new MarkovAnalyzer));
+        services->add(boost::shared_ptr<Play>(new MPX::Play));
+        services->add(boost::shared_ptr<Preferences>(MPX::Preferences::create()));
 #ifdef HAVE_HAL
-        boost::shared_ptr<Library> ptr_library
-            (new MPX::Library());
-        services->add(ptr_library);
-#else
-        boost::shared_ptr<Library> ptr_library
-            (new MPX::Library());
-        services->add(ptr_library);
-#endif
-
-        boost::shared_ptr<MarkovAnalyzer> ptr_markov
-            (new MarkovAnalyzer());
-        services->add(ptr_markov);
-
-        boost::shared_ptr<Play> ptr_play
-            (new MPX::Play());
-        services->add(ptr_play);
-
-        boost::shared_ptr<Preferences> ptr_preferences
-            (MPX::Preferences::create());
-        services->add(ptr_preferences);
-
-#ifdef HAVE_HAL
-        boost::shared_ptr<MLibManager> ptr_mlibman
-            (MPX::MLibManager::create());
-        services->add(ptr_mlibman);
+        services->add(boost::shared_ptr<MLibManager>(MPX::MLibManager::create()));
 #endif // HAVE_HAL
-
-        boost::shared_ptr<Player> ptr_player
-            (MPX::Player::create());
-        services->add(ptr_player);
-
-        boost::shared_ptr<PluginManager> ptr_plugins
-            (new MPX::PluginManager());
-        services->add(ptr_plugins);
-        ptr_plugins->load_plugins ();
-        ptr_plugins->activate_plugins ();
-
-        boost::shared_ptr<PluginManagerGUI> ptr_plugins_gui
-            (MPX::PluginManagerGUI::create());
-        services->add(ptr_plugins_gui);
-
-        boost::shared_ptr<MB_ImportAlbum> ptr_mbimport
-            (MPX::MB_ImportAlbum::create());
-        services->add(ptr_mbimport);
+        services->add(boost::shared_ptr<Player>(MPX::Player::create()));
+        services->add(boost::shared_ptr<PluginManager>(new MPX::PluginManager));
+        services->add(boost::shared_ptr<PluginManagerGUI>(MPX::PluginManagerGUI::create()));
+        services->add(boost::shared_ptr<MB_ImportAlbum>(MPX::MB_ImportAlbum::create()));
 
         splash->set_message(_("Done"), 1.0);
         delete splash;
 
+        ptr_plugins->load_plugins ();
+        ptr_plugins->activate_plugins ();
+
         gtk->run (*ptr_player.get());
-
-        ptr_plugins_gui.reset();
-        ptr_plugins.reset();
-
-        ptr_player.reset();
-
-        ptr_mlibman.reset();
-        ptr_mbimport.reset();
-        ptr_play.reset();
-        ptr_markov.reset();
-        ptr_library.reset();
-        ptr_taglib.reset();
-        ptr_covers.reset();
-#ifdef HAVE_HAL
-        ptr_halobj.reset();
-#endif
 
 #ifdef HAVE_HAL
     }
@@ -430,11 +373,10 @@ main (int argc, char ** argv)
     }
 #endif
 
-/*
     delete services;
-*/
     delete gtk;
     delete mcs;
 
     return EXIT_SUCCESS;
 }
+
