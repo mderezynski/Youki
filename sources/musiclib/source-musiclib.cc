@@ -479,9 +479,6 @@ namespace MPX
 
                         MPX::Source::PlaybackSourceMusicLib & m_MLib;
 
-                        PAccess<MPX::Library>                 m_Lib;
-                        PAccess<MPX::HAL>                     m_HAL;
-
                         Glib::RefPtr<Gdk::Pixbuf>             m_Playing;
                         Glib::RefPtr<Gdk::Pixbuf>             m_Bad;
 
@@ -518,14 +515,10 @@ namespace MPX
                         PlaylistTreeView(
                             Glib::RefPtr<Gnome::Glade::Xml> const& xml,
                             Glib::RefPtr<Gtk::UIManager>    const& ui_manager,
-                            PAccess<MPX::Library>           const& lib,
-                            PAccess<MPX::HAL>               const& hal,
                             MPX::Source::PlaybackSourceMusicLib  & mlib
                         )
                         : WidgetLoader<Gtk::TreeView>(xml,"source-musiclib-treeview-playlist")
                         , m_MLib(mlib)
-                        , m_Lib(lib)
-                        , m_HAL(hal)
                         , m_ButtonDepressed(0)
                         {
                                 set_has_tooltip();
@@ -889,7 +882,7 @@ namespace MPX
                                         if(r.count("pcount"))
                                                 (*iter)[PlaylistColumns.Playcount] = get<gint64>(r["pcount"]);
 
-                                        (*iter)[PlaylistColumns.MPXTrack] = m_Lib.get().sqlToTrack(r); 
+                                        (*iter)[PlaylistColumns.MPXTrack] = services->get<Library>("mpx-service-library")->sqlToTrack(r); 
                                         (*iter)[PlaylistColumns.IsMPXTrack] = true; 
                                         (*iter)[PlaylistColumns.IsBad] = false; 
                                 }
@@ -943,7 +936,7 @@ namespace MPX
                                 append_album (gint64 id)
                                 {
                                         SQL::RowV v;
-                                        m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = '%lld' ORDER BY track") % id).str()); 
+                                        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = '%lld' ORDER BY track") % id).str()); 
                                         TreeIter iter = ListStore->append();
                                         for(SQL::RowV::const_iterator i = v.begin(); i != v.end(); ++i)
                                         {
@@ -972,7 +965,7 @@ namespace MPX
                                         }
 
                                         SQL::RowV v;
-                                        m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s) %s") % numbers.str() % ((order == ORDER) ? "ORDER BY track_view.track" : "")).str()); 
+                                        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id IN (%s) %s") % numbers.str() % ((order == ORDER) ? "ORDER BY track_view.track" : "")).str()); 
 
                                         TreeIter iter = ListStore->append();
 
@@ -1034,7 +1027,7 @@ namespace MPX
                                                 }
 
                                                 Track track;
-                                                m_Lib.get().getMetadata(*i, track);
+                                                services->get<Library>("mpx-service-library")->getMetadata(*i, track);
 
                                                 if(!begin)
                                                 {
@@ -1097,7 +1090,7 @@ namespace MPX
                                                 gint64 id = *(reinterpret_cast<const gint64*>(data.get_data()));
 
                                                 SQL::RowV v;
-                                                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = %lld ORDER BY track;") % id).str()); 
+                                                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = %lld ORDER BY track;") % id).str()); 
 
                                                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                                                 {
@@ -1114,7 +1107,7 @@ namespace MPX
                                                 gint64 id = *(reinterpret_cast<const gint64*>(data.get_data()));
 
                                                 SQL::RowV v;
-                                                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = %lld;") % id).str()); 
+                                                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = %lld;") % id).str()); 
 
                                                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                                                 {
@@ -1133,7 +1126,7 @@ namespace MPX
                                                 for(IdV::const_iterator i = idv.begin(); i != idv.end(); ++i) 
                                                 {
                                                         SQL::RowV v;
-                                                        m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = %lld;") % *i).str()); 
+                                                        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = %lld;") % *i).str()); 
                                                         SQL::Row & r = v[0]; 
 
                                                         if(i != idv.begin())
@@ -1169,7 +1162,7 @@ namespace MPX
                                                         g_return_val_if_fail(((rating >= 0) && (rating <= 5)), false);
                                                         TreeIter iter = ListStore->get_iter(path);
                                                         (*iter)[PlaylistColumns.Rating] = rating;   
-                                                        m_Lib.get().trackRated(gint64((*iter)[PlaylistColumns.RowId]), rating);
+                                                        services->get<Library>("mpx-service-library")->trackRated(gint64((*iter)[PlaylistColumns.RowId]), rating);
                                                 }
                                         }
                                         TreeView::on_button_press_event(event);
@@ -1534,7 +1527,7 @@ namespace MPX
                                         std::string location;
 
                                         try{
-                                            location = m_Lib.get().trackGetLocation( t );
+                                            location = services->get<Library>("mpx-service-library")->trackGetLocation( t );
                                         } catch( Library::FileQualificationError & cxe )
                                         {
                                             g_message("%s: Error: What: %s", G_STRLOC, cxe.what());
@@ -1603,8 +1596,6 @@ namespace MPX
                 class AllTracksView
                 {
                         MPX::Source::PlaybackSourceMusicLib & m_MLib;
-                        PAccess<MPX::Library>                 m_Lib;
-                        PAccess<MPX::HAL>                     m_HAL;
                         ListView                            * m_ListView;
                         DataModelFilterP                      m_FilterModel;
                         RoundedLayout*                        m_LabelShowing;
@@ -1613,13 +1604,9 @@ namespace MPX
 
                         AllTracksView(
                                         Glib::RefPtr<Gnome::Glade::Xml> const& xml,
-                                        PAccess<MPX::Library>           const& lib,
-                                        PAccess<MPX::HAL>               const& hal,
                                         MPX::Source::PlaybackSourceMusicLib  & mlib
                                      )
-                                : m_MLib(mlib)
-                                  , m_Lib(lib)
-                                  , m_HAL(hal)
+                        : m_MLib(mlib)
                         {
                                 Gtk::ScrolledWindow     * scrollwin = dynamic_cast<Gtk::ScrolledWindow*>(xml->get_widget("musiclib-alltracks-sw")); 
                                 Gtk::Entry              * entry     = dynamic_cast<Gtk::Entry*>(xml->get_widget("musiclib-alltracks-filter-entry")); 
@@ -1629,11 +1616,11 @@ namespace MPX
                                 DataModelP m (new DataModel);
 
                                 SQL::RowV v;
-                                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY album_artist, album, track_view.track")).str()); 
+                                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY album_artist, album, track_view.track")).str()); 
                                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                                 {
                                         SQL::Row & r = *i;
-                                        m->append_track(r, m_Lib.get().sqlToTrack(r));
+                                        m->append_track(r, services->get<Library>("mpx-service-library")->sqlToTrack(r));
                                 }
 
                                 m_FilterModel = DataModelFilterP (new DataModelFilter(m));
@@ -1688,14 +1675,14 @@ namespace MPX
                                                         cb
                                                         ));
 
-                                m_Lib.get().signal_new_track().connect( 
+                                services->get<Library>("mpx-service-library")->signal_new_track().connect( 
                                                 sigc::mem_fun(
                                                         *this,
                                                         &AllTracksView::on_new_track
                                                         ));
 
 
-                                m_Lib.get().signal_track_deleted().connect( 
+                                services->get<Library>("mpx-service-library")->signal_track_deleted().connect( 
                                                 sigc::mem_fun(
                                                         *this,
                                                         &AllTracksView::on_track_deleted
@@ -1749,10 +1736,6 @@ namespace MPX
                 View                    *   m_View;
                 ViewModel               *   m_ViewModel;
 
-                PAccess<MPX::Library>       m_Lib;
-                PAccess<MPX::Covers>        m_Covers;
-                PAccess<MPX::HAL>           m_HAL;
-
                 MusicLibPrivate(
                     MPX::Player&                            player,
                     MPX::Source::PlaybackSourceMusicLib&    mlib,
@@ -1764,14 +1747,11 @@ namespace MPX
 
                         m_UI = m_RefXml->get_widget("source-musiclib");
 
-                        player.get_object(m_Lib);
-                        player.get_object(m_Covers);
-                        player.get_object(m_HAL);
+                        m_TreeViewAlbums = new AlbumTreeView(m_RefXml, "source-musiclib-treeview-albums", "albums-showing", "search-entry", "search-alignment", "search-plugin-cbox", ui_manager);
+                        m_TreeViewCollections = new CollectionTreeView(m_RefXml, "source-musiclib-treeview-collections", "collections-showing", "collections-filter-entry", ui_manager);
 
-                        m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, ui_manager, m_Lib, m_HAL, mlib);
-                        m_TreeViewAlbums = new AlbumTreeView(m_RefXml, "source-musiclib-treeview-albums", "albums-showing", "search-entry", "search-alignment", "search-plugin-cbox", ui_manager, m_Lib, m_Covers);
-                        m_TreeViewCollections = new CollectionTreeView(m_RefXml, "source-musiclib-treeview-collections", "collections-showing", "collections-filter-entry", ui_manager, m_Lib);
-                        m_ViewAllTracks = new AllTracksView(m_RefXml, m_Lib, m_HAL, mlib);
+                        m_ViewAllTracks = new AllTracksView(m_RefXml, mlib);
+                        m_TreeViewPlaylist = new PlaylistTreeView(m_RefXml, ui_manager, mlib);
 
                         //m_TreeViewFS = new FileSystemTree(m_RefXml, "musiclib-treeview-file-system");
                         /*
@@ -1793,7 +1773,7 @@ namespace MPX
                         win->add(*m_View);
 
                         SQL::RowV v;
-                        m_Lib.get().getSQL(v, "SELECT * FROM album ORDER BY id;");
+                        services->get<Library>("mpx-service-library")->getSQL(v, "SELECT * FROM album ORDER BY id;");
 
                         for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                         {
@@ -1810,11 +1790,11 @@ namespace MPX
                             }
 
                             SQL::RowV v2;
-                            m_Lib.get().getSQL(v2, (boost::format ("SELECT * FROM track_view WHERE album_j = '%lld'") % get<gint64>(r["id"])).str());
+                            services->get<Library>("mpx-service-library")->getSQL(v2, (boost::format ("SELECT * FROM track_view WHERE album_j = '%lld'") % get<gint64>(r["id"])).str());
 
                             for(SQL::RowV::iterator n = v2.begin(); n != v2.end(); ++n)
                             {
-                                r1->ChildData.push_back(m_Lib.get().sqlToTrack(*n));
+                                r1->ChildData.push_back(services->get<Library>("mpx-service-library")->sqlToTrack(*n));
                             }
 
                             m_ViewModel->append_row( r1 );
@@ -1893,10 +1873,6 @@ namespace MPX
 
                                 m_signals_installed = true;
                         }
-
-                        player.get_object(m_Lib);
-                        player.get_object(m_HAL);
-                        player.get_object(m_Covers);
 
                         const std::string path (build_filename(DATA_DIR, build_filename("glade","source-musiclib.glade")));
                         m_RefXml = Gnome::Glade::Xml::create (path);
@@ -2148,7 +2124,7 @@ namespace MPX
                                 int response = dialog.run(_("Are you sure you want to Refresh <b>all</b> covers at this time? (previous covers will be irrevocably lost)"));
                                 if( response == Gtk::RESPONSE_OK )
                                 {
-                                        m_Lib.get().recacheCovers();
+                                        services->get<Library>("mpx-service-library")->recacheCovers();
                                 }
                         }
 
@@ -2347,7 +2323,7 @@ namespace MPX
                                 MPX::Track t ((*playlist.m_CurrentIter.get())[playlist.PlaylistColumns.MPXTrack]);
                                 
                                 try{
-                                    return m_Lib.get().trackGetLocation( t );
+                                    return services->get<Library>("mpx-service-library")->trackGetLocation( t );
                                 } catch( Library::FileQualificationError & cxe ) 
                                 {
                                         g_message("%s: Error: What: %s", G_STRLOC, cxe.what());

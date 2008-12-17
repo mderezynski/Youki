@@ -116,50 +116,48 @@ namespace
 namespace MPX
 {
                 CollectionTreeView::CollectionTreeView(
-                        const Glib::RefPtr<Gnome::Glade::Xml>&  xml,    
-                        const std::string&                      name,
-                        const std::string&                      name_showing_label,
-                        const std::string&                      name_filter_entry,
-                        Glib::RefPtr<Gtk::UIManager>            ui_manager,
-                        const PAccess<MPX::Library>&            lib
+                          const Glib::RefPtr<Gnome::Glade::Xml>&  xml    
+                        , const std::string&                      name
+                        , const std::string&                      name_showing_label
+                        , const std::string&                      name_filter_entry
+                        , Glib::RefPtr<Gtk::UIManager>            ui_manager
                 )
                 : WidgetLoader<Gtk::TreeView>(xml,name)
                 , m_Name(name)
-                , m_Lib(lib)
                 , m_ButtonPressed(false)
                 {
-                        m_Lib.get().signal_collection_new_track().connect(
+                        services->get<Library>("mpx-service-library")->signal_collection_new_track().connect(
                             sigc::mem_fun(
                                 *this,
                                 &CollectionTreeView::on_new_track
                         ));
 
-                        m_Lib.get().signal_collection_new().connect(
+                        services->get<Library>("mpx-service-library")->signal_collection_new().connect(
                             sigc::mem_fun(
                                 *this,
                                 &CollectionTreeView::on_new_collection
                         ));
 
 #if 0
-                        m_Lib.get().signal_collection_deleted().connect(
+                        services->get<Library>("mpx-service-library")->signal_collection_deleted().connect(
                             sigc::mem_fun(
                                 *this,
                                 &CollectionTreeView::on_collection_deleted
                         ));
 
-                        m_Lib.get().signal_track_deleted().connect(
+                        services->get<Library>("mpx-service-library")->signal_track_deleted().connect(
                             sigc::mem_fun(
                                 *this,
                                 &CollectionTreeView::on_track_deleted
                         ));
 
-                        m_Lib.get().signal_collection_updated().connect(
+                        services->get<Library>("mpx-service-library")->signal_collection_updated().connect(
                             sigc::mem_fun(
                                 *this,
                                 &CollectionTreeView::on_collection_updated
                         ));
 
-                        m_Lib.get().signal_reload().connect(
+                        services->get<Library>("mpx-service-library")->signal_reload().connect(
                             sigc::mem_fun(
                                 *this,
                                 &CollectionTreeView::collection_list_load
@@ -367,7 +365,7 @@ namespace MPX
                                         bool has_children = (gtk_tree_model_iter_children(GTK_TREE_MODEL(CollectionsTreeStore->gobj()), &children, const_cast<GtkTreeIter*>(iter->gobj())));
 
                                         SQL::RowV v;
-                                        m_Lib.get().getSQL(v, (boost::format("SELECT track_id FROM collection_%lld;") % gint64((*iter)[Columns.Id])).str());
+                                        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT track_id FROM collection_%lld;") % gint64((*iter)[Columns.Id])).str());
 
                                         for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                                         {
@@ -375,7 +373,7 @@ namespace MPX
                                                 gint64 id = get<gint64>(r_id["track_id"]);
 
                                                 SQL::RowV v;
-                                                m_Lib.get().getSQL(v, (boost::format ("SELECT * from track_view WHERE id = '%lld'") % id).str());
+                                                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format ("SELECT * from track_view WHERE id = '%lld'") % id).str());
                                                 SQL::Row & r = v[0];
 
                                                 TreeIter child = CollectionsTreeStore->append(iter->children());
@@ -560,7 +558,7 @@ namespace MPX
                                 m_TrackIterMap.clear();
 
                                 SQL::RowV v;
-                                m_Lib.get().getSQL(v, "SELECT * FROM collection");
+                                services->get<Library>("mpx-service-library")->getSQL(v, "SELECT * FROM collection");
 
                                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                                 {
@@ -576,7 +574,7 @@ namespace MPX
                                 g_message(G_STRFUNC);
 
                                 SQL::RowV v;
-                                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM collection JOIN collection_artist ON collection.collection_artist_j = collection_artist.id WHERE collection.id = %lld;") % id).str());
+                                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM collection JOIN collection_artist ON collection.collection_artist_j = collection_artist.id WHERE collection.id = %lld;") % id).str());
 
                                 g_return_if_fail(!v.empty());
 
@@ -590,7 +588,7 @@ namespace MPX
                         CollectionTreeView::on_new_collection(gint64 id)
                         {
                                 SQL::RowV v;
-                                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM collection WHERE collection.id = %lld;") % id).str());
+                                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM collection WHERE collection.id = %lld;") % id).str());
 
                                 g_return_if_fail(!v.empty());
 
@@ -608,7 +606,7 @@ namespace MPX
                                         if (((*iter)[Columns.HasTracks]))
                                         {
                                                 SQL::RowV v;
-                                                m_Lib.get().getSQL(v, (boost::format ("SELECT * from track_view WHERE id = '%lld'") % track_id).str());
+                                                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format ("SELECT * from track_view WHERE id = '%lld'") % track_id).str());
                                                 SQL::Row & r = v[0];
 
                                                 TreeIter child = CollectionsTreeStore->append(iter->children());

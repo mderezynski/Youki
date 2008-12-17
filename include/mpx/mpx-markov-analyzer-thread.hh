@@ -59,7 +59,6 @@ namespace MPX
     
             typedef std::deque<MPX::Track>  TrackQueue_t;
 
-            boost::shared_ptr<MPX::Library> m_Library ;
             TrackQueue_t                    m_trackQueue;
             sigc::connection                m_idleConnection;
             Glib::Mutex                     m_queueLock;

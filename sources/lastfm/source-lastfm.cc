@@ -202,9 +202,7 @@ namespace Source
     void
     LastFM::on_playlist (XSPF::Playlist const& plist)
     {
-        PAccess<MPX::Play> pa;
-        m_Player.get_object(pa);
-        pa.get().set_custom_httpheader((boost::format ("Cookie: Session=%s") % m_LastFmBackend.session().SessionId).str().c_str());
+        services->get<Play>("mpx-service-play")->set_custom_httpheader((boost::format ("Cookie: Session=%s") % m_LastFmBackend.session().SessionId).str().c_str());
 
         bool next = (m_Playlist && (m_PlaylistIter == m_Playlist.get().Items.end()));
 
@@ -306,9 +304,7 @@ namespace Source
         m_Caps = Caps (m_Caps & ~C_CAN_GO_NEXT);
         send_caps();
 
-        PAccess<MPX::Play> pa;
-        m_Player.get_object(pa);
-        pa.get().set_custom_httpheader(NULL);
+        services->get<Play>("mpx-services-play")->set_custom_httpheader(NULL);
         m_Playlist.reset();
     }
 

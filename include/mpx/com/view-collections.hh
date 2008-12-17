@@ -183,12 +183,11 @@ namespace MPX
                         }
 
                         CollectionTreeView(
-                            const Glib::RefPtr<Gnome::Glade::Xml>&,    
-                            const std::string&,
-                            const std::string&,
-                            const std::string&,
-                            Glib::RefPtr<Gtk::UIManager>,
-                            const PAccess<MPX::Library>&
+                              const Glib::RefPtr<Gnome::Glade::Xml>&
+                            , const std::string&
+                            , const std::string&
+                            , const std::string&
+                            , Glib::RefPtr<Gtk::UIManager>
                         );
 
                         protected:

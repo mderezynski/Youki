@@ -95,20 +95,6 @@ namespace MPX
 		void
 		remove_info_widget (Gtk::Widget*);
 
-		void
-		get_object (PAccess<MPX::Library>&);
-
-		void	
-		get_object (PAccess<MPX::Covers>&);
-
-        void
-        get_object (PAccess<MPX::Play>&);
-
-#ifdef HAVE_HAL
-        void
-        get_object (PAccess<MPX::HAL>&);
-#endif // HAVE_HAL
-
         PyObject* 
         get_source(std::string const& uuid);
 
@@ -274,11 +260,7 @@ namespace MPX
 
     // objects
 
-        Covers                        & m_Covers;
-        HAL                           & m_HAL;
-        Library                       & m_Library;
-
-		Play                          & m_Play;
+		Play                          * m_Play;
         Sidebar                       * m_Sidebar;
         InfoArea                      * m_InfoArea;
         VideoWidget                   * m_VideoWidget; 

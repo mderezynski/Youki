@@ -75,12 +75,13 @@ namespace MPX
 				};
 			};
 	
+            Gtk::Window                   & m_GUI;
+
 			Glib::RefPtr<Gtk::ListStore>    Store;
 			ColumnsT                        Columns;
-			PluginManager                 & m_Manager;
             Gtk::CellRendererPixbuf       * m_pRendererPixbuf;
+
             IdIterMap_t                     m_IdIterMap;
-            Gtk::Window                   & m_GUI;
 
 		public:
 
@@ -91,7 +92,6 @@ namespace MPX
             )
 
             : Gnome::Glade::WidgetLoader<Gtk::TreeView>(xml, "treeview")
-			, m_Manager(manager)
             , m_GUI(gui)
 
 			{
@@ -127,7 +127,7 @@ namespace MPX
                     )
                 );
 
-				PluginHoldMap const& map = m_Manager.get_map();	
+				PluginHoldMap const& map = services->get<PluginManager>("mpx-service-plugins")->get_map();	
 
 				for(PluginHoldMap::const_iterator i = map.begin(); i != map.end(); ++i)
 				{
@@ -236,9 +236,9 @@ namespace MPX
 				bool active = (*iter)[Columns.Active];
 
 				if(active)
-					m_Manager.deactivate(id);
+					services->get<PluginManager>("mpx-service-plugins")->deactivate(id);
 				else
-					m_Manager.activate(id);
+					services->get<PluginManager>("mpx-service-plugins")->activate(id);
 			}
 
 			Gtk::Widget *
@@ -247,7 +247,7 @@ namespace MPX
 				gint64 id = (*iter)[Columns.Id];
 
 				if((*iter)[Columns.HasGUI])
-					return m_Manager.get_gui(id);
+					return services->get<PluginManager>("mpx-service-plugins")->get_gui(id);
 				else
 					return NULL;
 			}
@@ -309,9 +309,7 @@ namespace MPX
         : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
         , Service::Base("mpx-service-plugins-gui")
 		{
-            m_Manager = services->get<PluginManager>("mpx-service-plugins");
-
-		    m_PluginTreeView = new PluginTreeView(xml, *(m_Manager.get()), *this);
+		    m_PluginTreeView = new PluginTreeView(xml, *(services->get<PluginManager>("mpx-service-plugins").get()), *this);
 			m_PluginTreeView->get_selection()->signal_changed().connect( sigc::mem_fun( *this, &PluginManagerGUI::on_selection_changed ) );
 
 			xml->get_widget("notebook", m_Notebook);
@@ -323,7 +321,7 @@ namespace MPX
 			xml->get_widget("traceback", m_Button_Traceback);
 			m_Button_Traceback->signal_clicked().connect( sigc::mem_fun( *this, &PluginManagerGUI::show_dialog ) );
 
-			if(m_Manager->get_traceback_count())
+			if(services->get<PluginManager>("mpx-service-plugins")->get_traceback_count())
 			{
 				set_error_text();
 				m_Button_Traceback->set_sensitive();
@@ -333,7 +331,7 @@ namespace MPX
 			xml->get_widget("close", buClose);
 			buClose->signal_clicked().connect( sigc::mem_fun( *this, &Gtk::Widget::hide ) );
 
-            m_Manager->signal_traceback().connect(
+            services->get<PluginManager>("mpx-service-plugins")->signal_traceback().connect(
                 sigc::mem_fun(
                     *this,
                     &PluginManagerGUI::check_traceback
@@ -406,7 +404,7 @@ namespace MPX
         void
         PluginManagerGUI::check_traceback()
         {
-			if(m_Manager->get_traceback_count())
+			if(services->get<PluginManager>("mpx-service-plugins")->get_traceback_count())
 			{
 				set_error_text();
 				m_Button_Traceback->set_sensitive();
@@ -421,12 +419,12 @@ namespace MPX
 		void
 		PluginManagerGUI::show_dialog()
 		{
-			Gtk::MessageDialog dialog ((boost::format(_("Failed to %1%: %2%")) % m_Manager->get_last_traceback().get_method() % m_Manager->get_last_traceback().get_name()).str(), false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_CLOSE);
+			Gtk::MessageDialog dialog ((boost::format(_("Failed to %1%: %2%")) % services->get<PluginManager>("mpx-service-plugins")->get_last_traceback().get_method() % services->get<PluginManager>("mpx-service-plugins")->get_last_traceback().get_name()).str(), false, Gtk::MESSAGE_ERROR, Gtk::BUTTONS_CLOSE);
 			dialog.set_title (_("Plugin traceback - MPX"));
-			dialog.set_secondary_text (m_Manager->pull_last_traceback().get_traceback());
+			dialog.set_secondary_text (services->get<PluginManager>("mpx-service-plugins")->pull_last_traceback().get_traceback());
 			dialog.run();
 
-			if(m_Manager->get_traceback_count())
+			if(services->get<PluginManager>("mpx-service-plugins")->get_traceback_count())
             {
 				set_error_text();
             }
@@ -440,9 +438,9 @@ namespace MPX
 		void
 		PluginManagerGUI::set_error_text()
 		{
-			std::string text = (boost::format(_("<b>Failed to %1%: %2%</b>")) % m_Manager->get_last_traceback().get_method() % m_Manager->get_last_traceback().get_name()).str();
+			std::string text = (boost::format(_("<b>Failed to %1%: %2%</b>")) % services->get<PluginManager>("mpx-service-plugins")->get_last_traceback().get_method() % services->get<PluginManager>("mpx-service-plugins")->get_last_traceback().get_name()).str();
 
-			unsigned int n = m_Manager->get_traceback_count();
+			unsigned int n = services->get<PluginManager>("mpx-service-plugins")->get_traceback_count();
 			if(n > 1)
 				text += (boost::format(_(" (%d more errors)")) % (n-1)).str();
 

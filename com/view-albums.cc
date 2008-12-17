@@ -178,20 +178,16 @@ namespace
 namespace MPX
 {
                 AlbumTreeView::AlbumTreeView(
-                        const Glib::RefPtr<Gnome::Glade::Xml>&  xml,    
-                        const std::string&                      name,
-                        const std::string&                      name_showing_label,
-                        const std::string&                      name_search_entry,
-                        const std::string&                      name_search_plugin_ui_alignment,
-                        const std::string&                      name_search_plugin_choice_cbox,
-                        Glib::RefPtr<Gtk::UIManager>            ui_manager,
-                        const PAccess<MPX::Library>&            lib,
-                        const PAccess<MPX::Covers>&             amzn
+                          const Glib::RefPtr<Gnome::Glade::Xml>&  xml
+                        , const std::string&                      name
+                        , const std::string&                      name_showing_label
+                        , const std::string&                      name_search_entry
+                        , const std::string&                      name_search_plugin_ui_alignment
+                        , const std::string&                      name_search_plugin_choice_cbox
+                        , Glib::RefPtr<Gtk::UIManager>            ui_manager
                 )
                 : WidgetLoader<Gtk::TreeView>(xml,name)
                 , m_Name(name)
-                , m_Lib(lib)
-                , m_Covers(amzn)
                 , m_ButtonPressed(false)
                 {
                         m_DiscDefault_DND = IconTheme::get_default()->load_icon("gnome-dev-cdrom-audio", 128, Gtk::ICON_LOOKUP_USE_BUILTIN);
@@ -223,49 +219,49 @@ namespace MPX
                                                "emblem-soundtrack.png" 
                         ));
 
-                        m_Lib.get().signal_new_album().connect(
+                        services->get<Library>("mpx-service-library")->signal_new_album().connect(
                             sigc::mem_fun(
                                 *this,
                                 &AlbumTreeView::on_new_album
                         ));
 
-                        m_Lib.get().signal_new_track().connect(
+                        services->get<Library>("mpx-service-library")->signal_new_track().connect(
                             sigc::mem_fun(
                                 *this,
                                 &AlbumTreeView::on_new_track
                         ));
 
-                        m_Lib.get().signal_album_deleted().connect(
+                        services->get<Library>("mpx-service-library")->signal_album_deleted().connect(
                             sigc::mem_fun(
                                 *this,
                                 &AlbumTreeView::on_album_deleted
                         ));
 
-                        m_Lib.get().signal_track_deleted().connect(
+                        services->get<Library>("mpx-service-library")->signal_track_deleted().connect(
                             sigc::mem_fun(
                                 *this,
                                 &AlbumTreeView::on_track_deleted
                         ));
 
-                        m_Lib.get().signal_track_updated().connect(
+                        services->get<Library>("mpx-service-library")->signal_track_updated().connect(
                             sigc::mem_fun(
                                 *this,
                                 &AlbumTreeView::on_track_updated
                         ));
 
-                        m_Lib.get().signal_album_updated().connect(
+                        services->get<Library>("mpx-service-library")->signal_album_updated().connect(
                             sigc::mem_fun(
                                 *this,
                                 &AlbumTreeView::on_album_updated
                         ));
 
-                        m_Lib.get().signal_reload().connect(
+                        services->get<Library>("mpx-service-library")->signal_reload().connect(
                             sigc::mem_fun(
                                 *this,
                                 &AlbumTreeView::album_list_load
                         ));
 
-                        m_Covers.get().signal_got_cover().connect(
+                        services->get<Covers>("mpx-service-covers")->signal_got_cover().connect(
                             sigc::mem_fun(
                                 *this,
                                 &AlbumTreeView::on_got_cover
@@ -567,7 +563,7 @@ namespace MPX
                                         std::string track_artist_mb_id;
 
                                         SQL::RowV v;
-                                        m_Lib.get().getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = %lld ORDER BY track;") % gint64((*iter)[Columns.Id])).str());
+                                        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = %lld ORDER BY track;") % gint64((*iter)[Columns.Id])).str());
 
                                         for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                                         {
@@ -637,7 +633,7 @@ namespace MPX
                                         if(m_DragAlbumMBID)
                                         {
                                                 Cairo::RefPtr<Cairo::ImageSurface> CoverCairo;
-                                                m_Covers.get().fetch(m_DragAlbumMBID.get(), CoverCairo, COVER_SIZE_DEFAULT);
+                                                services->get<Covers>("mpx-service-covers")->fetch(m_DragAlbumMBID.get(), CoverCairo, COVER_SIZE_DEFAULT);
                                                 if(CoverCairo)
                                                 {
                                                         CoverCairo = Util::cairo_image_surface_round(CoverCairo, 21.3); 
@@ -733,7 +729,7 @@ namespace MPX
                                                 break;
                                         }
     
-                                       m_Covers.get().cache_artwork( (*iter)[Columns.MBID], cover ); 
+                                       services->get<Covers>("mpx-service-covers")->cache_artwork( (*iter)[Columns.MBID], cover ); 
                                     }
                                 } catch(...) {
                                     g_message("%s: Error saving Pixbuf", G_STRLOC);
@@ -758,7 +754,7 @@ namespace MPX
                                         Glib::RefPtr<Gtk::TextBuffer> buffer = textview->get_buffer();
                                         Glib::ustring text = buffer->get_text();
 
-                                        m_Lib.get().albumAddNewRating(id, rating, text);
+                                        services->get<Library>("mpx-service-library")->albumAddNewRating(id, rating, text);
                                 }
 
                                 dialog->hide();
@@ -789,7 +785,7 @@ namespace MPX
 
                                                         run_rating_comment_dialog(rating, m_DragAlbumId.get());
 
-                                                        rating = m_Lib.get().albumGetMeanRatingValue(m_DragAlbumId.get());
+                                                        rating = services->get<Library>("mpx-service-library")->albumGetMeanRatingValue(m_DragAlbumId.get());
                                                         (*iter)[Columns.Rating] = rating;  
                                                         queue_draw ();
                                                 }
@@ -930,8 +926,8 @@ namespace MPX
                         {
                                 AlbumInfoWindow * d = AlbumInfoWindow::create(
                                                 (*get_selection()->get_selected())[Columns.Id],
-                                                m_Lib.get(),
-                                                m_Covers.get()
+                                                *(services->get<Library>("mpx-service-library").get()),
+                                                *(services->get<Covers>("mpx-service-covers").get())
                                                 );
                         }
 
@@ -939,7 +935,7 @@ namespace MPX
                         AlbumTreeView::on_got_cover(const std::string& mbid)
                         {
                                 Cairo::RefPtr<Cairo::ImageSurface> surface;
-                                m_Covers.get().fetch(mbid, surface, COVER_SIZE_ALBUM);
+                                services->get<Covers>("mpx-service-covers")->fetch(mbid, surface, COVER_SIZE_ALBUM);
                                 surface = Util::cairo_image_surface_round(surface, 6.);
 
                                 Gdk::Color c = get_style()->get_black();
@@ -989,7 +985,7 @@ namespace MPX
                                 track[ATTRIBUTE_ALBUM] = album;
 
                                 try{
-                                        rating = m_Lib.get().albumGetMeanRatingValue(id);
+                                        rating = services->get<Library>("mpx-service-library")->albumGetMeanRatingValue(id);
                                         track[ATTRIBUTE_RATING] = rating;
                                 } catch( std::runtime_error )
                                 {
@@ -1163,7 +1159,7 @@ namespace MPX
                                 m_Track_Iter_Map.clear();
 
                                 SQL::RowV v;
-                                m_Lib.get().getSQL(v, "SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id;");
+                                services->get<Library>("mpx-service-library")->getSQL(v, "SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id;");
 
                                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                                 {
@@ -1173,7 +1169,7 @@ namespace MPX
                                         RequestQualifier rq;
                                         rq.mbid = get<std::string>(r["mb_album_id"]);
 
-                                        m_Covers.get().cache(
+                                        services->get<Covers>("mpx-service-covers")->cache(
                                               rq
                                             , false 
                                         );
@@ -1184,7 +1180,7 @@ namespace MPX
                         AlbumTreeView::on_album_updated(gint64 id)
                         {
                                 SQL::RowV v;
-                                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
+                                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
                                 g_return_if_fail(!v.empty());
                                 SQL::Row & r = v[0];
                                 update_album (r, id); 
@@ -1194,7 +1190,7 @@ namespace MPX
                         AlbumTreeView::on_new_album(gint64 id)
                         {
                                 SQL::RowV v;
-                                m_Lib.get().getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
+                                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
                                 g_return_if_fail(!v.empty());
                                 SQL::Row & r = v[0];
                                 place_album (r, id); 

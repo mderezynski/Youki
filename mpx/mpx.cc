@@ -570,14 +570,10 @@ namespace MPX
                 , m_Caps(C_NONE)
                 , m_NextSourceId(0)
                 , m_SourceUI(0)
-                , m_Covers(*(services->get<Covers>("mpx-service-covers")))
-        #ifdef HAVE_HAL
-                , m_HAL(*(services->get<HAL>("mpx-service-hal")))
-        #endif // HAVE_HAL
-                , m_Library(*(services->get<Library>("mpx-service-library")))
-                , m_Play(*(services->get<Play>("mpx-service-play")))
                 , m_NewTrack(false)
                 {
+                        m_Play = services->get<Play>("mpx-service-play").get();
+
                         IconTheme::get_default()->prepend_search_path(build_filename(DATA_DIR,"icons"));
                         register_default_stock_icons();
 
@@ -635,43 +631,43 @@ namespace MPX
                                 g_warning("%s: Couldn't set main window icon", G_STRLOC);
                         }
 
-                        m_Play.signal_eos().connect(
+                        m_Play->signal_eos().connect(
                                         sigc::mem_fun( *this, &MPX::Player::on_play_eos
                                                 ));
 
-                        m_Play.signal_position().connect(
+                        m_Play->signal_position().connect(
                                         sigc::mem_fun( *this, &MPX::Player::on_play_position
                                                 ));
 
-                        m_Play.signal_metadata().connect(
+                        m_Play->signal_metadata().connect(
                                         sigc::mem_fun( *this, &MPX::Player::on_play_metadata
                                                 ));
 
-                        m_Play.signal_buffering().connect(
+                        m_Play->signal_buffering().connect(
                                         sigc::mem_fun( *this, &MPX::Player::on_play_buffering
                                                 ));
 
-                        m_Play.property_status().signal_changed().connect(
+                        m_Play->property_status().signal_changed().connect(
                                         sigc::mem_fun( *this, &MPX::Player::on_play_status_changed
                                                 ));
 
-                        m_Play.signal_stream_switched().connect(
+                        m_Play->signal_stream_switched().connect(
                                         sigc::mem_fun( *this, &MPX::Player::on_play_stream_switched
                                                 ));
 
-                        m_Play.signal_spectrum().connect(
-                                        sigc::mem_fun( *this, &MPX::Player::on_play_update_spectrum )
-                                        );
+                        m_Play->signal_spectrum().connect(
+                                        sigc::mem_fun( *this, &MPX::Player::on_play_update_spectrum
+                                                ));
 
-                        m_VideoWidget = manage(new VideoWidget(&m_Play));
+                        m_VideoWidget = manage(new VideoWidget(m_Play));
                         m_VideoWidget->show ();
                         gtk_widget_realize (GTK_WIDGET (m_VideoWidget->gobj()));
 
-                        if( m_Play.has_video() )
+                        if( m_Play->has_video() )
                         {
-                                m_Play.signal_request_window_id ().connect
+                                m_Play->signal_request_window_id ().connect
                                         (sigc::mem_fun( *this, &Player::on_gst_set_window_id ));
-                                m_Play.signal_video_geom ().connect
+                                m_Play->signal_video_geom ().connect
                                         (sigc::mem_fun( *this, &Player::on_gst_set_window_geom ));
                         }
 
@@ -1194,32 +1190,6 @@ namespace MPX
                         plugins.raise ();
                 }
 
-        void
-                Player::get_object (PAccess<MPX::Library> & pa)
-                {
-                        pa = PAccess<MPX::Library>(m_Library);
-                }
-
-        void	
-                Player::get_object (PAccess<MPX::Covers> & pa)
-                {
-                        pa = PAccess<MPX::Covers>(m_Covers);
-                }
-
-        void
-                Player::get_object (PAccess<MPX::Play> & pa)
-                {
-                        pa = PAccess<MPX::Play>(m_Play);
-                }
-
-#ifdef HAVE_HAL
-        void
-                Player::get_object (PAccess<MPX::HAL> & pa)
-                {
-                        pa = PAccess<MPX::HAL>(m_HAL);
-                }
-#endif // HAVE_HAL
-
         Glib::RefPtr<Gtk::UIManager>&
                 Player::ui ()
                 {
@@ -1229,7 +1199,7 @@ namespace MPX
         PlayStatus
                 Player::get_status ()
                 {
-                        return PlayStatus(m_Play.property_status().get_value());
+                        return PlayStatus(m_Play->property_status().get_value());
                 }
 
 
@@ -1281,7 +1251,7 @@ namespace MPX
         void
                 Player::on_volume_value_changed(double volume)
                 {
-                        m_Play.property_volume() = volume;
+                        m_Play->property_volume() = volume;
                         mcs->key_set("mpx","volume", int(volume)); 
                 }
 
@@ -1291,16 +1261,16 @@ namespace MPX
                         if( event->type == GDK_KEY_PRESS )
                         {
                                 GdkEventKey * ev = ((GdkEventKey*)(event));
-                                gint64 status = m_Play.property_status().get_value();
+                                gint64 status = m_Play->property_status().get_value();
                                 if((status == PLAYSTATUS_PLAYING) || (status == PLAYSTATUS_PAUSED))
                                 {
-                                        gint64 pos = m_Play.property_position().get_value();
+                                        gint64 pos = m_Play->property_position().get_value();
 
                                         int delta = (ev->state & GDK_SHIFT_MASK) ? 1 : 15;
 
                                         if(ev->keyval == GDK_Left)
                                         {
-                                                m_Play.seek( pos - delta );
+                                                m_Play->seek( pos - delta );
                                                 m_TrackSeekedSeconds -= delta;
                                                 if( m_TrackSeekedSeconds < 0 )
                                                 {
@@ -1311,7 +1281,7 @@ namespace MPX
                                         }
                                         else if(ev->keyval == GDK_Right)
                                         {
-                                                m_Play.seek( pos + delta );
+                                                m_Play->seek( pos + delta );
                                                 m_TrackSeekedSeconds += delta;
                                                 return true;
                                         }
@@ -1321,7 +1291,7 @@ namespace MPX
                         else if( event->type == GDK_BUTTON_PRESS )
                         {
                                 g_atomic_int_set(&m_Seeking,1);
-                                m_PreSeekPosition = m_Play.property_position().get_value();
+                                m_PreSeekPosition = m_Play->property_position().get_value();
                                 goto SET_SEEK_POSITION;
                         }
                         else if( event->type == GDK_BUTTON_RELEASE && g_atomic_int_get(&m_Seeking))
@@ -1339,13 +1309,13 @@ namespace MPX
                                 }
 
                                 m_LastSeeked = gint64(m_Seek->get_value());
-                                m_Play.seek (gint64(m_Seek->get_value()));
+                                m_Play->seek (gint64(m_Seek->get_value()));
                         }
                         else if( event->type == GDK_MOTION_NOTIFY && g_atomic_int_get(&m_Seeking))
                         {
 SET_SEEK_POSITION:
 
-                                guint64 duration = m_Play.property_duration().get_value();
+                                guint64 duration = m_Play->property_duration().get_value();
                                 guint64 position = m_Seek->get_value();
 
                                 guint64 m_pos = position / 60;
@@ -1371,7 +1341,7 @@ SET_SEEK_POSITION:
                 {
                         Glib::Mutex::Lock L (m_MetadataLock);
 
-                        GstMetadata const& m = m_Play.get_metadata();
+                        GstMetadata const& m = m_Play->get_metadata();
 
                         switch (field)
                         {
@@ -1440,7 +1410,7 @@ SET_SEEK_POSITION:
                         if( position <= m_LastSeeked )
                             return;
 
-                        guint64 duration = m_Play.property_duration().get_value();
+                        guint64 duration = m_Play->property_duration().get_value();
 
                         if( (duration > 0) && (position <= duration) && (position >= 0) )
                         {
@@ -1462,7 +1432,7 @@ SET_SEEK_POSITION:
                                 m_Seek->set_value(double (position));
 
                                 m_TrackPlayedSeconds += 0.5; // this is slightly incorrect, the tick is every 500ms, but nothing says that the time always also progresses by exactly 0.5s
-                                m_TrackDuration = m_Play.property_duration().get_value();
+                                m_TrackDuration = m_Play->property_duration().get_value();
                         }
                 }
 
@@ -1494,7 +1464,7 @@ SET_SEEK_POSITION:
         void
                 Player::switch_stream(std::string const& uri, std::string const& type)
                 {
-                        m_Play.switch_stream( uri, type );
+                        m_Play->switch_stream( uri, type );
                 }
 
         void
@@ -1513,7 +1483,7 @@ SET_SEEK_POSITION:
                                 MPX::MarkovAnalyzer & markov = (*(services->get<MarkovAnalyzer>("mpx-service-markov")));
                                 markov.append( m_Metadata.get() );
 
-                                m_Library.trackPlayed(
+                                services->get<Library>("mpx-service-library")->trackPlayed(
                                     get<gint64>(m_Metadata.get()[ATTRIBUTE_MPX_TRACK_ID].get()),
                                     get<gint64>(m_Metadata.get()[ATTRIBUTE_MPX_ALBUM_ID].get()),
                                     time(NULL)
@@ -1596,7 +1566,7 @@ SET_SEEK_POSITION:
 
                                 if( c & C_CAN_PLAY )
                                 {
-                                        if( m_ActiveSource && (m_Play.property_status().get_value() != PLAYSTATUS_STOPPED))
+                                        if( m_ActiveSource && (m_Play->property_status().get_value() != PLAYSTATUS_STOPPED))
                                         {
                                                 track_played ();
                                                 m_Sources[m_ActiveSource.get()]->stop ();
@@ -1642,13 +1612,13 @@ SET_SEEK_POSITION:
 
                         if(c & C_CAN_PAUSE )
                         {
-                                if( m_Play.property_status() == PLAYSTATUS_PAUSED)
+                                if( m_Play->property_status() == PLAYSTATUS_PAUSED)
                                 {
-                                        m_Play.request_status (PLAYSTATUS_PLAYING);
+                                        m_Play->request_status (PLAYSTATUS_PLAYING);
                                 }
                                 else
                                 {
-                                        m_Play.request_status (PLAYSTATUS_PAUSED);
+                                        m_Play->request_status (PLAYSTATUS_PAUSED);
                                 }
                         }
                 }
@@ -1732,7 +1702,7 @@ SET_SEEK_POSITION:
                         {
                                 m_Sources[m_PreparingSource.get()]->stop ();
                                 m_Sources[m_PreparingSource.get()]->send_caps ();
-                                m_Play.request_status( PLAYSTATUS_STOPPED );
+                                m_Play->request_status( PLAYSTATUS_STOPPED );
                         }
                         else
                         if(m_ActiveSource)
@@ -1740,14 +1710,14 @@ SET_SEEK_POSITION:
                                 track_played();
                                 m_Sources[m_ActiveSource.get()]->stop ();
                                 m_Sources[m_ActiveSource.get()]->send_caps ();
-                                m_Play.request_status( PLAYSTATUS_STOPPED );
+                                m_Play->request_status( PLAYSTATUS_STOPPED );
                         }
                 }
 
         void
                 Player::on_play_status_changed ()
                 {
-                        PlayStatus status = PlayStatus (m_Play.property_status().get_value());
+                        PlayStatus status = PlayStatus (m_Play->property_status().get_value());
 
                         switch( status )
                         {
@@ -1949,7 +1919,7 @@ SET_SEEK_POSITION:
                     if( m_Metadata && m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID] && get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()) == mbid)
                     {
                         Glib::RefPtr<Gdk::Pixbuf> cover;
-                        m_Covers.fetch(mbid, cover);
+                        services->get<Covers>("mpx-service-covers")->fetch(mbid, cover);
                         m_InfoArea->set_cover( cover->scale_simple( 80, 80, Gdk::INTERP_BILINEAR), m_NewTrack );
                         g_atomic_int_set(&m_NewTrack, 0);
                     }
@@ -2047,8 +2017,8 @@ SET_SEEK_POSITION:
                 {
                         Glib::Mutex::Lock L (m_MetadataLock);
 
-                        if( (m_Play.property_status() == PLAYSTATUS_STOPPED ) ||
-                            (m_Play.property_status() == PLAYSTATUS_WAITING ))
+                        if( (m_Play->property_status() == PLAYSTATUS_STOPPED ) ||
+                            (m_Play->property_status() == PLAYSTATUS_WAITING ))
                             return;
 
                         metadata_reparse ();
@@ -2061,15 +2031,15 @@ SET_SEEK_POSITION:
 
                         Glib::Mutex::Lock L (m_MetadataLock);
 
-                        if( (m_Play.property_status() == PLAYSTATUS_STOPPED ) ||
-                            (m_Play.property_status() == PLAYSTATUS_WAITING ))
+                        if( (m_Play->property_status() == PLAYSTATUS_STOPPED ) ||
+                            (m_Play->property_status() == PLAYSTATUS_WAITING ))
                             return;
  
                         m_Metadata = metadata;
 
                         if( !m_Metadata.get().Image && m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID]) 
                         {
-                                m_Covers.fetch(
+                                services->get<Covers>("mpx-service-covers")->fetch(
                                                 get<std::string>(m_Metadata.get()[ATTRIBUTE_MB_ALBUM_ID].get()),
                                                 m_Metadata.get().Image
                                               );
@@ -2077,7 +2047,7 @@ SET_SEEK_POSITION:
 
                         if(!m_Metadata.get()[ATTRIBUTE_LOCATION])
                         {
-                                m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play.property_stream().get_value();
+                                m_Metadata.get()[ATTRIBUTE_LOCATION] = m_Play->property_stream().get_value();
                         }
 
                         metadata_reparse ();

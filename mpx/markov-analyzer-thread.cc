@@ -10,7 +10,6 @@ using namespace MPX::SQL;
 MPX::MarkovAnalyzer::MarkovAnalyzer()
 : Service::Base("mpx-service-markov")
 {
-    m_Library = services->get<Library>("mpx-service-library");
 }
 
 MPX::MarkovAnalyzer::~MarkovAnalyzer ()
@@ -30,7 +29,7 @@ MPX::MarkovAnalyzer::process_tracks(
         return;
     }
 
-    m_Library->markovUpdate(
+    services->get<Library>("mpx-service-library")->markovUpdate(
         get<gint64>(track1[ATTRIBUTE_MPX_TRACK_ID].get()),
         get<gint64>(track2[ATTRIBUTE_MPX_TRACK_ID].get())
     );

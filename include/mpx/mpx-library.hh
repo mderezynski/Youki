@@ -395,17 +395,11 @@ namespace MPX
 
             enum Flags
             {
-                  F_NONE      =       0
-                , F_USING_HAL =       1 << 0,
+                  F_NONE            = 0
+                , F_USING_HAL       = 1 << 0,
             };
 
         private:
-
-#ifdef HAVE_HAL
-            boost::shared_ptr<HAL>                    m_HAL ;
-#endif //HAVE_HAL 
-            boost::shared_ptr<Covers>                 m_Covers ;
-            boost::shared_ptr<MetadataReaderTagLib>   m_MetadataReaderTagLib ;
 
             SQL::SQLDB                              * m_SQL;
             boost::shared_ptr<LibraryScannerThread>   m_ScannerThread;

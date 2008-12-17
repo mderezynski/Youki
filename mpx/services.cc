@@ -11,19 +11,19 @@ namespace Service
 
     Manager::~Manager ()
     {
-        m_services["mpx-service-plugins-gui"].reset();
-        m_services["mpx-service-plugins"].reset();
-        m_services["mpx-service-player"].reset();
-        m_services["mpx-service-mlibman"].reset();
-        m_services["mpx-service-mbimport"].reset();
-        m_services["mpx-service-play"].reset();
-        m_services["mpx-service-markov"].reset();
-        m_services["mpx-service-library"].reset();
-        m_services["mpx-service-taglib"].reset();
-        m_services["mpx-service-covers"].reset();
-
+        m_services.erase("mpx-service-mbimport");
+        m_services.erase("mpx-service-plugins-gui");
+        m_services.erase("mpx-service-plugins");
+        m_services.erase("mpx-service-player");
+        m_services.erase("mpx-service-mlibman");
+        m_services.erase("mpx-service-preferences");
+        m_services.erase("mpx-service-play");
+        m_services.erase("mpx-service-markov");
+        m_services.erase("mpx-service-library");
+        m_services.erase("mpx-service-taglib");
+        m_services.erase("mpx-service-covers");
 #ifdef HAVE_HAL
-        m_services["mpx-service-hal"].reset();
+        m_services.erase("mpx-service-hal");
 #endif // HAVE_HAL
     }
 

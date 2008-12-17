@@ -113,11 +113,6 @@ namespace MPX
                             Glib::RefPtr<Gtk::UIManager>          m_UIManager;
                             Glib::RefPtr<Gtk::ActionGroup>        m_ActionGroup;      
 
-                        // Objects
-
-                            PAccess<MPX::Library>                 m_Lib;
-                            PAccess<MPX::Covers>                  m_Covers;
-
                         // View mappings
 
                             MBIDIterMap                           m_Album_MBID_Iter_Map;
@@ -215,9 +210,7 @@ namespace MPX
                                 const std::string&,
                                 const std::string&,
                                 const std::string&,
-                                Glib::RefPtr<Gtk::UIManager>,
-                                const PAccess<MPX::Library>&,
-                                const PAccess<MPX::Covers>&
+                                Glib::RefPtr<Gtk::UIManager>
                             );
 
                         protected:

@@ -250,7 +250,7 @@ namespace MPX
             std::string m_VolumeUDI;  // holds current VUDI
             std::string m_DeviceUDI;  //     - " -     DUDI
             std::string m_MountPoint; //     - " -     mount point
-#endif
+#endif // HAVE_HAL
 
             Gtk::Button     * m_Close ;
 
@@ -258,15 +258,11 @@ namespace MPX
             Gtk::Button     * m_Rescan ;
             Gtk::Button     * m_DeepRescan ;
             Gtk::Button     * m_Vacuum ;
-#endif
+#endif // HAVE_HAL
 
             Gtk::Statusbar  * m_Statusbar ;
             Gtk::Widget     * m_VboxInner ;
 
-#ifdef HAVE_HAL
-            boost::shared_ptr<MPX::HAL>     m_HAL ;
-#endif
-            boost::shared_ptr<MPX::Library> m_Library ;
             Glib::Timer                     m_RescanTimer ;
 
             Glib::RefPtr<Gtk::TextBuffer>   m_TextBufferDetails ;
@@ -299,7 +295,7 @@ namespace MPX
 
             void
             on_volume_vacuum_volume() ;
-#endif
+#endif // HAVE_HAL
 
             void
             on_update_statistics();
@@ -309,7 +305,7 @@ namespace MPX
 #ifdef HAVE_HAL
             void
             on_library_use_hal_changed (MCS_CB_DEFAULT_SIGNATURE) ;
-#endif
+#endif // HAVE_HAL
 
             void
             on_library_rescan_in_intervals_changed (MCS_CB_DEFAULT_SIGNATURE) ;
@@ -317,7 +313,7 @@ namespace MPX
             bool
             on_rescan_timeout() ;
 
-    // GIO import stuff
+            // GIO import stuff
 
             void
             on_import_folder();

@@ -24,6 +24,7 @@
 #include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
 #include "mpx/mpx-library.hh"
+#include "mpx/mpx-main.hh"
 #include "mpx/mpx-play.hh"
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/mpx-python.hh"
@@ -376,45 +377,43 @@ namespace mpxpy
 
 namespace mpxpy
 {
+    using namespace MPX;
+
 	MPX::Library&
-	player_get_library (MPX::Player & obj)
+	player_get_library(MPX::Player & obj)
 	{
-		MPX::PAccess<MPX::Library> pa;	
-		obj.get_object(pa);
+		MPX::PAccess<MPX::Library> pa (*services->get<Library>("mpx-service-library").get());
 		return pa.get();
 	}
 
 	MPX::Covers&
 	player_get_covers (MPX::Player & obj)
 	{
-		MPX::PAccess<MPX::Covers> pa;	
-		obj.get_object(pa);
+		MPX::PAccess<MPX::Covers> pa (*services->get<Covers>("mpx-service-covers").get());
 		return pa.get();
 	}
 
 	MPX::Play&
-	player_get_play (MPX::Player & obj)
+	player_get_play   (MPX::Player & obj)
 	{
-		MPX::PAccess<MPX::Play> pa;	
-		obj.get_object(pa);
+		MPX::PAccess<MPX::Play> pa   (*services->get<Play>("mpx-service-play").get());
 		return pa.get();
-	}
-
-    PyObject*
-	player_get_ui (MPX::Player & obj)
-	{
-		return pygobject_new((GObject*)(obj.ui()->gobj()));
 	}
 
 #ifdef HAVE_HAL
 	MPX::HAL&
 	player_get_hal (MPX::Player & obj)
 	{
-		MPX::PAccess<MPX::HAL> pa;	
-		obj.get_object(pa);
+		MPX::PAccess<MPX::HAL> pa    (*services->get<HAL>("mpx-service-hal").get());
 		return pa.get();
 	}
 #endif // HAVE_HAL
+
+    PyObject*
+	player_get_ui (MPX::Player & obj)
+	{
+		return pygobject_new((GObject*)(obj.ui()->gobj()));
+	}
 
 	void
 	player_add_widget (MPX::Player & obj, PyObject * pyobj)
@@ -828,8 +827,10 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("get_library",         &mpxpy::player_get_library,
                                     return_internal_reference<>()) 
 
+#ifdef HAVE_HAL
 		.def("get_hal",             &mpxpy::player_get_hal,
                                     return_internal_reference<>()) 
+#endif // HAVE_HAL
 
         .def("get_covers",          &mpxpy::player_get_covers,
                                     return_internal_reference<>())

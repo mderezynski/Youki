@@ -178,9 +178,6 @@ namespace MPX
         )
         : sigx::glib_auto_dispatchable()
         , Service::Base("mpx-service-library")
-        , m_HAL(services->get<HAL>("mpx-service-hal"))
-        , m_Covers(services->get<Covers>("mpx-service-covers"))
-        , m_MetadataReaderTagLib(services->get<MetadataReaderTagLib>("mpx-service-taglib"))
         , m_Flags(0)
         {
                 const int MLIB_VERSION_CUR = 1;
@@ -278,7 +275,7 @@ namespace MPX
                 m_ScannerThread->connect().signal_cache_cover().connect(
                                 sigc::bind(
                                     sigc::mem_fun(
-                                        *(m_Covers.get()),
+                                        *(services->get<Covers>("mpx-service-covers").get()),
                                         &Covers::cache
                                 )
                                 , true
@@ -489,6 +486,7 @@ namespace MPX
 
         Library::~Library ()
         {
+            m_ScannerThread->finish();
             m_ScannerThread.reset();
         }
 
@@ -523,7 +521,7 @@ namespace MPX
                                 const std::string& volume_udi  = get<std::string>((*i)["hal_volume_udi"]) ;
                                 const std::string& device_udi  = get<std::string>((*i)["hal_device_udi"]) ;
                                 const std::string& insert_path = Util::normalize_path(get<std::string>((*i)["insert_path"]));
-                                const std::string& mount_point = m_HAL->get_mount_point_for_volume(volume_udi, device_udi) ;
+                                const std::string& mount_point = services->get<HAL>("mpx-service-hal")->get_mount_point_for_volume(volume_udi, device_udi) ;
 
                                 std::string insert_path_new = filename_to_uri( build_filename( Util::normalize_path(mount_point), insert_path ));
     
@@ -568,7 +566,7 @@ namespace MPX
 
                                 try{
                                         const std::string& insert_path = Util::normalize_path(get<std::string>((*i)["insert_path"]));
-                                        const HAL::Volume& volume( m_HAL->get_volume_for_uri( insert_path )); 
+                                        const HAL::Volume& volume( services->get<HAL>("mpx-service-hal")->get_volume_for_uri( insert_path )); 
                                         const std::string& insert_path_new = 
                                                 Util::normalize_path(filename_from_uri( Util::normalize_path(insert_path) ).substr( volume.mount_point.length() ));
 
@@ -632,7 +630,7 @@ namespace MPX
                         rq.artist = album_artist;
                         rq.album  = album;
 
-                        m_Covers->cache(
+                        services->get<Covers>("mpx-service-covers")->cache(
                               rq
                             , true
                         );
@@ -654,7 +652,7 @@ namespace MPX
         void
                 Library::recacheCovers()
                 {
-                        m_Covers->purge();
+                        services->get<Covers>("mpx-service-covers")->purge();
                         reload ();
 
                         RowV * v = new RowV;
@@ -900,7 +898,7 @@ namespace MPX
         void
                 Library::getMetadata (const std::string& uri, Track & track)
                 {
-                        m_MetadataReaderTagLib->get(uri, track);
+                        services->get<MetadataReaderTagLib>("mpx-service-taglib")->get(uri, track);
 
                         track[ATTRIBUTE_LOCATION] = uri; 
   
@@ -912,7 +910,7 @@ namespace MPX
                                         if( u.get_protocol() == URI::PROTOCOL_FILE )
                                         {
                                                 try{
-                                                        HAL::Volume const& volume (m_HAL->get_volume_for_uri (uri));
+                                                        HAL::Volume const& volume (services->get<HAL>("mpx-service-hal")->get_volume_for_uri (uri));
 
                                                         track[ATTRIBUTE_HAL_VOLUME_UDI] =
                                                                 volume.volume_udi ;
@@ -961,7 +959,7 @@ namespace MPX
                                         {
                                                 try{
                                                         {
-                                                                HAL::Volume const& volume ( m_HAL->get_volume_for_uri( uri ));
+                                                                HAL::Volume const& volume ( services->get<HAL>("mpx-service-hal")->get_volume_for_uri( uri ));
 
                                                                 track[ATTRIBUTE_HAL_VOLUME_UDI] =
                                                                         volume.volume_udi ;
@@ -1007,7 +1005,7 @@ namespace MPX
                                         const std::string& volume_udi  = get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get()) ;
                                         const std::string& device_udi  = get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get()) ;
                                         const std::string& vrp         = get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()) ;
-                                        const std::string& mount_point = m_HAL->get_mount_point_for_volume(volume_udi, device_udi) ;
+                                        const std::string& mount_point = services->get<HAL>("mpx-service-hal")->get_mount_point_for_volume(volume_udi, device_udi) ;
 
                                         return filename_to_uri( build_filename( Util::normalize_path(mount_point), vrp) );
 

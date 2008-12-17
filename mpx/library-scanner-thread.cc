@@ -188,10 +188,8 @@ MPX::LibraryScannerThread::LibraryScannerThread(
 , signal_cache_cover(*this, m_ThreadData, &ThreadData::CacheCover)
 , signal_reload(*this, m_ThreadData, &ThreadData::Reload)
 , signal_message(*this, m_ThreadData, &ThreadData::Message)
-, m_Library(boost::shared_ptr<Library>(obj_library))
-, m_SQL(new SQL::SQLDB(*((m_Library->get_sql_db()))))
-, m_HAL(services->get<HAL>("mpx-service-hal"))
-, m_MetadataReaderTagLib(services->get<MetadataReaderTagLib>("mpx-service-taglib"))
+, m_Library(*obj_library)
+, m_SQL(new SQL::SQLDB(*((m_Library.get_sql_db()))))
 , m_Flags(flags)
 {
     m_Connectable =
@@ -312,7 +310,7 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
             try{
                 if (m_Flags & Library::F_USING_HAL)
                 {
-                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (*i));
+                    HAL::Volume const& volume (services->get<HAL>("mpx-service-hal")->get_volume_for_uri (*i));
                     insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr (volume.mount_point.length())) ;
                 }
                 else
@@ -432,7 +430,7 @@ MPX::LibraryScannerThread::on_scan_list_deep(
             try{
                 if (m_Flags & Library::F_USING_HAL)
                 { 
-                    HAL::Volume const& volume (m_HAL->get_volume_for_uri (*i));
+                    HAL::Volume const& volume (services->get<HAL>("mpx-service-hal")->get_volume_for_uri (*i));
                     insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr (volume.mount_point.length())) ;
                 }
                 else
@@ -892,7 +890,7 @@ MPX::LibraryScannerThread::insert_file(
         Track track;
 
         try{
-            m_Library->trackSetLocation( track, uri );
+            m_Library.trackSetLocation( track, uri );
 
             try{
                 gint64 mtime1 = Util::get_file_mtime( uri );
@@ -906,7 +904,7 @@ MPX::LibraryScannerThread::insert_file(
                 {
                     track[ATTRIBUTE_MTIME] = mtime1; 
 
-                    if( !m_MetadataReaderTagLib->get( uri, track ) )
+                    if( !services->get<MetadataReaderTagLib>("mpx-service-taglib")->get( uri, track ) )
                     {
                         ++m_ScanSummary.FilesErroneous;
                           m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, _("Could not acquire metadata (using taglib-gio)")));
@@ -1249,7 +1247,7 @@ MPX::LibraryScannerThread::on_vacuum()
 
   for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
   {
-          std::string uri = get<std::string>(m_Library->sqlToTrack( *i, false )[ATTRIBUTE_LOCATION].get());
+          std::string uri = get<std::string>(m_Library.sqlToTrack( *i, false )[ATTRIBUTE_LOCATION].get());
 
           if( !uri.empty() )
           {
@@ -1305,7 +1303,7 @@ MPX::LibraryScannerThread::on_vacuum_volume(
 
   for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
   {
-          std::string uri = get<std::string>(m_Library->sqlToTrack( *i, false )[ATTRIBUTE_LOCATION].get());
+          std::string uri = get<std::string>(m_Library.sqlToTrack( *i, false )[ATTRIBUTE_LOCATION].get());
 
           if( !uri.empty() )
           {

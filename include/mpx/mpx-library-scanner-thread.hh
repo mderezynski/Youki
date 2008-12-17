@@ -337,10 +337,8 @@ namespace MPX
             struct ThreadData;
             Glib::Private<ThreadData>               m_ThreadData ;
 
-            boost::shared_ptr<MPX::Library>         m_Library ;
+            MPX::Library                          & m_Library ;
             boost::shared_ptr<MPX::SQL::SQLDB>      m_SQL ;
-            boost::shared_ptr<MPX::HAL>             m_HAL ;
-            boost::shared_ptr<MetadataReaderTagLib> m_MetadataReaderTagLib ;
             gint64                                  m_Flags ;
 
             ScanSummary                             m_ScanSummary ;

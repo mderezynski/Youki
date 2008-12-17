@@ -76,8 +76,6 @@ namespace MPX
             void
             check_traceback();
 
-            boost::shared_ptr<PluginManager>     m_Manager;
-
 			PluginTreeView                     * m_PluginTreeView;
 			Gtk::Notebook                      * m_Notebook;
 			Gtk::Alignment                     * m_Options;
