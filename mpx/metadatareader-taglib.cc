@@ -1,6 +1,7 @@
 // (c) 2007 M. Derezynski
 
 #include <boost/algorithm/string.hpp>
+#include "mpx/mpx-types.hh"
 
 #include <glibmm.h>
 #include <gmodule.h>
@@ -12,6 +13,7 @@
 
 using namespace Glib;
 using boost::algorithm::is_any_of;
+using boost::get;
 
 namespace
 {
@@ -116,19 +118,43 @@ namespace MPX
     }
 
     bool
-    MetadataReaderTagLib::get (std::string const& uri, Track & track)
+    MetadataReaderTagLib::get(
+        const std::string& uri,
+        Track&             track
+    )
     {
         std::string type;
+
         try{
             if( MPX::Audio::typefind( uri, type ))
             {
-                    TaglibPluginsMap::const_iterator i = m_taglib_plugins.find( type );
-                    if (i != m_taglib_plugins.end() && i->second->get && i->second->get( uri, track ))
-                    {
-                      track[ATTRIBUTE_LOCATION] = uri;
-                      track[ATTRIBUTE_TYPE] = type;
-                      return true;
+                TaglibPluginsMap::const_iterator i = m_taglib_plugins.find( type );
+
+                if (i != m_taglib_plugins.end() && i->second->get && i->second->get( uri, track ))
+                {
+                    track[ATTRIBUTE_LOCATION] = uri;
+
+                    try{
+                        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+                        Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
+                        track[ATTRIBUTE_TYPE] = info->get_attribute_string("standard::content-type");
+                    } catch(...) {
+                        g_message("GIO Typefind Error");
                     }
+
+                    if( !track.has(ATTRIBUTE_DATE) && track.has(ATTRIBUTE_MB_RELEASE_DATE) )
+                    {
+                        std::string mb_date_str = boost::get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get());
+                        int         mb_date_int = 0;
+
+                        if( sscanf( mb_date_str.c_str(), "%04d", &mb_date_int ) == 1 )
+                        {
+                            track[ATTRIBUTE_DATE] = gint64( mb_date_int ) ;
+                        }
+                    }
+
+                    return true;
+                }
             }
           }
         catch (Glib::ConvertError & cxe)

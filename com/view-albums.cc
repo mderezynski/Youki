@@ -977,8 +977,9 @@ namespace MPX
                                 std::string type;
                                 std::string rt_string;
                                 std::string genre;
-                                double playscore = 0;
-                                gint64 rating = 0;
+                                std::string mbid;
+                                double      playscore = 0;
+                                gint64      rating = 0;
                                 ReleaseType rt;
 
                                 std::string album = get<std::string>(r["album"]);
@@ -1016,7 +1017,7 @@ namespace MPX
 
                                 if(r.count("mb_album_id"))
                                 {
-                                        std::string mbid = get<std::string>(r["mb_album_id"]);
+                                        mbid = get<std::string>(r["mb_album_id"]);
 
                                         IterSet & s = m_Album_MBID_Iter_Map[mbid];
                                         s.insert(iter);
@@ -1100,6 +1101,8 @@ namespace MPX
                                 renderdata->Genre = genre;
 
                                 (*iter)[Columns.RenderData] = renderdata;
+
+                                on_got_cover( mbid );
                         } 
 
                 void
@@ -1193,39 +1196,43 @@ namespace MPX
                         {
                                 g_message("New Album: %lld", id );
 
-                                SQL::RowV v;
-                                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
-                                g_return_if_fail(!v.empty());
-                                SQL::Row & r = v[0];
-                                place_album (r, id); 
+                                if(!m_Album_Iter_Map.count(id))
+                                {
+                                        SQL::RowV v;
+                                        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
+                                        g_return_if_fail(!v.empty());
+                                        SQL::Row & r = v[0];
+                                        place_album (r, id); 
+                                }
                         }
 
                 void
                         AlbumTreeView::on_new_track(Track & track, gint64 album_id, gint64 artist_id)
                         {
-                                if(m_Album_Iter_Map.count(album_id))
+                                if(!m_Album_Iter_Map.count(album_id))
                                 {
-                                        TreeIter iter = m_Album_Iter_Map[album_id];
-                                        if (((*iter)[Columns.HasTracks]))
-                                        {
-                                                TreeIter child = AlbumsTreeStore->append(iter->children());
-                                                if(track[ATTRIBUTE_TITLE])
-                                                        (*child)[Columns.TrackTitle] = get<std::string>(track[ATTRIBUTE_TITLE].get());
-                                                if(track[ATTRIBUTE_ARTIST])
-                                                        (*child)[Columns.TrackArtist] = get<std::string>(track[ATTRIBUTE_ARTIST].get());
-                                                if(track[ATTRIBUTE_MB_ARTIST_ID])
-                                                        (*child)[Columns.TrackArtistMBID] = get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get());
-                                                if(track[ATTRIBUTE_TRACK])
-                                                        (*child)[Columns.TrackNumber] = get<gint64>(track[ATTRIBUTE_TRACK].get());
-                                                if(track[ATTRIBUTE_TIME])
-                                                        (*child)[Columns.TrackLength] = get<gint64>(track[ATTRIBUTE_TIME].get());
-
-                                                (*child)[Columns.TrackId] = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get());
-                                                (*child)[Columns.RowType] = ROW_TRACK; 
-                                        }
+                                    on_new_album( album_id );
                                 }
-                                else
-                                        g_warning("%s: Got new track without associated album! Consistency error!", G_STRLOC);
+
+                                TreeIter iter = m_Album_Iter_Map[album_id];
+
+                                if (((*iter)[Columns.HasTracks]))
+                                {
+                                        TreeIter child = AlbumsTreeStore->append(iter->children());
+                                        if(track[ATTRIBUTE_TITLE])
+                                                (*child)[Columns.TrackTitle] = get<std::string>(track[ATTRIBUTE_TITLE].get());
+                                        if(track[ATTRIBUTE_ARTIST])
+                                                (*child)[Columns.TrackArtist] = get<std::string>(track[ATTRIBUTE_ARTIST].get());
+                                        if(track[ATTRIBUTE_MB_ARTIST_ID])
+                                                (*child)[Columns.TrackArtistMBID] = get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get());
+                                        if(track[ATTRIBUTE_TRACK])
+                                                (*child)[Columns.TrackNumber] = get<gint64>(track[ATTRIBUTE_TRACK].get());
+                                        if(track[ATTRIBUTE_TIME])
+                                                (*child)[Columns.TrackLength] = get<gint64>(track[ATTRIBUTE_TIME].get());
+
+                                        (*child)[Columns.TrackId] = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get());
+                                        (*child)[Columns.RowType] = ROW_TRACK; 
+                                }
                         }
 
                 void

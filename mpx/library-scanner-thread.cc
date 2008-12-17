@@ -1038,16 +1038,6 @@ MPX::LibraryScannerThread::create_insertion_track(
     throw ScanError(_("Insufficient Metadata (artist, album and title must be given)"));
   }
 
-  if( !track.has(ATTRIBUTE_DATE) && track.has(ATTRIBUTE_MB_RELEASE_DATE) )
-  {
-    std::string mb_date = get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get());
-    int mb_date_int = 0;
-    if (sscanf(mb_date.c_str(), "%04d", &mb_date_int) == 1)
-    {
-        track[ATTRIBUTE_DATE] = gint64(mb_date_int);
-    }
-  }
-
   track[ATTRIBUTE_INSERT_PATH] = Util::normalize_path( insert_path ) ;
   track[ATTRIBUTE_INSERT_DATE] = gint64(time(NULL));
 
@@ -1062,6 +1052,9 @@ MPX::LibraryScannerThread::create_insertion_track(
   p->Artist         = get_track_artist_id( track ) ;
   p->AlbumArtist    = get_album_artist_id( track ) ;
   p->Album          = get_album_id( track, p->AlbumArtist.first );
+  p->Title          = get<std::string>(track[ATTRIBUTE_TITLE].get());
+  p->TrackNumber    = get<gint64>(track[ATTRIBUTE_TRACK].get());
+  p->Type           = get<std::string>(track[ATTRIBUTE_TYPE].get());
 
   for( unsigned int n = 0; n < N_ATTRIBUTES_INT; ++n )
   {
@@ -1091,17 +1084,7 @@ MPX::LibraryScannerThread::create_insertion_track(
   column_v += mprintf( "'%lld'", p->Artist.first ) + "," + mprintf( "'%lld'", p->Album.first ) ; 
 
   p->Insertion_SQL  = mprintf( track_set_f, column_n.c_str(), column_v.c_str());
-  p->Title          = get<std::string>(track[ATTRIBUTE_TITLE].get());
-  p->TrackNumber    = get<gint64>(track[ATTRIBUTE_TRACK].get());
-  p->Track          = Track_p (new Track( track ));
-
-  try{
-    Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
-    Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
-    p->Type = info->get_attribute_string("standard::content-type");
-  } catch(...) {
-    g_message("GIO Typefind Error");
-  }
+  p->Track          = Track_p( new Track( track ));
 
   m_InsertionTracks[p->Album.first][p->Artist.first][p->Title][p->TrackNumber].push_back( p );
 }
@@ -1192,7 +1175,6 @@ MPX::LibraryScannerThread::process_insertion_list()
                         TrackInfo_p p = prioritize( v );
 
                         uri = get<std::string>((*(p->Track.get()))[ATTRIBUTE_LOCATION].get());
-                        g_message("URI: %s", uri.c_str());
 
                         pthreaddata->Message.emit(
                             (boost::format(_("Inserting Tracks: %lld"))
@@ -1276,7 +1258,19 @@ MPX::LibraryScannerThread::insert(
 
   } catch( SqlConstraintError & cxe )
   {
-    gint64 id = get_track_id( track );
+    RowV rv;
+    m_SQL->get(
+        rv,
+        mprintf(
+              "SELECT id FROM track WHERE album_j = '%lld' AND artist_j = '%lld' AND track = '%lld' AND title = '%q'"
+            , p->Album.first
+            , p->Artist.first
+            , p->TrackNumber
+            , p->Title.c_str()
+    )); 
+
+    gint64 id = rv.empty() ? 0 : get<gint64>(rv[0]["id"]);
+
     if( id != 0 )
     {
         m_SQL->exec_sql( mprintf( delete_track_f, id ));
@@ -1286,6 +1280,7 @@ MPX::LibraryScannerThread::insert(
 
                 m_SQL->exec_sql(mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, m_SQL->exec_sql( p->Insertion_SQL )));
                 signal_new_entities( v );
+
                 pthreaddata->TrackUpdated.emit( track, p->Album.first, p->Artist.first ) ; 
 
                 return SCAN_RESULT_UPDATE ;
@@ -1414,21 +1409,21 @@ MPX::LibraryScannerThread::on_vacuum()
 
           if( !uri.empty() )
           {
-                  if (! (std::distance(rows.begin(), i) % 50) )
-                  {
-                          pthreaddata->Message.emit((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
-                  }
+              if (! (std::distance(rows.begin(), i) % 50) )
+              {
+                      pthreaddata->Message.emit((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
+              }
 
-                  try{
-                          Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
-                          if( !file->query_exists() )
-                          {
-                                  m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
-                                  pthreaddata->EntityDeleted( get<gint64>((*i)["id"]) , ENTITY_TRACK );
-                          }
-                  } catch(Glib::Error) {
-                          g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
-                  }
+              try{
+                      Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+                      if( !file->query_exists() )
+                      {
+                              m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
+                              pthreaddata->EntityDeleted( get<gint64>((*i)["id"]) , ENTITY_TRACK );
+                      }
+              } catch(Glib::Error) {
+                        g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
+              }
           }
   }
 
@@ -1482,17 +1477,17 @@ MPX::LibraryScannerThread::on_vacuum_volume(
                               m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
                               pthreaddata->EntityDeleted( get<gint64>((*i)["id"]), ENTITY_TRACK );
                       }
-              } catch(...) {
-                      g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
+              } catch(Glib::Error) {
+                        g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
               }
-        }
+          }
   }
 
   do_remove_dangling ();
 
   m_SQL->exec_sql("COMMIT");
 
-  pthreaddata->Message((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
+  pthreaddata->Message.emit((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
   pthreaddata->ScanEnd.emit();
 }
 

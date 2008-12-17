@@ -444,10 +444,11 @@ namespace MPX
                                         % column_names
                                         % "artist_j INTEGER NOT NULL"   // track artist information 
                                         % "album_j INTEGER NOT NULL"    // album + album artist
-                                        % attrs[ATTRIBUTE_HAL_VOLUME_UDI].id
-                                        % attrs[ATTRIBUTE_HAL_DEVICE_UDI].id
-                                        % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id
-                                        % attrs[ATTRIBUTE_LOCATION].id).str());
+                                        % "album_j" 
+                                        % "artist_j" 
+                                        % "track" 
+                                        % "title"
+                ).str());
 
                 ///////////////////////////////////////////////////////////////
                 /// TRACK VIEW VIEW 
