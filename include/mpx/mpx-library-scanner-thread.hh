@@ -310,13 +310,8 @@ namespace MPX
             typedef std::tr1::unordered_map<gint64,      Map_L3>               Map_L2;
             typedef std::tr1::unordered_map<gint64,      Map_L2>               Map_L1;
 
-            typedef std::set<gint64>                EntitySet;
-
-
             //typedef std::map<gint64 , std::map<gint64, std::map<std::string, TrackInfo_p_Vector> > > InsertionTracks_t;
 
-            EntitySet   m_SignalledAlbums;
-            EntitySet   m_SignalledAlbumArtists;
             Map_L1      m_InsertionTracks;
 
             void
@@ -347,7 +342,7 @@ namespace MPX
 
             void
             signal_new_entities(
-                const TrackInfo_p&
+                const TrackInfo_p_Vector&
             );
 
             void

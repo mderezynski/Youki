@@ -1200,7 +1200,7 @@ MPX::LibraryScannerThread::process_insertion_list()
                             ).str()
                         );
 
-                        ScanResult status = insert( p ); 
+                        ScanResult status = insert( p, v ); 
 
                         switch( status )
                         {
@@ -1231,33 +1231,38 @@ MPX::LibraryScannerThread::process_insertion_list()
     }
        
     m_InsertionTracks.clear(); 
-    m_SignalledAlbums.clear();
-    m_SignalledAlbumArtists.clear();
 }
 
 void
 MPX::LibraryScannerThread::signal_new_entities(
-    const TrackInfo_p& p
+    const TrackInfo_p_Vector& v
 )
 {
     ThreadData * pthreaddata = m_ThreadData.get();
 
-    if( !m_SignalledAlbumArtists.count( p->AlbumArtist.first )) 
+    for( TrackInfo_p_Vector::const_iterator i = v.begin(); i != v.end(); ++i )
     {
-        m_SignalledAlbumArtists.insert( p->AlbumArtist.first );
-        pthreaddata->NewArtist.emit( p->AlbumArtist.first );
+        if( (*i)->AlbumArtist.second == ENTITY_IS_NEW )
+        { 
+            pthreaddata->NewArtist.emit( p->AlbumArtist.first );
+            break;
+        }
     }
 
-    if( !m_SignalledAlbums.count( p->Album.first )) 
+    for( TrackInfo_p_Vector::const_iterator i = v.begin(); i != v.end(); ++i )
     {
-        m_SignalledAlbums.insert( p->Album.first );
-        pthreaddata->NewAlbum.emit( p->Album.first );
+        if( (*i)->Album.second == ENTITY_IS_NEW )
+        { 
+            pthreaddata->NewAlbum.emit( p->Album.first );
+            break;
+        }
     }
 }
 
 ScanResult
 MPX::LibraryScannerThread::insert(
-    const TrackInfo_p& p
+      const TrackInfo_p& p
+    , const TrackInfo_p_Vector& v
 )
 {
   ThreadData * pthreaddata = m_ThreadData.get();
@@ -1272,25 +1277,15 @@ MPX::LibraryScannerThread::insert(
   } catch( SqlConstraintError & cxe )
   {
     gint64 id = get_track_id( track );
-
-    g_message("%s: ConstraintError: %lld, %s", G_STRLOC, id, cxe.what()); 
-
     if( id != 0 )
     {
         m_SQL->exec_sql( mprintf( delete_track_f, id ));
 
-        g_message("%s: Track Deleted: %lld", G_STRLOC, id);
-
         try{
-                gint64 new_id = m_SQL->exec_sql( p->Insertion_SQL ); 
-
-                m_SQL->exec_sql(mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));
-
                 track[ATTRIBUTE_MPX_TRACK_ID] = id; 
 
-                signal_new_entities( p );
-            
-                g_message("%s: Track Updated: %lld", G_STRLOC, id);
+                m_SQL->exec_sql(mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, m_SQL->exec_sql( p->Insertion_SQL )));
+                signal_new_entities( v );
                 pthreaddata->TrackUpdated.emit( track, p->Album.first, p->Artist.first ) ; 
 
                 return SCAN_RESULT_UPDATE ;
@@ -1302,7 +1297,6 @@ MPX::LibraryScannerThread::insert(
     }
     else
     {
-        g_warning("%s: Got track ID 0 for internal track! Highly supicious! Please report!", G_STRLOC);
         throw ScanError(_("Got track ID 0 for internal track! Highly supicious! Please report!"));
     }
   }
@@ -1311,9 +1305,7 @@ MPX::LibraryScannerThread::insert(
         throw ScanError((boost::format(_("SQL error while inserting/updating track: '%s'")) % cxe.what()).str());
   }
 
-  signal_new_entities( p );
-
-  g_message("%s: Track Inserted: %lld", G_STRLOC, get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()));
+  signal_new_entities( v );
   pthreaddata->NewTrack.emit( track, p->Album.first, p->Artist.first ); 
 
   return SCAN_RESULT_OK ; 
