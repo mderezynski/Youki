@@ -1244,7 +1244,7 @@ MPX::LibraryScannerThread::signal_new_entities(
     {
         if( (*i)->AlbumArtist.second == ENTITY_IS_NEW )
         { 
-            pthreaddata->NewArtist.emit( p->AlbumArtist.first );
+            pthreaddata->NewArtist.emit( (*i)->AlbumArtist.first );
             break;
         }
     }
@@ -1253,7 +1253,7 @@ MPX::LibraryScannerThread::signal_new_entities(
     {
         if( (*i)->Album.second == ENTITY_IS_NEW )
         { 
-            pthreaddata->NewAlbum.emit( p->Album.first );
+            pthreaddata->NewAlbum.emit( (*i)->Album.first );
             break;
         }
     }

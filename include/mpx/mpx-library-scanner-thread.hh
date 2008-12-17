@@ -316,15 +316,15 @@ namespace MPX
 
             void
             insert_file(
-                const std::string& uri
-              , const std::string& insert_path
+                  const std::string& uri
+                , const std::string& insert_path
             );
 
             void
             create_insertion_track(
-                Track&             track
-              , const std::string& uri
-              , const std::string& insert_path
+                  Track&             track
+                , const std::string& uri
+                , const std::string& insert_path
             );
     
             void
@@ -332,17 +332,18 @@ namespace MPX
 
             TrackInfo_p
             prioritize(
-                const TrackInfo_p_Vector& v
+                  const TrackInfo_p_Vector&
             );
 
             ScanResult
             insert(
-                const TrackInfo_p&
+                  const TrackInfo_p&
+                , const TrackInfo_p_Vector&
             );
 
             void
             signal_new_entities(
-                const TrackInfo_p_Vector&
+                  const TrackInfo_p_Vector&
             );
 
             void
