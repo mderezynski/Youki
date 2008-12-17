@@ -143,6 +143,53 @@ namespace
     };
 }
 
+namespace MPX
+{
+    template <typename T>
+    void
+    append_value(
+          std::string&    sql
+        , Track&          track
+        , int             attr
+    )
+    { 
+        throw;
+    }
+
+    template <>
+    void
+    append_value<std::string>(
+          std::string&    sql
+        , Track&          track
+        , int             attr
+    )
+    {
+        sql += mprintf( "'%q'", get<std::string>(track[attr].get()).c_str()) ;
+    }
+
+    template <>
+    void
+    append_value<gint64>(
+          std::string&    sql
+        , Track&          track
+        , int             attr
+    )
+    {
+        sql += mprintf( "'%lld'", get<gint64>(track[attr].get()) ) ;
+    }
+
+    template <>
+    void
+    append_value<double>(
+          std::string&    sql
+        , Track&          track
+        , int             attr
+    )
+    {
+        sql += mprintf( "'%f'", get<double>(track[attr].get())) ;
+    }
+}
+
 struct MPX::LibraryScannerThread::ThreadData
 {
     LibraryScannerThread::SignalScanStart_t         ScanStart ;
@@ -345,6 +392,8 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
                 ));
             } catch(...) {
             }
+
+            process_insertion_list ();
         }
         catch( Glib::ConvertError & cxe )
         {
@@ -393,6 +442,7 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback(
         {
             pthreaddata->ScanRun.emit( m_ScanSummary.FilesTotal, false );
         }
+
     } catch( Glib::Error & cxe ) {
         g_warning("%s: Error: %s", G_STRLOC, cxe.what().c_str()); 
     }
@@ -510,67 +560,75 @@ MPX::LibraryScannerThread::on_scan_stop ()
     g_atomic_int_set(&pthreaddata->m_ScanStop, 1);
 }
 
-gint64
+MPX::LibraryScannerThread::EntityInfo
 MPX::LibraryScannerThread::get_track_artist_id (Track &track, bool only_if_exists)
 {
-  RowV rows; 
+    RowV rows; 
 
-  char const* select_artist_f ("SELECT id FROM artist WHERE %s %s AND %s %s AND %s %s;"); 
-  m_SQL->get (rows, mprintf (select_artist_f,
+    EntityInfo info ( 0, MPX::LibraryScannerThread::ENTITY_IS_UNDEFINED );
 
-         attrs[ATTRIBUTE_ARTIST].id,
-        (track.has(ATTRIBUTE_ARTIST)
-            ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ARTIST].get()).c_str()).c_str()
-            : "IS NULL"),
+    char const* select_artist_f ("SELECT id FROM artist WHERE %s %s AND %s %s AND %s %s;"); 
+    m_SQL->get (rows, mprintf (select_artist_f,
 
-         attrs[ATTRIBUTE_MB_ARTIST_ID].id,
-        (track.has(ATTRIBUTE_MB_ARTIST_ID)
-            ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get()).c_str()).c_str()
-            : "IS NULL"),
+           attrs[ATTRIBUTE_ARTIST].id,
+          (track.has(ATTRIBUTE_ARTIST)
+              ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ARTIST].get()).c_str()).c_str()
+              : "IS NULL"),
 
-         attrs[ATTRIBUTE_ARTIST_SORTNAME].id,
-        (track.has(ATTRIBUTE_ARTIST_SORTNAME)
-            ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ARTIST_SORTNAME].get()).c_str()).c_str()
-            : "IS NULL")));
+           attrs[ATTRIBUTE_MB_ARTIST_ID].id,
+          (track.has(ATTRIBUTE_MB_ARTIST_ID)
+              ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get()).c_str()).c_str()
+              : "IS NULL"),
 
-  gint64 artist_j = 0;
+           attrs[ATTRIBUTE_ARTIST_SORTNAME].id,
+          (track.has(ATTRIBUTE_ARTIST_SORTNAME)
+              ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ARTIST_SORTNAME].get()).c_str()).c_str()
+              : "IS NULL")));
 
-  if (rows.size ())
-  {
-    artist_j = get <gint64> (rows[0].find ("id")->second);
-  }
-  else
-  if (!only_if_exists)
-  {
-    char const* set_artist_f ("INSERT INTO artist (%s, %s, %s) VALUES (%Q, %Q, %Q);");
+    if (rows.size ())
+    {
+      info = EntityInfo( 
+            get<gint64>(rows[0].find ("id")->second)
+          , MPX::LibraryScannerThread::ENTITY_IS_NOT_NEW
+      );
+    }
+    else
+    if (!only_if_exists)
+    {
+      char const* set_artist_f ("INSERT INTO artist (%s, %s, %s) VALUES (%Q, %Q, %Q);");
 
-    m_SQL->exec_sql (mprintf (set_artist_f,
+       info = EntityInfo(
 
-         attrs[ATTRIBUTE_ARTIST].id,
-         attrs[ATTRIBUTE_ARTIST_SORTNAME].id,
-         attrs[ATTRIBUTE_MB_ARTIST_ID].id,
+              m_SQL->exec_sql (mprintf (set_artist_f,
 
-        (track.has(ATTRIBUTE_ARTIST)
-            ? get<std::string>(track[ATTRIBUTE_ARTIST].get()).c_str()
-            : NULL) ,
+                 attrs[ATTRIBUTE_ARTIST].id,
+                 attrs[ATTRIBUTE_ARTIST_SORTNAME].id,
+                 attrs[ATTRIBUTE_MB_ARTIST_ID].id,
 
-        (track.has(ATTRIBUTE_ARTIST_SORTNAME)
-            ? get<std::string>(track[ATTRIBUTE_ARTIST_SORTNAME].get()).c_str()
-            : NULL) ,
+                (track.has(ATTRIBUTE_ARTIST)
+                    ? get<std::string>(track[ATTRIBUTE_ARTIST].get()).c_str()
+                    : NULL) ,
 
-        (track.has(ATTRIBUTE_MB_ARTIST_ID)
-            ? get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get()).c_str()
-            : NULL))) ;
+                (track.has(ATTRIBUTE_ARTIST_SORTNAME)
+                    ? get<std::string>(track[ATTRIBUTE_ARTIST_SORTNAME].get()).c_str()
+                    : NULL) ,
 
-    artist_j = m_SQL->last_insert_rowid ();
-  }
-  return artist_j;
+                (track.has(ATTRIBUTE_MB_ARTIST_ID)
+                    ? get<std::string>(track[ATTRIBUTE_MB_ARTIST_ID].get()).c_str()
+                    : NULL)
+                ))
+
+            , MPX::LibraryScannerThread::ENTITY_IS_NEW
+       );
+    }
+
+    return info;
 }
 
-gint64
+MPX::LibraryScannerThread::EntityInfo
 MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exists)
 {
-    ThreadData * pthreaddata = m_ThreadData.get();
+    EntityInfo info ( 0, MPX::LibraryScannerThread::ENTITY_IS_UNDEFINED );
 
     if( track.has(ATTRIBUTE_ALBUM_ARTIST) && track.has(ATTRIBUTE_MB_ALBUM_ARTIST_ID) )
     {
@@ -619,54 +677,61 @@ MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exist
        )) ; 
     }
 
-    gint64 artist_j = 0;
-
     if (!rows.empty())
     {
-      artist_j = get <gint64> (rows[0].find ("id")->second);
+        info = EntityInfo(
+              get<gint64>(rows[0].find ("id")->second)
+            , MPX::LibraryScannerThread::ENTITY_IS_NOT_NEW
+        );
     }
-    else if (!only_if_exists)
+    else
+    if( !only_if_exists )
     {
-      char const* set_artist_f ("INSERT INTO album_artist (%s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q);");
+        char const* set_artist_f ("INSERT INTO album_artist (%s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q);");
 
-      m_SQL->exec_sql (mprintf (set_artist_f,
+        info = EntityInfo(
 
-        attrs[ATTRIBUTE_ALBUM_ARTIST].id,
-        attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id,
-        attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
-        attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id,
+            m_SQL->exec_sql (mprintf (set_artist_f,
 
-      (track.has(ATTRIBUTE_ALBUM_ARTIST)
-          ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str() 
-          : NULL) , 
+              attrs[ATTRIBUTE_ALBUM_ARTIST].id,
+              attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id,
+              attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id,
+              attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id,
 
-      (track.has(ATTRIBUTE_ALBUM_ARTIST_SORTNAME)
-          ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()).c_str()
-          : NULL) , 
+            (track.has(ATTRIBUTE_ALBUM_ARTIST)
+                ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()).c_str() 
+                : NULL) , 
 
-      (track.has(ATTRIBUTE_MB_ALBUM_ARTIST_ID)
-          ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()
-          : NULL) ,
+            (track.has(ATTRIBUTE_ALBUM_ARTIST_SORTNAME)
+                ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get()).c_str()
+                : NULL) , 
 
-      (get<gint64>(track[ATTRIBUTE_IS_MB_ALBUM_ARTIST].get())
-          ? "1"
-          : NULL))) ;
+            (track.has(ATTRIBUTE_MB_ALBUM_ARTIST_ID)
+                ? get<std::string>(track[ATTRIBUTE_MB_ALBUM_ARTIST_ID].get()).c_str()
+                : NULL) ,
 
-      artist_j = m_SQL->last_insert_rowid (); //FIXME: not threadsafe, see get_tag_id
+            (get<gint64>(track[ATTRIBUTE_IS_MB_ALBUM_ARTIST].get())
+                ? "1"
+                : NULL)
+            ))
 
-      pthreaddata->NewArtist.emit( artist_j ); 
+            , MPX::LibraryScannerThread::ENTITY_IS_NEW
+        );
     }
-    return artist_j;
+
+    return info;
 }
 
-gint64
+MPX::LibraryScannerThread::EntityInfo
 MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, bool only_if_exists)
 {
     ThreadData * pthreaddata = m_ThreadData.get();
 
-    gint64 album_j = 0;
     RowV rows;
+
     std::string sql;
+
+    EntityInfo info ( 0, MPX::LibraryScannerThread::ENTITY_IS_UNDEFINED );
 
     if( track.has(ATTRIBUTE_MB_ALBUM_ID) )
     {
@@ -717,10 +782,15 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
     if(!rows.empty())
     {
-        album_j = get <gint64> (rows[0].find ("id")->second);
+        info = EntityInfo(
+              get<gint64>(rows[0].find ("id")->second)
+            , MPX::LibraryScannerThread::ENTITY_IS_NOT_NEW
+        );
 
         if(rows[0].count("mb_album_id"))
-            track[ATTRIBUTE_MB_ALBUM_ID] = get<std::string> (rows[0].find ("mb_album_id")->second);
+        {
+            track[ATTRIBUTE_MB_ALBUM_ID] = get<std::string>(rows[0].find ("mb_album_id")->second);
+        }
     }
     else
     if(!only_if_exists)
@@ -778,10 +848,10 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
       );
 
-      m_SQL->exec_sql (sql);
-      album_j = m_SQL->last_insert_rowid ();
-
-      pthreaddata->NewAlbum.emit( album_j );
+      info = EntityInfo(
+          m_SQL->exec_sql (sql)
+        , MPX::LibraryScannerThread::ENTITY_IS_NEW
+      );
 
       RequestQualifier rq;
       rq.mbid       = get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get());
@@ -798,7 +868,8 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
       pthreaddata->CacheCover( rq );
     }
-    return album_j;
+
+    return info;
 }
 
 gint64
@@ -986,8 +1057,11 @@ MPX::LibraryScannerThread::create_insertion_track(
   column_n.reserve( 0x400 );
   column_v.reserve( 0x400 );
 
-  gint64 artist_j = get_track_artist_id( track ) ;
-  gint64 album_j  = get_album_id( track, get_album_artist_id( track ) ) ;
+  TrackInfo_p p (new TrackInfo);
+
+  p->Artist         = get_track_artist_id( track ) ;
+  p->AlbumArtist    = get_album_artist_id( track ) ;
+  p->Album          = get_album_id( track, p->AlbumArtist.first );
 
   for( unsigned int n = 0; n < N_ATTRIBUTES_INT; ++n )
   {
@@ -996,15 +1070,15 @@ MPX::LibraryScannerThread::create_insertion_track(
           switch( attrs[n].type )
           {
                 case VALUE_TYPE_STRING:
-                    column_v += mprintf ("'%q'", get <std::string> (track[n].get()).c_str());
+                    append_value<std::string>( column_v, track, n );
                     break;
 
                 case VALUE_TYPE_INT:
-                    column_v += mprintf ("'%lld'", get <gint64> (track[n].get()));
+                    append_value<gint64>( column_v, track, n );
                     break;
 
                 case VALUE_TYPE_REAL:
-                    column_v += mprintf ("'%f'", get <double> (track[n].get()));
+                    append_value<double>( column_v, track, n );
                     break;
           }
 
@@ -1014,18 +1088,85 @@ MPX::LibraryScannerThread::create_insertion_track(
   }
 
   column_n += "artist_j, album_j";
-  column_v += mprintf( "'%lld'", artist_j ) + "," + mprintf( "'%lld'", album_j ) ; 
+  column_v += mprintf( "'%lld'", p->Artist.first ) + "," + mprintf( "'%lld'", p->Album.first ) ; 
 
-  TrackInfo_p p (new TrackInfo);
-
-  p->Artist         = artist_j;
-  p->Album          = album_j;
+  p->Insertion_SQL  = mprintf( track_set_f, column_n.c_str(), column_v.c_str());
   p->Title          = get<std::string>(track[ATTRIBUTE_TITLE].get());
   p->TrackNumber    = get<gint64>(track[ATTRIBUTE_TRACK].get());
   p->Track          = Track_p (new Track( track ));
-  p->Insertion_SQL  = mprintf( track_set_f, column_n.c_str(), column_v.c_str());
 
-  m_InsertionTracks[artist_j][album_j][p->Title][p->TrackNumber].push_back( p );
+  try{
+    Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+    Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
+    p->Type = info->get_attribute_string("standard::content-type");
+  } catch(...) {
+    g_message("GIO Typefind Error");
+  }
+
+  m_InsertionTracks[p->Album.first][p->Artist.first][p->Title][p->TrackNumber].push_back( p );
+}
+
+MPX::LibraryScannerThread::TrackInfo_p
+MPX::LibraryScannerThread::prioritize(
+    const TrackInfo_p_Vector& v
+)
+{
+    const char* list[] = {
+            "audio/x-flac"
+        ,   "audio/x-vorbis+ogg"
+        ,   "audio/mpeg"
+        ,   NULL
+    };
+
+    char ** copy = (char**)(list);
+
+    if( v.size() == 1 )
+    {
+        return v[0];
+    }
+
+    TrackInfo_p_Vector v2;
+
+    while( copy )
+    {
+        for( TrackInfo_p_Vector::const_iterator i = v.begin(); i != v.end(); ++i )
+        {
+            if( (*i)->Type == *copy )
+            {
+                v2.push_back( *i );
+            }
+        }
+
+        if( !v2.empty() )
+            break;
+
+        ++copy;
+    }
+
+    if( v2.size() == 1 )
+    {
+        return v2[0];
+    }
+    else
+    {
+        TrackInfo_p p_highest_bitrate;
+        gint64      bitrate = 0;
+
+        for( TrackInfo_p_Vector::const_iterator i = v2.begin(); i != v2.end(); ++i )
+        {
+            gint64 c_bitrate = get<gint64>((*(*i)->Track.get())[ATTRIBUTE_BITRATE].get());
+
+            if( c_bitrate > bitrate )
+            {
+                bitrate = c_bitrate;
+                p_highest_bitrate = (*i);
+            }
+        }
+
+        return p_highest_bitrate;
+    }
+
+    return v[0];
 }
 
 void
@@ -1047,9 +1188,11 @@ MPX::LibraryScannerThread::process_insertion_list()
 
                     if( !v.empty() )
                     try{
-                        const Track& track = *(v[0]->Track.get());
 
-                        uri = get<std::string>(track[ATTRIBUTE_LOCATION].get());
+                        TrackInfo_p p = prioritize( v );
+
+                        uri = get<std::string>((*(p->Track.get()))[ATTRIBUTE_LOCATION].get());
+                        g_message("URI: %s", uri.c_str());
 
                         pthreaddata->Message.emit(
                             (boost::format(_("Inserting Tracks: %lld"))
@@ -1057,7 +1200,7 @@ MPX::LibraryScannerThread::process_insertion_list()
                             ).str()
                         );
 
-                        ScanResult status = insert( v[0] ); 
+                        ScanResult status = insert( p ); 
 
                         switch( status )
                         {
@@ -1088,6 +1231,26 @@ MPX::LibraryScannerThread::process_insertion_list()
     }
        
     m_InsertionTracks.clear(); 
+    m_SignalledAlbums.clear();
+    m_SignalledAlbumArtists.clear();
+}
+
+void
+MPX::LibraryScannerThread::signal_new_entities(
+    const TrackInfo_p& p
+)
+{
+    if( !m_SignalledAlbumArtists.count( p->AlbumArtist.first )) 
+    {
+        m_SignalledAlbumArtists.insert( p->AlbumArtist.first );
+        pthreaddata->NewArtist.emit( p->AlbumArtist.first );
+    }
+
+    if( !m_SignalledAlbums.count( p->Album.first )) 
+    {
+        m_SignalledAlbums.insert( p->Album.first );
+        pthreaddata->NewAlbum.emit( p->Album.first );
+    }
 }
 
 ScanResult
@@ -1121,10 +1284,13 @@ MPX::LibraryScannerThread::insert(
 
                 m_SQL->exec_sql(mprintf ("UPDATE track SET id = '%lld' WHERE id = '%lld';", id, new_id));
 
-                g_message("%s: Track Updated: %lld", G_STRLOC, id);
-
                 track[ATTRIBUTE_MPX_TRACK_ID] = id; 
-                pthreaddata->TrackUpdated.emit( track, p->Album, p->Artist ) ; 
+
+                signal_new_entities( p );
+            
+                g_message("%s: Track Updated: %lld", G_STRLOC, id);
+                pthreaddata->TrackUpdated.emit( track, p->Album.first, p->Artist.first ) ; 
+
                 return SCAN_RESULT_UPDATE ;
 
         } catch( SqlConstraintError & cxe )
@@ -1143,8 +1309,11 @@ MPX::LibraryScannerThread::insert(
         throw ScanError((boost::format(_("SQL error while inserting/updating track: '%s'")) % cxe.what()).str());
   }
 
+  signal_new_entities( p );
+
   g_message("%s: Track Inserted: %lld", G_STRLOC, get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()));
-  pthreaddata->NewTrack.emit( track, p->Album, p->Artist ); 
+  pthreaddata->NewTrack.emit( track, p->Album.first, p->Artist.first ); 
+
   return SCAN_RESULT_OK ; 
 }
 

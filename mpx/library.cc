@@ -176,8 +176,8 @@ namespace MPX
 
         Library::Library(
         )
-        : sigx::glib_auto_dispatchable()
-        , Service::Base("mpx-service-library")
+        : Service::Base("mpx-service-library")
+        , sigx::glib_auto_dispatchable()
         , m_Flags(0)
         {
                 const int MLIB_VERSION_CUR = 1;
@@ -857,7 +857,7 @@ namespace MPX
                     for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
                     {
                         Row & r = *i;
-                        mm->push_message((boost::format(_("Deleting Track: %lld")) % get<gint64>(r["id"])).str());
+                        mm->push_message((boost::format(_("Deleting Track: %lld of %lld")) % gint64(std::distance(rows.begin(), i)) % gint64(rows.size())).str());
                         execSQL( mprintf("DELETE FROM track WHERE id = '%lld'", get<gint64>(r["id"]))); 
                         Signals.TrackDeleted.emit( get<gint64>(r["id"]) );
                     }
@@ -1312,6 +1312,9 @@ namespace MPX
                                 if (row.count("mb_release_type"))
                                         track[ATTRIBUTE_MB_RELEASE_TYPE] = get<std::string>(row["mb_release_type"]);
 
+                                if (row.count("musicip_puid"))
+                                        track[ATTRIBUTE_MUSICIP_PUID] = get<std::string>(row["musicip_puid"]);
+
                                 if (row.count("date"))
                                         track[ATTRIBUTE_DATE] = get<gint64>(row["date"]);
 
@@ -1332,6 +1335,9 @@ namespace MPX
 
                                 if (row.count("samplerate"))
                                         track[ATTRIBUTE_SAMPLERATE] = get<gint64>(row["samplerate"]);
+
+                                if (row.count("type"))
+                                        track[ATTRIBUTE_TYPE] = get<std::string>(row["type"]);
                         }
 
                         g_assert( track.has(ATTRIBUTE_LOCATION) );

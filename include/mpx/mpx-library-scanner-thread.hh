@@ -247,25 +247,6 @@ namespace MPX
             );
 
             gint64
-            get_track_artist_id(
-                Track&,
-                bool = false
-            );
-
-            gint64
-            get_album_artist_id(
-                Track&,
-                bool = false
-            );
-
-            gint64
-            get_album_id(
-                Track&,
-                gint64,
-                bool = false
-            );
-
-            gint64
             get_track_mtime(
                 Track&
             ) const;
@@ -277,19 +258,47 @@ namespace MPX
 
             /// INSERTION
 
+            enum EntityIsNew
+            {
+                  ENTITY_IS_NEW
+                , ENTITY_IS_NOT_NEW
+                , ENTITY_IS_UNDEFINED
+            };
+
+            typedef std::pair<gint64, EntityIsNew>   EntityInfo;
+ 
+            EntityInfo 
+            get_track_artist_id(
+                Track&,
+                bool = false
+            );
+
+            EntityInfo 
+            get_album_artist_id(
+                Track&,
+                bool = false
+            );
+
+            EntityInfo 
+            get_album_id(
+                Track&,
+                gint64,
+                bool = false
+            );
+
             typedef boost::shared_ptr<Track>        Track_p;
-           
+
             struct TrackInfo
             {
-                gint64          Artist;
-                gint64          Album;
-                std::string     Title;
-                gint64          TrackNumber;
+                EntityInfo      Artist;
+                EntityInfo      Album;
+                EntityInfo      AlbumArtist;
 
+                gint64          TrackNumber;
+                std::string     Title;
                 std::string     Type;
 
                 Track_p         Track;
-
                 std::string     Insertion_SQL;
             };
  
@@ -301,9 +310,14 @@ namespace MPX
             typedef std::tr1::unordered_map<gint64,      Map_L3>               Map_L2;
             typedef std::tr1::unordered_map<gint64,      Map_L2>               Map_L1;
 
+            typedef std::set<gint64>                EntitySet;
+
+
             //typedef std::map<gint64 , std::map<gint64, std::map<std::string, TrackInfo_p_Vector> > > InsertionTracks_t;
 
-            Map_L1   m_InsertionTracks;
+            EntitySet   m_SignalledAlbums;
+            EntitySet   m_SignalledAlbumArtists;
+            Map_L1      m_InsertionTracks;
 
             void
             insert_file(
@@ -321,11 +335,20 @@ namespace MPX
             void
             process_insertion_list();
 
+            TrackInfo_p
+            prioritize(
+                const TrackInfo_p_Vector& v
+            );
+
             ScanResult
             insert(
                 const TrackInfo_p&
             );
 
+            void
+            signal_new_entities(
+                const TrackInfo_p&
+            );
 
             void
             do_remove_dangling();

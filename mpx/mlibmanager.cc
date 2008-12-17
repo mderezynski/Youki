@@ -575,7 +575,7 @@ namespace MPX
             % summary.FilesErroneous
         ).str());
 
-        services->get<Library>("mpx-service-library")->execSQL((boost::format ("INSERT INTO meta (last_scan_date) VALUES (%lld)") % (gint64(time(NULL)))).str());
+        services->get<Library>("mpx-service-library")->execSQL((boost::format ("UPDATE meta SET last_scan_date = %lld WHERE rowid = 1") % (gint64(time(NULL)))).str());
 
         m_TextBufferDetails->set_text("");
         Glib::ustring text;

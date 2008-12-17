@@ -1179,6 +1179,8 @@ namespace MPX
                 void
                         AlbumTreeView::on_album_updated(gint64 id)
                         {
+                                g_message("Album Updated: %lld", id );
+
                                 SQL::RowV v;
                                 services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
                                 g_return_if_fail(!v.empty());
@@ -1189,6 +1191,8 @@ namespace MPX
                 void
                         AlbumTreeView::on_new_album(gint64 id)
                         {
+                                g_message("New Album: %lld", id );
+
                                 SQL::RowV v;
                                 services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
                                 g_return_if_fail(!v.empty());
