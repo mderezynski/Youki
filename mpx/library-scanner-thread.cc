@@ -22,8 +22,6 @@ using namespace Glib;
 
 namespace
 {
-    static gint64 gl_last_scan_date = 0;
-
     struct AttrInfo
     {
         char const* id;
@@ -460,10 +458,6 @@ MPX::LibraryScannerThread::on_scan_list_deep(
 
     pthreaddata->ScanStart.emit();
     m_SQL->exec_sql( "UPDATE album SET album_new = 0" );
-
-    SQL::RowV rows;
-    m_SQL->get(rows, "SELECT last_scan_date FROM meta WHERE rowid = 1");
-    gl_last_scan_date = boost::get<gint64>(rows[0]["last_scan_date"]);
 
     m_ScanSummary = ScanSummary();
     m_ScanSummary.DeepRescan = true;
@@ -954,10 +948,10 @@ MPX::LibraryScannerThread::insert_file(
         try{
                 m_Library.trackSetLocation( track, uri );
 
-                gint64 mtime1 = Util::get_file_mtime( uri );
-                gint64 mtime2 = /*get_track_mtime( track ) ;*/ gl_last_scan_date;
+                gint64 mtime1 = Util::get_file_mtime( uri ) ;
+                gint64 mtime2 = get_track_mtime( track ) ; 
 
-                if( /*mtime2 != 0 && mtime1 == mtime2*/ mtime1 <= mtime2 ) 
+                if( mtime2 != 0 && mtime1 == mtime2 )
                 {
                     ++m_ScanSummary.FilesUpToDate;
                 }
@@ -1011,8 +1005,6 @@ MPX::LibraryScannerThread::create_insertion_track(
     , const std::string& insert_path
 )
 {
-  g_message("%s", G_STRLOC);
-
   char const delete_track_f[] = "DELETE FROM track WHERE id='%lld';";
   char const track_set_f[] = "INSERT INTO track (%s) VALUES (%s);";
 
