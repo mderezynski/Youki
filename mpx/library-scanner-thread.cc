@@ -852,21 +852,6 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
           m_SQL->exec_sql (sql)
         , MPX::LibraryScannerThread::ENTITY_IS_NEW
       );
-
-      RequestQualifier rq;
-      rq.mbid       = get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get());
-      rq.asin       = track.has(ATTRIBUTE_ASIN)
-                            ? get<std::string>(track[ATTRIBUTE_ASIN].get())
-                            : "";
-
-      rq.uri        = get<std::string>(track[ATTRIBUTE_LOCATION].get());
-      rq.artist     = track.has(ATTRIBUTE_ALBUM_ARTIST)
-                            ? get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get())
-                            : get<std::string>(track[ATTRIBUTE_ARTIST].get());
-
-      rq.album      = get<std::string>(track[ATTRIBUTE_ALBUM].get());
-
-      pthreaddata->CacheCover( rq );
     }
 
     return info;
@@ -961,9 +946,8 @@ MPX::LibraryScannerThread::insert_file(
         Track track;
 
         try{
-            m_Library.trackSetLocation( track, uri );
+                m_Library.trackSetLocation( track, uri );
 
-            try{
                 gint64 mtime1 = Util::get_file_mtime( uri );
                 gint64 mtime2 = get_track_mtime( track ) ;
 
@@ -974,6 +958,14 @@ MPX::LibraryScannerThread::insert_file(
                 else
                 {
                     track[ATTRIBUTE_MTIME] = mtime1; 
+
+                    try{
+                        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+                        Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
+                        track[ATTRIBUTE_TYPE] = info->get_attribute_string("standard::content-type");
+                    } catch(...) {
+                        g_message("GIO Typefind Error");
+                    }
 
                     if( !services->get<MetadataReaderTagLib>("mpx-service-taglib")->get( uri, track ) )
                     {
@@ -995,9 +987,8 @@ MPX::LibraryScannerThread::insert_file(
                           m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
                     }
                 }
-            } catch( Glib::Error & cxe ) { 
-                g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-            }
+        } catch( Glib::Error & cxe ) { 
+            g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
         }
         catch( Library::FileQualificationError & cxe )
         {
@@ -1236,6 +1227,22 @@ MPX::LibraryScannerThread::signal_new_entities(
         if( (*i)->Album.second == ENTITY_IS_NEW )
         { 
             pthreaddata->NewAlbum.emit( (*i)->Album.first );
+
+            RequestQualifier rq;
+            rq.mbid       = get<std::string>((*((*i)->Track.get()))[ATTRIBUTE_MB_ALBUM_ID].get());
+            rq.asin       = (*((*i)->Track.get())).has(ATTRIBUTE_ASIN)
+                                  ? get<std::string>((*((*i)->Track.get()))[ATTRIBUTE_ASIN].get())
+                                  : "";
+
+            rq.uri        = get<std::string>((*((*i)->Track.get()))[ATTRIBUTE_LOCATION].get());
+            rq.artist     = (*((*i)->Track.get())).has(ATTRIBUTE_ALBUM_ARTIST)
+                                  ? get<std::string>((*((*i)->Track.get()))[ATTRIBUTE_ALBUM_ARTIST].get())
+                                  : get<std::string>((*((*i)->Track.get()))[ATTRIBUTE_ARTIST].get());
+
+            rq.album      = get<std::string>((*((*i)->Track.get()))[ATTRIBUTE_ALBUM].get());
+
+            pthreaddata->CacheCover( rq );
+
             break;
         }
     }

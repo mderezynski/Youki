@@ -517,8 +517,6 @@ namespace MPX
                                     m_FilterPluginUI_Alignment->remove();
                                 }
 
-                                g_message("Current Plugin: %d", m_FilterPluginsCBox->get_active_row_number());
-
                                 m_FilterPlugin_Current = m_FilterPlugins[m_FilterPluginsCBox->get_active_row_number()];
                                 m_FilterPluginUI = m_FilterPlugin_Current->get_ui();
                                 if( m_FilterPluginUI )
@@ -936,27 +934,30 @@ namespace MPX
                         {
                                 Cairo::RefPtr<Cairo::ImageSurface> surface;
                                 services->get<Covers>("mpx-service-covers")->fetch(mbid, surface, COVER_SIZE_ALBUM);
-                                surface = Util::cairo_image_surface_round(surface, 6.);
 
-                                Gdk::Color c = get_style()->get_black();
-                                Util::cairo_image_surface_rounded_border(surface, .5, 6., c.get_red_p(), c.get_green_p(), c.get_blue_p(), 1.);
+                                if( surface )
+                                {
+                                        surface = Util::cairo_image_surface_round(surface, 6.);
+                                        Gdk::Color c = get_style()->get_black();
+                                        Util::cairo_image_surface_rounded_border(surface, .5, 6., c.get_red_p(), c.get_green_p(), c.get_blue_p(), 1.);
 
-                                IterSet & set = m_Album_MBID_Iter_Map[mbid];
-                                for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
-                                {       
-                                        switch( (*(*i))[Columns.RT] ) 
-                                        {
-                                            case RT_COMPILATION:
-                                                (*(*i))[Columns.Image] = Util::cairo_image_surface_overlay( surface, Util::cairo_image_surface_from_pixbuf(m_Emblem[EM_COMPILATION]), 0., 0., 1.); 
-                                                break;
+                                        IterSet & set = m_Album_MBID_Iter_Map[mbid];
+                                        for(IterSet::iterator i = set.begin(); i != set.end(); ++i)
+                                        {       
+                                                switch( (*(*i))[Columns.RT] ) 
+                                                {
+                                                    case RT_COMPILATION:
+                                                        (*(*i))[Columns.Image] = Util::cairo_image_surface_overlay( surface, Util::cairo_image_surface_from_pixbuf(m_Emblem[EM_COMPILATION]), 0., 0., 1.); 
+                                                        break;
 
-                                            case RT_SOUNDTRACK:
-                                                (*(*i))[Columns.Image] = Util::cairo_image_surface_overlay( surface, Util::cairo_image_surface_from_pixbuf(m_Emblem[EM_SOUNDTRACK]), 0., 0., 1.); 
-                                                break;
+                                                    case RT_SOUNDTRACK:
+                                                        (*(*i))[Columns.Image] = Util::cairo_image_surface_overlay( surface, Util::cairo_image_surface_from_pixbuf(m_Emblem[EM_SOUNDTRACK]), 0., 0., 1.); 
+                                                        break;
 
-                                            default:
-                                                (*(*i))[Columns.Image] = surface;
-                                                break;
+                                                    default:
+                                                        (*(*i))[Columns.Image] = surface;
+                                                        break;
+                                                }
                                         }
                                 }
                         }
@@ -1182,8 +1183,6 @@ namespace MPX
                 void
                         AlbumTreeView::on_album_updated(gint64 id)
                         {
-                                g_message("Album Updated: %lld", id );
-
                                 SQL::RowV v;
                                 services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = %lld;") % id).str());
                                 g_return_if_fail(!v.empty());
@@ -1194,8 +1193,6 @@ namespace MPX
                 void
                         AlbumTreeView::on_new_album(gint64 id)
                         {
-                                g_message("New Album: %lld", id );
-
                                 if(!m_Album_Iter_Map.count(id))
                                 {
                                         SQL::RowV v;

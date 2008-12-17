@@ -134,14 +134,6 @@ namespace MPX
                 {
                     track[ATTRIBUTE_LOCATION] = uri;
 
-                    try{
-                        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
-                        Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
-                        track[ATTRIBUTE_TYPE] = info->get_attribute_string("standard::content-type");
-                    } catch(...) {
-                        g_message("GIO Typefind Error");
-                    }
-
                     if( !track.has(ATTRIBUTE_DATE) && track.has(ATTRIBUTE_MB_RELEASE_DATE) )
                     {
                         std::string mb_date_str = boost::get<std::string>(track[ATTRIBUTE_MB_RELEASE_DATE].get());
