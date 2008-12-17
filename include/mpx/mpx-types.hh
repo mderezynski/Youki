@@ -28,6 +28,7 @@
 #include <vector>
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
+#include <boost/shared_ptr.hpp>
 #ifdef HAVE_TR1
 #include<tr1/unordered_map>
 #endif // HAVE_TR1
@@ -183,6 +184,8 @@ namespace MPX
             return bool(data[index]);
           }
     };
+
+    typedef boost::shared_ptr<Track> Track_sp;
 
     typedef std::vector< gint64 > IdV;
 

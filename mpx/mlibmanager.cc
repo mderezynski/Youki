@@ -335,7 +335,7 @@ namespace MPX
         m_Actions->add( Action::create(
             "action-mlib-rescan",
             Gtk::Stock::REFRESH,
-            _("_Rescan")),
+            _("_Find New Files")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,
@@ -347,7 +347,7 @@ namespace MPX
         m_Actions->add( Action::create(
             "action-mlib-rescan-deep",
             Gtk::Stock::HARDDISK,
-            _("_Rescan (Deep Rescan)")),
+            _("_Look For Changes")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,
@@ -380,7 +380,7 @@ namespace MPX
             "action-volume-rescan",
 
             Gtk::Stock::REFRESH,
-            _("_Rescan")),
+            _("_Find New Files")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,
@@ -394,7 +394,7 @@ namespace MPX
             "action-volume-rescan-deep",
 
             Gtk::Stock::HARDDISK,
-            _("_Rescan (Deep Rescan)")),
+            _("_Look For Changes")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,
@@ -604,15 +604,7 @@ namespace MPX
         }
 
         m_TextBufferDetails->set_text(text);
-
-        if( mcs->key_get<bool>("library","always-vacuum") )
-#ifdef HAVE_HAL
-            on_vacuum_volume();
-#else
-            services->get<Library>("mpx-service-library")->vacuum();
-#endif
-        else
-            m_VboxInner->set_sensitive(true);
+        m_VboxInner->set_sensitive(true);
     }
     
     void
@@ -1330,7 +1322,7 @@ namespace MPX
 
                 StrV v;
                 v.push_back(filename_to_uri(FullPath));
-                services->get<Library>("mpx-service-library")->initScan(v, true);
+                services->get<Library>("mpx-service-library")->initAdd(v);
             }
         }
     }
@@ -1442,7 +1434,7 @@ namespace MPX
                             d->hide();
                             StrV v;
                             v.push_back(uri);
-                            services->get<Library>("mpx-service-library")->initScan(v);
+                            services->get<Library>("mpx-service-library")->initAdd(v);
                     }
             }
 
@@ -1571,7 +1563,7 @@ rerun_import_share_dialog:
                     }
 
                     Util::FileList v (1, m_Share);
-                    services->get<Library>("mpx-service-library")->initScan(v);
+                    services->get<Library>("mpx-service-library")->initAdd(v);
             }
 
     void

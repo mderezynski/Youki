@@ -119,8 +119,8 @@ namespace MPX
 
         public:
 
+            sigx::request_f<Util::FileList const&>          add ;
             sigx::request_f<Util::FileList const&, bool>    scan ;
-            sigx::request_f<Util::FileList const&>          scan_direct ;
             sigx::request_f<>                               scan_stop ;
             sigx::request_f<>                               vacuum ;
 #ifdef HAVE_HAL
@@ -212,24 +212,25 @@ namespace MPX
                 bool
             ) ;
 
-            void on_scan_direct(
-                const Util::FileList&
-            ) ;
-
             void on_scan_stop() ;
 
             void on_vacuum ();
 
 #ifdef HAVE_HAL
             void on_vacuum_volume(
-                const std::string&,
-                const std::string&
+                  const std::string&
+                , const std::string&
+                , bool = true
             );
 #endif // HAVE_HAL
 
             void on_update_statistics ();
 
 /////////////////////////
+
+            void on_add(
+                const Util::FileList&
+            );
 
             void on_scan_list_deep(
                 const Util::FileList&
@@ -317,6 +318,13 @@ namespace MPX
             void
             insert_file(
                   const std::string& uri
+                , const std::string& insert_path
+            );
+
+            void
+            insert_file_no_mtime_check(
+                  Track_sp           track
+                , const std::string& uri
                 , const std::string& insert_path
             );
 

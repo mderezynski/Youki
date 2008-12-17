@@ -882,7 +882,7 @@ namespace MPX
                                         if(r.count("pcount"))
                                                 (*iter)[PlaylistColumns.Playcount] = get<gint64>(r["pcount"]);
 
-                                        (*iter)[PlaylistColumns.MPXTrack] = services->get<Library>("mpx-service-library")->sqlToTrack(r); 
+                                        (*iter)[PlaylistColumns.MPXTrack] = (*(services->get<Library>("mpx-service-library")->sqlToTrack(r).get()));
                                         (*iter)[PlaylistColumns.IsMPXTrack] = true; 
                                         (*iter)[PlaylistColumns.IsBad] = false; 
                                 }
@@ -1620,7 +1620,7 @@ namespace MPX
                                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                                 {
                                         SQL::Row & r = *i;
-                                        m->append_track(r, services->get<Library>("mpx-service-library")->sqlToTrack(r));
+                                        m->append_track(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r).get())));
                                 }
 
                                 m_FilterModel = DataModelFilterP (new DataModelFilter(m));

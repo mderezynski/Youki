@@ -263,7 +263,6 @@ namespace MPX
         mcs->key_register ("library", "rescan-at-startup", true);
         mcs->key_register ("library", "rescan-in-intervals", true);
         mcs->key_register ("library", "rescan-interval", 30); // in minutes
-        mcs->key_register ("library", "always-vacuum", false);
 #ifdef HAVE_HAL
         mcs->key_register ("library", "use-hal", true);
 #endif // HAVE_HAL

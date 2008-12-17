@@ -466,9 +466,6 @@ namespace MPX
 				sigc::mem_fun(*m_Library_RescanInIntervals, &Gtk::ToggleButton::get_active)
 		));
 
-        m_Xml->get_widget( "always-vacuum", m_Library_RescanAlwaysVacuum );
-        mcs_bind->bind_toggle_button(*m_Library_RescanAlwaysVacuum, "library","always-vacuum");
-
 #ifdef HAVE_HAL
         m_Xml->get_widget("lib-use-hal-rb1", m_Library_UseHAL_Yes);
         m_Xml->get_widget("lib-use-hal-rb2", m_Library_UseHAL_No);
@@ -545,10 +542,7 @@ namespace MPX
     void
     Preferences::on_library_scan_summary ( const ScanSummary& G_GNUC_UNUSED )
     {
-        if( !mcs->key_get<bool>("library","always-vacuum") )
-        {
-            m_Xml->get_widget("vbox135")->set_sensitive(true);
-        }
+        m_Xml->get_widget("vbox135")->set_sensitive(true);
     }
 
     void

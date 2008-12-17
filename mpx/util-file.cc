@@ -287,9 +287,14 @@ namespace MPX
         const std::string& uri
     )
     {
-        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri); 
-        Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_CHANGED, Gio::FILE_QUERY_INFO_NONE);
-        return info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_CHANGED) ;
+        try{
+                Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri); 
+                Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_CHANGED, Gio::FILE_QUERY_INFO_NONE);
+                return info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_CHANGED) ;
+        } catch( Glib::Error )
+        {
+                return 0;
+        }
     }
 
     gint64
@@ -297,9 +302,14 @@ namespace MPX
         const std::string& uri
     )
     {
-        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri); 
-        Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_MODIFIED, Gio::FILE_QUERY_INFO_NONE);
-        return info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_MODIFIED) ;
+        try{
+                Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri); 
+                Glib::RefPtr<Gio::FileInfo> info = file->query_info(G_FILE_ATTRIBUTE_TIME_MODIFIED, Gio::FILE_QUERY_INFO_NONE);
+                return info->get_attribute_uint64(G_FILE_ATTRIBUTE_TIME_MODIFIED) ;
+        } catch( Glib::Error )
+        {
+                return 0;
+        }
     }
 
     std::string

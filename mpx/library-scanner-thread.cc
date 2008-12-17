@@ -141,6 +141,8 @@ namespace
         {   "active",
             VALUE_TYPE_INT      },
     };
+
+    const char delete_track_f[] = "DELETE FROM track WHERE id='%lld';";
 }
 
 namespace MPX
@@ -214,12 +216,12 @@ MPX::LibraryScannerThread::LibraryScannerThread(
   , gint64                      flags
 )
 : sigx::glib_threadable()
+, add(sigc::mem_fun(*this, &LibraryScannerThread::on_add))
 , scan(sigc::mem_fun(*this, &LibraryScannerThread::on_scan))
-, scan_direct(sigc::mem_fun(*this, &LibraryScannerThread::on_scan_direct))
 , scan_stop(sigc::mem_fun(*this, &LibraryScannerThread::on_scan_stop))
 , vacuum(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum))
 #ifdef HAVE_HAL
-, vacuum_volume(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum_volume))
+, vacuum_volume(sigc::bind(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum_volume), true))
 #endif // HAVE_HAL
 , update_statistics(sigc::mem_fun(*this, &LibraryScannerThread::on_update_statistics))
 , signal_scan_start(*this, m_ThreadData, &ThreadData::ScanStart)
@@ -297,159 +299,7 @@ MPX::LibraryScannerThread::on_scan(
 }
 
 void
-MPX::LibraryScannerThread::on_scan_direct(
-    const Util::FileList&   list
-)
-{
-    ThreadData * pthreaddata = m_ThreadData.get();
-    g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
-
-    pthreaddata->ScanStart.emit();
-    m_SQL->exec_sql( "UPDATE album SET album_new = 0" );
-
-    m_ScanSummary = ScanSummary();
-    m_ScanSummary.DeepRescan = true;
-    m_ScanSummary.FilesTotal = list.size();
-
-    for(Util::FileList::const_iterator i = list.begin(); i != list.end(); ++i)
-    {  
-        if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
-        {
-            pthreaddata->ScanSummary.emit( m_ScanSummary );
-            return;
-        }
-
-        insert_file( *i, "" );
-                        
-        if (! (std::distance(list.begin(), i) % 50) )
-        {
-                pthreaddata->ScanRun.emit(std::distance(list.begin(), i), true ); 
-        }
-    }
-
-    pthreaddata->ScanSummary.emit( m_ScanSummary );
-}
-
-void
-MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
-{
-    ThreadData * pthreaddata = m_ThreadData.get();
-    g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
-
-    pthreaddata->ScanStart.emit();
-    m_SQL->exec_sql( "UPDATE album SET album_new = 0" );
-
-    SQL::RowV rows;
-    m_SQL->get(rows, "SELECT last_scan_date FROM meta");
-    gint64 last_scan_date = boost::get<gint64>(rows[0]["last_scan_date"]);
-
-    m_ScanSummary = ScanSummary();
-    m_ScanSummary.DeepRescan = false;
-
-    for(Util::FileList::const_iterator i = list.begin(); i != list.end(); ++i)
-    {  
-        std::string insert_path ;
-        std::string insert_path_sql ;
-
-        try{
-            insert_path = Util::normalize_path( *i ) ;
-#ifdef HAVE_HAL
-            try{
-                if (m_Flags & Library::F_USING_HAL)
-                {
-                    HAL::Volume const& volume (services->get<HAL>("mpx-service-hal")->get_volume_for_uri (*i));
-                    insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr (volume.mount_point.length())) ;
-                }
-                else
-#endif
-                {
-                    insert_path_sql = insert_path; 
-                }
-#ifdef HAVE_HAL
-            }
-          catch (HAL::Exception & cxe)
-            {
-              g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
-              return;
-            }
-          catch (Glib::ConvertError & cxe)
-            {
-              g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
-              return;
-            }
-#endif // HAVE_HAL
-           
-            try{ 
-                Util::collect_dirs(
-                    insert_path,
-                    sigc::bind(
-                        sigc::mem_fun(
-                                *this,
-                                &LibraryScannerThread::on_scan_list_paths_callback
-                        ),
-                        last_scan_date,
-                        insert_path_sql
-                ));
-            } catch(...) {
-            }
-
-            process_insertion_list ();
-        }
-        catch( Glib::ConvertError & cxe )
-        {
-            g_warning("%s: %s", G_STRLOC, cxe.what().c_str());
-            return;
-        }
-    }
-
-    pthreaddata->ScanSummary.emit( m_ScanSummary );
-}
-void
-MPX::LibraryScannerThread::on_scan_list_paths_callback(
-    const std::string&  i3,
-    const gint64&       last_scan_date,
-    const std::string&  insert_path_sql
-)
-{
-    ThreadData * pthreaddata = m_ThreadData.get();
-
-    try{
-        gint64 ctime = Util::get_file_ctime( i3 );
-        if( ctime > last_scan_date )
-        {
-            Util::FileList collection2;
-
-            try{ 
-                Util::collect_audio_paths( i3, collection2 );
-            } catch(...) {
-            }
-
-            for(Util::FileList::iterator i2 = collection2.begin(); i2 != collection2.end(); ++i2)
-            {
-                if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
-                {
-                    pthreaddata->ScanSummary.emit( m_ScanSummary );
-                    return;
-                }
-
-                insert_file( *i2, insert_path_sql );
-            }
-        }
-        
-        m_ScanSummary.FilesTotal++;
-
-        if( m_ScanSummary.FilesTotal % 50 )
-        {
-            pthreaddata->ScanRun.emit( m_ScanSummary.FilesTotal, false );
-        }
-
-    } catch( Glib::Error & cxe ) {
-        g_warning("%s: Error: %s", G_STRLOC, cxe.what().c_str()); 
-    }
-}
-
-void
-MPX::LibraryScannerThread::on_scan_list_deep(
+MPX::LibraryScannerThread::on_add(
     const Util::FileList& list
 )
 {
@@ -552,6 +402,270 @@ MPX::LibraryScannerThread::on_scan_list_deep(
     pthreaddata->ScanSummary.emit( m_ScanSummary );
 }
 
+void
+MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
+{
+    ThreadData * pthreaddata = m_ThreadData.get();
+    g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
+
+    pthreaddata->ScanStart.emit();
+    m_SQL->exec_sql( "UPDATE album SET album_new = 0" );
+
+    SQL::RowV rows;
+    m_SQL->get(rows, "SELECT last_scan_date FROM meta");
+    gint64 last_scan_date = boost::get<gint64>(rows[0]["last_scan_date"]);
+
+    m_ScanSummary = ScanSummary();
+    m_ScanSummary.DeepRescan = false;
+
+    typedef std::set<HAL::VolumeKey> VolumeKey_set_t;
+
+    VolumeKey_set_t volumes;
+
+    for(Util::FileList::const_iterator i = list.begin(); i != list.end(); ++i)
+    {  
+        std::string insert_path ;
+        std::string insert_path_sql ;
+
+        try{
+            insert_path = Util::normalize_path( *i ) ;
+#ifdef HAVE_HAL
+            try{
+                if (m_Flags & Library::F_USING_HAL)
+                {
+                    HAL::Volume const& volume (services->get<HAL>("mpx-service-hal")->get_volume_for_uri (*i));
+                    volumes.insert(std::make_pair( volume.device_udi, volume.volume_udi ));
+                    insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr (volume.mount_point.length())) ;
+                }
+                else
+#endif
+                {
+                    insert_path_sql = insert_path; 
+                }
+#ifdef HAVE_HAL
+            }
+          catch (HAL::Exception & cxe)
+            {
+              g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+              return;
+            }
+          catch (Glib::ConvertError & cxe)
+            {
+              g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+              return;
+            }
+#endif // HAVE_HAL
+           
+            try{ 
+                Util::collect_dirs(
+                    insert_path,
+                    sigc::bind(
+                        sigc::mem_fun(
+                                *this,
+                                &LibraryScannerThread::on_scan_list_paths_callback
+                        ),
+                        last_scan_date,
+                        insert_path_sql
+                ));
+            } catch(...) {
+            }
+
+            process_insertion_list ();
+        }
+        catch( Glib::ConvertError & cxe )
+        {
+            g_warning("%s: %s", G_STRLOC, cxe.what().c_str());
+            return;
+        }
+    }
+
+    for( VolumeKey_set_t::const_iterator i = volumes.begin(); i != volumes.end(); ++i )
+    {
+        on_vacuum_volume( (*i).first, (*i).second, false );
+    }
+
+    pthreaddata->ScanSummary.emit( m_ScanSummary );
+}
+void
+MPX::LibraryScannerThread::on_scan_list_paths_callback(
+    const std::string&  i3,
+    const gint64&       last_scan_date,
+    const std::string&  insert_path_sql
+)
+{
+    ThreadData * pthreaddata = m_ThreadData.get();
+
+    try{
+        gint64 ctime = Util::get_file_ctime( i3 );
+        if( ctime && ctime > last_scan_date )
+        {
+            Util::FileList collection2;
+
+            try{ 
+                Util::collect_audio_paths( i3, collection2 );
+            } catch(...) {
+            }
+
+            for(Util::FileList::iterator i2 = collection2.begin(); i2 != collection2.end(); ++i2)
+            {
+                if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
+                {
+                    pthreaddata->ScanSummary.emit( m_ScanSummary );
+                    return;
+                }
+
+                insert_file( *i2, insert_path_sql );
+            }
+        }
+        
+        m_ScanSummary.FilesTotal++;
+
+        if( m_ScanSummary.FilesTotal % 50 )
+        {
+            pthreaddata->ScanRun.emit( m_ScanSummary.FilesTotal, false );
+        }
+
+    } catch( Glib::Error & cxe ) {
+        g_warning("%s: Error: %s", G_STRLOC, cxe.what().c_str()); 
+    }
+}
+
+void
+MPX::LibraryScannerThread::on_scan_list_deep(
+    const Util::FileList& list
+)
+{
+    ThreadData * pthreaddata = m_ThreadData.get();
+    g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
+
+    pthreaddata->ScanStart.emit();
+    m_SQL->exec_sql( "UPDATE album SET album_new = 0" );
+
+    m_ScanSummary = ScanSummary();
+    m_ScanSummary.DeepRescan = true;
+
+    boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
+
+    for( Util::FileList::const_iterator i = list.begin(); i != list.end(); ++i )
+    {  
+        std::string insert_path ;
+        std::string insert_path_sql ;
+
+#ifdef HAVE_HAL
+        try{
+#endif
+
+            RowV v;
+            insert_path = Util::normalize_path( *i ) ;
+
+#ifdef HAVE_HAL
+
+            try{
+                if (m_Flags & Library::F_USING_HAL)
+                { 
+                    HAL::Volume const& volume (services->get<HAL>("mpx-service-hal")->get_volume_for_uri (*i));
+                    insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr(volume.mount_point.length())) ;
+
+                    m_SQL->get(
+                        v,
+                        mprintf( 
+                              "SELECT id, hal_volume_udi, hal_device_udi, hal_vrp, mtime FROM track WHERE hal_volume_udi = '%s' AND hal_device_udi ='%s' AND insert_path ='%s'"
+                            , volume.volume_udi.c_str()
+                            , volume.device_udi.c_str() 
+                            , insert_path_sql.c_str())
+                    );
+                }
+                else
+#endif
+                {
+                    insert_path_sql = insert_path; 
+
+                    m_SQL->get(
+                        v,
+                        mprintf( 
+                              "SELECT id, location, mtime FROM track WHERE insert_path ='%s'"
+                            , insert_path_sql.c_str())
+                    );
+                }
+#ifdef HAVE_HAL
+            }
+            catch( HAL::Exception& cxe )
+            {
+                g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
+                pthreaddata->ScanSummary.emit( m_ScanSummary );
+                return;
+            }
+            catch( Glib::ConvertError& cxe )
+            {
+                g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
+                pthreaddata->ScanSummary.emit( m_ScanSummary );
+                return;
+            }
+#endif // HAVE_HAL
+
+            for( RowV::iterator i = v.begin(); i != v.end(); ++i )
+            {
+                Track_sp t = library->sqlToTrack( *i, false ); 
+
+                std::string location = get<std::string>(   (*(t.get()))[ATTRIBUTE_LOCATION].get() ) ; 
+
+                gint64 mtime1 = Util::get_file_mtime( get<std::string>( (*(t.get()))[ATTRIBUTE_LOCATION].get() ) );
+                gint64 mtime2 = get<gint64>((*i)["mtime"]);
+
+                if( mtime1 && mtime2 && mtime1 == mtime2 )
+                {
+                    ++m_ScanSummary.FilesUpToDate;
+                }
+                else
+                {
+                    if( mtime1 )
+                    {
+                            (*(t.get()))[ATTRIBUTE_MTIME] = mtime1;
+
+                            insert_file_no_mtime_check( t, location, insert_path_sql );
+
+                    }
+                    else
+                    {
+                        gint64 id = get<gint64>((*i)["id"]);
+                        m_SQL->exec_sql(mprintf( delete_track_f, id));
+                        pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
+                    }
+                }
+
+                if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
+                {
+                    pthreaddata->ScanSummary.emit( m_ScanSummary );
+                    m_InsertionTracks.clear();
+                    return;
+                }
+
+                m_ScanSummary.FilesTotal ++ ;
+
+                if( !(m_ScanSummary.FilesTotal % 100) )
+                {
+                        pthreaddata->Message.emit(
+                            (boost::format(_("Checking Tracks: %lld"))
+                                % gint64(m_ScanSummary.FilesTotal)
+                            ).str()
+                        );
+                }
+            }
+
+        }
+        catch( Glib::ConvertError & cxe )
+        {
+            g_warning("%s: %s", G_STRLOC, cxe.what().c_str());
+            pthreaddata->ScanSummary.emit( m_ScanSummary );
+            return;
+        }
+    }
+
+    do_remove_dangling();
+    process_insertion_list ();
+
+    pthreaddata->ScanSummary.emit( m_ScanSummary );
+}
 
 void
 MPX::LibraryScannerThread::on_scan_stop ()
@@ -938,6 +1052,52 @@ MPX::LibraryScannerThread::get_track_id (Track& track) const
 }
 
 void
+MPX::LibraryScannerThread::insert_file_no_mtime_check(
+      Track_sp           track
+    , const std::string& uri
+    , const std::string& insert_path
+)
+{
+        try{
+                    try{
+                        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+                        Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
+                        (*(track.get()))[ATTRIBUTE_TYPE] = info->get_attribute_string("standard::content-type");
+                    } catch(...) {
+                        g_message("GIO Typefind Error");
+                    }
+
+                    if( !services->get<MetadataReaderTagLib>("mpx-service-taglib")->get( uri, *(track.get()) ) )
+                    {
+                        ++m_ScanSummary.FilesErroneous;
+                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, _("Could not acquire metadata (using taglib-gio)")));
+                    }
+                    else try{
+                        create_insertion_track( *(track.get()), uri, insert_path );
+                    }
+                    catch( ScanError & cxe )
+                    {
+                        ++m_ScanSummary.FilesErroneous;
+                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
+                    }
+                    catch( Glib::ConvertError & cxe )
+                    {
+                        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+                        ++m_ScanSummary.FilesErroneous;
+                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
+                    }
+
+        } catch( Glib::Error & cxe ) { 
+            g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+        }
+        catch( Library::FileQualificationError & cxe )
+        {
+            ++(m_ScanSummary.FilesErroneous);
+               m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, cxe.what()));
+        }
+}
+
+void
 MPX::LibraryScannerThread::insert_file(
       const std::string& uri
     , const std::string& insert_path
@@ -1005,7 +1165,6 @@ MPX::LibraryScannerThread::create_insertion_track(
     , const std::string& insert_path
 )
 {
-  char const delete_track_f[] = "DELETE FROM track WHERE id='%lld';";
   char const track_set_f[] = "INSERT INTO track (%s) VALUES (%s);";
 
   if( uri.empty() )
@@ -1075,7 +1234,7 @@ MPX::LibraryScannerThread::create_insertion_track(
   column_v += mprintf( "'%lld'", p->Artist.first ) + "," + mprintf( "'%lld'", p->Album.first ) ; 
 
   p->Insertion_SQL  = mprintf( track_set_f, column_n.c_str(), column_v.c_str());
-  p->Track          = Track_p( new Track( track ));
+  p->Track          = Track_sp( new Track( track ));
 
   m_InsertionTracks[p->Album.first][p->Artist.first][p->Title][p->TrackNumber].push_back( p );
 }
@@ -1256,8 +1415,6 @@ MPX::LibraryScannerThread::insert(
 {
   ThreadData * pthreaddata = m_ThreadData.get();
 
-  const char delete_track_f[] = "DELETE FROM track WHERE id='%lld';";
-
   Track & track = *(p->Track.get());
 
   try{
@@ -1412,7 +1569,7 @@ MPX::LibraryScannerThread::on_vacuum()
 
   for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
   {
-          std::string uri = get<std::string>(m_Library.sqlToTrack( *i, false )[ATTRIBUTE_LOCATION].get());
+          std::string uri = get<std::string>((*(m_Library.sqlToTrack( *i, false )))[ATTRIBUTE_LOCATION].get());
 
           if( !uri.empty() )
           {
@@ -1445,13 +1602,15 @@ MPX::LibraryScannerThread::on_vacuum()
 #ifdef HAVE_HAL
 void
 MPX::LibraryScannerThread::on_vacuum_volume(
-    const std::string& hal_device_udi,
-    const std::string& hal_volume_udi
+      const std::string& hal_device_udi
+    , const std::string& hal_volume_udi
+    , bool               do_signal
 )
 {
   ThreadData * pthreaddata = m_ThreadData.get();
-
-  pthreaddata->ScanStart.emit();
+    
+  if( do_signal )
+      pthreaddata->ScanStart.emit();
 
   typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
 
@@ -1468,7 +1627,7 @@ MPX::LibraryScannerThread::on_vacuum_volume(
 
   for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
   {
-          std::string uri = get<std::string>(m_Library.sqlToTrack( *i, false )[ATTRIBUTE_LOCATION].get());
+          std::string uri = get<std::string>((*(m_Library.sqlToTrack( *i, false )))[ATTRIBUTE_LOCATION].get());
 
           if( !uri.empty() )
           {
@@ -1495,7 +1654,9 @@ MPX::LibraryScannerThread::on_vacuum_volume(
   m_SQL->exec_sql("COMMIT");
 
   pthreaddata->Message.emit((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
-  pthreaddata->ScanEnd.emit();
+
+  if( do_signal )
+      pthreaddata->ScanEnd.emit();
 }
 
 void

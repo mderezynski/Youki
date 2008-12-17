@@ -512,11 +512,11 @@ namespace MPX
 
                             for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
                             {
-                                Track t = sqlToTrack( *i, false );
+                                Track_sp t = sqlToTrack( *i, false );
 
                                 mm->push_message((boost::format(_("Updating Track Locations: %lld / %lld")) % gint64(std::distance(v.begin(), i)) % v.size()).str());
 
-                                g_assert( t.has(ATTRIBUTE_LOCATION) );
+                                g_assert( t->has(ATTRIBUTE_LOCATION) );
                                 g_assert( (*i).count("id") );
 
                                 const std::string& volume_udi  = get<std::string>((*i)["hal_volume_udi"]) ;
@@ -529,7 +529,7 @@ namespace MPX
                                 execSQL(
                                     mprintf(
                                           "UPDATE track SET location = '%q', insert_path = '%q', hal_device_udi = NULL, hal_volume_udi = NULL, hal_vrp = NULL WHERE id ='%lld'"
-                                        , get<std::string>(t[ATTRIBUTE_LOCATION].get()).c_str()
+                                        , get<std::string>((*(t.get()))[ATTRIBUTE_LOCATION].get()).c_str()
                                         , insert_path_new.c_str()
                                         , get<gint64>((*i)["id"])
                                 ));
@@ -604,9 +604,9 @@ namespace MPX
                         boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
                         mm->push_message((boost::format(_("Refreshing album covers: %lld / %lld")) % *position % (*v).size()).str());
 
-                        Track t = sqlToTrack( r, false );
+                        Track_sp t = sqlToTrack( r, false );
 
-                        std::string location = get<std::string>(t[ATTRIBUTE_LOCATION].get()) ;
+                        std::string location = get<std::string>((*(t.get()))[ATTRIBUTE_LOCATION].get()) ;
                         std::string mb_album_id;
                         std::string amazon_asin;
                         std::string album_artist;
@@ -804,7 +804,7 @@ namespace MPX
                                     continue; //FIXME: Maybe it was vacuumed during this operation, so let's just continue. We really need proper high-level locking for the database
                                 }
 
-                                std::string uri = get<std::string>( sqlToTrack( rows[0], false )[ATTRIBUTE_LOCATION].get() ) ;
+                                std::string uri = get<std::string>( (*sqlToTrack( rows[0], false ))[ATTRIBUTE_LOCATION].get() ) ;
 
                                 if( !uri.empty() )
                                 {
@@ -1138,12 +1138,12 @@ namespace MPX
                             , (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % id).str()
                         );
 
-                        Track t = sqlToTrack( v[0] );
+                        Track_sp t = sqlToTrack( v[0] );
 
                         gint64 id_album = get<gint64>(v[0]["album_j"]);
                         gint64 id_artst = get<gint64>(v[0]["album_artist_j"]);
 
-                        Signals.TrackUpdated.emit( t, id_album, id_artst );
+                        Signals.TrackUpdated.emit( *(t.get()), id_album, id_artst );
                 }
 
         void	
@@ -1171,12 +1171,12 @@ namespace MPX
                             , (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % id).str()
                         );
 
-                        Track t = sqlToTrack( v[0] );
+                        Track_sp t = sqlToTrack( v[0] );
 
                         gint64 id_album = get<gint64>(v[0]["album_j"]);
                         gint64 id_artst = get<gint64>(v[0]["album_artist_j"]);
 
-                        Signals.TrackUpdated.emit( t, id_album, id_artst );
+                        Signals.TrackUpdated.emit( (*t.get()), id_album, id_artst );
                         Signals.AlbumUpdated.emit( album_id ) ;
                 }
 
@@ -1239,109 +1239,109 @@ namespace MPX
                         return 0;
                 }
 
-        Track
+        Track_sp
                 Library::sqlToTrack(
                       SQL::Row & row
                     , bool all_metadata
                 )
                 {
-                        Track track;
+                        Track_sp track (new Track);
 
 #ifdef HAVE_HAL
                         if( m_Flags & F_USING_HAL )
                         {
                             if (row.count("hal_volume_udi"))
-                                    track[ATTRIBUTE_HAL_VOLUME_UDI] = get<std::string>(row["hal_volume_udi"]);
+                                    (*track.get())[ATTRIBUTE_HAL_VOLUME_UDI] = get<std::string>(row["hal_volume_udi"]);
 
                             if (row.count("hal_device_udi"))
-                                    track[ATTRIBUTE_HAL_DEVICE_UDI] = get<std::string>(row["hal_device_udi"]);
+                                    (*track.get())[ATTRIBUTE_HAL_DEVICE_UDI] = get<std::string>(row["hal_device_udi"]);
 
                             if (row.count("hal_vrp"))
-                                    track[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);
+                                    (*track.get())[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);
 
-                            track[ATTRIBUTE_LOCATION] = trackGetLocation( track ); 
+                            (*track.get())[ATTRIBUTE_LOCATION] = trackGetLocation( (*track.get()) ); 
 
-                            g_assert( track.has(ATTRIBUTE_LOCATION) );
+                            g_assert( (*track.get()).has(ATTRIBUTE_LOCATION) );
                         }
                         else
 #endif
                         if( row.count("location") )
                         {
-                            track[ATTRIBUTE_LOCATION] = get<std::string>(row["location"]);
+                            (*track.get())[ATTRIBUTE_LOCATION] = get<std::string>(row["location"]);
                         }
 
                         if( row.count("id") )
                         {
-                            track[ATTRIBUTE_MPX_TRACK_ID] = get<gint64>(row["id"]);
+                            (*track.get())[ATTRIBUTE_MPX_TRACK_ID] = get<gint64>(row["id"]);
                         }
 
                         if( all_metadata )
                         {
                                 if (row.count("album_artist"))
-                                        track[ATTRIBUTE_ALBUM_ARTIST] = get<std::string>(row["album_artist"]);
+                                        (*track.get())[ATTRIBUTE_ALBUM_ARTIST] = get<std::string>(row["album_artist"]);
 
                                 if (row.count("artist"))
-                                        track[ATTRIBUTE_ARTIST] = get<std::string>(row["artist"]);
+                                        (*track.get())[ATTRIBUTE_ARTIST] = get<std::string>(row["artist"]);
 
                                 if (row.count("album"))
-                                        track[ATTRIBUTE_ALBUM] = get<std::string>(row["album"]);
+                                        (*track.get())[ATTRIBUTE_ALBUM] = get<std::string>(row["album"]);
 
                                 if (row.count("track"))
-                                        track[ATTRIBUTE_TRACK] = gint64(get<gint64>(row["track"]));
+                                        (*track.get())[ATTRIBUTE_TRACK] = gint64(get<gint64>(row["track"]));
 
                                 if (row.count("title"))
-                                        track[ATTRIBUTE_TITLE] = get<std::string>(row["title"]);
+                                        (*track.get())[ATTRIBUTE_TITLE] = get<std::string>(row["title"]);
 
                                 if (row.count("time"))
-                                        track[ATTRIBUTE_TIME] = gint64(get<gint64>(row["time"]));
+                                        (*track.get())[ATTRIBUTE_TIME] = gint64(get<gint64>(row["time"]));
 
                                 if (row.count("mb_artist_id"))
-                                        track[ATTRIBUTE_MB_ARTIST_ID] = get<std::string>(row["mb_artist_id"]);
+                                        (*track.get())[ATTRIBUTE_MB_ARTIST_ID] = get<std::string>(row["mb_artist_id"]);
 
                                 if (row.count("mb_album_id"))
-                                        track[ATTRIBUTE_MB_ALBUM_ID] = get<std::string>(row["mb_album_id"]);
+                                        (*track.get())[ATTRIBUTE_MB_ALBUM_ID] = get<std::string>(row["mb_album_id"]);
 
                                 if (row.count("mb_track_id"))
-                                        track[ATTRIBUTE_MB_TRACK_ID] = get<std::string>(row["mb_track_id"]);
+                                        (*track.get())[ATTRIBUTE_MB_TRACK_ID] = get<std::string>(row["mb_track_id"]);
 
                                 if (row.count("mb_album_artist_id"))
-                                        track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = get<std::string>(row["mb_album_artist_id"]);
+                                        (*track.get())[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = get<std::string>(row["mb_album_artist_id"]);
 
                                 if (row.count("mb_release_country"))
-                                        track[ATTRIBUTE_MB_RELEASE_COUNTRY] = get<std::string>(row["mb_release_country"]);
+                                        (*track.get())[ATTRIBUTE_MB_RELEASE_COUNTRY] = get<std::string>(row["mb_release_country"]);
 
                                 if (row.count("mb_release_type"))
-                                        track[ATTRIBUTE_MB_RELEASE_TYPE] = get<std::string>(row["mb_release_type"]);
+                                        (*track.get())[ATTRIBUTE_MB_RELEASE_TYPE] = get<std::string>(row["mb_release_type"]);
 
                                 if (row.count("musicip_puid"))
-                                        track[ATTRIBUTE_MUSICIP_PUID] = get<std::string>(row["musicip_puid"]);
+                                        (*track.get())[ATTRIBUTE_MUSICIP_PUID] = get<std::string>(row["musicip_puid"]);
 
                                 if (row.count("date"))
-                                        track[ATTRIBUTE_DATE] = get<gint64>(row["date"]);
+                                        (*track.get())[ATTRIBUTE_DATE] = get<gint64>(row["date"]);
 
                                 if (row.count("amazon_asin"))
-                                        track[ATTRIBUTE_ASIN] = get<std::string>(row["amazon_asin"]);
+                                        (*track.get())[ATTRIBUTE_ASIN] = get<std::string>(row["amazon_asin"]);
 
                                 if (row.count("id"))
-                                        track[ATTRIBUTE_MPX_TRACK_ID] = get<gint64>(row["id"]);
+                                        (*track.get())[ATTRIBUTE_MPX_TRACK_ID] = get<gint64>(row["id"]);
 
                                 if (row.count("album_j"))
-                                        track[ATTRIBUTE_MPX_ALBUM_ID] = get<gint64>(row["album_j"]);
+                                        (*track.get())[ATTRIBUTE_MPX_ALBUM_ID] = get<gint64>(row["album_j"]);
 
                                 if (row.count("type"))
-                                        track[ATTRIBUTE_TYPE] = get<std::string>(row["type"]);
+                                        (*track.get())[ATTRIBUTE_TYPE] = get<std::string>(row["type"]);
 
                                 if (row.count("bitrate"))
-                                        track[ATTRIBUTE_BITRATE] = get<gint64>(row["bitrate"]);
+                                        (*track.get())[ATTRIBUTE_BITRATE] = get<gint64>(row["bitrate"]);
 
                                 if (row.count("samplerate"))
-                                        track[ATTRIBUTE_SAMPLERATE] = get<gint64>(row["samplerate"]);
+                                        (*track.get())[ATTRIBUTE_SAMPLERATE] = get<gint64>(row["samplerate"]);
 
                                 if (row.count("type"))
-                                        track[ATTRIBUTE_TYPE] = get<std::string>(row["type"]);
+                                        (*track.get())[ATTRIBUTE_TYPE] = get<std::string>(row["type"]);
                         }
 
-                        g_assert( track.has(ATTRIBUTE_LOCATION) );
+                        g_assert( (*track.get()).has(ATTRIBUTE_LOCATION) );
 
                         return track;
                 }
@@ -1564,9 +1564,15 @@ namespace MPX
         void
                 Library::initScan (const Util::FileList & list, bool deep)
                 {
-                        execSQL("UPDATE album SET album_new = 0");
                         m_ScannerThread->scan(list, deep);
                 }
+
+        void
+                Library::initAdd (const Util::FileList & list)
+                {
+                        m_ScannerThread->add(list);
+                }
+
         void
                 Library::remove_dangling () 
                 {

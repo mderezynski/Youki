@@ -945,7 +945,7 @@ BOOST_PYTHON_MODULE(mpx)
 
 		.def("getMetadata", &MPX::Library::getMetadata)
 
-        .def("sqlToTrack", &MPX::Library::sqlToTrack)
+        //.def("sqlToTrack", &MPX::Library::sqlToTrack)
 
         .def("getTrackTags", &MPX::Library::getTrackTags)
 

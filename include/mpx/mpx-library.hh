@@ -119,6 +119,11 @@ namespace MPX
             ); 
 
             void
+            initAdd(
+                const Util::FileList& /*list*/
+            ); 
+
+            void
             getSQL(
                 SQL::RowV&,
                 const std::string&
@@ -132,7 +137,7 @@ namespace MPX
             void
             recacheCovers() ;
 
-            Track
+            Track_sp 
             sqlToTrack(
                   SQL::Row&
                 , bool /*all metadata?*/ = true
