@@ -1240,6 +1240,8 @@ MPX::LibraryScannerThread::signal_new_entities(
     const TrackInfo_p& p
 )
 {
+    ThreadData * pthreaddata = m_ThreadData.get();
+
     if( !m_SignalledAlbumArtists.count( p->AlbumArtist.first )) 
     {
         m_SignalledAlbumArtists.insert( p->AlbumArtist.first );
