@@ -121,6 +121,7 @@ namespace MPX
 
             sigx::request_f<Util::FileList const&>          add ;
             sigx::request_f<Util::FileList const&, bool>    scan ;
+            sigx::request_f<>                               scan_all ;
             sigx::request_f<>                               scan_stop ;
             sigx::request_f<>                               vacuum ;
 #ifdef HAVE_HAL
@@ -210,6 +211,9 @@ namespace MPX
             void on_scan(
                 const Util::FileList&,
                 bool
+            ) ;
+
+            void on_scan_all(
             ) ;
 
             void on_scan_stop() ;

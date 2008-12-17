@@ -113,6 +113,10 @@ namespace MPX
             reload() ;
 
             void
+            initScanAll(
+            ); 
+
+            void
             initScan(
                 const Util::FileList& /*list*/,
                 bool                  /*deep*/ = false

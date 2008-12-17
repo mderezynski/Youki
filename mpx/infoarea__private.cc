@@ -343,8 +343,8 @@ namespace MPX
 
           RoundedRectangle( cr, cover_anim_area_x0+(m_pressed?1:0),
                          cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-                                                             cover_anim_area_height+(m_pressed?1:0), 6. /*,
-            CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )*/
+                                                             cover_anim_area_height+(m_pressed?1:0), 6. ,
+            CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )
           );
 
           cr->clip ();
@@ -360,8 +360,8 @@ namespace MPX
 
           RoundedRectangle( cr, cover_anim_area_x0+(m_pressed?1:0),
                          cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-                                                             cover_anim_area_height+(m_pressed?1:0), 6. /*,
-            CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )*/
+                                                             cover_anim_area_height+(m_pressed?1:0), 6. ,
+            CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )
           );
 
           cr->clip ();
@@ -406,8 +406,8 @@ namespace MPX
 
           RoundedRectangle( cr, cover_anim_area_x0+(m_pressed?1:0),
                          cover_anim_area_y0+(m_pressed?1:0), cover_anim_area_width+(m_pressed?1:0),
-                                                             cover_anim_area_height+(m_pressed?1:0), 6./*,
-            CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )*/
+                                                             cover_anim_area_height+(m_pressed?1:0), 6.,
+            CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::BOTTOMLEFT )
           );
 
           cr->clip ();

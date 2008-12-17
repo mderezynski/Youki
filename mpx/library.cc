@@ -1562,6 +1562,12 @@ namespace MPX
                 }
 
         void
+                Library::initScanAll ()
+                { 
+                        m_ScannerThread->scan_all();
+                }
+
+        void
                 Library::initScan (const Util::FileList & list, bool deep)
                 {
                         m_ScannerThread->scan(list, deep);

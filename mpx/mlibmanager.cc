@@ -717,14 +717,16 @@ namespace MPX
                                 case DELETED:
                                     goto reread_paths;
                             }
-                      }
-                      services->get<Library>("mpx-service-library")->initScan(v, deep);                  
+                        }
+
+                        services->get<Library>("mpx-service-library")->initScan(v, deep);                  
                     }
               }
         }
         else
 #endif
         {
+            services->get<Library>("mpx-service-library")->initScanAll();                  
         }
 
         m_VboxInner->set_sensitive(true);
