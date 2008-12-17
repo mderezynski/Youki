@@ -525,7 +525,7 @@ namespace MPX
                                 }
                         }
 
-                        for(int n = ATTRIBUTE_TRACK; n < N_ATTRIBUTES_INT; ++n)
+                        for(int n = ATTRIBUTE_TRACK; n < ATTRIBUTE_MPX_TRACK_ID; ++n)
                         {
                                 if(m[n].is_initialized())
                                 {

@@ -1312,7 +1312,7 @@ MPX::LibraryScannerThread::create_insertion_track(
   p->TrackNumber    = get<gint64>(track[ATTRIBUTE_TRACK].get());
   p->Type           = get<std::string>(track[ATTRIBUTE_TYPE].get());
 
-  for( unsigned int n = 0; n < N_ATTRIBUTES_INT; ++n )
+  for( unsigned int n = 0; n < ATTRIBUTE_MPX_TRACK_ID; ++n )
   {
       if( track.has( n ))
       {

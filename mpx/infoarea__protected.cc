@@ -111,8 +111,6 @@ namespace MPX
         bool
                 InfoArea::on_expose_event (GdkEventExpose * event)
                 {
-                        //Widget::on_expose_event (event);
-
                         Cairo::RefPtr<Cairo::Context> cr = get_window ()->create_cairo_context ();
 
                         draw_background (cr);
@@ -120,6 +118,17 @@ namespace MPX
                         draw_spectrum (cr);
                         draw_text (cr);
                         draw_info (cr);
+
+                        const Gtk::Allocation& allocation = get_allocation();
+
+                        cr->set_line_width(0.75);
+                        Util::cairo_rounded_rect(cr, 0.5, 0.5, allocation.get_width()-1, allocation.get_height()-1, 7.);
+                        cr->set_source_rgb(0.6, 0.6, 0.6);
+                        cr->stroke();
+
+                        Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 7.);
+                        cr->set_source_rgb(0.05, 0.05, 0.05);
+                        cr->stroke();
 
                         return true;
                 }
