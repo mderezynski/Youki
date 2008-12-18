@@ -87,6 +87,7 @@ namespace MPX
 
         if( active )
         {
+            ptr->m_Active = true;
             ptr->activate();
         }
     }

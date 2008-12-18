@@ -121,8 +121,10 @@ namespace
                 "<menubar name='MenubarMain'>"
                 "   <menu action='MenuMusic'>"
                 "         <menuitem action='action-play-files'/>"
+/*
                 "         <separator name='sep00-a'/>"
                 "	      <menuitem action='action-mb-import'/>"
+*/
                 "         <separator name='sep01-a'/>"
                 "         <menuitem action='action-quit'/>"
                 "   </menu>"
