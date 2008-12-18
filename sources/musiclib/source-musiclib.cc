@@ -507,7 +507,8 @@ namespace MPX
                 class PlaylistTreeView
                         :   public WidgetLoader<Gtk::TreeView>
                 {
-                        typedef std::map<gint64, TreeIter>    IdIterMap_t ; 
+                        typedef std::set<TreeIter>            IterSet_t;
+                        typedef std::map<gint64, IterSet_t>   IdIterMap_t ; 
    
                         IdIterMap_t                           m_IdIterMap; 
 
@@ -789,21 +790,25 @@ namespace MPX
                                     gint64 id = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get());
                                     if( m_IdIterMap.count(id))
                                     {
-                                        TreeIter iter = m_IdIterMap.find( id )->second;
-                                        m_IdIterMap.erase( id );
-                                        place_track( track, iter );
+                                        IterSet_t s = m_IdIterMap.find( id )->second; // intentional copy
+                                        m_IdIterMap.erase(id);
+        
+                                        for( IterSet_t::const_iterator i = s.begin(); i != s.end(); ++i )
+                                        {
+                                            place_track( track, *i );
+                                        }
                                     }
                                 }
 
                         void
                                 erase_track_from_store(
                                       gint64 id
+                                    , const TreeIter& iter
                                 )
                                 {
                                     if( m_IdIterMap.count(id))
                                     {
-                                        TreeIter iter = m_IdIterMap.find( id )->second;
-                                        m_IdIterMap.erase( id );
+                                        m_IdIterMap[id].erase(iter);
                                         ListStore->erase(iter);
                                     }
                                 }
@@ -850,7 +855,7 @@ namespace MPX
                                                 {
                                                         m_CurrentIter.reset();
                                                 }
-                                                erase_track_from_store((*iter)[PlaylistColumns.RowId]);
+                                                erase_track_from_store((*iter)[PlaylistColumns.RowId], iter);
                                                 i = v.erase (i);
                                         }
 
@@ -885,7 +890,7 @@ namespace MPX
                                         for (i = v.begin() ; !v.empty() ; )
                                         {
                                                 TreeIter iter = ListStore->get_iter (i->get_path());
-                                                erase_track_from_store((*iter)[PlaylistColumns.RowId]);
+                                                erase_track_from_store((*iter)[PlaylistColumns.RowId], iter);
                                                 i = v.erase (i);
                                         }
 
@@ -916,7 +921,7 @@ namespace MPX
                                         for (i = v.begin() ; !v.empty() ; )
                                         {
                                                 TreeIter iter = ListStore->get_iter (i->get_path());
-                                                erase_track_from_store((*iter)[PlaylistColumns.RowId]);
+                                                erase_track_from_store((*iter)[PlaylistColumns.RowId], iter);
                                                 i = v.erase (i);
                                         }
 
@@ -1021,7 +1026,7 @@ namespace MPX
                                         (*iter)[PlaylistColumns.IsMPXTrack] = track[ATTRIBUTE_MPX_TRACK_ID] ? true : false; 
                                         (*iter)[PlaylistColumns.IsBad] = false; 
 
-                                        m_IdIterMap.insert(std::make_pair( id, iter )); 
+                                        m_IdIterMap[id].insert( iter );
                                 }
 
                         void
