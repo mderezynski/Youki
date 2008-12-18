@@ -520,11 +520,15 @@ namespace MPX
                     MCS_CB_DEFAULT_SIGNATURE
                 )
                 {
+                    g_message("Priorities Changed!");
+
                     std::vector<std::string> strv;
 
                     for( int n = 0; n < 7; ++n )
                     {
-                        strv.push_back( mcs->key_get<std::string>("Preferences-FileFormatPriorities", (boost::format("Format%d")%n).str()));                        
+                        std::string mime = mcs->key_get<std::string>("Preferences-FileFormatPriorities", (boost::format("Format%d")%n).str());
+                        g_message("MIME: %s", mime.c_str());
+                        strv.push_back( mime ); 
                     }
 
                     m_ScannerThread->set_priority_data(

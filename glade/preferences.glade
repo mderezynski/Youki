@@ -3764,7 +3764,7 @@ Non-accelerated (Use this when problems arise with Accelerated)</property>
 		      </child>
 
 		      <child>
-			<widget class="GtkVBox" id="vbox138">
+			<widget class="GtkVBox" id="vbox-filefmts">
 			  <property name="visible">True</property>
 			  <property name="homogeneous">False</property>
 			  <property name="spacing">6</property>
@@ -4094,7 +4094,7 @@ filesystem, below the last type listed.&lt;/small&gt;</property>
 				    <widget class="GtkLabel" id="label500">
 				      <property name="visible">True</property>
 				      <property name="label" translatable="yes">Prioritize by Bitrate
-&lt;small&gt;Using this option, AudioSource will additionally prefer higher bitrates over lower.&lt;/small&gt;</property>
+&lt;small&gt;Using this option, AudioSource will prefer higher bitrates over lower.&lt;/small&gt;</property>
 				      <property name="use_underline">False</property>
 				      <property name="use_markup">True</property>
 				      <property name="justify">GTK_JUSTIFY_LEFT</property>

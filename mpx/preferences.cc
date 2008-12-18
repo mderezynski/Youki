@@ -272,6 +272,12 @@ namespace MPX
                 Store = Gtk::ListStore::create(Columns);
                 set_model(Store);
 
+                Store->signal_rows_reordered().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &CoverArtSourceView::on_rows_reordered
+                ));
+
                 TreeViewColumn *col = manage( new TreeViewColumn(_("Active")));
                 CellRendererToggle *cell1 = manage( new CellRendererToggle );
                 cell1->property_xalign() = 0.5;
@@ -318,11 +324,8 @@ namespace MPX
                 on_cell_toggled(Glib::ustring const& path)
             {
                 TreeIter iter = Store->get_iter(path);
-
-                bool active = (*iter)[Columns.Active];
-                (*iter)[Columns.Active] = !active;
-
-                Signals.ColumnState.emit((*iter)[Columns.ID], !active);
+                (*iter)[Columns.Active] = !bool((*iter)[Columns.Active]);
+                Signals.ColumnState.emit((*iter)[Columns.ID], (*iter)[Columns.Active]); 
 
                 update_configuration ();
             }
@@ -369,6 +372,12 @@ namespace MPX
             {
                 Store = Gtk::ListStore::create(Columns);
                 set_model(Store);
+
+                Store->signal_rows_reordered().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &FileFormatPrioritiesView::on_rows_reordered
+                ));
 
                 append_column(_("Name"), Columns.Name);
                 append_column(_("Description"), Columns.Description);
@@ -570,6 +579,12 @@ namespace MPX
             sigc::mem_fun(*m_Fmts_PrioritiesView, &Gtk::Widget::set_sensitive),
             sigc::mem_fun(*m_Fmts_PrioritizeByFileType, &Gtk::ToggleButton::get_active)
             ));
+
+        mcs_bind->bind_toggle_button(
+            *m_Fmts_PrioritizeByFileType
+            , "Preferences-FileFormatPriorities"
+            , "prioritize-by-filetype"
+            );
 
         mcs_bind->bind_toggle_button(
             *m_Fmts_PrioritizeByBitrate
