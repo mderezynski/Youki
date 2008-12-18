@@ -344,9 +344,6 @@ namespace MPX
     /*static*/ void
     Player::mmkeys_activate ()
     {
-      if( mm_active )
-        return;
-
       DBusGConnection *bus;
 
       g_message(G_STRLOC ": Activating media player keys");
@@ -431,16 +428,11 @@ namespace MPX
         g_message(G_STRLOC ": attempting old-style key grabs");
         mmkeys_grab (true);
       }
-
-      mm_active = true;
     }
 
     /*static*/ void
     Player::mmkeys_deactivate ()
     {
-      if( !mm_active )
-        return;
-
       if( m_mmkeys_dbusproxy )
       {
         GError *error = NULL;
@@ -470,8 +462,6 @@ namespace MPX
         mmkeys_grab (false);
         m_mmkeys_grab_type = NONE;
       }
-
-      mm_active = false;
     }
 
     void

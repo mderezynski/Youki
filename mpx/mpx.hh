@@ -501,9 +501,7 @@ namespace MPX
         void
         on_mm_edit_done (); 
 
-        bool mm_active;
         sigc::connection mWindowFocusConn;
-
     };
 }
 
