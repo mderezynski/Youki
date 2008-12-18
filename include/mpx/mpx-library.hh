@@ -418,36 +418,64 @@ namespace MPX
         protected:
 
             void
-            on_new_album( gint64 ) ;
+            on_new_album(
+                gint64
+            ) ;
 
             void
-            on_new_artist( gint64 ) ;
+            on_new_artist(
+                gint64
+            ) ;
 
             void
-            on_new_track( Track&,gint64,gint64 ) ;
+            on_new_track(
+                  Track&
+                , gint64
+                , gint64
+            ) ;
 
             void
-            on_entity_deleted( gint64 , EntityType ) ;
+            on_entity_deleted(
+                  gint64
+                , EntityType
+            ) ;
 
             void
-            on_entity_updated( gint64 , EntityType ) ;
+            on_entity_updated(
+                  gint64
+                , EntityType
+            ) ;
 
             void
-            on_track_updated( Track&, gint64, gint64 ) ;
+            on_track_updated(
+                  Track&
+                , gint64
+                , gint64
+            ) ;
 
             void
-            on_message( const std::string& );
+            on_message(
+                const std::string&
+            );
         
-
             bool
-            recache_covers_handler( SQL::RowV *, int* ) ; 
+            recache_covers_handler(
+                  SQL::RowV*
+                , int*
+            ) ; 
+
+            gint64
+            get_tag_id(
+                std::string const&
+            ) ;
 
             void
             remove_dangling() ;
 
-
-            gint64
-            get_tag_id( std::string const& ) ;
+            void
+            on_priority_settings_changed(
+                MCS_CB_DEFAULT_SIGNATURE
+            );
     };
 } // namespace MPX
 

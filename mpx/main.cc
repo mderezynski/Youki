@@ -295,6 +295,17 @@ namespace MPX
         mcs->key_register("Preferences-CoverArtSources", "SourceActive3", bool(true));
         mcs->key_register("Preferences-CoverArtSources", "SourceActive4", bool(true));
 
+        mcs->domain_register("Preferences-FileFormatPriorities");
+        mcs->key_register("Preferences-FileFormatPriorities", "Format0", std::string("audio/x-flac")); 
+        mcs->key_register("Preferences-FileFormatPriorities", "Format1", std::string("audio/x-ape"));
+        mcs->key_register("Preferences-FileFormatPriorities", "Format2", std::string("audio/x-vorbis+ogg"));
+        mcs->key_register("Preferences-FileFormatPriorities", "Format3", std::string("audio/x-musepack"));
+        mcs->key_register("Preferences-FileFormatPriorities", "Format4", std::string("audio/mp4"));
+        mcs->key_register("Preferences-FileFormatPriorities", "Format5", std::string("audio/mpeg"));
+        mcs->key_register("Preferences-FileFormatPriorities", "Format6", std::string("audio/x-ms-wma"));
+        mcs->key_register("Preferences-FileFormatPriorities", "prioritize-by-filetype", false); 
+        mcs->key_register("Preferences-FileFormatPriorities", "prioritize-by-bitrate", false); 
+
         mcs->domain_register("PlaybackSourceMusicLib");
         mcs->key_register("PlaybackSourceMusicLib", "divider-position", 250);
     }

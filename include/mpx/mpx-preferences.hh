@@ -50,6 +50,7 @@
 namespace MPX
 {
   class CoverArtSourceView;
+  class FileFormatPrioritiesView;
 
   /** Preferences dialog
    *
@@ -321,18 +322,23 @@ namespace MPX
     private:
 
         // Misc
-        Gtk::SpinButton*	m_Radio_MinimalBitrate;
-      	CoverArtSourceView*	m_Covers_CoverArtSources; 
+        Gtk::SpinButton             * m_Radio_MinimalBitrate;
+
+      	CoverArtSourceView          * m_Covers_CoverArtSources; 
+
+        // File Formats
+        FileFormatPrioritiesView    * m_Fmts_PrioritiesView;
+        Gtk::CheckButton            * m_Fmts_PrioritizeByFileType;
+        Gtk::CheckButton            * m_Fmts_PrioritizeByBitrate;
 
         // Library
-        Gtk::CheckButton*	m_Library_RescanAtStartup;
-        Gtk::CheckButton*	m_Library_RescanInIntervals;
-        Gtk::SpinButton*	m_Library_RescanInterval;
-        Gtk::HBox*          m_Library_RescanIntervalBox;
-        Gtk::ToggleButton*  m_Library_RescanAlwaysVacuum;
-
-        Gtk::RadioButton*   m_Library_UseHAL_Yes;
-        Gtk::RadioButton*   m_Library_UseHAL_No;
+        Gtk::CheckButton            * m_Library_RescanAtStartup;
+        Gtk::CheckButton            * m_Library_RescanInIntervals;
+        Gtk::SpinButton             * m_Library_RescanInterval;
+        Gtk::HBox                   * m_Library_RescanIntervalBox;
+        Gtk::ToggleButton           * m_Library_RescanAlwaysVacuum;
+        Gtk::RadioButton            * m_Library_UseHAL_Yes;
+        Gtk::RadioButton            * m_Library_UseHAL_No;
 
         void
         on_library_scan_start () ;
@@ -343,8 +349,10 @@ namespace MPX
         void
         on_library_scan_summary ( const ScanSummary& G_GNUC_UNUSED ) ;
 
+#ifdef HAVE_HAL
         void
         on_library_use_hal_toggled() ;
+#endif // HAVE_HAL
 
   }; // class Preferences
 } // namespace MPX

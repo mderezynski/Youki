@@ -225,6 +225,7 @@ MPX::LibraryScannerThread::LibraryScannerThread(
 , vacuum_volume(sigc::bind(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum_volume), true))
 #endif // HAVE_HAL
 , update_statistics(sigc::mem_fun(*this, &LibraryScannerThread::on_update_statistics))
+, set_priority_data(sigc::mem_fun(*this, &LibraryScannerThread::on_set_priority_data))
 , signal_scan_start(*this, m_ThreadData, &ThreadData::ScanStart)
 , signal_scan_run(*this, m_ThreadData, &ThreadData::ScanRun)
 , signal_scan_end(*this, m_ThreadData, &ThreadData::ScanEnd)
@@ -280,6 +281,18 @@ MPX::LibraryScannerThread::on_startup ()
 void
 MPX::LibraryScannerThread::on_cleanup ()
 {
+}
+
+void
+MPX::LibraryScannerThread::on_set_priority_data(
+      const std::vector<std::string>&   types
+    , bool                              prioritize_by_filetype
+    , bool                              prioritize_by_bitrate
+)
+{
+    m_MIME_Types = types; 
+    m_PrioritizeByFileType = prioritize_by_filetype;
+    m_PrioritizeByBitrate  = prioritize_by_bitrate;
 }
 
 void
@@ -521,7 +534,7 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
     pthreaddata->ScanStart.emit();
 
     SQL::RowV rows;
-    m_SQL->get(rows, "SELECT last_scan_date FROM meta");
+    m_SQL->get(rows, "SELECT last_scan_date FROM meta WHERE rowid = 1");
     gint64 last_scan_date = boost::get<gint64>(rows[0]["last_scan_date"]);
 
     m_ScanSummary = ScanSummary();
@@ -1350,15 +1363,6 @@ MPX::LibraryScannerThread::prioritize(
     const TrackInfo_p_Vector& v
 )
 {
-    const char* list[] = {
-            "audio/x-flac"
-        ,   "audio/x-vorbis+ogg"
-        ,   "audio/mpeg"
-        ,   NULL
-    };
-
-    char ** copy = (char**)(list);
-
     if( v.size() == 1 )
     {
         return v[0];
@@ -1366,23 +1370,28 @@ MPX::LibraryScannerThread::prioritize(
 
     TrackInfo_p_Vector v2;
 
-    while( copy )
+    if( m_PrioritizeByFileType )
     {
-        for( TrackInfo_p_Vector::const_iterator i = v.begin(); i != v.end(); ++i )
-        {
-            if( (*i)->Type == *copy )
+            for( MIME_Types_t::const_iterator t = m_MIME_Types.begin(); t != m_MIME_Types.end(); ++t )
             {
-                v2.push_back( *i );
+                for( TrackInfo_p_Vector::const_iterator i = v.begin(); i != v.end(); ++i )
+                {
+                    if( (*i)->Type == (*t) )
+                    {
+                        v2.push_back( *i );
+                    }
+                }
+
+                if( !v2.empty() )
+                    break;
             }
-        }
-
-        if( !v2.empty() )
-            break;
-
-        ++copy;
+    }
+    else
+    {
+            v2 = v;
     }
 
-    if( v2.size() == 1 )
+    if( v2.size() == 1 || !m_PrioritizeByBitrate )
     {
         return v2[0];
     }

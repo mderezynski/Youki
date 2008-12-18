@@ -32,6 +32,7 @@
 #include <sigx/request_f.h>
 #include <tr1/unordered_map> 
 #include "mpx/mpx-covers.hh"
+#include "mpx/mpx-main.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/util-string.hh"
@@ -119,11 +120,12 @@ namespace MPX
 
         public:
 
-            sigx::request_f<Util::FileList const&>          add ;
-            sigx::request_f<Util::FileList const&, bool>    scan ;
-            sigx::request_f<>                               scan_all ;
-            sigx::request_f<>                               scan_stop ;
-            sigx::request_f<>                               vacuum ;
+            sigx::request_f<Util::FileList const&>                          add ;
+            sigx::request_f<Util::FileList const&, bool>                    scan ;
+            sigx::request_f<>                                               scan_all ;
+            sigx::request_f<>                                               scan_stop ;
+            sigx::request_f<>                                               vacuum ;
+            sigx::request_f<const std::vector<std::string>&, bool, bool>    set_priority_data ;
 #ifdef HAVE_HAL
             sigx::request_f< const std::string&, const std::string& > vacuum_volume ;
 #endif // HAVE_HAL
@@ -341,6 +343,23 @@ namespace MPX
     
             void
             process_insertion_list();
+    
+            typedef std::vector<std::string>        MIME_Types_t;
+
+            MIME_Types_t m_MIME_Types;
+            bool         m_PrioritizeByFileType;
+            bool         m_PrioritizeByBitrate;
+
+            void
+            on_set_priority_data(
+                  const std::vector<std::string>&
+                , bool
+                , bool
+            );
+
+            void
+            on_set_prio(
+            );
 
             TrackInfo_p
             prioritize(

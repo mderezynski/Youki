@@ -483,6 +483,30 @@ namespace MPX
 
                 m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS collection (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, blurb TEXT NOT NULL, cover_url TEXT)");
 
+                mcs->subscribe(
+                      "Preferences-FileFormatPriorities"
+                    , "Format6"
+                    , sigc::mem_fun(
+                            *this,
+                            &Library::on_priority_settings_changed
+                ));
+
+                mcs->subscribe(
+                      "Preferences-FileFormatPriorities"
+                    , "prioritize-by-filetype"
+                    , sigc::mem_fun(
+                            *this,
+                            &Library::on_priority_settings_changed
+                ));
+
+                mcs->subscribe(
+                      "Preferences-FileFormatPriorities"
+                    , "prioritize-by-bitrate"
+                    , sigc::mem_fun(
+                            *this,
+                            &Library::on_priority_settings_changed
+                ));
+
         }
 
         Library::~Library ()
@@ -490,6 +514,25 @@ namespace MPX
             m_ScannerThread->finish();
             m_ScannerThread.reset();
         }
+
+        void
+                Library::on_priority_settings_changed(
+                    MCS_CB_DEFAULT_SIGNATURE
+                )
+                {
+                    std::vector<std::string> strv;
+
+                    for( int n = 0; n < 7; ++n )
+                    {
+                        strv.push_back( mcs->key_get<std::string>("Preferences-FileFormatPriorities", (boost::format("Format%d")%n).str()));                        
+                    }
+
+                    m_ScannerThread->set_priority_data(
+                          strv
+                        , mcs->key_get<bool>("Preferences-FileFormatPriorities", "prioritize-by-filetype")
+                        , mcs->key_get<bool>("Preferences-FileFormatPriorities", "prioritize-by-bitrate")
+                    );
+                }
 
 #ifdef HAVE_HAL
         void
