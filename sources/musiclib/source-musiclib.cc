@@ -54,7 +54,6 @@
 #include "mpx/widgets/cell-renderer-vbox.hh"
 #include "mpx/widgets/cell-renderer-expander.h"
 #include "mpx/widgets/rounded-layout.hh"
-#include "mpx/widgets/timed-confirmation.hh"
 
 #include "mpx/com/file-system-tree.hh"
 #include "mpx/com/view-tracklist.hh"
@@ -84,6 +83,7 @@ namespace
         const char ACTION_REMOVE_REMAINING [] = "musiclib-playlist-action-remove-remaining";
         const char ACTION_REMOVE_PRECEDING [] = "musiclib-playlist-action-remove-preceding";
         const char ACTION_PLAY [] = "musiclib-playlist-action-play";
+        const char ACTION_SHOW_CCDIALOG [] = "musiclib-playlist-action-show-ccdialog";
 
         const char ui_playlist_popup [] =
                 "<ui>"
@@ -97,6 +97,8 @@ namespace
                 "       <menuitem action='musiclib-playlist-action-clear'/>"
                 "       <menuitem action='musiclib-playlist-action-remove-preceding'/>"
                 "       <menuitem action='musiclib-playlist-action-remove-remaining'/>"
+                "     <separator/>"
+                "       <menuitem action='musiclib-playlist-action-show-ccdialog'/>"
                 "     <separator/>"
                 "       <placeholder name='musiclib-playlist-placeholder-playlist'/>"
                 "   </menu>"
@@ -633,37 +635,76 @@ namespace MPX
                                 set_headers_clickable();
                                 set_model(ListStore);
 
-                                //m_UIManager = Gtk::UIManager::create();
                                 m_UIManager = ui_manager;
-                                m_ActionGroup = Gtk::ActionGroup::create ("Actions_UiPartMusicLib-PlaylistList");
 
-                                m_ActionGroup->add  (Gtk::Action::create("dummy","dummy"));
+                                m_ActionGroup = ActionGroup::create ("Actions_UiPartMusicLib-PlaylistList");
+                                m_ActionGroup->add(Action::create("dummy","dummy"));
 
-                                m_ActionGroup->add  (Gtk::Action::create (ACTION_PLAY,
-                                                        Gtk::StockID (GTK_STOCK_MEDIA_PLAY),
-                                                        _("Play")),
-                                                sigc::mem_fun(mlib, &MPX::Source::PlaybackSourceMusicLib::action_cb_play));
+                                m_ActionGroup->add(
+                                                Action::create(
+                                                    ACTION_PLAY,
+                                                    Gtk::StockID (GTK_STOCK_MEDIA_PLAY),
+                                                    _("Play")
+                                                ),
+                                                sigc::mem_fun(
+                                                    mlib,
+                                                    &MPX::Source::PlaybackSourceMusicLib::action_cb_play
+                                                ));
 
-                                m_ActionGroup->add  (Gtk::Action::create (ACTION_CLEAR,
-                                                        Gtk::StockID (GTK_STOCK_CLEAR),
-                                                        _("Clear Playlist")),
+                                m_ActionGroup->add(
+                                                Action::create(
+                                                    ACTION_CLEAR,
+                                                    Gtk::StockID (GTK_STOCK_CLEAR),
+                                                    _("Clear Playlist")
+                                                ),
                                                 AccelKey("<ctrl>d"),
-                                                sigc::mem_fun( *this, &PlaylistTreeView::clear ));
+                                                sigc::mem_fun(
+                                                    *this,
+                                                    &PlaylistTreeView::clear
+                                                ));
 
-                                m_ActionGroup->add  (Gtk::Action::create (ACTION_REMOVE_ITEMS,
-                                                        Gtk::StockID (GTK_STOCK_REMOVE),
-                                                        _("Remove selected Tracks")),
-                                                sigc::mem_fun( *this, &PlaylistTreeView::action_cb_playlist_remove_items ));
+                                m_ActionGroup->add(
+                                                Action::create(
+                                                    ACTION_REMOVE_ITEMS,
+                                                    Gtk::StockID (GTK_STOCK_REMOVE),
+                                                    _("Remove selected Tracks")
+                                                ),
+                                                sigc::mem_fun(
+                                                    *this,
+                                                    &PlaylistTreeView::action_cb_playlist_remove_items 
+                                                ));
 
-                                m_ActionGroup->add  (Gtk::Action::create (ACTION_REMOVE_REMAINING,
-                                                        _("Remove remaining Tracks")),
+                                m_ActionGroup->add(
+                                                Action::create(
+                                                    ACTION_REMOVE_REMAINING,
+                                                    _("Remove remaining Tracks")
+                                                ),
                                                 AccelKey("<ctrl>r"),
-                                                sigc::mem_fun( *this, &PlaylistTreeView::action_cb_playlist_remove_remaining ));
+                                                sigc::mem_fun(
+                                                    *this,
+                                                    &PlaylistTreeView::action_cb_playlist_remove_remaining
+                                                ));
 
-                                m_ActionGroup->add  (Gtk::Action::create (ACTION_REMOVE_PRECEDING,
-                                                        _("Remove preceding Tracks")),
+                                m_ActionGroup->add(
+                                                Action::create(
+                                                    ACTION_REMOVE_PRECEDING,
+                                                    _("Remove preceding Tracks")
+                                                ),
                                                 AccelKey("<ctrl>p"),
-                                                sigc::mem_fun( *this, &PlaylistTreeView::action_cb_playlist_remove_preceding ));
+                                                sigc::mem_fun(
+                                                    *this,
+                                                    &PlaylistTreeView::action_cb_playlist_remove_preceding
+                                                ));
+
+                                m_ActionGroup->add(
+                                                Action::create(
+                                                    ACTION_SHOW_CCDIALOG,
+                                                _("Configure Columns...")
+                                                ),
+                                                sigc::mem_fun(
+                                                    *this,
+                                                    &PlaylistTreeView::action_cb_show_ccdialog
+                                                ));
 
                                 m_UIManager->insert_action_group (m_ActionGroup);
                                 m_UIManager->add_ui_from_string (ui_playlist_popup);
@@ -1992,18 +2033,6 @@ namespace MPX
                                                 &MusicLibPrivate::PlaylistTreeView::action_cb_show_ccdialog
                                                 ));
 
-                        m_MainActionGroup->add(
-
-                                        Action::create(
-                                                "musiclib-recache-covers",
-                                                _("Refresh Album Covers")
-                                                ),
-
-                                        sigc::mem_fun(
-                                                *this,
-                                                &PlaybackSourceMusicLib::action_cb_refresh_covers
-                                                ));
-
                         const ReleaseTypeActionInfo action_infos[] =
                         {
                                 {N_("Show All Release Types"), "musiclib-albums-show-all", RT_ALL},
@@ -2115,17 +2144,6 @@ namespace MPX
                         PlaybackSourceMusicLib::action_cb_go_to_album(gint64 id)
                         {
                                 m_Private->m_TreeViewAlbums->go_to_album(id);
-                        }
-
-                void
-                        PlaybackSourceMusicLib::action_cb_refresh_covers ()
-                        {
-                                TimedConfirmation dialog (_("Please confirm Cover Refresh"), 4);
-                                int response = dialog.run(_("Are you sure you want to Refresh <b>all</b> covers at this time? (previous covers will be irrevocably lost)"));
-                                if( response == Gtk::RESPONSE_OK )
-                                {
-                                        services->get<Library>("mpx-service-library")->recacheCovers();
-                                }
                         }
 
                 PyObject*

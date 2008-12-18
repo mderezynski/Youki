@@ -37,6 +37,7 @@
 #include "mpx/mpx-uri.hh"
 
 #include "mpx/widgets/task-dialog.hh"
+#include "mpx/widgets/timed-confirmation.hh"
 
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
@@ -67,6 +68,7 @@ namespace
                 "         <menuitem action='action-mlib-vacuum'/>"
                 "         <separator/>"
                 "         <menuitem action='action-mlib-update-statistics'/>"
+                "         <menuitem action='action-mlib-refresh-covers'/>"
                 "         <separator/>"
                 "         <menuitem action='action-close'/>"
                 "   </menu>"
@@ -372,6 +374,14 @@ namespace MPX
             sigc::mem_fun(
                 *this,
                 &MLibManager::on_update_statistics
+        ));
+
+        m_Actions->add( Action::create(
+            "action-mlib-refresh-covers",
+            _("Refresh _Covers")),
+            sigc::mem_fun(
+                *this,
+                &MLibManager::on_refresh_covers
         ));
 
 #ifdef HAVE_HAL
@@ -1363,6 +1373,17 @@ namespace MPX
     MLibManager::on_update_statistics()
     {
         services->get<Library>("mpx-service-library")->scanner()->update_statistics();
+    }
+
+    void
+    MLibManager::on_refresh_covers()
+    {
+        TimedConfirmation dialog (_("Please confirm Cover Refresh"), 10);
+        int response = dialog.run(_("Are you sure you want to Refresh <b>all</b> covers at this time? (previous covers will be irrevocably lost)"));
+        if( response == Gtk::RESPONSE_OK )
+        {
+            services->get<Library>("mpx-service-library")->recacheCovers();
+        }
     }
 
     void

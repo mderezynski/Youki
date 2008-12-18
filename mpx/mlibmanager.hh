@@ -300,6 +300,9 @@ namespace MPX
             void
             on_update_statistics();
 
+            void
+            on_recache_covers();
+
             // MCS Callbacks
 
 #ifdef HAVE_HAL

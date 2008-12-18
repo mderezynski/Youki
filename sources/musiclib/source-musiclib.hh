@@ -183,9 +183,6 @@ namespace Source
                 void
                 action_cb_go_to_album(gint64);
 
-                void
-                action_cb_refresh_covers();
-
 
                 void
                 check_nextprev_caps ();
