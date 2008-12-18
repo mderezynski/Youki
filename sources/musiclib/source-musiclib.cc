@@ -143,7 +143,6 @@ namespace
                 "         <separator/>"
                 "         <menuitem action='musiclib-show-only-new'/>"
                 "         <separator/>"
-                "         <menuitem action='musiclib-show-ccdialog'/>"
                 "         <menuitem action='musiclib-recache-covers'/>"
                 "     </menu>"
                 "   </placeholder>"
@@ -2020,18 +2019,6 @@ namespace MPX
                                                 )
                                         );
                         RefPtr<Gtk::RadioAction>::cast_static(m_MainActionGroup->get_action("musiclib-show-collections"))->property_value() = 2;
-
-                        m_MainActionGroup->add(
-
-                                        Action::create(
-                                                "musiclib-show-ccdialog",
-                                                _("Configure Columns...")
-                                                ),
-
-                                        sigc::mem_fun(
-                                                *m_Private->m_TreeViewPlaylist,
-                                                &MusicLibPrivate::PlaylistTreeView::action_cb_show_ccdialog
-                                                ));
 
                         const ReleaseTypeActionInfo action_infos[] =
                         {

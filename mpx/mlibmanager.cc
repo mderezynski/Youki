@@ -68,7 +68,7 @@ namespace
                 "         <menuitem action='action-mlib-vacuum'/>"
                 "         <separator/>"
                 "         <menuitem action='action-mlib-update-statistics'/>"
-                "         <menuitem action='action-mlib-refresh-covers'/>"
+                "         <menuitem action='action-mlib-recache-covers'/>"
                 "         <separator/>"
                 "         <menuitem action='action-close'/>"
                 "   </menu>"
@@ -377,11 +377,11 @@ namespace MPX
         ));
 
         m_Actions->add( Action::create(
-            "action-mlib-refresh-covers",
+            "action-mlib-recache-covers",
             _("Refresh _Covers")),
             sigc::mem_fun(
                 *this,
-                &MLibManager::on_refresh_covers
+                &MLibManager::on_recache_covers
         ));
 
 #ifdef HAVE_HAL
@@ -1376,7 +1376,7 @@ namespace MPX
     }
 
     void
-    MLibManager::on_refresh_covers()
+    MLibManager::on_recache_covers()
     {
         TimedConfirmation dialog (_("Please confirm Cover Refresh"), 10);
         int response = dialog.run(_("Are you sure you want to Refresh <b>all</b> covers at this time? (previous covers will be irrevocably lost)"));
