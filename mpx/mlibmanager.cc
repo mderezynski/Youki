@@ -335,7 +335,7 @@ namespace MPX
         m_Actions->add( Action::create(
             "action-mlib-rescan",
             Gtk::Stock::REFRESH,
-            _("_Find New Files")),
+            _("_Fast Rescan")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,
@@ -347,7 +347,7 @@ namespace MPX
         m_Actions->add( Action::create(
             "action-mlib-rescan-deep",
             Gtk::Stock::HARDDISK,
-            _("_Look For Changes")),
+            _("_Thorough Rescan")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,
@@ -380,7 +380,7 @@ namespace MPX
             "action-volume-rescan",
 
             Gtk::Stock::REFRESH,
-            _("_Find New Files")),
+            _("_Fast Rescan")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,
@@ -394,7 +394,7 @@ namespace MPX
             "action-volume-rescan-deep",
 
             Gtk::Stock::HARDDISK,
-            _("_Look For Changes")),
+            _("_Thorough Rescan")),
             sigc::bind(
                     sigc::mem_fun(
                         *this,

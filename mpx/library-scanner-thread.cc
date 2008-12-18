@@ -216,7 +216,7 @@ MPX::LibraryScannerThread::LibraryScannerThread(
   , gint64                      flags
 )
 : sigx::glib_threadable()
-, add(sigc::mem_fun(*this, &LibraryScannerThread::on_add))
+, add(sigc::bind(sigc::mem_fun(*this, &LibraryScannerThread::on_add), false))
 , scan(sigc::mem_fun(*this, &LibraryScannerThread::on_scan))
 , scan_all(sigc::mem_fun(*this, &LibraryScannerThread::on_scan_all))
 , scan_stop(sigc::mem_fun(*this, &LibraryScannerThread::on_scan_stop))
@@ -296,6 +296,32 @@ MPX::LibraryScannerThread::on_set_priority_data(
 }
 
 void
+MPX::LibraryScannerThread::cache_mtimes(
+)
+{
+    m_MTIME_Map.clear();
+
+    RowV v;
+    m_SQL->get(
+          v
+        , "SELECT hal_device_udi, hal_volume_udi, hal_vrp, mtime FROM track"
+    );
+
+    for( RowV::iterator i = v.begin(); i != v.end(); ++i )
+    {
+        m_MTIME_Map.insert(
+            std::make_pair(
+                  boost::make_tuple(
+                      get<std::string>((*i)["hal_device_udi"])
+                    , get<std::string>((*i)["hal_volume_udi"])
+                    , get<std::string>((*i)["hal_vrp"])
+                  )
+                , get<gint64>((*i)["mtime"])
+        ));
+    }
+}
+
+void
 MPX::LibraryScannerThread::on_scan(
     const Util::FileList&   list,
     bool                    deep
@@ -307,9 +333,14 @@ MPX::LibraryScannerThread::on_scan(
     }
 
     if( deep )
-        on_scan_list_deep( list );
+    {
+        on_add( list, true ); 
+    }
     else
-        on_scan_list_paths( list ); 
+    {
+        on_scan_list_quick_stage_1( list ); 
+        on_scan_list_quick_stage_2( list );
+    }
 }
 
 void
@@ -416,7 +447,8 @@ MPX::LibraryScannerThread::on_scan_all(
 
 void
 MPX::LibraryScannerThread::on_add(
-    const Util::FileList& list
+      const Util::FileList& list
+    , bool                  check_mtimes
 )
 {
     ThreadData * pthreaddata = m_ThreadData.get();
@@ -429,6 +461,11 @@ MPX::LibraryScannerThread::on_add(
     m_ScanSummary.DeepRescan = true;
 
     boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
+
+    if( check_mtimes )
+    {
+        cache_mtimes();
+    }
 
     Util::FileList collection;
 
@@ -504,9 +541,23 @@ MPX::LibraryScannerThread::on_add(
             Track_sp t (new Track);
     
             library->trackSetLocation( (*(t.get())), *i2 );
-            (*(t.get()))[ATTRIBUTE_MTIME] = Util::get_file_mtime( get<std::string>( (*(t.get()))[ATTRIBUTE_LOCATION].get() ) );
 
-            insert_file_no_mtime_check( t, *i2, insert_path_sql );
+            gint64 mtime1 = Util::get_file_mtime( get<std::string>( (*(t.get()))[ATTRIBUTE_LOCATION].get() ) );
+            (*(t.get()))[ATTRIBUTE_MTIME] = mtime1; 
+
+            if( check_mtimes )
+            {
+                    gint64 mtime2 = get_track_mtime( (*(t.get())) );
+
+                    if( mtime1 != mtime2 )
+                    {
+                        insert_file_no_mtime_check( t, *i2, insert_path_sql );
+                    }
+            }
+            else
+            {
+                insert_file_no_mtime_check( t, *i2, insert_path_sql );
+            }
                         
             if (! (std::distance(collection.begin(), i2) % 50) )
             {
@@ -526,7 +577,7 @@ MPX::LibraryScannerThread::on_add(
 }
 
 void
-MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
+MPX::LibraryScannerThread::on_scan_list_quick_stage_1 (Util::FileList const& list)
 {
     ThreadData * pthreaddata = m_ThreadData.get();
     g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
@@ -584,7 +635,7 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
                     sigc::bind(
                         sigc::mem_fun(
                                 *this,
-                                &LibraryScannerThread::on_scan_list_paths_callback
+                                &LibraryScannerThread::on_scan_list_quick_stage_1_callback
                         ),
                         last_scan_date,
                         insert_path_sql
@@ -601,15 +652,11 @@ MPX::LibraryScannerThread::on_scan_list_paths (Util::FileList const& list)
         }
     }
 
-    for( VolumeKey_set_t::const_iterator i = volumes.begin(); i != volumes.end(); ++i )
-    {
-        on_vacuum_volume( (*i).first, (*i).second, false );
-    }
-
     pthreaddata->ScanSummary.emit( m_ScanSummary );
 }
+
 void
-MPX::LibraryScannerThread::on_scan_list_paths_callback(
+MPX::LibraryScannerThread::on_scan_list_quick_stage_1_callback(
     const std::string&  i3,
     const gint64&       last_scan_date,
     const std::string&  insert_path_sql
@@ -653,7 +700,7 @@ MPX::LibraryScannerThread::on_scan_list_paths_callback(
 }
 
 void
-MPX::LibraryScannerThread::on_scan_list_deep(
+MPX::LibraryScannerThread::on_scan_list_quick_stage_2(
     const Util::FileList& list
 )
 {
@@ -958,8 +1005,6 @@ MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exist
 MPX::LibraryScannerThread::EntityInfo
 MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, bool only_if_exists)
 {
-    ThreadData * pthreaddata = m_ThreadData.get();
-
     RowV rows;
 
     std::string sql;
@@ -1091,8 +1136,24 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 }
 
 gint64
-MPX::LibraryScannerThread::get_track_mtime (Track& track) const
+MPX::LibraryScannerThread::get_track_mtime(
+    Track& track
+) const
 {
+    Triplet_MTIME_t::const_iterator i =
+         m_MTIME_Map.find(
+            boost::make_tuple(
+                get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get())
+              , get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get())
+              , get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get())
+    ));
+
+    if( i != m_MTIME_Map.end() )
+    {
+        return i->second;
+    }
+
+#if 0
   RowV rows;
   if( m_Flags & Library::Library::F_USING_HAL )
   {
@@ -1131,6 +1192,7 @@ MPX::LibraryScannerThread::get_track_mtime (Track& track) const
   {
     return boost::get<gint64>( rows[0].find (attrs[ATTRIBUTE_MTIME].id)->second ) ;
   }
+#endif
 
   return 0;
 }

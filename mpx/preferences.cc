@@ -272,12 +272,6 @@ namespace MPX
                 Store = Gtk::ListStore::create(Columns);
                 set_model(Store);
 
-                Store->signal_rows_reordered().connect(
-                    sigc::mem_fun(
-                        *this,
-                        &CoverArtSourceView::on_rows_reordered
-                ));
-
                 TreeViewColumn *col = manage( new TreeViewColumn(_("Active")));
                 CellRendererToggle *cell1 = manage( new CellRendererToggle );
                 cell1->property_xalign() = 0.5;
@@ -302,6 +296,12 @@ namespace MPX
                     (*iter)[Columns.ID]     = source;
                     (*iter)[Columns.Active] = mcs->key_get<bool>("Preferences-CoverArtSources", (boost::format ("SourceActive%d") % i).str());
                 }
+
+                Store->signal_row_deleted().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &CoverArtSourceView::on_row_deleted
+                ));
             };
 
             void
@@ -331,7 +331,9 @@ namespace MPX
             }
 
             virtual void
-                on_rows_reordered (const TreeModel::Path& path, const TreeModel::iterator& iter, int* new_order)
+                on_row_deleted(
+                      const TreeModel::Path&        G_GNUC_UNUSED
+            )
             {
                 update_configuration ();
             }
@@ -373,12 +375,6 @@ namespace MPX
                 Store = Gtk::ListStore::create(Columns);
                 set_model(Store);
 
-                Store->signal_rows_reordered().connect(
-                    sigc::mem_fun(
-                        *this,
-                        &FileFormatPrioritiesView::on_rows_reordered
-                ));
-
                 append_column(_("Name"), Columns.Name);
                 append_column(_("Description"), Columns.Description);
                 append_column(_("MIME Type"), Columns.MIME);
@@ -403,6 +399,12 @@ namespace MPX
                     (*iter)[Columns.Name]           = info.Name ;
                     (*iter)[Columns.Description]    = info.Description ;
                 }
+
+                Store->signal_row_deleted().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &FileFormatPrioritiesView::on_row_deleted
+                ));
             };
 
             void
@@ -419,7 +421,9 @@ namespace MPX
             }
 
             virtual void
-                on_rows_reordered (const TreeModel::Path& path, const TreeModel::iterator& iter, int* new_order)
+                on_row_deleted(
+                  const TreeModel::Path&        G_GNUC_UNUSED
+            )
             {
                 update_configuration ();
             }

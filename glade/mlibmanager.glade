@@ -548,7 +548,7 @@
 			  <child>
 			    <widget class="GtkButton" id="b-rescan">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">If you changed existing files, use 'Look For Changes'.</property>
+			      <property name="tooltip" translatable="yes">Looks for new files and changes in already added files.</property>
 			      <property name="can_default">True</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -592,7 +592,7 @@
 				      <child>
 					<widget class="GtkLabel" id="label3">
 					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">_Find New Files</property>
+					  <property name="label" translatable="yes">_Fast Rescan</property>
 					  <property name="use_underline">True</property>
 					  <property name="use_markup">False</property>
 					  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -623,7 +623,7 @@
 			  <child>
 			    <widget class="GtkButton" id="b-rescan-deep">
 			      <property name="visible">True</property>
-			      <property name="tooltip" translatable="yes">Finds Changes in already added Files. Will also remove files not present anymore, or switch for a different filetype.</property>
+			      <property name="tooltip" translatable="yes">Performs more complex operations. Use this if you e.g. changed file type priority order.</property>
 			      <property name="can_default">True</property>
 			      <property name="can_focus">True</property>
 			      <property name="relief">GTK_RELIEF_NORMAL</property>
@@ -667,7 +667,7 @@
 				      <child>
 					<widget class="GtkLabel" id="label10">
 					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">_Look For Changes</property>
+					  <property name="label" translatable="yes">_Thorough Rescan</property>
 					  <property name="use_underline">True</property>
 					  <property name="use_markup">False</property>
 					  <property name="justify">GTK_JUSTIFY_LEFT</property>

@@ -31,6 +31,8 @@
 #include <sigx/signal_f.h>
 #include <sigx/request_f.h>
 #include <tr1/unordered_map> 
+#include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-sql.hh"
@@ -235,22 +237,23 @@ namespace MPX
 /////////////////////////
 
             void on_add(
-                const Util::FileList&
+                  const Util::FileList&
+                , bool  = false
             );
 
-            void on_scan_list_deep(
-                const Util::FileList&
+            void on_scan_list_quick_stage_2(
+                  const Util::FileList&
             ); // on_scan delegate
 
-            void on_scan_list_paths(
-                const Util::FileList&
+            void on_scan_list_quick_stage_1(
+                  const Util::FileList&
             ); // on_scan delegate
 
             void
-            on_scan_list_paths_callback(
-                const std::string&,
-                const gint64&,
-                const std::string&
+            on_scan_list_quick_stage_1_callback(
+                  const std::string&,
+                  const gint64&,
+                  const std::string&
             );
 
             gint64
@@ -321,6 +324,15 @@ namespace MPX
 
             Map_L1      m_InsertionTracks;
 
+            typedef boost::tuple<std::string, std::string, std::string>        FileTriplet_t;
+            typedef std::map<FileTriplet_t, gint64>                            Triplet_MTIME_t;
+    
+            Triplet_MTIME_t                         m_MTIME_Map;
+
+            void
+            cache_mtimes(
+            ) ;
+
             void
             insert_file(
                   const std::string& uri
@@ -355,10 +367,6 @@ namespace MPX
                   const std::vector<std::string>&
                 , bool
                 , bool
-            );
-
-            void
-            on_set_prio(
             );
 
             TrackInfo_p

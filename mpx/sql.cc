@@ -66,8 +66,6 @@ MPX::SQL::SQLDB::THROW_SQL_ERROR(
   
   if (status != 100 && status != 101) 
   { 
-    g_log( G_LOG_DOMAIN, G_LOG_LEVEL_WARNING, "SQL Error: %s (%d)", sqlite3_errmsg(m_sqlite), status ); 
- 
     switch (status) 
     { 
       case SQLITE_ERROR: 
@@ -598,7 +596,6 @@ namespace MPX
 
           if( status != SQLITE_OK )
           {
-              g_message("%s: SQLite status != OK: %d", G_STRFUNC, status);
               sqlite3_finalize( statement );
               THROW_SQL_ERROR( sql, status );
           }
