@@ -1394,12 +1394,6 @@ MPX::LibraryScannerThread::create_update_sql(
 {
     std::string sql = "UPDATE track SET ";
 
-    std::string column_n;
-    std::string column_v;
-
-    column_n.reserve( 0x400 );
-    column_v.reserve( 0x400 );
-
     for( unsigned int n = 0; n < ATTRIBUTE_MPX_TRACK_ID; ++n )
     {
         if( track.has( n ))
@@ -1407,15 +1401,15 @@ MPX::LibraryScannerThread::create_update_sql(
             switch( attrs[n].type )
             {
                   case VALUE_TYPE_STRING:
-                      append_key_value_pair<std::string>( column_v, track, n );
+                      append_key_value_pair<std::string>( sql, track, n );
                       break;
 
                   case VALUE_TYPE_INT:
-                      append_key_value_pair<gint64>( column_v, track, n );
+                      append_key_value_pair<gint64>( sql, track, n );
                       break;
 
                   case VALUE_TYPE_REAL:
-                      append_key_value_pair<double>( column_v, track, n );
+                      append_key_value_pair<double>( sql, track, n );
                       break;
             }
 
@@ -1716,9 +1710,9 @@ MPX::LibraryScannerThread::compare_types(
     }
 
     if( val_a < val_b )
-        return -1;
-    else if( val_a > val_b )
         return 1;
+    else if( val_a > val_b )
+        return -1;
 
     return 0;
 }
@@ -1742,7 +1736,7 @@ MPX::LibraryScannerThread::insert(
     m_SQL->get(
         rv,
         mprintf(
-              "SELECT id, type, bitrate FROM track WHERE album_j = '%lld' AND artist_j = '%lld' AND track = '%lld' AND title = '%q'"
+              "SELECT id, type, bitrate, location FROM track WHERE album_j = '%lld' AND artist_j = '%lld' AND track = '%lld' AND title = '%q'"
             , p->Album.first
             , p->Artist.first
             , p->TrackNumber
@@ -1750,10 +1744,11 @@ MPX::LibraryScannerThread::insert(
     )); 
 
     gint64 id = rv.empty() ? 0 : get<gint64>(rv[0]["id"]);
-
-    if( id != 0 && ((!m_PrioritizeByFileType) || (m_PrioritizeByFileType && compare_types( p->Type, get<std::string>(rv[0]["type"])) >= 0 )))
+    if( id != 0 ) 
     {
-        if( (!m_PrioritizeByBitrate) || (m_PrioritizeByBitrate && (get<gint64>(track[ATTRIBUTE_BITRATE].get())) > (get<gint64>(rv[0]["bitrate"]))))
+        int types_compare = compare_types( p->Type, get<std::string>(rv[0]["type"]));
+
+        if( (m_PrioritizeByFileType && types_compare > 0) || (m_PrioritizeByBitrate && (get<gint64>(track[ATTRIBUTE_BITRATE].get())) > (get<gint64>(rv[0]["bitrate"]))))
         try{
                 track[ATTRIBUTE_MPX_TRACK_ID] = id; 
                 m_SQL->exec_sql( create_update_sql( track, p->Album.first, p->Artist.first ) + (boost::format(" WHERE id = '%lld'") % id).str()  ); 
@@ -1764,6 +1759,7 @@ MPX::LibraryScannerThread::insert(
 
         } catch( SqlConstraintError & cxe )
         {
+                g_message("Scan Error!: %s", cxe.what());
                 throw ScanError((boost::format(_("Constraint error while trying to set new track data!: '%s'")) % cxe.what()).str());
         }
 
@@ -1776,6 +1772,7 @@ MPX::LibraryScannerThread::insert(
   }
   catch( SqlExceptionC & cxe )
   {
+        g_message("Scan Error!: %s", cxe.what());
         throw ScanError((boost::format(_("SQL error while inserting/updating track: '%s'")) % cxe.what()).str());
   }
 

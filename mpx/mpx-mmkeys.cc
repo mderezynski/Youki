@@ -351,9 +351,12 @@ namespace MPX
 
       g_message(G_STRLOC ": Activating media player keys");
 
+      m_mmkeys_dbusproxy = 0;
+
       if (m_mmkeys_grab_type == SETTINGS_DAEMON)
       {
         bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
+
         if(bus != NULL)
         {
           GError *error = NULL;
@@ -414,6 +417,8 @@ namespace MPX
               g_error_free (error);
             }
           }
+          else
+            m_mmkeys_dbusproxy = 0;
         }
         else
         {
@@ -436,7 +441,7 @@ namespace MPX
       if( !mm_active )
         return;
 
-      if (m_mmkeys_dbusproxy)
+      if( m_mmkeys_dbusproxy )
       {
         GError *error = NULL;
 

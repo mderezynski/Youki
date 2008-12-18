@@ -571,6 +571,7 @@ namespace MPX
                 , m_NextSourceId(0)
                 , m_SourceUI(0)
                 , m_NewTrack(false)
+                , mm_active(false)
                 {
                         m_Play = services->get<Play>("mpx-service-play").get();
 
