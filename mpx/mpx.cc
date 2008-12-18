@@ -1060,6 +1060,8 @@ namespace MPX
                         delete m_AboutDialog;
                         delete m_Equalizer;
                         delete m_VolumeControl;
+
+                        mmkeys_deactivate();
                 }
 
         void
