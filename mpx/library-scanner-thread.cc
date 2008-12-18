@@ -10,6 +10,7 @@
 #include <queue>
 #include <boost/ref.hpp>
 #include <boost/format.hpp>
+#include <boost/functional/hash.hpp>
 #include <giomm.h>
 #include <glibmm.h>
 #include <glibmm/i18n.h>
@@ -312,9 +313,9 @@ MPX::LibraryScannerThread::cache_mtimes(
         m_MTIME_Map.insert(
             std::make_pair(
                   boost::make_tuple(
-                      get<std::string>((*i)["hal_device_udi"])
-                    , get<std::string>((*i)["hal_volume_udi"])
-                    , get<std::string>((*i)["hal_vrp"])
+                      boost::hash_value(get<std::string>((*i)["hal_device_udi"]))
+                    , boost::hash_value(get<std::string>((*i)["hal_volume_udi"]))
+                    , boost::hash_value(get<std::string>((*i)["hal_vrp"]))
                   )
                 , get<gint64>((*i)["mtime"])
         ));
@@ -1143,9 +1144,9 @@ MPX::LibraryScannerThread::get_track_mtime(
     Triplet_MTIME_t::const_iterator i =
          m_MTIME_Map.find(
             boost::make_tuple(
-                get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get())
-              , get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get())
-              , get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get())
+                boost::hash_value(get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get()))
+              , boost::hash_value(get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get()))
+              , boost::hash_value(get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()))
     ));
 
     if( i != m_MTIME_Map.end() )

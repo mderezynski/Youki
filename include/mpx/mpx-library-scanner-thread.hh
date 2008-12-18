@@ -324,7 +324,7 @@ namespace MPX
 
             Map_L1      m_InsertionTracks;
 
-            typedef boost::tuple<std::string, std::string, std::string>        FileTriplet_t;
+            typedef boost::tuple<std::size_t, std::size_t, std::size_t>        FileTriplet_t;
             typedef std::map<FileTriplet_t, gint64>                            Triplet_MTIME_t;
     
             Triplet_MTIME_t                         m_MTIME_Map;
