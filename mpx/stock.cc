@@ -68,13 +68,13 @@ namespace MPX
     v.push_back(StockIconSpec( "lastfm.png",                   MPX_STOCK_LASTFM            ));
     v.push_back(StockIconSpec( "plugin.png",                   MPX_STOCK_PLUGIN            ));
     v.push_back(StockIconSpec( "plugin-disabled.png",          MPX_STOCK_PLUGIN_DISABLED   ));
-
+    v.push_back(StockIconSpec( "equalizer.png",                MPX_STOCK_EQUALIZER         ));
+    v.push_back(StockIconSpec( "preferences.png",              "mpx-stock-preferences"     ));
     register_stock_icons (v, default_stock_path("24x24")); 
+
     v.clear();
 
     v.push_back(StockIconSpec( "error.png",                    MPX_STOCK_ERROR             ));
-    v.push_back(StockIconSpec( "equalizer.png",                MPX_STOCK_EQUALIZER         ));
-
     register_stock_icons (v, default_stock_path("16x16")); 
   }
 }

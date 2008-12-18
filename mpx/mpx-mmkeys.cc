@@ -363,37 +363,37 @@ namespace MPX
 
         m_mmkeys_dbusproxy = 0;
 
-        if (m_mmkeys_grab_type == SETTINGS_DAEMON)
+        if( m_mmkeys_grab_type == SETTINGS_DAEMON )
         {
-            bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
+            bus = dbus_g_bus_get( DBUS_BUS_SESSION, NULL ) ;
 
-            if( bus != NULL )
+            if( bus )
             {
                 GError *error = NULL;
 
-                m_mmkeys_dbusproxy = dbus_g_proxy_new_for_name (bus,
+                m_mmkeys_dbusproxy = dbus_g_proxy_new_for_name( bus,
                     "org.gnome.SettingsDaemon",
                     "/org/gnome/SettingsDaemon/MediaKeys",
                     "org.gnome.SettingsDaemon.MediaKeys");
 
-                if(!m_mmkeys_dbusproxy)
+                if( !m_mmkeys_dbusproxy )
                 {
-                    m_mmkeys_dbusproxy = dbus_g_proxy_new_for_name (bus,
+                    m_mmkeys_dbusproxy = dbus_g_proxy_new_for_name( bus,
                         "org.gnome.SettingsDaemon",
                         "/org/gnome/SettingsDaemon",
                         "org.gnome.SettingsDaemon");
                 }
 
-                if (m_mmkeys_dbusproxy)
+                if( m_mmkeys_dbusproxy )
                 {
-                    dbus_g_proxy_call (m_mmkeys_dbusproxy,
+                    dbus_g_proxy_call( m_mmkeys_dbusproxy,
                         "GrabMediaPlayerKeys", &error,
                         G_TYPE_STRING, "MPX",
                         G_TYPE_UINT, 0,
                         G_TYPE_INVALID,
                         G_TYPE_INVALID);
 
-                    if (error == NULL)
+                    if( error == NULL )
                     {
                         g_message(G_STRLOC ": created dbus proxy for org.gnome.SettingsDaemon; grabbing keys");
 
@@ -420,11 +420,15 @@ namespace MPX
                          */
                         g_message(G_STRLOC ": org.gnome.SettingsDaemon dbus service not found: %s", error->message);
                         g_error_free (error);
+                        g_object_unref(m_mmkeys_dbusproxy);
+                        m_mmkeys_dbusproxy = 0;
                     }
                     else
                     {
                         g_warning (G_STRLOC ": Unable to grab media player keys: %s", error->message);
                         g_error_free (error);
+                        g_object_unref(m_mmkeys_dbusproxy);
+                        m_mmkeys_dbusproxy = 0;
                     }
                 }
 

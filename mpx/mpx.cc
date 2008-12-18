@@ -819,7 +819,7 @@ namespace MPX
 
                                           ACTION_PLUGINS,
 
-                                          Gtk::StockID(MPX_STOCK_PLUGIN),
+                                          Gtk::StockID( MPX_STOCK_PLUGIN ),
                                           _("Plugins..."),
                                           _("View and Enable or Disable Plugins")),
                                           sigc::mem_fun (*this, &Player::on_action_cb_show_plugins ));
@@ -838,7 +838,7 @@ namespace MPX
 
                                           ACTION_PREFERENCES,
 
-                                          Gtk::Stock::EXECUTE,
+                                          Gtk::StockID( "mpx-stock-preferences" ),
                                           _("_Preferences..."),
                                           _("Set up Audio and other Settings")),
                                           sigc::mem_fun (*(services->get<Preferences>("mpx-service-preferences").get()), &Gtk::Widget::show ));
