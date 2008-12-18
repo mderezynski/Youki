@@ -34,6 +34,7 @@
 
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-sql.hh"
+#include "mpx/mpx-types.hh"
 #include "mpx/mpx-uri.hh"
 
 #include "mpx/widgets/task-dialog.hh"
@@ -51,6 +52,7 @@
 
 using namespace Glib;
 using namespace Gtk;
+using boost::get;
 
 namespace
 {
@@ -103,6 +105,65 @@ namespace MPX
         Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-h")));
     }
 
+    void
+    MLibManager::update_filestats()
+    {
+        using namespace MPX::SQL;
+
+        m_FileStats_Store->clear();
+
+        RowV v1;
+        services->get<Library>("mpx-service-library")->getSQL(
+              v1
+            , "SELECT DISTINCT type, count(*) AS cnt FROM track GROUP BY type"
+        );
+
+        for( RowV::iterator i = v1.begin(); i != v1.end(); ++i )
+        {
+            RowV v2; 
+            services->get<Library>("mpx-service-library")->getSQL(
+                  v2
+                , (boost::format("SELECT sum(bitrate)/count(*) AS rate FROM track WHERE type = '%s'") % get<std::string>((*i)["type"])).str()
+            );
+
+            TreeIter iter = m_FileStats_Store->append();
+
+            (*iter)[m_FileStats_Columns.Type]       = get<std::string>((*i)["type"]);
+            (*iter)[m_FileStats_Columns.Count]      = get<gint64>((*i)["cnt"]);
+            (*iter)[m_FileStats_Columns.AvgBitrate] = (boost::format("%lld kbit/s") % get<gint64>(v2[0]["rate"])).str();
+        }
+
+        Gtk::Label * label;
+
+        v1.clear();
+        services->get<Library>("mpx-service-library")->getSQL(
+              v1
+            , "SELECT DISTINCT count(*) AS cnt FROM track"
+        );
+
+        m_Xml->get_widget( "label-count-of-tracks", label );
+        label->set_text((boost::format("%lld") % get<gint64>(v1[0]["cnt"])).str());
+
+
+        v1.clear();
+        services->get<Library>("mpx-service-library")->getSQL(
+              v1
+            , "SELECT sum(time) AS time FROM track"
+        );
+
+
+        m_Xml->get_widget( "label-library-playtime", label );
+
+        gint64 total = get<gint64>(v1[0]["time"]) ;
+
+        gint64 days    = (total / 86400) ;
+        gint64 hours   = (total % 86400) / 3600;
+        gint64 minutes = ((total % 86400) % 3600) / 60 ;
+        gint64 seconds = ((total % 86400) % 3600) % 60 ;
+
+        label->set_text((boost::format(_("%lld Days, %lld Hours, %lld Minutes, %lld Seconds")) % hours % minutes % seconds).str());
+    }
+
     MLibManager::MLibManager(
         const RefPtr<Gnome::Glade::Xml>& xml
     )
@@ -111,6 +172,27 @@ namespace MPX
     , Service::Base("mpx-service-mlibman")
     {
        /*- Widgets -------------------------------------------------------*/ 
+
+        m_Xml->get_widget("treeview-filestats", m_FileStats_View );
+
+        m_FileStats_Store = Gtk::ListStore::create( m_FileStats_Columns ) ;
+
+        m_FileStats_View->append_column(
+              _("Type")
+            , m_FileStats_Columns.Type
+        );
+
+        m_FileStats_View->append_column(
+              _("Track Count")
+            , m_FileStats_Columns.Count
+        );
+
+        m_FileStats_View->append_column(
+              _("Average Bitrate")
+            , m_FileStats_Columns.AvgBitrate
+        );
+
+        m_FileStats_View->set_model( m_FileStats_Store );
 
         m_Xml->get_widget("statusbar", m_Statusbar );
         m_Xml->get_widget("vbox-inner", m_VboxInner );
@@ -480,6 +562,8 @@ namespace MPX
             )->add(
                 *(m_UIManager->get_widget ("/MenubarMLibMan"))
             );
+
+            update_filestats();
         }
 
         /*- Init the UI ---------------------------------------------------*/ 
@@ -560,6 +644,7 @@ namespace MPX
     void
     MLibManager::scan_end ()
     {
+        update_filestats();
         m_VboxInner->set_sensitive(true);
     }
 
@@ -614,6 +699,7 @@ namespace MPX
         }
 
         m_TextBufferDetails->set_text(text);
+        update_filestats();
         m_VboxInner->set_sensitive(true);
     }
     

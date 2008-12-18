@@ -58,11 +58,32 @@ namespace MPX
         IGNORED
     } ;
 
+    struct FileStatsColumns : public Gtk::TreeModel::ColumnRecord
+    {
+        Gtk::TreeModelColumn<std::string>       Type;
+        Gtk::TreeModelColumn<gint64>            Count;
+        Gtk::TreeModelColumn<std::string>       AvgBitrate;
+
+        FileStatsColumns ()
+        {
+            add(Type);
+            add(Count);
+            add(AvgBitrate);
+        }
+    };
+
     class MLibManager
       : public Gnome::Glade::WidgetLoader<Gtk::Window>
       , public sigx::glib_auto_dispatchable
       , public Service::Base
     {
+            FileStatsColumns                    m_FileStats_Columns ;
+            Glib::RefPtr<Gtk::ListStore>        m_FileStats_Store ;
+            Gtk::TreeView                     * m_FileStats_View ;
+        
+            void
+            update_filestats ();
+
         public:
 
             static MLibManager* create(

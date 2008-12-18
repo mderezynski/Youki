@@ -263,7 +263,7 @@ namespace
                 N_("Album Artist"),
                 N_("Album Artist Sort Name"),
                 N_("MusicBrainz Album Artist ID"),
-                N_("MIME type"),
+                N_("MIME Type"),
                 N_("HAL Volume UDI"),
                 N_("HAL Device UDI"),
                 N_("Volume-relative Path"),
