@@ -43,11 +43,9 @@
 
 namespace MPX
 {
-	struct PluginHolder
+	struct PluginHolderBase
 	{
-		private:
-
-			PyObject	*	m_PluginInstance;
+		protected:
 
 			std::string		m_Name;
 			std::string		m_Description;
@@ -62,40 +60,77 @@ namespace MPX
 
 		public:
 
-			std::string const&
+            virtual bool
+            activate(
+            ) = 0;
+
+            virtual bool
+            deactivate(
+            ) = 0;
+
+            virtual Gtk::Widget*
+            get_gui(
+            ) = 0;
+
+			virtual std::string const&
 			get_name ()			const	{ return m_Name; }
 	
-			std::string	const&
+			virtual std::string	const&
 			get_desc ()			const	{ return m_Description; }
 
-			std::string const&
+			virtual std::string const&
 			get_authors ()		const	{ return m_Authors; }
 	
-			std::string const&
+			virtual std::string const&
 			get_copyright ()	const	{ return m_Copyright; }
 
-			std::string const&
+			virtual std::string const&
 			get_website ()		const	{ return m_Website; }
 	
-			bool
+			virtual bool
 			get_active ()		const	{ return m_Active; }
 
-            bool
+            virtual bool
             get_has_gui ()      const   { return m_HasGUI; }
 
-            bool
+            virtual bool
             get_can_activate () const   { return m_CanActivate; }
 
-			gint64
+			virtual gint64
 			get_id ()			const	{ return m_Id; }
 
 		friend class PluginManager;
         friend class PluginActivate;
 	};
 
-	typedef boost::shared_ptr<PluginHolder>	PluginHolderRefP;
-	typedef std::map<gint64, PluginHolderRefP> PluginHoldMap; 
-	typedef std::vector<std::string> Strings;
+	struct PluginHolderPython
+    : public PluginHolderBase
+	{
+		protected:
+
+			PyObject	*	m_PluginInstance;
+
+		public:
+    
+            virtual bool
+            activate(
+            );
+
+            virtual bool
+            deactivate(
+            );
+
+            virtual Gtk::Widget*
+            get_gui(
+            ); 
+
+		friend class PluginManager;
+        friend class PluginActivate;
+	};
+
+	typedef boost::shared_ptr<PluginHolderBase> PluginHolderRefP ;
+	typedef std::map<gint64, PluginHolderRefP>  PluginHoldMap ; 
+	typedef std::vector<std::string>            Strings ;
 
     class Traceback
 	{

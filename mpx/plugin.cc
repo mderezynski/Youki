@@ -50,6 +50,70 @@ using namespace boost::python;
 
 namespace MPX
 {
+    bool
+    PluginHolderPython::activate(
+    )
+    {
+        bool success = false;
+
+		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+
+		try{
+			object instance = object((handle<>(borrowed(m_PluginInstance))));
+			object callable = instance.attr("activate");
+			success = boost::python::call<bool>(callable.ptr());
+		} catch( error_already_set )
+		{
+		}
+
+		pyg_gil_state_release (state);
+
+        return success;
+    }
+
+    bool
+    PluginHolderPython::deactivate(
+    )
+    {
+        bool success = false;
+
+		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+
+		try{
+			object instance = object((handle<>(borrowed(m_PluginInstance))));
+			object callable = instance.attr("deactivate");
+			success = boost::python::call<bool>(callable.ptr());
+		} catch( error_already_set )
+		{
+		}
+
+		pyg_gil_state_release (state);
+
+        return success;
+    }
+
+    Gtk::Widget*
+    PluginHolderPython::get_gui(
+    )
+    {
+        PyGObject * pygobj;
+
+		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+
+		try{
+			object instance = object((handle<>(borrowed(m_PluginInstance))));
+			object result = instance.attr("get_gui")();
+			pygobj = (PyGObject*)(result.ptr());
+		    pyg_gil_state_release (state);
+		    return Glib::wrap(((GtkWidget*)(pygobj->obj)), false);
+		} catch( error_already_set )
+		{
+		}
+
+        pyg_gil_state_release (state);
+        return 0;
+    }
+
 	Traceback::Traceback(const std::string& n, const std::string& m, const std::string& t)
 	:	name (n)
 	,	method (m)
@@ -117,27 +181,15 @@ namespace MPX
         for(PluginHoldMap::iterator i = m_Map.begin(); i != m_Map.end(); ++i)
         {
             PluginHolderRefP & item = i->second;
-            try{
-                bool active = mcs->key_get<bool>("pyplugs", item->get_name());
 
-                g_message("Name: [%s], Active: %d", item->get_name().c_str(), int(active));
+            bool active = mcs->key_get<bool>("pyplugs", item->get_name());
 
-                if (active)
-                {
-                    try{    
-                        PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-                        object instance = object((handle<>(borrowed(item->m_PluginInstance))));
-                        instance.attr("activate")();
-                        item->m_Active = true;
-                        pyg_gil_state_release(state);
-                        } catch( error_already_set )
-                        {
-                            PyErr_Print();
-                        }
-                }
-             } catch(...)
-             {
-             }
+            g_message("Name: [%s], Active: %d", item->get_name().c_str(), int(active));
+
+            if( active )
+            {
+                item->activate();
+            }
         }
     }
 
@@ -212,7 +264,7 @@ namespace MPX
                                     continue;
                                 }
 
-                                PluginHolderRefP ptr = PluginHolderRefP(new PluginHolder);
+                                PluginHolderPython * ptr = new PluginHolderPython;
 
                                 ptr->m_PluginInstance = instance.ptr();
                                 Py_INCREF(instance.ptr());
@@ -271,7 +323,9 @@ namespace MPX
                                     PyErr_Clear();
                                 }
 
-                                m_Map.insert(std::make_pair(ptr->m_Id, ptr));
+
+                                PluginHolderRefP refptr = PluginHolderRefP(ptr);
+                                m_Map.insert(std::make_pair(ptr->m_Id, refptr));
 
                                 g_message("%s: >> Loaded: '%s'", G_STRLOC, ptr->m_Name.c_str());
                             } catch( error_already_set )
@@ -297,18 +351,7 @@ namespace MPX
                     continue;
                 }
 
-                PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-
-                try{
-                    object instance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-                    object callable = instance.attr("deactivate");
-                    boost::python::call<bool>(callable.ptr());
-                    i->second->m_Active = false;
-                } catch( error_already_set ) 
-                {
-                }
-
-                pyg_gil_state_release (state);
+                i->second->deactivate();
         }
     }
 
@@ -326,41 +369,26 @@ namespace MPX
 	Gtk::Widget *
 	PluginManager::get_gui(gint64 id)
 	{
-		PyGObject * pygobj;
 		Glib::Mutex::Lock L (m_StateChangeLock);
 
 		PluginHoldMap::iterator i = m_Map.find(id);
 		g_return_val_if_fail(i != m_Map.end(), false);
         g_return_val_if_fail(m_Map.find(id)->second->get_has_gui(), false);
 
-		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+        Gtk::Widget * gui = i->second->get_gui();
 
-		try{
-			object instance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			object result = instance.attr("get_gui")();
-			pygobj = (PyGObject*)(result.ptr());
-		} catch( error_already_set )
-		{
+        if( !gui )
+        {
 			push_traceback (id, "get_gui");
-			return NULL;
+	        return 0;	
 		}
 
-        try{
-            mcs->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
-        } catch(...) {
-            g_message("%s: Failed saving plugin state for '%s'", G_STRLOC, i->second->get_name().c_str());
-        }
-
-		pyg_gil_state_release (state);
-
-		return Glib::wrap(((GtkWidget*)(pygobj->obj)), false);
+		return gui; 
 	}
-
 
 	bool
 	PluginManager::activate(gint64 id)
 	{
-		bool result = false;
 		Glib::Mutex::Lock L (m_StateChangeLock);
 
 		PluginHoldMap::iterator i = m_Map.find(id);
@@ -372,18 +400,17 @@ namespace MPX
 			g_return_val_if_reached(false);
 		}
 
-		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+        bool success = i->second->activate();
 
-		try{
-			object instance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			object callable = instance.attr("activate");
-			result = boost::python::call<bool>(callable.ptr());
+        if ( success ) 
+        {
 			i->second->m_Active = true;
             signal_activated_.emit(id);
-		} catch( error_already_set )
-		{
+        }
+        else
+        {
 			push_traceback (id, "activate");
-		}
+        }
 
         try{
             mcs->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
@@ -391,9 +418,7 @@ namespace MPX
             g_message("%s: Failed saving plugin state for '%s'", G_STRLOC, i->second->get_name().c_str());
         }
 
-		pyg_gil_state_release (state);
-
-		return result;
+		return success;
 	}
 
     bool
@@ -404,35 +429,32 @@ namespace MPX
 		PluginHoldMap::iterator i = m_Map.find(id);
 		g_return_val_if_fail(i != m_Map.end(), false);
 
-        bool result = false;
-
 		if(!i->second->m_Active)
 		{
 			g_message("%s: Deactivate requested for plugin %lld, but is already deactivated.", G_STRLOC, id);	
 			g_return_val_if_reached(false);
 		}
 
-		PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
+        bool success = i->second->deactivate();
 
-		try{
-			object instance = object((handle<>(borrowed(i->second->m_PluginInstance))));
-			object callable = instance.attr("deactivate");
-			result = boost::python::call<bool>(callable.ptr());
+        if ( success ) 
+        {
 			i->second->m_Active = false;
             signal_deactivated_.emit(id);
-		} catch( error_already_set ) 
-		{
-			push_traceback (id, "deactivate");
-		}
+        }
+        else
+        {
+			push_traceback( id, "deactivate" );
+        }
 
-		pyg_gil_state_release (state);
 
         try{
             mcs->key_set<bool>("pyplugs", i->second->get_name(), i->second->m_Active);
         } catch(...) {
             g_message("%s: Failed saving plugin state for '%s'", G_STRLOC, i->second->get_name().c_str());
         }
-        return result;
+
+        return success;
 	}
 
     void
