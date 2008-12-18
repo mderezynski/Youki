@@ -46,6 +46,7 @@ namespace MPX
     {
         SCAN_RESULT_OK,
         SCAN_RESULT_UPDATE,
+        SCAN_RESULT_UPTODATE
     };
 
     enum EntityType
@@ -309,7 +310,6 @@ namespace MPX
                 std::string     Type;
 
                 Track_p         Track;
-                std::string     Insertion_SQL;
             };
  
             typedef boost::shared_ptr<TrackInfo>    TrackInfo_p;
@@ -324,7 +324,7 @@ namespace MPX
 
             Map_L1      m_InsertionTracks;
 
-            typedef boost::tuple<std::size_t, std::size_t, std::size_t>        FileTriplet_t;
+            typedef boost::tuple<std::string, std::string, std::string>        FileTriplet_t;
             typedef std::map<FileTriplet_t, gint64>                            Triplet_MTIME_t;
     
             Triplet_MTIME_t                         m_MTIME_Map;
@@ -367,26 +367,47 @@ namespace MPX
                   const std::vector<std::string>&
                 , bool
                 , bool
-            );
+            ) ;
 
             TrackInfo_p
             prioritize(
                   const TrackInfo_p_Vector&
-            );
+            ) ;
 
             ScanResult
             insert(
                   const TrackInfo_p&
                 , const TrackInfo_p_Vector&
-            );
+            ) ;
 
             void
             signal_new_entities(
                   const TrackInfo_p_Vector&
+            ) ;
+
+            int
+            compare_types(
+                  const std::string&
+                , const std::string&
+            ) ;
+
+            std::string
+            create_insertion_sql(
+                  const Track&
+                , gint64
+                , gint64
+            );
+
+
+            std::string
+            create_update_sql(
+                  const Track&
+                , gint64
+                , gint64
             );
 
             void
-            do_remove_dangling();
+            do_remove_dangling() ;
 
         private:
 

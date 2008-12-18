@@ -476,6 +476,10 @@ namespace MPX
             on_priority_settings_changed(
                 MCS_CB_DEFAULT_SIGNATURE
             );
+
+            void
+            library_scanner_thread_set_priorities(
+            );
     };
 } // namespace MPX
 

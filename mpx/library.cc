@@ -507,6 +507,7 @@ namespace MPX
                             &Library::on_priority_settings_changed
                 ));
 
+                library_scanner_thread_set_priorities();
         }
 
         Library::~Library ()
@@ -516,8 +517,7 @@ namespace MPX
         }
 
         void
-                Library::on_priority_settings_changed(
-                    MCS_CB_DEFAULT_SIGNATURE
+                Library::library_scanner_thread_set_priorities(
                 )
                 {
                     std::vector<std::string> strv;
@@ -533,6 +533,14 @@ namespace MPX
                         , mcs->key_get<bool>("Preferences-FileFormatPriorities", "prioritize-by-filetype")
                         , mcs->key_get<bool>("Preferences-FileFormatPriorities", "prioritize-by-bitrate")
                     );
+                }
+
+        void
+                Library::on_priority_settings_changed(
+                    MCS_CB_DEFAULT_SIGNATURE
+                )
+                {
+                    library_scanner_thread_set_priorities();
                 }
 
 #ifdef HAVE_HAL

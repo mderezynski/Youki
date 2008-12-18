@@ -179,7 +179,7 @@ namespace MPX
           Track () { data = DataT (DataT::size_type(N_ATTRIBUTES_INT)); }
 
           bool
-          has(DataT::size_type index)
+          has(DataT::size_type index) const
           {
             return bool(data[index]);
           }
