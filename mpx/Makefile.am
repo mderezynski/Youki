@@ -171,6 +171,8 @@ audiosource_bin_SOURCES =				\
 								\
 	plugin.hh					\
 	plugin.cc					\
+	plugin-loader-python.cc		\
+	plugin-types-python.cc		\
 	plugin-manager-gui.hh		\
 	plugin-manager-gui.cc		\
 								\

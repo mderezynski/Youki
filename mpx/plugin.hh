@@ -31,6 +31,7 @@
 #include <list>
 #include <string>
 #include <vector>
+#include <set>
 
 #include <glib/gtypes.h>
 #include <glibmm/thread.h>
@@ -41,96 +42,16 @@
 
 #include "mpx/mpx-services.hh"
 
+#include "plugin-types.hh"
+#include "plugin-types-python.hh"
+#include "plugin-types-cpp.hh"
+
+#include "plugin-loader-python.hh"
+#include "plugin-loader-cpp.hh"
+
 namespace MPX
 {
-	struct PluginHolderBase
-	{
-		protected:
-
-			std::string		m_Name;
-			std::string		m_Description;
-			std::string		m_Authors;
-			std::string		m_Copyright;
-			int				m_IAge;
-			std::string		m_Website;
-			bool			m_Active;
-            bool            m_HasGUI;
-            bool            m_CanActivate;
-			gint64			m_Id;
-
-		public:
-
-            virtual bool
-            activate(
-            ) = 0;
-
-            virtual bool
-            deactivate(
-            ) = 0;
-
-            virtual Gtk::Widget*
-            get_gui(
-            ) = 0;
-
-			virtual std::string const&
-			get_name ()			const	{ return m_Name; }
-	
-			virtual std::string	const&
-			get_desc ()			const	{ return m_Description; }
-
-			virtual std::string const&
-			get_authors ()		const	{ return m_Authors; }
-	
-			virtual std::string const&
-			get_copyright ()	const	{ return m_Copyright; }
-
-			virtual std::string const&
-			get_website ()		const	{ return m_Website; }
-	
-			virtual bool
-			get_active ()		const	{ return m_Active; }
-
-            virtual bool
-            get_has_gui ()      const   { return m_HasGUI; }
-
-            virtual bool
-            get_can_activate () const   { return m_CanActivate; }
-
-			virtual gint64
-			get_id ()			const	{ return m_Id; }
-
-		friend class PluginManager;
-        friend class PluginActivate;
-	};
-
-	struct PluginHolderPython
-    : public PluginHolderBase
-	{
-		protected:
-
-			PyObject	*	m_PluginInstance;
-
-		public:
-    
-            virtual bool
-            activate(
-            );
-
-            virtual bool
-            deactivate(
-            );
-
-            virtual Gtk::Widget*
-            get_gui(
-            ); 
-
-		friend class PluginManager;
-        friend class PluginActivate;
-	};
-
-	typedef boost::shared_ptr<PluginHolderBase> PluginHolderRefP ;
-	typedef std::map<gint64, PluginHolderRefP>  PluginHoldMap ; 
-	typedef std::vector<std::string>            Strings ;
+    typedef std::map<gint64, PluginHolderRefP_t> PluginHoldMap_t ; 
 
     class Traceback
 	{
@@ -155,16 +76,12 @@ namespace MPX
     typedef sigc::signal<void, gint64> SignalPlugin;
     typedef sigc::signal<void>         Signal;
 
-
-	class Player;
     class PluginManager : public Service::Base
     {
-        friend class PluginActivate;
-
-        SignalPlugin signal_activated_;
-        SignalPlugin signal_deactivated_;
-        SignalPlugin signal_plugin_show_gui_;
-        Signal       signal_traceback_;
+            SignalPlugin    signal_activated_ ;
+            SignalPlugin    signal_deactivated_ ;
+            SignalPlugin    signal_plugin_show_gui_ ;
+            Signal          signal_traceback_ ;
 
 		public:
 	
@@ -195,21 +112,10 @@ namespace MPX
                 return signal_traceback_;
             }
 
-			void
-			append_search_path(
-                std::string const& /*path*/
-            );
-    
             void
             shutdown();
 
-			void
-			load_plugins ();
-
-            void
-            activate_plugins ();
-
-			const PluginHoldMap&
+			const PluginHoldMap_t&
 			get_map ()
             const;
 
@@ -252,13 +158,17 @@ namespace MPX
 
 		private:
 
-            boost::shared_ptr<Player> m_Player;
+            void
+            on_plugin_loaded(
+                PluginHolderRefP_t
+            );
 
-			PluginHoldMap	      m_Map;	
-			Strings		          m_Paths;
-			gint64			      m_Id;
-			Glib::Mutex		      m_StateChangeLock;
-			std::list<Traceback>  m_TracebackList;
+            PluginLoaderPython          * m_PluginLoader_Python;
+
+			PluginHoldMap_t	      m_Map ;	
+			gint64			      m_Id ;
+			Glib::Mutex		      m_StateChangeLock ;
+			std::list<Traceback>  m_TracebackList ;
     };
 }
 

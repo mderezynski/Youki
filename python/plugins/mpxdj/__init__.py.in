@@ -654,7 +654,7 @@ class MPXDJ(mpx.Plugin):
 
         self.combo.set_active(current.get_current_value())
         self.playmode = current.get_current_value()
-        self.player.show_plugin(self.id)
+        #self.player.show_plugin(self.id)
 
     def on_enable_toggled(self, action):
 
@@ -689,6 +689,7 @@ class MPXDJ(mpx.Plugin):
         self.action1.handler_block(self.action_handler1)
         self.action1.set_active(True) 
         self.action1.handler_unblock(self.action_handler1)
+        return True
 
     def deactivate(self):
 
@@ -696,6 +697,7 @@ class MPXDJ(mpx.Plugin):
         self.action1.handler_block(self.action_handler1)
         self.action1.set_active(False) 
         self.action1.handler_unblock(self.action_handler1)
+        return True
 
     def on_mode_cbox_changed(self, cbox):
 

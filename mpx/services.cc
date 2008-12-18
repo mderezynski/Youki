@@ -11,10 +11,10 @@ namespace Service
 
     Manager::~Manager ()
     {
-        m_services.erase("mpx-service-mbimport");
         m_services.erase("mpx-service-plugins-gui");
         m_services.erase("mpx-service-plugins");
         m_services.erase("mpx-service-player");
+        m_services.erase("mpx-service-mbimport");
         m_services.erase("mpx-service-mlibman");
         m_services.erase("mpx-service-preferences");
         m_services.erase("mpx-service-play");

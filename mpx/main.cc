@@ -362,12 +362,10 @@ main (int argc, char ** argv)
 #ifdef HAVE_HAL
         services->add(boost::shared_ptr<MLibManager>(MPX::MLibManager::create()));
 #endif // HAVE_HAL
+        services->add(boost::shared_ptr<MB_ImportAlbum>(MPX::MB_ImportAlbum::create()));
         services->add(boost::shared_ptr<Player>(MPX::Player::create()));
         services->add(boost::shared_ptr<PluginManager>(new MPX::PluginManager));
-        services->get<PluginManager>("mpx-service-plugins")->load_plugins ();
-        services->get<PluginManager>("mpx-service-plugins")->activate_plugins ();
         services->add(boost::shared_ptr<PluginManagerGUI>(MPX::PluginManagerGUI::create()));
-        services->add(boost::shared_ptr<MB_ImportAlbum>(MPX::MB_ImportAlbum::create()));
 
         splash->set_message(_("Done"), 1.0);
         delete splash;

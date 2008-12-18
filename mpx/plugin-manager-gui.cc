@@ -26,14 +26,15 @@
 #include <config.h>
 #endif
 
-#include "plugin.hh"
-#include "plugin-manager-gui.hh"
-#include "mpx/mpx-main.hh"
-
+#include <boost/format.hpp>
 #include <glibmm.h>
 #include <glibmm/i18n.h>
 #include <libglademm/xml.h>
-#include <boost/format.hpp>
+
+#include "mpx/mpx-main.hh"
+
+#include "plugin.hh"
+#include "plugin-manager-gui.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -127,9 +128,9 @@ namespace MPX
                     )
                 );
 
-				PluginHoldMap const& map = services->get<PluginManager>("mpx-service-plugins")->get_map();	
+				PluginHoldMap_t const& map = services->get<PluginManager>("mpx-service-plugins")->get_map();	
 
-				for(PluginHoldMap::const_iterator i = map.begin(); i != map.end(); ++i)
+				for(PluginHoldMap_t::const_iterator i = map.begin(); i != map.end(); ++i)
 				{
 					TreeIter iter = Store->append();
 
