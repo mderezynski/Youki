@@ -161,7 +161,7 @@ namespace MPX
         gint64 minutes = ((total % 86400) % 3600) / 60 ;
         gint64 seconds = ((total % 86400) % 3600) % 60 ;
 
-        label->set_text((boost::format(_("%lld Days, %lld Hours, %lld Minutes, %lld Seconds")) % hours % minutes % seconds).str());
+        label->set_text((boost::format(_("%lld Days, %lld Hours, %lld Minutes, %lld Seconds")) % days % hours % minutes % seconds).str());
     }
 
     MLibManager::MLibManager(
