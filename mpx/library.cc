@@ -1228,8 +1228,8 @@ namespace MPX
                         gint64 id_album = get<gint64>(v[0]["album_j"]);
                         gint64 id_artst = get<gint64>(v[0]["album_artist_j"]);
 
-                        Signals.TrackUpdated.emit( (*t.get()), id_album, id_artst );
                         Signals.AlbumUpdated.emit( album_id ) ;
+                        Signals.TrackUpdated.emit( (*t.get()), id_album, id_artst );
                 }
 
         void

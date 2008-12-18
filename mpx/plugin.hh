@@ -41,8 +41,8 @@
 #include <Python.h>
 
 #include "mpx/mpx-services.hh"
+#include "mpx/plugin-types.hh"
 
-#include "plugin-types.hh"
 #include "plugin-types-python.hh"
 #include "plugin-types-cpp.hh"
 

@@ -27,7 +27,8 @@
 
 #include <config.h>
 
-#include "plugin-types.hh"
+#include "mpx/plugin-types.hh"
+
 #include "plugin-types-python.hh"
 #include "plugin-loader.hh"
 

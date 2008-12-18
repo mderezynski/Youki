@@ -40,7 +40,7 @@
 #include <mcs/mcs.h>
 #include <Python.h>
 
-#include "plugin-types.hh"
+#include "mpx/plugin-types.hh"
 
 namespace MPX
 {

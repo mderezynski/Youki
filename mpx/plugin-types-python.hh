@@ -26,8 +26,9 @@
 #define MPX_PLUGIN_TYPES__PYTHON_HH
 
 #include <config.h>
-#include "plugin-types.hh"
 #include <Python.h>
+
+#include "mpx/plugin-types.hh"
 
 namespace MPX
 {
