@@ -318,9 +318,9 @@ namespace MPX
                 static boost::format
                         album_table_f ("CREATE TABLE IF NOT EXISTS album "
                                         "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
-                                        "'%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, "
+                                        "'%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, "
                                         "'%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' FLOAT DEFAULT 0, UNIQUE "
-                                        "('%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s'))");
+                                        "('%s', '%s', '%s', '%s', '%s', '%s', '%s'))");
 
                 m_SQL->exec_sql ((album_table_f
                                         % attrs[ATTRIBUTE_ALBUM].id
@@ -330,7 +330,6 @@ namespace MPX
                                         % attrs[ATTRIBUTE_MB_RELEASE_TYPE].id
                                         % attrs[ATTRIBUTE_ASIN].id
                                         % "album_genre" 
-                                        % "album_mime"
                                         % "album_rating"
                                         % "album_artist_j"
                                         % "album_insert_date"
@@ -342,9 +341,7 @@ namespace MPX
                                         % attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id
                                         % attrs[ATTRIBUTE_MB_RELEASE_TYPE].id
                                         % attrs[ATTRIBUTE_ASIN].id
-                                        % "album_artist_j"
-                                        % "album_mime"
-                ).str());
+                                        % "album_artist_j").str());
 
 
                 ///////////////////////////////////////////////////////////////

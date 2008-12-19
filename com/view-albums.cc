@@ -979,7 +979,6 @@ namespace MPX
                                 std::string rt_string;
                                 std::string genre;
                                 std::string mbid;
-                                std::string mime;
                                 double      playscore = 0;
                                 gint64      rating = 0;
                                 gint64      bitrate = 0;
@@ -1006,12 +1005,6 @@ namespace MPX
                                 {
                                         genre = get<std::string>(r["album_genre"]);
                                         track[ATTRIBUTE_GENRE] = genre;
-                                }
-
-                                if(r.count("album_mime"))
-                                {
-                                        mime = get<std::string>(r["album_mime"]);
-                                        track[ATTRIBUTE_TYPE] = mime;
                                 }
 
                                 if(r.count("album_playscore"))
@@ -1117,8 +1110,6 @@ namespace MPX
 
                                 if( bitrate != 0 )
                                     renderdata->Bitrate = (boost::format("%lld kbit/s") % bitrate).str();
-
-                                renderdata->MIME = mime;
 
                                 (*iter)[Columns.RenderData] = renderdata;
 

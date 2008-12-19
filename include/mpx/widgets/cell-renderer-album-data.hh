@@ -19,7 +19,6 @@ namespace MPX
         std::string Release;
         std::string Type;
         std::string Genre;
-        std::string MIME;
         std::string Bitrate;
     };
 

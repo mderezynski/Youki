@@ -1060,7 +1060,7 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
     if( track.has(ATTRIBUTE_MB_ALBUM_ID) )
     {
-      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s = '%q') AND (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
+      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s = '%q') AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
 
       sql = mprintf (select_album_f,
 
@@ -1077,18 +1077,13 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
                 ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_MB_RELEASE_COUNTRY].get()).c_str()).c_str()
                 : "IS NULL"), 
 
-             "album_mime",
-            (track.has(ATTRIBUTE_TYPE)
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_TYPE].get()).c_str()).c_str()
-                : "IS NULL"), 
-
             "album_artist_j",
             album_artist_id
       );
     }
     else
     {
-      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
+      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s = %lld);"); 
 
       sql = mprintf (select_album_f,
 
@@ -1100,11 +1095,6 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
             attrs[ATTRIBUTE_ASIN].id,
             (track.has(ATTRIBUTE_ASIN)
                 ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()).c_str()
-                : "IS NULL"), 
-
-            "album_mime",
-            (track.has(ATTRIBUTE_TYPE)
-                ? mprintf (" = '%q'", get<std::string>(track[ATTRIBUTE_TYPE].get()).c_str()).c_str()
                 : "IS NULL"), 
 
             "album_artist_j",
@@ -1140,21 +1130,20 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
         custom_id = true;
       }
 
-      char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s, %s, %s, %s, %s, album_new) VALUES (%Q, %Q, %Q, %Q, %Q, %Q, %Q, %lld, %lld, 1);");
+      char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s, %s, %s, %s, album_new) VALUES (%Q, %Q, %Q, %Q, %Q, %Q, %lld, %lld, 1);");
 
       std::string sql = mprintf (set_album_f,
 
-            attrs[ATTRIBUTE_ALBUM].id
-          , attrs[ATTRIBUTE_MB_ALBUM_ID].id
-          , attrs[ATTRIBUTE_MB_RELEASE_DATE].id
-          , attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id
-          , attrs[ATTRIBUTE_MB_RELEASE_TYPE].id
-          , attrs[ATTRIBUTE_ASIN].id
-          , "album_mime"
-          , "album_artist_j"
-          , "album_insert_date"
+          attrs[ATTRIBUTE_ALBUM].id,
+          attrs[ATTRIBUTE_MB_ALBUM_ID].id,
+          attrs[ATTRIBUTE_MB_RELEASE_DATE].id,
+          attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id,
+          attrs[ATTRIBUTE_MB_RELEASE_TYPE].id,
+          attrs[ATTRIBUTE_ASIN].id,
+          "album_artist_j",
+          "album_insert_date",
 
-          , (track.has(ATTRIBUTE_ALBUM)
+          (track.has(ATTRIBUTE_ALBUM)
               ? get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()
               : NULL) , 
 
@@ -1176,10 +1165,6 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
           (track.has(ATTRIBUTE_ASIN)
               ? get<std::string>(track[ATTRIBUTE_ASIN].get()).c_str()
-              : NULL) , 
-
-          (track.has(ATTRIBUTE_TYPE)
-              ? get<std::string>(track[ATTRIBUTE_TYPE].get()).c_str()
               : NULL) , 
 
           album_artist_id,
