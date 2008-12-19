@@ -1060,7 +1060,7 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
     if( track.has(ATTRIBUTE_MB_ALBUM_ID) )
     {
-      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s = '%q') AND (%s %s) AND (%s %s) AND (%s = %s) AND (%s = %lld);"); 
+      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s = '%q') AND (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
 
       sql = mprintf (select_album_f,
 
@@ -1088,7 +1088,7 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
     }
     else
     {
-      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s = %s) AND (%s = %lld);"); 
+      char const* select_album_f ("SELECT album, id, mb_album_id FROM album WHERE (%s %s) AND (%s %s) AND (%s %s) AND (%s = %lld);"); 
 
       sql = mprintf (select_album_f,
 
@@ -1154,7 +1154,7 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
           , "album_artist_j"
           , "album_insert_date"
 
-          (track.has(ATTRIBUTE_ALBUM)
+          , (track.has(ATTRIBUTE_ALBUM)
               ? get<std::string>(track[ATTRIBUTE_ALBUM].get()).c_str()
               : NULL) , 
 
