@@ -6,6 +6,7 @@ INCLUDES = 						\
 	$(GLADEMM_CFLAGS)			\
 	$(GLIBMM_CFLAGS)			\
 	$(GTKMM_CFLAGS)				\
+	$(HAL_CFLAGS)				\
 	$(PYTHON_CFLAGS)			\
 	$(PYGTK_CFLAGS)				\
 	$(SEXYMM_CFLAGS)			\

@@ -36,7 +36,7 @@
 #include <glib/gtypes.h>
 #include <glibmm/ustring.h>
 #include <boost/functional/hash.hpp>
-#include "hal++.hh"
+#include "libhal++/hal++.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-services.hh"
 
@@ -78,12 +78,16 @@ namespace MPX
                       Hal::RefPtr<Hal::Volume>  const& volume) throw ();
             };
 
-            typedef std::vector<Hal::RefPtr<Hal::Volume> >                                      VolumesV;
-            typedef std::pair<std::string, std::string >                                        VolumeKey;
-            typedef std::pair<Volume, Hal::RefPtr<Hal::Volume> >                                StoredVolume;
-            typedef std::tr1::unordered_map<VolumeKey , StoredVolume, boost::hash<VolumeKey> >  Volumes;
-            typedef std::tr1::unordered_map<VolumeKey , bool, boost::hash<VolumeKey> >          VolumesMounted;
-            typedef std::set<std::string>                                                       MountedPaths;
+            typedef std::vector<Hal::RefPtr<Hal::Volume> >                                                  VolumesHALCC_v;
+            typedef std::pair<Volume, Hal::RefPtr<Hal::Volume> >                                            Volume_VolumeHALCC_pair;
+
+            typedef std::pair<std::string, std::string>                                                     VolumeKey;
+            typedef std::vector<HAL::VolumeKey>                                                             VolumeKey_v;
+
+            typedef std::tr1::unordered_map<VolumeKey , Volume_VolumeHALCC_pair, boost::hash<VolumeKey> >   Volumes;
+            typedef std::tr1::unordered_map<VolumeKey , bool, boost::hash<VolumeKey> >                      VolumesMounted;
+
+            typedef std::set<std::string>                                                                   MountedPaths;
 
             typedef sigc::signal  <void, Volume const&>                 SignalVolume;
             typedef sigc::signal  <void, std::string, std::string >     SignalCDDAInserted;
@@ -100,7 +104,7 @@ namespace MPX
             volumes () const;
 
             void
-            volumes (VolumesV & volumes) const;
+            volumes (VolumesHALCC_v & volumes) const;
 
             bool
             path_is_mount_path (std::string const& path);

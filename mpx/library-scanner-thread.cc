@@ -269,7 +269,7 @@ MPX::LibraryScannerThread::LibraryScannerThread(
 , scan_stop(sigc::mem_fun(*this, &LibraryScannerThread::on_scan_stop))
 , vacuum(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum))
 #ifdef HAVE_HAL
-, vacuum_volume(sigc::bind(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum_volume), true))
+, vacuum_volume_list(sigc::bind(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum_volume_list), true))
 #endif // HAVE_HAL
 , update_statistics(sigc::mem_fun(*this, &LibraryScannerThread::on_update_statistics))
 , set_priority_data(sigc::mem_fun(*this, &LibraryScannerThread::on_set_priority_data))
@@ -1913,10 +1913,9 @@ MPX::LibraryScannerThread::on_vacuum()
 
 #ifdef HAVE_HAL
 void
-MPX::LibraryScannerThread::on_vacuum_volume(
-      const std::string& hal_device_udi
-    , const std::string& hal_volume_udi
-    , bool               do_signal
+MPX::LibraryScannerThread::on_vacuum_volume_list(
+      const HAL::VolumeKey_v&    volumes
+    , bool                    do_signal
 )
 {
   ThreadData * pthreaddata = m_ThreadData.get();
@@ -1924,48 +1923,48 @@ MPX::LibraryScannerThread::on_vacuum_volume(
   if( do_signal )
       pthreaddata->ScanStart.emit();
 
-  typedef std::map<HAL::VolumeKey, std::string> VolMountPointMap;
 
-  VolMountPointMap m;
-  RowV rows;
-  m_SQL->get(
-      rows,
-      (boost::format ("SELECT * FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
-              % hal_device_udi
-              % hal_volume_udi
-      ).str());
-
-  m_SQL->exec_sql("BEGIN");
-
-  for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
+  for( HAL::VolumeKey_v::const_iterator i = volumes.begin(); i != volumes.end(); ++i )
   {
-          std::string uri = get<std::string>((*(m_Library.sqlToTrack( *i, false )))[ATTRIBUTE_LOCATION].get());
+          RowV rows;
+          m_SQL->get(
+              rows,
+              (boost::format ("SELECT * FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
+                      % (*i).first 
+                      % (*i).second 
+              ).str());
 
-          if( !uri.empty() )
+          m_SQL->exec_sql("BEGIN");
+
+          for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
           {
-              if (! (std::distance(rows.begin(), i) % 50) )
-              {
-                      pthreaddata->Message.emit((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
-              }
+                  std::string uri = get<std::string>((*(m_Library.sqlToTrack( *i, false )))[ATTRIBUTE_LOCATION].get());
 
-              try{
-                      Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
-                      if( !file->query_exists() )
+                  if( !uri.empty() )
+                  {
+                      if (! (std::distance(rows.begin(), i) % 50) )
                       {
-                              m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
-                              pthreaddata->EntityDeleted( get<gint64>((*i)["id"]), ENTITY_TRACK );
+                              pthreaddata->Message.emit((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
                       }
-              } catch(Glib::Error) {
-                        g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
-              }
+
+                      try{
+                              Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+                              if( !file->query_exists() )
+                              {
+                                      m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
+                                      pthreaddata->EntityDeleted( get<gint64>((*i)["id"]), ENTITY_TRACK );
+                              }
+                      } catch(Glib::Error) {
+                                g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
+                      }
+                  }
           }
   }
 
   do_remove_dangling ();
-
   m_SQL->exec_sql("COMMIT");
 
-  pthreaddata->Message.emit((boost::format (_("Vacuum process done for [%s]:%s")) % hal_device_udi % hal_volume_udi).str());
+  pthreaddata->Message.emit(_("Vacuum Process: Done."));
 
   if( do_signal )
       pthreaddata->ScanEnd.emit();

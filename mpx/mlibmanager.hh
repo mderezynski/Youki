@@ -189,6 +189,9 @@ namespace MPX
             on_rescan_volume(bool /*deep*/) ;
 
             void
+            on_vacuum_all() ;
+
+            void
             on_vacuum_volume() ;
 
             void

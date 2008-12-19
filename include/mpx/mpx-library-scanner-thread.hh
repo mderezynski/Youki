@@ -34,6 +34,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
 #include "mpx/mpx-covers.hh"
+#include "mpx/mpx-hal.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
@@ -130,9 +131,9 @@ namespace MPX
             sigx::request_f<>                                               vacuum ;
             sigx::request_f<const std::vector<std::string>&, bool, bool>    set_priority_data ;
 #ifdef HAVE_HAL
-            sigx::request_f< const std::string&, const std::string& > vacuum_volume ;
+            sigx::request_f<const HAL::VolumeKey_v&>                        vacuum_volume_list ;
 #endif // HAVE_HAL
-            sigx::request_f<>                               update_statistics ;
+            sigx::request_f<>                                               update_statistics ;
 
             signal_scan_start_x             signal_scan_start ;
             signal_scan_run_x               signal_scan_run ; 
@@ -226,9 +227,8 @@ namespace MPX
             void on_vacuum ();
 
 #ifdef HAVE_HAL
-            void on_vacuum_volume(
-                  const std::string&
-                , const std::string&
+            void on_vacuum_volume_list(
+                  const HAL::VolumeKey_v&
                 , bool = true
             );
 #endif // HAVE_HAL

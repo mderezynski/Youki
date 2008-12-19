@@ -34,9 +34,10 @@ audiosource_bin_CXXFLAGS = 									\
 		$(XML_CFLAGS)        						\
 		$(XPROTO_CFLAGS)							\
 		-I$(top_srcdir)								\
-		-I$(top_srcdir)/include	
+		-I$(top_srcdir)/include						\
+		-I$(top_srcdir)/libhal++	
 
-audiosource_bin_LDADD =										\
+audiosource_bin_LDADD =								\
 		$(ALSA_LIBS)								\
 		$(BOOST_LDFLAGS)							\
 		$(BOOST_REGEX_LIB)							\

@@ -445,8 +445,8 @@ namespace MPX
             Gtk::Stock::UNDO,
             _("_Clean Up")),
             sigc::mem_fun(
-                *(services->get<Library>("mpx-service-library").get()),
-                &Library::vacuum
+                *this,
+                &MLibManager::on_vacuum_all
         ));
 
         m_Actions->add( Action::create(
@@ -824,8 +824,6 @@ namespace MPX
         {
             services->get<Library>("mpx-service-library")->initScanAll();                  
         }
-
-        m_VboxInner->set_sensitive(true);
     }
 
     void
@@ -936,10 +934,10 @@ namespace MPX
 
         try { 
                 Hal::RefPtr<Hal::Context> Ctx = services->get<HAL>("mpx-service-hal")->get_context();
-                HAL::VolumesV volumes;
+                HAL::VolumesHALCC_v volumes;
                 services->get<HAL>("mpx-service-hal")->volumes(volumes);
 
-                for(HAL::VolumesV::const_iterator i = volumes.begin(); i != volumes.end(); ++i)
+                for(HAL::VolumesHALCC_v::const_iterator i = volumes.begin(); i != volumes.end(); ++i)
                 {
                     Hal::RefPtr<Hal::Volume> Vol = *i;
                     std::string vol_label = Vol->get_partition_label();
@@ -1450,9 +1448,42 @@ namespace MPX
     }
 
     void
+    MLibManager::on_vacuum_all ()
+    {
+        m_VboxInner->set_sensitive(false);
+
+#ifdef HAVE_HAL
+        if( mcs->key_get<bool>("library", "use-hal"))
+        {
+              HAL::VolumeKey_v v ;
+
+              Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
+              for(Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); ++iter)
+              {
+                    Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
+
+                    std::string VolumeUDI     = Vol->get_udi();
+                    std::string DeviceUDI     = Vol->get_storage_device_udi();
+                    std::string MountPoint    = Vol->get_mount_point();
+
+                    v.push_back( HAL::VolumeKey( DeviceUDI, VolumeUDI ));
+              }
+
+              services->get<Library>("mpx-service-library")->vacuumVolumeList( v ) ;                  
+        }
+        else
+#endif
+        {
+            services->get<Library>("mpx-service-library")->vacuum();                  
+        }
+    }
+
+    void
     MLibManager::on_vacuum_volume ()
     {
-        services->get<Library>("mpx-service-library")->vacuumVolume( m_DeviceUDI, m_VolumeUDI );
+        HAL::VolumeKey_v v (1);
+        v[0] = HAL::VolumeKey( m_DeviceUDI, m_VolumeUDI );
+        services->get<Library>("mpx-service-library")->vacuumVolumeList( v );
     }
 
     void

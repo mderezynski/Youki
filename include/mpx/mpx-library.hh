@@ -26,25 +26,26 @@
 #include <sigx/sigx.h>
 
 #include "mpx/mpx-covers.hh"
+#include "mpx/mpx-hal.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
-#include "mpx/util-file.hh"
-#include "mpx/util-string.hh"
 #include "mpx/mpx-services.hh"
 
 #include "mpx/mpx-library-scanner-thread.hh"
 
+#include "mpx/util-file.hh"
+#include "mpx/util-string.hh"
+
+
 namespace MPX
 {
-    struct Collection
+    struct CollectionMeta
     {
-        gint64          Id;
-        std::string     Name;
-        std::string     Blurb;
-        std::string     Cover_URL;
+        std::string Name;
+        std::string Blurb;
+        std::string Cover_URL;
+        gint64      Id;
     };
-
-    typedef std::vector<Collection> CollectionV;
 
     class HAL;
     class MetadataReaderTagLib;
@@ -97,9 +98,8 @@ namespace MPX
             );
 
 			void
-			vacuumVolume(
-                const std::string&,
-                const std::string&
+			vacuumVolumeList(
+                const HAL::VolumeKey_v&
             ) ;
 
             void
@@ -213,7 +213,7 @@ namespace MPX
             collectionErase(gint64 /*id*/, const IdV&) ;
 
             void
-            collectionGetMeta(gint64 /*id*/, Collection& /*collection*/) ;
+            collectionGetMeta(gint64 /*id*/, CollectionMeta& /*collection_meta*/) ;
 
             void
             collectionGetAll(IdV& /*collections*/) ;

@@ -862,10 +862,8 @@ namespace MPX
                                 {
                                         mm->push_message((boost::format(_("Removing duplicates: %s")) % filename_from_uri(uri)).str());
                                         try{
-/*
                                                 Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
                                                 if( file->remove() )
-*/
                                                 {
                                                         execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(rt["id"])).str()); 
                                                         Signals.TrackDeleted.emit( get<gint64>(rt["id"]) );
@@ -927,12 +925,11 @@ namespace MPX
 
 #ifdef HAVE_HAL    
         void
-		        Library::vacuumVolume(
-                      const std::string& device_udi
-                    , const std::string& volume_udi
+		        Library::vacuumVolumeList(
+                      const HAL::VolumeKey_v& v
                 )
                 {
-                        m_ScannerThread->vacuum_volume( device_udi, volume_udi );
+                        m_ScannerThread->vacuum_volume_list( v ); 
                 }
 #endif // HAVE_HAL
 
@@ -1505,8 +1502,8 @@ namespace MPX
 
         void
                 Library::collectionGetMeta(
-                    gint64          id,
-                    Collection&     collection
+                      gint64              id
+                    , CollectionMeta&     collection
                 )
                 {
                     static std::string
@@ -1525,18 +1522,16 @@ namespace MPX
                         )
                     );
 
-                    collection = Collection();
-
                     collection.Id = get<gint64>(v[0]["id"]);
 
                     if( v[0].count("name") )
-                        collection.Name         = get<std::string>(v[0]["name"]);
+                        collection.Name = get<std::string>(v[0]["name"]);
 
                     if( v[0].count("blurb") )
-                        collection.Blurb        = get<std::string>(v[0]["blurb"]);
+                        collection.Blurb = get<std::string>(v[0]["blurb"]);
 
                     if( v[0].count("cover_url") )
-                        collection.Cover_URL    = get<std::string>(v[0]["cover_url"]);
+                        collection.Cover_URL = get<std::string>(v[0]["cover_url"]);
                 }
 
         void
