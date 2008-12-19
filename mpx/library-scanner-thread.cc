@@ -2012,7 +2012,7 @@ MPX::LibraryScannerThread::on_update_statistics()
             bitrate = get<gint64>(rows[0]["rate"]);
         }
 
-        m_SQL->exec_sql(mprintf("UPDATE album SET album_genre = '%q', album_bitrate = '%lld' WHERE id = '%lld'", genre, bitrate, get<gint64>((*i)["album_j"])));
+        m_SQL->exec_sql(mprintf("UPDATE album SET album_genre = '%q', album_bitrate = '%lld' WHERE id = '%lld'", genre.c_str(), bitrate, get<gint64>((*i)["album_j"])));
 
         pthreaddata->EntityUpdated( get<gint64>((*i)["album_j"]) , ENTITY_ALBUM );
 

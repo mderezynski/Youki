@@ -56,7 +56,7 @@
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-covers-stores.hh"
-#include "mpx/algorithm/ld.hh"
+#include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-minisoup.hh"
 #include "mpx/mpx-network.hh"
@@ -65,6 +65,7 @@
 #include "mpx/util-graphics.hh"
 #include "mpx/util-string.hh"
 #include "mpx/xml/xml.hh"
+#include "mpx/algorithm/ld.hh"
 
 using namespace Glib;
 using namespace TagLib;
@@ -166,6 +167,33 @@ namespace MPX
                     *this,
                     &Covers::source_pref_changed_callback
         ));
+    }
+
+    void
+    Covers::precache(
+        MPX::Library* const library
+    )
+    {
+        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), PACKAGE, "covers", NULL));
+
+        SQL::RowV v;
+
+        library->getSQL( v, "SELECT DISTINCT mb_album_id FROM album" );
+
+        for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
+        {
+            try{
+                const std::string& mbid = boost::get<std::string>((*i)["mb_album_id"]);
+                const std::string& cpth = build_filename( path.get(), mbid) + ".png";
+                if( Glib::file_test( cpth, Glib::FILE_TEST_EXISTS )) 
+                {
+                    Glib::RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cpth ); 
+                    m_pixbuf_cache.insert(std::make_pair( mbid, cover ));
+                }
+            } catch( Gdk::PixbufError )
+            {
+            }
+        }
     }
 
     void
@@ -376,7 +404,11 @@ namespace MPX
                                     Gdk::INTERP_BILINEAR
                 ));
                 return true;
-            } catch( Gdk::PixbufError )
+            }
+            catch( Gdk::PixbufError )
+            {
+            }
+            catch( Glib::FileError )
             {
             }
         }

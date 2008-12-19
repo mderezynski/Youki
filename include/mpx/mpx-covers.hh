@@ -94,7 +94,7 @@ namespace MPX
   typedef sigc::signal<void, const std::string&> SignalGotCover;
 
   class CoverStore;
-
+  class Library;
   class Covers : public sigx::glib_auto_dispatchable, public Service::Base
   {
     public:
@@ -136,6 +136,11 @@ namespace MPX
       cache(
           const RequestQualifier&     rql
         , bool                        acquire  = false
+      );
+
+      void
+      precache(
+        ::MPX::Library* const
       );
 
       void

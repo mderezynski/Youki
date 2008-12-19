@@ -508,6 +508,8 @@ namespace MPX
                 ));
 
                 library_scanner_thread_set_priorities();
+
+//                services->get<Covers>("mpx-service-covers")->precache(this);
         }
 
         Library::~Library ()

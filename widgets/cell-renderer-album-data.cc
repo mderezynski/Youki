@@ -72,8 +72,8 @@ namespace MPX
         xoff = cell_area.get_x();
         yoff = cell_area.get_y();
 
-        Glib::RefPtr<Pango::Layout> layout[4];
-        int text_width[4], text_height[4];
+        Glib::RefPtr<Pango::Layout> layout[5];
+        int text_width[5], text_height[5];
 
         // Name
         layout[0] = Pango::Layout::create( widget.get_pango_context() );
@@ -161,7 +161,7 @@ namespace MPX
         layout[3]->get_pixel_size( text_width[3], text_height[3] );
 
         cr->move_to(
-              xoff + cell_area.get_width() - 100 - 4 
+              xoff + cell_area.get_width() - 160 - 4 
             , yoff + 7 + YPAD
         );
 
