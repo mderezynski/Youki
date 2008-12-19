@@ -22,25 +22,51 @@ namespace AQE
         VectorType v;
         boost::algorithm::split( v, text, boost::algorithm::is_any_of(" ") );
 
+        if( v.empty() )
+        {
+            v.push_back( text );
+        }
+
         for( VectorType::const_iterator i = v.begin(); i != v.end(); ++i )
         {
             std::string const& token = *i;
 
-            VectorType v2;
-            boost::algorithm::split( v2, token, boost::algorithm::is_any_of(":") );
-
-            if( v2.size() == 1) 
+            struct MatchData
             {
-                non_attr_strings.push_back(v2[0]);
+                char const* op;
+                MatchType_t type;
+            };
+
+            const MatchData data[] =
+            {
+                  {"=", MT_EQUAL}
+                , {">", MT_GREATER_THAN}
+                , {"<", MT_LESSER_THAN}
+            };
+
+            MatchType_t type = MT_UNDEFINED;
+
+            VectorType v2;
+
+            for( unsigned n = 0; n < G_N_ELEMENTS(data); ++n )
+            {
+                v2.clear();
+                boost::algorithm::split( v2, token, boost::algorithm::is_any_of(data[n].op) );
+                if( v2.size() == 2) 
+                {
+                    type = data[n].type; 
+                    break;
+                }
             }
-            else
+
+            if( type != MT_UNDEFINED )
             {
                 Constraint_t c;
 
                 if( v2[0] == "musicip-puid" )
                 {
                     c.TargetAttr = ATTRIBUTE_MUSICIP_PUID;
-                    c.MatchType = MT_EQUAL;
+                    c.MatchType = type;
                     c.TargetValue = v2[1];
                     constraints.push_back(c);
                 }
@@ -48,7 +74,7 @@ namespace AQE
                 if( v2[0] == "album-mbid" )
                 {
                     c.TargetAttr = ATTRIBUTE_MB_ALBUM_ID;
-                    c.MatchType = MT_EQUAL;
+                    c.MatchType = type;
                     c.TargetValue = v2[1];
                     constraints.push_back(c);
                 }
@@ -56,7 +82,7 @@ namespace AQE
                 if( v2[0] == "album-artist-mbid" )
                 {
                     c.TargetAttr = ATTRIBUTE_MB_ALBUM_ARTIST_ID;
-                    c.MatchType = MT_EQUAL;
+                    c.MatchType = type;
                     c.TargetValue = v2[1];
                     constraints.push_back(c);
                 }
@@ -64,7 +90,7 @@ namespace AQE
                 if( v2[0] == "artist-mbid" )
                 {
                     c.TargetAttr = ATTRIBUTE_MB_ARTIST_ID;
-                    c.MatchType = MT_EQUAL;
+                    c.MatchType = type;
                     c.TargetValue = v2[1];
                     constraints.push_back(c);
                 }
@@ -72,7 +98,7 @@ namespace AQE
                 if( v2[0] == "country" )
                 {
                     c.TargetAttr = ATTRIBUTE_MB_RELEASE_COUNTRY;
-                    c.MatchType = MT_EQUAL;
+                    c.MatchType = type;
                     c.TargetValue = v2[1];
                     constraints.push_back(c);
                 }
@@ -80,9 +106,20 @@ namespace AQE
                 if( v2[0] == "type" )
                 {
                     c.TargetAttr = ATTRIBUTE_MB_RELEASE_TYPE;
-                    c.MatchType = MT_EQUAL;
+                    c.MatchType = type;
                     c.TargetValue = v2[1];
                     constraints.push_back(c);
+                }
+                else
+                if( v2[0] == "bitrate" )
+                {
+                    try{
+                            c.TargetValue = gint64(boost::lexical_cast<int>(v2[1]));
+                            c.TargetAttr = ATTRIBUTE_BITRATE;
+                            c.MatchType = type;
+                            constraints.push_back(c);
+                    } catch( boost::bad_lexical_cast ) {
+                    }
                 }
                 else
                 if( v2[0] == "year" )
@@ -90,7 +127,7 @@ namespace AQE
                     try{
                             c.TargetValue = gint64(boost::lexical_cast<int>(v2[1]));
                             c.TargetAttr = ATTRIBUTE_DATE;
-                            c.MatchType = MT_EQUAL;
+                            c.MatchType = type;
                             constraints.push_back(c);
                     } catch( boost::bad_lexical_cast ) {
                     }
@@ -139,6 +176,10 @@ namespace AQE
                     } catch( boost::bad_lexical_cast ) {
                     }
                 }
+            }
+            else
+            {
+                non_attr_strings.push_back( token );
             }
         }
 

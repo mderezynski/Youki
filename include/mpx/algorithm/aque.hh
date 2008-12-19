@@ -14,6 +14,7 @@ namespace AQE
 {
     enum MatchType_t
     {
+        MT_UNDEFINED,
         MT_EQUAL,
         MT_NOT_EQUAL,
         MT_GREATER_THAN,

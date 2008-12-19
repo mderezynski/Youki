@@ -161,7 +161,7 @@ namespace MPX
         layout[3]->get_pixel_size( text_width[3], text_height[3] );
 
         cr->move_to(
-              xoff + cell_area.get_width() - 160 - 4 
+              xoff + cell_area.get_width() - 130 - 4 
             , yoff + 7 + YPAD
         );
 
