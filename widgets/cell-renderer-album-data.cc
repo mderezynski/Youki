@@ -72,8 +72,8 @@ namespace MPX
         xoff = cell_area.get_x();
         yoff = cell_area.get_y();
 
-        Glib::RefPtr<Pango::Layout> layout[5];
-        int text_width[5], text_height[5];
+        Glib::RefPtr<Pango::Layout> layout[6];
+        int text_width[6], text_height[6];
 
         // Name
         layout[0] = Pango::Layout::create( widget.get_pango_context() );
@@ -172,6 +172,23 @@ namespace MPX
 
         pango_cairo_show_layout( cr->cobj(), layout[3]->gobj() );
 
+        // MIME 
+        layout[4] = Pango::Layout::create( widget.get_pango_context() );
+        layout[4]->set_text( property_info_.get_value()->MIME );
+        layout[4]->get_pixel_size( text_width[4], text_height[4] );
+
+        cr->move_to(
+              xoff + cell_area.get_width() - 130 - 4 - 8 - text_width[4]
+            , yoff + 7 + YPAD
+        );
+
+        if( state & Gtk::CELL_RENDERER_SELECTED )
+            Gdk::Cairo::set_source_color( cr, widget.get_style()->get_text(Gtk::STATE_NORMAL) );
+        else
+            cr->set_source_rgba(.9, .9, .9, 1.);
+
+        pango_cairo_show_layout( cr->cobj(), layout[4]->gobj() );
+
         // Release Type
         AlbumInfo_pt info = property_info_.get_value();      
 
@@ -187,10 +204,10 @@ namespace MPX
         else
             release_info = info->Type;
  
-        layout[4] = Pango::Layout::create( widget.get_pango_context() );
-        layout[4]->set_text( release_info ); 
+        layout[5] = Pango::Layout::create( widget.get_pango_context() );
+        layout[5]->set_text( release_info ); 
 
-        layout[4]->get_pixel_size( text_width[4], text_height[4] );
+        layout[5]->get_pixel_size( text_width[5], text_height[5] );
 
         if( state & Gtk::CELL_RENDERER_SELECTED )
             cr->set_source_rgba(1., 1., 1., .8);
@@ -202,7 +219,7 @@ namespace MPX
             , yoff + 72 - text_height[3]
         );
 
-        pango_cairo_show_layout( cr->cobj(), layout[4]->gobj() );
+        pango_cairo_show_layout( cr->cobj(), layout[5]->gobj() );
     }
 
     ///////////////////////////////////////////////
