@@ -70,6 +70,7 @@ namespace MPX
     v.push_back(StockIconSpec( "plugin-disabled.png",          MPX_STOCK_PLUGIN_DISABLED   ));
     v.push_back(StockIconSpec( "equalizer.png",                MPX_STOCK_EQUALIZER         ));
     v.push_back(StockIconSpec( "preferences.png",              "mpx-stock-preferences"     ));
+    v.push_back(StockIconSpec( "musiclibrary.png",             "mpx-stock-musiclibrary"    ));
     register_stock_icons (v, default_stock_path("24x24")); 
 
     v.clear();

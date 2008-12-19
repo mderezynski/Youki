@@ -1,6 +1,7 @@
 icons_DATA =				\
 	equalizer.png			\
 	lastfm.png				\
+	musiclibrary.png		\
 	plugin.png				\
 	plugin-disabled.png		\
 	preferences.png			\

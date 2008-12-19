@@ -800,9 +800,10 @@ namespace MPX
                         m_Actions->add( Action::create(
 
                                           ACTION_MLIBMANAGER,
-
+        
+                                          Gtk::StockID("mpx-stock-musiclibrary"),
                                           _("_Music Library..."),
-                                          _("Add or Remove Music")),
+                                          _("Add/Remove Music, Perform various management Tasks")),
                                           sigc::mem_fun(mlibman, &MLibManager::present));
 #endif
 
