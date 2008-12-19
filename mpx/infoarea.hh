@@ -52,6 +52,8 @@ namespace MPX
           Glib::Mutex                           m_layout_lock;
           Glib::Mutex                           m_info_lock;
 
+          std::string                           m_Previous_MBID;
+
           double cover_anim_area_width;
           double cover_anim_area_height;
           double cover_anim_area_x0;

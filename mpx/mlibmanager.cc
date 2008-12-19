@@ -120,47 +120,61 @@ namespace MPX
 
         for( RowV::iterator i = v1.begin(); i != v1.end(); ++i )
         {
+            TreeIter iter = m_FileStats_Store->append();
+            (*iter)[m_FileStats_Columns.Type]       = get<std::string>((*i)["type"]);
+            (*iter)[m_FileStats_Columns.Count]      = get<gint64>((*i)["cnt"]);
+
             RowV v2; 
             services->get<Library>("mpx-service-library")->getSQL(
                   v2
-                , (boost::format("SELECT sum(bitrate)/count(*) AS rate FROM track WHERE type = '%s'") % get<std::string>((*i)["type"])).str()
+                , (boost::format("SELECT sum(bitrate)/count(*) AS rate FROM track WHERE type = '%s' AND bitrate != '0'") % get<std::string>((*i)["type"])).str()
             );
-
-            TreeIter iter = m_FileStats_Store->append();
-
-            (*iter)[m_FileStats_Columns.Type]       = get<std::string>((*i)["type"]);
-            (*iter)[m_FileStats_Columns.Count]      = get<gint64>((*i)["cnt"]);
             (*iter)[m_FileStats_Columns.AvgBitrate] = (boost::format("%lld kbit/s") % get<gint64>(v2[0]["rate"])).str();
+
+            v2.clear();
+            services->get<Library>("mpx-service-library")->getSQL(
+                  v2
+                , (boost::format("SELECT bitrate AS rate FROM track WHERE type = '%s' AND bitrate != '0' ORDER BY bitrate DESC LIMIT 1") % get<std::string>((*i)["type"])).str()
+            );
+            (*iter)[m_FileStats_Columns.HighBitrate] = (boost::format("%lld kbit/s") % get<gint64>(v2[0]["rate"])).str();
+
+            v2.clear();
+            services->get<Library>("mpx-service-library")->getSQL(
+                  v2
+                , (boost::format("SELECT bitrate AS rate FROM track WHERE type = '%s' AND bitrate != '0' ORDER BY bitrate ASC LIMIT 1") % get<std::string>((*i)["type"])).str()
+            );
+            (*iter)[m_FileStats_Columns.LowBitrate] = (boost::format("%lld kbit/s") % get<gint64>(v2[0]["rate"])).str();
         }
 
         Gtk::Label * label;
 
+        m_Xml->get_widget( "label-count-of-tracks", label );
         v1.clear();
         services->get<Library>("mpx-service-library")->getSQL(
               v1
             , "SELECT DISTINCT count(*) AS cnt FROM track"
         );
-
-        m_Xml->get_widget( "label-count-of-tracks", label );
         label->set_text((boost::format("%lld") % get<gint64>(v1[0]["cnt"])).str());
 
+        m_Xml->get_widget( "label-count-of-albums", label );
+        v1.clear();
+        services->get<Library>("mpx-service-library")->getSQL(
+              v1
+            , "SELECT DISTINCT count(*) AS cnt FROM album"
+        );
+        label->set_text((boost::format("%lld") % get<gint64>(v1[0]["cnt"])).str());
 
+        m_Xml->get_widget( "label-library-playtime", label );
         v1.clear();
         services->get<Library>("mpx-service-library")->getSQL(
               v1
             , "SELECT sum(time) AS time FROM track"
         );
-
-
-        m_Xml->get_widget( "label-library-playtime", label );
-
         gint64 total = get<gint64>(v1[0]["time"]) ;
-
         gint64 days    = (total / 86400) ;
         gint64 hours   = (total % 86400) / 3600;
         gint64 minutes = ((total % 86400) % 3600) / 60 ;
         gint64 seconds = ((total % 86400) % 3600) % 60 ;
-
         label->set_text((boost::format(_("%lld Days, %lld Hours, %lld Minutes, %lld Seconds")) % days % hours % minutes % seconds).str());
     }
 
@@ -191,6 +205,17 @@ namespace MPX
               _("Average Bitrate")
             , m_FileStats_Columns.AvgBitrate
         );
+
+        m_FileStats_View->append_column(
+              _("Highest Bitrate")
+            , m_FileStats_Columns.HighBitrate
+        );
+
+        m_FileStats_View->append_column(
+              _("Lowest Bitrate")
+            , m_FileStats_Columns.LowBitrate
+        );
+
 
         m_FileStats_View->set_model( m_FileStats_Store );
 
@@ -452,7 +477,7 @@ namespace MPX
         m_Actions->add( Action::create(
             "action-mlib-update-statistics",
             Gtk::Stock::FIND,
-            _("_Update Statistics & Additional Metadata")),
+            _("_Update Additional Metadata")),
             sigc::mem_fun(
                 *this,
                 &MLibManager::on_update_statistics

@@ -86,6 +86,8 @@ namespace MPX
 
                   m_info_text.reset();
 
+                  m_Previous_MBID = "";
+
                   queue_draw ();
           }
 
@@ -112,13 +114,18 @@ namespace MPX
           {
                   Glib::Mutex::Lock L (m_layout_lock);
 
-                  if( metadata.Image )
+                  if( metadata.has( ATTRIBUTE_MB_ALBUM_ID ) && boost::get<std::string>(metadata[ATTRIBUTE_MB_ALBUM_ID].get()) != m_Previous_MBID )
                   {
-                          set_cover (metadata.Image->scale_simple (78, 78, Gdk::INTERP_BILINEAR), first);
-                  }
-                  else if( first )
-                  {
-                          clear_cover ();
+                        m_Previous_MBID = boost::get<std::string>(metadata[ATTRIBUTE_MB_ALBUM_ID].get());
+
+                        if( metadata.Image )
+                        {
+                            set_cover (metadata.Image->scale_simple (78, 78, Gdk::INTERP_BILINEAR), first);
+                        }
+                        else if( first )
+                        {
+                            clear_cover ();
+                        }
                   }
 
                   TextSet set (5);

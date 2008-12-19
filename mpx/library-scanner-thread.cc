@@ -1864,7 +1864,7 @@ MPX::LibraryScannerThread::do_remove_dangling ()
                   pthreaddata->EntityDeleted( *i , ENTITY_ALBUM_ARTIST );
   }
 
-  pthreaddata->Message.emit(_("Cleanup Done."));
+  pthreaddata->Message.emit(_("Cleanup: Done"));
 }
 
 void
@@ -1964,7 +1964,7 @@ MPX::LibraryScannerThread::on_vacuum_volume_list(
   do_remove_dangling ();
   m_SQL->exec_sql("COMMIT");
 
-  pthreaddata->Message.emit(_("Vacuum Process: Done."));
+  pthreaddata->Message.emit(_("Vacuum Process: Done"));
 
   if( do_signal )
       pthreaddata->ScanEnd.emit();
@@ -1985,24 +1985,42 @@ MPX::LibraryScannerThread::on_update_statistics()
 
     for( RowV::iterator i = rows_albums.begin(); i != rows_albums.end(); ++i )
     {
-        static boost::format select_f ("SELECT DISTINCT genre FROM track WHERE album_j = %lld AND genre IS NOT NULL AND genre != ''"); 
+        RowV        rows;
+        std::string genre;
+        gint64      bitrate = 0;
 
-        RowV rows;
         m_SQL->get(
             rows,
-            (select_f % get<gint64>((*i)["album_j"])).str()
+            (boost::format ("SELECT DISTINCT genre FROM track WHERE album_j = %lld AND genre IS NOT NULL AND genre != '' LIMIT 1") 
+                % get<gint64>((*i)["album_j"])
+            ).str()
         ); 
-
         if( !rows.empty() )
         {
-            pthreaddata->Message.emit((boost::format(_("Statistics Update: Album Genre: %lld")) % std::distance(rows_albums.begin(), i)).str());
-
-            m_SQL->exec_sql(mprintf("UPDATE album SET album_genre = '%q' WHERE id = '%lld'", get<std::string>(rows[0]["genre"]).c_str(), get<gint64>((*i)["album_j"])));
-            pthreaddata->EntityUpdated( get<gint64>((*i)["album_j"]) , ENTITY_ALBUM );
+            genre = get<std::string>(rows[0]["genre"]);
         }
+
+        rows.clear();
+        m_SQL->get(
+            rows,
+            (boost::format ("SELECT sum(bitrate)/count(*) AS rate FROM track WHERE album_j = %lld AND bitrate IS NOT NULL AND bitrate != '0'") 
+                % get<gint64>((*i)["album_j"])
+            ).str()
+        ); 
+        if( !rows.empty() )
+        {
+            bitrate = get<gint64>(rows[0]["rate"]);
+        }
+
+        m_SQL->exec_sql(mprintf("UPDATE album SET album_genre = '%q', album_bitrate = '%lld' WHERE id = '%lld'", genre, bitrate, get<gint64>((*i)["album_j"])));
+
+        pthreaddata->EntityUpdated( get<gint64>((*i)["album_j"]) , ENTITY_ALBUM );
+
+        if( !(std::distance(rows_albums.begin(), i) % 50) )
+            pthreaddata->Message.emit((boost::format(_("Additional Metadata Update: %lld of %lld")) % std::distance(rows_albums.begin(), i) % rows_albums.size() ).str());
     }
 
-    pthreaddata->Message(_("Statistics Update: Done"));
+    pthreaddata->Message(_("Additional Metadata Update: Done"));
     pthreaddata->ScanEnd.emit();
 }
 

@@ -981,6 +981,7 @@ namespace MPX
                                 std::string mbid;
                                 double      playscore = 0;
                                 gint64      rating = 0;
+                                gint64      bitrate = 0;
                                 ReleaseType rt;
 
                                 std::string album = get<std::string>(r["album"]);
@@ -993,6 +994,12 @@ namespace MPX
                                 {
                                 }
                                 (*iter)[Columns.Rating] = rating;
+
+                                if(r.count("album_bitrate"))
+                                {
+                                        bitrate = get<gint64>(r["album_bitrate"]);
+                                        track[ATTRIBUTE_BITRATE] = bitrate;
+                                }
 
                                 if(r.count("album_genre"))
                                 {
@@ -1100,6 +1107,9 @@ namespace MPX
                                 renderdata->Release = (boost::format("%s %s") % country % year).str();
                                 renderdata->Type = rt_string;
                                 renderdata->Genre = genre;
+
+                                if( bitrate != 0 )
+                                    renderdata->Bitrate = (boost::format("%lld kbit/s") % bitrate).str();
 
                                 (*iter)[Columns.RenderData] = renderdata;
 
