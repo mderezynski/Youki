@@ -724,6 +724,18 @@ namespace MPX
                 }
         }
 
+        const char * end; 
+        const char * str = text.c_str();
+    
+        if( !g_utf8_validate( str, -1, &end ))
+        {
+            std::string err;
+            for( ; str != end; ++str )
+                err += *str;
+
+            g_print("Error string UP TO THE error: %s", err.c_str());
+        }
+
         m_TextBufferDetails->set_text(text);
         update_filestats();
         m_VboxInner->set_sensitive(true);
