@@ -469,10 +469,10 @@ MPX::LibraryScannerThread::on_scan_all(
 
         if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
         {
-            pthreaddata->ScanSummary.emit( m_ScanSummary );
             m_InsertionTracks.clear();
             m_AlbumIDs.clear();
             m_AlbumArtistIDs.clear();
+            pthreaddata->ScanSummary.emit( m_ScanSummary );
             return;
         }
 
@@ -504,7 +504,6 @@ MPX::LibraryScannerThread::on_add(
     g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
 
     pthreaddata->ScanStart.emit();
-    m_SQL->exec_sql( "UPDATE album SET album_new = 0" );
 
     m_ScanSummary = ScanSummary();
     m_ScanSummary.DeepRescan = true;
@@ -583,6 +582,9 @@ MPX::LibraryScannerThread::on_add(
         {
             if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
             {
+                m_InsertionTracks.clear();
+                m_AlbumIDs.clear();
+                m_AlbumArtistIDs.clear();
                 pthreaddata->ScanSummary.emit( m_ScanSummary );
                 return;
             }
@@ -598,15 +600,11 @@ MPX::LibraryScannerThread::on_add(
             {
                     gint64 mtime2 = get_track_mtime( (*(t.get())) );
 
-                    if( mtime1 != mtime2 )
-                    {
-                        insert_file_no_mtime_check( t, *i2, insert_path_sql );
-                    }
+                    if( mtime1 == mtime2 )
+                        continue;
             }
-            else
-            {
-                insert_file_no_mtime_check( t, *i2, insert_path_sql );
-            }
+
+            insert_file_no_mtime_check( t, *i2, insert_path_sql );
                         
             if (! (std::distance(collection.begin(), i2) % 50) )
             {
@@ -650,8 +648,11 @@ MPX::LibraryScannerThread::on_scan_list_quick_stage_1 (Util::FileList const& lis
         std::string insert_path_sql ;
 
         try{
+
             insert_path = Util::normalize_path( *i ) ;
+
 #ifdef HAVE_HAL
+
             try{
                 if (m_Flags & Library::F_USING_HAL)
                 {
@@ -660,10 +661,13 @@ MPX::LibraryScannerThread::on_scan_list_quick_stage_1 (Util::FileList const& lis
                     insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr (volume.mount_point.length())) ;
                 }
                 else
+
 #endif
+
                 {
                     insert_path_sql = insert_path; 
                 }
+
 #ifdef HAVE_HAL
             }
           catch (HAL::Exception & cxe)
@@ -729,6 +733,9 @@ MPX::LibraryScannerThread::on_scan_list_quick_stage_1_callback(
                 if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
                 {
                     pthreaddata->ScanSummary.emit( m_ScanSummary );
+                    m_InsertionTracks.clear();
+                    m_AlbumIDs.clear();
+                    m_AlbumArtistIDs.clear();
                     return;
                 }
 
@@ -754,12 +761,6 @@ MPX::LibraryScannerThread::on_scan_list_quick_stage_2(
 )
 {
     ThreadData * pthreaddata = m_ThreadData.get();
-    g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
-
-    pthreaddata->ScanStart.emit();
-
-    m_ScanSummary = ScanSummary();
-    m_ScanSummary.DeepRescan = true;
 
     boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
 
@@ -850,10 +851,10 @@ MPX::LibraryScannerThread::on_scan_list_quick_stage_2(
 
                 if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
                 {
-                    pthreaddata->ScanSummary.emit( m_ScanSummary );
                     m_InsertionTracks.clear();
                     m_AlbumIDs.clear();
                     m_AlbumArtistIDs.clear();
+                    pthreaddata->ScanSummary.emit( m_ScanSummary );
                     return;
                 }
 
@@ -1290,43 +1291,45 @@ MPX::LibraryScannerThread::insert_file_no_mtime_check(
     , const std::string& insert_path
 )
 {
+    try{
         try{
-                    try{
-                        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
-                        Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
-                        (*(track.get()))[ATTRIBUTE_TYPE] = info->get_attribute_string("standard::content-type");
-                    } catch(...) {
-                        g_message("GIO Typefind Error");
-                    }
+            try{
+                Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+                Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
+                (*(track.get()))[ATTRIBUTE_TYPE] = info->get_attribute_string("standard::content-type");
+            } catch(Gio::Error & cxe) {
+                g_message("%s: GIO Error: %s", G_STRLOC, cxe.what().c_str());
+                ++m_ScanSummary.FilesErroneous;
+                  m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), _("An error ocurred trying to determine the file type")));
+                return;
+            }
 
-                    if( !services->get<MetadataReaderTagLib>("mpx-service-taglib")->get( uri, *(track.get()) ) )
-                    {
-                        ++m_ScanSummary.FilesErroneous;
-                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, _("Could not acquire metadata (using taglib-gio)")));
-                    }
-                    else try{
-                        create_insertion_track( *(track.get()), uri, insert_path );
-                    }
-                    catch( ScanError & cxe )
-                    {
-                        ++m_ScanSummary.FilesErroneous;
-                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
-                    }
-                    catch( Glib::ConvertError & cxe )
-                    {
-                        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-                        ++m_ScanSummary.FilesErroneous;
-                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
-                    }
-
-        } catch( Glib::Error & cxe ) { 
-            g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+            if( !services->get<MetadataReaderTagLib>("mpx-service-taglib")->get( uri, *(track.get()) ) )
+            {
+                ++m_ScanSummary.FilesErroneous;
+                  m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), _("Could not acquire metadata (using taglib-gio)")));
+            }
+            else try{
+                create_insertion_track( *(track.get()), uri, insert_path );
+            }
+            catch( ScanError & cxe )
+            {
+                ++m_ScanSummary.FilesErroneous;
+                  m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
+            }
         }
         catch( Library::FileQualificationError & cxe )
         {
-            ++(m_ScanSummary.FilesErroneous);
-               m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, cxe.what()));
+            ++m_ScanSummary.FilesErroneous;
+              m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
         }
+    }
+    catch( Glib::ConvertError & cxe )
+    {
+        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+        ++m_ScanSummary.FilesErroneous;
+          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( _("(invalid UTF-8)"), _("Could not convert URI to UTF-8 for display")));
+    }
 }
 
 void
@@ -1338,6 +1341,7 @@ MPX::LibraryScannerThread::insert_file(
         Track track;
 
         try{
+            try{
                 m_Library.trackSetLocation( track, uri );
 
                 gint64 mtime1 = Util::get_file_mtime( uri ) ;
@@ -1355,14 +1359,17 @@ MPX::LibraryScannerThread::insert_file(
                         Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
                         Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
                         track[ATTRIBUTE_TYPE] = info->get_attribute_string("standard::content-type");
-                    } catch(...) {
-                        g_message("GIO Typefind Error");
+                    } catch(Gio::Error & cxe) {
+                        g_message("%s: GIO Error: %s", G_STRLOC, cxe.what().c_str());
+                        ++m_ScanSummary.FilesErroneous;
+                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), _("An error ocurred trying to determine the file type")));
+                        return;
                     }
 
                     if( !services->get<MetadataReaderTagLib>("mpx-service-taglib")->get( uri, track ) )
                     {
                         ++m_ScanSummary.FilesErroneous;
-                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, _("Could not acquire metadata (using taglib-gio)")));
+                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), _("Could not acquire metadata (using taglib-gio)")));
                     }
                     else try{
                         create_insertion_track( track, uri, insert_path );
@@ -1370,23 +1377,22 @@ MPX::LibraryScannerThread::insert_file(
                     catch( ScanError & cxe )
                     {
                         ++m_ScanSummary.FilesErroneous;
-                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
-                    }
-                    catch( Glib::ConvertError & cxe )
-                    {
-                        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-                        ++m_ScanSummary.FilesErroneous;
-                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
+                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
                     }
                 }
-        } catch( Glib::Error & cxe ) { 
-            g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
         }
         catch( Library::FileQualificationError & cxe )
         {
             ++(m_ScanSummary.FilesErroneous);
-               m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri, cxe.what()));
+               m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), cxe.what()));
         }
+    }
+    catch( Glib::ConvertError & cxe )
+    {
+        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+        ++m_ScanSummary.FilesErroneous;
+          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
+    }
 }
 
 std::string
@@ -1600,6 +1606,8 @@ MPX::LibraryScannerThread::process_insertion_list()
     for( Map_L3::const_iterator l3 = (l2->second).begin(); l3 != (l2->second).end(); ++l3 ) {
     for( Map_L4::const_iterator l4 = (l3->second).begin(); l4 != (l3->second).end(); ++l4 ) {
 
+
+    try{
                     const TrackInfo_p_Vector& v = (*l4).second ; 
     
                     std::string uri;
@@ -1626,7 +1634,7 @@ MPX::LibraryScannerThread::process_insertion_list()
 
                             case SCAN_RESULT_UPDATE:
                                 ++m_ScanSummary.FilesUpdated;
-                                  m_ScanSummary.FileListUpdated.push_back( SSFileInfo( uri, _("Updated")));
+                                  m_ScanSummary.FileListUpdated.push_back( SSFileInfo( filename_to_utf8(uri), _("Updated")));
                                 break;
 
                             case SCAN_RESULT_UPTODATE:
@@ -1637,14 +1645,16 @@ MPX::LibraryScannerThread::process_insertion_list()
                     catch( ScanError & cxe )
                     {
                         ++m_ScanSummary.FilesErroneous;
-                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri,( boost::format (_("Error inserting file: %s")) % cxe.what()).str() ) );
+                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri),( boost::format (_("Error inserting file: %s")) % cxe.what()).str() ) );
                     }
-                    catch( Glib::ConvertError & cxe )
-                    {
-                        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-                        ++m_ScanSummary.FilesErroneous;
-                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri,( boost::format (_("Error inserting file: %s")) % cxe.what()).str() ) );
-                    }
+    }
+    catch( Glib::ConvertError & cxe )
+    {
+        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
+        ++m_ScanSummary.FilesErroneous;
+          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( _("(invalid UTF-8)"), _("Could not convert URI to UTF-8 for display")));
+    }
+
     }
     }
     }

@@ -184,6 +184,7 @@ namespace MPX
     : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
     , sigx::glib_auto_dispatchable()
     , Service::Base("mpx-service-mlibman")
+    , m_InnerdialogMainloop(0)
     {
        /*- Widgets -------------------------------------------------------*/ 
 
@@ -1349,6 +1350,9 @@ namespace MPX
     void
     MLibManager::on_path_toggled (const Glib::ustring & path_str)
     {
+        if( m_InnerdialogMainloop )
+            m_InnerdialogMainloop->quit();
+
         TreeIter iter = FSTreeStore->get_iter(path_str);
         TreeIter iter_copy = iter;
 
@@ -1421,6 +1425,8 @@ namespace MPX
             GDK_THREADS_LEAVE();
             m_InnerdialogMainloop->run();
             GDK_THREADS_ENTER();
+
+            m_InnerdialogMainloop.reset(); 
             
             m_InnerdialogHBox->hide();
             m_InnerdialogLabel->set_text("");
