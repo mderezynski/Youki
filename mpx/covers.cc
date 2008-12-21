@@ -190,8 +190,12 @@ namespace MPX
                     Glib::RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cpth ); 
                     m_pixbuf_cache.insert(std::make_pair( mbid, cover ));
                 }
-            } catch( Gdk::PixbufError )
+            }
+            catch( Gdk::PixbufError )
             {
+            }
+            catch( Glib::FileError )
+            {  
             }
         }
     }
@@ -375,7 +379,11 @@ namespace MPX
               cover = Gdk::Pixbuf::create_from_file( thumb_path ); 
               m_pixbuf_cache.insert (std::make_pair(mbid, cover));
               return true;
-            } catch( Gdk::PixbufError )
+            }
+            catch( Gdk::PixbufError )
+            {
+            }
+            catch( Glib::FileError )
             {
             }
         }

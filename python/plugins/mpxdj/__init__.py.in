@@ -442,20 +442,24 @@ class OPTION__EntertainMe(BaseOPTION__):
     def ENTERTAIN_Local(self):
 
         rv = mpx.SQLRowV()
-        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 20")
+        self.lib.getSQL(rv, "SELECT id FROM track_view WHERE pcount > 10")
         random.shuffle(rv)
-        extract_ids(rv[0:1], self.v)
+        extract_ids_n(rv, self.v, 1)
   
     def ENTERTAIN_LastFm(self):
 
         r = lastfm.UserTopTracks(self.mcs.key_get_string("lastfm","username"))
         t = r.get()
-        random.shuffle(t)
-        rv = mpx.SQLRowV()
-        artist = t[0].getArtist().replace("'","''")
-        title = t[0].getName().replace("'","''")
-        self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist = '%s' AND title = '%s' LIMIT 1" % (artist,title)))
-        extract_ids(rv, self.v)
+
+        for n in range(5):
+
+            random.shuffle(t)
+            rv = mpx.SQLRowV()
+            artist = t[0].getArtist().replace("'","''")
+            title = t[0].getName().replace("'","''")
+            self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist = '%s'" % (artist,title)))
+            random.shuffle(rv)
+            extract_ids_n(rv, self.v, 1)
 
 class OPTION__SoundsOf(BaseOPTION__):
 

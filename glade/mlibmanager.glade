@@ -592,7 +592,7 @@
 				      <child>
 					<widget class="GtkLabel" id="label3">
 					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">_Fast Rescan</property>
+					  <property name="label" translatable="yes">_Find New Files</property>
 					  <property name="use_underline">True</property>
 					  <property name="use_markup">False</property>
 					  <property name="justify">GTK_JUSTIFY_LEFT</property>
@@ -667,9 +667,9 @@
 				      <child>
 					<widget class="GtkLabel" id="label10">
 					  <property name="visible">True</property>
-					  <property name="label" translatable="yes">_Thorough Rescan</property>
+					  <property name="label" translatable="yes">&lt;small&gt;_Update Existing &amp;amp; Remove Stale Files&lt;/small&gt;</property>
 					  <property name="use_underline">True</property>
-					  <property name="use_markup">False</property>
+					  <property name="use_markup">True</property>
 					  <property name="justify">GTK_JUSTIFY_LEFT</property>
 					  <property name="wrap">False</property>
 					  <property name="selectable">False</property>

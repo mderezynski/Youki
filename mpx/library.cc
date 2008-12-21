@@ -319,7 +319,7 @@ namespace MPX
                         album_table_f ("CREATE TABLE IF NOT EXISTS album "
                                         "(id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, "
                                         "'%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, "
-                                        "'%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' FLOAT DEFAULT 0, UNIQUE "
+                                        "'%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' FLOAT DEFAULT 0, UNIQUE "
                                         "('%s', '%s', '%s', '%s', '%s', '%s', '%s'))");
 
                 m_SQL->exec_sql ((album_table_f
@@ -334,6 +334,7 @@ namespace MPX
                                         % "album_artist_j"
                                         % "album_insert_date"
                                         % "album_new"
+                                        % "album_bitrate"
                                         % "album_playscore"
                                         % attrs[ATTRIBUTE_ALBUM].id
                                         % attrs[ATTRIBUTE_MB_ALBUM_ID].id

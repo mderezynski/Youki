@@ -326,7 +326,9 @@ namespace MPX
 
             typedef boost::tuple<std::string, std::string, std::string>        FileTriplet_t;
             typedef std::map<FileTriplet_t, gint64>                            Triplet_MTIME_t;
-    
+            typedef std::set<gint64>                                           IdSet_t;
+
+            IdSet_t                                 m_AlbumIDs, m_AlbumArtistIDs; 
             Triplet_MTIME_t                         m_MTIME_Map;
 
             void
@@ -382,7 +384,7 @@ namespace MPX
 
             void
             signal_new_entities(
-                  const TrackInfo_p_Vector&
+                  const TrackInfo_p&
             ) ;
 
             int

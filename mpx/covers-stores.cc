@@ -423,10 +423,20 @@ namespace MPX
         }
         else
         {
-            RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cover_art );
-            covers.cache_artwork( data->qualifier.mbid, cover );
-            g_message("%s: Cover HasFound", G_STRFUNC);
-            Signals.HasFound.emit( data );
+            try{
+                    RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cover_art );
+                    covers.cache_artwork( data->qualifier.mbid, cover );
+                    g_message("%s: Cover HasFound", G_STRFUNC);
+                    Signals.HasFound.emit(data);
+            }
+            catch (Gdk::PixbufError)
+            {
+                Signals.NotFound.emit(data);
+            }
+            catch (Glib::FileError)
+            {
+                Signals.NotFound.emit(data);
+            }
         }
     }
 

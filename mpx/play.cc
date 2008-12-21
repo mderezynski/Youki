@@ -724,7 +724,7 @@ namespace MPX
                                                       GstClockTime curtime=gst_clock_get_time(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())))-basetime;
                                                       GstClockTimeDiff waittime=GST_CLOCK_DIFF(curtime,endtime);
                                                       
-                                                      clock_id=gst_clock_new_single_shot_id(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())),waittime);
+                                                      clock_id=gst_clock_new_single_shot_id(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())),basetime+endtime);
 
                                                       GstStructure const* s = gst_message_get_structure (message);
                                                       GValue const* m = gst_structure_get_value (s, "magnitude");

@@ -28,7 +28,6 @@ import re
 import string
 import threading
 import time
-import time
 import urllib
 import urllib2
 import webkit
@@ -172,6 +171,49 @@ tmpl_section_header = '''
 tmpl_section_header_small = '''
 <div class='SectionHeaderSmall'>${header}</div>
 '''
+
+def rel_unix_enddate(rel):
+
+    enddate = rel.getEndDate()
+
+    if enddate:
+        if len(enddate) == 4:
+            return time.mktime(time.strptime(enddate, "%Y"))
+        elif len(enddate) == 7:
+            return time.mktime(time.strptime(enddate, "%Y-%m"))
+        elif len(enddate) == 10:
+            return time.mktime(time.strptime(enddate, "%Y-%m-%d"))
+
+    return 0
+
+def split_relations(relations):
+
+    list_former         = []
+    list_current        = []
+    list_member_in      = []
+
+    tm = time.time()
+
+    for rel in relations:
+
+        mbns, hash, reltype = rel.getType().partition("#")
+
+        if reltype == "MemberOfBand":
+
+            if rel.getDirection() == Relation.DIR_BACKWARD:
+
+                unix_enddate = rel_unix_enddate(rel)
+
+                if (unix_enddate != 0) and (unix_enddate < tm):
+                    list_former.append( rel ) 
+                else:
+                    list_current.append( rel )
+
+            if rel.getDirection() == Relation.DIR_FORWARD:
+
+                list_member_in.append( rel )
+
+    return [list_current, list_former, list_member_in]
 
 class WebToolbar(gtk.Toolbar):
     def __init__(self, browser):
@@ -507,23 +549,22 @@ def append_url_rels(entity):
 def append_artist_rels(entity): 
 
     data        = []
-    relations   = entity.getRelations(Relation.TO_ARTIST)
+    relations   = split_relations(entity.getRelations(Relation.TO_ARTIST))
 
-    for rel in relations:
+    for rel in relations[0]:
 
-        mbns, hash, reltype = rel.getType().partition("#")
+        target  = rel.getTarget() 
+        data.append( "...has member <b>%s</b>" % (getEntityLink(target.getName(),target.getId(),"artist")))
 
-        if reltype == "MemberOfBand":
+    for rel in relations[1]:
 
-            if rel.getDirection() == Relation.DIR_BACKWARD:
+        target  = rel.getTarget() 
+        data.append( "...has former member <b>%s</b>" % (getEntityLink(target.getName(),target.getId(),"artist")))
 
-                target = rel.getTarget() 
-                data.append("...has member <b>%s</b>" % (getEntityLink(target.getName(),target.getId(),"artist")))
+    for rel in relations[2]:
 
-            elif rel.getDirection() == Relation.DIR_FORWARD:
-
-                target = rel.getTarget() 
-                data.append("...is member in <b>%s</b>" % (getEntityLink(target.getName(),target.getId(),"artist")))
+        target = rel.getTarget() 
+        data.append("...is member in <b>%s</b>" % (getEntityLink(target.getName(),target.getId(),"artist")))
 
     return "<br/>".join(data)
                 
