@@ -127,13 +127,6 @@ namespace MPX
             RowV v2; 
             services->get<Library>("mpx-service-library")->getSQL(
                   v2
-                , (boost::format("SELECT sum(bitrate)/count(*) AS rate FROM track WHERE type = '%s' AND bitrate != '0'") % get<std::string>((*i)["type"])).str()
-            );
-            (*iter)[m_FileStats_Columns.AvgBitrate] = (boost::format("%lld kbit/s") % get<gint64>(v2[0]["rate"])).str();
-
-            v2.clear();
-            services->get<Library>("mpx-service-library")->getSQL(
-                  v2
                 , (boost::format("SELECT bitrate AS rate FROM track WHERE type = '%s' AND bitrate != '0' ORDER BY bitrate DESC LIMIT 1") % get<std::string>((*i)["type"])).str()
             );
             (*iter)[m_FileStats_Columns.HighBitrate] = (boost::format("%lld kbit/s") % get<gint64>(v2[0]["rate"])).str();
@@ -200,11 +193,6 @@ namespace MPX
         m_FileStats_View->append_column(
               _("Track Count")
             , m_FileStats_Columns.Count
-        );
-
-        m_FileStats_View->append_column(
-              _("Average Bitrate")
-            , m_FileStats_Columns.AvgBitrate
         );
 
         m_FileStats_View->append_column(

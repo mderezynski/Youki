@@ -507,6 +507,7 @@ namespace MPX
                         AlbumTreeView::refilter ()
                         {
                                 AlbumsTreeStoreFilter->refilter();
+                                update_album_count_display();
                         }
 
             void
@@ -1640,7 +1641,7 @@ namespace MPX
                 void
                         AlbumTreeView::on_row_added_or_deleted ()
                         {
-                                //update_album_count_display ();
+                                update_album_count_display ();
                         }
 
                 void
@@ -1660,15 +1661,18 @@ namespace MPX
                                         Options.Flags |= ALBUMS_STATE_SHOW_NEW;
                                 else
                                         Options.Flags &= ~ALBUMS_STATE_SHOW_NEW;
+
                                 AlbumsTreeStoreFilter->refilter();
+                                update_album_count_display();
                         }
 
                 void
                         AlbumTreeView::set_release_type_filter (int state)
                         {
                                 Options.Type = state; 
-                                update_album_count_display();
+
                                 AlbumsTreeStoreFilter->refilter();
+                                update_album_count_display();
                         }
 
                 void

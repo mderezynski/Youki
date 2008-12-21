@@ -62,7 +62,6 @@ namespace MPX
     {
         Gtk::TreeModelColumn<std::string>       Type;
         Gtk::TreeModelColumn<gint64>            Count;
-        Gtk::TreeModelColumn<std::string>       AvgBitrate;
         Gtk::TreeModelColumn<std::string>       HighBitrate;
         Gtk::TreeModelColumn<std::string>       LowBitrate;
 
@@ -70,7 +69,6 @@ namespace MPX
         {
             add(Type);
             add(Count);
-            add(AvgBitrate);
             add(HighBitrate);
             add(LowBitrate);
         }
