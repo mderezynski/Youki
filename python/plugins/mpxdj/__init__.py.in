@@ -22,12 +22,12 @@ from gettext import gettext as _
 #import musicbrainz2
 #import musicbrainz2.webservice as ws
 
-def extract_ids(rv, v):
+def extract_IDs(rv, v):
 
     for val in rv:
         v.append(val["id"].get_int())
 
-def extract_ids_n(rv, v, n):
+def extract_IDs_n(rv, v, n):
 
     for n in range(0, n):
         v.append(rv[n]["id"].get_int())
@@ -177,7 +177,7 @@ class OPTION__Analyzer(BaseOPTION__):
                 if self.count_previous_artist_presence(track.getArtist().getName()) < 1:
 
                         self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' AND title = '%s' ORDER BY random() LIMIT 1" % ( track.getArtist().getName().replace("'", "''") , track.getName().replace("'","''") ) ))
-                        extract_ids(rv, self.v)
+                        extract_IDs(rv, self.v)
 
                         if len(self.v) > 0:
 
@@ -237,7 +237,7 @@ class OPTION__Analyzer(BaseOPTION__):
 
                     if self.count_previous_mbid_presence(id) < 1:
                         self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY random() LIMIT 1" % id))
-                        extract_ids(rv, self.v)
+                        extract_IDs(rv, self.v)
 
                     if len(rv) > 0: return
 
@@ -268,7 +268,7 @@ class OPTION__Analyzer(BaseOPTION__):
                         if self.count_previous_artist_presence(name) < 1:
 
                                 self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE artist ='%s' ORDER BY random() LIMIT 1" % name.replace("'","''") ))
-                                extract_ids(rv, self.v)
+                                extract_IDs(rv, self.v)
                                 if len(self.v): return
 
                         tries = tries - 1
@@ -338,7 +338,7 @@ class OPTION__LastFmTag(BaseOPTION__):
                 for x in range(l):
                     self.lib.getSQL(rv, str("SELECT id FROM track_view WHERE mb_artist_id ='%s' ORDER BY random() LIMIT 1" % s[x].getMBID()))
 
-                extract_ids(rv, self.v)
+                extract_IDs(rv, self.v)
                 idx = idx + 1
 
         self.finished.set()
@@ -383,13 +383,13 @@ class OPTION__RandomMix(BaseOPTION__):
 
             lib.getSQL(rv, "SELECT id FROM track_view ORDER BY random() LIMIT 2")
 
-        extract_ids(rv, v)
+        extract_IDs(rv, v)
 
     def RANDOM_toptune(self, lib, v):
     
         rv = mpx.SQLRowV()
         self.lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY random() LIMIT 1")
-        extract_ids(rv, v)
+        extract_IDs(rv, v)
 
     def RANDOM_markov(self, lib, v):
         
@@ -409,7 +409,7 @@ class OPTION__TopTunes(BaseOPTION__):
     
         rv = mpx.SQLRowV()
         self.lib.getSQL(rv, "SELECT id FROM track_view WHERE rating > 3 AND album_rating > 3 ORDER BY random() LIMIT 10")
-        extract_ids(rv, self.v)
+        extract_IDs(rv, self.v)
         self.finished.set()
 
 class OPTION__PlayAll(BaseOPTION__):
@@ -422,7 +422,7 @@ class OPTION__PlayAll(BaseOPTION__):
 
         rv = mpx.SQLRowV()
         self.lib.getSQL(rv, "SELECT id FROM track_view ORDER BY album_j, track")
-        extract_ids(rv, self.v)
+        extract_IDs(rv, self.v)
         self.finished.set()
 
 class OPTION__EntertainMe(BaseOPTION__):
@@ -446,7 +446,7 @@ class OPTION__EntertainMe(BaseOPTION__):
     
         if len(rv):
             random.shuffle(rv)
-            extract_ids_n(rv, self.v, 1)
+            extract_IDs_n(rv, self.v, 1)
         else:
             self.ENTERTAIN_LastFm()
   
@@ -464,7 +464,7 @@ class OPTION__EntertainMe(BaseOPTION__):
 
             if len(rv):
                 random.shuffle(rv)
-                extract_ids_n(rv, self.v, 1)
+                extract_IDs_n(rv, self.v, 1)
 
 class OPTION__SoundsOf(BaseOPTION__):
 
@@ -489,7 +489,7 @@ class OPTION__SoundsOf(BaseOPTION__):
         for x in range(10):
             self.lib.getSQL(rv, "SELECT id FROM track_view WHERE date >= " + str(lower) + " AND date < " + str(upper) + " ORDER BY random() LIMIT 1")
 
-        extract_ids(rv, self.v)
+        extract_IDs(rv, self.v)
         self.finished.set()
 
 class OPTION__ForgottenGems(BaseOPTION__):
@@ -502,8 +502,11 @@ class OPTION__ForgottenGems(BaseOPTION__):
    
         rv = mpx.SQLRowV() 
         self.lib.getSQL(rv, "SELECT id FROM track_view WHERE pdate IS NOT NULL AND pcount > 3 ORDER BY pdate ASC")
-        random.shuffle(rv)
-        extract_ids_n(rv, self.v, 5)
+
+        if len(rv):
+            random.shuffle(rv)
+            extract_IDs_n(rv, self.v, 5)
+
         self.finished.set()
 
 class OPTION__DejaVu(BaseOPTION__):
@@ -516,8 +519,11 @@ class OPTION__DejaVu(BaseOPTION__):
    
         rv = mpx.SQLRowV() 
         self.lib.getSQL(rv, "SELECT id FROM track_view ORDER BY pcount DESC LIMIT 10")
-        random.shuffle(rv)
-        extract_ids_n(rv, self.v, 5)
+
+        if len(rv):
+            random.shuffle(rv)
+            extract_IDs_n(rv, self.v, 5)
+
         self.finished.set()
 
 class MPXDJ(mpx.Plugin):
