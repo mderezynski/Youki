@@ -1285,6 +1285,22 @@ MPX::LibraryScannerThread::get_track_id (Track& track) const
 }
 
 void
+MPX::LibraryScannerThread::add_erroneous_track(
+      const std::string& uri
+    , const std::string& info
+)
+{
+    ++m_ScanSummary.FilesErroneous;
+
+    try{
+          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), _("An error ocurred trying to determine the file type")));
+    } catch( Glib::ConvertError & cxe )
+    {
+          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( _("(invalid UTF-8)"), _("Could not convert URI to UTF-8 for display")));
+    }
+}
+
+void
 MPX::LibraryScannerThread::insert_file_no_mtime_check(
       Track_sp           track
     , const std::string& uri
@@ -1293,42 +1309,30 @@ MPX::LibraryScannerThread::insert_file_no_mtime_check(
 {
     try{
         try{
-            try{
-                Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
-                Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
-                (*(track.get()))[ATTRIBUTE_TYPE] = info->get_attribute_string("standard::content-type");
-            } catch(Gio::Error & cxe) {
-                g_message("%s: GIO Error: %s", G_STRLOC, cxe.what().c_str());
-                ++m_ScanSummary.FilesErroneous;
-                  m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), _("An error ocurred trying to determine the file type")));
-                return;
-            }
-
-            if( !services->get<MetadataReaderTagLib>("mpx-service-taglib")->get( uri, *(track.get()) ) )
-            {
-                ++m_ScanSummary.FilesErroneous;
-                  m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), _("Could not acquire metadata (using taglib-gio)")));
-            }
-            else try{
-                create_insertion_track( *(track.get()), uri, insert_path );
-            }
-            catch( ScanError & cxe )
-            {
-                ++m_ScanSummary.FilesErroneous;
-                  m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
-            }
+            Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+            Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
+            (*(track.get()))[ATTRIBUTE_TYPE] = info->get_attribute_string("standard::content-type");
+        } catch(Gio::Error & cxe) {
+            g_message("%s: GIO Error: %s", G_STRLOC, cxe.what().c_str());
+            add_erroneous_track( uri, _("An error ocurred trying to determine the file type"));
+            return;
         }
-        catch( Library::FileQualificationError & cxe )
+
+        if( !services->get<MetadataReaderTagLib>("mpx-service-taglib")->get( uri, *(track.get()) ) )
         {
-            ++m_ScanSummary.FilesErroneous;
-              m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
+            add_erroneous_track( uri, _("Could not acquire metadata (using taglib-gio)"));
+        }
+        else try{
+            create_insertion_track( *(track.get()), uri, insert_path );
+        }
+        catch( ScanError & cxe )
+        {
+            add_erroneous_track( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str());
         }
     }
-    catch( Glib::ConvertError & cxe )
+    catch( Library::FileQualificationError & cxe )
     {
-        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-        ++m_ScanSummary.FilesErroneous;
-          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( _("(invalid UTF-8)"), _("Could not convert URI to UTF-8 for display")));
+        add_erroneous_track( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str());
     }
 }
 
@@ -1341,57 +1345,44 @@ MPX::LibraryScannerThread::insert_file(
         Track track;
 
         try{
-            try{
-                m_Library.trackSetLocation( track, uri );
+            m_Library.trackSetLocation( track, uri );
 
-                gint64 mtime1 = Util::get_file_mtime( uri ) ;
-                gint64 mtime2 = get_track_mtime( track ) ; 
+            gint64 mtime1 = Util::get_file_mtime( uri ) ;
+            gint64 mtime2 = get_track_mtime( track ) ; 
 
-                if( mtime2 != 0 && mtime1 == mtime2 )
-                {
-                    ++m_ScanSummary.FilesUpToDate;
+            if( mtime2 != 0 && mtime1 == mtime2 )
+            {
+                ++m_ScanSummary.FilesUpToDate;
+            }
+            else
+            {
+                track[ATTRIBUTE_MTIME] = mtime1; 
+
+                try{
+                    Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
+                    Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
+                    track[ATTRIBUTE_TYPE] = info->get_attribute_string("standard::content-type");
+                } catch(Gio::Error & cxe) {
+                    add_erroneous_track( uri, _("An error ocurred trying to determine the file type"));
+                    return;
                 }
-                else
+
+                if( !services->get<MetadataReaderTagLib>("mpx-service-taglib")->get( uri, track) )
                 {
-                    track[ATTRIBUTE_MTIME] = mtime1; 
-
-                    try{
-                        Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
-                        Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
-                        track[ATTRIBUTE_TYPE] = info->get_attribute_string("standard::content-type");
-                    } catch(Gio::Error & cxe) {
-                        g_message("%s: GIO Error: %s", G_STRLOC, cxe.what().c_str());
-                        ++m_ScanSummary.FilesErroneous;
-                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), _("An error ocurred trying to determine the file type")));
-                        return;
-                    }
-
-                    if( !services->get<MetadataReaderTagLib>("mpx-service-taglib")->get( uri, track ) )
-                    {
-                        ++m_ScanSummary.FilesErroneous;
-                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), _("Could not acquire metadata (using taglib-gio)")));
-                    }
-                    else try{
-                        create_insertion_track( track, uri, insert_path );
-                    }
-                    catch( ScanError & cxe )
-                    {
-                        ++m_ScanSummary.FilesErroneous;
-                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
-                    }
+                    add_erroneous_track( uri, _("Could not acquire metadata (using taglib-gio)"));
                 }
-        }
-        catch( Library::FileQualificationError & cxe )
-        {
-            ++(m_ScanSummary.FilesErroneous);
-               m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), cxe.what()));
-        }
+                else try{
+                    create_insertion_track( track, uri, insert_path );
+                }
+                catch( ScanError & cxe )
+                {
+                    add_erroneous_track( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str());
+                }
+            }
     }
-    catch( Glib::ConvertError & cxe )
+    catch( Library::FileQualificationError & cxe )
     {
-        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-        ++m_ScanSummary.FilesErroneous;
-          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri), (boost::format (_("Error inserting file: %s")) % cxe.what()).str()));
+        add_erroneous_track( uri, cxe.what() ); 
     }
 }
 
@@ -1607,7 +1598,6 @@ MPX::LibraryScannerThread::process_insertion_list()
     for( Map_L4::const_iterator l4 = (l3->second).begin(); l4 != (l3->second).end(); ++l4 ) {
 
 
-    try{
                     const TrackInfo_p_Vector& v = (*l4).second ; 
     
                     std::string uri;
@@ -1633,8 +1623,13 @@ MPX::LibraryScannerThread::process_insertion_list()
                                 break;
 
                             case SCAN_RESULT_UPDATE:
-                                ++m_ScanSummary.FilesUpdated;
-                                  m_ScanSummary.FileListUpdated.push_back( SSFileInfo( filename_to_utf8(uri), _("Updated")));
+                                try{
+                                    ++m_ScanSummary.FilesUpdated;
+                                      m_ScanSummary.FileListUpdated.push_back( SSFileInfo( filename_to_utf8(uri), _("Updated")));
+                                } catch (Glib::ConvertError & cxe )
+                                {
+                                      m_ScanSummary.FileListErroneous.push_back( SSFileInfo( _("(invalid UTF-8)"), _("Could not convert URI to UTF-8 for display")));
+                                }
                                 break;
 
                             case SCAN_RESULT_UPTODATE:
@@ -1644,16 +1639,8 @@ MPX::LibraryScannerThread::process_insertion_list()
                     }
                     catch( ScanError & cxe )
                     {
-                        ++m_ScanSummary.FilesErroneous;
-                          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8(uri),( boost::format (_("Error inserting file: %s")) % cxe.what()).str() ) );
+                        add_erroneous_track( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str() );
                     }
-    }
-    catch( Glib::ConvertError & cxe )
-    {
-        g_warning("%s: %s", G_STRLOC, cxe.what().c_str() );
-        ++m_ScanSummary.FilesErroneous;
-          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( _("(invalid UTF-8)"), _("Could not convert URI to UTF-8 for display")));
-    }
 
     }
     }

@@ -357,6 +357,12 @@ namespace MPX
     
             void
             process_insertion_list();
+
+            void
+            add_erroneous_track(
+                  const std::string& uri
+                , const std::string& info
+            );
     
             typedef std::vector<std::string>        MIME_Types_t;
 
