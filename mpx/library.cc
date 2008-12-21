@@ -827,7 +827,7 @@ namespace MPX
                 {
                         boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
 
-                        execSQL("BEGIN");
+                        execSQL("BEGIN IMMEDIATE");
 
                         RowV rows_tracks;
                         getSQL(
@@ -1412,7 +1412,7 @@ namespace MPX
                     static std::string 
                             collection_create_f ("INSERT INTO collection (name, blurb) VALUES ('%q', '%q')");
 
-                    execSQL("BEGIN");
+                    execSQL("BEGIN IMMEDIATE");
 
                     execSQL(mprintf(collection_create_f.c_str(),
                         name.c_str(),
@@ -1444,7 +1444,7 @@ namespace MPX
                     static std::string
                             collection_delete_f ("DELETE FROM collection WHERE id = '%lld'");
 
-                    execSQL("BEGIN");
+                    execSQL("BEGIN IMMEDIATE");
 
                     execSQL(mprintf(collection_delete_f.c_str(),
                             id
@@ -1468,7 +1468,7 @@ namespace MPX
                     static std::string
                             collection_append_f ("INSERT INTO collection_%lld (track_id) VALUES ('%lld')");
 
-                    execSQL("BEGIN");
+                    execSQL("BEGIN IMMEDIATE");
 
                     for( IdV::const_iterator i = tracks.begin(); i != tracks.end(); ++i )
                     {

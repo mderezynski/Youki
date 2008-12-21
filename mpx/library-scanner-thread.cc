@@ -1888,7 +1888,7 @@ MPX::LibraryScannerThread::on_vacuum()
   RowV rows;
   m_SQL->get (rows, "SELECT id, hal_volume_udi, hal_device_udi, hal_vrp, location FROM track"); // FIXME: We shouldn't need to do this here, it should be transparent (HAL vs. non HAL)
 
-  m_SQL->exec_sql("BEGIN");
+  m_SQL->exec_sql("BEGIN IMMEDIATE");
 
   for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
   {
@@ -1945,7 +1945,7 @@ MPX::LibraryScannerThread::on_vacuum_volume_list(
                       % (*i).second 
               ).str());
 
-          m_SQL->exec_sql("BEGIN");
+          m_SQL->exec_sql("BEGIN IMMEDIATE");
 
           for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
           {
