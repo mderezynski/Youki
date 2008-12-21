@@ -1292,12 +1292,15 @@ MPX::LibraryScannerThread::add_erroneous_track(
 {
     ++m_ScanSummary.FilesErroneous;
 
-    Glib::ustring uri_utf8 (uri);
+    URI u (uri);
+    u.unescape();
 
-    if( !uri_utf8.validate() )
-          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( _("(invalid UTF-8)"), _("Could not convert URI to UTF-8 for display")));
-    else
-          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( uri_utf8.c_str(), info));
+    try{
+          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( filename_to_utf8((ustring(u))), info));
+    } catch( Glib::ConvertError & cxe )
+    {
+          m_ScanSummary.FileListErroneous.push_back( SSFileInfo( _("(invalid UTF-8)"), (boost::format (_("Could not convert URI to UTF-8 for display")) % cxe.what()).str()));
+    }
 }
 
 void

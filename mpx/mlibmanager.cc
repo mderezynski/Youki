@@ -705,10 +705,7 @@ namespace MPX
                 text.append("Erroneous Files:\n");
                 for(std::vector<SSFileInfo>::const_iterator i = summary.FileListErroneous.begin(); i != summary.FileListErroneous.end(); ++i) 
                 {
-                    URI u ((*i).first);
-                    u.unescape();
-                    Glib::ustring u_unescaped (u);
-                    text.append((boost::format ("\t%1%:  %2%\n") % (*i).second % u_unescaped.c_str()).str());
+                    text.append((boost::format ("\t%1%:  %2%\n") % (*i).second % (*i).first).str());
                 }
         }
 
@@ -717,10 +714,7 @@ namespace MPX
                 text.append("\nUpdated Files:\n");
                 for(std::vector<SSFileInfo>::const_iterator i = summary.FileListUpdated.begin(); i != summary.FileListUpdated.end(); ++i) 
                 {
-                    URI u ((*i).first);
-                    u.unescape();
-                    Glib::ustring u_unescaped (u);
-                    text.append((boost::format ("\t%1%:  %2%\n") % (*i).second % u_unescaped.c_str()).str());
+                    text.append((boost::format ("\t%1%:  %2%\n") % (*i).second % (*i).first).str());
                 }
         }
 
