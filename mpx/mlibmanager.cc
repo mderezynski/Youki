@@ -790,12 +790,16 @@ namespace MPX
     void
     MLibManager::rescan_all_volumes(bool deep)
     {
+        Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
+
+        if( children.empty() ) 
+            return;
+    
         m_VboxInner->set_sensitive(false);
 
 #ifdef HAVE_HAL
         if( mcs->key_get<bool>("library","use-hal"))
         {
-              Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
               for(Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); ++iter)
               {
                     Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
@@ -1475,6 +1479,11 @@ namespace MPX
     void
     MLibManager::on_vacuum_all ()
     {
+        Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
+
+        if( children.empty() )
+            return;
+
         m_VboxInner->set_sensitive(false);
 
 #ifdef HAVE_HAL
@@ -1482,7 +1491,6 @@ namespace MPX
         {
               HAL::VolumeKey_v v ;
 
-              Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
               for(Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); ++iter)
               {
                     Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
