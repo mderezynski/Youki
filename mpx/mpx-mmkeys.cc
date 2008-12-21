@@ -97,8 +97,10 @@ namespace MPX
     }
 
     /*static*/ void
-        Player::grab_mmkey (int key_code,
-        GdkWindow *root)
+        Player::grab_mmkey(
+            int        key_code,
+            GdkWindow *root
+        )
     {
         gdk_error_trap_push ();
 
@@ -144,9 +146,11 @@ namespace MPX
     }
 
     /*static*/ void
-        Player::grab_mmkey (int key_code,
-        int modifier,
-        GdkWindow *root)
+        Player::grab_mmkey(
+            int        key_code,
+            int        modifier,
+            GdkWindow *root
+        )
     {
         gdk_error_trap_push ();
 
@@ -218,9 +222,11 @@ namespace MPX
     }
 
     /*static*/ GdkFilterReturn
-        Player::filter_mmkeys (GdkXEvent *xevent,
-        GdkEvent *event,
-        gpointer data)
+        Player::filter_mmkeys(
+            GdkXEvent   *xevent,
+            GdkEvent    *event,
+            gpointer     data
+        )
     {
         Player & player = *reinterpret_cast<Player*>(data);
 
@@ -432,7 +438,7 @@ namespace MPX
                     }
                 }
 
-                g_object_unref( bus );
+                dbus_g_connection_unref( bus );
             }
             else
             {
@@ -451,31 +457,33 @@ namespace MPX
     {
         if( m_mmkeys_dbusproxy )
         {
-            GError *error = NULL;
-
-            if (m_mmkeys_grab_type == SETTINGS_DAEMON)
+            if( m_mmkeys_grab_type == SETTINGS_DAEMON )
             {
+                GError *error = NULL;
+
                 dbus_g_proxy_call (m_mmkeys_dbusproxy,
                     "ReleaseMediaPlayerKeys", &error,
                     G_TYPE_STRING, "MPX",
                     G_TYPE_INVALID, G_TYPE_INVALID);
+
                 if (error != NULL)
                 {
                     g_warning (G_STRLOC ": Could not release media player keys: %s", error->message);
                     g_error_free (error);
                 }
+
                 mWindowFocusConn.disconnect ();
                 m_mmkeys_grab_type = NONE;
             }
 
-            g_object_unref (m_mmkeys_dbusproxy);
+            g_object_unref( m_mmkeys_dbusproxy ) ;
             m_mmkeys_dbusproxy = 0;
         }
 
         if (m_mmkeys_grab_type == X_KEY_GRAB)
         {
             g_message(G_STRLOC ": undoing old-style key grabs");
-            mmkeys_grab (false);
+            mmkeys_grab( false ) ;
             m_mmkeys_grab_type = NONE;
         }
     }
@@ -492,21 +500,25 @@ namespace MPX
         if( mcs->key_get<bool>("hotkeys","enable") )
         {
             int sys = mcs->key_get<int>("hotkeys","system");
+
             if( (sys == 0) || (sys == 2))
                 m_mmkeys_grab_type = X_KEY_GRAB;
             else
                 m_mmkeys_grab_type = SETTINGS_DAEMON;
+
             mmkeys_activate ();
         }
     }
 
-    // MM-Keys stuff (C) Rhythmbox Developers 2007
+    // MMkeys code (C) Rhythmbox Developers 2007
 
     /*static*/ void
-        Player::media_player_key_pressed (DBusGProxy *proxy,
-        const gchar *application,
-        const gchar *key,
-        gpointer data)
+        Player::media_player_key_pressed(
+            DBusGProxy  *proxy,
+            const gchar *application,
+            const gchar *key,
+            gpointer     data
+        )
     {
         Player & player = *reinterpret_cast<Player*>(data);
 
