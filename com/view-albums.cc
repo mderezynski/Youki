@@ -195,6 +195,7 @@ namespace MPX
 
                         Options.Flags = ALBUMS_STATE_NO_FLAGS;
                         Options.Type = RT_ALL;
+                        Options.HighlightMode = HIGHLIGHT_EQUAL;
 
                         const std::string image_base_path = build_filename( DATA_DIR, "images" );
 
