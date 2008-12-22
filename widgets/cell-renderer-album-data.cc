@@ -25,12 +25,21 @@ namespace MPX
     : ObjectBase        (typeid(CellRendererAlbumData))
     , property_info_    (*this, "info", boost::shared_ptr<AlbumInfo>()) 
     {
-        for(int n = 0; n < 4; ++n)
+        for( int n = 0; n < 4; ++n )
         {
                 m_Quality[n] = Gdk::Pixbuf::create_from_file(
                     build_filename(
                           build_filename(DATA_DIR,"images")
                         , (boost::format("qual%d.png") % n).str()
+                ));
+        }
+
+        for( int n = 0; n < 6; ++n )
+        {
+                m_Ratings[n] = Gdk::Pixbuf::create_from_file(
+                    build_filename(
+                          build_filename(DATA_DIR,"images")
+                        , (boost::format("stars%d.png") % n).str()
                 ));
         }
     }
@@ -59,7 +68,7 @@ namespace MPX
       layout->get_pixel_size( text_width, text_height );
 
       if(height)
-        *height = 72; 
+        *height = 90; 
 
       if(width)
       {
@@ -91,10 +100,13 @@ namespace MPX
         layout[0]->set_text( info->Name );
 
         Pango::AttrList list;
+
         Pango::Attribute attr = Pango::Attribute::create_attr_scale(1.2);
         list.insert(attr);
+
         attr = Pango::Attribute::create_attr_weight(Pango::WEIGHT_BOLD);
         list.insert(attr);
+
         layout[0]->set_attributes(list);
         layout[0]->get_pixel_size( text_width[0], text_height[0] );
 
@@ -129,12 +141,14 @@ namespace MPX
         layout[1]->set_text( info->Artist );
 
         list = Pango::AttrList();
+
         attr = Pango::Attribute::create_attr_scale(1.2);
         list.insert(attr);
+
         attr = Pango::Attribute::create_attr_weight(Pango::WEIGHT_BOLD);
         list.insert(attr);
-        layout[1]->set_attributes(list);
 
+        layout[1]->set_attributes(list);
         layout[1]->get_pixel_size( text_width[1], text_height[1] );
 
         if( state & Gtk::CELL_RENDERER_SELECTED )
@@ -146,7 +160,6 @@ namespace MPX
               xoff + 2 + XPAD
             , yoff + text_height[0] + 4 + 6 
         );
-
         pango_cairo_show_layout( cr->cobj(), layout[1]->gobj() );
 
         // Release
@@ -154,25 +167,16 @@ namespace MPX
         layout[2]->set_text( info->Release );
         layout[2]->get_pixel_size( text_width[2], text_height[2] );
 
-        cr->move_to(
-              xoff + cell_area.get_width() - text_width[2] - 4 
-            , yoff + 7 + YPAD
-        );
-
         if( state & Gtk::CELL_RENDERER_SELECTED )
             Gdk::Cairo::set_source_color( cr, widget.get_style()->get_text(Gtk::STATE_NORMAL) );
         else
             cr->set_source_rgba(.9, .9, .9, 1.);
 
+        cr->move_to(
+              xoff + cell_area.get_width() - text_width[2] - 4 
+            , yoff + 7 + YPAD
+        );
         pango_cairo_show_layout( cr->cobj(), layout[2]->gobj() );
-
-        // Quality
-        if( info->Qual != -1 )
-        {
-            Gdk::Cairo::set_source_pixbuf( cr, m_Quality[info->Qual], xoff + cell_area.get_width() - 130, yoff + 6 + YPAD ); 
-            cr->rectangle( xoff + cell_area.get_width() - 130, yoff + 6 + YPAD, 72, 16 ); 
-            cr->fill();
-        }
 
         // Release Type
         std::string release_info;
@@ -189,7 +193,6 @@ namespace MPX
  
         layout[3] = Pango::Layout::create( widget.get_pango_context() );
         layout[3]->set_text( release_info ); 
-
         layout[3]->get_pixel_size( text_width[3], text_height[3] );
 
         if( state & Gtk::CELL_RENDERER_SELECTED )
@@ -201,8 +204,21 @@ namespace MPX
               xoff + 2 + XPAD
             , yoff + 72 - 10 
         );
-
         pango_cairo_show_layout( cr->cobj(), layout[3]->gobj() );
+
+        // Quality
+        if( info->Qual != -1 )
+        {
+            Gdk::Cairo::set_source_pixbuf( cr, m_Quality[info->Qual], xoff + cell_area.get_width() - 130, yoff + 6 + YPAD ); 
+            cr->rectangle( xoff + cell_area.get_width() - 130, yoff + 6 + YPAD, 72, 16 ); 
+            cr->fill();
+        }
+
+        // Rating
+        Gdk::Cairo::set_source_pixbuf( cr, m_Ratings[info->Rating], xoff + XPAD, yoff + 80 ); 
+        cr->rectangle( xoff + XPAD , yoff + 80, 60, 12 ); 
+        cr->fill();
+
     }
 
     ///////////////////////////////////////////////

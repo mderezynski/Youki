@@ -20,6 +20,7 @@ namespace MPX
         std::string Type;
         std::string Genre;
         gint64      Qual;
+        gint64      Rating;
     };
 
     typedef boost::shared_ptr<AlbumInfo> AlbumInfo_pt;
@@ -44,6 +45,7 @@ namespace MPX
         PropAlbumInfo property_info_;
 
         Glib::RefPtr<Gdk::Pixbuf> m_Quality[4];
+        Glib::RefPtr<Gdk::Pixbuf> m_Ratings[6];
 
       protected:
 

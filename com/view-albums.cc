@@ -199,15 +199,6 @@ namespace MPX
 
                         const std::string image_base_path = build_filename( DATA_DIR, "images" );
 
-                        for(int n = 0; n < N_STARS; ++n)
-                        {
-                                m_Stars[n] = Gdk::Pixbuf::create_from_file(
-                                                build_filename(
-                                                        image_base_path,
-                                                        (boost::format("stars%d.png") % n).str()
-                                ));
-                        }
-
                         m_Emblem[EM_COMPILATION] = Gdk::Pixbuf::create_from_file(
                                         build_filename(
                                                image_base_path,
@@ -277,83 +268,131 @@ namespace MPX
                         set_level_indentation( 56 );
 
                         TreeViewColumn * col = manage (new TreeViewColumn());
-                        GtkCellRenderer * renderer = gossip_cell_renderer_expander_new ();
-                        gtk_tree_view_column_pack_start (col->gobj(), renderer, FALSE);
-                        gtk_tree_view_column_set_cell_data_func (col->gobj(),
-                                        renderer,
-                                        GtkTreeCellDataFunc(rb_sourcelist_expander_cell_data_func),
-                                        this,
-                                        NULL);
 
-                        CellRendererCairoSurface * cellcairo = manage (new CellRendererCairoSurface);
-                        col->pack_start(*cellcairo, false);
-                        col->set_cell_data_func(*cellcairo, sigc::mem_fun( *this, &AlbumTreeView::cellDataFuncCover ));
-                        cellcairo->property_xpad() = 1;
-                        cellcairo->property_ypad() = 4;
-                        cellcairo->property_yalign() = 0.;
-                        cellcairo->property_xalign() = 0.;
+                        { // Album Expander
 
-                        CellRendererVBox *cvbox = manage (new CellRendererVBox);
-    
-                        CellRendererAlbumData *celldata = manage( new CellRendererAlbumData );
-                        cvbox->property_renderer1() = celldata;
+                                GtkCellRenderer * renderer = gossip_cell_renderer_expander_new ();
 
-                        CellRendererPixbuf *cellpixbuf = manage (new CellRendererPixbuf);
-                        cellpixbuf->property_xalign() = 0.;
-                        cellpixbuf->property_ypad() = 2;
-                        cellpixbuf->property_xpad() = 4;
-                        cvbox->property_renderer2() = cellpixbuf;
+                                gtk_tree_view_column_pack_start(
+                                      col->gobj()
+                                    , renderer
+                                    , FALSE
+                                );
 
-                        col->pack_start(*cvbox, true);
-                        col->set_cell_data_func(
-                                        *cvbox,
-                                        sigc::mem_fun(
-                                                *this,
-                                                &AlbumTreeView::cellDataFuncText1
-                                                ));
+                                gtk_tree_view_column_set_cell_data_func(
+                                      col->gobj()
+                                    , renderer
+                                    , GtkTreeCellDataFunc(rb_sourcelist_expander_cell_data_func)
+                                    , this
+                                    , NULL
+                                );
+                        }
 
-                        CellRendererCount *cellcount = manage (new CellRendererCount);
-                        cellcount->property_box() = BOX_NORMAL;
-                        col->pack_start(*cellcount, false);
 
-                        col->set_cell_data_func(
-                                        *cellcount,
-                                        sigc::mem_fun(
-                                                *this,
-                                                &AlbumTreeView::cellDataFuncText2
-                                                ));
 
-                        CellRendererText *celltext = manage (new CellRendererText);
-                        col->pack_start(*celltext, false);
+                        { // Album Cover
 
-                        col->set_cell_data_func(
-                                        *celltext,
-                                        sigc::mem_fun(
-                                                *this,
-                                                &AlbumTreeView::cellDataFuncText3
-                                                ));
+                                CellRendererCairoSurface *cell = manage (new CellRendererCairoSurface);
 
-                        celltext = manage (new CellRendererText);
-                        col->pack_start(*celltext, false);
+                                col->pack_start( *cell, false );
 
-                        col->set_cell_data_func(
-                                        *celltext,
-                                        sigc::mem_fun(
-                                                *this,
-                                                &AlbumTreeView::cellDataFuncText4
-                                                ));
+                                col->set_cell_data_func(
+                                                *cell,
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AlbumTreeView::cellDataFuncCover
+                                ));
 
-                        celltext = manage (new CellRendererText);
-                        col->pack_start(*celltext, false);
-                        celltext->property_xalign() = 0.;
-                        celltext->property_xpad() = 2;
+                                cell->property_xpad() = 1;
+                                cell->property_ypad() = 4;
+                                cell->property_yalign() = 0.;
+                                cell->property_xalign() = 0.;
+                        }
 
-                        col->set_cell_data_func(
-                                        *celltext,
-                                        sigc::mem_fun(
-                                                *this,
-                                                &AlbumTreeView::cellDataFuncText5
-                                                ));
+
+
+                        { // Album 
+
+                                CellRendererAlbumData *cell = manage( new CellRendererAlbumData );
+
+                                col->pack_start( *cell, true );
+
+                                col->set_cell_data_func(
+                                                *cell,
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AlbumTreeView::cellDataFuncText1
+                                ));
+                        }
+
+
+
+                        { // Track Count 
+
+                                CellRendererCount *cell = manage (new CellRendererCount);
+
+                                col->pack_start( *cell, false );
+
+                                col->set_cell_data_func(
+                                                *cell,
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AlbumTreeView::cellDataFuncText2
+                                ));
+
+                                cell->property_box() = BOX_NORMAL;
+                        }
+
+
+
+                        { // Track Title
+        
+                                CellRendererText *cell = manage (new CellRendererText);
+
+                                col->pack_start( *cell, false );
+
+                                col->set_cell_data_func(
+                                                *cell,
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AlbumTreeView::cellDataFuncText3
+                               ));
+                        }
+
+
+
+                        { // Track Time
+
+                                CellRendererText *cell = manage (new CellRendererText);
+
+                                col->pack_start( *cell, false );
+
+                                col->set_cell_data_func(
+                                                *cell,
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AlbumTreeView::cellDataFuncText4
+                                ));
+                        }
+
+
+
+                        { // Track Artist
+
+                                CellRendererText *cell = manage (new CellRendererText);
+
+                                col->pack_start( *cell, false );
+
+                                col->set_cell_data_func(
+                                                *cell,
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AlbumTreeView::cellDataFuncText5
+                                ));
+
+                                cell->property_xalign() = 0.;
+                                cell->property_xpad() = 2;
+                        }
 
                         append_column(*col);
 
@@ -551,7 +590,7 @@ namespace MPX
                         }
 
                 void
-                        AlbumTreeView::on_row_expanded (const TreeIter &iter_filter,const TreePath &path) 
+                        AlbumTreeView::on_row_expanded (const TreeIter & iter_filter,const TreePath &path) 
                         {
                                 TreeIter iter = AlbumsTreeStoreFilter->convert_iter_to_child_iter(iter_filter);
                                 if(!(*iter)[Columns.HasTracks])
@@ -636,7 +675,7 @@ namespace MPX
                                                 services->get<Covers>("mpx-service-covers")->fetch(m_DragAlbumMBID.get(), CoverCairo, COVER_SIZE_DEFAULT);
                                                 if(CoverCairo)
                                                 {
-                                                        CoverCairo = Util::cairo_image_surface_round(CoverCairo, 21.3); 
+                                                        CoverCairo = Util::cairo_image_surface_round(CoverCairo, 28); 
                                                         Glib::RefPtr<Gdk::Pixbuf> CoverPixbuf = Util::cairo_image_surface_to_pixbuf(CoverCairo);
                                                         drag_source_set_icon(CoverPixbuf->scale_simple(128,128,Gdk::INTERP_BILINEAR));
                                                         return;
@@ -777,16 +816,19 @@ namespace MPX
 
                                                 g_atomic_int_set(&m_ButtonPressed, 1);
 
-                                                if( (cell_x >= 124) && (cell_x <= 184) && (cell_y > 72) && (cell_y < 90))
+                                                if( (cell_x >= 114) && (cell_x <= 176) && (cell_y > 80) && (cell_y < 92))
                                                 {
-                                                        int rating = ((cell_x - 124)+7) / 12;
+                                                        int rating = ((cell_x - 114)+7) / 12;
+
                                                         (*iter)[Columns.Rating] = rating;  
+                                                        AlbumInfo_pt((*iter)[Columns.RenderData])->Rating = rating;
                                                         queue_draw ();
 
                                                         run_rating_comment_dialog(rating, m_DragAlbumId.get());
 
                                                         rating = services->get<Library>("mpx-service-library")->albumGetMeanRatingValue(m_DragAlbumId.get());
                                                         (*iter)[Columns.Rating] = rating;  
+                                                        AlbumInfo_pt((*iter)[Columns.RenderData])->Rating = rating;
                                                         queue_draw ();
                                                 }
                                         }
@@ -981,6 +1023,7 @@ namespace MPX
                                 std::string rt_string;
                                 std::string genre;
                                 std::string mbid;
+                                std::string mbid_artist;
                                 double      playscore = 0;
                                 gint64      rating = 0;
                                 gint64      quality = -1;
@@ -995,7 +1038,6 @@ namespace MPX
                                 } catch( std::runtime_error )
                                 {
                                 }
-                                (*iter)[Columns.Rating] = rating;
 
                                 if(r.count("album_quality"))
                                 {
@@ -1032,15 +1074,13 @@ namespace MPX
                                         IterSet & s = m_Album_MBID_Iter_Map[mbid];
                                         s.insert(iter);
 
-                                        (*iter)[Columns.MBID] = mbid; 
                                         track[ATTRIBUTE_MB_ALBUM_ID] = mbid;
                                 }
 
                                 if(r.count("mb_album_artist_id"))
                                 {
-                                        std::string mb_album_artist_id = get<std::string>(r["mb_album_artist_id"]);
-                                        (*iter)[Columns.AlbumArtistMBID] = mb_album_artist_id; 
-                                        track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = mb_album_artist_id;
+                                        mbid_artist = get<std::string>(r["mb_album_artist_id"]);
+                                        track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = mbid_artist;
                                 }
 
                                 if(r.count("mb_release_date"))
@@ -1092,24 +1132,31 @@ namespace MPX
                                 rt = determine_release_type(type);
                                 rt_string = _(get_release_string(rt).c_str());
 
+                                (*iter)[Columns.Album] = album;
+                                (*iter)[Columns.AlbumTrack] = track;
+
+                                (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
+                                (*iter)[Columns.MBID] = mbid; 
+
+                                (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
+                                (*iter)[Columns.AlbumArtistMBID] = mbid_artist; 
+
+                                (*iter)[Columns.Artist] = artist;
+                                (*iter)[Columns.Rating] = rating;
+                                (*iter)[Columns.Genre] = genre;
+                                (*iter)[Columns.PlayScore] = playscore; 
+
                                 (*iter)[Columns.RT] = rt; 
                                 (*iter)[Columns.Text] = (boost::format("%s %s") % album % artist).str();
-                                (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
-                                (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
-                                (*iter)[Columns.PlayScore] = playscore; 
-                                (*iter)[Columns.AlbumTrack] = track;
-                                (*iter)[Columns.Album] = album;
-                                (*iter)[Columns.Artist] = artist;
-                                (*iter)[Columns.Genre] = genre;
 
                                 AlbumInfo_pt renderdata (new AlbumInfo);
-
                                 renderdata->Name = album; 
                                 renderdata->Artist = artist;
                                 renderdata->Release = (boost::format("%s %s") % country % year).str();
                                 renderdata->Type = rt_string;
                                 renderdata->Genre = genre;
                                 renderdata->Qual = quality; 
+                                renderdata->Rating = rating;
 
                                 (*iter)[Columns.RenderData] = renderdata;
                         } 
@@ -1427,7 +1474,7 @@ namespace MPX
                         }
 
                 void
-                        AlbumTreeView::cellDataFuncCover (CellRenderer * basecell, TreeModel::iterator const &iter)
+                        AlbumTreeView::cellDataFuncCover (CellRenderer * basecell, const TreeIter& iter)
                         {
                                 TreePath path (iter);
                                 CellRendererCairoSurface *cell = dynamic_cast<CellRendererCairoSurface*>(basecell);
@@ -1470,58 +1517,32 @@ namespace MPX
                         }
 
                 void
-                        AlbumTreeView::cellDataFuncText1 (CellRenderer * basecell, TreeModel::iterator const &iter)
+                        AlbumTreeView::cellDataFuncText1 (CellRenderer * basecell, const TreeIter& iter)
                         {
                                 TreePath path (iter);
-                                CellRendererVBox *cvbox = dynamic_cast<CellRendererVBox*>(basecell);
-                                CellRendererAlbumData *cell1 = dynamic_cast<CellRendererAlbumData*>(cvbox->property_renderer1().get_value());
-                                CellRendererPixbuf *cell2 = dynamic_cast<CellRendererPixbuf*>(cvbox->property_renderer2().get_value());
-                                if(path.get_depth() == ROW_ALBUM)
+
+                                CellRendererAlbumData *cell = dynamic_cast<CellRendererAlbumData*>(basecell);
+
+                                g_return_if_fail( cell );
+
+                                if( path.get_depth() == ROW_ALBUM )
                                 {
-                                        cvbox->property_visible() = true; 
-
-                                        if(cell1)
-                                        {
-                                                cell1->property_info() = (*iter)[Columns.RenderData]; 
-
-                                                double score = (*iter)[Columns.PlayScore]; 
-
-                                                if( Options.HighlightMode == HIGHLIGHT_UNPLAYED )
-                                                {
-                                                    if( score < 1 )
-                                                        cell1->property_sensitive() = true;
-                                                    else
-                                                        cell1->property_sensitive() = false; 
-                                                }
-                                                else if( Options.HighlightMode == HIGHLIGHT_PLAYED )
-                                                {
-                                                    if( score >= 1 )
-                                                        cell1->property_sensitive() = true; 
-                                                    else
-                                                        cell1->property_sensitive() = false; 
-                                                }
-                                                else
-                                                    cell1->property_sensitive() = true; 
-                                        }
-
-                                        if(cell2)
-                                        {
-                                                gint64 i = ((*iter)[Columns.Rating]);
-                                                g_return_if_fail((i >= 0) && (i <= 5));
-                                                cell2->property_pixbuf() = m_Stars[i];
-                                        }
+                                        cell->property_visible() = true; 
+                                        cell->property_info() = (*iter)[Columns.RenderData]; 
                                 }
                                 else
                                 {
-                                        cvbox->property_visible() = false; 
+                                        cell->property_visible() = false; 
                                 }
                         }
 
                 void
-                        AlbumTreeView::cellDataFuncText2 (CellRenderer * basecell, TreeModel::iterator const &iter)
+                        AlbumTreeView::cellDataFuncText2 (CellRenderer * basecell, const TreeIter& iter)
                         {
                                 TreePath path (iter);
+
                                 CellRendererCount *cell = dynamic_cast<CellRendererCount*>(basecell);
+
                                 if(path.get_depth() == ROW_TRACK)
                                 {
                                         cell->property_visible() = true; 
@@ -1534,7 +1555,7 @@ namespace MPX
                         }
 
                 void
-                        AlbumTreeView::cellDataFuncText3 (CellRenderer * basecell, TreeModel::iterator const &iter)
+                        AlbumTreeView::cellDataFuncText3 (CellRenderer * basecell, const TreeIter& iter)
                         {
                                 TreePath path (iter);
                                 CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);
@@ -1550,7 +1571,7 @@ namespace MPX
                         }
 
                 void
-                        AlbumTreeView::cellDataFuncText4 (CellRenderer * basecell, TreeModel::iterator const &iter)
+                        AlbumTreeView::cellDataFuncText4 (CellRenderer * basecell, const TreeIter& iter)
                         {
                                 TreePath path (iter);
                                 CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);
@@ -1567,7 +1588,7 @@ namespace MPX
                         }
 
                 void
-                        AlbumTreeView::cellDataFuncText5 (CellRenderer * basecell, TreeModel::iterator const &iter)
+                        AlbumTreeView::cellDataFuncText5 (CellRenderer * basecell, const TreeIter& iter)
                         {
                                 TreePath path (iter);
                                 CellRendererText *cell = dynamic_cast<CellRendererText*>(basecell);

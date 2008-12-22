@@ -357,7 +357,7 @@ gossip_cell_renderer_expander_render (GtkCellRenderer      *cell,
 			    cell_area->y + y_offset + cell->ypad + priv->expander_size / 2,
                 */
 			    cell_area->x + x_offset + cell->xpad + priv->expander_size / 2,
-			    /*(cell_area->y + cell->ypad + priv->expander_size / 2)*/ cell_area->y + cell_area->height - priv->expander_size,
+			    /*(cell_area->y + cell->ypad + priv->expander_size / 2)*/ cell_area->y + 14, //cell_area->height - priv->expander_size,
 			    expander_style);
 }
 

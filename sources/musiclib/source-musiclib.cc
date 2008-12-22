@@ -281,6 +281,7 @@ namespace
                 N_("Insert Date"),
                 N_("Is MB Album Artist"),
                 N_("Active"),
+                N_("Audio Quality"),
                 N_("MPX Track ID"),
                 N_("MPX Album ID")
         };
