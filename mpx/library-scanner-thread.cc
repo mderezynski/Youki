@@ -512,7 +512,6 @@ MPX::LibraryScannerThread::on_scan_all(
             if( mtime2 && mtime1 == mtime2 )
             {
                 ++m_ScanSummary.FilesUpToDate;
-                g_message("Up to date: %s", location.c_str());
             }
             else
             {
@@ -559,9 +558,17 @@ MPX::LibraryScannerThread::on_add(
 )
 {
     ThreadData * pthreaddata = m_ThreadData.get();
-    g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
 
-    pthreaddata->ScanStart.emit();
+    if( check_mtimes )
+    {
+        cache_mtimes();
+    }
+    else
+    {
+        pthreaddata->ScanStart.emit();
+    }
+
+    g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
 
     RowV rows;
     m_SQL->get(rows, "SELECT last_scan_date FROM meta WHERE rowid = 1");
@@ -570,11 +577,6 @@ MPX::LibraryScannerThread::on_add(
     m_ScanSummary = ScanSummary();
 
     boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
-
-    if( check_mtimes )
-    {
-        cache_mtimes();
-    }
 
     Util::FileList collection;
 
@@ -655,7 +657,7 @@ MPX::LibraryScannerThread::on_add(
                     if( mtime1 <= last_scan_date)
                     {
                         ++m_ScanSummary.FilesUpToDate;
-                        g_message("Up to date: %s", location.c_str());
+                        continue;
                     }
                     else
                     {
@@ -664,7 +666,6 @@ MPX::LibraryScannerThread::on_add(
                         if( mtime1 == mtime2 )
                         {
                             ++m_ScanSummary.FilesUpToDate;
-                            g_message("Up to date: %s", location.c_str());
                             continue;
                         }
                     }
@@ -672,7 +673,7 @@ MPX::LibraryScannerThread::on_add(
 
             insert_file_no_mtime_check( t, *i2, insert_path_sql );
                         
-            if (! (std::distance(collection.begin(), i2) % 50) )
+            if( (! (std::distance(collection.begin(), i2) % 50)) )
             {
                 pthreaddata->Message.emit(
                     (boost::format(_("Collecting Tracks: %lld of %lld"))
@@ -699,6 +700,8 @@ MPX::LibraryScannerThread::on_scan_list_quick_stage_1(
 )
 {
     ThreadData * pthreaddata = m_ThreadData.get();
+
+    pthreaddata->ScanStart.emit();
 
     boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
 
@@ -773,9 +776,9 @@ MPX::LibraryScannerThread::on_scan_list_quick_stage_1(
                 if( check_abort_scan() ) 
                     return;
 
-                if (! (std::distance(v.begin(), i) % 100) )
+                if( (! (std::distance(v.begin(), i) % 100)) )
                 {
-                    pthreaddata->Message.emit((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(v.begin(), i) % v.size()).str());
+                    pthreaddata->Message.emit((boost::format(_("Checking Files for Presence: %lld / %lld")) % std::distance(v.begin(), i) % v.size()).str());
                 }
             }
 
@@ -1447,7 +1450,6 @@ MPX::LibraryScannerThread::process_insertion_list()
 
                             case SCAN_RESULT_UPTODATE:
                                 ++m_ScanSummary.FilesUpToDate;
-                                g_message("Up to date: %s", location.c_str());
                                 break;
                         }
                     }
@@ -1707,7 +1709,7 @@ MPX::LibraryScannerThread::on_vacuum()
 
           if( !uri.empty() )
           {
-              if (! (std::distance(rows.begin(), i) % 50) )
+              if( (!(std::distance(rows.begin(), i) % 50)) )
               {
                       pthreaddata->Message.emit((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
               }
@@ -1760,7 +1762,7 @@ MPX::LibraryScannerThread::on_vacuum_volume_list(
 
                   if( !uri.empty() )
                   {
-                      if (! (std::distance(rows.begin(), i) % 50) )
+                      if( (!(std::distance(rows.begin(), i) % 50)) )
                       {
                               pthreaddata->Message.emit((boost::format(_("Checking files for presence: %lld / %lld")) % std::distance(rows.begin(), i) % rows.size()).str());
                       }
@@ -1798,7 +1800,9 @@ MPX::LibraryScannerThread::update_albums(
         update_album( (*i) );
 
         if( !(std::distance(m_ProcessedAlbums.begin(), i) % 50) )
+        {
             pthreaddata->Message.emit((boost::format(_("Additional Metadata Update: %lld of %lld")) % std::distance(m_ProcessedAlbums.begin(), i) % m_ProcessedAlbums.size() ).str());
+        }
     }
 
     m_ProcessedAlbums.clear();
@@ -1869,7 +1873,9 @@ MPX::LibraryScannerThread::on_update_statistics()
         );
 
         if( !(std::distance(v1.begin(), i) % 100) )
+        {
             pthreaddata->Message.emit((boost::format(_("Additional Metadata Update/Track Audio Quality: %lld of %lld")) % std::distance(v1.begin(), i) % v1.size() ).str());
+        }
     }
 
     // Album Statistical Metadata
@@ -1914,7 +1920,9 @@ MPX::LibraryScannerThread::on_update_statistics()
         pthreaddata->EntityUpdated( get<gint64>((*i)["album_j"]) , ENTITY_ALBUM );
 
         if( !(std::distance(v1.begin(), i) % 50) )
+        {
             pthreaddata->Message.emit((boost::format(_("Additional Metadata Update: %lld of %lld")) % std::distance(v1.begin(), i) % v1.size() ).str());
+        }
     }
 
     pthreaddata->Message(_("Additional Metadata Update: Done"));

@@ -185,12 +185,6 @@ namespace MPX
             on_rescan_volume() ;
 
             void
-            on_vacuum_all() ;
-
-            void
-            on_vacuum_volume() ;
-
-            void
             on_volume_added(
                 const HAL::Volume&
             ) ;
