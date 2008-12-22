@@ -112,8 +112,10 @@ namespace MPX
 
         m_FileStats_Store->clear();
 
+        boost::shared_ptr<MPX::Library> library = services->get<Library>("mpx-service-library");
+
         RowV v1;
-        services->get<Library>("mpx-service-library")->getSQL(
+        library->getSQL(
               v1
             , "SELECT DISTINCT type, count(*) AS cnt FROM track GROUP BY type"
         );
@@ -125,14 +127,14 @@ namespace MPX
             (*iter)[m_FileStats_Columns.Count]      = get<gint64>((*i)["cnt"]);
 
             RowV v2; 
-            services->get<Library>("mpx-service-library")->getSQL(
+            library->getSQL(
                   v2
                 , (boost::format("SELECT bitrate AS rate FROM track WHERE type = '%s' AND bitrate != '0' ORDER BY bitrate DESC LIMIT 1") % get<std::string>((*i)["type"])).str()
             );
             (*iter)[m_FileStats_Columns.HighBitrate] = (boost::format("%lld kbit/s") % get<gint64>(v2[0]["rate"])).str();
 
             v2.clear();
-            services->get<Library>("mpx-service-library")->getSQL(
+            library->getSQL(
                   v2
                 , (boost::format("SELECT bitrate AS rate FROM track WHERE type = '%s' AND bitrate != '0' ORDER BY bitrate ASC LIMIT 1") % get<std::string>((*i)["type"])).str()
             );
@@ -143,7 +145,7 @@ namespace MPX
 
         m_Xml->get_widget( "label-count-of-tracks", label );
         v1.clear();
-        services->get<Library>("mpx-service-library")->getSQL(
+        library->getSQL(
               v1
             , "SELECT DISTINCT count(*) AS cnt FROM track"
         );
@@ -151,7 +153,7 @@ namespace MPX
 
         m_Xml->get_widget( "label-count-of-albums", label );
         v1.clear();
-        services->get<Library>("mpx-service-library")->getSQL(
+        library->getSQL(
               v1
             , "SELECT DISTINCT count(*) AS cnt FROM album"
         );
@@ -159,7 +161,7 @@ namespace MPX
 
         m_Xml->get_widget( "label-library-playtime", label );
         v1.clear();
-        services->get<Library>("mpx-service-library")->getSQL(
+        library->getSQL(
               v1
             , "SELECT sum(time) AS time FROM track"
         );

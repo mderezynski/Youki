@@ -11,6 +11,7 @@
 #include "mpx/widgets/cell-renderer-album-data.hh"
 
 using namespace Gtk;
+using namespace Glib;
 
 namespace
 {
@@ -24,6 +25,14 @@ namespace MPX
     : ObjectBase        (typeid(CellRendererAlbumData))
     , property_info_    (*this, "info", boost::shared_ptr<AlbumInfo>()) 
     {
+        for(int n = 0; n < 4; ++n)
+        {
+                m_Quality[n] = Gdk::Pixbuf::create_from_file(
+                    build_filename(
+                          build_filename(DATA_DIR,"images")
+                        , (boost::format("qual%d.png") % n).str()
+                ));
+        }
     }
 
     CellRendererAlbumData::~CellRendererAlbumData ()
@@ -75,9 +84,11 @@ namespace MPX
         Glib::RefPtr<Pango::Layout> layout[5];
         int text_width[5], text_height[5];
 
+        AlbumInfo_pt info = property_info_.get_value();
+
         // Name
         layout[0] = Pango::Layout::create( widget.get_pango_context() );
-        layout[0]->set_text( property_info_.get_value()->Name );
+        layout[0]->set_text( info->Name );
 
         Pango::AttrList list;
         Pango::Attribute attr = Pango::Attribute::create_attr_scale(1.2);
@@ -87,7 +98,7 @@ namespace MPX
         layout[0]->set_attributes(list);
         layout[0]->get_pixel_size( text_width[0], text_height[0] );
 
-        cr->set_operator( ::Cairo::OPERATOR_SOURCE );
+        cr->set_operator( Cairo::OPERATOR_ATOP );
         RoundedRectangle( cr, xoff+1, yoff+5, cell_area.get_width()-2, text_height[0] + 4, 4. );
 
         if( state & Gtk::CELL_RENDERER_SELECTED )
@@ -115,7 +126,7 @@ namespace MPX
 
         // Artist
         layout[1] = Pango::Layout::create( widget.get_pango_context() );
-        layout[1]->set_text( property_info_.get_value()->Artist );
+        layout[1]->set_text( info->Artist );
 
         list = Pango::AttrList();
         attr = Pango::Attribute::create_attr_scale(1.2);
@@ -140,7 +151,7 @@ namespace MPX
 
         // Release
         layout[2] = Pango::Layout::create( widget.get_pango_context() );
-        layout[2]->set_text( property_info_.get_value()->Release );
+        layout[2]->set_text( info->Release );
         layout[2]->get_pixel_size( text_width[2], text_height[2] );
 
         cr->move_to(
@@ -156,8 +167,9 @@ namespace MPX
         pango_cairo_show_layout( cr->cobj(), layout[2]->gobj() );
 
         // Bitrate
+        /*
         layout[3] = Pango::Layout::create( widget.get_pango_context() );
-        layout[3]->set_text( property_info_.get_value()->Bitrate );
+        layout[3]->set_text( info->Bitrate );
         layout[3]->get_pixel_size( text_width[3], text_height[3] );
 
         cr->move_to(
@@ -171,10 +183,18 @@ namespace MPX
             cr->set_source_rgba(.9, .9, .9, 1.);
 
         pango_cairo_show_layout( cr->cobj(), layout[3]->gobj() );
+        */
+
+        // Qual
+
+        if( info->Qual != -1 )
+        {
+            Gdk::Cairo::set_source_pixbuf( cr, m_Quality[info->Qual], xoff + cell_area.get_width() - 130, yoff + 6 + YPAD ); 
+            cr->rectangle( xoff + cell_area.get_width() - 130, yoff + 6 + YPAD, 72, 16 ); 
+            cr->fill();
+        }
 
         // Release Type
-        AlbumInfo_pt info = property_info_.get_value();      
-
         std::string release_info;
 
         if( !info->Genre.empty() )

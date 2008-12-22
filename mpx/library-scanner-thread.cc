@@ -143,10 +143,58 @@ namespace
     };
 
     const char delete_track_f[] = "DELETE FROM track WHERE id='%lld';";
-}
 
-namespace MPX
-{
+    enum Quality
+    {
+          QUALITY_ABYSMAL
+        , QUALITY_LOW
+        , QUALITY_MED
+        , QUALITY_HI
+    };
+
+    struct BitrateLookupTable
+    {
+        const char*     Type;
+        int             Range0;
+        int             Range1;
+        int             Range2;
+    };
+
+    BitrateLookupTable table[]=
+    {
+          {"audio/x-flac",          320, 640, 896 }
+        , {"audio/x-ape",           256, 512, 768 }
+        , {"audio/x-vorbis+ogg",     32,  96, 192 }
+        , {"audio/x-musepack",      128, 192, 256 }
+        , {"audio/mp4",              24,  64, 128 }
+        , {"audio/mpeg",             64, 128, 256 }
+        , {"audio/x-ms-wma",         48,  96, 196 }
+    };
+
+    gint64
+    get_audio_quality(
+          const std::string& type
+        , gint64             rate
+    )
+    {
+        for( unsigned n = 0; n < G_N_ELEMENTS(table); ++n )
+        {
+            if( type == table[n].Type )
+            {
+                if( rate <= table[n].Range0 )
+                    return QUALITY_ABYSMAL;
+                else if( rate <= table[n].Range1 )
+                    return QUALITY_LOW;
+                else if( rate <= table[n].Range2 )
+                    return QUALITY_MED;
+                else
+                    return QUALITY_HI;
+            }
+        }
+
+        return 0;
+    }
+
     template <typename T>
     void
     append_value(
@@ -1988,17 +2036,41 @@ MPX::LibraryScannerThread::on_update_statistics()
 
     pthreaddata->ScanStart.emit();
 
-    RowV rows_albums;
+    // Audio Quality per Track
+
+    RowV v1;
+    m_SQL->get(
+          v1
+        , "SELECT id, type, bitrate FROM track WHERE audio_quality IS NULL"
+    );
+    for( RowV::iterator i = v1.begin(); i != v1.end(); ++i )
+    {
+        std::string type = get<std::string>((*i)["type"]);
+        gint64      rate = get<gint64>((*i)["bitrate"]);
+        gint64      qual = get_audio_quality( type, rate );
+        gint64        id = get<gint64>((*i)["id"]);
+
+        m_SQL->exec_sql(
+            (boost::format("UPDATE track SET audio_quality = '%lld' WHERE id = %lld") % qual % id).str()
+        );
+
+        if( !(std::distance(v1.begin(), i) % 100) )
+            pthreaddata->Message.emit((boost::format(_("Additional Metadata Update/Track Audio Quality: %lld of %lld")) % std::distance(v1.begin(), i) % v1.size() ).str());
+    }
+
+    // Album Statistical Metadata
+
+    v1.clear();
     m_SQL->get( 
-        rows_albums,
+        v1,
         "SELECT DISTINCT album_j FROM track"
     );
 
-    for( RowV::iterator i = rows_albums.begin(); i != rows_albums.end(); ++i )
+    for( RowV::iterator i = v1.begin(); i != v1.end(); ++i )
     {
         RowV        rows;
         std::string genre;
-        gint64      bitrate = 0;
+        gint64      quality = 0;
 
         m_SQL->get(
             rows,
@@ -2014,21 +2086,21 @@ MPX::LibraryScannerThread::on_update_statistics()
         rows.clear();
         m_SQL->get(
             rows,
-            (boost::format ("SELECT sum(bitrate)/count(*) AS rate FROM track WHERE album_j = %lld AND bitrate IS NOT NULL AND bitrate != '0'") 
+            (boost::format ("SELECT sum(audio_quality)/count(*) AS quality FROM track WHERE album_j = %lld AND audio_quality IS NOT NULL") 
                 % get<gint64>((*i)["album_j"])
             ).str()
         ); 
         if( !rows.empty() )
         {
-            bitrate = get<gint64>(rows[0]["rate"]);
+            quality = get<gint64>(rows[0]["quality"]);
         }
 
-        m_SQL->exec_sql(mprintf("UPDATE album SET album_genre = '%q', album_bitrate = '%lld' WHERE id = '%lld'", genre.c_str(), bitrate, get<gint64>((*i)["album_j"])));
+        m_SQL->exec_sql(mprintf("UPDATE album SET album_genre = '%q', album_quality = '%lld' WHERE id = '%lld'", genre.c_str(), quality, get<gint64>((*i)["album_j"])));
 
         pthreaddata->EntityUpdated( get<gint64>((*i)["album_j"]) , ENTITY_ALBUM );
 
-        if( !(std::distance(rows_albums.begin(), i) % 50) )
-            pthreaddata->Message.emit((boost::format(_("Additional Metadata Update: %lld of %lld")) % std::distance(rows_albums.begin(), i) % rows_albums.size() ).str());
+        if( !(std::distance(v1.begin(), i) % 50) )
+            pthreaddata->Message.emit((boost::format(_("Additional Metadata Update: %lld of %lld")) % std::distance(v1.begin(), i) % v1.size() ).str());
     }
 
     pthreaddata->Message(_("Additional Metadata Update: Done"));
