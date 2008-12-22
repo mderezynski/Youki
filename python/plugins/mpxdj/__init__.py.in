@@ -280,9 +280,13 @@ class OPTION__Analyzer(BaseOPTION__):
         
         track = self.model[len(self.model)-1]
         id = track[mpx.AttributeId.MPX_TRACK_ID].get()
-        markov_id = lib.markovGetRandomProbableTrack(id)
-        if markov_id and markov_id != 0:
-            v.append(markov_id)
+
+        if id:
+
+            markov_id = lib.markovGetRandomProbableTrack(id)
+
+            if markov_id and markov_id != 0:
+                v.append(markov_id)
 
     def run(self):
 
