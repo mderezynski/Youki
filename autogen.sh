@@ -111,8 +111,8 @@ ACLOCAL=${ACLOCAL:-aclocal}
 AUTOHEADER=${AUTOHEADER:-autoheader}
 AUTOPOINT=${AUTOPOINT:-autopoint}
 LIBTOOLIZE=${LIBTOOLIZE:-libtoolize}
-INTLTOOLIZE=${INTLTOOLIZE:-intltoolize}
-GLIB_GETTEXTIZE=${GLIB_GETTEXTIZE:-glib-gettextize}
+#INTLTOOLIZE=${INTLTOOLIZE:-intltoolize}
+#GLIB_GETTEXTIZE=${GLIB_GETTEXTIZE:-glib-gettextize}
 
 # Check for proper automake version
 automake_maj_req=1
@@ -176,8 +176,9 @@ if [ ! -e Changelog ]; then
 fi
 
 run_or_die $ACLOCAL -I m4
-run_or_die $GLIB_GETTEXTIZE --force --copy
-run_or_die $INTLTOOLIZE --force --copy --automake
+run_or_die $AUTOPOINT --force
+#run_or_die $GLIB_GETTEXTIZE --force --copy
+#run_or_die $INTLTOOLIZE --force --copy --automake
 run_or_die $LIBTOOLIZE --force --copy --automake
 run_or_die $AUTOCONF
 run_or_die $AUTOHEADER

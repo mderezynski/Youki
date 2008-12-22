@@ -167,7 +167,7 @@ namespace
         , {"audio/x-vorbis+ogg",     32,  96, 192 }
         , {"audio/x-musepack",      128, 192, 256 }
         , {"audio/mp4",              24,  64, 128 }
-        , {"audio/mpeg",             64, 128, 256 }
+        , {"audio/mpeg",             96, 192, 256 }
         , {"audio/x-ms-wma",         48,  96, 196 }
     };
 
@@ -181,11 +181,11 @@ namespace
         {
             if( type == table[n].Type )
             {
-                if( rate <= table[n].Range0 )
+                if( rate < table[n].Range0 )
                     return QUALITY_ABYSMAL;
-                else if( rate <= table[n].Range1 )
+                else if( rate < table[n].Range1 )
                     return QUALITY_LOW;
-                else if( rate <= table[n].Range2 )
+                else if( rate < table[n].Range2 )
                     return QUALITY_MED;
                 else
                     return QUALITY_HI;

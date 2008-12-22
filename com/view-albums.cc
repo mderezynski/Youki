@@ -1111,8 +1111,6 @@ namespace MPX
                                 renderdata->Qual = quality; 
 
                                 (*iter)[Columns.RenderData] = renderdata;
-
-                                on_got_cover( mbid );
                         } 
 
                 void
