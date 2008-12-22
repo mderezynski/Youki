@@ -10,11 +10,11 @@ fi
     elif [ -x /usr/xpg4/bin/sh ]; then
         USE_SHELL=/usr/xpg4/bin/sh
     else
-        echo "please install /bin/ksh or /usr/xpg4/bin/sh"
+        printf "\033[1mplease install /bin/ksh or /usr/xpg4/bin/sh\033[0m"
         exit
     fi
     export USE_SHELL
-    echo "restarting under $USE_SHELL..."
+    printf "\033[1mrestarting under $USE_SHELL...\033[0m"
     $USE_SHELL $0 "$@"
     exit
 }
@@ -23,20 +23,20 @@ TOP_DIR=$(cd $(dirname $0); echo $PWD)
 LAST_DIR=$PWD
 
 if test ! -f $TOP_DIR/configure.ac ; then
-    echo "You must execute this script from the top level directory."
+    printf "\033[1mYou must execute this script from the top level directory.\033[0m"
     exit 1
 fi
 
 # Functions
 dump_help_screen ()
 {
-    echo "Usage: autogen.sh [options]"
+    printf "\033[1mUsage: autogen.sh [options]"
     echo 
     echo "options:"
     echo "  -h,--help             Show this help screen"
     echo "  -n,--no-log           Don't create ChangeLog from SVN commit logs" 
     echo "  -l,--last-version     Specify the revision down to which create the log from"
-    echo
+    printf "\033[0m"
     exit 0
 }
 
@@ -57,7 +57,7 @@ parse_options ()
             shift 2
             ;;
         *)
-            echo Assuming configure arguments!
+            printf "\033[1mAssuming configure arguments!\033[0m\n"
             ;;
     esac
 
@@ -75,7 +75,7 @@ run_or_die ()
 
     # check for empty commands
     if test -z "$COMMAND" ; then
-        echo "*warning* no command specified"
+        printf "\033[1;33m*warning* no command specified!\033[0m\n"
         return 1
     fi
 
@@ -84,7 +84,7 @@ run_or_die ()
     OPTIONS="$@"
 
     # print a message
-    printf "*info* running $COMMAND"
+    printf "\033[1m*info* running $COMMAND\033[0m"
     if test -n "$OPTIONS" ; then
         echo " ($OPTIONS)"
     else
@@ -94,7 +94,7 @@ run_or_die ()
     # run or die
     $COMMAND $OPTIONS ; RESULT=$?
     if test $RESULT -ne 0 ; then
-        echo "*error* $COMMAND failed. (exit code = $RESULT)"
+        echo -e "\033[1;31m*error* $COMMAND failed. (exit code = $RESULT)\033[0m"
         exit 1
     fi
 
@@ -118,21 +118,21 @@ LIBTOOLIZE=${LIBTOOLIZE:-libtoolize}
 automake_maj_req=1
 automake_min_req=9
 
-printf "Checking Automake version..."
+printf "\033[1mChecking Automake version... "
 
 automake_version=`$AUTOMAKE --version | head -n1 | cut -f 4 -d \ `
 automake_major=$(echo $automake_version | cut -f 1 -d . | sed -e 's:^\([0-9]\+\).*$:\1:')
 automake_minor=$(echo $automake_version | cut -f 2 -d . | sed -e 's:^\([0-9]\+\).*$:\1:')
 automake_micro=$(echo $automake_version | cut -f 3 -d . | sed -e 's:^\([0-9]\+\).*$:\1:')
 
-printf "$automake_major.$automake_minor.$automake_micro.:  "
+printf "$automake_major.$automake_minor.$automake_micro: \033[0m"
 
 if [ $automake_major -ge $automake_maj_req ]; then
     if [ $automake_minor -lt $automake_min_req ]; then 
-      echo "error: bmpx requires automake $automake_maj_req.$automake_min_req"
+      echo -e "\033[1;31m*error*: mpx requires automake $automake_maj_req.$automake_min_req\033[0m"
       exit 1
     else
-      echo "ok"
+      echo -e "\033[1;32mok\033[0m"
     fi
 fi
 
@@ -140,20 +140,20 @@ fi
 autoconf_maj_req=2
 autoconf_min_req=60
 
-printf "Checking Autoconf version... "
+printf "\033[1mChecking Autoconf version... "
 
 autoconf_version=`$AUTOCONF --version | head -n1 | cut -f 4 -d \ `
 autoconf_major=$(echo $autoconf_version | cut -f 1 -d . | sed -e 's:^\([0-9]\+\).*$:\1:')
 autoconf_minor=$(echo $autoconf_version | cut -f 2 -d . | sed -e 's:^\([0-9]\+\).*$:\1:')
 
-printf "$autoconf_major.$autoconf_minor..:  "
+printf "$autoconf_major.$autoconf_minor: \033[0m"
 
 if [ $autoconf_major -ge $autoconf_maj_req ]; then
     if [ $autoconf_minor -lt $autoconf_min_req ]; then 
-      echo "error: bmpx requires autoconf $autoconf_maj_req.$autoconf_min_req"
+      printf "\033[1;31m*error* mpx requires autoconf $autoconf_maj_req.$autoconf_min_req\033[0m"
       exit 1
     else
-      echo "ok"
+      echo -e "\033[1;32mok\033[0m"
     fi
 fi
 
@@ -161,7 +161,7 @@ fi
 if [ -d .svn ]; then
     if [ "x$no_log" != "x1" ]; then
       # only recreate if we in svn repo
-      echo "*info* creating ChangeLog from SVN history"
+      printf "\033[1m*info* creating ChangeLog from SVN history\033[0m"
       if [ "x$lastversion" != "x" ]; then
         REVISION=$(svnversion)
         $USE_SHELL ./scripts/svn2cl.sh -i --authors=./authors.xml --break-before-msg --separate-daylogs --reparagraph -r $REVISION:$lastversion
@@ -186,5 +186,7 @@ run_or_die $AUTOMAKE -a -c
 
 cd $LAST_DIR
 
-echo "Running 'configure' with options $GLOBOPTIONS"
-./configure $GLOBOPTIONS
+echo
+echo -e "\033[1m*info* running 'configure' with options: $GLOBOPTIONS\033[0m"
+echo
+./configure "$@"
