@@ -80,6 +80,8 @@ namespace MPX
             gtk_widget_realize( GTK_WIDGET( m_volume_window->gobj() ));
 
 
+            adapt_image();
+
             m_volume_window->signal_button_press_event().connect(
                     sigc::mem_fun(
                         *this,
