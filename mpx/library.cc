@@ -168,6 +168,9 @@ namespace
 
                 {   "active",
                         VALUE_TYPE_INT      },
+
+                {   "audio_quality",
+                        VALUE_TYPE_INT      },
         };
 }
 
@@ -1368,6 +1371,9 @@ namespace MPX
 
                                 if (row.count("type"))
                                         (*track.get())[ATTRIBUTE_TYPE] = get<std::string>(row["type"]);
+
+                                if (row.count("audio_quality"))
+                                        (*track.get())[ATTRIBUTE_QUALITY] = get<gint64>(row["audio_quality"]);
                         }
 
                         g_assert( (*track.get()).has(ATTRIBUTE_LOCATION) );

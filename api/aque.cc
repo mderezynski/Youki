@@ -133,6 +133,17 @@ namespace AQE
                     }
                 }
                 else
+                if( v2[0] == "quality" )
+                {
+                    try{
+                            c.TargetValue = gint64(boost::lexical_cast<int>(v2[1]));
+                            c.TargetAttr = ATTRIBUTE_QUALITY;
+                            c.MatchType = type;
+                            constraints.push_back(c);
+                    } catch( boost::bad_lexical_cast ) {
+                    }
+                }
+                else
                 if( v2[0] == "genre" )
                 {
                     try{

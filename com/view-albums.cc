@@ -1000,6 +1000,7 @@ namespace MPX
                                 if(r.count("album_quality"))
                                 {
                                         quality = get<gint64>(r["album_quality"]);
+                                        track[ATTRIBUTE_QUALITY] = quality;
                                 }
 
                                 if(r.count("album_genre"))

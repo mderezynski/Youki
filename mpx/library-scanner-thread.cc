@@ -140,6 +140,9 @@ namespace
 
         {   "active",
             VALUE_TYPE_INT      },
+
+        {   "audio_quality",
+            VALUE_TYPE_INT      },
     };
 
     const char delete_track_f[] = "DELETE FROM track WHERE id='%lld';";
