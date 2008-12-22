@@ -461,7 +461,6 @@ MPX::LibraryScannerThread::on_scan_all(
     pthreaddata->ScanStart.emit();
 
     m_ScanSummary = ScanSummary();
-    m_ScanSummary.DeepRescan = true;
 
     boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
 
@@ -505,26 +504,29 @@ MPX::LibraryScannerThread::on_scan_all(
         std::string location = get<std::string>( (*(t.get()))[ATTRIBUTE_LOCATION].get() ) ; 
 
         gint64 mtime1 = Util::get_file_mtime( get<std::string>( (*(t.get()))[ATTRIBUTE_LOCATION].get() ) );
-        gint64 mtime2 = get<gint64>((*i)["mtime"]);
 
-        if( mtime1 && mtime2 && mtime1 == mtime2 )
+        if( mtime1 )
         {
-            ++m_ScanSummary.FilesUpToDate;
-        }
-        else
-        {
-            if( mtime1 )
+            gint64 mtime2 = get<gint64>((*i)["mtime"]);
+
+            if( mtime2 && mtime1 == mtime2 )
             {
-                    (*(t.get()))[ATTRIBUTE_MTIME] = mtime1;
-                    insert_file_no_mtime_check( t, location, get<std::string>((*i)["insert_path"])); 
+                ++m_ScanSummary.FilesUpToDate;
+                g_message("Up to date: %s", location.c_str());
             }
             else
             {
-                gint64 id = get<gint64>((*i)["id"]);
-                m_SQL->exec_sql(mprintf( delete_track_f, id));
-                pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
+                (*(t.get()))[ATTRIBUTE_MTIME] = mtime1;
+                insert_file_no_mtime_check( t, location, get<std::string>((*i)["insert_path"])); 
             }
         }
+        else
+        {
+            gint64 id = get<gint64>((*i)["id"]);
+            m_SQL->exec_sql(mprintf( delete_track_f, id));
+            pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
+        }
+
 
         if( check_abort_scan() )
             return;
@@ -545,6 +547,7 @@ MPX::LibraryScannerThread::on_scan_all(
     do_remove_dangling ();
     update_albums ();
 
+    pthreaddata->Message.emit(_("Rescan: Done"));
     pthreaddata->ScanSummary.emit( m_ScanSummary );
     pthreaddata->ScanEnd.emit();
 }
@@ -565,7 +568,6 @@ MPX::LibraryScannerThread::on_add(
     gint64 last_scan_date = boost::get<gint64>(rows[0]["last_scan_date"]);
 
     m_ScanSummary = ScanSummary();
-    m_ScanSummary.DeepRescan = true;
 
     boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
 
@@ -640,10 +642,12 @@ MPX::LibraryScannerThread::on_add(
                 return;
 
             Track_sp t (new Track);
-    
             library->trackSetLocation( (*(t.get())), *i2 );
 
-            gint64 mtime1 = Util::get_file_mtime( get<std::string>( (*(t.get()))[ATTRIBUTE_LOCATION].get() ) );
+            const std::string& location = get<std::string>( (*(t.get()))[ATTRIBUTE_LOCATION].get() );
+
+            gint64 mtime1 = Util::get_file_mtime( location ); 
+
             (*(t.get()))[ATTRIBUTE_MTIME] = mtime1; 
 
             if( check_mtimes )
@@ -651,6 +655,7 @@ MPX::LibraryScannerThread::on_add(
                     if( mtime1 <= last_scan_date)
                     {
                         ++m_ScanSummary.FilesUpToDate;
+                        g_message("Up to date: %s", location.c_str());
                     }
                     else
                     {
@@ -659,6 +664,7 @@ MPX::LibraryScannerThread::on_add(
                         if( mtime1 == mtime2 )
                         {
                             ++m_ScanSummary.FilesUpToDate;
+                            g_message("Up to date: %s", location.c_str());
                             continue;
                         }
                     }
@@ -682,6 +688,7 @@ MPX::LibraryScannerThread::on_add(
     do_remove_dangling ();
     update_albums ();
 
+    pthreaddata->Message.emit(_("Rescan: Done"));
     pthreaddata->ScanSummary.emit( m_ScanSummary );
     pthreaddata->ScanEnd.emit();
 }
@@ -1407,19 +1414,17 @@ MPX::LibraryScannerThread::process_insertion_list()
 
 
                     const TrackInfo_p_Vector& v = (*l4).second ; 
-    
-                    std::string uri;
 
+                    std::string location;
+    
                     if( !v.empty() )
                     try{
 
                         TrackInfo_p p = prioritize( v );
 
-                        uri = get<std::string>((*(p->Track.get()))[ATTRIBUTE_LOCATION].get());
+                        location = get<std::string>((*(p->Track.get()))[ATTRIBUTE_LOCATION].get());
 
-                        ScanResult status = insert( p, v ); 
-
-                        switch( status )
+                        switch( insert( p, v ) ) 
                         {
                             case SCAN_RESULT_OK:
                                  pthreaddata->Message.emit(
@@ -1433,7 +1438,7 @@ MPX::LibraryScannerThread::process_insertion_list()
                             case SCAN_RESULT_UPDATE:
                                 try{
                                     ++m_ScanSummary.FilesUpdated;
-                                      m_ScanSummary.FileListUpdated.push_back( SSFileInfo( filename_to_utf8(uri), _("Updated")));
+                                      m_ScanSummary.FileListUpdated.push_back( SSFileInfo( filename_to_utf8(location), _("Updated")));
                                 } catch (Glib::ConvertError & cxe )
                                 {
                                       m_ScanSummary.FileListErroneous.push_back( SSFileInfo( _("(invalid UTF-8)"), _("Could not convert URI to UTF-8 for display")));
@@ -1442,12 +1447,13 @@ MPX::LibraryScannerThread::process_insertion_list()
 
                             case SCAN_RESULT_UPTODATE:
                                 ++m_ScanSummary.FilesUpToDate;
+                                g_message("Up to date: %s", location.c_str());
                                 break;
                         }
                     }
                     catch( ScanError & cxe )
                     {
-                        add_erroneous_track( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str() );
+                        add_erroneous_track( location, (boost::format (_("Error inserting file: %s")) % cxe.what()).str() );
                     }
 
     }

@@ -67,7 +67,6 @@ namespace MPX
         gint64  FilesUpToDate;
         gint64  FilesUpdated;
         gint64  FilesTotal;
-        bool    DeepRescan;
 
         std::vector<SSFileInfo> FileListErroneous;
         std::vector<SSFileInfo> FileListUpdated;

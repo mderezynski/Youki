@@ -608,7 +608,7 @@ namespace MPX
             _("Library Scan finished at %1% (%2% %3% scanned, %4% Files added, %5% Files up to date, %6% updated, %7% erroneous, see log)"))
             % bdate 
             % summary.FilesTotal
-            % (summary.DeepRescan ? _("Files") : _("Folders"))
+            % _("Files")
             % summary.FilesAdded
             % summary.FilesUpToDate
             % summary.FilesUpdated
