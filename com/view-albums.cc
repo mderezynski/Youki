@@ -1206,6 +1206,8 @@ namespace MPX
                                         break;
                                 }
 
+                                on_got_cover( get<std::string>(r["mb_album_id"]));
+
                                 return iter;
                         }
 

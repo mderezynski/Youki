@@ -66,10 +66,7 @@ namespace
                 "         <separator/>"
                 "         <menuitem action='action-mlib-remove-dupes'/>"
                 "         <menuitem action='action-mlib-rescan'/>"
-                "         <menuitem action='action-mlib-rescan-deep'/>"
-                "         <menuitem action='action-mlib-vacuum'/>"
                 "         <separator/>"
-                "         <menuitem action='action-mlib-update-statistics'/>"
                 "         <menuitem action='action-mlib-recache-covers'/>"
                 "         <separator/>"
                 "         <menuitem action='action-close'/>"
@@ -77,8 +74,6 @@ namespace
 #ifdef HAVE_HAL
                 "   <menu action='MenuVolume'>"
                 "         <menuitem action='action-volume-rescan'/>"
-                "         <menuitem action='action-volume-rescan-deep'/>"
-                "         <menuitem action='action-volume-vacuum'/>"
                 "   </menu>"
 #endif
                 "</menubar>"
@@ -271,12 +266,6 @@ namespace MPX
                 &MLibManager::scan_summary
         ));
 
-        services->get<Library>("mpx-service-library")->scanner()->connect().signal_scan_run().connect(
-            sigc::mem_fun(
-                *this,
-                &MLibManager::scan_run
-        ));
-
         m_Xml->get_widget("volumes-view", m_VolumesView);
         m_VolumesView->get_selection()->set_mode( Gtk::SELECTION_BROWSE );
 
@@ -374,8 +363,6 @@ namespace MPX
 
 #ifdef HAVE_HAL
         m_Xml->get_widget("b-rescan", m_Rescan);
-        m_Xml->get_widget("b-rescan-deep", m_DeepRescan);
-        m_Xml->get_widget("b-vacuum", m_Vacuum);
 #endif
 
         /*- Rescanning ----------------------------------------------------*/ 
@@ -435,43 +422,10 @@ namespace MPX
         m_Actions->add( Action::create(
             "action-mlib-rescan",
             Gtk::Stock::REFRESH,
-            _("_Find New Files")),
-            sigc::bind(
-                    sigc::mem_fun(
-                        *this,
-                        &MLibManager::rescan_all_volumes
-                    ),
-                    false
-        ));
-
-        m_Actions->add( Action::create(
-            "action-mlib-rescan-deep",
-            Gtk::Stock::HARDDISK,
-            _("_Update Existing & Remove Stale Files")),
-            sigc::bind(
-                    sigc::mem_fun(
-                        *this,
-                        &MLibManager::rescan_all_volumes
-                    ),
-                    true
-        ));
-
-        m_Actions->add( Action::create(
-            "action-mlib-vacuum",
-            Gtk::Stock::UNDO,
-            _("_Clean Up")),
-            sigc::mem_fun(
-                *this,
-                &MLibManager::on_vacuum_all
-        ));
-
-        m_Actions->add( Action::create(
-            "action-mlib-update-statistics",
-            Gtk::Stock::FIND,
-            _("_Update Additional Metadata")),
-            sigc::mem_fun(
-                *this,
-                &MLibManager::on_update_statistics
+            _("_Rescan, Update & Clean Up")),
+                sigc::mem_fun(
+                    *this,
+                    &MLibManager::rescan_all_volumes
         ));
 
         m_Actions->add( Action::create(
@@ -488,36 +442,10 @@ namespace MPX
             "action-volume-rescan",
 
             Gtk::Stock::REFRESH,
-            _("_Find New Files")),
-            sigc::bind(
-                    sigc::mem_fun(
-                        *this,
-                        &MLibManager::on_rescan_volume
-                    ),
-                    false
-        ));
-
-        m_Actions->add( Action::create(
-
-            "action-volume-rescan-deep",
-
-            Gtk::Stock::HARDDISK,
-            _("_Update Existing & Remove Stale Files")),
-            sigc::bind(
-                    sigc::mem_fun(
-                        *this,
-                        &MLibManager::on_rescan_volume
-                    ),
-                    true
-        ));
-
-        m_Actions->add( Action::create(
-            "action-volume-vacuum",
-            Gtk::Stock::UNDO,
-            _("_Clean Up")),
-            sigc::mem_fun(
-                *this,
-                &MLibManager::on_vacuum_volume
+            _("_Rescan, Update & Clean Up Volume")),
+                sigc::mem_fun(
+                    *this,
+                    &MLibManager::on_rescan_volume
         ));
 #endif
 
@@ -549,12 +477,7 @@ namespace MPX
 
 #ifdef HAVE_HAL
         m_Actions->get_action("action-volume-rescan")->set_sensitive( false );
-        m_Actions->get_action("action-volume-rescan-deep")->set_sensitive( false );
-        m_Actions->get_action("action-volume-vacuum")->set_sensitive( false );
-
         m_Actions->get_action("action-volume-rescan")->connect_proxy( *m_Rescan );
-        m_Actions->get_action("action-volume-rescan-deep")->connect_proxy( *m_DeepRescan );
-        m_Actions->get_action("action-volume-vacuum")->connect_proxy( *m_Vacuum );
 #endif
 
         m_Actions->get_action("action-close")->connect_proxy( *m_Close );
@@ -665,6 +588,12 @@ namespace MPX
     }
 
     void
+    MLibManager::scan_start ()
+    {
+        m_VboxInner->set_sensitive(false);
+    }
+
+    void
     MLibManager::scan_summary( ScanSummary const& summary )
     {
         time_t curtime = time(NULL);
@@ -709,27 +638,8 @@ namespace MPX
         }
 
         m_TextBufferDetails->set_text(text);
-        update_filestats();
-        m_VboxInner->set_sensitive(true);
     }
     
-    void
-    MLibManager::scan_start ()
-    {
-        m_VboxInner->set_sensitive(false);
-    }
-
-    void
-    MLibManager::scan_run( gint64 n, bool deep )
-    {
-        m_Statusbar->pop();
-        m_Statusbar->push((
-            boost::format(_("Scanning: %1% %2%"))
-            % n
-            % (deep ? _("Files") : _("Folders"))
-        ).str());
-    }
-
     void
     MLibManager::hide ()
     {
@@ -773,7 +683,7 @@ namespace MPX
     }
 
     void
-    MLibManager::rescan_all_volumes(bool deep)
+    MLibManager::rescan_all_volumes()
     {
         Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
 
@@ -828,8 +738,7 @@ namespace MPX
                                     goto reread_paths;
                             }
                         }
-
-                        services->get<Library>("mpx-service-library")->initScan(v, deep);                  
+                        services->get<Library>("mpx-service-library")->initScan(v);                  
                     }
               }
         }
@@ -1288,14 +1197,6 @@ namespace MPX
                 has_selection && !m_ManagedPaths.empty()
             );
 
-            m_Actions->get_action("action-volume-rescan-deep")->set_sensitive( 
-                has_selection && !m_ManagedPaths.empty()
-            );
-
-            m_Actions->get_action("action-volume-vacuum")->set_sensitive( 
-                has_selection && !m_ManagedPaths.empty()
-            );
-
             recreate_path_frags ();
             build_fstree(Vol->get_mount_point());
             TreePath path (1);
@@ -1382,14 +1283,6 @@ namespace MPX
                     !m_ManagedPaths.empty()
                 );
 
-                m_Actions->get_action("action-volume-rescan-deep")->set_sensitive( 
-                    !m_ManagedPaths.empty()
-                );
-
-                m_Actions->get_action("action-volume-vacuum")->set_sensitive( 
-                    !m_ManagedPaths.empty()
-                );
-
                 m_VboxInner->set_sensitive( true );
             }
         }
@@ -1427,14 +1320,6 @@ namespace MPX
                     !m_ManagedPaths.empty()
                 );
 
-                m_Actions->get_action("action-volume-rescan-deep")->set_sensitive( 
-                    !m_ManagedPaths.empty()
-                );
-
-                m_Actions->get_action("action-volume-vacuum")->set_sensitive( 
-                    !m_ManagedPaths.empty()
-                );
-
                 StrV v;
                 v.push_back(filename_to_uri(FullPath));
                 services->get<Library>("mpx-service-library")->initAdd(v);
@@ -1443,7 +1328,7 @@ namespace MPX
     }
 
     void
-    MLibManager::on_rescan_volume(bool deep)
+    MLibManager::on_rescan_volume()
     {
         restart_rescan_volume:
     
@@ -1463,7 +1348,7 @@ namespace MPX
                     goto restart_rescan_volume;
             }
         }
-        services->get<Library>("mpx-service-library")->initScan(v, deep);
+        services->get<Library>("mpx-service-library")->initScan(v);
     }
 
     void

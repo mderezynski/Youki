@@ -103,7 +103,7 @@ namespace MPX
             is_present() ;
 
             void
-            rescan_all_volumes (bool /*deep*/ = false) ;
+            rescan_all_volumes () ;
 
             void
             push_message (const std::string&) ;
@@ -125,12 +125,6 @@ namespace MPX
 
             void
             scan_start(
-            ) ;
-
-            void
-            scan_run(
-                gint64,
-                bool
             ) ;
 
 #ifdef HAVE_HAL
@@ -188,7 +182,7 @@ namespace MPX
             ) ;
 
             void
-            on_rescan_volume(bool /*deep*/) ;
+            on_rescan_volume() ;
 
             void
             on_vacuum_all() ;

@@ -95,7 +95,6 @@ namespace MPX
         public:
 
             typedef sigc::signal<void>                              SignalScanStart_t ;
-            typedef sigc::signal<void, gint64,bool>                 SignalScanRun_t ;
             typedef sigc::signal<void>                              SignalScanEnd_t ;
             typedef sigc::signal<void, ScanSummary const&>          SignalScanSummary_t ;
             typedef sigc::signal<void, gint64>                      SignalNewAlbum_t ;
@@ -109,7 +108,6 @@ namespace MPX
             typedef sigc::signal<void, const std::string&>          SignalMessage_t ;
             
             typedef sigx::signal_f<SignalScanStart_t>               signal_scan_start_x ;
-            typedef sigx::signal_f<SignalScanRun_t>                 signal_scan_run_x ; 
             typedef sigx::signal_f<SignalScanEnd_t>                 signal_scan_end_x ;
             typedef sigx::signal_f<SignalScanSummary_t>             signal_scan_summary_x ;
             typedef sigx::signal_f<SignalNewAlbum_t>                signal_new_album_x ;
@@ -125,7 +123,7 @@ namespace MPX
         public:
 
             sigx::request_f<Util::FileList const&>                          add ;
-            sigx::request_f<Util::FileList const&, bool>                    scan ;
+            sigx::request_f<Util::FileList const&>                          scan ;
             sigx::request_f<>                                               scan_all ;
             sigx::request_f<>                                               scan_stop ;
             sigx::request_f<>                                               vacuum ;
@@ -136,7 +134,6 @@ namespace MPX
             sigx::request_f<>                                               update_statistics ;
 
             signal_scan_start_x             signal_scan_start ;
-            signal_scan_run_x               signal_scan_run ; 
             signal_scan_end_x               signal_scan_end ;
             signal_scan_summary_x           signal_scan_summary ;
             signal_new_album_x              signal_new_album ;
@@ -153,7 +150,6 @@ namespace MPX
             {
                 ScannerConnectable(
                       signal_scan_start_x&            start_x
-                    , signal_scan_run_x&              run_x
                     , signal_scan_end_x&              end_x
                     , signal_scan_summary_x&          summary_x
                     , signal_new_album_x&             album_x
@@ -167,7 +163,6 @@ namespace MPX
                     , signal_message_x&               message_x 
                 )
                 : signal_scan_start(start_x)
-                , signal_scan_run(run_x)
                 , signal_scan_end(end_x)
                 , signal_scan_summary(summary_x)
                 , signal_new_album(album_x)
@@ -183,7 +178,6 @@ namespace MPX
                 }
 
                 signal_scan_start_x         & signal_scan_start ;
-                signal_scan_run_x           & signal_scan_run ; 
                 signal_scan_end_x           & signal_scan_end ;
                 signal_scan_summary_x       & signal_scan_summary ;
                 signal_new_album_x          & signal_new_album ;
@@ -215,8 +209,7 @@ namespace MPX
 // Requests /////////////
 
             void on_scan(
-                const Util::FileList&,
-                bool
+                const Util::FileList&
             ) ;
 
             void on_scan_all(
@@ -242,20 +235,9 @@ namespace MPX
                 , bool  = false
             );
 
-            void on_scan_list_quick_stage_2(
-                  const Util::FileList&
-            ); // on_scan delegate
-
             void on_scan_list_quick_stage_1(
                   const Util::FileList&
             ); // on_scan delegate
-
-            void
-            on_scan_list_quick_stage_1_callback(
-                  const std::string&,
-                  const gint64&,
-                  const std::string&
-            );
 
             gint64
             get_track_mtime(
@@ -329,17 +311,12 @@ namespace MPX
             typedef std::set<gint64>                                           IdSet_t;
 
             IdSet_t                                 m_AlbumIDs, m_AlbumArtistIDs; 
+            IdSet_t                                 m_ProcessedAlbums;
             Triplet_MTIME_t                         m_MTIME_Map;
 
             void
             cache_mtimes(
             ) ;
-
-            void
-            insert_file(
-                  const std::string& uri
-                , const std::string& insert_path
-            );
 
             void
             insert_file_no_mtime_check(
@@ -404,7 +381,7 @@ namespace MPX
                   const Track&
                 , gint64
                 , gint64
-            );
+            ) ;
 
 
             std::string
@@ -412,10 +389,23 @@ namespace MPX
                   const Track&
                 , gint64
                 , gint64
-            );
+            ) ;
+
+            void
+            update_album(
+                gint64
+            ) ;
+
+            void
+            update_albums(
+            ) ;
 
             void
             do_remove_dangling() ;
+
+            bool
+            check_abort_scan( 
+            ) ;
 
         private:
 

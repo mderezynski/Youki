@@ -118,8 +118,7 @@ namespace MPX
 
             void
             initScan(
-                const Util::FileList& /*list*/,
-                bool                  /*deep*/ = false
+                const Util::FileList& /*list*/
             ); 
 
             void

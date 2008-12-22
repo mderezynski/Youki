@@ -420,11 +420,10 @@ namespace MPX
                 std::string column_names (Util::stdstrjoin (columns, ", "));
 
                 m_SQL->exec_sql((
-                    boost::format("CREATE TABLE IF NOT EXISTS track (id INTEGER PRIMARY KEY AUTOINCREMENT, %s, %s, %s, %s, UNIQUE (%s, %s, %s, %s))")
+                    boost::format("CREATE TABLE IF NOT EXISTS track (id INTEGER PRIMARY KEY AUTOINCREMENT, %s, %s, %s, UNIQUE (%s, %s, %s, %s))")
                         % column_names
                         % "artist_j INTEGER NOT NULL"   // track artist information 
                         % "album_j INTEGER NOT NULL"    // album + album artist
-                        % "audio_quality INTEGER DEFAULT NULL"
                         % "album_j" 
                         % "artist_j" 
                         % "track" 
@@ -1601,9 +1600,9 @@ namespace MPX
                 }
 
         void
-                Library::initScan (const Util::FileList & list, bool deep)
+                Library::initScan (const Util::FileList & list)
                 {
-                        m_ScannerThread->scan(list, deep);
+                        m_ScannerThread->scan(list);
                 }
 
         void
