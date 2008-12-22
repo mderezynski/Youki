@@ -2044,7 +2044,7 @@ MPX::LibraryScannerThread::on_update_statistics()
     RowV v1;
     m_SQL->get(
           v1
-        , "SELECT id, type, bitrate FROM track WHERE audio_quality IS NULL"
+        , "SELECT id, type, bitrate FROM track"
     );
     for( RowV::iterator i = v1.begin(); i != v1.end(); ++i )
     {
@@ -2089,7 +2089,7 @@ MPX::LibraryScannerThread::on_update_statistics()
         rows.clear();
         m_SQL->get(
             rows,
-            (boost::format ("SELECT sum(audio_quality)/count(*) AS quality FROM track WHERE album_j = %lld AND audio_quality IS NOT NULL") 
+            (boost::format ("SELECT sum(audio_quality)/count(*) AS quality FROM track WHERE album_j = %lld AND audio_quality IS NOT NULL AND audio_quality != '0'") 
                 % get<gint64>((*i)["album_j"])
             ).str()
         ); 
