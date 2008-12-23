@@ -30,7 +30,6 @@ SUBDIRS =			\
 					\
 	po				\
 					\
-	boost			\
 	include			\
 	xsd				\
 	widgets			\

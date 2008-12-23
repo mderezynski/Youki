@@ -42,6 +42,10 @@ libmpx_view_components_la_LIBADD =  	\
 		$(top_builddir)/musicbrainz/libmpx-musicbrainz.la
 		$(top_builddir)/xmlcpp/libmpx-parsers.la
 
+noinst_HEADERS =	\
+	model.hh		\
+	view.hh
+
 libmpx_view_components_la_SOURCES =	\
 	view-collections.cc				\
 	file-system-tree.cc				\

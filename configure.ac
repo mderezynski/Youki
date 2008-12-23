@@ -723,12 +723,6 @@ AC_OUTPUT([
     libhal++/Makefile
     mcs/Makefile
 
-	boost/Makefile
-	boost/python/Makefile
-	boost/python/suite/Makefile
-	boost/python/suite/indexing/Makefile
-	boost/python/suite/indexing/detail/Makefile
-
     python/Makefile
 	python/plugins/Makefile
 	python/plugins/trackinfo-webkit/Makefile
