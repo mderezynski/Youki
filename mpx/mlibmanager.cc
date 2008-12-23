@@ -593,6 +593,7 @@ namespace MPX
     {
         m_VboxInner->set_sensitive(false);
         m_Actions->set_sensitive(false);
+        m_TextBufferDetails->set_text("");
     }
 
     void
@@ -619,7 +620,6 @@ namespace MPX
 
         services->get<Library>("mpx-service-library")->execSQL((boost::format ("UPDATE meta SET last_scan_date = %lld WHERE rowid = 1") % (gint64(time(NULL)))).str());
 
-        m_TextBufferDetails->set_text("");
         Glib::ustring text;
         if( !summary.FileListErroneous.empty() )
         {
@@ -639,7 +639,8 @@ namespace MPX
                 }
         }
 
-        m_TextBufferDetails->set_text(text);
+        m_TextBufferDetails->insert(m_TextBufferDetails->end(), "\n");
+        m_TextBufferDetails->insert(m_TextBufferDetails->end(), text);
     }
     
     void
@@ -679,6 +680,9 @@ namespace MPX
     {
         m_Statusbar->pop();
         m_Statusbar->push(message);
+
+        m_TextBufferDetails->insert(m_TextBufferDetails->end(), message);
+        m_TextBufferDetails->insert(m_TextBufferDetails->end(), "\n");
 
         while (gtk_events_pending())
             gtk_main_iteration();

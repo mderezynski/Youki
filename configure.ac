@@ -1,7 +1,7 @@
 #libxml (C) 2003-2007 MPX developers, see AUTHORS
 
 AC_PREREQ([2.60])
-AC_INIT([audiosource], [alpha6], [http://mpx.backtrace.info/report])
+AC_INIT([audiosource], [0.01], [http://mpx.backtrace.info/report])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
@@ -370,11 +370,12 @@ AC_SUBST([DBUS_SERVICES_DIR])
 AC_DEFINE_UNQUOTED([DBUS_SERVICES_DIR], ["$DBUS_SERVICES_DIR"], [Directory for D-BUS service files])
 
 # HAL
-AC_ARG_ENABLE([hal],
-    [AS_HELP_STRING([--enable-hal], [Enable usage of HAL for managing storage (default=enabled)])],
-    [enable_hal="$enableval"],
-    [enable_hal="yes"]
-)
+# AC_ARG_ENABLE([hal],
+#    [AS_HELP_STRING([--enable-hal], [Enable usage of HAL for managing storage (default=enabled)])],
+#    [enable_hal="$enableval"],
+#    [enable_hal="yes"]
+#)
+enable_hal="yes"
 
 if test "$enable_hal" = "yes"; then
 PKG_CHECK_EXISTS([hal >= 0.5.7.1 hal-storage >= 0.5.7.1],

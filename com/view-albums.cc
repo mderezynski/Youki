@@ -265,7 +265,7 @@ namespace MPX
                             m_LabelShowing = 0;
 
                         set_show_expanders( false );
-                        set_level_indentation( 56 );
+                        set_level_indentation( 50 );
 
                         TreeViewColumn * col = manage (new TreeViewColumn());
 
