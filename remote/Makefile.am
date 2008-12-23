@@ -1,4 +1,4 @@
-bin_PROGRAMS = mpx 
+bin_PROGRAMS = audiosource 
 
 mpx_LDADD =				\
 	$(GLIBMM_LIBS)		\
