@@ -79,8 +79,8 @@ AC_SEARCH_LIBS([getrpcbyname], nsl)
 #GETTEXT_PACKAGE="$PACKAGE"
 #AC_SUBST(GETTEXT_PACKAGE)
 
-#IT_PROG_INTLTOOL([0.35.0])
-#AM_GLIB_GNU_GETTEXT
+IT_PROG_INTLTOOL([0.40.0])
+AM_GLIB_GNU_GETTEXT
 
 # Next 2 lines is a hack to prevent libtool checking for F77
 m4_undefine([AC_PROG_F77])
