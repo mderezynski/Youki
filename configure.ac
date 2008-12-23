@@ -75,12 +75,11 @@ AC_SEARCH_LIBS([connect], socket)
 AC_SEARCH_LIBS([getrpcbyname], nsl)
 
 # i18n
-#AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$PACKAGE", [Package])
-#GETTEXT_PACKAGE="$PACKAGE"
-#AC_SUBST(GETTEXT_PACKAGE)
+AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$PACKAGE", [Package])
+GETTEXT_PACKAGE="$PACKAGE"
+AC_SUBST(GETTEXT_PACKAGE)
 
 IT_PROG_INTLTOOL([0.40.0])
-AM_GLIB_GNU_GETTEXT
 
 # Next 2 lines is a hack to prevent libtool checking for F77
 m4_undefine([AC_PROG_F77])
@@ -284,6 +283,8 @@ PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.4])
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.10.0 gobject-2.0 gthread-2.0 gmodule-2.0])
 PKG_CHECK_MODULES([GLIBMM], [glibmm-2.4 >= 2.8.3])
 PKG_CHECK_MODULES([SIGC], [sigc++-2.0 >= 2.0.0])
+
+AM_GLIB_GNU_GETTEXT
 
 # clutter
 # PKG_CHECK_MODULES([CLUTTER], [clutter-0.6 >= 0.6.0 clutter-cairo-0.6 >= 0.6.0 clutter-gtk-0.6 >= 0.6.0])

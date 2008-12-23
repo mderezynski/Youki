@@ -146,13 +146,10 @@ audiosource_bin_SOURCES =				\
 	library-scanner-thread.cc	\
 								\
 	main.cc						\
-								\
-	markov-analyzer-thread.cc	\
-								\
 	messages.hh					\
 								\
+	markov-analyzer-thread.cc	\
 	metadatareader-taglib.cc	\
-								\
 	minisoup.cc					\
 								\
 	mpx.hh						\
@@ -165,7 +162,6 @@ audiosource_bin_SOURCES =				\
 	paths.hh					\
 	paths.cc					\
 								\
-	play.hh						\
 	play.cc						\
 								\
 	playbacksource.cc			\
@@ -177,7 +173,6 @@ audiosource_bin_SOURCES =				\
 	plugin-manager-gui.hh		\
 	plugin-manager-gui.cc		\
 								\
-	preferences.hh				\
 	preferences.cc				\
 								\
 	pysigc.hh					\

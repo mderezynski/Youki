@@ -42,19 +42,13 @@ libmpx_view_components_la_LIBADD =  	\
 		$(top_builddir)/musicbrainz/libmpx-musicbrainz.la
 		$(top_builddir)/xmlcpp/libmpx-parsers.la
 
-noinst_HEADERS =	\
-	model.hh		\
-	view.hh
-
 libmpx_view_components_la_SOURCES =	\
-	view-collections.cc				\
+									\
+	album-info-window.cc			\
 	file-system-tree.cc				\
 	mb-import-album.cc				\
 	tagview.cc						\
 	treeview-popup.cc				\
-									\
-	album-info-window.cc			\
+	view-albums-filter-plugin.cc	\
 	view-albums.cc					\
-	view-albums-filter-plugin.cc	
-
-
+	view-collections.cc				
