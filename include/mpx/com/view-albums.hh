@@ -102,7 +102,7 @@ namespace MPX
 
                             Glib::RefPtr<Gtk::TreeStore>          AlbumsTreeStore;
                             Glib::RefPtr<Gtk::TreeModelFilter>    AlbumsTreeStoreFilter;
-                            ViewAlbumsColumnsT                    Columns;
+                            ViewAlbumsColumns_t                   Columns;
 
                         protected:
 

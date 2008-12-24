@@ -168,8 +168,18 @@ audiosource_bin_SOURCES =				\
 								\
 	plugin.hh					\
 	plugin.cc					\
-	plugin-loader-python.cc		\
+								\
+	plugin-loader.hh			\
+								\
+	plugin-types-cpp.hh			\
+	plugin-loader-cpp.hh		\
+								\
+	plugin-types-python.hh		\
 	plugin-types-python.cc		\
+								\
+	plugin-loader-python.hh		\
+	plugin-loader-python.cc		\
+								\
 	plugin-manager-gui.hh		\
 	plugin-manager-gui.cc		\
 								\
@@ -271,3 +281,4 @@ audiosource_bin_SOURCES += dbus-marshalers.c
 
 CLEANFILES = $(BUILT_SOURCES)
 DISTCLEANFILES = $(BUILT_SOURCES)
+

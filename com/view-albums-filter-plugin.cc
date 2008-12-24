@@ -23,31 +23,167 @@
 
 #include "config.h"
 #include <glibmm/i18n.h>
-#include "mpx/com/view-albums-filter-plugin.hh"
-#include "mpx/util-string.hh"
-#include "mpx/algorithm/aque.hh"
 
+#include "mpx/com/view-albums-filter-plugin.hh"
+
+#include "mpx/mpx-library.hh"
+#include "mpx/mpx-main.hh"
 #include "mpx/mpx-uri.hh"
-#include "mpx/xml/xmltoc++.hh"
+
+#include "mpx/util-string.hh"
+
 #include "xmlcpp/xsd-topalbums-2.0.hxx"
 #include "xmlcpp/xsd-artist-similar-2.0.hxx"
+
+#include "mpx/xml/xmltoc++.hh"
+
+#include "mpx/algorithm/aque.hh"
+
+#include "mpx/widgets/widgetloader.hh"
 
 #include <boost/format.hpp>
 
 using namespace MPX::AQE;
+using namespace Gnome::Glade;
+using namespace Gtk;
+using boost::get;
+
+namespace MPX
+{
+    typedef std::set<gint64>        IdSet_t;
+    typedef sigc::signal<void>      SignalChanged_t;
+
+    class ArtistListView : public Gtk::TreeView
+    {
+            class Columns_t : public Gtk::TreeModelColumnRecord
+            {
+                public:
+
+                    Gtk::TreeModelColumn<std::string>   Name;
+                    Gtk::TreeModelColumn<std::string>   SortKey;
+                    Gtk::TreeModelColumn<gint64>        ID;
+
+                    Columns_t ()
+                    {
+                        add(Name);
+                        add(SortKey);
+                        add(ID);
+                    };
+            };
+
+            Columns_t                       Columns;
+            Glib::RefPtr<Gtk::TreeStore>    Store;
+
+            IdSet_t m_FilterIDs;
+
+            SignalChanged_t                 signal_changed_;
+
+        public:
+
+            SignalChanged_t&
+            signal_changed(
+            )
+            {
+                return signal_changed_;
+            }
+
+            const IdSet_t&
+            get_filter_ids(
+            )
+            {
+                return m_FilterIDs;
+            }
+
+            ArtistListView()
+            {
+                Store = Gtk::TreeStore::create(Columns);
+
+                append_column(_("Name"), Columns.Name);
+
+                MPX::SQL::RowV v;
+                boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
+
+                library->getSQL(
+                      v
+                    , "SELECT id, album_artist, album_artist_sortname, mb_album_artist_id FROM album_artist ORDER BY ifnull(album_artist_sortname,album_artist)"
+                );
+
+                TreeIter iter = Store->append();
+                (*iter)[Columns.Name] = "ALL"; 
+
+                for( MPX::SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
+                {
+                    TreeIter iter = Store->append();
+
+                    (*iter)[Columns.Name] = (*i).count("album_artist_sortname")
+                                                ? get<std::string>((*i)["album_artist_sortname"])
+                                                : get<std::string>((*i)["album_artist"]);
+                    (*iter)[Columns.SortKey] = Glib::ustring((*iter)[Columns.Name]).collate_key();
+                    (*iter)[Columns.ID] = get<gint64>((*i)["id"]);
+                }
+
+                set_model(Store);
+
+                get_selection()->signal_changed().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &ArtistListView::on_selection_changed
+                ));
+            }
+
+            void
+            on_selection_changed()
+            {
+                TreeIter iter = get_selection()->get_selected();
+                if( iter == Store->children().begin() )
+                {
+                    m_FilterIDs.clear();
+                }
+                else
+                {
+                    m_FilterIDs.clear();
+                    m_FilterIDs.insert( (*iter)[Columns.ID] );
+                }
+
+                signal_changed_.emit();
+            }
+    };
+}
 
 namespace MPX
 {
     namespace ViewAlbumsFilterPlugin
     {
-            TextMatch::TextMatch ()
+            TextMatch::TextMatch(
+                          Glib::RefPtr<Gtk::TreeStore>&     store
+                        , ViewAlbumsColumns_t&                columns
+            )
+            : Base( store, columns )
             {
-                m_UI = manage( new Gtk::CheckButton( _("Advanced Query")));
-                m_UI->signal_toggled().connect(
+                m_UI = manage( new Gtk::VBox );
+                m_Advanced_CB = manage( new Gtk::CheckButton( _("Advanced Query")));
+                m_Advanced_CB->signal_toggled().connect(
                     sigc::mem_fun(
                             *this,
                             &TextMatch::on_advanced_toggled
                 ));
+
+                Gtk::ScrolledWindow * sw = manage( new Gtk::ScrolledWindow );
+
+                m_ArtistListView = new ArtistListView; 
+                m_ArtistListView->set_rules_hint();
+                m_ArtistListView->signal_changed().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &TextMatch::on_artist_filter_changed
+                ));
+
+                sw->add( *m_ArtistListView );
+                sw->set_policy( Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC );
+                sw->set_size_request( -1, 180 );
+
+                m_UI->pack_start( *m_Advanced_CB, false, false );
+                m_UI->pack_start( *sw );
                 m_UI->show_all();
             }
 
@@ -62,9 +198,34 @@ namespace MPX
             }
 
             void
+            TextMatch::on_artist_filter_changed(
+            )
+            {
+                const IdSet_t& s = m_ArtistListView->get_filter_ids();
+
+                for( TreeNodeChildren::iterator i = Store->children().begin(); i != Store->children().end(); ++i )
+                {
+                    (*i)[Columns.Visible] = s.empty();
+                }
+
+                if( !s.empty())
+                {
+                        for( TreeNodeChildren::iterator i = Store->children().begin(); i != Store->children().end(); ++i )
+                        {
+                            if( s.count( (*i)[Columns.AlbumArtistId] ))
+                            {
+                                (*i)[Columns.Visible] = true;
+                            }
+                        }
+                }
+
+                Signals.Refilter.emit();
+            }
+
+            void
             TextMatch::on_advanced_toggled ()
             {
-                if( m_UI->get_active() )
+                if( m_Advanced_CB->get_active() )
                 {
                     m_Constraints.clear();
                     m_FilterEffective = AQE::parse_advanced_query( m_Constraints, m_FilterText ); 
@@ -88,7 +249,7 @@ namespace MPX
             {
                 m_FilterText = text;
 
-                if( m_UI->get_active() )
+                if( m_Advanced_CB->get_active() )
                 {
                     m_Constraints.clear();
                     m_FilterEffective = AQE::parse_advanced_query( m_Constraints, m_FilterText ); 
@@ -102,8 +263,11 @@ namespace MPX
             }
 
             bool
-            TextMatch::filter_delegate(const Gtk::TreeIter& iter, const ViewAlbumsColumnsT& columns)
+            TextMatch::filter_delegate(const Gtk::TreeIter& iter)
             {
+                if( ! bool((*iter)[Columns.Visible]))
+                    return false;
+
                 if( m_FilterEffective.empty() && m_Constraints.empty() ) 
                 {
                     return true;
@@ -113,11 +277,11 @@ namespace MPX
                     bool truth = true;
                     if( !m_Constraints.empty() )
                     {
-                        MPX::Track track = (*iter)[columns.AlbumTrack]; 
+                        MPX::Track& track = *(Track_sp((*iter)[Columns.AlbumTrack]));
                         truth = AQE::match_track( m_Constraints, track );
                     }
 
-                    return truth && Util::match_keys( Glib::ustring((*iter)[columns.Text]).lowercase(), m_FilterEffective ); 
+                    return truth && Util::match_keys( *(ustring_sp((*iter)[Columns.Text])), m_FilterEffective ); 
                 }
             }
     }
@@ -127,7 +291,11 @@ namespace MPX
 {
     namespace ViewAlbumsFilterPlugin
     {
-            LFMTopAlbums::LFMTopAlbums ()
+            LFMTopAlbums::LFMTopAlbums(
+                          Glib::RefPtr<Gtk::TreeStore>&     store
+                        , ViewAlbumsColumns_t&                columns
+            )
+            : Base( store, columns )
             {
             }
 
@@ -174,9 +342,9 @@ namespace MPX
             }
 
             bool
-            LFMTopAlbums::filter_delegate(const Gtk::TreeIter& iter, const ViewAlbumsColumnsT& columns)
+            LFMTopAlbums::filter_delegate(const Gtk::TreeIter& iter)
             {
-                return m_FilterText.empty() || m_Names.count( AlbumQualifier_t((*iter)[columns.Album], (*iter)[columns.Artist]));
+                return m_FilterText.empty() || m_Names.count( AlbumQualifier_t((*iter)[Columns.Album], (*iter)[Columns.AlbumArtist]));
             }
     }
 } // end namespace MPX 
@@ -185,7 +353,11 @@ namespace MPX
 {
     namespace ViewAlbumsFilterPlugin
     {
-            LFMSimilarArtists::LFMSimilarArtists ()
+            LFMSimilarArtists::LFMSimilarArtists(
+                          Glib::RefPtr<Gtk::TreeStore>&     store
+                        , ViewAlbumsColumns_t&              columns
+            )
+            : Base( store, columns )
             {
             }
 
@@ -232,9 +404,9 @@ namespace MPX
             }
 
             bool
-            LFMSimilarArtists::filter_delegate(const Gtk::TreeIter& iter, const ViewAlbumsColumnsT& columns)
+            LFMSimilarArtists::filter_delegate(const Gtk::TreeIter& iter)
             {
-                return m_FilterText.empty() || m_Names.count( (*iter)[columns.Artist] );
+                return m_FilterText.empty() || m_Names.count( (*iter)[Columns.AlbumArtist] );
             }
     }
 } // end namespace MPX 

@@ -1888,9 +1888,12 @@ SET_SEEK_POSITION:
                 {
                         m_InfoArea->set_metadata(m_Metadata.get(), m_NewTrack );
 
-                        if( m_NewTrack && m_Metadata.get().Image )
+                        if( m_NewTrack ) 
                         {
-                            g_atomic_int_set(&m_NewTrack, 0);
+                            if( m_Metadata.get().Image )
+                                g_atomic_int_set(&m_NewTrack, 0);
+                            else
+                                m_InfoArea->clear_cover();
                         }
 
                         if(m_Metadata.get()[ATTRIBUTE_TITLE] && m_Metadata.get()[ATTRIBUTE_ARTIST])

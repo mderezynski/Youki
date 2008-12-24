@@ -1093,7 +1093,7 @@ class TrackInfo:
         return 1
 
 
-class TrackInfoDispatcher(mpx.Plugin):
+class LiveInfo(mpx.Plugin):
 
     """The Trackinfo Plugin provides a Last.fm/Musicbrainz based track info for the currently played track."""
 

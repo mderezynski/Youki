@@ -150,25 +150,25 @@ namespace
                 get_release_string (ReleaseType rt, bool plural = false)
                 {
                             if( rt == RT_ALBUM )
-                                return plural ? N_("albums") : N_("Album");
+                                return plural ? N_("Albums") : N_("Album");
 
                             if( rt == RT_SINGLE )
-                                return plural ? N_("singles") : N_("Single");
+                                return plural ? N_("Singles") : N_("Single");
 
                             if( rt == RT_COMPILATION )
-                                return plural ? N_("compilations") : N_("Compilation");
+                                return plural ? N_("Compilations") : N_("Compilation");
 
                             if( rt == RT_EP )
                                 return plural ? N_("EPs") : N_("EP");
 
                             if( rt == RT_LIVE )
-                                return plural ? N_("live recordings") : N_("Live Recording");
+                                return plural ? N_("Live Recordings") : N_("Live Recording");
 
                             if( rt == RT_REMIX )
-                                return plural ? N_("remixes") : N_("Remix");
+                                return plural ? N_("Remixes") : N_("Remix");
 
                             if( rt == RT_SOUNDTRACK )
-                                return plural ? N_("soundtracks") : N_("Soundtrack");
+                                return plural ? N_("Soundtracks") : N_("Soundtrack");
 
                         return "";
                 }
@@ -409,7 +409,7 @@ namespace MPX
                         xml->get_widget(name_search_plugin_choice_cbox, m_FilterPluginsCBox);
  
                         {
-                                Plugin_p p (new MPX::ViewAlbumsFilterPlugin::TextMatch);
+                                Plugin_p p (new MPX::ViewAlbumsFilterPlugin::TextMatch( AlbumsTreeStore, Columns ));
                                 p->signal_refilter().connect(
                                                 sigc::mem_fun(
                                                         *this,
@@ -419,7 +419,7 @@ namespace MPX
                         } 
 
                         {
-                                Plugin_p p (new MPX::ViewAlbumsFilterPlugin::LFMTopAlbums);
+                                Plugin_p p (new MPX::ViewAlbumsFilterPlugin::LFMTopAlbums( AlbumsTreeStore, Columns ));
                                 p->signal_refilter().connect(
                                                 sigc::mem_fun(
                                                         *this,
@@ -429,7 +429,7 @@ namespace MPX
                         } 
 
                         {
-                                Plugin_p p (new MPX::ViewAlbumsFilterPlugin::LFMSimilarArtists);
+                                Plugin_p p (new MPX::ViewAlbumsFilterPlugin::LFMSimilarArtists( AlbumsTreeStore, Columns ));
                                 p->signal_refilter().connect(
                                                 sigc::mem_fun(
                                                         *this,
@@ -586,7 +586,7 @@ namespace MPX
                                         return true;
                                 }
 
-                                return m_FilterPlugin_Current->filter_delegate( iter, Columns );
+                                return m_FilterPlugin_Current->filter_delegate( iter );
                         }
 
                 void
@@ -602,7 +602,7 @@ namespace MPX
                                         std::string track_artist_mb_id;
 
                                         SQL::RowV v;
-                                        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = %lld ORDER BY track;") % gint64((*iter)[Columns.Id])).str());
+                                        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view WHERE album_j = %lld ORDER BY track;") % gint64((*iter)[Columns.AlbumId])).str());
 
                                         for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                                         {
@@ -768,7 +768,7 @@ namespace MPX
                                                 break;
                                         }
     
-                                       services->get<Covers>("mpx-service-covers")->cache_artwork( (*iter)[Columns.MBID], cover ); 
+                                       services->get<Covers>("mpx-service-covers")->cache_artwork( (*iter)[Columns.AlbumMBID], cover ); 
                                     }
                                 } catch(...) {
                                     g_message("%s: Error saving Pixbuf", G_STRLOC);
@@ -810,8 +810,8 @@ namespace MPX
                                         TreeIter iter = AlbumsTreeStore->get_iter(AlbumsTreeStoreFilter->convert_path_to_child_path(m_PathButtonPress));
                                         if(m_PathButtonPress.get_depth() == ROW_ALBUM)
                                         {
-                                                m_DragAlbumMBID = (*iter)[Columns.MBID];
-                                                m_DragAlbumId = (*iter)[Columns.Id];
+                                                m_DragAlbumMBID = (*iter)[Columns.AlbumMBID];
+                                                m_DragAlbumId = (*iter)[Columns.AlbumId];
                                                 m_DragTrackId.reset(); 
 
                                                 g_atomic_int_set(&m_ButtonPressed, 1);
@@ -891,7 +891,7 @@ namespace MPX
 
                                                         if( path.get_depth() == ROW_ALBUM )
                                                         {
-                                                                gint64 id = (*iter)[Columns.Id];
+                                                                gint64 id = (*iter)[Columns.AlbumId];
                                                                 Signals.PlayAlbum.emit(id, !play);
                                                         }
                                                         else
@@ -946,7 +946,7 @@ namespace MPX
                                                         bool play = event->state & GDK_CONTROL_MASK;
                                                         if( path.get_depth() == ROW_ALBUM )
                                                         {
-                                                                gint64 id = (*iter)[Columns.Id];
+                                                                gint64 id = (*iter)[Columns.AlbumId];
                                                                 Signals.PlayAlbum.emit(id, !play);
                                                         }
                                                         else
@@ -967,7 +967,7 @@ namespace MPX
                         AlbumTreeView::on_album_show_info ()
                         {
                                 AlbumInfoWindow * d = AlbumInfoWindow::create(
-                                                (*get_selection()->get_selected())[Columns.Id],
+                                                (*get_selection()->get_selected())[Columns.AlbumId],
                                                 *(services->get<Library>("mpx-service-library").get()),
                                                 *(services->get<Covers>("mpx-service-covers").get())
                                                 );
@@ -1013,8 +1013,6 @@ namespace MPX
                             gint64          id
                         )
                         {
-                                MPX::Track track;
-
                                 std::string asin;
                                 std::string year; 
                                 std::string country;
@@ -1028,6 +1026,10 @@ namespace MPX
                                 gint64      rating = 0;
                                 gint64      quality = -1;
                                 ReleaseType rt;
+
+                                Track_sp p (new Track);
+        
+                                Track & track = *(p.get());
 
                                 std::string album = get<std::string>(r["album"]);
                                 track[ATTRIBUTE_ALBUM] = album;
@@ -1133,21 +1135,22 @@ namespace MPX
                                 rt_string = _(get_release_string(rt).c_str());
 
                                 (*iter)[Columns.Album] = album;
-                                (*iter)[Columns.AlbumTrack] = track;
+                                (*iter)[Columns.AlbumArtist] = artist;
 
+                                (*iter)[Columns.AlbumId] = get<gint64>(r["id"]);
                                 (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
-                                (*iter)[Columns.MBID] = mbid; 
+                                (*iter)[Columns.AlbumMBID] = mbid; 
 
-                                (*iter)[Columns.ArtistSort] = ustring(artist).collate_key();
+                                (*iter)[Columns.AlbumArtistId] = get<gint64>(r["album_artist_j"]);
+                                (*iter)[Columns.AlbumArtistSort] = ustring(artist).collate_key();
                                 (*iter)[Columns.AlbumArtistMBID] = mbid_artist; 
 
-                                (*iter)[Columns.Artist] = artist;
+                                (*iter)[Columns.RT] = rt; 
+                                (*iter)[Columns.AlbumTrack] = p;
                                 (*iter)[Columns.Rating] = rating;
                                 (*iter)[Columns.Genre] = genre;
                                 (*iter)[Columns.PlayScore] = playscore; 
-
-                                (*iter)[Columns.RT] = rt; 
-                                (*iter)[Columns.Text] = (boost::format("%s %s") % album % artist).str();
+                                (*iter)[Columns.Text] = ustring_sp( new ustring( ustring((boost::format("%s %s") % album % artist).str()).lowercase() ));
 
                                 AlbumInfo_pt renderdata (new AlbumInfo);
                                 renderdata->Name = album; 
@@ -1157,7 +1160,6 @@ namespace MPX
                                 renderdata->Genre = genre;
                                 renderdata->Qual = quality; 
                                 renderdata->Rating = rating;
-
                                 (*iter)[Columns.RenderData] = renderdata;
                         } 
 
@@ -1187,7 +1189,7 @@ namespace MPX
                                 (*iter)[Columns.RowType] = ROW_ALBUM; 
                                 (*iter)[Columns.HasTracks] = false; 
                                 (*iter)[Columns.NewAlbum] = get<gint64>(r["album_new"]);
-                                (*iter)[Columns.Id] = id; 
+                                (*iter)[Columns.AlbumId] = id; 
 
                                 place_album_iter_real(iter, r, id);
 
@@ -1295,7 +1297,7 @@ namespace MPX
                             IdIterMap::iterator i = m_Album_Iter_Map.find(id);
                             if( i != m_Album_Iter_Map.end() )
                             {
-                                std::string mbid = (*i->second)[Columns.MBID];
+                                std::string mbid = (*i->second)[Columns.AlbumMBID];
                                 AlbumsTreeStore->erase( i->second );
                                 IterSet & set = m_Album_MBID_Iter_Map[mbid];
                                 set.erase( i->second );
@@ -1316,7 +1318,7 @@ namespace MPX
 
                                 if( !parent->children().size() )
                                 {
-                                    on_album_deleted( gint64((*parent)[Columns.Id]) );
+                                    on_album_deleted( gint64((*parent)[Columns.AlbumId]) );
                                 }
                             }
                         }
@@ -1384,8 +1386,8 @@ namespace MPX
                                 {
                                         gint64 alb_a = (*iter_a)[Columns.Date];
                                         gint64 alb_b = (*iter_b)[Columns.Date];
-                                        std::string art_a = (*iter_a)[Columns.ArtistSort];
-                                        std::string art_b = (*iter_b)[Columns.ArtistSort];
+                                        std::string art_a = (*iter_a)[Columns.AlbumArtistSort];
+                                        std::string art_b = (*iter_b)[Columns.AlbumArtistSort];
 
                                         if(art_a != art_b)
                                                 return art_a.compare(art_b);
@@ -1432,8 +1434,8 @@ namespace MPX
                                 {
                                         std::string alb_a = (*iter_a)[Columns.AlbumSort];
                                         std::string alb_b = (*iter_b)[Columns.AlbumSort];
-                                        std::string art_a = (*iter_a)[Columns.ArtistSort];
-                                        std::string art_b = (*iter_b)[Columns.ArtistSort];
+                                        std::string art_a = (*iter_a)[Columns.AlbumArtistSort];
+                                        std::string art_b = (*iter_b)[Columns.AlbumArtistSort];
 
                                         if(art_a != art_b)
                                                 return art_a.compare(art_b);
@@ -1652,7 +1654,9 @@ namespace MPX
                                     m_LabelShowing->set_text( (showing_f
                                         % n2
                                         % n1
-                                        % ((Options.Type == RT_ALL) ? _("releases of all kind") : get_release_string(ReleaseType(Options.Type), true))
+                                        % ((Options.Type == RT_ALL)
+                                                ? ((n1 == 1) ? _("release") : _("releases of all kind"))
+                                                : get_release_string(ReleaseType(Options.Type), n1>1))
                                         % extra
                                     ).str());
                                 }

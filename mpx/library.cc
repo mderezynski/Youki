@@ -465,6 +465,15 @@ namespace MPX
 
                 m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS collection (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, blurb TEXT NOT NULL, cover_url TEXT)");
 
+                ///////////////////////////////////////////////////////////////
+                /// ARTIST ALIASES 
+                ///////////////////////////////////////////////////////////////
+
+                m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS artist_aliases (id INTEGER PRIMARY KEY AUTOINCREMENT, mbid_alias TEXT NOT NULL, mbid_for TEXT NOT NULL, UNIQUE( mbid_alias, mbid_for))");
+
+
+
+
                 mcs->subscribe(
                       "Preferences-FileFormatPriorities"
                     , "Format6"

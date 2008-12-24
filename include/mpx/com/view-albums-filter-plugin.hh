@@ -34,10 +34,12 @@
 
 namespace MPX
 {
+    class ArtistListView;
+
     enum AlbumRowType
     {
-            ROW_ALBUM   =   1,
-            ROW_TRACK   =   2,
+        ROW_ALBUM   =   1,
+        ROW_TRACK   =   2,
     };
 
     enum ReleaseType
@@ -54,33 +56,35 @@ namespace MPX
         RT_ALL              =   (RT_ALBUM|RT_SINGLE|RT_COMPILATION|RT_EP|RT_LIVE|RT_REMIX|RT_SOUNDTRACK|RT_OTHER)
     };
 
-    struct ViewAlbumsColumnsT : public Gtk::TreeModel::ColumnRecord 
+    typedef boost::shared_ptr<Glib::ustring> ustring_sp;
+
+    struct ViewAlbumsColumns_t : public Gtk::TreeModel::ColumnRecord 
     {
             Gtk::TreeModelColumn<AlbumRowType>                          RowType;
             Gtk::TreeModelColumn<ReleaseType>                           RT;
-
-            Gtk::TreeModelColumn<MPX::Track>                            AlbumTrack;
+            Gtk::TreeModelColumn<MPX::Track_sp>                         AlbumTrack;
 
             Gtk::TreeModelColumn<Cairo::RefPtr<Cairo::ImageSurface> >   Image;
-            Gtk::TreeModelColumn<Glib::ustring>                         Text;
+            Gtk::TreeModelColumn<ustring_sp>                            Text;
 
             Gtk::TreeModelColumn<bool>                                  HasTracks;
             Gtk::TreeModelColumn<bool>                                  NewAlbum;
 
             Gtk::TreeModelColumn<std::string>                           Album;
-            Gtk::TreeModelColumn<std::string>                           Artist;
+            Gtk::TreeModelColumn<gint64>                                AlbumId;
             Gtk::TreeModelColumn<std::string>                           AlbumSort;
-            Gtk::TreeModelColumn<std::string>                           ArtistSort;
+            Gtk::TreeModelColumn<std::string>                           AlbumMBID;
 
-            Gtk::TreeModelColumn<gint64>                                Id;
-            Gtk::TreeModelColumn<std::string>                           MBID;
+            Gtk::TreeModelColumn<std::string>                           AlbumArtist;
+            Gtk::TreeModelColumn<gint64>                                AlbumArtistId;
+            Gtk::TreeModelColumn<std::string>                           AlbumArtistSort;
             Gtk::TreeModelColumn<std::string>                           AlbumArtistMBID;
 
             Gtk::TreeModelColumn<gint64>                                Date;
+            Gtk::TreeModelColumn<std::string>                           Genre;
             Gtk::TreeModelColumn<gint64>                                InsertDate;
             Gtk::TreeModelColumn<gint64>                                Rating;
             Gtk::TreeModelColumn<double>                                PlayScore;
-            Gtk::TreeModelColumn<std::string>                           Genre;
 
             Gtk::TreeModelColumn<Glib::ustring>                         TrackTitle;
             Gtk::TreeModelColumn<Glib::ustring>                         TrackArtist;
@@ -93,7 +97,7 @@ namespace MPX
 
             Gtk::TreeModelColumn<AlbumInfo_pt>                          RenderData;
 
-            ViewAlbumsColumnsT ()
+            ViewAlbumsColumns_t ()
             {
                     add (RowType);
                     add (RT);
@@ -106,20 +110,20 @@ namespace MPX
                     add (NewAlbum);
 
                     add (Album);
-                    add (Artist);
-
+                    add (AlbumId);
                     add (AlbumSort);
-                    add (ArtistSort);
+                    add (AlbumMBID);
 
-                    add (Id);
-                    add (MBID);
+                    add (AlbumArtist);
+                    add (AlbumArtistId);
+                    add (AlbumArtistSort);
                     add (AlbumArtistMBID);
 
                     add (Date);
+                    add (Genre);
                     add (InsertDate);
                     add (Rating);
                     add (PlayScore);
-                    add (Genre);
 
                     add (TrackTitle);
                     add (TrackArtist);
@@ -145,25 +149,44 @@ namespace MPX
 
             class Base
             {
+                protected:
+
+                    Glib::RefPtr<Gtk::TreeStore>        Store;
+                    ViewAlbumsColumns_t               & Columns;
+    
+
                 public:
 
-                    Base ()
-                    {}
+                    Base(
+                          Glib::RefPtr<Gtk::TreeStore>&     store
+                        , ViewAlbumsColumns_t&              columns
+                    )
+                    : Store( store )
+                    , Columns( columns )
+                    {
+                    }
 
                     virtual ~Base ()
                     {}
 
                     virtual void 
-                    on_filter_issued( const Glib::ustring& ) = 0;
+                    on_filter_issued(
+                        const Glib::ustring&
+                    ) = 0;
 
                     virtual void
-                    on_filter_changed( const Glib::ustring& ) = 0;
+                    on_filter_changed(
+                        const Glib::ustring&
+                    ) = 0;
 
                     virtual bool
-                    filter_delegate(const Gtk::TreeIter&, const ViewAlbumsColumnsT& columns) = 0;
+                    filter_delegate(
+                        const Gtk::TreeIter&
+                    ) = 0;
 
                     virtual Gtk::Widget*
-                    get_ui () = 0;
+                    get_ui(
+                    ) = 0;
     
                     virtual SignalRefilter&
                     signal_refilter ()
@@ -180,7 +203,10 @@ namespace MPX
             {
                 public:                    
 
-                    TextMatch ();
+                    TextMatch(
+                          Glib::RefPtr<Gtk::TreeStore>&     store
+                        , ViewAlbumsColumns_t&              columns
+                    );
 
                     virtual ~TextMatch ();
 
@@ -191,7 +217,7 @@ namespace MPX
                     on_filter_changed( const Glib::ustring& );
 
                     virtual bool
-                    filter_delegate(const Gtk::TreeIter&, const ViewAlbumsColumnsT& columns);
+                    filter_delegate(const Gtk::TreeIter&);
 
                     virtual Gtk::Widget*
                     get_ui ();
@@ -201,16 +227,25 @@ namespace MPX
                     void
                     on_advanced_toggled ();
 
+                    void
+                    on_artist_filter_changed ();
+
                     AQE::Constraints_t  m_Constraints;
                     Glib::ustring       m_FilterText, m_FilterEffective;
-                    Gtk::CheckButton  * m_UI;
+
+                    Gtk::VBox         * m_UI;
+                    Gtk::CheckButton  * m_Advanced_CB;
+                    ArtistListView    * m_ArtistListView;
             };
 
             class LFMTopAlbums : public Base
             {
                 public:                    
 
-                    LFMTopAlbums ();
+                    LFMTopAlbums(
+                          Glib::RefPtr<Gtk::TreeStore>&     store
+                        , ViewAlbumsColumns_t&              columns
+                    );
 
                     virtual ~LFMTopAlbums ();
 
@@ -221,7 +256,7 @@ namespace MPX
                     on_filter_changed( const Glib::ustring& );
 
                     virtual bool
-                    filter_delegate(const Gtk::TreeIter&, const ViewAlbumsColumnsT& columns);
+                    filter_delegate(const Gtk::TreeIter&);
 
                     virtual Gtk::Widget*
                     get_ui ();
@@ -239,7 +274,10 @@ namespace MPX
             {
                 public:                    
 
-                    LFMSimilarArtists ();
+                    LFMSimilarArtists(
+                          Glib::RefPtr<Gtk::TreeStore>&     store
+                        , ViewAlbumsColumns_t&              columns
+                    );
 
                     virtual ~LFMSimilarArtists ();
 
@@ -250,7 +288,7 @@ namespace MPX
                     on_filter_changed( const Glib::ustring& );
 
                     virtual bool
-                    filter_delegate(const Gtk::TreeIter&, const ViewAlbumsColumnsT& columns);
+                    filter_delegate(const Gtk::TreeIter&);
 
                     virtual Gtk::Widget*
                     get_ui ();
