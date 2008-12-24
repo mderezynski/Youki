@@ -148,7 +148,7 @@ extern "C" bool _get (std::string const& filename, Track & track)
 
   if (ItemMap.contains ("----:com.apple.iTunes:MusicBrainz Album Id"))
   {
-      track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] =
+      track[ATTRIBUTE_MB_ALBUM_ID] =
                   ItemMap["----:com.apple.iTunes:MusicBrainz Album Id"].toStringList()[0].toCString (true); 
   }
 
@@ -156,6 +156,12 @@ extern "C" bool _get (std::string const& filename, Track & track)
   {
       track[ATTRIBUTE_MB_ARTIST_ID] =
                   ItemMap["----:com.apple.iTunes:MusicBrainz Artist Id"].toStringList()[0].toCString (true); 
+  }
+
+  if (ItemMap.contains ("----:com.apple.iTunes:MusicBrainz Album Artist Id"))
+  {
+      track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] =
+                  ItemMap["----:com.apple.iTunes:MusicBrainz Album Artist Id"].toStringList()[0].toCString (true); 
   }
 
   if (ItemMap.contains ("----:com.apple.iTunes:ASIN"))

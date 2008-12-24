@@ -1481,11 +1481,13 @@ MPX::LibraryScannerThread::signal_new_entities(
     if( m_AlbumArtistIDs.find( artst_id ) != m_AlbumArtistIDs.end() )
     { 
         pthreaddata->NewArtist.emit( artst_id );
+        m_AlbumArtistIDs.erase( artst_id );
     }
 
     if( m_AlbumIDs.find( album_id ) != m_AlbumIDs.end() )
     {
             pthreaddata->NewAlbum.emit( album_id );
+            m_AlbumIDs.erase( album_id );
 
             RequestQualifier rq;
 
