@@ -42,6 +42,8 @@
 #include "mpx/widgets/widgetloader.hh"
 
 #include <boost/format.hpp>
+#include <sigx/sigx.h>
+
 
 using namespace MPX::AQE;
 using namespace Gnome::Glade;
@@ -53,7 +55,9 @@ namespace MPX
     typedef std::set<gint64>        IdSet_t;
     typedef sigc::signal<void>      SignalChanged_t;
 
-    class ArtistListView : public Gtk::TreeView
+    class ArtistListView
+    : public Gtk::TreeView
+    , public sigx::glib_auto_dispatchable
     {
             class Columns_t : public Gtk::TreeModelColumnRecord
             {
@@ -73,10 +77,12 @@ namespace MPX
 
             Columns_t                       Columns;
             Glib::RefPtr<Gtk::TreeStore>    Store;
-
-            IdSet_t m_FilterIDs;
-
+            IdSet_t                         m_FilterIDs;
             SignalChanged_t                 signal_changed_;
+    
+            typedef std::map<gint64, TreeIter>  IdIterMap_t;
+
+            IdIterMap_t m_IdIterMap;
 
         public:
 
@@ -97,15 +103,32 @@ namespace MPX
             ArtistListView()
             {
                 Store = Gtk::TreeStore::create(Columns);
+                Store->set_default_sort_func(
+                    sigc::mem_fun(
+                        *this,
+                        &ArtistListView::sort
+                ));
 
                 append_column(_("Name"), Columns.Name);
 
                 MPX::SQL::RowV v;
                 boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
 
+                library->signal_new_artist().connect(
+                    sigc::mem_fun(
+                          *this
+                        , &ArtistListView::on_new_artist
+                ));
+
+                library->scanner()->signal_entity_deleted().connect(
+                    sigc::mem_fun(
+                          *this
+                        , &ArtistListView::on_entity_deleted
+                ));
+
                 library->getSQL(
                       v
-                    , "SELECT id, album_artist, album_artist_sortname, mb_album_artist_id FROM album_artist ORDER BY ifnull(album_artist_sortname,album_artist)"
+                    , "SELECT id, album_artist, album_artist_sortname, mb_album_artist_id FROM album_artist"
                 );
 
                 TreeIter iter = Store->append();
@@ -120,6 +143,8 @@ namespace MPX
                                                 : get<std::string>((*i)["album_artist"]);
                     (*iter)[Columns.SortKey] = Glib::ustring((*iter)[Columns.Name]).collate_key();
                     (*iter)[Columns.ID] = get<gint64>((*i)["id"]);
+
+                    m_IdIterMap.insert(std::make_pair( get<gint64>((*i)["id"]), iter));
                 }
 
                 set_model(Store);
@@ -131,9 +156,61 @@ namespace MPX
                 ));
             }
 
+            int
+            sort(
+                  const TreeIter& iter_a
+                , const TreeIter& iter_b
+            )
+            {
+                return std::string((*iter_a)[Columns.SortKey]).compare(std::string((*iter_b)[Columns.SortKey]));
+            }
+
+            void
+            on_new_artist(
+                gint64 id
+            )
+            {
+                MPX::SQL::RowV v;
+                boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
+
+                library->getSQL(
+                      v
+                    , (boost::format("SELECT album_artist, album_artist_sortname, mb_album_artist_id FROM album_artist WHERE id = '%lld'") % id).str()
+                );
+
+                TreeIter iter = Store->append();
+
+                (*iter)[Columns.Name] = v[0].count("album_artist_sortname")
+                                            ? get<std::string>(v[0]["album_artist_sortname"])
+                                            : get<std::string>(v[0]["album_artist"]);
+                (*iter)[Columns.SortKey] = Glib::ustring((*iter)[Columns.Name]).collate_key();
+                (*iter)[Columns.ID] = get<gint64>(v[0]["id"]);
+
+                m_IdIterMap.insert(std::make_pair( get<gint64>(v[0]["id"]), iter));
+            }
+
+            void
+            on_entity_deleted(
+                  gint64     id
+                , EntityType type
+            )
+            {
+                if( type == ENTITY_ALBUM_ARTIST && m_IdIterMap.count(id))
+                {
+                    m_IdIterMap.erase(id); 
+                    on_selection_changed();
+                }
+            }
+
             void
             on_selection_changed()
             {
+                if( !get_selection()->count_selected_rows())
+                {
+                    m_FilterIDs.clear();
+                    return;
+                }
+
                 TreeIter iter = get_selection()->get_selected();
                 if( iter == Store->children().begin() )
                 {
