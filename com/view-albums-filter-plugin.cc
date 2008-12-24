@@ -185,9 +185,9 @@ namespace MPX
                                             ? get<std::string>(v[0]["album_artist_sortname"])
                                             : get<std::string>(v[0]["album_artist"]);
                 (*iter)[Columns.SortKey] = Glib::ustring((*iter)[Columns.Name]).collate_key();
-                (*iter)[Columns.ID] = get<gint64>(v[0]["id"]);
+                (*iter)[Columns.ID] = id; 
 
-                m_IdIterMap.insert(std::make_pair( get<gint64>(v[0]["id"]), iter));
+                m_IdIterMap.insert(std::make_pair( id, iter));
             }
 
             void
