@@ -649,10 +649,9 @@ MPX::LibraryScannerThread::on_add(
             const std::string& location = get<std::string>( (*(t.get()))[ATTRIBUTE_LOCATION].get() );
 
             gint64 mtime1 = Util::get_file_mtime( location ); 
+            gint64 mtime2 = get_track_mtime( (*(t.get())) );
 
-            (*(t.get()))[ATTRIBUTE_MTIME] = mtime1; 
-
-            if( check_mtimes )
+            if( check_mtimes && mtime2 )
             {
                     if( mtime1 <= last_scan_date)
                     {
@@ -660,17 +659,14 @@ MPX::LibraryScannerThread::on_add(
                         continue;
                     }
                     else
+                    if( mtime1 == mtime2 )
                     {
-                        gint64 mtime2 = get_track_mtime( (*(t.get())) );
-
-                        if( mtime1 == mtime2 )
-                        {
-                            ++m_ScanSummary.FilesUpToDate;
-                            continue;
-                        }
+                        ++m_ScanSummary.FilesUpToDate;
+                        continue;
                     }
             }
 
+            (*(t.get()))[ATTRIBUTE_MTIME] = mtime1; 
             insert_file_no_mtime_check( t, *i2, insert_path_sql );
                         
             if( (! (std::distance(collection.begin(), i2) % 50)) )
