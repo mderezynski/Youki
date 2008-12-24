@@ -290,6 +290,8 @@ namespace MPX
                 std::string     Title;
                 std::string     Type;
 
+                bool            Update;
+
                 Track_p         Track;
             };
  
@@ -322,6 +324,7 @@ namespace MPX
                   Track_sp           track
                 , const std::string& uri
                 , const std::string& insert_path
+                , bool               update_track = false
             );
 
             void
@@ -329,6 +332,7 @@ namespace MPX
                   Track&             track
                 , const std::string& uri
                 , const std::string& insert_path
+                , bool               update
             );
     
             void

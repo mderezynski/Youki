@@ -853,8 +853,10 @@ namespace MPX
                                 {
                                         mm->push_message((boost::format(_("Removing duplicates: %s")) % filename_from_uri(uri)).str());
                                         try{
+/*
                                                 Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
                                                 if( file->remove() )
+*/
                                                 {
                                                         execSQL((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>(rt["id"])).str()); 
                                                         Signals.TrackDeleted.emit( get<gint64>(rt["id"]) );

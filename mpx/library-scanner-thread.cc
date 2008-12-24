@@ -516,7 +516,7 @@ MPX::LibraryScannerThread::on_scan_all(
             else
             {
                 (*(t.get()))[ATTRIBUTE_MTIME] = mtime1;
-                insert_file_no_mtime_check( t, location, get<std::string>((*i)["insert_path"])); 
+                insert_file_no_mtime_check( t, location, get<std::string>((*i)["insert_path"]), mtime2 && mtime1 != mtime2); 
             }
         }
         else
@@ -1168,6 +1168,7 @@ MPX::LibraryScannerThread::insert_file_no_mtime_check(
       Track_sp           track
     , const std::string& uri
     , const std::string& insert_path
+    , bool               update
 )
 {
     try{
@@ -1186,7 +1187,7 @@ MPX::LibraryScannerThread::insert_file_no_mtime_check(
             add_erroneous_track( uri, _("Could not acquire metadata (using taglib-gio)"));
         }
         else try{
-            create_insertion_track( *(track.get()), uri, insert_path );
+            create_insertion_track( *(track.get()), uri, insert_path, update );
         }
         catch( ScanError & cxe )
         {
@@ -1289,6 +1290,7 @@ MPX::LibraryScannerThread::create_insertion_track(
       Track&             track
     , const std::string& uri
     , const std::string& insert_path
+    , bool               update
 )
 {
     if( uri.empty() )
@@ -1324,6 +1326,7 @@ MPX::LibraryScannerThread::create_insertion_track(
     p->Title          = get<std::string>(track[ATTRIBUTE_TITLE].get());
     p->TrackNumber    = get<gint64>(track[ATTRIBUTE_TRACK].get());
     p->Type           = get<std::string>(track[ATTRIBUTE_TYPE].get());
+    p->Update         = update;
     p->Track          = Track_sp( new Track( track ));
 
     if( p->Album.second == ENTITY_IS_NEW )
@@ -1552,8 +1555,55 @@ MPX::LibraryScannerThread::insert(
   m_ProcessedAlbums.insert( p->Album.first );
 
   try{
-    track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->exec_sql( create_insertion_sql( track, p->Album.first, p->Artist.first )); 
 
+    if( p->Update )
+    {
+        gint64 id_old = 0;
+        gint64 id_new = 0;
+        RowV   rv;
+
+        if( mcs->key_get<bool>("library","use-hal"))
+        {
+            m_SQL->get(
+                rv,
+                mprintf(
+                      "SELECT id FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND hal_vrp = '%s'"
+                    , get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get()).c_str() 
+                    , get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get()).c_str() 
+                    , get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()).c_str() 
+            )); 
+        }
+        else
+        {
+            m_SQL->get(
+                rv,
+                mprintf(
+                      "SELECT id FROM track WHERE location = '%s'"
+                    , get<std::string>(track[ATTRIBUTE_LOCATION].get()).c_str() 
+            )); 
+        }
+
+        id_old = get<gint64>(rv[0]["id"]);
+
+        m_SQL->exec_sql(
+            mprintf(
+                  "DELETE FROM track WHERE id ='%lld"
+                , id_old
+        ));
+
+        id_new = m_SQL->exec_sql( create_insertion_sql( track, p->Album.first, p->Artist.first )); 
+
+        m_SQL->exec_sql(
+            mprintf(
+                  "UPDATE track SET id = '%lld' WHERE id ='%lld"
+                , id_old
+                , id_new
+        ));
+    }
+    else
+    {
+        track[ATTRIBUTE_MPX_TRACK_ID] = m_SQL->exec_sql( create_insertion_sql( track, p->Album.first, p->Artist.first )); 
+    } 
   } catch( SqlConstraintError & cxe )
   {
     RowV rv;
