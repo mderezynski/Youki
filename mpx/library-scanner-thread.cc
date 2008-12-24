@@ -1636,11 +1636,11 @@ MPX::LibraryScannerThread::do_remove_dangling ()
 
   for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
   {
-          if (idset1.find (*i) == idset1.end())
-          {
-                  m_SQL->exec_sql((delete_f % "artist" % (*i)).str());
-                  pthreaddata->EntityDeleted( *i , ENTITY_ARTIST );
-          }
+        if (idset1.find (*i) == idset1.end())
+        {
+            m_SQL->exec_sql((delete_f % "artist" % (*i)).str());
+            pthreaddata->EntityDeleted( *i , ENTITY_ARTIST );
+        }
   }
 
 
@@ -1661,11 +1661,11 @@ MPX::LibraryScannerThread::do_remove_dangling ()
 
   for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
   {
-          if (idset1.find (*i) == idset1.end())
-          {
-                  m_SQL->exec_sql((delete_f % "album" % (*i)).str());
-                  pthreaddata->EntityDeleted( *i , ENTITY_ALBUM );
-          }
+        if (idset1.find (*i) == idset1.end())
+        {
+            m_SQL->exec_sql((delete_f % "album" % (*i)).str());
+            pthreaddata->EntityDeleted( *i , ENTITY_ALBUM );
+        }
   }
 
   /// CLEAR DANGLING ALBUM ARTISTS
@@ -1685,9 +1685,11 @@ MPX::LibraryScannerThread::do_remove_dangling ()
 
   for (IdSet::const_iterator i = idset2.begin(); i != idset2.end(); ++i)
   {
-          if (idset1.find (*i) == idset1.end())
-                  m_SQL->exec_sql((delete_f % "album_artist" % (*i)).str());
-                  pthreaddata->EntityDeleted( *i , ENTITY_ALBUM_ARTIST );
+        if (idset1.find (*i) == idset1.end())
+        {
+            m_SQL->exec_sql((delete_f % "album_artist" % (*i)).str());
+            pthreaddata->EntityDeleted( *i , ENTITY_ALBUM_ARTIST );
+        }
   }
 
   pthreaddata->Message.emit(_("Cleanup: Done"));

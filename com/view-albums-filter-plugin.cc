@@ -206,6 +206,8 @@ namespace MPX
             {
                 if( type == ENTITY_ALBUM_ARTIST && m_IdIterMap.count(id))
                 {
+                    TreeIter iter = m_IdIterMap.find(id)->second;
+                    Store->erase(iter);
                     m_IdIterMap.erase(id); 
                 }
 
