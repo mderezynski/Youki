@@ -108,6 +108,7 @@ namespace MPX
                         *this,
                         &ArtistListView::sort
                 ));
+                Store->set_sort_column_id( -1, Gtk::SORT_ASCENDING );
 
                 append_column(_("Name"), Columns.Name);
 
@@ -190,6 +191,14 @@ namespace MPX
             }
 
             void
+            on_new_album(
+                  gint64 G_GNUC_UNUSED 
+            )
+            {
+                signal_changed_.emit();
+            }
+
+            void
             on_entity_deleted(
                   gint64     id
                 , EntityType type
@@ -198,8 +207,9 @@ namespace MPX
                 if( type == ENTITY_ALBUM_ARTIST && m_IdIterMap.count(id))
                 {
                     m_IdIterMap.erase(id); 
-                    on_selection_changed();
                 }
+
+                on_selection_changed();
             }
 
             void
