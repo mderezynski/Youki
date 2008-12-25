@@ -22,33 +22,65 @@
 //  MPX is covered by.
 
 #include "config.h"
+
+#include <boost/format.hpp>
 #include <glibmm/i18n.h>
+#include <sigx/sigx.h>
 
 #include "mpx/com/view-albums-filter-plugin.hh"
 
+#include "mpx/mpx-artist-images.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-uri.hh"
-
+#include "mpx/algorithm/aque.hh"
 #include "mpx/util-string.hh"
+#include "mpx/util-graphics.hh"
 
 #include "xmlcpp/xsd-topalbums-2.0.hxx"
 #include "xmlcpp/xsd-artist-similar-2.0.hxx"
-
 #include "mpx/xml/xmltoc++.hh"
-
-#include "mpx/algorithm/aque.hh"
-
 #include "mpx/widgets/widgetloader.hh"
-
-#include <boost/format.hpp>
-#include <sigx/sigx.h>
 
 
 using namespace MPX::AQE;
 using namespace Gnome::Glade;
 using namespace Gtk;
+using namespace Glib;
 using boost::get;
+
+namespace
+{
+    std::string
+    locale_date_string(
+        const std::string& date
+    )
+    {
+        struct tm atm;
+        char buf[512];
+
+        if( date.size() == 4)
+        {
+            strptime(date.c_str(), "%Y", &atm);            
+            strftime(buf, 512, "%Y", &atm);
+        }
+        else if( date.size() == 7)
+        {
+            strptime(date.c_str(), "%Y-%m", &atm);            
+            strftime(buf, 512, "%B %Y", &atm);
+        }
+        else if( date.size() == 10)
+        {
+            strptime(date.c_str(), "%Y-%m-%d", &atm);            
+            strftime(buf, 512, "%d %B %Y", &atm);
+        }
+        else
+            return "";
+
+        std::string rv (buf);
+        return rv; 
+    }
+}
 
 namespace MPX
 {
@@ -63,13 +95,19 @@ namespace MPX
             {
                 public:
 
-                    Gtk::TreeModelColumn<std::string>   Name;
-                    Gtk::TreeModelColumn<std::string>   SortKey;
-                    Gtk::TreeModelColumn<gint64>        ID;
+                    Gtk::TreeModelColumn<Glib::RefPtr<Gdk::Pixbuf> >    Image;
+                    Gtk::TreeModelColumn<std::string>                   Name;
+                    Gtk::TreeModelColumn<std::string>                   Name_Raw;
+                    Gtk::TreeModelColumn<std::string>                   Date_Raw;
+                    Gtk::TreeModelColumn<std::string>                   SortKey;
+                    Gtk::TreeModelColumn<gint64>                        ID;
 
                     Columns_t ()
                     {
+                        add(Image);
                         add(Name);
+                        add(Name_Raw);
+                        add(Date_Raw);
                         add(SortKey);
                         add(ID);
                     };
@@ -80,9 +118,13 @@ namespace MPX
             IdSet_t                         m_FilterIDs;
             SignalChanged_t                 signal_changed_;
     
-            typedef std::map<gint64, TreeIter>  IdIterMap_t;
+            typedef std::map<gint64, TreeIter>       IdIterMap_t;
+            typedef std::map<std::string, TreeIter>  MBIDIterMap_t;
 
             IdIterMap_t m_IdIterMap;
+            MBIDIterMap_t m_MBIDIterMap;
+
+            Glib::RefPtr<Gdk::Pixbuf>       m_Artist_Default;
 
         public:
 
@@ -100,8 +142,80 @@ namespace MPX
                 return m_FilterIDs;
             }
 
+        protected:
+
+            void
+            build_list ()    
+            {
+                boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
+
+                MPX::SQL::RowV v;
+                library->getSQL(
+                      v
+                    , "SELECT id, album_artist, album_artist_sortname, mb_album_artist_id, life_span_begin, life_span_end FROM album_artist"
+                );
+
+                TreeIter iter = Store->append();
+                (*iter)[Columns.Name] = "<b>All Artists</b>"; 
+
+                for( MPX::SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
+                {
+                    TreeIter iter = Store->append();
+
+                    std::string name = (*i).count("album_artist_sortname")
+                                                ? get<std::string>((*i)["album_artist_sortname"])
+                                                : get<std::string>((*i)["album_artist"]);
+
+                    (*iter)[Columns.Name_Raw] = name; 
+
+                    std::string date;
+
+                    if( (*i).count("life_span_begin"))
+                    {
+                        std::string s = get<std::string>((*i)["life_span_begin"]);
+                        if( s.length() )
+                        {
+                            date = "<small>" + locale_date_string( s ) + "</small>";
+                        }
+                    }
+
+                    date += "\n";
+
+                    if( (*i).count("life_span_end"))
+                    {
+                        std::string s = get<std::string>((*i)["life_span_end"]);
+                        if( s.length() )
+                        {
+                            date += "<small>" + locale_date_string( s ) + "</small>"; 
+                        }
+                    }
+
+                    (*iter)[Columns.Date_Raw] = date; 
+
+                    //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>\n" + date; 
+                    (*iter)[Columns.Name] = Glib::Markup::escape_text(name);
+                    (*iter)[Columns.SortKey] = Glib::ustring(name).collate_key();
+                    (*iter)[Columns.ID] = get<gint64>((*i)["id"]);
+                    (*iter)[Columns.Image] = m_Artist_Default;
+
+                    m_IdIterMap.insert(std::make_pair( get<gint64>((*i)["id"]), iter));
+
+                    if( (*i).count("mb_album_artist_id"))
+                        m_MBIDIterMap.insert(std::make_pair( get<std::string>((*i)["mb_album_artist_id"]), iter));
+                }
+            }
+
+        public:
+
             ArtistListView()
             {
+                set_headers_visible( false );
+
+                Cairo::RefPtr<Cairo::ImageSurface> surface = Util::cairo_image_surface_round( Util::cairo_image_surface_from_pixbuf(  Gdk::Pixbuf::create_from_file( build_filename( build_filename( DATA_DIR, "images" ), "artist.png" ))), 2.88 );
+                Util::cairo_image_surface_rounded_border(surface, .5, 2.88, 0., 0., 0., 1.); 
+
+                m_Artist_Default = Util::cairo_image_surface_to_pixbuf( surface ); 
+
                 Store = Gtk::TreeStore::create(Columns);
                 Store->set_default_sort_func(
                     sigc::mem_fun(
@@ -110,9 +224,30 @@ namespace MPX
                 ));
                 Store->set_sort_column_id( -1, Gtk::SORT_ASCENDING );
 
-                append_column(_("Name"), Columns.Name);
+                /*
+                // Image
+                { 
+                        TreeViewColumn * col = manage (new TreeViewColumn(_("Image")));
 
-                MPX::SQL::RowV v;
+                        CellRendererPixbuf *cell = manage (new CellRendererPixbuf);
+                        col->pack_start( *cell, true );
+                        col->add_attribute( *cell, "pixbuf", Columns.Image );
+                        append_column(*col);
+                }
+                */
+
+                
+                // Text
+                { 
+                        TreeViewColumn * col = manage (new TreeViewColumn(_("Name")));
+
+                        CellRendererText *cell = manage (new CellRendererText);
+                        //cell->property_yalign() = 0.;
+                        col->pack_start( *cell, false );
+                        col->add_attribute( *cell, "markup", Columns.Name );
+                        append_column(*col);
+                }
+
                 boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
 
                 library->signal_new_artist().connect(
@@ -127,26 +262,13 @@ namespace MPX
                         , &ArtistListView::on_entity_deleted
                 ));
 
-                library->getSQL(
-                      v
-                    , "SELECT id, album_artist, album_artist_sortname, mb_album_artist_id FROM album_artist"
-                );
+                library->scanner()->signal_entity_updated().connect(
+                    sigc::mem_fun(
+                          *this
+                        , &ArtistListView::on_entity_updated
+                ));
 
-                TreeIter iter = Store->append();
-                (*iter)[Columns.Name] = "ALL"; 
-
-                for( MPX::SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
-                {
-                    TreeIter iter = Store->append();
-
-                    (*iter)[Columns.Name] = (*i).count("album_artist_sortname")
-                                                ? get<std::string>((*i)["album_artist_sortname"])
-                                                : get<std::string>((*i)["album_artist"]);
-                    (*iter)[Columns.SortKey] = Glib::ustring((*iter)[Columns.Name]).collate_key();
-                    (*iter)[Columns.ID] = get<gint64>((*i)["id"]);
-
-                    m_IdIterMap.insert(std::make_pair( get<gint64>((*i)["id"]), iter));
-                }
+                build_list();
 
                 set_model(Store);
 
@@ -155,6 +277,32 @@ namespace MPX
                         *this,
                         &ArtistListView::on_selection_changed
                 ));
+
+                boost::shared_ptr<ArtistImages> artist_images = services->get<ArtistImages>("mpx-service-artist-images");
+
+                artist_images->signal_got_artist_image().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &ArtistListView::on_got_artist_image
+                ));
+
+                artist_images->recache_images();
+            }
+
+            void
+            on_got_artist_image(
+                  const std::string&            mbid
+                , Glib::RefPtr<Gdk::Pixbuf>     artist_image
+            )
+            {
+                if( m_MBIDIterMap.count( mbid ))
+                {
+                    TreeIter iter = m_MBIDIterMap.find( mbid )->second;
+
+                    Cairo::RefPtr<Cairo::ImageSurface> surface = Util::cairo_image_surface_round( Util::cairo_image_surface_from_pixbuf( artist_image->scale_simple( 48, 48, Gdk::INTERP_BILINEAR) ), 2.88 );
+                    Util::cairo_image_surface_rounded_border(surface, .5, 2.88, 0., 0., 0., 1.); 
+                    (*iter)[Columns.Image] = Util::cairo_image_surface_to_pixbuf( surface ); 
+                }
             }
 
             int
@@ -176,18 +324,51 @@ namespace MPX
 
                 library->getSQL(
                       v
-                    , (boost::format("SELECT album_artist, album_artist_sortname, mb_album_artist_id FROM album_artist WHERE id = '%lld'") % id).str()
+                    , (boost::format("SELECT album_artist, album_artist_sortname, mb_album_artist_id, life_span_begin, life_span_end FROM album_artist WHERE id = '%lld'") % id).str()
                 );
 
                 TreeIter iter = Store->append();
 
-                (*iter)[Columns.Name] = v[0].count("album_artist_sortname")
+                std::string name = v[0].count("album_artist_sortname")
                                             ? get<std::string>(v[0]["album_artist_sortname"])
                                             : get<std::string>(v[0]["album_artist"]);
-                (*iter)[Columns.SortKey] = Glib::ustring((*iter)[Columns.Name]).collate_key();
-                (*iter)[Columns.ID] = id; 
 
-                m_IdIterMap.insert(std::make_pair( id, iter));
+                (*iter)[Columns.Name_Raw] = name; 
+
+                std::string date;
+
+                if( v[0].count("life_span_begin"))
+                {
+                    std::string s = get<std::string>(v[0]["life_span_begin"]);
+                    if( s.length() )
+                    {
+                        date = "<small>" + locale_date_string( s ) + "</small>";
+                    }
+                }
+
+                date += "\n";
+
+                if( v[0].count("life_span_end"))
+                {
+                    std::string s = get<std::string>(v[0]["life_span_end"]);
+                    if( s.length() )
+                    {
+                        date += "<small>" + locale_date_string( s ) + "</small>"; 
+                    }
+                }
+
+                (*iter)[Columns.Date_Raw] = date; 
+
+                //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>\n" + date; 
+                (*iter)[Columns.Name] = Glib::Markup::escape_text(name);
+                (*iter)[Columns.SortKey] = Glib::ustring(name).collate_key();
+                (*iter)[Columns.ID] = get<gint64>(v[0]["id"]);
+                (*iter)[Columns.Image] = m_Artist_Default;
+
+                m_IdIterMap.insert(std::make_pair( get<gint64>(v[0]["id"]), iter));
+
+                if( v[0].count("mb_album_artist_id"))
+                    m_MBIDIterMap.insert(std::make_pair( get<std::string>(v[0]["mb_album_artist_id"]), iter));
             }
 
             void
@@ -209,10 +390,84 @@ namespace MPX
                     TreeIter iter = m_IdIterMap.find(id)->second;
                     Store->erase(iter);
                     m_IdIterMap.erase(id); 
+
+                    MPX::SQL::RowV v;
+                    boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
+
+                    library->getSQL(
+                          v
+                        , (boost::format("SELECT mb_album_artist_id FROM album_artist WHERE id = '%lld'") % id).str()
+                    ) ;
+
+                    m_MBIDIterMap.erase(get<std::string>(v[0]["mb_album_artist_id"]));
                 }
 
                 on_selection_changed();
             }
+
+            void
+            on_entity_updated(
+                  gint64     id
+                , EntityType type
+            )
+            {
+                if( type == ENTITY_ALBUM_ARTIST && m_IdIterMap.count(id))
+                {
+                    TreeIter iter = m_IdIterMap.find(id)->second;
+
+                    MPX::SQL::RowV v;
+
+                    boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
+                    library->getSQL(
+                          v
+                        , (boost::format("SELECT album_artist, album_artist_sortname, mb_album_artist_id, life_span_begin, life_span_end FROM album_artist WHERE id = '%lld'") % id).str()
+                    );
+
+                    std::string name = v[0].count("album_artist_sortname")
+                                                ? get<std::string>(v[0]["album_artist_sortname"])
+                                                : get<std::string>(v[0]["album_artist"]);
+
+                    (*iter)[Columns.Name_Raw] = name; 
+
+                    std::string date;
+
+                    if( v[0].count("life_span_begin"))
+                    {
+                        std::string s = get<std::string>(v[0]["life_span_begin"]);
+                        if( s.length() )
+                        {
+                            date = "<small>" + locale_date_string( s ) + "</small>";
+                        }
+                    }
+
+                    date += "\n";
+
+                    if( v[0].count("life_span_end"))
+                    {
+                        std::string s = get<std::string>(v[0]["life_span_end"]);
+                        if( s.length() )
+                        {
+                            date += "<small>" + locale_date_string( s ) + "</small>"; 
+                        }
+                    }
+
+                    (*iter)[Columns.Date_Raw] = date; 
+
+                    //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>\n" + date; 
+                    (*iter)[Columns.Name] = Glib::Markup::escape_text(name);
+                    (*iter)[Columns.SortKey] = Glib::ustring(name).collate_key();
+                    (*iter)[Columns.ID] = get<gint64>(v[0]["id"]);
+
+                    m_IdIterMap.insert(std::make_pair( get<gint64>(v[0]["id"]), iter));
+
+                    if( v[0].count("mb_album_artist_id"))
+                        m_MBIDIterMap.insert(std::make_pair( get<std::string>(v[0]["mb_album_artist_id"]), iter));
+
+                }
+
+                on_selection_changed();
+            }
+
 
             void
             on_selection_changed()

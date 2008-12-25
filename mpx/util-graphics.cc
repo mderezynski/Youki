@@ -33,6 +33,10 @@
 #include <X11/Xlib.h>
 #include "mpx/util-graphics.hh"
 #include "mpx/widgets/cairo-extensions.hh"
+#include "mpx/mpx-minisoup.hh"
+#include "mpx/mpx-uri.hh"
+
+using namespace Glib;
 
 namespace
 {
@@ -79,6 +83,40 @@ namespace MPX
 {
   namespace Util
   {
+    Glib::RefPtr<Gdk::Pixbuf>
+    get_image_from_uri(
+        const std::string& uri
+    )
+    {
+      Glib::RefPtr<Gdk::Pixbuf> image = Glib::RefPtr<Gdk::Pixbuf>(0);
+
+      try{
+          URI u (uri);
+          if (u.get_protocol() == URI::PROTOCOL_HTTP)
+          {
+              Soup::RequestSyncRefP request = Soup::RequestSync::create (Glib::ustring (u));
+              guint code = request->run (); 
+
+              if( code == 200 )
+              try{
+                    Glib::RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
+                    loader->write (reinterpret_cast<const guint8*>(request->get_data_raw()), request->get_data_size());
+                    loader->close ();
+                    image = loader->get_pixbuf();
+              } catch( Gdk::PixbufError & cxe ) {
+                    g_message("%s: Gdk::PixbufError: %s", G_STRLOC, cxe.what().c_str());
+              }
+          }
+          else if( u.get_protocol() == URI::PROTOCOL_FILE ) 
+          {
+            image = Gdk::Pixbuf::create_from_file (filename_from_uri (uri));
+          }
+      } catch (URI::ParseError & cxe) {
+          g_message("%s: URI Parse Error: %s", G_STRLOC, cxe.what());
+      }
+      return image;
+    }
+
     void
     window_set_busy (GtkWindow* window)
     {
@@ -94,23 +132,6 @@ namespace MPX
     window_set_idle (GtkWindow* window)
     {
         gdk_window_set_cursor (GTK_WIDGET (window)->window, NULL);
-    }
-
-    GtkWidget *
-    ui_manager_get_popup (GtkUIManager * ui_manager,
-                          char const*    path)
-    {
-      GtkWidget *menu_item;
-      GtkWidget *submenu;
-
-      menu_item = gtk_ui_manager_get_widget (ui_manager, path);
-
-      if (GTK_IS_MENU_ITEM (menu_item))
-          submenu = gtk_menu_item_get_submenu (GTK_MENU_ITEM (menu_item));
-      else
-          submenu = NULL;
-
-      return submenu;
     }
 
     void

@@ -1,6 +1,7 @@
 images_DATA =						\
 									\
 		about.png					\
+		artist.png					\
 		disc.png					\
 		splash.png					\
 		throbber.gif				\

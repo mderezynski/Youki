@@ -68,6 +68,7 @@ namespace
                 "         <menuitem action='action-mlib-rescan'/>"
                 "         <separator/>"
                 "         <menuitem action='action-mlib-recache-covers'/>"
+                "         <menuitem action='action-mlib-update-statistics'/>"
                 "         <separator/>"
                 "         <menuitem action='action-close'/>"
                 "   </menu>"
@@ -434,6 +435,14 @@ namespace MPX
             sigc::mem_fun(
                 *this,
                 &MLibManager::on_recache_covers
+        ));
+
+        m_Actions->add( Action::create(
+            "action-mlib-update-statistics",
+            _("Update Additional Metadata")),
+            sigc::mem_fun(
+                *this,
+                &MLibManager::on_update_statistics
         ));
 
 #ifdef HAVE_HAL

@@ -40,8 +40,8 @@ namespace MPX
 {
   namespace Util
   {
-    Gtk::Widget*
-    get_popup (Glib::RefPtr<Gtk::UIManager> ui_manager, Glib::ustring const& menupath);
+    Glib::RefPtr<Gdk::Pixbuf>
+    get_image_from_uri   (const std::string&);
 
     void
     window_set_busy      (GtkWindow* window);

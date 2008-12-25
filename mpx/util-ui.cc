@@ -30,8 +30,6 @@
 #include <gtkmm/messagedialog.h>
 #include <gtkmm.h>
 #include "mpx/util-ui.hh"
-#include "mpx/mpx-minisoup.hh"
-#include "mpx/mpx-uri.hh"
 using namespace Gtk;
 
 namespace MPX
@@ -63,42 +61,6 @@ namespace MPX
       Gtk::Widget * menuitem = 0;
       menuitem = ui_manager->get_widget (menupath);
       return (menuitem ? dynamic_cast <Gtk::MenuItem *> (menuitem)->get_submenu() : 0);
-    }
-
-    Glib::RefPtr<Gdk::Pixbuf>
-    Util::get_image_from_uri (Glib::ustring const& uri)
-    {
-      Glib::RefPtr<Gdk::Pixbuf> image = Glib::RefPtr<Gdk::Pixbuf>(0);
-
-      try{
-        URI u (uri);
-        if (u.get_protocol() == URI::PROTOCOL_HTTP)
-        {
-          Soup::RequestSyncRefP request = Soup::RequestSync::create (Glib::ustring (u));
-          guint code = request->run (); 
-
-          if (code == 200)
-          try{
-                Glib::RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
-                loader->write (reinterpret_cast<const guint8*>(request->get_data_raw()), request->get_data_size());
-                loader->close ();
-                image = loader->get_pixbuf();
-            }
-          catch (Gdk::PixbufError & cxe)
-            {
-                g_message("%s: Gdk::PixbufError: %s", G_STRLOC, cxe.what().c_str());
-            }
-        }
-        else if (u.get_protocol() == URI::PROTOCOL_FILE)
-        {
-          image = Gdk::Pixbuf::create_from_file (filename_from_uri (uri));
-        }
-      }
-      catch (MPX::URI::ParseError & cxe)
-      { 
-          g_message("%s: URI Parse Error: %s", G_STRLOC, cxe.what());
-      }
-      return image;
     }
 
 } // MPX

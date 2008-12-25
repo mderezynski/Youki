@@ -99,7 +99,9 @@ audiosource_bin_CXXFLAGS += -D_XOPEN_SOURCE=600
 audiosource_bin_CFLAGS += -D_XOPEN_SOURCE=600
 endif
 
-audiosource_bin_SOURCES =				\
+audiosource_bin_SOURCES =		\
+								\
+	artist-images.cc			\
 								\
 	audio.cc					\
 	audio-types.hh				\

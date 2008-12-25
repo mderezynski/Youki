@@ -7,6 +7,8 @@
 #include "mpx/mpx-types.hh"
 #include "mpx/metadatareader-taglib.hh"
 #include "mpx/util-file.hh"
+#include "xmlcpp/mb-artist-basic-1.0.hxx"
+#include "mpx/xml/xmltoc++.hh"
 #include <queue>
 #include <boost/ref.hpp>
 #include <boost/format.hpp>
@@ -522,8 +524,9 @@ MPX::LibraryScannerThread::on_scan_all(
         else
         {
             gint64 id = get<gint64>((*i)["id"]);
-            m_SQL->exec_sql(mprintf( delete_track_f, id));
             pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
+
+            m_SQL->exec_sql(mprintf( delete_track_f, id));
         }
 
 
@@ -765,8 +768,9 @@ MPX::LibraryScannerThread::on_scan_list_quick_stage_1(
                 if( !file->query_exists() )
                 {
                     gint64 id = get<gint64>((*i)["id"]);
-                    m_SQL->exec_sql(mprintf( delete_track_f, id));
                     pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
+
+                    m_SQL->exec_sql(mprintf( delete_track_f, id));
                 }
 
                 if( check_abort_scan() ) 
@@ -865,12 +869,12 @@ MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exist
 
     if( track.has(ATTRIBUTE_ALBUM_ARTIST) && track.has(ATTRIBUTE_MB_ALBUM_ARTIST_ID) )
     {
-      track[ATTRIBUTE_IS_MB_ALBUM_ARTIST] = gint64(1); 
+        track[ATTRIBUTE_IS_MB_ALBUM_ARTIST] = gint64(1); 
     }
     else
     {
-      track[ATTRIBUTE_IS_MB_ALBUM_ARTIST] = gint64(0); 
-      track[ATTRIBUTE_ALBUM_ARTIST] = track[ATTRIBUTE_ARTIST];
+        track[ATTRIBUTE_IS_MB_ALBUM_ARTIST] = gint64(0); 
+        track[ATTRIBUTE_ALBUM_ARTIST] = track[ATTRIBUTE_ARTIST];
     }
 
     RowV rows;
@@ -920,6 +924,9 @@ MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exist
     else
     if( !only_if_exists )
     {
+        if( !track.has(ATTRIBUTE_MB_ALBUM_ARTIST_ID) )
+             track[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = "mpx-" + get<std::string>(track[ATTRIBUTE_ALBUM_ARTIST].get()); 
+
         char const* set_artist_f ("INSERT INTO album_artist (%s, %s, %s, %s) VALUES (%Q, %Q, %Q, %Q);");
 
         info = EntityInfo(
@@ -1026,14 +1033,11 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
     else
     if(!only_if_exists)
     {
-      bool custom_id = false;
-
       if( !track.has(ATTRIBUTE_MB_ALBUM_ID) )
       {
         track[ATTRIBUTE_MB_ALBUM_ID] = "mpx-" + get<std::string>(track[ATTRIBUTE_ARTIST].get())
                                               + "-"
                                               + get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
-        custom_id = true;
       }
 
       char const* set_album_f ("INSERT INTO album (%s, %s, %s, %s, %s, %s, %s, %s, album_new) VALUES (%Q, %Q, %Q, %Q, %Q, %Q, %lld, %lld, 1);");
@@ -1306,8 +1310,9 @@ MPX::LibraryScannerThread::create_insertion_track(
       gint64 id = get_track_id( track );
       if( id != 0 )
       {
-          m_SQL->exec_sql(mprintf( delete_track_f, id));
           pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
+
+          m_SQL->exec_sql(mprintf( delete_track_f, id));
       }
 
       // FIXME/TODO: Still throw if deleted?
@@ -1686,8 +1691,9 @@ MPX::LibraryScannerThread::do_remove_dangling ()
   {
         if (idset1.find (*i) == idset1.end())
         {
-            m_SQL->exec_sql((delete_f % "artist" % (*i)).str());
             pthreaddata->EntityDeleted( *i , ENTITY_ARTIST );
+
+            m_SQL->exec_sql((delete_f % "artist" % (*i)).str());
         }
   }
 
@@ -1711,8 +1717,9 @@ MPX::LibraryScannerThread::do_remove_dangling ()
   {
         if (idset1.find (*i) == idset1.end())
         {
-            m_SQL->exec_sql((delete_f % "album" % (*i)).str());
             pthreaddata->EntityDeleted( *i , ENTITY_ALBUM );
+
+            m_SQL->exec_sql((delete_f % "album" % (*i)).str());
         }
   }
 
@@ -1735,8 +1742,9 @@ MPX::LibraryScannerThread::do_remove_dangling ()
   {
         if (idset1.find (*i) == idset1.end())
         {
-            m_SQL->exec_sql((delete_f % "album_artist" % (*i)).str());
             pthreaddata->EntityDeleted( *i , ENTITY_ALBUM_ARTIST );
+
+            m_SQL->exec_sql((delete_f % "album_artist" % (*i)).str());
         }
   }
 
@@ -1768,8 +1776,9 @@ MPX::LibraryScannerThread::on_vacuum()
                       Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
                       if( !file->query_exists() )
                       {
-                              m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
                               pthreaddata->EntityDeleted( get<gint64>((*i)["id"]) , ENTITY_TRACK );
+
+                              m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
                       }
               } catch(Glib::Error) {
                         g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
@@ -1821,8 +1830,9 @@ MPX::LibraryScannerThread::on_vacuum_volume_list(
                               Glib::RefPtr<Gio::File> file = Gio::File::create_for_uri(uri);
                               if( !file->query_exists() )
                               {
-                                      m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
                                       pthreaddata->EntityDeleted( get<gint64>((*i)["id"]), ENTITY_TRACK );
+
+                                      m_SQL->exec_sql((boost::format ("DELETE FROM track WHERE id = %lld") % get<gint64>((*i)["id"])).str()); 
                               }
                       } catch(Glib::Error) {
                                 g_message(G_STRLOC ": Error while trying to test URI '%s' for presence", uri.c_str());
@@ -1904,74 +1914,40 @@ MPX::LibraryScannerThread::on_update_statistics()
 
     pthreaddata->ScanStart.emit();
 
-    // Audio Quality per Track
+    SQL::RowV v;
 
-    RowV v1;
     m_SQL->get(
-          v1
-        , "SELECT id, type, bitrate FROM track"
-    );
-    for( RowV::iterator i = v1.begin(); i != v1.end(); ++i )
-    {
-        std::string type = get<std::string>((*i)["type"]);
-        gint64      rate = get<gint64>((*i)["bitrate"]);
-        gint64      qual = get_audio_quality( type, rate );
-        gint64        id = get<gint64>((*i)["id"]);
-
-        m_SQL->exec_sql(
-            (boost::format("UPDATE track SET audio_quality = '%lld' WHERE id = %lld") % qual % id).str()
-        );
-
-        if( !(std::distance(v1.begin(), i) % 100) )
-        {
-            pthreaddata->Message.emit((boost::format(_("Additional Metadata Update/Track Audio Quality: %lld of %lld")) % std::distance(v1.begin(), i) % v1.size() ).str());
-        }
-    }
-
-    // Album Statistical Metadata
-
-    v1.clear();
-    m_SQL->get( 
-        v1,
-        "SELECT DISTINCT album_j FROM track"
+          v
+        , "SELECT DISTINCT id, mb_album_artist_id FROM album_artist WHERE is_mb_album_artist = 1"
     );
 
-    for( RowV::iterator i = v1.begin(); i != v1.end(); ++i )
+    for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
     {
-        RowV        rows;
-        std::string genre;
-        gint64      quality = 0;
+        try{
+            MPX::XmlInstance<mmd::metadata> mmd ((boost::format("http://www.uk.musicbrainz.org/ws/1/artist/%s?type=xml") % get<std::string>((*i)["mb_album_artist_id"])).str());
 
-        m_SQL->get(
-            rows,
-            (boost::format ("SELECT DISTINCT genre FROM track WHERE album_j = %lld AND genre IS NOT NULL AND genre != '' LIMIT 1") 
-                % get<gint64>((*i)["album_j"])
-            ).str()
-        ); 
-        if( !rows.empty() )
-        {
-            genre = get<std::string>(rows[0]["genre"]);
-        }
+            std::string ls_begin, ls_end;
 
-        rows.clear();
-        m_SQL->get(
-            rows,
-            (boost::format ("SELECT sum(audio_quality)/count(*) AS quality FROM track WHERE album_j = %lld AND audio_quality IS NOT NULL AND audio_quality != '0'") 
-                % get<gint64>((*i)["album_j"])
-            ).str()
-        ); 
-        if( !rows.empty() )
-        {
-            quality = get<gint64>(rows[0]["quality"]);
-        }
+            if( mmd.xml().artist().life_span().present() )
+            {
+                if( mmd.xml().artist().life_span().get().begin().present() )
+                    ls_begin = mmd.xml().artist().life_span().get().begin().get();
 
-        m_SQL->exec_sql(mprintf("UPDATE album SET album_genre = '%q', album_quality = '%lld' WHERE id = '%lld'", genre.c_str(), quality, get<gint64>((*i)["album_j"])));
+                if( mmd.xml().artist().life_span().get().end().present() )
+                    ls_end = mmd.xml().artist().life_span().get().end().get();
+            }
 
-        pthreaddata->EntityUpdated( get<gint64>((*i)["album_j"]) , ENTITY_ALBUM );
+            gint64 id = get<gint64>((*i)["id"]);
 
-        if( !(std::distance(v1.begin(), i) % 50) )
-        {
-            pthreaddata->Message.emit((boost::format(_("Additional Metadata Update: %lld of %lld")) % std::distance(v1.begin(), i) % v1.size() ).str());
+            m_SQL->exec_sql(
+                (boost::format("UPDATE album_artist SET life_span_begin = '%s', life_span_end = '%s' WHERE id = '%lld'") % ls_begin % ls_end % id).str()
+            );
+
+            pthreaddata->Message.emit((boost::format(_("Updating Artist Life Spans: %lld / %lld")) % std::distance(v.begin(), i) % v.size()).str());
+
+            pthreaddata->EntityUpdated( id, ENTITY_ALBUM_ARTIST );
+
+        } catch( ... ) {        
         }
     }
 

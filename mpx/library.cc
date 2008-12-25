@@ -303,10 +303,12 @@ namespace MPX
                 ///////////////////////////////////////////////////////////////
 
                 m_SQL->exec_sql((
-                    boost::format("CREATE TABLE IF NOT EXISTS album_artist (id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' INTEGER, UNIQUE ('%s', '%s', '%s', '%s'))")
+                    boost::format("CREATE TABLE IF NOT EXISTS album_artist (id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' INTEGER, UNIQUE ('%s', '%s', '%s', '%s'))")
                         % attrs[ATTRIBUTE_ALBUM_ARTIST].id
                         % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id
                         % attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id
+                        % "life_span_begin"
+                        % "life_span_end"
                         % attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id
                         % attrs[ATTRIBUTE_ALBUM_ARTIST].id
                         % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id

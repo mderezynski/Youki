@@ -23,6 +23,7 @@ namespace MPX
       app_paths[PATH_APP_CACHE_DIR]  = Glib::build_filename (g_get_user_cache_dir  (), PACKAGE);
       app_paths[PATH_APP_CONFIG_DIR] = Glib::build_filename (g_get_user_config_dir (), PACKAGE);
 
+      make_user_dir (Glib::build_filename( get_app_cache_dir(), "artists" ));
       make_user_dir (get_app_data_dir   ());
       make_user_dir (get_app_cache_dir  ());
       make_user_dir (get_app_config_dir ());

@@ -25,8 +25,21 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 
-#include "mpx.hh"
 
+#include <glib/gi18n.h>
+#include <glibmm/miscutils.h>
+#include <giomm.h>
+#include <gst/gst.h>
+#include <gtkmm/main.h>
+#include <gtkglmm.h>
+#include <cstdlib>
+#include <string>
+
+#include "mpx.hh"
+#include "paths.hh"
+#include "signals.hh"
+
+#include "mpx/mpx-artist-images.hh"
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
@@ -38,33 +51,19 @@
 #include "mpx/util-file.hh"
 #ifdef HAVE_HAL
 #include "mpx/mpx-hal.hh"
-#include "mlibmanager.hh"
 #endif // HAVE_HAL
+
+#include "mlibmanager.hh"
 
 #include "mpx/metadatareader-taglib.hh"
 
 #include "mpx/com/mb-import-album.hh"
 #include "mpx/mpx-markov-analyzer-thread.hh"
 
-#include "paths.hh"
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
-#include "signals.hh"
+
 #include "splash-screen.hh"
-
-#if 0
-#include <clutter/clutter.h>
-#endif
-
-#include <glib/gi18n.h>
-#include <glibmm/miscutils.h>
-#include <giomm.h>
-#include <gst/gst.h>
-#include <gtkmm/main.h>
-#include <gtkglmm.h>
-
-#include <cstdlib>
-#include <string>
 
 using namespace MPX;
 using namespace Glib;
@@ -356,6 +355,7 @@ main (int argc, char ** argv)
         services->add(boost::shared_ptr<Covers>(new MPX::Covers));
         services->add(boost::shared_ptr<MetadataReaderTagLib>(new MPX::MetadataReaderTagLib));
         services->add(boost::shared_ptr<Library>(new MPX::Library));
+        services->add(boost::shared_ptr<ArtistImages>(new MPX::ArtistImages));
         services->add(boost::shared_ptr<MarkovAnalyzer>(new MarkovAnalyzer));
         services->add(boost::shared_ptr<Play>(new MPX::Play));
         services->add(boost::shared_ptr<Preferences>(MPX::Preferences::create()));
