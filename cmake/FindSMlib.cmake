@@ -1,39 +1,30 @@
-pkg_check_modules (SM sm)
+#pkg_check_modules (SM sm)
 
 if (NOT SM_FOUND)
-  find_package (X11)
+  find_path (SM_INCLUDE_DIR
+    NAMES SM
+    HINTS $ENV{SMDIR}
+    PATHS /usr/local /usr /opt/local /opt
+    PATH_SUFFIXES include/X11 include X11R6/include
+  )
 
-  message (STATUS "checking for X11 session management library (SMlib)")
+  find_library (SM_LIBRARY
+    NAMES SM
+    HINTS $ENV{SMDIR}
+    PATHS /usr/local/X11R6 /usr/X11R6 /opt/local/X11R6 /opt/X11R6
+    PATH_SUFFIXES lib64 lib
+  )
 
-  if (X11_ICE_FOUND)
-    find_file (SM_HEADER
-      NAME SM.h
-      PATHS ${X11_INCLUDE_DIR}
-      PATH_SUFFIXES SM
-    )
+  find_library (ICE_LIBRARY
+    NAMES ICE
+    HINTS $ENV{SMDIR}
+    PATHS /usr/local/X11R6 /usr/X11R6 /opt/local/X11R6 /opt/X11R6
+    PATH_SUFFIXES lib64 lib
+  )
 
-    find_library (SM_LIBRARY
-      NAME SM
-      PATHS /usr/local/X11R6 /usr/X11R6
-      PATH_SUFFIXES lib lib64
-    )
-
-    if (NOT ${SM_HEADER}  MATCHES "NOTFOUND" AND
-        NOT ${SM_LIBRARY} MATCHES "NOTFOUND")
-
-      set (SM_FOUND "YES")
-      string (REPLACE "SM/SM.h" "" SM_INCLUDE_PATH ${SM_HEADER})
-      set (SM_LIBRARIES "${SM_LIBRARY} ${X11_ICE_LIB}")
-
-    endif (NOT ${SM_HEADER}  MATCHES "NOTFOUND" AND
-           NOT ${SM_LIBRARY} MATCHES "NOTFOUND")
-
-  endif (X11_ICE_FOUND)
-
-  if (SM_FOUND)
-    message (STATUS "  SMlib found")
-  else (SM_FOUND)
-    message (STATUS "  SMlib not found")
-  endif (SM_FOUND)
+  if (SM_INCLUDE_DIR AND SM_LIBRARY AND ICE_LIBRARY)
+    set (SM_FOUND "YES")
+    set (SM_LIBRARIES ${SM_LIBRARY} ${ICE_LIBRARY})
+  endif (SM_INCLUDE_DIR AND SM_LIBRARY AND ICE_LIBRARY)
 
 endif (NOT SM_FOUND)
