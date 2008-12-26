@@ -84,7 +84,6 @@ namespace
 
 namespace MPX
 {
-    typedef std::set<gint64>        IdSet_t;
     typedef sigc::signal<void>      SignalChanged_t;
 
     class ArtistListView
@@ -503,6 +502,7 @@ namespace MPX
                         , ViewAlbumsColumns_t&                columns
             )
             : Base( store, columns )
+            , m_ArtistListView( new ArtistListView )
             {
                 m_UI = manage( new Gtk::VBox );
                 m_Advanced_CB = manage( new Gtk::CheckButton( _("Advanced Query")));
@@ -545,24 +545,6 @@ namespace MPX
             TextMatch::on_artist_filter_changed(
             )
             {
-                const IdSet_t& s = m_ArtistListView->get_filter_ids();
-
-                for( TreeNodeChildren::iterator i = Store->children().begin(); i != Store->children().end(); ++i )
-                {
-                    (*i)[Columns.Visible] = s.empty();
-                }
-
-                if( !s.empty())
-                {
-                        for( TreeNodeChildren::iterator i = Store->children().begin(); i != Store->children().end(); ++i )
-                        {
-                            if( s.count( (*i)[Columns.AlbumArtistId] ))
-                            {
-                                (*i)[Columns.Visible] = true;
-                            }
-                        }
-                }
-
                 Signals.Refilter.emit();
             }
 
@@ -609,24 +591,28 @@ namespace MPX
             bool
             TextMatch::filter_delegate(const Gtk::TreeIter& iter)
             {
-                if( ! bool((*iter)[Columns.Visible]))
-                    return false;
+                const IdSet_t& s (m_ArtistListView->get_filter_ids());
 
-                if( m_FilterEffective.empty() && m_Constraints.empty() ) 
+                if( s.empty() || s.count( (*iter)[Columns.AlbumArtistId] ))
                 {
-                    return true;
+                        if( m_FilterEffective.empty() && m_Constraints.empty() ) 
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            bool truth = true;
+                            if( !m_Constraints.empty() )
+                            {
+                                MPX::Track& track = *(Track_sp((*iter)[Columns.AlbumTrack]));
+                                truth = AQE::match_track( m_Constraints, track );
+                            }
+
+                            return truth && Util::match_keys( *(ustring_sp((*iter)[Columns.Text])), m_FilterEffective ); 
+                        }
                 }
                 else
-                {
-                    bool truth = true;
-                    if( !m_Constraints.empty() )
-                    {
-                        MPX::Track& track = *(Track_sp((*iter)[Columns.AlbumTrack]));
-                        truth = AQE::match_track( m_Constraints, track );
-                    }
-
-                    return truth && Util::match_keys( *(ustring_sp((*iter)[Columns.Text])), m_FilterEffective ); 
-                }
+                        return false;
             }
     }
 } // end namespace MPX 

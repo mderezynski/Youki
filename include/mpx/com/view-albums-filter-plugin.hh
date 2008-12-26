@@ -138,6 +138,8 @@ namespace MPX
             }
     };
 
+    typedef std::set<gint64> IdSet_t;
+
     namespace ViewAlbumsFilterPlugin
     {
             typedef sigc::signal<void> SignalRefilter;
