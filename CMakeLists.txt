@@ -1,25 +1,26 @@
 cmake_minimum_required (VERSION 2.6)
 
 project (audiosource)
+set (VERSION "0.01")
 
 include (CheckIncludeFile)
 include (CheckIncludeFiles)
 include (CheckLibraryExists)
 
 #subdirs (
-#  scripts
-#  desktop
-#  glade
-#  icons
-#  images
-#  po
-#  include
-#  xsd
-#  widgets
-#  musicbrainz
-#  com
-#  xmlcpp
-#  taglib
+  #scripts
+  #desktop
+  #glade
+  #icons
+  #images
+  #po
+  #include
+  #xsd
+  #widgets
+  #musicbrainz
+  #com
+  #xmlcpp
+  #taglib
 #)
 
 check_include_files ("argz.h arpa/inet.h fcntl.h float.h inttypes.h langinfo.h libintl.h limits.h locale.h malloc.h netdb.h netinet/in.h stddef.h stdint.h stdio_ext.h stdlib.h string.h strings.h sys/param.h sys/socket.h sys/time.h unistd.h wchar.h" HAVE_MISC_HEADERS)
@@ -29,40 +30,33 @@ check_library_exists (nsl getrpcbyname "" HAVE_NSL)
 
 find_package (Gettext)
 
-## Profilling
-#AC_ARG_ENABLE([profile],
-#    [AS_HELP_STRING([--enable-profile], [Enable Profiling support ***THIS IS A DEVELOPER OPTION*** Don't enable this if you don't need it (and if you don't know whether you do or not, then you dont!) (default=disabled)])],
-#    [enable_profile="$enableval"],
-#    [enable_profile="no"]
-#)
+# Profilling
+option (ENABLE_PROFILE "Profiling support [DEVELOPERS only] (default=disabled)" "NO")
+mark_as_advanced (FORCE ENABLE_PROFILE)
 
-#if test "$enable_profile" = "yes"; then
-#    C_COMMON_FLAGS="$C_COMMON_FLAGS -pg -fno-inline"
-#fi
+if (ENABLE_PROFILE)
+  set (C_COMMON_FLAGS "${C_COMMON_FLAGS} -pg -fno-inline")
+endif (ENABLE_PROFILE)
 
-## Debugging
-#AC_ARG_ENABLE([debug],
-#    [AS_HELP_STRING([--enable-debug], [Enable Debugging support (default=disabled)])],
-#    [enable_debug="$enableval"],
-#    [enable_debug="no"]
-#)
+# Debugging
+option (ENABLE_DEBUG, "Enable Debugging support [DEVELOPERS only] (default=disabled)" "NO")
+mark_as_advanced (FORCE ENABLE_DEBUG)
 
-#if test "$enable_debug" = "yes"; then
-#    C_COMMON_FLAGS="$C_COMMON_FLAGS -ggdb3"
-#    CFLAGS="$CFLAGS -ggdb3"
-#    AC_DEFINE([WITH_DEBUG], [], [Building with debug information])
-#fi
-#AM_CONDITIONAL([WITH_DEBUG], [test "$enable_debug" = "yes"])
+if (ENABLE_DEBUG)
+  set (C_COMMON_FLAGS "${C_COMMON_FLAGS} -ggdb3")
+  set (CFLAGS "${CFLAGS} -ggdb3")
+  #AC_DEFINE([WITH_DEBUG], [], [Building with debug information])
+endif (ENABLE_DEBUG)
 
 # CFLAGS/CXXFLAGS
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "gcc")
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   # NOTE: We cannot use -pedantic with g++ because GST headers ()@#!@#
   # adds extra commas after the last item in enums
   set (C_COMMON_FLAGS "${C_COMMON_FLAGS} -fno-strict-aliasing -fmessage-length=0 -Wall -D_FORTIFY_SOURCE=2")
   set (CFLAGS "${CFLAGS} -std=c99 -pedantic")
-else (${CMAKE_CXX_COMPILER_ID} STREQUAL "gcc")
+else (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   set (C_COMMON_FLAGS "${C_COMMON_FLAGS} -Wall -D_FORTIFY_SOURCE=2")
-endif (${CMAKE_CXX_COMPILER_ID} STREQUAL "gcc")
+endif (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 
 find_package (X11)
 
@@ -136,13 +130,7 @@ set (SEXYMM_INCLUDES "")
 set (SEXYMM_LIBS "-lsexymm")
 
 ## Network Manager
-#AC_ARG_WITH([nm],
-#    [AS_HELP_STRING([--with-nm], [With GNOME NetworkManager])],
-#    [use_nm="$withval"],
-#    [use_nm="no"]
-#)
-#
-set (ENABLE_NM "NO")
+option (ENABLE_NM "With GNOME NetworkManager" "NO")
 
 if (ENABLE_NM)
   pkg_check_modules (NM, NetworkManager>=0.6.0)
@@ -152,18 +140,15 @@ if (ENABLE_NM)
   endif (NM_FOUND)
 endif (ENABLE_NM)
 
-## xerces
-#AC_ARG_WITH([xerces-prefix],
-#    [AC_HELP_STRING([--with-xerces-prefix],[xerces prefix [default=/usr]])],
-#    [xerces_prefix="$withval"],
-#    [xerces_prefix="/usr"]
-#)
+# xerces
+
+option (XERCES_PREFIX "xerces prefix (default=/usr)" "/usr")
 
 check_library_exists (xerces_c init "" HAVE_XERCES)
-if(HAVE_XERCES)
+if (HAVE_XERCES)
     set (XML_INCLUDES "-I$xml_prefix/xercesc")
     set (XML_LIBS "-L$xml_prefix/lib -lxerces-c")
-endif(HAVE_XERCES)
+endif (HAVE_XERCES)
 
 pkg_check_modules (GST              REQUIRED gstreamer-0.10>=0.10.14 gstreamer-base-0.10>=0.10.14)
 pkg_check_modules (GST_PLUGINS_BASE REQUIRED gstreamer-plugins-base-0.10>=0.10.9)
@@ -176,21 +161,11 @@ find_program (DBUSBINDINGTOOL "dbus-binding-tool")
 #GLIB_GENMARSHAL=`$PKG_CONFIG glib-2.0 --variable=glib_genmarshal`
 #AC_SUBST(GLIB_GENMARSHAL)
 
-#AC_ARG_WITH([dbus-services-dir],
-#    [AS_HELP_STRING([--with-dbus-services-dir@<:@=PATH@:>@], [D-BUS services file destination dir])],
-#    [DBUS_SERVICES_DIR="$withval"],
-#    [DBUS_SERVICES_DIR="$DEFAULT_DBUS_PREFIX/share/dbus-1/services"]
-#)
+option (DBUS_SERVICES_DIR "D-BUS services file destination dir" "${DEFAULT_DBUS_PREFIX}/share/dbus-1/services")
 
-#if test "$with_dbus_services_dir" = ""; then 
-#    if test "$DEFAULT_DBUS_PREFIX" = ""; then
-#        AC_MSG_ERROR([Unable to determine D-BUS installation prefix for automatic discovery of the serivices dir. Please use --with-dbus-services-dir!])
-#    fi
-#fi
-#AC_SUBST([DBUS_SERVICES_DIR])
-#AC_DEFINE_UNQUOTED([DBUS_SERVICES_DIR], ["$DBUS_SERVICES_DIR"], [Directory for D-BUS service files])
+# HAL
 
-set (ENABLE_HAL, "NO")
+option (ENABLE_HAL "Storage management with HAL (default=enabled)" "YES")
 
 if (ENABLE_HAL)
   pkg_check_modules (HAL hal>=0.5.7.1 hal-storage>=0.5.7.1)
@@ -219,19 +194,8 @@ pkg_check_modules (TAGLIB REQUIRED taglib-gio>=1.4)
 
 # libsidplay (v1.x)
 
-#AC_ARG_ENABLE([sid],
-#    [AC_HELP_STRING([--enable-sid],[build MPX with .sid/.psid taglib support])],
-#    [have_sid="$enableval"],
-#    [have_sid="no"]
-#)
-
-#AC_ARG_WITH([sid-prefix],
-#    [AC_HELP_STRING([--with-sid-prefix],[sidplay prefix [default=/usr]])],
-#    [sid_prefix="$withval"],
-#    [sid_prefix="/usr"]
-#)
-set (ENABLE_SID "NO")
-set (SID_PREFIX "/usr")
+option (ENABLE_SID ".sid/.psid taglib support" "NO")
+option (SID_PREFIX "sidplay prefix (default=/usr)" "/usr")
 
 if (ENABLE_SID)
   check_library_exists (sidplay C64_clockSpeed "" HAVE_SID)
@@ -247,12 +211,8 @@ if (ENABLE_SID)
 endif (ENABLE_SID)
 
 # ModPlug check
-#AC_ARG_ENABLE([modplug],
-#    [AC_HELP_STRING([--enable-modplug],[build MPX with modplug taglib support])],
-#    [have_mod="$enableval"],
-#    [have_mod="no"]
-#)
-set (ENABLE_MOD "YES")
+
+option (ENABLE_MOD "modplug taglib support" "NO")
 
 if (ENABLE_MOD)
   pkg_check_modules (MOD, libmodplug>=0.7)
@@ -261,12 +221,7 @@ endif (ENABLE_MOD)
 
 # SMlib/ICE
 
-#AC_ARG_ENABLE([sm],
-#    [AS_HELP_STRING([--enable-sm], [Enable session management using SMlib (default=enabled)])],
-#    [enable_sm="$enableval"],
-#    [enable_sm="yes"]
-#)
-set (ENABLE_SM, "YES")
+option (ENABLE_SM "Session management support with SMlib (default=enabled" "YES")
 
 if (ENABLE_SM)
   #BMP_CHECK_SMLIB([],
@@ -277,27 +232,21 @@ if (ENABLE_SM)
   #AC_DEFINE([HAVE_SM], [1], [Define if building with SMlib support])
 endif(ENABLE_SM)
 
-# Startup Notification
-#AC_ARG_ENABLE([sn],
-#    [AS_HELP_STRING([--enable-sn], [Enable Startup Notification (default=enabled)])],
-#    [enable_sn="$enableval"],
-#    [enable_sn="yes"]
-#)
-set (ENABLE_SN "YES")
+option (ENABLE_SN "Enable Startup Notification (default=enabled)" "YES")
 
 if (ENABLE_SN)
   pkg_check_modules (STARTUP_NOTIFY libstartup-notification-1.0>=0.8)
   #AC_DEFINE([HAVE_STARTUP_NOTIFICATION], [], [Define when building with libstartup-notification])
-  set (ENABLE_SN_DESKTOP "FALSE")
+  set (ENABLE_SN_DESKTOP "NO")
 else (ENABLE_SN)
-  set (ENABLE_SN_DESKTOP "FALSE")
+  set (ENABLE_SN_DESKTOP "NO")
 endif (ENABLE_SN)
 
 # Zip
 find_program (ZIP "zip")
-#if test "x$ZIP" != "x"; then
-#  AC_DEFINE([HAVE_ZIP], [], [Define if having ZIP])
-#fi
+if (NOT ZIP)
+  set (HAVE_ZIP "NO")
+endif (NOT ZIP)
 
 pkg_check_modules(LIBOFA REQUIRED libofa>=0.9.3)
 
@@ -316,5 +265,7 @@ check_include_file (fam.h HAVE_FAM_H)
 # Multimedia keys
 pkg_check_modules(XPROTO xproto>=7.0.10)
 
-#CFLAGS="$CFLAGS $C_COMMON_FLAGS"
-#CXXFLAGS="$CXXFLAGS $C_COMMON_FLAGS"
+set (CFLAGS "${CFLAGS} ${C_COMMON_FLAGS}")
+set (CXXFLAGS "${CXXFLAGS} ${C_COMMON_FLAGS}")
+
+configure_file (mpx.1.in mpx.1)
