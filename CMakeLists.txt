@@ -70,40 +70,23 @@ find_package (Boost)
 set (USE_TR1 "YES")
 
 if (USE_TR1)
-  #BMP_CHECK_TR1
-  if (HAVE_TR1)
-    #AC_MSG_RESULT([available])
+  include ("${PROJECT_SOURCE_DIR}/cmake/TestForTR1.cmake")
+
+  if (TR1_FOUND)
     #AC_DEFINE([HAVE_TR1], [], [Define when having C++ tr1 extensions])
-  else (HAVE_TR1)
-    #AC_MSG_RESULT([not available])
-  endif (HAVE_TR1)
+  endif (TR1_FOUND)
 endif (USE_TR1)
 
 find_package (PkgConfig)
 
-#PYTHON_CFLAGS=`python-config --cflags`
-#PYTHON_LIBS=`python-config --libs`
-#AC_SUBST(PYTHON_CFLAGS)
-#AC_SUBST(PYTHON_LIBS)
+find_package (PythonLibs)
 
 pkg_check_modules (PYGTK REQUIRED pygtk-2.0>=2.12.0)
 
-#AC_MSG_CHECKING([for conflicting pygtk versions])
-#pygtk_version=`$PKG_CONFIG --modversion pygtk-2.0`
-#case $pygtk_version in
-#     2.9.0|2.9.1)
-#        AC_MSG_RESULT([found $pygtk_version])
-#        AC_MSG_ERROR([invalid pygtk version found; please upgrade])
-#        ;;
-#     *)
-#        AC_MSG_RESULT([none])
-#        ;;
-#esac
-
-#AC_MSG_CHECKING(for pygtk defs)
-#PYGTK_DEFSDIR=`$PKG_CONFIG --variable=defsdir pygtk-2.0`
-#AC_SUBST(PYGTK_DEFSDIR)
-#AC_MSG_RESULT($PYGTK_DEFSDIR)
+message (STATUS "Checking for pygtk defs")
+execute_process (COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=defsdir pygtk-2.0
+   OUTPUT_VARIABLE PYGTK_DEFSDIR)
+message (STATUS "  pygtk defs path at ${PYGTK_DEFSDIR}")
 
 pkg_check_modules (XML REQUIRED libxml-2.0>=2.6.1)
 
@@ -154,14 +137,16 @@ pkg_check_modules (GST              REQUIRED gstreamer-0.10>=0.10.14 gstreamer-b
 pkg_check_modules (GST_PLUGINS_BASE REQUIRED gstreamer-plugins-base-0.10>=0.10.9)
 
 pkg_check_modules (DBUS REQUIRED dbus-1>=0.93 dbus-glib-1>=0.61)
-#DEFAULT_DBUS_PREFIX=`pkg-config --variable=prefix dbus-1`
+execute_process (COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=prefix dbus-1
+  OUTPUT_VARIABLE DEFAULT_DBUS_PREFIX)
+
+option (DBUS_SERVICES_DIR "D-BUS services file destination dir" "${DEFAULT_DBUS_PREFIX}/share/dbus-1/services")
 
 find_program (DBUSBINDINGTOOL "dbus-binding-tool")
 
-#GLIB_GENMARSHAL=`$PKG_CONFIG glib-2.0 --variable=glib_genmarshal`
-#AC_SUBST(GLIB_GENMARSHAL)
+execute_process (COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=glib_genmarshal glib-2.0
+  OUTPUT_VARIABLE GLIB_GENMARSHAL)
 
-option (DBUS_SERVICES_DIR "D-BUS services file destination dir" "${DEFAULT_DBUS_PREFIX}/share/dbus-1/services")
 
 # HAL
 
@@ -186,7 +171,7 @@ if (ENABLE_HAL)
   pkg_check_modules (HAL_058 hal>=0.5.8.1 hal-storage>=0.5.8.1)
   if(HAL_058_FOUND)
     #AC_DEFINE([HAVE_HAL_058], [], [Defined when building with HAL >= 0.5.8.1])
-  endif(HAL_058_FOUND)
+  endif (HAL_058_FOUND)
 
 endif (ENABLE_HAL)
 
@@ -205,7 +190,7 @@ if (ENABLE_SID)
     set (SID_INCLUDES "-I ${SID_PREFIX}/sidplay")
     set (SID_LIBS "-I ${SID_PREFIX}/lib -lsidplay")
   else (HAVE_SID)
-    #AC_MSG_ERROR([libsidplay 1.x not found!])
+    message (FATAL_ERROR "libsidplay 1.x not found!")
   endif (HAVE_SID)
 
 endif (ENABLE_SID)
@@ -224,13 +209,12 @@ endif (ENABLE_MOD)
 option (ENABLE_SM "Session management support with SMlib (default=enabled" "YES")
 
 if (ENABLE_SM)
-  #BMP_CHECK_SMLIB([],
-  # [AC_MSG_ERROR([Cannot find SMlib])]
-  #)
-
-  #
+  include ("${PROJECT_SOURCE_DIR}/cmake/FindSMlib.cmake")
   #AC_DEFINE([HAVE_SM], [1], [Define if building with SMlib support])
-endif(ENABLE_SM)
+  if (NOT SM_FOUND)
+    message (ERROR "Cannot find SMlib")
+  endif (NOT SM_FOUND)
+endif (ENABLE_SM)
 
 option (ENABLE_SN "Enable Startup Notification (default=enabled)" "YES")
 
@@ -248,14 +232,14 @@ if (NOT ZIP)
   set (HAVE_ZIP "NO")
 endif (NOT ZIP)
 
-pkg_check_modules(LIBOFA REQUIRED libofa>=0.9.3)
+pkg_check_modules (LIBOFA REQUIRED libofa>=0.9.3)
 
-pkg_check_modules(GDL REQUIRED gdl-1.0)
+pkg_check_modules (GDL REQUIRED gdl-1.0)
 
-pkg_check_modules(SIGX REQUIRED sigx-2.0)
+pkg_check_modules (SIGX REQUIRED sigx-2.0)
 
 # GTKGLEXT
-pkg_check_modules(GTKGLEXT REQUIRED gtkglextmm-1.2)
+pkg_check_modules (GTKGLEXT REQUIRED gtkglextmm-1.2)
 
 # GAMIN
 check_library_exists (fam FAMOpen "" HAVE_FAM)
@@ -263,9 +247,10 @@ check_library_exists (fam FAMNoExists "" HAVE_FAMNOEXISTS)
 check_include_file (fam.h HAVE_FAM_H)
 
 # Multimedia keys
-pkg_check_modules(XPROTO xproto>=7.0.10)
+pkg_check_modules (XPROTO xproto>=7.0.10)
 
 set (CFLAGS "${CFLAGS} ${C_COMMON_FLAGS}")
 set (CXXFLAGS "${CXXFLAGS} ${C_COMMON_FLAGS}")
 
 configure_file (mpx.1.in mpx.1)
+
