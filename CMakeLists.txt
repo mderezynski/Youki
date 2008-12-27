@@ -220,8 +220,49 @@ check_library_exists (fam FAMOpen "" HAVE_FAM)
 check_library_exists (fam FAMNoExists "" HAVE_FAMNOEXISTS)
 check_include_file (fam.h HAVE_FAM_H)
 
+# FIXME: Determine default sink to use depending on target system
+set (DEFAULT_SINK "autoaudiosink")
+set (DEFAULT_DEVICE "/dev/dsp")
+
+set (DEFAULT_DEVICE_OSS  "/dev/dsp0")
+set (DEFAULT_DEVICE_ALSA "default")
+set (DEFAULT_DEVICE_SUN  "/dev/audio")
+set (DEFAULT_DEVICE_ESD  "localhost")
+
+# CDDA
+include (${PROJECT_SOURCE_DIR}/cmake/FindCDSupport.cmake)
+if (NOT CDIO_FOUND AND NOT CDDA_FOUND)
+  message (FATAL_ERROR "No CDDA libraries found")
+endif (NOT CDIO_FOUND AND NOT CDDA_FOUND)
+
 # Multimedia keys
 pkg_check_modules (XPROTO xproto>=7.0.10)
+
+#PREFIX=${prefix}
+#PLUGIN_DIR=${libdir}/${PACKAGE}/plugins
+#LOCALE_DIR=${localedir}
+#DATA_DIR=${pkgdatadir}
+
+#AX_DEFINE_UNQUOTED([PREFIX], [${prefix}], [The installation prefix])
+#AX_DEFINE_UNQUOTED([PLUGIN_DIR], [${libdir}/${PACKAGE}/plugins], [Plugins path])
+#AX_DEFINE_UNQUOTED([LOCALE_DIR], [${localedir}], [The locale directory])
+#AX_DEFINE_UNQUOTED([DATA_DIR], [${prefix}/share/${PACKAGE}], [Data directory])
+
+set (MPX_DBUS_SERVICE_ "\"org.mpris.mpx\"")
+set (MPX_DBUS_INTERFACE__MPRIS_ "\"org.freedesktop.MediaPlayer\"")
+set (MPX_DBUS_PATH__MPRIS_ROOT_ "\"/\"")
+set (MPX_DBUS_PATH__MPRIS_PLAYER_ "\"/Player\"")
+set (MPX_DBUS_PATH__MPRIS_TRACKLIST_ "\"/TrackList\"")
+
+set (MPX_DBUS_INTERFACE__MPX_ "\"info.backtrace.mpx\"")
+set (MPX_DBUS_PATH__MPX_ "\"/MPX\"")
+
+#AC_DEFINE([PLUGIN_VERSION], [10], [Plugin Version])
+
+# MCS stubs
+#AC_DEFINE([HAVE_BMP], [1], [Defined when having BMP])
+#AC_DEFINE([HAVE_XML], [1], [Defined when having libxml2])
+#AC_DEFINE([HAVE_GTK], [1], [Defined when having GTK2])
 
 set (CFLAGS "${CFLAGS} ${C_COMMON_FLAGS}")
 set (CXXFLAGS "${CXXFLAGS} ${C_COMMON_FLAGS}")
