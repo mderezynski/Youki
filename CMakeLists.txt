@@ -281,3 +281,4 @@ set (CFLAGS "${CFLAGS} ${C_COMMON_FLAGS}")
 set (CXXFLAGS "${CXXFLAGS} ${C_COMMON_FLAGS}")
 
 configure_file (mpx.1.in mpx.1)
+
