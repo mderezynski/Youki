@@ -602,13 +602,19 @@ namespace MPX
                         else
                         {
                             bool truth = true;
+
                             if( !m_Constraints.empty() )
                             {
                                 MPX::Track& track = *(Track_sp((*iter)[Columns.AlbumTrack]));
                                 truth = AQE::match_track( m_Constraints, track );
                             }
 
-                            return truth && Util::match_keys( *(ustring_sp((*iter)[Columns.Text])), m_FilterEffective ); 
+                            ustring_sp p = (*iter)[Columns.Text];
+
+                            if( p )
+                                return truth && Util::match_keys( *p, m_FilterEffective ); 
+                            else
+                                return truth;
                         }
                 }
                 else

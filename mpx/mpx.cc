@@ -832,7 +832,7 @@ namespace MPX
                                           Gtk::StockID( MPX_STOCK_EQUALIZER ),
                                           _("Equalizer..."),
                                           _("Adjust audio bands")),
-                                          sigc::mem_fun (*m_Equalizer, &Gtk::Widget::show ));
+                                          sigc::mem_fun (*m_Equalizer, &Gtk::Window::show ));
 
 
                         m_Actions->add( Action::create(
@@ -842,7 +842,7 @@ namespace MPX
                                           Gtk::StockID( "mpx-stock-preferences" ),
                                           _("_Preferences..."),
                                           _("Set up Audio and other Settings")),
-                                          sigc::mem_fun (*(services->get<Preferences>("mpx-service-preferences").get()), &Gtk::Widget::show ));
+                                          sigc::mem_fun (*(services->get<Preferences>("mpx-service-preferences").get()), &MPX::Preferences::present ));
 
                         m_Actions->add( Action::create(
 

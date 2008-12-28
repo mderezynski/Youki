@@ -63,10 +63,6 @@ namespace MPX
   , public MPX::Service::Base
   , public sigx::glib_auto_dispatchable
   {
-    protected:
-
-      virtual void on_hide ();
-
     public:
 
       Preferences (Glib::RefPtr<Gnome::Glade::Xml> const&);
@@ -77,6 +73,8 @@ namespace MPX
 
       virtual
       ~Preferences();
+
+        virtual void present ();
 
     protected:
 

@@ -397,6 +397,8 @@ namespace MPX
                 mcs->key_get<int>("mpx","window-plugins-x"),
                 mcs->key_get<int>("mpx","window-plugins-y")
             );
+
+            Gtk::Window::present();
         }
 
 		void

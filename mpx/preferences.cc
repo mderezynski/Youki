@@ -450,11 +450,29 @@ namespace MPX
     }
 
     void
+    Preferences::present ()
+    {
+        resize(
+            mcs->key_get<int>("mpx","window-prefs-w"),
+            mcs->key_get<int>("mpx","window-prefs-h")
+            );
+
+        move(
+            mcs->key_get<int>("mpx","window-prefs-x"),
+            mcs->key_get<int>("mpx","window-prefs-y")
+            );
+
+        Gtk::Window::show ();
+        Gtk::Window::raise ();
+    }
+
+    void
     Preferences::hide ()
     {
         Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-y")));
         Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-h")));
         Gtk::Widget::hide();
+        setup_audio();
     }
 
     Preferences::Preferences(
@@ -1481,13 +1499,6 @@ namespace MPX
         m_warning_audio_system_changed->set_sensitive(false);
         m_button_audio_system_apply->set_sensitive(false);
         m_button_audio_system_reset->set_sensitive(false);
-    }
-
-    void
-        Preferences::on_hide ()
-    {
-        setup_audio();
-        Gtk::Widget::on_hide();
     }
 
     /* mm-keys */

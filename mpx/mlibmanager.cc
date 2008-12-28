@@ -1435,7 +1435,7 @@ namespace MPX
     {
         if(!is_visible() && mcs->key_get<bool>("library","rescan-in-intervals") && m_RescanTimer.elapsed() >= mcs->key_get<int>("library","rescan-interval") * 60)
         {
-u           rescan_volumes();
+            rescan_volumes();
             m_RescanTimer.reset();
         }
         return true;
