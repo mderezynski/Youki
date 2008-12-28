@@ -4,6 +4,7 @@ SUBDIRS =			        \
 		lastfmstuff			\
 		mpxdj			    \
 		mtpplayer			\
+		musicbrainz-tools	\
 		osd			        \
 		puid-scan			\
 		trackcover			\

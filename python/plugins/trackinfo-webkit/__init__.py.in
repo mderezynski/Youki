@@ -1101,7 +1101,7 @@ class LiveInfo(mpx.Plugin):
     
         self.id = id
         self.player = player
-        self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/trackinfo-webkit/trackinfo-webkit.glade")
+        self.xml = gtk.glade.XML("@PLUGIN_DIR@" + "/plugins-python/trackinfo-webkit/trackinfo-webkit.glade")
         self.vbox = self.xml.get_widget("vbox")
         self.vbox.unparent()
         self.info = TrackInfo(self.xml,self.player)

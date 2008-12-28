@@ -236,11 +236,9 @@ namespace MPX
         mcs->key_register ("lastfm", "username", std::string ());
         mcs->key_register ("lastfm", "password", std::string ());
 
-#ifdef HAVE_OFA
         mcs->domain_register ("musicbrainz");
         mcs->key_register ("musicbrainz", "username", std::string ());
         mcs->key_register ("musicbrainz", "password", std::string ());
-#endif //HAVE_OFA
 
         mcs->domain_register ("albums");
         mcs->key_register ("albums", "continuous-play", false);

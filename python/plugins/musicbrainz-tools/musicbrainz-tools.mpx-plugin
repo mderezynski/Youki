@@ -1,0 +1,8 @@
+[MPX Plugin]
+Loader=python
+Module=musicbrainz-tools
+IAge=1
+Name=MusicBrainz Tools
+Authors=Andy Theyers <andy@isotoma.com>, Milosz Derezynski <milosz@backtrace.info>
+Copyright=Copyright © 2008 Andy Theyers, Milosz Derezynski 
+Website=http://mpx.backtrace.info/

@@ -29,7 +29,7 @@ class PlaylistDefaultTooltip(mpx.Plugin):
     def __init__(self,id,player,mcs):
 
         self.id = id
-        f = open("@DATA_DIR@" + "/python-plugins/pltd/pltd.glade")
+        f = open("@PLUGIN_DIR@" + "/plugins-python/pltd/pltd.glade")
         self.xmldata = f.read() 
         f.close()
         

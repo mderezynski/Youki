@@ -546,7 +546,7 @@ class MPXDJ(mpx.Plugin):
         self.ui = self.player.ui()
         self.playmode = 0
 
-        self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj.glade")
+        self.xml = gtk.glade.XML("@PLUGIN_DIR@" + "/plugins-python/mpxdj/mpxdj.glade")
         self.widget = self.xml.get_widget("widget")
         self.widget.unparent()
 
@@ -558,14 +558,14 @@ class MPXDJ(mpx.Plugin):
         self.go.connect("clicked", self.on_button_go)
 
         self.header_image = self.xml.get_widget("header-image")
-        self.header_image.set_from_file("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj.png")
+        self.header_image.set_from_file("@PLUGIN_DIR@" + "/plugins-python/mpxdj/mpxdj.png")
 
         self.notebook = self.xml.get_widget("notebook")
 
         self.working = False
 
         try:
-            self.icon = gtk.gdk.pixbuf_new_from_file("@DATA_DIR@" + "/python-plugins/mpxdj/mpxdj-icon.png")
+            self.icon = gtk.gdk.pixbuf_new_from_file("@PLUGIN_DIR@" + "/plugins-python/mpxdj/mpxdj-icon.png")
         except:
             self.icon = None
 
