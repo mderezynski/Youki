@@ -21,6 +21,17 @@ include (CheckLibraryExists)
   #com
   #xmlcpp
   #taglib
+
+  #if HAVE_HAL
+  #endif
+
+  #jnetlib
+  #mcs
+  #remote
+  #python
+  #sources
+  #api
+  #mpx
 #)
 
 check_include_files ("argz.h arpa/inet.h fcntl.h float.h inttypes.h langinfo.h libintl.h limits.h locale.h malloc.h netdb.h netinet/in.h stddef.h stdint.h stdio_ext.h stdlib.h string.h strings.h sys/param.h sys/socket.h sys/time.h unistd.h wchar.h" HAVE_MISC_HEADERS)
@@ -151,6 +162,8 @@ if (ENABLE_HAL)
   include (${PROJECT_SOURCE_DIR}/cmake/TestForHALPSI.cmake)
 
   pkg_check_modules (HAL_058 hal>=0.5.8.1 hal-storage>=0.5.8.1)
+
+  add_subdirectory (libhal++)
 endif (ENABLE_HAL)
 
 pkg_check_modules (TAGLIB REQUIRED taglib-gio>=1.4)
@@ -268,4 +281,3 @@ set (CFLAGS "${CFLAGS} ${C_COMMON_FLAGS}")
 set (CXXFLAGS "${CXXFLAGS} ${C_COMMON_FLAGS}")
 
 configure_file (mpx.1.in mpx.1)
-
