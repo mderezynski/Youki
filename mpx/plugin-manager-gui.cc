@@ -299,8 +299,7 @@ namespace MPX
 {
 		PluginManagerGUI::~PluginManagerGUI ()
 		{
-            Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-y")));
-            Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-h")));
+            hide();
 			delete m_PluginTreeView;
 		}
 
@@ -311,26 +310,36 @@ namespace MPX
         , Service::Base("mpx-service-plugins-gui")
 		{
 		    m_PluginTreeView = new PluginTreeView(xml, *(services->get<PluginManager>("mpx-service-plugins").get()), *this);
-			m_PluginTreeView->get_selection()->signal_changed().connect( sigc::mem_fun( *this, &PluginManagerGUI::on_selection_changed ) );
-
-			xml->get_widget("notebook", m_Notebook);
-			m_Notebook->get_nth_page(1)->hide();
+			m_PluginTreeView->get_selection()->signal_changed().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &PluginManagerGUI::on_selection_changed
+            ));
 
 			xml->get_widget("overview", m_Overview);
 			xml->get_widget("options", m_Options);
 			xml->get_widget("error", m_Error);
+			xml->get_widget("notebook", m_Notebook);
+			m_Notebook->get_nth_page(1)->hide();
+
+			dynamic_cast<Gtk::Button*>(xml->get_widget("close"))->signal_clicked().connect(
+                sigc::mem_fun(
+                    *this,
+                    &PluginManagerGUI::hide
+            ));
+
 			xml->get_widget("traceback", m_Button_Traceback);
-			m_Button_Traceback->signal_clicked().connect( sigc::mem_fun( *this, &PluginManagerGUI::show_dialog ) );
+			m_Button_Traceback->signal_clicked().connect(
+                    sigc::mem_fun(
+                        *this,
+                        &PluginManagerGUI::show_dialog
+            ));
 
 			if(services->get<PluginManager>("mpx-service-plugins")->get_traceback_count())
 			{
 				set_error_text();
 				m_Button_Traceback->set_sensitive();
 			}
-
-			Gtk::Button * buClose;
-			xml->get_widget("close", buClose);
-			buClose->signal_clicked().connect( sigc::mem_fun( *this, &Gtk::Widget::hide ) );
 
             services->get<PluginManager>("mpx-service-plugins")->signal_traceback().connect(
                 sigc::mem_fun(
@@ -364,9 +373,31 @@ namespace MPX
 		bool
 		PluginManagerGUI::on_delete_event (GdkEventAny* G_GNUC_UNUSED)
 		{
-			Gtk::Window::hide ();
+            hide();
 			return true;
 		}
+
+        void
+        PluginManagerGUI::hide ()
+        {
+            Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-y")));
+            Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-plugins-h")));
+            Gtk::Widget::hide();
+        }
+
+        void
+        PluginManagerGUI::present ()
+        {
+            resize(
+               mcs->key_get<int>("mpx","window-plugins-w"),
+               mcs->key_get<int>("mpx","window-plugins-h")
+            );
+
+            move(
+                mcs->key_get<int>("mpx","window-plugins-x"),
+                mcs->key_get<int>("mpx","window-plugins-y")
+            );
+        }
 
 		void
 		PluginManagerGUI::on_selection_changed()

@@ -71,7 +71,16 @@ namespace MPX
                 *this,
                 &PluginManager::on_plugin_loaded
         ));
+
+        m_PluginLoader_CPP = new PluginLoaderCPP;
+        m_PluginLoader_CPP->signal_plugin_loaded().connect(
+            sigc::mem_fun(
+                *this,
+                &PluginManager::on_plugin_loaded
+        ));
+
         m_PluginLoader_Python->load_plugins( m_Id ); 
+        m_PluginLoader_CPP->load_plugins( m_Id ); 
 	}
 
     void

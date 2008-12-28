@@ -56,6 +56,12 @@ namespace MPX
 			static PluginManagerGUI*
 			create ();
 
+            virtual void
+            hide ();
+
+            virtual void
+            present ();
+
 			void
 			on_selection_changed();
 

@@ -69,8 +69,8 @@ namespace MPX
 
         append_search_path
                 (build_filename(
-                                DATA_DIR,
-                                "python-plugins"
+                                PLUGIN_DIR,
+                                "plugins-python"
                                ));
     }
 

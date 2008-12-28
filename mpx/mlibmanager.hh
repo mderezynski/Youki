@@ -75,9 +75,9 @@ namespace MPX
     };
 
     class MLibManager
-      : public Gnome::Glade::WidgetLoader<Gtk::Window>
-      , public sigx::glib_auto_dispatchable
-      , public Service::Base
+    : public Gnome::Glade::WidgetLoader<Gtk::Window>
+    , public sigx::glib_auto_dispatchable
+    , public Service::Base
     {
             FileStatsColumns                    m_FileStats_Columns ;
             Glib::RefPtr<Gtk::ListStore>        m_FileStats_Store ;
@@ -88,25 +88,20 @@ namespace MPX
 
         public:
 
-            static MLibManager* create(
-            ) ;
-
+            static MLibManager* create () ;
             virtual ~MLibManager () ;
 
             void
+            push_message (const std::string&) ;
+
+            virtual bool
+            on_delete_event(GdkEventAny*);
+
+            virtual void
             present () ;
 
-            void
+            virtual void
             hide () ;
-
-            bool
-            is_present() ;
-
-            void
-            rescan_all_volumes () ;
-
-            void
-            push_message (const std::string&) ;
 
         private:
 
@@ -133,6 +128,9 @@ namespace MPX
 
             void
             populate_volumes () ;
+
+            void
+            rescan_volumes () ;
 
             void
             build_fstree(

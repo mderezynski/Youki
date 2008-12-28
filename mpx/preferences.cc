@@ -438,9 +438,23 @@ namespace MPX
 
     Preferences::~Preferences ()
     {
+        hide();
+        mcs->key_set<int>("mpx","preferences-notebook-page", m_notebook_preferences->get_current_page());
+    }
+
+    bool
+    Preferences::on_delete_event(GdkEventAny* G_GNUC_UNUSED)
+    {
+        hide();
+        return true;
+    }
+
+    void
+    Preferences::hide ()
+    {
         Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-y")));
         Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-prefs-h")));
-        mcs->key_set<int>("mpx","preferences-notebook-page", m_notebook_preferences->get_current_page());
+        Gtk::Widget::hide();
     }
 
     Preferences::Preferences(
@@ -453,9 +467,10 @@ namespace MPX
 
         dynamic_cast<Button*>(m_Xml->get_widget ("close"))->signal_clicked().connect(
             sigc::mem_fun(
-            *this,
-            &Preferences::hide
-            ));
+                *this,
+                &Preferences::hide
+        ));
+
         m_Xml->get_widget ("notebook", m_notebook_preferences);
 
         // Audio
@@ -982,67 +997,80 @@ namespace MPX
         Preferences::get_alsa_cards ()
     {
         AlsaCards cards;
-        int card_id (-1);
-        while (!snd_card_next (&card_id) && (card_id > -1))
+
+        int card_id = -1;
+
+        while( !snd_card_next( &card_id ) && ( card_id > -1 ))
         {
-            snd_ctl_t* control (0);
-            if (!snd_ctl_open (&control, (boost::format ("hw:%d") % card_id).str().c_str(), SND_CTL_ASYNC))
+            snd_ctl_t* control = 0;
+
+            if( !snd_ctl_open( &control, (boost::format ("hw:%d") % card_id).str().c_str(), SND_CTL_ASYNC ))
             {
-                snd_ctl_card_info_t * card_info (0);
+                snd_ctl_card_info_t * card_info = 0;
+
                 snd_ctl_card_info_malloc (&card_info);
 
-                if (!snd_ctl_card_info (control, card_info))
+                if( !snd_ctl_card_info( control, card_info ))
                 {
-                    using namespace std;
+                    std::string   card_handle   = snd_ctl_name (control);
+                    std::string   card_id       = snd_ctl_card_info_get_id (card_info);
+                    std::string   card_name     = snd_ctl_card_info_get_name (card_info);
+                    std::string   card_longname = snd_ctl_card_info_get_longname (card_info);
+                    std::string   card_driver   = snd_ctl_card_info_get_driver (card_info);
+                    std::string   card_mixer    = snd_ctl_card_info_get_mixername (card_info);
+                    int           card_card_id  = snd_ctl_card_info_get_card (card_info);
 
-                    string   card_handle   (snd_ctl_name (control));
-                    int      card_card_id  (snd_ctl_card_info_get_card (card_info));
-                    string   card_id       (snd_ctl_card_info_get_id (card_info));
-                    string   card_name     (snd_ctl_card_info_get_name (card_info));
-                    string   card_longname (snd_ctl_card_info_get_longname (card_info));
-                    string   card_driver   (snd_ctl_card_info_get_driver (card_info));
-                    string   card_mixer    (snd_ctl_card_info_get_mixername (card_info));
+                    AlsaDevices   devices;
 
-                    AlsaDevices _devices;
+                    int device_id = -1;
 
-                    int device_id (-1);
-                    while (!snd_ctl_pcm_next_device (control, &device_id) && (device_id > -1))
+                    while( !snd_ctl_pcm_next_device( control, &device_id ) && ( device_id > -1 ))
                     {
                         snd_pcm_info_t * pcm_info (0);
                         snd_pcm_info_malloc (&pcm_info);
                         snd_pcm_info_set_device (pcm_info, device_id);
 
-                        if (!snd_ctl_pcm_info (control, pcm_info))
+                        if( !snd_ctl_pcm_info( control, pcm_info ) )
                         {
-                            if (snd_pcm_info_get_stream (pcm_info) == SND_PCM_STREAM_PLAYBACK)
+                            if( snd_pcm_info_get_stream( pcm_info ) == SND_PCM_STREAM_PLAYBACK )
                             {
-                                string device_handle  ((boost::format ("%s,%d") % snd_ctl_name (control) % device_id).str());
-                                string device_name    (snd_pcm_info_get_name (pcm_info));
+                                std::string device_handle  = (boost::format ("%s,%d") % snd_ctl_name (control) % device_id).str();
+                                std::string device_name    = snd_pcm_info_get_name (pcm_info);
 
-                                _devices.push_back (AlsaDevice (device_handle,
-                                    card_card_id,
-                                    device_id,
-                                    device_name));
+                                devices.push_back(
+                                    AlsaDevice(
+                                        device_handle,
+                                        card_card_id,
+                                        device_id,
+                                        device_name
+                                ));
                             }
                         }
-                        if (pcm_info) snd_pcm_info_free (pcm_info);
+
+                        if( pcm_info )
+                            snd_pcm_info_free( pcm_info ) ;
                     }
 
-                    if (_devices.size())
+                    if (devices.size())
                     {
-                        cards.push_back (AlsaCard ( card_handle,
-                            card_card_id,
-                            card_id,
-                            card_name,
-                            card_longname,
-                            card_driver,
-                            card_mixer,
-                            _devices ));
+                        cards.push_back(
+                            AlsaCard(
+                                card_handle,
+                                card_card_id,
+                                card_id,
+                                card_name,
+                                card_longname,
+                                card_driver,
+                                card_mixer,
+                                devices
+                        ));
                     }
                 }
-                if (card_info) snd_ctl_card_info_free (card_info);
+                if( card_info )
+                    snd_ctl_card_info_free( card_info ) ;
             }
-            if (control) snd_ctl_close (control);
+            if( control )
+                snd_ctl_close( control ) ;
         }
         return cards;
     }

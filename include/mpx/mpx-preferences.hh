@@ -78,6 +78,12 @@ namespace MPX
       virtual
       ~Preferences();
 
+    protected:
+
+        virtual bool on_delete_event(GdkEventAny*);
+
+        virtual void hide ();
+
     private:
 
       class AudioSystemColumnRecord

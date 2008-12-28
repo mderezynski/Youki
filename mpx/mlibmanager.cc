@@ -370,7 +370,7 @@ namespace MPX
 
         if( mcs->key_get<bool>("library","rescan-at-startup") )
         {
-            rescan_all_volumes();
+            rescan_volumes();
         }
 
         mcs->subscribe(
@@ -426,7 +426,7 @@ namespace MPX
             _("_Rescan, Update & Clean Up")),
                 sigc::mem_fun(
                     *this,
-                    &MLibManager::rescan_all_volumes
+                    &MLibManager::rescan_volumes
         ));
 
         m_Actions->add( Action::create(
@@ -651,13 +651,19 @@ namespace MPX
         m_TextBufferDetails->insert(m_TextBufferDetails->end(), "\n");
         m_TextBufferDetails->insert(m_TextBufferDetails->end(), text);
     }
+
+    bool
+    MLibManager::on_delete_event(GdkEventAny* G_GNUC_UNUSED)
+    {
+        hide();
+        return true;
+    }
     
     void
     MLibManager::hide ()
     {
         Gtk::Window::get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-y")));
         Gtk::Window::get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-w")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-mlib-h")));
-
         Gtk::Widget::hide();
     }
 
@@ -678,12 +684,6 @@ namespace MPX
         Gtk::Window::raise ();
     }
 
-    bool
-    MLibManager::is_present()
-    {
-        return is_visible();
-    }
-
     void
     MLibManager::push_message(std::string const& message)
     {
@@ -698,7 +698,7 @@ namespace MPX
     }
 
     void
-    MLibManager::rescan_all_volumes()
+    MLibManager::rescan_volumes()
     {
         Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
 
@@ -1433,10 +1433,10 @@ namespace MPX
     bool
     MLibManager::on_rescan_timeout()
     {
-        if(!is_present() && mcs->key_get<bool>("library","rescan-in-intervals") && m_RescanTimer.elapsed() >= mcs->key_get<int>("library","rescan-interval") * 60)
+        if(!is_visible() && mcs->key_get<bool>("library","rescan-in-intervals") && m_RescanTimer.elapsed() >= mcs->key_get<int>("library","rescan-interval") * 60)
         {
-          rescan_all_volumes();
-          m_RescanTimer.reset();
+u           rescan_volumes();
+            m_RescanTimer.reset();
         }
         return true;
     }

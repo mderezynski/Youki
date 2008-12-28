@@ -163,7 +163,8 @@ namespace MPX
                 PluginHolderRefP_t
             );
 
-            PluginLoaderPython          * m_PluginLoader_Python;
+            PluginLoaderPython  * m_PluginLoader_Python;
+            PluginLoaderCPP     * m_PluginLoader_CPP;
 
 			PluginHoldMap_t	      m_Map ;	
 			gint64			      m_Id ;

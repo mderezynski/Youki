@@ -40,18 +40,38 @@
 #include <mcs/mcs.h>
 #include <Python.h>
 
+#include "plugin-loader.hh"
+
 namespace MPX
 {
     struct CPPPluginLoader
     {
-        PluginHolderBase*   (*get_instance) ();
-        bool                (*del_instance) ();
+        PluginHolderBase*   (*get_instance) (gint64);
+        bool                (*del_instance) (PluginHolderBase*);
 
-        PluginHolderBase*   m_instance;
+        PluginHolderBase*   instance;
     };
 
     typedef boost::shared_ptr<CPPPluginLoader>    CPPPluginLoaderRefP_t ;
     typedef std::set<CPPPluginLoaderRefP_t>       CPPPluginKeeper_t ;
+
+    class PluginLoaderCPP
+    : public PluginLoaderBase
+    {
+        public:
+        
+            PluginLoaderCPP ();
+            virtual ~PluginLoaderCPP ();
+
+            virtual void
+            load_plugins(
+                gint64&
+            ); 
+
+        private:
+
+            CPPPluginKeeper_t   m_Plugins;
+    };
 }
 
 #endif

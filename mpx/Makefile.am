@@ -174,7 +174,9 @@ audiosource_bin_SOURCES =		\
 	plugin-loader.hh			\
 								\
 	plugin-types-cpp.hh			\
+								\
 	plugin-loader-cpp.hh		\
+	plugin-loader-cpp.cc		\
 								\
 	plugin-types-python.hh		\
 	plugin-types-python.cc		\
