@@ -327,6 +327,23 @@ namespace MPX
 
 
 
+                        { // Add/Remove
+
+                                CellRendererPixbuf *cell = manage (new CellRendererPixbuf);
+
+                                col->pack_start( *cell, false );
+
+                                col->set_cell_data_func(
+                                                *cell,
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AlbumTreeView::cellDataFuncAdd
+                                ));
+
+                        }
+
+
+
                         { // Track Count 
 
                                 CellRendererCount *cell = manage (new CellRendererCount);
@@ -395,6 +412,7 @@ namespace MPX
                         }
 
                         append_column(*col);
+
 
                         AlbumsTreeStore = Gtk::TreeStore::create(Columns);
                         AlbumsTreeStoreFilter = Gtk::TreeModelFilter::create(AlbumsTreeStore);
@@ -839,6 +857,7 @@ namespace MPX
                                                         m_DragAlbumId.reset();
                                                         m_DragTrackId = (*iter)[Columns.TrackId];
                                                 }
+
                                 }
                                 TreeView::on_button_press_event(event);
                                 return false;
@@ -869,7 +888,21 @@ namespace MPX
 
                             m_motion_x = x;
                             m_motion_y = y; 
-        
+
+                            TreePath path;
+                            TreeViewColumn * col;
+                            int cell_x, cell_y;
+
+                            if( get_path_at_pos (event->x, event->y, path, col, cell_x, cell_y) )
+                            {
+                              m_MouseOverPath = path;
+
+                              if( path.get_depth() == ROW_TRACK )
+                              {
+                                        queue_draw_area( 52, 0, 16, get_height());
+                              }
+                            }
+
                             return false;
                         } 
 
@@ -1537,6 +1570,35 @@ namespace MPX
                                 else
                                 {
                                         cell->property_visible() = false; 
+                                }
+                        }
+
+                void
+                        AlbumTreeView::cellDataFuncAdd (CellRenderer * basecell, const TreeIter& iter)
+                        {
+                                TreePath path (iter);
+
+                                CellRendererPixbuf *cell = dynamic_cast<CellRendererPixbuf*>(basecell);
+
+                                g_return_if_fail( cell );
+
+                                if( path.get_depth() == ROW_TRACK )
+                                {
+                                         if( path == m_MouseOverPath )
+                                          {
+                                                    cell->property_stock_id() = "gtk-add";
+                                                    cell->property_stock_size() = ICON_SIZE_MENU; // 16
+                                          }
+                                          else
+                                          {
+                                                    cell->property_pixbuf() = IconTheme::get_default()->load_icon( "sound", ICON_SIZE_MENU, Gtk::ICON_LOOKUP_NO_SVG );
+                                          }
+
+                                          cell->property_visible() = true;
+                                }
+                                else
+                                {
+                                           cell->property_visible() = false;
                                 }
                         }
 

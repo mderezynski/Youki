@@ -175,6 +175,7 @@ namespace MPX
 
                             Gtk::Entry*                           m_FilterEntry;
                             RoundedLayout*                        m_LabelShowing;
+                            Gtk::TreePath                         m_MouseOverPath;
 
                             int                                   m_motion_x,
                                                                   m_motion_y;
@@ -305,6 +306,9 @@ namespace MPX
 
                             virtual int
                                     sortTracks(const Gtk::TreeIter&, const Gtk::TreeIter&);
+
+                            virtual void
+                                    cellDataFuncAdd (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
 
                             virtual void
                                     cellDataFuncCover (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
