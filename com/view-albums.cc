@@ -340,6 +340,9 @@ namespace MPX
                                                         &AlbumTreeView::cellDataFuncAdd
                                 ));
 
+                                cell->property_width() = 16;
+
+                                m_CellAdd = cell;
                         }
 
 
@@ -851,20 +854,29 @@ namespace MPX
                                                 }
                                         }
                                         else
-                                                if(m_PathButtonPress.get_depth() == ROW_TRACK)
-                                                {
-                                                        m_DragAlbumMBID.reset(); 
-                                                        m_DragAlbumId.reset();
-                                                        m_DragTrackId = (*iter)[Columns.TrackId];
+                                        if(m_PathButtonPress.get_depth() == ROW_TRACK)
+                                        {
+                                            m_DragAlbumMBID.reset(); 
+                                            m_DragAlbumId.reset();
+                                            m_DragTrackId = (*iter)[Columns.TrackId];
 
-                                                        if( (cell_x >= 52) && (cell_x <= 68) )
-                                                        {
-                                                                gint64 id = (*iter)[Columns.TrackId];
-                                                                IdV v (1, id);
-                                                                Signals.PlayTracks.emit(v, false);
- 
-                                                        }
+                                            int start_pos, width;
+
+                                            if( m_MouseOverIter && m_MouseOverIter.get() == AlbumsTreeStoreFilter->convert_child_iter_to_iter( iter ) )
+                                            {
+                                                if( get_column(0)->get_cell_position( *m_CellAdd, start_pos, width ) )
+                                                {
+                                                    if( cell_x >= 54 && cell_x <= 64 )
+                                                    {
+                                                        IdV v (1, m_DragTrackId.get());
+                                                        Signals.PlayTracks.emit(v, false);
+                                                        m_MouseOverIter.reset();
+                                                        queue_draw();
+                                                        return true;
+                                                    }
                                                 }
+                                            }
+                                        }
 
                                 }
                                 TreeView::on_button_press_event(event);
@@ -903,14 +915,15 @@ namespace MPX
 
                             if( get_path_at_pos (event->x, event->y, path, col, cell_x, cell_y) )
                             {
-                              m_MouseOverPath = path;
-
-                              if( path.get_depth() == ROW_TRACK )
-                              {
-                                        queue_draw_area( 52, 0, 16, get_height());
-                              }
+                                if( path.get_depth() == ROW_TRACK )
+                                {
+                                    m_MouseOverIter = AlbumsTreeStoreFilter->get_iter( path );
+                                    queue_draw ();
+                                    return false;
+                                }
                             }
 
+                            m_MouseOverIter.reset();
                             return false;
                         } 
 
@@ -1592,21 +1605,21 @@ namespace MPX
 
                                 if( path.get_depth() == ROW_TRACK )
                                 {
-                                         if( path == m_MouseOverPath )
+                                         if( m_MouseOverIter && iter == m_MouseOverIter.get() )
                                           {
                                                     cell->property_stock_id() = "gtk-add";
                                                     cell->property_stock_size() = ICON_SIZE_MENU; // 16
                                           }
                                           else
                                           {
-                                                    cell->property_pixbuf() = IconTheme::get_default()->load_icon( "sound", ICON_SIZE_MENU, Gtk::ICON_LOOKUP_NO_SVG );
+                                                    cell->property_pixbuf() = Glib::RefPtr<Gdk::Pixbuf>(0); 
                                           }
 
                                           cell->property_visible() = true;
                                 }
                                 else
                                 {
-                                           cell->property_visible() = false;
+                                          cell->property_visible() = false;
                                 }
                         }
 
