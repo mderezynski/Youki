@@ -856,6 +856,14 @@ namespace MPX
                                                         m_DragAlbumMBID.reset(); 
                                                         m_DragAlbumId.reset();
                                                         m_DragTrackId = (*iter)[Columns.TrackId];
+
+                                                        if( (cell_x >= 52) && (cell_x <= 68) )
+                                                        {
+                                                                gint64 id = (*iter)[Columns.TrackId];
+                                                                IdV v (1, id);
+                                                                Signals.PlayTracks.emit(v, false);
+ 
+                                                        }
                                                 }
 
                                 }
