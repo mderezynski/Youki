@@ -169,16 +169,17 @@ namespace MPX
                                     int                   Type;
                             };
 
-                            Options_t                             Options;
+                            Options_t                             Options ;
 
                         // Widgets
 
-                            Gtk::Entry*                           m_FilterEntry;
-                            RoundedLayout*                        m_LabelShowing;
-                            Gtk::TreePath                         m_MouseOverPath;
+                            Gtk::Entry*                           m_FilterEntry ;
+                            RoundedLayout*                        m_LabelShowing ;
 
+                            boost::optional<Gtk::TreeIter>        m_MouseOverIter ;
                             int                                   m_motion_x,
-                                                                  m_motion_y;
+                                                                  m_motion_y ;
+                            Gtk::CellRenderer*                    m_CellAdd ;
 
                         // Signals
 

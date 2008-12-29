@@ -328,7 +328,7 @@ class OPTION__LastFmTag(BaseOPTION__):
 
         idx = 0
 
-        while not len(rv):
+        while not len(rv) and len(a):
 
                 r = lastfm.SimilarArtists(a[idx].getName())
                 s = r.get()

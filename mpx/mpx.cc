@@ -922,6 +922,8 @@ namespace MPX
 
                         /*- Playback Controls ---------------------------------------------*/ 
 
+                        m_ButtonPause = /* we need this later on to unset pause on next/prev */ dynamic_cast<Gtk::ToggleButton*>(m_Xml->get_widget("controls-pause")) ;
+
                         m_Actions->get_action (ACTION_PLAY)->connect_proxy
                                 (*(dynamic_cast<Button *>(m_Xml->get_widget ("controls-play"))));
                         m_Actions->get_action (ACTION_PREV)->connect_proxy
@@ -929,7 +931,7 @@ namespace MPX
                         m_Actions->get_action (ACTION_NEXT)->connect_proxy
                                 (*(dynamic_cast<Button *>(m_Xml->get_widget ("controls-next"))));
                         m_Actions->get_action (ACTION_PAUSE)->connect_proxy
-                                (*(dynamic_cast<Button *>(m_Xml->get_widget ("controls-pause"))));
+                                (*m_ButtonPause);
                         m_Actions->get_action (ACTION_STOP)->connect_proxy
                                 (*(dynamic_cast<Button *>(m_Xml->get_widget ("controls-stop"))));
 
@@ -1570,6 +1572,10 @@ SET_SEEK_POSITION:
                                 {
                                         if( m_ActiveSource && (m_Play->property_status().get_value() != PLAYSTATUS_STOPPED))
                                         {
+                                                m_Actions->get_action( ACTION_PAUSE )->disconnect_proxy( *m_ButtonPause );
+                                                m_ButtonPause->set_active( false );
+                                                m_Actions->get_action( ACTION_PAUSE )->connect_proxy( *m_ButtonPause );
+
                                                 track_played ();
                                                 m_Sources[m_ActiveSource.get()]->stop ();
                                         }
@@ -1630,13 +1636,18 @@ SET_SEEK_POSITION:
                 {
                         ItemKey const& source_id = m_ActiveSource.get(); 
 
-                        PlaybackSource*           source = m_Sources[source_id];
-                        Flags          f = m_source_f[source_id];
-                        Caps           c = m_source_c[source_id];
+                        PlaybackSource*    source = m_Sources[source_id];
+                        Flags                   f = m_source_f[source_id];
+                        Caps                    c = m_source_c[source_id];
 
                         if( c & C_CAN_GO_PREV )
                         {
-                                //del_caps(C_CAN_PAUSE);
+                                del_caps(C_CAN_PAUSE);
+
+                                m_Actions->get_action( ACTION_PAUSE )->disconnect_proxy( *m_ButtonPause );
+                                m_ButtonPause->set_active( false );
+                                m_Actions->get_action( ACTION_PAUSE )->connect_proxy( *m_ButtonPause );
+
                                 track_played();
 
                                 if( f & F_ASYNC )
@@ -1667,7 +1678,12 @@ SET_SEEK_POSITION:
 
                         if( c & C_CAN_GO_NEXT )
                         {
-                                //del_caps(C_CAN_PAUSE);
+                                del_caps(C_CAN_PAUSE);
+
+                                m_Actions->get_action( ACTION_PAUSE )->disconnect_proxy( *m_ButtonPause );
+                                m_ButtonPause->set_active( false );
+                                m_Actions->get_action( ACTION_PAUSE )->connect_proxy( *m_ButtonPause );
+
                                 track_played();
 
                                 if( f & F_ASYNC )
@@ -1698,7 +1714,7 @@ SET_SEEK_POSITION:
         void
                 Player::stop ()
                 {
-                        //del_caps(C_CAN_PAUSE);
+                        del_caps(C_CAN_PAUSE);
 
                         if(m_PreparingSource)
                         {

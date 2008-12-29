@@ -267,23 +267,25 @@ namespace MPX
 
     // widgets
 
-        Gtk::Statusbar                * m_Statusbar;
+        Gtk::Statusbar                * m_Statusbar ;
 
-		Gtk::Notebook                 * m_MainNotebook;
-        Gtk::Notebook                 * m_OuterNotebook;
+		Gtk::Notebook                 * m_MainNotebook ;
+        Gtk::Notebook                 * m_OuterNotebook ;
 
-		Gtk::VolumeButton             * m_Volume;
-		Gtk::HScale                   * m_Seek;
-		Gtk::Label                    * m_TimeLabel;
+		Gtk::VolumeButton             * m_Volume ;
+		Gtk::HScale                   * m_Seek ;
+		Gtk::Label                    * m_TimeLabel ;
 
-        Gtk::Notebook                 * m_InfoNotebook;
-        Gtk::Expander                 * m_InfoExpander;
+        Gtk::Notebook                 * m_InfoNotebook ;
+        Gtk::Expander                 * m_InfoExpander ;
 
-        WidgetWidgetMap                 m_InfoWidgetMap;
+        WidgetWidgetMap                 m_InfoWidgetMap ;
 
-        AboutDialog                   * m_AboutDialog;
-        Equalizer                     * m_Equalizer;
-        VolumeControl                 * m_VolumeControl;
+        AboutDialog                   * m_AboutDialog ;
+        Equalizer                     * m_Equalizer ;
+        VolumeControl                 * m_VolumeControl ;
+            
+        Gtk::ToggleButton             * m_ButtonPause ;
 
     // metadata
 
