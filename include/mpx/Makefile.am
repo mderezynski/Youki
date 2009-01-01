@@ -8,6 +8,7 @@ noinst_HEADERS =							\
 		i-playbacksource.hh					\
 		i-playlistparser.hh					\
 		metadatareader-taglib.hh			\
+		mpx-artist-images.hh				\
 		mpx-audio.hh						\
 		mpx-covers.hh						\
 		mpx-covers-stores.hh				\
