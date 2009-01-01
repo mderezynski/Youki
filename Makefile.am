@@ -22,13 +22,13 @@ CLEANFILES =  $(service_DATA) \
 DISTCLEANFILES = $(CLEANFILES) intltool-extract intltool-merge intltool-update
 
 SUBDIRS =			\
+	po				\
 	scripts			\
 	desktop			\
 	glade			\
 	icons			\
 	images			\
 					\
-	po				\
 					\
 	include			\
 	xsd				\
@@ -67,8 +67,5 @@ EXTRA_DIST =									\
 	info.backtrace.sentinel.service.in			\
 												\
 	mpx.1.in									\
-	mpx.pc.in									\
-												\
-	intltool-extract.in							\
-	intltool-merge.in							\
-	intltool-update.in
+	mpx.pc.in									
+	

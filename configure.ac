@@ -1,23 +1,27 @@
 #libxml (C) 2003-2007 MPX developers, see AUTHORS
 
-AC_PREREQ([2.60])
-AC_INIT([audiosource], [0.01], [http://mpx.backtrace.info/report])
+AC_PREREQ(2.63)
+AC_INIT([audiosource],[0.01],[http://mpx.backtrace.info/report])
+AC_CONFIG_SRCDIR([mpx/main.cc])
+AC_CONFIG_HEADER([config.h])
+AC_CONFIG_AUX_DIR([aux])
+AC_GNU_SOURCE
+
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([1.8])
+
+# gettext
 AM_GNU_GETTEXT_VERSION(0.17)
 AM_GNU_GETTEXT([external])
-
-AC_CONFIG_HEADERS([config.h])
 
 # stash the configure arguments in config.h
 AC_DEFINE_UNQUOTED(CONFIGURE_ARGS, "$ac_configure_args", [configure arguments])
 
 # Check for compilers 
-AC_LANG([C])
 AC_LANG([C++])
-AC_ISC_POSIX
+AC_SEARCH_LIBS([strerror],[cposix])
 
 # Various checks
 AC_PROG_CXX
@@ -33,7 +37,6 @@ AC_PROG_MAKE_SET
 AC_FUNC_ALLOCA
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([argz.h arpa/inet.h fcntl.h float.h inttypes.h langinfo.h libintl.h limits.h locale.h malloc.h netdb.h netinet/in.h stddef.h stdint.h stdio_ext.h stdlib.h string.h strings.h sys/param.h sys/socket.h sys/time.h unistd.h wchar.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -47,7 +50,6 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
 AC_C_VOLATILE
-AC_CHECK_TYPES([ptrdiff_t])
 
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_FORK
@@ -59,7 +61,6 @@ AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STAT
 AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([__argz_count __argz_next __argz_stringify dup2 fdatasync ftime ftruncate getcwd gethostbyname gettimeofday localtime_r mempcpy memset mkdir munmap nl_langinfo rmdir select setlocale socket stpcpy strcasecmp strchr strcspn strdup strerror strncasecmp strrchr strstr strtol strtoul access])
 
 AC_CHECK_SIZEOF(int, 4)
 AC_CHECK_SIZEOF(long, 8)
@@ -74,13 +75,6 @@ AC_SUBST(SIZEOF_LONG_LONG, "$ac_cv_sizeof_long_long")
 AC_SEARCH_LIBS([connect], socket)
 AC_SEARCH_LIBS([getrpcbyname], nsl)
 
-# i18n
-AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$PACKAGE", [Package])
-GETTEXT_PACKAGE="$PACKAGE"
-AC_SUBST(GETTEXT_PACKAGE)
-
-IT_PROG_INTLTOOL([0.40.0])
-
 # Next 2 lines is a hack to prevent libtool checking for F77
 m4_undefine([AC_PROG_F77])
 m4_defun([AC_PROG_F77],[])
@@ -88,7 +82,7 @@ m4_defun([AC_PROG_F77],[])
 # Libtool
 AC_DISABLE_STATIC
 AC_ENABLE_SHARED
-AC_PROG_LIBTOOL
+LT_INIT
 
 ####################################
 ########## BUILDING FLAGS ##########
@@ -284,8 +278,6 @@ PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.10.0 gobject-2.0 gthread-2.0 gmodule-2.
 PKG_CHECK_MODULES([GLIBMM], [glibmm-2.4 >= 2.8.3])
 PKG_CHECK_MODULES([SIGC], [sigc++-2.0 >= 2.0.0])
 
-AM_GLIB_GNU_GETTEXT
-
 # clutter
 # PKG_CHECK_MODULES([CLUTTER], [clutter-0.6 >= 0.6.0 clutter-cairo-0.6 >= 0.6.0 clutter-gtk-0.6 >= 0.6.0])
 
@@ -327,7 +319,7 @@ AM_CONDITIONAL([HAVE_NM], [test "x$have_nm" = "xyes"])
 
 # xerces
 AC_ARG_WITH([xerces-prefix],
-    [AC_HELP_STRING([--with-xerces-prefix],[xerces prefix [default=/usr]])],
+    [AS_HELP_STRING([--with-xerces-prefix],[xerces prefix [default=/usr]])],
     [xerces_prefix="$withval"],
     [xerces_prefix="/usr"]
 )
@@ -404,23 +396,19 @@ PKG_CHECK_MODULES([TAGLIB], [taglib-gio >= 1.4])
 
 # libsidplay (v1.x)
 AC_ARG_ENABLE([sid],
-    [AC_HELP_STRING([--enable-sid],[build MPX with .sid/.psid taglib support])],
+    [AS_HELP_STRING([--enable-sid],[build MPX with .sid/.psid taglib support])],
     [have_sid="$enableval"],
     [have_sid="no"]
 )
 
 AC_ARG_WITH([sid-prefix],
-    [AC_HELP_STRING([--with-sid-prefix],[sidplay prefix [default=/usr]])],
+    [AS_HELP_STRING([--with-sid-prefix],[sidplay prefix [default=/usr]])],
     [sid_prefix="$withval"],
     [sid_prefix="/usr"]
 )
 
-echo $have_sid
-
 if test "$have_sid" != "no"; then
-
-    AC_LANG_SAVE
-    AC_LANG_CPLUSPLUS
+	AC_LANG_PUSH([C++])
 
     AC_CHECK_LIB([sidplay], [C64_clockSpeed], [have_sid=yes], [have_sid=no])
 
@@ -432,7 +420,7 @@ if test "$have_sid" != "no"; then
         AC_MSG_ERROR([libsidplay 1.x not found!])
     fi
 
-    AC_LANG_RESTORE
+    AC_LANG_POP([C++])
 fi
 AC_SUBST([SID_INCLUDES])
 AC_SUBST([SID_LIBS])
@@ -440,7 +428,7 @@ AM_CONDITIONAL([HAVE_SID], [test "$have_sid" != "no"])
 
 # ModPlug check
 AC_ARG_ENABLE([modplug],
-    [AC_HELP_STRING([--enable-modplug],[build MPX with modplug taglib support])],
+    [AS_HELP_STRING([--enable-modplug],[build MPX with modplug taglib support])],
     [have_mod="$enableval"],
     [have_mod="no"]
 )
@@ -601,7 +589,7 @@ if test "$system" = "solaris"; then
   AC_DEFINE([HAVE_CDIO], [1], [have cdio])
 else
   AC_ARG_WITH([cdparanoia-prefix],
-      [AC_HELP_STRING([--with-cdparanoia-prefix],[cdparanoia prefix [default=/usr]])],
+      [AS_HELP_STRING([--with-cdparanoia-prefix],[cdparanoia prefix [default=/usr]])],
       [cdparanoia_prefix="$withval"],
       [cdparanoia_prefix="/usr"]
   )
@@ -704,7 +692,7 @@ AM_CONDITIONAL([HAVE_GTK], [test "1" = "1"])
 CFLAGS="$CFLAGS $C_COMMON_FLAGS"
 CXXFLAGS="$CXXFLAGS $C_COMMON_FLAGS"
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
 
     icons/Makefile
     icons/hicolor/Makefile
@@ -812,6 +800,7 @@ AC_OUTPUT([
 
     Makefile
 ])
+AC_OUTPUT
 
 
 echo
