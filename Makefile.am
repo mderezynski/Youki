@@ -22,13 +22,13 @@ CLEANFILES =  $(service_DATA) \
 DISTCLEANFILES = $(CLEANFILES) intltool-extract intltool-merge intltool-update
 
 SUBDIRS =			\
+	po				\
 	scripts			\
 	desktop			\
 	glade			\
 	icons			\
 	images			\
 					\
-	po				\
 					\
 	include			\
 	xsd				\
