@@ -67,8 +67,5 @@ EXTRA_DIST =									\
 	info.backtrace.sentinel.service.in			\
 												\
 	mpx.1.in									\
-	mpx.pc.in									\
-												\
-	intltool-extract.in							\
-	intltool-merge.in							\
-	intltool-update.in
+	mpx.pc.in									
+	
