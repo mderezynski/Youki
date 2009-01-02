@@ -57,7 +57,7 @@ parse_options ()
             shift 2
             ;;
         *)
-            printf "\033[1mAssuming configure arguments!\033[0m\n"
+            echo -e "\033[1mAssuming configure arguments!\033[0m\n"
             ;;
     esac
 
@@ -75,7 +75,7 @@ run_or_die ()
 
     # check for empty commands
     if test -z "$COMMAND" ; then
-        printf "\033[1;33m*warning* no command specified!\033[0m\n"
+        echo -e "\033[1;33m*warning* no command specified!\033[0m\n"
         return 1
     fi
 
@@ -162,7 +162,8 @@ printf "$automake_version: \033[0m"
 if compare_version $automake_version $automake_req; then
 	echo -e "\033[1;32mok\033[0m"
 else
-	echo -e "\033[1;31m*error*: mpx requires automake $automake_req\033[0m"
+  echo -e "\033[1;31m!!"
+	echo -e "*error*: mpx requires automake $automake_req\033[0m"
 	exit 1
 fi
 
@@ -177,7 +178,8 @@ printf "$autoconf_version: \033[0m"
 if compare_version $autoconf_version $autoconf_req; then
 	echo -e "\033[1;32mok\033[0m"
 else
-	printf "\033[1;31m*error* mpx requires autoconf $autoconf_req\033[0m"
+  echo -e "\033[1;31m!!"
+	echo -e "*error* mpx requires autoconf $autoconf_req\033[0m"
 	exit 1
 fi
 
@@ -193,7 +195,8 @@ printf "$libtool_version: \033[0m"
 if compare_version $libtool_version $libtool_req; then
 	echo -e "\033[1;32mok\033[0m"
 else
-	printf "\033[1;31m*error* mpx requires libtool $libtool_req\033[0m"
+  echo -e "\033[1;31m!!"
+	echo -e "*error* mpx requires libtool $libtool_req\033[0m"
 	exit 1
 fi
 
@@ -208,7 +211,8 @@ printf "$gettext_version: \033[0m"
 if compare_version $gettext_version $gettext_req; then
 	echo -e "\033[1;32mok\033[0m"
 else
-	printf "\033[1;31m*error* mpx requires gettext $gettext_req\033[0m"
+  echo -e "\033[1;31m!!"
+	echo -e "*error* mpx requires gettext $gettext_req\033[0m"
 	exit 1
 fi
 
