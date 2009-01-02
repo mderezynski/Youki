@@ -1,6 +1,6 @@
 #libxml (C) 2003-2007 MPX developers, see AUTHORS
 
-AC_PREREQ(2.63)
+AC_PREREQ(2.60)
 AC_INIT([audiosource],[0.01],[http://mpx.backtrace.info/report])
 AC_CONFIG_SRCDIR([mpx/main.cc])
 AC_CONFIG_HEADER([config.h])
@@ -82,7 +82,7 @@ m4_defun([AC_PROG_F77],[])
 # Libtool
 AC_DISABLE_STATIC
 AC_ENABLE_SHARED
-LT_INIT
+AC_PROG_LIBTOOL
 
 ####################################
 ########## BUILDING FLAGS ##########
