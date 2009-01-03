@@ -24,6 +24,7 @@
 
 #include <config.h>
 #include <glibmm.h>
+#include <glibmm/i18n.h>
 
 #define NO_IMPORT
 #include <iostream>
@@ -62,6 +63,8 @@ namespace MPX
             success = boost::python::call<bool>(callable.ptr());
         } catch( error_already_set & cxe )
         {
+            pyg_gil_state_release (state);
+            throw MethodInvocationError(_("Could not activate plugin"));
         }
 
         pyg_gil_state_release (state);
@@ -83,6 +86,8 @@ namespace MPX
             success = boost::python::call<bool>(callable.ptr());
         } catch( error_already_set )
         {
+            pyg_gil_state_release (state);
+            throw MethodInvocationError(_("Could not deactivate plugin"));
         }
 
         pyg_gil_state_release (state);
@@ -104,6 +109,8 @@ namespace MPX
             pygobj = (PyGObject*)(result.ptr());
         } catch( error_already_set )
         {
+            pyg_gil_state_release (state);
+            throw MethodInvocationError(_("Could not get gui"));
         }
 
         pyg_gil_state_release (state);
