@@ -199,6 +199,7 @@ class MPXOSD(mpx.Plugin):
     def deactivate(self):
         self.player.gobj().disconnect(self.player_updated_handler_id)
         self.player.gobj().disconnect(self.player_status_change_handler_id)
+        return True
 
     def on_button_press(self, widget, event):
 
