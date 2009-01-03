@@ -135,8 +135,10 @@ namespace MPX
 		g_return_val_if_fail(i != m_Map.end(), false);
         g_return_val_if_fail(m_Map.find(id)->second->get_has_gui(), false);
 
+        Gtk::Widget * gui = 0;
+
         try{
-                Gtk::Widget * gui = i->second->get_gui();
+            gui = i->second->get_gui();
 
         } catch( MethodInvocationError & cxe )
         {
@@ -161,8 +163,10 @@ namespace MPX
 			g_return_val_if_reached(false);
 		}
 
+        bool success = false;
+
         try{
-                bool success = i->second->activate();
+                success = i->second->activate();
 
                 if ( success ) 
                 {
@@ -198,9 +202,11 @@ namespace MPX
 			g_message("%s: Deactivate requested for plugin %lld, but is already deactivated.", G_STRLOC, id);	
 			g_return_val_if_reached(false);
 		}
+        
+        bool success = false;
 
         try{
-                bool success = i->second->deactivate();
+                success = i->second->deactivate();
 
                 if ( success ) 
                 {
