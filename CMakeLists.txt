@@ -1,7 +1,8 @@
 cmake_minimum_required (VERSION 2.6)
 
 project (audiosource)
-set (VERSION "0.01")
+set (PACKAGE "audiosource")
+set (PACKAGE_VERSION "0.01")
 
 include (CheckIncludeFile)
 include (CheckIncludeFiles)
@@ -34,7 +35,32 @@ include (CheckLibraryExists)
   #mpx
 #)
 
-check_include_files ("argz.h arpa/inet.h fcntl.h float.h inttypes.h langinfo.h libintl.h limits.h locale.h malloc.h netdb.h netinet/in.h stddef.h stdint.h stdio_ext.h stdlib.h string.h strings.h sys/param.h sys/socket.h sys/time.h unistd.h wchar.h" HAVE_MISC_HEADERS)
+check_include_files (
+  argz.h
+  arpa/inet.h
+  fcntl.h
+  float.h
+  inttypes.h
+  langinfo.h
+  libintl.h
+  limits.h
+  locale.h
+  malloc.h
+  netdb.h
+  netinet/in.h
+  stddef.h
+  stdint.h
+  stdio_ext.h
+  stdlib.h
+  string.h
+  strings.h
+  sys/param.h
+  sys/socket.h
+  sys/time.h
+  unistd.h
+  wchar.h
+  HAVE_MISC_HEADERS
+)
 
 check_library_exists (socket connect "" HAVE_SOCKET_LIB)
 check_library_exists (nsl getrpcbyname "" HAVE_NSL)
@@ -50,8 +76,6 @@ if (ENABLE_PROFILE)
 endif (ENABLE_PROFILE)
 
 # Debugging
-#AC_DEFINE([WITH_DEBUG], [], [Building with debug information])
-
 option (ENABLE_DEBUG "Enable Debugging support [DEVELOPERS only] (default=disabled)" "NO")
 mark_as_advanced (FORCE ENABLE_DEBUG)
 
@@ -80,7 +104,6 @@ find_package (Boost)
 #AX_BOOST_PYTHON
 
 # C++ TR1 extensions
-#AC_DEFINE([HAVE_TR1], [], [Define when having C++ tr1 extensions])
 
 set (USE_TR1 "YES")
 if (USE_TR1)
@@ -122,8 +145,6 @@ pkg_check_modules (CAIROMM    REQUIRED cairomm-1.0>=0.6.0)
 pkg_check_modules (SEXYMM     REQUIRED libsexymm>=0.1.9)
 
 # Network Manager
-#AC_DEFINE([HAVE_NM], [], [Network Manager support])
-
 option (ENABLE_NM "With GNOME NetworkManager" "NO")
 
 if (ENABLE_NM)
@@ -152,9 +173,6 @@ execute_process (COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=glib_genmarshal gli
 
 
 # HAL
-#AC_DEFINE([HAVE_HAL], [], [Define if building with HAL support])
-#AC_DEFINE([HAVE_HAL_058], [], [Defined when building with HAL >= 0.5.8.1])
-
 option (ENABLE_HAL "Storage management with HAL (default=enabled)" "YES")
 
 if (ENABLE_HAL)
@@ -169,8 +187,6 @@ endif (ENABLE_HAL)
 pkg_check_modules (TAGLIB REQUIRED taglib-gio>=1.4)
 
 # libsidplay (v1.x)
-#AC_DEFINE([HAVE_SID], [1], [have sid])
-
 option (ENABLE_SIDPLAY ".sid/.psid taglib support" "NO")
 
 if (ENABLE_SIDPLAY)
@@ -181,8 +197,6 @@ if (ENABLE_SIDPLAY)
 endif (ENABLE_SIDPLAY)
 
 # ModPlug check
-#AC_DEFINE([HAVE_MOD], [1], [have mod])
-
 option (ENABLE_MOD "modplug taglib support" "NO")
 
 if (ENABLE_MOD)
@@ -190,8 +204,6 @@ if (ENABLE_MOD)
 endif (ENABLE_MOD)
 
 # SMlib/ICE
-#AC_DEFINE([HAVE_SM], [1], [Define if building with SMlib support])
-
 option (ENABLE_SM "Session management support with SMlib (default=enabled" "YES")
 
 if (ENABLE_SM)
@@ -202,8 +214,6 @@ if (ENABLE_SM)
 endif (ENABLE_SM)
 
 # Startup Notifications
-#AC_DEFINE([HAVE_STARTUP_NOTIFICATION], [], [Define when building with libstartup-notification])
-
 option (ENABLE_SN "Enable Startup Notification (default=enabled)" "YES")
 
 if (ENABLE_SN)
@@ -219,7 +229,7 @@ if (NOT ZIP)
   set (HAVE_ZIP "NO")
 endif (NOT ZIP)
 
-pkg_check_modules (LIBOFA REQUIRED libofa>=0.9.3)
+pkg_check_modules (OFA REQUIRED libofa>=0.9.3)
 
 pkg_check_modules (GDL REQUIRED gdl-1.0)
 
@@ -251,15 +261,16 @@ endif (NOT CDIO_FOUND AND NOT CDDA_FOUND)
 # Multimedia keys
 pkg_check_modules (XPROTO xproto>=7.0.10)
 
-#PREFIX=${prefix}
-#PLUGIN_DIR=${libdir}/${PACKAGE}/plugins
-#LOCALE_DIR=${localedir}
-#DATA_DIR=${pkgdatadir}
+# TODO: Turn these into options
+set (MPX_PREFIX      ${CMAKE_INSTALL_PREFIX})
+set (MPX_EXEC_PREFIX ${CMAKE_INSTALL_PREFIX})
+set (MPX_INCLUDEDIR  ${CMAKE_INSTALL_PREFIX}/include)
+set (MPX_LIBDIR      ${CMAKE_INSTALL_PREFIX}/lib) # fix this for 64-bit platforms
+set (MPX_LIBEXECDIR  ${CMAKE_INSTALL_PREFIX}/libexec)
 
-#AX_DEFINE_UNQUOTED([PREFIX], [${prefix}], [The installation prefix])
-#AX_DEFINE_UNQUOTED([PLUGIN_DIR], [${libdir}/${PACKAGE}/plugins], [Plugins path])
-#AX_DEFINE_UNQUOTED([LOCALE_DIR], [${localedir}], [The locale directory])
-#AX_DEFINE_UNQUOTED([DATA_DIR], [${prefix}/share/${PACKAGE}], [Data directory])
+set (PLUGIN_DIR "${CMAKE_INSTALL_LIBDIR}/${PACKAGE}/plugins")
+set (LOCALE_DIR "${localedir}")
+set (DATA_DIR   "${CMAKE_INSTALL_PREFIX}/share/${PACKAGE}")
 
 set (MPX_DBUS_SERVICE_ "\"org.mpris.mpx\"")
 set (MPX_DBUS_INTERFACE__MPRIS_ "\"org.freedesktop.MediaPlayer\"")
@@ -270,15 +281,18 @@ set (MPX_DBUS_PATH__MPRIS_TRACKLIST_ "\"/TrackList\"")
 set (MPX_DBUS_INTERFACE__MPX_ "\"info.backtrace.mpx\"")
 set (MPX_DBUS_PATH__MPX_ "\"/MPX\"")
 
-#AC_DEFINE([PLUGIN_VERSION], [10], [Plugin Version])
+set (PLUGIN_VERSION "10")
 
-# MCS stubs
-#AC_DEFINE([HAVE_BMP], [1], [Defined when having BMP])
-#AC_DEFINE([HAVE_XML], [1], [Defined when having libxml2])
-#AC_DEFINE([HAVE_GTK], [1], [Defined when having GTK2])
+set (HAVE_BMP "YES")
 
 set (CFLAGS "${CFLAGS} ${C_COMMON_FLAGS}")
 set (CXXFLAGS "${CXXFLAGS} ${C_COMMON_FLAGS}")
 
-configure_file (mpx.1.in mpx.1)
 
+configure_file (${PROJECT_SOURCE_DIR}/mpx.1.in ${PROJECT_BINARY_DIR}/mpx.1)
+configure_file (${PROJECT_SOURCE_DIR}/mpx.pc.in ${PROJECT_BINARY_DIR}/mpx.pc)
+configure_file (${PROJECT_SOURCE_DIR}/info.backtrace.mpx.service.in ${PROJECT_BINARY_DIR}/info.backtrace.mpx.service)
+configure_file (${PROJECT_SOURCE_DIR}/info.backtrace.sentinel.service.in ${PROJECT_BINARY_DIR}/info.backtrace.sentinel.service)
+configure_file (${PROJECT_SOURCE_DIR}/desktop/mpx.desktop.in ${PROJECT_BINARY_DIR}/desktop/mpx.desktop)
+
+configure_file (${PROJECT_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)

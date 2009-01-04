@@ -1,4 +1,4 @@
-.TH BMPx 1 "26 September 2007" "Version @VERSION@" "BMPx Manual Page"
+.TH BMPx 1 "26 September 2007" "Version @PACKAGE_VERSION@" "BMPx Manual Page"
 .SH NAME
 BMP \- Media Player 
 .SH SYNOPSIS

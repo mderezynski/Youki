@@ -1,6 +1,8 @@
 message (STATUS "checking for HAL PropertySetIterator")
 
 # FIXME: add proper link libraries
+set (LINK_LIBRARIES ${HAL_LIBRARIES})
+
 try_run (HAL_PSI_TEST_EXITCODE HAL_PSI_TEST_COMPILED
   ${CMAKE_BINARY_DIR}
   ${PROJECT_SOURCE_DIR}/cmake/hal-psi-test.cpp
