@@ -2577,7 +2577,7 @@ namespace MPX
                                 add_cap(C_CAN_PROVIDE_METADATA);
                                 check_nextprev_caps ();
 
-                                m_Private->m_TreeViewPlaylist->scroll_to_track();
+                                //playlist.scroll_to_track();
 
                                 TreeIter &iter = playlist.m_CurrentIter.get();
                                 TreePath path1 = playlist.ListStore->get_path(iter);
@@ -2598,7 +2598,7 @@ namespace MPX
 
                                 playlist.queue_draw();
                                 check_nextprev_caps ();
-                                playlist.scroll_to_track();
+                                //playlist.scroll_to_track();
 
                                 TreeIter &iter = playlist.m_CurrentIter.get();
                                 TreePath path1 = playlist.ListStore->get_path(iter);
@@ -2622,7 +2622,7 @@ namespace MPX
 
                                 playlist.queue_draw();
                                 check_nextprev_caps ();
-                                playlist.scroll_to_track();
+                                //playlist.scroll_to_track();
                         }
 
                 void

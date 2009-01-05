@@ -224,27 +224,23 @@ namespace MPX
                 Store->set_sort_column_id( -1, Gtk::SORT_ASCENDING );
 
                 /*
-                // Image
                 { 
-                        TreeViewColumn * col = manage (new TreeViewColumn(_("Image")));
-
-                        CellRendererPixbuf *cell = manage (new CellRendererPixbuf);
-                        col->pack_start( *cell, true );
-                        col->add_attribute( *cell, "pixbuf", Columns.Image );
-                        append_column(*col);
+                    // Image
+                    TreeViewColumn * col = manage (new TreeViewColumn(_("Image")));
+                    CellRendererPixbuf *cell = manage (new CellRendererPixbuf);
+                    col->pack_start( *cell, true );
+                    col->add_attribute( *cell, "pixbuf", Columns.Image );
+                    append_column(*col);
                 }
                 */
 
-                
-                // Text
                 { 
-                        TreeViewColumn * col = manage (new TreeViewColumn(_("Name")));
-
-                        CellRendererText *cell = manage (new CellRendererText);
-                        //cell->property_yalign() = 0.;
-                        col->pack_start( *cell, false );
-                        col->add_attribute( *cell, "markup", Columns.Name );
-                        append_column(*col);
+                    // Text
+                    TreeViewColumn * col = manage (new TreeViewColumn(_("Name")));
+                    CellRendererText *cell = manage (new CellRendererText);
+                    col->pack_start( *cell, false );
+                    col->add_attribute( *cell, "markup", Columns.Name );
+                    append_column(*col);
                 }
 
                 boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
@@ -268,8 +264,9 @@ namespace MPX
                 ));
 
                 build_list();
-
                 set_model(Store);
+                set_enable_search();
+                set_search_column(Columns.Name_Raw); 
 
                 get_selection()->signal_changed().connect(
                     sigc::mem_fun(
@@ -277,6 +274,7 @@ namespace MPX
                         &ArtistListView::on_selection_changed
                 ));
 
+                /*
                 boost::shared_ptr<ArtistImages> artist_images = services->get<ArtistImages>("mpx-service-artist-images");
 
                 artist_images->signal_got_artist_image().connect(
@@ -286,6 +284,7 @@ namespace MPX
                 ));
 
                 artist_images->recache_images();
+                */
             }
 
             void
