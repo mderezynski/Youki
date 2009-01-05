@@ -104,10 +104,12 @@ class TrackTags(mpx.Plugin):
         return True
 
     def deactivate(self):
+
         self.player.remove_info_widget(self.tagview.get_widget())
         self.player.gobj().disconnect(self.player_metadata_updated_handler_id)
         self.player.gobj().disconnect(self.player_playtstatus_changed_handler_id)
         self.tagview.get_widget().disconnect(self.player_tagview_tag_handler_id)
+        return True
 
     def tag_clicked(self, blah, tag):
         

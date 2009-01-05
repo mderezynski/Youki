@@ -47,6 +47,37 @@ using namespace boost::python;
 
 #include "plugin-types-python.hh"
 
+namespace
+{
+    std::string
+	get_py_error(
+    )
+	{
+        PyObject *error = PyErr_Occurred();
+
+        if( error )
+        {
+                PyObject *pytype = 0, *pyvalue = 0, *pytraceback = 0, *pystring = 0;
+
+                PyErr_Fetch (&pytype, &pyvalue, &pytraceback);
+                PyErr_Clear ();
+
+                pystring = PyObject_Str(pyvalue);
+
+                std::string traceback = PyString_AsString( pystring );
+
+                Py_XDECREF (pytype);
+                Py_XDECREF (pyvalue);
+                Py_XDECREF (pytraceback);
+                Py_XDECREF (pystring);
+
+                return traceback;
+        }
+
+        return _("(no traceback available)");
+    }
+}
+
 namespace MPX
 {
     bool
@@ -63,8 +94,9 @@ namespace MPX
             success = boost::python::call<bool>(callable.ptr());
         } catch( error_already_set & cxe )
         {
+            const std::string& error = get_py_error();
             pyg_gil_state_release (state);
-            throw MethodInvocationError(_("Could not activate plugin"));
+            throw MethodInvocationError(error);
         }
 
         pyg_gil_state_release (state);
@@ -86,8 +118,9 @@ namespace MPX
             success = boost::python::call<bool>(callable.ptr());
         } catch( error_already_set )
         {
+            const std::string& error = get_py_error();
             pyg_gil_state_release (state);
-            throw MethodInvocationError(_("Could not deactivate plugin"));
+            throw MethodInvocationError(error);
         }
 
         pyg_gil_state_release (state);
@@ -109,8 +142,9 @@ namespace MPX
             pygobj = (PyGObject*)(result.ptr());
         } catch( error_already_set )
         {
+            const std::string& error = get_py_error();
             pyg_gil_state_release (state);
-            throw MethodInvocationError(_("Could not get gui"));
+            throw MethodInvocationError(error);
         }
 
         pyg_gil_state_release (state);

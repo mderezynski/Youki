@@ -22,6 +22,7 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 #include "config.h"
+#include <glibmm/i18n.h>
 #include "plugin.hh"
 #include "mpx/mpx-main.hh"
 #include "mcs/mcs.h"
@@ -142,7 +143,8 @@ namespace MPX
 
         } catch( MethodInvocationError & cxe )
         {
-			push_traceback (id, "get_gui");
+			push_traceback( id, "get_gui", cxe.what() );
+
             return 0;
         }
 
@@ -176,7 +178,8 @@ namespace MPX
 
         } catch( MethodInvocationError & cxe )
         {
-			push_traceback (id, "activate");
+			push_traceback (id, "activate", cxe.what() );
+
             return false;
         }
 
@@ -216,7 +219,8 @@ namespace MPX
 
         } catch( MethodInvocationError & cxe )
         {
-			push_traceback( id, "deactivate" );
+			push_traceback( id, "deactivate", cxe.what() );
+
             return false;
         }
 
@@ -236,28 +240,16 @@ namespace MPX
 	}
 
 	void
-	PluginManager::push_traceback(gint64 id, const std::string& method)
+	PluginManager::push_traceback(
+          gint64                id
+        , const std::string&    method
+        , const std::string&    traceback
+    )
 	{
         g_return_if_fail(m_Map.count(id) != 0);
-        g_return_if_fail(PyErr_Occurred() != 0);
-
-        PyObject *pytype = NULL, *pyvalue = NULL, *pytraceback = NULL, *pystring = NULL;
-        PyErr_Fetch (&pytype, &pyvalue, &pytraceback);
-        PyErr_Clear();
-        pystring = PyObject_Str(pyvalue);
-        std::string traceback = PyString_AsString (pystring);
-
-        std::string name = m_Map.find(id)->second->get_name();
-        g_message("%s: Failed to call '%s' on plugin %lld:\nTraceback: %s", G_STRLOC, method.c_str(), id, traceback.c_str());
-		m_TracebackList.push_front(Traceback(name, method, traceback));
-
+        m_TracebackList.push_front( Traceback( m_Map.find(id)->second->get_name(), method, traceback ));
         signal_traceback_.emit();
-
-        Py_XDECREF (pytype);
-        Py_XDECREF (pyvalue);
-        Py_XDECREF (pytraceback);
-        Py_XDECREF (pystring);
-	}
+    }
 
 	unsigned int
 	PluginManager::get_traceback_count() const

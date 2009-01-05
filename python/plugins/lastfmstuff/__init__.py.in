@@ -122,8 +122,10 @@ class LastFmActions(mpx.Plugin):
 
     def deactivate(self):
 
-        self.ui.remove_ui(self.merge_id)
         self.player.gobj().disconnect(self.handler1_id)
+        self.player.gobj().disconnect(self.handler2_id)
+        self.ui.remove_ui(self.merge_id)
+        return True
 
     def __init__(self,id,player,mcs):
 

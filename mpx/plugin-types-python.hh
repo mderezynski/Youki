@@ -37,7 +37,9 @@ namespace MPX
 	{
 		protected:
 
-			PyObject	*	m_PluginInstance ;
+			PyObject * m_PluginInstance ;
+
+            friend class PluginLoaderPython ;
 
 		public:
     
@@ -52,10 +54,6 @@ namespace MPX
             virtual Gtk::Widget*
             get_gui(
             ); 
-
-		friend class PluginManager;
-        friend class PluginActivate;
-        friend class PluginLoaderPython;
 	};
 }
 

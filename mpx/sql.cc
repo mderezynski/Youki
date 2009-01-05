@@ -89,7 +89,7 @@ MPX::SQL::SQLDB::THROW_SQL_ERROR(
         break; 
  
       case SQLITE_NOMEM: 
-        throw SqlOOM (sql); 
+        throw SqlOOMError (sql); 
         break; 
  
       case SQLITE_READONLY: 
@@ -105,15 +105,15 @@ MPX::SQL::SQLDB::THROW_SQL_ERROR(
         break; 
  
       case SQLITE_CORRUPT: 
-        throw SqlSQLCorruptError (sql); 
+        throw SqlDatabaseCorruptError (sql); 
         break; 
  
       case SQLITE_FULL: 
-        throw SqlSQLFullError (sql); 
+        throw SqlDatabaseFullError (sql); 
         break; 
  
       case SQLITE_CANTOPEN: 
-        throw SqlSQLOpenError (sql); 
+        throw SqlDatabaseOpenError (sql); 
         break; 
  
       case SQLITE_PROTOCOL: 
@@ -121,7 +121,7 @@ MPX::SQL::SQLDB::THROW_SQL_ERROR(
         break; 
  
       case SQLITE_EMPTY: 
-        throw SqlSQLEmptyError (sql); 
+        throw SqlDatabaseEmptyError (sql); 
         break; 
  
       case SQLITE_SCHEMA: 

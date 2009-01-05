@@ -99,11 +99,26 @@ namespace MPX
     class MethodInvocationError : public std::exception
     {
         public:
-            MethodInvocationError(const std::string &msg = std::string()) : msg(msg) {}
-            virtual ~MethodInvocationError() throw() {}
-            const char *what() const throw() { return msg.c_str(); }
+
+            MethodInvocationError(
+                const std::string& _message = std::string()
+            )
+            : message(_message)
+            {}
+
+            virtual
+            ~MethodInvocationError() throw()
+            {}
+
+            virtual const char*
+            what() const throw()
+            {
+                return message.c_str();
+            }
+
        private:
-            std::string msg;
+
+            std::string message;
     };
 }
 
