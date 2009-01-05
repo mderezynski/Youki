@@ -861,7 +861,7 @@ class MPXAudioScrobbler(mpx.Plugin):
     
         self.hand1 = self.player.gobj().connect("track-played", self.track_played)
         self.hand2 = self.player.gobj().connect("new-track", self.new_track)
-        self.hand2 = self.player.gobj().connect("metadata-updated", self.now_playing)
+        self.hand3 = self.player.gobj().connect("metadata-updated", self.now_playing)
         self.player_playstatus_changed = self.player.gobj().connect("play-status-changed", self.pstate_changed)
 
         print ("Audioscrobbler activated: " + str(self.post.authenticated))
@@ -878,13 +878,16 @@ class MPXAudioScrobbler(mpx.Plugin):
     def deactivate(self):
 
         """ Deactivate plugin """
-        pass
-        #self.player.gobj().disconnect(self.hand1)
-        #self.player.gobj().disconnect(self.hand2)
-        #self.as = None
+
+        self.player.gobj().disconnect(self.hand1)
+        self.player.gobj().disconnect(self.hand2)
+        self.player.gobj().disconnect(self.hand3)
+        self.as = None
         #self.post.save()
         #self.post.stop()
-        #self.post = None
+        self.post = None
+
+        return True
 
     def pstate_changed(self, blah, state):
 

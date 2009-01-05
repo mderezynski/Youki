@@ -29,10 +29,11 @@ class TrackCover(mpx.Plugin):
     def activate(self):
 
         self.player.add_info_widget(self.alignment, "Album Covers")
-        self.player_metadata_updated_handler_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
-        self.player_metadata_updated_handler_id = self.player.gobj().connect("new-coverart", self.metadata_updated)
-        self.player_metadata_updated_handler_id = self.player.gobj().connect("new-track", self.new_track)
-        self.player_playstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.pstate_changed)
+
+        self.player_metadata_updated_handler_id     = self.player.gobj().connect("metadata-updated", self.metadata_updated)
+        self.player_new_coverart_handler_id         = self.player.gobj().connect("new-coverart", self.metadata_updated)
+        self.player_new_track_handler_id            = self.player.gobj().connect("new-track", self.new_track)
+        self.player_playstatus_changed_handler_id   = self.player.gobj().connect("play-status-changed", self.pstate_changed)
 
         self.metadata_updated(None)
 
@@ -42,6 +43,8 @@ class TrackCover(mpx.Plugin):
 
         self.player.remove_info_widget(self.alignment)
         self.player.gobj().disconnect(self.player_metadata_updated_handler_id)
+        self.player.gobj().disconnect(self.player_new_coverart_handler_id)
+        self.player.gobj().disconnect(self.player_new_track_handler_id)
         self.player.gobj().disconnect(self.player_playstatus_changed_handler_id)
 
         return True

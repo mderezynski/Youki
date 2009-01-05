@@ -37,8 +37,8 @@
 #include <glibmm/thread.h>
 #include <gtkmm/widget.h>
 #include <boost/shared_ptr.hpp>
-#include <mcs/mcs.h>
-#include <Python.h>
+
+#include "mcs/mcs.h"
 
 #include "mpx/mpx-services.hh"
 #include "mpx/plugin-types.hh"
@@ -141,8 +141,9 @@ namespace MPX
 
 			void
 			push_traceback(
-                gint64 /*id*/,
-                const std::string& /*method*/
+                  gint64                /*id*/
+                , const std::string&    /*method*/
+                , const std::string&    /*error*/
             );
 
 			unsigned int

@@ -539,12 +539,9 @@ def append_url_rels(entity):
 
             rls = rel_links[a]
             for rel in rls:
-                if len(rls) > 1:
-                    links.append("<a href='%s'>%s</a>(%s)" % (rel.getTargetId(), mapping[a], str(rls.index(rel)+1)))
-                else:
-                    links.append("<a href='%s'>%s</a>" % (rel.getTargetId(), mapping[a]))
+                html += "<tr><td style='width: 30%'>%s</td><td><a href='%s'>%s</a></td></tr>" % (mapping[a], rel.getTargetId(), rel.getTargetId())
 
-    return ", ".join(links) 
+    return html 
 
 def append_artist_rels(entity): 
 
@@ -733,6 +730,10 @@ class TrackInfoQuery (threading.Thread):
             self.html += lyrics.replace("\n","<br/>")
             self.html += "</div>"
 
+    def APPEND_MBData_RelLink(self, linktitle, linkurl):
+
+        self.html += "<tr><td style='width: 30%'>%s:</td><td><a href='%s'>%s</a></td></tr>" % (linktitle, linkurl, linkurl)
+
     def APPEND_MBData(self):
 
         CallTable = {"Cover"             :   [self.append_ar_coverversion],
@@ -841,9 +842,11 @@ class TrackInfoQuery (threading.Thread):
                         self.html += artist_rels 
                         self.html += "<br/><br/>"
 
-                    self.html += "<a href='http://www.google.com/search?q=%s'>Google</a>, " % urllib.quote(entity.getName())
-                    self.html += "<a href='http://www.last.fm/music/%s'>Last.fm</a>, " % urllib.quote_plus(entity.getName())
-                    self.html += "<a href='http://www.bbc.co.uk/music/artists/%s'>BBC</a>, " % id 
+                    self.html += "<table style='width: 100%'>"
+    
+                    self.APPEND_MBData_RelLink("Google", "http://www.google.com/search?q=%s" % urllib.quote(entity.getName()))
+                    self.APPEND_MBData_RelLink("Last.fm", "http://www.last.fm/music/%s" % urllib.quote_plus(entity.getName()))
+                    self.APPEND_MBData_RelLink("BBC Music", "http://www.bbc.co.uk/music/artists/%s" % id)
                     self.html += append_url_rels(entity)
                     self.html += "<br/><br/>"
 
@@ -1119,9 +1122,12 @@ class LiveInfo(mpx.Plugin):
         return True
 
     def deactivate(self):
+
         self.player.remove_info_widget(self.vbox)
         self.player.gobj().disconnect(self.player_infoarea_click_id)
         self.info.clear()
+
+        return True
 
     def metadata_updated(self, blah):
 
