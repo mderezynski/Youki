@@ -361,10 +361,10 @@ namespace MPX
                 //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>\n" + date; 
                 (*iter)[Columns.Name] = Glib::Markup::escape_text(name);
                 (*iter)[Columns.SortKey] = Glib::ustring(name).collate_key();
-                (*iter)[Columns.ID] = get<gint64>(v[0]["id"]);
+                (*iter)[Columns.ID] = id; 
                 (*iter)[Columns.Image] = m_Artist_Default;
 
-                m_IdIterMap.insert(std::make_pair( get<gint64>(v[0]["id"]), iter));
+                m_IdIterMap.insert(std::make_pair( id, iter));
 
                 if( v[0].count("mb_album_artist_id"))
                     m_MBIDIterMap.insert(std::make_pair( get<std::string>(v[0]["mb_album_artist_id"]), iter));
