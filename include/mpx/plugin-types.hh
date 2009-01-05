@@ -95,6 +95,16 @@ namespace MPX
 	};
 
 	typedef boost::shared_ptr<PluginHolderBase> PluginHolderRefP_t ;
+
+    class MethodInvocationError : public std::exception
+    {
+        public:
+            MethodInvocationError(const std::string &msg = std::string()) : msg(msg) {}
+            virtual ~MethodInvocationError() throw() {}
+            const char *what() const throw() { return msg.c_str(); }
+       private:
+            std::string msg;
+    };
 }
 
 #endif

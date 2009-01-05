@@ -135,13 +135,16 @@ namespace MPX
 		g_return_val_if_fail(i != m_Map.end(), false);
         g_return_val_if_fail(m_Map.find(id)->second->get_has_gui(), false);
 
-        Gtk::Widget * gui = i->second->get_gui();
+        Gtk::Widget * gui = 0;
 
-        if( !gui )
+        try{
+            gui = i->second->get_gui();
+
+        } catch( MethodInvocationError & cxe )
         {
 			push_traceback (id, "get_gui");
-	        return 0;	
-		}
+            return 0;
+        }
 
 		return gui; 
 	}
@@ -160,16 +163,21 @@ namespace MPX
 			g_return_val_if_reached(false);
 		}
 
-        bool success = i->second->activate();
+        bool success = false;
 
-        if ( success ) 
-        {
-			i->second->m_Active = true;
-            signal_activated_.emit(id);
-        }
-        else
+        try{
+                success = i->second->activate();
+
+                if ( success ) 
+                {
+                    i->second->m_Active = true;
+                    signal_activated_.emit(id);
+                }
+
+        } catch( MethodInvocationError & cxe )
         {
 			push_traceback (id, "activate");
+            return false;
         }
 
         try{
@@ -194,19 +202,23 @@ namespace MPX
 			g_message("%s: Deactivate requested for plugin %lld, but is already deactivated.", G_STRLOC, id);	
 			g_return_val_if_reached(false);
 		}
+        
+        bool success = false;
 
-        bool success = i->second->deactivate();
+        try{
+                success = i->second->deactivate();
 
-        if ( success ) 
-        {
-			i->second->m_Active = false;
-            signal_deactivated_.emit(id);
-        }
-        else
+                if ( success ) 
+                {
+                    i->second->m_Active = false;
+                    signal_deactivated_.emit(id);
+                }
+
+        } catch( MethodInvocationError & cxe )
         {
 			push_traceback( id, "deactivate" );
+            return false;
         }
-
 
         try{
             mcs->key_set<bool>("plugins", i->second->get_name(), i->second->m_Active);
