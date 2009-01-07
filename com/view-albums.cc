@@ -929,6 +929,7 @@ namespace MPX
                             }
 
                             m_MouseOverIter.reset();
+                            queue_draw();
                             return false;
                         } 
 
