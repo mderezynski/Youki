@@ -174,16 +174,16 @@ namespace MPX
           {
                   if( pixbuf ) 
                   {
-                          Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
-                          Cairo::RefPtr<Cairo::ImageSurface> surface = Util::cairo_image_surface_from_pixbuf (pixbuf);
-                          //surface = Util::cairo_image_surface_round(surface, 3.5);
-                          set_cover( surface, first );
+                        Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
+                        Cairo::RefPtr<Cairo::ImageSurface> surface = Util::cairo_image_surface_from_pixbuf (pixbuf);
+                        surface = Util::cairo_image_surface_round(surface, 6.);
+                        set_cover( surface, first );
                   }
                   else
-                          if( first )
-                          {
-                                  clear_cover ();
-                          }
+                  if( first )
+                  {
+                        clear_cover ();
+                  }
           }
 
   void
@@ -208,6 +208,7 @@ namespace MPX
                   {
                           m_cover_surface_cur = surface; 
                           m_cover_anim_conn_slide.disconnect ();
+
                           m_cover_anim_conn_slide = Glib::signal_timeout ().connect(
                                           sigc::mem_fun( *this, &InfoArea::slide_in_cover ), cover_anim_interval
                                           );
