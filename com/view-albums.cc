@@ -567,6 +567,7 @@ namespace MPX
                 void
                         AlbumTreeView::refilter ()
                         {
+                                m_MouseOverIter.reset();
                                 AlbumsTreeStoreFilter->refilter();
                                 update_album_count_display();
                         }
@@ -692,12 +693,16 @@ namespace MPX
                                 {
                                         if(m_DragAlbumMBID)
                                         {
-                                                Cairo::RefPtr<Cairo::ImageSurface> CoverCairo;
-                                                services->get<Covers>("mpx-service-covers")->fetch(m_DragAlbumMBID.get(), CoverCairo, COVER_SIZE_DEFAULT);
-                                                if(CoverCairo)
+                                                Cairo::RefPtr<Cairo::ImageSurface> surface;
+
+                                                services->get<Covers>("mpx-service-covers")->fetch(m_DragAlbumMBID.get(), surface, COVER_SIZE_DEFAULT);
+
+                                                if( surface )
                                                 {
-                                                        CoverCairo = Util::cairo_image_surface_round(CoverCairo, 28); 
-                                                        Glib::RefPtr<Gdk::Pixbuf> CoverPixbuf = Util::cairo_image_surface_to_pixbuf(CoverCairo);
+                                                        Gdk::Color c = get_style()->get_black();
+                                                        surface = Util::cairo_image_surface_round(surface, 28.); 
+                                                        Util::cairo_image_surface_rounded_border(surface, .5, 28., c.get_red_p(), c.get_green_p(), c.get_blue_p(), 1.);
+                                                        Glib::RefPtr<Gdk::Pixbuf> CoverPixbuf = Util::cairo_image_surface_to_pixbuf(surface);
                                                         drag_source_set_icon(CoverPixbuf->scale_simple(128,128,Gdk::INTERP_BILINEAR));
                                                         return;
                                                 }

@@ -180,7 +180,7 @@ namespace MPX
 
         // Release Type
         std::string release_info;
-    
+   
         if( !info->Genre.empty() )
         {
             if( !info->Type.empty() )
