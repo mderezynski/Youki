@@ -4,6 +4,8 @@ project (audiosource)
 set (PACKAGE "audiosource")
 set (PACKAGE_VERSION "0.01")
 
+set (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+
 include (CheckIncludeFile)
 include (CheckIncludeFiles)
 include (CheckLibraryExists)
@@ -107,7 +109,7 @@ find_package (Boost)
 
 set (USE_TR1 "YES")
 if (USE_TR1)
-  include (${PROJECT_SOURCE_DIR}/cmake/TestForTR1.cmake)
+  find_package (CxxTR1)
 
   if (NOT TR1_FOUND)
     message (FATAL_ERROR "C++ TR1 extensions not found")
@@ -152,7 +154,7 @@ if (ENABLE_NM)
 endif (ENABLE_NM)
 
 # Xerces C
-include (${PROJECT_SOURCE_DIR}/cmake/FindXercesC.cmake)
+find_package (XercesC)
 if (NOT XERCESC_FOUND)
   message (FATAL_ERROR "Xerces not found")
 endif (NOT XERCESC_FOUND)
@@ -190,7 +192,7 @@ pkg_check_modules (TAGLIB REQUIRED taglib-gio>=1.4)
 option (ENABLE_SIDPLAY ".sid/.psid taglib support" "NO")
 
 if (ENABLE_SIDPLAY)
-  include (${PROJECT_SOURCE_DIR}/cmake/FindSIDPlay.cmake)
+  find_package (SIDPlay)
   if (NOT SIDPLAY_FOUND)
     message (FATAL_ERROR "libsidplay 1.x not found!")
   endif (NOT SIDPLAY_FOUND)
@@ -207,7 +209,7 @@ endif (ENABLE_MOD)
 option (ENABLE_SM "Session management support with SMlib (default=enabled" "YES")
 
 if (ENABLE_SM)
-  include (${PROJECT_SOURCE_DIR}/cmake/FindSMlib.cmake)
+  find_package (SMlib)
   if (NOT SM_FOUND)
     message (FATAL_ERROR "Cannot find SMlib")
   endif (NOT SM_FOUND)
@@ -253,7 +255,7 @@ set (DEFAULT_DEVICE_SUN  "/dev/audio")
 set (DEFAULT_DEVICE_ESD  "localhost")
 
 # CDDA
-include (${PROJECT_SOURCE_DIR}/cmake/FindCDSupport.cmake)
+find_package (CDSupport)
 if (NOT CDIO_FOUND AND NOT CDDA_FOUND)
   message (FATAL_ERROR "No CDDA libraries found")
 endif (NOT CDIO_FOUND AND NOT CDDA_FOUND)
