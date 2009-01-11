@@ -1,12 +1,12 @@
 AUTOMAKE_OPTIONS = foreign
 
-if HAVE_BMP
-libhalcc_la_LDFLAGS = --version-info $(LIBVERSION) -release $(RELEASE)
-noinst_LTLIBRARIES = libhalcc.la
-else
+#if HAVE_BMP
+#libhalcc_la_LDFLAGS = --version-info $(LIBVERSION) -release $(RELEASE)
+#noinst_LTLIBRARIES = libhalcc.la
+#else
 libhalcc_la_LDFLAGS = -export-dynamic -fPIC -version-info $(LIBVERSION) -release $(RELEASE)
 lib_LTLIBRARIES = libhalcc.la
-endif
+#endif
 
 INCLUDES = $(SIGC_CFLAGS) $(DBUS_CFLAGS) $(HAL_CFLAGS) $(GLIB_CFLAGS)
 
@@ -37,10 +37,10 @@ HCC_COMMONHEADERS   = \
     util.hh           \
     hal++.hh
 
-if HAVE_BMP
-noinst_HEADERS = $(HCC_COMMONHEADERS) 
-else
+#if HAVE_BMP
+#noinst_HEADERS = $(HCC_COMMONHEADERS) 
+#else
 apiheader_HEADERS = $(HCC_COMMONHEADERS) 
 apiheaderdir = $(includedir)/hal++-1.0/hal++
-endif
+#endif
 

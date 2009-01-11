@@ -12,6 +12,7 @@ pygtk.require('2.0')
 import gtk
 import gobject
 import pango
+import cairo
 
 class TrackCover(mpx.Plugin):
 
@@ -21,10 +22,46 @@ class TrackCover(mpx.Plugin):
         self.player = player
         self.mcs = mcs
         self.alignment = gtk.Alignment(xalign=0.5, yalign=0.5)
-        self.box = gtk.HBox(False,16)
-        self.box.show_all()
-        self.alignment.add(self.box)
+        self.da = gtk.DrawingArea() 
+        self.da.set_size_request(435,398)
+        self.da.show_all()
+        self.alignment.add(self.da)
         self.alignment.show_all()
+
+        self.image = None
+
+        self.da.connect("expose-event", self.on_da_expose_event)
+    
+        self.jewelcase_bot = gtk.gdk.pixbuf_new_from_file("@PLUGIN_DIR@" + "/plugins-python/trackcover/jewelcase_bot.png")
+        self.jewelcase_top = gtk.gdk.pixbuf_new_from_file("@PLUGIN_DIR@" + "/plugins-python/trackcover/jewelcase_top.png")
+
+    def on_da_expose_event(self, da, event):
+
+        context = self.da.window.cairo_create()
+
+        if not self.image:
+            context.set_operator(cairo.OPERATOR_CLEAR)
+            context.rectangle(0,0,435,398) 
+            context.fill()
+            return True
+
+        context.set_operator(cairo.OPERATOR_SOURCE)
+        context.set_source_pixbuf(self.jewelcase_bot, 0, 0)
+        context.rectangle(0,0, 435, 398)
+        context.fill()
+
+        if self.image:
+            context.set_operator(cairo.OPERATOR_ATOP)
+            context.set_source_pixbuf(self.image, 46, 7)
+            context.rectangle(46,7,383,383)
+            context.fill()
+
+        context.set_operator(cairo.OPERATOR_ATOP)
+        context.set_source_pixbuf(self.jewelcase_top, 45, 6)
+        context.rectangle(45,6, 383, 383)
+        context.fill()
+
+        return True
 
     def activate(self):
 
@@ -51,16 +88,12 @@ class TrackCover(mpx.Plugin):
 
     def regen_box(self):
 
-        self.box.destroy()
-        self.box = gtk.HBox(False,16)
-        self.box.show_all()
-        self.alignment.add(self.box)
-        self.alignment.show_all()
+        self.image = None
+        self.da.queue_draw()
 
     def pstate_changed(self, blah, state):
 
-        if state == mpx.PlayStatus.STOPPED:
-                self.regen_box()
+        if state == mpx.PlayStatus.STOPPED: self.regen_box()
 
     def new_track(self, blah):
 
@@ -73,9 +106,7 @@ class TrackCover(mpx.Plugin):
         try:
             pixbuf = self.player.get_metadata().get_image()
             if pixbuf:
-                image = gtk.Image()
-                image.set_from_pixbuf(pixbuf.scale_simple( 384, 384, gtk.gdk.INTERP_HYPER ))
-                self.box.pack_end(image, False, False)
-                image.show_all()
+                self.image = pixbuf.scale_simple( 383, 383, gtk.gdk.INTERP_HYPER )
+                self.da.queue_draw()
         except:
             pass

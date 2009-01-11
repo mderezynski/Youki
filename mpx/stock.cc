@@ -76,6 +76,7 @@ namespace MPX
     v.clear();
 
     v.push_back(StockIconSpec( "error.png",                    MPX_STOCK_ERROR             ));
+    v.push_back(StockIconSpec( "add.png",                      "mpx-stock-add"             ));
     register_stock_icons (v, default_stock_path("16x16")); 
   }
 }

@@ -113,26 +113,15 @@ namespace MPX
         cr->set_operator( Cairo::OPERATOR_ATOP );
         RoundedRectangle( cr, xoff+1, yoff+5, cell_area.get_width()-2, text_height[0] + 4, 4. );
 
-        if( state & Gtk::CELL_RENDERER_SELECTED )
-        {
-            Gdk::Cairo::set_source_color( cr, widget.get_style()->get_text(Gtk::STATE_SELECTED) );
-            cr->fill ();
-        }
-        else
-        {
-            cr->set_source_rgba(.25, .25, .25, 1.);
-            cr->fill ();
-        }
+        cr->set_source_rgba(.25, .25, .25, 1.);
+        cr->fill ();
 
         cr->move_to(
               xoff + 2 + XPAD
             , yoff + 5 + YPAD
         );
 
-        if( state & Gtk::CELL_RENDERER_SELECTED )
-            Gdk::Cairo::set_source_color( cr, widget.get_style()->get_text(Gtk::STATE_NORMAL) );
-        else
-            cr->set_source_rgba(1., 1., 1., 1.);
+        cr->set_source_rgba(1., 1., 1., 1.);
 
         pango_cairo_show_layout( cr->cobj(), layout[0]->gobj() );
 
@@ -167,10 +156,7 @@ namespace MPX
         layout[2]->set_text( info->Release );
         layout[2]->get_pixel_size( text_width[2], text_height[2] );
 
-        if( state & Gtk::CELL_RENDERER_SELECTED )
-            Gdk::Cairo::set_source_color( cr, widget.get_style()->get_text(Gtk::STATE_NORMAL) );
-        else
-            cr->set_source_rgba(.9, .9, .9, 1.);
+        cr->set_source_rgba(.9, .9, .9, 1.);
 
         cr->move_to(
               xoff + cell_area.get_width() - text_width[2] - 4 

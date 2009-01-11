@@ -718,6 +718,7 @@ AC_CONFIG_FILES([
 	python/plugins/trackinfo-webkit/__init__.py
 	python/plugins/tracktags/Makefile
 	python/plugins/trackcover/Makefile
+	python/plugins/trackcover/__init__.py
 	python/plugins/osd/Makefile
 	python/plugins/osd/__init__.py
 	python/plugins/mpxdj/Makefile

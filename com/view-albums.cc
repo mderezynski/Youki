@@ -1073,18 +1073,21 @@ namespace MPX
                             gint64          id
                         )
                         {
-                                std::string asin;
-                                std::string year; 
-                                std::string country;
                                 std::string artist;
-                                std::string type;
-                                std::string rt_string;
+                                std::string artist_sort;
+                                std::string asin;
+                                std::string country;
                                 std::string genre;
                                 std::string mbid;
                                 std::string mbid_artist;
-                                double      playscore = 0;
-                                gint64      rating = 0;
-                                gint64      quality = -1;
+                                std::string rt_string;
+                                std::string type;
+                                std::string year; 
+
+                                double      playscore   = 0;
+                                gint64      quality     = -1; //FIXME: Use boost::optional
+                                gint64      rating      = 0;
+
                                 ReleaseType rt;
 
                                 Track_sp p (new Track);
@@ -1175,15 +1178,20 @@ namespace MPX
                                         track[ATTRIBUTE_MB_RELEASE_TYPE] = type; 
                                 }
 
+                                if(r.find("album_artist") != r.end())
+                                {
+                                        artist = get<std::string>(r["album_artist"]);
+                                        track[ATTRIBUTE_ALBUM_ARTIST] = artist; 
+                                }
+
                                 if(r.find("album_artist_sortname") != r.end())
                                 {
-                                        artist = get<std::string>(r["album_artist_sortname"]);
-                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
+                                        artist_sort = get<std::string>(r["album_artist_sortname"]); 
+                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist_sort; 
                                 }
                                 else
                                 {
-                                        artist = get<std::string>(r["album_artist"]);
-                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
+                                        artist_sort = artist;
                                 }
 
                                 trim(country);
@@ -1198,12 +1206,13 @@ namespace MPX
                                 (*iter)[Columns.AlbumArtist] = artist;
 
                                 (*iter)[Columns.AlbumId] = get<gint64>(r["id"]);
-                                (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
                                 (*iter)[Columns.AlbumMBID] = mbid; 
 
                                 (*iter)[Columns.AlbumArtistId] = get<gint64>(r["album_artist_j"]);
-                                (*iter)[Columns.AlbumArtistSort] = ustring(artist).collate_key();
                                 (*iter)[Columns.AlbumArtistMBID] = mbid_artist; 
+
+                                (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
+                                (*iter)[Columns.AlbumArtistSort] = ustring(artist_sort).collate_key();
 
                                 (*iter)[Columns.RT] = rt; 
                                 (*iter)[Columns.AlbumTrack] = p;
@@ -1214,8 +1223,8 @@ namespace MPX
 
                                 AlbumInfo_pt renderdata (new AlbumInfo);
                                 renderdata->Name = album; 
-                                renderdata->Artist = artist;
-                                renderdata->Release = (boost::format("%s %s") % country % year).str();
+                                renderdata->Artist = artist_sort;
+                                renderdata->Release = country.empty() ? (year.empty() ? "" : year) : (year.empty() ? country : (boost::format("%s %s") % country % year).str());
                                 renderdata->Type = rt_string;
                                 renderdata->Genre = genre;
                                 renderdata->Qual = quality; 
@@ -1613,7 +1622,7 @@ namespace MPX
                                 {
                                          if( m_MouseOverIter && iter == m_MouseOverIter.get() )
                                           {
-                                                    cell->property_stock_id() = "gtk-add";
+                                                    cell->property_stock_id() = "mpx-stock-add";
                                                     cell->property_stock_size() = ICON_SIZE_MENU; // 16
                                           }
                                           else
