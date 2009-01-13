@@ -624,8 +624,9 @@ class ArtistInfoQuery (threading.Thread):
                 self.html += "<div class='SectionContent'>"
                 self.html += "<br/><b>%s</b>(%s): <br/>" % (entity.getName(), self.artistid)
                 self.html += append_artist_rels(entity)
-                self.html += "<br/><br/>"
+                self.html += "<table style='width: 100%'>"
                 self.html += append_url_rels(entity)
+                self.html += "</table>"
                 self.html += "</div>"
         except Exception, e:
                 print "Error: " + str(e)
@@ -716,7 +717,7 @@ class TrackInfoQuery (threading.Thread):
     def APPEND_Lyrics(self):
 
         req  = urllib2.urlopen("http://lyricwiki.org/api.php?fmt=text&artist=%s&song=%s"
-                % (urllib.quote(self.track[mpx.AttributeId.ARTIST].get()), urllib.quote(self.track[mpx.AttributeId.TITLE].get())))
+                % (urllib.quote(self.track[mpx.AttributeId.ARTIST].get().encode("utf-8")), urllib.quote(self.track[mpx.AttributeId.TITLE].get().encode("utf-8"))))
 
         lyrics = req.read()
 
@@ -724,7 +725,7 @@ class TrackInfoQuery (threading.Thread):
 
             self.html += Template(tmpl_section_header).render(header='Lyrics')
             self.html += "<div class='SectionContent'>"
-            self.html += "<a href='%s'>(Edit Lyrics on LyricWiki)</a>" % ("http://lyricwiki.org/index.php?title=%s:%s&action=edit" % (urllib.quote(self.track[mpx.AttributeId.ARTIST].get()), urllib.quote(self.track[mpx.AttributeId.TITLE].get())))
+            self.html += "<a href='%s'>(Edit Lyrics on LyricWiki)</a>" % ("http://lyricwiki.org/index.php?title=%s:%s&action=edit" % (urllib.quote(self.track[mpx.AttributeId.ARTIST].get().encode("utf-8")), urllib.quote(self.track[mpx.AttributeId.TITLE].get().encode("utf-8"))))
             self.html += "<br/>"
             self.html += "<br/>"
             self.html += lyrics.replace("\n","<br/>")
@@ -809,16 +810,16 @@ class TrackInfoQuery (threading.Thread):
 
             self.html += Template(tmpl_section_header).render(header=_('Album Links'))
             self.html += "<div class='SectionContent'>"
+            self.html += "<table style='width: 100%'>"
 
             if self.track[mpx.AttributeId.ALBUM_ARTIST] and self.track[mpx.AttributeId.ALBUM]: 
-                self.html += "<a href='http://rateyourmusic.com/release/album/%s/%s/'>RateYourMusic</a>" % (self.track[mpx.AttributeId.ALBUM_ARTIST].get().replace(" ","_").lower(), self.track[mpx.AttributeId.ALBUM].get().replace(" ","_").lower())
+                url = "http://rateyourmusic.com/release/album/%s/%s/" % (self.track[mpx.AttributeId.ALBUM_ARTIST].get().replace(" ","_").lower(), self.track[mpx.AttributeId.ALBUM].get().replace(" ","_").lower())
+                self.html += "<tr><td style='width: 30%'>RateYourMusic:</td><td><a href='"+url+"'>"+url+"</a></td></tr>"
 
             if self.track[mpx.AttributeId.MB_ALBUM_ID]: 
-                url_rels = append_url_rels(self.query.getReleaseById(self.track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release))
-                if len(url_rels) > 0:
-                    self.html += ", ";
-                    self.html += url_rels
+                self.html += append_url_rels(self.query.getReleaseById(self.track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release))
 
+            self.html += "</table>"
             self.html += "</div>"
 
             # Contributor Links
@@ -834,15 +835,15 @@ class TrackInfoQuery (threading.Thread):
 
                     entity = self.query.getArtistById(id, self.wsinc)   
 
-                    self.html += "<span style='font-weight:bold; font-size: large'>%s</span><br/><br/>" % entity.getName()
+                    self.html += "<span style='font-weight:bold; font-size: large'>%s</span>" % entity.getName()
 
                     artist_rels = append_artist_rels(entity)
                     if len(artist_rels): self.html += artist_rels 
 
                     self.html += "<table style='width: 100%'>"
-                    self.APPEND_MBData_RelLink("Google", "http://www.google.com/search?q=%s" % urllib.quote(entity.getName()))
-                    self.APPEND_MBData_RelLink("Last.fm", "http://www.last.fm/music/%s" % urllib.quote_plus(entity.getName()))
-                    self.APPEND_MBData_RelLink("BBC Music", "http://www.bbc.co.uk/music/artists/%s" % id)
+                    self.APPEND_MBData_RelLink("Google", u"http://www.google.com/search?q=%s" % urllib.quote(entity.getName().encode("utf-8")))
+                    self.APPEND_MBData_RelLink("Last.fm", u"http://www.last.fm/music/%s" % urllib.quote_plus(entity.getName().encode("utf-8")))
+                    self.APPEND_MBData_RelLink("BBC Music", u"http://www.bbc.co.uk/music/artists/%s" % id)
                     self.html += append_url_rels(entity)
                     self.html += "<br/><br/>"
 

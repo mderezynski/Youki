@@ -9,14 +9,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: audiosource alpha6\n"
 "Report-Msgid-Bugs-To: http://mpx.backtrace.info/report\n"
-"POT-Creation-Date: 2009-01-05 23:30+0100\n"
+"POT-Creation-Date: 2009-01-11 07:33+0100\n"
 "PO-Revision-Date: 2009-01-05 23:46+0100\n"
 "Last-Translator: Carl Furstenberg <azatoth@gmail.com>\n"
 "Language-Team: Swedish <sv@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: python/plugins/lastfmstuff/__init__.py:139
 msgid "I Love this Track!"
@@ -158,30 +158,30 @@ msgstr "Albumlänkar"
 msgid "Track Artists"
 msgstr "Spårartister"
 
-#: python/plugins/trackinfo-webkit/__init__.py:875
+#: python/plugins/trackinfo-webkit/__init__.py:871
 msgid "is a cover version of"
 msgstr "är en cover-version av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:880
+#: python/plugins/trackinfo-webkit/__init__.py:876
 #, python-format
 msgid "...has <b>%s</b> performed by <b>%s</b>"
 msgstr "... har <b>%s</b> framfört av <b>%s</b>"
 
-#: python/plugins/trackinfo-webkit/__init__.py:881
+#: python/plugins/trackinfo-webkit/__init__.py:877
 #, python-format
 msgid "...has <b>%s %s</b> performed by <b>%s</b>"
 msgstr "...har <b>%s %s</b> framfört av <b>%s</b>"
 
-#: python/plugins/trackinfo-webkit/__init__.py:882
+#: python/plugins/trackinfo-webkit/__init__.py:878
 #, python-format
 msgid "...has <b>%s %s %s</b> performed by <b>%s</b>"
 msgstr "...har <b>%s %s %s</b> framfört av <b>%s</b>"
 
-#: python/plugins/trackinfo-webkit/__init__.py:933
+#: python/plugins/trackinfo-webkit/__init__.py:929
 msgid "contains samples from"
 msgstr "innehåller samplar av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:1115
+#: python/plugins/trackinfo-webkit/__init__.py:1111
 msgid "Browser"
 msgstr "Läsare"
 
@@ -383,19 +383,19 @@ msgstr "Soundtrack"
 msgid "Album _Info"
 msgstr "Albums_info"
 
-#: com/view-albums.cc:1732
+#: com/view-albums.cc:1747
 msgid ", highlighting played"
 msgstr ", framhäver spelade"
 
-#: com/view-albums.cc:1734
+#: com/view-albums.cc:1749
 msgid ", highlighting unplayed"
 msgstr ", framhäver ospelade"
 
-#: com/view-albums.cc:1741
+#: com/view-albums.cc:1756
 msgid "release"
 msgstr "släpp"
 
-#: com/view-albums.cc:1741
+#: com/view-albums.cc:1756
 msgid "releases of all kind"
 msgstr "utgåvor av alla dess slag"
 
@@ -602,8 +602,8 @@ msgid ""
 "The check box indicates whether a plugin is active. Plugins with a lock "
 "symbol don't need to be activated."
 msgstr ""
-"Kryssrutan indikerar om ett plugin är aktiverat. Plugin med en "
-"låssymbol behöver inte bli aktiverade."
+"Kryssrutan indikerar om ett plugin är aktiverat. Plugin med en låssymbol "
+"behöver inte bli aktiverade."
 
 #: glade/plugin-manager.glade:131
 msgid "Plugin Details"
@@ -626,7 +626,8 @@ msgid ""
 "<small>Default Path at which MusicBrainz-imported music will be stored.</"
 "small>"
 msgstr ""
-"<small>Standardsökväg med vilken importerad MusicBrainz musik kommer att bli lagrad</small>"
+"<small>Standardsökväg med vilken importerad MusicBrainz musik kommer att bli "
+"lagrad</small>"
 
 #: glade/preferences.glade:180
 msgid "Please select Music import Path"
@@ -2317,4 +2318,3 @@ msgstr ""
 #: widgets/bmp_status_icon.c:193
 msgid "Whether or not the status icon is visible"
 msgstr ""
-

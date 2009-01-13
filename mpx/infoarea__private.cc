@@ -420,6 +420,9 @@ namespace MPX
 
     int x1 = cover_anim_area_x0 + cover_anim_area_width; 
     int width = (allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS - RIGHT_MARGIN) - cover_anim_area_width;
+    int max_width = 0;
+
+    Glib::RefPtr<Pango::Layout> layouts[3];
 
     for( int n = 0; n < 3; ++n )
     {
@@ -431,13 +434,29 @@ namespace MPX
           text_new = m_text_new.get()[n];
       }
 
-      Glib::RefPtr<Pango::Layout> layout = create_pango_layout ("");
-      layout->set_markup(text_cur);
-      layout->set_single_paragraph_mode (true);
-      layout->set_wrap(Pango::WRAP_CHAR);
+      layouts[n] = create_pango_layout ("");
+      layouts[n]->set_markup(text_cur);
+      layouts[n]->set_single_paragraph_mode (true);
+      layouts[n]->set_wrap(Pango::WRAP_CHAR);
 
       Pango::Rectangle Ink;
-      layout->get_pixel_extents(Ink, layout_extents[n]);
+      layouts[n]->get_pixel_extents(Ink, layout_extents[n]);
+        
+      if( max_width < layout_extents[n].get_width())
+          max_width = layout_extents[n].get_width();
+
+    }
+
+    if ( max_width <= width )
+    for( int n = 0; n < 3; ++n )
+    {
+      std::string text_cur = m_text_cur.get()[n];
+      std::string text_new;
+
+      if( m_text_new )
+      {
+          text_new = m_text_new.get()[n];
+      }
 
       cr->move_to( x1 + (width - layout_extents[n].get_width())/2, layout_info[n].y);
 
@@ -451,7 +470,7 @@ namespace MPX
       }
 
       cr->set_operator (Cairo::OPERATOR_ATOP);
-      pango_cairo_show_layout (cr->cobj(), layout->gobj());
+      pango_cairo_show_layout (cr->cobj(), layouts[n]->gobj());
     }
   }
 

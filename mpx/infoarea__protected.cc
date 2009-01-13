@@ -114,7 +114,12 @@ namespace MPX
                         Cairo::RefPtr<Cairo::Context> cr = get_window ()->create_cairo_context ();
 
                         draw_background (cr);
-                        draw_cover (cr);
+
+                        if( get_allocation().get_width() > 608 )
+                        {
+                            draw_cover (cr);
+                        }
+
                         draw_spectrum (cr);
                         draw_text (cr);
                         draw_info (cr);
