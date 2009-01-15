@@ -1,16 +1,16 @@
-cmake_minimum_required (VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-project (audiosource)
-set (PACKAGE "audiosource")
-set (PACKAGE_VERSION "0.01")
+PROJECT(audiosource)
+SET(PACKAGE "audiosource")
+SET(PACKAGE_VERSION "0.01")
 
-set (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
-include (CheckIncludeFile)
-include (CheckIncludeFiles)
-include (CheckLibraryExists)
+INCLUDE(CheckIncludeFile)
+INCLUDE(CheckIncludeFiles)
+INCLUDE(CheckLibraryExists)
 
-#subdirs (
+#SUBDIRS(
   #scripts
   #desktop
   #glade
@@ -37,7 +37,7 @@ include (CheckLibraryExists)
   #mpx
 #)
 
-check_include_files (
+CHECK_INCLUDE_FILES(
   argz.h
   arpa/inet.h
   fcntl.h
@@ -64,41 +64,39 @@ check_include_files (
   HAVE_MISC_HEADERS
 )
 
-check_library_exists (socket connect "" HAVE_SOCKET_LIB)
-check_library_exists (nsl getrpcbyname "" HAVE_NSL)
+CHECK_LIBRARY_EXISTS(socket connect "" HAVE_SOCKET_LIB)
+CHECK_LIBRARY_EXISTS(nsl getrpcbyname "" HAVE_NSL)
 
-find_package (Gettext)
+FIND_PACKAGE(Gettext)
 
 # Profilling
-option (ENABLE_PROFILE "Profiling support [DEVELOPERS only] (default=disabled)" "NO")
-mark_as_advanced (FORCE ENABLE_PROFILE)
+OPTION(ENABLE_PROFILE "Profiling support [DEVELOPERS only] (default=disabled)" "NO")
+MARK_AS_ADVANCED(ENABLE_PROFILE)
 
-if (ENABLE_PROFILE)
-  set (C_COMMON_FLAGS "${C_COMMON_FLAGS} -pg -fno-inline")
-endif (ENABLE_PROFILE)
+IF(ENABLE_PROFILE)
+  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -pg -fno-inline")
+ENDIF(ENABLE_PROFILE)
 
 # Debugging
-option (ENABLE_DEBUG "Enable Debugging support [DEVELOPERS only] (default=disabled)" "NO")
-mark_as_advanced (FORCE ENABLE_DEBUG)
+OPTION(ENABLE_DEBUG "Enable Debugging support [DEVELOPERS only] (default=disabled)" "NO")
+MARK_AS_ADVANCED(ENABLE_DEBUG)
 
-if (ENABLE_DEBUG)
-  set (C_COMMON_FLAGS "${C_COMMON_FLAGS} -ggdb3")
-  set (CFLAGS "${CFLAGS} -ggdb3")
-endif (ENABLE_DEBUG)
+IF(ENABLE_DEBUG)
+  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -ggdb3")
+  SET(CFLAGS "${CFLAGS} -ggdb3")
+ENDIF(ENABLE_DEBUG)
 
 # CFLAGS/CXXFLAGS
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   # NOTE: We cannot use -pedantic with g++ because GST headers ()@#!@#
   # adds extra commas after the last item in enums
-  set (C_COMMON_FLAGS "${C_COMMON_FLAGS} -fno-strict-aliasing -fmessage-length=0 -Wall -D_FORTIFY_SOURCE=2")
-  set (CFLAGS "${CFLAGS} -std=c99 -pedantic")
-else (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-  set (C_COMMON_FLAGS "${C_COMMON_FLAGS} -Wall -D_FORTIFY_SOURCE=2")
-endif (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -fno-strict-aliasing -fmessage-length=0 -Wall -D_FORTIFY_SOURCE=2")
+  SET(CFLAGS "${CFLAGS} -std=c99 -pedantic")
+ELSE(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -Wall -D_FORTIFY_SOURCE=2")
+ENDIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 
-find_package (X11)
-
-find_package (Boost)
+FIND_PACKAGE(Boost)
 #AX_BOOST_BASE([1.33.1])
 #AX_BOOST_FILESYSTEM
 #AX_BOOST_REGEX
@@ -107,194 +105,189 @@ find_package (Boost)
 
 # C++ TR1 extensions
 
-set (USE_TR1 "YES")
-if (USE_TR1)
-  find_package (CxxTR1)
+SET(USE_TR1 "YES")
+IF(USE_TR1)
+  FIND_PACKAGE(CxxTR1)
+  IF(NOT TR1_FOUND)
+    MESSAGE(FATAL_ERROR "C++ TR1 extensions not found")
+  ENDIF(NOT TR1_FOUND)
+ENDIF(USE_TR1)
 
-  if (NOT TR1_FOUND)
-    message (FATAL_ERROR "C++ TR1 extensions not found")
-  endif (NOT TR1_FOUND)
-endif (USE_TR1)
+FIND_PACKAGE(PkgConfig)
 
-find_package (PkgConfig)
-
-find_package (PythonLibs)
-
-pkg_check_modules (PYGTK REQUIRED pygtk-2.0>=2.12.0)
-message (STATUS "checking for pygtk defs")
-execute_process (COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=defsdir pygtk-2.0
-   OUTPUT_VARIABLE PYGTK_DEFSDIR)
-message (STATUS "  pygtk defs path at ${PYGTK_DEFSDIR}")
-
-pkg_check_modules (XML REQUIRED libxml-2.0>=2.6.1)
-
-pkg_check_modules (SOUP REQUIRED libsoup-2.4>=2.2.10)
-
-pkg_check_modules (SQLITE REQUIRED sqlite3>=3.4)
-
-pkg_check_modules (GLIB   REQUIRED glib-2.0>=2.10.0 gobject-2.0 gthread-2.0 gmodule-2.0)
-pkg_check_modules (GLIBMM REQUIRED glibmm-2.4>=2.8.3)
-pkg_check_modules (SIGC   REQUIRED sigc++-2.0)
+FIND_PACKAGE(X11)
 
 # AM_GLIB_GNU_GETTEXT
 
-#pkg_check_modules (CLUTTER    REQUIRED clutter-0.6 clutter-cairo-0.6 clutter-gtk-0.6)
-pkg_check_modules (GIOMM      REQUIRED giomm-2.4)
-pkg_check_modules (GTK        REQUIRED gtk+-2.0>=2.10.0)
-pkg_check_modules (GTKMM      REQUIRED gtkmm-2.4>=2.6.0)
-pkg_check_modules (LIBGLADEMM REQUIRED libglademm-2.4>=2.6.0)
-pkg_check_modules (CAIROMM    REQUIRED cairomm-1.0>=0.6.0)
-pkg_check_modules (SEXYMM     REQUIRED libsexymm>=0.1.9)
+PKG_CHECK_MODULES(XML    REQUIRED libxml-2.0>=2.6.1)
+PKG_CHECK_MODULES(SOUP   REQUIRED libsoup-2.4>=2.2.10)
+PKG_CHECK_MODULES(SQLITE REQUIRED sqlite3>=3.4)
+
+PKG_CHECK_MODULES(SIGC       REQUIRED sigc++-2.0)
+PKG_CHECK_MODULES(SIGX       REQUIRED sigx-2.0)
+PKG_CHECK_MODULES(GLIB       REQUIRED glib-2.0>=2.10.0 gobject-2.0 gthread-2.0 gmodule-2.0)
+PKG_CHECK_MODULES(GLIBMM     REQUIRED glibmm-2.4>=2.8.3)
+PKG_CHECK_MODULES(GIOMM      REQUIRED giomm-2.4)
+PKG_CHECK_MODULES(GTK        REQUIRED gtk+-2.0>=2.10.0)
+PKG_CHECK_MODULES(GTKMM      REQUIRED gtkmm-2.4>=2.6.0)
+PKG_CHECK_MODULES(GTKGLEXT   REQUIRED gtkglextmm-1.2)
+PKG_CHECK_MODULES(LIBGLADEMM REQUIRED libglademm-2.4>=2.6.0)
+PKG_CHECK_MODULES(CAIROMM    REQUIRED cairomm-1.0>=0.6.0)
+PKG_CHECK_MODULES(SEXYMM     REQUIRED libsexymm>=0.1.9)
+#PKG_CHECK_MODULES(CLUTTER   REQUIRED clutter-0.6 clutter-cairo-0.6 clutter-gtk-0.6)
+PKG_CHECK_MODULES(OFA        REQUIRED libofa>=0.9.3)
+PKG_CHECK_MODULES(GDL        REQUIRED gdl-1.0)
+
+# Python
+FIND_PACKAGE(PythonLibs)
+
+# PyGTK
+PKG_CHECK_MODULES(PYGTK REQUIRED pygtk-2.0>=2.12.0)
+MESSAGE(STATUS "checking for pygtk defs")
+EXECUTE_PROCESS(
+  COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=defsdir pygtk-2.0
+  OUTPUT_VARIABLE PYGTK_DEFSDIR
+)
+MESSAGE(STATUS "  pygtk defs path at ${PYGTK_DEFSDIR}")
 
 # Network Manager
-option (ENABLE_NM "With GNOME NetworkManager" "NO")
+OPTION(ENABLE_NM "With GNOME NetworkManager" "NO")
 
-if (ENABLE_NM)
-  pkg_check_modules (NM REQUIRED NetworkManager>=0.6.0)
-endif (ENABLE_NM)
+IF(ENABLE_NM)
+  PKG_CHECK_MODULES(NM REQUIRED NetworkManager>=0.6.0)
+ENDIF(ENABLE_NM)
 
 # Xerces C
-find_package (XercesC)
-if (NOT XERCESC_FOUND)
-  message (FATAL_ERROR "Xerces not found")
-endif (NOT XERCESC_FOUND)
+FIND_PACKAGE(XercesC)
+IF(NOT XERCESC_FOUND)
+  MESSAGE(FATAL_ERROR "Xerces not found")
+ENDIF(NOT XERCESC_FOUND)
 
-pkg_check_modules (GST              REQUIRED gstreamer-0.10>=0.10.14 gstreamer-base-0.10>=0.10.14)
-pkg_check_modules (GST_PLUGINS_BASE REQUIRED gstreamer-plugins-base-0.10>=0.10.9)
+PKG_CHECK_MODULES(GST              REQUIRED gstreamer-0.10>=0.10.14 gstreamer-base-0.10>=0.10.14)
+PKG_CHECK_MODULES(GST_PLUGINS_BASE REQUIRED gstreamer-plugins-base-0.10>=0.10.9)
 
-pkg_check_modules (DBUS REQUIRED dbus-1>=0.93 dbus-glib-1>=0.61)
-execute_process (COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=prefix dbus-1
-  OUTPUT_VARIABLE DEFAULT_DBUS_PREFIX)
+# D-Bus
 
-option (DBUS_SERVICES_DIR "D-BUS services file destination dir" "${DEFAULT_DBUS_PREFIX}/share/dbus-1/services")
+OPTION(DBUS_SERVICES_DIR "D-BUS services file destination dir" "${DEFAULT_DBUS_PREFIX}/share/dbus-1/services")
 
-find_program (DBUSBINDINGTOOL "dbus-binding-tool")
+PKG_CHECK_MODULES(DBUS REQUIRED dbus-1>=0.93 dbus-glib-1>=0.61)
+EXECUTE_PROCESS(
+  COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=prefix dbus-1
+  OUTPUT_VARIABLE DEFAULT_DBUS_PREFIX
+)
 
-execute_process (COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=glib_genmarshal glib-2.0
-  OUTPUT_VARIABLE GLIB_GENMARSHAL)
+FIND_PROGRAM(DBUSBINDINGTOOL "dbus-binding-tool")
 
+EXECUTE_PROCESS(
+  COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=glib_genmarshal glib-2.0
+  OUTPUT_VARIABLE GLIB_GENMARSHAL
+)
 
 # HAL
-option (ENABLE_HAL "Storage management with HAL (default=enabled)" "YES")
+OPTION(ENABLE_HAL "Storage management with HAL (default=enabled)" "YES")
 
-if (ENABLE_HAL)
-  pkg_check_modules (HAL REQUIRED hal>=0.5.7.1 hal-storage>=0.5.7.1)
-  include (${PROJECT_SOURCE_DIR}/cmake/TestForHALPSI.cmake)
+IF(ENABLE_HAL)
+  PKG_CHECK_MODULES(HAL REQUIRED hal>=0.5.7.1 hal-storage>=0.5.7.1)
+  INCLUDE(${PROJECT_SOURCE_DIR}/cmake/TestForHALPSI.cmake)
 
-  pkg_check_modules (HAL_058 hal>=0.5.8.1 hal-storage>=0.5.8.1)
+  PKG_CHECK_MODULES(HAL_058 hal>=0.5.8.1 hal-storage>=0.5.8.1)
 
-  add_subdirectory (libhal++)
-endif (ENABLE_HAL)
+  ADD_SUBDIRECTORY(libhal++)
+ENDIF(ENABLE_HAL)
 
-pkg_check_modules (TAGLIB REQUIRED taglib-gio>=1.4)
+PKG_CHECK_MODULES(TAGLIB REQUIRED taglib-gio>=1.4)
 
 # libsidplay (v1.x)
-option (ENABLE_SIDPLAY ".sid/.psid taglib support" "NO")
-
-if (ENABLE_SIDPLAY)
-  find_package (SIDPlay)
-  if (NOT SIDPLAY_FOUND)
-    message (FATAL_ERROR "libsidplay 1.x not found!")
-  endif (NOT SIDPLAY_FOUND)
-endif (ENABLE_SIDPLAY)
+OPTION(ENABLE_SIDPLAY ".sid/.psid taglib support" "NO")
+IF(ENABLE_SIDPLAY)
+  FIND_PACKAGE(SIDPlay)
+  IF(NOT SIDPLAY_FOUND)
+    MESSAGE(FATAL_ERROR "libsidplay 1.x not found!")
+  ENDIF(NOT SIDPLAY_FOUND)
+ENDIF(ENABLE_SIDPLAY)
 
 # ModPlug check
-option (ENABLE_MOD "modplug taglib support" "NO")
-
-if (ENABLE_MOD)
-  pkg_check_modules (MOD REQUIRED libmodplug>=0.7)
-endif (ENABLE_MOD)
+OPTION(ENABLE_MOD "modplug taglib support" "NO")
+IF(ENABLE_MOD)
+  PKG_CHECK_MODULES(MOD REQUIRED libmodplug>=0.7)
+ENDIF(ENABLE_MOD)
 
 # SMlib/ICE
-option (ENABLE_SM "Session management support with SMlib (default=enabled" "YES")
-
-if (ENABLE_SM)
-  find_package (SMlib)
-  if (NOT SM_FOUND)
-    message (FATAL_ERROR "Cannot find SMlib")
-  endif (NOT SM_FOUND)
-endif (ENABLE_SM)
+OPTION(ENABLE_SM "Session management support with SMlib (default=enabled" "YES")
+IF(ENABLE_SM)
+  FIND_PACKAGE(SMlib)
+  IF(NOT SM_FOUND)
+    MESSAGE(FATAL_ERROR "Cannot find SMlib")
+  ENDIF(NOT SM_FOUND)
+ENDIF(ENABLE_SM)
 
 # Startup Notifications
-option (ENABLE_SN "Enable Startup Notification (default=enabled)" "YES")
-
-if (ENABLE_SN)
-  pkg_check_modules (STARTUP_NOTIFY REQUIRED libstartup-notification-1.0>=0.8)
-  set (ENABLE_SN_DESKTOP "YES")
-else (ENABLE_SN)
-  set (ENABLE_SN_DESKTOP "NO")
-endif (ENABLE_SN)
+OPTION(ENABLE_SN "Enable Startup Notification (default=enabled)" "YES")
+IF(ENABLE_SN)
+  PKG_CHECK_MODULES(STARTUP_NOTIFY REQUIRED libstartup-notification-1.0>=0.8)
+  SET(ENABLE_SN_DESKTOP "YES")
+ELSE(ENABLE_SN)
+  SET(ENABLE_SN_DESKTOP "NO")
+ENDIF(ENABLE_SN)
 
 # Zip
-find_program (ZIP "zip")
-if (NOT ZIP)
-  set (HAVE_ZIP "NO")
-endif (NOT ZIP)
-
-pkg_check_modules (OFA REQUIRED libofa>=0.9.3)
-
-pkg_check_modules (GDL REQUIRED gdl-1.0)
-
-pkg_check_modules (SIGX REQUIRED sigx-2.0)
-
-# GTKGLEXT
-pkg_check_modules (GTKGLEXT REQUIRED gtkglextmm-1.2)
+FIND_PROGRAM(ZIP "zip")
+IF(NOT ZIP)
+  SET(HAVE_ZIP "NO")
+ENDIF(NOT ZIP)
 
 # GAMIN
-check_library_exists (fam FAMOpen "" HAVE_FAM)
-check_library_exists (fam FAMNoExists "" HAVE_FAMNOEXISTS)
-check_include_file (fam.h HAVE_FAM_H)
+CHECK_LIBRARY_EXISTS(fam FAMOpen "" HAVE_FAM)
+CHECK_LIBRARY_EXISTS(fam FAMNoExists "" HAVE_FAMNOEXISTS)
+CHECK_INCLUDE_FILE(fam.h HAVE_FAM_H)
 
 # FIXME: Determine default sink to use depending on target system
-set (DEFAULT_SINK "autoaudiosink")
-set (DEFAULT_DEVICE "/dev/dsp")
+SET(DEFAULT_SINK "autoaudiosink")
+SET(DEFAULT_DEVICE "/dev/dsp")
 
-set (DEFAULT_DEVICE_OSS  "/dev/dsp0")
-set (DEFAULT_DEVICE_ALSA "default")
-set (DEFAULT_DEVICE_SUN  "/dev/audio")
-set (DEFAULT_DEVICE_ESD  "localhost")
+SET(DEFAULT_DEVICE_OSS  "/dev/dsp0")
+SET(DEFAULT_DEVICE_ALSA "default")
+SET(DEFAULT_DEVICE_SUN  "/dev/audio")
+SET(DEFAULT_DEVICE_ESD  "localhost")
 
 # CDDA
-find_package (CDSupport)
-if (NOT CDIO_FOUND AND NOT CDDA_FOUND)
-  message (FATAL_ERROR "No CDDA libraries found")
-endif (NOT CDIO_FOUND AND NOT CDDA_FOUND)
+FIND_PACKAGE(CDSupport)
+IF(NOT CDIO_FOUND AND NOT CDDA_FOUND)
+  MESSAGE(FATAL_ERROR "No CDDA libraries found")
+ENDIF(NOT CDIO_FOUND AND NOT CDDA_FOUND)
 
 # Multimedia keys
-pkg_check_modules (XPROTO xproto>=7.0.10)
+PKG_CHECK_MODULES(XPROTO xproto>=7.0.10)
 
 # TODO: Turn these into options
-set (MPX_PREFIX      ${CMAKE_INSTALL_PREFIX})
-set (MPX_EXEC_PREFIX ${CMAKE_INSTALL_PREFIX})
-set (MPX_INCLUDEDIR  ${CMAKE_INSTALL_PREFIX}/include)
-set (MPX_LIBDIR      ${CMAKE_INSTALL_PREFIX}/lib) # fix this for 64-bit platforms
-set (MPX_LIBEXECDIR  ${CMAKE_INSTALL_PREFIX}/libexec)
+SET(MPX_PREFIX      ${CMAKE_INSTALL_PREFIX})
+SET(MPX_EXEC_PREFIX ${CMAKE_INSTALL_PREFIX})
+SET(MPX_INCLUDEDIR  ${CMAKE_INSTALL_PREFIX}/include)
+SET(MPX_LIBDIR      ${CMAKE_INSTALL_PREFIX}/lib) # fix this for 64-bit platforms
+SET(MPX_LIBEXECDIR  ${CMAKE_INSTALL_PREFIX}/libexec)
+SET(PLUGIN_DIR      ${CMAKE_INSTALL_LIBDIR}/${PACKAGE}/plugins)
+SET(LOCALE_DIR      ${CMAKE_INSTALL_LIBDIR}/share/locale)
+SET(DATA_DIR        ${CMAKE_INSTALL_PREFIX}/share/${PACKAGE})
 
-set (PLUGIN_DIR "${CMAKE_INSTALL_LIBDIR}/${PACKAGE}/plugins")
-set (LOCALE_DIR "${localedir}")
-set (DATA_DIR   "${CMAKE_INSTALL_PREFIX}/share/${PACKAGE}")
+SET(MPX_DBUS_SERVICE_ "\"org.mpris.mpx\"")
+SET(MPX_DBUS_INTERFACE__MPRIS_ "\"org.freedesktop.MediaPlayer\"")
+SET(MPX_DBUS_PATH__MPRIS_ROOT_ "\"/\"")
+SET(MPX_DBUS_PATH__MPRIS_PLAYER_ "\"/Player\"")
+SET(MPX_DBUS_PATH__MPRIS_TRACKLIST_ "\"/TrackList\"")
 
-set (MPX_DBUS_SERVICE_ "\"org.mpris.mpx\"")
-set (MPX_DBUS_INTERFACE__MPRIS_ "\"org.freedesktop.MediaPlayer\"")
-set (MPX_DBUS_PATH__MPRIS_ROOT_ "\"/\"")
-set (MPX_DBUS_PATH__MPRIS_PLAYER_ "\"/Player\"")
-set (MPX_DBUS_PATH__MPRIS_TRACKLIST_ "\"/TrackList\"")
+SET(MPX_DBUS_INTERFACE__MPX_ "\"info.backtrace.mpx\"")
+SET(MPX_DBUS_PATH__MPX_ "\"/MPX\"")
 
-set (MPX_DBUS_INTERFACE__MPX_ "\"info.backtrace.mpx\"")
-set (MPX_DBUS_PATH__MPX_ "\"/MPX\"")
+SET(PLUGIN_VERSION "10")
 
-set (PLUGIN_VERSION "10")
+SET(HAVE_BMP "YES")
 
-set (HAVE_BMP "YES")
+SET(CFLAGS "${CFLAGS} ${C_COMMON_FLAGS}")
+SET(CXXFLAGS "${CXXFLAGS} ${C_COMMON_FLAGS}")
 
-set (CFLAGS "${CFLAGS} ${C_COMMON_FLAGS}")
-set (CXXFLAGS "${CXXFLAGS} ${C_COMMON_FLAGS}")
-
-
-configure_file (${PROJECT_SOURCE_DIR}/mpx.1.in ${PROJECT_BINARY_DIR}/mpx.1)
-configure_file (${PROJECT_SOURCE_DIR}/mpx.pc.in ${PROJECT_BINARY_DIR}/mpx.pc)
-configure_file (${PROJECT_SOURCE_DIR}/info.backtrace.mpx.service.in ${PROJECT_BINARY_DIR}/info.backtrace.mpx.service)
-configure_file (${PROJECT_SOURCE_DIR}/info.backtrace.sentinel.service.in ${PROJECT_BINARY_DIR}/info.backtrace.sentinel.service)
-configure_file (${PROJECT_SOURCE_DIR}/desktop/mpx.desktop.in ${PROJECT_BINARY_DIR}/desktop/mpx.desktop)
-
-configure_file (${PROJECT_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/mpx.1.in ${PROJECT_BINARY_DIR}/mpx.1)
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/mpx.pc.in ${PROJECT_BINARY_DIR}/mpx.pc)
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/info.backtrace.mpx.service.in ${PROJECT_BINARY_DIR}/info.backtrace.mpx.service)
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/info.backtrace.sentinel.service.in ${PROJECT_BINARY_DIR}/info.backtrace.sentinel.service)
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/desktop/mpx.desktop.in ${PROJECT_BINARY_DIR}/desktop/mpx.desktop)
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)
