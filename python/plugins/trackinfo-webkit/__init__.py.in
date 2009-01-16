@@ -43,15 +43,15 @@ body {
     padding-left: 0.5em;
     padding-right: 0.5em;
     color: #404040;
-    background-color: #000000;
+    background-color: #dfdfdf;
     padding-left: 3em;
     padding-right: 3em;
 }
 
 .SectionHeaderSmall {
 
-    background-color: #9fa782;
-    border-color: #9fa782;
+    background-color: #1d96dc;
+    border-color: #1d96dc;
     border-width: 4px;
     border-style: solid;
     color: white;
@@ -75,9 +75,8 @@ body {
 }
 
 .SectionHeader {
-
-    background-color: #9fa782;
-    border-color: #9fa782;
+    background-color: #1d96dc;
+    border-color: #1d96dc;
     border-width: 4px;
     border-style: solid;
     color: white;
@@ -93,12 +92,12 @@ body {
 .SectionContent {
     -webkit-border-bottom-left-radius: 10px;
     -webkit-border-bottom-right-radius: 10px;
-    border-color: #dfdfdf;
+    border-color: #1d96dc;
     border-width: 2px;
     border-style: solid;
     padding: 0.5em;
     margin-bottom: 1.5em;
-    background-color: #dfdfdf;
+    background-color: #ffffff;
     font-size: 115%;
 }
 
@@ -539,7 +538,7 @@ def append_url_rels(entity):
 
             rls = rel_links[a]
             for rel in rls:
-                html += "<tr><td style='padding-right: 1em'>"+mapping[a]+"</td><td><a href='"+rel.getTargetId()+"'>"+rel.getTargetId()+"</a></td></tr>"
+                html += "<tr><td style='width: 25%'>"+mapping[a]+":</td><td><a href='"+rel.getTargetId()+"'>"+rel.getTargetId()+"</a></td></tr>"
 
     return html 
 
@@ -617,7 +616,7 @@ class ArtistInfoQuery (threading.Thread):
         except Exception, e:
                 print "Error: " + str(e)
         
-        self.html += Template(tmpl_section_header).render(header=_('Contributor Links'))
+        self.html += Template(tmpl_section_header).render(header=_('Track Artists'))
 
         try:
                 entity = self.query.getArtistById(self.artistid, self.wsinc)   
@@ -733,7 +732,7 @@ class TrackInfoQuery (threading.Thread):
 
     def APPEND_MBData_RelLink(self, linktitle, linkurl):
 
-        self.html += "<tr><td style='padding-right: 1em'>" + linktitle +":</td><td><a href='"+linkurl+"'>"+linkurl+"</a></td></tr>"
+        self.html += "<tr><td style='width: 25%'>" + linktitle +":</td><td><a href='"+linkurl+"'>"+linkurl+"</a></td></tr>"
 
     def APPEND_MBData(self):
 
@@ -814,7 +813,7 @@ class TrackInfoQuery (threading.Thread):
 
             if self.track[mpx.AttributeId.ALBUM_ARTIST] and self.track[mpx.AttributeId.ALBUM]: 
                 url = "http://rateyourmusic.com/release/album/%s/%s/" % (self.track[mpx.AttributeId.ALBUM_ARTIST].get().replace(" ","_").lower(), self.track[mpx.AttributeId.ALBUM].get().replace(" ","_").lower())
-                self.html += "<tr><td style='width: 30%'>RateYourMusic:</td><td><a href='"+url+"'>"+url+"</a></td></tr>"
+                self.html += "<tr><td style='width: 25%'>RateYourMusic:</td><td><a href='"+url+"'>"+url+"</a></td></tr>"
 
             if self.track[mpx.AttributeId.MB_ALBUM_ID]: 
                 self.html += append_url_rels(self.query.getReleaseById(self.track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release))
@@ -835,17 +834,24 @@ class TrackInfoQuery (threading.Thread):
 
                     entity = self.query.getArtistById(id, self.wsinc)   
 
+                    self.html += "<div style='margin-bottom: 0.5em'>"
                     self.html += "<span style='font-weight:bold; font-size: large'>%s</span>" % entity.getName()
 
                     artist_rels = append_artist_rels(entity)
-                    if len(artist_rels): self.html += artist_rels 
+
+                    if len(artist_rels):
+                        self.html += "<br/><br/>"
+                        self.html += append_artist_rels(entity)
+                        self.html += "<br/><br/>"
 
                     self.html += "<table style='width: 100%'>"
                     self.APPEND_MBData_RelLink("Google", u"http://www.google.com/search?q=%s" % urllib.quote(entity.getName().encode("utf-8")))
                     self.APPEND_MBData_RelLink("Last.fm", u"http://www.last.fm/music/%s" % urllib.quote_plus(entity.getName().encode("utf-8")))
                     self.APPEND_MBData_RelLink("BBC Music", u"http://www.bbc.co.uk/music/artists/%s" % id)
                     self.html += append_url_rels(entity)
-                    self.html += "<br/><br/>"
+                    self.html += "</table>"
+
+                    self.html += "</div>"
 
 
                 self.html += "</div>"
