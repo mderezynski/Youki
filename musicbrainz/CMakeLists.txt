@@ -24,7 +24,7 @@ INCLUDE_DIRECTORIES(
   ${XML_INCLUDE_DIRS}
 )
 
-ADD_LIBRARY(mpx_musicbrainz STATIC ${mpx_musicbrainz_SOURCES})
+ADD_LIBRARY(mpx_musicbrainz SHARED ${mpx_musicbrainz_SOURCES})
 
 TARGET_LINK_LIBRARIES(mpx_musicbrainz
   ${Boost_FILESYSTEM_LIBRARY}

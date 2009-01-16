@@ -1,23 +1,23 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-/* Name of package */
-#cmakedefine PACKAGE
+/* Define to the name of this package */
+#define PACKAGE             "@PACKAGE@"
 
 /* Define to the address where bug reports for this package should be sent. */
-#cmakedefine PACKAGE_BUGREPORT
+#define PACKAGE_BUGREPORT   "@PACKAGE_BUGREPORT@"
 
 /* Define to the full name of this package. */
-#cmakedefine PACKAGE_NAME
+#define PACKAGE_NAME        "@PACKAGE_NAME@"
 
 /* Define to the full name and version of this package. */
-#cmakedefine PACKAGE_STRING
+#define PACKAGE_STRING      "@PACKAGE_STRING@"
 
 /* Define to the one symbol short name of this package. */
-#cmakedefine PACKAGE_TARNAME
+#define PACKAGE_TARNAME     "@PACKAGE_TARNAME@"
 
 /* Define to the version of this package. */
-#cmakedefine PACKAGE_VERSION
+#define PACKAGE_VERSION     "@PACKAGE_VERSION@"
 
 /* Building with debug or profiling information */
 #cmakedefine WITH_DEBUG
@@ -29,25 +29,27 @@
 #cmakedefine HAVE_FREEBSD
 #cmakedefine HAVE_SUN
 
+#define PREFIX              "@CMAKE_INSTALL_PREFIX@"
+
 /* Data directories */
-#cmakedefine DATA_DIR
-#cmakedefine LOCALE_DIR
+#define DATA_DIR            "@DATA_DIR@"
+#define LOCALE_DIR          "@LOCALE_DIR@"
 
 /* Plugins settings */
-#cmakedefine PLUGIN_DIR
-#cmakedefine PLUGIN_VERSION
+#define PLUGIN_DIR          "@PLUGIN_DIR@"
+#define PLUGIN_VERSION      "@PLUGIN_VERSION@"
 
 /* Directory for D-BUS service files */
-#cmakedefine DBUS_SERVICES_DIR
+#define DBUS_SERVICES_DIR   "@DBUS_SERVICES_DIR@"
 
 /* default devices */
-#cmakedefine DEFAULT_DEVICE_ALSA
-#cmakedefine DEFAULT_DEVICE_ESD
-#cmakedefine DEFAULT_DEVICE_OSS
-#cmakedefine DEFAULT_DEVICE_SUN
+#define DEFAULT_DEVICE_ALSA "@DEFAULT_DEVICE_ALSA@"
+#define DEFAULT_DEVICE_ESD  "@DEFAULT_DEVICE_ESD@"
+#define DEFAULT_DEVICE_OSS  "@DEFAULT_DEVICE_OSS@"
+#define DEFAULT_DEVICE_SUN  "@DEFAULT_DEVICE_SUN@"
 
 /* default sink */
-#cmakedefine DEFAULT_SINK
+#define DEFAULT_SINK        "@DEFAULT_SINK@"
 
 /* Defined when having BMP */
 #cmakedefine HAVE_BMP
@@ -62,10 +64,10 @@
 #cmakedefine HAVE_BOOST_FILESYSTEM
 
 /* define if the Boost::IOStreams library is available */
-#cmakedefine  HAVE_BOOST_IOSTREAMS
+#cmakedefine HAVE_BOOST_IOSTREAMS
 
 /* define if the Boost::Python library is available */
-#cmakedefine  HAVE_BOOST_PYTHON
+#cmakedefine HAVE_BOOST_PYTHON
 
 /* define if the Boost::Regex library is available */
 #cmakedefine HAVE_BOOST_REGEX
@@ -98,7 +100,7 @@
 #cmakedefine HAVE_OFA
 
 /* Define to 1 if you have the `fam' library (-lfam). */
-#cmakedefine HAVE_LIBFAM
+#cmakedefine HAVE_FAM
 
 /* Define to 1 if you have the <libintl.h> header file. */
 #cmakedefine HAVE_LIBINTL_H

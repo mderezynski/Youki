@@ -1,8 +1,13 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
 PROJECT(audiosource)
-SET(PACKAGE "audiosource")
-SET(PACKAGE_VERSION "0.01")
+
+SET(PACKAGE           "audiosource")
+SET(PACKAGE_VERSION   "0.01")
+SET(PACKAGE_NAME      "audiosource")
+SET(PACKAGE_BUGREPORT "http://mpx.backtrace.info/report")
+SET(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
+SET(PACKAGE_TARNAME   "audiosource")
 
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
@@ -20,17 +25,8 @@ INCLUDE(CheckLibraryExists)
   #include
   #xsd
   #widgets
-  #musicbrainz
   #com
-  #xmlcpp
   #taglib
-
-  #if HAVE_HAL
-  #endif
-
-  #jnetlib
-  #mcs
-  #remote
   #python
   #sources
   #api
@@ -68,6 +64,7 @@ CHECK_LIBRARY_EXISTS(socket connect "" HAVE_SOCKET_LIB)
 CHECK_LIBRARY_EXISTS(nsl getrpcbyname "" HAVE_NSL)
 
 FIND_PACKAGE(Gettext)
+SET(HAVE_GETTEXT ${GETTEXT_FOUND})
 
 # Profilling
 OPTION(ENABLE_PROFILE "Profiling support [DEVELOPERS only] (default=disabled)" "NO")
@@ -96,20 +93,23 @@ ELSE(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -Wall -D_FORTIFY_SOURCE=2")
 ENDIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 
-FIND_PACKAGE(Boost 1.33.1 COMPONENTS filesystem regex iostreams python)
+# pkg-config
+FIND_PACKAGE(PkgConfig)
 
 # C++ TR1 extensions
-
 SET(USE_TR1 "YES")
 IF(USE_TR1)
   FIND_PACKAGE(CxxTR1)
   IF(NOT TR1_FOUND)
     MESSAGE(FATAL_ERROR "C++ TR1 extensions not found")
   ENDIF(NOT TR1_FOUND)
+  SET(HAVE_TR1 ${TR1_FOUND})
 ENDIF(USE_TR1)
 
-FIND_PACKAGE(PkgConfig)
+# Boost
+FIND_PACKAGE(Boost 1.33.1 COMPONENTS filesystem regex iostreams python)
 
+# X libraries
 FIND_PACKAGE(X11)
 
 # AM_GLIB_GNU_GETTEXT
@@ -132,6 +132,12 @@ PKG_CHECK_MODULES(SQLITE     REQUIRED sqlite3>=3.4)
 PKG_CHECK_MODULES(OFA        REQUIRED libofa>=0.9.3)
 PKG_CHECK_MODULES(GDL        REQUIRED gdl-1.0)
 
+# FIXME: Placed here temporarily
+SET(HAVE_GTK ${GTK_FOUND})
+SET(HAVE_XML ${XML_FOUND})
+SET(HAVE_OFA ${OFA_FOUND})
+SET(HAVE_GDL ${GDL_FOUND})
+
 # Python
 FIND_PACKAGE(PythonLibs)
 
@@ -146,9 +152,9 @@ MESSAGE(STATUS "  pygtk defs path at ${PYGTK_DEFSDIR}")
 
 # Network Manager
 OPTION(ENABLE_NM "With GNOME NetworkManager" "NO")
-
 IF(ENABLE_NM)
   PKG_CHECK_MODULES(NM REQUIRED NetworkManager>=0.6.0)
+  SET(HAVE_NM ${NM_FOUND})
 ENDIF(ENABLE_NM)
 
 # Xerces C
@@ -162,7 +168,7 @@ PKG_CHECK_MODULES(GST_PLUGINS_BASE REQUIRED gstreamer-plugins-base-0.10>=0.10.9)
 
 # D-Bus
 
-OPTION(DBUS_SERVICES_DIR "D-BUS services file destination dir" "${DEFAULT_DBUS_PREFIX}/share/dbus-1/services")
+SET(DBUS_SERVICES_DIR "D-BUS services file destination dir" "${DEFAULT_DBUS_PREFIX}/share/dbus-1/services")
 
 PKG_CHECK_MODULES(DBUS REQUIRED dbus-1>=0.93 dbus-glib-1>=0.61)
 EXECUTE_PROCESS(
@@ -178,8 +184,11 @@ EXECUTE_PROCESS(
 )
 
 # FIXME: Temporarily placed here
+ADD_SUBDIRECTORY(jnetlib)
 ADD_SUBDIRECTORY(musicbrainz)
 ADD_SUBDIRECTORY(xmlcpp)
+ADD_SUBDIRECTORY(mcs)
+ADD_SUBDIRECTORY(remote)
 
 # HAL
 OPTION(ENABLE_HAL "Storage management with HAL (default=enabled)" "YES")
@@ -206,6 +215,7 @@ IF(ENABLE_SIDPLAY)
   IF(NOT SIDPLAY_FOUND)
     MESSAGE(FATAL_ERROR "libsidplay 1.x not found!")
   ENDIF(NOT SIDPLAY_FOUND)
+  SET(HAVE_SID ${SID_FOUND})
 ENDIF(ENABLE_SIDPLAY)
 
 # ModPlug check
@@ -227,9 +237,7 @@ ENDIF(ENABLE_SM)
 OPTION(ENABLE_SN "Enable Startup Notification (default=enabled)" "YES")
 IF(ENABLE_SN)
   PKG_CHECK_MODULES(STARTUP_NOTIFY REQUIRED libstartup-notification-1.0>=0.8)
-  SET(ENABLE_SN_DESKTOP "YES")
-ELSE(ENABLE_SN)
-  SET(ENABLE_SN_DESKTOP "NO")
+  SET(HAVE_STARTUP_NOTIFICATION ${STARTUP_NOTIFY_FOUND})
 ENDIF(ENABLE_SN)
 
 # Zip
@@ -257,6 +265,8 @@ FIND_PACKAGE(CDSupport)
 IF(NOT CDIO_FOUND AND NOT CDDA_FOUND)
   MESSAGE(FATAL_ERROR "No CDDA libraries found")
 ENDIF(NOT CDIO_FOUND AND NOT CDDA_FOUND)
+SET(HAVE_CDIO ${CDIO_FOUND})
+SET(HAVE_CDPARANOIA ${CDDA_FOUND})
 
 # Multimedia keys
 PKG_CHECK_MODULES(XPROTO xproto>=7.0.10)
@@ -286,6 +296,8 @@ SET(HAVE_BMP "YES")
 
 SET(CFLAGS "${CFLAGS} ${C_COMMON_FLAGS}")
 SET(CXXFLAGS "${CXXFLAGS} ${C_COMMON_FLAGS}")
+
+SET_PROPERTY(DIRECTORY PROPERTY COMPILE_DEFINITIONS -DHAVE_CONFIG_H)
 
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/mpx.1.in ${PROJECT_BINARY_DIR}/mpx.1)
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/mpx.pc.in ${PROJECT_BINARY_DIR}/mpx.pc)

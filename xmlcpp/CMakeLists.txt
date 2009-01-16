@@ -19,8 +19,9 @@ INCLUDE_DIRECTORIES(
   ${XERCESC_INCLUDE_DIRS}
 )
 
+ADD_LIBRARY(mpx_parsers SHARED ${mpx_parsers_SOURCES})
+
 TARGET_LINK_LIBRARIES(mpx_parsers
   ${XERCESC_LIBRARIES}
 )
 
-ADD_LIBRARY(mpx_parsers STATIC ${mpx_parsers_SOURCES})
