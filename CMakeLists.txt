@@ -26,7 +26,6 @@ INCLUDE(CheckLibraryExists)
   #xsd
   #widgets
   #com
-  #taglib
   #python
   #sources
   #api
@@ -122,7 +121,7 @@ PKG_CHECK_MODULES(GIOMM      REQUIRED giomm-2.4)
 PKG_CHECK_MODULES(GTK        REQUIRED gtk+-2.0>=2.10.0)
 PKG_CHECK_MODULES(GTKMM      REQUIRED gtkmm-2.4>=2.6.0)
 PKG_CHECK_MODULES(GTKGLEXT   REQUIRED gtkglextmm-1.2)
-PKG_CHECK_MODULES(LIBGLADEMM REQUIRED libglademm-2.4>=2.6.0)
+PKG_CHECK_MODULES(GLADEMM    REQUIRED libglademm-2.4>=2.6.0)
 PKG_CHECK_MODULES(CAIROMM    REQUIRED cairomm-1.0>=0.6.0)
 PKG_CHECK_MODULES(SEXYMM     REQUIRED libsexymm>=0.1.9)
 #PKG_CHECK_MODULES(CLUTTER   REQUIRED clutter-0.6 clutter-cairo-0.6 clutter-gtk-0.6)
@@ -147,6 +146,7 @@ MESSAGE(STATUS "checking for pygtk defs")
 EXECUTE_PROCESS(
   COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=defsdir pygtk-2.0
   OUTPUT_VARIABLE PYGTK_DEFSDIR
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 MESSAGE(STATUS "  pygtk defs path at ${PYGTK_DEFSDIR}")
 
@@ -163,17 +163,19 @@ IF(NOT XERCESC_FOUND)
   MESSAGE(FATAL_ERROR "Xerces not found")
 ENDIF(NOT XERCESC_FOUND)
 
+# GStreamer
 PKG_CHECK_MODULES(GST              REQUIRED gstreamer-0.10>=0.10.14 gstreamer-base-0.10>=0.10.14)
 PKG_CHECK_MODULES(GST_PLUGINS_BASE REQUIRED gstreamer-plugins-base-0.10>=0.10.9)
 
 # D-Bus
 
-SET(DBUS_SERVICES_DIR "D-BUS services file destination dir" "${DEFAULT_DBUS_PREFIX}/share/dbus-1/services")
+SET(DBUS_SERVICES_DIR "${DEFAULT_DBUS_PREFIX}/share/dbus-1/services")
 
 PKG_CHECK_MODULES(DBUS REQUIRED dbus-1>=0.93 dbus-glib-1>=0.61)
 EXECUTE_PROCESS(
   COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=prefix dbus-1
   OUTPUT_VARIABLE DEFAULT_DBUS_PREFIX
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
 FIND_PROGRAM(DBUSBINDINGTOOL "dbus-binding-tool")
@@ -181,6 +183,7 @@ FIND_PROGRAM(DBUSBINDINGTOOL "dbus-binding-tool")
 EXECUTE_PROCESS(
   COMMAND ${PKG_CONFIG_EXECUTABLE} --variable=glib_genmarshal glib-2.0
   OUTPUT_VARIABLE GLIB_GENMARSHAL
+  OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
 # FIXME: Temporarily placed here
@@ -189,6 +192,9 @@ ADD_SUBDIRECTORY(musicbrainz)
 ADD_SUBDIRECTORY(xmlcpp)
 ADD_SUBDIRECTORY(mcs)
 ADD_SUBDIRECTORY(remote)
+#ADD_SUBDIRECTORY(sentinel)
+#ADD_SUBDIRECTORY(taglib)
+ADD_SUBDIRECTORY(widgets)
 
 # HAL
 OPTION(ENABLE_HAL "Storage management with HAL (default=enabled)" "YES")
@@ -222,6 +228,7 @@ ENDIF(ENABLE_SIDPLAY)
 OPTION(ENABLE_MOD "modplug taglib support" "NO")
 IF(ENABLE_MOD)
   PKG_CHECK_MODULES(MOD REQUIRED libmodplug>=0.7)
+  SET(HAVE_MOD ${MOD_FOUND})
 ENDIF(ENABLE_MOD)
 
 # SMlib/ICE
@@ -231,6 +238,7 @@ IF(ENABLE_SM)
   IF(NOT SM_FOUND)
     MESSAGE(FATAL_ERROR "Cannot find SMlib")
   ENDIF(NOT SM_FOUND)
+  SET(HAVE_SM ${SM_FOUND})
 ENDIF(ENABLE_SM)
 
 # Startup Notifications

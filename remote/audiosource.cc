@@ -61,7 +61,7 @@ namespace
   {
     g_print ("%s %s",
              PACKAGE,
-             VERSION);
+             PACKAGE_VERSION);
 
     g_print (_("\nAudioSource Player Copyright (c) 2008 MPX Project <http://mpx.backtrace.info>\n\n"));
   }
@@ -69,8 +69,8 @@ namespace
   void
   print_configure ()
   {
-    g_print ("%s\n",
-             CONFIGURE_ARGS);
+    //g_print ("%s\n",
+    //         CONFIGURE_ARGS);
   }
 
   void
