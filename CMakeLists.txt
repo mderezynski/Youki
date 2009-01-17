@@ -195,6 +195,7 @@ ADD_SUBDIRECTORY(remote)
 #ADD_SUBDIRECTORY(sentinel)
 #ADD_SUBDIRECTORY(taglib)
 ADD_SUBDIRECTORY(widgets)
+ADD_SUBDIRECTORY(api)
 
 # HAL
 OPTION(ENABLE_HAL "Storage management with HAL (default=enabled)" "YES")

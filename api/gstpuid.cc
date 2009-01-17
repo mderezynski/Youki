@@ -654,4 +654,4 @@ GST_PLUGIN_DEFINE_STATIC (GST_VERSION_MAJOR,
                           GST_VERSION_MINOR,
                           "puid",
                           "Calculates MusicIP PUID from audio files and retrieves metadata",
-                          plugin_init, VERSION, "LGPL", "BMP Project", "Milosz Derezynski <internalerror@gmail.com>")
+                          plugin_init, PACKAGE_VERSION, "LGPL", "BMP Project", "Milosz Derezynski <internalerror@gmail.com>")

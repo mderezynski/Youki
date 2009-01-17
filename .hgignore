@@ -30,3 +30,19 @@ ltmain.sh
 missing
 mkinstalldirs
 stamp-h1
+
+# CMake stuff
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+
+# Output files
+*.so
+*.so.*
+*.a
+*.desktop
+*.service
+mpx.1
+mpx.pc
+remote/audiosource
+widgets/widget-marshalers.*
