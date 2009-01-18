@@ -31,6 +31,7 @@
 #include "mpx/algorithm/aque.hh"
 #include <tr1/unordered_set>
 #include "mpx/widgets/cell-renderer-album-data.hh"
+#include <set>
 
 namespace MPX
 {
