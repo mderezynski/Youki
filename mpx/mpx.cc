@@ -151,6 +151,19 @@ namespace
 
 namespace MPX
 {
+		enum
+		{
+			PLAYER_OBJ_SIGNAL_NEW_TRACK,
+			PLAYER_OBJ_SIGNAL_TRACK_PLAYED,
+			PLAYER_OBJ_SIGNAL_INFOAREA_CLICK,
+            PLAYER_OBJ_SIGNAL_STATUS_CHANGED,
+            PLAYER_OBJ_SIGNAL_METADATA_PREPARE,
+            PLAYER_OBJ_SIGNAL_METADATA_UPDATED,
+            PLAYER_OBJ_SIGNAL_NEW_COVERART,
+            PLAYER_OBJ_SIGNAL_NEW_SOURCE,
+			N_SIGNALS
+		};
+
 #define TYPE_DBUS_OBJ_MPX (DBusMPX::get_type ())
 #define DBUS_OBJ_MPX(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), TYPE_DBUS_OBJ_MPX, DBusMPX))
 
@@ -375,10 +388,35 @@ namespace MPX
                                         GError** error);
 
                 static gboolean
+                        get_status (DBusPlayer* self,
+                                        int* status,
+                                        GError** error);
+
+                static gboolean
                         play_tracks (DBusPlayer* self,
                                         char** uris,
                                         gboolean play,
                                         GError** error);
+
+                static gboolean
+                        next (DBusPlayer* self,
+                              GError** error);
+
+                static gboolean
+                        prev (DBusPlayer* self,
+                              GError** error);
+
+                static gboolean
+                        pause (DBusPlayer* self,
+                              GError** error);
+
+                static gboolean
+                        stop (DBusPlayer* self,
+                              GError** error);
+
+                static gboolean
+                        play (DBusPlayer* self,
+                              GError** error);
         };
 
         gpointer Player::DBusPlayer::parent_class       = 0;
@@ -391,6 +429,7 @@ namespace MPX
 #define player_stop stop
 #define player_play play
 #define player_get_metadata get_metadata
+#define player_get_status get_status
 #define player_play_tracks play_tracks
 
 #include "dbus-obj-PLAYER-glue.h"
@@ -402,6 +441,70 @@ namespace MPX
 
                         GObjectClass *gobject_class = reinterpret_cast<GObjectClass*>(klass);
                         gobject_class->constructor  = &DBusPlayer::constructor;
+
+                        signals[PLAYER_OBJ_SIGNAL_NEW_TRACK] =
+                                g_signal_new ("new-track",
+                                                G_OBJECT_CLASS_TYPE (klass),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
+                        signals[PLAYER_OBJ_SIGNAL_TRACK_PLAYED] =
+                                g_signal_new ("track-played",
+                                                G_OBJECT_CLASS_TYPE (klass),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
+                        signals[PLAYER_OBJ_SIGNAL_INFOAREA_CLICK] =
+                                g_signal_new ("info-area-click",
+                                                G_OBJECT_CLASS_TYPE (klass),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
+                        signals[PLAYER_OBJ_SIGNAL_STATUS_CHANGED] =
+                                g_signal_new ("play-status-changed",
+                                                G_OBJECT_CLASS_TYPE (klass),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT); 
+
+                        signals[PLAYER_OBJ_SIGNAL_METADATA_PREPARE] =
+                                g_signal_new ("metadata-prepare",
+                                                G_OBJECT_CLASS_TYPE (klass),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
+                        signals[PLAYER_OBJ_SIGNAL_METADATA_UPDATED] =
+                                g_signal_new ("metadata-updated",
+                                                G_OBJECT_CLASS_TYPE (klass),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
+
+                        signals[PLAYER_OBJ_SIGNAL_NEW_COVERART] =
+                                g_signal_new ("new-coverart",
+                                                G_OBJECT_CLASS_TYPE (klass),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE, 0);
+
+                        signals[PLAYER_OBJ_SIGNAL_NEW_SOURCE] =
+                                g_signal_new ("new-source",
+                                                G_OBJECT_CLASS_TYPE (klass),
+                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                                0,
+                                                NULL, NULL,
+                                                g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE, 1, g_type_from_name("PyObject")); 
                 }
 
         GObject *
@@ -541,6 +644,17 @@ namespace MPX
                 }
 
         gboolean
+                Player::DBusPlayer::get_status(
+                      DBusPlayer*   self
+                    , int*          status
+                    , GError**      error
+                )
+                {
+                        *status = self->player->get_status();
+                        return TRUE ;
+                }
+
+        gboolean
                 Player::DBusPlayer::play_tracks (DBusPlayer* self,
                                 char** uris,
                                 gboolean play,
@@ -559,18 +673,69 @@ namespace MPX
                         return TRUE;
                 }
 
+        gboolean
+                Player::DBusPlayer::next(
+                      DBusPlayer*   self
+                    , GError**      error  
+                )
+                {
+                        self->player->next();
+                        return TRUE;
+                }
+
+        gboolean
+                Player::DBusPlayer::prev(
+                      DBusPlayer*   self
+                    , GError**      error  
+                )
+                {
+                        self->player->prev();
+                        return TRUE;
+                }
+
+        gboolean
+                Player::DBusPlayer::pause(
+                      DBusPlayer*   self
+                    , GError**      error  
+                )
+                {
+                        self->player->pause();
+                        return TRUE;
+                }
+
+        gboolean
+                Player::DBusPlayer::stop(
+                      DBusPlayer*   self
+                    , GError**      error  
+                )
+                {
+                        self->player->stop();
+                        return TRUE;
+                }
+
+        gboolean
+                Player::DBusPlayer::play(
+                      DBusPlayer*   self
+                    , GError**      error  
+                )
+                {
+                        self->player->stop();
+                        return TRUE;
+                }
 
                 Player::Player(
                     const Glib::RefPtr<Gnome::Glade::Xml>& xml
                 )
-                : WidgetLoader<Gtk::Window>(xml, "mpx")
-                , sigx::glib_auto_dispatchable()
-                , Service::Base("mpx-service-player")
-                , m_startup_complete(false)
-                , m_Caps(C_NONE)
-                , m_NextSourceId(0)
-                , m_SourceUI(0)
-                , m_NewTrack(false)
+
+                        : WidgetLoader<Gtk::Window>(xml, "mpx")
+                        , sigx::glib_auto_dispatchable()
+                        , Service::Base("mpx-service-player")
+                        , m_startup_complete(false)
+                        , m_Caps(C_NONE)
+                        , m_NextSourceId(0)
+                        , m_SourceUI(0)
+                        , m_NewTrack(false)
+
                 {
                         m_Play = services->get<Play>("mpx-service-play").get();
 
@@ -684,70 +849,6 @@ namespace MPX
                         (services->get<Preferences>("mpx-service-preferences"))->signal_mm_edit_done().connect(
                                         sigc::mem_fun( *this, &Player::on_mm_edit_done
                                                 ));
-
-                        signals[PSIGNAL_NEW_TRACK] =
-                                g_signal_new ("new-track",
-                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                0,
-                                                NULL, NULL,
-                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
-
-                        signals[PSIGNAL_TRACK_PLAYED] =
-                                g_signal_new ("track-played",
-                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                0,
-                                                NULL, NULL,
-                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
-
-                        signals[PSIGNAL_INFOAREA_CLICK] =
-                                g_signal_new ("infoarea-click",
-                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                0,
-                                                NULL, NULL,
-                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
-
-                        signals[PSIGNAL_STATUS_CHANGED] =
-                                g_signal_new ("play-status-changed",
-                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                0,
-                                                NULL, NULL,
-                                                g_cclosure_marshal_VOID__INT, G_TYPE_NONE, 1, G_TYPE_INT); 
-
-                        signals[PSIGNAL_METADATA_PREPARE] =
-                                g_signal_new ("metadata-prepare",
-                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                0,
-                                                NULL, NULL,
-                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
-
-                        signals[PSIGNAL_METADATA_UPDATED] =
-                                g_signal_new ("metadata-updated",
-                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                0,
-                                                NULL, NULL,
-                                                g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0); 
-
-                        signals[PSIGNAL_NEW_COVERART] =
-                                g_signal_new ("new-coverart",
-                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                0,
-                                                NULL, NULL,
-                                                g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE, 0);
-
-                        signals[PSIGNAL_NEW_SOURCE] =
-                                g_signal_new ("new-source",
-                                                G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
-                                                GSignalFlags (G_SIGNAL_RUN_FIRST),
-                                                0,
-                                                NULL, NULL,
-                                                g_cclosure_marshal_VOID__BOXED, G_TYPE_NONE, 1, g_type_from_name("PyObject")); 
 
                         /*- DBus ----------------------------------------------------------*/
 
@@ -1067,6 +1168,12 @@ namespace MPX
                         mmkeys_deactivate();
                 }
 
+        GObject*
+                Player::get_gobj()
+                {
+                    return (GObject*)DBusObjects.player ;
+                }
+
         void
                 Player::init_dbus ()
                 {
@@ -1359,7 +1466,7 @@ SET_SEEK_POSITION:
                                                         m_InfoArea->set_cover (m.m_image.get()->scale_simple( 80, 80, Gdk::INTERP_BILINEAR), m_NewTrack );
 
                                                         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-                                                        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_COVERART], 0);
+                                                        g_signal_emit (G_OBJECT(DBusObjects.player), DBusObjects.player->signals[PLAYER_OBJ_SIGNAL_NEW_COVERART], 0);
                                                         check_py_error();
                                                         pyg_gil_state_release(state);
                                                 }
@@ -1458,7 +1565,7 @@ SET_SEEK_POSITION:
                 Player::on_cb_album_cover_clicked ()
                 {
                         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-                        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_INFOAREA_CLICK], 0);
+                        g_signal_emit (G_OBJECT(DBusObjects.player), DBusObjects.player->signals[PLAYER_OBJ_SIGNAL_INFOAREA_CLICK], 0);
                         check_py_error();
                         pyg_gil_state_release(state);
                 }
@@ -1494,7 +1601,7 @@ SET_SEEK_POSITION:
                                 );
 
                                 PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-                                g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_TRACK_PLAYED], 0);
+                                g_signal_emit (G_OBJECT(DBusObjects.player), DBusObjects.player->signals[PLAYER_OBJ_SIGNAL_TRACK_PLAYED], 0);
                                 check_py_error();
                                 pyg_gil_state_release(state);
                         }
@@ -1554,7 +1661,7 @@ SET_SEEK_POSITION:
                         set_caps(C_CAN_PAUSE, caps & C_CAN_PAUSE);
 
                         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-                        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_NEW_TRACK], 0);
+                        g_signal_emit (G_OBJECT(DBusObjects.player), DBusObjects.player->signals[PLAYER_OBJ_SIGNAL_NEW_TRACK], 0);
                         check_py_error();
                         pyg_gil_state_release(state);
                 }
@@ -1816,7 +1923,7 @@ SET_SEEK_POSITION:
                         }
 
                         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-                        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_STATUS_CHANGED], 0, int(status));
+                        g_signal_emit (G_OBJECT(DBusObjects.player), DBusObjects.player->signals[PLAYER_OBJ_SIGNAL_STATUS_CHANGED], 0, int(status));
                         check_py_error();
                         pyg_gil_state_release(state);
                 }
@@ -1952,12 +2059,12 @@ SET_SEEK_POSITION:
                 Player::metadata_updated ()
                 {
                         PyGILState_STATE state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-                        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_PREPARE], 0);
+                        g_signal_emit (G_OBJECT(DBusObjects.player), DBusObjects.player->signals[PLAYER_OBJ_SIGNAL_METADATA_PREPARE], 0);
                         check_py_error();
                         pyg_gil_state_release(state);
 
                         state = (PyGILState_STATE)(pyg_gil_state_ensure ());
-                        g_signal_emit (G_OBJECT(gobj()), signals[PSIGNAL_METADATA_UPDATED], 0);
+                        g_signal_emit (G_OBJECT(DBusObjects.player), DBusObjects.player->signals[PLAYER_OBJ_SIGNAL_METADATA_UPDATED], 0);
                         check_py_error();
                         pyg_gil_state_release(state);
 

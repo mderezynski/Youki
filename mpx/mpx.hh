@@ -110,6 +110,9 @@ namespace MPX
         Glib::RefPtr<Gtk::UIManager>&
         ui (); 
 
+        GObject*
+        get_gobj() ;
+
         void
         deactivate_plugin(gint64);
 
@@ -174,6 +177,7 @@ namespace MPX
         class DBusTrackList;
 
         friend class DBusMPX;
+        friend class DBusPlayer;
 
 		void
 		init_dbus ();
@@ -185,21 +189,6 @@ namespace MPX
         info_clear ();
 
       private:
-
-		enum PlayerCSignals
-		{
-			PSIGNAL_NEW_TRACK,
-			PSIGNAL_TRACK_PLAYED,
-			PSIGNAL_INFOAREA_CLICK,
-            PSIGNAL_STATUS_CHANGED,
-            PSIGNAL_METADATA_PREPARE,
-            PSIGNAL_METADATA_UPDATED,
-            PSIGNAL_NEW_COVERART,
-            PSIGNAL_NEW_SOURCE,
-			N_SIGNALS
-		};
-
-	    guint signals[N_SIGNALS];
 
         struct SourcePlugin
         {

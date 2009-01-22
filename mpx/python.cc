@@ -379,6 +379,13 @@ namespace mpxpy
 {
     using namespace MPX;
 
+    template <>
+	PyObject*
+	get_gobject(MPX::Player & obj)
+	{
+		return pygobject_new((GObject*)(obj.get_gobj()));
+	}
+
 	MPX::Library&
 	player_get_library(MPX::Player & obj)
 	{
