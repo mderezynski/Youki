@@ -738,7 +738,7 @@ namespace MPX
                         StrV v;
                         for(StrSetT::const_iterator i = ManagedPaths.begin(); i != ManagedPaths.end(); ++i)
                         {
-                            PathTestResult r = path_test(*i);
+                            PathTestResult r = path_test(*i, DeviceUDI, VolumeUDI);
                             switch( r )
                             {
                                 case IS_PRESENT:
@@ -912,158 +912,177 @@ namespace MPX
 
     PathTestResult
     MLibManager::path_test(
-        const std::string& path
+          const std::string& path
+        , const std::string& device_udi
+        , const std::string& volume_udi
     )
     {
         if( Glib::file_test(path, Glib::FILE_TEST_EXISTS) )
         {
-          return IS_PRESENT;
+            HAL::Volume volume ;
+
+            try{
+                volume = services->get<HAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
+            } catch( MPX::HAL::NoVolumeForUriError & cxe ) {
+                std::abort();
+            }
+            
+            std::string current_volume_udi =
+                volume.volume_udi ;
+
+            std::string current_device_udi =  
+                volume.device_udi ;
+
+            if( device_udi == current_device_udi && volume_udi == current_volume_udi )
+            {
+                return IS_PRESENT ;
+            }
         }
-        else
+
+        TaskDialog dialog(
+              this,
+              _("AudioSource: Music Path is missing"),
+              _("Music Path is missing"),
+              Gtk::MESSAGE_WARNING,
+              (boost::format (_("A path managed by AudioSource containing music can not be found.\nPerhaps the HAL data for the relevant volume has changed, or the path has been relocated."
+                                "\nYour intervention is required.\n\nPath: %s")) % path).str()
+        );
+
+        dialog.add_button(
+              _("Relocate Path"),
+              _("The path has been moved somewhere else, and AudioSource needs to know the new location."),
+              Gtk::Stock::HARDDISK,
+              0
+        );
+      
+        dialog.add_button(
+              _("Delete Path from Library"),
+              _("The path has been permanently deleted, and AudioSource should not manage it anymore."),
+              Gtk::Stock::DELETE,
+              1
+        );
+
+        dialog.add_button(
+              _("Check Next Time"),
+              _("The situation is different than described above, and deeper intervention is neccessary.\nAudioSource will check the path at the next rescan again."),
+              Gtk::Stock::OK,
+              2
+        );
+
+        // Show the relocate dialog and process the result
+
+        rerun_taskdialog:
+
+        int result = dialog.run();
+
+        std::string volume_udi_source, device_udi_source;
+        std::string volume_udi_target, device_udi_target;
+        std::string vrp_source, vrp_target;
+        HAL::Volume volume_source, volume_target;
+        std::string uri;
+
+        FileChooserDialog fcdialog (
+              _("AudioSource: Select relocated path target"),
+              FILE_CHOOSER_ACTION_SELECT_FOLDER
+        );
+
+        fcdialog.add_button(
+              Gtk::Stock::CANCEL,
+              Gtk::RESPONSE_CANCEL
+        );
+
+        fcdialog.add_button(
+              Gtk::Stock::OK,
+              Gtk::RESPONSE_OK
+        );
+
+        int response;
+
+        switch(result)
         {
-                TaskDialog dialog(
-                      this,
-                      _("AudioSource: Music Path is missing"),
-                      _("Music Path is missing"),
-                      Gtk::MESSAGE_WARNING,
-                      (boost::format (_("A path managed by AudioSource containing music can not be found.\nYour intervention is required.\n\nPath: %s")) % path).str()
-                );
+          case 0:
+              response = fcdialog.run();
+              fcdialog.hide();
 
-                dialog.add_button(
-                      _("Relocate Path"),
-                      _("The path has been moved somewhere else, and AudioSource needs to know the new location."),
-                      Gtk::Stock::HARDDISK,
-                      0
-                );
-              
-                dialog.add_button(
-                      _("Delete Path from Library"),
-                      _("The path has been permanently deleted, and AudioSource should not manage it anymore."),
-                      Gtk::Stock::DELETE,
-                      1
-                );
+              if( response == Gtk::RESPONSE_CANCEL ) 
+                  goto rerun_taskdialog;
 
-                dialog.add_button(
-                      _("Check Next Time"),
-                      _("The situation is different than described above, and deeper intervention is neccessary.\nAudioSource will check the path at the next rescan again."),
-                      Gtk::Stock::OK,
-                      2
-                );
+              uri = fcdialog.get_current_folder_uri();
 
-                // Show the relocate dialog and process the result
+              volume_source = services->get<HAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
+              volume_udi_source =
+                  volume_source.volume_udi ;
+              device_udi_source =  
+                  volume_source.device_udi ;
+              vrp_source = 
+                  path.substr(volume_source.mount_point.length()) ;
 
-                rerun_taskdialog:
+              volume_target = services->get<HAL>("mpx-service-hal")->get_volume_for_uri(uri);
+              volume_udi_target =
+                  volume_target.volume_udi ;
+              device_udi_target =  
+                  volume_target.device_udi ;
+              vrp_target = 
+                  Glib::filename_from_uri(uri).substr(volume_target.mount_point.length()) ;
 
-                int result = dialog.run();
+              services->get<Library>("mpx-service-library")->execSQL(
+                  (boost::format("UPDATE track SET hal_device_udi = '%s', hal_volume_udi = '%s', insert_path = '%s' "
+                                 "WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path = '%s'")
+                      % device_udi_target
+                      % volume_udi_target
+                      % vrp_target
+                      % device_udi_source
+                      % volume_udi_source
+                      % vrp_source
+              ).str());
 
-                std::string volume_udi_source, device_udi_source;
-                std::string volume_udi_target, device_udi_target;
-                std::string vrp_source, vrp_target;
-                HAL::Volume volume_source, volume_target;
-                std::string uri;
+              on_volumes_changed ();
 
-                FileChooserDialog fcdialog (
-                      _("AudioSource: Select relocated path target"),
-                      FILE_CHOOSER_ACTION_SELECT_FOLDER
-                );
+              /*
+              services->get<Library>("mpx-service-library")->vacuumVolume(
+                  device_udi_target,
+                  volume_udi_target 
+              );*/
 
-                fcdialog.add_button(
-                      Gtk::Stock::CANCEL,
-                      Gtk::RESPONSE_CANCEL
-                );
+              return RELOCATED;
+            break;
 
-                fcdialog.add_button(
-                      Gtk::Stock::OK,
-                      Gtk::RESPONSE_OK
-                );
+          case 1:
 
-                int response;
+              volume_target = services->get<HAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
 
-                switch(result)
-                {
-                  case 0:
-                      response = fcdialog.run();
-                      fcdialog.hide();
+              volume_udi_target =
+                  volume_target.volume_udi ;
 
-                      if( response == Gtk::RESPONSE_CANCEL ) 
-                          goto rerun_taskdialog;
+              device_udi_target =  
+                  volume_target.device_udi ;
 
-                      uri = fcdialog.get_current_folder_uri();
+              vrp_target = 
+                  path.substr(volume_target.mount_point.length()) ;
 
-                      volume_source = services->get<HAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
-                      volume_udi_source =
-                          volume_source.volume_udi ;
-                      device_udi_source =  
-                          volume_source.device_udi ;
-                      vrp_source = 
-                          path.substr(volume_source.mount_point.length()) ;
+              services->get<Library>("mpx-service-library")->execSQL(
+                  (boost::format("DELETE FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path LIKE '%s%%'")
+                      % device_udi_target
+                      % volume_udi_target
+                      % vrp_target
+              ).str());
 
-                      volume_target = services->get<HAL>("mpx-service-hal")->get_volume_for_uri(uri);
-                      volume_udi_target =
-                          volume_target.volume_udi ;
-                      device_udi_target =  
-                          volume_target.device_udi ;
-                      vrp_target = 
-                          Glib::filename_from_uri(uri).substr(volume_target.mount_point.length()) ;
+              on_volumes_changed();
 
-                      services->get<Library>("mpx-service-library")->execSQL(
-                          (boost::format("UPDATE track SET hal_device_udi = '%s', hal_volume_udi = '%s', insert_path = '%s' "
-                                         "WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path = '%s'")
-                              % device_udi_target
-                              % volume_udi_target
-                              % vrp_target
-                              % device_udi_source
-                              % volume_udi_source
-                              % vrp_source
-                      ).str());
+              /*
+              services->get<Library>("mpx-service-library")->vacuumVolume(
+                  device_udi_target,
+                  volume_udi_target 
+              );*/
 
-                      on_volumes_changed ();
+              return DELETED;
+            break;
 
-                      /*
-                      services->get<Library>("mpx-service-library")->vacuumVolume(
-                          device_udi_target,
-                          volume_udi_target 
-                      );*/
-
-                      return RELOCATED;
-                    break;
-
-                  case 1:
-
-                      volume_target = services->get<HAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
-
-                      volume_udi_target =
-                          volume_target.volume_udi ;
-
-                      device_udi_target =  
-                          volume_target.device_udi ;
-
-                      vrp_target = 
-                          path.substr(volume_target.mount_point.length()) ;
-
-                      services->get<Library>("mpx-service-library")->execSQL(
-                          (boost::format("DELETE FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path LIKE '%s%%'")
-                              % device_udi_target
-                              % volume_udi_target
-                              % vrp_target
-                      ).str());
-
-                      on_volumes_changed();
-
-                      /*
-                      services->get<Library>("mpx-service-library")->vacuumVolume(
-                          device_udi_target,
-                          volume_udi_target 
-                      );*/
-
-                      return DELETED;
-                    break;
-
-                  case 2:
-                      return IGNORED;
-                    break;
-                }
+          case 2:
+              return IGNORED;
+            break;
         }
+
         return IGNORED;
     }
 
@@ -1175,10 +1194,10 @@ namespace MPX
     void
     MLibManager::on_volumes_changed ()
     {
-        m_ManagedPaths  = StrSetT();
-        m_VolumeUDI     = std::string(); 
-        m_DeviceUDI     = std::string(); 
-        m_MountPoint    = std::string();
+        m_ManagedPaths.clear() ;
+        m_VolumeUDI.clear() ;   
+        m_DeviceUDI.clear() ;
+        m_MountPoint.clear() ;
 
         bool has_selection = m_VolumesView->get_selection()->count_selected_rows();
 
@@ -1350,7 +1369,7 @@ namespace MPX
         StrV v;
         for(StrSetT::const_iterator i = m_ManagedPaths.begin(); i != m_ManagedPaths.end(); ++i)
         {
-            PathTestResult r = path_test(*i);
+            PathTestResult r = path_test( *i, m_DeviceUDI, m_VolumeUDI );
             switch( r )
             {
                 case IS_PRESENT:

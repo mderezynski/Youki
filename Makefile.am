@@ -52,7 +52,7 @@ SUBDIRS +=		\
 	sources		\
 				\
 	api			\
-	mpx
+	src
 
 man_MANS = mpx.1
 

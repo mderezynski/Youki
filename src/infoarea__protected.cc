@@ -120,7 +120,7 @@ namespace MPX
                             draw_cover (cr);
                         }
 
-                        draw_spectrum (cr);
+                        //draw_spectrum (cr);
                         draw_text (cr);
                         draw_info (cr);
 

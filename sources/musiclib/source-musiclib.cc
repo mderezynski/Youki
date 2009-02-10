@@ -976,8 +976,11 @@ namespace MPX
                         void
                                 place_track(SQL::Row & r, Gtk::TreeIter const& iter)
                                 {
-                                        Track_sp t = m_Library->sqlToTrack( r );
-                                        place_track( *(t.get()), iter );
+                                        try{
+                                                Track_sp t = m_Library->sqlToTrack( r );
+                                                place_track( *(t.get()), iter );
+                                        } catch( Library::FileQualificationError ) {
+                                        } 
                                 }
 
                         void
@@ -1721,7 +1724,11 @@ namespace MPX
                                 for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                                 {
                                         SQL::Row & r = *i;
-                                        m->append_track(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r).get())));
+                                        try{
+                                            m->append_track(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, true).get())));
+                                        } catch( Library::FileQualificationError )
+                                        {
+                                        }
                                 }
 
                                 m_FilterModel = DataModelFilterP (new DataModelFilter(m));

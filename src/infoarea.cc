@@ -23,13 +23,13 @@ namespace MPX
         , m_spectrum_peak(SPECT_BANDS, 0)
         , m_cover_alpha(0.)
         , m_pressed(false)
-        , cover_anim_area_width(78.0)
-        , cover_anim_area_height(78.0)
+        , cover_anim_area_width(114.0)
+        , cover_anim_area_height(114.0)
         , cover_anim_area_x0(3.0)
         , cover_anim_area_y0(3.0)
         , cover_anim_area_x1(cover_anim_area_x0 + cover_anim_area_width)
         , cover_anim_area_y1(cover_anim_area_y0 + cover_anim_area_height)
-        , cover_anim_initial_pos(3.0 - 78.0)
+        , cover_anim_initial_pos(3.0 - 114.0)
         , cover_anim_initial_velocity(473.3)
         , cover_anim_gravity(359.1)
         , cover_anim_wall(cover_anim_area_x1)
@@ -120,7 +120,7 @@ namespace MPX
 
                         if( metadata.Image )
                         {
-                            set_cover (metadata.Image->scale_simple (78, 78, Gdk::INTERP_BILINEAR), first);
+                            set_cover (metadata.Image->scale_simple (114, 114, Gdk::INTERP_BILINEAR), first);
                         }
                         else if( first )
                         {

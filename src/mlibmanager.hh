@@ -162,7 +162,9 @@ namespace MPX
 
             PathTestResult
             path_test(
-                const std::string&
+                  const std::string&
+                , const std::string&
+                , const std::string&
             ) ;
 
             void

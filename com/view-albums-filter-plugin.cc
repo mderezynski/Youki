@@ -40,6 +40,7 @@
 #include "xmlcpp/xsd-topalbums-2.0.hxx"
 #include "xmlcpp/xsd-artist-similar-2.0.hxx"
 #include "mpx/xml/xmltoc++.hh"
+#include "mpx/widgets/cell-renderer-vbox.hh"
 #include "mpx/widgets/widgetloader.hh"
 
 
@@ -191,8 +192,8 @@ namespace MPX
 
                     (*iter)[Columns.Date_Raw] = date; 
 
-                    //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>\n" + date; 
-                    (*iter)[Columns.Name] = Glib::Markup::escape_text(name);
+                    (*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>"; //\n" + date; 
+                    //(*iter)[Columns.Name] = Glib::Markup::escape_text(name);
                     (*iter)[Columns.SortKey] = Glib::ustring(name).collate_key();
                     (*iter)[Columns.ID] = get<gint64>((*i)["id"]);
                     (*iter)[Columns.Image] = m_Artist_Default;
@@ -203,6 +204,19 @@ namespace MPX
                         m_MBIDIterMap.insert(std::make_pair( get<std::string>((*i)["mb_album_artist_id"]), iter));
                 }
             }
+
+            void
+            cell_data_func_artist( CellRenderer * basecell, const TreeIter& iter )
+            {
+                CellRendererVBox & cvbox = *dynamic_cast<CellRendererVBox*>(basecell);
+
+                CellRendererPixbuf *cell1 = dynamic_cast<CellRendererPixbuf*>(cvbox.property_renderer1().get_value());
+                CellRendererText   *cell2 = dynamic_cast<CellRendererText*>(cvbox.property_renderer2().get_value());
+
+                cell1->property_pixbuf() = (*iter)[Columns.Image] ;
+                cell2->property_markup() = Glib::ustring((*iter)[Columns.Name]) ;
+            }
+        
 
         public:
 
@@ -223,6 +237,28 @@ namespace MPX
                 ));
                 Store->set_sort_column_id( -1, Gtk::SORT_ASCENDING );
 
+                CellRendererVBox *cvbox = manage( new CellRendererVBox ) ;
+                TreeViewColumn   *col = manage( new TreeViewColumn ) ;
+
+                CellRendererPixbuf *cell1 = manage( new CellRendererPixbuf ) ;
+                cell1->property_ypad() = 8 ;
+                cvbox->property_renderer1() = cell1 ;
+
+                CellRendererText   *cell2 = manage( new CellRendererText ) ;
+                cell2->property_xalign() = 0.5 ;
+                cell2->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE ;
+                cvbox->property_renderer2() = cell2 ;
+
+                col->pack_start( *cvbox, true ) ;
+                col->set_cell_data_func(
+                          *cvbox    
+                        , sigc::mem_fun(
+                            *this,
+                            &ArtistListView::cell_data_func_artist
+                        ));
+
+                append_column( *col ) ;
+
                 /*
                 { 
                     // Image
@@ -232,7 +268,6 @@ namespace MPX
                     col->add_attribute( *cell, "pixbuf", Columns.Image );
                     append_column(*col);
                 }
-                */
 
                 { 
                     // Text
@@ -242,6 +277,7 @@ namespace MPX
                     col->add_attribute( *cell, "markup", Columns.Name );
                     append_column(*col);
                 }
+                */
 
                 boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
 
@@ -274,7 +310,6 @@ namespace MPX
                         &ArtistListView::on_selection_changed
                 ));
 
-                /*
                 boost::shared_ptr<ArtistImages> artist_images = services->get<ArtistImages>("mpx-service-artist-images");
 
                 artist_images->signal_got_artist_image().connect(
@@ -284,7 +319,6 @@ namespace MPX
                 ));
 
                 artist_images->recache_images();
-                */
             }
 
             void
@@ -297,7 +331,7 @@ namespace MPX
                 {
                     TreeIter iter = m_MBIDIterMap.find( mbid )->second;
 
-                    Cairo::RefPtr<Cairo::ImageSurface> surface = Util::cairo_image_surface_round( Util::cairo_image_surface_from_pixbuf( artist_image->scale_simple( 48, 48, Gdk::INTERP_BILINEAR) ), 2.88 );
+                    Cairo::RefPtr<Cairo::ImageSurface> surface = Util::cairo_image_surface_round( Util::cairo_image_surface_from_pixbuf( artist_image->scale_simple( 90, 90, Gdk::INTERP_BILINEAR) ), 2.88 );
                     Util::cairo_image_surface_rounded_border(surface, .5, 2.88, 0., 0., 0., 1.); 
                     (*iter)[Columns.Image] = Util::cairo_image_surface_to_pixbuf( surface ); 
                 }
@@ -357,8 +391,8 @@ namespace MPX
 
                 (*iter)[Columns.Date_Raw] = date; 
 
-                //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>\n" + date; 
-                (*iter)[Columns.Name] = Glib::Markup::escape_text(name);
+                (*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>"; //\n" + date; 
+                //(*iter)[Columns.Name] = Glib::Markup::escape_text(name);
                 (*iter)[Columns.SortKey] = Glib::ustring(name).collate_key();
                 (*iter)[Columns.ID] = id; 
                 (*iter)[Columns.Image] = m_Artist_Default;
@@ -451,8 +485,8 @@ namespace MPX
 
                     (*iter)[Columns.Date_Raw] = date; 
 
-                    //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>\n" + date; 
-                    (*iter)[Columns.Name] = Glib::Markup::escape_text(name);
+                    (*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>"; //\n" + date; 
+                    //(*iter)[Columns.Name] = Glib::Markup::escape_text(name);
                     (*iter)[Columns.SortKey] = Glib::ustring(name).collate_key();
                     (*iter)[Columns.ID] = get<gint64>(v[0]["id"]);
 

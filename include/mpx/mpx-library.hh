@@ -144,6 +144,7 @@ namespace MPX
             sqlToTrack(
                   SQL::Row&
                 , bool /*all metadata?*/ = true
+                , bool /*no_location?*/  = false
             ) ;
 
             void

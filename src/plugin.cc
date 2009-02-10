@@ -102,7 +102,7 @@ namespace MPX
                 ptr->activate();
             } catch( MethodInvocationError )
             {
-                g_warning("%s: Could not activate plugin: %s", G_STRLOC, ptr->get_name().c_str()):
+                g_warning("%s: Could not activate plugin: %s", G_STRLOC, ptr->get_name().c_str()) ;
             }
         }
     }

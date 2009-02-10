@@ -91,9 +91,9 @@ MPX::ArtistImages::get_image_by_mbid(
         StrV m;
 
         split( m, image_url, is_any_of("/") );
-        std::string image_url_64s = (boost::format("http://userserve-ak.last.fm/serve/64s/%s") % m[m.size()-1]).str();
+        std::string image_url_126s = (boost::format("http://userserve-ak.last.fm/serve/126s/%s") % m[m.size()-1]).str();
 
-        artist_image = Util::get_image_from_uri( image_url_64s );
+        artist_image = Util::get_image_from_uri( image_url_126s );
 
     } catch(...) {
     }

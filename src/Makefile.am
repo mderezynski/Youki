@@ -244,7 +244,7 @@ EXTRA_DIST = 				\
 dbus-obj-MPX-glue.h: Makefile.am dbus-obj-MPX.xml
 	@echo "* Generating /MPX DBus Glue"
 	@$(DBUSBINDINGTOOL) --mode=glib-server --prefix=Player::DBusMPX::mpx \
-    $(abs_top_srcdir)/mpx/dbus-obj-MPX.xml > \
+    $(abs_top_srcdir)/src/dbus-obj-MPX.xml > \
     dbus-obj-MPX-glue.h.temp
 	@cat dbus-obj-MPX-glue.h.temp   | sed s:G_BEGIN_DECLS:: | sed s:G_END_DECLS:: > \
     dbus-obj-MPX-glue.h.temp.1
@@ -259,7 +259,7 @@ dbus-obj-MPX-glue.h: Makefile.am dbus-obj-MPX.xml
 dbus-obj-PLAYER-glue.h: Makefile.am dbus-obj-PLAYER.xml
 	@echo "* Generating /Player DBus Glue"
 	@$(DBUSBINDINGTOOL) --mode=glib-server --prefix=Player::DBusPlayer::player \
-    $(abs_top_srcdir)/mpx/dbus-obj-PLAYER.xml > \
+    $(abs_top_srcdir)/src/dbus-obj-PLAYER.xml > \
     dbus-obj-PLAYER-glue.h.temp
 	@cat dbus-obj-PLAYER-glue.h.temp   | sed s:G_BEGIN_DECLS:: | sed s:G_END_DECLS:: > \
     dbus-obj-PLAYER-glue.h.temp.1

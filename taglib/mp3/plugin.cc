@@ -168,51 +168,56 @@ extern "C" bool _set (std::string const& filename, Track & track)
 
 extern "C" bool _get (std::string const& filename, Track & track)  
 {
-  MPEG::File opfile (filename.c_str());
-  if (!metadata_check_file (&opfile))
-    return false;
+  try{
+          MPEG::File opfile (filename.c_str());
+          if (!metadata_check_file (&opfile))
+            return false;
 
-  ID3v2::Tag * tag = opfile.ID3v2Tag (false);
-  if (tag)
-  {
-    metadata_get_id3v2 (tag, track);
-  }
+          ID3v2::Tag * tag = opfile.ID3v2Tag (false);
+          if (tag)
+          {
+            metadata_get_id3v2 (tag, track);
+          }
 
-  track [ ATTRIBUTE_TRACK ] = gint64 (opfile.tag()->track());
-  track [ ATTRIBUTE_DATE ] = gint64 (opfile.tag()->year());
+          track [ ATTRIBUTE_TRACK ] = gint64 (opfile.tag()->track());
+          track [ ATTRIBUTE_DATE ] = gint64 (opfile.tag()->year());
 
-  std::string value; 
+          std::string value; 
 
-  value = opfile.tag()->artist().to8Bit(true);
-  if (!value.empty())
-      track [ ATTRIBUTE_ARTIST ] = value;
+          value = opfile.tag()->artist().to8Bit(true);
+          if (!value.empty())
+              track [ ATTRIBUTE_ARTIST ] = value;
 
-  value = opfile.tag()->album().to8Bit(true);
-  if (!value.empty())
-      track [ ATTRIBUTE_ALBUM ] = value;
+          value = opfile.tag()->album().to8Bit(true);
+          if (!value.empty())
+              track [ ATTRIBUTE_ALBUM ] = value;
 
-  value = opfile.tag()->genre().to8Bit(true);
-  if (!value.empty())
-      track [ ATTRIBUTE_GENRE ] = value;
+          value = opfile.tag()->genre().to8Bit(true);
+          if (!value.empty())
+              track [ ATTRIBUTE_GENRE ] = value;
 
-  value = opfile.tag()->comment().to8Bit(true);
-  if (!value.empty())
-      track [ ATTRIBUTE_COMMENT ] = value;
+          value = opfile.tag()->comment().to8Bit(true);
+          if (!value.empty())
+              track [ ATTRIBUTE_COMMENT ] = value;
 
-  if (opfile.audioProperties())
-  {
-      track [ ATTRIBUTE_BITRATE ] = gint64 (opfile.audioProperties()->bitrate());
-      track [ ATTRIBUTE_SAMPLERATE ] = gint64 (opfile.audioProperties()->sampleRate());
-      track [ ATTRIBUTE_TIME ] = gint64 (opfile.audioProperties()->length());
-  }
-  else
-  {
-      track [ ATTRIBUTE_BITRATE ] = gint64 (0);
-      track [ ATTRIBUTE_SAMPLERATE ] = gint64 (0);
-      track [ ATTRIBUTE_TIME ] = gint64 (0);
-  }
+          if (opfile.audioProperties())
+          {
+              track [ ATTRIBUTE_BITRATE ] = gint64 (opfile.audioProperties()->bitrate());
+              track [ ATTRIBUTE_SAMPLERATE ] = gint64 (opfile.audioProperties()->sampleRate());
+              track [ ATTRIBUTE_TIME ] = gint64 (opfile.audioProperties()->length());
+          }
+          else
+          {
+              track [ ATTRIBUTE_BITRATE ] = gint64 (0);
+              track [ ATTRIBUTE_SAMPLERATE ] = gint64 (0);
+              track [ ATTRIBUTE_TIME ] = gint64 (0);
+          }
 
-  track [ ATTRIBUTE_TITLE ] = opfile.tag()->title().to8Bit(true);
+          track [ ATTRIBUTE_TITLE ] = opfile.tag()->title().to8Bit(true);
+    } catch( std::bad_alloc )
+    {
+        return false;
+    }
 
   return true;
 }

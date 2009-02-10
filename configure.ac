@@ -2,7 +2,7 @@
 
 AC_PREREQ(2.60)
 AC_INIT([audiosource],[0.01],[http://mpx.backtrace.info/report])
-AC_CONFIG_SRCDIR([mpx/main.cc])
+AC_CONFIG_SRCDIR([src/main.cc])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_AUX_DIR([aux])
 AC_GNU_SOURCE
@@ -792,7 +792,7 @@ AC_CONFIG_FILES([
     xsd/cxx/parser/non-validating/Makefile
     xsd/cxx/parser/expat/Makefile
     
-    mpx/Makefile
+    src/Makefile
 
     po/Makefile.in
 

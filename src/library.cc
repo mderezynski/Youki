@@ -1287,31 +1287,35 @@ namespace MPX
                 Library::sqlToTrack(
                       SQL::Row & row
                     , bool all_metadata
+                    , bool no_location
                 )
                 {
                         Track_sp track (new Track);
 
+                        if( !no_location )
+                        {
 #ifdef HAVE_HAL
-                        if( m_Flags & F_USING_HAL )
-                        {
-                            if (row.count("hal_volume_udi"))
-                                    (*track.get())[ATTRIBUTE_HAL_VOLUME_UDI] = get<std::string>(row["hal_volume_udi"]);
+                                if( m_Flags & F_USING_HAL )
+                                {
+                                    if (row.count("hal_volume_udi"))
+                                            (*track.get())[ATTRIBUTE_HAL_VOLUME_UDI] = get<std::string>(row["hal_volume_udi"]);
 
-                            if (row.count("hal_device_udi"))
-                                    (*track.get())[ATTRIBUTE_HAL_DEVICE_UDI] = get<std::string>(row["hal_device_udi"]);
+                                    if (row.count("hal_device_udi"))
+                                            (*track.get())[ATTRIBUTE_HAL_DEVICE_UDI] = get<std::string>(row["hal_device_udi"]);
 
-                            if (row.count("hal_vrp"))
-                                    (*track.get())[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);
+                                    if (row.count("hal_vrp"))
+                                            (*track.get())[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);
 
-                            (*track.get())[ATTRIBUTE_LOCATION] = trackGetLocation( (*track.get()) ); 
+                                    (*track.get())[ATTRIBUTE_LOCATION] = trackGetLocation( (*track.get()) ); 
 
-                            g_assert( (*track.get()).has(ATTRIBUTE_LOCATION) );
-                        }
-                        else
+                                    g_assert( (*track.get()).has(ATTRIBUTE_LOCATION) );
+                                }
+                                else
 #endif
-                        if( row.count("location") )
-                        {
-                            (*track.get())[ATTRIBUTE_LOCATION] = get<std::string>(row["location"]);
+                                if( row.count("location") )
+                                {
+                                    (*track.get())[ATTRIBUTE_LOCATION] = get<std::string>(row["location"]);
+                                }
                         }
 
                         if( row.count("id") )
@@ -1388,7 +1392,7 @@ namespace MPX
                                         (*track.get())[ATTRIBUTE_QUALITY] = get<gint64>(row["audio_quality"]);
                         }
 
-                        g_assert( (*track.get()).has(ATTRIBUTE_LOCATION) );
+                       // g_assert( (*track.get()).has(ATTRIBUTE_LOCATION) );
 
                         return track;
                 }

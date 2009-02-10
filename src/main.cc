@@ -91,6 +91,8 @@ namespace MPX
     void
     sigsegv_handler (int signal_number)
     {
+        delete mcs; // try to save config
+
 #ifdef HANDLE_SIGSEGV
         std::exit (EXIT_FAILURE);
 #else

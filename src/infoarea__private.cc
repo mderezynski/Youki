@@ -418,8 +418,8 @@ namespace MPX
 
     Gtk::Allocation allocation = get_allocation ();
 
-    int x1 = cover_anim_area_x0 + cover_anim_area_width; 
-    int width = (allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS - RIGHT_MARGIN) - cover_anim_area_width;
+    int x1 = allocation.get_x(); //cover_anim_area_x0 + cover_anim_area_width; 
+    int width = allocation.get_width(); /*(allocation.get_width() - (WIDTH+SPACING)*SPECT_BANDS - RIGHT_MARGIN) - cover_anim_area_width*/;
     int max_width = 0;
 
     Glib::RefPtr<Pango::Layout> layouts[3];
