@@ -549,6 +549,8 @@ namespace MPX
                         AlbumsTreeStore->set_sort_func(3 , sigc::mem_fun( *this, &AlbumTreeView::slotSortStrictAlpha ));
                         AlbumsTreeStore->set_sort_func(4 , sigc::mem_fun( *this, &AlbumTreeView::slotSortPlayScore ));
                         AlbumsTreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
+
+                        set_search_column(Columns.Album);
                 }
 
                 void

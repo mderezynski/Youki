@@ -192,8 +192,8 @@ namespace MPX
 
                     (*iter)[Columns.Date_Raw] = date; 
 
-                    (*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>"; //\n" + date; 
-                    //(*iter)[Columns.Name] = Glib::Markup::escape_text(name);
+                    //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>"; //\n" + date; 
+                    (*iter)[Columns.Name] = Glib::Markup::escape_text(name);
                     (*iter)[Columns.SortKey] = Glib::ustring(name).collate_key();
                     (*iter)[Columns.ID] = get<gint64>((*i)["id"]);
                     (*iter)[Columns.Image] = m_Artist_Default;
@@ -237,25 +237,31 @@ namespace MPX
                 ));
                 Store->set_sort_column_id( -1, Gtk::SORT_ASCENDING );
 
-                CellRendererVBox *cvbox = manage( new CellRendererVBox ) ;
-                TreeViewColumn   *col = manage( new TreeViewColumn ) ;
+                //CellRendererVBox *cvbox = manage( new CellRendererVBox ) ;
+                TreeViewColumn *col = manage( new TreeViewColumn ) ;
 
+                /*
                 CellRendererPixbuf *cell1 = manage( new CellRendererPixbuf ) ;
                 cell1->property_ypad() = 8 ;
                 cvbox->property_renderer1() = cell1 ;
+                */
 
-                CellRendererText   *cell2 = manage( new CellRendererText ) ;
-                cell2->property_xalign() = 0.5 ;
-                cell2->property_ellipsize() = Pango::ELLIPSIZE_MIDDLE ;
-                cvbox->property_renderer2() = cell2 ;
+                CellRendererText *cell2 = manage( new CellRendererText ) ;
+                cell2->property_xalign() = 0.0 ;
+                cell2->property_ellipsize() = Pango::ELLIPSIZE_END ;
+                //cvbox->property_renderer2() = cell2 ;
 
-                col->pack_start( *cvbox, true ) ;
+                col->pack_start( *cell2, true ) ;
+                col->add_attribute( *cell2, "markup", Columns.Name ); 
+            
+                /*
                 col->set_cell_data_func(
                           *cvbox    
                         , sigc::mem_fun(
                             *this,
                             &ArtistListView::cell_data_func_artist
                         ));
+                */
 
                 append_column( *col ) ;
 
@@ -302,7 +308,7 @@ namespace MPX
                 build_list();
                 set_model(Store);
                 set_enable_search();
-                set_search_column(Columns.Name_Raw); 
+                set_search_column( Columns.Name_Raw ) ; 
 
                 get_selection()->signal_changed().connect(
                     sigc::mem_fun(
@@ -310,6 +316,7 @@ namespace MPX
                         &ArtistListView::on_selection_changed
                 ));
 
+                /*
                 boost::shared_ptr<ArtistImages> artist_images = services->get<ArtistImages>("mpx-service-artist-images");
 
                 artist_images->signal_got_artist_image().connect(
@@ -319,6 +326,7 @@ namespace MPX
                 ));
 
                 artist_images->recache_images();
+                */
             }
 
             void
@@ -391,8 +399,8 @@ namespace MPX
 
                 (*iter)[Columns.Date_Raw] = date; 
 
-                (*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>"; //\n" + date; 
-                //(*iter)[Columns.Name] = Glib::Markup::escape_text(name);
+                //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>"; //\n" + date; 
+                (*iter)[Columns.Name] = Glib::Markup::escape_text(name);
                 (*iter)[Columns.SortKey] = Glib::ustring(name).collate_key();
                 (*iter)[Columns.ID] = id; 
                 (*iter)[Columns.Image] = m_Artist_Default;
@@ -485,8 +493,8 @@ namespace MPX
 
                     (*iter)[Columns.Date_Raw] = date; 
 
-                    (*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>"; //\n" + date; 
-                    //(*iter)[Columns.Name] = Glib::Markup::escape_text(name);
+                    //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>"; //\n" + date; 
+                    (*iter)[Columns.Name] = Glib::Markup::escape_text(name);
                     (*iter)[Columns.SortKey] = Glib::ustring(name).collate_key();
                     (*iter)[Columns.ID] = get<gint64>(v[0]["id"]);
 
@@ -538,12 +546,6 @@ namespace MPX
             , m_ArtistListView( new ArtistListView )
             {
                 m_UI = manage( new Gtk::VBox );
-                m_Advanced_CB = manage( new Gtk::CheckButton( _("Advanced Query")));
-                m_Advanced_CB->signal_toggled().connect(
-                    sigc::mem_fun(
-                            *this,
-                            &TextMatch::on_advanced_toggled
-                ));
 
                 Gtk::ScrolledWindow * sw = manage( new Gtk::ScrolledWindow );
 
@@ -558,8 +560,8 @@ namespace MPX
                 sw->add( *m_ArtistListView );
                 sw->set_policy( Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC );
                 sw->set_size_request( -1, 180 );
+                sw->set_shadow_type( Gtk::SHADOW_IN );
 
-                m_UI->pack_start( *m_Advanced_CB, false, false );
                 m_UI->pack_start( *sw );
                 m_UI->show_all();
             }
@@ -582,22 +584,6 @@ namespace MPX
             }
 
             void
-            TextMatch::on_advanced_toggled ()
-            {
-                if( m_Advanced_CB->get_active() )
-                {
-                    m_Constraints.clear();
-                    m_FilterEffective = AQE::parse_advanced_query( m_Constraints, m_FilterText ); 
-                }
-                else
-                {
-                    m_FilterEffective = m_FilterText;
-                }
-
-                Signals.Refilter.emit();
-            }
-
-            void
             TextMatch::on_filter_issued( const Glib::ustring& G_GNUC_UNUSED )
             {
                 // for textmach, we don't need to do anything
@@ -607,17 +593,8 @@ namespace MPX
             TextMatch::on_filter_changed( const Glib::ustring& text )
             {
                 m_FilterText = text;
-
-                if( m_Advanced_CB->get_active() )
-                {
-                    m_Constraints.clear();
-                    m_FilterEffective = AQE::parse_advanced_query( m_Constraints, m_FilterText ); 
-                }
-                else
-                {
-                    m_FilterEffective = text;
-                }
-
+                m_Constraints.clear();
+                m_FilterEffective = AQE::parse_advanced_query( m_Constraints, m_FilterText ); 
                 Signals.Refilter.emit();
             }
 

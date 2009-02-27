@@ -31,16 +31,18 @@
 // FIXME: Must be here for some damn reason
 #include <giomm.h>
 
-#include "mpx/mpx-main.hh"
-
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-library.hh"
+#include "mpx/mpx-main.hh"
 #include "mpx/mpx-play.hh"
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/mpx-services.hh"
+
 #include "mpx/util-file.hh"
+
 #include "mpx/widgets/widgetloader.hh"
+#include "mpx/widgets/rounded-layout.hh"
 
 #include "mpx/i-playbacksource.hh"
 
@@ -263,7 +265,7 @@ namespace MPX
 
 		Gtk::VolumeButton             * m_Volume ;
 		Gtk::HScale                   * m_Seek ;
-		Gtk::Label                    * m_TimeLabel ;
+        Gtk::Label                    * m_TimeLabel ;
 
         Gtk::Notebook                 * m_InfoNotebook ;
         Gtk::Expander                 * m_InfoExpander ;

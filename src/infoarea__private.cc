@@ -314,7 +314,7 @@ namespace MPX
     */
 
     cr->set_source_rgb(0.,0.,0.);
-    Util::cairo_rounded_rect(cr, 0, 0, allocation.get_width(), allocation.get_height(), 7.);
+    RoundedRectangle(cr, 0, 0, allocation.get_width(), allocation.get_height(), 7.);
     cr->fill ();
   }
 
