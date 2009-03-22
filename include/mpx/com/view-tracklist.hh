@@ -61,7 +61,7 @@ namespace MPX
                     return m_realmodel->size();
                 }
 
-                virtual Row5 const&
+                virtual Row5&
                 row (int row)
                 {
                     return (*m_realmodel)[row];
@@ -167,7 +167,7 @@ namespace MPX
                     return m_mapping.size();
                 }
 
-                virtual Row5 const&
+                virtual Row5&
                 row (int row)
                 {
                     return *(m_mapping[row]);
@@ -352,19 +352,21 @@ namespace MPX
                 {
                     using boost::get;
 
+                    /*
                     cairo->set_operator(Cairo::OPERATOR_ATOP);
                     Gdk::Color c = widget.get_style()->get_text(Gtk::STATE_NORMAL);
                     cairo->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.2);
-                    //RoundedRectangle(cairo, x_pos+2, y_pos+2, m_width-4, rowheight-2, 4.);
                     cairo->rectangle(x_pos, y_pos, m_width, rowheight);
                     cairo->fill(); 
+                    */
 
-                    cairo->rectangle( x_pos + 6, y_pos + 6, m_width, rowheight);
+                    cairo->rectangle( x_pos + 5, y_pos + 6, m_width+1, rowheight);
                     cairo->clip();
 
-                    cairo->move_to( x_pos + 6, y_pos + 6);
-                    cairo->set_operator(Cairo::OPERATOR_SOURCE);
-                    Gdk::Cairo::set_source_color(cairo, widget.get_style()->get_text(Gtk::STATE_NORMAL));
+                    cairo->move_to( x_pos + 5, y_pos + 6);
+                    cairo->set_operator(Cairo::OPERATOR_ATOP);
+                    //Gdk::Cairo::set_source_color(cairo, widget.get_style()->get_text(Gtk::STATE_NORMAL));
+                    cairo->set_source_rgba( 1., 1., 1., 1. ) ;
                     Glib::RefPtr<Pango::Layout> layout = widget.create_pango_layout(""); 
                     layout->set_markup((boost::format("<b>%s</b>") % Glib::Markup::escape_text(m_title).c_str()).str());
                     layout->set_ellipsize(Pango::ELLIPSIZE_END);
@@ -385,13 +387,14 @@ namespace MPX
                     int                             y_pos,
                     int                             rowheight,
                     bool                            selected,
-                    bool                            highlight
+                    bool                            highlight = true
                 )
                 {
                     using boost::get;
 
-                    cairo->set_operator(Cairo::OPERATOR_SOURCE);
-                    Gdk::Cairo::set_source_color(cairo, widget.get_style()->get_text(selected ? Gtk::STATE_SELECTED : Gtk::STATE_NORMAL ));
+                    cairo->set_operator(Cairo::OPERATOR_ATOP);
+                    //Gdk::Cairo::set_source_color(cairo, widget.get_style()->get_text(selected ? Gtk::STATE_SELECTED : Gtk::STATE_NORMAL ));
+                    cairo->set_source_rgba( 1., 1., 1., 1. ) ;
 
                     cairo->rectangle( x_pos, y_pos, m_width, rowheight);
                     cairo->clip();
@@ -681,7 +684,7 @@ namespace MPX
 
                     if( event->y < (m_row_height+4))
                     {
-                        return false;
+                        return true;
                     }
         
                     m_sel_size_was = m_selection.size();
@@ -738,7 +741,7 @@ namespace MPX
                         }
                     }
                 
-                    return false;
+                    return true;
                 }
 
                 bool
@@ -801,7 +804,7 @@ namespace MPX
 
                     m_visible_height = event->height;
 
-                    double columnwidth = double(event->width) / double(m_columns.size());
+                    double columnwidth = (double(event->width) - 16) / double(m_columns.size());
 
                     for(int n = 0; n < m_columns.size(); ++n)
                     {
@@ -816,7 +819,8 @@ namespace MPX
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
 
                     cairo->set_operator(Cairo::OPERATOR_SOURCE);
-                    Gdk::Cairo::set_source_color(cairo, get_style()->get_base(Gtk::STATE_NORMAL));
+                    //Gdk::Cairo::set_source_color(cairo, get_style()->get_base(Gtk::STATE_NORMAL));
+                    cairo->set_source_rgba( 0.12, 0.12, 0.12, 1. ) ;
                     cairo->paint();
 
                     Gtk::Allocation const& alloc = get_allocation();
@@ -825,7 +829,7 @@ namespace MPX
                     m_previousdrawnrow = row;
 
                     int y_pos       = m_row_height + 2;
-                    int x_pos       = 0;
+                    int x_pos       = 16;
                     int col         = 0;
                     int cnt         = (m_visible_height - (m_row_height + 2)) / m_row_height;
                     
@@ -837,27 +841,20 @@ namespace MPX
 
                     while(m_model->is_set() && cnt && (row < m_model->m_mapping.size())) 
                     {
-                        x_pos = 0;
+                        x_pos = 16;
 
-                        if( row % 2 )
+                        if( !(row%2) ) 
                         {
-                          GdkRectangle background_area;
-                          background_area.x = 0;
-                          background_area.y = y_pos;
-                          background_area.width = alloc.get_width();
-                          background_area.height = m_row_height;
+                            GdkRectangle background_area;
+                            background_area.x = 0;
+                            background_area.y = y_pos;
+                            background_area.width = alloc.get_width();
+                            background_area.height = m_row_height;
 
-                          gtk_paint_flat_box(get_style()->gobj(),
-                                  event->window,
-                                  GTK_STATE_NORMAL,
-                                  GTK_SHADOW_NONE,
-                                  &event->area,
-                                  m_treeview,
-                                  "cell_odd_ruled",
-                                  background_area.x,
-                                  background_area.y,
-                                  background_area.width,
-                                  background_area.height);
+                            cairo->set_operator(Cairo::OPERATOR_ATOP);
+                            cairo->rectangle( background_area.x, background_area.y, background_area.width, background_area.height ) ;
+                            cairo->set_source_rgba( 0.2, 0.2, 0.2, 1. ) ;
+                            cairo->fill() ;
                         }
 
 
@@ -989,7 +986,7 @@ namespace MPX
                 , m_dnd(false)
                 , m_click_row_1(0)
                 , m_sel_size_was(0)
-                , m_highlight(false)
+                , m_highlight(true)
                 {
                     m_treeview = gtk_tree_view_new();
                     gtk_widget_realize(GTK_WIDGET(m_treeview));
@@ -1003,7 +1000,7 @@ namespace MPX
                                       GSignalFlags (G_SIGNAL_RUN_FIRST),
                                       0,
                                       NULL, NULL,
-                                      psm_glib_marshal_VOID__OBJECT_OBJECT, G_TYPE_NONE, 2, GTK_TYPE_ADJUSTMENT, GTK_TYPE_ADJUSTMENT);
+                                      g_cclosure_user_marshal_VOID__OBJECT_OBJECT, G_TYPE_NONE, 2, GTK_TYPE_ADJUSTMENT, GTK_TYPE_ADJUSTMENT);
 
                     g_signal_connect(G_OBJECT(gobj()), "set_scroll_adjustments", G_CALLBACK(list_view_set_adjustments), this);
 

@@ -11,6 +11,8 @@ images_DATA =						\
 									\
 		icon-plugins-tab.png		\
 		icon-now-playing-tab.png	\
+                                    \
+        title-logo.png              \
 									\
 		qual0.png					\
 		qual1.png					\

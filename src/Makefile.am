@@ -125,6 +125,8 @@ audiosource_bin_SOURCES =		\
 	flow_engine.cc				\
 	flow_widget.hh				\
 	flow_widget.cc				\
+                                \
+    glib-marshalers.c           \
 								\
 	gtkmmmodule.h				\
 	gtkmmmodule.cc				\
@@ -143,6 +145,9 @@ audiosource_bin_SOURCES =		\
 								\
 	jnethttpsrc.h				\
 	jnethttpsrc.cc				\
+                                \
+    kobo-main.hh                \
+    kobo-main.cc                \
 								\
 	library.cc					\
 	library-scanner-thread.cc	\

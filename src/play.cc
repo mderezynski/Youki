@@ -272,6 +272,7 @@ namespace MPX
                                 property_status_ = PLAYSTATUS_STOPPED;
                         }
                         set_custom_httpheader(NULL);
+                        signal_spectrum_.emit( m_zero_spectrum );
                 }
 
         void

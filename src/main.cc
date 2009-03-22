@@ -35,7 +35,6 @@
 #include <cstdlib>
 #include <string>
 
-#include "mpx.hh"
 #include "paths.hh"
 #include "signals.hh"
 
@@ -64,6 +63,9 @@
 #include "plugin-manager-gui.hh"
 
 #include "splash-screen.hh"
+
+#include "kobo-main.hh"
+#include "alltracks.hh"
 
 using namespace MPX;
 using namespace Glib;
@@ -362,15 +364,20 @@ main (int argc, char ** argv)
 #ifdef HAVE_HAL
         services->add(boost::shared_ptr<MLibManager>(MPX::MLibManager::create()));
 #endif // HAVE_HAL
-        services->add(boost::shared_ptr<MB_ImportAlbum>(MPX::MB_ImportAlbum::create()));
-        services->add(boost::shared_ptr<Player>(MPX::Player::create()));
-        services->add(boost::shared_ptr<PluginManager>(new MPX::PluginManager));
-        services->add(boost::shared_ptr<PluginManagerGUI>(MPX::PluginManagerGUI::create()));
+        //services->add(boost::shared_ptr<MB_ImportAlbum>(MPX::MB_ImportAlbum::create()));
+        //services->add(boost::shared_ptr<Player>(MPX::Player::create()));
+        //services->add(boost::shared_ptr<PluginManager>(new MPX::PluginManager));
+        //services->add(boost::shared_ptr<PluginManagerGUI>(MPX::PluginManagerGUI::create()));
 
         splash->set_message(_("Done"), 1.0);
         delete splash;
 
-        gtk->run (*(services->get<Player>("mpx-service-player").get()));
+        MainWindow * w = new MainWindow ;
+        AllTracksView * tracks = new AllTracksView ;
+        w->set_widget_top( *tracks->get_widget() ) ;
+        w->show_all() ;
+
+        gtk->run( *w ) ;
 
 #ifdef HAVE_HAL
     }

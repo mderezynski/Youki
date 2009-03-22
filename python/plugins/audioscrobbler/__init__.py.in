@@ -850,8 +850,8 @@ class MPXAudioScrobbler(mpx.Plugin):
     
         """ Activate plugin """
 
-        self.as = AudioScrobbler()
-        self.post = self.as.post(self.mcs.key_get_string("lastfm", "username"), self.mcs.key_get_string("lastfm", "password"))
+        self.audioscrobbler = AudioScrobbler()
+        self.post = self.audioscrobbler.post(self.mcs.key_get_string("lastfm", "username"), self.mcs.key_get_string("lastfm", "password"))
         self.post.start()
         
         try:
@@ -882,7 +882,7 @@ class MPXAudioScrobbler(mpx.Plugin):
         self.player.gobj().disconnect(self.hand1)
         self.player.gobj().disconnect(self.hand2)
         self.player.gobj().disconnect(self.hand3)
-        self.as = None
+        self.audioscrobbler = None
         #self.post.save()
         #self.post.stop()
         self.post = None
