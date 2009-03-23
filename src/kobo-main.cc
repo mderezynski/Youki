@@ -23,7 +23,7 @@ namespace MPX
     : m_drawer_out( false )
     , m_presize_height( 0 )
     , m_drawer_height( 0 )
-    , m_drawer_height_max( 200 )
+    , m_drawer_height_max( 300 )
     , m_expand_direction( EXPAND_NONE )
                     {
                         set_decorated( false ) ;
@@ -45,6 +45,8 @@ namespace MPX
 
                         a1 = Gtk::manage( new Gtk::Alignment  ) ;
                         a2 = Gtk::manage( new Gtk::Alignment  ) ;
+
+                        a2->property_yalign() = 0. ;
 
                         a1->property_top_padding() = 20 ;
                         a1->property_bottom_padding() = 16 ;
@@ -102,7 +104,6 @@ namespace MPX
 
                             a1->set_size_request( -1, m_presize_height ) ;
                             a2->set_size_request( -1, m_drawer_height ) ;
-                            a2->property_bottom_padding() = 200 - m_drawer_height ;
 
                             if( m_drawer_height == m_drawer_height_max )
                             {
@@ -124,7 +125,6 @@ namespace MPX
 
                             a1->set_size_request( -1, m_presize_height ) ;
                             a2->set_size_request( -1, m_drawer_height ) ;
-                            a2->property_bottom_padding() = 200 - m_drawer_height ;
 
                             if( m_drawer_height == 0 )
                             {

@@ -14,6 +14,7 @@ namespace MPX
                     bool                        m_drawer_out ;
                     int                         m_presize_height ;
                     int                         m_drawer_height ;
+                    int                         m_bottom_pad ;
 
                     enum ExpandDirection
                     {
