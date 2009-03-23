@@ -5,12 +5,18 @@ images_DATA =						\
 		disc.png					\
 		splash.png					\
 		throbber.gif				\
+                                    \
+        speaker.png                 \
+        speaker_ghost.png           \
 									\
 		emblem-compilation.png		\
 		emblem-soundtrack.png		\
 									\
 		icon-plugins-tab.png		\
 		icon-now-playing-tab.png	\
+                                    \
+        jewelcase_bot.png           \
+        jewelcase_top.png           \
                                     \
         title-logo.png              \
 									\

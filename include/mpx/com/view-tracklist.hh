@@ -438,28 +438,33 @@ namespace MPX
         typedef std::vector<ColumnP> Columns;
         typedef std::set<std::pair<ModelT::iterator, int> > Selection;
 
-        typedef sigc::signal<void, gint64, bool> SignalTrackActivated;
+        typedef sigc::signal<void, MPX::Track, bool> SignalTrackActivated;
 
         class ListView : public Gtk::DrawingArea
         {
-                int                                 m_row_height;
-                int                                 m_visible_height;
-                int                                 m_previousdrawnrow;
-                DataModelFilterP                    m_model;
-                Columns                             m_columns;
-                PropAdj                             m_prop_vadj;
-                PropAdj                             m_prop_hadj;
-                guint                               m_signal0; 
-                Selection                           m_selection;
-                boost::optional<ModelT::iterator>   m_selected;
-                GtkWidget                         * m_treeview;
-                IdV                                 m_dnd_idv;
-                bool                                m_dnd;
-                int                                 m_click_row_1;
-                int                                 m_sel_size_was;
-                bool                                m_highlight;
+                int                                 m_row_height ;
+                int                                 m_visible_height ;
+                int                                 m_previousdrawnrow ;
+                DataModelFilterP                    m_model ;
+                Columns                             m_columns ;
+                PropAdj                             m_prop_vadj ;
+                PropAdj                             m_prop_hadj ;
+                guint                               m_signal0 ; 
+                Selection                           m_selection ;
+                boost::optional<ModelT::iterator>   m_selected ;
+                GtkWidget                         * m_treeview ;
+                IdV                                 m_dnd_idv ;
+                bool                                m_dnd ;
+                int                                 m_click_row_1 ;
+                int                                 m_sel_size_was ;
+                bool                                m_highlight ;
+                boost::optional<gint64>             m_active_track ;
+                boost::optional<gint64>             m_hover_track ;
+                boost::optional<gint64>             m_local_active_track ;
+                Glib::RefPtr<Gdk::Pixbuf>           m_playing_pixbuf ;
+                Glib::RefPtr<Gdk::Pixbuf>           m_hover_pixbuf ;
 
-                SignalTrackActivated                m_trackactivated;
+                SignalTrackActivated                m_SIGNAL_track_activated;
 
                 void
                 initialize_metrics ()
@@ -562,10 +567,10 @@ namespace MPX
                             {
                                 using boost::get;
 
-                                Row5 const& r = *(m_selection.begin()->first);
-                                gint64 id = get<3>(r);
-                                bool play = (event->state & GDK_CONTROL_MASK);
-                                m_trackactivated.emit(id, !play);
+                                MPX::Track track = get<4>(*(m_selection.begin()->first)) ;
+                                m_SIGNAL_track_activated.emit(track, !(event->state & GDK_CONTROL_MASK)) ;
+                                m_selection.clear() ;
+                                queue_draw () ;
                             }
                             return true;
 
@@ -689,21 +694,11 @@ namespace MPX
         
                     m_sel_size_was = m_selection.size();
 
-                    if(event->type == GDK_2BUTTON_PRESS)
-                    {
-                        if( !m_selection.empty() )
-                        {
-                                Row5 const& r = *(m_selection.begin()->first);
-                                gint64 id = get<3>(r);
-                                bool play = (event->state & GDK_CONTROL_MASK);
-                                m_trackactivated.emit(id, !play);
-                        }
-                    }
-                    else
                     if(event->type == GDK_BUTTON_PRESS)
                     {
                         if(event->state & GDK_SHIFT_MASK)
                         {
+/*
                             Selection::iterator i_sel = m_selection.end();
                             i_sel--;
                             int row_p = i_sel->second; 
@@ -716,10 +711,20 @@ namespace MPX
                                         queue_draw();
                                     }
                             }
+*/
                         }
                         else
                         {
                             int row = get_upper_row() + ((int(event->y)-(m_row_height+2)) / m_row_height);
+
+                            if( event->x < (m_columns[0]->get_width()+16) )
+                            {
+                                MPX::Track track = get<4>(m_model->row(row)) ;
+                                m_SIGNAL_track_activated.emit(track, true) ;
+                            }
+
+/*
+                            else
                             if( row < m_model->m_mapping.size() )
                             {
                                     m_click_row_1 = row;
@@ -738,6 +743,7 @@ namespace MPX
                                         queue_draw();
                                     }
                             }
+*/
                         }
                     }
                 
@@ -795,9 +801,55 @@ namespace MPX
                     return false;
                 }
 
+                bool
+                on_leave_notify_event(
+                    GdkEventCrossing* G_GNUC_UNUSED
+                )
+                {
+                    m_hover_track.reset() ;
+                    queue_draw () ;
+
+                    return true ;
+                }
 
                 bool
-                on_configure_event (GdkEventConfigure * event)        
+                on_motion_notify_event(
+                    GdkEventMotion* event
+                )
+                {
+                    int x_orig, y_orig;
+                    GdkModifierType state;
+
+                    if (event->is_hint)
+                    {
+                        gdk_window_get_pointer (event->window, &x_orig, &y_orig, &state);
+                    }
+                    else
+                    {
+                        x_orig = int (event->x);
+                        y_orig = int (event->y);
+                        state = GdkModifierType (event->state);
+                    }
+
+                    int row_c = get_upper_row() + ((int(y_orig)-(m_row_height+2)) / m_row_height);
+                    if( row_c < m_model->m_mapping.size() && (x_orig < (m_columns[0]->get_width()+16)))
+                    {
+                        m_hover_track = row_c ;
+                        queue_draw () ;
+                    }
+                    else
+                    {
+                        m_hover_track.reset() ;
+                        queue_draw () ;
+                    }
+
+                    return true ;
+                }
+
+                bool
+                on_configure_event(
+                    GdkEventConfigure* event
+                )        
                 {
                     m_prop_vadj.get_value()->set_page_size(event->height); 
                     m_prop_vadj.get_value()->set_upper((m_model->size()) * m_row_height);
@@ -828,6 +880,8 @@ namespace MPX
                     int row = get_upper_row() ;
                     m_previousdrawnrow = row;
 
+                    m_local_active_track.reset() ;
+
                     int y_pos       = m_row_height + 2;
                     int x_pos       = 16;
                     int col         = 0;
@@ -838,6 +892,8 @@ namespace MPX
                         (*i)->render_header(cairo, *this, x_pos, 0, m_row_height+2, col);
                         x_pos += (*i)->get_width() + 1;
                     }
+
+                    cairo->set_operator(Cairo::OPERATOR_ATOP);
 
                     while(m_model->is_set() && cnt && (row < m_model->m_mapping.size())) 
                     {
@@ -851,7 +907,6 @@ namespace MPX
                             background_area.width = alloc.get_width();
                             background_area.height = m_row_height;
 
-                            cairo->set_operator(Cairo::OPERATOR_ATOP);
                             cairo->rectangle( background_area.x, background_area.y, background_area.width, background_area.height ) ;
                             cairo->set_source_rgba( 0.2, 0.2, 0.2, 1. ) ;
                             cairo->fill() ;
@@ -863,7 +918,6 @@ namespace MPX
 
                         if( !m_selection.empty() && m_selection.count(std::make_pair(selected, row))) 
                         {
-                            cairo->set_operator(Cairo::OPERATOR_ATOP);
                             Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
                             cairo->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.8);
                             RoundedRectangle (cairo, 1, y_pos+1, alloc.get_width()-2, m_row_height-2., 1.);
@@ -877,6 +931,46 @@ namespace MPX
                         {
                             (*i)->render(cairo, m_model->row(row), m_model->m_filter_effective, *this, row, x_pos, y_pos, m_row_height, iter_is_selected, m_highlight);
                             x_pos += (*i)->get_width();
+                        }
+            
+                        if( m_active_track && boost::get<3>(m_model->row(row)) == m_active_track.get() )
+                        {
+                            m_local_active_track = row ;
+    
+                            Gdk::Cairo::set_source_pixbuf(
+                                  cairo
+                                , m_playing_pixbuf
+                                , 2
+                                , y_pos + (m_row_height/2 - 8)
+                            ) ;
+
+                            cairo->rectangle(
+                                  2
+                                , y_pos + (m_row_height/2 - 8)
+                                , 16
+                                , 16
+                            ) ;
+
+                            cairo->fill () ;
+                        }
+                        else
+                        if( m_hover_track && row == m_hover_track.get() )
+                        {
+                            Gdk::Cairo::set_source_pixbuf(
+                                  cairo
+                                , m_hover_pixbuf
+                                , 2
+                                , y_pos + (m_row_height/2 - 8)
+                            ) ;
+
+                            cairo->rectangle(
+                                  2
+                                , y_pos + (m_row_height/2 - 8)
+                                , 16
+                                , 16
+                            ) ;
+
+                            cairo->fill () ;
                         }
 
                         y_pos += m_row_height;
@@ -960,6 +1054,12 @@ namespace MPX
                     ));
                 }
 
+                boost::optional<gint64>
+                get_local_active_track ()
+                {
+                    return m_local_active_track ;
+                }
+
                 void
                 append_column (ColumnP column)
                 {
@@ -969,13 +1069,26 @@ namespace MPX
                 SignalTrackActivated&
                 signal_track_activated()
                 {
-                    return m_trackactivated;
+                    return m_SIGNAL_track_activated;
                 }
 
                 void
                 set_advanced (bool advanced)
                 {
                     m_model->set_advanced(advanced);
+                }
+
+                void
+                clear_active_track()
+                {
+                    m_active_track.reset() ;
+                }
+
+                void
+                set_active_track(gint64 id)
+                {
+                    m_active_track = id ;
+                    queue_draw () ;
                 }
 
                 ListView ()
@@ -986,13 +1099,16 @@ namespace MPX
                 , m_dnd(false)
                 , m_click_row_1(0)
                 , m_sel_size_was(0)
-                , m_highlight(true)
+                , m_highlight(false)
                 {
+                    m_playing_pixbuf = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "speaker.png" )) ;
+                    m_hover_pixbuf = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "speaker_ghost.png" )) ;
+
                     m_treeview = gtk_tree_view_new();
                     gtk_widget_realize(GTK_WIDGET(m_treeview));
 
                     set_flags(Gtk::CAN_FOCUS);
-                    add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_FOCUS_CHANGE_MASK));
+                    add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_FOCUS_CHANGE_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK ));
 
                     ((GtkWidgetClass*)(G_OBJECT_GET_CLASS(G_OBJECT(gobj()))))->set_scroll_adjustments_signal = 
                             g_signal_new ("set_scroll_adjustments",

@@ -128,10 +128,6 @@ audiosource_bin_SOURCES =		\
                                 \
     glib-marshalers.c           \
 								\
-	gtkmmmodule.h				\
-	gtkmmmodule.cc				\
-	gtkmm.cc					\
-								\
 	import-share.hh				\
 	import-share.cc				\
 								\
@@ -146,6 +142,15 @@ audiosource_bin_SOURCES =		\
 	jnethttpsrc.h				\
 	jnethttpsrc.cc				\
                                 \
+    kobo-position.hh            \
+    kobo-position.cc            \
+                                \
+    kobo-controller.hh          \
+    kobo-controller.cc          \
+                                \
+    kobo-cover.hh               \
+    kobo-cover.cc               \
+                                \
     kobo-main.hh                \
     kobo-main.cc                \
 								\
@@ -159,11 +164,6 @@ audiosource_bin_SOURCES =		\
 	metadatareader-taglib.cc	\
 	minisoup.cc					\
 								\
-	mpx.hh						\
-	mpx.cc						\
-	mpx-mmkeys.cc				\
-	mpx-source-handling.cc		\
-								\
 	network.cc					\
 								\
 	paths.hh					\
@@ -173,29 +173,8 @@ audiosource_bin_SOURCES =		\
 								\
 	playbacksource.cc			\
 								\
-	plugin.hh					\
-	plugin.cc					\
-								\
-	plugin-loader.hh			\
-								\
-	plugin-types-cpp.hh			\
-								\
-	plugin-loader-cpp.hh		\
-	plugin-loader-cpp.cc		\
-								\
-	plugin-types-python.hh		\
-	plugin-types-python.cc		\
-								\
-	plugin-loader-python.hh		\
-	plugin-loader-python.cc		\
-								\
-	plugin-manager-gui.hh		\
-	plugin-manager-gui.cc		\
-								\
+                                \
 	preferences.cc				\
-								\
-	pysigc.hh					\
-	python.cc					\
 								\
 	request-value.hh			\
 	request-value.cc			\

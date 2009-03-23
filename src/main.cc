@@ -61,11 +61,9 @@
 
 #include "plugin.hh"
 #include "plugin-manager-gui.hh"
-
 #include "splash-screen.hh"
 
-#include "kobo-main.hh"
-#include "alltracks.hh"
+#include "kobo-controller.hh"
 
 using namespace MPX;
 using namespace Glib;
@@ -372,12 +370,11 @@ main (int argc, char ** argv)
         splash->set_message(_("Done"), 1.0);
         delete splash;
 
-        MainWindow * w = new MainWindow ;
-        AllTracksView * tracks = new AllTracksView ;
-        w->set_widget_top( *tracks->get_widget() ) ;
-        w->show_all() ;
+        KoboController * control = new KoboController ;
 
-        gtk->run( *w ) ;
+        gtk->run( *control->get_widget() ) ;
+
+        delete control ;
 
 #ifdef HAVE_HAL
     }

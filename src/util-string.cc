@@ -430,7 +430,7 @@ namespace MPX
                                     c_open += (*(i_begin.find(idx))).second;
                                     if( !c_open_prev && c_open >= 1 )
                                     {
-                                        output += Glib::Markup::escape_text(chunk).raw();
+                                        output += Glib::Markup::escape_text( chunk ).raw();
                                         chunk.clear();
                                         output += "<span color='"+color+"'>";
                                     }
@@ -441,7 +441,7 @@ namespace MPX
                                     c_close += (*(i_end.find(idx))).second;
                                     if( c_close == c_open )
                                     {
-                                        output += Glib::Markup::escape_text(chunk).raw();
+                                        output += Glib::Markup::escape_text( chunk ).raw();
                                         chunk.clear();
                                         output += "</span>"; 
                                         c_close = 0;
@@ -452,7 +452,7 @@ namespace MPX
                                 chunk += *i;
                             }
 
-                            output += Glib::Markup::escape_text(chunk).raw();
+                            output += Glib::Markup::escape_text( chunk ).raw();
 
                             if( c_open )
                             {
@@ -464,7 +464,7 @@ namespace MPX
             }
             else
             {
-                return text;
+                return Glib::Markup::escape_text( text ) ;
             }
     }
   }
