@@ -6,9 +6,8 @@
 #include "kobo-main.hh"
 #include "kobo-position.hh"
 #include "kobo-cover.hh"
-#include "alltracks.hh"
-
 #include "mpx/mpx-types.hh"
+#include "mpx/com/view-tracklist.hh"
 
 namespace MPX
 {
@@ -17,12 +16,20 @@ namespace MPX
     {
         protected:
 
-            MainWindow          * m_main_window ;
-            AllTracksView       * m_main_track_view ;
-            Gtk::VBox           * m_vbox_bottom ;
-            KoboPosition        * m_main_position ;
-            KoboCover           * m_main_cover ;
-            Play                * m_play ;
+            MainWindow              * m_main_window ;
+            KoboPosition            * m_main_position ;
+            KoboCover               * m_main_cover ;
+
+            ListView                * m_ListView;
+            Gtk::ScrolledWindow     * m_ScrolledWin ;
+            Gtk::Entry              * m_Entry ;
+            Gtk::VBox               * m_VBox ;
+            Gtk::HBox               * m_HBox ;
+
+            DataModelFilterP          m_FilterModel;
+
+            Play                    * m_play ;
+    
 
             boost::optional<MPX::Track> m_current_track ;          
 
@@ -58,6 +65,12 @@ namespace MPX
                   MPX::Track        /*track*/
                 , bool              /*play or not*/
             ) ;
+
+            void
+            on_entry_changed (DataModelFilterP model, Gtk::Entry* entry)
+            {
+                model->set_filter(entry->get_text());
+            }
 
         protected:
 

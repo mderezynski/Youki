@@ -66,6 +66,9 @@ namespace MPX
         ) ;
 
         cairo->stroke () ;
+
+        Gdk::Color c = get_style()->get_base( Gtk::STATE_SELECTED ) ;
+        Gdk::Cairo::set_source_color( cairo, c ) ;
    
         cairo->rectangle(
               4 

@@ -6,8 +6,8 @@ namespace MPX
 {
     KoboCover::KoboCover ()
     {
-        m_jewelcase_bot = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "jewelcase_bot.png" ))->scale_simple( 289, 265, Gdk::INTERP_BILINEAR) ;
-        m_jewelcase_top = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "jewelcase_top.png" ))->scale_simple( 253, 253, Gdk::INTERP_BILINEAR) ;
+        m_jewelcase_bot = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "jewelcase_bot.png" ))->scale_simple( 289, 262, Gdk::INTERP_BILINEAR) ;
+        m_jewelcase_top = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "jewelcase_top.png" ))->scale_simple( 253, 255, Gdk::INTERP_BILINEAR) ;
     }
     
     KoboCover::~KoboCover ()
@@ -19,7 +19,7 @@ namespace MPX
         Glib::RefPtr<Gdk::Pixbuf> cover
     )
     {
-        m_cover = cover->scale_simple( 253, 253, Gdk::INTERP_BILINEAR ) ;
+        m_cover = cover->scale_simple( 253, 255, Gdk::INTERP_BILINEAR ) ;
         queue_draw () ;
 
     }
@@ -54,11 +54,11 @@ namespace MPX
               cairo
             , m_jewelcase_bot
             , a.get_width()/2 - 289/2
-            , a.get_height()/2 - 265/2
+            , a.get_height() - 262 - 4
         ) ;  
         cairo->rectangle(
               a.get_width()/2 - 289/2
-            , a.get_height()/2 - 265/2
+            , a.get_height() - 262 - 4
             , m_jewelcase_bot->get_width()
             , m_jewelcase_bot->get_height()
         ) ;
@@ -69,11 +69,11 @@ namespace MPX
               cairo
             , m_cover
             , a.get_width()/2 - 253/2 + 14.24
-            , a.get_height()/2 - 253/2 
+            , a.get_height() - 259 - 4
         ) ;  
         cairo->rectangle(
               a.get_width()/2 - 253/2 + 14.24
-            , a.get_height()/2 - 253/2
+            , a.get_height() - 259 - 4
             , m_cover->get_width()
             , m_cover->get_height()
         ) ;
@@ -83,11 +83,11 @@ namespace MPX
               cairo
             , m_jewelcase_top
             , a.get_width()/2 - 253/2 + 14.24
-            , a.get_height()/2 - 253/2
+            , a.get_height() - 259 - 4
         ) ;  
         cairo->rectangle(
               a.get_width()/2 - 253/2 + 14.24
-            , a.get_height()/2 - 253/2
+            , a.get_height() - 259 - 4
             , m_jewelcase_top->get_width()
             , m_jewelcase_top->get_height()
         ) ;

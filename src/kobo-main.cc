@@ -50,6 +50,7 @@ namespace MPX
 
                         a1->property_top_padding() = 20 ;
                         a1->property_bottom_padding() = 16 ;
+                        a2->property_bottom_padding() = 12 ;
 
                         a1->set_border_width( 1 ) ;
                         a2->set_border_width( 1 ) ;
