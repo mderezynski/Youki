@@ -1,4 +1,5 @@
 #include "kobo-controller.hh"
+#include "mpx/widgets/cairo-extensions.hh"
 #include <glibmm/i18n.h>
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-library.hh"
@@ -6,18 +7,65 @@
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-types.hh"
 
+namespace
+{
+    bool
+    on_alignment_expose(
+          GdkEventExpose* event
+        , Gtk::Alignment* widget
+    )
+    {
+            Cairo::RefPtr<Cairo::Context> cairo = widget->get_window()->create_cairo_context() ;
+            cairo->set_source_rgba( 0.65, 0.65, 0.65, 1. ) ;
+            cairo->set_line_width( 0.85 ) ;
+            cairo->set_operator( Cairo::OPERATOR_SOURCE ) ; 
+           
+            MPX::RoundedRectangle( 
+                  cairo
+                , widget->get_allocation().get_x() + 1
+                , widget->get_allocation().get_y() + 1
+                , widget->get_allocation().get_width() - 2
+                , widget->get_allocation().get_height() - 2
+                , 4.
+            ) ;
+
+            cairo->stroke () ;
+
+            return true ;
+    }
+}
+
 namespace MPX
 {
     KoboController::KoboController ()
     {
-        m_VBox        = Gtk::manage( new Gtk::VBox ) ;
-        m_ScrolledWin = Gtk::manage( new Gtk::ScrolledWindow ) ;
-        m_Entry       = Gtk::manage( new Gtk::Entry ) ;
+        m_VBox              = Gtk::manage( new Gtk::VBox ) ;
+        m_ScrolledWin       = Gtk::manage( new Gtk::ScrolledWindow ) ;
+        m_Entry             = Gtk::manage( new Gtk::Entry ) ;
+        m_Alignment_Entry   = Gtk::manage( new Gtk::Alignment ) ;
+
+        m_VBox->property_spacing() = 2 ; 
+
+        m_Alignment_Entry->add( *m_Entry ) ;
+        m_Alignment_Entry->property_top_padding() = 2 ;
+        m_Alignment_Entry->property_bottom_padding() = 2 ;
+        m_Alignment_Entry->property_left_padding() = 2 ;
+        m_Alignment_Entry->property_right_padding() = 2 ;
+
+        m_Alignment_Entry->signal_expose_event().connect(
+            sigc::bind(
+                      &on_alignment_expose
+                    , m_Alignment_Entry
+        )) ;    
 
         Gdk::Color c ;
         c.set_rgb_p( 0.12, 0.12, 0.12 ) ;
         m_Entry->modify_bg( Gtk::STATE_NORMAL, c ) ;
         m_Entry->modify_base( Gtk::STATE_NORMAL, c ) ;
+        m_Entry->modify_bg( Gtk::STATE_ACTIVE, c ) ;
+        m_Entry->modify_base( Gtk::STATE_ACTIVE, c ) ;
+        m_Entry->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+        m_Entry->modify_base( Gtk::STATE_PRELIGHT, c ) ;
         c.set_rgb_p( 1., 1., 1. ) ; 
         m_Entry->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Entry->modify_fg( Gtk::STATE_NORMAL, c ) ;
@@ -25,23 +73,23 @@ namespace MPX
 
         m_ScrolledWin->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
 
-        m_ListView = new ListView;
+        m_ListView = new ListView ;
 
-        DataModelP m (new DataModel);
+        DataModelP m (new DataModel) ;
 
-        SQL::RowV v;
-        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY album_artist, album, track_view.track")).str()); 
+        SQL::RowV v ;
+        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY album_artist, album, track_view.track")).str()) ; 
         for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
         {
                 SQL::Row & r = *i;
                 try{
-                    m->append_track(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, false).get())));
+                    m->append_track(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, false).get()))) ;
                 } catch( Library::FileQualificationError )
                 {
                 }
         }
 
-        m_FilterModel = DataModelFilterP (new DataModelFilter(m));
+        m_FilterModel = DataModelFilterP (new DataModelFilter(m)) ;
 
         m_Entry->signal_changed().connect(
                 sigc::bind(
@@ -51,36 +99,49 @@ namespace MPX
                         )
                       , m_FilterModel
                       , m_Entry
-        ));
+        )) ;
 
-        ColumnP c1 (new Column(_("Title")));
-        c1->set_column(0);
+        ColumnP c1 (new Column(_("Title"))) ;
+        c1->set_column(0) ;
 
-        ColumnP c2 (new Column(_("Artist")));
-        c2->set_column(1);
+        ColumnP c2 (new Column(_("Track"))) ;
+        c2->set_column(5) ;
+        c2->set_alignment( Pango::ALIGN_RIGHT ) ;
 
-        ColumnP c3 (new Column(_("Album")));
-        c3->set_column(2);
+        ColumnP c3 (new Column(_("Album"))) ;
+        c3->set_column(2) ;
 
-        m_ListView->append_column(c1);
-        m_ListView->append_column(c2);
-        m_ListView->append_column(c3);
+        ColumnP c4 (new Column(_("Artist"))) ;
+        c4->set_column(1) ;
 
-        m_ListView->set_model(m_FilterModel);
+        m_ListView->append_column(c1) ;
+        m_ListView->append_column(c2) ;
+        m_ListView->append_column(c3) ;
+        m_ListView->append_column(c4) ;
 
-        m_ScrolledWin->add(*m_ListView);
-        m_ScrolledWin->show_all();
+        m_ListView->column_set_fixed(
+              1
+            , true
+            , 60
+        ) ;
+
+        m_ListView->set_model(m_FilterModel ) ;
+
+        m_ScrolledWin->add(*m_ListView) ;
+        m_ScrolledWin->show_all() ;
 
         m_main_window = new MainWindow ;
         m_main_cover = new KoboCover ;
         m_main_position = new KoboPosition ;
+        m_main_titleinfo = new KoboTitleInfo ;
 
         m_main_window->set_widget_top( *m_VBox ) ;
         m_main_window->set_widget_drawer( *m_main_cover ) ; 
 
-        m_VBox->pack_start( *m_Entry, false, false, 0 ) ;
+        m_VBox->pack_start( *m_Alignment_Entry, false, false, 0 ) ;
         m_VBox->pack_start( *m_ScrolledWin, true, true, 0 ) ;
         m_VBox->pack_start( *m_main_position, false, false, 0 ) ;
+        m_VBox->pack_start( *m_main_titleinfo, false, false, 0 ) ;
 
         m_ListView->signal_track_activated().connect(
             sigc::mem_fun(
@@ -156,10 +217,7 @@ namespace MPX
     )
     {
         gint64 duration = m_play->property_duration().get_value() ;
-
-        double percent = double(position) / double(duration) ;
-
-        m_main_position->set_percent( percent ) ;
+        m_main_position->set_position( duration, position ) ;
     }
 
     void
@@ -202,14 +260,13 @@ namespace MPX
                 m_ListView->clear_active_track() ;
                 m_main_cover->clear() ;
                 m_current_track.reset() ;
-                m_main_position->set_percent( 0. ) ;
+                m_main_position->set_position( 0, 0 ) ;
+                m_main_titleinfo->clear() ;
                 break ;
 
             case PLAYSTATUS_WAITING:
-                m_ListView->clear_active_track() ;
-                m_main_cover->clear() ;
                 m_current_track.reset() ;
-                m_main_position->set_percent( 0. ) ;
+                m_main_titleinfo->clear() ;
                 break ;
 
             default: break ;
@@ -245,6 +302,18 @@ namespace MPX
         {
                 m_main_cover->clear() ;
         }
+
+        std::vector<std::string> info ;
+
+        int id[] = { ATTRIBUTE_ARTIST, ATTRIBUTE_TITLE } ;
+
+        for( int n = 0; n < 3 ; ++n ) 
+        {
+                if( m_current_track.get().has( n ) )
+                    info.push_back( boost::get<std::string>(m_current_track.get()[id[n]].get()) ) ;
+        }
+
+        m_main_titleinfo->set_info( info ) ;
     }
 
     void

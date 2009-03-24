@@ -8,6 +8,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/optional.hpp>
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 #include "mpx/aux/glibaddons.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/util-string.hh"
@@ -20,11 +21,11 @@ typedef Glib::Property<Gtk::Adjustment*> PropAdj;
 
 namespace MPX
 {
-        typedef boost::tuple<std::string, std::string, std::string, gint64, MPX::Track> Row5;
-        typedef std::vector<Row5>                                                       ModelT;
-        typedef boost::shared_ptr<ModelT>                                               ModelP;
-        typedef sigc::signal<void>                                                      Signal0;
-        typedef std::map<gint64, ModelT::iterator>                                      IdIterMap;
+        typedef boost::tuple<std::string, std::string, std::string, gint64, MPX::Track, gint64> Row6;
+        typedef std::vector<Row6>                                                               ModelT;
+        typedef boost::shared_ptr<ModelT>                                                       ModelP;
+        typedef sigc::signal<void>                                                              Signal0;
+        typedef std::map<gint64, ModelT::iterator>                                              IdIterMap;
 
         struct DataModel
         {
@@ -61,7 +62,7 @@ namespace MPX
                     return m_realmodel->size();
                 }
 
-                virtual Row5&
+                virtual Row6&
                 row (int row)
                 {
                     return (*m_realmodel)[row];
@@ -73,7 +74,7 @@ namespace MPX
                     using boost::get;
 
                     std::string artist, album, title;
-                    gint64 id = 0;
+                    gint64 id = 0, num = 0;
 
                     if(r.count("id"))
                     { 
@@ -89,7 +90,12 @@ namespace MPX
                     if(r.count("title"))
                         title = get<std::string>(r["title"]);
 
-                    Row5 row (title, artist, album, id, track);
+                    if(r.count("track"))
+                    { 
+                        num = get<gint64>(r["track"]); 
+                    }
+
+                    Row6 row (title, artist, album, id, track, num);
                     m_realmodel->push_back(row);
 
                     ModelT::iterator i = m_realmodel->end();
@@ -103,7 +109,7 @@ namespace MPX
                     using boost::get;
 
                     std::string artist, album, title;
-                    gint64 id = 0;
+                    gint64 id = 0, num = 0;
 
                     if(track[ATTRIBUTE_MPX_TRACK_ID])
                         id = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()); 
@@ -120,7 +126,10 @@ namespace MPX
                     if(track[ATTRIBUTE_TITLE])
                         title = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
 
-                    Row5 row (artist, album, title, id, track);
+                    if(track[ATTRIBUTE_TRACK])
+                        num = get<gint64>(track[ATTRIBUTE_TRACK].get()); 
+
+                    Row6 row (artist, album, title, id, track, num);
                     m_realmodel->push_back(row);
 
                     ModelT::iterator i = m_realmodel->end();
@@ -167,7 +176,7 @@ namespace MPX
                     return m_mapping.size();
                 }
 
-                virtual Row5&
+                virtual Row6&
                 row (int row)
                 {
                     return *(m_mapping[row]);
@@ -230,7 +239,7 @@ namespace MPX
                     
                     for(ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i)
                     {
-                        Row5 const& row = *i;
+                        Row6 const& row = *i;
 
                         if( m_filter_effective.empty() && m_constraints.empty() ) 
                         {
@@ -263,7 +272,7 @@ namespace MPX
                     RowRowMapping new_mapping;
                     for(RowRowMapping::const_iterator i = m_mapping.begin(); i != m_mapping.end(); ++i)
                     {
-                        Row5 const& row = *(*i);
+                        Row6 const& row = *(*i);
 
                         if( m_filter_effective.empty() && m_constraints.empty() ) 
                         {
@@ -293,16 +302,18 @@ namespace MPX
 
         class Column
         {
-                int         m_width;
-                int         m_column;
-                std::string m_title;
+                int                 m_width ;
+                int                 m_column ;
+                std::string         m_title ;
+                Pango::Alignment    m_alignment ;
 
             public:
 
                 Column (std::string const& title)
-                : m_width   (0)
-                , m_column  (0)
-                , m_title   (title)
+                : m_width( 0 )
+                , m_column( 0 )
+                , m_title( title )
+                , m_alignment( Pango::ALIGN_LEFT )
                 {
                 }
 
@@ -346,40 +357,75 @@ namespace MPX
                     return m_title;
                 }
 
+                void
+                set_alignment(
+                    Pango::Alignment align
+                )
+                {
+                    m_alignment = align ;
+                }
+
+
+                Pango::Alignment
+                get_alignment(
+                )
+                {
+                    return m_alignment ;
+                }
+
 
                 void
                 render_header(Cairo::RefPtr<Cairo::Context> cairo, Gtk::Widget& widget, int x_pos, int y_pos, int rowheight, int column)
                 {
                     using boost::get;
 
-                    /*
-                    cairo->set_operator(Cairo::OPERATOR_ATOP);
-                    Gdk::Color c = widget.get_style()->get_text(Gtk::STATE_NORMAL);
-                    cairo->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.2);
-                    cairo->rectangle(x_pos, y_pos, m_width, rowheight);
-                    cairo->fill(); 
-                    */
+                    int off = (column == 0) ? 16 : 0 ;
 
-                    cairo->rectangle( x_pos + 5, y_pos + 6, m_width+1, rowheight);
-                    cairo->clip();
+                    cairo->rectangle(
+                          x_pos + off + 5
+                        , y_pos + 6
+                        , m_width
+                        , rowheight
+                    ) ;
+                    cairo->clip() ;
 
-                    cairo->move_to( x_pos + 5, y_pos + 6);
+                    cairo->move_to(
+                          x_pos + off + 5
+                        , y_pos + 6
+                    ) ;
                     cairo->set_operator(Cairo::OPERATOR_ATOP);
-                    //Gdk::Cairo::set_source_color(cairo, widget.get_style()->get_text(Gtk::STATE_NORMAL));
                     cairo->set_source_rgba( 1., 1., 1., 1. ) ;
-                    Glib::RefPtr<Pango::Layout> layout = widget.create_pango_layout(""); 
-                    layout->set_markup((boost::format("<b>%s</b>") % Glib::Markup::escape_text(m_title).c_str()).str());
-                    layout->set_ellipsize(Pango::ELLIPSIZE_END);
-                    layout->set_width((m_width-10)*PANGO_SCALE);
-                    pango_cairo_show_layout(cairo->cobj(), layout->gobj());
 
-                    cairo->reset_clip();
+                    Glib::RefPtr<Pango::Layout> layout = widget.create_pango_layout(""); 
+
+                    layout->set_markup(
+                          (boost::format("<b>%s</b>") % Glib::Markup::escape_text(m_title).c_str()).str()
+                    ) ;
+
+                    layout->set_ellipsize(
+                          Pango::ELLIPSIZE_END
+                    ) ;
+
+                    layout->set_width(
+                          (m_width-off-10)*PANGO_SCALE
+                    ) ;
+
+                    layout->set_alignment(
+                          m_alignment
+                    ) ;
+
+                    pango_cairo_show_layout(
+                          cairo->cobj()
+                        , layout->gobj()
+                    ) ;
+
+                    cairo->reset_clip() ;
                 }
 
                 void
                 render(
                     Cairo::RefPtr<Cairo::Context>   cairo,
-                    Row5 const&                     datarow,
+                    Row6 const&                     datarow,
                     std::string const&              filter,
                     Gtk::Widget&                    widget,
                     int                             row,
@@ -393,12 +439,21 @@ namespace MPX
                     using boost::get;
 
                     cairo->set_operator(Cairo::OPERATOR_ATOP);
-                    //Gdk::Cairo::set_source_color(cairo, widget.get_style()->get_text(selected ? Gtk::STATE_SELECTED : Gtk::STATE_NORMAL ));
                     cairo->set_source_rgba( 1., 1., 1., 1. ) ;
 
-                    cairo->rectangle( x_pos, y_pos, m_width, rowheight);
+                    int off = (m_column == 0) ? 16 : 0 ;
+
+                    cairo->rectangle(
+                          x_pos + off
+                        , y_pos
+                        , m_width - off
+                        , rowheight
+                    ) ;
                     cairo->clip();
-                    cairo->move_to( x_pos + 6, y_pos + 4);
+                    cairo->move_to(
+                          x_pos + off + 6
+                        , y_pos + 4
+                    ) ;
 
                     std::string str;
                     switch( m_column )
@@ -412,23 +467,39 @@ namespace MPX
                         case 2:
                             str = get<2>(datarow);
                             break;
+                        case 5:
+                            str = boost::lexical_cast<std::string>(get<5>(datarow)) ;
+                            break;
                     }
 
                     Glib::RefPtr<Pango::Layout> layout; 
 
                     if( highlight )
                     {
-                        layout = widget.create_pango_layout("");
-                        layout->set_markup( Util::text_match_highlight( str, filter, "#ff3030") );
+                        layout = widget.create_pango_layout("") ;
+                        layout->set_markup( Util::text_match_highlight( str, filter, "#ff3030") ) ;
                     }
                     else
                     {
                         layout = widget.create_pango_layout( str );
                     }
 
-                    layout->set_ellipsize( Pango::ELLIPSIZE_END );
-                    layout->set_width( (m_width-8)*PANGO_SCALE );
-                    pango_cairo_show_layout( cairo->cobj(), layout->gobj() );
+                    layout->set_ellipsize(
+                          Pango::ELLIPSIZE_END
+                    ) ;
+
+                    layout->set_width(
+                          (m_width - off - 8) * PANGO_SCALE
+                    ) ;
+
+                    layout->set_alignment(
+                          m_alignment
+                    ) ;
+
+                    pango_cairo_show_layout(
+                          cairo->cobj()
+                        , layout->gobj()
+                    ) ;
 
                     cairo->reset_clip();
                 }
@@ -463,7 +534,10 @@ namespace MPX
                 boost::optional<gint64>             m_local_active_track ;
                 Glib::RefPtr<Gdk::Pixbuf>           m_playing_pixbuf ;
                 Glib::RefPtr<Gdk::Pixbuf>           m_hover_pixbuf ;
-
+                std::set<int>                       m_collapsed ;
+                std::set<int>                       m_fixed ;
+                int                                 m_fixed_total_width ;
+        
                 SignalTrackActivated                m_SIGNAL_track_activated;
 
                 void
@@ -536,7 +610,7 @@ namespace MPX
 
                     for(Selection::const_iterator i = m_selection.begin(); i != m_selection.end(); ++i)
                     {
-                        Row5 const& r = *(i->first);
+                        Row6 const& r = *(i->first);
                         m_dnd_idv.push_back(get<3>(r));
                     }
 
@@ -689,6 +763,18 @@ namespace MPX
 
                     if( event->y < (m_row_height+4))
                     {
+                        int x = event->x ;
+                        int p = 0 ;
+                        for( int n = 0; n < m_columns.size() ; ++n )
+                        {
+                            int w = m_columns[n]->get_width() ;
+                            if( (x >= p) && (x <= p + w))
+                            {
+                                column_set_collapsed( n, !m_collapsed.count( n ) ) ;
+                                break ;
+                            }
+                            p += w ;
+                        }
                         return true;
                     }
         
@@ -717,7 +803,7 @@ namespace MPX
                         {
                             int row = get_upper_row() + ((int(event->y)-(m_row_height+2)) / m_row_height);
 
-                            if( event->x < (m_columns[0]->get_width()+16) )
+                            if( event->x < m_columns[0]->get_width() )
                             {
                                 MPX::Track track = get<4>(m_model->row(row)) ;
                                 m_SIGNAL_track_activated.emit(track, true) ;
@@ -832,7 +918,7 @@ namespace MPX
                     }
 
                     int row_c = get_upper_row() + ((int(y_orig)-(m_row_height+2)) / m_row_height);
-                    if( row_c < m_model->m_mapping.size() && (x_orig < (m_columns[0]->get_width()+16)))
+                    if( row_c < m_model->m_mapping.size() && (x_orig < m_columns[0]->get_width()) )
                     {
                         m_hover_track = row_c ;
                         queue_draw () ;
@@ -856,11 +942,22 @@ namespace MPX
 
                     m_visible_height = event->height;
 
-                    double columnwidth = (double(event->width) - 16) / double(m_columns.size());
+                    double column_width = (double(event->width) - m_fixed_total_width - (40*m_collapsed.size()) ) / double(m_columns.size()-m_collapsed.size()-m_fixed.size());
 
                     for(int n = 0; n < m_columns.size(); ++n)
                     {
-                        m_columns[n]->set_width(columnwidth);
+                        if( m_fixed.count( n ) )
+                        {
+                            continue ;
+                        } 
+                        if( m_collapsed.count( n ) )
+                        {
+                            m_columns[n]->set_width( 40 ) ;
+                        }
+                        else
+                        {
+                            m_columns[n]->set_width( column_width ) ;
+                        }
                     }
                     return false;
                 }
@@ -883,7 +980,7 @@ namespace MPX
                     m_local_active_track.reset() ;
 
                     int y_pos       = m_row_height + 2;
-                    int x_pos       = 16;
+                    int x_pos       = 0;
                     int col         = 0;
                     int cnt         = (m_visible_height - (m_row_height + 2)) / m_row_height;
                     
@@ -897,7 +994,7 @@ namespace MPX
 
                     while(m_model->is_set() && cnt && (row < m_model->m_mapping.size())) 
                     {
-                        x_pos = 16;
+                        x_pos = 0;
 
                         if( !(row%2) ) 
                         {
@@ -1091,15 +1188,62 @@ namespace MPX
                     queue_draw () ;
                 }
 
+                void
+                column_set_collapsed(
+                      int       column
+                    , bool      collapsed
+                )
+                {
+                    if( collapsed )
+                    {
+                        m_collapsed.insert( column ) ;
+                        queue_resize () ;
+                        queue_draw () ;
+                    }
+                    else
+                    {
+                        m_collapsed.erase( column ) ;
+                        queue_resize () ;
+                        queue_draw () ;
+                    }
+                }
+
+                void
+                column_set_fixed(
+                      int       column
+                    , bool      fixed
+                    , int       width = 0
+                )
+                {
+                    if( fixed )
+                    {
+                        m_fixed.insert( column ) ;
+                        m_fixed_total_width += width ;
+                        m_columns[column]->set_width( width ) ;
+                        queue_resize () ;
+                        queue_draw () ;
+                    }
+                    else
+                    {
+                        m_fixed.erase( column ) ;
+                        m_fixed_total_width -= m_columns[column]->get_width() ; 
+                        queue_resize () ;
+                        queue_draw () ;
+                    }
+                }
+
                 ListView ()
-                : ObjectBase    ("MPXListView")
-                , m_previousdrawnrow(0)
-                , m_prop_vadj   (*this, "vadjustment", (Gtk::Adjustment*)(0))
-                , m_prop_hadj   (*this, "hadjustment", (Gtk::Adjustment*)(0))
-                , m_dnd(false)
-                , m_click_row_1(0)
-                , m_sel_size_was(0)
-                , m_highlight(false)
+
+                        : ObjectBase( "MPXListView" )
+                        , m_previousdrawnrow( 0 )
+                        , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
+                        , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
+                        , m_dnd( false )
+                        , m_click_row_1( 0 ) 
+                        , m_sel_size_was( 0 )
+                        , m_highlight( false )
+                        , m_fixed_total_width( 0 )
+
                 {
                     m_playing_pixbuf = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "speaker.png" )) ;
                     m_hover_pixbuf = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "speaker_ghost.png" )) ;

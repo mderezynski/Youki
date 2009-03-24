@@ -10,15 +10,19 @@ namespace MPX
         protected:
         
             double m_percent ;
-        
+            gint64 m_duration ;        
+            gint64 m_position ;
+            bool   m_inside ;
+    
         public:
 
             KoboPosition () ;
             virtual ~KoboPosition () ;
 
             void
-            set_percent(
-                double
+            set_position(
+                  gint64
+                , gint64
             ) ;
 
         protected:
@@ -31,6 +35,16 @@ namespace MPX
             virtual bool
             on_expose_event(
                 GdkEventExpose*
+            ) ;
+
+            virtual bool
+            on_leave_notify_event(
+                GdkEventCrossing*
+            ) ;
+
+            virtual bool
+            on_enter_notify_event(
+                GdkEventCrossing*
             ) ;
     } ; 
 }

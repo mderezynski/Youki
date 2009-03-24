@@ -6,6 +6,7 @@
 #include "kobo-main.hh"
 #include "kobo-position.hh"
 #include "kobo-cover.hh"
+#include "kobo-titleinfo.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/com/view-tracklist.hh"
 
@@ -19,10 +20,12 @@ namespace MPX
             MainWindow              * m_main_window ;
             KoboPosition            * m_main_position ;
             KoboCover               * m_main_cover ;
+            KoboTitleInfo           * m_main_titleinfo ;
 
             ListView                * m_ListView;
             Gtk::ScrolledWindow     * m_ScrolledWin ;
             Gtk::Entry              * m_Entry ;
+            Gtk::Alignment          * m_Alignment_Entry ;
             Gtk::VBox               * m_VBox ;
             Gtk::HBox               * m_HBox ;
 

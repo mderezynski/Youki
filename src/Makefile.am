@@ -154,6 +154,9 @@ audiosource_bin_SOURCES =		\
     kobo-main.hh                \
     kobo-main.cc                \
 								\
+    kobo-titleinfo.hh           \
+    kobo-titleinfo.cc           \
+								\
 	library.cc					\
 	library-scanner-thread.cc	\
 								\

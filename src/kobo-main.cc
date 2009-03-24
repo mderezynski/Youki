@@ -26,8 +26,10 @@ namespace MPX
     , m_drawer_height_max( 300 )
     , m_expand_direction( EXPAND_NONE )
                     {
+                        set_title( "KOBO" ) ;
                         set_decorated( false ) ;
                         set_colormap(Glib::wrap(gdk_screen_get_rgba_colormap(gdk_screen_get_default()), true)) ; 
+
                         add_events( Gdk::BUTTON_PRESS_MASK ) ;
                         m_title_logo = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "title-logo.png" )) ;
 
@@ -52,8 +54,8 @@ namespace MPX
                         a1->property_bottom_padding() = 16 ;
                         a2->property_bottom_padding() = 12 ;
 
-                        a1->set_border_width( 1 ) ;
-                        a2->set_border_width( 1 ) ;
+                        a1->set_border_width( 2 ) ;
+                        a2->set_border_width( 2 ) ;
 
                         v = Gtk::manage( new Gtk::VBox ) ;
                         v->pack_start( *a1, 0, 0, 0 ) ;
@@ -225,7 +227,7 @@ namespace MPX
                         if( m_expand_direction != EXPAND_NONE || m_drawer_out )
                         {
                                 cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
-                                cr->set_source_rgba( 0.35, 0.35, 0.35, .8 ) ;
+                                cr->set_source_rgba( 0.35, 0.35, 0.35, .93 ) ;
                             
                                 RoundedRectangle(
                                       cr

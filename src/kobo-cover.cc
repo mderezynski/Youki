@@ -1,6 +1,7 @@
 #include "config.h"
 #include <gtkmm.h>
 #include "kobo-cover.hh"
+#include "mpx/widgets/cairo-extensions.hh"
 
 namespace MPX
 {
@@ -39,7 +40,7 @@ namespace MPX
         Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context() ;
         
         cairo->set_operator( Cairo::OPERATOR_SOURCE ) ; 
-        cairo->set_source_rgba( 0.35, 0.35, 0.35, 0.8 ) ;
+        cairo->set_source_rgba( 0.35, 0.35, 0.35, .93 ) ;
         cairo->paint () ;     
 
         if( !m_cover )
@@ -49,6 +50,7 @@ namespace MPX
 
         const Gtk::Allocation& a = get_allocation() ;
 
+/*
         cairo->set_operator( Cairo::OPERATOR_SOURCE ) ; 
         Gdk::Cairo::set_source_pixbuf(    
               cairo
@@ -92,6 +94,28 @@ namespace MPX
             , m_jewelcase_top->get_height()
         ) ;
         cairo->fill () ;
+*/
+
+        cairo->set_operator( Cairo::OPERATOR_SOURCE ) ; 
+        Gdk::Cairo::set_source_pixbuf(    
+              cairo
+            , m_cover
+            , a.get_width()/2 - m_cover->get_width()/2 
+            , a.get_height() - m_cover->get_height() - 8 
+        ) ;  
+        RoundedRectangle(
+              cairo
+            , a.get_width()/2 - m_cover->get_width()/2 
+            , a.get_height() - m_cover->get_height() - 8
+            , m_cover->get_width()
+            , m_cover->get_height()
+            , 10.
+        ) ;
+        cairo->fill_preserve () ;
+
+        cairo->set_source_rgba( 0., 0., 0., 1. ) ;
+        cairo->set_line_width( 0.5 ) ;
+        cairo->stroke() ;
 
         return true ;
     }
