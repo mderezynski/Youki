@@ -113,9 +113,11 @@ namespace MPX
         ) ;
         cairo->fill_preserve () ;
 
+/*
         cairo->set_source_rgba( 0., 0., 0., 1. ) ;
         cairo->set_line_width( 0.5 ) ;
         cairo->stroke() ;
+*/
 
         return true ;
     }

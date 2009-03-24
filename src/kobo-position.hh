@@ -9,12 +9,28 @@ namespace MPX
     {
         protected:
         
-            double m_percent ;
-            gint64 m_duration ;        
-            gint64 m_position ;
-            bool   m_inside ;
+            double  m_percent ;
+            gint64  m_duration ;        
+            gint64  m_position ;
+            bool    m_clicked ;
+            gint64  m_seek_position ;
+            double  m_seek_factor ;
     
         public:
+
+            typedef sigc::signal<void, gint64>      SignalSeekEvent ;
+
+        protected:
+    
+            SignalSeekEvent    m_SIGNAL_seek_event ;
+
+        public:
+
+            SignalSeekEvent&
+            signal_seek_event()
+            {
+                return m_SIGNAL_seek_event ;
+            }
 
             KoboPosition () ;
             virtual ~KoboPosition () ;
@@ -45,6 +61,21 @@ namespace MPX
             virtual bool
             on_enter_notify_event(
                 GdkEventCrossing*
+            ) ;
+
+            virtual bool
+            on_button_press_event(
+                GdkEventButton*
+            ) ;
+
+            virtual bool
+            on_button_release_event(
+                GdkEventButton*
+            ) ;
+
+            virtual bool
+            on_motion_notify_event(
+                GdkEventMotion*
             ) ;
     } ; 
 }

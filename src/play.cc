@@ -566,8 +566,13 @@ namespace MPX
                 Play::seek (gint64 position)
                 {
                         m_conn_stream_position.disconnect ();
-                        gst_element_seek_simple (GST_ELEMENT (control_pipe ()), GST_FORMAT_TIME,
-                                        GstSeekFlags (GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_KEY_UNIT), gint64 (position * GST_SECOND));
+
+                        if (!gst_element_seek (control_pipe(), 1.0, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH,
+                                                 GST_SEEK_TYPE_SET, position * GST_SECOND,
+                                                 GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE))
+                        {
+                            g_print ("Seek failed!\n");
+                        }
                 }
 
         void

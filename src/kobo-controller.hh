@@ -24,14 +24,20 @@ namespace MPX
 
             ListView                * m_ListView;
             Gtk::ScrolledWindow     * m_ScrolledWin ;
+
             Gtk::Entry              * m_Entry ;
             Gtk::Alignment          * m_Alignment_Entry ;
+            Gtk::HBox               * m_HBox_Entry ;
+            Gtk::Label              * m_Label_Search ;
+
             Gtk::VBox               * m_VBox ;
             Gtk::HBox               * m_HBox ;
 
             DataModelFilterP          m_FilterModel;
 
             Play                    * m_play ;
+
+            gint64                    m_seek_position ;
     
 
             boost::optional<MPX::Track> m_current_track ;          
@@ -74,6 +80,9 @@ namespace MPX
             {
                 model->set_filter(entry->get_text());
             }
+
+            void
+            on_seek( gint64 ) ;
 
         protected:
 

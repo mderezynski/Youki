@@ -10,10 +10,12 @@ namespace MPX
 
         : m_percent( 0 )
         , m_duration( 0 )
-        , m_inside( false )
+        , m_clicked( false )
+        , m_seek_position( 0 )
+        , m_seek_factor( 0 )
 
     {
-        add_events(Gdk::EventMask(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK )) ;
+        add_events(Gdk::EventMask(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK )) ;
     }
 
     KoboPosition::~KoboPosition () 
@@ -88,10 +90,13 @@ namespace MPX
                 cairo->fill () ;
         }
 
-        double factor = 1. ;
-        if( m_percent >= 0.90 )
+        double factor   = 1. ;
+        gint64 position = m_clicked ? m_seek_position : m_position ;
+        double percent  = double(position) / double(m_duration) ; 
+
+        if( percent >= 0.90 )
         {
-            factor = (1. - m_percent) * 10. ; 
+            factor = (1. - percent) * 10. ; 
         }
 
         if( m_percent > 0. )
@@ -107,14 +112,14 @@ namespace MPX
                       cairo
                     , 4 
                     , 4 
-                    , double((a.get_width() - 8)) * double(m_percent)
+                    , double((a.get_width() - 8)) * double(percent)
                     , 12
                     , 4.
                 ) ;
                 cairo->fill () ;
         }
 
-        if( m_duration > 0 && m_inside )
+        if( m_duration > 0 ) 
         {
             const int text_size_px = 8 ;
 
@@ -127,13 +132,12 @@ namespace MPX
             Glib::RefPtr<Pango::Layout> layout = Glib::wrap (pango_cairo_create_layout (cairo->cobj ())) ;
             layout->set_font_description (font_desc) ;
 
-
             layout->set_text(
-                (boost::format("%02d:%02d") % ( m_position / 60 ) % ( m_position % 60 )).str()
+                (boost::format("%02d:%02d") % ( position / 60 ) % ( position % 60 )).str()
             ) ;
             int width, height;
             layout->get_pixel_size (width, height) ;
-            double position_x = 4 + double((a.get_width() - 8)) * double(m_percent) - width - 2;
+            double position_x = 4 + double((a.get_width() - 8)) * double(percent) - width - 2;
             position_x = (position_x < 4) ? 4 : position_x ;
             cairo->move_to(
                   position_x                  
@@ -164,9 +168,6 @@ namespace MPX
         GdkEventCrossing* G_GNUC_UNUSED
     )
     {
-        m_inside = false ;
-        queue_draw () ;
-
         return true ;
     }
 
@@ -175,8 +176,67 @@ namespace MPX
         GdkEventCrossing*
     )
     {
-        m_inside = true ;
+        return true ;
+    }
+
+    bool
+    KoboPosition::on_button_press_event(
+        GdkEventButton* event
+    ) 
+    {
+        if( event->button == 1 )
+        {
+            const Gtk::Allocation& a = get_allocation() ;
+
+            m_clicked = true ;
+            m_seek_factor = double(a.get_width()) / double(m_duration) ;
+            m_seek_position = double(event->x) / m_seek_factor ;
+            m_seek_position = (m_seek_position > m_duration) ? m_duration : m_seek_position ;
+            m_seek_position = (m_seek_position < 0) ? 0 : m_seek_position ;
+            queue_draw () ;
+        }
+
+        return true ;
+    }
+
+    bool
+    KoboPosition::on_button_release_event(
+        GdkEventButton* G_GNUC_UNUSED
+    )
+    {
+        m_position = m_seek_position ;
+        m_SIGNAL_seek_event.emit( m_seek_position ) ;
+        m_clicked = false ;
         queue_draw () ;
+        return true ;
+    }
+
+    bool
+    KoboPosition::on_motion_notify_event(
+        GdkEventMotion* event
+    )
+    {
+        if( m_clicked )
+        {
+            int x_orig, y_orig;
+            GdkModifierType state;
+
+            if (event->is_hint)
+            {
+                gdk_window_get_pointer (event->window, &x_orig, &y_orig, &state);
+            }
+            else
+            {
+                x_orig = int (event->x);
+                y_orig = int (event->y);
+                state = GdkModifierType (event->state);
+            }
+
+            m_seek_position = double(x_orig) / m_seek_factor ;
+            m_seek_position = (m_seek_position > m_duration) ? m_duration : m_seek_position ;
+            m_seek_position = (m_seek_position < 0) ? 0 : m_seek_position ;
+            queue_draw () ;
+        }
 
         return true ;
     }

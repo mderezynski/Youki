@@ -35,6 +35,7 @@
 #include <cairomm/cairomm.h>
 #include <cmath>
 #include "mpx/util-graphics.hh"
+#include "mpx/widgets/cairo-extensions.hh"
 
 namespace
 {
@@ -46,7 +47,7 @@ namespace
     int const animation_frame_period_ms = 1000 / animation_fps;
 
     char const*  text_font              = "Sans" ;
-    int const    text_size_px           = 10 ;
+    int const    text_size_px           = 14 ;
     double const text_colour[3]         = { 1.0, 1.0, 1.0 } ;
     double const text_fade_in_time      = 0.2 ;
     double const text_fade_out_time     = 0.05 ;
@@ -109,7 +110,7 @@ namespace MPX
         m_timer.stop ();
         m_timer.reset ();
 
-        set_size_request( -1, 20 ) ;
+        set_size_request( -1, 24 ) ;
     }
 
     void
@@ -153,11 +154,30 @@ namespace MPX
     void
     KoboTitleInfo::draw_frame ()
     {
-        Cairo::RefPtr<Cairo::Context> cr = get_window ()->create_cairo_context () ;
+        Cairo::RefPtr<Cairo::Context> cairo = get_window ()->create_cairo_context () ;
 
-        cr->set_operator(Cairo::OPERATOR_SOURCE) ;
-        cr->set_source_rgba( 0.12, 0.12, 0.12, 1. ) ;
-        cr->paint () ;
+        const Gtk::Allocation& a = get_allocation() ;
+
+        cairo->set_operator(Cairo::OPERATOR_SOURCE) ;
+        cairo->set_source_rgba( 0.12, 0.12, 0.12, 1. ) ;
+        cairo->paint () ;
+
+        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+        cairo->set_source_rgba(
+              .8
+            , .8
+            , .8 
+            , .08
+        ) ;
+        RoundedRectangle(
+              cairo
+            , 4
+            , 1 
+            , double((a.get_width() - 8))
+            , double((a.get_height() - 2))
+            , 2.
+        ) ;
+        cairo->fill () ;
 
         double current_time = m_timer.elapsed () ;
 
@@ -170,24 +190,22 @@ namespace MPX
             std::string text  = get_text_at_time (current_time) ;
             double      alpha = get_text_alpha_at_time (current_time) ;
 
-            Glib::RefPtr<Pango::Layout> layout = Glib::wrap (pango_cairo_create_layout (cr->cobj ())) ;
+            Glib::RefPtr<Pango::Layout> layout = Glib::wrap (pango_cairo_create_layout (cairo->cobj ())) ;
             layout->set_font_description (font_desc) ;
             layout->set_text (text) ;
 
             int width, height;
             layout->get_pixel_size (width, height) ;
 
-            const Gtk::Allocation& a = get_allocation() ;
-
-            cr->move_to(
+            cairo->move_to(
                   (a.get_width () - width) / 2
                 , (a.get_height () - height) / 2
             ) ;
 
-            cr->set_source_rgba (text_colour[0], text_colour[1], text_colour[2], alpha) ;
-            cr->set_operator (Cairo::OPERATOR_ATOP) ;
+            cairo->set_source_rgba (text_colour[0], text_colour[1], text_colour[2], alpha) ;
+            cairo->set_operator (Cairo::OPERATOR_ATOP) ;
 
-            pango_cairo_show_layout (cr->cobj (), layout->gobj ()) ;
+            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
         }
     }
 

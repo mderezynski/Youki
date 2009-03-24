@@ -38,13 +38,24 @@ namespace
 namespace MPX
 {
     KoboController::KoboController ()
+    : m_seek_position( -1 )
     {
         m_VBox              = Gtk::manage( new Gtk::VBox ) ;
         m_ScrolledWin       = Gtk::manage( new Gtk::ScrolledWindow ) ;
         m_Entry             = Gtk::manage( new Gtk::Entry ) ;
         m_Alignment_Entry   = Gtk::manage( new Gtk::Alignment ) ;
+        m_HBox_Entry        = Gtk::manage( new Gtk::HBox ) ;
+        m_Label_Search      = Gtk::manage( new Gtk::Label(_("_Search:"))) ;
+
+        m_Label_Search->set_mnemonic_widget( *m_Entry ) ;
+        m_Label_Search->set_use_underline() ;
 
         m_VBox->property_spacing() = 2 ; 
+        m_HBox_Entry->property_spacing() = 4 ; 
+        m_HBox_Entry->set_border_width( 2 ) ;
+
+        m_HBox_Entry->pack_start( *m_Label_Search, false, false, 0 ) ;
+        m_HBox_Entry->pack_start( *m_Alignment_Entry, true, true, 0 ) ;
 
         m_Alignment_Entry->add( *m_Entry ) ;
         m_Alignment_Entry->property_top_padding() = 2 ;
@@ -70,6 +81,16 @@ namespace MPX
         m_Entry->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Entry->modify_fg( Gtk::STATE_NORMAL, c ) ;
         m_Entry->property_has_frame() = false ; 
+
+        m_Label_Search->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_Label_Search->modify_base( Gtk::STATE_NORMAL, c ) ;
+        m_Label_Search->modify_bg( Gtk::STATE_ACTIVE, c ) ;
+        m_Label_Search->modify_base( Gtk::STATE_ACTIVE, c ) ;
+        m_Label_Search->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+        m_Label_Search->modify_base( Gtk::STATE_PRELIGHT, c ) ;
+        c.set_rgb_p( 1., 1., 1. ) ; 
+        m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
+        m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
 
         m_ScrolledWin->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
 
@@ -138,7 +159,7 @@ namespace MPX
         m_main_window->set_widget_top( *m_VBox ) ;
         m_main_window->set_widget_drawer( *m_main_cover ) ; 
 
-        m_VBox->pack_start( *m_Alignment_Entry, false, false, 0 ) ;
+        m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
         m_VBox->pack_start( *m_ScrolledWin, true, true, 0 ) ;
         m_VBox->pack_start( *m_main_position, false, false, 0 ) ;
         m_VBox->pack_start( *m_main_titleinfo, false, false, 0 ) ;
@@ -147,6 +168,12 @@ namespace MPX
             sigc::mem_fun(
                       *this
                     , &KoboController::on_track_activated
+        )) ;
+
+        m_main_position->signal_seek_event().connect(
+            sigc::mem_fun(
+                  *this
+                , &KoboController::on_seek
         )) ;
 
         m_play = services->get<Play>("mpx-service-play").get() ;
@@ -216,8 +243,22 @@ namespace MPX
           gint64 position
     )
     {
-        gint64 duration = m_play->property_duration().get_value() ;
-        m_main_position->set_position( duration, position ) ;
+        if( m_seek_position != -1 )
+        {
+            if( position >= m_seek_position )
+            {
+                gint64 duration = m_play->property_duration().get_value() ;
+                m_main_position->set_position( duration, position ) ;
+                m_seek_position = -1 ;
+            }
+        }
+        else
+        if( m_seek_position == -1 )
+        {
+            gint64 duration = m_play->property_duration().get_value() ;
+            m_main_position->set_position( duration, position ) ;
+        }
+
     }
 
     void
@@ -257,16 +298,20 @@ namespace MPX
         switch( status )
         {
             case PLAYSTATUS_STOPPED:
+                m_current_track.reset() ;
+                m_main_titleinfo->clear() ;
+                m_main_window->queue_draw () ;    
+                m_seek_position = -1 ;
                 m_ListView->clear_active_track() ;
                 m_main_cover->clear() ;
-                m_current_track.reset() ;
                 m_main_position->set_position( 0, 0 ) ;
-                m_main_titleinfo->clear() ;
                 break ;
 
             case PLAYSTATUS_WAITING:
                 m_current_track.reset() ;
                 m_main_titleinfo->clear() ;
+                m_main_window->queue_draw () ;    
+                m_seek_position = -1 ;
                 break ;
 
             default: break ;
@@ -323,5 +368,14 @@ namespace MPX
     ) 
     {
         play_track( t ) ;
+    }
+
+    void
+    KoboController::on_seek(
+          gint64        position
+    )
+    {
+        m_seek_position = position ;
+        m_play->seek( position ) ;
     }
 }

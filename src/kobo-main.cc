@@ -176,7 +176,7 @@ namespace MPX
                             return false ;
                         }
                         else
-                        if( event->y <= m_presize_height )
+                        if( (event->y <= m_presize_height) && (event->y > m_presize_height-16) )
                         {
                             if( m_drawer_out )
                             {
