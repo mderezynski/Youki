@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: audiosource alpha6\n"
 "Report-Msgid-Bugs-To: http://mpx.backtrace.info/report\n"
-"POT-Creation-Date: 2009-02-27 15:16+0100\n"
+"POT-Creation-Date: 2009-03-24 21:55+0100\n"
 "PO-Revision-Date: 2009-01-05 23:46+0100\n"
 "Last-Translator: Carl Furstenberg <azatoth@gmail.com>\n"
 "Language-Team: Swedish <sv@li.org>\n"
@@ -1026,10 +1026,6 @@ msgstr ""
 
 #: src/hal.cc:131 src/hal.cc:136
 msgid "Drive Size"
-msgstr ""
-
-#: src/infoarea.cc:59
-msgid "Drag and drop files here to play them."
 msgstr ""
 
 #: src/library-scanner-thread.cc:541

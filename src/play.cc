@@ -673,14 +673,13 @@ namespace MPX
                         // Unrefrencing the message will break the spectrum and memory will leak
                         //gst_message_unref(play.m_spectrum_message);
 
-                        play.signal_spectrum_.emit( play.m_spectrum );
+               //         play.signal_spectrum_.emit( play.m_spectrum );
 
-                        /*
                         Glib::signal_idle().connect(
                                 sigc::mem_fun(
                                         play,
                                         &Play::clock_idle_handler
-                        ));*/
+                        ));
 
                         return FALSE;
                 }
@@ -730,7 +729,7 @@ namespace MPX
                                                       GstClockTime curtime=gst_clock_get_time(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())))-basetime;
                                                       GstClockTimeDiff waittime=GST_CLOCK_DIFF(curtime,endtime);
                                                       
-                                                      clock_id=gst_clock_new_single_shot_id(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())),basetime+endtime);
+                                                      clock_id=gst_clock_new_single_shot_id(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())), /*basetime+endtime*/ waittime );
 
                                                       GstStructure const* s = gst_message_get_structure (message);
                                                       GValue const* m = gst_structure_get_value (s, "magnitude");

@@ -6,6 +6,11 @@
 
 namespace
 {
+    const double rounding = 8. ;
+}
+
+namespace
+{
     void RoundedTriangle (Cairo::RefPtr<Cairo::Context> cr, double x, double y, double w, double h,
         double r)
     {
@@ -26,7 +31,7 @@ namespace MPX
     , m_drawer_height_max( 300 )
     , m_expand_direction( EXPAND_NONE )
                     {
-                        set_title( "KOBO" ) ;
+                        set_title( "Youki" ) ;
                         set_decorated( false ) ;
                         set_colormap(Glib::wrap(gdk_screen_get_rgba_colormap(gdk_screen_get_default()), true)) ; 
 
@@ -54,8 +59,8 @@ namespace MPX
                         a1->property_bottom_padding() = 16 ;
                         a2->property_bottom_padding() = 12 ;
 
-                        a1->set_border_width( 2 ) ;
-                        a2->set_border_width( 2 ) ;
+                        a1->set_border_width( 8 ) ;
+                        a2->set_border_width( 8 ) ;
 
                         v = Gtk::manage( new Gtk::VBox ) ;
                         v->pack_start( *a1, 0, 0, 0 ) ;
@@ -87,7 +92,7 @@ namespace MPX
                         Gdk::Geometry geom ;
 
                         geom.min_height = 300 + ( with_drawer_height ? m_drawer_height_max : 0 ) ;
-                        geom.min_width = 300 ;
+                        geom.min_width = 524 ;
 
                         set_geometry_hints(
                               *this
@@ -227,7 +232,7 @@ namespace MPX
                         if( m_expand_direction != EXPAND_NONE || m_drawer_out )
                         {
                                 cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
-                                cr->set_source_rgba( 0.35, 0.35, 0.35, .93 ) ;
+                                cr->set_source_rgba( 0.65, 0.65, 0.65, .4 ) ;
                             
                                 RoundedRectangle(
                                       cr
@@ -235,7 +240,7 @@ namespace MPX
                                     , m_presize_height - 16
                                     , get_allocation().get_width()
                                     , m_drawer_height + 16 
-                                    , 10.
+                                    , rounding
                                     , CairoCorners::CORNERS( CairoCorners::BOTTOMLEFT | CairoCorners::BOTTOMRIGHT )
                                 ) ;
 
@@ -251,11 +256,12 @@ namespace MPX
                             , 0
                             , get_allocation().get_width()
                             , get_allocation().get_height() - ( ( m_expand_direction != EXPAND_NONE || m_drawer_out ) ? m_drawer_height_max : 0 )
-                            , 10.
-                            //, CairoCorners::CORNERS( CairoCorners::BOTTOMLEFT | CairoCorners::BOTTOMRIGHT )
+                            , rounding
                         ) ;
-
-                        cr->fill() ;
+                        cr->fill_preserve() ;
+                        cr->set_source_rgba( 0.22, 0.22, 0.22, 1. ) ;
+                        cr->set_line_width( 1. ) ;
+                        cr->stroke() ;
 
                         // Create the linear gradient diagonal
                         Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
@@ -300,19 +306,8 @@ namespace MPX
                             , get_allocation().get_width()
                             , 20
                         ) ;
-                    /*
-                        RoundedRectangle( 
-                              cr
-                            , 0
-                            , 0
-                            , get_allocation().get_width()
-                            , 20
-                            , 10.
-                            , CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::TOPRIGHT )
-                        ) ;
-                    */
-                        
                         cr->fill();
+
 
                         Gdk::Cairo::set_source_pixbuf(
                               cr
@@ -343,7 +338,7 @@ namespace MPX
                             , m_presize_height
                             , 16
                             , 16
-                            , 10.
+                            , rounding
                         ) ;
 
                         cr->fill () ;

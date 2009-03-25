@@ -104,6 +104,7 @@ namespace MPX
     KoboTitleInfo::KoboTitleInfo ()
     {
         set_app_paintable (true);
+        add_events( Gdk::BUTTON_PRESS_MASK ) ;
 
         set_colormap (Gdk::Screen::get_default()->get_rgba_colormap());
 
@@ -171,11 +172,11 @@ namespace MPX
         ) ;
         RoundedRectangle(
               cairo
-            , 4
+            , 0
             , 1 
-            , double((a.get_width() - 8))
+            , a.get_width() 
             , double((a.get_height() - 2))
-            , 2.
+            , 4. 
         ) ;
         cairo->fill () ;
 

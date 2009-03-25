@@ -49,7 +49,6 @@ SUBDIRS +=		\
 				\
 	remote		\
 	python		\
-	sources		\
 				\
 	api			\
 	src

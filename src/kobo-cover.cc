@@ -40,7 +40,7 @@ namespace MPX
         Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context() ;
         
         cairo->set_operator( Cairo::OPERATOR_SOURCE ) ; 
-        cairo->set_source_rgba( 0.35, 0.35, 0.35, .93 ) ;
+        cairo->set_source_rgba( 0.65, 0.65, 0.65, .4 ) ;
         cairo->paint () ;     
 
         if( !m_cover )
@@ -109,7 +109,7 @@ namespace MPX
             , a.get_height() - m_cover->get_height() - 8
             , m_cover->get_width()
             , m_cover->get_height()
-            , 10.
+            , 6.
         ) ;
         cairo->fill_preserve () ;
 

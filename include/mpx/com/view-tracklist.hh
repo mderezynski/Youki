@@ -14,10 +14,17 @@
 #include "mpx/util-string.hh"
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/algorithm/aque.hh"
-
+#include "mpx/util-graphics.hh"
 #include "glib-marshalers.h"
 
+#include <cmath>
+
 typedef Glib::Property<Gtk::Adjustment*> PropAdj;
+
+namespace
+{
+    const double rounding = 4. ; 
+}
 
 namespace MPX
 {
@@ -157,17 +164,64 @@ namespace MPX
         {
                 typedef std::vector<ModelT::iterator> RowRowMapping;
 
-                RowRowMapping           m_mapping;
-                std::string             m_filter_full;
-                std::string             m_filter_effective;
-                AQE::Constraints_t      m_constraints;
-                bool                    m_advanced;
+                RowRowMapping           m_mapping ;
+                std::string             m_filter_full ;
+                std::string             m_filter_effective ;
+                AQE::Constraints_t      m_constraints ;
+                AQE::Constraints_t      m_constraints_synthetic ;
+                bool                    m_advanced ;
+                boost::optional<gint64> m_active_track ;
+                boost::optional<gint64> m_local_active_track ;
 
                 DataModelFilter(DataModelP & model)
                 : DataModel(model->m_realmodel)
                 , m_advanced(false)
                 {
                     regen_mapping ();
+                }
+
+                void
+                clear_active_track()
+                {
+                    m_active_track.reset() ;
+                    m_local_active_track.reset() ;
+                }
+
+                void
+                set_active_track(gint64 id)
+                {
+                    m_active_track = id ;
+                    scan_active () ;
+                }
+
+                boost::optional<gint64>
+                get_local_active_track ()
+                {
+                    return m_local_active_track ;
+                }
+
+                void
+                add_synthetic_constraint(
+                    const AQE::Constraint_t& c
+                )
+                {
+                    m_constraints_synthetic.push_back( c ) ;    
+                    regen_mapping () ;
+                }
+
+                virtual void
+                clear_synthetic_constraints(
+                )
+                {
+                    m_constraints_synthetic.clear() ;
+                    regen_mapping () ;
+                }
+
+                virtual void
+                clear_synthetic_constraints_quiet(
+                )
+                {
+                    m_constraints_synthetic.clear() ;
                 }
 
                 virtual int 
@@ -231,66 +285,142 @@ namespace MPX
                 }
 
                 void
+                scan_active ()
+                {
+                    using boost::get;
+
+                    m_local_active_track.reset() ;
+
+                    for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
+                    {
+                        if( m_active_track && get<3>(*(*i)) == m_active_track.get() )
+                            m_local_active_track = std::distance( m_mapping.begin(), i ) ;  
+                    }
+                }
+
+                void
                 regen_mapping ()
                 {
                     using boost::get;
 
                     m_mapping.clear();
+                    m_local_active_track.reset() ;
                     
                     for(ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i)
                     {
                         Row6 const& row = *i;
 
-                        if( m_filter_effective.empty() && m_constraints.empty() ) 
+                        if( m_filter_effective.empty() && m_constraints.empty() && m_constraints_synthetic.empty() ) 
                         {
                             m_mapping.push_back(i);
                         }
                         else
+                        if( m_filter_effective.empty() ) 
+                        {
+                            MPX::Track track = get<4>(row);
+
+                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
+
+                            if( !m_constraints.empty() )
+                               truth |= AQE::match_track( m_constraints, track ) ;
+
+                            if( !m_constraints_synthetic.empty() )
+                               truth |= AQE::match_track( m_constraints_synthetic, track ) ;
+
+                            if( truth ) 
+                                m_mapping.push_back(i);
+                        }
+                        else
                         {
                             std::string compound_haystack = get<0>(row) + " " + get<1>(row) + " " + get<2>(row);
-                            bool match = Util::match_keys( compound_haystack, m_filter_effective ); 
+
                             MPX::Track track = get<4>(row);
-                            bool truth = AQE::match_track(m_constraints, track);
+
+                            int match = Util::match_keys( compound_haystack, m_filter_effective ); 
+                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
+
+                            if( !m_constraints.empty() )
+                               truth |= AQE::match_track( m_constraints, track ) ;
+
+                            if( !m_constraints_synthetic.empty() )
+                               truth |= AQE::match_track( m_constraints_synthetic, track ) ;
 
                             if( match && truth )
-                            {
                                 m_mapping.push_back(i);
-                            }
                         }
                     }
 
+                    scan_active () ;
                     m_changed.emit();
                 }
+
 
                 void
                 regen_mapping_iterative ()
                 {
                     using boost::get;
 
-                    std::string filter = Glib::ustring(m_filter_effective).lowercase().c_str();
+                    m_local_active_track.reset() ;
+
+                    std::string filter = Glib::ustring( m_filter_effective ).lowercase().c_str();
 
                     RowRowMapping new_mapping;
-                    for(RowRowMapping::const_iterator i = m_mapping.begin(); i != m_mapping.end(); ++i)
+
+                    for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                     {
                         Row6 const& row = *(*i);
 
-                        if( m_filter_effective.empty() && m_constraints.empty() ) 
+                        if( m_filter_effective.empty() && m_constraints.empty() && m_constraints_synthetic.empty() ) 
                         {
-                            new_mapping.push_back(*i);
+                            new_mapping.push_back( *i ) ;
+                        }
+                        else
+                        if( m_filter_effective.empty() ) 
+                        {
+                            MPX::Track track = get<4>(row);
+
+                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
+
+                            if( !m_constraints.empty() )
+                               truth |= AQE::match_track( m_constraints, track ) ;
+
+                            if( !m_constraints_synthetic.empty() )
+                               truth |= AQE::match_track( m_constraints_synthetic, track ) ;
+
+                            if( truth ) 
+                            {
+                                new_mapping.push_back( *i ) ;
+
+                                if( m_active_track && get<3>(*(*i)) == m_active_track.get() )
+                                    m_local_active_track = std::distance( m_mapping.begin(), i ) ;  
+                            }
                         }
                         else
                         {
                             std::string compound_haystack = get<0>(row) + " " + get<1>(row) + " " + get<2>(row);
-                            bool match = Util::match_keys( compound_haystack, m_filter_effective ); 
                             MPX::Track track = get<4>(row);
-                            bool truth = AQE::match_track(m_constraints, track);
 
-                            if( (match || m_filter_effective.empty()) && truth )
+                            int match = Util::match_keys( compound_haystack, m_filter_effective ); 
+                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
+
+                            if( !m_constraints.empty() )
+                               truth |= AQE::match_track( m_constraints, track ) ;
+
+                            if( !m_constraints_synthetic.empty() )
+                               truth |= AQE::match_track( m_constraints_synthetic, track ) ;
+
+                            if( match && truth )
                             {
-                                new_mapping.push_back(*i);
+                                new_mapping.push_back( *i ) ;
+
+                                if( m_active_track && get<3>(*(*i)) == m_active_track.get() )
+                                    m_local_active_track = std::distance( m_mapping.begin(), i ) ;  
                             }
                         }
                     }
+
+                    if( m_filter_effective.empty() && m_constraints.empty() && m_constraints_synthetic.empty() ) 
+                        m_local_active_track = m_active_track.get() ; 
 
                     std::swap(m_mapping, new_mapping);
                     m_changed.emit();
@@ -375,23 +505,23 @@ namespace MPX
 
 
                 void
-                render_header(Cairo::RefPtr<Cairo::Context> cairo, Gtk::Widget& widget, int x_pos, int y_pos, int rowheight, int column)
+                render_header(Cairo::RefPtr<Cairo::Context> cairo, Gtk::Widget& widget, int xpos, int ypos, int rowheight, int column)
                 {
                     using boost::get;
 
                     int off = (column == 0) ? 16 : 0 ;
 
                     cairo->rectangle(
-                          x_pos + off + 5
-                        , y_pos + 6
+                          xpos + off + 5
+                        , ypos + 6
                         , m_width
                         , rowheight
                     ) ;
                     cairo->clip() ;
 
                     cairo->move_to(
-                          x_pos + off + 5
-                        , y_pos + 6
+                          xpos + off + 5
+                        , ypos + 6
                     ) ;
                     cairo->set_operator(Cairo::OPERATOR_ATOP);
                     cairo->set_source_rgba( 1., 1., 1., 1. ) ;
@@ -429,8 +559,8 @@ namespace MPX
                     std::string const&              filter,
                     Gtk::Widget&                    widget,
                     int                             row,
-                    int                             x_pos,
-                    int                             y_pos,
+                    int                             xpos,
+                    int                             ypos,
                     int                             rowheight,
                     bool                            selected,
                     bool                            highlight = true
@@ -444,15 +574,15 @@ namespace MPX
                     int off = (m_column == 0) ? 16 : 0 ;
 
                     cairo->rectangle(
-                          x_pos + off
-                        , y_pos
+                          xpos + off
+                        , ypos
                         , m_width - off
                         , rowheight
                     ) ;
                     cairo->clip();
                     cairo->move_to(
-                          x_pos + off + 6
-                        , y_pos + 4
+                          xpos + off + 6
+                        , ypos + 4
                     ) ;
 
                     std::string str;
@@ -513,32 +643,46 @@ namespace MPX
 
         class ListView : public Gtk::DrawingArea
         {
-                int                                 m_row_height ;
-                int                                 m_visible_height ;
-                int                                 m_previousdrawnrow ;
+            public:
+
                 DataModelFilterP                    m_model ;
+
+            private:
+
+                int                                 m_row_height ;
+                int                                 m_row_start ;
+                int                                 m_visible_height ;
+                int                                 m_previous_drawn_row ;
+
                 Columns                             m_columns ;
+
                 PropAdj                             m_prop_vadj ;
                 PropAdj                             m_prop_hadj ;
+
                 guint                               m_signal0 ; 
+
                 Selection                           m_selection ;
                 boost::optional<ModelT::iterator>   m_selected ;
-                GtkWidget                         * m_treeview ;
+
                 IdV                                 m_dnd_idv ;
                 bool                                m_dnd ;
                 int                                 m_click_row_1 ;
                 int                                 m_sel_size_was ;
                 bool                                m_highlight ;
+
                 boost::optional<gint64>             m_active_track ;
                 boost::optional<gint64>             m_hover_track ;
-                boost::optional<gint64>             m_local_active_track ;
+
                 Glib::RefPtr<Gdk::Pixbuf>           m_playing_pixbuf ;
                 Glib::RefPtr<Gdk::Pixbuf>           m_hover_pixbuf ;
+
                 std::set<int>                       m_collapsed ;
                 std::set<int>                       m_fixed ;
                 int                                 m_fixed_total_width ;
         
                 SignalTrackActivated                m_SIGNAL_track_activated;
+
+                GtkWidget                         * m_treeview ;
 
                 void
                 initialize_metrics ()
@@ -551,13 +695,17 @@ namespace MPX
 
                     m_row_height = (pango_font_metrics_get_ascent (metrics)/PANGO_SCALE) + 
                                    (pango_font_metrics_get_descent (metrics)/PANGO_SCALE) + 8;
+
+                    const int visible_area_pad = 2 ;
+
+                    m_row_start = m_row_height + visible_area_pad ;
                 }
 
                 void
                 on_vadj_value_changed ()
                 {
                     int row = (double(m_prop_vadj.get_value()->get_value()-m_row_height) / double(m_row_height));
-                    if( m_previousdrawnrow != row )
+                    if( m_previous_drawn_row != row )
                     {
                         queue_draw ();
                     }
@@ -788,7 +936,7 @@ namespace MPX
                             Selection::iterator i_sel = m_selection.end();
                             i_sel--;
                             int row_p = i_sel->second; 
-                            int row_c = get_upper_row() + ((int(event->y)-(m_row_height+2)) / m_row_height);
+                            int row_c = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
                             if( row_c < m_model->m_mapping.size() )
                             {
                                     for(int i = row_p+1; i <= row_c; ++i)
@@ -801,7 +949,7 @@ namespace MPX
                         }
                         else
                         {
-                            int row = get_upper_row() + ((int(event->y)-(m_row_height+2)) / m_row_height);
+                            int row = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
 
                             if( event->x < m_columns[0]->get_width() )
                             {
@@ -865,7 +1013,7 @@ namespace MPX
                                 Selection::iterator i_sel = m_selection.end();
                                 i_sel--;
                                 int row_p = i_sel->second; 
-                                int row_c = get_upper_row() + ((int(event->y)-(m_row_height+2)) / m_row_height);
+                                int row_c = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
                                 if( row_c < m_model->m_mapping.size() )
                                 {
                                         for(int i = row_p+1; i <= row_c; ++i)
@@ -917,16 +1065,16 @@ namespace MPX
                         state = GdkModifierType (event->state);
                     }
 
-                    int row_c = get_upper_row() + ((int(y_orig)-(m_row_height+2)) / m_row_height);
+                    int row_c = get_upper_row() + ((int(y_orig)-(m_row_start)) / m_row_height);
                     if( row_c < m_model->m_mapping.size() && (x_orig < m_columns[0]->get_width()) )
                     {
                         m_hover_track = row_c ;
-                        queue_draw () ;
+                        queue_draw_area (0, m_row_start, 16, get_allocation().get_height() - m_row_start ) ;
                     }
                     else
                     {
                         m_hover_track.reset() ;
-                        queue_draw () ;
+                        queue_draw_area (0, m_row_start, 16, get_allocation().get_height() - m_row_start ) ;
                     }
 
                     return true ;
@@ -967,85 +1115,144 @@ namespace MPX
                 {
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
 
-                    cairo->set_operator(Cairo::OPERATOR_SOURCE);
-                    //Gdk::Cairo::set_source_color(cairo, get_style()->get_base(Gtk::STATE_NORMAL));
-                    cairo->set_source_rgba( 0.12, 0.12, 0.12, 1. ) ;
+                    cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
+                    cairo->set_source_rgba(
+                          0.12    
+                        , 0.12
+                        , 0.12
+                        , 1.
+                    ) ;
                     cairo->paint();
 
-                    Gtk::Allocation const& alloc = get_allocation();
+                    const Gtk::Allocation& alloc = get_allocation();
 
                     int row = get_upper_row() ;
-                    m_previousdrawnrow = row;
+                    m_previous_drawn_row = row;
 
-                    m_local_active_track.reset() ;
+                    int ypos    = m_row_start ;
+                    int xpos    = 0 ;
+                    int col     = 0 ;
+                    int cnt     = ( m_visible_height - m_row_start ) / m_row_height ;
 
-                    int y_pos       = m_row_height + 2;
-                    int x_pos       = 0;
-                    int col         = 0;
-                    int cnt         = (m_visible_height - (m_row_height + 2)) / m_row_height;
-                    
-                    for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i, ++col)
+                    if( event->area.y <= m_row_start )
                     {
-                        (*i)->render_header(cairo, *this, x_pos, 0, m_row_height+2, col);
-                        x_pos += (*i)->get_width() + 1;
+                            for( Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i, ++col )
+                            {
+                                (*i)->render_header(
+                                    cairo
+                                  , *this
+                                  , xpos
+                                  , 0
+                                  , m_row_start
+                                  , col
+                                ) ;
+
+                                xpos += (*i)->get_width() + 1;
+                            }
                     }
 
                     cairo->set_operator(Cairo::OPERATOR_ATOP);
+    
+                    const int xpad = 16 ;
 
-                    while(m_model->is_set() && cnt && (row < m_model->m_mapping.size())) 
+                    while( m_model->is_set() && cnt && (row < m_model->m_mapping.size()) ) 
                     {
-                        x_pos = 0;
+                        xpos = 0 ;
 
-                        if( !(row%2) ) 
+                        if( ! event->area.width <= 16 )
                         {
-                            GdkRectangle background_area;
-                            background_area.x = 0;
-                            background_area.y = y_pos;
-                            background_area.width = alloc.get_width();
-                            background_area.height = m_row_height;
+                                if( ! (row % 2) ) 
+                                {
+                                    GdkRectangle r ;
 
-                            cairo->rectangle( background_area.x, background_area.y, background_area.width, background_area.height ) ;
-                            cairo->set_source_rgba( 0.2, 0.2, 0.2, 1. ) ;
-                            cairo->fill() ;
+                                    r.x       = xpad ;
+                                    r.y       = ypos ;
+                                    r.width   = alloc.get_width() - xpad ;
+                                    r.height  = m_row_height ;
+
+                                    RoundedRectangle(
+                                          cairo
+                                        , r.x
+                                        , r.y
+                                        , r.width
+                                        , r.height
+                                        , rounding
+                                    ) ;
+
+                                    cairo->set_source_rgba(
+                                          0.2
+                                        , 0.2
+                                        , 0.2
+                                        , 1.
+                                    ) ;
+
+                                    cairo->fill() ;
+                                }
+
+                                ModelT::iterator selected = m_model->m_mapping[row];
+                                bool iter_is_selected = false;
+
+                                if( !m_selection.empty() && m_selection.count(std::make_pair(selected, row))) 
+                                {
+                                    Gdk::Color c = get_style()->get_base( Gtk::STATE_SELECTED ) ;
+
+                                    cairo->set_source_rgba(
+                                          c.get_red_p()
+                                        , c.get_green_p()
+                                        , c.get_blue_p()
+                                        , 0.8
+                                    ) ;
+
+                                    const int inner_pad  = 0 ;
+
+                                    GdkRectangle r ;
+
+                                    r.x         = inner_pad ;
+                                    r.y         = ypos + inner_pad ;
+                                    r.width     = alloc.get_width() - 2*inner_pad ;
+                                    r.height    = m_row_height - 2*inner_pad ;
+
+                                    RoundedRectangle(
+                                          cairo
+                                        , r.x 
+                                        , r.y 
+                                        , r.width 
+                                        , r.height 
+                                        , rounding
+                                    ) ;
+
+                                    cairo->fill (); 
+
+                                    iter_is_selected = true;
+                                }
+
+                                for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
+                                {
+                                    (*i)->render(cairo, m_model->row(row), m_model->m_filter_effective, *this, row, xpos, ypos, m_row_height, iter_is_selected, m_highlight);
+                                    xpos += (*i)->get_width();
+                                }
                         }
+                    
+                        const int icon_lateral = 16 ;
+                        const int icon_xorigin = 0 ;
 
-
-                        ModelT::iterator selected = m_model->m_mapping[row];
-                        bool iter_is_selected = false;
-
-                        if( !m_selection.empty() && m_selection.count(std::make_pair(selected, row))) 
-                        {
-                            Gdk::Color c = get_style()->get_base(Gtk::STATE_SELECTED);
-                            cairo->set_source_rgba(c.get_red_p(), c.get_green_p(), c.get_blue_p(), 0.8);
-                            RoundedRectangle (cairo, 1, y_pos+1, alloc.get_width()-2, m_row_height-2., 1.);
-                            cairo->fill_preserve(); 
-                            cairo->set_source_rgb(c.get_red_p(), c.get_green_p(), c.get_blue_p());
-                            cairo->stroke();
-                            iter_is_selected = true;
-                        }
-
-                        for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
-                        {
-                            (*i)->render(cairo, m_model->row(row), m_model->m_filter_effective, *this, row, x_pos, y_pos, m_row_height, iter_is_selected, m_highlight);
-                            x_pos += (*i)->get_width();
-                        }
-            
                         if( m_active_track && boost::get<3>(m_model->row(row)) == m_active_track.get() )
                         {
-                            m_local_active_track = row ;
-    
+                            const int icon_x = icon_xorigin ;
+                            const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
+
                             Gdk::Cairo::set_source_pixbuf(
                                   cairo
                                 , m_playing_pixbuf
-                                , 2
-                                , y_pos + (m_row_height/2 - 8)
+                                , icon_x
+                                , icon_y 
                             ) ;
 
                             cairo->rectangle(
-                                  2
-                                , y_pos + (m_row_height/2 - 8)
-                                , 16
-                                , 16
+                                  icon_x
+                                , icon_y 
+                                , icon_lateral
+                                , icon_lateral
                             ) ;
 
                             cairo->fill () ;
@@ -1053,24 +1260,27 @@ namespace MPX
                         else
                         if( m_hover_track && row == m_hover_track.get() )
                         {
+                            const int icon_x = icon_xorigin ;
+                            const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
+
                             Gdk::Cairo::set_source_pixbuf(
                                   cairo
                                 , m_hover_pixbuf
-                                , 2
-                                , y_pos + (m_row_height/2 - 8)
+                                , icon_x
+                                , icon_y 
                             ) ;
 
                             cairo->rectangle(
-                                  2
-                                , y_pos + (m_row_height/2 - 8)
-                                , 16
-                                , 16
+                                  icon_x 
+                                , icon_y 
+                                , icon_lateral
+                                , icon_lateral
                             ) ;
 
                             cairo->fill () ;
                         }
 
-                        y_pos += m_row_height;
+                        ypos += m_row_height;
                         row ++;
                         cnt --;
                     }
@@ -1151,12 +1361,6 @@ namespace MPX
                     ));
                 }
 
-                boost::optional<gint64>
-                get_local_active_track ()
-                {
-                    return m_local_active_track ;
-                }
-
                 void
                 append_column (ColumnP column)
                 {
@@ -1179,13 +1383,21 @@ namespace MPX
                 clear_active_track()
                 {
                     m_active_track.reset() ;
+                    m_model->clear_active_track() ;
                 }
 
                 void
                 set_active_track(gint64 id)
                 {
                     m_active_track = id ;
+                    m_model->set_active_track( id ) ;
                     queue_draw () ;
+                }
+
+                boost::optional<gint64>
+                get_local_active_track ()
+                {
+                    return m_model->m_local_active_track ;
                 }
 
                 void
@@ -1235,7 +1447,7 @@ namespace MPX
                 ListView ()
 
                         : ObjectBase( "MPXListView" )
-                        , m_previousdrawnrow( 0 )
+                        , m_previous_drawn_row( 0 )
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_dnd( false )

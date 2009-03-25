@@ -1,8 +1,8 @@
-libexec_PROGRAMS = audiosource-bin 
+libexec_PROGRAMS = youki-bin 
 
-audiosource_bin_LDFLAGS = -Wl,--export-dynamic 
+youki_bin_LDFLAGS = -Wl,--export-dynamic 
 
-audiosource_bin_CXXFLAGS = 									\
+youki_bin_CXXFLAGS = 									\
 		$(ALSA_CFLAGS)								\
 		$(BOOST_CPPFLAGS)							\
 		$(CAIROMM_CFLAGS)   						\
@@ -37,7 +37,7 @@ audiosource_bin_CXXFLAGS = 									\
 		-I$(top_srcdir)/include						\
 		-I$(top_srcdir)/libhal++	
 
-audiosource_bin_LDADD =								\
+youki_bin_LDADD =								\
 		$(ALSA_LIBS)								\
 		$(BOOST_LDFLAGS)							\
 		$(BOOST_REGEX_LIB)							\
@@ -83,23 +83,23 @@ audiosource_bin_LDADD =								\
 		$(top_builddir)/musicbrainz/libmpx-musicbrainz.la			\
 		$(top_builddir)/com/libmpx-view-components.la
 
-audiosource_bin_CFLAGS =				\
+youki_bin_CFLAGS =				\
     $(GLIB_CFLAGS) $(GST_CFLAGS) -I$(top_srcdir)/include
 
 if HAVE_HAL
-audiosource_bin_LDADD += $(top_builddir)/libhal++/libhalcc.la
-audiosource_bin_CXXFLAGS += -I$(top_srcdir)/libhal++
+youki_bin_LDADD += $(top_builddir)/libhal++/libhalcc.la
+youki_bin_CXXFLAGS += -I$(top_srcdir)/libhal++
 endif # HAVE_HAL
 
-audiosource_bin_CXXFLAGS += -D__USE_POSIX199309
-audiosource_bin_CFLAGS += -D__USE_POSIX199309
+youki_bin_CXXFLAGS += -D__USE_POSIX199309
+youki_bin_CFLAGS += -D__USE_POSIX199309
 
 if HAVE_LINUX 
-audiosource_bin_CXXFLAGS += -D_XOPEN_SOURCE=600
-audiosource_bin_CFLAGS += -D_XOPEN_SOURCE=600
+youki_bin_CXXFLAGS += -D_XOPEN_SOURCE=600
+youki_bin_CFLAGS += -D_XOPEN_SOURCE=600
 endif
 
-audiosource_bin_SOURCES =		\
+youki_bin_SOURCES =		\
 								\
 	artist-images.cc			\
 								\
@@ -157,6 +157,9 @@ audiosource_bin_SOURCES =		\
     kobo-titleinfo.hh           \
     kobo-titleinfo.cc           \
 								\
+    kobo-volume.hh              \
+    kobo-volume.cc              \
+                                \
 	library.cc					\
 	library-scanner-thread.cc	\
 								\
@@ -214,7 +217,7 @@ audiosource_bin_SOURCES =		\
 	volume-control.cc
 
 if HAVE_HAL								
-audiosource_bin_SOURCES += hal.cc	\
+youki_bin_SOURCES += hal.cc	\
 	mlibmanager.hh				\
 	mlibmanager.cc				
 endif
@@ -268,7 +271,7 @@ dbus-marshalers.h: dbus-marshalers.list
 
 
 BUILT_SOURCES += dbus-marshalers.c dbus-marshalers.h
-audiosource_bin_SOURCES += dbus-marshalers.c
+youki_bin_SOURCES += dbus-marshalers.c
 
 CLEANFILES = $(BUILT_SOURCES)
 DISTCLEANFILES = $(BUILT_SOURCES)

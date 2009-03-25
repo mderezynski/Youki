@@ -1376,6 +1376,12 @@ namespace MPX
                                 if (row.count("album_j"))
                                         (*track.get())[ATTRIBUTE_MPX_ALBUM_ID] = get<gint64>(row["album_j"]);
 
+                                if (row.count("artist_j"))
+                                        (*track.get())[ATTRIBUTE_MPX_ARTIST_ID] = get<gint64>(row["artist_j"]);
+
+                                if (row.count("mpx_album_artist_id"))
+                                        (*track.get())[ATTRIBUTE_MPX_ALBUM_ARTIST_ID] = get<gint64>(row["mpx_album_artist_id"]);
+
                                 if (row.count("type"))
                                         (*track.get())[ATTRIBUTE_TYPE] = get<std::string>(row["type"]);
 

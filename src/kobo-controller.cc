@@ -16,9 +16,17 @@ namespace
     )
     {
             Cairo::RefPtr<Cairo::Context> cairo = widget->get_window()->create_cairo_context() ;
-            cairo->set_source_rgba( 0.65, 0.65, 0.65, 1. ) ;
-            cairo->set_line_width( 0.85 ) ;
-            cairo->set_operator( Cairo::OPERATOR_SOURCE ) ; 
+
+            cairo->set_operator( Cairo::OPERATOR_ATOP ) ; 
+
+            cairo->set_source_rgba(
+                  .65
+                , .65
+                , .65
+                , 0.4 
+            ) ;
+
+            cairo->set_line_width( 1. ) ;
            
             MPX::RoundedRectangle( 
                   cairo
@@ -41,11 +49,13 @@ namespace MPX
     : m_seek_position( -1 )
     {
         m_VBox              = Gtk::manage( new Gtk::VBox ) ;
-        m_ScrolledWin       = Gtk::manage( new Gtk::ScrolledWindow ) ;
+        m_HBox_Entry        = Gtk::manage( new Gtk::HBox ) ;
+        m_HBox_Controls     = Gtk::manage( new Gtk::HBox ) ;
         m_Entry             = Gtk::manage( new Gtk::Entry ) ;
         m_Alignment_Entry   = Gtk::manage( new Gtk::Alignment ) ;
-        m_HBox_Entry        = Gtk::manage( new Gtk::HBox ) ;
         m_Label_Search      = Gtk::manage( new Gtk::Label(_("_Search:"))) ;
+        m_ScrolledWin       = Gtk::manage( new Gtk::ScrolledWindow ) ;
+        m_ScrolledWinAA     = Gtk::manage( new Gtk::ScrolledWindow ) ;
 
         m_Label_Search->set_mnemonic_widget( *m_Entry ) ;
         m_Label_Search->set_use_underline() ;
@@ -70,6 +80,7 @@ namespace MPX
         )) ;    
 
         Gdk::Color c ;
+
         c.set_rgb_p( 0.12, 0.12, 0.12 ) ;
         m_Entry->modify_bg( Gtk::STATE_NORMAL, c ) ;
         m_Entry->modify_base( Gtk::STATE_NORMAL, c ) ;
@@ -77,97 +88,160 @@ namespace MPX
         m_Entry->modify_base( Gtk::STATE_ACTIVE, c ) ;
         m_Entry->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
         m_Entry->modify_base( Gtk::STATE_PRELIGHT, c ) ;
+
         c.set_rgb_p( 1., 1., 1. ) ; 
         m_Entry->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Entry->modify_fg( Gtk::STATE_NORMAL, c ) ;
         m_Entry->property_has_frame() = false ; 
-
         m_Label_Search->modify_bg( Gtk::STATE_NORMAL, c ) ;
         m_Label_Search->modify_base( Gtk::STATE_NORMAL, c ) ;
         m_Label_Search->modify_bg( Gtk::STATE_ACTIVE, c ) ;
         m_Label_Search->modify_base( Gtk::STATE_ACTIVE, c ) ;
         m_Label_Search->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
         m_Label_Search->modify_base( Gtk::STATE_PRELIGHT, c ) ;
+
         c.set_rgb_p( 1., 1., 1. ) ; 
         m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
 
         m_ScrolledWin->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
+        m_ScrolledWinAA->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
 
-        m_ListView = new ListView ;
+        m_Paned = new Gtk::HPaned ;
 
-        DataModelP m (new DataModel) ;
-
-        SQL::RowV v ;
-        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY album_artist, album, track_view.track")).str()) ; 
-        for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
         {
-                SQL::Row & r = *i;
-                try{
-                    m->append_track(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, false).get()))) ;
-                } catch( Library::FileQualificationError )
+                m_ListView = new ListView ;
+
+                DataModelP m (new DataModel) ;
+
+                SQL::RowV v ;
+                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY album_artist, date, album, track_view.track")).str()) ; 
+                for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
                 {
+                        SQL::Row & r = *i;
+                        try{
+                            m->append_track(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, false).get()))) ;
+                        } catch( Library::FileQualificationError )
+                        {
+                        }
                 }
+
+                m_FilterModel = DataModelFilterP (new DataModelFilter(m)) ;
+
+                m_Entry->signal_changed().connect(
+                        sigc::bind(
+                                sigc::mem_fun(
+                                      *this
+                                    , &KoboController::on_entry_changed
+                                )
+                              , m_FilterModel
+                              , m_Entry
+                )) ;
+
+                ColumnP c1 (new Column(_("Title"))) ;
+                c1->set_column(0) ;
+
+                ColumnP c2 (new Column(_("Track"))) ;
+                c2->set_column(5) ;
+                c2->set_alignment( Pango::ALIGN_RIGHT ) ;
+
+                ColumnP c3 (new Column(_("Album"))) ;
+                c3->set_column(2) ;
+
+                ColumnP c4 (new Column(_("Artist"))) ;
+                c4->set_column(1) ;
+
+                m_ListView->append_column(c1) ;
+                m_ListView->append_column(c2) ;
+                m_ListView->append_column(c3) ;
+                m_ListView->append_column(c4) ;
+
+                m_ListView->column_set_fixed(
+                      1
+                    , true
+                    , 60
+                ) ;
+
+                m_ListView->set_model( m_FilterModel ) ;
+
+                m_ScrolledWin->add(*m_ListView) ;
+                m_ScrolledWin->show_all() ;
         }
 
-        m_FilterModel = DataModelFilterP (new DataModelFilter(m)) ;
+        {
+                m_ListViewAA = new ListViewAA ;
 
-        m_Entry->signal_changed().connect(
-                sigc::bind(
-                        sigc::mem_fun(
-                              *this
-                            , &KoboController::on_entry_changed
-                        )
-                      , m_FilterModel
-                      , m_Entry
-        )) ;
+                m_ListViewAA->signal_selection_changed().connect(
+                    sigc::mem_fun(
+                          *this
+                        , &KoboController::on_list_view_aa_selection_changed
+                )) ;
 
-        ColumnP c1 (new Column(_("Title"))) ;
-        c1->set_column(0) ;
+                DataModelAAP m (new DataModelAA) ;
+                m_FilterModelAA = DataModelFilterAAP (new DataModelFilterAA(m)) ;
 
-        ColumnP c2 (new Column(_("Track"))) ;
-        c2->set_column(5) ;
-        c2->set_alignment( Pango::ALIGN_RIGHT ) ;
+                m_FilterModelAA->append_artist_quiet(
+                      _("All Artists") 
+                    , -1
+                ) ;
 
-        ColumnP c3 (new Column(_("Album"))) ;
-        c3->set_column(2) ;
+                SQL::RowV v ;
+                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album_artist ORDER BY album_artist")).str()) ; 
 
-        ColumnP c4 (new Column(_("Artist"))) ;
-        c4->set_column(1) ;
+                for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                {
+                        SQL::Row & r = *i;
+                        m_FilterModelAA->append_artist_quiet(
+                              boost::get<std::string>(r["album_artist"])
+                            , boost::get<gint64>(r["id"])
+                        ) ;
+                }
 
-        m_ListView->append_column(c1) ;
-        m_ListView->append_column(c2) ;
-        m_ListView->append_column(c3) ;
-        m_ListView->append_column(c4) ;
+                m_FilterModelAA->regen_mapping () ;
 
-        m_ListView->column_set_fixed(
-              1
-            , true
-            , 60
-        ) ;
+                ColumnAAP c1 (new ColumnAA(_("Album Artist"))) ;
+                c1->set_column(0) ;
 
-        m_ListView->set_model(m_FilterModel ) ;
+                m_ListViewAA->append_column(c1) ;
+                m_ListViewAA->set_model( m_FilterModelAA ) ;
 
-        m_ScrolledWin->add(*m_ListView) ;
-        m_ScrolledWin->show_all() ;
+                m_ScrolledWinAA->add(*m_ListViewAA) ;
+                m_ScrolledWinAA->show_all() ;
+        }
+
+        m_Paned->add1( *m_ScrolledWinAA ) ;
+        m_Paned->add2( *m_ScrolledWin ) ;
 
         m_main_window = new MainWindow ;
         m_main_cover = new KoboCover ;
         m_main_position = new KoboPosition ;
         m_main_titleinfo = new KoboTitleInfo ;
+        m_main_infoarea = new InfoArea ;
+        m_main_volume = new KoboVolume ;
+
+        m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
+        m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
+        m_HBox_Controls->set_spacing( 2 ) ;
 
         m_main_window->set_widget_top( *m_VBox ) ;
         m_main_window->set_widget_drawer( *m_main_cover ) ; 
 
+        m_main_infoarea->signal_clicked().connect(
+            sigc::mem_fun(
+                  *this
+                , &KoboController::on_infoarea_clicked
+        )) ;
+
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
-        m_VBox->pack_start( *m_ScrolledWin, true, true, 0 ) ;
-        m_VBox->pack_start( *m_main_position, false, false, 0 ) ;
+        m_VBox->pack_start( *m_Paned, true, true, 0 ) ;
+        m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
         m_VBox->pack_start( *m_main_titleinfo, false, false, 0 ) ;
+        m_VBox->pack_start( *m_main_infoarea, false, false, 0 ) ;
 
         m_ListView->signal_track_activated().connect(
             sigc::mem_fun(
                       *this
-                    , &KoboController::on_track_activated
+                    , &KoboController::on_list_view_tr_track_activated
         )) ;
 
         m_main_position->signal_seek_event().connect(
@@ -177,6 +251,10 @@ namespace MPX
         )) ;
 
         m_play = services->get<Play>("mpx-service-play").get() ;
+
+        m_main_volume->set_volume(
+            m_play->property_volume().get_value()
+        ) ;
 
         m_play->signal_eos().connect(
             sigc::mem_fun(
@@ -200,6 +278,18 @@ namespace MPX
             sigc::mem_fun(
                   *this
                 , &KoboController::on_stream_switched
+        )) ;
+
+        m_play->signal_spectrum().connect(
+            sigc::mem_fun(
+                  *m_main_infoarea
+                , &InfoArea::update_spectrum
+        )) ;
+
+        m_main_volume->signal_set_volume().connect(
+            sigc::mem_fun(
+                  *this 
+                , &KoboController::on_volume
         )) ;
 
         m_main_window->show_all() ;
@@ -265,6 +355,8 @@ namespace MPX
     KoboController::on_eos ()
     {
         boost::optional<gint64> pos = m_ListView->get_local_active_track () ;
+
+        g_message("pos: %d, num: %lld", int(bool(pos)), pos ? pos.get() : -1 ) ;
 
         if( pos )
         {
@@ -362,12 +454,37 @@ namespace MPX
     }
 
     void
-    KoboController::on_track_activated(
+    KoboController::on_list_view_tr_track_activated(
           MPX::Track    t 
         , bool          play
     ) 
     {
         play_track( t ) ;
+    }
+
+    void
+    KoboController::on_list_view_aa_selection_changed(
+    ) 
+    {
+        gint64 id = m_ListViewAA->get_selected() ;
+
+        m_FilterModel->clear_synthetic_constraints_quiet () ;
+
+        if( id == -1 )
+        {
+            m_FilterModel->regen_mapping() ;
+            return ;
+        }
+
+        AQE::Constraint_t c ;
+
+        c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ARTIST_ID ;
+        c.TargetValue = id ;
+        c.MatchType = AQE::MT_EQUAL ;
+
+        m_FilterModel->add_synthetic_constraint( c ) ;
+
+        m_Entry->set_text("") ;
     }
 
     void
@@ -377,5 +494,25 @@ namespace MPX
     {
         m_seek_position = position ;
         m_play->seek( position ) ;
+    }
+
+    void
+    KoboController::on_volume(
+          int           volume
+    )
+    {
+        m_play->property_volume().set_value( volume ) ;
+    }
+
+    void
+    KoboController::on_infoarea_clicked ()
+    {
+        PlayStatus s = PlayStatus(m_play->property_status().get_value()) ;
+
+        if( s == PLAYSTATUS_PAUSED )
+            m_play->request_status( PLAYSTATUS_PLAYING ) ;
+        else
+        if( s == PLAYSTATUS_PLAYING )
+            m_play->request_status( PLAYSTATUS_PAUSED ) ;
     }
 }

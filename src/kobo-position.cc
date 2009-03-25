@@ -1,8 +1,14 @@
 #include <gtkmm.h>
 #include <boost/format.hpp>
+#include <cmath>
 #include "kobo-position.hh"
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/util-graphics.hh"
+
+namespace
+{
+    const double rounding = 2. ; 
+}
 
 namespace MPX
 {
@@ -63,11 +69,11 @@ namespace MPX
 
         RoundedRectangle(
               cairo
+            , 0 
             , 4 
-            , 4 
-            , double((a.get_width() - 8))
+            , a.get_width() 
             , 12
-            , 4.
+            , rounding
         ) ;
         cairo->clip () ;
 
@@ -81,11 +87,11 @@ namespace MPX
                 ) ;
                 RoundedRectangle(
                       cairo
+                    , 0 
                     , 4 
-                    , 4 
-                    , double((a.get_width() - 8))
+                    , a.get_width()
                     , 12
-                    , 4.
+                    , rounding
                 ) ;
                 cairo->fill () ;
         }
@@ -110,11 +116,11 @@ namespace MPX
                 ) ;
                 RoundedRectangle(
                       cairo
+                    , 0 
                     , 4 
-                    , 4 
-                    , double((a.get_width() - 8)) * double(percent)
+                    , double(a.get_width()) * double(percent)
                     , 12
-                    , 4.
+                    , rounding
                 ) ;
                 cairo->fill () ;
         }
@@ -135,29 +141,33 @@ namespace MPX
             layout->set_text(
                 (boost::format("%02d:%02d") % ( position / 60 ) % ( position % 60 )).str()
             ) ;
+
             int width, height;
             layout->get_pixel_size (width, height) ;
-            double position_x = 4 + double((a.get_width() - 8)) * double(percent) - width - 2;
-            position_x = (position_x < 4) ? 4 : position_x ;
+
             cairo->move_to(
-                  position_x                  
+                  fmax( 2, 2 + double(a.get_width()) * double(percent) - width - 4 ) 
                 , (a.get_height () - height) / 2
             ) ;
             cairo->set_source_rgba( 1., 1., 1., 1. ) ;
-            cairo->set_operator( Cairo::OPERATOR_ADD ) ;
+            cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+
             pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
 
-            layout->set_text(
-                (boost::format("%02d:%02d") % ( m_duration / 60 ) % ( m_duration % 60 )).str()
-            ) ;
-            layout->get_pixel_size (width, height) ;
-            cairo->move_to(
-                  4 + double((a.get_width() - 8)) - width - 2
-                , (a.get_height () - height) / 2
-            ) ;
-            cairo->set_source_rgba( 1., 1., 1., 1. * factor ) ;
-            cairo->set_operator( Cairo::OPERATOR_ADD ) ;
-            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+            if( (m_duration - m_position) > 1 )
+            {
+                    layout->set_text(
+                        (boost::format("%02d:%02d") % ( m_duration / 60 ) % ( m_duration % 60 )).str()
+                    ) ;
+                    layout->get_pixel_size (width, height) ;
+                    cairo->move_to(
+                          2 + double(a.get_width()) - width - 4  
+                        , (a.get_height () - height) / 2
+                    ) ;
+                    cairo->set_source_rgba( 1., 1., 1., 1. * factor ) ;
+                    cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+                    pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+            }
         }
 
         return true ;
