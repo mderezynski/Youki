@@ -107,6 +107,11 @@ namespace MPX
                 GdkEventButton*
             ) ;
 
+            bool
+            on_main_window_key_press(
+                GdkEventKey*
+            ) ;
+
             void
             on_entry_changed (DataModelFilterP model, Gtk::Entry* entry)
             {

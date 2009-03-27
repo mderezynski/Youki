@@ -768,6 +768,7 @@ namespace MPX
                                 , c.get_blue_p()
                             ) ;
 
+                            cairo->set_line_width( 0.5 ) ;
                             cairo->stroke () ;
 
                             iter_is_selected = true;

@@ -1,11 +1,14 @@
 #include "youki-controller.hh"
 #include "mpx/widgets/cairo-extensions.hh"
 #include <glibmm/i18n.h>
+#include <gdk/gdkkeysyms.h>
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-play.hh"
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-types.hh"
+#include "mpx/mpx-preferences.hh"
+#include "mlibmanager.hh"
 
 namespace
 {
@@ -240,6 +243,12 @@ namespace MPX
 
         m_main_window->set_widget_top( *m_VBox ) ;
         m_main_window->set_widget_drawer( *m_main_cover ) ; 
+
+        m_main_window->signal_key_press_event().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_main_window_key_press
+        )) ;
 
         m_main_infoarea->signal_clicked().connect(
             sigc::mem_fun(
@@ -551,6 +560,26 @@ namespace MPX
             m_main_window->move( m_main_window_x, m_main_window_y ) ;
             m_main_window->show () ;
             m_main_window->raise () ;
+        }
+
+        return false ;
+    }
+
+    bool
+    YoukiController::on_main_window_key_press(
+        GdkEventKey* event
+    ) 
+    {
+        switch( event->keyval )
+        {
+            case GDK_F1:
+                services->get<MLibManager>("mpx-service-mlibman")->present () ;
+                return true ;
+
+            case GDK_F2:
+                services->get<Preferences>("mpx-service-preferences")->present () ;
+                return true ;
+
         }
 
         return false ;
