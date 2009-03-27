@@ -528,6 +528,7 @@ namespace MPX
         setup_audio_widgets ();
         setup_audio ();
 
+/*
         // MM-Keys
 
         const int N_MM_KEYS = 6;
@@ -600,6 +601,7 @@ namespace MPX
         m_Xml->get_widget("mm-vbox")->set_sensitive(mm_enabled);
         mm_enable->signal_toggled().connect(sigc::mem_fun( *this, &Preferences::mm_toggled ));
         mm_load ();
+*/
 
         // Coverart Sources
 

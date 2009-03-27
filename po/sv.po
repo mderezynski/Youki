@@ -1779,11 +1779,11 @@ msgstr ""
 msgid "label2"
 msgstr ""
 
-#: remote/audiosource.cc:56
+#: remote/youki.cc:56
 msgid "Play files/URIs after enqueueing"
 msgstr ""
 
-#: remote/audiosource.cc:66
+#: remote/youki.cc:66
 msgid ""
 "\n"
 "AudioSource Player Copyright (c) 2008 MPX Project <http://mpx.backtrace."
@@ -1791,7 +1791,7 @@ msgid ""
 "\n"
 msgstr ""
 
-#: remote/audiosource.cc:110
+#: remote/youki.cc:110
 msgid ""
 "\n"
 "       MPX seems to have crashed.\n"
@@ -1799,27 +1799,27 @@ msgid ""
 "       Please try starting it from a terminal using '"
 msgstr ""
 
-#: remote/audiosource.cc:112
+#: remote/youki.cc:112
 msgid ""
 "/libexec/mpx-bin --no-log'\n"
 "       for further information on what could have caused the crash\n"
 msgstr ""
 
-#: remote/audiosource.cc:113
+#: remote/youki.cc:113
 msgid ""
 "       and report it to our IRC channel, #mpx on irc.freenode.net\n"
 "\n"
 msgstr ""
 
-#: remote/audiosource.cc:125
+#: remote/youki.cc:125
 msgid "MPX Crashed"
 msgstr ""
 
-#: remote/audiosource.cc:174
+#: remote/youki.cc:174
 msgid " - Run MPX and/or perform actions on MPX"
 msgstr ""
 
-#: remote/audiosource.cc:179
+#: remote/youki.cc:179
 #, c-format
 msgid ""
 "\n"
@@ -1828,14 +1828,14 @@ msgid ""
 "\n"
 msgstr ""
 
-#: remote/audiosource.cc:200
+#: remote/youki.cc:200
 #, c-format
 msgid ""
 "%s: Couldn't connect to session bus: %s\n"
 "\n"
 msgstr ""
 
-#: remote/audiosource.cc:206
+#: remote/youki.cc:206
 #, c-format
 msgid ""
 "<big><b>MPX/DBus Error</b></big>\n"
@@ -1849,11 +1849,11 @@ msgid ""
 "further help with this problem from DBus or MPX"
 msgstr ""
 
-#: remote/audiosource.cc:216
+#: remote/youki.cc:216
 msgid "(Unknown error. Perhaps DBus is not running at all?)"
 msgstr ""
 
-#: remote/audiosource.cc:225
+#: remote/youki.cc:225
 msgid "MPX/DBus Error - MPX"
 msgstr ""
 

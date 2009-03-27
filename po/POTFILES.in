@@ -46,7 +46,7 @@ python/plugins/mpxdj/mpxdj.glade
 python/plugins/mtpplayer/mtpplayer.glade
 python/plugins/trackinfo-webkit/__init__.py
 python/plugins/trackinfo-webkit/trackinfo-webkit.glade
-remote/audiosource.cc
+remote/youki.cc
 sources/lastfm/source-lastfm.cc
 sources/lastfm/source-lastfm.glade
 sources/musiclib/source-musiclib.cc
