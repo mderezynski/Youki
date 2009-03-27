@@ -63,7 +63,10 @@
 #include "plugin-manager-gui.hh"
 #include "splash-screen.hh"
 
+#if 0
 #include <dbus-c++/glib-integration.h>
+#endif
+
 #include "youki-controller.hh"
 
 using namespace MPX;
@@ -371,14 +374,14 @@ main (int argc, char ** argv)
         splash->set_message(_("Done"), 1.0);
         delete splash;
 
+/*
         DBus::Glib::BusDispatcher dispatcher ;
         DBus::default_dispatcher = &dispatcher ;
-
         dispatcher.attach( NULL ) ;
-
         DBus::Connection conn = DBus::Connection::SessionBus () ;
+*/
 
-        YoukiController * control = new YoukiController( conn ) ;
+        YoukiController * control = new YoukiController() ;
 
         control->get_widget()->show_all () ;
 

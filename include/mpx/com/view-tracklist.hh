@@ -1233,9 +1233,9 @@ namespace MPX
 
                                     GdkRectangle r ;
 
-                                    r.x         = inner_pad ;
+                                    r.x         = inner_pad + 16 ;
                                     r.y         = ypos + inner_pad ;
-                                    r.width     = alloc.get_width() - 2*inner_pad ;  
+                                    r.width     = alloc.get_width() - 2*inner_pad - 16 ;  
                                     r.height    = m_row_height - 2*inner_pad ;
 
                                     cairo->save () ;

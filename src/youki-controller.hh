@@ -155,6 +155,7 @@ namespace MPX
 
         protected: // DBUS
 
+/*
             virtual void
             Startup () ;
 
@@ -172,6 +173,7 @@ namespace MPX
 
             virtual void
             Pause () ;
+*/
     } ;
 }
 

@@ -291,14 +291,14 @@ namespace MPX
 
         m_main_window->show_all() ;
 
-        StartupComplete () ;
+        //StartupComplete () ;
     }
 
     YoukiController::~YoukiController ()
     {
         delete m_main_window ;
 
-        ShutdownComplete () ;
+        //ShutdownComplete () ;
     }
 
     Gtk::Window*
@@ -618,6 +618,7 @@ namespace MPX
 
     //// DBUS
 
+/*
     void
     YoukiController::Startup ()
     {
@@ -647,4 +648,5 @@ namespace MPX
     YoukiController::Pause ()
     {
     }
+*/
 }
