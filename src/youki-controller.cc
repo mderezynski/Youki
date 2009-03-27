@@ -49,10 +49,12 @@ namespace
 namespace MPX
 {
     YoukiController::YoukiController(
-        DBus::Connection& conn
+//        DBus::Connection& conn
     )
+/*
     : DBus::ObjectAdaptor( conn, "/Youki" )
-    , m_seek_position( -1 )
+*/
+    : m_seek_position( -1 )
     {
         m_VBox              = Gtk::manage( new Gtk::VBox ) ;
         m_HBox_Entry        = Gtk::manage( new Gtk::HBox ) ;
@@ -120,18 +122,6 @@ namespace MPX
 
                 DataModelP m (new DataModel) ;
 
-                SQL::RowV v ;
-                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY album_artist, date, album, track_view.track")).str()) ; 
-                for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
-                {
-                        SQL::Row & r = *i;
-                        try{
-                            m->append_track(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, false).get()))) ;
-                        } catch( Library::FileQualificationError )
-                        {
-                        }
-                }
-
                 m_FilterModel = DataModelFilterP (new DataModelFilter(m)) ;
 
                 m_Entry->signal_changed().connect(
@@ -185,25 +175,6 @@ namespace MPX
 
                 DataModelAAP m (new DataModelAA) ;
                 m_FilterModelAA = DataModelFilterAAP (new DataModelFilterAA(m)) ;
-
-                m_FilterModelAA->append_artist_quiet(
-                      _("All Artists") 
-                    , -1
-                ) ;
-
-                SQL::RowV v ;
-                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album_artist ORDER BY album_artist")).str()) ; 
-
-                for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
-                {
-                        SQL::Row & r = *i;
-                        m_FilterModelAA->append_artist_quiet(
-                              boost::get<std::string>(r["album_artist"])
-                            , boost::get<gint64>(r["id"])
-                        ) ;
-                }
-
-                m_FilterModelAA->regen_mapping () ;
 
                 ColumnAAP c1 (new ColumnAA(_("Album Artist"))) ;
                 c1->set_column(0) ;
@@ -316,6 +287,8 @@ namespace MPX
                 , &YoukiController::on_volume
         )) ;
 
+        reload_library () ;
+
         m_main_window->show_all() ;
 
         StartupComplete () ;
@@ -332,6 +305,64 @@ namespace MPX
     YoukiController::get_widget ()
     {
         return m_main_window ;
+    }
+
+////////////////
+
+    void
+    YoukiController::reload_library ()
+    {
+        m_FilterModel->clear () ;
+        m_FilterModelAA->clear () ;
+
+        // Tracks 
+
+        SQL::RowV v ;
+        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY album_artist, date, album, track_view.track")).str()) ; 
+        for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+        {
+                SQL::Row & r = *i;
+                try{
+                    m_FilterModel->append_track_quiet(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, false).get()))) ;
+                } catch( Library::FileQualificationError )
+                {
+                }
+        }
+
+        m_FilterModel->regen_mapping () ;
+
+        // Album Artists
+
+        m_FilterModelAA->append_artist_quiet(
+              _("All Artists") 
+            , -1
+        ) ;
+
+        v.clear () ; 
+        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album_artist ORDER BY album_artist")).str()) ; 
+
+        for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+        {
+                SQL::Row & r = *i;
+                m_FilterModelAA->append_artist_quiet(
+                      boost::get<std::string>(r["album_artist"])
+                    , boost::get<gint64>(r["id"])
+                ) ;
+        }
+
+        m_FilterModelAA->regen_mapping () ;
+    }
+
+    void
+    YoukiController::on_library_scan_end(
+         gint64
+       , gint64
+       , gint64
+       , gint64
+       , gint64
+    )
+    {
+        reload_library () ;
     }
 
 ////////////////

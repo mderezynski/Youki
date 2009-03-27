@@ -50,6 +50,13 @@ namespace MPX
                     m_realmodel = model; 
                 }
 
+                virtual void
+                clear ()
+                {
+                    m_realmodel->clear () ;
+                    m_iter_map.clear() ;
+                    m_changed.emit () ;
+                } 
 
                 virtual Signal0&
                 signal_changed ()
@@ -180,6 +187,15 @@ namespace MPX
                     regen_mapping() ;
                 }
 
+                virtual void
+                clear ()
+                {
+                    m_realmodel->clear () ;
+                    m_mapping.clear () ;
+                    m_iter_map.clear() ;
+                    m_changed.emit () ;
+                } 
+
                 void
                 clear_active_track()
                 {
@@ -243,6 +259,25 @@ namespace MPX
                     regen_mapping();
                 }
                 
+                virtual void
+                append_track(SQL::Row& r, const MPX::Track& track)
+                {
+                    DataModel::append_track(r, track);
+                    regen_mapping();
+                }
+
+                virtual void
+                append_track_quiet(MPX::Track& track)
+                {
+                    DataModel::append_track(track);
+                }
+
+                virtual void
+                append_track_quiet(SQL::Row& r, const MPX::Track& track)
+                {
+                    DataModel::append_track(r, track);
+                }
+
                 void
                 erase_track(gint64 id)
                 {
@@ -1130,7 +1165,7 @@ namespace MPX
                     int ypos    = m_row_start ;
                     int xpos    = 0 ;
                     int col     = 0 ;
-                    int cnt     = ( m_visible_height - m_row_start ) / m_row_height ;
+                    int cnt     = ( m_visible_height - m_row_start ) / m_row_height  + 1 ;
 
                     if( event->area.y <= m_row_start )
                     {
@@ -1155,18 +1190,23 @@ namespace MPX
 
                     while( m_model->is_set() && cnt && (row < m_model->m_mapping.size()) ) 
                     {
+                        const int inner_pad  = 1 ;
+
                         xpos = 0 ;
+
+                        ModelT::iterator selected = m_model->m_mapping[row];
+                        bool iter_is_selected = ( !m_selection.empty() && m_selection.count(std::make_pair(selected, row))) ;
 
                         if( ! event->area.width <= 16 )
                         {
-                                if( ! (row % 2) ) 
+                                if( !(row % 2) ) 
                                 {
                                     GdkRectangle r ;
 
-                                    r.x       = xpad ;
-                                    r.y       = ypos ;
-                                    r.width   = alloc.get_width() - xpad ;
-                                    r.height  = m_row_height ;
+                                    r.x       = xpad  + inner_pad ;
+                                    r.y       = ypos  + inner_pad ;
+                                    r.width   = alloc.get_width() - xpad - 2 * inner_pad ;
+                                    r.height  = m_row_height - 2 * inner_pad ;
 
                                     RoundedRectangle(
                                           cairo
@@ -1187,14 +1227,10 @@ namespace MPX
                                     cairo->fill() ;
                                 }
 
-                                ModelT::iterator selected = m_model->m_mapping[row];
-                                bool iter_is_selected = false;
-
-                                if( !m_selection.empty() && m_selection.count(std::make_pair(selected, row))) 
+                                if( iter_is_selected )
                                 {
                                     Gdk::Color c = get_style()->get_base( Gtk::STATE_SELECTED ) ;
 
-                                    const int inner_pad  = 1 ;
                                     GdkRectangle r ;
 
                                     r.x         = inner_pad ;
@@ -1202,7 +1238,8 @@ namespace MPX
                                     r.width     = alloc.get_width() - 2*inner_pad ;  
                                     r.height    = m_row_height - 2*inner_pad ;
 
-                                    //// TITLEBAR 
+                                    cairo->save () ;
+
                                     Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
                                           r.x + r.width / 2
                                         , r.y  
@@ -1235,6 +1272,7 @@ namespace MPX
                                     ) ;
 
                                     cairo->set_source( background_gradient_ptr ) ;
+                                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
                                     RoundedRectangle(
                                           cairo
@@ -1253,7 +1291,10 @@ namespace MPX
                                         , c.get_blue_p()
                                     ) ;
 
+                                    cairo->set_line_width( 0.8 ) ;
                                     cairo->stroke () ;
+
+                                    cairo->restore () ;
 
                                     iter_is_selected = true;
                                 }
@@ -1503,7 +1544,7 @@ namespace MPX
                     gtk_widget_realize(GTK_WIDGET(m_treeview));
 
                     set_flags(Gtk::CAN_FOCUS);
-                    add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_FOCUS_CHANGE_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK ));
+                    add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_FOCUS_CHANGE_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK ));
 
                     ((GtkWidgetClass*)(G_OBJECT_GET_CLASS(G_OBJECT(gobj()))))->set_scroll_adjustments_signal = 
                             g_signal_new ("set_scroll_adjustments",
@@ -1517,11 +1558,6 @@ namespace MPX
 
                     gtk_widget_realize(GTK_WIDGET(gobj()));
                     initialize_metrics();
-
-                    std::vector<Gtk::TargetEntry> Entries;
-                    Entries.push_back(Gtk::TargetEntry("mpx-track", Gtk::TARGET_SAME_APP, 0x81));
-                    Entries.push_back(Gtk::TargetEntry("mpx-idvec", Gtk::TARGET_SAME_APP, 0x82));
-                    drag_source_set(Entries); 
                 }
 
                 ~ListView ()

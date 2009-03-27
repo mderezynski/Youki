@@ -33,15 +33,21 @@ namespace Service
 
         for( int n = 0; n < G_N_ELEMENTS(services); ++n )
         {
-            Base_p service = m_services[services[n]] ; 
-
-            sigx::glib_threadable * p = dynamic_cast<sigx::glib_threadable*>(service.get());
-            if( p )
+            if(m_services.count(services[n]))
             {
-                p->finish ();
-            }
+                    Base_p service = m_services[services[n]] ; 
 
-            m_services.erase( services[n] ) ;
+                    if( service )
+                    {
+                            sigx::glib_threadable * p = dynamic_cast<sigx::glib_threadable*>(service.get());
+                            if( p )
+                            {
+                                p->finish ();
+                            }
+
+                            m_services.erase( services[n] ) ;
+                    }
+            }
         }
     }
 

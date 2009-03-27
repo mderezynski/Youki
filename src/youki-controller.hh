@@ -13,14 +13,18 @@
 #include "mpx/com/view-albumartist.hh"
 #include "infoarea.hh"
 
+#if 0
 #include "youki-controller-dbus.hh"
+#endif
 
 namespace MPX
 {
     class Play ;
     class YoukiController
+/*
     : public org::freedesktop::MediaPlayer_adaptor
     , public DBus::ObjectAdaptor
+*/
     {
         protected:
 
@@ -62,7 +66,7 @@ namespace MPX
 
         public: 
 
-            YoukiController (DBus::Connection&) ;
+            YoukiController( /*DBus::Connection&*/ ) ;
             virtual ~YoukiController () ;
 
             Gtk::Window*
@@ -133,6 +137,20 @@ namespace MPX
             void
             play_track (
                    MPX::Track&
+            ) ;
+
+        protected:
+
+            void
+            reload_library () ;
+
+            void
+            on_library_scan_end(
+                 gint64
+               , gint64
+               , gint64
+               , gint64
+               , gint64
             ) ;
 
         protected: // DBUS

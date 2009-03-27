@@ -225,11 +225,11 @@ endif
 EXTRA_DIST =                    \
     dbus-obj-YOUKI.xml      
 
-BUILT_SOURCES =                 \
-    youki-controller-dbus.hh    
+#BUILT_SOURCES =                 \
+#    youki-controller-dbus.hh    
 
-CLEANFILES = $(BUILT_SOURCES)
-DISTCLEANFILES = $(BUILT_SOURCES)
+#CLEANFILES = $(BUILT_SOURCES)
+#DISTCLEANFILES = $(BUILT_SOURCES)
 
-youki-controller-dbus.hh:
-	$(DBUSBINDINGTOOL) dbus-obj-YOUKI.xml --adaptor=youki-controller-dbus.hh
+#youki-controller-dbus.hh:
+#	$(DBUSBINDINGTOOL) dbus-obj-YOUKI.xml --adaptor=youki-controller-dbus.hh
