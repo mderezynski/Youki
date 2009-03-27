@@ -206,6 +206,14 @@ AX_BOOST_REGEX
 AX_BOOST_IOSTREAMS
 AX_BOOST_PYTHON
 
+# libdir
+AC_ARG_WITH([libdir],
+    [AS_HELP_STRING([--with-libdir], [Specify libdir name (default=lib)])],
+    [libdir="$withval"],
+    [libdir="lib"]
+)
+
+
 # tr1
 AC_ARG_WITH([tr1],
     [AS_HELP_STRING([--with-tr1], [Use C++ TR1 extensions])],
@@ -327,7 +335,7 @@ AC_ARG_WITH([xerces-prefix],
 AC_CHECK_LIB([xerces-c], [_init], [have_xerces=yes], [have_xerces=no])
 if test "$have_xerces" = "yes"; then
     XML_INCLUDES="-I$xml_prefix/xercesc"
-    XML_LIBS="-L$xml_prefix/lib -lxerces-c"
+    XML_LIBS="-L$xml_prefix/$libdir -lxerces-c"
 else
     AC_MSG_ERROR([Xerces-C not found])
 fi
@@ -415,7 +423,7 @@ if test "$have_sid" != "no"; then
     if test "$have_sid" = "yes"; then
         AC_DEFINE([HAVE_SID], [1], [have sid])
         SID_INCLUDES="-I$sid_prefix/sidplay"
-        SID_LIBS="-L$sid_prefix/lib -lsidplay"
+        SID_LIBS="-L$sid_prefix/$libdir -lsidplay"
     else
         AC_MSG_ERROR([libsidplay 1.x not found!])
     fi
@@ -609,7 +617,7 @@ else
           else
             CDPARANOIA_INCLUDES="-I$cdparanoia_prefix/include"
           fi
-          CDPARANOIA_LIBS="-L$cdparanoia_prefix/lib -lcdda_interface"
+          CDPARANOIA_LIBS="-L$cdparanoia_prefix/$libdir -lcdda_interface"
   else
           AC_MSG_ERROR([cdparanoia not found!])
   fi
