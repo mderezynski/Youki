@@ -31,44 +31,42 @@ namespace
         { 0xec, 0xce, 0xb6 },
   };
 
-  const int RIGHT_MARGIN = 16; 
-  const int TOP_MARGIN = 6;
-  const int WIDTH = 6;
-  const int SPACING = 2;
+  const int WIDTH = 8 ;
+  const int SPACING = 0 ;
 }
 
 namespace MPX
 {
   void
-  InfoArea::draw_background (Cairo::RefPtr<Cairo::Context> & cr)
+  InfoArea::draw_background (Cairo::RefPtr<Cairo::Context> & cairo)
   {
-    Gtk::Allocation allocation = get_allocation ();
+    const Gtk::Allocation& a = get_allocation ();
 
-    cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
-    cr->set_source_rgba(
-          .12
-        , .12
-        , .12
-        , 1.
+    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+    cairo->set_source_rgba(
+          .10
+        , .10
+        , .10 
+        , 1. 
     ) ;
-    cr->rectangle(
+    cairo->rectangle(
           0
-        , 0
-        , allocation.get_width()
-        , allocation.get_height()
+        , 0 
+        , a.get_width() 
+        , a.get_height()
     ) ;
-    cr->fill ();
+    cairo->fill () ;
   }
 
   void
-  InfoArea::draw_spectrum (Cairo::RefPtr<Cairo::Context> & cr)
+  InfoArea::draw_spectrum (Cairo::RefPtr<Cairo::Context> & cairo)
   {
       const int HEIGHT = 36;
       const double ALPHA = 0.4;
 
       Gtk::Allocation allocation = get_allocation ();
 
-      cr->set_operator(Cairo::OPERATOR_ATOP);
+      cairo->set_operator(Cairo::OPERATOR_ATOP);
 
       for (int n = 0; n < SPECT_BANDS; ++n) 
       {
@@ -79,26 +77,26 @@ namespace MPX
 
         // Peak
         int peak = (int(m_spectrum_peak[n]/2) / 3) * 3;
-        y = TOP_MARGIN + (HEIGHT - (peak+HEIGHT)); 
+        y = (HEIGHT - (peak+HEIGHT)); 
         h = peak+HEIGHT;
 
         if( w>0 && h>0)
         {
-            cr->set_source_rgba(1., 1., 1., 0.1);
-            Util::cairo_rounded_rect(cr, x, y, w, h, 1.);
-            cr->fill ();
+            cairo->set_source_rgba(1., 1., 1., 0.1);
+            Util::cairo_rounded_rect(cairo, x, y, w, h, 1.);
+            cairo->fill ();
         }
 
         // Bar
         int data = (int(m_spectrum_data[n]/2) / 3) * 3;
-        y = TOP_MARGIN + (HEIGHT - (data+HEIGHT)); 
+        y = (HEIGHT - (data+HEIGHT)); 
         h = data+HEIGHT;
 
         if( w>0 && h>0)
         {
-            cr->set_source_rgba (double(colors[n/6].red)/255., double(colors[n/6].green)/255., double(colors[n/6].blue)/255., ALPHA);
-            Util::cairo_rounded_rect(cr, x, y, w, h, 1.);
-            cr->fill ();
+            cairo->set_source_rgba (double(colors[n/6].red)/255., double(colors[n/6].green)/255., double(colors[n/6].blue)/255., ALPHA);
+            Util::cairo_rounded_rect(cairo, x, y, w, h, 1.);
+            cairo->fill ();
         }
       }
   }

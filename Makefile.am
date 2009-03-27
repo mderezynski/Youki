@@ -4,8 +4,8 @@ DISTCHECK_CONFIGURE_FLAGS = --with-dbus-services-dir=/tmp --enable-hal
 
 # Main Service
 servicedir = $(DBUS_SERVICES_DIR)
-service_in_files = info.backtrace.mpx.service.in
-service_DATA = info.backtrace.mpx.service
+service_in_files = info.backtrace.youki.service.in
+service_DATA = info.backtrace.youki.service
 $(service_DATA): $(service_in_files) Makefile
 	@sed -e "s|\@libexecdir\@|$(libexecdir)|" $< > $@
 
@@ -62,7 +62,7 @@ EXTRA_DIST =									\
 												\
 	autogen.sh									\
 												\
-	info.backtrace.mpx.service.in				\
+	info.backtrace.youki.service.in				\
 	info.backtrace.sentinel.service.in			\
 												\
 	mpx.1.in									\

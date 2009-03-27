@@ -12,21 +12,37 @@ namespace Service
 
     Manager::~Manager ()
     {
-        m_services.erase("mpx-service-plugins-gui");
-        m_services.erase("mpx-service-plugins");
-        m_services.erase("mpx-service-player");
-        m_services.erase("mpx-service-mbimport");
-        m_services.erase("mpx-service-mlibman");
-        m_services.erase("mpx-service-preferences");
-        m_services.erase("mpx-service-play");
-        m_services.erase("mpx-service-markov");
-        m_services.erase("mpx-service-artist-images");
-        m_services.erase("mpx-service-library");
-        m_services.erase("mpx-service-taglib");
-        m_services.erase("mpx-service-covers");
+        const char* services[] =
+        {
+                "mpx-service-plugins-gui"
+                "mpx-service-plugins"
+                "mpx-service-player"
+                "mpx-service-mbimport"
+                "mpx-service-mlibman"
+                "mpx-service-preferences"
+                "mpx-service-play"
+                "mpx-service-markov"
+                "mpx-service-artist-images"
+                "mpx-service-library"
+                "mpx-service-taglib"
+                "mpx-service-covers"
 #ifdef HAVE_HAL
-        m_services.erase("mpx-service-hal");
+                "mpx-service-hal"
 #endif // HAVE_HAL
+        } ;
+
+        for( int n = 0; n < G_N_ELEMENTS(services); ++n )
+        {
+            Base_p service = m_services[services[n]] ; 
+
+            sigx::glib_threadable * p = dynamic_cast<sigx::glib_threadable*>(service.get());
+            if( p )
+            {
+                p->finish ();
+            }
+
+            m_services.erase( services[n] ) ;
+        }
     }
 
     void

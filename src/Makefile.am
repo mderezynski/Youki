@@ -2,88 +2,88 @@ libexec_PROGRAMS = youki-bin
 
 youki_bin_LDFLAGS = -Wl,--export-dynamic 
 
-youki_bin_CXXFLAGS = 									\
-		$(ALSA_CFLAGS)								\
-		$(BOOST_CPPFLAGS)							\
-		$(CAIROMM_CFLAGS)   						\
-		$(CLUTTER_CFLAGS)							\
-		$(CDIO_CFLAGS)								\
-		$(CDPARANOIA_INCLUDES) 						\
-		$(DBUS_CFLAGS)								\
-		$(EXO_CFLAGS)								\
-		$(GDL_CFLAGS)								\
-		$(GIOMM_CFLAGS)								\
-		$(GLADEMM_CFLAGS)							\
-		$(GLIBMM_CFLAGS)							\
-		$(GST_CFLAGS)								\
-		$(GTKGLEXT_CFLAGS)							\
-		$(GTKMM_CFLAGS)								\
-		$(HAL_CFLAGS)								\
-		$(NM_CFLAGS)								\
-		$(LIBOFA_CFLAGS)							\
-		$(PYGTK_CFLAGS)								\
-		$(PYTHON_CFLAGS)							\
-		$(RSVG_CFLAGS)								\
-		$(SEXYMM_CFLAGS)							\
-		$(SIGX_CFLAGS)								\
-		$(SOUP_CFLAGS)								\
-		$(SQLITE_CFLAGS)							\
-		$(STARTUP_NOTIFY_CFLAGS)					\
-		$(TAGLIB_CFLAGS)							\
-		$(X_CFLAGS)									\
-		$(XML_CFLAGS)        						\
-		$(XPROTO_CFLAGS)							\
-		-I$(top_srcdir)								\
-		-I$(top_srcdir)/include						\
-		-I$(top_srcdir)/libhal++	
+youki_bin_CXXFLAGS =                            \
+        $(ALSA_CFLAGS)                          \
+        $(BOOST_CPPFLAGS)                       \
+        $(CAIROMM_CFLAGS)                       \
+        $(CLUTTER_CFLAGS)                       \
+        $(CDIO_CFLAGS)                          \
+        $(CDPARANOIA_INCLUDES)                  \
+        $(DBUS_CFLAGS)                          \
+        $(EXO_CFLAGS)                           \
+        $(GDL_CFLAGS)                           \
+        $(GIOMM_CFLAGS)                         \
+        $(GLADEMM_CFLAGS)                       \
+        $(GLIBMM_CFLAGS)                        \
+        $(GST_CFLAGS)                           \
+        $(GTKGLEXT_CFLAGS)                      \
+        $(GTKMM_CFLAGS)                         \
+        $(HAL_CFLAGS)                           \
+        $(NM_CFLAGS)                            \
+        $(LIBOFA_CFLAGS)                        \
+        $(PYGTK_CFLAGS)                         \
+        $(PYTHON_CFLAGS)                        \
+        $(RSVG_CFLAGS)                          \
+        $(SEXYMM_CFLAGS)                        \
+        $(SIGX_CFLAGS)                          \
+        $(SOUP_CFLAGS)                          \
+        $(SQLITE_CFLAGS)                        \
+        $(STARTUP_NOTIFY_CFLAGS)                \
+        $(TAGLIB_CFLAGS)                        \
+        $(X_CFLAGS)                             \
+        $(XML_CFLAGS)                           \
+        $(XPROTO_CFLAGS)                        \
+        -I$(top_srcdir)                         \
+        -I$(top_srcdir)/include                 \
+        -I$(top_srcdir)/libhal++    
 
-youki_bin_LDADD =								\
-		$(ALSA_LIBS)								\
-		$(BOOST_LDFLAGS)							\
-		$(BOOST_REGEX_LIB)							\
-		$(BOOST_FILESYSTEM_LIB)						\
-		$(BOOST_IOSTREAMS_LIB)						\
-		$(BOOST_PYTHON_LIB)							\
-		$(CAIROMM_LIBS)								\
-		$(CLUTTER_LIBS)								\
-		$(CDIO_LIBS)								\
-		$(CDPARANOIA_LIBS)							\
-		$(DBUS_LIBS)								\
-		$(EXO_LIBS)									\
-		$(GDL_LIBS)									\
-		$(GIOMM_LIBS)								\
-		$(GLADEMM_LIBS)								\
-		$(GLIBMM_LIBS)								\
-		$(GST_LIBS)									\
-		$(GTKGLEXT_LIBS)							\
-		$(GTKMM_LIBS)								\
-		$(HAL_LIBS)									\
-		$(NM_LIBS)									\
-		$(LIBOFA_LIBS)								\
-		$(PYGTK_LIBS)								\
-		$(PYTHON_LIBS)								\
-		$(RSVG_LIBS)								\
-		$(SEXYMM_LIBS)								\
-		$(SIGX_LIBS)								\
-		$(SM_LIBS)									\
-		$(SOUP_LIBS)								\
-		$(SQLITE_LIBS)								\
-		$(STARTUP_NOTIFY_LIBS)						\
-		$(TAGLIB_LIBS)								\
-		$(XML_LIBS)									\
-		$(XLIB_LIBS)								\
-		-lgstinterfaces-0.10 						\
-		-lgstvideo-0.10								\
-													\
-													\
-		$(top_builddir)/jnetlib/libjnetlib.la						\
-		$(top_builddir)/mcs/libmconfig.la							\
-		$(top_builddir)/api/libmpx-api.la							\
-		$(top_builddir)/widgets/libmpx-widgets.la					\
-		$(top_builddir)/musicbrainz/libmpx-musicbrainz.la			\
-		$(top_builddir)/com/libmpx-view-components.la
+youki_bin_LDADD =                               \
+        $(ALSA_LIBS)                            \
+        $(BOOST_LDFLAGS)                        \
+        $(BOOST_REGEX_LIB)                      \
+        $(BOOST_FILESYSTEM_LIB)                 \
+        $(BOOST_IOSTREAMS_LIB)                  \
+        $(BOOST_PYTHON_LIB)                     \
+        $(CAIROMM_LIBS)                         \
+        $(CLUTTER_LIBS)                         \
+        $(CDIO_LIBS)                            \
+        $(CDPARANOIA_LIBS)                      \
+        $(DBUS_LIBS)                            \
+        $(EXO_LIBS)                             \
+        $(GDL_LIBS)                             \
+        $(GIOMM_LIBS)                           \
+        $(GLADEMM_LIBS)                         \
+        $(GLIBMM_LIBS)                          \
+        $(GST_LIBS)                             \
+        $(GTKGLEXT_LIBS)                        \
+        $(GTKMM_LIBS)                           \
+        $(HAL_LIBS)                             \
+        $(NM_LIBS)                              \
+        $(LIBOFA_LIBS)                          \
+        $(PYGTK_LIBS)                           \
+        $(PYTHON_LIBS)                          \
+        $(RSVG_LIBS)                            \
+        $(SEXYMM_LIBS)                          \
+        $(SIGX_LIBS)                            \
+        $(SM_LIBS)                              \
+        $(SOUP_LIBS)                            \
+        $(SQLITE_LIBS)                          \
+        $(STARTUP_NOTIFY_LIBS)                  \
+        $(TAGLIB_LIBS)                          \
+        $(XML_LIBS)                             \
+        $(XLIB_LIBS)                            \
+        -lgstinterfaces-0.10                    \
+        -lgstvideo-0.10                         \
+                                                \
+                                                \
+        $(top_builddir)/jnetlib/libjnetlib.la               \
+        $(top_builddir)/mcs/libmconfig.la                   \
+        $(top_builddir)/api/libmpx-api.la                   \
+        $(top_builddir)/widgets/libmpx-widgets.la           \
+        $(top_builddir)/musicbrainz/libmpx-musicbrainz.la   \
+        $(top_builddir)/com/libmpx-view-components.la
 
-youki_bin_CFLAGS =				\
+youki_bin_CFLAGS =                                          \
     $(GLIB_CFLAGS) $(GST_CFLAGS) -I$(top_srcdir)/include
 
 if HAVE_HAL
@@ -99,180 +99,137 @@ youki_bin_CXXFLAGS += -D_XOPEN_SOURCE=600
 youki_bin_CFLAGS += -D_XOPEN_SOURCE=600
 endif
 
-youki_bin_SOURCES =		\
-								\
-	artist-images.cc			\
-								\
-	audio.cc					\
-	audio-types.hh				\
-	audio-exception.hh			\
-								\
-	covers.cc					\
-	covers-stores.cc 			\
-								\
-	dialog-about.hh				\
-	dialog-about.cc				\
-								\
-	dialog-equalizer.hh			\
-	dialog-equalizer.cc			\
-								\
-	dialog-filebrowser.hh		\
-	dialog-filebrowser.cc		\
-								\
-	error.cc					\
-								\
-	flow_engine.hh				\
-	flow_engine.cc				\
-	flow_widget.hh				\
-	flow_widget.cc				\
+youki_bin_SOURCES =             \
                                 \
-    glib-marshalers.c           \
-								\
-	import-share.hh				\
-	import-share.cc				\
-								\
-	import-folder.hh			\
-	import-folder.cc			\
-								\
-	infoarea.hh					\
-	infoarea.cc					\
-	infoarea__protected.cc		\
-	infoarea__private.cc		\
-								\
-	jnethttpsrc.h				\
-	jnethttpsrc.cc				\
+    artist-images.cc            \
+                                \
+    audio.cc                    \
+    audio-types.hh              \
+    audio-exception.hh          \
+                                \
+    covers.cc                   \
+    covers-stores.cc            \
+                                \
+    dialog-about.hh             \
+    dialog-about.cc             \
+                                \
+    dialog-equalizer.hh         \
+    dialog-equalizer.cc         \
+                                \
+    dialog-filebrowser.hh       \
+    dialog-filebrowser.cc       \
+                                \
+    error.cc                    \
+                                \
+    flow_engine.hh              \
+    flow_engine.cc              \
+    flow_widget.hh              \
+    flow_widget.cc              \
+                                \
+        glib-marshalers.c       \
+                                \
+    import-share.hh             \
+    import-share.cc             \
+                                \
+    import-folder.hh            \
+    import-folder.cc            \
+                                \
+    infoarea.hh                 \
+    infoarea.cc                 \
+    infoarea__protected.cc      \
+    infoarea__private.cc        \
+                                \
+    jnethttpsrc.h               \
+    jnethttpsrc.cc              \
                                 \
     kobo-position.hh            \
     kobo-position.cc            \
                                 \
-    kobo-controller.hh          \
-    kobo-controller.cc          \
+    youki-controller.hh         \
+    youki-controller.cc         \
                                 \
     kobo-cover.hh               \
     kobo-cover.cc               \
                                 \
     kobo-main.hh                \
     kobo-main.cc                \
-								\
+                                \
     kobo-titleinfo.hh           \
     kobo-titleinfo.cc           \
-								\
+                                \
     kobo-volume.hh              \
     kobo-volume.cc              \
                                 \
-	library.cc					\
-	library-scanner-thread.cc	\
-								\
-	main.cc						\
-	messages.hh					\
-								\
-	markov-analyzer-thread.cc	\
-	metadatareader-taglib.cc	\
-	minisoup.cc					\
-								\
-	network.cc					\
-								\
-	paths.hh					\
-	paths.cc					\
-								\
-	play.cc						\
-								\
-	playbacksource.cc			\
-								\
+    library.cc                  \
+    library-scanner-thread.cc   \
                                 \
-	preferences.cc				\
-								\
-	request-value.hh			\
-	request-value.cc			\
-								\
-	sidebar.hh					\
-	sidebar.cc					\
-								\
-	splash-screen.hh			\
-	splash-screen.cc			\
-								\
-	services.cc					\
-								\
-	signals.cc					\
-	signals.hh					\
-								\
-	sql.cc						\
-								\
-	stock.cc					\
-								\
-	uri.cc						\
-								\
-	util-file.cc				\
-	util-graphics.cc			\
-	util-string.cc				\
-	util-ui.cc					\
-								\
-	video-playback.hh			\
-	video-playback.cc			\
-								\
-	video-widget.hh				\
-	video-widget.cc				\
-								\
-	volume-control.hh			\
-	volume-control.cc
+    main.cc                     \
+    messages.hh                 \
+                                \
+    markov-analyzer-thread.cc   \
+    metadatareader-taglib.cc    \
+    minisoup.cc                 \
+                                \
+    network.cc                  \
+                                \
+    paths.hh                    \
+    paths.cc                    \
+                                \
+    play.cc                     \
+                                \
+    playbacksource.cc           \
+                                \
+    preferences.cc              \
+                                \
+    request-value.hh            \
+    request-value.cc            \
+                                \
+    sidebar.hh                  \
+    sidebar.cc                  \
+                                \
+    splash-screen.hh            \
+    splash-screen.cc            \
+                                \
+    services.cc                 \
+                                \
+    signals.cc                  \
+    signals.hh                  \
+                                \
+    sql.cc                      \
+                                \
+    stock.cc                    \
+                                \
+    uri.cc                      \
+                                \
+    util-file.cc                \
+    util-graphics.cc            \
+    util-string.cc              \
+    util-ui.cc                  \
+                                \
+    video-playback.hh           \
+    video-playback.cc           \
+                                \
+    video-widget.hh             \
+    video-widget.cc             \
+                                \
+    volume-control.hh           \
+    volume-control.cc
 
-if HAVE_HAL								
-youki_bin_SOURCES += hal.cc	\
-	mlibmanager.hh				\
-	mlibmanager.cc				
+if HAVE_HAL                             
+youki_bin_SOURCES +=            \
+    hal.cc                      \
+    mlibmanager.hh              \
+    mlibmanager.cc              
 endif
 
-BUILT_SOURCES = 			\
-	dbus-obj-MPX-glue.h		\
-	dbus-obj-PLAYER-glue.h
+EXTRA_DIST =                    \
+    dbus-obj-YOUKI.xml      
 
-EXTRA_DIST = 				\
-	dbus-obj-MPX.xml 		\
-	dbus-obj-PLAYER.xml 	\
-	dbus-marshalers.list
-
-dbus-obj-MPX-glue.h: Makefile.am dbus-obj-MPX.xml
-	@echo "* Generating /MPX DBus Glue"
-	@$(DBUSBINDINGTOOL) --mode=glib-server --prefix=Player::DBusMPX::mpx \
-    $(abs_top_srcdir)/src/dbus-obj-MPX.xml > \
-    dbus-obj-MPX-glue.h.temp
-	@cat dbus-obj-MPX-glue.h.temp   | sed s:G_BEGIN_DECLS:: | sed s:G_END_DECLS:: > \
-    dbus-obj-MPX-glue.h.temp.1
-	@cat dbus-obj-MPX-glue.h.temp.1 | sed s/dbus_glib_Player\:\:DBusMPX\:\:mpx/dbus_glib_mpx/g > \
-    dbus-obj-MPX-glue.h.temp.2
-	@cat dbus-obj-MPX-glue.h.temp.2 | sed s/dbus_glib_marshal_Player\:\:DBusMPX\:\:mpx/dbus_glib_marshal_mpx/g > \
-    dbus-obj-MPX-glue.h
-	@rm -f dbus-obj-MPX-glue.h.temp
-	@rm -f dbus-obj-MPX-glue.h.temp.1
-	@rm -f dbus-obj-MPX-glue.h.temp.2
-
-dbus-obj-PLAYER-glue.h: Makefile.am dbus-obj-PLAYER.xml
-	@echo "* Generating /Player DBus Glue"
-	@$(DBUSBINDINGTOOL) --mode=glib-server --prefix=Player::DBusPlayer::player \
-    $(abs_top_srcdir)/src/dbus-obj-PLAYER.xml > \
-    dbus-obj-PLAYER-glue.h.temp
-	@cat dbus-obj-PLAYER-glue.h.temp   | sed s:G_BEGIN_DECLS:: | sed s:G_END_DECLS:: > \
-    dbus-obj-PLAYER-glue.h.temp.1
-	@cat dbus-obj-PLAYER-glue.h.temp.1 | sed s/dbus_glib_Player\:\:DBusPlayer\:\:player/dbus_glib_player/g > \
-    dbus-obj-PLAYER-glue.h.temp.2
-	@cat dbus-obj-PLAYER-glue.h.temp.2 | sed s/dbus_glib_marshal_Player\:\:DBusPlayer\:\:player/dbus_glib_marshal_player/g > \
-    dbus-obj-PLAYER-glue.h
-	@rm -f dbus-obj-PLAYER-glue.h.temp
-	@rm -f dbus-obj-PLAYER-glue.h.temp.1
-	@rm -f dbus-obj-PLAYER-glue.h.temp.2
-
-dbus-marshalers.c: dbus-marshalers.list 
-	@echo "* Generating dbus-marshalers.c"
-	@$(GLIB_GENMARSHAL) --prefix=mpx_dbus_marshal --body   $(srcdir)/dbus-marshalers.list > dbus-marshalers.c
-
-dbus-marshalers.h: dbus-marshalers.list
-	@echo "* Generating dbus-marshalers.h"
-	@$(GLIB_GENMARSHAL) --prefix=mpx_dbus_marshal --header $(srcdir)/dbus-marshalers.list > dbus-marshalers.h
-
-
-BUILT_SOURCES += dbus-marshalers.c dbus-marshalers.h
-youki_bin_SOURCES += dbus-marshalers.c
+BUILT_SOURCES =                 \
+    youki-controller-dbus.hh    
 
 CLEANFILES = $(BUILT_SOURCES)
 DISTCLEANFILES = $(BUILT_SOURCES)
 
+youki-controller-dbus.hh:
+	$(DBUSBINDINGTOOL) dbus-obj-YOUKI.xml --adaptor=youki-controller-dbus.hh

@@ -31,7 +31,7 @@ namespace MPX
     void
     KoboPosition::on_size_request( Gtk::Requisition * req )
     {
-        req->height = 20 ;  
+        req->height = 12 ;  
     }
 
     void
@@ -58,24 +58,19 @@ namespace MPX
         const Gdk::Color& c = get_style()->get_base( Gtk::STATE_SELECTED ) ;
 
         cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
-        cairo->set_source_rgba( 0.12, 0.12, 0.12, 1. ) ;
+        cairo->set_source_rgba(
+              0.10
+            , 0.10
+            , 0.10
+            , 1.
+        ) ;
         cairo->rectangle(
               0 
             , 0 
             , a.get_width()
-            , 20
+            , a.get_height()
         ) ;
         cairo->fill () ;
-
-        RoundedRectangle(
-              cairo
-            , 0 
-            , 4 
-            , a.get_width() 
-            , 12
-            , rounding
-        ) ;
-        cairo->clip () ;
 
         {
                cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
@@ -88,7 +83,7 @@ namespace MPX
                 RoundedRectangle(
                       cairo
                     , 0 
-                    , 4 
+                    , 0 
                     , a.get_width()
                     , 12
                     , rounding
@@ -117,7 +112,7 @@ namespace MPX
                 RoundedRectangle(
                       cairo
                     , 0 
-                    , 4 
+                    , 0 
                     , double(a.get_width()) * double(percent)
                     , 12
                     , rounding
@@ -147,7 +142,7 @@ namespace MPX
 
             cairo->move_to(
                   fmax( 2, 2 + double(a.get_width()) * double(percent) - width - 4 ) 
-                , (a.get_height () - height) / 2
+                , (a.get_height () - height) / 2 
             ) ;
             cairo->set_source_rgba( 1., 1., 1., 1. ) ;
             cairo->set_operator( Cairo::OPERATOR_OVER ) ;

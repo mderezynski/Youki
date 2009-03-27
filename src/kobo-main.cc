@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <gtkmm.h>
+#include "mpx/mpx-main.hh"
 #include "mpx/widgets/cairo-extensions.hh"
 #include "kobo-main.hh"
 
@@ -24,19 +25,30 @@ namespace
 
 namespace MPX
 {
+    MainWindow::~MainWindow ()
+    {
+        get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-y")));
+        get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-w")), m_presize_height );
+    }
+
     MainWindow::MainWindow ()
-    : m_drawer_out( false )
-    , m_presize_height( 0 )
-    , m_drawer_height( 0 )
-    , m_drawer_height_max( 300 )
-    , m_expand_direction( EXPAND_NONE )
-                    {
+
+        : m_drawer_out( false )
+        , m_presize_height( 0 )
+        , m_drawer_height( 0 )
+        , m_drawer_height_max( 300 )
+        , m_quit_clicked( false )
+        , m_expand_direction( EXPAND_NONE )
+
+                     {
                         set_title( "Youki" ) ;
                         set_decorated( false ) ;
                         set_colormap(Glib::wrap(gdk_screen_get_rgba_colormap(gdk_screen_get_default()), true)) ; 
 
                         add_events( Gdk::BUTTON_PRESS_MASK ) ;
+
                         m_title_logo = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "title-logo.png" )) ;
+                        m_button_off = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "off.png" )) ;
 
                         set_geom_hints( false ) ;
 
@@ -70,7 +82,28 @@ namespace MPX
                         a2->set_size_request( -1, 0 ) ;
 
                         add( *v ) ;
+
+                        resize(
+                              mcs->key_get<int>("mpx","window-w"),
+                              mcs->key_get<int>("mpx","window-h")
+                        );
+
+                        move(
+                              mcs->key_get<int>("mpx","window-x"),
+                              mcs->key_get<int>("mpx","window-y")
+                        );
+
+
+                        while (gtk_events_pending())
+                          gtk_main_iteration();
                     }
+
+    bool
+    MainWindow::quit_timeout ()
+    {
+        Gtk::Main::quit () ;
+        return false ;
+    }
 
     void
     MainWindow::set_widget_top( Gtk::Widget & w )
@@ -157,6 +190,51 @@ namespace MPX
     bool
     MainWindow::on_button_press_event( GdkEventButton* event )
                     {
+                        if( event->window != GTK_WIDGET(gobj())->window )
+                        {
+                            return false ;
+                        }
+
+                        Gdk::Rectangle r1, r2 ;
+
+                        r1.set_x( event->x ) ;
+                        r1.set_y( event->y ) ;
+                        r1.set_width( 1 ) ;
+                        r1.set_height( 1 ) ;
+
+                        r2.set_x( get_allocation().get_width() - 8 - m_button_off->get_width() ) ;
+                        r2.set_y( (20 - m_button_off->get_height()) / 2 ) ;
+                        r2.set_width( m_button_off->get_width() ) ;
+                        r2.set_height( m_button_off->get_height() ) ;
+
+                        bool intersect = false ;
+
+                        r2.intersect( r1, intersect ) ;
+
+                        if( intersect )
+                        {
+                            m_quit_clicked = true ;
+                            queue_draw () ;
+                            Glib::signal_timeout().connect(
+                                  sigc::mem_fun(
+                                        *this
+                                      , &MainWindow::quit_timeout
+                                  )
+                                , 500
+                            ) ;
+                            return false ;
+                        }
+                        if( event->y < 20 )
+                        {
+                            begin_move_drag(
+                                  event->button
+                                , event->x_root
+                                , event->y_root
+                                , event->time
+                            ) ;
+                            return false ;
+                        }
+
                         if( event->y < 20 )
                         {
                             begin_move_drag(
@@ -226,14 +304,16 @@ namespace MPX
                     {
                         Cairo::RefPtr<Cairo::Context> cr = get_window()->create_cairo_context() ;
 
+                        const Gtk::Allocation& a = get_allocation() ;
+
                         cr->set_operator( Cairo::OPERATOR_CLEAR ) ;
                         cr->paint () ;
 
+                        //// DRAWER 
                         if( m_expand_direction != EXPAND_NONE || m_drawer_out )
                         {
                                 cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
                                 cr->set_source_rgba( 0.65, 0.65, 0.65, .4 ) ;
-                            
                                 RoundedRectangle(
                                       cr
                                     , 0 
@@ -243,13 +323,12 @@ namespace MPX
                                     , rounding
                                     , CairoCorners::CORNERS( CairoCorners::BOTTOMLEFT | CairoCorners::BOTTOMRIGHT )
                                 ) ;
-
                                 cr->fill () ;
                         }
 
+                        //// MAINAREA 
                         cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
-                        cr->set_source_rgba( 0.12, 0.12, 0.12, 1. ) ;
-                    
+                        cr->set_source_rgba( 0.10, 0.10, 0.10, 1. ) ;
                         RoundedRectangle(
                               cr
                             , 0
@@ -263,7 +342,7 @@ namespace MPX
                         cr->set_line_width( 1. ) ;
                         cr->stroke() ;
 
-                        // Create the linear gradient diagonal
+                        //// TITLEBAR 
                         Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
                               get_allocation().get_width() / 2. 
                             , 0
@@ -271,7 +350,6 @@ namespace MPX
                             , 20 
                         ) ;
                         
-                        // Set grandient colors
                         background_gradient_ptr->add_color_stop_rgba(
                               0
                             , 1.
@@ -288,7 +366,6 @@ namespace MPX
                             , 0.2 
                         ) ;
                         
-                        // Set grandient colors
                         background_gradient_ptr->add_color_stop_rgba(
                               1 
                             , 1.
@@ -297,7 +374,6 @@ namespace MPX
                             , 0.15 
                         ) ;
 
-                        // Draw a rectangle and fill with gradient
                         cr->set_operator( Cairo::OPERATOR_ATOP ) ;
                         cr->set_source( background_gradient_ptr ) ;
                         cr->rectangle(
@@ -309,6 +385,7 @@ namespace MPX
                         cr->fill();
 
 
+                        //// ICONS
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_title_logo 
@@ -322,9 +399,28 @@ namespace MPX
                             , m_title_logo->get_width()
                             , m_title_logo->get_height()
                         ) ;
-
                         cr->fill () ;
 
+
+                        Gdk::Cairo::set_source_pixbuf(
+                              cr
+                            , m_button_off 
+                            , a.get_width() - 8 - m_button_off->get_width()
+                            , (20 - m_button_off->get_height()) / 2. 
+                        ) ;
+
+                        cr->rectangle(
+                              a.get_width() - 8 - m_button_off->get_width()
+                            , (20 - m_title_logo->get_height()) / 2.
+                            , m_title_logo->get_width()
+                            , m_title_logo->get_height()
+                        ) ;
+                        cr->save () ;
+                        cr->clip () ;
+                        cr->paint_with_alpha( m_quit_clicked ? .9 : .6 ) ; 
+                        cr->restore () ;
+
+                        //// RESIZE GRIP 
                         cr->set_source_rgba(
                               1.
                             , 1.

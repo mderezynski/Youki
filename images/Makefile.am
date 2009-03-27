@@ -3,8 +3,10 @@ images_DATA =						\
 		about.png					\
 		artist.png					\
 		disc.png					\
+        off.png                     \
 		splash.png					\
 		throbber.gif				\
+        youki.png                   \
                                     \
         speaker.png                 \
         speaker_ghost.png           \

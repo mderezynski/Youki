@@ -505,8 +505,6 @@ namespace MPX
 
         Library::~Library ()
         {
-            m_ScannerThread->finish();
-            m_ScannerThread.reset();
         }
 
         void

@@ -91,6 +91,11 @@ namespace
                         return (in.size() ? in.c_str() : NULL);
                 }
 
+        inline double
+                cos_smooth (double x)
+                {
+                    return (1.0 - std::cos (x * G_PI)) / 2.0;
+                }
 }
 
 namespace MPX
@@ -112,7 +117,7 @@ namespace MPX
                 for (int n = 0; n < SPECT_BANDS; ++n)
                 {
                         m_spectrum.push_back (0);
-                        m_zero_spectrum.push_back (0);
+                        m_spectrum_zero.push_back (0);
                 }
 
                 property_volume().signal_changed().connect
@@ -272,7 +277,7 @@ namespace MPX
                                 property_status_ = PLAYSTATUS_STOPPED;
                         }
                         set_custom_httpheader(NULL);
-                        signal_spectrum_.emit( m_zero_spectrum );
+                        signal_spectrum_.emit( m_spectrum_zero );
                 }
 
         void
@@ -383,8 +388,7 @@ namespace MPX
                                 return;
                         }
 
-                        m_current_protocol = uri.get_protocol();
-                        switch (m_current_protocol)
+                        switch( uri.get_protocol() )
                         {
                                 case URI::PROTOCOL_ITPC:
                                         /* ITPC doesn't provide streams, it only links to RSS feed files */
@@ -466,8 +470,6 @@ namespace MPX
                     ustring const& type
                 )
                 {
-                        //Glib::Mutex::Lock L (m_stream_lock);
-
                         set_custom_httpheader(NULL);
                         m_metadata.reset();
 
@@ -505,61 +507,68 @@ namespace MPX
         void
                 Play::request_status_real (PlayStatus status)
                 {
-                        m_state_lock.lock ();
-
                         switch (status)
                         {
                                 case PLAYSTATUS_PAUSED:
-                                        pause_stream ();
+
+                                        pause_stream () ;
+                                        break;
+
+                                case PLAYSTATUS_PLAYING:
+
+                                        play_stream () ;
+                                        break;
+
+                                case PLAYSTATUS_WAITING:
+
+                                        m_metadata.reset();
+                                        property_stream_type_ = ustring();
+
+                                        readify_stream (); 
                                         break;
 
                                 case PLAYSTATUS_STOPPED:
 
+                                        // FIXME: remove the need for this somehow
+
                                         if (BinId (m_pipeline_id) == BIN_HTTP) 
                                         {
-                                                g_object_set (G_OBJECT (gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP]), "src")),
-                                                                "abort",
-                                                                TRUE, NULL); 
+                                            g_object_set(
+                                                G_OBJECT(gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP]), "src"))
+                                              , "abort"
+                                              , TRUE
+                                              , NULL
+                                            ) ; 
                                         }
                                         else
                                         if (BinId (m_pipeline_id) == BIN_HTTP_MP3)
                                         {
-                                                g_object_set (G_OBJECT (gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP_MP3]), "src")),
-                                                                "abort",
-                                                                TRUE, NULL); 
+                                            g_object_set(
+                                                G_OBJECT (gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP_MP3]), "src"))
+                                              , "abort"
+                                              , TRUE
+                                              , NULL
+                                            ) ; 
                                         }
 
                                         m_metadata.reset();
                                         property_stream_type_ = ustring();
-                                        //stop_stream ();
-                                        property_status_ = PLAYSTATUS_STOPPED;
-                                        fade_init ();
-                                        break;
 
-                                case PLAYSTATUS_WAITING:
-                                        m_metadata.reset();
-                                        property_stream_type_ = ustring();
-                                        readify_stream (); 
-                                        break;
-
-                                case PLAYSTATUS_PLAYING:
-                                        fade_stop ();
-                                        play_stream ();
+                                        stop_stream ();
                                         break;
 
                                 default:
-                                        {
-                                                g_log ( G_LOG_DOMAIN,
-                                                                G_LOG_LEVEL_WARNING,
-                                                                "%s: Unhandled Playback status request: %d",
-                                                                G_STRFUNC,
-                                                                int (status));
-                                                break;
-                                        }
+                                        g_log(
+                                              G_LOG_DOMAIN
+                                            , G_LOG_LEVEL_WARNING
+                                            , "%s: request for unsupported playstatus: %d"
+                                            , G_STRFUNC
+                                            , int( status )
+                                        ) ;
+                                        break;
                         }
 
                         signal_playstatus_.emit (PlayStatus (property_status().get_value()));
-                        m_state_lock.unlock ();
                 }
 
         void
@@ -670,11 +679,6 @@ namespace MPX
                 {
                         Play & play = *(static_cast<Play*>( data ));
 
-                        // Unrefrencing the message will break the spectrum and memory will leak
-                        //gst_message_unref(play.m_spectrum_message);
-
-               //         play.signal_spectrum_.emit( play.m_spectrum );
-
                         Glib::signal_idle().connect(
                                 sigc::mem_fun(
                                         play,
@@ -690,8 +694,6 @@ namespace MPX
                                 gpointer    data)
                 {
                         Play & play = *(static_cast<Play*> (data));
-
-                        Glib::Mutex::Lock L (play.m_bus_lock);
 
                         static GstState old_state = GstState (0), new_state = GstState (0), pending_state = GstState (0);
 
@@ -716,21 +718,12 @@ namespace MPX
                                 case GST_MESSAGE_ELEMENT:
                                         {
                                                 GstStructure const* s = gst_message_get_structure (message);
-                                                if(std::string (gst_structure_get_name (s)) == "spectrum" && !g_atomic_int_get(&play.m_FadeStop))
+                                                if(std::string (gst_structure_get_name (s)) == "spectrum" && !g_atomic_int_get(&play.m_InFade))
                                                 {
                                                     GstClockTime endtime;
 
                                                     if(gst_structure_get_clock_time (s, "endtime", &endtime))
                                                     {
-                                                      GstClockID clock_id;
-                                                      GstClockReturn clock_ret;
-                                                      GstClockTimeDiff jitter;
-                                                      GstClockTime basetime=gst_element_get_base_time(GST_ELEMENT(GST_MESSAGE_SRC(message)));
-                                                      GstClockTime curtime=gst_clock_get_time(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())))-basetime;
-                                                      GstClockTimeDiff waittime=GST_CLOCK_DIFF(curtime,endtime);
-                                                      
-                                                      clock_id=gst_clock_new_single_shot_id(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())), /*basetime+endtime*/ waittime );
-
                                                       GstStructure const* s = gst_message_get_structure (message);
                                                       GValue const* m = gst_structure_get_value (s, "magnitude");
 
@@ -738,6 +731,15 @@ namespace MPX
                                                       {
                                                         play.m_spectrum[i] = g_value_get_float(gst_value_list_get_value( m, i )); 
                                                       }
+
+                                                      GstClockTime      message_running_time ;
+
+                                                      gst_structure_get_clock_time (s, "running-time", &message_running_time) ;
+
+                                                      GstClockID        clock_id ;
+                                                      GstClockTime      pipeline_base_time = gst_element_get_base_time(play.control_pipe()) ;
+                                                      
+                                                      clock_id=gst_clock_new_single_shot_id(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())), message_running_time + pipeline_base_time ) ;
 
                                                       gst_clock_id_wait_async(clock_id,clock_callback,data);
                                                       gst_clock_id_unref(clock_id);
@@ -774,7 +776,7 @@ namespace MPX
                                                                         GstStructure * structure = gst_caps_get_structure (caps, 0);
                                                                         int width, height;
                                                                         if ((gst_structure_get_int (structure, "width", &width) &&
-                                                                                                gst_structure_get_int (structure, "height", &height)))
+                                                                             gst_structure_get_int (structure, "height", &height)))
                                                                         {
                                                                                 const GValue * par = gst_structure_get_value (structure, "pixel-aspect-ratio");
                                                                                 play.signal_video_geom_.emit (width, height, par);
@@ -1427,53 +1429,125 @@ namespace MPX
                 }
 
         void
-                Play::fade_init ()
+                Play::fade_in ()
                 {
-                        Glib::Mutex::Lock L (m_FadeLock);
+                        g_atomic_int_set(&m_InFade, 1);
 
-                        m_FadeVolume = 1.;
-                        update_fade_volume();
-                        g_atomic_int_set(&m_FadeStop, 1);
-                        m_FadeConn = Glib::signal_timeout().connect( sigc::mem_fun( *this, &Play::fade_timeout ), 15);
+                        update_fade_volume( 0. ) ;
+
+                        m_FadeTimer.reset () ;
+
+                        m_FadeDirection = FADE_IN ;
+
+                        if( !m_FadeConn )
+                        {
+                            m_FadeConn = Glib::signal_timeout().connect(
+                                    sigc::mem_fun(
+                                            *this
+                                          , &Play::fade_timeout
+                                    )
+                                  , 30
+                           ) ;
+                        }
+
+                        play_stream () ;
+
+                        m_FadeTimer.start () ;
+                }
+
+        void
+                Play::fade_out ()
+                {
+                        update_fade_volume( 1. ) ;
+
+                        m_FadeTimer.reset () ;
+
+                        m_FadeDirection = FADE_OUT ;
+
+                        if( !m_FadeConn )
+                        {
+                            m_FadeConn = Glib::signal_timeout().connect(
+                                    sigc::mem_fun(
+                                            *this
+                                          , &Play::fade_timeout
+                                    )
+                                  , 30
+                           ) ;
+                        }
+
+                        g_atomic_int_set(&m_InFade, 1);
+
+                        m_FadeTimer.start () ;
                 }
 
         void
                 Play::fade_stop ()
                 {
-                        Glib::Mutex::Lock L (m_FadeLock);
+                        g_atomic_int_set(&m_InFade, 0);
 
-                        m_FadeConn.disconnect();
-                        m_FadeVolume = 1.; 
-                        update_fade_volume();
-                        g_atomic_int_set(&m_FadeStop, 0);
+                        m_FadeTimer.stop () ;
+                        m_FadeTimer.reset () ;
                 }
 
         void
-                Play::update_fade_volume ()
+                Play::update_fade_volume(
+                    double  volume
+                )
                 {
-                        GstElement *e = gst_bin_get_by_name (GST_BIN (m_bin[BIN_OUTPUT]), "VolumeFade");
-                        g_object_set (G_OBJECT (e), "volume", m_FadeVolume, NULL);
-                        gst_object_unref (e);
+                        GstElement *e = gst_bin_get_by_name(
+                              GST_BIN(m_bin[BIN_OUTPUT])
+                            , "VolumeFade"
+                        ) ;
+
+                        g_object_set(
+                              G_OBJECT( e )
+                            , "volume"
+                            , cos_smooth( volume )
+                            , NULL
+                        ) ;
+
+                        gst_object_unref( e ) ;
                 }
 
         bool
                 Play::fade_timeout ()
                 {
-                        Glib::Mutex::Lock L (m_FadeLock);
+                    if( g_atomic_int_get(&m_InFade) )
+                    {
+                        double elapsed = m_FadeTimer.elapsed () ;
 
-                        m_FadeVolume -= 0.1;
-                        update_fade_volume();
-
-                        if(m_FadeVolume < 0.1)
+                        if( elapsed > 0.400 )
                         {
-                            stop_stream ();  
-                            m_FadeVolume = 1.0;
-                            update_fade_volume ();
-                            g_atomic_int_set(&m_FadeStop, 0);
-                            return false;
+                            update_fade_volume( 0. ) ;
+
+                            if( m_FadeDirection == FADE_OUT )
+                            {
+                                pause_stream () ;
+                            }
+
+                            g_atomic_int_set(&m_InFade, 0);
+
+                            m_FadeDirection = FADE_NONE ;
+
+                            return false ;
+                        }
+
+                        if( m_FadeDirection == FADE_IN )
+                        {
+                            double position = elapsed * 1000 ;
+                            update_fade_volume( position / 400. );
+                        }
+                        else
+                        if( m_FadeDirection == FADE_OUT )
+                        {
+                            double position = (elapsed * 1000 ) ; 
+                            update_fade_volume( 1. - (position / 400.) );
                         }
 
                         return true;
+                    }
+
+                    return false ;
                 }
 
         void
@@ -1502,7 +1576,6 @@ namespace MPX
         void
                 Play::push_message (Audio::Message const& message)
                 {
-                        //Glib::Mutex::Lock L (m_queue_lock);
                         g_async_queue_push (m_message_queue, (gpointer)(new Audio::Message (message)));
                         process_queue ();
                 }

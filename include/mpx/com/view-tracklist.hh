@@ -177,7 +177,7 @@ namespace MPX
                 : DataModel(model->m_realmodel)
                 , m_advanced(false)
                 {
-                    regen_mapping ();
+                    regen_mapping() ;
                 }
 
                 void
@@ -298,12 +298,14 @@ namespace MPX
                     }
                 }
 
-                void
-                regen_mapping ()
+                virtual void
+                regen_mapping(
+                )
                 {
                     using boost::get;
 
-                    m_mapping.clear();
+                    RowRowMapping new_mapping ;
+
                     m_local_active_track.reset() ;
                     
                     for(ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i)
@@ -312,7 +314,7 @@ namespace MPX
 
                         if( m_filter_effective.empty() && m_constraints.empty() && m_constraints_synthetic.empty() ) 
                         {
-                            m_mapping.push_back(i);
+                            new_mapping.push_back(i);
                         }
                         else
                         if( m_filter_effective.empty() ) 
@@ -328,7 +330,7 @@ namespace MPX
                                truth |= AQE::match_track( m_constraints_synthetic, track ) ;
 
                             if( truth ) 
-                                m_mapping.push_back(i);
+                                new_mapping.push_back(i);
                         }
                         else
                         {
@@ -346,12 +348,16 @@ namespace MPX
                                truth |= AQE::match_track( m_constraints_synthetic, track ) ;
 
                             if( match && truth )
-                                m_mapping.push_back(i);
+                                new_mapping.push_back(i);
                         }
                     }
 
-                    scan_active () ;
-                    m_changed.emit();
+                    if( new_mapping != m_mapping )
+                    {
+                        scan_active () ;
+                        std::swap( new_mapping, m_mapping ) ;
+                        m_changed.emit();
+                    }
                 }
 
 
@@ -1114,17 +1120,9 @@ namespace MPX
                 on_expose_event (GdkEventExpose *event)
                 {
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
-
-                    cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
-                    cairo->set_source_rgba(
-                          0.12    
-                        , 0.12
-                        , 0.12
-                        , 1.
-                    ) ;
-                    cairo->paint();
-
                     const Gtk::Allocation& alloc = get_allocation();
+
+                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
                     int row = get_upper_row() ;
                     m_previous_drawn_row = row;
@@ -1196,21 +1194,47 @@ namespace MPX
                                 {
                                     Gdk::Color c = get_style()->get_base( Gtk::STATE_SELECTED ) ;
 
-                                    cairo->set_source_rgba(
-                                          c.get_red_p()
-                                        , c.get_green_p()
-                                        , c.get_blue_p()
-                                        , 0.8
-                                    ) ;
-
-                                    const int inner_pad  = 0 ;
-
+                                    const int inner_pad  = 1 ;
                                     GdkRectangle r ;
 
                                     r.x         = inner_pad ;
                                     r.y         = ypos + inner_pad ;
-                                    r.width     = alloc.get_width() - 2*inner_pad ;
+                                    r.width     = alloc.get_width() - 2*inner_pad ;  
                                     r.height    = m_row_height - 2*inner_pad ;
+
+                                    //// TITLEBAR 
+                                    Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
+                                          r.x + r.width / 2
+                                        , r.y  
+                                        , r.x + r.width / 2
+                                        , r.y + r.height
+                                    ) ;
+                                    
+                                    background_gradient_ptr->add_color_stop_rgba(
+                                          0
+                                        , c.get_red_p() 
+                                        , c.get_green_p()
+                                        , c.get_blue_p()
+                                        , 0.55 
+                                    ) ;
+                                    
+                                    background_gradient_ptr->add_color_stop_rgba(
+                                          .60
+                                        , c.get_red_p() 
+                                        , c.get_green_p()
+                                        , c.get_blue_p()
+                                        , 0.75 
+                                    ) ;
+                                    
+                                    background_gradient_ptr->add_color_stop_rgba(
+                                          1. 
+                                        , c.get_red_p() 
+                                        , c.get_green_p()
+                                        , c.get_blue_p()
+                                        , 0.80 
+                                    ) ;
+
+                                    cairo->set_source( background_gradient_ptr ) ;
 
                                     RoundedRectangle(
                                           cairo
@@ -1221,7 +1245,15 @@ namespace MPX
                                         , rounding
                                     ) ;
 
-                                    cairo->fill (); 
+                                    cairo->fill_preserve (); 
+
+                                    cairo->set_source_rgb(
+                                          c.get_red_p()
+                                        , c.get_green_p()
+                                        , c.get_blue_p()
+                                    ) ;
+
+                                    cairo->stroke () ;
 
                                     iter_is_selected = true;
                                 }
@@ -1457,6 +1489,13 @@ namespace MPX
                         , m_fixed_total_width( 0 )
 
                 {
+                    Gdk::Color c ;
+    
+                    c.set_rgb_p( .10, .10, .10 ) ;
+
+                    modify_bg( Gtk::STATE_NORMAL, c ) ;
+                    modify_base( Gtk::STATE_NORMAL, c ) ;
+
                     m_playing_pixbuf = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "speaker.png" )) ;
                     m_hover_pixbuf = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "speaker_ghost.png" )) ;
 

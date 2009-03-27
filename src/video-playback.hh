@@ -42,83 +42,89 @@ namespace MPX
 
 #include "audio-exception.hh"
 
-  AUDIOEXCEPTION(NoSuchElementError)
-  AUDIOEXCEPTION(UnableToConstructError)
+    AUDIOEXCEPTION(NoSuchElementError)
+    AUDIOEXCEPTION(UnableToConstructError)
 
-  class VideoPipe
-  {
-    public:
-      typedef sigc::signal< ::Window> SignalRequestWindowId;
-      typedef sigc::signal<void, int, int> SignalVideoGeom;
+    class VideoPipe
+    {
+        public:
 
-  
-    private:
-      SignalRequestWindowId signal_;
-      SignalBusWatchCascade signal_cascade_;
+            typedef sigc::signal< ::Window> SignalRequestWindowId;
+            typedef sigc::signal<void, int, int> SignalVideoGeom;
 
-    public:
-      SignalRequestWindowId&
-      signal_request_window_id ()
-      {
-        return signal_;
-      }
-
-      SignalBusWatchCascade&
-      signal_cascade ()
-      {
-        return signal_cascade_;
-      }
-
-    private:
-
-      static void bus_watch (GstBus*     bus,
-                             GstMessage* message,
-                             gpointer    data);
-
-      static void link_pad (GstElement* element,
-                            GstPad*     pad,
-                            gboolean    last,
-                            gpointer    data);
-
-      static void link_pads_and_unref (GstPad*, GstPad*, VideoPipe &);
-
-      GstElement  * pipeline;
-      GstElement  * filesrc;
-      GstElement  * decodebin;
-      GstElement  * queue; 
-      GstElement  * ffmpegcolorspace; 
-      GstElement  * imagesink;
-      GstElement  * videoscale; // only used when no hw scaling is available
-      GstElement  * queue2;
-
-      typedef std::map<std::string, GstElement *> ElementMap;
-      typedef ElementMap::value_type ElementPair;
-      ElementMap m_elements;
       
-    public:
+        private:
 
-      void  set_audio_elmt (GstElement * audio_out);
-      void  rem_audio_elmt ();
-      void  set_window_id (::Window id);
-      void  expose ();
- 
-      VideoPipe ();
-      ~VideoPipe ();
+            SignalRequestWindowId signal_;
+            SignalBusWatchCascade signal_cascade_;
 
-      GstElement *
-      pipe ()
-      {
-        return pipeline;
-      }
+        public:
+            
+            SignalRequestWindowId&
+            signal_request_window_id ()
+            {
+              return signal_;
+            }
 
-      GstElement *
-      operator[] (std::string const& id)
-      {
-        if (m_elements.find (id) == m_elements.end())
-          throw NoSuchElementError ((boost::format ("No such element '%s' in this pipeline") % id).str());
-        return m_elements.find (id)->second;
-      }
-  };
+            SignalBusWatchCascade&
+            signal_cascade ()
+            {
+              return signal_cascade_;
+            }
+
+        private:
+
+            static void bus_watch (GstBus*     bus,
+                                   GstMessage* message,
+                                   gpointer    data);
+
+            static void link_pad (GstElement* element,
+                                  GstPad*     pad,
+                                  gboolean    last,
+                                  gpointer    data);
+
+            static void link_pads_and_unref (GstPad*, GstPad*, VideoPipe &);
+
+            GstElement  * pipeline ;
+            GstElement  * filesrc ;
+            GstElement  * decodebin ;
+            GstElement  * queue ; 
+            GstElement  * ffmpegcolorspace ; 
+            GstElement  * imagesink ;
+            GstElement  * videoscale ; // only used when no hw scaling is available
+            GstElement  * queue2 ;
+
+            typedef std::map<std::string, GstElement *> ElementMap;
+            typedef ElementMap::value_type              ElementPair;
+            ElementMap                                  m_elements;
+            
+        public:
+
+            void  set_audio_elmt (GstElement * audio_out);
+            void  rem_audio_elmt ();
+            void  set_window_id (::Window id);
+            void  expose ();
+       
+            VideoPipe() ;
+            virtual ~VideoPipe() ;
+
+            GstElement *
+            pipe ()
+            {
+                return pipeline;
+            }
+
+            GstElement *
+            operator[] (std::string const& id)
+            {
+                if( m_elements.find( id ) == m_elements.end() )
+                {
+                    throw NoSuchElementError( (boost::format ("No such element '%s' in this pipeline") % id).str() );
+                }
+
+                return m_elements.find( id )->second;
+            }
+    };
 }
 
 #endif

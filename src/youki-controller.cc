@@ -1,4 +1,4 @@
-#include "kobo-controller.hh"
+#include "youki-controller.hh"
 #include "mpx/widgets/cairo-extensions.hh"
 #include <glibmm/i18n.h>
 #include "mpx/mpx-main.hh"
@@ -45,8 +45,11 @@ namespace
 
 namespace MPX
 {
-    KoboController::KoboController ()
-    : m_seek_position( -1 )
+    YoukiController::YoukiController(
+        DBus::Connection& conn
+    )
+    : DBus::ObjectAdaptor( conn, "/Youki" )
+    , m_seek_position( -1 )
     {
         m_VBox              = Gtk::manage( new Gtk::VBox ) ;
         m_HBox_Entry        = Gtk::manage( new Gtk::HBox ) ;
@@ -60,7 +63,7 @@ namespace MPX
         m_Label_Search->set_mnemonic_widget( *m_Entry ) ;
         m_Label_Search->set_use_underline() ;
 
-        m_VBox->property_spacing() = 2 ; 
+        m_VBox->property_spacing() = 4 ; 
         m_HBox_Entry->property_spacing() = 4 ; 
         m_HBox_Entry->set_border_width( 2 ) ;
 
@@ -132,7 +135,7 @@ namespace MPX
                         sigc::bind(
                                 sigc::mem_fun(
                                       *this
-                                    , &KoboController::on_entry_changed
+                                    , &YoukiController::on_entry_changed
                                 )
                               , m_FilterModel
                               , m_Entry
@@ -174,7 +177,7 @@ namespace MPX
                 m_ListViewAA->signal_selection_changed().connect(
                     sigc::mem_fun(
                           *this
-                        , &KoboController::on_list_view_aa_selection_changed
+                        , &YoukiController::on_list_view_aa_selection_changed
                 )) ;
 
                 DataModelAAP m (new DataModelAA) ;
@@ -219,6 +222,18 @@ namespace MPX
         m_main_infoarea = new InfoArea ;
         m_main_volume = new KoboVolume ;
 
+        m_Icon = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "youki.png" )) ;
+        m_main_window->set_icon( m_Icon ) ;
+
+        m_main_status_icon = Gtk::StatusIcon::create( m_Icon ) ;
+
+        m_main_status_icon->set( m_Icon ) ;
+        m_main_status_icon->signal_button_press_event().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_status_icon_clicked
+        )) ;
+
         m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
         m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
         m_HBox_Controls->set_spacing( 2 ) ;
@@ -229,25 +244,25 @@ namespace MPX
         m_main_infoarea->signal_clicked().connect(
             sigc::mem_fun(
                   *this
-                , &KoboController::on_infoarea_clicked
+                , &YoukiController::on_info_area_clicked
         )) ;
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
         m_VBox->pack_start( *m_Paned, true, true, 0 ) ;
-        m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
         m_VBox->pack_start( *m_main_titleinfo, false, false, 0 ) ;
+        m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
         m_VBox->pack_start( *m_main_infoarea, false, false, 0 ) ;
 
         m_ListView->signal_track_activated().connect(
             sigc::mem_fun(
                       *this
-                    , &KoboController::on_list_view_tr_track_activated
+                    , &YoukiController::on_list_view_tr_track_activated
         )) ;
 
         m_main_position->signal_seek_event().connect(
             sigc::mem_fun(
                   *this
-                , &KoboController::on_seek
+                , &YoukiController::on_seek
         )) ;
 
         m_play = services->get<Play>("mpx-service-play").get() ;
@@ -259,25 +274,25 @@ namespace MPX
         m_play->signal_eos().connect(
             sigc::mem_fun(
                   *this
-                , &KoboController::on_eos
+                , &YoukiController::on_eos
         )) ;
 
         m_play->signal_position().connect(
             sigc::mem_fun(
                   *this
-                , &KoboController::on_position
+                , &YoukiController::on_position
         )) ;
 
         m_play->signal_playstatus().connect(
             sigc::mem_fun(
                   *this
-                , &KoboController::on_playstatus
+                , &YoukiController::on_playstatus
         )) ;
 
         m_play->signal_stream_switched().connect(
             sigc::mem_fun(
                   *this
-                , &KoboController::on_stream_switched
+                , &YoukiController::on_stream_switched
         )) ;
 
         m_play->signal_spectrum().connect(
@@ -289,18 +304,23 @@ namespace MPX
         m_main_volume->signal_set_volume().connect(
             sigc::mem_fun(
                   *this 
-                , &KoboController::on_volume
+                , &YoukiController::on_volume
         )) ;
 
         m_main_window->show_all() ;
+
+        StartupComplete () ;
     }
 
-    KoboController::~KoboController ()
+    YoukiController::~YoukiController ()
     {
+        delete m_main_window ;
+
+        ShutdownComplete () ;
     }
 
     Gtk::Window*
-    KoboController::get_widget ()
+    YoukiController::get_widget ()
     {
         return m_main_window ;
     }
@@ -308,7 +328,7 @@ namespace MPX
 ////////////////
 
     void
-    KoboController::play_track(
+    YoukiController::play_track(
         MPX::Track& t
     )
     {
@@ -329,7 +349,7 @@ namespace MPX
     }
 
     void
-    KoboController::on_position(
+    YoukiController::on_position(
           gint64 position
     )
     {
@@ -352,7 +372,7 @@ namespace MPX
     }
 
     void
-    KoboController::on_eos ()
+    YoukiController::on_eos ()
     {
         boost::optional<gint64> pos = m_ListView->get_local_active_track () ;
 
@@ -383,7 +403,7 @@ namespace MPX
     }
 
     void
-    KoboController::on_playstatus(
+    YoukiController::on_playstatus(
           PlayStatus status
     )
     {
@@ -411,7 +431,7 @@ namespace MPX
     }
 
     void
-    KoboController::on_stream_switched()
+    YoukiController::on_stream_switched()
     {
         g_return_if_fail( bool(m_current_track) ) ;
 
@@ -454,7 +474,7 @@ namespace MPX
     }
 
     void
-    KoboController::on_list_view_tr_track_activated(
+    YoukiController::on_list_view_tr_track_activated(
           MPX::Track    t 
         , bool          play
     ) 
@@ -463,7 +483,7 @@ namespace MPX
     }
 
     void
-    KoboController::on_list_view_aa_selection_changed(
+    YoukiController::on_list_view_aa_selection_changed(
     ) 
     {
         gint64 id = m_ListViewAA->get_selected() ;
@@ -488,7 +508,7 @@ namespace MPX
     }
 
     void
-    KoboController::on_seek(
+    YoukiController::on_seek(
           gint64        position
     )
     {
@@ -497,7 +517,7 @@ namespace MPX
     }
 
     void
-    KoboController::on_volume(
+    YoukiController::on_volume(
           int           volume
     )
     {
@@ -505,7 +525,7 @@ namespace MPX
     }
 
     void
-    KoboController::on_infoarea_clicked ()
+    YoukiController::on_info_area_clicked ()
     {
         PlayStatus s = PlayStatus(m_play->property_status().get_value()) ;
 
@@ -514,5 +534,57 @@ namespace MPX
         else
         if( s == PLAYSTATUS_PLAYING )
             m_play->request_status( PLAYSTATUS_PAUSED ) ;
+    }
+
+    bool
+    YoukiController::on_status_icon_clicked(
+        GdkEventButton* G_GNUC_UNUSED
+    )
+    {
+        if( m_main_window->is_visible() )
+        {
+            m_main_window->get_position( m_main_window_x, m_main_window_y ) ;
+            m_main_window->hide () ;
+        }
+        else
+        {
+            m_main_window->move( m_main_window_x, m_main_window_y ) ;
+            m_main_window->show () ;
+            m_main_window->raise () ;
+        }
+
+        return false ;
+    }
+
+    //// DBUS
+
+    void
+    YoukiController::Startup ()
+    {
+    }
+
+    void
+    YoukiController::Quit ()
+    {
+    }
+
+    std::map<std::string, DBus::Variant>
+    YoukiController::GetMetadata ()
+    {
+    }
+
+    void
+    YoukiController::Next ()
+    {
+    }
+
+    void
+    YoukiController::Prev ()
+    {
+    }
+
+    void
+    YoukiController::Pause ()
+    {
     }
 }

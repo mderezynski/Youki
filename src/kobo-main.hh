@@ -11,10 +11,16 @@ namespace MPX
             protected:
 
                     Glib::RefPtr<Gdk::Pixbuf>   m_title_logo ;
+                    Glib::RefPtr<Gdk::Pixbuf>   m_button_off ;
+
                     bool                        m_drawer_out ;
                     int                         m_presize_height ;
                     int                         m_drawer_height ;
                     int                         m_bottom_pad ;
+                    bool                        m_quit_clicked ;
+
+                    bool
+                    quit_timeout () ;
 
                     enum ExpandDirection
                     {
@@ -37,6 +43,8 @@ namespace MPX
             public:
 
                     MainWindow () ;
+
+                    virtual ~MainWindow () ;
 
                     void
                     set_widget_top( Gtk::Widget & w ) ;

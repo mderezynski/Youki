@@ -63,7 +63,8 @@
 #include "plugin-manager-gui.hh"
 #include "splash-screen.hh"
 
-#include "kobo-controller.hh"
+#include <dbus-c++/glib-integration.h>
+#include "youki-controller.hh"
 
 using namespace MPX;
 using namespace Glib;
@@ -370,9 +371,18 @@ main (int argc, char ** argv)
         splash->set_message(_("Done"), 1.0);
         delete splash;
 
-        KoboController * control = new KoboController ;
+        DBus::Glib::BusDispatcher dispatcher ;
+        DBus::default_dispatcher = &dispatcher ;
 
-        gtk->run( *control->get_widget() ) ;
+        dispatcher.attach( NULL ) ;
+
+        DBus::Connection conn = DBus::Connection::SessionBus () ;
+
+        YoukiController * control = new YoukiController( conn ) ;
+
+        control->get_widget()->show_all () ;
+
+        gtk->run() ;
 
         delete control ;
 
@@ -384,9 +394,9 @@ main (int argc, char ** argv)
     }
 #endif
 
-    delete services;
-    delete gtk;
-    delete mcs;
+    delete services ;
+    delete gtk ;
+    delete mcs ;
 
     return EXIT_SUCCESS;
 }

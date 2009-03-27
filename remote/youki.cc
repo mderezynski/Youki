@@ -136,7 +136,7 @@ namespace
                       char*       new_owner,
                       gpointer    data)
   {
-    if (!name || (name && std::strcmp (name, "info.backtrace.mpx")))
+    if (!name || (name && std::strcmp (name, "info.backtrace.youki")))
       return;
 
     if (std::strlen (old_owner) && !std::strlen (new_owner))
@@ -270,9 +270,9 @@ main (int    argc,
   gboolean was_running = TRUE;
 
   DBusGProxy* o_mpx = dbus_g_proxy_new_for_name_owner (dbus,
-                                                       "info.backtrace.mpx",
-                                                       "/MPX",
-                                                       "info.backtrace.mpx",
+                                                       "info.backtrace.youki",
+                                                       "/Youki",
+                                                       "info.freedesktop.MediaPlayer",
                                                        &error);
 
   if (!o_mpx)
@@ -285,9 +285,9 @@ main (int    argc,
   }
 
   o_mpx = dbus_g_proxy_new_for_name (dbus,
-                                     "info.backtrace.mpx",
-                                     "/MPX",
-                                     "info.backtrace.mpx");
+                                     "info.backtrace.youki",
+                                     "/Youki",
+                                     "info.freedesktop.MediaPlayer");
 
   dbus_g_proxy_call (o_mpx, "Startup", &error,
                        G_TYPE_INVALID,
@@ -314,8 +314,8 @@ main (int    argc,
 
   g_main_loop_unref (mainloop);
 
-  DBusGProxy* o_player = dbus_g_proxy_new_for_name (dbus,  "info.backtrace.mpx",
-                                                           "/Player",
+  DBusGProxy* o_player = dbus_g_proxy_new_for_name (dbus,  "info.backtrace.youki",
+                                                           "/Youki",
                                                            "org.freedesktop.MediaPlayer");
   if (argc > 1)
   {

@@ -95,51 +95,58 @@ namespace MPX
                                 N_BINS,
                         };
 
-                        PipelineId          m_pipeline_id;
+                        PipelineId          m_pipeline_id ;
 
-                        VideoPipe         * m_video_pipe;
+                        VideoPipe         * m_video_pipe ;
 
-                        GstElement        * m_pipeline;
-                        GstElement        * m_equalizer;
-                        GstElement        * m_play_elmt;
-                        GstElement        * m_bin[N_BINS];
+                        GstElement        * m_pipeline ;
+                        GstElement        * m_equalizer ;
+                        GstElement        * m_play_elmt ;
+                        GstElement        * m_bin[N_BINS] ;
 
-                        Glib::Mutex         m_queue_lock;
-                        Glib::Mutex         m_bus_lock;
-                        Glib::Mutex         m_state_lock,
-                                            m_stream_lock;
+                        GAsyncQueue       * m_message_queue ;
+                        GstMetadata         m_metadata ;
 
-                        GAsyncQueue       * m_message_queue;
-                        URI::Protocol       m_current_protocol;
-                        GstMetadata         m_metadata;
+                        Spectrum            m_spectrum
+                                          , m_spectrum_zero ;
 
-                        Spectrum            m_spectrum,
-                                            m_zero_spectrum;
-                        GstMessage        * m_spectrum_message;
+                        enum FadeDirection
+                        {
+                              FADE_NONE
+                            , FADE_OUT
+                            , FADE_IN
+                        } ;
 
-                        Glib::Mutex         m_FadeLock;
-                        sigc::connection    m_FadeConn;
-                        double              m_FadeVolume;
-                        int                 m_FadeStop;
+                        sigc::connection    m_FadeConn ;
+                        Glib::Timer         m_FadeTimer ;
+                        int                 m_InFade ;
+                        FadeDirection       m_FadeDirection ;
 
                         sigc::connection    m_conn_stream_position;
 
                 private:
 
+                        //// FADING
+
+                        void
+                                fade_in () ;
+   
+                        void 
+                                fade_out () ;
+
+                        void
+                                fade_stop () ;
+
+                        void
+                                update_fade_volume ( double ) ;
+
                         bool
-                                fade_timeout ();
+                                fade_timeout () ;
+
+                        //// QUEUE
 
                         void
-                                fade_init ();
-
-                        void
-                                fade_stop ();
-
-                        void
-                                update_fade_volume ();
-
-                        void
-                                process_queue ();
+                                process_queue () ;
 
                         void
                                 push_message (Audio::Message const& message);
