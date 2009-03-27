@@ -126,7 +126,7 @@ youki_bin_SOURCES =             \
     flow_widget.hh              \
     flow_widget.cc              \
                                 \
-        glib-marshalers.c       \
+    glib-marshalers.c           \
                                 \
     import-share.hh             \
     import-share.cc             \

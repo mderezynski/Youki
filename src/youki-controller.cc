@@ -289,6 +289,12 @@ namespace MPX
 
         reload_library () ;
 
+        services->get<Library>("mpx-service-library")->signal_scan_end().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_library_scan_end
+        )) ;
+
         m_main_window->show_all() ;
 
         //StartupComplete () ;
