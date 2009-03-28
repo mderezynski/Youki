@@ -358,59 +358,36 @@ namespace MPX
                 {
                     using boost::get;
 
-                    gint64  id1             = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
+                    gint64  id              = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
                     gint64  new_position    = 0 ;
 
                     RowRowMapping new_mapping ;
 
-                    for(ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i)
+                    for( ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                     {
-                        Row6 const& row = *i;
+                        const Row6& row = *i;
 
-                        if( m_filter_effective.empty() && m_constraints.empty() && m_constraints_synthetic.empty() ) 
-                        {
-                            new_mapping.push_back(i);
+                        int match   = 0 ;
+                        int truth   = m_constraints.empty() && m_constraints_synthetic.empty() ; 
 
-                            gint64 id2 = get<3>(row) ; 
-
-                            if( id2 == id1 )
-                            {
-                                new_position = new_mapping.size()  - 1 ;
-                            }
-                        }
-                        else
                         if( m_filter_effective.empty() ) 
                         {
-                            MPX::Track track    = get<4>(row) ;
-
-                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
-
-                            if( !m_constraints.empty() )
-                               truth |= AQE::match_track( m_constraints, track ) ;
-
-                            if( !m_constraints_synthetic.empty() )
-                               truth |= AQE::match_track( m_constraints_synthetic, track ) ;
-
-                            if( truth ) 
+                            if( !(m_constraints.empty() && m_constraints_synthetic.empty()) )
                             {
-                                new_mapping.push_back(i);
+                                const MPX::Track& track = get<4>(row) ;
 
-                                gint64 id2 = get<3>(row) ; 
+                                if( !m_constraints.empty() )
+                                    truth |= AQE::match_track( m_constraints, track ) ;
 
-                                if( id2 == id1 )
-                                {
-                                    new_position = new_mapping.size()  - 1 ;
-                                }
+                                if( !m_constraints_synthetic.empty() )
+                                    truth |= AQE::match_track( m_constraints_synthetic, track ) ;
                             }
                         }
                         else
                         {
-                            std::string compound_haystack = get<0>(row) + " " + get<1>(row) + " " + get<2>(row);
+                            match = Util::match_keys( get<0>(row), m_filter_effective ) || Util::match_keys( get<1>(row), m_filter_effective ) || Util::match_keys( get<2>(row), m_filter_effective ) ;
 
-                            MPX::Track track = get<4>(row);
-
-                            int match = Util::match_keys( compound_haystack, m_filter_effective ); 
-                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
+                            const MPX::Track& track = get<4>(row);
 
                             if( !m_constraints.empty() )
                                truth |= AQE::match_track( m_constraints, track ) ;
@@ -418,16 +395,16 @@ namespace MPX
                             if( !m_constraints_synthetic.empty() )
                                truth |= AQE::match_track( m_constraints_synthetic, track ) ;
 
-                            if( match && truth )
+                            truth = match && truth ;
+                        }
+
+                        if( truth )
+                        {
+                            new_mapping.push_back( i ) ;
+
+                            if( id >= 0 && get<3>(row) == id )
                             {
-                                new_mapping.push_back(i);
-
-                                gint64 id2 = get<3>(row) ; 
-
-                                if( id2 == id1 )
-                                {
-                                    new_position = new_mapping.size()  - 1 ;
-                                }
+                                new_position = new_mapping.size()  - 1 ;
                             }
                         }
                     }
@@ -440,86 +417,58 @@ namespace MPX
                     }
                 }
 
-
                 void
                 regen_mapping_iterative ()
                 {
                     using boost::get;
 
-                    gint64  id1             = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
+                    gint64  id              = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
                     gint64  new_position    = 0 ;
-
-                    std::string filter = Glib::ustring( m_filter_effective ).lowercase().c_str();
 
                     RowRowMapping new_mapping;
 
                     for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                     {
-                        Row6 const& row = *(*i);
+                        const Row6& row = *(*i);
 
-                        if( m_filter_effective.empty() && m_constraints.empty() && m_constraints_synthetic.empty() ) 
+                        int match   = 0 ;
+                        int truth   = m_constraints.empty() && m_constraints_synthetic.empty() ; 
+
+                        if( m_filter_effective.empty() ) 
+                        {
+                            if( !(m_constraints.empty() && m_constraints_synthetic.empty()) )
+                            {
+                                const MPX::Track& track = get<4>(row) ;
+
+                                if( !m_constraints.empty() )
+                                    truth |= AQE::match_track( m_constraints, track ) ;
+
+                                if( !m_constraints_synthetic.empty() )
+                                    truth |= AQE::match_track( m_constraints_synthetic, track ) ;
+                            }
+                        }
+                        else
+                        {
+                            match = Util::match_keys( get<0>(row), m_filter_effective ) || Util::match_keys( get<1>(row), m_filter_effective ) || Util::match_keys( get<2>(row), m_filter_effective ) ;
+
+                            const MPX::Track& track = get<4>(row);
+
+                            if( !m_constraints.empty() )
+                               truth |= AQE::match_track( m_constraints, track ) ;
+
+                            if( !m_constraints_synthetic.empty() )
+                               truth |= AQE::match_track( m_constraints_synthetic, track ) ;
+
+                            truth = match && truth ;
+                        }
+
+                        if( truth )
                         {
                             new_mapping.push_back( *i ) ;
 
-                            gint64 id2 = get<3>(row) ; 
-
-                            if( id2 == id1 )
+                            if( id >= 0 && get<3>(row) == id )
                             {
                                 new_position = new_mapping.size()  - 1 ;
-                            }
-                        }
-                        else
-                        if( m_filter_effective.empty() ) 
-                        {
-                            MPX::Track track = get<4>(row);
-
-                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
-
-                            if( !m_constraints.empty() )
-                               truth |= AQE::match_track( m_constraints, track ) ;
-
-                            if( !m_constraints_synthetic.empty() )
-                               truth |= AQE::match_track( m_constraints_synthetic, track ) ;
-
-                            if( truth ) 
-                            {
-                                new_mapping.push_back( *i ) ;
-
-                                if( m_active_track && get<3>(*(*i)) == m_active_track.get() )
-                                    m_local_active_track = new_mapping.size() - 1 ; 
-
-                                gint64 id2 = get<3>(row) ; 
-
-                                if( id2 == id1 )
-                                {
-                                    new_position = new_mapping.size() - 1 ;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            std::string compound_haystack = get<0>(row) + " " + get<1>(row) + " " + get<2>(row);
-                            MPX::Track track = get<4>(row);
-
-                            int match = Util::match_keys( compound_haystack, m_filter_effective ); 
-                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
-
-                            if( !m_constraints.empty() )
-                               truth |= AQE::match_track( m_constraints, track ) ;
-
-                            if( !m_constraints_synthetic.empty() )
-                               truth |= AQE::match_track( m_constraints_synthetic, track ) ;
-
-                            if( match && truth )
-                            {
-                                new_mapping.push_back( *i ) ;
-
-                                gint64 id2 = get<3>(row) ; 
-
-                                if( id2 == id1 )
-                                {
-                                    new_position = new_mapping.size() ;
-                                }
                             }
                         }
                     }
@@ -817,9 +766,11 @@ namespace MPX
                     if( m_model->size() )
                     {
                             int row = get_upper_row() ; 
+
+                            m_model->set_current_row( row ) ;        
+
                             if( m_previous_drawn_row != row )
                             {
-                                m_model->set_current_row( row ) ;        
                                 queue_draw ();
                             }
                     }
@@ -828,7 +779,7 @@ namespace MPX
                 int
                 get_upper_row ()
                 {
-                    return m_prop_vadj.get_value()->get_value() / m_row_height ;
+                    return double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ;
                 }
 
                 bool
@@ -1198,28 +1149,24 @@ namespace MPX
                     GdkEventConfigure* event
                 )        
                 {
-                    m_prop_vadj.get_value()->set_page_size(event->height); 
-                    m_prop_vadj.get_value()->set_upper((m_model->size()) * m_row_height);
-
                     m_visible_height = event->height;
 
-                    double column_width = (double(event->width) - m_fixed_total_width - (40*m_collapsed.size()) ) / double(m_columns.size()-m_collapsed.size()-m_fixed.size());
+                    m_prop_vadj.get_value()->set_upper( m_model->size()  * m_row_height ) ;
+                    m_prop_vadj.get_value()->set_page_size( m_visible_height ) ;
 
-                    for(int n = 0; n < m_columns.size(); ++n)
+                    const double column_width_collapsed = 40. ;
+
+                    double n = m_columns.size() - m_collapsed.size() - m_fixed.size() ;
+                    double column_width_calculated = (double(event->width) - double(m_fixed_total_width) - double(column_width_collapsed*double(m_collapsed.size()))) / n ; 
+
+                    for( int n = 0; n < m_columns.size(); ++n )
                     {
-                        if( m_fixed.count( n ) )
+                        if( !m_fixed.count( n ) )
                         {
-                            continue ;
-                        } 
-                        if( m_collapsed.count( n ) )
-                        {
-                            m_columns[n]->set_width( 40 ) ;
-                        }
-                        else
-                        {
-                            m_columns[n]->set_width( column_width ) ;
+                            m_columns[n]->set_width( m_collapsed.count( n ) ? column_width_collapsed : column_width_calculated ) ;
                         }
                     }
+
                     return false;
                 }
 
@@ -1453,7 +1400,7 @@ namespace MPX
                 {
                     int view_count = m_visible_height / m_row_height ;
 
-                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height) ;
+                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
 
                     if( m_model->size() < view_count )
                     {
@@ -1477,11 +1424,12 @@ namespace MPX
                 {
                     g_object_set(G_OBJECT(obj), "vadjustment", vadj, NULL); 
                     g_object_set(G_OBJECT(obj), "hadjustment", hadj, NULL);
-                    g_object_set(G_OBJECT(vadj), "page-size", 0.05, "upper", 1.0, NULL);
 
                     ListView & view = *(reinterpret_cast<ListView*>(data));
 
                     view.m_prop_vadj.get_value()->set_value(0.);
+                    view.m_prop_vadj.get_value()->set_upper( view.m_model->size() * view.m_row_height ) ;
+                    view.m_prop_vadj.get_value()->set_page_size( view.m_visible_height ) ; 
 
                     view.m_prop_vadj.get_value()->signal_value_changed().connect(
                         sigc::mem_fun(

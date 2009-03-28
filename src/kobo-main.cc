@@ -36,8 +36,9 @@ namespace MPX
         : m_drawer_out( false )
         , m_presize_height( 0 )
         , m_drawer_height( 0 )
-        , m_drawer_height_max( 300 )
+        , m_bottom_pad( 0 )
         , m_quit_clicked( false )
+        , m_drawer_height_max( 300 )
         , m_expand_direction( EXPAND_NONE )
 
                      {
@@ -97,27 +98,6 @@ namespace MPX
                         while (gtk_events_pending())
                           gtk_main_iteration();
                     }
-
-    void
-    MainWindow::initiate_quit ()
-    {
-        m_quit_clicked = true ;
-        queue_draw () ;
-        Glib::signal_timeout().connect(
-              sigc::mem_fun(
-                    *this
-                  , &MainWindow::quit_timeout
-              )
-            , 500
-        ) ;
-    }
-
-    bool
-    MainWindow::quit_timeout ()
-    {
-        Gtk::Main::quit () ;
-        return false ;
-    }
 
     void
     MainWindow::set_widget_top( Gtk::Widget & w )
@@ -202,20 +182,6 @@ namespace MPX
                     }
 
     bool
-    MainWindow::on_key_press_event( GdkEventKey* event )
-                    {
-                        if( (event->keyval == GDK_q || event->keyval == GDK_Q) && (event->state & GDK_CONTROL_MASK))
-                        {
-                            initiate_quit() ;
-                            return true ;
-                        }
-
-                        Gtk::Window::on_key_press_event( event ) ;
-
-                        return true ;
-                    }
-
-    bool
     MainWindow::on_button_press_event( GdkEventButton* event )
                     {
                         if( event->window != GTK_WIDGET(gobj())->window )
@@ -241,7 +207,7 @@ namespace MPX
 
                         if( intersect )
                         {
-                            initiate_quit() ;
+                            SignalQuit.emit() ; 
                             return false ;
                         }
                         if( event->y < 20 )

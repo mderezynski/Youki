@@ -19,9 +19,6 @@ namespace MPX
                     int                         m_bottom_pad ;
                     bool                        m_quit_clicked ;
 
-                    bool
-                    quit_timeout () ;
-
                     enum ExpandDirection
                     {
                           EXPAND_IN
@@ -40,17 +37,32 @@ namespace MPX
 
                     Gtk::VBox                 * v ;
 
+                    sigc::signal<void>          SignalQuit ;
+
             public:
 
                     MainWindow () ;
 
                     virtual ~MainWindow () ;
 
+                    sigc::signal<void>&
+                    signal_quit()
+                    {
+                        return SignalQuit ;
+                    }
+
                     void
                     set_widget_top( Gtk::Widget & w ) ;
 
                     void
                     set_widget_drawer( Gtk::Widget & w ) ;
+
+                    void
+                    quit()
+                    {
+                        m_quit_clicked = true ;
+                        queue_draw () ;
+                    }
 
             protected:
             
@@ -67,17 +79,12 @@ namespace MPX
                     bool
                     on_button_press_event( GdkEventButton* event ) ;
 
-                    bool
-                    on_key_press_event( GdkEventKey* event ) ;
-
                     void
                     on_size_allocate( Gtk::Allocation & a ) ;
 
                     bool
                     on_expose_event( GdkEventExpose* event ) ;
 
-                    void
-                    initiate_quit() ;
         } ;
 }
 

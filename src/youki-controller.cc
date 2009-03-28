@@ -51,8 +51,8 @@ namespace MPX
         DBus::Connection conn
     )
     : DBus::ObjectAdaptor( conn, "/info/backtrace/Youki/App" )
-    , m_seek_position( -1 )
     , m_main_window( 0 )
+    , m_seek_position( -1 )
     {
         m_mlibman_dbus_proxy = new info::backtrace::Youki::MLibMan_proxy_actual( conn ) ;
 
@@ -221,6 +221,12 @@ namespace MPX
                 , &YoukiController::on_main_window_key_press
         )) ;
 
+        m_main_window->signal_quit().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::initiate_quit
+        )) ;
+
         m_main_infoarea->signal_clicked().connect(
             sigc::mem_fun(
                   *this
@@ -316,6 +322,27 @@ namespace MPX
     }
 
 ////////////////
+
+    void
+    YoukiController::initiate_quit ()
+    {
+        m_main_window->quit () ;
+
+        Glib::signal_timeout().connect(
+              sigc::mem_fun(
+                    *this
+                  , &YoukiController::quit_timeout
+              )
+            , 500
+        ) ;
+    }
+
+    bool
+    YoukiController::quit_timeout ()
+    {
+        Gtk::Main::quit () ;
+        return false ;
+    }
 
     void
     YoukiController::reload_library ()
@@ -564,6 +591,12 @@ namespace MPX
           int           volume
     )
     {
+        mcs->key_set<int>(
+              "mpx"
+            ,"volume"
+            , volume
+        ) ;
+
         m_play->property_volume().set_value( volume ) ;
     }
 
@@ -614,6 +647,13 @@ namespace MPX
                 services->get<Preferences>("mpx-service-preferences")->present () ;
                 return true ;
 
+            case GDK_q:
+            case GDK_Q:
+                if( event->state & GDK_CONTROL_MASK )
+                {
+                    initiate_quit() ;
+                    return true ;
+                }
         }
 
         return false ;

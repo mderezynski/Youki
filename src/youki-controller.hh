@@ -148,6 +148,12 @@ namespace MPX
             on_library_scan_end(
             ) ;
 
+            void
+            initiate_quit() ;
+
+            bool
+            quit_timeout() ;
+
         protected: // DBUS
 
             virtual void
