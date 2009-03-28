@@ -35,12 +35,11 @@
 #include <gdk/gdkx.h>
 #include <sigc++/sigc++.h>
 #include <boost/format.hpp>
-#include "audio-types.hh"
+#include "mpx/mpx-audio.hh"
+#include "mpx/mpx-audio-types.hh"
 
 namespace MPX
 {
-
-#include "audio-exception.hh"
 
     AUDIOEXCEPTION(NoSuchElementError)
     AUDIOEXCEPTION(UnableToConstructError)

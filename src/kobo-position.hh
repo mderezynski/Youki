@@ -9,12 +9,13 @@ namespace MPX
     {
         protected:
         
-            double  m_percent ;
             gint64  m_duration ;        
             gint64  m_position ;
-            bool    m_clicked ;
             gint64  m_seek_position ;
+            bool    m_clicked ;
             double  m_seek_factor ;
+        
+            sigc::connection m_scrollback_conn ;
     
         public:
 

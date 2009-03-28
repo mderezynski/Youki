@@ -32,9 +32,10 @@
 // FIXME: Must be here for some damn reason
 #include <giomm.h>
 
+#include "library-mlibman.hh"
+
 #include "mpx/widgets/widgetloader.hh"
 #include "mpx/mpx-hal.hh"
-#include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-services.hh"
 
@@ -313,9 +314,6 @@ namespace MPX
 
             void
             on_update_statistics();
-
-            void
-            on_recache_covers();
 
             // MCS Callbacks
 

@@ -289,7 +289,7 @@ namespace MPX
 
         reload_library () ;
 
-        services->get<Library>("mpx-service-library")->signal_scan_end().connect(
+        services->get<Library>("mpx-service-library")->scanner()->signal_scan_end().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_library_scan_end
@@ -361,11 +361,6 @@ namespace MPX
 
     void
     YoukiController::on_library_scan_end(
-         gint64
-       , gint64
-       , gint64
-       , gint64
-       , gint64
     )
     {
         reload_library () ;
@@ -499,6 +494,10 @@ namespace MPX
                             , 160
                             , Gdk::INTERP_BILINEAR
                     )) ;
+                }
+                else
+                {
+                    m_main_cover->clear() ;
                 }
         }
         else

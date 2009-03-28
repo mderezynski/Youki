@@ -51,7 +51,8 @@ SUBDIRS +=		\
 	python		\
 				\
 	api			\
-	src
+	src         \
+    mpxlib      
 
 man_MANS = mpx.1
 

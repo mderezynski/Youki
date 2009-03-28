@@ -67,7 +67,6 @@ namespace
                 "         <menuitem action='action-mlib-remove-dupes'/>"
                 "         <menuitem action='action-mlib-rescan'/>"
                 "         <separator/>"
-                "         <menuitem action='action-mlib-recache-covers'/>"
                 "         <menuitem action='action-mlib-update-statistics'/>"
                 "         <separator/>"
                 "         <menuitem action='action-close'/>"
@@ -108,7 +107,7 @@ namespace MPX
 
         m_FileStats_Store->clear();
 
-        boost::shared_ptr<MPX::Library> library = services->get<Library>("mpx-service-library");
+        boost::shared_ptr<Library_MLibMan> library = services->get<Library_MLibMan>("mpx-service-library");
 
         RowV v1;
         library->getSQL(
@@ -249,19 +248,19 @@ namespace MPX
                 &MLibManager::on_volume_added
         ));
 
-        services->get<Library>("mpx-service-library")->scanner()->connect().signal_scan_start().connect(
+        services->get<Library_MLibMan>("mpx-service-library")->scanner()->connect().signal_scan_start().connect(
             sigc::mem_fun(
                 *this,
                 &MLibManager::scan_start
         ));
 
-        services->get<Library>("mpx-service-library")->scanner()->connect().signal_scan_end().connect(
+        services->get<Library_MLibMan>("mpx-service-library")->scanner()->connect().signal_scan_end().connect(
             sigc::mem_fun(
                 *this,
                 &MLibManager::scan_end
         ));
 
-        services->get<Library>("mpx-service-library")->scanner()->connect().signal_scan_summary().connect(
+        services->get<Library_MLibMan>("mpx-service-library")->scanner()->connect().signal_scan_summary().connect(
             sigc::mem_fun(
                 *this,
                 &MLibManager::scan_summary
@@ -427,14 +426,6 @@ namespace MPX
                 sigc::mem_fun(
                     *this,
                     &MLibManager::rescan_volumes
-        ));
-
-        m_Actions->add( Action::create(
-            "action-mlib-recache-covers",
-            _("Refresh _Covers")),
-            sigc::mem_fun(
-                *this,
-                &MLibManager::on_recache_covers
         ));
 
         m_Actions->add( Action::create(
@@ -627,7 +618,7 @@ namespace MPX
             % summary.FilesErroneous
         ).str());
 
-        services->get<Library>("mpx-service-library")->execSQL((boost::format ("UPDATE meta SET last_scan_date = %lld WHERE rowid = 1") % (gint64(time(NULL)))).str());
+        services->get<Library_MLibMan>("mpx-service-library")->execSQL((boost::format ("UPDATE meta SET last_scan_date = %lld WHERE rowid = 1") % (gint64(time(NULL)))).str());
 
         Glib::ustring text;
         if( !summary.FileListErroneous.empty() )
@@ -719,7 +710,7 @@ namespace MPX
                     reread_paths:
 
                     SQL::RowV v;
-                    services->get<Library>("mpx-service-library")->getSQL(
+                    services->get<Library_MLibMan>("mpx-service-library")->getSQL(
                             v,
                             (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
                              % DeviceUDI
@@ -751,14 +742,14 @@ namespace MPX
                                     goto reread_paths;
                             }
                         }
-                        services->get<Library>("mpx-service-library")->initScan(v);                  
+                        services->get<Library_MLibMan>("mpx-service-library")->initScan(v);                  
                     }
               }
         }
         else
 #endif
         {
-            services->get<Library>("mpx-service-library")->initScanAll();                  
+            services->get<Library_MLibMan>("mpx-service-library")->initScanAll();                  
         }
     }
 
@@ -766,7 +757,7 @@ namespace MPX
     MLibManager::on_mlib_remove_dupes ()
     {
         SQL::RowV rows;
-        services->get<Library>("mpx-service-library")->getSQL(
+        services->get<Library_MLibMan>("mpx-service-library")->getSQL(
             rows,
             "SELECT id FROM (track NATURAL JOIN (SELECT artist, album, title, track FROM track GROUP BY artist, album, title, track HAVING count(title) > 1)) EXCEPT SELECT id FROM track GROUP BY artist, album, title, track HAVING count(title) > 1" 
         );
@@ -803,7 +794,7 @@ namespace MPX
     
         if( response == GTK_RESPONSE_OK )
         {
-            services->get<Library>("mpx-service-library")->removeDupes();
+            services->get<Library_MLibMan>("mpx-service-library")->removeDupes();
         }
     }
 
@@ -1025,7 +1016,7 @@ namespace MPX
               vrp_target = 
                   Glib::filename_from_uri(uri).substr(volume_target.mount_point.length()) ;
 
-              services->get<Library>("mpx-service-library")->execSQL(
+              services->get<Library_MLibMan>("mpx-service-library")->execSQL(
                   (boost::format("UPDATE track SET hal_device_udi = '%s', hal_volume_udi = '%s', insert_path = '%s' "
                                  "WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path = '%s'")
                       % device_udi_target
@@ -1039,7 +1030,7 @@ namespace MPX
               on_volumes_changed ();
 
               /*
-              services->get<Library>("mpx-service-library")->vacuumVolume(
+              services->get<Library_MLibMan>("mpx-service-library")->vacuumVolume(
                   device_udi_target,
                   volume_udi_target 
               );*/
@@ -1060,7 +1051,7 @@ namespace MPX
               vrp_target = 
                   path.substr(volume_target.mount_point.length()) ;
 
-              services->get<Library>("mpx-service-library")->execSQL(
+              services->get<Library_MLibMan>("mpx-service-library")->execSQL(
                   (boost::format("DELETE FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path LIKE '%s%%'")
                       % device_udi_target
                       % volume_udi_target
@@ -1070,7 +1061,7 @@ namespace MPX
               on_volumes_changed();
 
               /*
-              services->get<Library>("mpx-service-library")->vacuumVolume(
+              services->get<Library_MLibMan>("mpx-service-library")->vacuumVolume(
                   device_udi_target,
                   volume_udi_target 
               );*/
@@ -1162,12 +1153,16 @@ namespace MPX
     {
         TreePath path = FSTreeStore->get_path(iter);
 
-        while(path.up())
+        while(path.up() && path[0] >= 0 && path.size() )
         {
             iter = FSTreeStore->get_iter(path);
-            std::string FullPath = std::string((*iter)[FSTreeColumns.FullPath])+"/";
-            if(m_ManagedPaths.count(FullPath))
-                return true;
+    
+            if( iter )
+            {
+                    std::string FullPath = std::string((*iter)[FSTreeColumns.FullPath])+"/";
+                    if(m_ManagedPaths.count(FullPath))
+                        return true;
+            }
         }
         return false;
     }
@@ -1212,7 +1207,7 @@ namespace MPX
             m_MountPoint    = Vol->get_mount_point();
 
             SQL::RowV v;
-            services->get<Library>("mpx-service-library")->getSQL(
+            services->get<Library_MLibMan>("mpx-service-library")->getSQL(
                     v,
                     (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
                         % m_DeviceUDI
@@ -1304,7 +1299,7 @@ namespace MPX
                 m_Actions->set_sensitive( false );
 
                 std::string FullPath_Sub = FullPath.substr(m_MountPoint.length()) ; 
-                services->get<Library>("mpx-service-library")->deletePath( m_DeviceUDI, m_VolumeUDI, FullPath_Sub.substr( 0, FullPath_Sub.size() - 1 ) );
+                services->get<Library_MLibMan>("mpx-service-library")->deletePath( m_DeviceUDI, m_VolumeUDI, FullPath_Sub.substr( 0, FullPath_Sub.size() - 1 ) );
 
                 m_ManagedPaths.erase( FullPath );
                 recreate_path_frags();
@@ -1356,7 +1351,7 @@ namespace MPX
 
                 StrV v;
                 v.push_back(filename_to_uri(FullPath));
-                services->get<Library>("mpx-service-library")->initAdd(v);
+                services->get<Library_MLibMan>("mpx-service-library")->initAdd(v);
             }
         }
     }
@@ -1382,24 +1377,13 @@ namespace MPX
                     goto restart_rescan_volume;
             }
         }
-        services->get<Library>("mpx-service-library")->initScan(v);
+        services->get<Library_MLibMan>("mpx-service-library")->initScan(v);
     }
 
     void
     MLibManager::on_update_statistics()
     {
-        services->get<Library>("mpx-service-library")->scanner()->update_statistics();
-    }
-
-    void
-    MLibManager::on_recache_covers()
-    {
-        TimedConfirmation dialog (_("Please confirm Cover Refresh"), 10);
-        int response = dialog.run(_("Are you sure you want to Refresh <b>all</b> covers at this time? (previous covers will be irrevocably lost)"));
-        if( response == Gtk::RESPONSE_OK )
-        {
-            services->get<Library>("mpx-service-library")->recacheCovers();
-        }
+        services->get<Library_MLibMan>("mpx-service-library")->scanner()->update_statistics();
     }
 
     void
@@ -1473,7 +1457,7 @@ namespace MPX
                             d->hide();
                             StrV v;
                             v.push_back(uri);
-                            services->get<Library>("mpx-service-library")->initAdd(v);
+                            services->get<Library_MLibMan>("mpx-service-library")->initAdd(v);
                     }
             }
 
@@ -1602,7 +1586,7 @@ rerun_import_share_dialog:
                     }
 
                     Util::FileList v (1, m_Share);
-                    services->get<Library>("mpx-service-library")->initAdd(v);
+                    services->get<Library_MLibMan>("mpx-service-library")->initAdd(v);
             }
 
     void

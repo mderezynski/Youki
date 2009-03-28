@@ -15,6 +15,8 @@
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/algorithm/aque.hh"
 #include "mpx/util-graphics.hh"
+#include "mpx/mpx-main.hh"
+#include "mpx/mpx-covers.hh"
 #include "glib-marshalers.h"
 
 #include <cmath>
@@ -745,7 +747,7 @@ namespace MPX
                 void
                 on_vadj_value_changed ()
                 {
-                    int row = (double(m_prop_vadj.get_value()->get_value()-m_row_height) / double(m_row_height));
+                    int row = (double(m_prop_vadj.get_value()->get_value()-m_row_start) / double(m_row_height));
                     if( m_previous_drawn_row != row )
                     {
                         queue_draw ();
@@ -1413,6 +1415,38 @@ namespace MPX
                     return TRUE;
                 }
 
+                bool
+                query_tooltip(
+                      int                                   tooltip_x
+                    , int                                   tooltip_y
+                    , bool                                  keypress
+                    , const Glib::RefPtr<Gtk::Tooltip>&     tooltip
+                )
+                {
+                    int row = (double( tooltip_y ) - m_row_start) / double(m_row_height) ;
+
+                    MPX::Track track = boost::get<4>(m_model->row(row));
+
+                    boost::shared_ptr<Covers> covers = services->get<Covers>("mpx-service-covers") ;
+                    Glib::RefPtr<Gdk::Pixbuf> cover ;
+
+                    const std::string& mbid = boost::get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()) ;
+
+                    Gtk::Image * image = Gtk::manage( new Gtk::Image ) ;
+
+                    if( covers->fetch(
+                          mbid
+                        , cover
+                    ))
+                    {   
+                        image->set( cover ) ;
+                        tooltip->set_custom( *image ) ;
+                        return true ;
+                    }
+
+                    return false ;
+                }
+
             public:
     
                 void
@@ -1558,6 +1592,16 @@ namespace MPX
 
                     gtk_widget_realize(GTK_WIDGET(gobj()));
                     initialize_metrics();
+
+/*
+                    signal_query_tooltip().connect(
+                        sigc::mem_fun(
+                              *this
+                            , &ListView::query_tooltip
+                    )) ;
+
+                    set_has_tooltip( true ) ;
+*/
                 }
 
                 ~ListView ()

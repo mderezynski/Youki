@@ -53,7 +53,7 @@
 #include "sidebar.hh"
 #include "video-widget.hh"
 
-#include "audio-types.hh"
+#include "mpx/mpx-audio-types.hh"
 #include "dbus-marshalers.h"
 
 #include <gtkmm.h>

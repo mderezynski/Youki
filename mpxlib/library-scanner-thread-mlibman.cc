@@ -1,8 +1,7 @@
+#include "config.h"
+
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-hal.hh"
-#include "mpx/mpx-library.hh"
-#include "mpx/mpx-library-scanner-thread.hh"
-#include "mpx/mpx-library.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/metadatareader-taglib.hh"
@@ -16,6 +15,9 @@
 #include <glibmm.h>
 #include <glibmm/i18n.h>
 #include <tr1/unordered_set>
+
+#include "library-scanner-thread-mlibman.hh"
+#include "library-mlibman.hh"
 
 using boost::get;
 using namespace MPX;
@@ -292,39 +294,39 @@ namespace
 
 }
 
-struct MPX::LibraryScannerThread::ThreadData
+struct MPX::LibraryScannerThread_MLibMan::ThreadData
 {
-    LibraryScannerThread::SignalScanStart_t         ScanStart ;
-    LibraryScannerThread::SignalScanEnd_t           ScanEnd ;
-    LibraryScannerThread::SignalScanSummary_t       ScanSummary ;
-    LibraryScannerThread::SignalNewAlbum_t          NewAlbum ;
-    LibraryScannerThread::SignalNewArtist_t         NewArtist ;
-    LibraryScannerThread::SignalNewTrack_t          NewTrack ;
-    LibraryScannerThread::SignalTrackUpdated_t      TrackUpdated ;
-    LibraryScannerThread::SignalEntityDeleted_t     EntityDeleted ;
-    LibraryScannerThread::SignalEntityUpdated_t     EntityUpdated ;
-    LibraryScannerThread::SignalCacheCover_t        CacheCover ;
-    LibraryScannerThread::SignalReload_t            Reload ;
-    LibraryScannerThread::SignalMessage_t           Message ;
+    LibraryScannerThread_MLibMan::SignalScanStart_t         ScanStart ;
+    LibraryScannerThread_MLibMan::SignalScanEnd_t           ScanEnd ;
+    LibraryScannerThread_MLibMan::SignalScanSummary_t       ScanSummary ;
+    LibraryScannerThread_MLibMan::SignalNewAlbum_t          NewAlbum ;
+    LibraryScannerThread_MLibMan::SignalNewArtist_t         NewArtist ;
+    LibraryScannerThread_MLibMan::SignalNewTrack_t          NewTrack ;
+    LibraryScannerThread_MLibMan::SignalTrackUpdated_t      TrackUpdated ;
+    LibraryScannerThread_MLibMan::SignalEntityDeleted_t     EntityDeleted ;
+    LibraryScannerThread_MLibMan::SignalEntityUpdated_t     EntityUpdated ;
+    LibraryScannerThread_MLibMan::SignalCacheCover_t        CacheCover ;
+    LibraryScannerThread_MLibMan::SignalReload_t            Reload ;
+    LibraryScannerThread_MLibMan::SignalMessage_t           Message ;
 
     int m_ScanStop;
 };
 
-MPX::LibraryScannerThread::LibraryScannerThread(
-    MPX::Library*               obj_library
+MPX::LibraryScannerThread_MLibMan::LibraryScannerThread_MLibMan(
+    MPX::Library_MLibMan*               obj_library
   , gint64                      flags
 )
 : sigx::glib_threadable()
-, add(sigc::bind(sigc::mem_fun(*this, &LibraryScannerThread::on_add), false))
-, scan(sigc::mem_fun(*this, &LibraryScannerThread::on_scan))
-, scan_all(sigc::mem_fun(*this, &LibraryScannerThread::on_scan_all))
-, scan_stop(sigc::mem_fun(*this, &LibraryScannerThread::on_scan_stop))
-, vacuum(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum))
+, add(sigc::bind(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_add), false))
+, scan(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_scan))
+, scan_all(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_scan_all))
+, scan_stop(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_scan_stop))
+, vacuum(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_vacuum))
 #ifdef HAVE_HAL
-, vacuum_volume_list(sigc::bind(sigc::mem_fun(*this, &LibraryScannerThread::on_vacuum_volume_list), true))
+, vacuum_volume_list(sigc::bind(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_vacuum_volume_list), true))
 #endif // HAVE_HAL
-, update_statistics(sigc::mem_fun(*this, &LibraryScannerThread::on_update_statistics))
-, set_priority_data(sigc::mem_fun(*this, &LibraryScannerThread::on_set_priority_data))
+, update_statistics(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_update_statistics))
+, set_priority_data(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_set_priority_data))
 , signal_scan_start(*this, m_ThreadData, &ThreadData::ScanStart)
 , signal_scan_end(*this, m_ThreadData, &ThreadData::ScanEnd)
 , signal_scan_summary(*this, m_ThreadData, &ThreadData::ScanSummary)
@@ -337,8 +339,8 @@ MPX::LibraryScannerThread::LibraryScannerThread(
 , signal_cache_cover(*this, m_ThreadData, &ThreadData::CacheCover)
 , signal_reload(*this, m_ThreadData, &ThreadData::Reload)
 , signal_message(*this, m_ThreadData, &ThreadData::Message)
-, m_Library(*obj_library)
-, m_SQL(new SQL::SQLDB(*((m_Library.get_sql_db()))))
+, m_Library_MLibMan(*obj_library)
+, m_SQL(new SQL::SQLDB(*((m_Library_MLibMan.get_sql_db()))))
 , m_Flags(flags)
 {
     m_Connectable =
@@ -358,30 +360,30 @@ MPX::LibraryScannerThread::LibraryScannerThread(
     ); 
 }
 
-MPX::LibraryScannerThread::~LibraryScannerThread ()
+MPX::LibraryScannerThread_MLibMan::~LibraryScannerThread_MLibMan ()
 {
     delete m_Connectable;
 }
 
-MPX::LibraryScannerThread::ScannerConnectable&
-MPX::LibraryScannerThread::connect ()
+MPX::LibraryScannerThread_MLibMan::ScannerConnectable&
+MPX::LibraryScannerThread_MLibMan::connect ()
 {
     return *m_Connectable;
 } 
 
 void
-MPX::LibraryScannerThread::on_startup ()
+MPX::LibraryScannerThread_MLibMan::on_startup ()
 {
     m_ThreadData.set(new ThreadData);
 }
 
 void
-MPX::LibraryScannerThread::on_cleanup ()
+MPX::LibraryScannerThread_MLibMan::on_cleanup ()
 {
 }
 
 bool
-MPX::LibraryScannerThread::check_abort_scan ()
+MPX::LibraryScannerThread_MLibMan::check_abort_scan ()
 {
     ThreadData * pthreaddata = m_ThreadData.get();
 
@@ -401,7 +403,7 @@ MPX::LibraryScannerThread::check_abort_scan ()
 }
 
 void
-MPX::LibraryScannerThread::on_set_priority_data(
+MPX::LibraryScannerThread_MLibMan::on_set_priority_data(
       const std::vector<std::string>&   types
     , bool                              prioritize_by_filetype
     , bool                              prioritize_by_bitrate
@@ -413,7 +415,7 @@ MPX::LibraryScannerThread::on_set_priority_data(
 }
 
 void
-MPX::LibraryScannerThread::cache_mtimes(
+MPX::LibraryScannerThread_MLibMan::cache_mtimes(
 )
 {
     m_MTIME_Map.clear();
@@ -439,7 +441,7 @@ MPX::LibraryScannerThread::cache_mtimes(
 }
 
 void
-MPX::LibraryScannerThread::on_scan(
+MPX::LibraryScannerThread_MLibMan::on_scan(
     const Util::FileList& list
 )
 {
@@ -453,7 +455,7 @@ MPX::LibraryScannerThread::on_scan(
 }
 
 void
-MPX::LibraryScannerThread::on_scan_all(
+MPX::LibraryScannerThread_MLibMan::on_scan_all(
 )
 {
     ThreadData * pthreaddata = m_ThreadData.get();
@@ -464,13 +466,13 @@ MPX::LibraryScannerThread::on_scan_all(
 
     m_ScanSummary = ScanSummary();
 
-    boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
+    boost::shared_ptr<Library_MLibMan> library = services->get<Library_MLibMan>("mpx-service-library");
 
     RowV v;
 
 #ifdef HAVE_HAL
     try{
-        if (m_Flags & Library::F_USING_HAL)
+        if (m_Flags & Library_MLibMan::F_USING_HAL)
         { 
             m_SQL->get(
                 v,
@@ -555,7 +557,7 @@ MPX::LibraryScannerThread::on_scan_all(
 }
 
 void
-MPX::LibraryScannerThread::on_add(
+MPX::LibraryScannerThread_MLibMan::on_add(
       const Util::FileList& list
     , bool                  check_mtimes
 )
@@ -579,7 +581,7 @@ MPX::LibraryScannerThread::on_add(
 
     m_ScanSummary = ScanSummary();
 
-    boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
+    boost::shared_ptr<Library_MLibMan> library = services->get<Library_MLibMan>("mpx-service-library");
 
     Util::FileList collection;
 
@@ -597,7 +599,7 @@ MPX::LibraryScannerThread::on_add(
             insert_path = Util::normalize_path( *i ) ;
 #ifdef HAVE_HAL
             try{
-                if (m_Flags & Library::F_USING_HAL)
+                if (m_Flags & Library_MLibMan::F_USING_HAL)
                 { 
                     HAL::Volume const& volume (services->get<HAL>("mpx-service-hal")->get_volume_for_uri (*i));
                     insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr (volume.mount_point.length())) ;
@@ -694,7 +696,7 @@ MPX::LibraryScannerThread::on_add(
 }
 
 void
-MPX::LibraryScannerThread::on_scan_list_quick_stage_1(
+MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
     const Util::FileList& list
 )
 {
@@ -702,7 +704,7 @@ MPX::LibraryScannerThread::on_scan_list_quick_stage_1(
 
     pthreaddata->ScanStart.emit();
 
-    boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
+    boost::shared_ptr<Library_MLibMan> library = services->get<Library_MLibMan>("mpx-service-library");
 
     for( Util::FileList::const_iterator i = list.begin(); i != list.end(); ++i )
     {  
@@ -719,7 +721,7 @@ MPX::LibraryScannerThread::on_scan_list_quick_stage_1(
 #ifdef HAVE_HAL
 
             try{
-                if (m_Flags & Library::F_USING_HAL)
+                if (m_Flags & Library_MLibMan::F_USING_HAL)
                 { 
                     HAL::Volume const& volume (services->get<HAL>("mpx-service-hal")->get_volume_for_uri (*i));
                     insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr(volume.mount_point.length())) ;
@@ -791,18 +793,18 @@ MPX::LibraryScannerThread::on_scan_list_quick_stage_1(
 }
 
 void
-MPX::LibraryScannerThread::on_scan_stop ()
+MPX::LibraryScannerThread_MLibMan::on_scan_stop ()
 {
     ThreadData * pthreaddata = m_ThreadData.get();
     g_atomic_int_set(&pthreaddata->m_ScanStop, 1);
 }
 
-MPX::LibraryScannerThread::EntityInfo
-MPX::LibraryScannerThread::get_track_artist_id (Track &track, bool only_if_exists)
+MPX::LibraryScannerThread_MLibMan::EntityInfo
+MPX::LibraryScannerThread_MLibMan::get_track_artist_id (Track &track, bool only_if_exists)
 {
     RowV rows; 
 
-    EntityInfo info ( 0, MPX::LibraryScannerThread::ENTITY_IS_UNDEFINED );
+    EntityInfo info ( 0, MPX::LibraryScannerThread_MLibMan::ENTITY_IS_UNDEFINED );
 
     char const* select_artist_f ("SELECT id FROM artist WHERE %s %s AND %s %s AND %s %s;"); 
     m_SQL->get (rows, mprintf (select_artist_f,
@@ -826,7 +828,7 @@ MPX::LibraryScannerThread::get_track_artist_id (Track &track, bool only_if_exist
     {
       info = EntityInfo( 
             get<gint64>(rows[0].find ("id")->second)
-          , MPX::LibraryScannerThread::ENTITY_IS_NOT_NEW
+          , MPX::LibraryScannerThread_MLibMan::ENTITY_IS_NOT_NEW
       );
     }
     else
@@ -855,17 +857,17 @@ MPX::LibraryScannerThread::get_track_artist_id (Track &track, bool only_if_exist
                     : NULL)
                 ))
 
-            , MPX::LibraryScannerThread::ENTITY_IS_NEW
+            , MPX::LibraryScannerThread_MLibMan::ENTITY_IS_NEW
        );
     }
 
     return info;
 }
 
-MPX::LibraryScannerThread::EntityInfo
-MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exists)
+MPX::LibraryScannerThread_MLibMan::EntityInfo
+MPX::LibraryScannerThread_MLibMan::get_album_artist_id (Track& track, bool only_if_exists)
 {
-    EntityInfo info ( 0, MPX::LibraryScannerThread::ENTITY_IS_UNDEFINED );
+    EntityInfo info ( 0, MPX::LibraryScannerThread_MLibMan::ENTITY_IS_UNDEFINED );
 
     if( track.has(ATTRIBUTE_ALBUM_ARTIST) && track.has(ATTRIBUTE_MB_ALBUM_ARTIST_ID) )
     {
@@ -918,7 +920,7 @@ MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exist
     {
         info = EntityInfo(
               get<gint64>(rows[0].find ("id")->second)
-            , MPX::LibraryScannerThread::ENTITY_IS_NOT_NEW
+            , MPX::LibraryScannerThread_MLibMan::ENTITY_IS_NOT_NEW
         );
     }
     else
@@ -955,21 +957,21 @@ MPX::LibraryScannerThread::get_album_artist_id (Track& track, bool only_if_exist
                 : NULL)
             ))
 
-            , MPX::LibraryScannerThread::ENTITY_IS_NEW
+            , MPX::LibraryScannerThread_MLibMan::ENTITY_IS_NEW
         );
     }
 
     return info;
 }
 
-MPX::LibraryScannerThread::EntityInfo
-MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, bool only_if_exists)
+MPX::LibraryScannerThread_MLibMan::EntityInfo
+MPX::LibraryScannerThread_MLibMan::get_album_id (Track& track, gint64 album_artist_id, bool only_if_exists)
 {
     RowV rows;
 
     std::string sql;
 
-    EntityInfo info ( 0, MPX::LibraryScannerThread::ENTITY_IS_UNDEFINED );
+    EntityInfo info ( 0, MPX::LibraryScannerThread_MLibMan::ENTITY_IS_UNDEFINED );
 
     if( track.has(ATTRIBUTE_MB_ALBUM_ID) )
     {
@@ -1022,7 +1024,7 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
     {
         info = EntityInfo(
               get<gint64>(rows[0].find ("id")->second)
-            , MPX::LibraryScannerThread::ENTITY_IS_NOT_NEW
+            , MPX::LibraryScannerThread_MLibMan::ENTITY_IS_NOT_NEW
         );
 
         if(rows[0].count("mb_album_id"))
@@ -1085,7 +1087,7 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 
       info = EntityInfo(
           m_SQL->exec_sql (sql)
-        , MPX::LibraryScannerThread::ENTITY_IS_NEW
+        , MPX::LibraryScannerThread_MLibMan::ENTITY_IS_NEW
       );
     }
 
@@ -1093,7 +1095,7 @@ MPX::LibraryScannerThread::get_album_id (Track& track, gint64 album_artist_id, b
 }
 
 gint64
-MPX::LibraryScannerThread::get_track_mtime(
+MPX::LibraryScannerThread_MLibMan::get_track_mtime(
     Track& track
 ) const
 {
@@ -1114,11 +1116,11 @@ MPX::LibraryScannerThread::get_track_mtime(
 }
 
 gint64
-MPX::LibraryScannerThread::get_track_id (Track& track) const
+MPX::LibraryScannerThread_MLibMan::get_track_id (Track& track) const
 {
   RowV rows;
 #ifdef HAVE_HAL
-  if( m_Flags & Library::F_USING_HAL )
+  if( m_Flags & Library_MLibMan::F_USING_HAL )
   {
     static boost::format
       select_f ("SELECT id FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
@@ -1149,7 +1151,7 @@ MPX::LibraryScannerThread::get_track_id (Track& track) const
 }
 
 void
-MPX::LibraryScannerThread::add_erroneous_track(
+MPX::LibraryScannerThread_MLibMan::add_erroneous_track(
       const std::string& uri
     , const std::string& info
 )
@@ -1168,7 +1170,7 @@ MPX::LibraryScannerThread::add_erroneous_track(
 }
 
 void
-MPX::LibraryScannerThread::insert_file_no_mtime_check(
+MPX::LibraryScannerThread_MLibMan::insert_file_no_mtime_check(
       Track_sp           track
     , const std::string& uri
     , const std::string& insert_path
@@ -1198,14 +1200,14 @@ MPX::LibraryScannerThread::insert_file_no_mtime_check(
             add_erroneous_track( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str());
         }
     }
-    catch( Library::FileQualificationError & cxe )
+    catch( Library_MLibMan::FileQualificationError & cxe )
     {
         add_erroneous_track( uri, (boost::format (_("Error inserting file: %s")) % cxe.what()).str());
     }
 }
 
 std::string
-MPX::LibraryScannerThread::create_update_sql(
+MPX::LibraryScannerThread_MLibMan::create_update_sql(
       const Track&  track
     , gint64        album_j
     , gint64        artist_j
@@ -1243,7 +1245,7 @@ MPX::LibraryScannerThread::create_update_sql(
 }
 
 std::string
-MPX::LibraryScannerThread::create_insertion_sql(
+MPX::LibraryScannerThread_MLibMan::create_insertion_sql(
       const Track&  track
     , gint64        album_j
     , gint64        artist_j
@@ -1290,7 +1292,7 @@ MPX::LibraryScannerThread::create_insertion_sql(
 }
 
 void
-MPX::LibraryScannerThread::create_insertion_track(
+MPX::LibraryScannerThread_MLibMan::create_insertion_track(
       Track&             track
     , const std::string& uri
     , const std::string& insert_path
@@ -1347,8 +1349,8 @@ MPX::LibraryScannerThread::create_insertion_track(
     m_InsertionTracks[p->Album.first][p->Artist.first][p->Title][p->TrackNumber].push_back( p );
 }
 
-MPX::LibraryScannerThread::TrackInfo_p
-MPX::LibraryScannerThread::prioritize(
+MPX::LibraryScannerThread_MLibMan::TrackInfo_p
+MPX::LibraryScannerThread_MLibMan::prioritize(
     const TrackInfo_p_Vector& v
 )
 {
@@ -1407,7 +1409,7 @@ MPX::LibraryScannerThread::prioritize(
 }
 
 void
-MPX::LibraryScannerThread::process_insertion_list()
+MPX::LibraryScannerThread_MLibMan::process_insertion_list()
 {
     ThreadData * pthreaddata = m_ThreadData.get();
 
@@ -1473,7 +1475,7 @@ MPX::LibraryScannerThread::process_insertion_list()
 }
 
 void
-MPX::LibraryScannerThread::signal_new_entities(
+MPX::LibraryScannerThread_MLibMan::signal_new_entities(
     const TrackInfo_p& p
 )
 {
@@ -1512,7 +1514,7 @@ MPX::LibraryScannerThread::signal_new_entities(
 }
 
 int
-MPX::LibraryScannerThread::compare_types(
+MPX::LibraryScannerThread_MLibMan::compare_types(
       const std::string& a
     , const std::string& b
 )
@@ -1548,7 +1550,7 @@ MPX::LibraryScannerThread::compare_types(
 }
 
 ScanResult
-MPX::LibraryScannerThread::insert(
+MPX::LibraryScannerThread_MLibMan::insert(
       const TrackInfo_p& p
     , const TrackInfo_p_Vector& v
 )
@@ -1662,7 +1664,7 @@ MPX::LibraryScannerThread::insert(
 }
 
 void
-MPX::LibraryScannerThread::do_remove_dangling () 
+MPX::LibraryScannerThread_MLibMan::do_remove_dangling () 
 {
   ThreadData * pthreaddata = m_ThreadData.get();
 
@@ -1752,7 +1754,7 @@ MPX::LibraryScannerThread::do_remove_dangling ()
 }
 
 void
-MPX::LibraryScannerThread::on_vacuum() 
+MPX::LibraryScannerThread_MLibMan::on_vacuum() 
 {
   ThreadData * pthreaddata = m_ThreadData.get();
 
@@ -1763,7 +1765,7 @@ MPX::LibraryScannerThread::on_vacuum()
 
   for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
   {
-          std::string uri = get<std::string>((*(m_Library.sqlToTrack( *i, false )))[ATTRIBUTE_LOCATION].get());
+          std::string uri = get<std::string>((*(m_Library_MLibMan.sqlToTrack( *i, false )))[ATTRIBUTE_LOCATION].get());
 
           if( !uri.empty() )
           {
@@ -1794,7 +1796,7 @@ MPX::LibraryScannerThread::on_vacuum()
 
 #ifdef HAVE_HAL
 void
-MPX::LibraryScannerThread::on_vacuum_volume_list(
+MPX::LibraryScannerThread_MLibMan::on_vacuum_volume_list(
       const HAL::VolumeKey_v&    volumes
     , bool                    do_signal
 )
@@ -1817,7 +1819,7 @@ MPX::LibraryScannerThread::on_vacuum_volume_list(
 
           for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
           {
-                  std::string uri = get<std::string>((*(m_Library.sqlToTrack( *i, false )))[ATTRIBUTE_LOCATION].get());
+                  std::string uri = get<std::string>((*(m_Library_MLibMan.sqlToTrack( *i, false )))[ATTRIBUTE_LOCATION].get());
 
                   if( !uri.empty() )
                   {
@@ -1850,7 +1852,7 @@ MPX::LibraryScannerThread::on_vacuum_volume_list(
 }
 
 void
-MPX::LibraryScannerThread::update_albums(
+MPX::LibraryScannerThread_MLibMan::update_albums(
 )
 {
     ThreadData * pthreaddata = m_ThreadData.get();
@@ -1869,7 +1871,7 @@ MPX::LibraryScannerThread::update_albums(
 }
 
 void
-MPX::LibraryScannerThread::update_album(
+MPX::LibraryScannerThread_MLibMan::update_album(
       gint64 id
 )
 {
@@ -1908,7 +1910,7 @@ MPX::LibraryScannerThread::update_album(
 }
 
 void
-MPX::LibraryScannerThread::on_update_statistics()
+MPX::LibraryScannerThread_MLibMan::on_update_statistics()
 {
     ThreadData * pthreaddata = m_ThreadData.get();
 

@@ -14,8 +14,8 @@ namespace MPX
 {
     KoboPosition::KoboPosition ()
 
-        : m_percent( 0 )
-        , m_duration( 0 )
+        : m_duration( 0 )
+        , m_position( 0 )
         , m_clicked( false )
         , m_seek_position( 0 )
         , m_seek_factor( 0 )
@@ -42,8 +42,6 @@ namespace MPX
     {
         m_duration = duration ;
         m_position = position ;
-
-        m_percent = double(position) / double(duration) ; 
 
         queue_draw () ;
     }
@@ -93,14 +91,14 @@ namespace MPX
 
         double factor   = 1. ;
         gint64 position = m_clicked ? m_seek_position : m_position ;
-        double percent  = double(position) / double(m_duration) ; 
+        double percent  = double(m_position) / double(m_duration) ; 
 
         if( percent >= 0.90 )
         {
             factor = (1. - percent) * 10. ; 
         }
 
-        if( m_percent > 0. )
+        if( percent > 0. )
         {
                 cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
                 cairo->set_source_rgba(

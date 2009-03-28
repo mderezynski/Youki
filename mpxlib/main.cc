@@ -31,14 +31,13 @@
 #include <giomm.h>
 #include <gst/gst.h>
 #include <gtkmm/main.h>
-#include <gtkglmm.h>
 #include <cstdlib>
 #include <string>
 
 #include "paths.hh"
 #include "signals.hh"
+#include "library-mlibman.hh"
 
-#include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-network.hh"
 #include "mpx/mpx-services.hh"
@@ -52,7 +51,6 @@
 #include "mpx/metadatareader-taglib.hh"
 
 #include <dbusmm/glib-integration.h>
-#endif
 
 using namespace MPX;
 using namespace Glib;
@@ -133,118 +131,19 @@ namespace MPX
         mcs_bind = new Mcs::Bind(mcs);
         mcs->load (Mcs::Mcs::VERSION_IGNORE);
 
-        mcs->domain_register ("main-window");
-        mcs->key_register ("main-window", "width", 0); //FIXME:
-        mcs->key_register ("main-window", "height", 0); //FIXME:
-        mcs->key_register ("main-window", "pos_x", 0);
-        mcs->key_register ("main-window", "pos_y", 0);
-
-        mcs->domain_register ("ui");
-        mcs->key_register ("ui", "show-statusbar", true);
-
         mcs->domain_register ("mpx");
-        mcs->key_register ("mpx", "no-ui", false);
-        mcs->key_register ("mpx", "ui-esc-trayconify", false);
-        mcs->key_register ("mpx", "keep-above", false);
         mcs->key_register ("mpx", "file-chooser-close-on-open", true);
         mcs->key_register ("mpx", "file-chooser-close-on-add", false);
         mcs->key_register ("mpx", "file-chooser-path", Glib::get_home_dir ());
-        mcs->key_register ("mpx", "icon-theme", std::string ("tango"));
-        mcs->key_register ("mpx", "force-rgba-enable", false);
-        mcs->key_register ("mpx", "display-notifications", true);
-        mcs->key_register ("mpx", "no-remote", false);
-        mcs->key_register ("mpx", "time-remaining", false);
-        mcs->key_register ("mpx", "volume", 50);
-        mcs->key_register ("mpx", "follow-current-track", false);
-        mcs->key_register ("mpx", "shuffle", false);
-        mcs->key_register ("mpx", "repeat", false);
-        mcs->key_register ("mpx", "enable-autoplay", false);
-        mcs->key_register ("mpx", "spm-listen", false);
-        mcs->key_register ("mpx", "window-x", 20);
-        mcs->key_register ("mpx", "window-y", 20);
-        mcs->key_register ("mpx", "window-w", 400);
-        mcs->key_register ("mpx", "window-h", 500);
         mcs->key_register ("mpx", "window-mlib-w", 600);
         mcs->key_register ("mpx", "window-mlib-h", 400);
         mcs->key_register ("mpx", "window-mlib-x", 100);
         mcs->key_register ("mpx", "window-mlib-y", 100);
-        mcs->key_register ("mpx", "window-prefs-w", 700);
-        mcs->key_register ("mpx", "window-prefs-h", 600);
-        mcs->key_register ("mpx", "window-prefs-x", 120);
-        mcs->key_register ("mpx", "window-prefs-y", 120);
-        mcs->key_register ("mpx", "window-plugins-w", 500);
-        mcs->key_register ("mpx", "window-plugins-h", 400);
-        mcs->key_register ("mpx", "window-plugins-x", 140);
-        mcs->key_register ("mpx", "window-plugins-y", 140);
         mcs->key_register ("mpx", "music-import-path", Glib::build_filename(Glib::get_home_dir (),"Music"));
-
-        mcs->domain_register ("audio");
-        mcs->key_register ("audio", "band0", 0.0);
-        mcs->key_register ("audio", "band1", 0.0);
-        mcs->key_register ("audio", "band2", 0.0);
-        mcs->key_register ("audio", "band3", 0.0);
-        mcs->key_register ("audio", "band4", 0.0);
-        mcs->key_register ("audio", "band5", 0.0);
-        mcs->key_register ("audio", "band6", 0.0);
-        mcs->key_register ("audio", "band7", 0.0);
-        mcs->key_register ("audio", "band8", 0.0);
-        mcs->key_register ("audio", "band9", 0.0);
-
-        mcs->key_register ("audio", "cdrom-device", std::string ("/dev/cdrom"));
-        mcs->key_register ("audio", "sink", std::string (DEFAULT_SINK));
-        mcs->key_register ("audio", "enable-eq", bool( false ));
-
-#ifdef HAVE_HAL
-        mcs->key_register ("audio", "hal-udi", std::string (""));
-#endif // HAVE_HAL
-
-#ifdef HAVE_ALSA
-        mcs->key_register ("audio", "alsa-buffer-time", 200000);
-        mcs->key_register ("audio", "device-alsa", std::string (DEFAULT_DEVICE_ALSA));
-#endif // HAVE_ALSA
-
-#ifdef HAVE_SUN
-        mcs->key_register ("audio", "sun-buffer-time", 200000);
-        mcs->key_register ("audio", "device-sun", std::string (DEFAULT_DEVICE_SUN));
-#endif // HAVE_SUN
-
-        mcs->key_register ("audio", "oss-buffer-time", 200000);
-        mcs->key_register ("audio", "device-oss", std::string (DEFAULT_DEVICE_OSS));
-
-        mcs->key_register ("audio", "esd-buffer-time", 200000);
-        mcs->key_register ("audio", "device-esd", std::string (DEFAULT_DEVICE_ESD));
-
-        mcs->key_register ("audio", "pulse-buffer-time", 200000);
-        mcs->key_register ("audio", "pulse-device", std::string ());
-        mcs->key_register ("audio", "pulse-server", std::string ());
-
-        mcs->key_register ("audio", "jack-buffer-time", 200000);
-        mcs->key_register ("audio", "jack-server", std::string ());
-
-        mcs->key_register ("audio", "video-output", 0);
-
-        mcs->domain_register ("lastfm");
-        mcs->key_register ("lastfm", "username", std::string ());
-        mcs->key_register ("lastfm", "password", std::string ());
 
         mcs->domain_register ("musicbrainz");
         mcs->key_register ("musicbrainz", "username", std::string ());
         mcs->key_register ("musicbrainz", "password", std::string ());
-
-        mcs->domain_register ("albums");
-        mcs->key_register ("albums", "continuous-play", false);
-
-        mcs->domain_register ("podcasts");
-        mcs->key_register ("podcasts", "download-dir", Glib::get_home_dir ());
-        mcs->key_register ("podcasts", "download-policy", 0);
-        mcs->key_register ("podcasts", "update-interval", 0);
-        mcs->key_register ("podcasts", "cache-policy", 0);
-
-        mcs->domain_register ("radio");
-        mcs->key_register ("radio", "minimal-bitrate", 96); 
-
-        mcs->domain_register ("playlist");
-        mcs->key_register ("playlist", "rootpath", Glib::get_home_dir ());
 
         mcs->domain_register ("library");
         mcs->key_register ("library", "rootpath", std::string (Glib::build_filename (Glib::get_home_dir (), "Music")));
@@ -254,34 +153,6 @@ namespace MPX
 #ifdef HAVE_HAL
         mcs->key_register ("library", "use-hal", true);
 #endif // HAVE_HAL
-
-        mcs->domain_register ("hotkeys");
-        mcs->key_register ("hotkeys", "enable", bool (true));
-        mcs->key_register ("hotkeys", "system", int (1)); // GNOME Configured is default
-        mcs->key_register ("hotkeys", "key-1", int (0)); // Play
-        mcs->key_register ("hotkeys", "key-1-mask", int (0));
-        mcs->key_register ("hotkeys", "key-2", int (0)); // Pause
-        mcs->key_register ("hotkeys", "key-2-mask", int (0));
-        mcs->key_register ("hotkeys", "key-3", int (0)); // Prev
-        mcs->key_register ("hotkeys", "key-3-mask", int (0));
-        mcs->key_register ("hotkeys", "key-4", int (0)); // Next
-        mcs->key_register ("hotkeys", "key-4-mask", int (0));
-        mcs->key_register ("hotkeys", "key-5", int (0)); // Stop
-        mcs->key_register ("hotkeys", "key-5-mask", int (0));
-
-        mcs->domain_register ("pyplugs");
-
-        mcs->domain_register("Preferences-CoverArtSources");
-        mcs->key_register("Preferences-CoverArtSources", "Source0", int(0));
-        mcs->key_register("Preferences-CoverArtSources", "Source1", int(1));
-        mcs->key_register("Preferences-CoverArtSources", "Source2", int(2));
-        mcs->key_register("Preferences-CoverArtSources", "Source3", int(3));
-        mcs->key_register("Preferences-CoverArtSources", "Source4", int(4));
-        mcs->key_register("Preferences-CoverArtSources", "SourceActive0", bool(true));
-        mcs->key_register("Preferences-CoverArtSources", "SourceActive1", bool(true));
-        mcs->key_register("Preferences-CoverArtSources", "SourceActive2", bool(true));
-        mcs->key_register("Preferences-CoverArtSources", "SourceActive3", bool(true));
-        mcs->key_register("Preferences-CoverArtSources", "SourceActive4", bool(true));
 
         mcs->domain_register("Preferences-FileFormatPriorities");
         mcs->key_register("Preferences-FileFormatPriorities", "Format0", std::string("audio/x-flac")); 
@@ -293,9 +164,6 @@ namespace MPX
         mcs->key_register("Preferences-FileFormatPriorities", "Format6", std::string("audio/x-ms-wma"));
         mcs->key_register("Preferences-FileFormatPriorities", "prioritize-by-filetype", false); 
         mcs->key_register("Preferences-FileFormatPriorities", "prioritize-by-bitrate", false); 
-
-        mcs->domain_register("PlaybackSourceMusicLib");
-        mcs->key_register("PlaybackSourceMusicLib", "divider-position", 250);
     }
 
   } // anonymous namespace
@@ -310,17 +178,10 @@ main (int argc, char ** argv)
     Gio::init();
 
     signal_handlers_install ();
-
-    create_user_dirs ();
-
     setup_mcs ();
 
-    GOptionContext * context_c = g_option_context_new (_(" - run AudioSource Player"));
-    g_option_context_add_group (context_c, gst_init_get_option_group ());
-    Glib::OptionContext context (context_c, true);
-
     try{
-        gtk = new Gtk::Main (argc, argv, context);
+        gtk = new Gtk::Main( argc, argv );
     } catch( Glib::OptionError & cxe )
     {
         g_warning(G_STRLOC ": %s", cxe.what().c_str());
@@ -336,7 +197,7 @@ main (int argc, char ** argv)
         services->add(boost::shared_ptr<HAL>(new MPX::HAL));
 #endif //HAVE_HAL
         services->add(boost::shared_ptr<MetadataReaderTagLib>(new MPX::MetadataReaderTagLib));
-        services->add(boost::shared_ptr<Library>(new MPX::Library));
+        services->add(boost::shared_ptr<Library_MLibMan>(new MPX::Library_MLibMan));
 #ifdef HAVE_HAL
         services->add(boost::shared_ptr<MLibManager>(MPX::MLibManager::create()));
 #endif // HAVE_HAL
@@ -346,9 +207,9 @@ main (int argc, char ** argv)
         dispatcher.attach( NULL ) ;
         DBus::RefPtr<DBus::Connection> conn = DBus::Connection::SessionBus () ;
 
-        services->get<MLibManager>("mpx-service-mlibman")->show () ; 
+        Gtk::Window * w = services->get<MLibManager>("mpx-service-mlibman").get() ;
 
-        gtk->run() ;
+        gtk->run( *w ) ;
 
 #ifdef HAVE_HAL
     }

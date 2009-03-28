@@ -32,8 +32,8 @@
 #include "mpx/util-graphics.hh"
 #include "mpx/algorithm/random.hh"
 #include "mpx/com/tagview.hh"
+#include "mpx/mpx-audio-types.hh"
 
-#include "audio-types.hh"
 #include "pysigc.hh"
 #include "gtkmmmodule.h"
 

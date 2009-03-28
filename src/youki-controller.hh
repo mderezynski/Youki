@@ -2,6 +2,7 @@
 #define KOBO_CONTROLLER_HH
 
 #include <boost/optional.hpp>
+#include <sigx/sigx.h>
 
 #include "kobo-main.hh"
 #include "kobo-position.hh"
@@ -25,6 +26,7 @@ namespace MPX
     : public org::freedesktop::MediaPlayer_adaptor
     , public DBus::ObjectAdaptor
 */
+    : public sigx::glib_auto_dispatchable
     {
         protected:
 
@@ -146,11 +148,6 @@ namespace MPX
 
             void
             on_library_scan_end(
-                 gint64
-               , gint64
-               , gint64
-               , gint64
-               , gint64
             ) ;
 
         protected: // DBUS

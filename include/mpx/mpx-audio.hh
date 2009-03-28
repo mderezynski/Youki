@@ -49,6 +49,45 @@
 
 namespace MPX
 {
+  class AudioException
+  : public std::exception
+  {
+    public:
+
+        AudioException(
+            const std::string& message_arg = std::string()
+        ) 
+        : message( message_arg )
+        {
+        }
+
+        virtual ~AudioException() throw()
+        {
+        }
+
+        const char*
+        what() const throw()
+        {
+            return message.c_str();
+        }
+
+    private:
+
+        std::string message ;
+  } ;
+
+#define AUDIOEXCEPTION(EXCEPTION_NAME)                                              \
+    class EXCEPTION_NAME                                                            \
+    : public AudioException                                                         \
+    {                                                                               \
+      public:                                                                       \
+        EXCEPTION_NAME(                                                             \
+            const std::string const& message = std::string()                        \
+        ) : AudioException( message )                                               \
+        {                                                                           \
+        }                                                                           \
+    };
+
   namespace Audio
   {
     bool

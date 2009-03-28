@@ -22,37 +22,34 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 
-#ifndef MPX_FILEBROWSER_HH 
-#define MPX_FILEBROWSER_HH
+#ifndef MPX_REQUEST_VALUE_HH
+#define MPX_REQUEST_VALUE_HH
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif // HAVE_CONFIG_H
+#include "mpx/widgets/widgetloader.hh"
 
-#include <gtkmm/button.h>
-#include <gtkmm/checkbutton.h>
-#include <gtkmm/filechooserwidget.h>
-#include <gtkmm/filefilter.h>
-#include <gtkmm/window.h>
+#include <gtkmm/dialog.h>
 #include <libglademm/xml.h>
 
 namespace MPX
 {
-  class FileBrowser
-    : public Gtk::FileChooserDialog
+  class RequestValue
+    : public Gnome::Glade::WidgetLoader<Gtk::Dialog>
   {
-    public:
+      public:
+          RequestValue (Glib::RefPtr<Gnome::Glade::Xml> const& xml);
+          static RequestValue* create ();
+          virtual ~RequestValue ();
 
-      FileBrowser (BaseObjectType                 * cobj,
-                   Glib::RefPtr<Gnome::Glade::Xml> const& xml);
-      static FileBrowser* create ();
-      virtual ~FileBrowser ();
-      int run ();
+          void
+          get_request_infos(Glib::ustring&);
 
-    private:
+          void
+          set_question(const Glib::ustring&);
 
-      bool audio_files_filter (Gtk::FileFilter::Info const& info);
-      Glib::RefPtr<Gnome::Glade::Xml> m_ref_xml;
+      private:
+
+        Glib::RefPtr<Gnome::Glade::Xml>	m_ref_xml;
   };
-}
-#endif
+} // namespace MPX
+
+#endif // !MPX_REQUEST_VALUE_HH
