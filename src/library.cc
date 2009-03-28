@@ -505,6 +505,7 @@ namespace MPX
 
         Library::~Library ()
         {
+            m_ScannerThread->finish () ;
         }
 
         void
@@ -540,6 +541,7 @@ namespace MPX
                     bool use_hal 
                 )
                 {
+                    /*
                         boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
 
                         if( !use_hal )
@@ -636,12 +638,14 @@ namespace MPX
                         m_SQL->exec_sql((boost::format ("UPDATE meta SET flags = '%lld' WHERE rowid = 1") % m_Flags).str());
 
                         reload();
+                    */
                 }
 #endif // HAVE_HAL
 
         bool
                 Library::recache_covers_handler (SQL::RowV *v, int* position)
                 {
+#if 0
                         Row & r = (*v)[*position]; 
 
                         boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
@@ -691,6 +695,7 @@ namespace MPX
                         }
 
                         return true;
+#endif
                 }
 
         void
@@ -806,13 +811,16 @@ namespace MPX
                     const std::string& msg
                 )
                 {
+                    /*
                         boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
                         mm->push_message( msg );
+                    */
                 }
 
         void
                 Library::removeDupes()
                 {
+#if 0
                         boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
 
                         execSQL("BEGIN IMMEDIATE");
@@ -872,6 +880,7 @@ namespace MPX
                         execSQL("COMMIT");
 
                         mm->push_message( _("Removing duplicates: Done") );
+#endif
                 }
 
 #ifdef HAVE_HAL
@@ -882,6 +891,7 @@ namespace MPX
                     const std::string& insert_path 
                 )
                 {
+#if 0
                     boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
 
                     SQL::RowV rows;
@@ -907,6 +917,7 @@ namespace MPX
                     }
 
                     remove_dangling();
+#endif
                 }
 #endif // HAVE_HAL
 
@@ -1635,6 +1646,7 @@ namespace MPX
         void
                 Library::remove_dangling () 
                 {
+#if 0
                         boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
 
                         typedef std::tr1::unordered_set <gint64> IdSet;
@@ -1713,5 +1725,6 @@ namespace MPX
                                         m_SQL->exec_sql((delete_f % "album_artist" % (*i)).str());
                                         on_entity_deleted( *i , ENTITY_ALBUM_ARTIST );
                         }
+#endif
                 }
 } // namespace MPX

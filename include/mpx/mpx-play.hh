@@ -30,14 +30,14 @@
 
 #include "mcs/mcs.h"
 
+#include "mpx/mpx-audio-messages.hh"
+#include "mpx/mpx-audio-types.hh"
 #include "mpx/aux/glibaddons.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/mpx-uri.hh"
 
 #include "video-playback.hh"
-#include "audio-types.hh"
-#include "messages.hh"
 
 #include <map>
 #include <string>

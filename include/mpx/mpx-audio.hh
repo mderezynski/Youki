@@ -82,7 +82,7 @@ namespace MPX
     {                                                                               \
       public:                                                                       \
         EXCEPTION_NAME(                                                             \
-            const std::string const& message = std::string()                        \
+            const std::string& message = std::string()                              \
         ) : AudioException( message )                                               \
         {                                                                           \
         }                                                                           \

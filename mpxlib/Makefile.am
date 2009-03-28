@@ -1,8 +1,8 @@
-libexec_PROGRAMS = youki-mlibman 
+libexec_PROGRAMS = youki-mlibman-bin
 
-youki_mlibman_LDFLAGS = -Wl,--export-dynamic 
+youki_mlibman_bin_LDFLAGS = -Wl,--export-dynamic 
 
-youki_mlibman_CXXFLAGS =                        \
+youki_mlibman_bin_CXXFLAGS =                        \
         $(BOOST_CPPFLAGS)                       \
         $(CAIROMM_CFLAGS)                       \
         $(DBUS_CFLAGS)                          \
@@ -25,7 +25,7 @@ youki_mlibman_CXXFLAGS =                        \
         -I$(top_srcdir)/include                 \
         -I$(top_srcdir)/libhal++    
 
-youki_mlibman_LDADD =                           \
+youki_mlibman_bin_LDADD =                           \
         $(BOOST_LDFLAGS)                        \
         $(BOOST_REGEX_LIB)                      \
         $(BOOST_FILESYSTEM_LIB)                 \
@@ -53,23 +53,23 @@ youki_mlibman_LDADD =                           \
         $(top_builddir)/musicbrainz/libmpx-musicbrainz.la   
 
 
-youki_mlibman_CFLAGS = \
+youki_mlibman_bin_CFLAGS = \
     $(GLIB_CFLAGS) $(GST_CFLAGS) -I$(top_srcdir)/include
 
 if HAVE_HAL
-youki_mlibman_LDADD += $(top_builddir)/libhal++/libhalcc.la
-youki_mlibman_CXXFLAGS += -I$(top_srcdir)/libhal++
+youki_mlibman_bin_LDADD += $(top_builddir)/libhal++/libhalcc.la
+youki_mlibman_bin_CXXFLAGS += -I$(top_srcdir)/libhal++
 endif # HAVE_HAL
 
-youki_mlibman_CXXFLAGS += -D__USE_POSIX199309
-youki_mlibman_CFLAGS += -D__USE_POSIX199309
+youki_mlibman_bin_CXXFLAGS += -D__USE_POSIX199309
+youki_mlibman_bin_CFLAGS += -D__USE_POSIX199309
 
 if HAVE_LINUX 
-youki_mlibman_CXXFLAGS += -D_XOPEN_SOURCE=600
-youki_mlibman_CFLAGS += -D_XOPEN_SOURCE=600
+youki_mlibman_bin_CXXFLAGS += -D_XOPEN_SOURCE=600
+youki_mlibman_bin_CFLAGS += -D_XOPEN_SOURCE=600
 endif
 
-youki_mlibman_SOURCES =                     \
+youki_mlibman_bin_SOURCES =                     \
                                             \
         audio-types.hh                      \
         import-folder.hh                    \
@@ -116,6 +116,6 @@ BUILT_SOURCES =                             \
 CLEANFILES = $(BUILT_SOURCES)
 DISTCLEANFILES = $(BUILT_SOURCES)
 
-mpx-mlibman-dbus.hh:
-	$(DBUSBINDINGTOOL) dbus-obj-MLIBMAN.xml --adaptor=mpx-mlibman-dbus.hh
+mpx-mlibman-dbus.hh: $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml
+	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml --adaptor=mpx-mlibman-dbus.hh
 

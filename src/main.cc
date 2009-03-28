@@ -38,7 +38,6 @@
 #include "paths.hh"
 #include "signals.hh"
 
-#include "mpx/mpx-artist-images.hh"
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
@@ -51,22 +50,11 @@
 #ifdef HAVE_HAL
 #include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
-
-#include "mlibmanager.hh"
-
 #include "mpx/metadatareader-taglib.hh"
 
-#include "mpx/com/mb-import-album.hh"
-#include "mpx/mpx-markov-analyzer-thread.hh"
-
-#include "plugin.hh"
-#include "plugin-manager-gui.hh"
 #include "splash-screen.hh"
 
-#if 0
 #include <dbus-c++/glib-integration.h>
-#endif
-
 #include "youki-controller.hh"
 
 using namespace MPX;
@@ -359,13 +347,10 @@ main (int argc, char ** argv)
         services->add(boost::shared_ptr<Covers>(new MPX::Covers));
         services->add(boost::shared_ptr<MetadataReaderTagLib>(new MPX::MetadataReaderTagLib));
         services->add(boost::shared_ptr<Library>(new MPX::Library));
-        services->add(boost::shared_ptr<ArtistImages>(new MPX::ArtistImages));
-        services->add(boost::shared_ptr<MarkovAnalyzer>(new MarkovAnalyzer));
+        //services->add(boost::shared_ptr<ArtistImages>(new MPX::ArtistImages));
+        //services->add(boost::shared_ptr<MarkovAnalyzer>(new MarkovAnalyzer));
         services->add(boost::shared_ptr<Play>(new MPX::Play));
         services->add(boost::shared_ptr<Preferences>(MPX::Preferences::create()));
-#ifdef HAVE_HAL
-        services->add(boost::shared_ptr<MLibManager>(MPX::MLibManager::create()));
-#endif // HAVE_HAL
         //services->add(boost::shared_ptr<MB_ImportAlbum>(MPX::MB_ImportAlbum::create()));
         //services->add(boost::shared_ptr<Player>(MPX::Player::create()));
         //services->add(boost::shared_ptr<PluginManager>(new MPX::PluginManager));
@@ -374,14 +359,16 @@ main (int argc, char ** argv)
         splash->set_message(_("Done"), 1.0);
         delete splash;
 
-/*
         DBus::Glib::BusDispatcher dispatcher ;
         DBus::default_dispatcher = &dispatcher ;
-        dispatcher.attach( NULL ) ;
+        dispatcher.attach( g_main_context_default() ) ;
         DBus::Connection conn = DBus::Connection::SessionBus () ;
-*/
+        conn.request_name( "info.backtrace.Youki.App" ) ;
+    
+        DBus::Connection actv = DBus::Connection::ActivationBus () ;
+        actv.start_service( "info.backtrace.Youki.MLibMan", 0 ) ;
 
-        YoukiController * control = new YoukiController() ;
+        YoukiController * control = new YoukiController( conn ) ;
 
         control->get_widget()->show_all () ;
 

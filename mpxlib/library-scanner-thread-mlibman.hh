@@ -207,6 +207,9 @@ namespace MPX
 
 // Requests /////////////
 
+            void on_cancel(
+            ) ;
+
             void on_scan(
                 const Util::FileList&
             ) ;

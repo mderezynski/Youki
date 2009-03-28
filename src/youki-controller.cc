@@ -8,7 +8,6 @@
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/mpx-preferences.hh"
-#include "mlibmanager.hh"
 
 namespace
 {
@@ -49,13 +48,13 @@ namespace
 namespace MPX
 {
     YoukiController::YoukiController(
-//        DBus::Connection& conn
+        DBus::Connection conn
     )
-/*
-    : DBus::ObjectAdaptor( conn, "/Youki" )
-*/
-    : m_seek_position( -1 )
+    : DBus::ObjectAdaptor( conn, "/info/backtrace/Youki/App" )
+    , m_seek_position( -1 )
     {
+        m_mlibman_dbus_proxy = new info::backtrace::Youki::MLibMan_proxy_actual( conn ) ;
+
         m_VBox              = Gtk::manage( new Gtk::VBox ) ;
         m_HBox_Entry        = Gtk::manage( new Gtk::HBox ) ;
         m_HBox_Controls     = Gtk::manage( new Gtk::HBox ) ;
@@ -289,7 +288,7 @@ namespace MPX
 
         reload_library () ;
 
-        services->get<Library>("mpx-service-library")->scanner()->signal_scan_end().connect(
+        m_mlibman_dbus_proxy->signal_scan_end().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_library_scan_end
@@ -297,14 +296,16 @@ namespace MPX
 
         m_main_window->show_all() ;
 
-        //StartupComplete () ;
+        StartupComplete () ;
     }
 
     YoukiController::~YoukiController ()
     {
         delete m_main_window ;
+        m_mlibman_dbus_proxy->Exit () ;
+        delete m_mlibman_dbus_proxy ;
 
-        //ShutdownComplete () ;
+        ShutdownComplete () ;
     }
 
     Gtk::Window*
@@ -609,7 +610,7 @@ namespace MPX
         switch( event->keyval )
         {
             case GDK_F1:
-                services->get<MLibManager>("mpx-service-mlibman")->present () ;
+                m_mlibman_dbus_proxy->ShowWindow () ;
                 return true ;
 
             case GDK_F2:
@@ -623,7 +624,6 @@ namespace MPX
 
     //// DBUS
 
-/*
     void
     YoukiController::Startup ()
     {
@@ -653,5 +653,4 @@ namespace MPX
     YoukiController::Pause ()
     {
     }
-*/
 }

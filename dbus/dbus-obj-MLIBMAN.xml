@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/info/backtrace/Youki/MLibMan">
+
+  <interface name="info.backtrace.Youki.MLibMan">
+
+        <method name="ShowWindow"/>
+        <method name="Exit"/>
+
+        <signal name="ScanStart"/>
+        <signal name="ScanEnd"/>
+
+  </interface>
+</node>

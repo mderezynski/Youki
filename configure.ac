@@ -346,7 +346,7 @@ PKG_CHECK_MODULES([GST], [gstreamer-0.10 >= 0.10.14 gstreamer-base-0.10 >= 0.10.
 PKG_CHECK_MODULES([GST_PLUGINS_BASE], [gstreamer-plugins-base-0.10 >= 0.10.9])
 
 # D-BUS
-PKG_CHECK_MODULES([DBUS], [dbusmm-1.0 dbus-1 >= 0.93 dbus-glib-1 >= 0.61])
+PKG_CHECK_MODULES([DBUS], [dbus-c++-1 dbus-1 >= 0.93 dbus-glib-1 >= 0.61])
 DEFAULT_DBUS_PREFIX=`pkg-config --variable=prefix dbus-1` 
 
 AC_PATH_PROG(DBUSBINDINGTOOL, dbusxx-xml2cpp)
@@ -747,13 +747,14 @@ AC_CONFIG_FILES([
     python/pyapi/lastfm/Makefile
     python/pyapi/lastfm/model/Makefile
 
+    api/Makefile
+    com/Makefile
+    musicbrainz/Makefile
 	remote/Makefile
+    sentinel/Makefile
     scripts/Makefile
     widgets/Makefile
-    musicbrainz/Makefile
-    com/Makefile
     xmlcpp/Makefile
-    api/Makefile
 
     include/Makefile
     include/mpx/Makefile

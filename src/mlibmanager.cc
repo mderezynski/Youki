@@ -1162,7 +1162,7 @@ namespace MPX
     {
         TreePath path = FSTreeStore->get_path(iter);
 
-        while(path.up())
+        while( path.up() && path[0] >= 0 && path.size() )
         {
             iter = FSTreeStore->get_iter(path);
             std::string FullPath = std::string((*iter)[FSTreeColumns.FullPath])+"/";

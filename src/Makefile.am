@@ -217,19 +217,18 @@ youki_bin_SOURCES =             \
 
 if HAVE_HAL                             
 youki_bin_SOURCES +=            \
-    hal.cc                      \
-    mlibmanager.hh              \
-    mlibmanager.cc              
+    hal.cc                      
 endif
 
-EXTRA_DIST =                    \
-    dbus-obj-YOUKI.xml      
+BUILT_SOURCES =                 \
+    mpx-mlibman-dbus-proxy.hh   \
+    mpx-app-dbus-adaptor.hh
 
-#BUILT_SOURCES =                 \
-#    youki-controller-dbus.hh    
+CLEANFILES = $(BUILT_SOURCES)
+DISTCLEANFILES = $(BUILT_SOURCES)
 
-#CLEANFILES = $(BUILT_SOURCES)
-#DISTCLEANFILES = $(BUILT_SOURCES)
+mpx-mlibman-dbus-proxy.hh: $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml
+	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml --proxy=mpx-mlibman-dbus-proxy.hh
 
-#youki-controller-dbus.hh:
-#	$(DBUSBINDINGTOOL) dbus-obj-YOUKI.xml --adaptor=youki-controller-dbus.hh
+mpx-app-dbus-adaptor.hh:
+	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-YOUKI.xml --adaptor=mpx-app-dbus-adaptor.hh

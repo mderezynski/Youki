@@ -309,7 +309,7 @@ struct MPX::LibraryScannerThread_MLibMan::ThreadData
     LibraryScannerThread_MLibMan::SignalReload_t            Reload ;
     LibraryScannerThread_MLibMan::SignalMessage_t           Message ;
 
-    int m_ScanStop;
+    int m_Cancel ;
 };
 
 MPX::LibraryScannerThread_MLibMan::LibraryScannerThread_MLibMan(
@@ -387,7 +387,7 @@ MPX::LibraryScannerThread_MLibMan::check_abort_scan ()
 {
     ThreadData * pthreaddata = m_ThreadData.get();
 
-    if( g_atomic_int_get(&pthreaddata->m_ScanStop) )
+    if( g_atomic_int_get(&pthreaddata->m_Cancel) )
     {
         m_InsertionTracks.clear();
         m_AlbumIDs.clear();
@@ -460,7 +460,7 @@ MPX::LibraryScannerThread_MLibMan::on_scan_all(
 {
     ThreadData * pthreaddata = m_ThreadData.get();
 
-    g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
+    g_atomic_int_set(&pthreaddata->m_Cancel, 0);
 
     pthreaddata->ScanStart.emit();
 
@@ -573,7 +573,7 @@ MPX::LibraryScannerThread_MLibMan::on_add(
         pthreaddata->ScanStart.emit();
     }
 
-    g_atomic_int_set(&pthreaddata->m_ScanStop, 0);
+    g_atomic_int_set(&pthreaddata->m_Cancel, 0);
 
     RowV rows;
     m_SQL->get(rows, "SELECT last_scan_date FROM meta WHERE rowid = 1");
@@ -796,7 +796,7 @@ void
 MPX::LibraryScannerThread_MLibMan::on_scan_stop ()
 {
     ThreadData * pthreaddata = m_ThreadData.get();
-    g_atomic_int_set(&pthreaddata->m_ScanStop, 1);
+    g_atomic_int_set(&pthreaddata->m_Cancel, 1);
 }
 
 MPX::LibraryScannerThread_MLibMan::EntityInfo

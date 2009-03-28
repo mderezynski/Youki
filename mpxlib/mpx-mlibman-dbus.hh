@@ -6,111 +6,66 @@
 #ifndef __dbusxx__mpx_mlibman_dbus_hh__ADAPTOR_MARSHAL_H
 #define __dbusxx__mpx_mlibman_dbus_hh__ADAPTOR_MARSHAL_H
 
-#include <dbusmm/dbus.h>
+#include <dbus-c++/dbus.h>
 
-namespace org {
-namespace freedesktop {
+namespace info {
+namespace backtrace {
+namespace Youki {
 
-class MediaPlayer_adaptor
+class MLibMan_adaptor
 : public ::DBus::InterfaceAdaptor
 {
 public:
 
-    MediaPlayer_adaptor()
-    : ::DBus::InterfaceAdaptor("org.freedesktop.MediaPlayer")
+    MLibMan_adaptor()
+    : ::DBus::InterfaceAdaptor("info.backtrace.Youki.MLibMan")
     {
-        register_method(MediaPlayer_adaptor, Startup, _Startup_stub);
-        register_method(MediaPlayer_adaptor, Quit, _Quit_stub);
-        register_method(MediaPlayer_adaptor, GetMetadata, _GetMetadata_stub);
-        register_method(MediaPlayer_adaptor, Next, _Next_stub);
-        register_method(MediaPlayer_adaptor, Prev, _Prev_stub);
-        register_method(MediaPlayer_adaptor, Pause, _Pause_stub);
+        register_method(MLibMan_adaptor, ShowWindow, _ShowWindow_stub);
+        register_method(MLibMan_adaptor, Exit, _Exit_stub);
     }
 
     ::DBus::IntrospectedInterface *const introspect() const 
     {
-        static ::DBus::IntrospectedArgument Startup_args[] = 
+        static ::DBus::IntrospectedArgument ShowWindow_args[] = 
         {
             { 0, 0, 0 }
         };
-        static ::DBus::IntrospectedArgument Quit_args[] = 
+        static ::DBus::IntrospectedArgument Exit_args[] = 
         {
             { 0, 0, 0 }
         };
-        static ::DBus::IntrospectedArgument GetMetadata_args[] = 
-        {
-            { 0, "a{sv}", false },
-            { 0, 0, 0 }
-        };
-        static ::DBus::IntrospectedArgument Next_args[] = 
+        static ::DBus::IntrospectedArgument ScanStart_args[] = 
         {
             { 0, 0, 0 }
         };
-        static ::DBus::IntrospectedArgument Prev_args[] = 
+        static ::DBus::IntrospectedArgument ScanEnd_args[] = 
         {
             { 0, 0, 0 }
         };
-        static ::DBus::IntrospectedArgument Pause_args[] = 
+        static ::DBus::IntrospectedMethod MLibMan_adaptor_methods[] = 
         {
-            { 0, 0, 0 }
-        };
-        static ::DBus::IntrospectedArgument NewTrack_args[] = 
-        {
-            { 0, 0, 0 }
-        };
-        static ::DBus::IntrospectedArgument MetadataUpdated_args[] = 
-        {
-            { 0, 0, 0 }
-        };
-        static ::DBus::IntrospectedArgument NewCoverart_args[] = 
-        {
-            { 0, 0, 0 }
-        };
-        static ::DBus::IntrospectedArgument PlayStatusChanged_args[] = 
-        {
-            { 0, "i", false },
-            { 0, 0, 0 }
-        };
-        static ::DBus::IntrospectedArgument StartupComplete_args[] = 
-        {
-            { 0, 0, 0 }
-        };
-        static ::DBus::IntrospectedArgument ShutdownComplete_args[] = 
-        {
-            { 0, 0, 0 }
-        };
-        static ::DBus::IntrospectedMethod MediaPlayer_adaptor_methods[] = 
-        {
-            { "Startup", Startup_args },
-            { "Quit", Quit_args },
-            { "GetMetadata", GetMetadata_args },
-            { "Next", Next_args },
-            { "Prev", Prev_args },
-            { "Pause", Pause_args },
+            { "ShowWindow", ShowWindow_args },
+            { "Exit", Exit_args },
             { 0, 0 }
         };
-        static ::DBus::IntrospectedMethod MediaPlayer_adaptor_signals[] = 
+        static ::DBus::IntrospectedMethod MLibMan_adaptor_signals[] = 
         {
-            { "NewTrack", NewTrack_args },
-            { "MetadataUpdated", MetadataUpdated_args },
-            { "NewCoverart", NewCoverart_args },
-            { "PlayStatusChanged", PlayStatusChanged_args },
-            { "StartupComplete", StartupComplete_args },
-            { "ShutdownComplete", ShutdownComplete_args },
+            { "ScanStart", ScanStart_args },
+            { "ScanEnd", ScanEnd_args },
             { 0, 0 }
         };
-        static ::DBus::IntrospectedProperty MediaPlayer_adaptor_properties[] = 
+        static ::DBus::IntrospectedProperty MLibMan_adaptor_properties[] = 
         {
             { 0, 0, 0, 0 }
         };
-        static ::DBus::IntrospectedInterface MediaPlayer_adaptor_interface = 
+        static ::DBus::IntrospectedInterface MLibMan_adaptor_interface = 
         {
-            "org.freedesktop.MediaPlayer",
-            MediaPlayer_adaptor_methods,
-            MediaPlayer_adaptor_signals,
-            MediaPlayer_adaptor_properties
+            "info.backtrace.Youki.MLibMan",
+            MLibMan_adaptor_methods,
+            MLibMan_adaptor_signals,
+            MLibMan_adaptor_properties
         };
-        return &MediaPlayer_adaptor_interface;
+        return &MLibMan_adaptor_interface;
     }
 
 public:
@@ -124,47 +79,21 @@ public:
     /* methods exported by this interface,
      * you will have to implement them in your ObjectAdaptor
      */
-    virtual void Startup() = 0;
-    virtual void Quit() = 0;
-    virtual std::map< std::string, ::DBus::Variant > GetMetadata() = 0;
-    virtual void Next() = 0;
-    virtual void Prev() = 0;
-    virtual void Pause() = 0;
+    virtual void ShowWindow() = 0;
+    virtual void Exit() = 0;
 
 public:
 
     /* signal emitters for this interface
      */
-    void NewTrack()
+    void ScanStart()
     {
-        ::DBus::SignalMessage sig("NewTrack");
+        ::DBus::SignalMessage sig("ScanStart");
         emit_signal(sig);
     }
-    void MetadataUpdated()
+    void ScanEnd()
     {
-        ::DBus::SignalMessage sig("MetadataUpdated");
-        emit_signal(sig);
-    }
-    void NewCoverart()
-    {
-        ::DBus::SignalMessage sig("NewCoverart");
-        emit_signal(sig);
-    }
-    void PlayStatusChanged(const int32_t& arg1)
-    {
-        ::DBus::SignalMessage sig("PlayStatusChanged");
-        ::DBus::MessageIter wi = sig.writer();
-        wi << arg1;
-        emit_signal(sig);
-    }
-    void StartupComplete()
-    {
-        ::DBus::SignalMessage sig("StartupComplete");
-        emit_signal(sig);
-    }
-    void ShutdownComplete()
-    {
-        ::DBus::SignalMessage sig("ShutdownComplete");
+        ::DBus::SignalMessage sig("ScanEnd");
         emit_signal(sig);
     }
 
@@ -172,57 +101,23 @@ private:
 
     /* unmarshalers (to unpack the DBus message before calling the actual interface method)
      */
-    ::DBus::Message _Startup_stub(const ::DBus::CallMessage &call)
+    ::DBus::Message _ShowWindow_stub(const ::DBus::CallMessage &call)
     {
         ::DBus::MessageIter ri = call.reader();
 
-        Startup();
+        ShowWindow();
         ::DBus::ReturnMessage reply(call);
         return reply;
     }
-    ::DBus::Message _Quit_stub(const ::DBus::CallMessage &call)
+    ::DBus::Message _Exit_stub(const ::DBus::CallMessage &call)
     {
         ::DBus::MessageIter ri = call.reader();
 
-        Quit();
-        ::DBus::ReturnMessage reply(call);
-        return reply;
-    }
-    ::DBus::Message _GetMetadata_stub(const ::DBus::CallMessage &call)
-    {
-        ::DBus::MessageIter ri = call.reader();
-
-        std::map< std::string, ::DBus::Variant > argout1 = GetMetadata();
-        ::DBus::ReturnMessage reply(call);
-        ::DBus::MessageIter wi = reply.writer();
-        wi << argout1;
-        return reply;
-    }
-    ::DBus::Message _Next_stub(const ::DBus::CallMessage &call)
-    {
-        ::DBus::MessageIter ri = call.reader();
-
-        Next();
-        ::DBus::ReturnMessage reply(call);
-        return reply;
-    }
-    ::DBus::Message _Prev_stub(const ::DBus::CallMessage &call)
-    {
-        ::DBus::MessageIter ri = call.reader();
-
-        Prev();
-        ::DBus::ReturnMessage reply(call);
-        return reply;
-    }
-    ::DBus::Message _Pause_stub(const ::DBus::CallMessage &call)
-    {
-        ::DBus::MessageIter ri = call.reader();
-
-        Pause();
+        Exit();
         ::DBus::ReturnMessage reply(call);
         return reply;
     }
 };
 
-} } 
+} } } 
 #endif//__dbusxx__mpx_mlibman_dbus_hh__ADAPTOR_MARSHAL_H

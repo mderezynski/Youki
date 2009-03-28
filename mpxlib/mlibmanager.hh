@@ -32,15 +32,6 @@
 // FIXME: Must be here for some damn reason
 #include <giomm.h>
 
-#include "library-mlibman.hh"
-
-#include "mpx/widgets/widgetloader.hh"
-#include "mpx/mpx-hal.hh"
-#include "mpx/mpx-main.hh"
-#include "mpx/mpx-services.hh"
-
-#include "libhal++/hal++.hh"
-
 #include <gtkmm/button.h>
 #include <gtkmm/checkbutton.h>
 #include <gtkmm/filechooserwidget.h>
@@ -48,6 +39,16 @@
 #include <gtkmm/window.h>
 #include <libglademm/xml.h>
 #include <sigx/sigx.h>
+
+#include "library-mlibman.hh"
+#include "libhal++/hal++.hh"
+
+#include "mpx/widgets/widgetloader.hh"
+#include "mpx/mpx-hal.hh"
+#include "mpx/mpx-main.hh"
+#include "mpx/mpx-services.hh"
+
+#include "mpx-mlibman-dbus.hh"
 
 namespace MPX
 {
@@ -76,7 +77,10 @@ namespace MPX
     };
 
     class MLibManager
-    : public Gnome::Glade::WidgetLoader<Gtk::Window>
+    : public info::backtrace::Youki::MLibMan_adaptor
+    , public DBus::IntrospectableAdaptor
+    , public DBus::ObjectAdaptor
+    , public Gnome::Glade::WidgetLoader<Gtk::Window>
     , public sigx::glib_auto_dispatchable
     , public Service::Base
     {
@@ -89,8 +93,12 @@ namespace MPX
 
         public:
 
-            static MLibManager* create () ;
-            virtual ~MLibManager () ;
+            static MLibManager* create(
+                DBus::Connection
+            ) ;
+
+            virtual ~MLibManager(
+            ) ;
 
             void
             push_message (const std::string&) ;
@@ -107,7 +115,8 @@ namespace MPX
         private:
 
             MLibManager(
-                const Glib::RefPtr<Gnome::Glade::Xml>& 
+                  const Glib::RefPtr<Gnome::Glade::Xml>& 
+                , DBus::Connection
             ) ;
 
             void
@@ -348,9 +357,18 @@ namespace MPX
                              const Glib::ustring& default_domain,
                              Gio::AskPasswordFlags flags);
 
-            Glib::RefPtr<Gio::File> m_MountFile;
-            Glib::RefPtr<Gio::MountOperation> m_MountOperation;
-            Glib::ustring m_Share, m_ShareName;
+            Glib::RefPtr<Gio::File>             m_MountFile;
+            Glib::RefPtr<Gio::MountOperation>   m_MountOperation;
+            Glib::ustring                       m_Share
+                                              , m_ShareName;
+
+        //// DBUS
+    
+            virtual void 
+            ShowWindow () ;
+
+            virtual void
+            Exit () ;
     } ;
 }
 #endif

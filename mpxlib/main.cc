@@ -50,7 +50,7 @@
 #include "mlibmanager.hh"
 #include "mpx/metadatareader-taglib.hh"
 
-#include <dbusmm/glib-integration.h>
+#include <dbus-c++/glib-integration.h>
 
 using namespace MPX;
 using namespace Glib;
@@ -192,6 +192,12 @@ main (int argc, char ** argv)
 
     services = new Service::Manager;
 
+    DBus::Glib::BusDispatcher dispatcher ;
+    DBus::default_dispatcher = &dispatcher ;
+    dispatcher.attach( g_main_context_default() ) ;
+    DBus::Connection conn = DBus::Connection::SessionBus () ;
+    conn.request_name( "info.backtrace.Youki.MLibMan" ) ;
+
 #ifdef HAVE_HAL
     try{
         services->add(boost::shared_ptr<HAL>(new MPX::HAL));
@@ -199,17 +205,12 @@ main (int argc, char ** argv)
         services->add(boost::shared_ptr<MetadataReaderTagLib>(new MPX::MetadataReaderTagLib));
         services->add(boost::shared_ptr<Library_MLibMan>(new MPX::Library_MLibMan));
 #ifdef HAVE_HAL
-        services->add(boost::shared_ptr<MLibManager>(MPX::MLibManager::create()));
+        services->add(boost::shared_ptr<MLibManager>(MPX::MLibManager::create( conn )));
 #endif // HAVE_HAL
-
-        DBus::Glib::BusDispatcher dispatcher ;
-        DBus::default_dispatcher = &dispatcher ;
-        dispatcher.attach( NULL ) ;
-        DBus::RefPtr<DBus::Connection> conn = DBus::Connection::SessionBus () ;
 
         Gtk::Window * w = services->get<MLibManager>("mpx-service-mlibman").get() ;
 
-        gtk->run( *w ) ;
+        gtk->run() ;
 
 #ifdef HAVE_HAL
     }

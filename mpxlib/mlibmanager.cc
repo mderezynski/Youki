@@ -85,11 +85,13 @@ namespace MPX
 {
     MLibManager*
     MLibManager::create(
+        DBus::Connection  conn
     )
     {
         const std::string path (build_filename (DATA_DIR, "glade" G_DIR_SEPARATOR_S "mlibmanager.glade"));
         MLibManager *p = new MLibManager(
-            Gnome::Glade::Xml::create(path)
+              Gnome::Glade::Xml::create(path)
+            , conn
         );
         return p;
     }
@@ -169,9 +171,13 @@ namespace MPX
     }
 
     MLibManager::MLibManager(
-        const RefPtr<Gnome::Glade::Xml>& xml
+          const RefPtr<Gnome::Glade::Xml>&  xml
+        , DBus::Connection                  conn
     )
-    : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
+    : info::backtrace::Youki::MLibMan_adaptor()
+    , DBus::IntrospectableAdaptor()
+    , DBus::ObjectAdaptor( conn, "/info/backtrace/Youki/MLibMan" )
+    , Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
     , sigx::glib_auto_dispatchable()
     , Service::Base("mpx-service-mlibman")
     , m_InnerdialogMainloop(0)
@@ -391,7 +397,7 @@ namespace MPX
 #endif
 
         sigc::slot<bool> slot = sigc::mem_fun(*this, &MLibManager::on_rescan_timeout);
-        sigc::connection conn = Glib::signal_timeout().connect(slot, 1000);
+        Glib::signal_timeout().connect(slot, 1000);
         m_RescanTimer.start();
 
         /*- Actions -------------------------------------------------------*/ 
@@ -535,6 +541,19 @@ namespace MPX
         );
     }
 
+    void 
+    MLibManager::ShowWindow ()
+    {
+        present () ;
+    }
+
+    void
+    MLibManager::Exit ()
+    {
+        services->get<Library_MLibMan>("mpx-service-library")->scanner()->scan_stop () ;
+        Gtk::Main::quit () ;
+    }
+
 #ifdef HAVE_HAL
     void
     MLibManager::on_library_use_hal_changed (MCS_CB_DEFAULT_SIGNATURE)
@@ -586,6 +605,8 @@ namespace MPX
         update_filestats();
         m_VboxInner->set_sensitive(true);
         m_Actions->set_sensitive(true);
+
+        ScanEnd () ;
     }
 
     void
@@ -594,6 +615,8 @@ namespace MPX
         m_VboxInner->set_sensitive(false);
         m_Actions->set_sensitive(false);
         m_TextBufferDetails->set_text("");
+
+        ScanStart () ; 
     }
 
     void

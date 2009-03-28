@@ -14,19 +14,17 @@
 #include "mpx/com/view-albumartist.hh"
 #include "infoarea.hh"
 
-#if 0
-#include "youki-controller-dbus.hh"
-#endif
+#include "mpx-mlibman-dbus-proxy-actual.hh"
+#include "mpx-app-dbus-adaptor.hh"
 
 namespace MPX
 {
     class Play ;
     class YoukiController
-/*
-    : public org::freedesktop::MediaPlayer_adaptor
-    , public DBus::ObjectAdaptor
-*/
     : public sigx::glib_auto_dispatchable
+    , public ::info::backtrace::Youki::App_adaptor
+    , public DBus::ObjectAdaptor
+    , public DBus::IntrospectableAdaptor
     {
         protected:
 
@@ -66,9 +64,11 @@ namespace MPX
     
             boost::optional<MPX::Track>       m_current_track ;          
 
+            info::backtrace::Youki::MLibMan_proxy_actual  * m_mlibman_dbus_proxy ;
+
         public: 
 
-            YoukiController( /*DBus::Connection&*/ ) ;
+            YoukiController( DBus::Connection ) ;
             virtual ~YoukiController () ;
 
             Gtk::Window*
@@ -152,7 +152,6 @@ namespace MPX
 
         protected: // DBUS
 
-/*
             virtual void
             Startup () ;
 
@@ -170,7 +169,6 @@ namespace MPX
 
             virtual void
             Pause () ;
-*/
     } ;
 }
 
