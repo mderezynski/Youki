@@ -101,8 +101,6 @@ endif
 
 youki_bin_SOURCES =             \
                                 \
-    artist-images.cc            \
-                                \
     audio.cc                    \
     audio-types.hh              \
     audio-exception.hh          \
@@ -161,7 +159,6 @@ youki_bin_SOURCES =             \
     kobo-volume.cc              \
                                 \
     library.cc                  \
-    library-scanner-thread.cc   \
                                 \
     main.cc                     \
     messages.hh                 \
@@ -183,9 +180,6 @@ youki_bin_SOURCES =             \
                                 \
     request-value.hh            \
     request-value.cc            \
-                                \
-    sidebar.hh                  \
-    sidebar.cc                  \
                                 \
     splash-screen.hh            \
     splash-screen.cc            \

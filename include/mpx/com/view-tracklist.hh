@@ -33,7 +33,7 @@ namespace MPX
         typedef boost::tuple<std::string, std::string, std::string, gint64, MPX::Track, gint64> Row6;
         typedef std::vector<Row6>                                                               ModelT;
         typedef boost::shared_ptr<ModelT>                                                       ModelP;
-        typedef sigc::signal<void>                                                              Signal0;
+        typedef sigc::signal<void, gint64>                                                      Signal0;
         typedef std::map<gint64, ModelT::iterator>                                              IdIterMap;
 
         struct DataModel
@@ -41,13 +41,16 @@ namespace MPX
                 ModelP          m_realmodel;
                 Signal0         m_changed;
                 IdIterMap       m_iter_map;
+                gint64          m_current_row ;
 
                 DataModel()
+                : m_current_row( 0 )
                 {
                     m_realmodel = ModelP(new ModelT); 
                 }
 
                 DataModel(ModelP model)
+                : m_current_row( 0 )
                 {
                     m_realmodel = model; 
                 }
@@ -57,100 +60,108 @@ namespace MPX
                 {
                     m_realmodel->clear () ;
                     m_iter_map.clear() ;
-                    m_changed.emit () ;
+                    m_changed.emit( 0 ) ;
                 } 
 
                 virtual Signal0&
                 signal_changed ()
                 {
-                    return m_changed;
+                    return m_changed ;
                 }
 
                 virtual bool
                 is_set ()
                 {
-                    return bool(m_realmodel);
+                    return bool(m_realmodel) ;
                 }
 
                 virtual int
                 size ()
                 {
-                    return m_realmodel->size();
+                    return m_realmodel->size() ;
                 }
 
                 virtual Row6&
                 row (int row)
                 {
-                    return (*m_realmodel)[row];
+                    return (*m_realmodel)[row] ;
+                }
+
+                virtual void
+                set_current_row(
+                    gint64 row
+                )
+                {
+                    m_current_row = row ;
                 }
 
                 virtual void
                 append_track(SQL::Row & r, const MPX::Track& track)
                 {
-                    using boost::get;
+                    using boost::get ;
 
-                    std::string artist, album, title;
-                    gint64 id = 0, num = 0;
+                    std::string artist, album, title ;
+                    gint64 id = 0, num = 0 ;
 
                     if(r.count("id"))
                     { 
-                        id = get<gint64>(r["id"]); 
+                        id = get<gint64>(r["id"]) ;
                     }
                     else
-                        g_critical("%s: No id for track, extremely suspicious", G_STRLOC);
+                        g_critical("%s: No id for track, extremely suspicious", G_STRLOC) ;
 
                     if(r.count("artist"))
-                        artist = get<std::string>(r["artist"]); 
+                        artist = get<std::string>(r["artist"]) ;
                     if(r.count("album"))
-                        album = get<std::string>(r["album"]); 
+                        album = get<std::string>(r["album"]) ;
                     if(r.count("title"))
-                        title = get<std::string>(r["title"]);
+                        title = get<std::string>(r["title"]) ;
 
                     if(r.count("track"))
                     { 
-                        num = get<gint64>(r["track"]); 
+                        num = get<gint64>(r["track"]) ;
                     }
 
-                    Row6 row (title, artist, album, id, track, num);
-                    m_realmodel->push_back(row);
+                    Row6 row (title, artist, album, id, track, num) ;
+                    m_realmodel->push_back(row) ;
 
-                    ModelT::iterator i = m_realmodel->end();
-                    std::advance( i, -1 );
-                    m_iter_map.insert(std::make_pair(id, i)); 
+                    ModelT::iterator i = m_realmodel->end() ;
+                    std::advance( i, -1 ) ;
+                    m_iter_map.insert(std::make_pair(id, i)) ; 
                 }
 
                 virtual void
                 append_track(MPX::Track & track)
                 {
-                    using boost::get;
+                    using boost::get ;
 
-                    std::string artist, album, title;
-                    gint64 id = 0, num = 0;
+                    std::string artist, album, title ;
+                    gint64 id = 0, num = 0 ;
 
                     if(track[ATTRIBUTE_MPX_TRACK_ID])
-                        id = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()); 
+                        id = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) ; 
                     else
-                        g_critical("Warning, no id given for track; this is totally wrong and should never happen.");
+                        g_critical("Warning, no id given for track; this is totally wrong and should never happen.") ;
 
 
                     if(track[ATTRIBUTE_ARTIST])
-                        artist = get<std::string>(track[ATTRIBUTE_ARTIST].get()); 
+                        artist = get<std::string>(track[ATTRIBUTE_ARTIST].get()) ;
 
                     if(track[ATTRIBUTE_ALBUM])
-                        album = get<std::string>(track[ATTRIBUTE_ALBUM].get()); 
+                        album = get<std::string>(track[ATTRIBUTE_ALBUM].get()) ;
 
                     if(track[ATTRIBUTE_TITLE])
-                        title = get<std::string>(track[ATTRIBUTE_TITLE].get()); 
+                        title = get<std::string>(track[ATTRIBUTE_TITLE].get()) ;
 
                     if(track[ATTRIBUTE_TRACK])
-                        num = get<gint64>(track[ATTRIBUTE_TRACK].get()); 
+                        num = get<gint64>(track[ATTRIBUTE_TRACK].get()) ;
 
-                    Row6 row (artist, album, title, id, track, num);
-                    m_realmodel->push_back(row);
+                    Row6 row (artist, album, title, id, track, num) ;
+                    m_realmodel->push_back(row) ;
 
-                    ModelT::iterator i = m_realmodel->end();
-                    std::advance( i, -1 );
-                    m_iter_map.insert(std::make_pair(id, i)); 
+                    ModelT::iterator i = m_realmodel->end() ;
+                    std::advance( i, -1 ) ;
+                    m_iter_map.insert(std::make_pair(id, i)) ; 
                 }
 
                 void
@@ -193,9 +204,9 @@ namespace MPX
                 clear ()
                 {
                     m_realmodel->clear () ;
-                    m_mapping.clear () ;
+                    m_mapping.clear() ;
                     m_iter_map.clear() ;
-                    m_changed.emit () ;
+                    m_changed.emit( 0 ) ;
                 } 
 
                 void
@@ -288,22 +299,25 @@ namespace MPX
                 }
 
                 virtual void
-                set_filter(std::string const& filter)
+                set_filter(
+                    const std::string& text
+                )
                 { 
-                    if(!m_filter_full.empty() && (filter.substr(0, filter.size()-1) == m_filter_full) && !m_advanced)
+                    if(!m_filter_full.empty() && (text.substr(0, text.size()-1) == m_filter_full) && !m_advanced)
                     {
-                        m_filter_full = filter; 
-                        m_filter_effective = filter;
-                        regen_mapping_iterative();
+                        m_filter_full = text ; 
+                        m_filter_effective = text ;
+
+                        regen_mapping_iterative() ;
                     }
                     else
                     {
-                        m_filter_full = filter; 
+                        m_filter_full = text; 
 
                         if( m_advanced )
                         {
                             m_constraints.clear();
-                            m_filter_effective = AQE::parse_advanced_query(m_constraints, filter);
+                            m_filter_effective = AQE::parse_advanced_query( m_constraints, text ) ;
                         }
                         else
                         {
@@ -326,13 +340,16 @@ namespace MPX
                 {
                     using boost::get;
 
-                    m_local_active_track.reset() ;
-
                     for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                     {
                         if( m_active_track && get<3>(*(*i)) == m_active_track.get() )
+                        {
                             m_local_active_track = std::distance( m_mapping.begin(), i ) ;  
+                            return ;
+                        }
                     }
+
+                    m_local_active_track.reset() ;
                 }
 
                 virtual void
@@ -341,10 +358,11 @@ namespace MPX
                 {
                     using boost::get;
 
+                    gint64  id1             = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
+                    gint64  new_position    = 0 ;
+
                     RowRowMapping new_mapping ;
 
-                    m_local_active_track.reset() ;
-                    
                     for(ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i)
                     {
                         Row6 const& row = *i;
@@ -352,11 +370,18 @@ namespace MPX
                         if( m_filter_effective.empty() && m_constraints.empty() && m_constraints_synthetic.empty() ) 
                         {
                             new_mapping.push_back(i);
+
+                            gint64 id2 = get<3>(row) ; 
+
+                            if( id2 == id1 )
+                            {
+                                new_position = new_mapping.size()  - 1 ;
+                            }
                         }
                         else
                         if( m_filter_effective.empty() ) 
                         {
-                            MPX::Track track = get<4>(row);
+                            MPX::Track track    = get<4>(row) ;
 
                             int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
 
@@ -367,7 +392,16 @@ namespace MPX
                                truth |= AQE::match_track( m_constraints_synthetic, track ) ;
 
                             if( truth ) 
+                            {
                                 new_mapping.push_back(i);
+
+                                gint64 id2 = get<3>(row) ; 
+
+                                if( id2 == id1 )
+                                {
+                                    new_position = new_mapping.size()  - 1 ;
+                                }
+                            }
                         }
                         else
                         {
@@ -385,7 +419,16 @@ namespace MPX
                                truth |= AQE::match_track( m_constraints_synthetic, track ) ;
 
                             if( match && truth )
+                            {
                                 new_mapping.push_back(i);
+
+                                gint64 id2 = get<3>(row) ; 
+
+                                if( id2 == id1 )
+                                {
+                                    new_position = new_mapping.size()  - 1 ;
+                                }
+                            }
                         }
                     }
 
@@ -393,7 +436,7 @@ namespace MPX
                     {
                         scan_active () ;
                         std::swap( new_mapping, m_mapping ) ;
-                        m_changed.emit();
+                        m_changed.emit( new_position ) ;
                     }
                 }
 
@@ -403,7 +446,8 @@ namespace MPX
                 {
                     using boost::get;
 
-                    m_local_active_track.reset() ;
+                    gint64  id1             = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
+                    gint64  new_position    = 0 ;
 
                     std::string filter = Glib::ustring( m_filter_effective ).lowercase().c_str();
 
@@ -416,6 +460,13 @@ namespace MPX
                         if( m_filter_effective.empty() && m_constraints.empty() && m_constraints_synthetic.empty() ) 
                         {
                             new_mapping.push_back( *i ) ;
+
+                            gint64 id2 = get<3>(row) ; 
+
+                            if( id2 == id1 )
+                            {
+                                new_position = new_mapping.size()  - 1 ;
+                            }
                         }
                         else
                         if( m_filter_effective.empty() ) 
@@ -435,7 +486,14 @@ namespace MPX
                                 new_mapping.push_back( *i ) ;
 
                                 if( m_active_track && get<3>(*(*i)) == m_active_track.get() )
-                                    m_local_active_track = std::distance( m_mapping.begin(), i ) ;  
+                                    m_local_active_track = new_mapping.size() - 1 ; 
+
+                                gint64 id2 = get<3>(row) ; 
+
+                                if( id2 == id1 )
+                                {
+                                    new_position = new_mapping.size() - 1 ;
+                                }
                             }
                         }
                         else
@@ -456,19 +514,28 @@ namespace MPX
                             {
                                 new_mapping.push_back( *i ) ;
 
-                                if( m_active_track && get<3>(*(*i)) == m_active_track.get() )
-                                    m_local_active_track = std::distance( m_mapping.begin(), i ) ;  
+                                gint64 id2 = get<3>(row) ; 
+
+                                if( id2 == id1 )
+                                {
+                                    new_position = new_mapping.size() ;
+                                }
                             }
                         }
                     }
 
                     if( m_filter_effective.empty() && m_constraints.empty() && m_constraints_synthetic.empty() ) 
+                    {
                         m_local_active_track = m_active_track.get() ; 
+                    }
 
-                    std::swap(m_mapping, new_mapping);
-                    m_changed.emit();
+                    if( new_mapping != m_mapping )
+                    {
+                        scan_active() ;
+                        std::swap( m_mapping, new_mapping ) ;
+                        m_changed.emit( new_position ) ;
+                    }
                 }
-
         };
 
         typedef boost::shared_ptr<DataModelFilter> DataModelFilterP;
@@ -747,18 +814,21 @@ namespace MPX
                 void
                 on_vadj_value_changed ()
                 {
-                    int row = (double(m_prop_vadj.get_value()->get_value()-m_row_start) / double(m_row_height));
-                    if( m_previous_drawn_row != row )
+                    if( m_model->size() )
                     {
-                        queue_draw ();
+                            int row = get_upper_row() ; 
+                            if( m_previous_drawn_row != row )
+                            {
+                                m_model->set_current_row( row ) ;        
+                                queue_draw ();
+                            }
                     }
                 }
 
                 int
                 get_upper_row ()
                 {
-                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
-                    return row_upper;
+                    return m_prop_vadj.get_value()->get_value() / m_row_height ;
                 }
 
                 bool
@@ -1379,17 +1449,22 @@ namespace MPX
                 }
 
                 void
-                on_model_changed()
+                on_model_changed( gint64 position )
                 {
-                    int view_count = m_visible_height / m_row_height;
+                    int view_count = m_visible_height / m_row_height ;
+
+                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height) ;
+
                     if( m_model->size() < view_count )
                     {
-                        m_prop_vadj.get_value()->set_value(0.);
+                        m_prop_vadj.get_value()->set_value(0.) ;
                     } 
-                    m_selection.clear();
-                    m_prop_vadj.get_value()->set_upper((m_model->size()) * m_row_height);
-                    m_prop_vadj.get_value()->set_value(0.);
-                    queue_draw();
+                    else
+                    {
+                        m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                    }
+
+                    queue_draw() ;
                 }
 
                 static gboolean
@@ -1405,6 +1480,8 @@ namespace MPX
                     g_object_set(G_OBJECT(vadj), "page-size", 0.05, "upper", 1.0, NULL);
 
                     ListView & view = *(reinterpret_cast<ListView*>(data));
+
+                    view.m_prop_vadj.get_value()->set_value(0.);
 
                     view.m_prop_vadj.get_value()->signal_value_changed().connect(
                         sigc::mem_fun(
@@ -1575,6 +1652,7 @@ namespace MPX
                     m_hover_pixbuf = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "speaker_ghost.png" )) ;
 
                     m_treeview = gtk_tree_view_new();
+                    gtk_widget_hide(GTK_WIDGET(m_treeview)) ;
                     gtk_widget_realize(GTK_WIDGET(m_treeview));
 
                     set_flags(Gtk::CAN_FOCUS);

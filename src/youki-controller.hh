@@ -2,7 +2,6 @@
 #define KOBO_CONTROLLER_HH
 
 #include <boost/optional.hpp>
-#include <sigx/sigx.h>
 
 #include "kobo-main.hh"
 #include "kobo-position.hh"
@@ -21,8 +20,7 @@ namespace MPX
 {
     class Play ;
     class YoukiController
-    : public sigx::glib_auto_dispatchable
-    , public ::info::backtrace::Youki::App_adaptor
+    : public ::info::backtrace::Youki::App_adaptor
     , public DBus::ObjectAdaptor
     , public DBus::IntrospectableAdaptor
     {

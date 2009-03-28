@@ -1,5 +1,5 @@
 [Desktop Entry]
-Name=MPX
+Name=Youki
 Comment=Audio Player
 Comment[cs]=Přehrávač audia
 Comment[de]=Audio-Player
@@ -10,11 +10,10 @@ Comment[lt]=Garso leistuvė
 Comment[pl]=Odtwarzacz dźwięku
 Comment[ro]=Player audio
 Comment[dk]=Lyd afspiller
-TryExec=mpx
-Exec=mpx
-Icon=mpx
-MimeType=audio/x-scpls;audio/x-mpegurl;audio/mpegurl;audio/mp3;audio/x-mp3;audio/mpeg;audio/x-mpeg;audio/x-wav;application/x-ogg;
-Actions=Enqueue;Play;
+TryExec=youki
+Exec=youki
+Icon=youki
+MimeType=
 Categories=GTK;AudioVideo;Player;
 Terminal=false
 Type=Application

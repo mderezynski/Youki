@@ -67,11 +67,17 @@ namespace MPX
                     bool
                     on_button_press_event( GdkEventButton* event ) ;
 
+                    bool
+                    on_key_press_event( GdkEventKey* event ) ;
+
                     void
                     on_size_allocate( Gtk::Allocation & a ) ;
 
                     bool
                     on_expose_event( GdkEventExpose* event ) ;
+
+                    void
+                    initiate_quit() ;
         } ;
 }
 

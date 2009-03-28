@@ -52,6 +52,7 @@ namespace MPX
     )
     : DBus::ObjectAdaptor( conn, "/info/backtrace/Youki/App" )
     , m_seek_position( -1 )
+    , m_main_window( 0 )
     {
         m_mlibman_dbus_proxy = new info::backtrace::Youki::MLibMan_proxy_actual( conn ) ;
 
@@ -418,8 +419,6 @@ namespace MPX
     {
         boost::optional<gint64> pos = m_ListView->get_local_active_track () ;
 
-        g_message("pos: %d, num: %lld", int(bool(pos)), pos ? pos.get() : -1 ) ;
-
         if( pos )
         {
             gint64 pos_cpy = pos.get() + 1 ;
@@ -432,13 +431,11 @@ namespace MPX
             }
         }
         else
+        if( m_FilterModel->size() )
         {
-            if( m_FilterModel->size() )
-            {
-                m_current_track = boost::get<4>(m_FilterModel->row( 0 )) ;
-                play_track( m_current_track.get() ) ; 
-                return ;
-            }
+            m_current_track = boost::get<4>(m_FilterModel->row( 0 )) ;
+            play_track( m_current_track.get() ) ; 
+            return ;
         }
 
         m_play->request_status( PLAYSTATUS_STOPPED ) ; 
@@ -627,6 +624,10 @@ namespace MPX
     void
     YoukiController::Startup ()
     {
+        if( m_main_window )
+        {
+            m_main_window->present() ;
+        }
     }
 
     void

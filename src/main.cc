@@ -345,11 +345,12 @@ main (int argc, char ** argv)
         services->add(boost::shared_ptr<HAL>(new MPX::HAL));
 #endif //HAVE_HAL
         services->add(boost::shared_ptr<Covers>(new MPX::Covers));
-        services->add(boost::shared_ptr<MetadataReaderTagLib>(new MPX::MetadataReaderTagLib));
+        //services->add(boost::shared_ptr<MetadataReaderTagLib>(new MPX::MetadataReaderTagLib));
         services->add(boost::shared_ptr<Library>(new MPX::Library));
         //services->add(boost::shared_ptr<ArtistImages>(new MPX::ArtistImages));
         //services->add(boost::shared_ptr<MarkovAnalyzer>(new MarkovAnalyzer));
         services->add(boost::shared_ptr<Play>(new MPX::Play));
+        services->get<Play>("mpx-service-play")->reset() ;
         services->add(boost::shared_ptr<Preferences>(MPX::Preferences::create()));
         //services->add(boost::shared_ptr<MB_ImportAlbum>(MPX::MB_ImportAlbum::create()));
         //services->add(boost::shared_ptr<Player>(MPX::Player::create()));
@@ -357,7 +358,6 @@ main (int argc, char ** argv)
         //services->add(boost::shared_ptr<PluginManagerGUI>(MPX::PluginManagerGUI::create()));
 
         splash->set_message(_("Done"), 1.0);
-        delete splash;
 
         DBus::Glib::BusDispatcher dispatcher ;
         DBus::default_dispatcher = &dispatcher ;
@@ -370,7 +370,7 @@ main (int argc, char ** argv)
 
         YoukiController * control = new YoukiController( conn ) ;
 
-        control->get_widget()->show_all () ;
+        delete splash;
 
         gtk->run() ;
 

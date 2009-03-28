@@ -208,13 +208,6 @@ namespace MPX
                                                 &AlbumInfoWindow::on_rating_list_selection_changed
                                                 ));
 
-                        m_Lib.signal_album_updated().connect(
-                                        sigc::hide(
-                                                sigc::mem_fun(
-                                                        *this,
-                                                        &AlbumInfoWindow::display_album
-                                                        )));
-
                         display_album();
                 }
 

@@ -796,7 +796,7 @@ namespace MPX
                     , true
                 );
 
-                dialog.set_title(_("AudioSource: Remove Duplicates"));
+                dialog.set_title(_("Youki: Remove Duplicates"));
                 dialog.run();
                 return;
         }
@@ -810,7 +810,7 @@ namespace MPX
             , true
         );
 
-        dialog.set_title(_("AudioSource: Remove Duplicates"));
+        dialog.set_title(_("Youki: Remove Duplicates"));
 
         int response = dialog.run();
         dialog.hide();
@@ -955,30 +955,30 @@ namespace MPX
 
         TaskDialog dialog(
               this,
-              _("AudioSource: Music Path is missing"),
+              _("Youki: Music Path is missing"),
               _("Music Path is missing"),
               Gtk::MESSAGE_WARNING,
-              (boost::format (_("A path managed by AudioSource containing music can not be found.\nPerhaps the HAL data for the relevant volume has changed, or the path has been relocated."
+              (boost::format (_("A path managed by Youki containing music can not be found.\nPerhaps the HAL data for the relevant volume has changed, or the path has been relocated."
                                 "\nYour intervention is required.\n\nPath: %s")) % path).str()
         );
 
         dialog.add_button(
               _("Relocate Path"),
-              _("The path has been moved somewhere else, and AudioSource needs to know the new location."),
+              _("The path has been moved somewhere else, and Youki needs to know the new location."),
               Gtk::Stock::HARDDISK,
               0
         );
       
         dialog.add_button(
               _("Delete Path from Library"),
-              _("The path has been permanently deleted, and AudioSource should not manage it anymore."),
+              _("The path has been permanently deleted, and Youki should not manage it anymore."),
               Gtk::Stock::DELETE,
               1
         );
 
         dialog.add_button(
               _("Check Next Time"),
-              _("The situation is different than described above, and deeper intervention is neccessary.\nAudioSource will check the path at the next rescan again."),
+              _("The situation is different than described above, and deeper intervention is neccessary.\nYouki will check the path at the next rescan again."),
               Gtk::Stock::OK,
               2
         );
@@ -996,7 +996,7 @@ namespace MPX
         std::string uri;
 
         FileChooserDialog fcdialog (
-              _("AudioSource: Select relocated path target"),
+              _("Youki: Select relocated path target"),
               FILE_CHOOSER_ACTION_SELECT_FOLDER
         );
 

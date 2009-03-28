@@ -1,6 +1,5 @@
 #include "mpx/mpx-services.hh"
 #include <glib/gmessages.h>
-#include <sigx/sigx.h>
 
 namespace MPX
 {
@@ -39,12 +38,6 @@ namespace Service
 
                     if( service )
                     {
-                            sigx::glib_threadable * p = dynamic_cast<sigx::glib_threadable*>(service.get());
-                            if( p )
-                            {
-                                p->finish ();
-                            }
-
                             m_services.erase( services[n] ) ;
                     }
             }
@@ -54,12 +47,6 @@ namespace Service
     void
     Manager::add(Base_p service)
     {
-        sigx::glib_threadable * p = dynamic_cast<sigx::glib_threadable*>(service.get());
-        if( p )
-        {
-            p->run ();
-        }
-
         m_services.insert(std::make_pair(service->get_guid(), service));
         g_message("%s: ADDED SERVICE [%s]", G_STRFUNC, service->get_guid().c_str());
     }

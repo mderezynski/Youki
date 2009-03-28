@@ -26,9 +26,6 @@
 #ifndef MPX_MARKOV_ANALYZER_HH
 #define MPX_MARKOV_ANALYZER_HH
 #include <glibmm.h>
-#include <sigx/sigx.h>
-#include <sigx/signal_f.h>
-#include <sigx/request_f.h>
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/mpx-types.hh"

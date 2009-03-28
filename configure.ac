@@ -711,8 +711,6 @@ AC_CONFIG_FILES([
     icons/hicolor/16x16/stock/Makefile
 
 	desktop/Makefile
-	desktop/mpx.desktop
-
     glade/Makefile
     images/Makefile
     jnetlib/Makefile

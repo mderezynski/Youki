@@ -129,8 +129,7 @@ namespace
 namespace MPX
 {
     Covers::Covers ()
-    : sigx::glib_auto_dispatchable()
-    , Service::Base("mpx-service-covers")
+    : Service::Base("mpx-service-covers")
     , m_rebuild(0)
     , m_rebuilt(0)
     {

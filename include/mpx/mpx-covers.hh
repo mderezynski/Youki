@@ -46,7 +46,6 @@
 #include <cairomm/cairomm.h>
 
 #include <boost/shared_ptr.hpp>
-#include <sigx/sigx.h>
 
 namespace MPX
 {
@@ -95,7 +94,8 @@ namespace MPX
 
   class CoverStore;
   class Library;
-  class Covers : public sigx::glib_auto_dispatchable, public Service::Base
+  class Covers
+  : public Service::Base
   {
     public:
 

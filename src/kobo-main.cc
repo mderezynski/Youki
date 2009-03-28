@@ -98,6 +98,20 @@ namespace MPX
                           gtk_main_iteration();
                     }
 
+    void
+    MainWindow::initiate_quit ()
+    {
+        m_quit_clicked = true ;
+        queue_draw () ;
+        Glib::signal_timeout().connect(
+              sigc::mem_fun(
+                    *this
+                  , &MainWindow::quit_timeout
+              )
+            , 500
+        ) ;
+    }
+
     bool
     MainWindow::quit_timeout ()
     {
@@ -188,6 +202,20 @@ namespace MPX
                     }
 
     bool
+    MainWindow::on_key_press_event( GdkEventKey* event )
+                    {
+                        if( (event->keyval == GDK_q || event->keyval == GDK_Q) && (event->state & GDK_CONTROL_MASK))
+                        {
+                            initiate_quit() ;
+                            return true ;
+                        }
+
+                        Gtk::Window::on_key_press_event( event ) ;
+
+                        return true ;
+                    }
+
+    bool
     MainWindow::on_button_press_event( GdkEventButton* event )
                     {
                         if( event->window != GTK_WIDGET(gobj())->window )
@@ -213,15 +241,7 @@ namespace MPX
 
                         if( intersect )
                         {
-                            m_quit_clicked = true ;
-                            queue_draw () ;
-                            Glib::signal_timeout().connect(
-                                  sigc::mem_fun(
-                                        *this
-                                      , &MainWindow::quit_timeout
-                                  )
-                                , 500
-                            ) ;
+                            initiate_quit() ;
                             return false ;
                         }
                         if( event->y < 20 )

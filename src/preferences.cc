@@ -54,7 +54,6 @@
 
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-library.hh"
-#include "mpx/mpx-library-scanner-thread.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-play.hh"
 #include "mpx/mpx-stock.hh"
@@ -685,6 +684,7 @@ namespace MPX
             &Preferences::on_library_use_hal_toggled
             ));
 
+/*
         boost::shared_ptr<Library> l = services->get<Library>("mpx-service-library");
 
         l->scanner()->connect().signal_scan_start().connect(
@@ -704,9 +704,10 @@ namespace MPX
             *this,
             &Preferences::on_library_scan_summary
             ));
-        #else
+*/
+#else
         m_Xml->get_widget("vbox135")->hide();
-        #endif                   // HAVE_HAL
+#endif // HAVE_HAL
 
         // Radio
 
@@ -762,6 +763,7 @@ namespace MPX
         m_notebook_preferences->set_current_page( mcs->key_get<int>("mpx","preferences-notebook-page") );
     }
 
+/*
     void
         Preferences::on_library_scan_start ()
     {
@@ -782,6 +784,7 @@ namespace MPX
         m_Xml->get_widget("vbox135")->set_sensitive(true);
         m_Xml->get_widget("vbox-filefmts")->set_sensitive(true);
     }
+*/
 
     #ifdef HAVE_HAL
     void
@@ -793,7 +796,7 @@ namespace MPX
         {
             m_Xml->get_widget("vbox135")->set_sensitive( false );
             g_message("%s: Switching to HAL mode", G_STRLOC);
-            l->switch_mode( true );
+            //l->switch_mode( true );
             mcs->key_set("library","use-hal", true);
             m_Xml->get_widget("vbox135")->set_sensitive( true );
         }
@@ -802,7 +805,7 @@ namespace MPX
         {
             m_Xml->get_widget("vbox135")->set_sensitive( false );
             g_message("%s: Switching to NO HAL mode", G_STRLOC);
-            l->switch_mode( false );
+            //l->switch_mode( false );
             mcs->key_set("library","use-hal", false);
             m_Xml->get_widget("vbox135")->set_sensitive( true );
         }

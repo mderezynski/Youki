@@ -43,9 +43,6 @@
 #include <libglademm/xml.h>
 #include <mcs/mcs.h>
 #include <mcs/gtk-bind.h>
-#include <sigx/sigx.h>
-
-#include "mpx/mpx-library-scanner-thread.hh"
 
 namespace MPX
 {
@@ -61,7 +58,6 @@ namespace MPX
   class Preferences
   : public Gnome::Glade::WidgetLoader<Gtk::Window>
   , public MPX::Service::Base
-  , public sigx::glib_auto_dispatchable
   {
     public:
 
@@ -344,6 +340,7 @@ namespace MPX
         Gtk::RadioButton            * m_Library_UseHAL_Yes;
         Gtk::RadioButton            * m_Library_UseHAL_No;
 
+/*
         void
         on_library_scan_start () ;
 
@@ -352,6 +349,7 @@ namespace MPX
 
         void
         on_library_scan_summary ( const ScanSummary& G_GNUC_UNUSED ) ;
+*/
 
 #ifdef HAVE_HAL
         void

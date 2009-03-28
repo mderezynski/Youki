@@ -718,7 +718,8 @@ namespace MPX
                                 case GST_MESSAGE_ELEMENT:
                                         {
                                                 GstStructure const* s = gst_message_get_structure (message);
-                                                if(std::string (gst_structure_get_name (s)) == "spectrum" && !g_atomic_int_get(&play.m_InFade))
+
+                                                if(std::string (gst_structure_get_name (s)) == "spectrum" ) 
                                                 {
                                                     GstClockTime endtime;
 
@@ -934,6 +935,7 @@ namespace MPX
 
                                 if (GST_IS_ELEMENT (spectrum))
                                 {
+                                        g_message( "%s: Have spectrum", G_STRLOC ) ;
                                         g_object_set (G_OBJECT (spectrum),
                                                         "interval", guint64 (50 * GST_MSECOND),
                                                         "bands", SPECT_BANDS,
