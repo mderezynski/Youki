@@ -349,10 +349,10 @@ namespace MPX
                                         m_play_elmt = 0;
                                 }
                                 else
-                                        if (m_pipeline_id == PIPELINE_VIDEO && m_video_pipe)
-                                        {
-                                                m_video_pipe->rem_audio_elmt ();
-                                        } 
+                                if (m_pipeline_id == PIPELINE_VIDEO && m_video_pipe)
+                                {
+                                    m_video_pipe->rem_audio_elmt ();
+                                } 
 
                                 m_pipeline_id = id;
                                 gst_element_set_state (m_pipeline, GST_STATE_NULL);
@@ -362,13 +362,16 @@ namespace MPX
                                 if (m_pipeline_id == PIPELINE_VIDEO && m_video_pipe)
                                 {
                                         m_video_pipe->set_audio_elmt (m_bin[BIN_OUTPUT]);
-                                        m_play_elmt = 0;
-                                        return;
-                                }
 
-                                m_play_elmt = m_bin[BinId (id)];
-                                gst_bin_add_many (GST_BIN (m_pipeline), m_bin[BinId (id)], m_bin[BIN_OUTPUT], NULL);
-                                gst_element_link_many (m_bin[BinId (id)], m_bin[BIN_OUTPUT], NULL);
+                                        m_play_elmt = 0;
+                                }
+                                else
+                                { 
+                                        gst_bin_add_many (GST_BIN (m_pipeline), m_bin[BinId (id)], m_bin[BIN_OUTPUT], NULL);
+                                        gst_element_link_many (m_bin[BinId (id)], m_bin[BIN_OUTPUT], NULL);
+
+                                        m_play_elmt = m_bin[BinId (id)];
+                                }
                         }
                 }
 
@@ -396,23 +399,29 @@ namespace MPX
 
                                 case URI::PROTOCOL_FILE:
                                         {
+/*
                                                 if (video_type( property_stream_type_.get_value() ) && m_video_pipe)
+*/
                                                 {
-                                                        g_object_set (m_video_pipe->operator[]("filesrc"), "location", filename_from_uri (property_stream_.get_value()).c_str(), NULL);
+                                                        g_object_set( m_video_pipe->operator[]("filesrc"), "location", filename_from_uri( property_stream_.get_value()).c_str(), NULL );
+
                                                         pipeline_configure (PIPELINE_VIDEO);
                                                 }
+/*
                                                 else
                                                 {
                                                         try{
-                                                                GstElement* src = gst_bin_get_by_name (GST_BIN (m_bin[BIN_FILE]), "src");
-                                                                g_object_set (src, "location", filename_from_uri (property_stream().get_value()).c_str(), NULL);
-                                                                gst_object_unref (src);
+                                                                GstElement* filesrc = gst_bin_get_by_name( GST_BIN(m_bin[BIN_FILE]), "src" ) ;
+                                                                g_object_set( filesrc, "location", filename_from_uri( property_stream().get_value()).c_str(), NULL ) ;
+                                                                gst_object_unref( filesrc );
+
                                                                 pipeline_configure (PIPELINE_FILE);
                                                         } catch( ConvertError& cxe )
                                                         {
                                                                 // FIXME
                                                         }
                                                 }
+*/
                                                 break;
                                         }
 
@@ -1179,6 +1188,7 @@ namespace MPX
                         try{
                                 m_video_pipe = new VideoPipe ();
                                 m_video_pipe->signal_cascade().connect (sigc::bind (sigc::ptr_fun (&MPX::Play::bus_watch), reinterpret_cast<gpointer>(this)));
+                                g_message("got video!");
                         }
                         catch (UnableToConstructError & cxe)
                         {
@@ -1186,7 +1196,7 @@ namespace MPX
                         }
 
                         // Main Pipeline
-                        m_pipeline = gst_pipeline_new ("MPX_Pipeline_Main");
+                        m_pipeline = gst_pipeline_new ("YoukiPipeline");
                         m_pipeline_id = PIPELINE_NONE;
                         GstBus * bus = gst_pipeline_get_bus (GST_PIPELINE (m_pipeline));
                         gst_bus_add_signal_watch (bus);

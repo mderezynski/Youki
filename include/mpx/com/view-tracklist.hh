@@ -361,16 +361,23 @@ namespace MPX
                     gint64  id              = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
                     gint64  new_position    = 0 ;
 
+                    std::string text = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
+
                     RowRowMapping new_mapping ;
 
                     for( ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                     {
                         const Row6& row = *i;
 
+                        std::vector<std::string> vec (3) ;
+                        vec[0] = Glib::ustring(boost::get<0>(row)).lowercase().c_str() ;
+                        vec[1] = Glib::ustring(boost::get<1>(row)).lowercase().c_str() ;
+                        vec[2] = Glib::ustring(boost::get<2>(row)).lowercase().c_str() ;
+
                         int match   = 0 ;
                         int truth   = m_constraints.empty() && m_constraints_synthetic.empty() ; 
 
-                        if( m_filter_effective.empty() ) 
+                        if( text.empty() ) 
                         {
                             if( !(m_constraints.empty() && m_constraints_synthetic.empty()) )
                             {
@@ -385,7 +392,7 @@ namespace MPX
                         }
                         else
                         {
-                            match = Util::match_keys( get<0>(row), m_filter_effective ) || Util::match_keys( get<1>(row), m_filter_effective ) || Util::match_keys( get<2>(row), m_filter_effective ) ;
+                            match |= Util::match_vec( text, vec ) ; 
 
                             const MPX::Track& track = get<4>(row);
 
@@ -425,16 +432,23 @@ namespace MPX
                     gint64  id              = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
                     gint64  new_position    = 0 ;
 
+                    std::string text = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
+
                     RowRowMapping new_mapping;
 
                     for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                     {
                         const Row6& row = *(*i);
 
+                        std::vector<std::string> vec (3) ;
+                        vec[0] = Glib::ustring(get<0>(row)).lowercase().c_str() ;
+                        vec[1] = Glib::ustring(get<1>(row)).lowercase().c_str() ;
+                        vec[2] = Glib::ustring(get<2>(row)).lowercase().c_str() ;
+
                         int match   = 0 ;
                         int truth   = m_constraints.empty() && m_constraints_synthetic.empty() ; 
 
-                        if( m_filter_effective.empty() ) 
+                        if( text.empty() ) 
                         {
                             if( !(m_constraints.empty() && m_constraints_synthetic.empty()) )
                             {
@@ -449,7 +463,7 @@ namespace MPX
                         }
                         else
                         {
-                            match = Util::match_keys( get<0>(row), m_filter_effective ) || Util::match_keys( get<1>(row), m_filter_effective ) || Util::match_keys( get<2>(row), m_filter_effective ) ;
+                            match |= Util::match_vec( text, vec ) ; 
 
                             const MPX::Track& track = get<4>(row);
 
@@ -473,7 +487,7 @@ namespace MPX
                         }
                     }
 
-                    if( m_filter_effective.empty() && m_constraints.empty() && m_constraints_synthetic.empty() ) 
+                    if( text.empty() && m_constraints.empty() && m_constraints_synthetic.empty() ) 
                     {
                         m_local_active_track = m_active_track.get() ; 
                     }
@@ -1163,9 +1177,31 @@ namespace MPX
                     {
                         if( !m_fixed.count( n ) )
                         {
-                            m_columns[n]->set_width( m_collapsed.count( n ) ? column_width_collapsed : column_width_calculated ) ;
+                            m_columns[n]->set_width(m_collapsed.count( n ) ? column_width_collapsed : column_width_calculated ) ; 
                         }
                     }
+
+/*
+                    g_print("total_width: %d    ", int(event->width) ) ;
+
+                    int xpos = 0 ;
+
+                    for( int n = 0; n < m_columns.size(); ++n )
+                    {
+                        if( m_collapsed.count( n ) )
+                        {
+                            g_print("%d:x=%d w=%d  ", n, xpos, int(column_width_collapsed) ) ;
+                            xpos += column_width_collapsed + 1 ;
+                        }
+                        else
+                        {
+                            g_print("%d:x=%d w=%d  ", n, xpos, int(m_columns[n]->get_width()) ) ;
+                            xpos += m_columns[n]->get_width() + 1 ;
+                        }
+                    }
+
+                    g_print("\n") ;
+*/
 
                     return false;
                 }
@@ -1188,7 +1224,7 @@ namespace MPX
 
                     if( event->area.y <= m_row_start )
                     {
-                            for( Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i, ++col )
+                            for( Columns::iterator i = m_columns.begin(); i != m_columns.end(); ++i, ++col )
                             {
                                 (*i)->render_header(
                                     cairo
@@ -1199,7 +1235,7 @@ namespace MPX
                                   , col
                                 ) ;
 
-                                xpos += (*i)->get_width() + 1;
+                                xpos += (*i)->get_width() + 1 ;
                             }
                     }
 
@@ -1321,7 +1357,7 @@ namespace MPX
                                 for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                                 {
                                     (*i)->render(cairo, m_model->row(row), m_model->m_filter_effective, *this, row, xpos, ypos, m_row_height, iter_is_selected, m_highlight);
-                                    xpos += (*i)->get_width();
+                                    xpos += (*i)->get_width() + 1;
                                 }
                         }
                     

@@ -200,7 +200,6 @@ namespace MPX
         m_main_window->set_icon( m_Icon ) ;
 
         m_main_status_icon = Gtk::StatusIcon::create( m_Icon ) ;
-
         m_main_status_icon->set( m_Icon ) ;
         m_main_status_icon->signal_button_press_event().connect(
             sigc::mem_fun(
@@ -213,7 +212,7 @@ namespace MPX
         m_HBox_Controls->set_spacing( 2 ) ;
 
         m_main_window->set_widget_top( *m_VBox ) ;
-        m_main_window->set_widget_drawer( *m_main_cover ) ; 
+//        m_main_window->set_widget_drawer( *m_main_cover ) ; 
 
         m_main_window->signal_key_press_event().connect(
             sigc::mem_fun(
@@ -251,12 +250,14 @@ namespace MPX
                 , &YoukiController::on_seek
         )) ;
 
+        m_main_volume->signal_set_volume().connect(
+            sigc::mem_fun(
+                  *this 
+                , &YoukiController::on_volume
+        )) ;
+
+
         m_play = services->get<Play>("mpx-service-play").get() ;
-
-        m_main_volume->set_volume(
-            m_play->property_volume().get_value()
-        ) ;
-
         m_play->signal_eos().connect(
             sigc::mem_fun(
                   *this
@@ -287,13 +288,9 @@ namespace MPX
                 , &InfoArea::update_spectrum
         )) ;
 
-        m_main_volume->signal_set_volume().connect(
-            sigc::mem_fun(
-                  *this 
-                , &YoukiController::on_volume
-        )) ;
-
-        reload_library () ;
+        m_main_volume->set_volume(
+            m_play->property_volume().get_value()
+        ) ;
 
         m_mlibman_dbus_proxy->signal_scan_end().connect(
             sigc::mem_fun(
@@ -301,7 +298,30 @@ namespace MPX
                 , &YoukiController::on_library_scan_end
         )) ;
 
+        m_VideoWidget = new VideoWidget( m_play ) ;
+
+        m_main_window->set_widget_drawer( *m_VideoWidget ) ; 
+        gtk_widget_realize(GTK_WIDGET(m_VideoWidget->gobj())) ;
+
+        reload_library () ;
+
         m_main_window->show_all() ;
+        while (gtk_events_pending())
+            gtk_main_iteration() ;
+
+        m_play->set_window_id( m_VideoWidget->get_video_xid() ) ;
+
+        m_play->signal_request_window_id().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_play_request_window_id
+        )) ;
+
+        m_play->signal_video_geom().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_play_video_geom
+        )) ;
 
         StartupComplete () ;
     }
@@ -475,21 +495,35 @@ namespace MPX
     {
         switch( status )
         {
+            case PLAYSTATUS_PLAYING:
+                m_VideoWidget->property_playing() = true ;
+                m_VideoWidget->queue_draw() ;
+                break ;
+
             case PLAYSTATUS_STOPPED:
+                m_VideoWidget->property_playing() = false ;
+                m_VideoWidget->queue_draw() ;
                 m_current_track.reset() ;
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
-                m_seek_position = -1 ;
                 m_ListView->clear_active_track() ;
                 m_main_cover->clear() ;
                 m_main_position->set_position( 0, 0 ) ;
+                m_seek_position = -1 ;
                 break ;
 
             case PLAYSTATUS_WAITING:
+                m_VideoWidget->property_playing() = false ;
+                m_VideoWidget->queue_draw() ;
                 m_current_track.reset() ;
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
                 m_seek_position = -1 ;
+                break ;
+
+            case PLAYSTATUS_PAUSED:
+                m_VideoWidget->property_playing() = false ;
+                m_VideoWidget->queue_draw() ;
                 break ;
 
             default: break ;
@@ -598,6 +632,30 @@ namespace MPX
         ) ;
 
         m_play->property_volume().set_value( volume ) ;
+    }
+
+    ::Window
+    YoukiController::on_play_request_window_id(
+    )
+    {
+        return m_VideoWidget->get_video_xid() ;
+    }
+
+    void
+    YoukiController::on_play_video_geom(
+          int               width
+        , int               height
+        , const GValue*     par
+    )
+    {
+        m_VideoWidget->property_geometry() = Geometry( width, height ) ;
+
+        if( par )
+        {
+            m_VideoWidget->set_par( par ) ;
+        }
+
+        m_VideoWidget->queue_draw() ;
     }
 
     void

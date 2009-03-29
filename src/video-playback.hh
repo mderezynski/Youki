@@ -84,14 +84,18 @@ namespace MPX
 
             static void link_pads_and_unref (GstPad*, GstPad*, VideoPipe &);
 
-            GstElement  * pipeline ;
-            GstElement  * filesrc ;
+            GstElement  * audioconvert ;
             GstElement  * decodebin ;
-            GstElement  * queue ; 
+            GstElement  * filesrc ;
             GstElement  * ffmpegcolorspace ; 
             GstElement  * imagesink ;
-            GstElement  * videoscale ; // only used when no hw scaling is available
+            GstElement  * infinite ;
+            GstElement  * pipeline ;
+            GstElement  * queue1 ; 
             GstElement  * queue2 ;
+            GstElement  * queue3 ;
+            GstElement  * tee ;
+            GstElement  * videoscale ; // only used when no hw scaling is available
 
             typedef std::map<std::string, GstElement *> ElementMap;
             typedef ElementMap::value_type              ElementPair;

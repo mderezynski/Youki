@@ -120,7 +120,8 @@ namespace MPX
         ) ;
 
         gst_element_link_many(
-              queue2
+              tee
+            , queue2
             , audio_out
             , NULL
         ) ;
@@ -133,14 +134,19 @@ namespace MPX
     {
         if( m_elements.count("audio_out") ) 
         {
-            gst_element_unlink(
-                  queue2
-                , m_elements.find("audio_out")->second
-            ) ;
-
             gst_element_set_state(
                   m_elements.find( "audio_out" )->second
                 , GST_STATE_NULL
+            ) ;
+
+            gst_element_unlink(
+                  tee
+                , queue2 
+            ) ;
+
+            gst_element_unlink(
+                  queue2
+                , m_elements.find("audio_out")->second
             ) ;
 
             gst_bin_remove_many(
@@ -171,30 +177,33 @@ namespace MPX
         try{
             filesrc             = element ("filesrc", "Video_FileSrc") ;
             decodebin           = element ("decodebin", "Video_Decoder") ;
-            queue               = element ("queue") ;
-            ffmpegcolorspace    = element ("ffmpegcolorspace") ;
+            queue1              = element ("queue", "Queue1") ;
+            queue2              = element ("queue", "Queue2");
+            queue3              = element ("queue", "Queue3");
+            infinite            = element ("libvisual_jess", "Visualization") ;
+            ffmpegcolorspace    = element ("ffmpegcolorspace", "FFMPEG Colorspace Converter") ;
+            audioconvert        = element ("audioconvert", "Audio Rate Converter") ;
+            tee                 = element ("tee", "T") ;
 
-            int video_out = mcs->key_get<int>( "audio", "video-output" ) ;
-
-            switch (video_out)
+            switch( mcs->key_get<int>( "audio", "video-output" ) )
             {
                 case 0: 
-                  imagesink = element ("xvimagesink"); 
-                  break;
+                    imagesink = element ("xvimagesink"); 
+                    g_object_set(G_OBJECT(imagesink), "autopaint-colorkey", FALSE, "draw-borders", FALSE, NULL ) ;
+                    break;
 
                 case 1:
-                  imagesink = element ("ximagesink"); 
-                  videoscale = element ("videoscale");
-                  g_object_set(
+                    imagesink = element ("ximagesink"); 
+                    videoscale = element ("videoscale");
+
+                    g_object_set(
                           G_OBJECT(videoscale)
                         , "method"
                         , int(1)
                         , NULL
-                  ) ;
-                  break;
+                    ) ;
+                    break;
             }
-
-            queue2 = element ("queue", "Queue2");
 
         } catch (NoSuchElementError & cxe) 
         {
@@ -204,35 +213,59 @@ namespace MPX
 
         m_elements.insert (ElementPair ("filesrc", filesrc));
         m_elements.insert (ElementPair ("decodebin", decodebin));
-        m_elements.insert (ElementPair ("queue", queue));
+        m_elements.insert (ElementPair ("queue1", queue1));
+        m_elements.insert (ElementPair ("queue2", queue2));
+        m_elements.insert (ElementPair ("queue3", queue3));
+        m_elements.insert (ElementPair ("libvisual_infinite", infinite));
         m_elements.insert (ElementPair ("ffmpegcolorspace", ffmpegcolorspace));
         m_elements.insert (ElementPair ("videoscale", videoscale));
         m_elements.insert (ElementPair ("videosink1", imagesink));
-        m_elements.insert (ElementPair ("queue2", queue2));
+        m_elements.insert (ElementPair ("tee", tee));
 
-        if( videoscale )
+        GstCaps * caps = gst_caps_from_string( "video/x-raw-rgb,width=500,height=250,framerate=25/1" );
+
+        if( mcs->key_get<int>( "audio", "video-output" ) == 1 && videoscale )
         {
             gst_bin_add_many(
                   GST_BIN (pipeline)
-                , filesrc
+                , audioconvert
                 , decodebin
-                , queue
                 , ffmpegcolorspace
-                , videoscale
+                , filesrc
                 , imagesink
+                , infinite
+                , queue1
                 , queue2
+                , queue3
+                , videoscale
+                , tee
                 , NULL
             ) ; 
 
             gst_element_link_many(
                   filesrc
                 , decodebin
+                , tee
+                , NULL
+            ) ;
+
+            gst_element_link_many(
+                  tee
+                , queue1
+                , audioconvert
+                , infinite
                 , NULL
             ) ; 
 
-            gst_element_link_many(
-                  queue
+            gst_element_link_filtered(
+                  infinite
                 , ffmpegcolorspace
+                , caps
+            ) ;
+
+            gst_element_link_many(
+                  ffmpegcolorspace
+                , queue3
                 , videoscale
                 , imagesink
                 , NULL
@@ -242,24 +275,43 @@ namespace MPX
         {
             gst_bin_add_many(
                   GST_BIN (pipeline)
-                , filesrc
+                , audioconvert
                 , decodebin
-                , queue
                 , ffmpegcolorspace
+                , filesrc
                 , imagesink
+                , infinite
+                , queue1
                 , queue2
+                , queue3
+                , tee
                 , NULL
             ) ; 
 
             gst_element_link_many(
                   filesrc
                 , decodebin
+                , tee
+                , NULL
+            ) ;
+
+            gst_element_link_many(
+                  tee
+                , queue1
+                , audioconvert
+                , infinite
                 , NULL
             ) ; 
 
-            gst_element_link_many(
-                  queue
+            gst_element_link_filtered(
+                  infinite
                 , ffmpegcolorspace
+                , caps
+            ) ;
+
+            gst_element_link_many(
+                  ffmpegcolorspace
+                , queue3
                 , imagesink
                 , NULL
             ) ;
@@ -299,27 +351,27 @@ namespace MPX
           break;
 
           case GST_PAD_LINK_WRONG_HIERARCHY:
-            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Trying to link pads %p and %p with non common ancestry.", G_STRFUNC, pad1, pad2); 
+            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Trying to link pads '%s:%p' and '%s:%p' with non common ancestry.", G_STRFUNC, GST_OBJECT_NAME(GST_OBJECT_PARENT(pad1)), pad1, GST_OBJECT_NAME(GST_OBJECT_PARENT(pad2)), pad2);  
           break;
 
           case GST_PAD_LINK_WAS_LINKED: 
-            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pad %p was already linked", G_STRFUNC, pad1); 
+            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pad '%s:%p' was already linked", G_STRFUNC, GST_OBJECT_NAME(GST_OBJECT_PARENT(pad1)), pad1);
           break;
 
           case GST_PAD_LINK_WRONG_DIRECTION:
-            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pad %p is being linked into the wrong direction", G_STRFUNC, pad1); 
+            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pad '%s:%p' is being linked into the wrong direction", G_STRFUNC, GST_OBJECT_NAME(GST_OBJECT_PARENT(pad1)), pad1); 
           break;
 
           case GST_PAD_LINK_NOFORMAT: 
-            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pads %p and %p have no common format", G_STRFUNC, pad1, pad2); 
+            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pads '%s:%p' and '%s:%p' have no common format", G_STRFUNC, GST_OBJECT_NAME(GST_OBJECT_PARENT(pad1)), pad1, GST_OBJECT_NAME(GST_OBJECT_PARENT(pad2)), pad2);  
           break;
 
           case GST_PAD_LINK_NOSCHED: 
-            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pads %p and %p can not cooperate in scheduling", G_STRFUNC, pad1, pad2); 
+            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pads '%s:%p' and '%s:%p' can not cooperate in scheduling", G_STRFUNC, GST_OBJECT_NAME(GST_OBJECT_PARENT(pad1)), pad1, GST_OBJECT_NAME(GST_OBJECT_PARENT(pad2)), pad2);  
           break;
 
           case GST_PAD_LINK_REFUSED:
-            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pad %p refused the link", G_STRFUNC, pad1); 
+            g_log (G_LOG_DOMAIN, G_LOG_LEVEL_CRITICAL, "%s: Pad '%s:%p' refused to link", G_STRFUNC, GST_OBJECT_NAME(GST_OBJECT_PARENT(pad1)), pad1);
           break;
       }
       gst_object_unref (pad2);
@@ -335,11 +387,16 @@ namespace MPX
 
       GstCaps * new_pad_caps = gst_pad_get_caps (pad);
 
+      GstPad * sink_pad = gst_element_get_pad( GST_ELEMENT( pipe["tee"] ), "sink" ) ;
+      g_return_if_fail( sink_pad ) ;
+      link_pads_and_unref( pad, sink_pad, pipe ) ;
+
+/*
       if (caps_have_structure (new_pad_caps, "video/x-raw-yuv") ||
           caps_have_structure (new_pad_caps, "video/x-raw-rgb"))
       {
         g_message ("%s: Video pad (%s)", G_STRLOC, GST_OBJECT_NAME (pad));
-        GstPad * video_sink_pad = gst_element_get_pad (GST_ELEMENT (pipe["queue"]), "sink");
+        GstPad * video_sink_pad = gst_element_get_pad (GST_ELEMENT (pipe["queue1"]), "sink");
         g_return_if_fail( video_sink_pad ) ;
         link_pads_and_unref( pad, video_sink_pad, pipe );
       }
@@ -347,9 +404,10 @@ namespace MPX
       if (caps_have_structure (new_pad_caps, "audio/x-raw-int"))
       {
         g_message ("%s: Audio pad (%s)", G_STRLOC, GST_OBJECT_NAME (pad));
-        GstPad * audio_sink_pad = gst_element_get_pad (GST_ELEMENT (pipe["queue2"]), "sink");
+        GstPad * audio_sink_pad = gst_element_get_pad (GST_ELEMENT (pipe["tee"]), "sink");
         g_return_if_fail( audio_sink_pad ) ;
         link_pads_and_unref (pad, audio_sink_pad, pipe);
       }
+*/
     }
 }

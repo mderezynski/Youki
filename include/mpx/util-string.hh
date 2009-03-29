@@ -40,78 +40,84 @@ namespace MPX
   {
     time_t
     parseRFC822Date(
-        const char * date
+        const char*
     ) ;
 
     std::string
     hex_string(
-        void const* data,
-        std::size_t len
+          void const*
+        , std::size_t
     ) ;
 
     std::string
     md5_hex_string(
-        void const* data,
-        std::size_t len
+          void const*
+        , std::size_t
     ) ;
 
     bool
     str_has_prefix_nocase(
-        const std::string& str,
-        const std::string& prefix
+          const std::string&
+        , const std::string&
     ) ;
 
     bool
     str_has_suffix_nocase(
-        const std::string& str,
-        const std::string& suffix
+          const std::string&
+        , const std::string&
     ) ;
 
     bool
     str_has_suffixes_nocase(
-        const std::string& str,
-        char const**       suffixes
+          const std::string&
+        , char const**     
     ) ;
 
     bool
     str_has_suffixes_nocase(
-        const std::string& str,
-        const StrV&        suffixes
+          const std::string& 
+        , const StrV&       
     ) ;
 
     bool
     match_keys(
-        const Glib::ustring& haystack,
-        const Glib::ustring& needle
+          const Glib::ustring&
+        , const Glib::ustring& 
+    ) ;
+
+    bool
+    match_vec(
+          const std::string&             
+        , const std::vector<std::string>&
     ) ;
 
     std::string
     stdstrjoin(
-        const StrV&,
-        const std::string&
+          const StrV&
+        , const std::string&
     ) ;
 
 	std::string
     sanitize_lastfm(
-        const std::string&
+          const std::string&
     ) ;
 
     Glib::ustring
     utf8_string_normalize(
-        const Glib::ustring&
+          const Glib::ustring&
     ) ;
 
     std::string
     gprintf(
-        const char *format,
-        ...
+          const char *format
+        , ...
     ) ;
 
     std::string
     text_match_highlight(
-            const std::string& text,
-            const std::string& matches,
-            const std::string& color
+          const std::string&
+        , const std::string&
+        , const std::string&
     ) ;
   } // Util namespace
 } // MPX namespace

@@ -16,6 +16,8 @@
 #include "mpx-mlibman-dbus-proxy-actual.hh"
 #include "mpx-app-dbus-adaptor.hh"
 
+#include "video-widget.hh"
+
 namespace MPX
 {
     class Play ;
@@ -51,6 +53,9 @@ namespace MPX
 
             Gtk::VBox                       * m_VBox ;
             Gtk::HBox                       * m_HBox ;
+
+            VideoWidget                     * m_VideoWidget ;
+            Gtk::DrawingArea                * m_VideoSimple ;
 
             DataModelFilterP                  m_FilterModel;
             DataModelFilterAAP                m_FilterModelAA;
@@ -132,21 +137,31 @@ namespace MPX
                   int
             ) ;
 
+            ::Window
+            on_play_request_window_id(
+            ) ;
+
+            void
+            on_play_video_geom(
+                  int
+                , int
+                , const GValue*
+            ) ;
+
         protected:
 
             void
             play_track (
-                   MPX::Track&
+                  MPX::Track&
             ) ;
 
         protected:
 
             void
-            reload_library () ;
+            reload_library() ;
 
             void
-            on_library_scan_end(
-            ) ;
+            on_library_scan_end() ;
 
             void
             initiate_quit() ;

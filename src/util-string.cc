@@ -332,6 +332,42 @@ namespace MPX
         return true;
     }
 
+    bool
+    match_vec(
+          const std::string&              n
+        , const std::vector<std::string>& h
+    )
+    {
+        using boost::algorithm::split;
+        using boost::algorithm::is_any_of;
+        using boost::algorithm::find_first;
+
+        StrV m;
+        split( m, n, is_any_of(" ") );
+
+        int cnt = 0 ;
+
+        for( int i = 0 ; i < m.size(); ++i )
+        {
+			if (m[i].length() < 1)
+            {
+                cnt += 1 ;
+				continue;
+            }
+
+            for( int n = 0 ; n < h.size(); ++n ) 
+            {
+    	        if (find_first (h[n], m[i]))
+                {
+	    		    cnt += 1 ;	
+                    break ;
+                }
+            }
+        }
+
+        return cnt == m.size() ;
+    }
+
     std::string
     sanitize_lastfm (std::string const& in)
     {
