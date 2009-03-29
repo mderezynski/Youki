@@ -33,9 +33,8 @@
 #include <gtk/gtkprivate.h>
 
 #include "widget-marshalers.h"
-
-#include "bmp_status_icon.h"
-#include "bmp_tray_icon.h"
+#include "youki-status-icon.h"
+#include "youki-tray-icon.h"
 
 #define BLINK_TIMEOUT 500
 
@@ -63,7 +62,7 @@ enum
   LAST_SIGNAL
 };
 
-struct _BmpStatusIconPrivate
+struct _YoukiStatusIconPrivate
 {
   GtkWidget    *tray_icon;
   GtkWidget    *image;
@@ -92,40 +91,40 @@ struct _BmpStatusIconPrivate
   guint         visible : 1;
 };
 
-static void     bmp_status_icon_finalize         (GObject        *object);
-static void     bmp_status_icon_set_property     (GObject        *object,
+static void     youki_status_icon_finalize         (GObject        *object);
+static void     youki_status_icon_set_property     (GObject        *object,
                                                   guint           prop_id,
                                                   const GValue   *value,
                                                   GParamSpec     *pspec);
-static void     bmp_status_icon_get_property     (GObject        *object,
+static void     youki_status_icon_get_property     (GObject        *object,
                                                   guint           prop_id,
                                                   GValue         *value,
                                                   GParamSpec     *pspec);
 
-static void     bmp_status_icon_size_allocate    (BmpStatusIcon  *status_icon,
+static void     youki_status_icon_size_allocate    (YoukiStatusIcon  *status_icon,
                                                   GtkAllocation  *allocation);
-static gboolean bmp_status_icon_button_press     (BmpStatusIcon  *status_icon,
+static gboolean youki_status_icon_button_press     (YoukiStatusIcon  *status_icon,
                                                   GdkEventButton *event);
-static gboolean bmp_status_icon_button_release   (BmpStatusIcon  *status_icon,
+static gboolean youki_status_icon_button_release   (YoukiStatusIcon  *status_icon,
                                     						  GdkEventButton *event);
-static gboolean bmp_status_icon_scroll           (BmpStatusIcon  *status_icon,
+static gboolean youki_status_icon_scroll           (YoukiStatusIcon  *status_icon,
                                     						  GdkEventScroll *event);
-static void     bmp_status_icon_disable_blinking (BmpStatusIcon  *status_icon);
-static void     bmp_status_icon_reset_image_data (BmpStatusIcon  *status_icon);
+static void     youki_status_icon_disable_blinking (YoukiStatusIcon  *status_icon);
+static void     youki_status_icon_reset_image_data (YoukiStatusIcon  *status_icon);
 					   
 
 static guint status_icon_signals [LAST_SIGNAL] = { 0 };
 
-G_DEFINE_TYPE (BmpStatusIcon, bmp_status_icon, G_TYPE_OBJECT)
+G_DEFINE_TYPE (YoukiStatusIcon, youki_status_icon, G_TYPE_OBJECT)
 
 static void
-bmp_status_icon_class_init (BmpStatusIconClass *class)
+youki_status_icon_class_init (YoukiStatusIconClass *class)
 {
   GObjectClass *gobject_class = (GObjectClass *) class;
 
-  gobject_class->finalize     = bmp_status_icon_finalize;
-  gobject_class->set_property = bmp_status_icon_set_property;
-  gobject_class->get_property = bmp_status_icon_get_property;
+  gobject_class->finalize     = youki_status_icon_finalize;
+  gobject_class->set_property = youki_status_icon_set_property;
+  gobject_class->get_property = youki_status_icon_get_property;
 
   g_object_class_install_property (gobject_class,
 				   PROP_PIXBUF,
@@ -195,7 +194,7 @@ bmp_status_icon_class_init (BmpStatusIconClass *class)
 							 GTK_PARAM_READWRITE));
 
   /**
-   * BmpStatusIcon::activate:
+   * YoukiStatusIcon::activate:
    * @status_icon: the object which received the signal
    *
    * Gets emitted when the user activates the status icon. 
@@ -207,7 +206,7 @@ bmp_status_icon_class_init (BmpStatusIconClass *class)
     g_signal_new (("activate"),
 		  G_TYPE_FROM_CLASS (gobject_class),
 		  G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
-		  G_STRUCT_OFFSET (BmpStatusIconClass, activate),
+		  G_STRUCT_OFFSET (YoukiStatusIconClass, activate),
 		  NULL,
 		  NULL,
 		  g_cclosure_marshal_VOID__VOID,
@@ -215,7 +214,7 @@ bmp_status_icon_class_init (BmpStatusIconClass *class)
 		  0);
 
   /**
-   * BmpStatusIcon::click:
+   * YoukiStatusIcon::click:
    * @status_icon: the object which received the signal
    *
    * Gets emitted when the user single-clicks the icon. 
@@ -227,7 +226,7 @@ bmp_status_icon_class_init (BmpStatusIconClass *class)
     g_signal_new (("click"),
 		  G_TYPE_FROM_CLASS (gobject_class),
 		  G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
-		  G_STRUCT_OFFSET (BmpStatusIconClass, click),
+		  G_STRUCT_OFFSET (YoukiStatusIconClass, click),
 		  NULL,
 		  NULL,
 		  g_cclosure_marshal_VOID__VOID,
@@ -235,7 +234,7 @@ bmp_status_icon_class_init (BmpStatusIconClass *class)
 		  0);
 
   /**
-   * BmpStatusIcon::scroll-up:
+   * YoukiStatusIcon::scroll-up:
    * @status_icon: the object which received the signal
    *
    * Gets emitted when the user does a mouse-wheel scroll-up 
@@ -247,7 +246,7 @@ bmp_status_icon_class_init (BmpStatusIconClass *class)
     g_signal_new (("scroll-up"),
 		  G_TYPE_FROM_CLASS (gobject_class),
 		  G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
-		  G_STRUCT_OFFSET (BmpStatusIconClass, scroll_down),
+		  G_STRUCT_OFFSET (YoukiStatusIconClass, scroll_down),
 		  NULL,
 		  NULL,
 		  g_cclosure_marshal_VOID__VOID,
@@ -255,7 +254,7 @@ bmp_status_icon_class_init (BmpStatusIconClass *class)
 		  0);
 
   /**
-   * BmpStatusIcon::scroll-down:
+   * YoukiStatusIcon::scroll-down:
    * @status_icon: the object which received the signal
    *
    * Gets emitted when the user does a mouse-wheel scroll-down 
@@ -267,7 +266,7 @@ bmp_status_icon_class_init (BmpStatusIconClass *class)
     g_signal_new (("scroll-down"),
 		  G_TYPE_FROM_CLASS (gobject_class),
 		  G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
-		  G_STRUCT_OFFSET (BmpStatusIconClass, scroll_down),
+		  G_STRUCT_OFFSET (YoukiStatusIconClass, scroll_down),
 		  NULL,
 		  NULL,
 		  g_cclosure_marshal_VOID__VOID,
@@ -275,7 +274,7 @@ bmp_status_icon_class_init (BmpStatusIconClass *class)
 		  0);
 
   /**
-   * BmpStatusIcon::popup-menu:
+   * YoukiStatusIcon::popup-menu:
    * @status_icon: the object which received the signal
    * @button: the button that was pressed, or 0 if the 
    *   signal is not emitted in response to a button press event
@@ -295,7 +294,7 @@ bmp_status_icon_class_init (BmpStatusIconClass *class)
     g_signal_new (("popup-menu"),
 		  G_TYPE_FROM_CLASS (gobject_class),
 		  G_SIGNAL_RUN_FIRST | G_SIGNAL_ACTION,
-		  G_STRUCT_OFFSET (BmpStatusIconClass, popup_menu),
+		  G_STRUCT_OFFSET (YoukiStatusIconClass, popup_menu),
 		  NULL,
 		  NULL,
 		  widget_VOID__UINT_UINT, 
@@ -305,7 +304,7 @@ bmp_status_icon_class_init (BmpStatusIconClass *class)
 		  G_TYPE_UINT);
 
   /**
-   * BmpStatusIcon::size-changed:
+   * YoukiStatusIcon::size-changed:
    * @status_icon: the object which received the signal
    * @size: the new size
    *
@@ -318,7 +317,7 @@ bmp_status_icon_class_init (BmpStatusIconClass *class)
     g_signal_new (("size-changed"),
 		  G_TYPE_FROM_CLASS (gobject_class),
 		  G_SIGNAL_RUN_FIRST,
-		  G_STRUCT_OFFSET (BmpStatusIconClass, size_changed),
+		  G_STRUCT_OFFSET (YoukiStatusIconClass, size_changed),
 		  NULL,
 		  NULL,
 		  g_cclosure_marshal_VOID__INT,
@@ -326,16 +325,16 @@ bmp_status_icon_class_init (BmpStatusIconClass *class)
 		  1,
 		  G_TYPE_INT);
 
-    g_type_class_add_private (class, sizeof (BmpStatusIconPrivate));
+    g_type_class_add_private (class, sizeof (YoukiStatusIconPrivate));
 }
 
 static void
-bmp_status_icon_init (BmpStatusIcon *status_icon)
+youki_status_icon_init (YoukiStatusIcon *status_icon)
 {
-  BmpStatusIconPrivate *priv;
+  YoukiStatusIconPrivate *priv;
 
-  priv = G_TYPE_INSTANCE_GET_PRIVATE (status_icon, BMP_TYPE_STATUS_ICON,
-				      BmpStatusIconPrivate);
+  priv = G_TYPE_INSTANCE_GET_PRIVATE (status_icon, YOUKI_TYPE_STATUS_ICON,
+				      YoukiStatusIconPrivate);
   status_icon->priv = priv;
   
   priv->storage_type = GTK_IMAGE_EMPTY;
@@ -345,24 +344,24 @@ bmp_status_icon_init (BmpStatusIcon *status_icon)
   priv->image_width  = 0;
   priv->image_height = 0;
 
-  priv->tray_icon = GTK_WIDGET (_bmp_tray_icon_new (NULL));
+  priv->tray_icon = GTK_WIDGET (_youki_tray_icon_new (NULL));
 
   gtk_widget_add_events (GTK_WIDGET (priv->tray_icon),
 			 GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK | GDK_SCROLL_MASK);
 
   g_signal_connect_swapped (status_icon->priv->tray_icon, "button-press-event",
-			    G_CALLBACK (bmp_status_icon_button_press), status_icon);
+			    G_CALLBACK (youki_status_icon_button_press), status_icon);
 
   g_signal_connect_swapped (status_icon->priv->tray_icon, "button-release-event",
-			    G_CALLBACK (bmp_status_icon_button_release), status_icon);
+			    G_CALLBACK (youki_status_icon_button_release), status_icon);
 
   g_signal_connect_swapped (status_icon->priv->tray_icon, "scroll-event",
-			    G_CALLBACK (bmp_status_icon_scroll), status_icon);
+			    G_CALLBACK (youki_status_icon_scroll), status_icon);
 
   priv->image = gtk_image_new ();
 
   g_signal_connect_swapped (priv->image, "size-allocate",
-			    G_CALLBACK (bmp_status_icon_size_allocate), status_icon);
+			    G_CALLBACK (youki_status_icon_size_allocate), status_icon);
 
   gtk_container_add (GTK_CONTAINER (priv->tray_icon), priv->image);
 
@@ -371,14 +370,14 @@ bmp_status_icon_init (BmpStatusIcon *status_icon)
 }
 
 static void
-bmp_status_icon_finalize (GObject *object)
+youki_status_icon_finalize (GObject *object)
 {
-  BmpStatusIcon *status_icon = BMP_STATUS_ICON (object);
-  BmpStatusIconPrivate *priv = status_icon->priv;
+  YoukiStatusIcon *status_icon = YOUKI_STATUS_ICON (object);
+  YoukiStatusIconPrivate *priv = status_icon->priv;
 
-  bmp_status_icon_disable_blinking (status_icon);
+  youki_status_icon_disable_blinking (status_icon);
   
-  bmp_status_icon_reset_image_data (status_icon);
+  youki_status_icon_reset_image_data (status_icon);
 
   if (priv->blank_icon)
     g_object_unref (priv->blank_icon);
@@ -386,36 +385,36 @@ bmp_status_icon_finalize (GObject *object)
 
   gtk_widget_destroy (priv->tray_icon);
 
-  G_OBJECT_CLASS (bmp_status_icon_parent_class)->finalize (object);
+  G_OBJECT_CLASS (youki_status_icon_parent_class)->finalize (object);
 }
 
 static void
-bmp_status_icon_set_property (GObject      *object,
+youki_status_icon_set_property (GObject      *object,
 			      guint         prop_id,
 			      const GValue *value,
 			      GParamSpec   *pspec)
 {
-  BmpStatusIcon *status_icon = BMP_STATUS_ICON (object);
+  YoukiStatusIcon *status_icon = YOUKI_STATUS_ICON (object);
 
   switch (prop_id)
     {
     case PROP_PIXBUF:
-      bmp_status_icon_set_from_pixbuf (status_icon, g_value_get_object (value));
+      youki_status_icon_set_from_pixbuf (status_icon, g_value_get_object (value));
       break;
     case PROP_FILE:
-      bmp_status_icon_set_from_file (status_icon, g_value_get_string (value));
+      youki_status_icon_set_from_file (status_icon, g_value_get_string (value));
       break;
     case PROP_STOCK:
-      bmp_status_icon_set_from_stock (status_icon, g_value_get_string (value));
+      youki_status_icon_set_from_stock (status_icon, g_value_get_string (value));
       break;
     case PROP_ICON_NAME:
-      bmp_status_icon_set_from_icon_name (status_icon, g_value_get_string (value));
+      youki_status_icon_set_from_icon_name (status_icon, g_value_get_string (value));
       break;
     case PROP_BLINKING:
-      bmp_status_icon_set_blinking (status_icon, g_value_get_boolean (value));
+      youki_status_icon_set_blinking (status_icon, g_value_get_boolean (value));
       break;
     case PROP_VISIBLE:
-      bmp_status_icon_set_visible (status_icon, g_value_get_boolean (value));
+      youki_status_icon_set_visible (status_icon, g_value_get_boolean (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -424,13 +423,13 @@ bmp_status_icon_set_property (GObject      *object,
 }
 
 static void
-bmp_status_icon_get_property (GObject    *object,
+youki_status_icon_get_property (GObject    *object,
 			      guint       prop_id,
 			      GValue     *value,
 			      GParamSpec *pspec)
 {
-  BmpStatusIcon *status_icon = BMP_STATUS_ICON (object);
-  BmpStatusIconPrivate *priv = status_icon->priv;
+  YoukiStatusIcon *status_icon = YOUKI_STATUS_ICON (object);
+  YoukiStatusIconPrivate *priv = status_icon->priv;
 
   /* The "getter" functions whine if you try to get the wrong
    * storage type. This function is instead robust against that,
@@ -444,31 +443,31 @@ bmp_status_icon_get_property (GObject    *object,
       if (priv->storage_type != GTK_IMAGE_PIXBUF)
 	g_value_set_object (value, NULL);
       else
-	g_value_set_object (value, bmp_status_icon_get_pixbuf (status_icon));
+	g_value_set_object (value, youki_status_icon_get_pixbuf (status_icon));
       break;
     case PROP_STOCK:
       if (priv->storage_type != GTK_IMAGE_STOCK)
 	g_value_set_string (value, NULL);
       else
-	g_value_set_string (value, bmp_status_icon_get_stock (status_icon));
+	g_value_set_string (value, youki_status_icon_get_stock (status_icon));
       break;
     case PROP_ICON_NAME:
       if (priv->storage_type != GTK_IMAGE_ICON_NAME)
 	g_value_set_string (value, NULL);
       else
-	g_value_set_string (value, bmp_status_icon_get_icon_name (status_icon));
+	g_value_set_string (value, youki_status_icon_get_icon_name (status_icon));
       break;
     case PROP_STORAGE_TYPE:
-      g_value_set_enum (value, bmp_status_icon_get_storage_type (status_icon));
+      g_value_set_enum (value, youki_status_icon_get_storage_type (status_icon));
       break;
     case PROP_SIZE:
-      g_value_set_int (value, bmp_status_icon_get_size (status_icon));
+      g_value_set_int (value, youki_status_icon_get_size (status_icon));
       break;
     case PROP_BLINKING:
-      g_value_set_boolean (value, bmp_status_icon_get_blinking (status_icon));
+      g_value_set_boolean (value, youki_status_icon_get_blinking (status_icon));
       break;
     case PROP_VISIBLE:
-      g_value_set_boolean (value, bmp_status_icon_get_visible (status_icon));
+      g_value_set_boolean (value, youki_status_icon_get_visible (status_icon));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -477,22 +476,22 @@ bmp_status_icon_get_property (GObject    *object,
 }
 
 /**
- * bmp_status_icon_new:
+ * youki_status_icon_new:
  * 
  * Creates an empty status icon object.
  * 
- * Return value: a new #BmpStatusIcon
+ * Return value: a new #YoukiStatusIcon
  *
  * Since: 2.10
  **/
-BmpStatusIcon *
-bmp_status_icon_new (void)
+YoukiStatusIcon *
+youki_status_icon_new (void)
 {
-  return g_object_new (BMP_TYPE_STATUS_ICON, NULL);
+  return g_object_new (YOUKI_TYPE_STATUS_ICON, NULL);
 }
 
 /**
- * bmp_status_icon_new_from_pixbuf:
+ * youki_status_icon_new_from_pixbuf:
  * @pixbuf: a #GdkPixbuf
  * 
  * Creates a status icon displaying @pixbuf. 
@@ -500,20 +499,20 @@ bmp_status_icon_new (void)
  * The image will be scaled down to fit in the available 
  * space in the notification area, if necessary.
  * 
- * Return value: a new #BmpStatusIcon
+ * Return value: a new #YoukiStatusIcon
  *
  * Since: 2.10
  **/
-BmpStatusIcon *
-bmp_status_icon_new_from_pixbuf (GdkPixbuf *pixbuf)
+YoukiStatusIcon *
+youki_status_icon_new_from_pixbuf (GdkPixbuf *pixbuf)
 {
-  return g_object_new (BMP_TYPE_STATUS_ICON,
+  return g_object_new (YOUKI_TYPE_STATUS_ICON,
 		       "pixbuf", pixbuf,
 		       NULL);
 }
 
 /**
- * bmp_status_icon_new_from_file:
+ * youki_status_icon_new_from_file:
  * @filename: a filename
  * 
  * Creates a status icon displaying the file @filename. 
@@ -521,20 +520,20 @@ bmp_status_icon_new_from_pixbuf (GdkPixbuf *pixbuf)
  * The image will be scaled down to fit in the available 
  * space in the notification area, if necessary.
  * 
- * Return value: a new #BmpStatusIcon
+ * Return value: a new #YoukiStatusIcon
  *
  * Since: 2.10
  **/
-BmpStatusIcon *
-bmp_status_icon_new_from_file (const gchar *filename)
+YoukiStatusIcon *
+youki_status_icon_new_from_file (const gchar *filename)
 {
-  return g_object_new (BMP_TYPE_STATUS_ICON,
+  return g_object_new (YOUKI_TYPE_STATUS_ICON,
 		       "file", filename,
 		       NULL);
 }
 
 /**
- * bmp_status_icon_new_from_stock:
+ * youki_status_icon_new_from_stock:
  * @stock_id: a stock icon id
  * 
  * Creates a status icon displaying a stock icon. Sample stock icon
@@ -542,54 +541,54 @@ bmp_status_icon_new_from_file (const gchar *filename)
  * own stock icon names, see gtk_icon_factory_add_default() and 
  * gtk_icon_factory_add(). 
  *
- * Return value: a new #BmpStatusIcon
+ * Return value: a new #YoukiStatusIcon
  *
  * Since: 2.10
  **/
-BmpStatusIcon *
-bmp_status_icon_new_from_stock (const gchar *stock_id)
+YoukiStatusIcon *
+youki_status_icon_new_from_stock (const gchar *stock_id)
 {
-  return g_object_new (BMP_TYPE_STATUS_ICON,
+  return g_object_new (YOUKI_TYPE_STATUS_ICON,
 		       "stock", stock_id,
 		       NULL);
 }
 
 /**
- * bmp_status_icon_new_from_icon_name:
+ * youki_status_icon_new_from_icon_name:
  * @icon_name: an icon name
  * 
  * Creates a status icon displaying an icon from the current icon theme.
  * If the current icon theme is changed, the icon will be updated 
  * appropriately.
  * 
- * Return value: a new #BmpStatusIcon
+ * Return value: a new #YoukiStatusIcon
  *
  * Since: 2.10
  **/
-BmpStatusIcon *
-bmp_status_icon_new_from_icon_name (const gchar *icon_name)
+YoukiStatusIcon *
+youki_status_icon_new_from_icon_name (const gchar *icon_name)
 {
-  return g_object_new (BMP_TYPE_STATUS_ICON,
+  return g_object_new (YOUKI_TYPE_STATUS_ICON,
 		       "icon-name", icon_name,
 		       NULL);
 }
 
 static void
-emit_click_signal (BmpStatusIcon *status_icon)
+emit_click_signal (YoukiStatusIcon *status_icon)
 {
   g_signal_emit (status_icon,
 		 status_icon_signals [CLICK_SIGNAL], 0);
 }
 
 static void
-emit_scroll_up_signal (BmpStatusIcon *status_icon)
+emit_scroll_up_signal (YoukiStatusIcon *status_icon)
 {
   g_signal_emit (status_icon,
 		 status_icon_signals [SCROLL_UP_SIGNAL], 0);
 }
 
 static void
-emit_scroll_down_signal (BmpStatusIcon *status_icon)
+emit_scroll_down_signal (YoukiStatusIcon *status_icon)
 {
   g_signal_emit (status_icon,
 		 status_icon_signals [SCROLL_DOWN_SIGNAL], 0);
@@ -597,7 +596,7 @@ emit_scroll_down_signal (BmpStatusIcon *status_icon)
 
 
 static void
-emit_popup_menu_signal (BmpStatusIcon *status_icon,
+emit_popup_menu_signal (YoukiStatusIcon *status_icon,
 			guint          button,
 			guint32        activate_time)
 {
@@ -608,7 +607,7 @@ emit_popup_menu_signal (BmpStatusIcon *status_icon,
 }
 
 static gboolean
-emit_size_changed_signal (BmpStatusIcon *status_icon,
+emit_size_changed_signal (YoukiStatusIcon *status_icon,
 			  gint           size)
 {
   gboolean handled = FALSE;
@@ -622,9 +621,9 @@ emit_size_changed_signal (BmpStatusIcon *status_icon,
 }
 
 static GdkPixbuf *
-bmp_status_icon_blank_icon (BmpStatusIcon *status_icon)
+youki_status_icon_blank_icon (YoukiStatusIcon *status_icon)
 {
-  BmpStatusIconPrivate *priv = status_icon->priv;
+  YoukiStatusIconPrivate *priv = status_icon->priv;
 
   if (priv->blank_icon)
     {
@@ -689,14 +688,14 @@ find_icon_size (GtkWidget *widget,
 }
 
 static void
-bmp_status_icon_update_image (BmpStatusIcon *status_icon)
+youki_status_icon_update_image (YoukiStatusIcon *status_icon)
 {
-  BmpStatusIconPrivate *priv = status_icon->priv;
+  YoukiStatusIconPrivate *priv = status_icon->priv;
 
   if (priv->blink_off)
     {
       gtk_image_set_from_pixbuf (GTK_IMAGE (priv->image),
-				 bmp_status_icon_blank_icon (status_icon));
+				 youki_status_icon_blank_icon (status_icon));
       return;
     }
 
@@ -766,14 +765,14 @@ bmp_status_icon_update_image (BmpStatusIcon *status_icon)
 }
 
 static void
-bmp_status_icon_size_allocate (BmpStatusIcon *status_icon,
+youki_status_icon_size_allocate (YoukiStatusIcon *status_icon,
 			       GtkAllocation *allocation)
 {
-  BmpStatusIconPrivate *priv = status_icon->priv;
+  YoukiStatusIconPrivate *priv = status_icon->priv;
   GtkOrientation orientation;
   gint size;
 
-  orientation = _bmp_tray_icon_get_orientation (BMP_TRAY_ICON (priv->tray_icon));
+  orientation = _youki_tray_icon_get_orientation (YOUKI_TRAY_ICON (priv->tray_icon));
 
   if (orientation == GTK_ORIENTATION_HORIZONTAL)
     size = allocation->height;
@@ -790,12 +789,12 @@ bmp_status_icon_size_allocate (BmpStatusIcon *status_icon,
       g_object_notify (G_OBJECT (status_icon), "size");
 
       if (!emit_size_changed_signal (status_icon, size))
-	bmp_status_icon_update_image (status_icon);
+	youki_status_icon_update_image (status_icon);
     }
 }
 
 static gboolean
-bmp_status_icon_scroll (BmpStatusIcon  *status_icon,
+youki_status_icon_scroll (YoukiStatusIcon  *status_icon,
 		       GdkEventScroll *event)
 {
 
@@ -820,7 +819,7 @@ bmp_status_icon_scroll (BmpStatusIcon  *status_icon,
 }
 
 static gboolean
-bmp_status_icon_button_release (BmpStatusIcon  *status_icon,
+youki_status_icon_button_release (YoukiStatusIcon  *status_icon,
 			        GdkEventButton *event)
 {
     status_icon->priv->pressed = FALSE;
@@ -828,7 +827,7 @@ bmp_status_icon_button_release (BmpStatusIcon  *status_icon,
 }
 
 static gboolean
-bmp_status_icon_button_press (BmpStatusIcon  *status_icon,
+youki_status_icon_button_press (YoukiStatusIcon  *status_icon,
 			      GdkEventButton *event)
 {
   status_icon->priv->pressed = TRUE;
@@ -849,9 +848,9 @@ bmp_status_icon_button_press (BmpStatusIcon  *status_icon,
 
 
 static void
-bmp_status_icon_reset_image_data (BmpStatusIcon *status_icon)
+youki_status_icon_reset_image_data (YoukiStatusIcon *status_icon)
 {
-  BmpStatusIconPrivate *priv = status_icon->priv;
+  YoukiStatusIconPrivate *priv = status_icon->priv;
 
   switch (priv->storage_type)
   {
@@ -888,15 +887,15 @@ bmp_status_icon_reset_image_data (BmpStatusIcon *status_icon)
 }
 
 static void
-bmp_status_icon_set_image (BmpStatusIcon *status_icon,
+youki_status_icon_set_image (YoukiStatusIcon *status_icon,
     			   GtkImageType   storage_type,
 			   gpointer       data)
 {
-  BmpStatusIconPrivate *priv = status_icon->priv;
+  YoukiStatusIconPrivate *priv = status_icon->priv;
 
   g_object_freeze_notify (G_OBJECT (status_icon));
 
-  bmp_status_icon_reset_image_data (status_icon);
+  youki_status_icon_reset_image_data (status_icon);
 
   priv->storage_type = storage_type;
   g_object_notify (G_OBJECT (status_icon), "storage-type");
@@ -916,114 +915,114 @@ bmp_status_icon_set_image (BmpStatusIcon *status_icon,
       g_object_notify (G_OBJECT (status_icon), "icon-name");
       break;
     default:
-      g_warning ("Image type %d not handled by BmpStatusIcon", storage_type);
+      g_warning ("Image type %d not handled by YoukiStatusIcon", storage_type);
     }
 
   g_object_thaw_notify (G_OBJECT (status_icon));
 
-  bmp_status_icon_update_image (status_icon);
+  youki_status_icon_update_image (status_icon);
 }
 
 /**
- * bmp_status_icon_set_from_pixbuf:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_set_from_pixbuf:
+ * @status_icon: a #YoukiStatusIcon
  * @pixbuf: a #GdkPixbuf or %NULL
  * 
  * Makes @status_icon display @pixbuf. 
- * See bmp_status_icon_new_from_pixbuf() for details.
+ * See youki_status_icon_new_from_pixbuf() for details.
  *
  * Since: 2.10
  **/
 void
-bmp_status_icon_set_from_pixbuf (BmpStatusIcon *status_icon,
+youki_status_icon_set_from_pixbuf (YoukiStatusIcon *status_icon,
 				 GdkPixbuf     *pixbuf)
 {
-  g_return_if_fail (BMP_IS_STATUS_ICON (status_icon));
+  g_return_if_fail (YOUKI_IS_STATUS_ICON (status_icon));
   g_return_if_fail (pixbuf == NULL || GDK_IS_PIXBUF (pixbuf));
 
   if (pixbuf)
     g_object_ref (pixbuf);
 
-  bmp_status_icon_set_image (status_icon, GTK_IMAGE_PIXBUF,
+  youki_status_icon_set_image (status_icon, GTK_IMAGE_PIXBUF,
       			     (gpointer) pixbuf);
 }
 
 /**
- * bmp_status_icon_set_from_file:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_set_from_file:
+ * @status_icon: a #YoukiStatusIcon
  * @filename: a filename
  * 
  * Makes @status_icon display the file @filename.
- * See bmp_status_icon_new_from_file() for details.
+ * See youki_status_icon_new_from_file() for details.
  *
  * Since: 2.10 
  **/
 void
-bmp_status_icon_set_from_file (BmpStatusIcon *status_icon,
+youki_status_icon_set_from_file (YoukiStatusIcon *status_icon,
  			       const gchar   *filename)
 {
   GdkPixbuf *pixbuf;
   
-  g_return_if_fail (BMP_IS_STATUS_ICON (status_icon));
+  g_return_if_fail (YOUKI_IS_STATUS_ICON (status_icon));
   g_return_if_fail (filename != NULL);
   
   pixbuf = gdk_pixbuf_new_from_file (filename, NULL);
   
-  bmp_status_icon_set_from_pixbuf (status_icon, pixbuf);
+  youki_status_icon_set_from_pixbuf (status_icon, pixbuf);
   
   if (pixbuf)
     g_object_unref (pixbuf);
 }
 
 /**
- * bmp_status_icon_set_from_stock:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_set_from_stock:
+ * @status_icon: a #YoukiStatusIcon
  * @stock_id: a stock icon id
  * 
  * Makes @status_icon display the stock icon with the id @stock_id.
- * See bmp_status_icon_new_from_stock() for details.
+ * See youki_status_icon_new_from_stock() for details.
  *
  * Since: 2.10 
  **/
 void
-bmp_status_icon_set_from_stock (BmpStatusIcon *status_icon,
+youki_status_icon_set_from_stock (YoukiStatusIcon *status_icon,
 				const gchar   *stock_id)
 {
-  g_return_if_fail (BMP_IS_STATUS_ICON (status_icon));
+  g_return_if_fail (YOUKI_IS_STATUS_ICON (status_icon));
   g_return_if_fail (stock_id != NULL);
 
-  bmp_status_icon_set_image (status_icon, GTK_IMAGE_STOCK,
+  youki_status_icon_set_image (status_icon, GTK_IMAGE_STOCK,
       			     (gpointer) stock_id);
 }
 
 /**
- * bmp_status_icon_set_from_icon_name:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_set_from_icon_name:
+ * @status_icon: a #YoukiStatusIcon
  * @icon_name: an icon name
  * 
  * Makes @status_icon display the icon named @icon_name from the 
  * current icon theme.
- * See bmp_status_icon_new_from_icon_name() for details.
+ * See youki_status_icon_new_from_icon_name() for details.
  *
  * Since: 2.10 
  **/
 void
-bmp_status_icon_set_from_icon_name (BmpStatusIcon *status_icon,
+youki_status_icon_set_from_icon_name (YoukiStatusIcon *status_icon,
 				    const gchar   *icon_name)
 {
-  g_return_if_fail (BMP_IS_STATUS_ICON (status_icon));
+  g_return_if_fail (YOUKI_IS_STATUS_ICON (status_icon));
   g_return_if_fail (icon_name != NULL);
 
-  bmp_status_icon_set_image (status_icon, GTK_IMAGE_ICON_NAME,
+  youki_status_icon_set_image (status_icon, GTK_IMAGE_ICON_NAME,
       			     (gpointer) icon_name);
 }
 
 /**
- * bmp_status_icon_get_storage_type:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_get_storage_type:
+ * @status_icon: a #YoukiStatusIcon
  * 
- * Gets the type of representation being used by the #BmpStatusIcon
- * to store image data. If the #BmpStatusIcon has no image data,
+ * Gets the type of representation being used by the #YoukiStatusIcon
+ * to store image data. If the #YoukiStatusIcon has no image data,
  * the return value will be %GTK_IMAGE_EMPTY. 
  * 
  * Return value: the image representation being used
@@ -1031,19 +1030,19 @@ bmp_status_icon_set_from_icon_name (BmpStatusIcon *status_icon,
  * Since: 2.10
  **/
 GtkImageType
-bmp_status_icon_get_storage_type (BmpStatusIcon *status_icon)
+youki_status_icon_get_storage_type (YoukiStatusIcon *status_icon)
 {
-  g_return_val_if_fail (BMP_IS_STATUS_ICON (status_icon), GTK_IMAGE_EMPTY);
+  g_return_val_if_fail (YOUKI_IS_STATUS_ICON (status_icon), GTK_IMAGE_EMPTY);
 
   return status_icon->priv->storage_type;
 }
 /**
- * bmp_status_icon_get_pixbuf:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_get_pixbuf:
+ * @status_icon: a #YoukiStatusIcon
  * 
- * Gets the #GdkPixbuf being displayed by the #BmpStatusIcon.
+ * Gets the #GdkPixbuf being displayed by the #YoukiStatusIcon.
  * The storage type of the status icon must be %GTK_IMAGE_EMPTY or
- * %GTK_IMAGE_PIXBUF (see bmp_status_icon_get_storage_type()).
+ * %GTK_IMAGE_PIXBUF (see youki_status_icon_get_storage_type()).
  * The caller of this function does not own a reference to the
  * returned pixbuf.
  * 
@@ -1052,11 +1051,11 @@ bmp_status_icon_get_storage_type (BmpStatusIcon *status_icon)
  * Since: 2.10
  **/
 GdkPixbuf *
-bmp_status_icon_get_pixbuf (BmpStatusIcon *status_icon)
+youki_status_icon_get_pixbuf (YoukiStatusIcon *status_icon)
 {
-  BmpStatusIconPrivate *priv;
+  YoukiStatusIconPrivate *priv;
 
-  g_return_val_if_fail (BMP_IS_STATUS_ICON (status_icon), NULL);
+  g_return_val_if_fail (YOUKI_IS_STATUS_ICON (status_icon), NULL);
 
   priv = status_icon->priv;
 
@@ -1070,13 +1069,13 @@ bmp_status_icon_get_pixbuf (BmpStatusIcon *status_icon)
 }
 
 /**
- * bmp_status_icon_get_stock:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_get_stock:
+ * @status_icon: a #YoukiStatusIcon
  * 
- * Gets the id of the stock icon being displayed by the #BmpStatusIcon.
+ * Gets the id of the stock icon being displayed by the #YoukiStatusIcon.
  * The storage type of the status icon must be %GTK_IMAGE_EMPTY or
- * %GTK_IMAGE_STOCK (see bmp_status_icon_get_storage_type()).
- * The returned string is owned by the #BmpStatusIcon and should not
+ * %GTK_IMAGE_STOCK (see youki_status_icon_get_storage_type()).
+ * The returned string is owned by the #YoukiStatusIcon and should not
  * be freed or modified.
  * 
  * Return value: stock id of the displayed stock icon,
@@ -1085,11 +1084,11 @@ bmp_status_icon_get_pixbuf (BmpStatusIcon *status_icon)
  * Since: 2.10
  **/
 G_CONST_RETURN gchar *
-bmp_status_icon_get_stock (BmpStatusIcon *status_icon)
+youki_status_icon_get_stock (YoukiStatusIcon *status_icon)
 {
-  BmpStatusIconPrivate *priv;
+  YoukiStatusIconPrivate *priv;
 
-  g_return_val_if_fail (BMP_IS_STATUS_ICON (status_icon), NULL);
+  g_return_val_if_fail (YOUKI_IS_STATUS_ICON (status_icon), NULL);
 
   priv = status_icon->priv;
 
@@ -1103,13 +1102,13 @@ bmp_status_icon_get_stock (BmpStatusIcon *status_icon)
 }
 
 /**
- * bmp_status_icon_get_icon_name:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_get_icon_name:
+ * @status_icon: a #YoukiStatusIcon
  * 
- * Gets the name of the icon being displayed by the #BmpStatusIcon.
+ * Gets the name of the icon being displayed by the #YoukiStatusIcon.
  * The storage type of the status icon must be %GTK_IMAGE_EMPTY or
- * %GTK_IMAGE_ICON_NAME (see bmp_status_icon_get_storage_type()).
- * The returned string is owned by the #BmpStatusIcon and should not
+ * %GTK_IMAGE_ICON_NAME (see youki_status_icon_get_storage_type()).
+ * The returned string is owned by the #YoukiStatusIcon and should not
  * be freed or modified.
  * 
  * Return value: name of the displayed icon, or %NULL if the image is empty.
@@ -1117,11 +1116,11 @@ bmp_status_icon_get_stock (BmpStatusIcon *status_icon)
  * Since: 2.10
  **/
 G_CONST_RETURN gchar *
-bmp_status_icon_get_icon_name (BmpStatusIcon *status_icon)
+youki_status_icon_get_icon_name (YoukiStatusIcon *status_icon)
 {
-  BmpStatusIconPrivate *priv;
+  YoukiStatusIconPrivate *priv;
   
-  g_return_val_if_fail (BMP_IS_STATUS_ICON (status_icon), NULL);
+  g_return_val_if_fail (YOUKI_IS_STATUS_ICON (status_icon), NULL);
 
   priv = status_icon->priv;
 
@@ -1135,8 +1134,8 @@ bmp_status_icon_get_icon_name (BmpStatusIcon *status_icon)
 }
 
 /**
- * bmp_status_icon_get_size:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_get_size:
+ * @status_icon: a #YoukiStatusIcon
  * 
  * Gets the size in pixels that is available for the image. 
  * Stock icons and named icons adapt their size automatically
@@ -1149,45 +1148,45 @@ bmp_status_icon_get_icon_name (BmpStatusIcon *status_icon)
  * Since: 2.10
  **/
 gint
-bmp_status_icon_get_size (BmpStatusIcon *status_icon)
+youki_status_icon_get_size (YoukiStatusIcon *status_icon)
 {
-  g_return_val_if_fail (BMP_IS_STATUS_ICON (status_icon), 0);
+  g_return_val_if_fail (YOUKI_IS_STATUS_ICON (status_icon), 0);
 
   return status_icon->priv->size;
 }
 
 static gboolean
-bmp_status_icon_blinker (BmpStatusIcon *status_icon)
+youki_status_icon_blinker (YoukiStatusIcon *status_icon)
 {
-  BmpStatusIconPrivate *priv = status_icon->priv;
+  YoukiStatusIconPrivate *priv = status_icon->priv;
   
   priv->blink_off = !priv->blink_off;
 
-  bmp_status_icon_update_image (status_icon);
+  youki_status_icon_update_image (status_icon);
 
   return TRUE;
 }
 
 static void
-bmp_status_icon_enable_blinking (BmpStatusIcon *status_icon)
+youki_status_icon_enable_blinking (YoukiStatusIcon *status_icon)
 {
-  BmpStatusIconPrivate *priv = status_icon->priv;
+  YoukiStatusIconPrivate *priv = status_icon->priv;
   
   if (!priv->blinking_timeout)
     {
-      bmp_status_icon_blinker (status_icon);
+      youki_status_icon_blinker (status_icon);
 
       priv->blinking_timeout =
 	g_timeout_add (BLINK_TIMEOUT, 
-		       (GSourceFunc) bmp_status_icon_blinker, 
+		       (GSourceFunc) youki_status_icon_blinker, 
 		       status_icon);
     }
 }
 
 static void
-bmp_status_icon_disable_blinking (BmpStatusIcon *status_icon)
+youki_status_icon_disable_blinking (YoukiStatusIcon *status_icon)
 {
-  BmpStatusIconPrivate *priv = status_icon->priv;
+  YoukiStatusIconPrivate *priv = status_icon->priv;
   
   if (priv->blinking_timeout)
     {
@@ -1195,13 +1194,13 @@ bmp_status_icon_disable_blinking (BmpStatusIcon *status_icon)
       priv->blinking_timeout = 0;
       priv->blink_off = FALSE;
 
-      bmp_status_icon_update_image (status_icon);
+      youki_status_icon_update_image (status_icon);
     }
 }
 
 /**
- * bmp_status_icon_set_visible:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_set_visible:
+ * @status_icon: a #YoukiStatusIcon
  * @visible: %TRUE to show the status icon, %FALSE to hide it
  * 
  * Shows or hides a status icon.
@@ -1209,12 +1208,12 @@ bmp_status_icon_disable_blinking (BmpStatusIcon *status_icon)
  * Since: 2.10
  **/
 void
-bmp_status_icon_set_visible (BmpStatusIcon *status_icon,
+youki_status_icon_set_visible (YoukiStatusIcon *status_icon,
 			     gboolean       visible)
 {
-  BmpStatusIconPrivate *priv;
+  YoukiStatusIconPrivate *priv;
 
-  g_return_if_fail (BMP_IS_STATUS_ICON (status_icon));
+  g_return_if_fail (YOUKI_IS_STATUS_ICON (status_icon));
 
   priv = status_icon->priv;
 
@@ -1233,29 +1232,29 @@ bmp_status_icon_set_visible (BmpStatusIcon *status_icon,
 }
 
 /**
- * bmp_status_icon_get_visible:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_get_visible:
+ * @status_icon: a #YoukiStatusIcon
  * 
  * Returns whether the status icon is visible or not. 
  * Note that being visible does not guarantee that 
  * the user can actually see the icon, see also 
- * bmp_status_icon_is_embedded().
+ * youki_status_icon_is_embedded().
  * 
  * Return value: %TRUE if the status icon is visible
  *
  * Since: 2.10
  **/
 gboolean
-bmp_status_icon_get_visible (BmpStatusIcon *status_icon)
+youki_status_icon_get_visible (YoukiStatusIcon *status_icon)
 {
-  g_return_val_if_fail (BMP_IS_STATUS_ICON (status_icon), FALSE);
+  g_return_val_if_fail (YOUKI_IS_STATUS_ICON (status_icon), FALSE);
 
   return status_icon->priv->visible;
 }
 
 /**
- * bmp_status_icon_set_blinking:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_set_blinking:
+ * @status_icon: a #YoukiStatusIcon
  * @blinking: %TRUE to turn blinking on, %FALSE to turn it off
  * 
  * Makes the status icon start or stop blinking. 
@@ -1266,12 +1265,12 @@ bmp_status_icon_get_visible (BmpStatusIcon *status_icon)
  * Since: 2.10
  **/
 void
-bmp_status_icon_set_blinking (BmpStatusIcon *status_icon,
+youki_status_icon_set_blinking (YoukiStatusIcon *status_icon,
 			      gboolean       blinking)
 {
-  BmpStatusIconPrivate *priv;
+  YoukiStatusIconPrivate *priv;
 
-  g_return_if_fail (BMP_IS_STATUS_ICON (status_icon));
+  g_return_if_fail (YOUKI_IS_STATUS_ICON (status_icon));
 
   priv = status_icon->priv;
 
@@ -1282,36 +1281,36 @@ bmp_status_icon_set_blinking (BmpStatusIcon *status_icon,
       priv->blinking = blinking;
 
       if (blinking)
-	bmp_status_icon_enable_blinking (status_icon);
+	youki_status_icon_enable_blinking (status_icon);
       else
-	bmp_status_icon_disable_blinking (status_icon);
+	youki_status_icon_disable_blinking (status_icon);
 
       g_object_notify (G_OBJECT (status_icon), "blinking");
     }
 }
 
 /**
- * bmp_status_icon_get_blinking:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_get_blinking:
+ * @status_icon: a #YoukiStatusIcon
  * 
  * Returns whether the icon is blinking, see 
- * bmp_status_icon_set_blinking().
+ * youki_status_icon_set_blinking().
  * 
  * Return value: %TRUE if the icon is blinking
  *
  * Since: 2.10
  **/
 gboolean
-bmp_status_icon_get_blinking (BmpStatusIcon *status_icon)
+youki_status_icon_get_blinking (YoukiStatusIcon *status_icon)
 {
-  g_return_val_if_fail (BMP_IS_STATUS_ICON (status_icon), FALSE);
+  g_return_val_if_fail (YOUKI_IS_STATUS_ICON (status_icon), FALSE);
 
   return status_icon->priv->blinking;
 }
 
 /**
- * bmp_status_icon_is_embedded:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_is_embedded:
+ * @status_icon: a #YoukiStatusIcon
  * 
  * Returns whether the status icon is embedded in a notification
  * area. 
@@ -1322,11 +1321,11 @@ bmp_status_icon_get_blinking (BmpStatusIcon *status_icon)
  * Since: 2.10
  **/
 gboolean
-bmp_status_icon_is_embedded (BmpStatusIcon *status_icon)
+youki_status_icon_is_embedded (YoukiStatusIcon *status_icon)
 {
   GtkPlug *plug;
 
-  g_return_val_if_fail (BMP_IS_STATUS_ICON (status_icon), FALSE);
+  g_return_val_if_fail (YOUKI_IS_STATUS_ICON (status_icon), FALSE);
 
   plug = GTK_PLUG (status_icon->priv->tray_icon);
 
@@ -1337,7 +1336,7 @@ bmp_status_icon_is_embedded (BmpStatusIcon *status_icon)
 }
 
 /**
- * bmp_status_icon_position_menu:
+ * youki_status_icon_position_menu:
  * @menu: the #GtkMenu
  * @x: return location for the x position
  * @y: return location for the y position
@@ -1352,15 +1351,15 @@ bmp_status_icon_is_embedded (BmpStatusIcon *status_icon)
  * Since: 2.10
  **/
 void
-bmp_status_icon_position_menu (GtkMenu  *menu,
+youki_status_icon_position_menu (GtkMenu  *menu,
 			       gint     *x,
 			       gint     *y,
 			       gboolean *push_in,
 			       gpointer  user_data)
 {
-  BmpStatusIcon *status_icon;
-  BmpStatusIconPrivate *priv;
-  BmpTrayIcon *tray_icon;
+  YoukiStatusIcon *status_icon;
+  YoukiStatusIconPrivate *priv;
+  YoukiTrayIcon *tray_icon;
   GtkWidget *widget;
   GdkScreen *screen;
   GtkTextDirection direction;
@@ -1369,11 +1368,11 @@ bmp_status_icon_position_menu (GtkMenu  *menu,
   gint monitor_num, height, width, xoffset, yoffset;
   
   g_return_if_fail (GTK_IS_MENU (menu));
-  g_return_if_fail (BMP_IS_STATUS_ICON (user_data));
+  g_return_if_fail (YOUKI_IS_STATUS_ICON (user_data));
 
-  status_icon = BMP_STATUS_ICON (user_data);
+  status_icon = YOUKI_STATUS_ICON (user_data);
   priv = status_icon->priv;
-  tray_icon = BMP_TRAY_ICON (priv->tray_icon);
+  tray_icon = YOUKI_TRAY_ICON (priv->tray_icon);
   widget = priv->tray_icon;
 
   direction = gtk_widget_get_direction (widget);
@@ -1392,7 +1391,7 @@ bmp_status_icon_position_menu (GtkMenu  *menu,
   
   gtk_widget_size_request (GTK_WIDGET (menu), &menu_req);
 
-  if (_bmp_tray_icon_get_orientation (tray_icon) == GTK_ORIENTATION_VERTICAL)
+  if (_youki_tray_icon_get_orientation (tray_icon) == GTK_ORIENTATION_VERTICAL)
     {
       width = 0;
       height = widget->allocation.height;
@@ -1443,8 +1442,8 @@ bmp_status_icon_position_menu (GtkMenu  *menu,
 }
 
 /**
- * bmp_status_icon_get_geometry:
- * @status_icon: a #BmpStatusIcon
+ * youki_status_icon_get_geometry:
+ * @status_icon: a #YoukiStatusIcon
  * @screen: return location for the screen, or %NULL if the
  *          information is not needed 
  * @area: return location for the area occupied by the status 
@@ -1458,14 +1457,14 @@ bmp_status_icon_position_menu (GtkMenu  *menu,
  * on screen. This information can be used to e.g. position 
  * popups like notification bubbles. 
  *
- * See bmp_status_icon_position_menu() for a more convenient 
+ * See youki_status_icon_position_menu() for a more convenient 
  * alternative for positioning menus.
  *
  * Note that some platforms do not allow GTK+ to provide 
  * this information, and even on platforms that do allow it,
  * the information is not reliable unless the status icon
  * is embedded in a notification area, see
- * bmp_status_icon_is_embedded().
+ * youki_status_icon_is_embedded().
  *
  * Return value: %TRUE if the location information has 
  *               been filled in
@@ -1473,16 +1472,16 @@ bmp_status_icon_position_menu (GtkMenu  *menu,
  * Since: 2.10
  */
 gboolean  
-bmp_status_icon_get_geometry (BmpStatusIcon    *status_icon,
+youki_status_icon_get_geometry (YoukiStatusIcon    *status_icon,
 			      GdkScreen       **screen,
 			      GdkRectangle     *area,
 			      GtkOrientation   *orientation)
 {
   GtkWidget *widget;
-  BmpStatusIconPrivate *priv;
+  YoukiStatusIconPrivate *priv;
   gint x, y;
 
-  g_return_val_if_fail (BMP_IS_STATUS_ICON (status_icon), FALSE);
+  g_return_val_if_fail (YOUKI_IS_STATUS_ICON (status_icon), FALSE);
 
   priv = status_icon->priv;
   widget = priv->tray_icon;
@@ -1500,15 +1499,15 @@ bmp_status_icon_get_geometry (BmpStatusIcon    *status_icon,
     }
 
   if (orientation)
-    *orientation = _bmp_tray_icon_get_orientation (BMP_TRAY_ICON (widget));
+    *orientation = _youki_tray_icon_get_orientation (YOUKI_TRAY_ICON (widget));
 
   return TRUE;
 }
 
 GtkWidget*
-bmp_status_icon_get_tray_icon       (BmpStatusIcon      *status_icon)
+youki_status_icon_get_tray_icon       (YoukiStatusIcon      *status_icon)
 {
-  BmpStatusIconPrivate *priv = status_icon->priv;
+  YoukiStatusIconPrivate *priv = status_icon->priv;
   return priv->tray_icon;
 }
 

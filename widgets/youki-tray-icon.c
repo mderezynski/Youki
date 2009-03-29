@@ -31,7 +31,7 @@
 #include <X11/Xatom.h>
 #include <gdk/gdkx.h>
 
-#include "bmp_tray_icon.h"
+#include "youki-tray-icon.h"
 
 #define SYSTEM_TRAY_REQUEST_DOCK    0
 #define SYSTEM_TRAY_BEGIN_MESSAGE   1
@@ -52,8 +52,7 @@ enum {
 
 static guint tray_signals[LAST_SIGNAL] = { 0 };
 
-
-struct _BmpTrayIconPrivate
+struct _YoukiTrayIconPrivate
 {
   guint stamp;
   
@@ -66,36 +65,36 @@ struct _BmpTrayIconPrivate
   GtkOrientation orientation;
 };
          
-static void bmp_tray_icon_get_property  (GObject     *object,
+static void youki_tray_icon_get_property  (GObject     *object,
 				 	 guint        prop_id,
 					 GValue      *value,
 					 GParamSpec  *pspec);
 
-static void     bmp_tray_icon_realize   (GtkWidget   *widget);
-static void     bmp_tray_icon_unrealize (GtkWidget   *widget);
-static gboolean bmp_tray_icon_delete    (GtkWidget   *widget,
+static void     youki_tray_icon_realize   (GtkWidget   *widget);
+static void     youki_tray_icon_unrealize (GtkWidget   *widget);
+static gboolean youki_tray_icon_delete    (GtkWidget   *widget,
 					 GdkEventAny *event);
-static gboolean bmp_tray_icon_expose    (GtkWidget      *widget, 
+static gboolean youki_tray_icon_expose    (GtkWidget      *widget, 
 					 GdkEventExpose *event);
 
-static void bmp_tray_icon_update_manager_window    (BmpTrayIcon *icon,
+static void youki_tray_icon_update_manager_window    (YoukiTrayIcon *icon,
 						    gboolean     dock_if_realized);
-static void bmp_tray_icon_manager_window_destroyed (BmpTrayIcon *icon);
+static void youki_tray_icon_manager_window_destroyed (YoukiTrayIcon *icon);
 
-G_DEFINE_TYPE (BmpTrayIcon, bmp_tray_icon, GTK_TYPE_PLUG)
+G_DEFINE_TYPE (YoukiTrayIcon, youki_tray_icon, GTK_TYPE_PLUG)
 
 static void
-bmp_tray_icon_class_init (BmpTrayIconClass *class)
+youki_tray_icon_class_init (YoukiTrayIconClass *class)
 {
   GObjectClass *gobject_class = (GObjectClass *)class;
   GtkWidgetClass *widget_class = (GtkWidgetClass *)class;
 
-  gobject_class->get_property = bmp_tray_icon_get_property;
+  gobject_class->get_property = youki_tray_icon_get_property;
 
-  widget_class->realize   = bmp_tray_icon_realize;
-  widget_class->unrealize = bmp_tray_icon_unrealize;
-  widget_class->delete_event = bmp_tray_icon_delete;
-  widget_class->expose_event = bmp_tray_icon_expose;
+  widget_class->realize   = youki_tray_icon_realize;
+  widget_class->unrealize = youki_tray_icon_unrealize;
+  widget_class->delete_event = youki_tray_icon_delete;
+  widget_class->expose_event = youki_tray_icon_expose;
 
   g_object_class_install_property (gobject_class,
 				   PROP_ORIENTATION,
@@ -110,12 +109,12 @@ bmp_tray_icon_class_init (BmpTrayIconClass *class)
     g_signal_new ("destroyed",
       G_OBJECT_CLASS_TYPE (class),
       G_SIGNAL_RUN_LAST,
-      G_STRUCT_OFFSET (BmpTrayIconClass, destroyed),
+      G_STRUCT_OFFSET (YoukiTrayIconClass, destroyed),
       NULL, NULL,
       g_cclosure_marshal_VOID__VOID,
       G_TYPE_NONE, 0);
 
-  g_type_class_add_private (class, sizeof (BmpTrayIconPrivate));
+  g_type_class_add_private (class, sizeof (YoukiTrayIconPrivate));
 }
 
 static void
@@ -145,10 +144,10 @@ make_transparent (GtkWidget *widget, gpointer data)
 }  
 
 static void
-bmp_tray_icon_init (BmpTrayIcon *icon)
+youki_tray_icon_init (YoukiTrayIcon *icon)
 {
-  icon->priv = G_TYPE_INSTANCE_GET_PRIVATE (icon, BMP_TYPE_TRAY_ICON,
-					    BmpTrayIconPrivate);
+  icon->priv = G_TYPE_INSTANCE_GET_PRIVATE (icon, YOUKI_TYPE_TRAY_ICON,
+					    YoukiTrayIconPrivate);
   
   icon->priv->stamp = 1;
   icon->priv->orientation = GTK_ORIENTATION_HORIZONTAL;
@@ -159,12 +158,12 @@ bmp_tray_icon_init (BmpTrayIcon *icon)
 }
 
 static void
-bmp_tray_icon_get_property (GObject    *object,
+youki_tray_icon_get_property (GObject    *object,
 			    guint       prop_id,
 			    GValue     *value,
 			    GParamSpec *pspec)
 {
-  BmpTrayIcon *icon = BMP_TRAY_ICON (object);
+  YoukiTrayIcon *icon = YOUKI_TRAY_ICON (object);
 
   switch (prop_id)
     {
@@ -178,20 +177,20 @@ bmp_tray_icon_get_property (GObject    *object,
 }
 
 static gboolean
-bmp_tray_icon_expose (GtkWidget      *widget, 
+youki_tray_icon_expose (GtkWidget      *widget, 
 		      GdkEventExpose *event)
 {
   gdk_window_clear_area (widget->window, event->area.x, event->area.y,
 			 event->area.width, event->area.height);
 
-  if (GTK_WIDGET_CLASS (bmp_tray_icon_parent_class)->expose_event)  
-    return GTK_WIDGET_CLASS (bmp_tray_icon_parent_class)->expose_event (widget, event);
+  if (GTK_WIDGET_CLASS (youki_tray_icon_parent_class)->expose_event)  
+    return GTK_WIDGET_CLASS (youki_tray_icon_parent_class)->expose_event (widget, event);
 
   return FALSE;
 }
 
 static void
-bmp_tray_icon_get_orientation_property (BmpTrayIcon *icon)
+youki_tray_icon_get_orientation_property (YoukiTrayIcon *icon)
 {
   Display *xdisplay;
   Atom type;
@@ -243,11 +242,11 @@ bmp_tray_icon_get_orientation_property (BmpTrayIcon *icon)
 }
 
 static GdkFilterReturn
-bmp_tray_icon_manager_filter (GdkXEvent *xevent, 
+youki_tray_icon_manager_filter (GdkXEvent *xevent, 
 			      GdkEvent  *event, 
 			      gpointer   user_data)
 {
-  BmpTrayIcon *icon = user_data;
+  YoukiTrayIcon *icon = user_data;
   XEvent *xev = (XEvent *)xevent;
 
   if (xev->xany.type == ClientMessage &&
@@ -255,7 +254,7 @@ bmp_tray_icon_manager_filter (GdkXEvent *xevent,
       xev->xclient.data.l[1] == icon->priv->selection_atom)
   {
     g_message ("%s: Update", G_STRLOC);
-    bmp_tray_icon_update_manager_window (icon, TRUE);
+    youki_tray_icon_update_manager_window (icon, TRUE);
   }
   else if (xev->xany.window == icon->priv->manager_window)
   {
@@ -263,12 +262,12 @@ bmp_tray_icon_manager_filter (GdkXEvent *xevent,
         xev->xproperty.atom == icon->priv->orientation_atom)
     {
       g_message ("%s: Orientation Change", G_STRLOC);
-      bmp_tray_icon_get_orientation_property (icon);
+      youki_tray_icon_get_orientation_property (icon);
     }
     if (xev->xany.type == DestroyNotify)
     {  
       g_message ("%s: Destroyed", G_STRLOC);
-      bmp_tray_icon_manager_window_destroyed (icon);
+      youki_tray_icon_manager_window_destroyed (icon);
       g_signal_emit_by_name (icon, "destroyed");
     }
   }
@@ -277,9 +276,9 @@ bmp_tray_icon_manager_filter (GdkXEvent *xevent,
 }
 
 static void
-bmp_tray_icon_unrealize (GtkWidget *widget)
+youki_tray_icon_unrealize (GtkWidget *widget)
 {
-  BmpTrayIcon *icon = BMP_TRAY_ICON (widget);
+  YoukiTrayIcon *icon = YOUKI_TRAY_ICON (widget);
   GdkWindow *root_window;
 
   if (icon->priv->manager_window != None)
@@ -289,19 +288,19 @@ bmp_tray_icon_unrealize (GtkWidget *widget)
       gdkwin = gdk_window_lookup_for_display (gtk_widget_get_display (widget),
                                               icon->priv->manager_window);
       
-      gdk_window_remove_filter (gdkwin, bmp_tray_icon_manager_filter, icon);
+      gdk_window_remove_filter (gdkwin, youki_tray_icon_manager_filter, icon);
     }
 
   root_window = gdk_screen_get_root_window (gtk_widget_get_screen (widget));
 
-  gdk_window_remove_filter (root_window, bmp_tray_icon_manager_filter, icon);
+  gdk_window_remove_filter (root_window, youki_tray_icon_manager_filter, icon);
 
-  if (GTK_WIDGET_CLASS (bmp_tray_icon_parent_class)->unrealize)
-    (* GTK_WIDGET_CLASS (bmp_tray_icon_parent_class)->unrealize) (widget);
+  if (GTK_WIDGET_CLASS (youki_tray_icon_parent_class)->unrealize)
+    (* GTK_WIDGET_CLASS (youki_tray_icon_parent_class)->unrealize) (widget);
 }
 
 static void
-bmp_tray_icon_send_manager_message (BmpTrayIcon *icon,
+youki_tray_icon_send_manager_message (YoukiTrayIcon *icon,
 				    long         message,
 				    Window       window,
 				    long         data1,
@@ -332,9 +331,9 @@ bmp_tray_icon_send_manager_message (BmpTrayIcon *icon,
 }
 
 static void
-bmp_tray_icon_send_dock_request (BmpTrayIcon *icon)
+youki_tray_icon_send_dock_request (YoukiTrayIcon *icon)
 {
-  bmp_tray_icon_send_manager_message (icon,
+  youki_tray_icon_send_manager_message (icon,
 				      SYSTEM_TRAY_REQUEST_DOCK,
 				      icon->priv->manager_window,
 				      gtk_plug_get_id (GTK_PLUG (icon)),
@@ -342,7 +341,7 @@ bmp_tray_icon_send_dock_request (BmpTrayIcon *icon)
 }
 
 static void
-bmp_tray_icon_update_manager_window (BmpTrayIcon *icon,
+youki_tray_icon_update_manager_window (YoukiTrayIcon *icon,
 				     gboolean     dock_if_realized)
 {
   Display *xdisplay;
@@ -371,17 +370,17 @@ bmp_tray_icon_update_manager_window (BmpTrayIcon *icon,
       gdkwin = gdk_window_lookup_for_display (gtk_widget_get_display (GTK_WIDGET (icon)),
 					      icon->priv->manager_window);
       
-      gdk_window_add_filter (gdkwin, bmp_tray_icon_manager_filter, icon);
+      gdk_window_add_filter (gdkwin, youki_tray_icon_manager_filter, icon);
 
       if (dock_if_realized && GTK_WIDGET_REALIZED (icon))
-        bmp_tray_icon_send_dock_request (icon);
+        youki_tray_icon_send_dock_request (icon);
 
-      bmp_tray_icon_get_orientation_property (icon);
+      youki_tray_icon_get_orientation_property (icon);
     }
 }
 
 static void
-bmp_tray_icon_manager_window_destroyed (BmpTrayIcon *icon)
+youki_tray_icon_manager_window_destroyed (YoukiTrayIcon *icon)
 {
   GdkWindow *gdkwin;
   
@@ -390,18 +389,18 @@ bmp_tray_icon_manager_window_destroyed (BmpTrayIcon *icon)
   gdkwin = gdk_window_lookup_for_display (gtk_widget_get_display (GTK_WIDGET (icon)),
 					  icon->priv->manager_window);
       
-  gdk_window_remove_filter (gdkwin, bmp_tray_icon_manager_filter, icon);
+  gdk_window_remove_filter (gdkwin, youki_tray_icon_manager_filter, icon);
 
   icon->priv->manager_window = None;
 
-  bmp_tray_icon_update_manager_window (icon, TRUE);
+  youki_tray_icon_update_manager_window (icon, TRUE);
 }
 
 static gboolean 
-bmp_tray_icon_delete (GtkWidget   *widget,
+youki_tray_icon_delete (GtkWidget   *widget,
 		      GdkEventAny *event)
 {
-  BmpTrayIcon *icon = BMP_TRAY_ICON (widget);
+  YoukiTrayIcon *icon = YOUKI_TRAY_ICON (widget);
   GdkWindow *gdkwin;
 
   if (icon->priv->manager_window != None)
@@ -409,28 +408,28 @@ bmp_tray_icon_delete (GtkWidget   *widget,
       gdkwin = gdk_window_lookup_for_display (gtk_widget_get_display (GTK_WIDGET (icon)),
 					      icon->priv->manager_window);
       
-      gdk_window_remove_filter (gdkwin, bmp_tray_icon_manager_filter, icon);
+      gdk_window_remove_filter (gdkwin, youki_tray_icon_manager_filter, icon);
       
       icon->priv->manager_window = None;
     }
 
-  bmp_tray_icon_update_manager_window (icon, TRUE);  
+  youki_tray_icon_update_manager_window (icon, TRUE);  
 
   return TRUE;
 }
 
 static void
-bmp_tray_icon_realize (GtkWidget *widget)
+youki_tray_icon_realize (GtkWidget *widget)
 {
-  BmpTrayIcon *icon = BMP_TRAY_ICON (widget);
+  YoukiTrayIcon *icon = YOUKI_TRAY_ICON (widget);
   GdkScreen *screen;
   GdkDisplay *display;
   Display *xdisplay;
   char buffer[256];
   GdkWindow *root_window;
 
-  if (GTK_WIDGET_CLASS (bmp_tray_icon_parent_class)->realize)
-    GTK_WIDGET_CLASS (bmp_tray_icon_parent_class)->realize (widget);
+  if (GTK_WIDGET_CLASS (youki_tray_icon_parent_class)->realize)
+    GTK_WIDGET_CLASS (youki_tray_icon_parent_class)->realize (widget);
 
   make_transparent (widget, NULL);
 
@@ -455,25 +454,25 @@ bmp_tray_icon_realize (GtkWidget *widget)
 					      "_NET_SYSTEM_TRAY_ORIENTATION",
 					      False);
 
-  bmp_tray_icon_update_manager_window (icon, FALSE);
-  bmp_tray_icon_send_dock_request (icon);
+  youki_tray_icon_update_manager_window (icon, FALSE);
+  youki_tray_icon_send_dock_request (icon);
 
   root_window = gdk_screen_get_root_window (screen);
   
   /* Add a root window filter so that we get changes on MANAGER */
   gdk_window_add_filter (root_window,
-			 bmp_tray_icon_manager_filter, icon);
+			 youki_tray_icon_manager_filter, icon);
 }
 
 guint
-_bmp_tray_icon_send_message (BmpTrayIcon *icon,
+_youki_tray_icon_send_message (YoukiTrayIcon *icon,
 			     gint         timeout,
 			     const gchar *message,
 			     gint         len)
 {
   guint stamp;
   
-  g_return_val_if_fail (BMP_IS_TRAY_ICON (icon), 0);
+  g_return_val_if_fail (YOUKI_IS_TRAY_ICON (icon), 0);
   g_return_val_if_fail (timeout >= 0, 0);
   g_return_val_if_fail (message != NULL, 0);
 		     
@@ -486,7 +485,7 @@ _bmp_tray_icon_send_message (BmpTrayIcon *icon,
   stamp = icon->priv->stamp++;
   
   /* Get ready to send the message */
-  bmp_tray_icon_send_manager_message (icon, SYSTEM_TRAY_BEGIN_MESSAGE,
+  youki_tray_icon_send_manager_message (icon, SYSTEM_TRAY_BEGIN_MESSAGE,
 				      (Window)gtk_plug_get_id (GTK_PLUG (icon)),
 				      timeout, len, stamp);
 
@@ -529,41 +528,41 @@ _bmp_tray_icon_send_message (BmpTrayIcon *icon,
 }
 
 void
-_bmp_tray_icon_cancel_message (BmpTrayIcon *icon,
+_youki_tray_icon_cancel_message (YoukiTrayIcon *icon,
 			       guint        id)
 {
-  g_return_if_fail (BMP_IS_TRAY_ICON (icon));
+  g_return_if_fail (YOUKI_IS_TRAY_ICON (icon));
   g_return_if_fail (id > 0);
   
-  bmp_tray_icon_send_manager_message (icon, SYSTEM_TRAY_CANCEL_MESSAGE,
+  youki_tray_icon_send_manager_message (icon, SYSTEM_TRAY_CANCEL_MESSAGE,
 				      (Window)gtk_plug_get_id (GTK_PLUG (icon)),
 				      id, 0, 0);
 }
 
-BmpTrayIcon *
-_bmp_tray_icon_new_for_screen (GdkScreen  *screen, 
+YoukiTrayIcon *
+_youki_tray_icon_new_for_screen (GdkScreen  *screen, 
 			       const gchar *name)
 {
   g_return_val_if_fail (GDK_IS_SCREEN (screen), NULL);
 
-  return g_object_new (BMP_TYPE_TRAY_ICON, 
+  return g_object_new (YOUKI_TYPE_TRAY_ICON, 
 		       "screen", screen, 
 		       "title", name, 
 		       NULL);
 }
 
-BmpTrayIcon*
-_bmp_tray_icon_new (const gchar *name)
+YoukiTrayIcon*
+_youki_tray_icon_new (const gchar *name)
 {
-  return g_object_new (BMP_TYPE_TRAY_ICON, 
+  return g_object_new (YOUKI_TYPE_TRAY_ICON, 
 		       "title", name, 
 		       NULL);
 }
 
 GtkOrientation
-_bmp_tray_icon_get_orientation (BmpTrayIcon *icon)
+_youki_tray_icon_get_orientation (YoukiTrayIcon *icon)
 {
-  g_return_val_if_fail (BMP_IS_TRAY_ICON (icon), GTK_ORIENTATION_HORIZONTAL);
+  g_return_val_if_fail (YOUKI_IS_TRAY_ICON (icon), GTK_ORIENTATION_HORIZONTAL);
 
   return icon->priv->orientation;
 }

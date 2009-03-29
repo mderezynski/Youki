@@ -401,14 +401,13 @@ namespace MPX
                                         {
 /*
                                                 if (video_type( property_stream_type_.get_value() ) && m_video_pipe)
-*/
                                                 {
                                                         g_object_set( m_video_pipe->operator[]("filesrc"), "location", filename_from_uri( property_stream_.get_value()).c_str(), NULL );
 
                                                         pipeline_configure (PIPELINE_VIDEO);
                                                 }
-/*
                                                 else
+*/
                                                 {
                                                         try{
                                                                 GstElement* filesrc = gst_bin_get_by_name( GST_BIN(m_bin[BIN_FILE]), "src" ) ;
@@ -421,7 +420,6 @@ namespace MPX
                                                                 // FIXME
                                                         }
                                                 }
-*/
                                                 break;
                                         }
 
@@ -616,7 +614,7 @@ namespace MPX
 
         void
                 Play::link_pad (GstElement* element,
-                                GstPad *     pad,
+                                GstPad*     pad,
                                 gboolean    last,
                                 gpointer    data)
                 {
@@ -965,21 +963,18 @@ namespace MPX
                                                 gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]),
                                                                 convert,
                                                                 resample,
-                                                                idn,
-                                                                m_equalizer,
                                                                 spectrum,
                                                                 volume,
-                                                                vol_fade,
                                                                 sink_element,
                                                                 NULL);
 
-                                                gst_element_link_many (convert, resample, idn, m_equalizer, spectrum, volume, vol_fade, sink_element, NULL);
+                                                gst_element_link_many (convert, resample, spectrum, volume, sink_element, NULL);
                                         }
                                         else
                                         {
                                                 GstElement* idn = gst_element_factory_make ("identity", "identity1"); 
-                                                gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, idn, m_equalizer, volume, vol_fade, sink_element, NULL);
-                                                gst_element_link_many (convert, resample, idn, m_equalizer, volume, vol_fade, sink_element, NULL);
+                                                gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, volume, sink_element, NULL);
+                                                gst_element_link_many( convert, resample, volume, sink_element, NULL);
                                         }
 
                                         // Connect MCS to Equalizer Bands
@@ -1024,20 +1019,18 @@ namespace MPX
                                                 gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]),
                                                                 convert,
                                                                 resample,
-                                                                idn,
                                                                 spectrum,
                                                                 volume,
-                                                                vol_fade,
                                                                 sink_element,
                                                                 NULL);
 
-                                                gst_element_link_many (convert, resample, idn, spectrum, volume, vol_fade, sink_element, NULL);
+                                                gst_element_link_many( convert, resample, spectrum, volume, sink_element, NULL);
                                         }
                                         else
                                         {
                                                 GstElement* idn = gst_element_factory_make ("identity", "identity1"); 
-                                                gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, idn, volume, vol_fade, sink_element, NULL);
-                                                gst_element_link_many (convert, resample, idn, volume, vol_fade, sink_element, NULL);
+                                                gst_bin_add_many( GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, volume, sink_element, NULL);
+                                                gst_element_link_many (convert, resample, volume, sink_element, NULL);
                                         }
                                 }
 

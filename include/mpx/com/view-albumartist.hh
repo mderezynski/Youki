@@ -848,17 +848,20 @@ namespace MPX
                     gpointer data
                 )
                 {
-                    g_object_set(G_OBJECT(obj), "vadjustment", vadj, NULL); 
-                    g_object_set(G_OBJECT(obj), "hadjustment", hadj, NULL);
-                    g_object_set(G_OBJECT(vadj), "page-size", 0.05, "upper", 1.0, NULL);
+                    if( vadj )
+                    {
+                            g_object_set(G_OBJECT(obj), "vadjustment", vadj, NULL); 
+                            g_object_set(G_OBJECT(obj), "hadjustment", hadj, NULL);
+                            g_object_set(G_OBJECT(vadj), "page-size", 0.05, "upper", 1.0, NULL);
 
-                    ListViewAA & view = *(reinterpret_cast<ListViewAA*>(data));
+                            ListViewAA & view = *(reinterpret_cast<ListViewAA*>(data));
 
-                    view.m_prop_vadj.get_value()->signal_value_changed().connect(
-                        sigc::mem_fun(
-                            view,
-                            &ListViewAA::on_vadj_value_changed
-                    ));
+                            view.m_prop_vadj.get_value()->signal_value_changed().connect(
+                                sigc::mem_fun(
+                                    view,
+                                    &ListViewAA::on_vadj_value_changed
+                            ));
+                    }
 
                     return TRUE;
                 }

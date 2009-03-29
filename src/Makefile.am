@@ -146,6 +146,12 @@ youki_bin_SOURCES =             \
     youki-controller.hh         \
     youki-controller.cc         \
                                 \
+    youki-controller-status-icon.hh \
+    youki-controller-status-icon.cc \
+                                \
+    youki-notification.hh       \
+    youki-notification.cc       \
+                                \
     kobo-cover.hh               \
     kobo-cover.cc               \
                                 \

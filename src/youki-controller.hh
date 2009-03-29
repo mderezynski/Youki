@@ -15,8 +15,8 @@
 
 #include "mpx-mlibman-dbus-proxy-actual.hh"
 #include "mpx-app-dbus-adaptor.hh"
-
 #include "video-widget.hh"
+#include "youki-controller-status-icon.hh"
 
 namespace MPX
 {
@@ -29,7 +29,6 @@ namespace MPX
         protected:
 
             MainWindow                      * m_main_window ;
-            Glib::RefPtr<Gtk::StatusIcon>     m_main_status_icon ;
             int                               m_main_window_x 
                                             , m_main_window_y ;
             
@@ -57,10 +56,12 @@ namespace MPX
             VideoWidget                     * m_VideoWidget ;
             Gtk::DrawingArea                * m_VideoSimple ;
 
+            YoukiControllerStatusIcon       * m_ControlStatusIcon ;
+
             DataModelFilterP                  m_FilterModel;
             DataModelFilterAAP                m_FilterModelAA;
 
-            Glib::RefPtr<Gdk::Pixbuf>         m_Icon ; 
+            Glib::RefPtr<Gdk::Pixbuf>         m_icon ; 
 
             Play                            * m_play ;
             gint64                            m_seek_position ;
@@ -79,23 +80,38 @@ namespace MPX
 
         protected:
 
+            //// PLAY ENGINE
+
             void
-            on_eos(
+            on_play_eos(
             ) ;
 
             void
-            on_position(
+            on_play_position(
                   gint64
             ) ;
 
             void
-            on_playstatus(
+            on_play_playstatus(
                   PlayStatus
             ) ;
 
             void
-            on_stream_switched(        
+            on_play_stream_switched(        
             ) ;
+
+            ::Window
+            on_play_request_window_id(
+            ) ;
+
+            void
+            on_play_video_geom(
+                  int
+                , int
+                , const GValue*
+            ) ;
+
+            //// TRACK LIST 
 
             void
             on_list_view_tr_track_activated(
@@ -107,13 +123,10 @@ namespace MPX
             on_list_view_aa_selection_changed(
             ) ;
 
+            //// MISCELLANEOUS WIDGETS 
+
             void
             on_info_area_clicked(
-            ) ;
-
-            bool
-            on_status_icon_clicked(
-                GdkEventButton*
             ) ;
 
             bool
@@ -128,24 +141,25 @@ namespace MPX
             }
 
             void
-            on_seek(
+            on_position_seek(
                   gint64
             ) ;
 
             void
-            on_volume(
+            on_volume_set_volume(
                   int
-            ) ;
-
-            ::Window
-            on_play_request_window_id(
             ) ;
 
             void
-            on_play_video_geom(
-                  int
-                , int
-                , const GValue*
+            on_status_icon_clicked(
+            ) ;
+
+            void
+            on_status_icon_scroll_up(
+            ) ;
+
+            void
+            on_status_icon_scroll_down(
             ) ;
 
         protected:
