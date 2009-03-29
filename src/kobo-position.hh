@@ -9,11 +9,12 @@ namespace MPX
     {
         protected:
         
-            gint64  m_duration ;        
-            gint64  m_position ;
-            gint64  m_seek_position ;
-            double  m_seek_factor ;
-            bool    m_clicked ;
+            gint64      m_duration ;        
+            gint64      m_position ;
+            gint64      m_seek_position ;
+            double      m_seek_factor ;
+            bool        m_clicked ;
+            Gdk::Color  m_bg ;
         
             sigc::connection m_scrollback_conn ;
     
@@ -33,7 +34,7 @@ namespace MPX
                 return m_SIGNAL_seek_event ;
             }
 
-            KoboPosition () ;
+            KoboPosition ( const Gdk::Color& ) ;
             virtual ~KoboPosition () ;
 
             void

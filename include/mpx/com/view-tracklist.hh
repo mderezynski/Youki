@@ -206,6 +206,7 @@ namespace MPX
                     m_realmodel->clear () ;
                     m_mapping.clear() ;
                     m_iter_map.clear() ;
+                    clear_active_track() ;
                     m_changed.emit( 0 ) ;
                 } 
 
@@ -235,7 +236,7 @@ namespace MPX
                 )
                 {
                     m_constraints_synthetic.push_back( c ) ;    
-                    regen_mapping () ;
+                    regen_mapping() ;
                 }
 
                 virtual void
@@ -251,6 +252,7 @@ namespace MPX
                 )
                 {
                     m_constraints_synthetic.clear() ;
+                    scan_active() ;
                 }
 
                 virtual int 

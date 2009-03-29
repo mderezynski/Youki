@@ -73,22 +73,60 @@ namespace MPX
 
         if( m_volume )
         {
-                cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
-                cairo->set_source_rgba(
-                      c.get_red_p() 
-                    , c.get_green_p() 
-                    , c.get_blue_p()
-                    , .6
-                ) ;
-                RoundedRectangle(
-                      cairo
-                    , pad 
-                    , 0 
-                    , fmax( 0, (a.get_width()-2*pad) * double(percent))
-                    , 12 
-                    , rounding
-                ) ;
-                cairo->fill () ;
+            GdkRectangle r ;
+
+            r.x         = pad ; 
+            r.y         = 0 ; 
+            r.width     = fmax( 0, (a.get_width()-2*pad) * double(percent))
+            r.height    = 12 ; 
+
+            cairo->save () ;
+
+            Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
+                  r.x + r.width / 2
+                , r.y  
+                , r.x + r.width / 2
+                , r.y + r.height
+            ) ;
+            
+            background_gradient_ptr->add_color_stop_rgba(
+                  0. 
+                , c.get_red_p() 
+                , c.get_green_p()
+                , c.get_blue_p()
+                , 0.85 * factor 
+            ) ;
+
+            background_gradient_ptr->add_color_stop_rgba(
+                  .40
+                , c.get_red_p() 
+                , c.get_green_p()
+                , c.get_blue_p()
+                , 0.55 * factor
+            ) ;
+            
+            background_gradient_ptr->add_color_stop_rgba(
+                  1. 
+                , c.get_red_p() 
+                , c.get_green_p()
+                , c.get_blue_p()
+                , 0.35 * factor
+            ) ;
+
+            cairo->set_source( background_gradient_ptr ) ;
+            cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+
+            RoundedRectangle(
+                  cairo
+                , r.x 
+                , r.y
+                , r.width 
+                , r.height
+                , rounding
+            ) ;
+
+            cairo->fill (); 
+            cairo->restore () ;
         }
 
         {

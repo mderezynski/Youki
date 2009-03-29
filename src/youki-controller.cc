@@ -150,7 +150,10 @@ namespace MPX
 
         m_main_cover        = Gtk::manage( new KoboCover ) ;
 
-        m_main_position     = Gtk::manage( new KoboPosition ) ;
+        Gdk::Color background ;
+        background.set_rgb_p( 0.1, 0.1, 0.1 ) ;
+
+        m_main_position     = Gtk::manage( new KoboPosition( background ) ) ;
         m_main_position->signal_seek_event().connect(
             sigc::mem_fun(
                   *this
@@ -312,18 +315,18 @@ namespace MPX
         m_play->set_window_id( m_VideoWidget->get_video_xid() ) ;
 #endif
 
-        m_ControlStatusIcon = new YoukiControllerStatusIcon ;
-        m_ControlStatusIcon->signal_clicked().connect(
+        m_control_status_icon = new YoukiControllerStatusIcon ;
+        m_control_status_icon->signal_clicked().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_status_icon_clicked
         )) ;
-        m_ControlStatusIcon->signal_scroll_up().connect(
+        m_control_status_icon->signal_scroll_up().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_status_icon_scroll_up
         )) ;
-        m_ControlStatusIcon->signal_scroll_down().connect(
+        m_control_status_icon->signal_scroll_down().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_status_icon_scroll_down
@@ -344,7 +347,7 @@ namespace MPX
 
     YoukiController::~YoukiController ()
     {
-        delete m_ControlStatusIcon ;
+        delete m_control_status_icon ;
         delete m_main_window ;
         m_mlibman_dbus_proxy->Exit () ;
         delete m_mlibman_dbus_proxy ;
@@ -445,7 +448,7 @@ namespace MPX
                 m_current_track = t ; 
                 m_play->switch_stream( library->trackGetLocation( t ) ) ;
                 m_ListView->set_active_track( boost::get<gint64>(t[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
-                m_ControlStatusIcon->set_metadata( t ) ;
+                m_control_status_icon->set_metadata( t ) ;
 
         } catch( Library::FileQualificationError & cxe )
         {
@@ -458,22 +461,24 @@ namespace MPX
           gint64 position
     )
     {
+        gint64 duration ;
+
         if( m_seek_position != -1 )
         {
             if( position >= m_seek_position )
             {
-                gint64 duration = m_play->property_duration().get_value() ;
-                m_main_position->set_position( duration, position ) ;
+                duration = m_play->property_duration().get_value() ;
                 m_seek_position = -1 ;
             }
         }
         else
         if( m_seek_position == -1 )
         {
-            gint64 duration = m_play->property_duration().get_value() ;
-            m_main_position->set_position( duration, position ) ;
+            duration = m_play->property_duration().get_value() ;
         }
 
+        m_main_position->set_position( duration, position ) ;
+        m_control_status_icon->set_position( duration, position ) ;
     }
 
     void
@@ -508,7 +513,7 @@ namespace MPX
           PlayStatus status
     )
     {
-        m_ControlStatusIcon->set_playstatus( status ) ;
+        m_control_status_icon->set_playstatus( status ) ;
 
         switch( status )
         {
@@ -525,6 +530,7 @@ namespace MPX
                 m_main_window->queue_draw () ;    
                 m_ListView->clear_active_track() ;
                 m_main_cover->clear() ;
+                m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
                 m_main_position->set_position( 0, 0 ) ;
                 m_seek_position = -1 ;
                 break ;
@@ -570,10 +576,14 @@ namespace MPX
                             , 160
                             , Gdk::INTERP_BILINEAR
                     )) ;
+
+                    m_control_status_icon->set_image( cover ) ;
                 }
                 else
                 {
                     m_main_cover->clear() ;
+
+                    m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
                 }
         }
         else

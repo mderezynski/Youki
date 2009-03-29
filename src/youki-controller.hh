@@ -37,6 +37,7 @@ namespace MPX
             KoboCover                       * m_main_cover ;
             KoboTitleInfo                   * m_main_titleinfo ;
             KoboVolume                      * m_main_volume ;
+            YoukiControllerStatusIcon       * m_control_status_icon ;
 
             ListView                        * m_ListView ;
             ListViewAA                      * m_ListViewAA ;
@@ -55,8 +56,6 @@ namespace MPX
 
             VideoWidget                     * m_VideoWidget ;
             Gtk::DrawingArea                * m_VideoSimple ;
-
-            YoukiControllerStatusIcon       * m_ControlStatusIcon ;
 
             DataModelFilterP                  m_FilterModel;
             DataModelFilterAAP                m_FilterModelAA;

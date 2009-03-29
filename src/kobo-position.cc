@@ -12,14 +12,16 @@ namespace
 
 namespace MPX
 {
-    KoboPosition::KoboPosition ()
+    KoboPosition::KoboPosition(
+        const Gdk::Color& bg
+    )
 
         : m_duration( 0 )
         , m_position( 0 )
         , m_seek_position( 0 )
         , m_seek_factor( 0 )
         , m_clicked( false )
-
+        , m_bg( bg )
     {
         add_events(Gdk::EventMask(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK )) ;
     }
@@ -57,9 +59,9 @@ namespace MPX
 
         cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
         cairo->set_source_rgba(
-              0.10
-            , 0.10
-            , 0.10
+              m_bg.get_red_p() 
+            , m_bg.get_green_p()
+            , m_bg.get_blue_p()
             , 1.
         ) ;
         cairo->rectangle(
@@ -98,22 +100,60 @@ namespace MPX
 
         if( percent > 0. )
         {
-                cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
-                cairo->set_source_rgba(
-                      c.get_red_p() 
-                    , c.get_green_p() 
-                    , c.get_blue_p()
-                    , 1. * factor 
-                ) ;
-                RoundedRectangle(
-                      cairo
-                    , 0 
-                    , 0 
-                    , double(a.get_width()) * double(percent)
-                    , 12
-                    , rounding
-                ) ;
-                cairo->fill () ;
+            GdkRectangle r ;
+
+            r.x         = 0 ; 
+            r.y         = 0 ; 
+            r.width     = a.get_width() * percent ; 
+            r.height    = 12 ; 
+
+            cairo->save () ;
+
+            Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
+                  r.x + r.width / 2
+                , r.y  
+                , r.x + r.width / 2
+                , r.y + r.height
+            ) ;
+            
+            background_gradient_ptr->add_color_stop_rgba(
+                  0. 
+                , c.get_red_p() 
+                , c.get_green_p()
+                , c.get_blue_p()
+                , 0.85 * factor 
+            ) ;
+
+            background_gradient_ptr->add_color_stop_rgba(
+                  .40
+                , c.get_red_p() 
+                , c.get_green_p()
+                , c.get_blue_p()
+                , 0.55 * factor
+            ) ;
+            
+            background_gradient_ptr->add_color_stop_rgba(
+                  1. 
+                , c.get_red_p() 
+                , c.get_green_p()
+                , c.get_blue_p()
+                , 0.35 * factor
+            ) ;
+
+            cairo->set_source( background_gradient_ptr ) ;
+            cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+
+            RoundedRectangle(
+                  cairo
+                , r.x 
+                , r.y
+                , r.width 
+                , r.height
+                , rounding
+            ) ;
+
+            cairo->fill (); 
+            cairo->restore () ;
         }
 
         if( m_duration > 0 ) 
@@ -138,11 +178,10 @@ namespace MPX
 
             cairo->move_to(
                   fmax( 2, 2 + double(a.get_width()) * double(percent) - width - 4 ) 
-                , (a.get_height () - height) / 2 
+                , 2 
             ) ;
             cairo->set_source_rgba( 1., 1., 1., 1. ) ;
             cairo->set_operator( Cairo::OPERATOR_OVER ) ;
-
             pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
 
             if( (m_duration - m_position) > 1 )
@@ -153,7 +192,7 @@ namespace MPX
                     layout->get_pixel_size (width, height) ;
                     cairo->move_to(
                           2 + double(a.get_width()) - width - 4  
-                        , (a.get_height () - height) / 2
+                        , 2
                     ) ;
                     cairo->set_source_rgba( 1., 1., 1., 1. * factor ) ;
                     cairo->set_operator( Cairo::OPERATOR_OVER ) ;
