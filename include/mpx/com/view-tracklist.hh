@@ -1,5 +1,5 @@
-#ifndef MPX_LISTVIEW_HH
-#define MPX_LISTVIEW_HH
+#ifndef _YOUKI_TRACK_LIST_HH
+#define _YOUKI_TRACK_LIST_HH
 
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
@@ -167,14 +167,12 @@ namespace MPX
                 void
                 erase_track(gint64 id)
                 {
-#if 0
                     IdIterMap::iterator i = m_iter_map.find(id);
                     if( i != m_iter_map.end() )
                     {
                         m_realmodel->erase( i->second );
                         m_iter_map.erase( i );
                     }
-#endif
                 }
         };
 
@@ -192,6 +190,8 @@ namespace MPX
                 bool                    m_advanced ;
                 boost::optional<gint64> m_active_track ;
                 boost::optional<gint64> m_local_active_track ;
+                gint64                  m_position ;
+
 
                 DataModelFilter(DataModelP & model)
                 : DataModel(model->m_realmodel)
@@ -265,6 +265,14 @@ namespace MPX
                     return *(m_mapping[row]);
                 }
 
+                void
+                swap( std::size_t p1, std::size_t p2 )
+                {
+                    std::swap( m_mapping[p1], m_mapping[p2] ) ;
+                    scan_active() ;
+                    m_changed.emit( m_position ) ;
+                }
+
                 virtual void
                 append_track(MPX::Track& track)
                 {
@@ -294,7 +302,7 @@ namespace MPX
                 void
                 erase_track(gint64 id)
                 {
-                    DataModel::erase_track(id);
+                    DataModel::erase_track( id );
                     regen_mapping();
                 }
 
@@ -358,8 +366,8 @@ namespace MPX
                 {
                     using boost::get;
 
-                    gint64  id              = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
-                    gint64  new_position    = 0 ;
+                    gint64 id = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
+                    m_position = 0 ;
 
                     std::string text = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
 
@@ -411,7 +419,7 @@ namespace MPX
 
                             if( id >= 0 && get<3>(row) == id )
                             {
-                                new_position = new_mapping.size()  - 1 ;
+                                m_position = new_mapping.size()  - 1 ;
                             }
                         }
                     }
@@ -420,7 +428,7 @@ namespace MPX
                     {
                         scan_active () ;
                         std::swap( new_mapping, m_mapping ) ;
-                        m_changed.emit( new_position ) ;
+                        m_changed.emit( m_position ) ;
                     }
                 }
 
@@ -429,8 +437,8 @@ namespace MPX
                 {
                     using boost::get;
 
-                    gint64  id              = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
-                    gint64  new_position    = 0 ;
+                    gint64 id = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
+                    m_position = 0 ;
 
                     std::string text = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
 
@@ -482,7 +490,7 @@ namespace MPX
 
                             if( id >= 0 && get<3>(row) == id )
                             {
-                                new_position = new_mapping.size()  - 1 ;
+                                m_position = new_mapping.size()  - 1 ;
                             }
                         }
                     }
@@ -496,7 +504,7 @@ namespace MPX
                     {
                         scan_active() ;
                         std::swap( m_mapping, new_mapping ) ;
-                        m_changed.emit( new_position ) ;
+                        m_changed.emit( m_position ) ;
                     }
                 }
         };
@@ -725,7 +733,7 @@ namespace MPX
                 int                                 m_row_height ;
                 int                                 m_row_start ;
                 int                                 m_visible_height ;
-                int                                 m_previous_drawn_row ;
+                gint64                              m_previous_drawn_row ;
 
                 Columns                             m_columns ;
 
@@ -739,8 +747,9 @@ namespace MPX
 
                 IdV                                 m_dnd_idv ;
                 bool                                m_dnd ;
-                int                                 m_click_row_1 ;
-                int                                 m_sel_size_was ;
+                gint64                              m_clicked_row ;
+                bool                                m_clicked ;
+                gint64                              m_sel_size_was ;
                 bool                                m_highlight ;
 
                 boost::optional<gint64>             m_active_track ;
@@ -751,7 +760,7 @@ namespace MPX
 
                 std::set<int>                       m_collapsed ;
                 std::set<int>                       m_fixed ;
-                int                                 m_fixed_total_width ;
+                gint64                              m_fixed_total_width ;
         
                 SignalTrackActivated                m_SIGNAL_track_activated;
 
@@ -811,7 +820,7 @@ namespace MPX
                 {
                     if(m_selection.empty())
                     {
-                        m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
+                        m_selection.insert(std::make_pair(m_model->m_mapping[m_clicked_row], m_clicked_row));
                         queue_draw ();
                     }
 
@@ -1006,56 +1015,22 @@ namespace MPX
         
                     m_sel_size_was = m_selection.size();
 
-                    if(event->type == GDK_BUTTON_PRESS)
+                    if( event->type == GDK_BUTTON_PRESS )
                     {
-                        if(event->state & GDK_SHIFT_MASK)
+                        gint64 row = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
+
+                        if( event->x < m_columns[0]->get_width() )
                         {
-/*
-                            Selection::iterator i_sel = m_selection.end();
-                            i_sel--;
-                            int row_p = i_sel->second; 
-                            int row_c = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
-                            if( row_c < m_model->m_mapping.size() )
-                            {
-                                    for(int i = row_p+1; i <= row_c; ++i)
-                                    {
-                                        m_selection.insert(std::make_pair(m_model->m_mapping[i], i));
-                                        queue_draw();
-                                    }
-                            }
-*/
+                            MPX::Track track = get<4>(m_model->row(row)) ;
+                            m_SIGNAL_track_activated.emit(track, true) ;
                         }
                         else
                         {
-                            int row = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
-
-                            if( event->x < m_columns[0]->get_width() )
-                            {
-                                MPX::Track track = get<4>(m_model->row(row)) ;
-                                m_SIGNAL_track_activated.emit(track, true) ;
-                            }
-
-/*
-                            else
-                            if( row < m_model->m_mapping.size() )
-                            {
-                                    m_click_row_1 = row;
-
-                                    if( event->state & GDK_CONTROL_MASK)
-                                    {
-                                        m_sel_size_was = 1; // hack
-                                        m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
-                                        queue_draw();
-                                    }
-                                    else
-                                    if( m_selection.size() <= 1)
-                                    {
-                                        m_selection.clear();
-                                        m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
-                                        queue_draw();
-                                    }
-                            }
-*/
+                            m_selection.clear();
+                            m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
+                            m_clicked_row = row ;
+                            m_clicked = true ;
+                            queue_draw() ;
                         }
                     }
                 
@@ -1065,52 +1040,8 @@ namespace MPX
                 bool
                 on_button_release_event (GdkEventButton * event)
                 {
-                    using boost::get;
-
-                    if( event->y < (m_row_height+4))
-                    {
-                        return false;
-                    }
-        
-                    if(event->type == GDK_BUTTON_RELEASE) 
-                    {
-                        if( m_dnd )
-                        {
-                            return false;
-                        }
-
-                        if( m_sel_size_was > 1 )
-                        {
-                            if( event->state & GDK_CONTROL_MASK )
-                            {
-                                m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
-                                queue_draw ();
-                            }
-                            if(event->state & GDK_SHIFT_MASK)
-                            {
-                                Selection::iterator i_sel = m_selection.end();
-                                i_sel--;
-                                int row_p = i_sel->second; 
-                                int row_c = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
-                                if( row_c < m_model->m_mapping.size() )
-                                {
-                                        for(int i = row_p+1; i <= row_c; ++i)
-                                        {
-                                            m_selection.insert(std::make_pair(m_model->m_mapping[i], i));
-                                            queue_draw();
-                                        }
-                                }
-                            }
-                            else
-                            {
-                                m_selection.clear();
-                                m_selection.insert(std::make_pair(m_model->m_mapping[m_click_row_1], m_click_row_1));
-                                queue_draw ();
-                            }
-                        }
-                    }
-                
-                    return false;
+                    m_clicked = false ;
+                    return true ;
                 }
 
                 bool
@@ -1134,25 +1065,44 @@ namespace MPX
 
                     if (event->is_hint)
                     {
-                        gdk_window_get_pointer (event->window, &x_orig, &y_orig, &state);
+                        gdk_window_get_pointer( event->window, &x_orig, &y_orig, &state ) ;
                     }
                     else
                     {
-                        x_orig = int (event->x);
-                        y_orig = int (event->y);
-                        state = GdkModifierType (event->state);
+                        x_orig = int( event->x ) ;
+                        y_orig = int( event->y ) ;
+                        state  = GdkModifierType( event->state ) ;
                     }
 
-                    int row_c = get_upper_row() + ((int(y_orig)-(m_row_start)) / m_row_height);
-                    if( row_c < m_model->m_mapping.size() && (x_orig < m_columns[0]->get_width()) )
+                    gint64 row = get_upper_row() + ( y_orig - m_row_start ) / m_row_height ;
+
+                    if( !m_clicked )
                     {
-                        m_hover_track = row_c ;
-                        queue_draw_area (0, m_row_start, 16, get_allocation().get_height() - m_row_start ) ;
+                            if( row < m_model->m_mapping.size() && (x_orig < m_columns[0]->get_width()) )
+                            {
+                                m_hover_track = row ;
+                                queue_draw_area (0, m_row_start, 16, get_allocation().get_height() - m_row_start ) ;
+                            }
+                            else
+                            {
+                                m_hover_track.reset() ;
+                                queue_draw_area (0, m_row_start, 16, get_allocation().get_height() - m_row_start ) ;
+                            }
                     }
                     else
                     {
-                        m_hover_track.reset() ;
-                        queue_draw_area (0, m_row_start, 16, get_allocation().get_height() - m_row_start ) ;
+                            if( row != m_clicked_row )
+                            {
+                                if( row >= 0 && row < m_model->size() )
+                                {
+                                        m_model->swap( row, m_clicked_row ) ;
+
+                                        m_selection.clear();
+                                        m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
+
+                                        m_clicked_row = row ;
+                                }
+                            }
                     }
 
                     return true ;
@@ -1619,7 +1569,8 @@ namespace MPX
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_dnd( false )
-                        , m_click_row_1( 0 ) 
+                        , m_clicked_row( 0 ) 
+                        , m_clicked( false )
                         , m_sel_size_was( 0 )
                         , m_highlight( false )
                         , m_fixed_total_width( 0 )
@@ -1640,7 +1591,7 @@ namespace MPX
                     gtk_widget_realize(GTK_WIDGET(m_treeview));
 
                     set_flags(Gtk::CAN_FOCUS);
-                    add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_FOCUS_CHANGE_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK ));
+                    add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_FOCUS_CHANGE_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK ));
 
                     ((GtkWidgetClass*)(G_OBJECT_GET_CLASS(G_OBJECT(gobj()))))->set_scroll_adjustments_signal = 
                             g_signal_new ("set_scroll_adjustments",
@@ -1655,7 +1606,7 @@ namespace MPX
                     gtk_widget_realize(GTK_WIDGET(gobj()));
                     initialize_metrics();
 
-/*
+                    /*
                     signal_query_tooltip().connect(
                         sigc::mem_fun(
                               *this
@@ -1663,7 +1614,7 @@ namespace MPX
                     )) ;
 
                     set_has_tooltip( true ) ;
-*/
+                    */
                 }
 
                 ~ListView ()
@@ -1672,4 +1623,4 @@ namespace MPX
         };
 }
 
-#endif
+#endif // _YOUKI_TRACK_LIST_HH

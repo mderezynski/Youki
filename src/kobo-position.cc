@@ -16,9 +16,9 @@ namespace MPX
 
         : m_duration( 0 )
         , m_position( 0 )
-        , m_clicked( false )
         , m_seek_position( 0 )
         , m_seek_factor( 0 )
+        , m_clicked( false )
 
     {
         add_events(Gdk::EventMask(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK )) ;
@@ -70,28 +70,26 @@ namespace MPX
         ) ;
         cairo->fill () ;
 
-        {
-               cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
-               cairo->set_source_rgba(
-                      c.get_red_p() 
-                    , c.get_green_p() 
-                    , c.get_blue_p()
-                    , .2 
-                ) ;
-                RoundedRectangle(
-                      cairo
-                    , 0 
-                    , 0 
-                    , a.get_width()
-                    , 12
-                    , rounding
-                ) ;
-                cairo->fill () ;
-        }
+       cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+       cairo->set_source_rgba(
+              c.get_red_p() 
+            , c.get_green_p() 
+            , c.get_blue_p()
+            , .2 
+        ) ;
+        RoundedRectangle(
+              cairo
+            , 0 
+            , 0 
+            , a.get_width()
+            , 12
+            , rounding
+        ) ;
+        cairo->fill () ;
 
         double factor   = 1. ;
         gint64 position = m_clicked ? m_seek_position : m_position ;
-        double percent  = double(m_position) / double(m_duration) ; 
+        double percent  = double(position) / double(m_duration) ; 
 
         if( percent >= 0.90 )
         {

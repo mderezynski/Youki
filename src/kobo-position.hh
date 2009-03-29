@@ -12,8 +12,8 @@ namespace MPX
             gint64  m_duration ;        
             gint64  m_position ;
             gint64  m_seek_position ;
-            bool    m_clicked ;
             double  m_seek_factor ;
+            bool    m_clicked ;
         
             sigc::connection m_scrollback_conn ;
     

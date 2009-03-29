@@ -8,7 +8,7 @@
 namespace
 {
     const double rounding = 2. ; 
-    const int    pad = 1 ;
+    const int    pad = 0 ;
 }
 
 namespace MPX
@@ -48,57 +48,49 @@ namespace MPX
     )
     {
         Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context() ;
+
         const Gdk::Rectangle& a = get_allocation() ;
+
         Gdk::Color c ;
-
         c.set_rgb_p( .7, .7, .7 ) ;
-
 
         double percent = double(m_volume) / 100. ; 
 
         cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
-        // render background 
+        cairo->set_source_rgba(
+              .10 
+            , .10 
+            , .10 
+            , 1. 
+        ) ;
+        cairo->rectangle(
+              0
+            , 0 
+            , a.get_width()
+            , 12 
+        ) ;
+        cairo->fill () ;
+
+        if( m_volume )
         {
-                cairo->set_source_rgba(
-                      .10 
-                    , .10 
-                    , .10 
-                    , 1. 
-                ) ;
-
-                cairo->rectangle(
-                      0 
-                    , 0 
-                    , a.get_width()
-                    , a.get_height() 
-                ) ;
-
-                cairo->fill () ;
-        }
-
-        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
-        // render volume bar
-        {
+                cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
                 cairo->set_source_rgba(
                       c.get_red_p() 
                     , c.get_green_p() 
                     , c.get_blue_p()
                     , .6
                 ) ;
-
                 RoundedRectangle(
                       cairo
                     , pad 
                     , 0 
-                    , (a.get_width()-2*pad) * double(percent)
+                    , fmax( 0, (a.get_width()-2*pad) * double(percent))
                     , 12 
                     , rounding
                 ) ;
-
                 cairo->fill () ;
         }
 
-        // draw volume text
         {
             const int text_size_px = 8 ;
 

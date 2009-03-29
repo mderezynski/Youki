@@ -112,8 +112,8 @@ namespace MPX
         m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
 
-        m_ScrolledWin->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
-        m_ScrolledWinAA->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
+        m_ScrolledWin->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
+        m_ScrolledWinAA->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
 
         m_Paned = new Gtk::HPaned ;
 
@@ -125,6 +125,16 @@ namespace MPX
                 m_FilterModel = DataModelFilterP (new DataModelFilter(m)) ;
 
                 m_Entry->signal_changed().connect(
+                        sigc::bind(
+                                sigc::mem_fun(
+                                      *this
+                                    , &YoukiController::on_entry_changed
+                                )
+                              , m_FilterModel
+                              , m_Entry
+                )) ;
+
+                m_Entry->signal_activate().connect(
                         sigc::bind(
                                 sigc::mem_fun(
                                       *this
