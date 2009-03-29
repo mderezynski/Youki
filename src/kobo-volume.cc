@@ -77,7 +77,7 @@ namespace MPX
 
             r.x         = pad ; 
             r.y         = 0 ; 
-            r.width     = fmax( 0, (a.get_width()-2*pad) * double(percent))
+            r.width     = fmax( 0, (a.get_width()-2*pad) * double(percent)) ;
             r.height    = 12 ; 
 
             cairo->save () ;
@@ -94,15 +94,15 @@ namespace MPX
                 , c.get_red_p() 
                 , c.get_green_p()
                 , c.get_blue_p()
-                , 0.85 * factor 
+                , 0.85
             ) ;
 
             background_gradient_ptr->add_color_stop_rgba(
-                  .40
+                  .60
                 , c.get_red_p() 
                 , c.get_green_p()
                 , c.get_blue_p()
-                , 0.55 * factor
+                , 0.55
             ) ;
             
             background_gradient_ptr->add_color_stop_rgba(
@@ -110,7 +110,7 @@ namespace MPX
                 , c.get_red_p() 
                 , c.get_green_p()
                 , c.get_blue_p()
-                , 0.35 * factor
+                , 0.35
             ) ;
 
             cairo->set_source( background_gradient_ptr ) ;

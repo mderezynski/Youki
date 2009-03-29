@@ -125,7 +125,7 @@ namespace MPX
             ) ;
 
             background_gradient_ptr->add_color_stop_rgba(
-                  .40
+                  .60
                 , c.get_red_p() 
                 , c.get_green_p()
                 , c.get_blue_p()
