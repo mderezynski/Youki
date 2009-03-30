@@ -33,7 +33,7 @@ namespace MPX
     void
     KoboPosition::on_size_request( Gtk::Requisition * req )
     {
-        req->height = 12 ;  
+        req->height = 14 ;  
     }
 
     void
@@ -84,7 +84,7 @@ namespace MPX
             , 0 
             , 0 
             , a.get_width()
-            , 12
+            , 14
             , rounding
         ) ;
         cairo->fill () ;
@@ -105,7 +105,7 @@ namespace MPX
             r.x         = 0 ; 
             r.y         = 0 ; 
             r.width     = a.get_width() * percent ; 
-            r.height    = 12 ; 
+            r.height    = 14 ; 
 
             cairo->save () ;
 
@@ -158,19 +158,19 @@ namespace MPX
 
         if( m_duration > 0 ) 
         {
-            const int text_size_px = 8 ;
+            const int text_size_px = 10 ;
 
             const Gtk::Allocation& a = get_allocation() ;
 
             Pango::FontDescription font_desc ("Sans") ;
             int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
             font_desc.set_size (text_size_pt * PANGO_SCALE) ;
-            font_desc.set_weight (Pango::WEIGHT_BOLD) ;
+//            font_desc.set_weight (Pango::WEIGHT_BOLD) ;
             Glib::RefPtr<Pango::Layout> layout = Glib::wrap (pango_cairo_create_layout (cairo->cobj ())) ;
             layout->set_font_description (font_desc) ;
 
-            layout->set_text(
-                (boost::format("%02d:%02d") % ( position / 60 ) % ( position % 60 )).str()
+            layout->set_markup(
+                (boost::format("<b>%02d</b>:<b>%02d</b>") % ( position / 60 ) % ( position % 60 )).str()
             ) ;
 
             int width, height;
@@ -178,7 +178,7 @@ namespace MPX
 
             cairo->move_to(
                   fmax( 2, 2 + double(a.get_width()) * double(percent) - width - 4 ) 
-                , 2 
+                , 1 
             ) ;
             cairo->set_source_rgba( 1., 1., 1., 1. ) ;
             cairo->set_operator( Cairo::OPERATOR_OVER ) ;
@@ -186,13 +186,13 @@ namespace MPX
 
             if( (m_duration - m_position) > 1 )
             {
-                    layout->set_text(
-                        (boost::format("%02d:%02d") % ( m_duration / 60 ) % ( m_duration % 60 )).str()
+                    layout->set_markup(
+                        (boost::format("<b>%02d</b>:<b>%02d</b>") % ( m_duration / 60 ) % ( m_duration % 60 )).str()
                     ) ;
                     layout->get_pixel_size (width, height) ;
                     cairo->move_to(
                           2 + double(a.get_width()) - width - 4  
-                        , 2
+                        , 1
                     ) ;
                     cairo->set_source_rgba( 1., 1., 1., 1. * factor ) ;
                     cairo->set_operator( Cairo::OPERATOR_OVER ) ;

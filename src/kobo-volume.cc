@@ -30,7 +30,7 @@ namespace MPX
     KoboVolume::on_size_request( Gtk::Requisition * req )
     {
         req->width  = 100 + 2*pad ;
-        req->height = 12 ;
+        req->height = 14 ;
     }
 
     void
@@ -67,7 +67,7 @@ namespace MPX
               0
             , 0 
             , a.get_width()
-            , 12 
+            , 14 
         ) ;
         cairo->fill () ;
 
@@ -78,7 +78,7 @@ namespace MPX
             r.x         = pad ; 
             r.y         = 0 ; 
             r.width     = fmax( 0, (a.get_width()-2*pad) * double(percent)) ;
-            r.height    = 12 ; 
+            r.height    = 14 ; 
 
             cairo->save () ;
 
@@ -130,7 +130,7 @@ namespace MPX
         }
 
         {
-            const int text_size_px = 8 ;
+            const int text_size_px = 10 ;
 
             const Gtk::Allocation& a = get_allocation() ;
 
@@ -149,7 +149,7 @@ namespace MPX
 
             cairo->move_to(
                   fmax( 2, 2 + double((a.get_width() - pad*2)) * double(percent) - width - (pad+4) ) 
-                , (a.get_height() - height) / 2
+                , 1 
             ) ;
 
             cairo->set_source_rgba( 1., 1., 1., 1. ) ;
