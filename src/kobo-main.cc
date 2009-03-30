@@ -7,7 +7,7 @@
 
 namespace
 {
-    const double rounding = 8. ;
+    const double rounding = 4. ;
 }
 
 namespace

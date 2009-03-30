@@ -869,9 +869,6 @@ namespace MPX
                     if( m_selection )
                     {
                         m_selection.reset() ;
-                        m_SIGNAL_selection_changed.emit() ;
-                        queue_draw() ;
-
                         // so we ESPECIALLY don't signal out if there is no selection anyway
                     }
                 }

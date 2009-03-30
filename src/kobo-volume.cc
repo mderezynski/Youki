@@ -67,7 +67,7 @@ namespace MPX
               0
             , 0 
             , a.get_width()
-            , 14 
+            , a.get_height() 
         ) ;
         cairo->fill () ;
 
@@ -76,7 +76,7 @@ namespace MPX
             GdkRectangle r ;
 
             r.x         = pad ; 
-            r.y         = 0 ; 
+            r.y         = (a.get_height() - 14) / 2 ; 
             r.width     = fmax( 0, (a.get_width()-2*pad) * double(percent)) ;
             r.height    = 14 ; 
 
@@ -149,7 +149,7 @@ namespace MPX
 
             cairo->move_to(
                   fmax( 2, 2 + double((a.get_width() - pad*2)) * double(percent) - width - (pad+4) ) 
-                , 1 
+                , (get_height() - height)/2.
             ) ;
 
             cairo->set_source_rgba( 1., 1., 1., 1. ) ;

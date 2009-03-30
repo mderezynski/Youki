@@ -447,6 +447,8 @@ namespace MPX
                 regen_mapping(
                 )
                 {
+                    g_message( G_STRFUNC ) ;
+
                     typedef std::set<Model_t::iterator>  RowSet_t ;
                     typedef std::vector<RowSet_t>        CacheVec_t ;
 
@@ -590,6 +592,8 @@ namespace MPX
                 regen_mapping_iterative(
                 )
                 {
+                    g_message( G_STRFUNC ) ;
+
                     typedef std::set<Model_t::iterator>  RowSet_t ;
                     typedef std::vector<RowSet_t>       CacheVec_t ;
 

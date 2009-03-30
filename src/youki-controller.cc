@@ -310,7 +310,7 @@ namespace MPX
 
         m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
         m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
-        m_HBox_Controls->set_spacing( 2 ) ;
+        m_HBox_Controls->set_spacing( 4 ) ;
 
         m_main_window->set_widget_top( *m_VBox ) ;
         m_main_window->set_widget_drawer( *m_main_cover ) ; 
@@ -402,7 +402,7 @@ namespace MPX
         // Tracks 
 
         SQL::RowV v ;
-        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY album_artist, date, album, track_view.track")).str()) ; 
+        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album, track_view.track")).str()) ; 
         for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
         {
                 SQL::Row & r = *i;
@@ -443,10 +443,11 @@ namespace MPX
             , -1
             , -1
             , _("All Albums")
+            , "" 
         ) ;
 
         v.clear () ; 
-        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY album_artist, mb_release_date")).str()) ; 
+        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album")).str()) ; 
 
         for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
         {
@@ -478,6 +479,7 @@ namespace MPX
                     , get<gint64>(r["id"])
                     , get<gint64>(r["album_artist_id"])
                     , get<std::string>(r["album"])
+                    , r.count("album_artist_sortname") ? get<std::string>(r["album_artist_sortname"]) : get<std::string>(r["album_artist"])
                 ) ;
         }
 
@@ -676,6 +678,7 @@ namespace MPX
         if( origin == ORIGIN_MODEL_ALBUM_ARTISTS ) 
         {
             m_ListViewAlbums->clear_selection() ;
+            id_albums = -1 ;
         }
     
         if( id_artist == -1 )
@@ -717,18 +720,38 @@ namespace MPX
     {
         m_FilterModelTracks->set_filter( m_Entry->get_text() );
 
-        m_ListViewAA->clear_selection() ;
         m_ListViewAlbums->clear_selection() ;
+        m_ListViewAA->clear_selection() ;
 
-        m_conn1.block() ;
-        m_FilterModelAA->set_constraint( m_FilterModelTracks->m_constraint_artist ) ;
-        m_FilterModelAA->regen_mapping() ;
-        m_conn1.unblock() ;
+        if( m_Entry->get_text().empty() )
+        {
 
-        m_conn2.block() ;
-        m_FilterModelAlbums->set_constraint_album( m_FilterModelTracks->m_constraint_albums ) ;
-        m_FilterModelAlbums->regen_mapping() ;
-        m_conn2.unblock() ;
+            m_conn1.block() ;
+            m_conn2.block() ;
+
+            std::set<gint64> constraint ;
+            m_FilterModelAA->set_constraint( constraint ) ;
+            m_FilterModelAlbums->set_constraint_album( constraint ) ;
+            m_FilterModelAlbums->set_constraint_artist( constraint ) ;
+
+            m_FilterModelAA->regen_mapping() ;
+            m_FilterModelAlbums->regen_mapping() ;
+
+            m_conn1.unblock() ;
+            m_conn2.unblock() ;
+        }
+        else
+        {
+                m_conn1.block() ;
+                m_FilterModelAA->set_constraint( m_FilterModelTracks->m_constraint_artist ) ;
+                m_FilterModelAA->regen_mapping() ;
+                m_conn1.unblock() ;
+
+                m_conn2.block() ;
+                m_FilterModelAlbums->set_constraint_album( m_FilterModelTracks->m_constraint_albums ) ;
+                m_FilterModelAlbums->regen_mapping() ;
+                m_conn2.unblock() ;
+        }
     }
 
     void
