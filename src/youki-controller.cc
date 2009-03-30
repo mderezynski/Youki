@@ -86,6 +86,7 @@ namespace MPX
                 , &YoukiController::on_play_stream_switched
         )) ;
 
+/*
         m_play->signal_request_window_id().connect(
             sigc::mem_fun(
                   *this
@@ -97,6 +98,7 @@ namespace MPX
                   *this
                 , &YoukiController::on_play_video_geom
         )) ;
+*/
 
         //m_VideoWidget       = Gtk::manage( new VideoWidget( m_play ) ) ;
         m_Paned             = Gtk::manage( new Gtk::HPaned ) ;
@@ -518,13 +520,13 @@ namespace MPX
         switch( status )
         {
             case PLAYSTATUS_PLAYING:
-                m_VideoWidget->property_playing() = true ;
-                m_VideoWidget->queue_draw() ;
+                //m_VideoWidget->property_playing() = true ;
+                //m_VideoWidget->queue_draw() ;
                 break ;
 
             case PLAYSTATUS_STOPPED:
-                m_VideoWidget->property_playing() = false ;
-                m_VideoWidget->queue_draw() ;
+                //m_VideoWidget->property_playing() = false ;
+                //m_VideoWidget->queue_draw() ;
                 m_current_track.reset() ;
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
@@ -536,8 +538,8 @@ namespace MPX
                 break ;
 
             case PLAYSTATUS_WAITING:
-                m_VideoWidget->property_playing() = false ;
-                m_VideoWidget->queue_draw() ;
+                //m_VideoWidget->property_playing() = false ;
+                //m_VideoWidget->queue_draw() ;
                 m_current_track.reset() ;
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
@@ -545,8 +547,8 @@ namespace MPX
                 break ;
 
             case PLAYSTATUS_PAUSED:
-                m_VideoWidget->property_playing() = false ;
-                m_VideoWidget->queue_draw() ;
+                //m_VideoWidget->property_playing() = false ;
+                //m_VideoWidget->queue_draw() ;
                 break ;
 
             default: break ;

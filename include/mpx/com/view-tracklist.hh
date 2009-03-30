@@ -1190,14 +1190,14 @@ namespace MPX
                     {
                         gint64 row = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
 
-                        if( event->x < m_columns[0]->get_width() )
+                        if( row < m_model->size() )
                         {
-                            MPX::Track track = get<4>(m_model->row(row)) ;
-                            m_SIGNAL_track_activated.emit(track, true) ;
-                        }
-                        else
-                        {
-                            if( row < m_model->m_mapping.size() )
+                            if( event->x < m_columns[0]->get_width() )
+                            {
+                                MPX::Track track = get<4>(m_model->row(row)) ;
+                                m_SIGNAL_track_activated.emit(track, true) ;
+                            }
+                            else
                             {
                                 m_selection.clear();
                                 m_selection.insert(std::make_pair(m_model->m_mapping[row], row));

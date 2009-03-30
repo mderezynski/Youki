@@ -294,7 +294,15 @@ namespace MPX
 
 		if( m_location == ARROW_TOP )
 		{
-			Cairo::Matrix matrix = { 1, 0, 0, -1, 0, h } ;
+			Cairo::Matrix matrix ;
+
+            matrix.xx =  1 ;
+            matrix.yx =  0 ;
+            matrix.xy =  0 ;
+            matrix.yy = -1 ; 
+            matrix.x0 =  0 ;
+            matrix.y0 =  h ;
+
 			cr->set_matrix (matrix) ;
 		}
 
