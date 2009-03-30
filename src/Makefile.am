@@ -102,8 +102,6 @@ endif
 youki_bin_SOURCES =             \
                                 \
     audio.cc                    \
-    audio-types.hh              \
-    audio-exception.hh          \
                                 \
     covers.cc                   \
     covers-stores.cc            \
@@ -118,11 +116,6 @@ youki_bin_SOURCES =             \
     dialog-filebrowser.cc       \
                                 \
     error.cc                    \
-                                \
-    flow_engine.hh              \
-    flow_engine.cc              \
-    flow_widget.hh              \
-    flow_widget.cc              \
                                 \
     glib-marshalers.c           \
                                 \
@@ -207,13 +200,8 @@ youki_bin_SOURCES =             \
     util-ui.cc                  \
                                 \
     video-playback.hh           \
-    video-playback.cc           \
-                                \
-    video-widget.hh             \
-    video-widget.cc             \
-                                \
-    volume-control.hh           \
-    volume-control.cc
+    video-playback.cc          
+                                
 
 if HAVE_HAL                             
 youki_bin_SOURCES +=            \

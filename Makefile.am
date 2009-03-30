@@ -64,16 +64,10 @@ SUBDIRS +=		\
 
 man_MANS = mpx.1
 
-pkgconfigdir = @pkgconfigdir@
-pkgconfig_DATA = mpx.pc
-
-EXTRA_DIST =									\
-												\
-	autogen.sh									\
-												\
-	info.backtrace.youki.service.in				\
-	info.backtrace.sentinel.service.in			\
-												\
-	mpx.1.in									\
-	mpx.pc.in									
-	
+EXTRA_DIST =                                        \
+                                                    \
+        autogen.sh                                  \
+        mpx.1.in                                    \
+        info.backtrace.youki.app.service.in         \
+        info.backtrace.youki.sentinel.service.in    \
+        info.backtrace.youki.mlibman.service.in

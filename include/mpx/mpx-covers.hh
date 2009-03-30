@@ -51,9 +51,9 @@ namespace MPX
 {
   enum CoverSize
   {
-    COVER_SIZE_ALBUM        = 0,
-    COVER_SIZE_DEFAULT      = 1,
-    N_COVER_SIZES
+        COVER_SIZE_ALBUM        = 0,
+        COVER_SIZE_DEFAULT      = 1,
+        N_COVER_SIZES
   };
 
   typedef std::map <std::string, int>                                   RequestStoreCounter;

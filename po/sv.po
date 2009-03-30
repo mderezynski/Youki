@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: audiosource alpha6\n"
 "Report-Msgid-Bugs-To: http://mpx.backtrace.info/report\n"
-"POT-Creation-Date: 2009-03-24 21:55+0100\n"
+"POT-Creation-Date: 2009-03-30 13:52+0200\n"
 "PO-Revision-Date: 2009-01-05 23:46+0100\n"
 "Last-Translator: Carl Furstenberg <azatoth@gmail.com>\n"
 "Language-Team: Swedish <sv@li.org>\n"
@@ -365,23 +365,23 @@ msgstr "Soundtrack"
 msgid "Soundtrack"
 msgstr "Soundtrack"
 
-#: com/view-albums.cc:495
+#: com/view-albums.cc:497
 msgid "Album _Info"
 msgstr "Albums_info"
 
-#: com/view-albums.cc:1749
+#: com/view-albums.cc:1751
 msgid ", highlighting played"
 msgstr ", framhäver spelade"
 
-#: com/view-albums.cc:1751
+#: com/view-albums.cc:1753
 msgid ", highlighting unplayed"
 msgstr ", framhäver ospelade"
 
-#: com/view-albums.cc:1758
+#: com/view-albums.cc:1760
 msgid "release"
 msgstr "släpp"
 
-#: com/view-albums.cc:1758
+#: com/view-albums.cc:1760
 msgid "releases of all kind"
 msgstr "utgåvor av alla dess slag"
 
@@ -488,7 +488,8 @@ msgid "_Show Credentials"
 msgstr "_Visa kreditiv"
 
 #: glade/mlibmanager.glade:7
-msgid "AudioSource: Music Library Management"
+#, fuzzy
+msgid "Youki: Music Library Management"
 msgstr "AudioSource: Musikbibliotekshandhavande"
 
 #: glade/mlibmanager.glade:89
@@ -776,7 +777,7 @@ msgstr ""
 msgid "<small>Changing the settings will interrupt playback.</small>"
 msgstr ""
 
-#: glade/preferences.glade:3528 glade/preferences.glade:5893
+#: glade/preferences.glade:3528 glade/preferences.glade:5892
 msgid "Revert"
 msgstr ""
 
@@ -894,73 +895,73 @@ msgstr ""
 msgid "Playback Capabilities"
 msgstr ""
 
-#: glade/preferences.glade:5062
+#: glade/preferences.glade:5061
 msgid "Enable Multimedia Keys"
 msgstr ""
 
-#: glade/preferences.glade:5094
+#: glade/preferences.glade:5093
 msgid "<b>Mode</b>"
 msgstr ""
 
-#: glade/preferences.glade:5152
+#: glade/preferences.glade:5151
 msgid "X Configured (xmodmap)"
 msgstr ""
 
-#: glade/preferences.glade:5209
+#: glade/preferences.glade:5208
 msgid "GNOME"
 msgstr ""
 
-#: glade/preferences.glade:5267
+#: glade/preferences.glade:5266
 msgid "Custom Layout:"
 msgstr ""
 
-#: glade/preferences.glade:5299
+#: glade/preferences.glade:5298
 msgid "              "
 msgstr ""
 
-#: glade/preferences.glade:5341
+#: glade/preferences.glade:5340
 msgid "<b>Press a key combination inside a text field.</b>"
 msgstr ""
 
-#: glade/preferences.glade:5379
+#: glade/preferences.glade:5378
 msgid "                        "
 msgstr ""
 
-#: glade/preferences.glade:5664 sources/lastfm/source-lastfm.glade:65
+#: glade/preferences.glade:5663 sources/lastfm/source-lastfm.glade:65
 msgid "Play:"
 msgstr ""
 
-#: glade/preferences.glade:5692
+#: glade/preferences.glade:5691
 msgid "Pause:"
 msgstr ""
 
-#: glade/preferences.glade:5720
+#: glade/preferences.glade:5719
 msgid "Previous Track:"
 msgstr ""
 
-#: glade/preferences.glade:5748
+#: glade/preferences.glade:5747
 msgid "Next Track:"
 msgstr ""
 
-#: glade/preferences.glade:5776
+#: glade/preferences.glade:5775
 msgid "Stop:"
 msgstr ""
 
-#: glade/preferences.glade:5959
+#: glade/preferences.glade:5958
 msgid "Multimedia Keys"
 msgstr ""
 
-#: glade/preferences.glade:6001
+#: glade/preferences.glade:6000
 msgid "<b>Covert Art Sources</b>"
 msgstr ""
 
-#: glade/preferences.glade:6033
+#: glade/preferences.glade:6032
 msgid ""
 "<small>Select which cover art sources should be used, and in what order.</"
 "small>"
 msgstr ""
 
-#: glade/preferences.glade:6153
+#: glade/preferences.glade:6152
 msgid "Cover Art"
 msgstr ""
 
@@ -1105,15 +1106,15 @@ msgstr ""
 msgid "SQL error while inserting/updating track: '%s'"
 msgstr ""
 
-#: src/library-scanner-thread.cc:1676 src/library.cc:1643
+#: src/library-scanner-thread.cc:1676
 msgid "Finding Lost Artists..."
 msgstr ""
 
-#: src/library-scanner-thread.cc:1702 src/library.cc:1668
+#: src/library-scanner-thread.cc:1702
 msgid "Finding Lost Albums..."
 msgstr ""
 
-#: src/library-scanner-thread.cc:1727 src/library.cc:1692
+#: src/library-scanner-thread.cc:1727
 msgid "Finding Lost Album Artists..."
 msgstr ""
 
@@ -1148,56 +1149,19 @@ msgstr ""
 msgid "Additional Metadata Update: Done"
 msgstr ""
 
-#: src/library.cc:562
-#, c-format
-msgid "Updating Track Locations: %lld / %lld"
-msgstr ""
-
-#: src/library.cc:586
-msgid "Updating Track Locations: Done"
-msgstr ""
-
-#: src/library.cc:611
-#, c-format
-msgid "Updating Track HAL Data: %lld / %lld"
-msgstr ""
-
-#: src/library.cc:634
-msgid "Updating Track HAL Data: Done"
-msgstr ""
-
-#: src/library.cc:650
-#, c-format
-msgid "Refreshing album covers: %lld / %lld"
-msgstr ""
-
-#: src/library.cc:856
-#, c-format
-msgid "Removing duplicates: %s"
-msgstr ""
-
-#: src/library.cc:876
-msgid "Removing duplicates: Done"
-msgstr ""
-
-#: src/library.cc:906
-#, c-format
-msgid "Deleting Track: %lld of %lld"
-msgstr ""
-
-#: src/main.cc:114
+#: src/main.cc:106
 msgid "Got SIGTERM: Exiting (It's all right!)"
 msgstr ""
 
-#: src/main.cc:329
+#: src/main.cc:321
 msgid " - run AudioSource Player"
 msgstr ""
 
-#: src/main.cc:347
+#: src/main.cc:339
 msgid "Starting Services..."
 msgstr ""
 
-#: src/main.cc:370
+#: src/main.cc:360
 msgid "Done"
 msgstr ""
 
@@ -1545,13 +1509,13 @@ msgstr ""
 msgid "Spectrum"
 msgstr ""
 
-#: src/plugin-manager-gui.cc:103 src/preferences.cc:275
+#: src/plugin-manager-gui.cc:103 src/preferences.cc:274
 #: sources/musiclib/source-musiclib.cc:283
 #: sources/musiclib/source-musiclib.cc:327
 msgid "Active"
 msgstr ""
 
-#: src/plugin-manager-gui.cc:104 src/preferences.cc:378
+#: src/plugin-manager-gui.cc:104 src/preferences.cc:377
 #: sources/musiclib/source-musiclib.cc:248
 #: sources/musiclib/source-musiclib.cc:598
 #: sources/musiclib/source-musiclib.cc:1746
@@ -1584,44 +1548,44 @@ msgstr ""
 msgid " (%d more errors)"
 msgstr ""
 
-#: src/preferences.cc:174
+#: src/preferences.cc:173
 msgid "Local files (folder.jpg, cover.jpg, etc.)"
 msgstr ""
 
-#: src/preferences.cc:175
+#: src/preferences.cc:174
 msgid "MusicBrainz Advanced Relations"
 msgstr ""
 
-#: src/preferences.cc:176 sources/musiclib/source-musiclib.cc:262
+#: src/preferences.cc:175 sources/musiclib/source-musiclib.cc:262
 msgid "Amazon ASIN"
 msgstr ""
 
-#: src/preferences.cc:177
+#: src/preferences.cc:176
 msgid "Amazon Search API"
 msgstr ""
 
-#: src/preferences.cc:178
+#: src/preferences.cc:177
 msgid "Inline Covers (File Metadata)"
 msgstr ""
 
-#: src/preferences.cc:287 sources/musiclib/source-musiclib.cc:338
+#: src/preferences.cc:286 sources/musiclib/source-musiclib.cc:338
 #: sources/musiclib/source-musiclib.cc:456
 msgid "Column"
 msgstr ""
 
-#: src/preferences.cc:379
+#: src/preferences.cc:378
 msgid "Description"
 msgstr ""
 
-#: src/preferences.cc:380 sources/musiclib/source-musiclib.cc:266
+#: src/preferences.cc:379 sources/musiclib/source-musiclib.cc:266
 msgid "MIME Type"
 msgstr ""
 
-#: src/preferences.cc:1362
+#: src/preferences.cc:1367
 msgid "System Default"
 msgstr ""
 
-#: src/preferences.cc:1567
+#: src/preferences.cc:1572
 msgid "(none)"
 msgstr ""
 
@@ -1779,82 +1743,60 @@ msgstr ""
 msgid "label2"
 msgstr ""
 
-#: remote/youki.cc:56
-msgid "Play files/URIs after enqueueing"
-msgstr ""
-
-#: remote/youki.cc:66
+#: remote/youki.cc:58
 msgid ""
 "\n"
-"AudioSource Player Copyright (c) 2008 MPX Project <http://mpx.backtrace."
-"info>\n"
+"Youki Copyright (c) 2009 MPX Project <http://mpx.backtrace.info>\n"
 "\n"
 msgstr ""
 
-#: remote/youki.cc:110
+#: remote/youki.cc:103
 msgid ""
 "\n"
-"       MPX seems to have crashed.\n"
+"       Youki seems to have crashed.\n"
 "\n"
 "       Please try starting it from a terminal using '"
 msgstr ""
 
-#: remote/youki.cc:112
+#: remote/youki.cc:105
 msgid ""
 "/libexec/mpx-bin --no-log'\n"
 "       for further information on what could have caused the crash\n"
 msgstr ""
 
-#: remote/youki.cc:113
+#: remote/youki.cc:106
 msgid ""
 "       and report it to our IRC channel, #mpx on irc.freenode.net\n"
 "\n"
 msgstr ""
 
-#: remote/youki.cc:125
-msgid "MPX Crashed"
-msgstr ""
-
-#: remote/youki.cc:174
-msgid " - Run MPX and/or perform actions on MPX"
-msgstr ""
-
-#: remote/youki.cc:179
+#: remote/youki.cc:196
 #, c-format
 msgid ""
-"\n"
-"Invalid argument: '%s'\n"
-"Please run '%s --help' for help on usage\n"
+"Youki-Startup: Could not connect to session bus: %s\n"
 "\n"
 msgstr ""
 
-#: remote/youki.cc:200
+#: remote/youki.cc:202
 #, c-format
 msgid ""
-"%s: Couldn't connect to session bus: %s\n"
+"<big><b>Youki-Startup DBus Error</b></big>\n"
 "\n"
-msgstr ""
-
-#: remote/youki.cc:206
-#, c-format
-msgid ""
-"<big><b>MPX/DBus Error</b></big>\n"
-"\n"
-"MPX can not be started trough DBus activation.\n"
-"The following error occured trying to start up MPX:\n"
+"Youki can not be started trough DBus activation.\n"
+"The following error occured trying to start up Youki:\n"
 "\n"
 "'<b>%s</b>'\n"
 "\n"
 "DBus might not be running at all or have even crashed, please consult "
-"further help with this problem from DBus or MPX"
+"further help with this problem from DBus or Youki"
 msgstr ""
 
-#: remote/youki.cc:216
+#: remote/youki.cc:215
 msgid "(Unknown error. Perhaps DBus is not running at all?)"
 msgstr ""
 
-#: remote/youki.cc:225
-msgid "MPX/DBus Error - MPX"
+#: remote/youki.cc:232
+msgid "Youki-Startup: DBus Error"
 msgstr ""
 
 #: sources/lastfm/source-lastfm.cc:88
@@ -2245,68 +2187,68 @@ msgstr ""
 msgid "Please enter search terms to search for stations:"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:133
+#: widgets/youki-status-icon.c:132
 msgid "Pixbuf"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:134
+#: widgets/youki-status-icon.c:133
 msgid "A GdkPixbuf to display"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:141
+#: widgets/youki-status-icon.c:140
 msgid "Filename"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:142
+#: widgets/youki-status-icon.c:141
 msgid "Filename to load and display"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:149
+#: widgets/youki-status-icon.c:148
 msgid "Stock ID"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:150
+#: widgets/youki-status-icon.c:149
 msgid "Stock ID for a stock image to display"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:157
+#: widgets/youki-status-icon.c:156
 msgid "Icon Name"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:158
+#: widgets/youki-status-icon.c:157
 msgid "The name of the icon from the icon theme"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:165
+#: widgets/youki-status-icon.c:164
 msgid "Storage type"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:166
+#: widgets/youki-status-icon.c:165
 msgid "The representation being used for image data"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:174
+#: widgets/youki-status-icon.c:173
 #, fuzzy
 msgid "Size"
 msgstr "Singel"
 
-#: widgets/bmp_status_icon.c:175
+#: widgets/youki-status-icon.c:174
 msgid "The size of the icon"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:184
+#: widgets/youki-status-icon.c:183
 msgid "Blinking"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:185
+#: widgets/youki-status-icon.c:184
 msgid "Whether or not the status icon is blinking"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:192
+#: widgets/youki-status-icon.c:191
 msgid "Visible"
 msgstr ""
 
-#: widgets/bmp_status_icon.c:193
+#: widgets/youki-status-icon.c:192
 msgid "Whether or not the status icon is visible"
 msgstr ""
 

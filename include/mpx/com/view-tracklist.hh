@@ -9,17 +9,23 @@
 #include <boost/optional.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include "mpx/aux/glibaddons.hh"
-#include "mpx/mpx-types.hh"
+#include <cmath>
+
 #include "mpx/util-string.hh"
-#include "mpx/widgets/cairo-extensions.hh"
-#include "mpx/algorithm/aque.hh"
 #include "mpx/util-graphics.hh"
+
+#include "mpx/mpx-types.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-covers.hh"
-#include "glib-marshalers.h"
 
-#include <cmath>
+#include "mpx/algorithm/aque.hh"
+#include "mpx/algorithm/ntree.hh"
+
+#include "mpx/aux/glibaddons.hh"
+
+#include "mpx/widgets/cairo-extensions.hh"
+
+#include "glib-marshalers.h"
 
 typedef Glib::Property<Gtk::Adjustment*> PropAdj;
 
@@ -30,26 +36,26 @@ namespace
 
 namespace MPX
 {
-        typedef boost::tuple<std::string, std::string, std::string, gint64, MPX::Track, gint64> Row6;
-        typedef std::vector<Row6>                                                               ModelT;
-        typedef boost::shared_ptr<ModelT>                                                       ModelP;
-        typedef sigc::signal<void, gint64>                                                      Signal0;
-        typedef std::map<gint64, ModelT::iterator>                                              IdIterMap;
+        typedef boost::tuple<std::string, std::string, std::string, gint64, MPX::Track, gint64> Row6 ;
+        typedef std::vector<Row6>                                                               Model_t ;
+        typedef boost::shared_ptr<Model_t>                                                      Model_SP_t ;
+        typedef sigc::signal<void, gint64>                                                      Signal0 ;
+        typedef std::map<gint64, Model_t::iterator>                                             IdIterMap_t ;
 
-        struct DataModel
+        struct DataModelTracks
         {
-                ModelP          m_realmodel;
+                Model_SP_t      m_realmodel;
                 Signal0         m_changed;
-                IdIterMap       m_iter_map;
+                IdIterMap_t     m_iter_map;
                 gint64          m_current_row ;
 
-                DataModel()
+                DataModelTracks()
                 : m_current_row( 0 )
                 {
-                    m_realmodel = ModelP(new ModelT); 
+                    m_realmodel = Model_SP_t(new Model_t); 
                 }
 
-                DataModel(ModelP model)
+                DataModelTracks(Model_SP_t model)
                 : m_current_row( 0 )
                 {
                     m_realmodel = model; 
@@ -125,7 +131,7 @@ namespace MPX
                     Row6 row (title, artist, album, id, track, num) ;
                     m_realmodel->push_back(row) ;
 
-                    ModelT::iterator i = m_realmodel->end() ;
+                    Model_t::iterator i = m_realmodel->end() ;
                     std::advance( i, -1 ) ;
                     m_iter_map.insert(std::make_pair(id, i)) ; 
                 }
@@ -159,7 +165,7 @@ namespace MPX
                     Row6 row (artist, album, title, id, track, num) ;
                     m_realmodel->push_back(row) ;
 
-                    ModelT::iterator i = m_realmodel->end() ;
+                    Model_t::iterator i = m_realmodel->end() ;
                     std::advance( i, -1 ) ;
                     m_iter_map.insert(std::make_pair(id, i)) ; 
                 }
@@ -167,7 +173,7 @@ namespace MPX
                 void
                 erase_track(gint64 id)
                 {
-                    IdIterMap::iterator i = m_iter_map.find(id);
+                    IdIterMap_t::iterator i = m_iter_map.find(id);
                     if( i != m_iter_map.end() )
                     {
                         m_realmodel->erase( i->second );
@@ -176,11 +182,11 @@ namespace MPX
                 }
         };
 
-        typedef boost::shared_ptr<DataModel> DataModelP;
+        typedef boost::shared_ptr<DataModelTracks> DataModelTracks_SP_t;
 
-        struct DataModelFilter : public DataModel
+        struct DataModelFilterTracks : public DataModelTracks
         {
-                typedef std::vector<ModelT::iterator> RowRowMapping;
+                typedef std::vector<Model_t::iterator> RowRowMapping;
 
                 RowRowMapping                           m_mapping ;
                 std::string                             m_filter_full ;
@@ -193,13 +199,13 @@ namespace MPX
                 gint64                                  m_position ;
 
                 typedef std::map<std::string, RowRowMapping> MappingCache ; 
-                typedef std::map<std::string, std::set<ModelT::iterator> > FragmentCache ;
+                typedef std::map<std::string, std::set<Model_t::iterator> > FragmentCache ;
 
                 MappingCache    m_mapping_cache ;
                 FragmentCache   m_fragment_cache ;
 
-                DataModelFilter(DataModelP & model)
-                : DataModel(model->m_realmodel)
+                DataModelFilterTracks(DataModelTracks_SP_t & model)
+                : DataModelTracks(model->m_realmodel)
                 , m_advanced(false)
                 {
                     regen_mapping() ;
@@ -244,6 +250,14 @@ namespace MPX
                     regen_mapping() ;
                 }
 
+                void
+                add_synthetic_constraint_quiet(
+                    const AQE::Constraint_t& c
+                )
+                {
+                    m_constraints_synthetic.push_back( c ) ;    
+                }
+
                 virtual void
                 clear_synthetic_constraints(
                 )
@@ -283,33 +297,33 @@ namespace MPX
                 virtual void
                 append_track(MPX::Track& track)
                 {
-                    DataModel::append_track(track);
+                    DataModelTracks::append_track(track);
                     regen_mapping();
                 }
                 
                 virtual void
                 append_track(SQL::Row& r, const MPX::Track& track)
                 {
-                    DataModel::append_track(r, track);
+                    DataModelTracks::append_track(r, track);
                     regen_mapping();
                 }
 
                 virtual void
                 append_track_quiet(MPX::Track& track)
                 {
-                    DataModel::append_track(track);
+                    DataModelTracks::append_track(track);
                 }
 
                 virtual void
                 append_track_quiet(SQL::Row& r, const MPX::Track& track)
                 {
-                    DataModel::append_track(r, track);
+                    DataModelTracks::append_track(r, track);
                 }
 
                 void
                 erase_track(gint64 id)
                 {
-                    DataModel::erase_track( id );
+                    DataModelTracks::erase_track( id );
                     regen_mapping();
                 }
 
@@ -416,7 +430,7 @@ namespace MPX
                 regen_mapping(
                 )
                 {
-                    typedef std::set<ModelT::iterator>  RowSet_t ;
+                    typedef std::set<Model_t::iterator>  RowSet_t ;
                     typedef std::vector<RowSet_t>       CacheVec_t ;
 
                     using boost::get;
@@ -432,7 +446,7 @@ namespace MPX
 
                     if( text.empty() )
                     {
-                        for( ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
+                        for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                         {
                             int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
 
@@ -477,7 +491,7 @@ namespace MPX
                             }
 
                             m_cachevec.resize( m_cachevec.size() + 1 ) ; 
-                            for( ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
+                            for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                             {
                                 const Row6& row = *i;
 
@@ -549,7 +563,7 @@ namespace MPX
                 void
                 regen_mapping_iterative ()
                 {
-                    typedef std::set<ModelT::iterator>  RowSet_t ;
+                    typedef std::set<Model_t::iterator>  RowSet_t ;
                     typedef std::vector<RowSet_t>       CacheVec_t ;
 
                     using boost::get;
@@ -680,7 +694,7 @@ namespace MPX
                 }
         };
 
-        typedef boost::shared_ptr<DataModelFilter> DataModelFilterP;
+        typedef boost::shared_ptr<DataModelFilterTracks> DataModelFilterTracks_SP_t;
 
         class Column
         {
@@ -889,7 +903,7 @@ namespace MPX
 
         typedef boost::shared_ptr<Column> ColumnP;
         typedef std::vector<ColumnP> Columns;
-        typedef std::set<std::pair<ModelT::iterator, int> > Selection;
+        typedef std::set<std::pair<Model_t::iterator, int> > Selection;
 
         typedef sigc::signal<void, MPX::Track, bool> SignalTrackActivated;
 
@@ -897,7 +911,7 @@ namespace MPX
         {
             public:
 
-                DataModelFilterP                    m_model ;
+                DataModelFilterTracks_SP_t                    m_model ;
 
             private:
 
@@ -914,7 +928,7 @@ namespace MPX
                 guint                               m_signal0 ; 
 
                 Selection                           m_selection ;
-                boost::optional<ModelT::iterator>   m_selected ;
+                boost::optional<Model_t::iterator>   m_selected ;
 
                 IdV                                 m_dnd_idv ;
                 bool                                m_dnd ;
@@ -1079,7 +1093,7 @@ namespace MPX
                             {
                                 if( get_row_is_visible( (*(m_selection.begin())).second ))
                                 {
-                                    ModelT::iterator i = (*(m_selection.begin())).first;
+                                    Model_t::iterator i = (*(m_selection.begin())).first;
                                     int row = (*(m_selection.begin())).second;
 
                                     std::advance(i, step);
@@ -1131,7 +1145,7 @@ namespace MPX
                             {
                                 if( get_row_is_visible( (*(m_selection.begin())).second ))
                                 {
-                                    ModelT::iterator i = (*(m_selection.begin())).first;
+                                    Model_t::iterator i = (*(m_selection.begin())).first;
                                     int row = (*(m_selection.begin())).second;
     
                                     std::advance(i, step);
@@ -1373,7 +1387,7 @@ namespace MPX
 
                         xpos = 0 ;
 
-                        ModelT::iterator selected = m_model->m_mapping[row];
+                        Model_t::iterator selected = m_model->m_mapping[row];
                         bool iter_is_selected = ( !m_selection.empty() && m_selection.count(std::make_pair(selected, row))) ;
 
                         if( ! event->area.width <= 16 )
@@ -1645,7 +1659,7 @@ namespace MPX
                 }
 
                 void
-                set_model(DataModelFilterP model)
+                set_model(DataModelFilterTracks_SP_t model)
                 {
                     m_model = model;
                     set_size_request(200, 8 * m_row_height);
@@ -1741,7 +1755,7 @@ namespace MPX
 
                 ListView ()
 
-                        : ObjectBase( "MPXListView" )
+                        : ObjectBase( "YoukiListViewTracks" )
                         , m_previous_drawn_row( 0 )
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))

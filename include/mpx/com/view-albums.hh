@@ -1,380 +1,961 @@
-//  MPX
-//  Copyright (C) 2005-2007 MPX development.
-//
-//  This program is free software; you can redistribute it and/or modify
-//  it under the terms of the GNU General Public License Version 2
-//  as published by the Free Software Foundation.
-//
-//  This program is distributed in the hope that it will be useful,
-//  but WITHOUT ANY WARRANTY; without even the implied warranty of
-//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//  GNU General Public License for more details.
-//
-//  You should have received a copy of the GNU General Public License
-//  along with this program; if not, write to the Free Software
-//  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
-//
-//  --
-//
-//  The MPX project hereby grants permission for non-GPL compatible GStreamer
-//  plugins to be used and distributed together with GStreamer and MPX. This
-//  permission is above and beyond the permissions granted by the GPL license
-//  MPX is covered by.
-#ifndef MPX_MUSICLIB_VIEW_ALBUMS_HH
-#define MPX_MUSICLIB_VIEW_ALBUMS_HH
-#include "config.h"
-#include <tr1/unordered_map>
-#include <glibmm/i18n.h>
+#ifndef _YOUKI_ALBUM_LIST_HH
+#define _YOUKI_ALBUM_LIST_HH
+
 #include <gtkmm.h>
-#include <glib.h>
-#include <giomm.h>
-#include <libglademm.h>
-#include <Python.h>
-#define NO_IMPORT
-#include <pygobject.h>
-
+#include <cairomm/cairomm.h>
+#include <boost/shared_ptr.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/optional.hpp>
+#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
+#include <cmath>
 
-#include "mpx/mpx-library.hh"
-#include "mpx/mpx-sql.hh"
-#include "mpx/mpx-stock.hh"
-#include "mpx/mpx-types.hh"
-#include "mpx/util-graphics.hh"
-#include "mpx/util-ui.hh"
 #include "mpx/util-string.hh"
-#include "mpx/widgets/widgetloader.hh"
-#include "mpx/mpx-protected-access.hh"
+#include "mpx/util-graphics.hh"
 
-#include "mpx/widgets/cell-renderer-cairo-surface.hh"
-#include "mpx/widgets/cell-renderer-count.hh"
-#include "mpx/widgets/cell-renderer-vbox.hh"
-#include "mpx/widgets/cell-renderer-expander.h"
-#include "mpx/widgets/rounded-layout.hh"
-#include "mpx/widgets/timed-confirmation.hh"
+#include "mpx/mpx-types.hh"
+#include "mpx/mpx-main.hh"
+#include "mpx/mpx-covers.hh"
 
 #include "mpx/algorithm/aque.hh"
+#include "mpx/algorithm/ntree.hh"
 
-#include "mpx/com/view-albums-filter-plugin.hh"
+#include "mpx/aux/glibaddons.hh"
+
+#include "mpx/widgets/cairo-extensions.hh"
+
+#include "glib-marshalers.h"
+
+typedef Glib::Property<Gtk::Adjustment*> PropAdj;
+
+namespace
+{
+    const double rounding_albums = 4. ; 
+}
 
 namespace MPX
 {
-                typedef sigc::signal<void, gint64, bool>      SignalPlayAlbum;
-                typedef sigc::signal<void, IdV, bool>         SignalPlayTracks;
+        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64>                Row3 ;
+        typedef std::vector<Row3>                                                               ModelAlbums_t ;
+        typedef boost::shared_ptr<ModelAlbums_t>                                                ModelAlbums_SP_t ;
+        typedef sigc::signal<void, gint64>                                                      Signal1 ;
+        typedef std::map<gint64, ModelAlbums_t::iterator>                                       IdIterMapAlbums_t ;
 
-                const int N_STARS = 6;
+        struct DataModelAlbums
+        {
+                ModelAlbums_SP_t    m_realmodel;
+                Signal1             m_changed;
+                IdIterMapAlbums_t   m_iter_map;
+                gint64              m_current_row ;
 
-                enum AlbumHighlightMode
+                DataModelAlbums()
+                : m_current_row( 0 )
                 {
-                        HIGHLIGHT_EQUAL,
-                        HIGHLIGHT_UNPLAYED,
-                        HIGHLIGHT_PLAYED
-                };
+                    m_realmodel = ModelAlbums_SP_t(new ModelAlbums_t); 
+                }
 
-                enum AlbumFlags
+                DataModelAlbums(ModelAlbums_SP_t model)
+                : m_current_row( 0 )
                 {
-                    ALBUMS_STATE_NO_FLAGS                =   0,
-                    ALBUMS_STATE_SHOW_NEW                =   1 << 0,
-                };
+                    m_realmodel = model; 
+                }
 
-                struct ReleaseTypeActionInfo
+                virtual void
+                clear ()
                 {
-                        char const*     Label;
-                        char const*     Name;
-                        int             Value;
-                };
+                    m_realmodel->clear () ;
+                    m_iter_map.clear() ;
+                    m_changed.emit( 0 ) ;
+                } 
 
-                typedef boost::shared_ptr<ViewAlbumsFilterPlugin::Base> Plugin_p;
-                typedef std::vector<Plugin_p> Plugin_pv;
-
-                class AlbumTreeView
-                        :   public Gnome::Glade::WidgetLoader<Gtk::TreeView>
+                virtual Signal1&
+                signal_changed ()
                 {
-                        public:
+                    return m_changed ;
+                }
 
-                            typedef std::set<Gtk::TreeIter>                         IterSet;
-                            typedef std::tr1::unordered_map<std::string, IterSet>   MBIDIterMap;
-                            typedef std::tr1::unordered_map<gint64, Gtk::TreeIter>  IdIterMap; 
+                virtual bool
+                is_set ()
+                {
+                    return bool(m_realmodel) ;
+                }
 
-                        public:
+                virtual int
+                size ()
+                {
+                    return m_realmodel->size() ;
+                }
 
-                        // Treemodel stuff
+                virtual Row3&
+                row (int row)
+                {
+                    return (*m_realmodel)[row] ;
+                }
 
-                            Glib::RefPtr<Gtk::TreeStore>          AlbumsTreeStore;
-                            Glib::RefPtr<Gtk::TreeModelFilter>    AlbumsTreeStoreFilter;
-                            ViewAlbumsColumns_t                   Columns;
+                virtual void
+                set_current_row(
+                    gint64 row
+                )
+                {
+                    m_current_row = row ;
+                }
 
-                        protected:
+                virtual void
+                append_album(
+                      Cairo::RefPtr<Cairo::ImageSurface>    surface
+                    , gint64                                id_album
+                    , gint64                                id_artist
+                )
+                {
+                    Row3 row ( surface, id_album, id_artist ) ; 
+                    m_realmodel->push_back( row ) ;
 
-                            std::string                           m_Name;
+                    ModelAlbums_t::iterator i = m_realmodel->end() ;
+                    std::advance( i, -1 ) ;
+                    m_iter_map.insert( std::make_pair( id_album, i) ) ; 
+                }
 
-                        // UI
+                void
+                erase_album(
+                    gint64 id_album
+                )
+                {
+                    IdIterMapAlbums_t::iterator i = m_iter_map.find( id_album ) ;
 
-                            Glib::RefPtr<Gtk::UIManager>          m_UIManager;
-                            Glib::RefPtr<Gtk::ActionGroup>        m_ActionGroup;      
+                    if( i != m_iter_map.end() )
+                    {
+                        m_realmodel->erase( i->second );
+                        m_iter_map.erase( i );
+                    }
+                }
+        };
 
-                        // View mappings
+        typedef boost::shared_ptr<DataModelAlbums> DataModelAlbums_SP_t;
 
-                            MBIDIterMap                           m_Album_MBID_Iter_Map;
-                            IdIterMap                             m_Album_Iter_Map;
-                            IdIterMap                             m_Track_Iter_Map;
+        struct DataModelFilterAlbums : public DataModelAlbums
+        {
+                typedef std::vector<ModelAlbums_t::iterator> RowRowMapping ;
 
-                        // Disc+rating pixbufs
+                RowRowMapping                           m_mapping ;
+                gint64                                  m_position ;
+                boost::optional<gint64>                 m_current_artist ;
 
-                            enum EmblemType
+                DataModelFilterAlbums(DataModelAlbums_SP_t & model)
+                : DataModelAlbums(model->m_realmodel)
+                {
+                    regen_mapping() ;
+                }
+
+                virtual void
+                clear ()
+                {
+                    m_realmodel->clear () ;
+                    m_mapping.clear() ;
+                    m_iter_map.clear() ;
+                    m_changed.emit( 0 ) ;
+                } 
+
+                virtual void
+                artist_set(
+                    gint64 id_artist
+                )
+                {
+                    m_current_artist = id_artist ;
+                    regen_mapping() ;
+                }
+
+                virtual void
+                artist_clear(
+                )
+                {
+                    m_current_artist.reset() ; 
+                    regen_mapping() ;
+                }
+
+                virtual int 
+                size ()
+                {
+                    return m_mapping.size();
+                }
+
+                virtual Row3&
+                row (int row)
+                {
+                    return *(m_mapping[row]);
+                }
+
+                void
+                swap( std::size_t p1, std::size_t p2 )
+                {
+                    std::swap( m_mapping[p1], m_mapping[p2] ) ;
+                    m_changed.emit( m_position ) ;
+                }
+
+                virtual void
+                append_album(
+                      Cairo::RefPtr<Cairo::ImageSurface>        surface
+                    , gint64                                    id_album
+                    , gint64                                    id_artist
+                )
+                {
+                    DataModelAlbums::append_album(
+                          surface
+                        , id_album
+                        , id_artist
+                    ) ;
+
+                    regen_mapping();
+                }
+                
+                virtual void
+                append_album_quiet(
+                      Cairo::RefPtr<Cairo::ImageSurface>        surface
+                    , gint64                                    id_album
+                    , gint64                                    id_artist
+                )
+                {
+                    DataModelAlbums::append_album(
+                          surface
+                        , id_album
+                        , id_artist
+                    ) ;
+                }
+
+                void
+                erase_album(
+                      gint64 id_album
+                )
+                {
+                    DataModelAlbums::erase_album( id_album );
+                    regen_mapping();
+                }
+
+                virtual void
+                regen_mapping(
+                )
+                {
+                    using boost::get;
+
+                    RowRowMapping  new_mapping ;
+
+                    gint64 id = ( m_current_row < m_mapping.size()) ? get<1>(row( m_current_row )) : -1 ; 
+                    m_position = 0 ;
+
+                    for( ModelAlbums_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
+                    {
+                            int truth = !m_current_artist || ( get<2>(*i) == m_current_artist.get() ) ; 
+
+                            if( truth )
                             {
-                                EM_COMPILATION,
-                                EM_SOUNDTRACK,
-    
-                                N_EMS
-                            };
-
-                            Cairo::RefPtr<Cairo::ImageSurface>    m_DiscDefault;
-                            Glib::RefPtr<Gdk::Pixbuf>             m_DiscDefault_DND;
-                            Glib::RefPtr<Gdk::Pixbuf>             m_Emblem[N_EMS];
-                            Glib::RefPtr<Gdk::Pixbuf>             m_Stars[N_STARS];
-
-                        // DND state variables
-
-                            boost::optional<std::string>          m_DragAlbumMBID;
-                            boost::optional<gint64>               m_DragAlbumId;
-                            boost::optional<gint64>               m_DragTrackId;
-
-                        // Event handling data
-
-                            Gtk::TreePath                         m_PathButtonPress;
-                            bool                                  m_ButtonPressed;
-
-                        // Filter Plugins
-
-                            Plugin_pv                             m_FilterPlugins;
-                            Plugin_p                              m_FilterPlugin_Current;
-                            Gtk::Widget                         * m_FilterPluginUI;
-                            Gtk::Alignment                      * m_FilterPluginUI_Alignment;
-                            Gtk::ComboBox                       * m_FilterPluginsCBox;
-                            sigc::connection                      m_ConnFilterEntry_Changed, m_ConnFilterEntry_Activate;
-
-                            void
-                            on_plugin_cbox_changed ();
-                        
-
-                        // State variables
-
-                            Glib::ustring                         m_FilterText;
-
-                            struct Options_t
-                            {
-                                    AlbumHighlightMode    HighlightMode;
-                                    int                   Flags;
-                                    int                   Type;
-                            };
-
-                            Options_t                             Options ;
-
-                        // Widgets
-
-                            Gtk::Entry*                           m_FilterEntry ;
-                            RoundedLayout*                        m_LabelShowing ;
-
-                            boost::optional<Gtk::TreeIter>        m_MouseOverIter ;
-                            int                                   m_motion_x,
-                                                                  m_motion_y ;
-                            Gtk::CellRenderer*                    m_CellAdd ;
-
-                        // Signals
-
-                            struct Signals_t
-                            {
-                                SignalPlayAlbum         PlayAlbum;
-                                SignalPlayTracks        PlayTracks; 
-                            };
-
-                            Signals_t Signals;
-
-                        public:
-
-                            SignalPlayTracks&
-                            signal_play_tracks()
-                            {
-                                return Signals.PlayTracks;
+                                new_mapping.push_back( i ) ;
                             }
 
-                            SignalPlayAlbum&
-                            signal_play_album()
+                            if( id >= 0 && get<1>(*i) == id )
                             {
-                                return Signals.PlayAlbum;
+                                m_position = new_mapping.size()  - 1 ;
+                            }
+                    }
+
+                    if( new_mapping != m_mapping )
+                    {
+                        std::swap( new_mapping, m_mapping ) ;
+                        m_changed.emit( m_position ) ;
+                    }                
+                }
+        };
+
+        typedef boost::shared_ptr<DataModelFilterAlbums> DataModelFilterAlbums_SP_t;
+
+        class ColumnAlbums
+        {
+                int m_width ;
+                int m_column ;
+
+            public:
+
+                ColumnAlbums(
+                )
+                    : m_width( 0 )
+                    , m_column( 0 )
+                {
+                }
+
+                ~ColumnAlbums ()
+                {
+                }
+
+                void
+                set_width (int width)
+                {
+                    m_width = width; 
+                }
+
+                int
+                get_width ()
+                {
+                    return m_width;
+                }
+
+                void
+                set_column (int column)
+                {
+                    m_column = column;
+                }
+
+                int
+                get_column ()
+                {
+                    return m_column;
+                }
+
+                void
+                render(
+                      Cairo::RefPtr<Cairo::Context>   cairo
+                    , const Row3&                     row_data
+                    , Gtk::Widget&                    widget
+                    , int                             row
+                    , int                             xpos
+                    , int                             ypos
+                    , int                             row_height
+                    , bool                            selected
+                )
+                {
+                    using boost::get;
+
+                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+
+                    GdkRectangle r ;
+            
+                    r.x         = xpos + (m_width - 64) / 2 ; 
+                    r.y         = ypos ;
+                    r.width     = m_width ;
+                    r.height    = row_height ;
+
+                    cairo->rectangle(
+                          r.x 
+                        , r.y
+                        , r.width 
+                        , r.height
+                    ) ;
+
+                    cairo->clip();
+
+                    cairo->move_to(
+                          r.x 
+                        , r.x 
+                    ) ;
+
+                    Cairo::RefPtr<Cairo::ImageSurface> s = get<0>(row_data) ;
+
+                    if( s )
+                    {
+                            cairo->set_source(
+                                  s
+                                , r.x + 1 
+                                , r.y + 1
+                            ) ; 
+
+                            RoundedRectangle(
+                                  cairo
+                                , r.x + 1
+                                , r.y + 1
+                                , get<0>(row_data)->get_width() - 2
+                                , get<0>(row_data)->get_height() - 2
+                                , 4.
+                            ) ;
+
+                            cairo->fill_preserve() ;
+
+                            cairo->set_line_width( 0.5 ) ;
+                            cairo->set_source_rgba( 0., 0., 0., 1. ) ;
+                            cairo->stroke() ; 
+                    }
+
+                    cairo->reset_clip();
+                }
+        };
+
+        typedef boost::shared_ptr<ColumnAlbums>                                         ColumnAlbums_SP_t ;
+        typedef std::vector<ColumnAlbums_SP_t>                                          ColumnAlbums_SP_t_vector_t ;
+        typedef boost::optional<boost::tuple<ModelAlbums_t::iterator, int, gint64> >    SelectionAlbums ;
+        typedef sigc::signal<void>                                                      SignalSelectionChanged ;
+
+        class ListViewAlbums : public Gtk::DrawingArea
+        {
+            public:
+
+                DataModelFilterAlbums_SP_t          m_model ;
+
+            private:
+
+                int                                 m_row_height ;
+                int                                 m_visible_height ;
+                gint64                              m_previous_drawn_row ;
+
+                ColumnAlbums_SP_t_vector_t          m_columns ;
+
+                PropAdj                             m_prop_vadj ;
+                PropAdj                             m_prop_hadj ;
+
+                guint                               m_signal0 ; 
+
+                SelectionAlbums                     m_selection ;
+                SignalSelectionChanged              m_SIGNAL_selection_changed ;
+
+                gint64                              m_clicked_row ;
+                bool                                m_clicked ;
+                bool                                m_highlight ;
+
+                GtkWidget                         * m_treeview ;
+
+                void
+                initialize_metrics ()
+                {
+                   m_row_height = 72 ; 
+                }
+
+                void
+                on_vadj_value_changed ()
+                {
+                    if( m_model->size() )
+                    {
+                            int row = get_upper_row() ; 
+
+                            m_model->set_current_row( row ) ;        
+
+                            if( m_previous_drawn_row != row )
+                            {
+                                queue_draw ();
+                            }
+                    }
+                }
+
+                int
+                get_upper_row ()
+                {
+                    return double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ;
+                }
+
+                bool
+                get_row_is_visible (int row)
+                {
+                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
+                    int row_lower = row_upper + m_visible_height/m_row_height;
+                    return ( row >= row_upper && row <= row_lower);
+                }
+
+            protected:
+
+                virtual bool
+                on_focus (Gtk::DirectionType direction)
+                { 
+                    grab_focus();
+                    return true;
+                }
+
+                virtual bool
+                on_key_press_event (GdkEventKey * event)
+                {
+                    int step; 
+
+                    switch( event->keyval )
+                    {
+                        case GDK_Return:
+                        case GDK_KP_Enter:
+                        case GDK_ISO_Enter:
+                        case GDK_3270_Enter:
+                            if( m_selection )
+                            {
+                            }
+                            return true;
+
+                        case GDK_Up:
+                        case GDK_KP_Up:
+                        case GDK_Page_Up:
+
+                            if( event->keyval == GDK_Page_Up )
+                            {
+                                step = - (m_visible_height / m_row_height) + 1;
+                            }
+                            else
+                            {
+                                step = -1;
                             }
 
-                            AlbumTreeView(
-                                const Glib::RefPtr<Gnome::Glade::Xml>&,    
-                                const std::string&,
-                                const std::string&,
-                                const std::string&,
-                                const std::string&,
-                                const std::string&,
-                                Glib::RefPtr<Gtk::UIManager>
-                            );
-
-                        protected:
-
-                            virtual void
-                                    on_row_expanded (const Gtk::TreeIter &iter_filter,
-                                                     const Gtk::TreePath &path);
-
-                            virtual void
-                                    on_drag_data_get (const Glib::RefPtr<Gdk::DragContext>&, Gtk::SelectionData&, guint, guint);
-
-                            virtual void
-                                    on_drag_begin (const Glib::RefPtr<Gdk::DragContext>&);
-
-
-                            virtual void
-                                    on_drag_data_received (const Glib::RefPtr<Gdk::DragContext>&, int x, int y,
-                                                const Gtk::SelectionData& data, guint, guint);
-
-                            virtual bool
-                                    on_drag_motion (const Glib::RefPtr<Gdk::DragContext>& context, int x, int y, guint time);
-
-                            virtual bool
-                                    on_motion_notify_event(GdkEventMotion*);
-
-                            virtual bool
-                                    on_button_press_event (GdkEventButton*);
-
-                            virtual bool
-                                    on_button_release_event (GdkEventButton*);
-
-                            virtual bool
-                                    on_event (GdkEvent * ev);
-
-                            virtual void
-                                    run_rating_comment_dialog(int, gint64);
-
-                            virtual void
-                                    on_album_show_info ();
-
-                            virtual void
-                                    on_got_cover(const std::string&);
-
-                            virtual Gtk::TreeIter 
-                                    place_album (SQL::Row&, gint64);
-
-                            virtual void
-                                    update_album (SQL::Row&, gint64);
-
-                            virtual void
-                                    place_album_iter_real(
-                                        Gtk::TreeIter&  iter,
-                                        SQL::Row&       r,
-                                        gint64          id
-                                    );
-
-                            virtual void
-                                    album_list_load ();
-
-                            virtual void
-                                    on_new_album(gint64);
-
-                            virtual void
-                                    on_new_track(Track&, gint64, gint64);
-
-                            virtual void
-                                    on_track_updated(Track&, gint64, gint64);
-
-                            virtual void
-                                    on_album_deleted(gint64);
-
-                            virtual void
-                                    on_album_updated(gint64);
-
-                            virtual void
-                                    on_track_deleted(gint64);
-
-                            virtual int
-                                    slotSortRating(const Gtk::TreeIter&, const Gtk::TreeIter&);
-
-                            virtual int
-                                    slotSortAlpha(const Gtk::TreeIter&, const Gtk::TreeIter&);
-
-                            virtual int
-                                    slotSortDate(const Gtk::TreeIter&, const Gtk::TreeIter&);
-
-                            virtual int
-                                    slotSortStrictAlpha(const Gtk::TreeIter&, const Gtk::TreeIter&);
-
-                            virtual int
-                                    slotSortPlayScore(const Gtk::TreeIter&, const Gtk::TreeIter&);
-
-                            virtual int
-                                    sortTracks(const Gtk::TreeIter&, const Gtk::TreeIter&);
-
-                            virtual void
-                                    cellDataFuncAdd (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
-
-                            virtual void
-                                    cellDataFuncCover (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
-
-                            virtual void
-                                    cellDataFuncText1 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
-
-                            virtual void
-                                    cellDataFuncText2 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
-
-                            virtual void
-                                    cellDataFuncText3 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
-
-                            virtual void
-                                    cellDataFuncText4 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
-
-                            virtual void
-                                    cellDataFuncText5 (Gtk::CellRenderer *, Gtk::TreeModel::iterator const&);
-
-                            static void
-                                    rb_sourcelist_expander_cell_data_func(
-                                        GtkTreeViewColumn*,
-                                        GtkCellRenderer*,
-                                        GtkTreeModel*,
-                                        GtkTreeIter*,
-                                        gpointer 
-                                    ); 
-
-
-                            virtual void
-                                    on_filter_entry_changed ();
+                            if( !m_selection ) 
+                            {
+                                mark_first_row_up:
     
-                            virtual void
-                                    on_filter_entry_activate ();
+                                int row = get_upper_row();
+                                m_selection = boost::make_tuple(m_model->m_mapping[row], row, get<1>(*m_model->m_mapping[row])) ;
+                                m_SIGNAL_selection_changed.emit() ;
+                            }
+                            else
+                            {
+                                if( get_row_is_visible( get<1>(m_selection.get()) ))
+                                {
+                                    ModelAlbums_t::iterator i   = get<0>(m_selection.get()) ;
+                                    int                     row = get<1>(m_selection.get()) ; 
 
-                            virtual bool
-                                    album_visible_func (Gtk::TreeIter const&);
+                                    std::advance( i, step ) ;
+                                    row += step;
 
-                            virtual void
-                                    refilter ();
+                                    if( row >= 0 )
+                                    {
+                                        m_selection = boost::make_tuple( m_model->m_mapping[row], row, get<1>(*m_model->m_mapping[row])) ;
 
+                                        if( row < get_upper_row()) 
+                                        {
+                                            double value = m_prop_vadj.get_value()->get_value();
+                                            value += step*m_row_height;
+                                            m_prop_vadj.get_value()->set_value( value );
+                                        }
 
+                                        m_SIGNAL_selection_changed.emit() ;
+                                    }
+                                }
+                                else
+                                {
+                                    goto mark_first_row_up;
+                                }
+                            }
+                            queue_draw();
+                            return true;
 
-                            virtual void
-                                    update_album_count_display ();
+                        case GDK_Down:
+                        case GDK_KP_Down:
+                        case GDK_Page_Down:
 
-                            virtual void
-                                    on_row_added_or_deleted ();
+                            if( event->keyval == GDK_Page_Down )
+                            {
+                                step = (m_visible_height / m_row_height) - 1;
+                            }
+                            else
+                            {
+                                step = 1;
+                            }
 
+                            if( !m_selection ) 
+                            {
+                                mark_first_row_down:
 
-                        public:
+                                int row = get_upper_row();
 
-                            virtual void
-                                    go_to_album(gint64 id);
+                                m_selection = boost::make_tuple(m_model->m_mapping[row], row, get<1>(*m_model->m_mapping[row]) );
 
-                            virtual void
-                                    set_new_albums_state (bool);
+                                m_SIGNAL_selection_changed.emit() ;
+                            }
+                            else
+                            {
+                                if( get_row_is_visible( get<1>(m_selection.get())) )
+                                {
+                                    ModelAlbums_t::iterator i   = get<0>(m_selection.get()) ;
+                                    int                     row = get<1>(m_selection.get()) ;
+    
+                                    std::advance( i, step ) ;
+                                    row += step;
 
-                            virtual void
-                                    set_release_type_filter (int);
+                                    if( row < m_model->m_mapping.size() )
+                                    {
+                                        m_selection = boost::make_tuple( m_model->m_mapping[row], row, get<1>(*m_model->m_mapping[row])) ;
 
-                            virtual void
-                                    set_highlight_mode (AlbumHighlightMode);
-                };
+                                        if( row >= (get_upper_row() + (m_visible_height/m_row_height)))
+                                        {
+                                            double value = m_prop_vadj.get_value()->get_value();
+                                            value += step*m_row_height;
+                                            m_prop_vadj.get_value()->set_value( value );
+                                        }
 
-} // end namespace MPX 
+                                        m_SIGNAL_selection_changed.emit() ;
+                                    }
+                                }
+                                else
+                                {
+                                    goto mark_first_row_down;
+                                }
+                            }
+                            queue_draw();
+                            return true;
+                    }
 
-#endif
+                    return false;
+                }
+
+                bool
+                on_button_press_event (GdkEventButton * event)
+                {
+                    using boost::get;
+
+                    if( event->type == GDK_BUTTON_PRESS )
+                    {
+                        gint64 row = get_upper_row() + (event->y / m_row_height) ;
+
+                        if( row < m_model->size() )
+                        {
+                            m_selection = boost::make_tuple( m_model->m_mapping[row], row, get<1>(*m_model->m_mapping[row])) ;
+                            m_clicked_row = row ;
+                            m_clicked = true ;
+                            queue_draw() ;
+                            m_SIGNAL_selection_changed.emit() ;
+                        }
+                    }
+                
+                    return true;
+                }
+
+                bool
+                on_button_release_event (GdkEventButton * event)
+                {
+                    m_clicked = false ;
+                    return true ;
+                }
+
+                bool
+                on_leave_notify_event(
+                    GdkEventCrossing* G_GNUC_UNUSED
+                )
+                {
+                    return true ;
+                }
+
+                bool
+                on_motion_notify_event(
+                    GdkEventMotion* event
+                )
+                {
+                    return true ;
+                }
+
+                bool
+                on_configure_event(
+                    GdkEventConfigure* event
+                )        
+                {
+                    m_visible_height = event->height ; 
+
+                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                    m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*int(m_row_height) ) ;
+
+                    double n                       = m_columns.size() ; 
+                    double column_width_calculated = event->width / n ;
+
+                    for( int n = 0; n < m_columns.size(); ++n )
+                    {
+                        m_columns[n]->set_width( column_width_calculated ) ; 
+                    }
+
+                    return false;
+                }
+
+                bool
+                on_expose_event (GdkEventExpose *event)
+                {
+                    Cairo::RefPtr<Cairo::Context>   cairo = get_window()->create_cairo_context() ;
+                    const Gtk::Allocation&          alloc = get_allocation() ;
+
+                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+
+                    int row     = get_upper_row() ;
+                    int ypos    = 0 ;
+                    int xpos    = 0 ;
+                    int col     = 0 ;
+                    int cnt     = m_visible_height / m_row_height ; 
+
+                    m_previous_drawn_row = row;
+
+                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+    
+                    const int xpad      = 0 ;
+                    const int inner_pad = 1 ;
+
+                    while( m_model->is_set() && cnt && (row < m_model->m_mapping.size()) ) 
+                    {
+                        xpos = 0 ;
+
+                        ModelAlbums_t::iterator  selected           = m_model->m_mapping[row] ;
+                        bool                     iter_is_selected   = ( m_selection && get<1>(m_selection.get()) == row ) ;
+
+                        if( !(row % 2) ) 
+                        {
+                            GdkRectangle r ;
+
+                            r.x       = xpad + inner_pad ;
+                            r.y       = ypos + inner_pad ;
+                            r.width   = alloc.get_width() - xpad - 2 * inner_pad ;
+                            r.height  = m_row_height - 2 * inner_pad ;
+
+                            RoundedRectangle(
+                                  cairo
+                                , r.x
+                                , r.y
+                                , r.width
+                                , r.height
+                                , rounding_albums
+                            ) ;
+
+                            cairo->set_source_rgba(
+                                  0.2
+                                , 0.2
+                                , 0.2
+                                , 1.
+                            ) ;
+
+                            cairo->fill() ;
+                        }
+
+                        if( iter_is_selected )
+                        {
+                            Gdk::Color c = get_style()->get_base( Gtk::STATE_SELECTED ) ;
+
+                            GdkRectangle r ;
+
+                            r.x         = inner_pad ; 
+                            r.y         = ypos + inner_pad ;
+                            r.width     = alloc.get_width() - 2*inner_pad ;  
+                            r.height    = m_row_height - 2*inner_pad ;
+
+                            cairo->save () ;
+
+                            Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
+                                  r.x + r.width / 2
+                                , r.y  
+                                , r.x + r.width / 2
+                                , r.y + r.height
+                            ) ;
+                            
+                            background_gradient_ptr->add_color_stop_rgba(
+                                  0
+                                , c.get_red_p() 
+                                , c.get_green_p()
+                                , c.get_blue_p()
+                                , 0.90 
+                            ) ;
+                            
+                            background_gradient_ptr->add_color_stop_rgba(
+                                  .40
+                                , c.get_red_p() 
+                                , c.get_green_p()
+                                , c.get_blue_p()
+                                , 0.75 
+                            ) ;
+                            
+                            background_gradient_ptr->add_color_stop_rgba(
+                                  1. 
+                                , c.get_red_p() 
+                                , c.get_green_p()
+                                , c.get_blue_p()
+                                , 0.45 
+                            ) ;
+
+                            cairo->set_source( background_gradient_ptr ) ;
+                            cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+
+                            RoundedRectangle(
+                                  cairo
+                                , r.x 
+                                , r.y 
+                                , r.width 
+                                , r.height 
+                                , rounding_albums
+                            ) ;
+
+                            cairo->fill_preserve (); 
+
+                            cairo->set_source_rgb(
+                                  c.get_red_p()
+                                , c.get_green_p()
+                                , c.get_blue_p()
+                            ) ;
+
+                            cairo->set_line_width( 0.8 ) ;
+                            cairo->stroke () ;
+                            cairo->restore () ;
+
+                            iter_is_selected = true;
+                        }
+
+                        for( ColumnAlbums_SP_t_vector_t::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i )
+                        {
+                            (*i)->render(
+                                    cairo
+                                  , m_model->row(row)
+                                  , *this
+                                  , row
+                                  , xpos
+                                  , ypos + 4
+                                  , 64
+                                  , iter_is_selected
+                            ) ;
+
+                            xpos += (*i)->get_width() ; 
+                        }
+
+                        ypos += m_row_height;
+                        row ++;
+                        cnt --;
+                    }
+
+                    if( has_focus() )
+                    {
+                        get_style()->paint_focus(
+                            get_window(),
+                            Gtk::STATE_NORMAL,
+                            get_allocation(),
+                            *this,
+                            "treeview",
+                            0, 
+                            0, 
+                            get_allocation().get_width(), 
+                            get_allocation().get_height()
+                        );
+                    }
+
+                    return true;
+                }
+
+                void
+                on_model_changed( gint64 position )
+                {
+                    int view_count = m_visible_height / m_row_height ;
+
+                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+
+                    if( m_model->size() < view_count )
+                    {
+                        m_prop_vadj.get_value()->set_value(0.) ;
+                    } 
+                    else
+                    {
+                        m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                    }
+
+/*
+                    if( m_selection )
+                    {
+                        DataModelFilterAlbums::RowRowMapping::iterator i = std::find( m_model->m_mapping.begin(), m_model->m_mapping.end(), get<0>(m_selection.get())) ;                        
+                       if( i == m_model->m_mapping.end() )
+                       {
+                            m_selection.reset() ;
+                            m_SIGNAL_selection_changed.emit() ;
+                       }
+                    }
+*/
+
+                    queue_draw() ;
+                }
+
+                static gboolean
+                list_view_set_adjustments(
+                    GtkWidget*obj,
+                    GtkAdjustment*hadj,
+                    GtkAdjustment*vadj, 
+                    gpointer data
+                )
+                {
+                    if( vadj )
+                    {
+                            g_object_set(G_OBJECT(obj), "vadjustment", vadj, NULL); 
+                            g_object_set(G_OBJECT(obj), "hadjustment", hadj, NULL);
+
+                            ListViewAlbums & view = *(reinterpret_cast<ListViewAlbums*>(data));
+
+                            view.m_prop_vadj.get_value()->set_value(0.);
+                            view.m_prop_vadj.get_value()->set_upper( view.m_model->size() * view.m_row_height ) ;
+                            view.m_prop_vadj.get_value()->set_page_size( (view.m_visible_height/view.m_row_height)*int(view.m_row_height) ) ; 
+
+                            view.m_prop_vadj.get_value()->signal_value_changed().connect(
+                                sigc::mem_fun(
+                                    view,
+                                    &ListViewAlbums::on_vadj_value_changed
+                            ));
+                    }
+
+                    return TRUE;
+                }
+
+            public:
+
+                SignalSelectionChanged&
+                signal_selection_changed()
+                {
+                    return m_SIGNAL_selection_changed ;
+                }
+
+                gint64
+                get_selected()
+                {
+                    return !m_selection ? -1 : get<2>(m_selection.get()) ;
+                }
+
+                void
+                clear_selection()
+                {
+                    m_selection.reset() ;
+                    queue_draw() ;
+                }
+    
+                void
+                set_model(DataModelFilterAlbums_SP_t model)
+                {
+                    m_model = model;
+                    set_size_request(200, 8 * m_row_height);
+                    m_model->signal_changed().connect(
+                        sigc::mem_fun(
+                            *this,
+                            &ListViewAlbums::on_model_changed
+                    ));
+                }
+
+                void
+                append_column (ColumnAlbums_SP_t column)
+                {
+                    m_columns.push_back(column);
+                }
+
+                ListViewAlbums ()
+
+                        : ObjectBase( "YoukiListViewAlbums" )
+                        , m_previous_drawn_row( 0 )
+                        , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
+                        , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
+                        , m_clicked_row( 0 ) 
+                        , m_clicked( false )
+                        , m_highlight( false )
+
+                {
+                    Gdk::Color c ;
+    
+                    c.set_rgb_p( .10, .10, .10 ) ;
+
+                    modify_bg( Gtk::STATE_NORMAL, c ) ;
+                    modify_base( Gtk::STATE_NORMAL, c ) ;
+
+                    m_treeview = gtk_tree_view_new();
+                    gtk_widget_hide(GTK_WIDGET(m_treeview)) ;
+                    gtk_widget_realize(GTK_WIDGET(m_treeview));
+
+                    set_flags(Gtk::CAN_FOCUS);
+                    add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_FOCUS_CHANGE_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK ));
+
+                    ((GtkWidgetClass*)(G_OBJECT_GET_CLASS(G_OBJECT(gobj()))))->set_scroll_adjustments_signal = 
+                            g_signal_new ("set_scroll_adjustments",
+                                      G_OBJECT_CLASS_TYPE (G_OBJECT_CLASS (G_OBJECT_GET_CLASS(G_OBJECT(gobj())))),
+                                      GSignalFlags (G_SIGNAL_RUN_FIRST),
+                                      0,
+                                      NULL, NULL,
+                                      g_cclosure_user_marshal_VOID__OBJECT_OBJECT, G_TYPE_NONE, 2, GTK_TYPE_ADJUSTMENT, GTK_TYPE_ADJUSTMENT);
+
+                    g_signal_connect(G_OBJECT(gobj()), "set_scroll_adjustments", G_CALLBACK(list_view_set_adjustments), this);
+
+                    gtk_widget_realize(GTK_WIDGET(gobj()));
+                    initialize_metrics();
+               }
+
+                ~ListViewAlbums ()
+                {
+                }
+        };
+}
+
+#endif // _YOUKI_ALBUM_LIST_HH

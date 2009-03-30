@@ -9,13 +9,13 @@
 #include "kobo-titleinfo.hh"
 #include "kobo-volume.hh"
 #include "mpx/mpx-types.hh"
-#include "mpx/com/view-tracklist.hh"
 #include "mpx/com/view-albumartist.hh"
+#include "mpx/com/view-albums.hh"
+#include "mpx/com/view-tracklist.hh"
 #include "infoarea.hh"
 
 #include "mpx-mlibman-dbus-proxy-actual.hh"
 #include "mpx-app-dbus-adaptor.hh"
-#include "video-widget.hh"
 #include "youki-controller-status-icon.hh"
 
 namespace MPX
@@ -28,7 +28,10 @@ namespace MPX
     {
         protected:
 
+            YoukiControllerStatusIcon       * m_control_status_icon ;
+
             MainWindow                      * m_main_window ;
+
             int                               m_main_window_x 
                                             , m_main_window_y ;
             
@@ -37,13 +40,17 @@ namespace MPX
             KoboCover                       * m_main_cover ;
             KoboTitleInfo                   * m_main_titleinfo ;
             KoboVolume                      * m_main_volume ;
-            YoukiControllerStatusIcon       * m_control_status_icon ;
 
-            ListView                        * m_ListView ;
             ListViewAA                      * m_ListViewAA ;
-            Gtk::ScrolledWindow             * m_ScrolledWin ;
+            ListViewAlbums                  * m_ListViewAlbums ;
+            ListView                        * m_ListViewTracks ;
+
             Gtk::ScrolledWindow             * m_ScrolledWinAA ;
-            Gtk::HPaned                     * m_Paned ;
+            Gtk::ScrolledWindow             * m_ScrolledWinAlbums ;
+            Gtk::ScrolledWindow             * m_ScrolledWinTracks ;
+
+            Gtk::HPaned                     * m_Paned1 ;
+            Gtk::HPaned                     * m_Paned2 ;
             
             Gtk::Entry                      * m_Entry ;
             Gtk::Alignment                  * m_Alignment_Entry ;
@@ -54,11 +61,9 @@ namespace MPX
             Gtk::VBox                       * m_VBox ;
             Gtk::HBox                       * m_HBox ;
 
-            VideoWidget                     * m_VideoWidget ;
-            Gtk::DrawingArea                * m_VideoSimple ;
-
-            DataModelFilterP                  m_FilterModel;
-            DataModelFilterAAP                m_FilterModelAA;
+            DataModelFilterAA_SP_t            m_FilterModelAA ;
+            DataModelFilterAlbums_SP_t        m_FilterModelAlbums ;
+            DataModelFilterTracks_SP_t        m_FilterModel ;
 
             Glib::RefPtr<Gdk::Pixbuf>         m_icon ; 
 
@@ -99,17 +104,6 @@ namespace MPX
             on_play_stream_switched(        
             ) ;
 
-            ::Window
-            on_play_request_window_id(
-            ) ;
-
-            void
-            on_play_video_geom(
-                  int
-                , int
-                , const GValue*
-            ) ;
-
             //// TRACK LIST 
 
             void
@@ -118,8 +112,15 @@ namespace MPX
                 , bool              /*play or not*/
             ) ;
 
+            enum ModelOrigin
+            {
+                  ORIGIN_MODEL_ALBUM_ARTISTS
+                , ORIGIN_MODEL_ALBUMS
+            } ;
+
             void
-            on_list_view_aa_selection_changed(
+            on_list_view_selection_changed(
+                ModelOrigin
             ) ;
 
             //// MISCELLANEOUS WIDGETS 
@@ -134,7 +135,7 @@ namespace MPX
             ) ;
 
             void
-            on_entry_changed (DataModelFilterP model, Gtk::Entry* entry)
+            on_entry_changed (DataModelFilterTracks_SP_t model, Gtk::Entry* entry)
             {
                 model->set_filter(entry->get_text());
             }

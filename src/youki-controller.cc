@@ -86,42 +86,21 @@ namespace MPX
                 , &YoukiController::on_play_stream_switched
         )) ;
 
-/*
-        m_play->signal_request_window_id().connect(
-            sigc::mem_fun(
-                  *this
-                , &YoukiController::on_play_request_window_id
-        )) ;
+        m_Paned1            = Gtk::manage( new Gtk::HPaned ) ;
+        m_Paned2            = Gtk::manage( new Gtk::HPaned ) ;
 
-        m_play->signal_video_geom().connect(
-            sigc::mem_fun(
-                  *this
-                , &YoukiController::on_play_video_geom
-        )) ;
-*/
-
-        //m_VideoWidget       = Gtk::manage( new VideoWidget( m_play ) ) ;
-        m_Paned             = Gtk::manage( new Gtk::HPaned ) ;
         m_VBox              = Gtk::manage( new Gtk::VBox ) ;
+
         m_HBox_Entry        = Gtk::manage( new Gtk::HBox ) ;
         m_HBox_Controls     = Gtk::manage( new Gtk::HBox ) ;
 
         m_Entry             = Gtk::manage( new Gtk::Entry ) ;
-        m_Entry->signal_activate().connect(
-                sigc::bind(
-                        sigc::mem_fun(
-                              *this
-                            , &YoukiController::on_entry_changed
-                        )
-                      , m_FilterModel
-                      , m_Entry
-        )) ;
 
         m_Alignment_Entry   = Gtk::manage( new Gtk::Alignment ) ;
         m_Label_Search      = Gtk::manage( new Gtk::Label(_("_Search:"))) ;
 
-        m_ListView          = Gtk::manage( new ListView ) ;
-        m_ListView->signal_track_activated().connect(
+        m_ListViewTracks          = Gtk::manage( new ListView ) ;
+        m_ListViewTracks->signal_track_activated().connect(
             sigc::mem_fun(
                       *this
                     , &YoukiController::on_list_view_tr_track_activated
@@ -129,13 +108,27 @@ namespace MPX
 
         m_ListViewAA        = Gtk::manage( new ListViewAA ) ;
         m_ListViewAA->signal_selection_changed().connect(
+            sigc::bind(
             sigc::mem_fun(
                   *this
-                , &YoukiController::on_list_view_aa_selection_changed
+                , &YoukiController::on_list_view_selection_changed
+            )
+            , ORIGIN_MODEL_ALBUM_ARTISTS
         )) ;
 
-        m_ScrolledWin       = Gtk::manage( new Gtk::ScrolledWindow ) ;
+        m_ListViewAlbums    = Gtk::manage( new ListViewAlbums ) ;
+        m_ListViewAlbums->signal_selection_changed().connect(
+            sigc::bind(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_list_view_selection_changed
+            )
+            , ORIGIN_MODEL_ALBUMS
+        )) ;
+
         m_ScrolledWinAA     = Gtk::manage( new Gtk::ScrolledWindow ) ;
+        m_ScrolledWinAlbums = Gtk::manage( new Gtk::ScrolledWindow ) ;
+        m_ScrolledWinTracks = Gtk::manage( new Gtk::ScrolledWindow ) ;
 
         m_main_window       = Gtk::manage( new MainWindow ) ;
         m_main_window->signal_key_press_event().connect(
@@ -229,12 +222,13 @@ namespace MPX
         m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
 
-        m_ScrolledWin->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
         m_ScrolledWinAA->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
+        m_ScrolledWinAlbums->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
+        m_ScrolledWinTracks->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
 
         {
-                DataModelP m (new DataModel) ;
-                m_FilterModel = DataModelFilterP (new DataModelFilter(m)) ;
+                DataModelTracks_SP_t m ( new DataModelTracks ) ;
+                m_FilterModel = DataModelFilterTracks_SP_t (new DataModelFilterTracks( m )) ;
 
                 ColumnP c1 (new Column(_("Title"))) ;
                 c1->set_column(0) ;
@@ -249,21 +243,21 @@ namespace MPX
                 ColumnP c4 (new Column(_("Artist"))) ;
                 c4->set_column(1) ;
 
-                m_ListView->append_column(c1) ;
-                m_ListView->append_column(c2) ;
-                m_ListView->append_column(c3) ;
-                m_ListView->append_column(c4) ;
+                m_ListViewTracks->append_column(c1) ;
+                m_ListViewTracks->append_column(c2) ;
+                m_ListViewTracks->append_column(c3) ;
+                m_ListViewTracks->append_column(c4) ;
 
-                m_ListView->column_set_fixed(
+                m_ListViewTracks->column_set_fixed(
                       1
                     , true
                     , 60
                 ) ;
 
-                m_ListView->set_model( m_FilterModel ) ;
+                m_ListViewTracks->set_model( m_FilterModel ) ;
 
-                m_ScrolledWin->add(*m_ListView) ;
-                m_ScrolledWin->show_all() ;
+                m_ScrolledWinTracks->add(*m_ListViewTracks) ;
+                m_ScrolledWinTracks->show_all() ;
 
                 m_Entry->signal_changed().connect(
                         sigc::bind(
@@ -277,10 +271,10 @@ namespace MPX
         }
 
         {
-                DataModelAAP m (new DataModelAA) ;
-                m_FilterModelAA = DataModelFilterAAP (new DataModelFilterAA(m)) ;
+                DataModelAA_SP_t m (new DataModelAA) ;
+                m_FilterModelAA = DataModelFilterAA_SP_t (new DataModelFilterAA(m)) ;
 
-                ColumnAAP c1 (new ColumnAA(_("Album Artist"))) ;
+                ColumnAA_SP_t c1 (new ColumnAA(_("Album Artist"))) ;
                 c1->set_column(0) ;
 
                 m_ListViewAA->append_column(c1) ;
@@ -290,8 +284,34 @@ namespace MPX
                 m_ScrolledWinAA->show_all() ;
         }
 
-        m_Paned->add1( *m_ScrolledWinAA ) ;
-        m_Paned->add2( *m_ScrolledWin ) ;
+        {
+                DataModelAlbums_SP_t m ( new DataModelAlbums ) ;
+                m_FilterModelAlbums = DataModelFilterAlbums_SP_t (new DataModelFilterAlbums( m )) ;
+
+                ColumnAlbums_SP_t c1 ( new ColumnAlbums ) ;
+                c1->set_column(0) ;
+
+                m_ListViewAlbums->append_column( c1 ) ;
+                m_ListViewAlbums->set_model( m_FilterModelAlbums ) ;
+
+                m_ScrolledWinAlbums->add( *m_ListViewAlbums ) ;
+                m_ScrolledWinAlbums->show_all() ;
+        }
+
+        m_Entry->signal_activate().connect(
+                sigc::bind(
+                        sigc::mem_fun(
+                              *this
+                            , &YoukiController::on_entry_changed
+                        )
+                      , m_FilterModel
+                      , m_Entry
+        )) ;
+
+        m_Paned1->add1( *m_ScrolledWinAA ) ;
+        m_Paned1->add2( *m_ScrolledWinAlbums ) ;
+        m_Paned2->add1( *m_Paned1 ) ;
+        m_Paned2->add2( *m_ScrolledWinTracks ) ;
 
         m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
         m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
@@ -301,21 +321,10 @@ namespace MPX
         m_main_window->set_widget_drawer( *m_main_cover ) ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
-        m_VBox->pack_start( *m_Paned, true, true, 0 ) ;
+        m_VBox->pack_start( *m_Paned2, true, true, 0 ) ;
         m_VBox->pack_start( *m_main_titleinfo, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
         m_VBox->pack_start( *m_main_infoarea, false, false, 0 ) ;
-
-#if 0
-        m_main_window->set_widget_drawer( *m_VideoWidget ) ; 
-        gtk_widget_realize(GTK_WIDGET(m_VideoWidget->gobj())) ;
-
-        m_main_window->show_all() ;
-        while (gtk_events_pending())
-            gtk_main_iteration() ;
-
-        m_play->set_window_id( m_VideoWidget->get_video_xid() ) ;
-#endif
 
         m_control_status_icon = new YoukiControllerStatusIcon ;
         m_control_status_icon->signal_clicked().connect(
@@ -389,8 +398,11 @@ namespace MPX
     void
     YoukiController::reload_library ()
     {
+        using boost::get ;
+
         m_FilterModel->clear () ;
         m_FilterModelAA->clear () ;
+        m_FilterModelAlbums->clear () ;
 
         // Tracks 
 
@@ -428,6 +440,47 @@ namespace MPX
         }
 
         m_FilterModelAA->regen_mapping () ;
+
+        // Albums
+
+        m_FilterModelAlbums->append_album_quiet(
+              Cairo::RefPtr<Cairo::ImageSurface>(0) 
+            , -1
+            , -1
+        ) ;
+
+        v.clear () ; 
+        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY album_artist, mb_release_date")).str()) ; 
+
+        for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
+        {
+                SQL::Row & r = *i;
+
+                const std::string& mbid = get<std::string>(r["mb_album_id"]) ;
+
+                Glib::RefPtr<Gdk::Pixbuf> cover_pb ;
+                Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
+
+                services->get<Covers>("mpx-service-covers")->fetch(
+                      mbid
+                    , cover_pb
+                ) ;
+               
+                if( cover_pb ) 
+                {
+                        cover_is = Util::cairo_image_surface_from_pixbuf(
+                              cover_pb->scale_simple( 64, 64, Gdk::INTERP_BILINEAR )
+                        ) ;
+                }
+                
+                m_FilterModelAlbums->append_album_quiet(
+                      cover_is
+                    , get<gint64>(r["id"])
+                    , get<gint64>(r["album_artist_id"])
+                ) ;
+        }
+
+        m_FilterModelAlbums->regen_mapping () ;
     }
 
     void
@@ -449,7 +502,7 @@ namespace MPX
 
                 m_current_track = t ; 
                 m_play->switch_stream( library->trackGetLocation( t ) ) ;
-                m_ListView->set_active_track( boost::get<gint64>(t[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
+                m_ListViewTracks->set_active_track( boost::get<gint64>(t[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
                 m_control_status_icon->set_metadata( t ) ;
 
         } catch( Library::FileQualificationError & cxe )
@@ -486,7 +539,7 @@ namespace MPX
     void
     YoukiController::on_play_eos ()
     {
-        boost::optional<gint64> pos = m_ListView->get_local_active_track () ;
+        boost::optional<gint64> pos = m_ListViewTracks->get_local_active_track () ;
 
         if( pos )
         {
@@ -520,17 +573,13 @@ namespace MPX
         switch( status )
         {
             case PLAYSTATUS_PLAYING:
-                //m_VideoWidget->property_playing() = true ;
-                //m_VideoWidget->queue_draw() ;
                 break ;
 
             case PLAYSTATUS_STOPPED:
-                //m_VideoWidget->property_playing() = false ;
-                //m_VideoWidget->queue_draw() ;
                 m_current_track.reset() ;
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
-                m_ListView->clear_active_track() ;
+                m_ListViewTracks->clear_active_track() ;
                 m_main_cover->clear() ;
                 m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
                 m_main_position->set_position( 0, 0 ) ;
@@ -538,8 +587,6 @@ namespace MPX
                 break ;
 
             case PLAYSTATUS_WAITING:
-                //m_VideoWidget->property_playing() = false ;
-                //m_VideoWidget->queue_draw() ;
                 m_current_track.reset() ;
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
@@ -547,8 +594,6 @@ namespace MPX
                 break ;
 
             case PLAYSTATUS_PAUSED:
-                //m_VideoWidget->property_playing() = false ;
-                //m_VideoWidget->queue_draw() ;
                 break ;
 
             default: break ;
@@ -616,26 +661,48 @@ namespace MPX
     }
 
     void
-    YoukiController::on_list_view_aa_selection_changed(
+    YoukiController::on_list_view_selection_changed(
+        ModelOrigin origin
     ) 
     {
-        gint64 id = m_ListViewAA->get_selected() ;
+        gint64 id_artist = m_ListViewAA->get_selected() ;
+        gint64 id_albums = m_ListViewAlbums->get_selected() ;
 
-        m_FilterModel->clear_synthetic_constraints_quiet () ;
-
-        if( id == -1 )
-        {
-            m_FilterModel->regen_mapping() ;
-            return ;
-        }
+        m_FilterModel->clear_synthetic_constraints_quiet() ;
 
         AQE::Constraint_t c ;
 
-        c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ARTIST_ID ;
-        c.TargetValue = id ;
-        c.MatchType = AQE::MT_EQUAL ;
+        if( id_artist == -1 )
+        {
+            m_FilterModelAlbums->artist_clear() ;
+        }
+        else
+        {
+            if( origin == ORIGIN_MODEL_ALBUM_ARTISTS ) 
+            {
+                m_ListViewAlbums->clear_selection() ;
+            }
 
-        m_FilterModel->add_synthetic_constraint( c ) ;
+            m_FilterModelAlbums->artist_set( id_artist ) ;
+
+            c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ARTIST_ID ;
+            c.TargetValue = id_artist ;
+            c.MatchType = AQE::MT_EQUAL ;
+            m_FilterModel->add_synthetic_constraint_quiet( c ) ;
+        }
+
+        if( id_albums == -1 )
+        {
+        }
+        else
+        {
+            c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ID ;
+            c.TargetValue = id_albums ;
+            c.MatchType = AQE::MT_EQUAL ;
+            m_FilterModel->add_synthetic_constraint_quiet( c ) ;
+        }
+
+        m_FilterModel->regen_mapping() ;
 
         m_Entry->set_text("") ;
     }
@@ -661,30 +728,6 @@ namespace MPX
         ) ;
 
         m_play->property_volume().set_value( volume ) ;
-    }
-
-    ::Window
-    YoukiController::on_play_request_window_id(
-    )
-    {
-        return m_VideoWidget->get_video_xid() ;
-    }
-
-    void
-    YoukiController::on_play_video_geom(
-          int               width
-        , int               height
-        , const GValue*     par
-    )
-    {
-        m_VideoWidget->property_geometry() = Geometry( width, height ) ;
-
-        if( par )
-        {
-            m_VideoWidget->set_par( par ) ;
-        }
-
-        m_VideoWidget->queue_draw() ;
     }
 
     void
