@@ -590,6 +590,13 @@ namespace MPX
                     const std::string& insert_path 
                 )
                 {
+                    g_message(
+                          "Deleting: path['%s'], device_udi['%s'], volume_udi['%s']"
+                        , insert_path.c_str()
+                        , hal_device_udi.c_str()
+                        , hal_volume_udi.c_str()
+                    ) ;
+
                     boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
 
                     SQL::RowV rows;
