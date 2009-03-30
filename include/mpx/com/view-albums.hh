@@ -140,12 +140,43 @@ namespace MPX
 
                 RowRowMapping                           m_mapping ;
                 gint64                                  m_position ;
-                boost::optional<gint64>                 m_current_artist ;
+                std::set<gint64>                        m_constraint_id_album ;
+                std::set<gint64>                        m_constraint_id_artist ;
 
                 DataModelFilterAlbums(DataModelAlbums_SP_t & model)
                 : DataModelAlbums(model->m_realmodel)
                 {
                     regen_mapping() ;
+                }
+
+                virtual void
+                set_constraint_album(
+                    const std::set<gint64>& constraint
+                )
+                {
+                    m_constraint_id_album = constraint ;
+                }
+
+                virtual void
+                clear_constraint_album(
+                )
+                {
+                    m_constraint_id_album.clear() ;
+                }
+
+                virtual void
+                set_constraint_artist(
+                    const std::set<gint64>& constraint
+                )
+                {
+                    m_constraint_id_artist = constraint ;
+                }
+
+                virtual void
+                clear_constraint_artist(
+                )
+                {
+                    m_constraint_id_artist.clear() ;
                 }
 
                 virtual void
@@ -156,23 +187,6 @@ namespace MPX
                     m_iter_map.clear() ;
                     m_changed.emit( 0 ) ;
                 } 
-
-                virtual void
-                artist_set(
-                    gint64 id_artist
-                )
-                {
-                    m_current_artist = id_artist ;
-                    regen_mapping() ;
-                }
-
-                virtual void
-                artist_clear(
-                )
-                {
-                    m_current_artist.reset() ; 
-                    regen_mapping() ;
-                }
 
                 virtual int 
                 size ()
@@ -259,7 +273,11 @@ namespace MPX
 
                     for( ; i != m_realmodel->end(); ++i )
                     {
-                            int truth = !m_current_artist || ( get<2>(*i) == m_current_artist.get() ) ; 
+                            int truth = 
+                                        (m_constraint_id_album.empty()  || m_constraint_id_album.count( get<1>(*i)) )
+                                                                        &&
+                                        (m_constraint_id_artist.empty() || m_constraint_id_artist.count( get<2>(*i)) )
+                            ; 
 
                             if( truth )
                             {
@@ -919,8 +937,14 @@ namespace MPX
                 void
                 clear_selection()
                 {
-                    m_selection.reset() ;
-                    queue_draw() ;
+                    if( m_selection )
+                    {
+                        m_selection.reset() ;
+                        m_SIGNAL_selection_changed.emit() ;
+                        queue_draw() ;
+
+                        // so we ESPECIALLY don't signal out if there is no selection anyway
+                    }
                 }
     
                 void

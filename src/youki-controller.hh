@@ -63,7 +63,7 @@ namespace MPX
 
             DataModelFilterAA_SP_t            m_FilterModelAA ;
             DataModelFilterAlbums_SP_t        m_FilterModelAlbums ;
-            DataModelFilterTracks_SP_t        m_FilterModel ;
+            DataModelFilterTracks_SP_t        m_FilterModelTracks ;
 
             Glib::RefPtr<Gdk::Pixbuf>         m_icon ; 
 
@@ -73,6 +73,8 @@ namespace MPX
             boost::optional<MPX::Track>       m_current_track ;          
 
             info::backtrace::Youki::MLibMan_proxy_actual  * m_mlibman_dbus_proxy ;
+
+            sigc::connection                  m_conn1, m_conn2, m_conn3 ;
 
         public: 
 
@@ -135,10 +137,8 @@ namespace MPX
             ) ;
 
             void
-            on_entry_changed (DataModelFilterTracks_SP_t model, Gtk::Entry* entry)
-            {
-                model->set_filter(entry->get_text());
-            }
+            on_entry_changed(
+            ) ;
 
             void
             on_position_seek(

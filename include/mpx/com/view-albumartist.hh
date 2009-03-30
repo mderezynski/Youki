@@ -106,12 +106,27 @@ namespace MPX
                 typedef std::vector<ModelAA_t::iterator> RowRowMapping;
 
                 RowRowMapping           m_mapping ;
-                std::string             m_filter ;
+                std::set<gint64>        m_constraint_artist ;
 
                 DataModelFilterAA(DataModelAA_SP_t & model)
                 : DataModelAA(model->m_realmodel)
                 {
                     regen_mapping ();
+                }
+
+                virtual void
+                set_constraint(
+                    const std::set<gint64>& constraint
+                )
+                {
+                    m_constraint_artist = constraint ;
+                }
+
+                virtual void
+                clear_constraint(
+                )
+                {
+                    m_constraint_artist.clear() ;
                 }
 
                 virtual void
@@ -154,70 +169,41 @@ namespace MPX
                     DataModelAA::append_artist( artist, artist_id ) ;
                 }
 
-                virtual void
-                set_filter(
-                    const std::string&          filter
-                )
-                { 
-                    m_filter = filter ;
-
-                    if( !m_filter.empty() && (filter.substr(0, filter.size()-1) == m_filter) ) 
-                        regen_mapping_iterative();
-                    else
-                        regen_mapping();
-                }
-
                 void
-                regen_mapping ()
+                regen_mapping(
+                )
                 {
-                    using boost::get;
-
-                    m_mapping.clear();
-                    
-                    for( ModelAA_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
+                    if( !m_realmodel->size() )
                     {
-                        Row2 const& row = *i;
-
-                        if( m_filter.empty() ) 
-                        {
-                            m_mapping.push_back( i ) ;
-                        }
-                        else
-                        if( Util::match_keys( get<0>(row), m_filter )) 
-                        {
-                            m_mapping.push_back( i ) ;
-                        }
+                        return ;
                     }
 
-                    m_changed.emit();
-                }
-
-                void
-                regen_mapping_iterative ()
-                {
                     using boost::get;
 
                     RowRowMapping new_mapping;
 
-                    for( RowRowMapping::const_iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
-                    {
-                        Row2 const& row = *(*i);
+                    ModelAA_t::iterator i = m_realmodel->begin() ; 
+                    new_mapping.push_back( i ) ;
+                    ++i ;
 
-                        if( m_filter.empty() ) 
+                    for( ; i != m_realmodel->end(); ++i )
+                    {
+                        const Row2& row = *i;
+
+                        int truth = (m_constraint_artist.empty() || m_constraint_artist.count( get<1>(row) )) ;
+
+                        if( truth )
                         {
-                            new_mapping.push_back( *i ) ;
-                        }
-                        else
-                        if( Util::match_keys( get<0>(row), m_filter ))  
-                        {
-                            new_mapping.push_back( *i ) ;
+                            new_mapping.push_back( i ) ;
                         }
                     }
 
-                    std::swap(m_mapping, new_mapping);
-                    m_changed.emit();
+                    if( new_mapping != m_mapping )
+                    {
+                        std::swap(m_mapping, new_mapping);
+                        m_changed.emit();
+                    }
                 }
-
         };
 
         typedef boost::shared_ptr<DataModelFilterAA> DataModelFilterAA_SP_t;
@@ -297,16 +283,14 @@ namespace MPX
 
                 void
                 render(
-                    Cairo::RefPtr<Cairo::Context>   cairo,
-                    Row2 const&                     datarow,
-                    std::string const&              filter,
-                    Gtk::Widget&                    widget,
-                    int                             row,
-                    int                             xpos,
-                    int                             ypos,
-                    int                             rowheight,
-                    bool                            selected,
-                    bool                            highlight = true
+                      Cairo::RefPtr<Cairo::Context>   cairo
+                    , const Row2&                     datarow
+                    , Gtk::Widget&                    widget
+                    , int                             row
+                    , int                             xpos
+                    , int                             ypos
+                    , int                             rowheight
+                    , bool                            selected
                 )
                 {
                     using boost::get;
@@ -336,22 +320,14 @@ namespace MPX
 
                     Glib::RefPtr<Pango::Layout> layout; 
 
-                    if( highlight )
+                    if( row == 0 )
                     {
-                        layout = widget.create_pango_layout("") ;
-                        layout->set_markup( Util::text_match_highlight( str, filter, "#ff3030") ) ;
+                        layout = widget.create_pango_layout("");
+                        layout->set_markup("<b>" + Glib::Markup::escape_text(str) + "</b>") ;
                     }
                     else
                     {
-                        if( row == 0 )
-                        {
-                            layout = widget.create_pango_layout("");
-                            layout->set_markup("<b>" + Glib::Markup::escape_text(str) + "</b>") ;
-                        }
-                        else
-                        {
-                            layout = widget.create_pango_layout(str);
-                        }
+                        layout = widget.create_pango_layout(str);
                     }
 
                     layout->set_ellipsize(
@@ -393,7 +369,7 @@ namespace MPX
 
                 guint                               m_signal0 ; 
 
-                boost::optional<std::pair<ModelAA_t::iterator, gint64> > m_selected ;
+                boost::optional<std::pair<ModelAA_t::iterator, gint64> > m_selection ;
 
                 bool                                m_highlight ;
 
@@ -480,28 +456,28 @@ namespace MPX
                                 step = -1;
                             }
 
-                            if( !m_selected )
+                            if( !m_selection )
                             {
                                 mark_first_row_up:
     
                                 int row = get_upper_row();
-                                m_selected = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
+                                m_selection = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
                                 m_SIGNAL_selection_changed.emit() ;
                             }
                             else
                             {
-                                int row = m_selected.get().second;
+                                int row = m_selection.get().second;
 
                                 if( get_row_is_visible( row ))
                                 {
-                                    ModelAA_t::iterator i = m_selected.get().first;
+                                    ModelAA_t::iterator i = m_selection.get().first;
 
                                     std::advance(i, step);
                                     row += step;
 
                                     if( row >= 0 )
                                     {
-                                        m_selected = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
+                                        m_selection = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
                                         m_SIGNAL_selection_changed.emit() ;
 
                                         if( row < get_upper_row()) 
@@ -533,28 +509,28 @@ namespace MPX
                                 step = 1;
                             }
 
-                            if( !m_selected ) 
+                            if( !m_selection ) 
                             {
                                 mark_first_row_down:
 
                                 int row = get_upper_row();
-                                m_selected = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
+                                m_selection = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
                                 m_SIGNAL_selection_changed.emit() ;
                             }
                             else
                             {
-                                int row = m_selected.get().second;
+                                int row = m_selection.get().second;
 
                                 if( get_row_is_visible( row ) )
                                 {
-                                    ModelAA_t::iterator i = m_selected.get().first;
+                                    ModelAA_t::iterator i = m_selection.get().first;
     
                                     std::advance(i, step);
                                     row += step;
 
                                     if( row < m_model->m_mapping.size() )
                                     {
-                                        m_selected = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
+                                        m_selection = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
                                         m_SIGNAL_selection_changed.emit() ;
 
                                         if( row >= (get_upper_row() + (m_visible_height/m_row_height)))
@@ -602,7 +578,7 @@ namespace MPX
 
                             if( row < m_model->m_mapping.size() )
                             {
-                                m_selected = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
+                                m_selection = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
                                 m_SIGNAL_selection_changed.emit() ;
                                 queue_draw();
                             }
@@ -700,7 +676,7 @@ namespace MPX
 
                         xpos = 0 ;
 
-                        bool iter_is_selected = ( m_selected && m_selected.get().second == get<1>(*m_model->m_mapping[row])) ;
+                        bool iter_is_selected = ( m_selection && m_selection.get().second == get<1>(*m_model->m_mapping[row])) ;
 
                         if( !(row % 2) ) 
                         {
@@ -802,7 +778,7 @@ namespace MPX
 
                         for(ColumnAA_SP_vector_t::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                         {
-                            (*i)->render(cairo, m_model->row(row), m_model->m_filter, *this, row, xpos, ypos, m_row_height, iter_is_selected, m_highlight);
+                            (*i)->render(cairo, m_model->row(row), *this, row, xpos, ypos, m_row_height, iter_is_selected);
                             xpos += (*i)->get_width();
                         }
 
@@ -839,7 +815,7 @@ namespace MPX
                         m_prop_vadj.get_value()->set_value(0.);
                     } 
 
-                    m_selected.reset();
+                    m_selection.reset();
 
                     m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
                     m_prop_vadj.get_value()->set_value(0.);
@@ -884,9 +860,22 @@ namespace MPX
                 gint64
                 get_selected()
                 {
-                    return m_selected ? m_selected.get().second : -1 ;
+                    return m_selection ? m_selection.get().second : -1 ;
                 }
     
+                void
+                clear_selection()
+                {
+                    if( m_selection )
+                    {
+                        m_selection.reset() ;
+                        m_SIGNAL_selection_changed.emit() ;
+                        queue_draw() ;
+
+                        // so we ESPECIALLY don't signal out if there is no selection anyway
+                    }
+                }
+
                 void
                 set_highlight(bool highlight)
                 {

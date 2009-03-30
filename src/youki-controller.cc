@@ -107,7 +107,7 @@ namespace MPX
         )) ;
 
         m_ListViewAA        = Gtk::manage( new ListViewAA ) ;
-        m_ListViewAA->signal_selection_changed().connect(
+        m_conn1 = m_ListViewAA->signal_selection_changed().connect(
             sigc::bind(
             sigc::mem_fun(
                   *this
@@ -117,7 +117,7 @@ namespace MPX
         )) ;
 
         m_ListViewAlbums    = Gtk::manage( new ListViewAlbums ) ;
-        m_ListViewAlbums->signal_selection_changed().connect(
+        m_conn2 = m_ListViewAlbums->signal_selection_changed().connect(
             sigc::bind(
             sigc::mem_fun(
                   *this
@@ -228,7 +228,7 @@ namespace MPX
 
         {
                 DataModelTracks_SP_t m ( new DataModelTracks ) ;
-                m_FilterModel = DataModelFilterTracks_SP_t (new DataModelFilterTracks( m )) ;
+                m_FilterModelTracks = DataModelFilterTracks_SP_t (new DataModelFilterTracks( m )) ;
 
                 ColumnP c1 (new Column(_("Title"))) ;
                 c1->set_column(0) ;
@@ -254,19 +254,15 @@ namespace MPX
                     , 60
                 ) ;
 
-                m_ListViewTracks->set_model( m_FilterModel ) ;
+                m_ListViewTracks->set_model( m_FilterModelTracks ) ;
 
-                m_ScrolledWinTracks->add(*m_ListViewTracks) ;
+                m_ScrolledWinTracks->add( *m_ListViewTracks ) ;
                 m_ScrolledWinTracks->show_all() ;
 
                 m_Entry->signal_changed().connect(
-                        sigc::bind(
-                                sigc::mem_fun(
-                                      *this
-                                    , &YoukiController::on_entry_changed
-                                )
-                              , m_FilterModel
-                              , m_Entry
+                    sigc::mem_fun(
+                          *this
+                        , &YoukiController::on_entry_changed
                 )) ;
         }
 
@@ -280,7 +276,7 @@ namespace MPX
                 m_ListViewAA->append_column(c1) ;
                 m_ListViewAA->set_model( m_FilterModelAA ) ;
 
-                m_ScrolledWinAA->add(*m_ListViewAA) ;
+                m_ScrolledWinAA->add( *m_ListViewAA ) ;
                 m_ScrolledWinAA->show_all() ;
         }
 
@@ -299,13 +295,9 @@ namespace MPX
         }
 
         m_Entry->signal_activate().connect(
-                sigc::bind(
-                        sigc::mem_fun(
-                              *this
-                            , &YoukiController::on_entry_changed
-                        )
-                      , m_FilterModel
-                      , m_Entry
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_entry_changed
         )) ;
 
         m_Paned1->add1( *m_ScrolledWinAA ) ;
@@ -400,7 +392,7 @@ namespace MPX
     {
         using boost::get ;
 
-        m_FilterModel->clear () ;
+        m_FilterModelTracks->clear () ;
         m_FilterModelAA->clear () ;
         m_FilterModelAlbums->clear () ;
 
@@ -412,13 +404,13 @@ namespace MPX
         {
                 SQL::Row & r = *i;
                 try{
-                    m_FilterModel->append_track_quiet(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, false).get()))) ;
+                    m_FilterModelTracks->append_track_quiet(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, false).get()))) ;
                 } catch( Library::FileQualificationError )
                 {
                 }
         }
 
-        m_FilterModel->regen_mapping () ;
+        m_FilterModelTracks->regen_mapping () ;
 
         // Album Artists
 
@@ -547,17 +539,17 @@ namespace MPX
         {
             gint64 pos_cpy = pos.get() + 1 ;
 
-            if( pos_cpy < m_FilterModel->size() )
+            if( pos_cpy < m_FilterModelTracks->size() )
             {
-                m_current_track = boost::get<4>(m_FilterModel->row(pos_cpy)) ;
+                m_current_track = boost::get<4>(m_FilterModelTracks->row(pos_cpy)) ;
                 play_track( m_current_track.get() ) ; 
                 return ;
             }
         }
         else
-        if( m_FilterModel->size() )
+        if( m_FilterModelTracks->size() )
         {
-            m_current_track = boost::get<4>(m_FilterModel->row( 0 )) ;
+            m_current_track = boost::get<4>(m_FilterModelTracks->row( 0 )) ;
             play_track( m_current_track.get() ) ; 
             return ;
         }
@@ -670,13 +662,14 @@ namespace MPX
         gint64 id_artist = m_ListViewAA->get_selected() ;
         gint64 id_albums = m_ListViewAlbums->get_selected() ;
 
-        m_FilterModel->clear_synthetic_constraints_quiet() ;
+        m_FilterModelTracks->clear_synthetic_constraints_quiet() ;
 
         AQE::Constraint_t c ;
 
         if( id_artist == -1 )
         {
-            m_FilterModelAlbums->artist_clear() ;
+            std::set<gint64> constraint ; 
+            m_FilterModelAlbums->set_constraint_artist( constraint ) ;
         }
         else
         {
@@ -684,13 +677,16 @@ namespace MPX
             {
                 m_ListViewAlbums->clear_selection() ;
             }
-
-            m_FilterModelAlbums->artist_set( id_artist ) ;
+    
+            std::set<gint64> constraint ; 
+            constraint.insert( id_artist ) ;
 
             c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ARTIST_ID ;
             c.TargetValue = id_artist ;
             c.MatchType = AQE::MT_EQUAL ;
-            m_FilterModel->add_synthetic_constraint_quiet( c ) ;
+
+            m_FilterModelAlbums->set_constraint_artist( constraint ) ;
+            m_FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
         }
 
         if( id_albums == -1 )
@@ -701,12 +697,31 @@ namespace MPX
             c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ID ;
             c.TargetValue = id_albums ;
             c.MatchType = AQE::MT_EQUAL ;
-            m_FilterModel->add_synthetic_constraint_quiet( c ) ;
+
+            m_FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
         }
 
-        m_FilterModel->regen_mapping() ;
+        m_FilterModelTracks->regen_mapping() ;
+        m_FilterModelAlbums->regen_mapping() ;
+    }
 
-        m_Entry->set_text("") ;
+    void
+    YoukiController::on_entry_changed()
+    {
+        m_FilterModelTracks->set_filter( m_Entry->get_text() );
+
+        m_ListViewAA->clear_selection() ;
+        m_ListViewAlbums->clear_selection() ;
+
+        m_conn1.block() ;
+        m_FilterModelAA->set_constraint( m_FilterModelTracks->m_constraint_artist ) ;
+        m_FilterModelAA->regen_mapping() ;
+        m_conn1.unblock() ;
+
+        m_conn2.block() ;
+        m_FilterModelAlbums->set_constraint_album( m_FilterModelTracks->m_constraint_albums ) ;
+        m_FilterModelAlbums->regen_mapping() ;
+        m_conn2.unblock() ;
     }
 
     void
@@ -751,6 +766,10 @@ namespace MPX
     {
         switch( event->keyval )
         {
+            case GDK_Escape:
+                m_main_window->hide() ;
+                return true ;
+
             case GDK_F1:
                 m_mlibman_dbus_proxy->ShowWindow () ;
                 return true ;

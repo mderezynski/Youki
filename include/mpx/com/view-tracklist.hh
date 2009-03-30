@@ -36,11 +36,11 @@ namespace
 
 namespace MPX
 {
-        typedef boost::tuple<std::string, std::string, std::string, gint64, MPX::Track, gint64> Row6 ;
-        typedef std::vector<Row6>                                                               Model_t ;
-        typedef boost::shared_ptr<Model_t>                                                      Model_SP_t ;
-        typedef sigc::signal<void, gint64>                                                      Signal0 ;
-        typedef std::map<gint64, Model_t::iterator>                                             IdIterMap_t ;
+        typedef boost::tuple<std::string, std::string, std::string, gint64, MPX::Track, gint64, gint64> Row7 ;
+        typedef std::vector<Row7>                                                                       Model_t ;
+        typedef boost::shared_ptr<Model_t>                                                              Model_SP_t ;
+        typedef sigc::signal<void, gint64>                                                              Signal0 ;
+        typedef std::map<gint64, Model_t::iterator>                                                     IdIterMap_t ;
 
         struct DataModelTracks
         {
@@ -87,7 +87,7 @@ namespace MPX
                     return m_realmodel->size() ;
                 }
 
-                virtual Row6&
+                virtual Row7&
                 row (int row)
                 {
                     return (*m_realmodel)[row] ;
@@ -107,7 +107,7 @@ namespace MPX
                     using boost::get ;
 
                     std::string artist, album, title ;
-                    gint64 id = 0, num = 0 ;
+                    gint64 id = 0, num = 0, artist_id = 0 ;
 
                     if(r.count("id"))
                     { 
@@ -128,7 +128,12 @@ namespace MPX
                         num = get<gint64>(r["track"]) ;
                     }
 
-                    Row6 row (title, artist, album, id, track, num) ;
+                    if(r.count("mpx_album_artist_id"))
+                    { 
+                        artist_id = get<gint64>(r["mpx_album_artist_id"]) ;
+                    }
+
+                    Row7 row ( title, artist, album, id, track, num, artist_id ) ;
                     m_realmodel->push_back(row) ;
 
                     Model_t::iterator i = m_realmodel->end() ;
@@ -142,7 +147,7 @@ namespace MPX
                     using boost::get ;
 
                     std::string artist, album, title ;
-                    gint64 id = 0, num = 0 ;
+                    gint64 id = 0, num = 0, artist_id = 0 ;
 
                     if(track[ATTRIBUTE_MPX_TRACK_ID])
                         id = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) ; 
@@ -162,7 +167,10 @@ namespace MPX
                     if(track[ATTRIBUTE_TRACK])
                         num = get<gint64>(track[ATTRIBUTE_TRACK].get()) ;
 
-                    Row6 row (artist, album, title, id, track, num) ;
+                    if(track[ATTRIBUTE_MPX_ALBUM_ARTIST_ID])
+                        artist_id = get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ARTIST_ID].get()) ;
+
+                    Row7 row ( artist, album, title, id, track, num, artist_id ) ;
                     m_realmodel->push_back(row) ;
 
                     Model_t::iterator i = m_realmodel->end() ;
@@ -197,8 +205,10 @@ namespace MPX
                 boost::optional<gint64>                 m_active_track ;
                 boost::optional<gint64>                 m_local_active_track ;
                 gint64                                  m_position ;
+                std::set<gint64>                        m_constraint_albums ;
+                std::set<gint64>                        m_constraint_artist ;
 
-                typedef std::map<std::string, RowRowMapping> MappingCache ; 
+                typedef std::map<std::string, RowRowMapping>                MappingCache ; 
                 typedef std::map<std::string, std::set<Model_t::iterator> > FragmentCache ;
 
                 MappingCache    m_mapping_cache ;
@@ -280,7 +290,7 @@ namespace MPX
                     return m_mapping.size();
                 }
 
-                virtual Row6&
+                virtual Row7&
                 row (int row)
                 {
                     return *(m_mapping[row]);
@@ -350,7 +360,7 @@ namespace MPX
 
                             for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                             {
-                                const Row6& row = *(*i);
+                                const Row7& row = *(*i);
 
                                 if( get<3>(row) == id )
                                 {
@@ -431,7 +441,7 @@ namespace MPX
                 )
                 {
                     typedef std::set<Model_t::iterator>  RowSet_t ;
-                    typedef std::vector<RowSet_t>       CacheVec_t ;
+                    typedef std::vector<RowSet_t>        CacheVec_t ;
 
                     using boost::get;
                     using boost::algorithm::split;
@@ -446,6 +456,9 @@ namespace MPX
 
                     if( text.empty() )
                     {
+                        m_constraint_albums.clear() ;
+                        m_constraint_artist.clear() ;
+
                         for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                         {
                             int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
@@ -493,7 +506,7 @@ namespace MPX
                             m_cachevec.resize( m_cachevec.size() + 1 ) ; 
                             for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                             {
-                                const Row6& row = *i;
+                                const Row7& row = *i;
 
                                 std::vector<std::string> vec (3) ;
                                 vec[0] = Glib::ustring(boost::get<0>(row)).lowercase().c_str() ;
@@ -533,6 +546,9 @@ namespace MPX
                             }
                         }
 
+                        m_constraint_albums.clear() ;
+                        m_constraint_artist.clear() ;
+
                         for( RowSet_t::iterator i = output.begin() ; i != output.end(); ++i )
                         {
                             int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
@@ -549,6 +565,9 @@ namespace MPX
                             {
                                 new_mapping.push_back( *i ) ;
                             }
+
+                            m_constraint_albums.insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+                            m_constraint_artist.insert( get<6>(*(*i)) ) ;
                         }
                     }
 
@@ -561,7 +580,8 @@ namespace MPX
                 }
 
                 void
-                regen_mapping_iterative ()
+                regen_mapping_iterative(
+                )
                 {
                     typedef std::set<Model_t::iterator>  RowSet_t ;
                     typedef std::vector<RowSet_t>       CacheVec_t ;
@@ -579,6 +599,9 @@ namespace MPX
 
                     if( text.empty() )
                     {
+                        m_constraint_albums.clear() ;
+                        m_constraint_artist.clear() ;
+
                         for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                         {
                             int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
@@ -626,7 +649,7 @@ namespace MPX
                             m_cachevec.resize( m_cachevec.size() + 1 ) ; 
                             for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                             {
-                                const Row6& row = *(*i);
+                                const Row7& row = *(*i);
 
                                 std::vector<std::string> vec (3) ;
                                 vec[0] = Glib::ustring(boost::get<0>(row)).lowercase().c_str() ;
@@ -666,6 +689,9 @@ namespace MPX
                             }
                         }
 
+                        m_constraint_albums.clear() ;
+                        m_constraint_artist.clear() ;
+
                         for( RowSet_t::iterator i = output.begin() ; i != output.end(); ++i )
                         {
                             int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
@@ -682,6 +708,9 @@ namespace MPX
                             {
                                 new_mapping.push_back( *i ) ;
                             }
+
+                            m_constraint_albums.insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+                            m_constraint_artist.insert( get<6>(*(*i)) ) ;
                         }
                     }
 
@@ -821,7 +850,7 @@ namespace MPX
                 void
                 render(
                     Cairo::RefPtr<Cairo::Context>   cairo,
-                    Row6 const&                     datarow,
+                    Row7 const&                     datarow,
                     std::string const&              filter,
                     Gtk::Widget&                    widget,
                     int                             row,
@@ -1030,7 +1059,7 @@ namespace MPX
 
                     for(Selection::const_iterator i = m_selection.begin(); i != m_selection.end(); ++i)
                     {
-                        Row6 const& r = *(i->first);
+                        Row7 const& r = *(i->first);
                         m_dnd_idv.push_back(get<3>(r));
                     }
 
