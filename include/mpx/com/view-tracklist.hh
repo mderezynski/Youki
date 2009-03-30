@@ -428,7 +428,7 @@ namespace MPX
                     std::string     text        = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
                     gint64          id          = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
 
-                    m_position  = 0 ;
+                    m_position = 0 ;
 
                     if( text.empty() )
                     {
@@ -543,7 +543,8 @@ namespace MPX
                         scan_active () ;
                         std::swap( new_mapping, m_mapping ) ;
                         m_changed.emit( m_position ) ;
-                    }                }
+                    }                
+                }
 
                 void
                 regen_mapping_iterative ()
@@ -1196,11 +1197,14 @@ namespace MPX
                         }
                         else
                         {
-                            m_selection.clear();
-                            m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
-                            m_clicked_row = row ;
-                            m_clicked = true ;
-                            queue_draw() ;
+                            if( row < m_model->m_mapping.size() )
+                            {
+                                m_selection.clear();
+                                m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
+                                m_clicked_row = row ;
+                                m_clicked = true ;
+                                queue_draw() ;
+                            }
                         }
                     }
                 
@@ -1285,7 +1289,7 @@ namespace MPX
                 {
                     m_visible_height = event->height - m_row_start ;
 
-                    m_prop_vadj.get_value()->set_upper( m_model->size()  * m_row_height ) ;
+                    m_prop_vadj.get_value()->set_upper( (m_model->size()+1) * m_row_height ) ;
                     m_prop_vadj.get_value()->set_page_size( m_visible_height ) ;
 
                     const double column_width_collapsed = 40. ;
@@ -1556,7 +1560,7 @@ namespace MPX
                 {
                     int view_count = m_visible_height / m_row_height ;
 
-                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                    m_prop_vadj.get_value()->set_upper( (m_model->size()+1) * m_row_height ) ;
 
                     if( m_model->size() < view_count )
                     {
@@ -1586,7 +1590,7 @@ namespace MPX
                             ListView & view = *(reinterpret_cast<ListView*>(data));
 
                             view.m_prop_vadj.get_value()->set_value(0.);
-                            view.m_prop_vadj.get_value()->set_upper( view.m_model->size() * view.m_row_height ) ;
+                            view.m_prop_vadj.get_value()->set_upper( (view.m_model->size()+1) * view.m_row_height ) ;
                             view.m_prop_vadj.get_value()->set_page_size( view.m_visible_height ) ; 
 
                             view.m_prop_vadj.get_value()->signal_value_changed().connect(
