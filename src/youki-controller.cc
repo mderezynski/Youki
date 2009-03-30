@@ -301,9 +301,9 @@ namespace MPX
         )) ;
 
         m_Paned1->add1( *m_ScrolledWinAA ) ;
+        m_Paned1->add2( *m_Paned2 ) ;
+        m_Paned2->add1( *m_ScrolledWinTracks ) ;
         m_Paned1->add2( *m_ScrolledWinAlbums ) ;
-        m_Paned2->add1( *m_Paned1 ) ;
-        m_Paned2->add2( *m_ScrolledWinTracks ) ;
 
         m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
         m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
@@ -313,7 +313,7 @@ namespace MPX
         m_main_window->set_widget_drawer( *m_main_cover ) ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
-        m_VBox->pack_start( *m_Paned2, true, true, 0 ) ;
+        m_VBox->pack_start( *m_Paned1, true, true, 0 ) ;
         m_VBox->pack_start( *m_main_titleinfo, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
         m_VBox->pack_start( *m_main_infoarea, false, false, 0 ) ;
