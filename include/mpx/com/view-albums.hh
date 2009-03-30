@@ -726,9 +726,9 @@ namespace MPX
                         {
                             GdkRectangle r ;
 
-                            r.x       = xpad + inner_pad ;
+                            r.x       = xpad + inner_pad + 2 ;
                             r.y       = ypos + inner_pad ;
-                            r.width   = alloc.get_width() - xpad - 2 * inner_pad ;
+                            r.width   = alloc.get_width() - xpad - 2 * inner_pad - 4 ;
                             r.height  = m_row_height - 2 * inner_pad ;
 
                             RoundedRectangle(
@@ -756,9 +756,9 @@ namespace MPX
 
                             GdkRectangle r ;
 
-                            r.x         = inner_pad ; 
+                            r.x         = inner_pad + 2 ; 
                             r.y         = ypos + inner_pad ;
-                            r.width     = alloc.get_width() - 2*inner_pad ;  
+                            r.width     = alloc.get_width() - 2*inner_pad  - 4 ;  
                             r.height    = m_row_height - 2*inner_pad ;
 
                             cairo->save () ;
