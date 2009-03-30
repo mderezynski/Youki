@@ -303,7 +303,7 @@ namespace MPX
         m_Paned1->add1( *m_ScrolledWinAA ) ;
         m_Paned1->add2( *m_Paned2 ) ;
         m_Paned2->add1( *m_ScrolledWinTracks ) ;
-        m_Paned1->add2( *m_ScrolledWinAlbums ) ;
+        m_Paned2->add2( *m_ScrolledWinAlbums ) ;
 
         m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
         m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
