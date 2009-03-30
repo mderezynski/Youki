@@ -17,6 +17,8 @@
 
 #include "glib-marshalers.h"
 
+#include <set>
+
 using boost::get ;
 
 typedef Glib::Property<Gtk::Adjustment*> PropAdj;

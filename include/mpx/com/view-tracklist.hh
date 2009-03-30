@@ -1492,10 +1492,49 @@ namespace MPX
                                     iter_is_selected = true;
                                 }
 
+                                std::valarray<double> dashes ( 2 ) ;
+                                dashes[0] = 0. ;
+                                dashes[1] = 1. ;
+
                                 for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                                 {
                                     (*i)->render(cairo, m_model->row(row), m_model->m_filter_effective, *this, row, xpos, ypos, m_row_height, iter_is_selected, m_highlight);
-                                    xpos += (*i)->get_width() + 1;
+
+                                    xpos += (*i)->get_width() ; 
+
+                                    cairo->save() ;
+
+                                    cairo->set_line_width(
+                                          .8
+                                    ) ;
+
+                                    cairo->set_dash(
+                                          dashes
+                                        , 0.
+                                    ) ;
+
+                                    cairo->set_source_rgba(
+                                          1.
+                                        , 1.
+                                        , 1.
+                                        , .5
+                                    ) ;
+
+                                    cairo->move_to(
+                                          xpos
+                                        , 0 
+                                    ) ; 
+
+                                    cairo->line_to(
+                                          xpos
+                                        , alloc.get_height()
+                                    ) ;
+
+                                    cairo->stroke() ;
+
+                                    cairo->restore(); 
+
+                                    xpos += 1 ;
                                 }
                         }
                     
