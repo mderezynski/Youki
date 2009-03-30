@@ -36,8 +36,8 @@ namespace
 
 namespace MPX
 {
-        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64>                Row3 ;
-        typedef std::vector<Row3>                                                               ModelAlbums_t ;
+        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string>   Row4 ;
+        typedef std::vector<Row4>                                                               ModelAlbums_t ;
         typedef boost::shared_ptr<ModelAlbums_t>                                                ModelAlbums_SP_t ;
         typedef sigc::signal<void, gint64>                                                      Signal1 ;
         typedef std::map<gint64, ModelAlbums_t::iterator>                                       IdIterMapAlbums_t ;
@@ -87,7 +87,7 @@ namespace MPX
                     return m_realmodel->size() ;
                 }
 
-                virtual Row3&
+                virtual Row4&
                 row (int row)
                 {
                     return (*m_realmodel)[row] ;
@@ -106,9 +106,10 @@ namespace MPX
                       Cairo::RefPtr<Cairo::ImageSurface>    surface
                     , gint64                                id_album
                     , gint64                                id_artist
+                    , const std::string&                    album
                 )
                 {
-                    Row3 row ( surface, id_album, id_artist ) ; 
+                    Row4 row ( surface, id_album, id_artist, album ) ; 
                     m_realmodel->push_back( row ) ;
 
                     ModelAlbums_t::iterator i = m_realmodel->end() ;
@@ -179,7 +180,7 @@ namespace MPX
                     return m_mapping.size();
                 }
 
-                virtual Row3&
+                virtual Row4&
                 row (int row)
                 {
                     return *(m_mapping[row]);
@@ -197,12 +198,14 @@ namespace MPX
                       Cairo::RefPtr<Cairo::ImageSurface>        surface
                     , gint64                                    id_album
                     , gint64                                    id_artist
+                    , const std::string&                        album
                 )
                 {
                     DataModelAlbums::append_album(
                           surface
                         , id_album
                         , id_artist
+                        , album
                     ) ;
 
                     regen_mapping();
@@ -213,12 +216,14 @@ namespace MPX
                       Cairo::RefPtr<Cairo::ImageSurface>        surface
                     , gint64                                    id_album
                     , gint64                                    id_artist
+                    , const std::string&                        album
                 )
                 {
                     DataModelAlbums::append_album(
                           surface
                         , id_album
                         , id_artist
+                        , album
                     ) ;
                 }
 
@@ -235,6 +240,11 @@ namespace MPX
                 regen_mapping(
                 )
                 {
+                    if( m_realmodel->size() == 0 )
+                    {
+                        return ;
+                    } 
+
                     using boost::get;
 
                     RowRowMapping  new_mapping ;
@@ -242,7 +252,12 @@ namespace MPX
                     gint64 id = ( m_current_row < m_mapping.size()) ? get<1>(row( m_current_row )) : -1 ; 
                     m_position = 0 ;
 
-                    for( ModelAlbums_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
+                    ModelAlbums_t::iterator i = m_realmodel->begin() ;
+
+                    new_mapping.push_back( i ) ;
+                    ++i ;
+
+                    for( ; i != m_realmodel->end(); ++i )
                     {
                             int truth = !m_current_artist || ( get<2>(*i) == m_current_artist.get() ) ; 
 
@@ -312,7 +327,7 @@ namespace MPX
                 void
                 render(
                       Cairo::RefPtr<Cairo::Context>   cairo
-                    , const Row3&                     row_data
+                    , const Row4&                     data_row
                     , Gtk::Widget&                    widget
                     , int                             row
                     , int                             xpos
@@ -332,21 +347,7 @@ namespace MPX
                     r.width     = m_width ;
                     r.height    = row_height ;
 
-                    cairo->rectangle(
-                          r.x 
-                        , r.y
-                        , r.width 
-                        , r.height
-                    ) ;
-
-                    cairo->clip();
-
-                    cairo->move_to(
-                          r.x 
-                        , r.x 
-                    ) ;
-
-                    Cairo::RefPtr<Cairo::ImageSurface> s = get<0>(row_data) ;
+                    Cairo::RefPtr<Cairo::ImageSurface> s = get<0>(data_row) ;
 
                     if( s )
                     {
@@ -360,8 +361,8 @@ namespace MPX
                                   cairo
                                 , r.x + 1
                                 , r.y + 1
-                                , get<0>(row_data)->get_width() - 2
-                                , get<0>(row_data)->get_height() - 2
+                                , 64 
+                                , 64 
                                 , 4.
                             ) ;
 
@@ -371,8 +372,35 @@ namespace MPX
                             cairo->set_source_rgba( 0., 0., 0., 1. ) ;
                             cairo->stroke() ; 
                     }
+                
+                    cairo->save() ;
 
-                    cairo->reset_clip();
+                    const int text_size_px = 9 ;
+                    const int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+                    Pango::FontDescription font_desc( "sans" ) ;
+                    font_desc.set_size( text_size_pt * PANGO_SCALE ) ;
+                    font_desc.set_weight( Pango::WEIGHT_BOLD ) ;
+
+                    Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
+
+                    layout->set_font_description( font_desc ) ;
+                    layout->set_text( get<3>(data_row) )  ;
+                    layout->set_ellipsize( Pango::ELLIPSIZE_MIDDLE ) ;
+                    layout->set_width( (m_width-8) * PANGO_SCALE ) ;
+
+                    int width, height;
+                    layout->get_pixel_size (width, height) ;
+
+                    cairo->move_to(
+                          xpos + (m_width - width) / 2.
+                        , r.y + 68 
+                    ) ;
+
+                    cairo->set_source_rgba( 1., 1., 1., .5 ) ;
+                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+                    pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+
+                    cairo->restore() ;
                 }
         };
 
@@ -412,7 +440,7 @@ namespace MPX
                 void
                 initialize_metrics ()
                 {
-                   m_row_height = 72 ; 
+                   m_row_height = 88 ; 
                 }
 
                 void

@@ -444,9 +444,10 @@ namespace MPX
         // Albums
 
         m_FilterModelAlbums->append_album_quiet(
-              Cairo::RefPtr<Cairo::ImageSurface>(0) 
+              Cairo::RefPtr<Cairo::ImageSurface>(0)
             , -1
             , -1
+            , _("All Albums")
         ) ;
 
         v.clear () ; 
@@ -468,15 +469,16 @@ namespace MPX
                
                 if( cover_pb ) 
                 {
-                        cover_is = Util::cairo_image_surface_from_pixbuf(
-                              cover_pb->scale_simple( 64, 64, Gdk::INTERP_BILINEAR )
-                        ) ;
+                    cover_is = Util::cairo_image_surface_from_pixbuf(
+                        cover_pb->scale_simple( 64, 64, Gdk::INTERP_BILINEAR )
+                    ) ;
                 }
                 
                 m_FilterModelAlbums->append_album_quiet(
                       cover_is
                     , get<gint64>(r["id"])
                     , get<gint64>(r["album_artist_id"])
+                    , get<std::string>(r["album"])
                 ) ;
         }
 
