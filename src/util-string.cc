@@ -342,6 +342,26 @@ namespace MPX
         using boost::algorithm::is_any_of;
         using boost::algorithm::find_first;
 
+        for( int i = 0 ; i < h.size(); ++i )
+        {
+			if (h[i].length() < 1)
+            {
+				continue;
+            }
+
+    	    if (find_first (h[i], n))
+            {
+                return true ;
+            }
+        }
+
+        return false ;
+
+/*
+        using boost::algorithm::split;
+        using boost::algorithm::is_any_of;
+        using boost::algorithm::find_first;
+
         StrV m;
         split( m, n, is_any_of(" ") );
 
@@ -366,6 +386,8 @@ namespace MPX
         }
 
         return cnt == m.size() ;
+*/
+
     }
 
     std::string

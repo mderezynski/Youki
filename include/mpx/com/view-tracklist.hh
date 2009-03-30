@@ -193,8 +193,10 @@ namespace MPX
                 gint64                                  m_position ;
 
                 typedef std::map<std::string, RowRowMapping> MappingCache ; 
+                typedef std::map<std::string, std::set<ModelT::iterator> > FragmentCache ;
 
-                MappingCache                            m_mapping_cache ;
+                MappingCache    m_mapping_cache ;
+                FragmentCache   m_fragment_cache ;
 
                 DataModelFilter(DataModelP & model)
                 : DataModel(model->m_realmodel)
@@ -318,7 +320,8 @@ namespace MPX
                 { 
                     using boost::get ;
 
-                    const int max_cache_size = 512 ;
+/*
+                    const int max_cache_size = 2048 ;
 
                     MappingCache::const_iterator f = m_mapping_cache.find( text ) ;
                     if( f != m_mapping_cache.end() )
@@ -348,6 +351,7 @@ namespace MPX
 
                         return ;
                     }
+*/
 
                     if(!m_filter_full.empty() && (text.substr(0, text.size()-1) == m_filter_full) && !m_advanced)
                     {
@@ -373,6 +377,7 @@ namespace MPX
                         regen_mapping();
                     }
 
+/*
                     if( m_mapping_cache.size() == max_cache_size ) 
                     {
                         MappingCache::iterator i = m_mapping_cache.begin() ;
@@ -380,6 +385,7 @@ namespace MPX
                     }
 
                     m_mapping_cache.insert( std::make_pair( text, m_mapping )) ;
+*/
                 }
 
                 virtual void
@@ -410,62 +416,124 @@ namespace MPX
                 regen_mapping(
                 )
                 {
+                    typedef std::set<ModelT::iterator>  RowSet_t ;
+                    typedef std::vector<RowSet_t>       CacheVec_t ;
+
                     using boost::get;
+                    using boost::algorithm::split;
+                    using boost::algorithm::is_any_of;
+                    using boost::algorithm::find_first;
 
-                    gint64 id = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
-                    m_position = 0 ;
+                    RowRowMapping   new_mapping ;
+                    std::string     text        = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
+                    gint64          id          = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
 
-                    std::string text = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
+                    m_position  = 0 ;
 
-                    RowRowMapping new_mapping ;
-
-                    for( ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
+                    if( text.empty() )
                     {
-                        const Row6& row = *i;
-
-                        std::vector<std::string> vec (3) ;
-                        vec[0] = Glib::ustring(boost::get<0>(row)).lowercase().c_str() ;
-                        vec[1] = Glib::ustring(boost::get<1>(row)).lowercase().c_str() ;
-                        vec[2] = Glib::ustring(boost::get<2>(row)).lowercase().c_str() ;
-
-                        int match   = 0 ;
-                        int truth   = m_constraints.empty() && m_constraints_synthetic.empty() ; 
-
-                        if( text.empty() ) 
+                        for( ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                         {
-                            if( !(m_constraints.empty() && m_constraints_synthetic.empty()) )
-                            {
-                                const MPX::Track& track = get<4>(row) ;
+                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
 
-                                if( !m_constraints.empty() )
-                                    truth |= AQE::match_track( m_constraints, track ) ;
-
-                                if( !m_constraints_synthetic.empty() )
-                                    truth |= AQE::match_track( m_constraints_synthetic, track ) ;
-                            }
-                        }
-                        else
-                        {
-                            match |= Util::match_vec( text, vec ) ; 
-
-                            const MPX::Track& track = get<4>(row);
+                            const MPX::Track& track = get<4>(*i);
 
                             if( !m_constraints.empty() )
-                               truth |= AQE::match_track( m_constraints, track ) ;
+                                truth |= AQE::match_track( m_constraints, track ) ;
 
                             if( !m_constraints_synthetic.empty() )
-                               truth |= AQE::match_track( m_constraints_synthetic, track ) ;
+                                truth |= AQE::match_track( m_constraints_synthetic, track ) ;
 
-                            truth = match && truth ;
-                        }
+                            if( truth )
+                            {
+                                new_mapping.push_back( i ) ;
+                            }
 
-                        if( truth )
-                        {
-                            new_mapping.push_back( i ) ;
-
-                            if( id >= 0 && get<3>(row) == id )
+                            if( id >= 0 && get<3>(*i) == id )
                             {
                                 m_position = new_mapping.size()  - 1 ;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        StrV m;
+                        split( m, text, is_any_of(" ") );
+
+                        CacheVec_t m_cachevec ; 
+
+                        for( int n = 0 ; n < m.size(); ++n )
+                        {
+                            if( !m[n].length() )
+                            {
+                                continue ;
+                            }
+
+                            FragmentCache::iterator it = m_fragment_cache.find( m[n] ) ;
+                            if( it != m_fragment_cache.end() )
+                            {
+                                m_cachevec.push_back( (*it).second ) ;
+                                continue ;
+                            }
+
+                            m_cachevec.resize( m_cachevec.size() + 1 ) ; 
+                            for( ModelT::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
+                            {
+                                const Row6& row = *i;
+
+                                std::vector<std::string> vec (3) ;
+                                vec[0] = Glib::ustring(boost::get<0>(row)).lowercase().c_str() ;
+                                vec[1] = Glib::ustring(boost::get<1>(row)).lowercase().c_str() ;
+                                vec[2] = Glib::ustring(boost::get<2>(row)).lowercase().c_str() ;
+
+                                if( Util::match_vec( m[n], vec) )
+                                {
+                                    m_cachevec[n].insert( i ) ; 
+                                }
+                            }
+
+                            m_fragment_cache.insert( std::make_pair( m[n], m_cachevec[n] )) ;
+                        }
+
+                        RowSet_t output  ;
+                        for( int n = 0 ; n < m_cachevec.size() ; ++n )
+                        {
+                            if( n == 0 ) 
+                            {
+                                output = m_cachevec[n] ; 
+                            }
+                            else
+                            {
+                                RowSet_t output_tmp ;
+                                const RowSet_t& s = m_cachevec[n] ;
+
+                                for( RowSet_t::const_iterator i = s.begin(); i != s.end(); ++i )
+                                {
+                                    if( output.count( *i ) )
+                                    {
+                                        output_tmp.insert( *i ) ;
+                                    }
+                                }
+
+                                std::swap( output, output_tmp ) ;
+                            }
+                        }
+
+                        for( RowSet_t::iterator i = output.begin() ; i != output.end(); ++i )
+                        {
+                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
+
+                            const MPX::Track& track = get<4>(*(*i));
+
+                            if( !m_constraints.empty() )
+                                truth |= AQE::match_track( m_constraints, track ) ;
+
+                            if( !m_constraints_synthetic.empty() )
+                                truth |= AQE::match_track( m_constraints_synthetic, track ) ;
+
+                            if( truth )
+                            {
+                                new_mapping.push_back( *i ) ;
                             }
                         }
                     }
@@ -475,81 +543,137 @@ namespace MPX
                         scan_active () ;
                         std::swap( new_mapping, m_mapping ) ;
                         m_changed.emit( m_position ) ;
-                    }
-                }
+                    }                }
 
                 void
                 regen_mapping_iterative ()
                 {
+                    typedef std::set<ModelT::iterator>  RowSet_t ;
+                    typedef std::vector<RowSet_t>       CacheVec_t ;
+
                     using boost::get;
+                    using boost::algorithm::split;
+                    using boost::algorithm::is_any_of;
+                    using boost::algorithm::find_first;
 
-                    gint64 id = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
-                    m_position = 0 ;
+                    RowRowMapping   new_mapping ;
+                    std::string     text        = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
+                    gint64          id          = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
 
-                    std::string text = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
+                    m_position  = 0 ;
 
-                    RowRowMapping new_mapping;
-
-                    for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
+                    if( text.empty() )
                     {
-                        const Row6& row = *(*i);
-
-                        std::vector<std::string> vec (3) ;
-                        vec[0] = Glib::ustring(get<0>(row)).lowercase().c_str() ;
-                        vec[1] = Glib::ustring(get<1>(row)).lowercase().c_str() ;
-                        vec[2] = Glib::ustring(get<2>(row)).lowercase().c_str() ;
-
-                        int match   = 0 ;
-                        int truth   = m_constraints.empty() && m_constraints_synthetic.empty() ; 
-
-                        if( text.empty() ) 
+                        for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                         {
-                            if( !(m_constraints.empty() && m_constraints_synthetic.empty()) )
-                            {
-                                const MPX::Track& track = get<4>(row) ;
+                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
 
-                                if( !m_constraints.empty() )
-                                    truth |= AQE::match_track( m_constraints, track ) ;
-
-                                if( !m_constraints_synthetic.empty() )
-                                    truth |= AQE::match_track( m_constraints_synthetic, track ) ;
-                            }
-                        }
-                        else
-                        {
-                            match |= Util::match_vec( text, vec ) ; 
-
-                            const MPX::Track& track = get<4>(row);
+                            const MPX::Track& track = get<4>(*(*i));
 
                             if( !m_constraints.empty() )
-                               truth |= AQE::match_track( m_constraints, track ) ;
+                                truth |= AQE::match_track( m_constraints, track ) ;
 
                             if( !m_constraints_synthetic.empty() )
-                               truth |= AQE::match_track( m_constraints_synthetic, track ) ;
+                                truth |= AQE::match_track( m_constraints_synthetic, track ) ;
 
-                            truth = match && truth ;
-                        }
+                            if( truth )
+                            {
+                                new_mapping.push_back( *i ) ;
+                            }
 
-                        if( truth )
-                        {
-                            new_mapping.push_back( *i ) ;
-
-                            if( id >= 0 && get<3>(row) == id )
+                            if( id >= 0 && get<3>(**i) == id )
                             {
                                 m_position = new_mapping.size()  - 1 ;
                             }
                         }
                     }
-
-                    if( text.empty() && m_constraints.empty() && m_constraints_synthetic.empty() ) 
+                    else
                     {
-                        m_local_active_track = m_active_track.get() ; 
+                        StrV m;
+                        split( m, text, is_any_of(" ") );
+
+                        CacheVec_t m_cachevec ; 
+
+                        for( int n = 0 ; n < m.size(); ++n )
+                        {
+                            if( !m[n].length() )
+                            {
+                                continue ;
+                            }
+
+                            FragmentCache::iterator it = m_fragment_cache.find( m[n] ) ;
+                            if( it != m_fragment_cache.end() )
+                            {
+                                m_cachevec.push_back( (*it).second ) ;
+                                continue ;
+                            }
+
+                            m_cachevec.resize( m_cachevec.size() + 1 ) ; 
+                            for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
+                            {
+                                const Row6& row = *(*i);
+
+                                std::vector<std::string> vec (3) ;
+                                vec[0] = Glib::ustring(boost::get<0>(row)).lowercase().c_str() ;
+                                vec[1] = Glib::ustring(boost::get<1>(row)).lowercase().c_str() ;
+                                vec[2] = Glib::ustring(boost::get<2>(row)).lowercase().c_str() ;
+
+                                if( Util::match_vec( m[n], vec) )
+                                {
+                                    m_cachevec[n].insert( *i ) ; 
+                                }
+                            }
+
+                            m_fragment_cache.insert( std::make_pair( m[n], m_cachevec[n] )) ;
+                        }
+
+                        RowSet_t output  ;
+                        for( int n = 0 ; n < m_cachevec.size() ; ++n )
+                        {
+                            if( n == 0 ) 
+                            {
+                                output = m_cachevec[n] ; 
+                            }
+                            else
+                            {
+                                RowSet_t output_tmp ;
+                                const RowSet_t& s = m_cachevec[n] ;
+
+                                for( RowSet_t::const_iterator i = s.begin(); i != s.end(); ++i )
+                                {
+                                    if( output.count( *i ) )
+                                    {
+                                        output_tmp.insert( *i ) ;
+                                    }
+                                }
+
+                                std::swap( output, output_tmp ) ;
+                            }
+                        }
+
+                        for( RowSet_t::iterator i = output.begin() ; i != output.end(); ++i )
+                        {
+                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
+
+                            const MPX::Track& track = get<4>(*(*i));
+
+                            if( !m_constraints.empty() )
+                                truth |= AQE::match_track( m_constraints, track ) ;
+
+                            if( !m_constraints_synthetic.empty() )
+                                truth |= AQE::match_track( m_constraints_synthetic, track ) ;
+
+                            if( truth )
+                            {
+                                new_mapping.push_back( *i ) ;
+                            }
+                        }
                     }
 
                     if( new_mapping != m_mapping )
                     {
-                        scan_active() ;
-                        std::swap( m_mapping, new_mapping ) ;
+                        scan_active () ;
+                        std::swap( new_mapping, m_mapping ) ;
                         m_changed.emit( m_position ) ;
                     }
                 }
