@@ -553,7 +553,7 @@ namespace MPX
                                         m_selected = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
                                         m_SIGNAL_selection_changed.emit() ;
 
-                                        if( row >= (get_upper_row() + ((m_visible_height-m_row_height)/m_row_height)))
+                                        if( row >= (get_upper_row() + (m_visible_height/m_row_height)))
                                         {
                                             double value = m_prop_vadj.get_value()->get_value();
                                             value += step*m_row_height;
@@ -639,7 +639,7 @@ namespace MPX
                     m_prop_vadj.get_value()->set_page_size(event->height); 
                     m_prop_vadj.get_value()->set_upper((m_model->size()) * m_row_height);
 
-                    m_visible_height = event->height;
+                    m_visible_height = event->height ;
 
                     double column_width = (double(event->width) - m_fixed_total_width - (40*m_collapsed.size()) ) / double(m_columns.size()-m_collapsed.size()-m_fixed.size());
 
@@ -748,11 +748,11 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.55 
+                                , 0.90 
                             ) ;
                             
                             background_gradient_ptr->add_color_stop_rgba(
-                                  .60
+                                  .40
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
@@ -764,7 +764,7 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.80 
+                                , 0.45 
                             ) ;
 
                             cairo->set_source( background_gradient_ptr ) ;

@@ -1141,7 +1141,7 @@ namespace MPX
                                         m_selection.clear();
                                         m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
 
-                                        if( row >= (get_upper_row() + ((m_visible_height-m_row_height)/m_row_height)))
+                                        if( row >= (get_upper_row() + (m_visible_height/m_row_height)))
                                         {
                                             double value = m_prop_vadj.get_value()->get_value();
                                             value += step*m_row_height;
@@ -1283,7 +1283,7 @@ namespace MPX
                     GdkEventConfigure* event
                 )        
                 {
-                    m_visible_height = event->height;
+                    m_visible_height = event->height - m_row_start ;
 
                     m_prop_vadj.get_value()->set_upper( m_model->size()  * m_row_height ) ;
                     m_prop_vadj.get_value()->set_page_size( m_visible_height ) ;
@@ -1340,7 +1340,7 @@ namespace MPX
                     int ypos    = m_row_start ;
                     int xpos    = 0 ;
                     int col     = 0 ;
-                    int cnt     = ( m_visible_height - m_row_start ) / m_row_height  + 1 ;
+                    int cnt     = m_visible_height / m_row_height + 1 ; 
 
                     if( event->area.y <= m_row_start )
                     {
@@ -1427,11 +1427,11 @@ namespace MPX
                                         , c.get_red_p() 
                                         , c.get_green_p()
                                         , c.get_blue_p()
-                                        , 0.55 
+                                        , 0.90 
                                     ) ;
                                     
                                     background_gradient_ptr->add_color_stop_rgba(
-                                          .60
+                                          .40
                                         , c.get_red_p() 
                                         , c.get_green_p()
                                         , c.get_blue_p()
@@ -1443,7 +1443,7 @@ namespace MPX
                                         , c.get_red_p() 
                                         , c.get_green_p()
                                         , c.get_blue_p()
-                                        , 0.80 
+                                        , 0.45 
                                     ) ;
 
                                     cairo->set_source( background_gradient_ptr ) ;
