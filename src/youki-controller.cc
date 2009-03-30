@@ -50,7 +50,8 @@ namespace MPX
     YoukiController::YoukiController(
         DBus::Connection conn
     )
-    : DBus::ObjectAdaptor( conn, "/info/backtrace/Youki/App" )
+    : Glib::ObjectBase( "YoukiController" )
+    , DBus::ObjectAdaptor( conn, "/info/backtrace/Youki/App" )
     , m_main_window( 0 )
     , m_seek_position( -1 )
     {
@@ -175,6 +176,8 @@ namespace MPX
         )) ;
 
         m_icon              = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "youki.png" )) ;
+        m_disc              = Util::cairo_image_surface_from_pixbuf( Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "disc.png" ))) ;
+        m_disc_multiple     = Util::cairo_image_surface_from_pixbuf( Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "disc-multiple.png" ))) ;
 
         m_main_window->set_icon( m_icon ) ;
 
@@ -222,9 +225,9 @@ namespace MPX
         m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
 
-        m_ScrolledWinAA->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
-        m_ScrolledWinAlbums->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
-        m_ScrolledWinTracks->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
+        m_ScrolledWinAA->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
+        m_ScrolledWinAlbums->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
+        m_ScrolledWinTracks->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
 
         {
                 DataModelTracks_SP_t m ( new DataModelTracks ) ;
@@ -426,7 +429,7 @@ namespace MPX
         {
                 SQL::Row & r = *i;
                 m_FilterModelAA->append_artist_quiet(
-                      boost::get<std::string>(r["album_artist"])
+                      r.count("album_artist_sortname") ? boost::get<std::string>(r["album_artist_sortname"]) : boost::get<std::string>(r["album_artist"])
                     , boost::get<gint64>(r["id"])
                 ) ;
         }
@@ -436,7 +439,7 @@ namespace MPX
         // Albums
 
         m_FilterModelAlbums->append_album_quiet(
-              Cairo::RefPtr<Cairo::ImageSurface>(0)
+              m_disc_multiple 
             , -1
             , -1
             , _("All Albums")
@@ -464,6 +467,10 @@ namespace MPX
                     cover_is = Util::cairo_image_surface_from_pixbuf(
                         cover_pb->scale_simple( 64, 64, Gdk::INTERP_BILINEAR )
                     ) ;
+                }
+                else
+                {
+                    cover_is = m_disc ; 
                 }
                 
                 m_FilterModelAlbums->append_album_quiet(
@@ -666,6 +673,11 @@ namespace MPX
 
         AQE::Constraint_t c ;
 
+        if( origin == ORIGIN_MODEL_ALBUM_ARTISTS ) 
+        {
+            m_ListViewAlbums->clear_selection() ;
+        }
+    
         if( id_artist == -1 )
         {
             std::set<gint64> constraint ; 
@@ -673,11 +685,6 @@ namespace MPX
         }
         else
         {
-            if( origin == ORIGIN_MODEL_ALBUM_ARTISTS ) 
-            {
-                m_ListViewAlbums->clear_selection() ;
-            }
-    
             std::set<gint64> constraint ; 
             constraint.insert( id_artist ) ;
 

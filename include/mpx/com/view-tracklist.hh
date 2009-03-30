@@ -116,8 +116,12 @@ namespace MPX
                     else
                         g_critical("%s: No id for track, extremely suspicious", G_STRLOC) ;
 
+                    if(r.count("artist_sortname"))
+                        artist = get<std::string>(r["artist_sortname"]) ;
+                    else
                     if(r.count("artist"))
                         artist = get<std::string>(r["artist"]) ;
+
                     if(r.count("album"))
                         album = get<std::string>(r["album"]) ;
                     if(r.count("title"))
@@ -155,6 +159,9 @@ namespace MPX
                         g_critical("Warning, no id given for track; this is totally wrong and should never happen.") ;
 
 
+                    if(track[ATTRIBUTE_ARTIST_SORTNAME])
+                        artist = get<std::string>(track[ATTRIBUTE_ARTIST_SORTNAME].get()) ;
+                    else
                     if(track[ATTRIBUTE_ARTIST])
                         artist = get<std::string>(track[ATTRIBUTE_ARTIST].get()) ;
 
@@ -1579,6 +1586,53 @@ namespace MPX
                         row ++;
                         cnt --;
                     }
+
+                    std::valarray<double> dashes ( 3 ) ;
+                    dashes[0] = 0. ;
+                    dashes[1] = 3. ;
+                    dashes[2] = 0. ;
+
+                    xpos = 0 ;
+
+                    Columns::iterator i2 = m_columns.end() ;
+                    --i2 ;
+
+                    cairo->save() ;
+
+                    for( Columns::const_iterator i = m_columns.begin(); i != i2; ++i )
+                    {
+                                xpos += (*i)->get_width() ; 
+
+                                cairo->set_line_width(
+                                      .5
+                                ) ;
+
+                                cairo->set_dash(
+                                      dashes
+                                    , 0
+                                ) ;
+
+                                cairo->set_source_rgba(
+                                      1.
+                                    , 1.
+                                    , 1.
+                                    , .5
+                                ) ;
+
+                                cairo->move_to(
+                                      xpos
+                                    , 0 
+                                ) ; 
+
+                                cairo->line_to(
+                                      xpos
+                                    , alloc.get_height()
+                                ) ;
+
+                                cairo->stroke() ;
+                    }
+
+                    cairo->restore(); 
 
                     if( has_focus() )
                     {

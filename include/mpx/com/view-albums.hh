@@ -384,11 +384,13 @@ namespace MPX
                                 , 4.
                             ) ;
 
-                            cairo->fill_preserve() ;
+                            cairo->fill() ;
 
+/*
                             cairo->set_line_width( 0.5 ) ;
                             cairo->set_source_rgba( 0., 0., 0., 1. ) ;
                             cairo->stroke() ; 
+*/
                     }
                 
                     cairo->save() ;
@@ -414,7 +416,7 @@ namespace MPX
                         , r.y + 68 
                     ) ;
 
-                    cairo->set_source_rgba( 1., 1., 1., .5 ) ;
+                    cairo->set_source_rgba( 1., 1., 1., .8 ) ;
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
                     pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
 
@@ -722,6 +724,7 @@ namespace MPX
                         ModelAlbums_t::iterator  selected           = m_model->m_mapping[row] ;
                         bool                     iter_is_selected   = ( m_selection && get<1>(m_selection.get()) == row ) ;
 
+/*
                         if( !(row % 2) ) 
                         {
                             GdkRectangle r ;
@@ -749,6 +752,7 @@ namespace MPX
 
                             cairo->fill() ;
                         }
+*/
 
                         if( iter_is_selected )
                         {

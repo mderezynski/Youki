@@ -16,7 +16,8 @@
 #include "mcs/mcs.h"
 #include "mcs/types.h"
 
-#include "mpx.hh"
+#include "youki-controller.hh"
+
 #include "mpx/mpx-types.hh"
 #include "mpx/mpx-lyrics.hh"
 #include "mpx/mpx-covers.hh"
@@ -379,29 +380,22 @@ namespace mpxpy
 {
     using namespace MPX;
 
-    template <>
-	PyObject*
-	get_gobject(MPX::Player & obj)
-	{
-		return pygobject_new((GObject*)(obj.get_gobj()));
-	}
-
 	MPX::Library&
-	player_get_library(MPX::Player & obj)
+	player_get_library(MPX::YoukiController & obj)
 	{
 		MPX::PAccess<MPX::Library> pa (*services->get<Library>("mpx-service-library").get());
 		return pa.get();
 	}
 
 	MPX::Covers&
-	player_get_covers (MPX::Player & obj)
+	player_get_covers (MPX::YoukiController & obj)
 	{
 		MPX::PAccess<MPX::Covers> pa (*services->get<Covers>("mpx-service-covers").get());
 		return pa.get();
 	}
 
 	MPX::Play&
-	player_get_play   (MPX::Player & obj)
+	player_get_play   (MPX::YoukiController & obj)
 	{
 		MPX::PAccess<MPX::Play> pa   (*services->get<Play>("mpx-service-play").get());
 		return pa.get();
@@ -409,27 +403,23 @@ namespace mpxpy
 
 #ifdef HAVE_HAL
 	MPX::HAL&
-	player_get_hal (MPX::Player & obj)
+	player_get_hal (MPX::YoukiController & obj)
 	{
 		MPX::PAccess<MPX::HAL> pa    (*services->get<HAL>("mpx-service-hal").get());
 		return pa.get();
 	}
 #endif // HAVE_HAL
 
-    PyObject*
-	player_get_ui (MPX::Player & obj)
-	{
-		return pygobject_new((GObject*)(obj.ui()->gobj()));
-	}
-
+/*
 	void
-	player_add_widget (MPX::Player & obj, PyObject * pyobj)
+	player_add_widget (MPX::YoukiController & obj, PyObject * pyobj)
 	{
 		obj.add_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false));
 	}
+*/
 
 	void
-	player_add_info_widget (MPX::Player & obj, PyObject * pyobj, PyObject * name_py)
+	player_add_info_widget (MPX::YoukiController & obj, PyObject * pyobj, PyObject * name_py)
 	{
         const char* name = PyString_AsString (name_py);
 
@@ -438,14 +428,16 @@ namespace mpxpy
 		obj.add_info_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false), name);
 	}
 
+/*
 	void
-	player_remove_widget (MPX::Player & obj, PyObject * pyobj)
+	player_remove_widget (MPX::YoukiController & obj, PyObject * pyobj)
 	{
 		obj.remove_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false));
 	}
+*/
 
 	void
-	player_remove_info_widget (MPX::Player & obj, PyObject * pyobj)
+	player_remove_info_widget (MPX::YoukiController & obj, PyObject * pyobj)
 	{
 		obj.remove_info_widget(Glib::wrap(((GtkWidget*)(((PyGObject*)(pyobj))->obj)), false));
 	}
@@ -698,6 +690,7 @@ BOOST_PYTHON_MODULE(mpx)
 
 	/*-------------------------------------------------------------------------------------*/
 
+/*
 	enum_<MPX::Flags>("PlaybackSourceFlags")
 		.value("F_NONE", MPX::F_NONE)	
 		.value("F_ASYNC", MPX::F_ASYNC)	
@@ -723,14 +716,15 @@ BOOST_PYTHON_MODULE(mpx)
 		.value("C_PROVIDES_TIMING", MPX::C_PROVIDES_TIMING)	
 	;
 
-	class_<MPX::IdV>("IdVector")
-		.def(vector_indexing_suite<MPX::IdV>());
-	;
-
     class_<MPX::PlaybackSource, boost::noncopyable>("PlaybackSourceAPI", boost::python::no_init)
             .def("get_guid", &MPX::PlaybackSource::get_guid)
             .def("get_class_guid", &MPX::PlaybackSource::get_class_guid)
     ;
+*/
+
+	class_<MPX::IdV>("IdVector")
+		.def(vector_indexing_suite<MPX::IdV>());
+	;
 
  	/*-------------------------------------------------------------------------------------*/
 
@@ -816,61 +810,41 @@ BOOST_PYTHON_MODULE(mpx)
 
 	/*-------------------------------------------------------------------------------------*/
 
-	class_<MPX::Player, boost::noncopyable>("Player", boost::python::no_init)
+	class_<MPX::YoukiController, boost::noncopyable>("YoukiController", boost::python::no_init)
 
-		.def("gobj",                &mpxpy::get_gobject<MPX::Player>)
-
-		.def("get_status",          &MPX::Player::get_status) 
-
-        .def("get_source",          &MPX::Player::get_source)
-
-        .def("get_sources_by_class",&MPX::Player::get_sources_by_class)
-
-		.def("get_metadata",        &MPX::Player::get_metadata,
-                                    return_internal_reference<>())
-
-        // FIXME: Deprecate the object getters by providing an interface to Services
 
 		.def("get_library",         &mpxpy::player_get_library,
                                     return_internal_reference<>()) 
-
+        .def("get_covers",          &mpxpy::player_get_covers,
+                                    return_internal_reference<>())
+        .def("get_play",            &mpxpy::player_get_play,
+                                    return_internal_reference<>())
 #ifdef HAVE_HAL
 		.def("get_hal",             &mpxpy::player_get_hal,
                                     return_internal_reference<>()) 
 #endif // HAVE_HAL
 
-        .def("get_covers",          &mpxpy::player_get_covers,
+
+		.def("gobj",                &mpxpy::get_gobject<MPX::YoukiController>)
+
+		.def("get_status",          &MPX::YoukiController::get_status) 
+
+		.def("get_metadata",        &MPX::YoukiController::get_metadata,
                                     return_internal_reference<>())
 
-        .def("get_play",            &mpxpy::player_get_play,
-                                    return_internal_reference<>())
+//        .def("deactivate_plugin",   &MPX::YoukiController::deactivate_plugin)
+//        .def("activate_plugin",     &MPX::YoukiController::activate_plugin)
+//        .def("show_plugin",         &MPX::YoukiController::show_plugin)
 
-        .def("ui",                  &mpxpy::player_get_ui)
-
-        .def("info_set",            &MPX::Player::info_set)
-
-        .def("info_clear",          &MPX::Player::info_clear)
-
-        .def("push_message",        &MPX::Player::push_message)
-
-        .def("deactivate_plugin",   &MPX::Player::deactivate_plugin)
-        .def("activate_plugin",     &MPX::Player::activate_plugin)
-        .def("show_plugin",         &MPX::Player::show_plugin)
-
-		.def("play",                &MPX::Player::play)
-		.def("pause",               &MPX::Player::pause)
-		.def("prev",                &MPX::Player::prev)
-		.def("next",                &MPX::Player::next)
-		.def("stop",                &MPX::Player::stop)
-        .def("play_uri",            &MPX::Player::play_uri)
+		.def("pause",               &MPX::YoukiController::pause)
 
         .def("add_info_widget",     &mpxpy::player_add_info_widget)
         .def("remove_info_widget",  &mpxpy::player_remove_info_widget)
 
+/*
 		.def("add_widget",          &mpxpy::player_add_widget)
 		.def("remove_widget",       &mpxpy::player_remove_widget)
-
-		.def("metadata_reparse",    &MPX::Player::metadata_reparse_with_lock)
+*/
 	;
 
 	/*-------------------------------------------------------------------------------------*/
@@ -966,10 +940,12 @@ BOOST_PYTHON_MODULE(mpx)
         .def("collectionCreate", &MPX::Library::collectionCreate) 
         .def("collectionAppend", &MPX::Library::collectionAppend) 
 
+/*
         .def("signal_new_album",        &MPX::Library::signal_new_album, return_value_policy<return_by_value>())
         .def("signal_new_artist",       &MPX::Library::signal_new_artist, return_value_policy<return_by_value>())
         .def("signal_new_track",        &MPX::Library::signal_new_track, return_value_policy<return_by_value>())
         .def("signal_track_updated",    &MPX::Library::signal_track_updated, return_value_policy<return_by_value>())
+*/
 	;
 
     typedef std::vector<double> IEEEV;
@@ -1064,10 +1040,12 @@ BOOST_PYTHON_MODULE(mpx)
     /* Play */
     /*-------------------------------------------------------------------------------------*/
 
+/*
     class_<MPX::Play, boost::noncopyable>("Play", boost::python::no_init)
         .def("tap", &mpxpy::Play::tap)
         .def("pipeline", &mpxpy::Play::pipeline)
     ;
+*/
 }
 
 namespace

@@ -22,7 +22,8 @@ namespace MPX
 {
     class Play ;
     class YoukiController
-    : public ::info::backtrace::Youki::App_adaptor
+    : public Glib::Object
+    , public ::info::backtrace::Youki::App_adaptor
     , public DBus::ObjectAdaptor
     , public DBus::IntrospectableAdaptor
     {
@@ -65,7 +66,9 @@ namespace MPX
             DataModelFilterAlbums_SP_t        m_FilterModelAlbums ;
             DataModelFilterTracks_SP_t        m_FilterModelTracks ;
 
-            Glib::RefPtr<Gdk::Pixbuf>         m_icon ; 
+            Glib::RefPtr<Gdk::Pixbuf>           m_icon ; 
+            Cairo::RefPtr<Cairo::ImageSurface>  m_disc ;
+            Cairo::RefPtr<Cairo::ImageSurface>  m_disc_multiple ;
 
             Play                            * m_play ;
             gint64                            m_seek_position ;
@@ -202,6 +205,41 @@ namespace MPX
 
             virtual void
             Pause () ;
+
+        public: // PLUGIN API
+
+            PlayStatus
+            get_status(
+            )
+            {
+            }
+
+            MPX::Track&
+            get_metadata(
+            )
+            {
+            }
+
+            void
+            pause(
+            )
+            {
+            }
+
+            void        
+            add_info_widget(
+                  Gtk::Widget*
+                , const std::string& name
+            )
+            {
+            }
+
+            void
+            remove_info_widget(
+                  Gtk::Widget*
+            )
+            {
+            }
     } ;
 }
 

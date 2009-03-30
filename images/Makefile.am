@@ -3,6 +3,7 @@ images_DATA =						\
 		about.png					\
 		artist.png					\
 		disc.png					\
+        disc-multiple.png           \
         off.png                     \
 		splash.png					\
 		throbber.gif				\
