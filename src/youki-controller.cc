@@ -87,7 +87,7 @@ namespace MPX
         )) ;
 
         m_Paned1            = Gtk::manage( new Gtk::HPaned ) ;
-        m_Paned2            = Gtk::manage( new Gtk::HPaned ) ;
+        //m_Paned2            = Gtk::manage( new Gtk::HPaned ) ;
 
         m_VBox              = Gtk::manage( new Gtk::VBox ) ;
 
@@ -116,6 +116,7 @@ namespace MPX
             , ORIGIN_MODEL_ALBUM_ARTISTS
         )) ;
 
+/*
         m_ListViewAlbums    = Gtk::manage( new ListViewAlbums ) ;
         m_ListViewAlbums->signal_selection_changed().connect(
             sigc::bind(
@@ -125,9 +126,10 @@ namespace MPX
             )
             , ORIGIN_MODEL_ALBUMS
         )) ;
+*/
 
         m_ScrolledWinAA     = Gtk::manage( new Gtk::ScrolledWindow ) ;
-        m_ScrolledWinAlbums = Gtk::manage( new Gtk::ScrolledWindow ) ;
+ //       m_ScrolledWinAlbums = Gtk::manage( new Gtk::ScrolledWindow ) ;
         m_ScrolledWinTracks = Gtk::manage( new Gtk::ScrolledWindow ) ;
 
         m_main_window       = Gtk::manage( new MainWindow ) ;
@@ -223,7 +225,7 @@ namespace MPX
         m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
 
         m_ScrolledWinAA->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
-        m_ScrolledWinAlbums->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
+//        m_ScrolledWinAlbums->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
         m_ScrolledWinTracks->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
 
         {
@@ -284,6 +286,7 @@ namespace MPX
                 m_ScrolledWinAA->show_all() ;
         }
 
+/*
         {
                 DataModelAlbums_SP_t m ( new DataModelAlbums ) ;
                 m_FilterModelAlbums = DataModelFilterAlbums_SP_t (new DataModelFilterAlbums( m )) ;
@@ -297,6 +300,7 @@ namespace MPX
                 m_ScrolledWinAlbums->add( *m_ListViewAlbums ) ;
                 m_ScrolledWinAlbums->show_all() ;
         }
+*/
 
         m_Entry->signal_activate().connect(
                 sigc::bind(
@@ -309,19 +313,20 @@ namespace MPX
         )) ;
 
         m_Paned1->add1( *m_ScrolledWinAA ) ;
-        m_Paned1->add2( *m_ScrolledWinAlbums ) ;
-        m_Paned2->add1( *m_Paned1 ) ;
-        m_Paned2->add2( *m_ScrolledWinTracks ) ;
+        m_Paned1->add2( *m_ScrolledWinTracks ) ;
+//      m_Paned1->add2( *m_ScrolledWinAlbums ) ;
+//      m_Paned2->add1( *m_Paned1 ) ;
+//      m_Paned2->add2( *m_ScrolledWinTracks ) ;
 
         m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
         m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
-        m_HBox_Controls->set_spacing( 2 ) ;
+        m_HBox_Controls->set_spacing( 4 ) ;
 
         m_main_window->set_widget_top( *m_VBox ) ;
         m_main_window->set_widget_drawer( *m_main_cover ) ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
-        m_VBox->pack_start( *m_Paned2, true, true, 0 ) ;
+        m_VBox->pack_start( *m_Paned1, true, true, 0 ) ;
         m_VBox->pack_start( *m_main_titleinfo, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
         m_VBox->pack_start( *m_main_infoarea, false, false, 0 ) ;
@@ -402,7 +407,7 @@ namespace MPX
 
         m_FilterModel->clear () ;
         m_FilterModelAA->clear () ;
-        m_FilterModelAlbums->clear () ;
+//        m_FilterModelAlbums->clear () ;
 
         // Tracks 
 
@@ -441,6 +446,7 @@ namespace MPX
 
         m_FilterModelAA->regen_mapping () ;
 
+/*
         // Albums
 
         m_FilterModelAlbums->append_album_quiet(
@@ -483,6 +489,7 @@ namespace MPX
         }
 
         m_FilterModelAlbums->regen_mapping () ;
+*/
     }
 
     void
@@ -668,7 +675,7 @@ namespace MPX
     ) 
     {
         gint64 id_artist = m_ListViewAA->get_selected() ;
-        gint64 id_albums = m_ListViewAlbums->get_selected() ;
+//        gint64 id_albums = m_ListViewAlbums->get_selected() ;
 
         m_FilterModel->clear_synthetic_constraints_quiet() ;
 
@@ -676,16 +683,18 @@ namespace MPX
 
         if( id_artist == -1 )
         {
-            m_FilterModelAlbums->artist_clear() ;
+//            m_FilterModelAlbums->artist_clear() ;
         }
         else
         {
+/*
             if( origin == ORIGIN_MODEL_ALBUM_ARTISTS ) 
             {
                 m_ListViewAlbums->clear_selection() ;
             }
+*/
 
-            m_FilterModelAlbums->artist_set( id_artist ) ;
+//            m_FilterModelAlbums->artist_set( id_artist ) ;
 
             c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ARTIST_ID ;
             c.TargetValue = id_artist ;
@@ -693,6 +702,7 @@ namespace MPX
             m_FilterModel->add_synthetic_constraint_quiet( c ) ;
         }
 
+/*
         if( id_albums == -1 )
         {
         }
@@ -703,9 +713,9 @@ namespace MPX
             c.MatchType = AQE::MT_EQUAL ;
             m_FilterModel->add_synthetic_constraint_quiet( c ) ;
         }
+*/
 
         m_FilterModel->regen_mapping() ;
-
         m_Entry->set_text("") ;
     }
 

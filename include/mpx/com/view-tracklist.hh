@@ -885,7 +885,7 @@ namespace MPX
                     ) ;
 
                     layout->set_width(
-                          (m_width - off - 8) * PANGO_SCALE
+                          (m_width - off - 10) * PANGO_SCALE
                     ) ;
 
                     layout->set_alignment(
@@ -1492,52 +1492,14 @@ namespace MPX
                                     iter_is_selected = true;
                                 }
 
-                                std::valarray<double> dashes ( 2 ) ;
-                                dashes[0] = 0. ;
-                                dashes[1] = 1. ;
-
                                 for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                                 {
                                     (*i)->render(cairo, m_model->row(row), m_model->m_filter_effective, *this, row, xpos, ypos, m_row_height, iter_is_selected, m_highlight);
 
-                                    xpos += (*i)->get_width() ; 
-
-                                    cairo->save() ;
-
-                                    cairo->set_line_width(
-                                          .8
-                                    ) ;
-
-                                    cairo->set_dash(
-                                          dashes
-                                        , 0.
-                                    ) ;
-
-                                    cairo->set_source_rgba(
-                                          1.
-                                        , 1.
-                                        , 1.
-                                        , .5
-                                    ) ;
-
-                                    cairo->move_to(
-                                          xpos
-                                        , 0 
-                                    ) ; 
-
-                                    cairo->line_to(
-                                          xpos
-                                        , alloc.get_height()
-                                    ) ;
-
-                                    cairo->stroke() ;
-
-                                    cairo->restore(); 
-
-                                    xpos += 1 ;
+                                    xpos += (*i)->get_width() + 1; 
                                 }
                         }
-                    
+
                         const int icon_lateral = 16 ;
                         const int icon_xorigin = 0 ;
 
@@ -1589,6 +1551,53 @@ namespace MPX
                         row ++;
                         cnt --;
                     }
+
+                    std::valarray<double> dashes ( 3 ) ;
+                    dashes[0] = 0. ;
+                    dashes[1] = 3. ;
+                    dashes[2] = 0. ;
+
+                    xpos = 0 ;
+
+                    Columns::iterator i2 = m_columns.end() ;
+                    --i2 ;
+
+                    cairo->save() ;
+
+                    for( Columns::const_iterator i = m_columns.begin(); i != i2; ++i )
+                    {
+                                xpos += (*i)->get_width() ; 
+
+                                cairo->set_line_width(
+                                      .5
+                                ) ;
+
+                                cairo->set_dash(
+                                      dashes
+                                    , 0
+                                ) ;
+
+                                cairo->set_source_rgba(
+                                      1.
+                                    , 1.
+                                    , 1.
+                                    , .5
+                                ) ;
+
+                                cairo->move_to(
+                                      xpos
+                                    , 0 
+                                ) ; 
+
+                                cairo->line_to(
+                                      xpos
+                                    , alloc.get_height()
+                                ) ;
+
+                                cairo->stroke() ;
+                    }
+
+                    cairo->restore(); 
 
                     if( has_focus() )
                     {

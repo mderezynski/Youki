@@ -342,9 +342,9 @@ namespace MPX
 
                     GdkRectangle r ;
             
-                    r.x         = xpos + (m_width - 64) / 2 ; 
+                    r.x         = xpos + (m_width - 64) / 2 + 4 ; 
                     r.y         = ypos ;
-                    r.width     = m_width ;
+                    r.width     = m_width - 4;
                     r.height    = row_height ;
 
                     Cairo::RefPtr<Cairo::ImageSurface> s = get<0>(data_row) ;
@@ -392,7 +392,7 @@ namespace MPX
                     layout->get_pixel_size (width, height) ;
 
                     cairo->move_to(
-                          xpos + (m_width - width) / 2.
+                          xpos + (m_width - 4 - width) / 2. + 4
                         , r.y + 68 
                     ) ;
 
