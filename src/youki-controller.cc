@@ -553,9 +553,7 @@ namespace MPX
         try{
                 boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library") ;
         
-                m_current_track_lock.lock() ;
                 m_current_track = t ; 
-                m_current_track_lock.unlock() ;
 
                 m_play->switch_stream( library->trackGetLocation( t ) ) ;
                 m_ListViewTracks->set_active_track( boost::get<gint64>(t[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
