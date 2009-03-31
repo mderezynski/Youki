@@ -141,8 +141,8 @@ namespace MPX
 
                 RowRowMapping                           m_mapping ;
                 gint64                                  m_position ;
-                std::set<gint64>                        m_constraint_id_album ;
-                std::set<gint64>                        m_constraint_id_artist ;
+                boost::optional<std::set<gint64> >      m_constraint_id_album ;
+                boost::optional<std::set<gint64> >      m_constraint_id_artist ;
 
                 DataModelFilterAlbums(DataModelAlbums_SP_t & model)
                 : DataModelAlbums(model->m_realmodel)
@@ -151,8 +151,8 @@ namespace MPX
                 }
 
                 virtual void
-                set_constraint_album(
-                    const std::set<gint64>& constraint
+                set_constraint_albums(
+                    const boost::optional<std::set<gint64> >& constraint
                 )
                 {
                     m_constraint_id_album = constraint ;
@@ -162,12 +162,12 @@ namespace MPX
                 clear_constraint_album(
                 )
                 {
-                    m_constraint_id_album.clear() ;
+                    m_constraint_id_album.reset() ;
                 }
 
                 virtual void
                 set_constraint_artist(
-                    const std::set<gint64>& constraint
+                    const boost::optional<std::set<gint64> >& constraint
                 )
                 {
                     m_constraint_id_artist = constraint ;
@@ -177,7 +177,7 @@ namespace MPX
                 clear_constraint_artist(
                 )
                 {
-                    m_constraint_id_artist.clear() ;
+                    m_constraint_id_artist.reset() ;
                 }
 
                 virtual void
@@ -279,9 +279,9 @@ namespace MPX
                     for( ; i != m_realmodel->end(); ++i )
                     {
                             int truth = 
-                                        (m_constraint_id_album.empty()  || m_constraint_id_album.count( get<1>(*i)) )
+                                        (!m_constraint_id_album  || m_constraint_id_album.get().count( get<1>(*i)) )
                                                                         &&
-                                        (m_constraint_id_artist.empty() || m_constraint_id_artist.count( get<2>(*i)) )
+                                        (!m_constraint_id_artist || m_constraint_id_artist.get().count( get<2>(*i)) )
                             ; 
 
                             if( truth )

@@ -396,34 +396,49 @@ namespace MPX
 
 
                         //// ICONS
+
+                        GdkRectangle r ;
+
+                        r.x         = m_presize_width - m_title_logo->get_width() - 12 ;
+                        r.y         = (20 / 2) - (m_title_logo->get_height()/2) ; 
+                        r.width     = m_title_logo->get_width() ;
+                        r.height    = m_title_logo->get_height() ;
+
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_title_logo 
-                            , get_allocation().get_width() - m_title_logo->get_width() - 12
-                            , (20 / 2) - (m_title_logo->get_height()/2) 
+                            , r.x 
+                            , r.y 
                         ) ;
 
                         cr->rectangle(
-                              get_allocation().get_width() - m_title_logo->get_width() - 12
-                            , (20 / 2) - (m_title_logo->get_height()/2) 
-                            , m_title_logo->get_width()
-                            , m_title_logo->get_height()
+                              r.x 
+                            , r.y 
+                            , r.width 
+                            , r.height 
                         ) ;
+
                         cr->fill () ;
+
+                        r.x         = 8 ; 
+                        r.y         = (20 - m_button_off->get_height()) / 2. ;
+                        r.width     = m_button_off->get_width() ;
+                        r.height    = m_button_off->get_height() ;
 
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_button_off 
-                            , 8 
-                            , (20 - m_button_off->get_height()) / 2. 
+                            , r.x 
+                            , r.y 
                         ) ;
 
                         cr->rectangle(
-                              8 
-                            , (20 - m_title_logo->get_height()) / 2.
-                            , m_title_logo->get_width()
-                            , m_title_logo->get_height()
+                              r.x 
+                            , r.y 
+                            , r.width 
+                            , r.height 
                         ) ;
+
                         cr->save () ;
                         cr->clip () ;
                         cr->paint_with_alpha( m_quit_clicked ? .9 : .6 ) ; 
@@ -439,7 +454,7 @@ namespace MPX
 
                         RoundedTriangleRight(
                               cr
-                            , get_allocation().get_width() - 16
+                            , m_presize_width - 16
                             , get_allocation().get_height()
                             , 16
                             , 16

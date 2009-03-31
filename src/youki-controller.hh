@@ -124,15 +124,12 @@ namespace MPX
                 , bool              /*play or not*/
             ) ;
 
-            enum ModelOrigin
-            {
-                  ORIGIN_MODEL_ALBUM_ARTISTS
-                , ORIGIN_MODEL_ALBUMS
-            } ;
+            void
+            on_list_view_aa_selection_changed(
+            ) ;
 
             void
-            on_list_view_selection_changed(
-                ModelOrigin
+            on_list_view_ab_selection_changed(
             ) ;
 
             //// MISCELLANEOUS WIDGETS 

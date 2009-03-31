@@ -595,7 +595,7 @@ class ArtistInfoQuery (threading.Thread):
                 self.html += "<div class='SectionContent'>"
                 self.html += "<table><tr valign='top'><td valign='top'>"
                 self.html += "<img src='%s'/>" % artist_info["picture"]
-                self.html += "</td><td>"
+                self.html += "</td><td width='90%'>"
 
                 value = artist_info["wikiText"]
                 re1 = re.compile("(\\[[^\\]]+\\])")
