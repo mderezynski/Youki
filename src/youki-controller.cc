@@ -720,11 +720,10 @@ namespace MPX
     {
         m_FilterModelTracks->set_filter( m_Entry->get_text() );
 
-        m_ListViewAlbums->clear_selection() ;
-        m_ListViewAA->clear_selection() ;
-
         if( m_Entry->get_text().empty() )
         {
+            m_ListViewAlbums->clear_selection() ;
+            m_ListViewAA->clear_selection() ;
 
             m_conn1.block() ;
             m_conn2.block() ;
