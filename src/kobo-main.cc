@@ -196,7 +196,7 @@ namespace MPX
                         r1.set_width( 1 ) ;
                         r1.set_height( 1 ) ;
 
-                        r2.set_x( get_allocation().get_width() - 8 - m_button_off->get_width() ) ;
+                        r2.set_x( 8 ) ;
                         r2.set_y( (20 - m_button_off->get_height()) / 2 ) ;
                         r2.set_width( m_button_off->get_width() ) ;
                         r2.set_height( m_button_off->get_height() ) ;
@@ -375,28 +375,27 @@ namespace MPX
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_title_logo 
-                            , 12
+                            , get_allocation().get_width() - m_title_logo->get_width() - 12
                             , (20 / 2) - (m_title_logo->get_height()/2) 
                         ) ;
 
                         cr->rectangle(
-                              12
+                              get_allocation().get_width() - m_title_logo->get_width() - 12
                             , (20 / 2) - (m_title_logo->get_height()/2) 
                             , m_title_logo->get_width()
                             , m_title_logo->get_height()
                         ) ;
                         cr->fill () ;
 
-
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_button_off 
-                            , a.get_width() - 8 - m_button_off->get_width()
+                            , 8 
                             , (20 - m_button_off->get_height()) / 2. 
                         ) ;
 
                         cr->rectangle(
-                              a.get_width() - 8 - m_button_off->get_width()
+                              8 
                             , (20 - m_title_logo->get_height()) / 2.
                             , m_title_logo->get_width()
                             , m_title_logo->get_height()

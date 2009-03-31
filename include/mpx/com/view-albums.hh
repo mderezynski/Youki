@@ -704,7 +704,9 @@ namespace MPX
                         m_columns[n]->set_width( column_width_calculated ) ; 
                     }
 
-                    return false;
+                    queue_draw() ;
+
+                    return true ;
                 }
 
                 bool

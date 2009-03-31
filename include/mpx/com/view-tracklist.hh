@@ -925,7 +925,7 @@ namespace MPX
                     ) ;
 
                     layout->set_width(
-                          (m_width - off - 8) * PANGO_SCALE
+                          (m_width - off - 12) * PANGO_SCALE
                     ) ;
 
                     layout->set_alignment(
