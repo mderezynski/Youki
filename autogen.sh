@@ -160,7 +160,7 @@ automake_version=`$AUTOMAKE --version | head -n1 | cut -f 4 -d \ `
 
 printf "$automake_version: \033[0m"
 if compare_version $automake_version $automake_req; then
-	echo "\033[1;32mok\033[0m"
+	echo -e "\033[1;32mok\033[0m"
 else
   echo "\033[1;31m!!"
 	echo "*error*: mpx requires automake $automake_req\033[0m"
@@ -176,7 +176,7 @@ autoconf_version=`$AUTOCONF --version | head -n1 | cut -f 4 -d \ `
 
 printf "$autoconf_version: \033[0m"
 if compare_version $autoconf_version $autoconf_req; then
-	echo "\033[1;32mok\033[0m"
+	echo -e "\033[1;32mok\033[0m"
 else
   echo "\033[1;31m!!"
 	echo "*error* mpx requires autoconf $autoconf_req\033[0m"
@@ -193,7 +193,7 @@ libtool_version=`$LIBTOOLIZE --version | head -n1 | cut -f 4 -d \ `
 
 printf "$libtool_version: \033[0m"
 if compare_version $libtool_version $libtool_req; then
-	echo "\033[1;32mok\033[0m"
+	echo -e "\033[1;32mok\033[0m"
 else
   echo "\033[1;31m!!"
 	echo "*error* mpx requires libtool $libtool_req\033[0m"
@@ -209,7 +209,7 @@ gettext_version=`$AUTOPOINT --version | head -n1 | cut -f 4 -d \ `
 
 printf "$gettext_version: \033[0m"
 if compare_version $gettext_version $gettext_req; then
-	echo "\033[1;32mok\033[0m"
+	echo -e "\033[1;32mok\033[0m"
 else
   echo "\033[1;31m!!"
 	echo "*error* mpx requires gettext $gettext_req\033[0m"
