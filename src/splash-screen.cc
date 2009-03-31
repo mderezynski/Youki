@@ -73,6 +73,9 @@ namespace MPX
         }
 
         show ();
+
+        while (gtk_events_pending())
+            gtk_main_iteration() ;
     }
 
     void
