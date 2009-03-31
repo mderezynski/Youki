@@ -177,10 +177,6 @@ youki_bin_SOURCES =             \
                                 \
     preferences.cc              \
                                 \
-    python.cc                   \
-    gtkmm.cc                    \
-    gtkmmmodule.cc              \
-                                \
     request-value.hh            \
     request-value.cc            \
                                 \

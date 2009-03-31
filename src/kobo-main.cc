@@ -12,13 +12,23 @@ namespace
 
 namespace
 {
-    void RoundedTriangle (Cairo::RefPtr<Cairo::Context> cr, double x, double y, double w, double h,
+    void RoundedTriangleRight (Cairo::RefPtr<Cairo::Context> cr, double x, double y, double w, double h,
         double r)
     {
         cr->move_to(x, y);
         cr->line_to(x + w, y - h);
         cr->line_to(x + w, y);
-        cr->arc(x + w - r, y - r, r, 0, M_PI * 0.5);
+        cr->arc(x + w, y, r, M_PI * 0.5, M_PI );
+        cr->line_to(x, y);
+    }
+
+    void RoundedTriangleLeft (Cairo::RefPtr<Cairo::Context> cr, double x, double y, double w, double h,
+        double r)
+    {
+        cr->move_to(x, y);
+        cr->line_to(x - w, y - h);
+        cr->line_to(x - w, y);
+        cr->arc(x - w, y, r, 0, M_PI * 0.5);
         cr->line_to(x, y);
     }
 }
@@ -245,6 +255,19 @@ namespace MPX
                             return false ;
                         }
                         else
+                        if( (event->y > (m_presize_height - 16)) && (event->y < m_presize_height) && (event->x >=0) && (event->x < 16) )
+                        {
+                            begin_resize_drag(
+                                  Gdk::WINDOW_EDGE_SOUTH_WEST
+                                , event->button
+                                , event->x_root
+                                , event->y_root
+                                , event->time
+                            ) ;
+
+                            return false ;
+                        }
+                        else
                         if( (event->y <= m_presize_height) && (event->y > m_presize_height-16) )
                         {
                             if( m_drawer_out )
@@ -289,8 +312,6 @@ namespace MPX
     MainWindow::on_expose_event( GdkEventExpose* event )
                     {
                         Cairo::RefPtr<Cairo::Context> cr = get_window()->create_cairo_context() ;
-
-                        const Gtk::Allocation& a = get_allocation() ;
 
                         cr->set_operator( Cairo::OPERATOR_CLEAR ) ;
                         cr->paint () ;
@@ -413,7 +434,7 @@ namespace MPX
                             , 0.4
                         ) ;
 
-                        RoundedTriangle(
+                        RoundedTriangleRight(
                               cr
                             , get_allocation().get_width() - 16
                             , m_presize_height
@@ -422,6 +443,15 @@ namespace MPX
                             , rounding
                         ) ;
 
+                        RoundedTriangleLeft(
+                              cr
+                            , 16 
+                            , m_presize_height
+                            , 16
+                            , 16
+                            , rounding
+                        ) ;
+ 
                         cr->fill () ;
 
                         if( get_child() )

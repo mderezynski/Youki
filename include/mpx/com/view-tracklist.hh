@@ -447,8 +447,6 @@ namespace MPX
                 regen_mapping(
                 )
                 {
-                    g_message( G_STRFUNC ) ;
-
                     typedef std::set<Model_t::iterator>  RowSet_t ;
                     typedef std::vector<RowSet_t>        CacheVec_t ;
 
@@ -592,8 +590,6 @@ namespace MPX
                 regen_mapping_iterative(
                 )
                 {
-                    g_message( G_STRFUNC ) ;
-
                     typedef std::set<Model_t::iterator>  RowSet_t ;
                     typedef std::vector<RowSet_t>       CacheVec_t ;
 
@@ -1083,6 +1079,11 @@ namespace MPX
                 on_focus (Gtk::DirectionType direction)
                 { 
                     grab_focus();
+                    if( m_selection.empty() && !m_model->m_mapping.empty() )
+                    {
+                        m_selection.insert(std::make_pair(m_model->m_mapping[0], 0));
+                        queue_draw() ;
+                    }
                     return true;
                 }
 
@@ -1126,6 +1127,7 @@ namespace MPX
                                 mark_first_row_up:
     
                                 int row = get_upper_row();
+
                                 m_selection.clear();
                                 m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
                             }
@@ -1672,6 +1674,7 @@ namespace MPX
                         m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
                     }
 
+                    m_selection.clear() ;
                     queue_draw() ;
                 }
 
