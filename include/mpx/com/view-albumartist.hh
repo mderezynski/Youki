@@ -2,6 +2,7 @@
 #define YOUKI_LISTVIEW_AA_HH
 
 #include <gtkmm.h>
+#include <gtk/gtktreeview.h>
 #include <cairomm/cairomm.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/algorithm/string.hpp>
