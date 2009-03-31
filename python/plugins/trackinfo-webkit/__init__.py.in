@@ -79,15 +79,14 @@ body {
     height: 2em;
     line-height: 2em;
     padding-left: 0.5em;
-    -webkit-border-top-left-radius: 10px;
-    -webkit-border-top-right-radius: 10px;
+    -webkit-border-top-left-radius: 2px;
+    -webkit-border-top-right-radius: 2px;
 }
 
 .SectionContent {
     padding: 0.5em;
     margin-bottom: 1.5em;
     background-color: #ffffff;
-    font-size: 115%;
 }
 
 .InfoBadge {
@@ -387,6 +386,7 @@ class WebBrowser():
                               self._javascript_script_prompt_cb)
 
         self._scrolled_window = gtk.ScrolledWindow()
+        self._scrolled_window.props.border_width = 0
         self._scrolled_window.props.hscrollbar_policy = gtk.POLICY_AUTOMATIC
         self._scrolled_window.props.vscrollbar_policy = gtk.POLICY_AUTOMATIC
         self._scrolled_window.add(self._browser)
@@ -396,10 +396,13 @@ class WebBrowser():
 
         self._statusbar = WebStatusBar()
 
-        self._vbox = gtk.VBox(spacing=4)
+#        self._vbox = gtk.VBox(spacing=4)
 #        self._vbox.pack_start(self._toolbar, expand=False, fill=False)
-        self._vbox.pack_start(self._scrolled_window)
+#        self._vbox.pack_start(self._scrolled_window)
         #self._vbox.pack_end(self._statusbar, expand=False, fill=False)
+#        self._vbox.show_all()
+
+        self._vbox = self._scrolled_window
         self._vbox.show_all()
 
     def get_entry(self):
@@ -602,7 +605,7 @@ class ArtistInfoQuery (threading.Thread):
 
                 if len(value) > 0:
                     self.html += value 
-                    self.html += "<a href='%s'>(%s)</a>" % (artist_info["wikiPageUrl"], _("more"))
+                    self.html += "<div style='text-align: right'><a href='%s'>(%s)</a></div>" % (artist_info["wikiPageUrl"], _("more"))
 
                 self.html += "</td></tr></table>"
                 self.html += "</div>"
@@ -690,7 +693,7 @@ class TrackInfoQuery (threading.Thread):
         value = re1.sub("",value)
         value = re2.sub("",value)
         if len(value) > 0:
-            self.html += "<span style='font-size: 115%'>" + value + "</span>"
+            self.html += value 
             self.html += "<a href='%s'>(%s)</a>" % (self.artist_info["wikiPageUrl"], _("more"))
         self.html += "</td><td style='width: 20%'>"
 
