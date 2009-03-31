@@ -43,6 +43,56 @@ namespace
 
             return true ;
     }
+
+    std::string mpris_attribute_id_str[] =
+    {
+            "location",
+            "title",
+            "genre",
+            "comment",
+            "puid fingerprint",
+            "mpx tag hash",
+            "mb track id",
+            "artist",
+            "artist sort name",
+            "mb artist id",
+            "album",
+            "mb album id",
+            "mb release date",
+            "mb release country",
+            "mb release type",
+            "asin",
+            "album artist",
+            "album artist sort name",
+            "mb album artist id",
+            "mime type",
+            "mpx hal volume udi",
+            "mpx hal device udi",
+            "mpx hal volume relative path",
+            "mpx insert path",
+            "mpx location name",
+    };
+
+    std::string mpris_attribute_id_int[] =
+    {
+            "tracknumber",
+            "time",
+            "rating",
+            "year",
+            "mtime",
+            "audio-bitrate",
+            "audio-samplerate",
+            "mpx play count",
+            "mpx play date",
+            "mpx insert date",
+            "mpx is mb album artist",
+            "mpx active",
+            "mpx quality",
+            "mpx track id",
+            "mpx album id",
+            "mpx artist id",
+            "mpx album artist id",
+    };
 }
 
 namespace MPX
@@ -502,8 +552,11 @@ namespace MPX
     {
         try{
                 boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library") ;
-
+        
+                m_current_track_lock.lock() ;
                 m_current_track = t ; 
+                m_current_track_lock.unlock() ;
+
                 m_play->switch_stream( library->trackGetLocation( t ) ) ;
                 m_ListViewTracks->set_active_track( boost::get<gint64>(t[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
                 m_control_status_icon->set_metadata( t ) ;
@@ -550,16 +603,20 @@ namespace MPX
 
             if( pos_cpy < m_FilterModelTracks->size() )
             {
+                m_current_track_lock.lock() ;
                 m_current_track = boost::get<4>(m_FilterModelTracks->row(pos_cpy)) ;
                 play_track( m_current_track.get() ) ; 
+                m_current_track_lock.unlock() ;
                 return ;
             }
         }
         else
         if( m_FilterModelTracks->size() )
         {
+            m_current_track_lock.lock() ;
             m_current_track = boost::get<4>(m_FilterModelTracks->row( 0 )) ;
             play_track( m_current_track.get() ) ; 
+            m_current_track_lock.unlock() ;
             return ;
         }
 
@@ -579,7 +636,11 @@ namespace MPX
                 break ;
 
             case PLAYSTATUS_STOPPED:
+
+                m_current_track_lock.lock() ;
                 m_current_track.reset() ;
+                m_current_track_lock.unlock() ;
+
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
                 m_ListViewTracks->clear_active_track() ;
@@ -590,7 +651,11 @@ namespace MPX
                 break ;
 
             case PLAYSTATUS_WAITING:
+
+                m_current_track_lock.lock() ;
                 m_current_track.reset() ;
+                m_current_track_lock.unlock() ;
+
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
                 m_seek_position = -1 ;
@@ -606,6 +671,8 @@ namespace MPX
     void
     YoukiController::on_play_stream_switched()
     {
+        Glib::Mutex::Lock L ( m_current_track_lock ) ;   
+    
         g_return_if_fail( bool(m_current_track) ) ;
 
         if( m_current_track.get().has( ATTRIBUTE_MB_ALBUM_ID ) )
@@ -897,6 +964,44 @@ namespace MPX
     std::map<std::string, DBus::Variant>
     YoukiController::GetMetadata ()
     {
+        m_current_track_lock.lock() ;
+
+        if( !m_current_track )
+        {
+            m_current_track_lock.unlock() ;
+            return std::map<std::string, DBus::Variant>() ;
+        }
+
+        MPX::Track t = m_current_track.get() ; 
+        m_current_track_lock.unlock() ;
+
+        std::map<std::string, DBus::Variant> m ;
+
+        for(int n = ATTRIBUTE_LOCATION; n < N_ATTRIBUTES_STRING; ++n)
+        {
+                if(t[n].is_initialized())
+                {
+                        DBus::Variant val ;
+                        DBus::MessageIter iter = val.writer() ;
+                        std::string v = boost::get<std::string>(t[n].get()) ; 
+                        iter << v ;
+                        m[mpris_attribute_id_str[n-ATTRIBUTE_LOCATION]] = val ;
+                }
+        }
+
+        for(int n = ATTRIBUTE_TRACK; n < ATTRIBUTE_MPX_ALBUM_ARTIST_ID; ++n)
+        {
+                if(t[n].is_initialized())
+                {
+                        DBus::Variant val ;
+                        DBus::MessageIter iter = val.writer() ;
+                        int64_t v = boost::get<gint64>(t[n].get()) ;
+                        iter << v ;
+                        m[mpris_attribute_id_int[n-ATTRIBUTE_TRACK]] = val ;
+                }
+        }
+
+        return m ;
     }
 
     void

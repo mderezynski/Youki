@@ -74,6 +74,7 @@ namespace MPX
             gint64                            m_seek_position ;
     
             boost::optional<MPX::Track>       m_current_track ;          
+            Glib::Mutex                       m_current_track_lock ;
 
             info::backtrace::Youki::MLibMan_proxy_actual  * m_mlibman_dbus_proxy ;
 
