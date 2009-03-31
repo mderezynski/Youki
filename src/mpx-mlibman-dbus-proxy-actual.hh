@@ -28,12 +28,14 @@ public:
 
 public:
 
-    typedef sigc::signal<void>  Signal_t ;
+    typedef sigc::signal<void>                                                                          Signal_t ;
+    typedef sigc::signal<void, gint64, std::string, std::string, std::string, std::string, std::string> Signal_1int64_5string_t ;
 
 protected:
 
-    Signal_t        SignalScanStart ;
-    Signal_t        SignalScanEnd ;
+    Signal_t                SignalScanStart ;
+    Signal_t                SignalScanEnd ;
+    Signal_1int64_5string_t SignalNewAlbum ;
 
 public:
 
@@ -43,10 +45,16 @@ public:
         return SignalScanStart ;
     }
 
-    Signal_t
+    Signal_t&
     signal_scan_end ()
     {
         return SignalScanEnd ;
+    }
+
+    Signal_1int64_5string_t&
+    signal_new_album ()
+    {
+        return SignalNewAlbum ;
     }
 
     /* signal handlers for this interface
@@ -65,17 +73,17 @@ public:
         SignalScanEnd.emit() ;
     }
 
-private:
-
-    /* unmarshalers (to unpack the DBus message before calling the actual signal handler)
-     */
-    void _ScanStart_stub(const ::DBus::SignalMessage &sig)
+    virtual
+    void NewAlbum(
+          const int64_t&        id
+        , const std::string&    s1
+        , const std::string&    s2
+        , const std::string&    s3
+        , const std::string&    s4
+        , const std::string&    s5
+    ) 
     {
-        ScanStart();
-    }
-    void _ScanEnd_stub(const ::DBus::SignalMessage &sig)
-    {
-        ScanEnd();
+        SignalNewAlbum.emit( id, s1, s2, s3, s4, s5 ) ;
     }
 };
 

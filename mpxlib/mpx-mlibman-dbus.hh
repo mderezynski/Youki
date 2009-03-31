@@ -42,6 +42,16 @@ public:
         {
             { 0, 0, 0 }
         };
+        static ::DBus::IntrospectedArgument NewAlbum_args[] = 
+        {
+            { 0, "x", false },
+            { 0, "s", false },
+            { 0, "s", false },
+            { 0, "s", false },
+            { 0, "s", false },
+            { 0, "s", false },
+            { 0, 0, 0 }
+        };
         static ::DBus::IntrospectedMethod MLibMan_adaptor_methods[] = 
         {
             { "ShowWindow", ShowWindow_args },
@@ -52,6 +62,7 @@ public:
         {
             { "ScanStart", ScanStart_args },
             { "ScanEnd", ScanEnd_args },
+            { "NewAlbum", NewAlbum_args },
             { 0, 0 }
         };
         static ::DBus::IntrospectedProperty MLibMan_adaptor_properties[] = 
@@ -94,6 +105,18 @@ public:
     void ScanEnd()
     {
         ::DBus::SignalMessage sig("ScanEnd");
+        emit_signal(sig);
+    }
+    void NewAlbum(const int64_t& arg1, const std::string& arg2, const std::string& arg3, const std::string& arg4, const std::string& arg5, const std::string& arg6)
+    {
+        ::DBus::SignalMessage sig("NewAlbum");
+        ::DBus::MessageIter wi = sig.writer();
+        wi << arg1;
+        wi << arg2;
+        wi << arg3;
+        wi << arg4;
+        wi << arg5;
+        wi << arg6;
         emit_signal(sig);
     }
 

@@ -600,16 +600,6 @@ namespace MPX
     /* ------------------------------------------------------------------------------------------------*/
 
     void
-    MLibManager::scan_end ()
-    {
-        update_filestats();
-        m_VboxInner->set_sensitive(true);
-        m_Actions->set_sensitive(true);
-
-        ScanEnd () ;
-    }
-
-    void
     MLibManager::scan_start ()
     {
         m_VboxInner->set_sensitive(false);
@@ -617,6 +607,16 @@ namespace MPX
         m_TextBufferDetails->set_text("");
 
         ScanStart () ; 
+    }
+
+    void
+    MLibManager::scan_end ()
+    {
+        update_filestats();
+        m_VboxInner->set_sensitive(true);
+        m_Actions->set_sensitive(true);
+
+        ScanEnd () ;
     }
 
     void
@@ -665,6 +665,19 @@ namespace MPX
         m_TextBufferDetails->insert(m_TextBufferDetails->end(), "\n");
         m_TextBufferDetails->insert(m_TextBufferDetails->end(), text);
     }
+
+    void
+    MLibManager::new_album(
+          gint64                id
+        , const std::string&    s1
+        , const std::string&    s2
+        , const std::string&    s3
+        , const std::string&    s4
+        , const std::string&    s5
+    )
+    {
+        NewAlbum( id, s1, s2, s3, s4, s5 ) ;
+    } 
 
     bool
     MLibManager::on_delete_event(GdkEventAny* G_GNUC_UNUSED)

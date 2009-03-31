@@ -34,9 +34,7 @@
 #include <gtkglmm.h>
 #include <cstdlib>
 #include <string>
-
-#include "paths.hh"
-#include "signals.hh"
+#include <dbus-c++/glib-integration.h>
 
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-library.hh"
@@ -44,6 +42,7 @@
 #include "mpx/mpx-network.hh"
 #include "mpx/mpx-play.hh"
 #include "mpx/mpx-preferences.hh"
+#include "mpx/mpx-python.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/util-file.hh"
@@ -52,10 +51,12 @@
 #endif // HAVE_HAL
 #include "mpx/metadatareader-taglib.hh"
 
-#include "splash-screen.hh"
-
-#include <dbus-c++/glib-integration.h>
+#include "paths.hh"
+#include "plugin.hh"
+#include "plugin-manager-gui.hh"
+#include "signals.hh"
 #include "youki-controller.hh"
+#include "splash-screen.hh"
 
 using namespace MPX;
 using namespace Glib;
@@ -313,9 +314,7 @@ main (int argc, char ** argv)
     Gio::init();
 
     signal_handlers_install ();
-
     create_user_dirs ();
-
     setup_mcs ();
 
     GOptionContext * context_c = g_option_context_new (_(" - run AudioSource Player"));
@@ -331,59 +330,43 @@ main (int argc, char ** argv)
     }
 
     gst_init(&argc, &argv);
-    //clutter_init(&argc, &argv);
-    Gtk::GL::init(argc, argv);
-
-    Splashscreen * splash = new Splashscreen;
-
-    splash->set_message(_("Starting Services..."), 0.5);
+    mpx_py_init() ;
 
     services = new Service::Manager;
+
+    DBus::Glib::BusDispatcher dispatcher ;
+    DBus::default_dispatcher = &dispatcher ;
+    dispatcher.attach( g_main_context_default() ) ;
+    DBus::Connection conn = DBus::Connection::SessionBus () ;
+    DBus::Connection actv = DBus::Connection::ActivationBus () ;
+
+    conn.request_name( "info.backtrace.Youki.App" ) ;
+    actv.start_service( "info.backtrace.Youki.MLibMan", 0 ) ;
+
+    Splashscreen* splash = new Splashscreen;
 
 #ifdef HAVE_HAL
     try{
         services->add(boost::shared_ptr<HAL>(new MPX::HAL));
-
 #endif //HAVE_HAL
         services->add(boost::shared_ptr<Covers>(new MPX::Covers));
-
-        //services->add(boost::shared_ptr<MetadataReaderTagLib>(new MPX::MetadataReaderTagLib));
-
         services->add(boost::shared_ptr<Library>(new MPX::Library));
-
         services->get<Covers>("mpx-service-covers")->precache( services->get<Library>("mpx-service-library").get() );
-
-        //services->add(boost::shared_ptr<ArtistImages>(new MPX::ArtistImages));
-        //services->add(boost::shared_ptr<MarkovAnalyzer>(new MarkovAnalyzer));
 
         services->add(boost::shared_ptr<Play>(new MPX::Play));
         services->get<Play>("mpx-service-play")->reset() ;
 
         services->add(boost::shared_ptr<Preferences>(MPX::Preferences::create()));
 
-        //services->add(boost::shared_ptr<MB_ImportAlbum>(MPX::MB_ImportAlbum::create()));
-        //services->add(boost::shared_ptr<Player>(MPX::Player::create()));
-        //services->add(boost::shared_ptr<PluginManager>(new MPX::PluginManager));
-        //services->add(boost::shared_ptr<PluginManagerGUI>(MPX::PluginManagerGUI::create()));
+        services->add(boost::shared_ptr<YoukiController>(new YoukiController( conn )));
+        services->add(boost::shared_ptr<PluginManager>(new MPX::PluginManager));
+        services->add(boost::shared_ptr<PluginManagerGUI>(MPX::PluginManagerGUI::create()));
 
-        splash->set_message(_("Done"), 1.0);
-
-        DBus::Glib::BusDispatcher dispatcher ;
-        DBus::default_dispatcher = &dispatcher ;
-        dispatcher.attach( g_main_context_default() ) ;
-        DBus::Connection conn = DBus::Connection::SessionBus () ;
-        conn.request_name( "info.backtrace.Youki.App" ) ;
-    
-        DBus::Connection actv = DBus::Connection::ActivationBus () ;
-        actv.start_service( "info.backtrace.Youki.MLibMan", 0 ) ;
-
-        YoukiController * control = new YoukiController( conn ) ;
+        services->get<YoukiController>("mpx-service-controller")->get_widget()->show_all() ;
+        services->get<YoukiController>("mpx-service-controller")->StartupComplete() ;
 
         delete splash;
-
         gtk->run() ;
-
-        delete control ;
 
 #ifdef HAVE_HAL
     }

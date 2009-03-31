@@ -173,6 +173,15 @@ youki_bin_SOURCES =             \
                                 \
     play.cc                     \
                                 \
+    python.cc                   \
+    plugin.cc                   \
+    plugin-loader-python.cc     \
+    plugin-types-python.cc      \
+    plugin-loader-cpp.cc        \
+    plugin-manager-gui.cc       \
+    gtkmm.cc                    \
+    gtkmmmodule.cc              \
+                                \
     playbacksource.cc           \
                                 \
     preferences.cc              \

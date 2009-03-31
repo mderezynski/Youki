@@ -66,8 +66,8 @@ namespace MPX
 
   struct RequestQualifier
   {
-      std::string asin;
       std::string mbid;
+      std::string asin;
       std::string uri;
       std::string artist;
       std::string album;

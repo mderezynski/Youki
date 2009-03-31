@@ -8,6 +8,7 @@
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/mpx-preferences.hh"
+#include "plugin-manager-gui.hh"
 
 namespace
 {
@@ -102,17 +103,38 @@ namespace MPX
     )
     : Glib::ObjectBase( "YoukiController" )
     , DBus::ObjectAdaptor( conn, "/info/backtrace/Youki/App" )
+    , Service::Base("mpx-service-controller")
     , m_main_window( 0 )
     , m_seek_position( -1 )
     {
+        m_C_SIG_ID_metadata_updated =
+            g_signal_new(
+                  "metadata-updated"
+                , G_OBJECT_CLASS_TYPE(G_OBJECT_GET_CLASS(gobj()))
+                , GSignalFlags(G_SIGNAL_RUN_FIRST)
+                , 0
+                , NULL
+                , NULL
+                , g_cclosure_marshal_VOID__VOID
+                , G_TYPE_NONE
+                , 0
+        ) ;
+
         m_mlibman_dbus_proxy = new info::backtrace::Youki::MLibMan_proxy_actual( conn ) ;
         m_mlibman_dbus_proxy->signal_scan_end().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_library_scan_end
         )) ;
+        m_mlibman_dbus_proxy->signal_new_album().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_library_new_album
+        )) ;
 
-        m_play = services->get<Play>("mpx-service-play").get() ;
+        m_covers    = services->get<Covers>("mpx-service-covers").get() ;
+        m_play      = services->get<Play>("mpx-service-play").get() ;
+
         m_play->signal_eos().connect(
             sigc::mem_fun(
                   *this
@@ -363,7 +385,7 @@ namespace MPX
         m_HBox_Controls->set_spacing( 4 ) ;
 
         m_main_window->set_widget_top( *m_VBox ) ;
-        m_main_window->set_widget_drawer( *m_main_cover ) ; 
+//        m_main_window->set_widget_drawer( *m_main_cover ) ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
         m_VBox->pack_start( *m_Paned1, true, true, 0 ) ;
@@ -395,10 +417,6 @@ namespace MPX
                   *m_main_infoarea
                 , &InfoArea::update_spectrum
         )) ;
-
-        m_main_window->show_all() ;
-
-        StartupComplete () ;
     }
 
     YoukiController::~YoukiController ()
@@ -543,6 +561,27 @@ namespace MPX
         reload_library () ;
     }
 
+    void
+    YoukiController::on_library_new_album(
+          gint64                id
+        , const std::string&    s1
+        , const std::string&    s2
+        , const std::string&    s3
+        , const std::string&    s4
+        , const std::string&    s5
+    )
+    {
+        RequestQualifier rq ; 
+
+        rq.mbid     =   s1 ;
+        rq.asin     =   s2 ;
+        rq.uri      =   s3 ;
+        rq.artist   =   s4 ;
+        rq.album    =   s5 ;
+
+        m_covers->cache( rq, true ) ;
+    }
+
 ////////////////
 
     void
@@ -556,8 +595,6 @@ namespace MPX
                 m_current_track = t ; 
 
                 m_play->switch_stream( library->trackGetLocation( t ) ) ;
-                m_ListViewTracks->set_active_track( boost::get<gint64>(t[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
-                m_control_status_icon->set_metadata( t ) ;
 
         } catch( Library::FileQualificationError & cxe )
         {
@@ -601,20 +638,14 @@ namespace MPX
 
             if( pos_cpy < m_FilterModelTracks->size() )
             {
-                m_current_track_lock.lock() ;
-                m_current_track = boost::get<4>(m_FilterModelTracks->row(pos_cpy)) ;
-                play_track( m_current_track.get() ) ; 
-                m_current_track_lock.unlock() ;
+                play_track( boost::get<4>(m_FilterModelTracks->row(pos_cpy)) ) ;
                 return ;
             }
         }
         else
         if( m_FilterModelTracks->size() )
         {
-            m_current_track_lock.lock() ;
-            m_current_track = boost::get<4>(m_FilterModelTracks->row( 0 )) ;
-            play_track( m_current_track.get() ) ; 
-            m_current_track_lock.unlock() ;
+            play_track( boost::get<4>(m_FilterModelTracks->row( 0 )) ) ;
             return ;
         }
 
@@ -635,9 +666,7 @@ namespace MPX
 
             case PLAYSTATUS_STOPPED:
 
-                m_current_track_lock.lock() ;
                 m_current_track.reset() ;
-                m_current_track_lock.unlock() ;
 
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
@@ -650,9 +679,7 @@ namespace MPX
 
             case PLAYSTATUS_WAITING:
 
-                m_current_track_lock.lock() ;
                 m_current_track.reset() ;
-                m_current_track_lock.unlock() ;
 
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
@@ -669,13 +696,16 @@ namespace MPX
     void
     YoukiController::on_play_stream_switched()
     {
-        Glib::Mutex::Lock L ( m_current_track_lock ) ;   
-    
-        g_return_if_fail( bool(m_current_track) ) ;
+        boost::optional<MPX::Track> t = m_current_track ;
 
-        if( m_current_track.get().has( ATTRIBUTE_MB_ALBUM_ID ) )
+        g_return_if_fail( bool(t) ) ;
+
+        m_ListViewTracks->set_active_track( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
+        m_control_status_icon->set_metadata( t.get() ) ;
+
+        if( t.get().has( ATTRIBUTE_MB_ALBUM_ID ) )
         {
-                const std::string& mbid = boost::get<std::string>(m_current_track.get()[ATTRIBUTE_MB_ALBUM_ID].get()) ;
+                const std::string& mbid = boost::get<std::string>(t.get()[ATTRIBUTE_MB_ALBUM_ID].get()) ;
 
                 boost::shared_ptr<Covers> covers = services->get<Covers>("mpx-service-covers") ;
                 Glib::RefPtr<Gdk::Pixbuf> cover ;
@@ -712,11 +742,17 @@ namespace MPX
 
         for( int n = 0; n < 3 ; ++n ) 
         {
-                if( m_current_track.get().has( n ) )
-                    info.push_back( boost::get<std::string>(m_current_track.get()[id[n]].get()) ) ;
+                if( t.get().has( n ) )
+                    info.push_back( boost::get<std::string>(t.get()[id[n]].get()) ) ;
         }
 
         m_main_titleinfo->set_info( info ) ;
+
+        g_signal_emit(
+              G_OBJECT(gobj())
+            , m_C_SIG_ID_metadata_updated
+            , 0
+        ) ;
     }
 
     void
@@ -872,6 +908,10 @@ namespace MPX
                 services->get<Preferences>("mpx-service-preferences")->present () ;
                 return true ;
 
+            case GDK_F3:
+                services->get<PluginManagerGUI>("mpx-service-plugins-gui")->present () ;
+                return true ;
+
             case GDK_q:
             case GDK_Q:
                 if( event->state & GDK_CONTROL_MASK )
@@ -962,26 +1002,22 @@ namespace MPX
     std::map<std::string, DBus::Variant>
     YoukiController::GetMetadata ()
     {
-        m_current_track_lock.lock() ;
+        boost::optional<MPX::Track> t = m_current_track ;
 
-        if( !m_current_track )
+        if( !t )
         {
-            m_current_track_lock.unlock() ;
             return std::map<std::string, DBus::Variant>() ;
         }
-
-        MPX::Track t = m_current_track.get() ; 
-        m_current_track_lock.unlock() ;
 
         std::map<std::string, DBus::Variant> m ;
 
         for(int n = ATTRIBUTE_LOCATION; n < N_ATTRIBUTES_STRING; ++n)
         {
-                if(t[n].is_initialized())
+                if(t.get()[n].is_initialized())
                 {
                         DBus::Variant val ;
                         DBus::MessageIter iter = val.writer() ;
-                        std::string v = boost::get<std::string>(t[n].get()) ; 
+                        std::string v = boost::get<std::string>(t.get()[n].get()) ; 
                         iter << v ;
                         m[mpris_attribute_id_str[n-ATTRIBUTE_LOCATION]] = val ;
                 }
@@ -989,11 +1025,11 @@ namespace MPX
 
         for(int n = ATTRIBUTE_TRACK; n < ATTRIBUTE_MPX_ALBUM_ARTIST_ID; ++n)
         {
-                if(t[n].is_initialized())
+                if(t.get()[n].is_initialized())
                 {
                         DBus::Variant val ;
                         DBus::MessageIter iter = val.writer() ;
-                        int64_t v = boost::get<gint64>(t[n].get()) ;
+                        int64_t v = boost::get<gint64>(t.get()[n].get()) ;
                         iter << v ;
                         m[mpris_attribute_id_int[n-ATTRIBUTE_TRACK]] = val ;
                 }

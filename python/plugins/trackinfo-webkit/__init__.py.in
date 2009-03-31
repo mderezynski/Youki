@@ -408,7 +408,7 @@ class WebBrowser():
         self._statusbar = WebStatusBar()
 
         self._vbox = gtk.VBox(spacing=4)
-        self._vbox.pack_start(self._toolbar, expand=False, fill=False)
+#        self._vbox.pack_start(self._toolbar, expand=False, fill=False)
         self._vbox.pack_start(self._scrolled_window)
         #self._vbox.pack_end(self._statusbar, expand=False, fill=False)
         self._vbox.show_all()
@@ -459,8 +459,12 @@ class WebBrowser():
         print "selection changed"
 
     def _set_scroll_adjustments_cb(self, page, hadjustment, vadjustment):
-        self._scrolled_window.props.hadjustment = hadjustment
-        self._scrolled_window.props.vadjustment = vadjustment
+
+        if hadjstument:
+            self._scrolled_window.props.hadjustment = hadjustment
+
+        if vadjustment:
+            self._scrolled_window.props.vadjustment = vadjustment
 
     def _javascript_console_message_cb(self, page, message, line, sourceid):
         self._statusbar.show_javascript_info()
@@ -954,9 +958,7 @@ class TrackInfoQuery (threading.Thread):
 
 class TrackInfo:
 
-    def __init__(self, xml, mpx):
-
-        self.mpx = mpx
+    def __init__(self, xml):
 
         self.query = ws.Query(musicbrainz2.webservice.WebService("www.uk.musicbrainz.org"))
         self.wsinc = musicbrainz2.webservice.TrackIncludes(trackRelations=True,artist=True,puids=True,releases=True,artistRelations=True,releaseRelations=True,urlRelations=True)
@@ -1103,22 +1105,22 @@ class LiveInfo(mpx.Plugin):
 
     """The Trackinfo Plugin provides a Last.fm/Musicbrainz based track info for the currently played track."""
 
-    def __init__(self,id,player,mcs):
+    def __init__(self,id,youki,mcs):
     
         self.id = id
-        self.player = player
-        self.xml = gtk.glade.XML("@PLUGIN_DIR@" + "/plugins-python/trackinfo-webkit/trackinfo-webkit.glade")
-        self.vbox = self.xml.get_widget("vbox")
+        self.youki = youki
+        self.xml = gtk.glade.XML( "@PLUGIN_DIR@" + "/plugins-python/trackinfo-webkit/trackinfo-webkit.glade" )
+        self.vbox = self.xml.get_widget( "vbox" )
         self.vbox.unparent()
-        self.info = TrackInfo(self.xml,self.player)
+        self.info = TrackInfo( self.xml )
 
     def activate(self):
 
-        self.player_infoarea_click_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
-        self.player.add_info_widget(self.vbox, _("Browser"))
+        self.youki_metadata_updated_id = self.youki.gobj().connect("metadata-updated", self.metadata_updated)
+        self.youki.add_info_widget(self.vbox, _("Browser"))
 
         try:
-            self.info.run(self.player.get_metadata())
+            self.info.run(self.youki.get_metadata())
         except:
             pass # We just try to display it after activation
 
@@ -1126,8 +1128,8 @@ class LiveInfo(mpx.Plugin):
 
     def deactivate(self):
 
-        self.player.remove_info_widget(self.vbox)
-        self.player.gobj().disconnect(self.player_infoarea_click_id)
+        self.youki.remove_info_widget(self.vbox)
+        self.youki.gobj().disconnect(self.youki_metadata_updated_id)
         self.info.clear()
 
         return True
@@ -1135,7 +1137,7 @@ class LiveInfo(mpx.Plugin):
     def metadata_updated(self, blah):
 
         try:
-            self.info.run(self.player.get_metadata())
+            self.info.run(self.youki.get_metadata())
         except Exception, e:
             print e
 
