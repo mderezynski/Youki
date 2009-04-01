@@ -9,7 +9,7 @@ namespace MPX
     struct NTree
     {
         struct Node ;
-        typedef boost::shared_ptr<Node> Node_SP_t ;
+        typedef Node*                   Node_SP_t ;
         typedef std::vector<Node_SP_t>  Children_t ;
 
         struct Node
@@ -42,7 +42,7 @@ namespace MPX
                         Node_SP_t           node
                     )
                     {
-                        node->Parent = Node_SP_t( this ) ;
+                        node->Parent = this ;
                         Children.push_back( node ) ; 
                     }
         } ;
@@ -51,21 +51,7 @@ namespace MPX
 
         NTree()
         {
-            Root = Node_SP_t( new Node ) ;
-        }
-
-        void
-        append(
-              Node_SP_t     node
-            , Node_SP_t     parent
-            , T&            data
-        )
-        {
-            node->append(
-                  node
-                , parent
-                , data
-            ) ;
+            Root = new Node ; 
         }
     } ;
 }

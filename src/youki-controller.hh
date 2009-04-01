@@ -28,7 +28,7 @@ namespace MPX
     struct FakeModel
     : public Gtk::TreeModelColumnRecord 
     {
-            Gtk::TreeModelColumn<std::string>       Fake ;
+            Gtk::TreeModelColumn<std::string> Fake ;
 
             FakeModel ()
             {
@@ -80,6 +80,8 @@ namespace MPX
             Gtk::HBox                       * m_HBox_Entry ;
             Gtk::HBox                       * m_HBox_Controls ;
             Gtk::Label                      * m_Label_Search ;
+            bool                              m_completion_enabled ;
+            Glib::Timer                       m_completion_timer ;
 
             Gtk::VBox                       * m_VBox ;
             Gtk::HBox                       * m_HBox ;
@@ -166,6 +168,15 @@ namespace MPX
 
             void
             on_entry_changed(
+            ) ;
+
+            bool
+            on_entry_key_press_event(
+                  GdkEventKey*
+            ) ;
+
+            bool
+            completion_timer_check(
             ) ;
 
             void

@@ -208,6 +208,24 @@ namespace MPX
 
         m_Entry             = Gtk::manage( new Gtk::Entry ) ;
 
+        m_completion_timer.stop() ;
+        m_completion_timer.reset() ;
+
+        m_Entry->signal_key_press_event().connect(
+                sigc::mem_fun(
+                      *this
+                    , &YoukiController::on_entry_key_press_event
+        )) ;
+    
+        Glib::signal_timeout().connect(
+                sigc::mem_fun(
+                      *this
+                    , &YoukiController::completion_timer_check
+                )
+                , 50
+                , Glib::PRIORITY_HIGH
+        ) ;
+
         m_Alignment_Entry   = Gtk::manage( new Gtk::Alignment ) ;
         m_Label_Search      = Gtk::manage( new Gtk::Label(_("_Search:"))) ;
 
@@ -449,7 +467,7 @@ namespace MPX
         m_Completion_Store = Gtk::ListStore::create( CC ) ;
 
         m_Completion->property_popup_completion() = false ;
-        m_Completion->property_inline_completion() = true ;
+        m_Completion->property_inline_completion() = false ; 
         m_Completion->property_inline_selection() = false ;
         m_Completion->property_minimum_key_length() = 1 ;
 
@@ -938,13 +956,48 @@ namespace MPX
         , const Gtk::TreeIter&  iter
     )
     {
-        g_message("Called!") ;
         return iter == m_Completion_Store->children().begin() ;
+    }
+
+    bool
+    YoukiController::on_entry_key_press_event(
+          GdkEventKey*  event
+    ) 
+    {
+        m_Completion->property_inline_completion() = false ; 
+        m_completion_timer.reset() ;
+        m_completion_timer.start() ;
+
+        return false ;
+    }
+
+    bool
+    YoukiController::completion_timer_check(
+    ) 
+    {
+        if( m_completion_timer.elapsed() > 0.3 ) 
+        {
+            m_Completion->property_inline_completion() = true ; 
+            m_Completion->complete() ;
+            m_completion_timer.stop() ;
+            m_completion_timer.reset() ;
+        }
+
+        return true ;
     }
 
     void
     YoukiController::on_entry_changed()
     {
+        Glib::ustring new_entry_text ;
+
+        new_entry_text = m_Entry->get_text() ;
+
+        if( new_entry_text == m_Entry_Text || ((new_entry_text.length() > 0) && (m_prediction.length() > 0) && (new_entry_text.length() < m_prediction.length()) && (m_prediction.substr( 0, new_entry_text.length()) == new_entry_text)))
+        {
+            return ;
+        }
+
         boost::optional<std::set<gint64> > constraint ; 
 
         gint64 id_artist = m_ListViewArtist->get_selected() ;
@@ -965,17 +1018,14 @@ namespace MPX
 
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
 
-        Glib::ustring entry_new_text = m_Entry->get_text () ;
-   
-/* 
-        if( entry_new_text.size() > m_Entry_Text.size() )
+        if( new_entry_text.size() > m_Entry_Text.size() )
         {
-            private_->MarkovPredictor->process_string( entry_new_text ) ;
+            private_->MarkovPredictor->process_string( new_entry_text ) ;
         }
 
-        if( entry_new_text.size() > 0 )
+        if( new_entry_text.size() > 0 )
         {
-            m_prediction = entry_new_text + private_->MarkovPredictor->predict( entry_new_text ) ;
+            m_prediction = new_entry_text + private_->MarkovPredictor->predict( new_entry_text ) ;
         }
         else
         {
@@ -984,9 +1034,10 @@ namespace MPX
 
         Gtk::TreeIter i = m_Completion_Store->children().begin() ;
         (*i)[CC.Fake] = m_prediction ;
-*/
 
-        private_->FilterModelTracks->set_filter( entry_new_text );
+        m_Entry_Text = new_entry_text ;
+
+        private_->FilterModelTracks->set_filter( new_entry_text );
 
         private_->FilterModelArtist->set_constraint( private_->FilterModelTracks->m_constraint_artist ) ;
         private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;

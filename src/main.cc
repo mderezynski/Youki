@@ -183,6 +183,7 @@ namespace MPX
         mcs->key_register ("mpx", "window-plugins-x", 140);
         mcs->key_register ("mpx", "window-plugins-y", 140);
         mcs->key_register ("mpx", "music-import-path", Glib::build_filename(Glib::get_home_dir (),"Music"));
+        mcs->key_register ("mpx", "completion-enabled", true);
 
         mcs->domain_register ("audio");
         mcs->key_register ("audio", "band0", 0.0);

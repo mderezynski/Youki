@@ -59,7 +59,7 @@ namespace MPX
                             GlyphData new_glyph_data ;
                             new_glyph_data.Intensity = 0 ;
                             new_glyph_data.Char = *i ; 
-                            NTree<GlyphData>::Node_SP_t n ( new NTree<GlyphData>::Node( new_glyph_data ) ) ;
+                            NTree<GlyphData>::Node_SP_t n =  new NTree<GlyphData>::Node( new_glyph_data ) ;
                             curr->append( n ) ; 
                             curr = n ;
                         }
@@ -98,7 +98,7 @@ namespace MPX
                     while( curr && !curr->Children.empty() )
                     {
                         double Intensity_Max = 0 ;
-                        NTree<GlyphData>::Node_SP_t Most_Intense_Node ;
+                        NTree<GlyphData>::Node_SP_t Most_Intense_Node  = 0 ;
 
                         for( NTree<GlyphData>::Children_t::iterator n = curr->Children.begin(); n != curr->Children.end(); ++n )
                         {       
