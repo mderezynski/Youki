@@ -75,60 +75,63 @@ namespace MPX
 
     enum AttributeId
     {
-      MPX_ATTRIBUTE_LOCATION,
-      MPX_ATTRIBUTE_TITLE,
+          MPX_ATTRIBUTE_LOCATION
+        , MPX_ATTRIBUTE_TITLE
 
-      MPX_ATTRIBUTE_GENRE,
-      MPX_ATTRIBUTE_COMMENT,
+        , MPX_ATTRIBUTE_GENRE
+        , MPX_ATTRIBUTE_COMMENT
 
-      MPX_ATTRIBUTE_MUSICIP_PUID,
+        , MPX_ATTRIBUTE_MUSICIP_PUID
 
-      MPX_ATTRIBUTE_HASH,     
-      MPX_ATTRIBUTE_MB_TRACK_ID, 
+        , MPX_ATTRIBUTE_HASH     
+        , MPX_ATTRIBUTE_MB_TRACK_ID 
 
-      MPX_ATTRIBUTE_ARTIST,
-      MPX_ATTRIBUTE_ARTIST_SORTNAME,
-      MPX_ATTRIBUTE_MB_ARTIST_ID,
+        , MPX_ATTRIBUTE_ARTIST
+        , MPX_ATTRIBUTE_ARTIST_SORTNAME
+        , MPX_ATTRIBUTE_MB_ARTIST_ID
 
-      MPX_ATTRIBUTE_ALBUM,
-      MPX_ATTRIBUTE_MB_ALBUM_ID,
-      MPX_ATTRIBUTE_MB_RELEASE_DATE,
-      MPX_ATTRIBUTE_MB_RELEASE_COUNTRY,
-      MPX_ATTRIBUTE_MB_RELEASE_TYPE,
-      MPX_ATTRIBUTE_ASIN,
+        , MPX_ATTRIBUTE_ALBUM
+        , MPX_ATTRIBUTE_MB_ALBUM_ID
+        , MPX_ATTRIBUTE_MB_RELEASE_DATE
+        , MPX_ATTRIBUTE_MB_RELEASE_COUNTRY
+        , MPX_ATTRIBUTE_MB_RELEASE_TYPE
+        , MPX_ATTRIBUTE_ASIN
 
-      MPX_ATTRIBUTE_ALBUM_ARTIST,
-      MPX_ATTRIBUTE_ALBUM_ARTIST_SORTNAME,
-      MPX_ATTRIBUTE_MB_ALBUM_ARTIST_ID,
+        , MPX_ATTRIBUTE_ALBUM_ARTIST
+        , MPX_ATTRIBUTE_ALBUM_ARTIST_SORTNAME
+        , MPX_ATTRIBUTE_MB_ALBUM_ARTIST_ID
 
-      // MIME type
-      MPX_ATTRIBUTE_TYPE,
+        // MIME type
+        , MPX_ATTRIBUTE_TYPE
 
-      // HAL
-      MPX_ATTRIBUTE_HAL_VOLUME_UDI,
-      MPX_ATTRIBUTE_HAL_DEVICE_UDI,
-      MPX_ATTRIBUTE_VOLUME_RELATIVE_PATH,
-        
-      // SQL
-      MPX_ATTRIBUTE_INSERT_PATH,
-      MPX_ATTRIBUTE_LOCATION_NAME,
+        // HAL
+        , MPX_ATTRIBUTE_HAL_VOLUME_UDI
+        , MPX_ATTRIBUTE_HAL_DEVICE_UDI
+        , MPX_ATTRIBUTE_VOLUME_RELATIVE_PATH
+          
+        // SQL
+        , MPX_ATTRIBUTE_INSERT_PATH
+        , MPX_ATTRIBUTE_LOCATION_NAME
 
-      MPX_ATTRIBUTE_TRACK, 
-      MPX_ATTRIBUTE_TIME,
-      MPX_ATTRIBUTE_RATING,
-      MPX_ATTRIBUTE_DATE,
-      MPX_ATTRIBUTE_MTIME,
-      MPX_ATTRIBUTE_BITRATE,
-      MPX_ATTRIBUTE_SAMPLERATE,
-      MPX_ATTRIBUTE_COUNT,
-      MPX_ATTRIBUTE_PLAYDATE,
-      MPX_ATTRIBUTE_NEW_ITEM,  
-      MPX_ATTRIBUTE_IS_MB_ALBUM_ARTIST,
+        , MPX_ATTRIBUTE_TRACK 
+        , MPX_ATTRIBUTE_TIME
+        , MPX_ATTRIBUTE_RATING
+        , MPX_ATTRIBUTE_DATE
+        , MPX_ATTRIBUTE_MTIME
+        , MPX_ATTRIBUTE_BITRATE
+        , MPX_ATTRIBUTE_SAMPLERATE
+        , MPX_ATTRIBUTE_COUNT
+        , MPX_ATTRIBUTE_PLAYDATE
+        , MPX_ATTRIBUTE_INSERT_DATE
+        , MPX_ATTRIBUTE_IS_MB_ALBUM_ARTIST
 
-      MPX_ATTRIBUTE_ACTIVE,
-      MPX_ATTRIBUTE_MPX_TRACK_ID,
+        , MPX_ATTRIBUTE_ACTIVE
+        , MPX_ATTRIBUTE_QUALITY
 
-      N_MPX_ATTRIBUTES_INT
+        , MPX_ATTRIBUTE_MPX_TRACK_ID
+        , MPX_ATTRIBUTE_MPX_ALBUM_ID
+        , MPX_ATTRIBUTE_MPX_ARTIST_ID
+        , MPX_ATTRIBUTE_MPX_ALBUM_ARTIST_ID
     };
 }
 
@@ -379,6 +382,30 @@ namespace mpxpy
 namespace mpxpy
 {
     using namespace MPX;
+
+	MPX::Track
+	library_sql_to_track(
+          MPX::Library&         obj
+        , SQL::Row&             row
+        , bool                  all_metadata
+        , bool                  no_location
+    )
+	{
+        Track_sp p = obj.sqlToTrack( row, all_metadata, no_location ) ;
+        Track t = *(p.get()) ;
+        return t ;
+	}
+
+	MPX::Track
+	library_get_track_by_id(
+          MPX::Library&         obj
+        , gint64                id
+    )
+	{
+        Track_sp p = obj.getTrackById( id ) ;
+        Track t = *(p.get()) ;
+        return t ;
+	}
 
 	MPX::Library&
 	player_get_library(MPX::YoukiController & obj)
@@ -728,46 +755,6 @@ BOOST_PYTHON_MODULE(mpx)
 
  	/*-------------------------------------------------------------------------------------*/
 
-#if 0
-	enum_<MPX::SQLID>("SQLID")
-      .value("LOCATION", "location") 
-      .value("TITLE", "title") 
-      .value("GENRE", "genre") 
-      .value("COMMENT", "comment")
-      .value("MUSICIP_PUID", "musicip_puid") 
-      .value("HASH", "hash") 
-      .value("MB_TRACK_ID", "mb_track_id") 
-      .value("ARTIST", "artist") 
-      .value("ARTIST_SORTNAME", "artist_sortname") 
-      .value("MB_ARTIST_ID", "mb_artist_id") 
-      .value("ALBUM", "album")
-      .value("MB_ALBUM_ID", "mb_album_id")
-      .value("MB_RELEASE_DATE", "mb_release_date") 
-      .value("ASIN", "amazon_asin") 
-      .value("ALBUM_ARTIST", "album_artist") 
-      .value("ALBUM_ARTIST_SORTNAME", "album_artist_sortname") 
-      .value("MB_ALBUM_ARTIST_ID", "mb_album_artist_id")
-      .value("TYPE", "type")
-      .value("HAL_VOLUME_UDI", "hal_volume_udi")
-      .value("HAL_DEVICE_UDI", "hal_device_udi")
-      .value("VOLUME_RELATIVE_PATH", "hal_vrp")
-      .value("INSERT_PATH", "insert_path")
-      .value("LOCATION_NAME", "location_name")
-      .value("TRACK", "track")
-      .value("TIME", "time")
-      .value("RATING", "rating")
-      .value("DATE", "date")
-      .value("MTIME", "mtime")
-      .value("BITRATE", "bitrate")
-      .value("SAMPLERATE", "samplerate")
-      .value("PLAYCOUNT", "pcount")
-      .value("PLAYDATE", "pdate")
-      .value("IS_MB_ALBUM_ARTIST", "is_mb_album_artist")
-      .value("ACTIVE", "active")
-      .value("MPX_ID", "id")
-	;
-#endif
-
 	enum_<MPX::AttributeId>("AttributeId")
       .value("LOCATION", MPX::MPX_ATTRIBUTE_LOCATION)
       .value("TITLE", MPX::MPX_ATTRIBUTE_TITLE)
@@ -801,11 +788,16 @@ BOOST_PYTHON_MODULE(mpx)
       .value("MTIME", MPX::MPX_ATTRIBUTE_MTIME)
       .value("BITRATE", MPX::MPX_ATTRIBUTE_BITRATE)
       .value("SAMPLERATE", MPX::MPX_ATTRIBUTE_SAMPLERATE)
-      .value("PLAYCOUNT", MPX::MPX_ATTRIBUTE_COUNT)
+      .value("COUNT", MPX::MPX_ATTRIBUTE_COUNT)
       .value("PLAYDATE", MPX::MPX_ATTRIBUTE_PLAYDATE)
+      .value("INSERT_DATE", MPX::MPX_ATTRIBUTE_INSERT_DATE)
       .value("IS_MB_ALBUM_ARTIST", MPX::MPX_ATTRIBUTE_IS_MB_ALBUM_ARTIST)
       .value("ACTIVE", MPX::MPX_ATTRIBUTE_ACTIVE)
+      .value("QUALITY", MPX::MPX_ATTRIBUTE_QUALITY)
       .value("MPX_TRACK_ID", MPX::MPX_ATTRIBUTE_MPX_TRACK_ID)
+      .value("MPX_ALBUM_ID", MPX::MPX_ATTRIBUTE_MPX_ALBUM_ID)
+      .value("MPX_ARTIST_ID", MPX::MPX_ATTRIBUTE_MPX_ARTIST_ID)
+      .value("MPX_ALBUM_ARTIST_ID", MPX::MPX_ATTRIBUTE_MPX_ALBUM_ARTIST_ID)
 	;
 
 	/*-------------------------------------------------------------------------------------*/
@@ -840,6 +832,8 @@ BOOST_PYTHON_MODULE(mpx)
 
         .def("add_info_widget",     &mpxpy::player_add_info_widget)
         .def("remove_info_widget",  &mpxpy::player_remove_info_widget)
+
+        .def("queue_next_track",    &MPX::YoukiController::queue_next_track)
 
 /*
 		.def("add_widget",          &mpxpy::player_add_widget)
@@ -926,7 +920,8 @@ BOOST_PYTHON_MODULE(mpx)
 
 		.def("getMetadata", &MPX::Library::getMetadata)
 
-        //.def("sqlToTrack", &MPX::Library::sqlToTrack)
+        .def("sqlToTrack", &mpxpy::library_sql_to_track)
+        .def("getTrackById", &mpxpy::library_get_track_by_id)
 
         .def("getTrackTags", &MPX::Library::getTrackTags)
 

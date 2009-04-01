@@ -361,19 +361,20 @@ namespace MPX
                 {
                     using boost::get;
 
-                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
-
                     GdkRectangle r ;
-            
-                    r.x         = xpos + (m_width - 64) / 2 ; 
-                    r.y         = ypos ;
-                    r.width     = m_width ;
-                    r.height    = row_height ;
+
+                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
                     Cairo::RefPtr<Cairo::ImageSurface> s = get<0>(data_row) ;
 
                     if( s )
                     {
+                            r.x         = xpos + (m_width - s->get_width()) / 2 ; 
+                            r.y         = ypos ;
+                            r.width     = m_width ;
+                            r.height    = row_height ;
+
+
                             cairo->set_source(
                                   s
                                 , r.x
@@ -384,8 +385,8 @@ namespace MPX
                                   cairo
                                 , r.x
                                 , r.y + 16
-                                , 64 
-                                , 64 
+                                , s->get_width() 
+                                , s->get_height() 
                                 , 4.
                             ) ;
 

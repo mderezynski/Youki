@@ -92,6 +92,11 @@ namespace MPX
                 , bool /*no_location?*/  = false
             ) ;
 
+            Track_sp
+            getTrackById(
+                  gint64
+            ) ;
+
             void
             recacheCovers() ;
 

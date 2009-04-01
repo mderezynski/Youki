@@ -929,9 +929,6 @@ namespace MPX
                                 if (row.count("amazon_asin"))
                                         (*track.get())[ATTRIBUTE_ASIN] = get<std::string>(row["amazon_asin"]);
 
-                                if (row.count("id"))
-                                        (*track.get())[ATTRIBUTE_MPX_TRACK_ID] = get<gint64>(row["id"]);
-
                                 if (row.count("album_j"))
                                         (*track.get())[ATTRIBUTE_MPX_ALBUM_ID] = get<gint64>(row["album_j"]);
 
@@ -957,9 +954,25 @@ namespace MPX
                                         (*track.get())[ATTRIBUTE_QUALITY] = get<gint64>(row["audio_quality"]);
                         }
 
-                       // g_assert( (*track.get()).has(ATTRIBUTE_LOCATION) );
-
                         return track;
+                }
+
+        Track_sp
+                Library::getTrackById(
+                      gint64 id
+                )
+                {
+                        SQL::RowV v ;
+                        getSQL( v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % id).str() ) ;
+                    
+                        if( !v.empty() )
+                        {
+                            return sqlToTrack( v[0], true, true ) ;
+                        }
+                        else
+                        {
+                            throw std::runtime_error((boost::format("No result set for ID[%lld]!") % id).str()) ;
+                        }
                 }
 
 

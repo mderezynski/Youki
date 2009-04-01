@@ -123,6 +123,18 @@ namespace MPX
                     }
 
     void
+    MainWindow::clear_widget_top()
+                    {
+                        a1->remove() ;
+                    }
+
+    void
+    MainWindow::clear_widget_drawer()
+                    {
+                        a2->remove() ;
+                    }
+
+    void
     MainWindow::set_geom_hints(
                         bool with_drawer_height
                     )
@@ -331,7 +343,7 @@ namespace MPX
                                     , m_drawer_width + 16 
                                     , get_allocation().get_height() 
                                     , rounding
-                                    , CairoCorners::CORNERS( CairoCorners::BOTTOMLEFT | CairoCorners::BOTTOMRIGHT )
+                                    , CairoCorners::CORNERS( CairoCorners::TOPRIGHT | CairoCorners::BOTTOMRIGHT )
                                 ) ;
                                 cr->fill () ;
                         }

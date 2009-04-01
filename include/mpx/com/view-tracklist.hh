@@ -241,7 +241,6 @@ namespace MPX
                 void
                 clear_active_track()
                 {
-                    m_active_track.reset() ;
                     m_local_active_track.reset() ;
                 }
 
@@ -430,6 +429,12 @@ namespace MPX
                 scan_active ()
                 {
                     using boost::get;
+
+                    if( !m_active_track )
+                    {
+                        m_local_active_track.reset() ;
+                        return ;
+                    }
 
                     for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                     {
@@ -1752,6 +1757,7 @@ namespace MPX
                 set_model(DataModelFilterTracks_SP_t model)
                 {
                     m_model = model;
+                    scan_active() ;
                     set_size_request(200, 8 * m_row_height);
                     m_model->signal_changed().connect(
                         sigc::mem_fun(

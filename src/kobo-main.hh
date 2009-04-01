@@ -58,6 +58,12 @@ namespace MPX
                     set_widget_drawer( Gtk::Widget & w ) ;
 
                     void
+                    clear_widget_top() ;
+
+                    void
+                    clear_widget_drawer() ;
+
+                    void
                     quit()
                     {
                         m_quit_clicked = true ;

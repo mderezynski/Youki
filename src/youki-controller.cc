@@ -120,6 +120,19 @@ namespace MPX
                 , 0
         ) ;
 
+        m_C_SIG_ID_track_cancelled =
+            g_signal_new(
+                  "track-cancelled"
+                , G_OBJECT_CLASS_TYPE(G_OBJECT_GET_CLASS(gobj()))
+                , GSignalFlags(G_SIGNAL_RUN_FIRST)
+                , 0
+                , NULL
+                , NULL
+                , g_cclosure_marshal_VOID__VOID
+                , G_TYPE_NONE
+                , 0
+        ) ;
+
         m_mlibman_dbus_proxy = new info::backtrace::Youki::MLibMan_proxy_actual( conn ) ;
         m_mlibman_dbus_proxy->signal_scan_end().connect(
             sigc::mem_fun(
@@ -158,6 +171,11 @@ namespace MPX
                   *this
                 , &YoukiController::on_play_stream_switched
         )) ;
+
+        m_NotebookPlugins   = Gtk::manage( new Gtk::Notebook ) ;
+        m_NotebookPlugins->property_show_border() = false ;
+        m_NotebookPlugins->property_tab_border() = 0 ;
+        m_NotebookPlugins->property_tab_pos() = Gtk::POS_BOTTOM ;
 
         m_Paned1            = Gtk::manage( new Gtk::HPaned ) ;
         m_Paned2            = Gtk::manage( new Gtk::HPaned ) ;
@@ -379,7 +397,7 @@ namespace MPX
         m_HBox_Controls->set_spacing( 4 ) ;
 
         m_main_window->set_widget_top( *m_VBox ) ;
-//        m_main_window->set_widget_drawer( *m_main_cover ) ; 
+        m_main_window->set_widget_drawer( *m_NotebookPlugins ) ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
         m_VBox->pack_start( *m_Paned1, true, true, 0 ) ;
@@ -504,8 +522,8 @@ namespace MPX
               m_disc_multiple 
             , -1
             , -1
+            , ""
             , _("All Albums")
-            , "" 
         ) ;
 
         v.clear () ; 
@@ -624,26 +642,40 @@ namespace MPX
     void
     YoukiController::on_play_eos ()
     {
-        boost::optional<gint64> pos = m_ListViewTracks->get_local_active_track () ;
-
-        if( pos )
+        if( m_next_track_queue_id )
         {
-            gint64 pos_cpy = pos.get() + 1 ;
+            boost::shared_ptr<Library> lib = services->get<Library>("mpx-service-library") ;
+            SQL::RowV v ;
+            lib->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % m_next_track_queue_id.get() ).str()) ; 
+            Track_sp p = lib->sqlToTrack( v[0], true, false ) ;
 
-            if( pos_cpy < m_FilterModelTracks->size() )
-            {
-                play_track( boost::get<4>(m_FilterModelTracks->row(pos_cpy)) ) ;
-                return ;
-            }
+            m_next_track_queue_id.reset() ;
+
+            play_track( *(p.get()) ) ;
         }
         else
-        if( m_FilterModelTracks->size() )
         {
-            play_track( boost::get<4>(m_FilterModelTracks->row( 0 )) ) ;
-            return ;
-        }
+                boost::optional<gint64> pos = m_ListViewTracks->get_local_active_track () ;
 
-        m_play->request_status( PLAYSTATUS_STOPPED ) ; 
+                if( pos )
+                {
+                    gint64 pos_cpy = pos.get() + 1 ;
+
+                    if( pos_cpy < m_FilterModelTracks->size() )
+                    {
+                        play_track( boost::get<4>(m_FilterModelTracks->row(pos_cpy)) ) ;
+                        return ;
+                    }
+                }
+                else
+                if( m_FilterModelTracks->size() )
+                {
+                    play_track( boost::get<4>(m_FilterModelTracks->row( 0 )) ) ;
+                    return ;
+                }
+
+                m_play->request_status( PLAYSTATUS_STOPPED ) ; 
+        }
     }
 
     void
@@ -755,6 +787,12 @@ namespace MPX
         , bool          play
     ) 
     {
+        g_signal_emit(
+              G_OBJECT(gobj())
+            , m_C_SIG_ID_track_cancelled
+            , 0
+        ) ;
+
         play_track( t ) ;
     }
 

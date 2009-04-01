@@ -1,8 +1,8 @@
-[MPX Plugin]
+[YoukiPlugin]
 Loader=python
 Module=mpxdj
 IAge=1
-Name=MPX DJ
+Name=Youki DJ
 Authors=Milosz Derezynski <milosz@backtrace.info>
-Copyright=Copyright © 2008 Milosz Derezynski 
+Copyright=Copyright © 2009 Milosz Derezynski 
 Website=http://mpx.backtrace.info/

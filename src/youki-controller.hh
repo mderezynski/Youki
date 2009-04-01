@@ -66,6 +66,8 @@ namespace MPX
             Gtk::VBox                       * m_VBox ;
             Gtk::HBox                       * m_HBox ;
 
+            Gtk::Notebook                   * m_NotebookPlugins ;
+
             DataModelFilterAA_SP_t            m_FilterModelAA ;
             DataModelFilterAlbums_SP_t        m_FilterModelAlbums ;
             DataModelFilterTracks_SP_t        m_FilterModelTracks ;
@@ -79,12 +81,14 @@ namespace MPX
             gint64                            m_seek_position ;
     
             boost::optional<MPX::Track>       m_current_track ;          
+            boost::optional<gint64>           m_next_track_queue_id ;
 
             info::backtrace::Youki::MLibMan_proxy_actual  * m_mlibman_dbus_proxy ;
 
             sigc::connection                  m_conn1, m_conn2, m_conn3 ;
 
             guint                             m_C_SIG_ID_metadata_updated ;
+            guint                             m_C_SIG_ID_track_cancelled ;
 
         public: 
 
@@ -224,6 +228,14 @@ namespace MPX
 
         public: // PLUGIN API
 
+            void
+            queue_next_track(
+                  gint64 id
+            )
+            {
+                m_next_track_queue_id = id ;
+            }
+
             PlayStatus
             get_status(
             )
@@ -252,15 +264,20 @@ namespace MPX
                 , const std::string&    name
             )
             {
-                w->set_size_request( -1, 280 ) ; 
-                m_main_window->set_widget_drawer( *w ) ; 
+                m_NotebookPlugins->append_page(
+                      *w
+                    , name
+                ) ;
             }
 
             void
             remove_info_widget(
-                  Gtk::Widget*
+                  Gtk::Widget*          w
             )
             {
+                m_NotebookPlugins->remove_page(
+                      *w
+                ) ;
             }
     } ;
 }

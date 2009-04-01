@@ -1109,7 +1109,7 @@ class LiveInfo(mpx.Plugin):
     def activate(self):
 
         self.youki_metadata_updated_id = self.youki.gobj().connect("metadata-updated", self.metadata_updated)
-        self.youki.add_info_widget(self.vbox, _("Browser"))
+        self.youki.add_info_widget(self.vbox, _("LiveInfo"))
 
         try:
             self.info.run(self.youki.get_metadata())

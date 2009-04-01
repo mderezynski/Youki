@@ -1,6 +1,6 @@
 python_DATA = 				\
 		__init__.py 		\
-		mpxdj.mpx-plugin 	\
+		mpxdj.youki-plugin 	\
 		mpxdj.glade			\
 		mpxdj.png			\
 		mpxdj-icon.png
