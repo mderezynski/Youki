@@ -14,6 +14,8 @@
 #include "mpx/com/view-album.hh"
 #include "mpx/com/view-tracks.hh"
 
+#include "mpx/algorithm/youki-markov-predictor.hh"
+
 namespace
 {
     bool
@@ -107,6 +109,13 @@ namespace MPX
         DataModelFilterArtist_SP_t        FilterModelArtist ;
         DataModelFilterAlbums_SP_t        FilterModelAlbums ;
         DataModelFilterTracks_SP_t        FilterModelTracks ;
+
+        boost::shared_ptr<MarkovTypingPredictor> MarkovPredictor ;
+        
+        Private ()
+        : MarkovPredictor( new MarkovTypingPredictor )
+        {
+        }
     } ;
 
     YoukiController::YoukiController(

@@ -10,9 +10,12 @@ namespace MPX
     {
         struct Node ;
         typedef boost::shared_ptr<Node> Node_SP_t ;
-    
+        typedef std::vector<Node_SP_t>  Children_t ;
+
         struct Node
         { 
+            public:
+
             private:
 
                     friend class NTree ;
@@ -23,27 +26,24 @@ namespace MPX
 
             public:
 
-                    const Node_SP_t         Parent ;
-                    std::vector<Node_SP_t>  Children ;
+                    Node_SP_t               Parent ;
+                    Children_t              Children ;
                     T                       Data ;
 
                     Node(
-                          const Node_SP_t   parent
-                        , const T&          data
+                        const T&            data
                     )
-                    : Parent( parent )
-                    , Data( data )
+                    : Data( data )
                     {
                     }
 
                     void
                     append(
-                          Node_SP_t         node
-                        , const Node_SP_t   parent
-                        , const T&          data
+                        Node_SP_t           node
                     )
                     {
-                        Children.push_back( Node_SP_t( new Node( parent, data ))) ;
+                        node->Parent = Node_SP_t( this ) ;
+                        Children.push_back( node ) ; 
                     }
         } ;
 
@@ -56,9 +56,9 @@ namespace MPX
 
         void
         append(
-              Node_SP_t         node
-            , const Node_SP_t   parent
-            , const T&          data
+              Node_SP_t     node
+            , Node_SP_t     parent
+            , T&            data
         )
         {
             node->append(
