@@ -25,6 +25,17 @@ namespace MPX
     class ListViewAlbums ;
     class ListViewArtist ;
 
+    struct FakeModel
+    : public Gtk::TreeModelColumnRecord 
+    {
+            Gtk::TreeModelColumn<std::string>       Fake ;
+
+            FakeModel ()
+            {
+                add( Fake ) ;
+            }
+    } ;
+
     class YoukiController
     : public Glib::Object
     , public ::info::backtrace::Youki::App_adaptor
@@ -58,7 +69,13 @@ namespace MPX
             Gtk::HPaned                     * m_Paned1 ;
             Gtk::HPaned                     * m_Paned2 ;
             
-            Gtk::Entry                      * m_Entry ;
+            Gtk::Entry                        * m_Entry ;
+            Glib::ustring                       m_Entry_Text ;
+            Glib::RefPtr<Gtk::ListStore>        m_Completion_Store ;
+            Glib::RefPtr<Gtk::EntryCompletion>  m_Completion ;
+            FakeModel                           CC ;
+            Glib::ustring                       m_prediction ;
+
             Gtk::Alignment                  * m_Alignment_Entry ;
             Gtk::HBox                       * m_HBox_Entry ;
             Gtk::HBox                       * m_HBox_Controls ;
@@ -70,7 +87,7 @@ namespace MPX
             Gtk::Notebook                   * m_NotebookPlugins ;
 
             struct Private ;
-            boost::shared_ptr<Private>        private_ ;
+            Private                         * private_ ;
 
             Glib::RefPtr<Gdk::Pixbuf>           m_icon ; 
             Cairo::RefPtr<Cairo::ImageSurface>  m_disc ;
@@ -196,6 +213,12 @@ namespace MPX
             ) ;
 
         protected:
+    
+            bool
+            on_completion_match(
+                  const Glib::ustring&
+                , const Gtk::TreeIter&
+            ) ;
 
             void
             reload_library() ;

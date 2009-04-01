@@ -111,7 +111,7 @@ namespace MPX
         DataModelFilterTracks_SP_t        FilterModelTracks ;
 
         boost::shared_ptr<MarkovTypingPredictor> MarkovPredictor ;
-        
+
         Private ()
         : MarkovPredictor( new MarkovTypingPredictor )
         {
@@ -444,6 +444,26 @@ namespace MPX
         )) ;
 
         reload_library () ;
+
+        m_Completion = Gtk::EntryCompletion::create() ;
+        m_Completion_Store = Gtk::ListStore::create( CC ) ;
+
+        m_Completion->property_popup_completion() = false ;
+        m_Completion->property_inline_completion() = true ;
+        m_Completion->property_inline_selection() = false ;
+        m_Completion->property_minimum_key_length() = 1 ;
+
+        m_Completion->set_model( m_Completion_Store ) ;
+        m_Completion->property_text_column() = 0 ;
+
+        m_Completion_Store->append() ;
+
+        m_Completion->set_match_func(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_completion_match
+        )) ;
+        m_Entry->set_completion( m_Completion ) ;
 
         m_play->signal_spectrum().connect(
             sigc::mem_fun(
@@ -912,6 +932,16 @@ namespace MPX
         private_->FilterModelTracks->regen_mapping() ;
     }
 
+    bool
+    YoukiController::on_completion_match(
+          const Glib::ustring&
+        , const Gtk::TreeIter&  iter
+    )
+    {
+        g_message("Called!") ;
+        return iter == m_Completion_Store->children().begin() ;
+    }
+
     void
     YoukiController::on_entry_changed()
     {
@@ -935,7 +965,28 @@ namespace MPX
 
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
 
-        private_->FilterModelTracks->set_filter( m_Entry->get_text() );
+        Glib::ustring entry_new_text = m_Entry->get_text () ;
+   
+/* 
+        if( entry_new_text.size() > m_Entry_Text.size() )
+        {
+            private_->MarkovPredictor->process_string( entry_new_text ) ;
+        }
+
+        if( entry_new_text.size() > 0 )
+        {
+            m_prediction = entry_new_text + private_->MarkovPredictor->predict( entry_new_text ) ;
+        }
+        else
+        {
+            m_prediction.clear() ;
+        }
+
+        Gtk::TreeIter i = m_Completion_Store->children().begin() ;
+        (*i)[CC.Fake] = m_prediction ;
+*/
+
+        private_->FilterModelTracks->set_filter( entry_new_text );
 
         private_->FilterModelArtist->set_constraint( private_->FilterModelTracks->m_constraint_artist ) ;
         private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;

@@ -17,12 +17,11 @@ namespace MPX
     {
         private:
 
-                boost::shared_ptr<NTree<GlyphData> > m_tree ;
+                NTree<GlyphData> m_tree ;
 
         public:
 
                 MarkovTypingPredictor()
-                : m_tree( new NTree<GlyphData> )
                 {
                 }
 
@@ -35,7 +34,7 @@ namespace MPX
                     const Glib::ustring& u
                 )
                 {
-                    NTree<GlyphData>::Node_SP_t root = m_tree->Root ;
+                    NTree<GlyphData>::Node_SP_t root = m_tree.Root ;
                     NTree<GlyphData>::Node_SP_t curr = root ;
 
                     for( Glib::ustring::const_iterator i = u.begin(); i != u.end(); ++i )
@@ -70,12 +69,11 @@ namespace MPX
                 Glib::ustring
                 predict(     
                       const Glib::ustring&  u
-                    , std::size_t           max_predict_chars 
                 )
                 {
                     Glib::ustring prediction ;
 
-                    NTree<GlyphData>::Node_SP_t root = m_tree->Root ;
+                    NTree<GlyphData>::Node_SP_t root = m_tree.Root ;
                     NTree<GlyphData>::Node_SP_t curr = root ;
 
                     for( Glib::ustring::const_iterator i = u.begin(); i != u.end(); ++i )
@@ -97,7 +95,7 @@ namespace MPX
                         continue_loop_in_case_of_found: ;
                     }
 
-                    while( ! curr->Children.empty() )
+                    while( curr && !curr->Children.empty() )
                     {
                         double Intensity_Max = 0 ;
                         NTree<GlyphData>::Node_SP_t Most_Intense_Node ;
@@ -105,10 +103,12 @@ namespace MPX
                         for( NTree<GlyphData>::Children_t::iterator n = curr->Children.begin(); n != curr->Children.end(); ++n )
                         {       
                             GlyphData & data = (*n)->Data ;
+
+                            double Intensity = data.Intensity / curr->Children.size() ;
                            
-                            if( data.Intensity > Intensity_Max ) 
+                            if( Intensity > Intensity_Max ) 
                             {
-                                Intensity_Max = data.Intensity ;
+                                Intensity_Max = Intensity ;
                                 Most_Intense_Node = *n ;
                             }
                         }
@@ -116,13 +116,14 @@ namespace MPX
                         if( Most_Intense_Node )
                         {
                             prediction += Most_Intense_Node->Data.Char ;
+                            curr = Most_Intense_Node ;
                         }
                         else
+                        if( !curr->Children.empty() )
                         {
-                            // uh-oh
+                            curr = *(curr->Children.begin()) ;
+                            prediction += curr->Data.Char ;
                         }
-
-                        curr = Most_Intense_Node ;
                     }
                 }
     } ;
