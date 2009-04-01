@@ -45,7 +45,7 @@ namespace MPX
                         {       
                             GlyphData & data = (*n)->Data ;
 
-                            if( data.Char == *i )
+                            if( g_unichar_tolower(data.Char) == g_unichar_tolower(*i) )
                             {
                                 data.Intensity++ ; 
                                 curr = *n ;
@@ -82,7 +82,7 @@ namespace MPX
                         {       
                             GlyphData & data = (*n)->Data ;
 
-                            if( data.Char == *i )
+                            if( g_unichar_tolower(data.Char) == g_unichar_tolower(*i) )
                             {
                                 curr = *n ;
                                 goto continue_loop_in_case_of_found ;

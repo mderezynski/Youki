@@ -168,6 +168,7 @@ namespace MPX
 
         m_covers    = services->get<Covers>("mpx-service-covers").get() ;
         m_play      = services->get<Play>("mpx-service-play").get() ;
+        m_library   = services->get<Library>("mpx-service-library").get() ;
 
         m_play->signal_eos().connect(
             sigc::mem_fun(
@@ -463,6 +464,17 @@ namespace MPX
 
         reload_library () ;
 
+        {
+            SQL::RowV v ;
+            m_library->getSQL( v, "SELECT album FROM album WHERE album_playscore > 0 ORDER BY album_playscore DESC LIMIT 50" ) ; 
+            for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
+            {
+                private_->MarkovPredictor->process_string(
+                      boost::get<std::string>((*i)["album"])
+                ) ;
+            }
+        }
+
         m_Completion = Gtk::EntryCompletion::create() ;
         m_Completion_Store = Gtk::ListStore::create( CC ) ;
 
@@ -560,7 +572,7 @@ namespace MPX
         {
                 SQL::Row & r = *i;
                 try{
-                    model_tracks->append_track_quiet(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, false).get()))) ;
+                    model_tracks->append_track_quiet(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, false ).get()))) ;
                 } catch( Library::FileQualificationError )
                 {
                 }
@@ -690,8 +702,9 @@ namespace MPX
     {
         try{
                 boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library") ;
-        
-                m_current_track = t ; 
+       
+                m_track_previous    = m_track_current ;
+                m_track_current     = t ; 
 
                 m_play->switch_stream( library->trackGetLocation( t ) ) ;
 
@@ -762,6 +775,17 @@ namespace MPX
                 }
 
                 m_play->request_status( PLAYSTATUS_STOPPED ) ; 
+
+                if( m_track_previous )
+                {
+                        m_library->trackPlayed(
+                              boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_TRACK_ID].get())
+                            , boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_ALBUM_ID].get())
+                            , time(NULL)
+                        ) ;
+
+                        m_track_previous.reset() ;
+                }
         }
     }
 
@@ -779,7 +803,7 @@ namespace MPX
 
             case PLAYSTATUS_STOPPED:
 
-                m_current_track.reset() ;
+                m_track_current.reset() ;
 
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
@@ -792,7 +816,7 @@ namespace MPX
 
             case PLAYSTATUS_WAITING:
 
-                m_current_track.reset() ;
+                m_track_current.reset() ;
 
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
@@ -809,7 +833,7 @@ namespace MPX
     void
     YoukiController::on_play_stream_switched()
     {
-        boost::optional<MPX::Track> t = m_current_track ;
+        boost::optional<MPX::Track> t = m_track_current ;
 
         g_return_if_fail( bool(t) ) ;
 
@@ -866,6 +890,17 @@ namespace MPX
             , m_C_SIG_ID_metadata_updated
             , 0
         ) ;
+
+        if( m_track_previous )
+        {
+                m_library->trackPlayed(
+                      boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_TRACK_ID].get())
+                    , boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_ALBUM_ID].get())
+                    , time(NULL)
+                ) ;
+
+                m_track_previous.reset() ;
+        }
     }
 
     void
@@ -1018,10 +1053,12 @@ namespace MPX
 
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
 
+/*
         if( new_entry_text.size() > m_Entry_Text.size() )
         {
             private_->MarkovPredictor->process_string( new_entry_text ) ;
         }
+*/
 
         if( new_entry_text.size() > 0 )
         {
@@ -1195,7 +1232,7 @@ namespace MPX
     std::map<std::string, DBus::Variant>
     YoukiController::GetMetadata ()
     {
-        boost::optional<MPX::Track> t = m_current_track ;
+        boost::optional<MPX::Track> t = m_track_current ;
 
         if( !t )
         {

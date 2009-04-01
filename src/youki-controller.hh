@@ -19,6 +19,7 @@
 namespace MPX
 {
     class Covers ;
+    class Library ;
     class Play ;
 
     class ListViewTracks ;
@@ -97,9 +98,11 @@ namespace MPX
     
             Covers                          * m_covers ;
             Play                            * m_play ;
+            Library                         * m_library ;
             gint64                            m_seek_position ;
     
-            boost::optional<MPX::Track>       m_current_track ;          
+            boost::optional<MPX::Track>       m_track_current ;          
+            boost::optional<MPX::Track>       m_track_previous ;          
             boost::optional<gint64>           m_next_track_queue_id ;
 
             info::backtrace::Youki::MLibMan_proxy_actual  * m_mlibman_dbus_proxy ;
@@ -280,8 +283,8 @@ namespace MPX
             get_metadata(
             )
             {
-                if( m_current_track )
-                    return m_current_track.get() ;
+                if( m_track_current )
+                    return m_track_current.get() ;
                 else
                     throw std::runtime_error("No current track!") ;
             }
