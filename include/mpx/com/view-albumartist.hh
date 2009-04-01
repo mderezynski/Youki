@@ -1,5 +1,5 @@
-#ifndef YOUKI_LISTVIEW_AA_HH
-#define YOUKI_LISTVIEW_AA_HH
+#ifndef YOUKI_LISTVIEW_Artist_HH
+#define YOUKI_LISTVIEW_Artist_HH
 
 #include <gtkmm.h>
 #include <gtk/gtktreeview.h>
@@ -30,24 +30,24 @@ namespace
 namespace MPX
 {
         typedef boost::tuple<std::string, gint64>           Row2 ;
-        typedef std::vector<Row2>                           ModelAA_t ;
-        typedef boost::shared_ptr<ModelAA_t>                ModelAA_SP_t ;
-        typedef sigc::signal<void>                          SignalAA_0 ;
-        typedef std::map<gint64, ModelAA_t::iterator>       IdIterMapAA_t ;
+        typedef std::vector<Row2>                           ModelArtist_t ;
+        typedef boost::shared_ptr<ModelArtist_t>                ModelArtist_SP_t ;
+        typedef sigc::signal<void>                          SignalArtist_0 ;
+        typedef std::map<gint64, ModelArtist_t::iterator>       IdIterMapArtist_t ;
 
-        struct DataModelAA
+        struct DataModelArtist : public sigc::trackable
         {
-                ModelAA_SP_t        m_realmodel ;
-                SignalAA_0          m_changed ;
-                IdIterMapAA_t       m_iter_map ;
+                ModelArtist_SP_t        m_realmodel ;
+                SignalArtist_0          m_changed ;
+                IdIterMapArtist_t       m_iter_map ;
 
-                DataModelAA()
+                DataModelArtist()
                 {
-                    m_realmodel = ModelAA_SP_t( new ModelAA_t ) ; 
+                    m_realmodel = ModelArtist_SP_t( new ModelArtist_t ) ; 
                 }
 
-                DataModelAA(
-                    ModelAA_SP_t model
+                DataModelArtist(
+                    ModelArtist_SP_t model
                 )
                 {
                     m_realmodel = model; 
@@ -61,7 +61,7 @@ namespace MPX
                     m_changed.emit () ;
                 } 
 
-                virtual SignalAA_0&
+                virtual SignalArtist_0&
                 signal_changed ()
                 {
                     return m_changed;
@@ -94,23 +94,23 @@ namespace MPX
                     Row2 row ( artist, artist_id ) ;
                     m_realmodel->push_back(row);
 
-                    ModelAA_t::iterator i = m_realmodel->end();
+                    ModelArtist_t::iterator i = m_realmodel->end();
                     std::advance( i, -1 );
                     m_iter_map.insert(std::make_pair(artist_id, i)); 
                 }
         };
 
-        typedef boost::shared_ptr<DataModelAA> DataModelAA_SP_t;
+        typedef boost::shared_ptr<DataModelArtist> DataModelArtist_SP_t;
 
-        struct DataModelFilterAA : public DataModelAA
+        struct DataModelFilterArtist : public DataModelArtist
         {
-                typedef std::vector<ModelAA_t::iterator> RowRowMapping;
+                typedef std::vector<ModelArtist_t::iterator> RowRowMapping;
 
                 RowRowMapping                       m_mapping ;
                 boost::optional<std::set<gint64> >  m_constraint_artist ;
 
-                DataModelFilterAA(DataModelAA_SP_t & model)
-                : DataModelAA(model->m_realmodel)
+                DataModelFilterArtist(DataModelArtist_SP_t & model)
+                : DataModelArtist(model->m_realmodel)
                 {
                     regen_mapping ();
                 }
@@ -157,7 +157,7 @@ namespace MPX
                     , gint64                    artist_id
                 )
                 {
-                    DataModelAA::append_artist( artist, artist_id ) ;
+                    DataModelArtist::append_artist( artist, artist_id ) ;
                     regen_mapping();
                 }
                 
@@ -167,7 +167,7 @@ namespace MPX
                     , gint64                    artist_id
                 )
                 {
-                    DataModelAA::append_artist( artist, artist_id ) ;
+                    DataModelArtist::append_artist( artist, artist_id ) ;
                 }
 
                 void
@@ -183,7 +183,7 @@ namespace MPX
 
                     RowRowMapping new_mapping;
 
-                    ModelAA_t::iterator i = m_realmodel->begin() ; 
+                    ModelArtist_t::iterator i = m_realmodel->begin() ; 
                     new_mapping.push_back( i ) ;
                     ++i ;
 
@@ -207,9 +207,9 @@ namespace MPX
                 }
         };
 
-        typedef boost::shared_ptr<DataModelFilterAA> DataModelFilterAA_SP_t;
+        typedef boost::shared_ptr<DataModelFilterArtist> DataModelFilterArtist_SP_t;
 
-        class ColumnAA
+        class ColumnArtist
         {
                 int                 m_width ;
                 int                 m_column ;
@@ -218,7 +218,7 @@ namespace MPX
 
             public:
 
-                ColumnAA (std::string const& title)
+                ColumnArtist (std::string const& title)
                 : m_width( 0 )
                 , m_column( 0 )
                 , m_title( title )
@@ -226,7 +226,7 @@ namespace MPX
                 {
                 }
 
-                ~ColumnAA ()
+                ~ColumnArtist ()
                 {
                 }
 
@@ -352,25 +352,25 @@ namespace MPX
                 }
         };
 
-        typedef boost::shared_ptr<ColumnAA> ColumnAA_SP_t ;
-        typedef std::vector<ColumnAA_SP_t>  ColumnAA_SP_vector_t ;
+        typedef boost::shared_ptr<ColumnArtist> ColumnArtist_SP_t ;
+        typedef std::vector<ColumnArtist_SP_t>  ColumnArtist_SP_vector_t ;
         typedef sigc::signal<void>          SignalSelectionChanged ;
 
-        class ListViewAA : public Gtk::DrawingArea
+        class ListViewArtist : public Gtk::DrawingArea
         {
                 int                                 m_row_height ;
                 int                                 m_visible_height ;
                 int                                 m_previous_drawn_row ;
 
-                DataModelFilterAA_SP_t              m_model ;
-                ColumnAA_SP_vector_t                m_columns ;
+                DataModelFilterArtist_SP_t              m_model ;
+                ColumnArtist_SP_vector_t                m_columns ;
 
                 PropAdj                             m_prop_vadj ;
                 PropAdj                             m_prop_hadj ;
 
                 guint                               m_signal0 ; 
 
-                boost::optional<std::pair<ModelAA_t::iterator, gint64> > m_selection ;
+                boost::optional<std::pair<ModelArtist_t::iterator, gint64> > m_selection ;
 
                 bool                                m_highlight ;
 
@@ -471,7 +471,7 @@ namespace MPX
 
                                 if( get_row_is_visible( row ))
                                 {
-                                    ModelAA_t::iterator i = m_selection.get().first;
+                                    ModelArtist_t::iterator i = m_selection.get().first;
 
                                     std::advance(i, step);
                                     row += step;
@@ -524,7 +524,7 @@ namespace MPX
 
                                 if( get_row_is_visible( row ) )
                                 {
-                                    ModelAA_t::iterator i = m_selection.get().first;
+                                    ModelArtist_t::iterator i = m_selection.get().first;
     
                                     std::advance(i, step);
                                     row += step;
@@ -777,7 +777,7 @@ namespace MPX
                             cairo->restore () ;
                         }
 
-                        for(ColumnAA_SP_vector_t::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
+                        for(ColumnArtist_SP_vector_t::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                         {
                             (*i)->render(cairo, m_model->row(row), *this, row, xpos, ypos, m_row_height, iter_is_selected);
                             xpos += (*i)->get_width();
@@ -836,12 +836,12 @@ namespace MPX
                             g_object_set(G_OBJECT(obj), "hadjustment", hadj, NULL);
                             g_object_set(G_OBJECT(vadj), "page-size", 0.05, "upper", 1.0, NULL);
 
-                            ListViewAA & view = *(reinterpret_cast<ListViewAA*>(data));
+                            ListViewArtist & view = *(reinterpret_cast<ListViewArtist*>(data));
 
                             view.m_prop_vadj.get_value()->signal_value_changed().connect(
                                 sigc::mem_fun(
                                     view,
-                                    &ListViewAA::on_vadj_value_changed
+                                    &ListViewArtist::on_vadj_value_changed
                             ));
                     }
 
@@ -880,19 +880,18 @@ namespace MPX
                 }
 
                 void
-                set_model(DataModelFilterAA_SP_t model)
+                set_model(DataModelFilterArtist_SP_t model)
                 {
                     m_model = model;
-                    set_size_request(200, 8 * m_row_height);
                     m_model->signal_changed().connect(
                         sigc::mem_fun(
                             *this,
-                            &ListViewAA::on_model_changed
+                            &ListViewArtist::on_model_changed
                     ));
                 }
 
                 void
-                append_column (ColumnAA_SP_t column)
+                append_column (ColumnArtist_SP_t column)
                 {
                     m_columns.push_back(column);
                 }
@@ -941,9 +940,9 @@ namespace MPX
                     }
                 }
 
-                ListViewAA ()
+                ListViewArtist ()
 
-                        : ObjectBase( "YoukiListViewAA" )
+                        : ObjectBase( "YoukiListViewArtist" )
                         , m_previous_drawn_row( 0 )
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
@@ -976,7 +975,7 @@ namespace MPX
                     m_SearchWindow->add( *m_SearchEntry ) ;
                 }
 
-                ~ListViewAA ()
+                ~ListViewArtist ()
                 {
                 }
         };

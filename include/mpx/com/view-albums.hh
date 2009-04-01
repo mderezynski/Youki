@@ -43,7 +43,7 @@ namespace MPX
         typedef sigc::signal<void, gint64>                                                                  Signal1 ;
         typedef std::map<gint64, ModelAlbums_t::iterator>                                                   IdIterMapAlbums_t ;
 
-        struct DataModelAlbums
+        struct DataModelAlbums : public sigc::trackable
         {
                 ModelAlbums_SP_t    m_realmodel;
                 Signal1             m_changed;
@@ -973,7 +973,6 @@ namespace MPX
                 set_model(DataModelFilterAlbums_SP_t model)
                 {
                     m_model = model;
-                    set_size_request(200, 8 * m_row_height);
                     m_model->signal_changed().connect(
                         sigc::mem_fun(
                             *this,

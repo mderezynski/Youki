@@ -46,11 +46,11 @@ namespace MPX
             KoboTitleInfo                   * m_main_titleinfo ;
             KoboVolume                      * m_main_volume ;
 
-            ListViewAA                      * m_ListViewAA ;
+            ListViewArtist                      * m_ListViewArtist ;
             ListViewAlbums                  * m_ListViewAlbums ;
             ListView                        * m_ListViewTracks ;
 
-            Gtk::ScrolledWindow             * m_ScrolledWinAA ;
+            Gtk::ScrolledWindow             * m_ScrolledWinArtist ;
             Gtk::ScrolledWindow             * m_ScrolledWinAlbums ;
             Gtk::ScrolledWindow             * m_ScrolledWinTracks ;
 
@@ -68,7 +68,7 @@ namespace MPX
 
             Gtk::Notebook                   * m_NotebookPlugins ;
 
-            DataModelFilterAA_SP_t            m_FilterModelAA ;
+            DataModelFilterArtist_SP_t        m_FilterModelArtist ;
             DataModelFilterAlbums_SP_t        m_FilterModelAlbums ;
             DataModelFilterTracks_SP_t        m_FilterModelTracks ;
 

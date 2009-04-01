@@ -197,8 +197,8 @@ namespace MPX
                     , &YoukiController::on_list_view_tr_track_activated
         )) ;
 
-        m_ListViewAA        = Gtk::manage( new ListViewAA ) ;
-        m_conn1 = m_ListViewAA->signal_selection_changed().connect(
+        m_ListViewArtist        = Gtk::manage( new ListViewArtist ) ;
+        m_conn1 = m_ListViewArtist->signal_selection_changed().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_list_view_aa_selection_changed
@@ -211,7 +211,7 @@ namespace MPX
                 , &YoukiController::on_list_view_ab_selection_changed
         )) ;
 
-        m_ScrolledWinAA     = Gtk::manage( new Gtk::ScrolledWindow ) ;
+        m_ScrolledWinArtist     = Gtk::manage( new Gtk::ScrolledWindow ) ;
         m_ScrolledWinAlbums = Gtk::manage( new Gtk::ScrolledWindow ) ;
         m_ScrolledWinTracks = Gtk::manage( new Gtk::ScrolledWindow ) ;
 
@@ -309,7 +309,7 @@ namespace MPX
         m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
 
-        m_ScrolledWinAA->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
+        m_ScrolledWinArtist->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
         m_ScrolledWinAlbums->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
         m_ScrolledWinTracks->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
 
@@ -354,17 +354,17 @@ namespace MPX
         }
 
         {
-                DataModelAA_SP_t m (new DataModelAA) ;
-                m_FilterModelAA = DataModelFilterAA_SP_t (new DataModelFilterAA(m)) ;
+                DataModelArtist_SP_t m (new DataModelArtist) ;
+                m_FilterModelArtist = DataModelFilterArtist_SP_t (new DataModelFilterArtist(m)) ;
 
-                ColumnAA_SP_t c1 (new ColumnAA(_("Album Artist"))) ;
+                ColumnArtist_SP_t c1 (new ColumnArtist(_("Album Artist"))) ;
                 c1->set_column(0) ;
 
-                m_ListViewAA->append_column(c1) ;
-                m_ListViewAA->set_model( m_FilterModelAA ) ;
+                m_ListViewArtist->append_column(c1) ;
+                m_ListViewArtist->set_model( m_FilterModelArtist ) ;
 
-                m_ScrolledWinAA->add( *m_ListViewAA ) ;
-                m_ScrolledWinAA->show_all() ;
+                m_ScrolledWinArtist->add( *m_ListViewArtist ) ;
+                m_ScrolledWinArtist->show_all() ;
         }
 
         {
@@ -387,7 +387,7 @@ namespace MPX
                 , &YoukiController::on_entry_changed
         )) ;
 
-        m_Paned1->add1( *m_ScrolledWinAA ) ;
+        m_Paned1->add1( *m_ScrolledWinArtist ) ;
         m_Paned1->add2( *m_Paned2 ) ;
         m_Paned2->add1( *m_ScrolledWinTracks ) ;
         m_Paned2->add2( *m_ScrolledWinAlbums ) ;
@@ -475,9 +475,14 @@ namespace MPX
     {
         using boost::get ;
 
-        m_FilterModelTracks->clear () ;
-        m_FilterModelAA->clear () ;
-        m_FilterModelAlbums->clear () ;
+        DataModelTracks_SP_t m1 ( new DataModelTracks ) ;
+        DataModelFilterTracks_SP_t model_tracks = DataModelFilterTracks_SP_t (new DataModelFilterTracks( m1 )) ;
+
+        DataModelArtist_SP_t m2 (new DataModelArtist) ;
+        DataModelFilterArtist_SP_t model_album_artists = DataModelFilterArtist_SP_t (new DataModelFilterArtist( m2 )) ;
+
+        DataModelAlbums_SP_t m3 ( new DataModelAlbums ) ;
+        DataModelFilterAlbums_SP_t model_albums = DataModelFilterAlbums_SP_t (new DataModelFilterAlbums( m3 )) ;
 
         // Tracks 
 
@@ -487,17 +492,15 @@ namespace MPX
         {
                 SQL::Row & r = *i;
                 try{
-                    m_FilterModelTracks->append_track_quiet(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, false).get()))) ;
+                    model_tracks->append_track_quiet(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, false).get()))) ;
                 } catch( Library::FileQualificationError )
                 {
                 }
         }
 
-        m_FilterModelTracks->regen_mapping () ;
-
         // Album Artists
 
-        m_FilterModelAA->append_artist_quiet(
+        model_album_artists->append_artist_quiet(
               _("All Artists") 
             , -1
         ) ;
@@ -508,17 +511,15 @@ namespace MPX
         for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
         {
                 SQL::Row & r = *i;
-                m_FilterModelAA->append_artist_quiet(
+                model_album_artists->append_artist_quiet(
                       r.count("album_artist_sortname") ? boost::get<std::string>(r["album_artist_sortname"]) : boost::get<std::string>(r["album_artist"])
                     , boost::get<gint64>(r["id"])
                 ) ;
         }
 
-        m_FilterModelAA->regen_mapping () ;
-
         // Albums
 
-        m_FilterModelAlbums->append_album_quiet(
+        model_albums->append_album_quiet(
               m_disc_multiple 
             , -1
             , -1
@@ -554,7 +555,7 @@ namespace MPX
                     cover_is = m_disc ; 
                 }
                 
-                m_FilterModelAlbums->append_album_quiet(
+                model_albums->append_album_quiet(
                       cover_is
                     , get<gint64>(r["id"])
                     , get<gint64>(r["album_artist_id"])
@@ -563,6 +564,24 @@ namespace MPX
                 ) ;
         }
 
+        model_album_artists->m_constraint_artist = m_FilterModelArtist->m_constraint_artist ; 
+
+        model_albums->m_constraint_id_album  = m_FilterModelAlbums->m_constraint_id_album ; 
+        model_albums->m_constraint_id_artist = m_FilterModelAlbums->m_constraint_id_artist ; 
+    
+        model_tracks->m_constraints = m_FilterModelTracks->m_constraints ;
+        model_tracks->m_constraints_synthetic = m_FilterModelTracks->m_constraints_synthetic ;
+
+        m_FilterModelArtist     = model_album_artists ;
+        m_FilterModelAlbums = model_albums ;
+        m_FilterModelTracks = model_tracks ;
+
+        m_ListViewArtist->set_model( m_FilterModelArtist ) ;
+        m_ListViewAlbums->set_model( m_FilterModelAlbums ) ;
+        m_ListViewTracks->set_model( m_FilterModelTracks ) ; 
+
+        m_FilterModelTracks->regen_mapping () ;
+        m_FilterModelArtist->regen_mapping () ;
         m_FilterModelAlbums->regen_mapping () ;
     }
 
@@ -803,7 +822,7 @@ namespace MPX
         m_ListViewAlbums->clear_selection() ;
 
         m_FilterModelTracks->clear_synthetic_constraints_quiet() ;
-        gint64 id_artist = m_ListViewAA->get_selected() ;
+        gint64 id_artist = m_ListViewArtist->get_selected() ;
 
         //// SET UP CONSTRAINTS
 
@@ -836,7 +855,7 @@ namespace MPX
     ) 
     {
         m_FilterModelTracks->clear_synthetic_constraints_quiet() ;
-        gint64 id_artist = m_ListViewAA->get_selected() ;
+        gint64 id_artist = m_ListViewArtist->get_selected() ;
         gint64 id_albums = m_ListViewAlbums->get_selected() ;
 
         if( id_albums != -1 )
@@ -868,13 +887,13 @@ namespace MPX
     {
         boost::optional<std::set<gint64> > constraint ; 
 
-        gint64 id_artist = m_ListViewAA->get_selected() ;
+        gint64 id_artist = m_ListViewArtist->get_selected() ;
         gint64 id_albums = m_ListViewAlbums->get_selected() ;
 
         if( id_artist != -1 )
         {
-            m_ListViewAA->clear_selection() ;
-            m_FilterModelAA->set_constraint( constraint ) ;
+            m_ListViewArtist->clear_selection() ;
+            m_FilterModelArtist->set_constraint( constraint ) ;
         }
 
         if( id_albums != -1 )
@@ -886,11 +905,11 @@ namespace MPX
 
         m_FilterModelTracks->set_filter( m_Entry->get_text() );
 
-        m_FilterModelAA->set_constraint( m_FilterModelTracks->m_constraint_artist ) ;
+        m_FilterModelArtist->set_constraint( m_FilterModelTracks->m_constraint_artist ) ;
         m_FilterModelAlbums->set_constraint_albums( m_FilterModelTracks->m_constraint_albums ) ;
         m_FilterModelAlbums->set_constraint_artist( m_FilterModelTracks->m_constraint_artist ) ;
 
-        m_FilterModelAA->regen_mapping() ;
+        m_FilterModelArtist->regen_mapping() ;
         m_FilterModelAlbums->regen_mapping() ;
     }
 

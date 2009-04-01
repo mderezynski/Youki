@@ -42,7 +42,7 @@ namespace MPX
         typedef sigc::signal<void, gint64>                                                              Signal0 ;
         typedef std::map<gint64, Model_t::iterator>                                                     IdIterMap_t ;
 
-        struct DataModelTracks
+        struct DataModelTracks : public sigx::trackable
         {
                 Model_SP_t      m_realmodel;
                 Signal0         m_changed;
@@ -1756,9 +1756,18 @@ namespace MPX
                 void
                 set_model(DataModelFilterTracks_SP_t model)
                 {
-                    m_model = model;
-                    scan_active() ;
-                    set_size_request(200, 8 * m_row_height);
+                    if( m_model )
+                    {
+                            boost::optional<gint64> active_track = m_model->m_active_track ;
+                            m_model = model;
+                            m_model->m_active_track = active_track ;
+                            m_model->scan_active() ;
+                    }
+                    else
+                    {
+                            m_model = model;
+                    }
+
                     m_model->signal_changed().connect(
                         sigc::mem_fun(
                             *this,
