@@ -115,6 +115,10 @@ namespace MPX
                     regen_mapping ();
                 }
 
+                virtual ~DataModelFilterArtist()
+                {
+                }
+
                 virtual void
                 set_constraint(
                     const boost::optional<std::set<gint64> >& constraint
@@ -975,7 +979,7 @@ namespace MPX
                     m_SearchWindow->add( *m_SearchEntry ) ;
                 }
 
-                ~ListViewArtist ()
+                virtual ~ListViewArtist ()
                 {
                 }
         };

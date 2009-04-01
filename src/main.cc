@@ -142,6 +142,8 @@ namespace MPX
         mcs->key_register ("main-window", "height", 0); //FIXME:
         mcs->key_register ("main-window", "pos_x", 0);
         mcs->key_register ("main-window", "pos_y", 0);
+        mcs->key_register ("main-window", "paned1", 0);
+        mcs->key_register ("main-window", "paned2", 0);
 
         mcs->domain_register ("ui");
         mcs->key_register ("ui", "show-statusbar", true);
@@ -347,23 +349,37 @@ main (int argc, char ** argv)
 
 #ifdef HAVE_HAL
     try{
+        splash->set_message(_("Starting HAL..."),1/10.);
         services->add(boost::shared_ptr<HAL>(new MPX::HAL));
 #endif //HAVE_HAL
+        splash->set_message(_("Starting Covers"),2/10.);
         services->add(boost::shared_ptr<Covers>(new MPX::Covers));
+
+        splash->set_message(_("Starting Library"),3/10.);
         services->add(boost::shared_ptr<Library>(new MPX::Library));
+
+        splash->set_message(_("Precaching covers..."),4/10.);
         services->get<Covers>("mpx-service-covers")->precache( services->get<Library>("mpx-service-library").get() );
 
+        splash->set_message(_("Starting Playback engine..."),5/10.);
         services->add(boost::shared_ptr<Play>(new MPX::Play));
-        services->get<Play>("mpx-service-play")->reset() ;
 
+        splash->set_message(_("Starting Preferences..."),6/10.);
         services->add(boost::shared_ptr<Preferences>(MPX::Preferences::create()));
 
+        splash->set_message(_("Starting Youki..."),7/10.);
         services->add(boost::shared_ptr<YoukiController>(new YoukiController( conn )));
+
+        splash->set_message(_("Starting Plugins..."),8/10.);
         services->add(boost::shared_ptr<PluginManager>(new MPX::PluginManager));
+
+        splash->set_message(_("Starting Plugin Manager..."),9/10.);
         services->add(boost::shared_ptr<PluginManagerGUI>(MPX::PluginManagerGUI::create()));
 
         services->get<YoukiController>("mpx-service-controller")->get_widget()->show_all() ;
         services->get<YoukiController>("mpx-service-controller")->StartupComplete() ;
+
+        splash->set_message(_("Startup complete!"),10/10.);
 
         delete splash;
         gtk->run() ;

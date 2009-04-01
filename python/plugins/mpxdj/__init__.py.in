@@ -519,7 +519,6 @@ class MPXDJ(mpx.Plugin):
         self.youki.add_info_widget( self.widget, "MPXDJ" )
 
         self.combo        = self.xml.get_widget("combobox")
-        self.label        = self.xml.get_widget("label")
 
         self.header_image = self.xml.get_widget("header-image")
         self.header_image.set_from_file("@PLUGIN_DIR@" + "/plugins-python/mpxdj/mpxdj.png")
@@ -657,7 +656,6 @@ class MPXDJ(mpx.Plugin):
 
     def on_mode_cbox_changed(self, cbox):
 
-        self.label.set_text(self.helptexts[cbox.get_active()])      
         self.notebook.set_current_page(cbox.get_active())       
 
         #self.action[0].handler_block(self.action_handler2)

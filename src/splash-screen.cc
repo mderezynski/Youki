@@ -38,14 +38,14 @@ namespace MPX
     , m_image (Gdk::Pixbuf::create_from_file (build_filename(DATA_DIR, "images" G_DIR_SEPARATOR_S "splash.png")))
     , m_image_w (m_image->get_width())
     , m_image_h (m_image->get_height())
-    , m_bar_w (477)
-    , m_bar_h (3)
+    , m_bar_w (160)
+    , m_bar_h (2)
     , m_bar_x (6)
-    , m_bar_y (158)
+    , m_bar_y (68)
     , m_percent (0.0)
     {
         set_size_request (m_image_w, m_image_h);
-        set_title (_("MPX Starting..."));
+        set_title (_("Youki is starting!"));
         set_skip_taskbar_hint (true);
         set_skip_pager_hint (true);
         set_keep_above (true);
@@ -110,40 +110,34 @@ namespace MPX
         gdk_cairo_set_source_pixbuf (m_cr->cobj(), m_image->gobj(), 0, 0);
         m_cr->paint ();
 
-#if 0
         m_cr->set_operator( Cairo::OPERATOR_ATOP );
         m_cr->set_source_rgba( 1., 1., 1., 1.); 
         m_cr->rectangle( m_bar_x - 2, m_bar_y - 2, m_bar_w + 4 , m_bar_h + 4);
         m_cr->set_line_width (0.5);
         m_cr->stroke ();
-#endif
 
-#if 0
         m_cr->set_operator( Cairo::OPERATOR_ATOP );
         m_cr->set_source_rgba( 1., 1., 1., .55); 
-        m_cr->rectangle( m_bar_x , m_bar_y , m_bar_w, m_bar_h * m_percent);
+        m_cr->rectangle( m_bar_x , m_bar_y , m_bar_w * m_percent, m_bar_h );
         m_cr->fill ();
-#endif
 
-#if 0
         int lw, lh;
 
         Pango::FontDescription desc = get_style()->get_font ();
-        pango_font_description_set_absolute_size (desc.gobj(), 10 * PANGO_SCALE);
+        pango_font_description_set_absolute_size (desc.gobj(), 8 * PANGO_SCALE);
         pango_layout_set_font_description (m_layout->gobj(), desc.gobj ()); 
 
         m_layout->set_markup (m_message); 
         m_layout->get_pixel_size (lw, lh);
 
         m_cr->set_operator( Cairo::OPERATOR_ATOP );
-        m_cr->move_to( m_bar_x - 2, m_bar_y - 17); 
+        m_cr->move_to( m_bar_x - 2, m_bar_y - 3 - lh ); 
         m_cr->set_source_rgba( 1., 1., 1., 1.);
         pango_cairo_show_layout (m_cr->cobj(), m_layout->gobj());
 
         desc = get_style()->get_font ();
         pango_font_description_set_absolute_size (desc.gobj(), 8 * PANGO_SCALE);
         pango_layout_set_font_description (m_layout->gobj(), desc.gobj ()); 
-#endif
 
         return false;
     }

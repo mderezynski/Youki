@@ -452,7 +452,7 @@ class WebBrowser():
 
     def _set_scroll_adjustments_cb(self, page, hadjustment, vadjustment):
 
-        if hadjstument:
+        if hadjustment:
             self._scrolled_window.props.hadjustment = hadjustment
 
         if vadjustment:

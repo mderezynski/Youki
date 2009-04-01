@@ -10,6 +10,10 @@
 #include "mpx/mpx-preferences.hh"
 #include "plugin-manager-gui.hh"
 
+#include "mpx/com/view-album-artist.hh"
+#include "mpx/com/view-album.hh"
+#include "mpx/com/view-tracks.hh"
+
 namespace
 {
     bool
@@ -98,6 +102,13 @@ namespace
 
 namespace MPX
 {
+    struct YoukiController::Private
+    {
+        DataModelFilterArtist_SP_t        FilterModelArtist ;
+        DataModelFilterAlbums_SP_t        FilterModelAlbums ;
+        DataModelFilterTracks_SP_t        FilterModelTracks ;
+    } ;
+
     YoukiController::YoukiController(
         DBus::Connection conn
     )
@@ -106,6 +117,7 @@ namespace MPX
     , Service::Base("mpx-service-controller")
     , m_main_window( 0 )
     , m_seek_position( -1 )
+    , private_( new Private )
     {
         m_C_SIG_ID_metadata_updated =
             g_signal_new(
@@ -190,7 +202,7 @@ namespace MPX
         m_Alignment_Entry   = Gtk::manage( new Gtk::Alignment ) ;
         m_Label_Search      = Gtk::manage( new Gtk::Label(_("_Search:"))) ;
 
-        m_ListViewTracks          = Gtk::manage( new ListView ) ;
+        m_ListViewTracks          = Gtk::manage( new ListViewTracks ) ;
         m_ListViewTracks->signal_track_activated().connect(
             sigc::mem_fun(
                       *this
@@ -315,7 +327,7 @@ namespace MPX
 
         {
                 DataModelTracks_SP_t m ( new DataModelTracks ) ;
-                m_FilterModelTracks = DataModelFilterTracks_SP_t (new DataModelFilterTracks( m )) ;
+                private_->FilterModelTracks = DataModelFilterTracks_SP_t (new DataModelFilterTracks( m )) ;
 
                 ColumnP c1 (new Column(_("Title"))) ;
                 c1->set_column(0) ;
@@ -341,7 +353,7 @@ namespace MPX
                     , 60
                 ) ;
 
-                m_ListViewTracks->set_model( m_FilterModelTracks ) ;
+                m_ListViewTracks->set_model( private_->FilterModelTracks ) ;
 
                 m_ScrolledWinTracks->add( *m_ListViewTracks ) ;
                 m_ScrolledWinTracks->show_all() ;
@@ -355,13 +367,13 @@ namespace MPX
 
         {
                 DataModelArtist_SP_t m (new DataModelArtist) ;
-                m_FilterModelArtist = DataModelFilterArtist_SP_t (new DataModelFilterArtist(m)) ;
+                private_->FilterModelArtist = DataModelFilterArtist_SP_t (new DataModelFilterArtist(m)) ;
 
                 ColumnArtist_SP_t c1 (new ColumnArtist(_("Album Artist"))) ;
                 c1->set_column(0) ;
 
                 m_ListViewArtist->append_column(c1) ;
-                m_ListViewArtist->set_model( m_FilterModelArtist ) ;
+                m_ListViewArtist->set_model( private_->FilterModelArtist ) ;
 
                 m_ScrolledWinArtist->add( *m_ListViewArtist ) ;
                 m_ScrolledWinArtist->show_all() ;
@@ -369,13 +381,13 @@ namespace MPX
 
         {
                 DataModelAlbums_SP_t m ( new DataModelAlbums ) ;
-                m_FilterModelAlbums = DataModelFilterAlbums_SP_t (new DataModelFilterAlbums( m )) ;
+                private_->FilterModelAlbums = DataModelFilterAlbums_SP_t (new DataModelFilterAlbums( m )) ;
 
                 ColumnAlbums_SP_t c1 ( new ColumnAlbums ) ;
                 c1->set_column(0) ;
 
                 m_ListViewAlbums->append_column( c1 ) ;
-                m_ListViewAlbums->set_model( m_FilterModelAlbums ) ;
+                m_ListViewAlbums->set_model( private_->FilterModelAlbums ) ;
 
                 m_ScrolledWinAlbums->add( *m_ListViewAlbums ) ;
                 m_ScrolledWinAlbums->show_all() ;
@@ -429,10 +441,19 @@ namespace MPX
                   *m_main_infoarea
                 , &InfoArea::update_spectrum
         )) ;
+
+        m_Paned2->set_position( mcs->key_get<int>("main-window","paned2") ) ;
+        while (gtk_events_pending()) gtk_main_iteration() ;
+
+        m_Paned1->set_position( mcs->key_get<int>("main-window","paned1") ) ;
+        while (gtk_events_pending()) gtk_main_iteration() ;
     }
 
     YoukiController::~YoukiController ()
     {
+        mcs->key_set<int>("main-window","paned1", m_Paned1->get_position() ) ;
+        mcs->key_set<int>("main-window","paned2", m_Paned2->get_position() ) ;
+
         delete m_control_status_icon ;
         delete m_main_window ;
         m_mlibman_dbus_proxy->Exit () ;
@@ -564,25 +585,25 @@ namespace MPX
                 ) ;
         }
 
-        model_album_artists->m_constraint_artist = m_FilterModelArtist->m_constraint_artist ; 
+        model_album_artists->m_constraint_artist = private_->FilterModelArtist->m_constraint_artist ; 
 
-        model_albums->m_constraint_id_album  = m_FilterModelAlbums->m_constraint_id_album ; 
-        model_albums->m_constraint_id_artist = m_FilterModelAlbums->m_constraint_id_artist ; 
+        model_albums->m_constraint_id_album  = private_->FilterModelAlbums->m_constraint_id_album ; 
+        model_albums->m_constraint_id_artist = private_->FilterModelAlbums->m_constraint_id_artist ; 
     
-        model_tracks->m_constraints = m_FilterModelTracks->m_constraints ;
-        model_tracks->m_constraints_synthetic = m_FilterModelTracks->m_constraints_synthetic ;
+        model_tracks->m_constraints = private_->FilterModelTracks->m_constraints ;
+        model_tracks->m_constraints_synthetic = private_->FilterModelTracks->m_constraints_synthetic ;
 
-        m_FilterModelArtist     = model_album_artists ;
-        m_FilterModelAlbums = model_albums ;
-        m_FilterModelTracks = model_tracks ;
+        private_->FilterModelArtist     = model_album_artists ;
+        private_->FilterModelAlbums = model_albums ;
+        private_->FilterModelTracks = model_tracks ;
 
-        m_ListViewArtist->set_model( m_FilterModelArtist ) ;
-        m_ListViewAlbums->set_model( m_FilterModelAlbums ) ;
-        m_ListViewTracks->set_model( m_FilterModelTracks ) ; 
+        m_ListViewArtist->set_model( private_->FilterModelArtist ) ;
+        m_ListViewAlbums->set_model( private_->FilterModelAlbums ) ;
+        m_ListViewTracks->set_model( private_->FilterModelTracks ) ; 
 
-        m_FilterModelTracks->regen_mapping () ;
-        m_FilterModelArtist->regen_mapping () ;
-        m_FilterModelAlbums->regen_mapping () ;
+        private_->FilterModelTracks->regen_mapping () ;
+        private_->FilterModelArtist->regen_mapping () ;
+        private_->FilterModelAlbums->regen_mapping () ;
     }
 
     void
@@ -680,16 +701,16 @@ namespace MPX
                 {
                     gint64 pos_cpy = pos.get() + 1 ;
 
-                    if( pos_cpy < m_FilterModelTracks->size() )
+                    if( pos_cpy < private_->FilterModelTracks->size() )
                     {
-                        play_track( boost::get<4>(m_FilterModelTracks->row(pos_cpy)) ) ;
+                        play_track( boost::get<4>(private_->FilterModelTracks->row(pos_cpy)) ) ;
                         return ;
                     }
                 }
                 else
-                if( m_FilterModelTracks->size() )
+                if( private_->FilterModelTracks->size() )
                 {
-                    play_track( boost::get<4>(m_FilterModelTracks->row( 0 )) ) ;
+                    play_track( boost::get<4>(private_->FilterModelTracks->row( 0 )) ) ;
                     return ;
                 }
 
@@ -821,7 +842,7 @@ namespace MPX
     {
         m_ListViewAlbums->clear_selection() ;
 
-        m_FilterModelTracks->clear_synthetic_constraints_quiet() ;
+        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
         gint64 id_artist = m_ListViewArtist->get_selected() ;
 
         //// SET UP CONSTRAINTS
@@ -833,7 +854,7 @@ namespace MPX
             constraint = std::set<gint64>() ; 
             constraint.get().insert( id_artist ) ;
         }
-        m_FilterModelAlbums->set_constraint_artist( constraint ) ;
+        private_->FilterModelAlbums->set_constraint_artist( constraint ) ;
 
         if( id_artist != -1 )
         {
@@ -843,18 +864,18 @@ namespace MPX
             c.TargetValue = id_artist ;
             c.MatchType = AQE::MT_EQUAL ;
 
-            m_FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
+            private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
         }
 
-        m_FilterModelAlbums->regen_mapping() ;
-        m_FilterModelTracks->regen_mapping() ;
+        private_->FilterModelAlbums->regen_mapping() ;
+        private_->FilterModelTracks->regen_mapping() ;
     }
 
     void
     YoukiController::on_list_view_ab_selection_changed(
     ) 
     {
-        m_FilterModelTracks->clear_synthetic_constraints_quiet() ;
+        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
         gint64 id_artist = m_ListViewArtist->get_selected() ;
         gint64 id_albums = m_ListViewAlbums->get_selected() ;
 
@@ -866,7 +887,7 @@ namespace MPX
             c.TargetValue = id_albums ;
             c.MatchType = AQE::MT_EQUAL ;
 
-            m_FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
+            private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
         }
         if( id_artist != -1 )
         {
@@ -876,10 +897,10 @@ namespace MPX
             c.TargetValue = id_artist ;
             c.MatchType = AQE::MT_EQUAL ;
 
-            m_FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
+            private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
         }
 
-        m_FilterModelTracks->regen_mapping() ;
+        private_->FilterModelTracks->regen_mapping() ;
     }
 
     void
@@ -893,24 +914,26 @@ namespace MPX
         if( id_artist != -1 )
         {
             m_ListViewArtist->clear_selection() ;
-            m_FilterModelArtist->set_constraint( constraint ) ;
+            private_->FilterModelArtist->set_constraint( constraint ) ;
         }
 
         if( id_albums != -1 )
         {
             m_ListViewAlbums->clear_selection() ;
-            m_FilterModelAlbums->set_constraint_albums( constraint ) ;
-            m_FilterModelAlbums->set_constraint_artist( constraint ) ;
+            private_->FilterModelAlbums->set_constraint_albums( constraint ) ;
+            private_->FilterModelAlbums->set_constraint_artist( constraint ) ;
         }
 
-        m_FilterModelTracks->set_filter( m_Entry->get_text() );
+        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
 
-        m_FilterModelArtist->set_constraint( m_FilterModelTracks->m_constraint_artist ) ;
-        m_FilterModelAlbums->set_constraint_albums( m_FilterModelTracks->m_constraint_albums ) ;
-        m_FilterModelAlbums->set_constraint_artist( m_FilterModelTracks->m_constraint_artist ) ;
+        private_->FilterModelTracks->set_filter( m_Entry->get_text() );
 
-        m_FilterModelArtist->regen_mapping() ;
-        m_FilterModelAlbums->regen_mapping() ;
+        private_->FilterModelArtist->set_constraint( private_->FilterModelTracks->m_constraint_artist ) ;
+        private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;
+        private_->FilterModelAlbums->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
+
+        private_->FilterModelArtist->regen_mapping() ;
+        private_->FilterModelAlbums->regen_mapping() ;
     }
 
     void

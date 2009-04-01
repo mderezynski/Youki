@@ -228,6 +228,10 @@ namespace MPX
                     regen_mapping() ;
                 }
 
+                virtual ~DataModelFilterTracks()
+                {
+                }
+
                 virtual void
                 clear ()
                 {
@@ -948,7 +952,7 @@ namespace MPX
 
         typedef sigc::signal<void, MPX::Track, bool> SignalTrackActivated;
 
-        class ListView : public Gtk::DrawingArea
+        class ListViewTracks : public Gtk::DrawingArea
         {
             public:
 
@@ -1696,7 +1700,7 @@ namespace MPX
                             g_object_set(G_OBJECT(obj), "vadjustment", vadj, NULL); 
                             g_object_set(G_OBJECT(obj), "hadjustment", hadj, NULL);
 
-                            ListView & view = *(reinterpret_cast<ListView*>(data));
+                            ListViewTracks & view = *(reinterpret_cast<ListViewTracks*>(data));
 
                             view.m_prop_vadj.get_value()->set_value(0.);
                             view.m_prop_vadj.get_value()->set_upper( view.m_model->size() * view.m_row_height ) ;
@@ -1705,7 +1709,7 @@ namespace MPX
                             view.m_prop_vadj.get_value()->signal_value_changed().connect(
                                 sigc::mem_fun(
                                     view,
-                                    &ListView::on_vadj_value_changed
+                                    &ListViewTracks::on_vadj_value_changed
                             ));
                     }
 
@@ -1771,7 +1775,7 @@ namespace MPX
                     m_model->signal_changed().connect(
                         sigc::mem_fun(
                             *this,
-                            &ListView::on_model_changed
+                            &ListViewTracks::on_model_changed
                     ));
                 }
 
@@ -1858,9 +1862,9 @@ namespace MPX
                     }
                 }
 
-                ListView ()
+                ListViewTracks ()
 
-                        : ObjectBase( "YoukiListViewTracks" )
+                        : ObjectBase( "YoukiListViewTracksTracks" )
                         , m_previous_drawn_row( 0 )
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
@@ -1906,14 +1910,14 @@ namespace MPX
                     signal_query_tooltip().connect(
                         sigc::mem_fun(
                               *this
-                            , &ListView::query_tooltip
+                            , &ListViewTracks::query_tooltip
                     )) ;
 
                     set_has_tooltip( true ) ;
                     */
                 }
 
-                ~ListView ()
+                virtual ~ListViewTracks ()
                 {
                 }
         };

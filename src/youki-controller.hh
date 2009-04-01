@@ -10,9 +10,6 @@
 #include "kobo-volume.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/mpx-types.hh"
-#include "mpx/com/view-album-artist.hh"
-#include "mpx/com/view-album.hh"
-#include "mpx/com/view-tracks.hh"
 #include "infoarea.hh"
 
 #include "mpx-mlibman-dbus-proxy-actual.hh"
@@ -23,6 +20,10 @@ namespace MPX
 {
     class Covers ;
     class Play ;
+
+    class ListViewTracks ;
+    class ListViewAlbums ;
+    class ListViewArtist ;
 
     class YoukiController
     : public Glib::Object
@@ -46,9 +47,9 @@ namespace MPX
             KoboTitleInfo                   * m_main_titleinfo ;
             KoboVolume                      * m_main_volume ;
 
-            ListViewArtist                      * m_ListViewArtist ;
+            ListViewArtist                  * m_ListViewArtist ;
             ListViewAlbums                  * m_ListViewAlbums ;
-            ListView                        * m_ListViewTracks ;
+            ListViewTracks                  * m_ListViewTracks ;
 
             Gtk::ScrolledWindow             * m_ScrolledWinArtist ;
             Gtk::ScrolledWindow             * m_ScrolledWinAlbums ;
@@ -68,9 +69,8 @@ namespace MPX
 
             Gtk::Notebook                   * m_NotebookPlugins ;
 
-            DataModelFilterArtist_SP_t        m_FilterModelArtist ;
-            DataModelFilterAlbums_SP_t        m_FilterModelAlbums ;
-            DataModelFilterTracks_SP_t        m_FilterModelTracks ;
+            struct Private ;
+            boost::shared_ptr<Private>        private_ ;
 
             Glib::RefPtr<Gdk::Pixbuf>           m_icon ; 
             Cairo::RefPtr<Cairo::ImageSurface>  m_disc ;

@@ -186,9 +186,9 @@ namespace MPX
 
                             if( m_drawer_width == 0 )
                             {
+                                a2->hide() ;
                                 m_drawer_out = false ;
-
-                                resize( get_allocation().get_width(), m_presize_width ) ;
+                                resize( m_presize_width, get_allocation().get_height() ) ;
                                 set_geom_hints( false ) ;
                             }
 
@@ -293,12 +293,10 @@ namespace MPX
                             if( m_expand_direction == EXPAND_NONE )
                             {
                                 m_presize_width = a.get_width() - m_drawer_width ;
-
-                                resize( m_presize_width + m_drawer_width_max, a.get_height() ) ; 
-
-                                set_geom_hints( true ) ;
-
                                 m_expand_direction = EXPAND_OUT ;
+                                a2->show() ;
+                                resize( m_presize_width + m_drawer_width_max, a.get_height() ) ; 
+                                set_geom_hints( true ) ;
                             }
                         }
 

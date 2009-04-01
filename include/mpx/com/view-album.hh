@@ -151,6 +151,10 @@ namespace MPX
                     regen_mapping() ;
                 }
 
+                virtual ~DataModelFilterAlbums()
+                {
+                }
+
                 virtual void
                 set_constraint_albums(
                     const boost::optional<std::set<gint64> >& constraint
@@ -368,7 +372,7 @@ namespace MPX
 
                     Cairo::RefPtr<Cairo::ImageSurface> s = get<0>(data_row) ;
 
-                    if( s )
+                    if( row > 0 && s )
                     {
                             r.x         = xpos + (m_width - s->get_width()) / 2 ; 
                             r.y         = ypos ;
@@ -419,19 +423,22 @@ namespace MPX
                     layout->get_pixel_size (width, height) ;
                     cairo->move_to(
                           xpos + (m_width - width) / 2.
-                        , r.y + 2 
+                        , (row > 0) ? (r.y + 2) : (r.y + ((row_height - height) / 2))
                     ) ;
                     pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
 
                     //// ALBUM
 
-                    layout->set_text( get<3>(data_row) )  ;
-                    layout->get_pixel_size (width, height) ;
-                    cairo->move_to(
-                          xpos + (m_width - width) / 2.
-                        , r.y + 84 
-                    ) ;
-                    pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+                    if( row > 0 )
+                    {
+                            layout->set_text( get<3>(data_row) )  ;
+                            layout->get_pixel_size (width, height) ;
+                            cairo->move_to(
+                                  xpos + (m_width - width) / 2.
+                                , r.y + 84 
+                            ) ;
+                            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+                    }
 
                     cairo->restore() ;
                 }
@@ -1025,7 +1032,7 @@ namespace MPX
                     initialize_metrics();
                }
 
-                ~ListViewAlbums ()
+                virtual ~ListViewAlbums ()
                 {
                 }
         };
