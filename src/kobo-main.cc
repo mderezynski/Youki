@@ -38,17 +38,17 @@ namespace MPX
     MainWindow::~MainWindow ()
     {
         get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-y")));
-        get_size( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-w")), m_presize_height );
+        get_size( m_presize_width, Mcs::Key::adaptor<int>(mcs->key("mpx", "window-h")) );
     }
 
     MainWindow::MainWindow ()
 
         : m_drawer_out( false )
-        , m_presize_height( 0 )
-        , m_drawer_height( 0 )
+        , m_presize_width( 0 )
+        , m_drawer_width( 0 )
         , m_bottom_pad( 0 )
         , m_quit_clicked( false )
-        , m_drawer_height_max( 300 )
+        , m_drawer_width_max( 500 )
         , m_expand_direction( EXPAND_NONE )
 
                      {
@@ -71,21 +71,22 @@ namespace MPX
                             , 20
                         ) ;
 
-                        m_presize_height = get_allocation().get_height() ;
+                        m_presize_width = get_allocation().get_width() ;
 
                         a1 = Gtk::manage( new Gtk::Alignment  ) ;
                         a2 = Gtk::manage( new Gtk::Alignment  ) ;
 
-                        a2->property_yalign() = 0. ;
+                        //a2->property_yalign() = 0. ;
 
                         a1->property_top_padding() = 20 ;
                         a1->property_bottom_padding() = 16 ;
-                        a2->property_bottom_padding() = 12 ;
+
+                        //a2->property_bottom_padding() = 12 ;
 
                         a1->set_border_width( 8 ) ;
                         a2->set_border_width( 8 ) ;
 
-                        v = Gtk::manage( new Gtk::VBox ) ;
+                        v = Gtk::manage( new Gtk::HBox ) ;
                         v->pack_start( *a1, 0, 0, 0 ) ;
                         v->pack_start( *a2, 0, 0, 0 ) ;
 
@@ -128,8 +129,8 @@ namespace MPX
                     {
                         Gdk::Geometry geom ;
 
-                        geom.min_height = 300 + ( with_drawer_height ? m_drawer_height_max : 0 ) ;
-                        geom.min_width = 524 ;
+                        geom.min_height = 300 ; 
+                        geom.min_width = 524 + ( with_drawer_height ? m_drawer_width_max : 0 ) ;
 
                         set_geometry_hints(
                               *this
@@ -145,12 +146,12 @@ namespace MPX
 
                         if( m_expand_direction == EXPAND_OUT )
                         {
-                            m_drawer_height = std::min( m_drawer_height + 20, m_drawer_height_max ) ;
+                            m_drawer_width = std::min( m_drawer_width + 20, m_drawer_width_max ) ;
 
-                            a1->set_size_request( -1, m_presize_height ) ;
-                            a2->set_size_request( -1, m_drawer_height ) ;
+                            a1->set_size_request( m_presize_width, -1 ) ;
+                            a2->set_size_request( m_drawer_width, -1 ) ;
 
-                            if( m_drawer_height == m_drawer_height_max )
+                            if( m_drawer_width == m_drawer_width_max )
                             {
                                 m_drawer_out = true ;
                             }
@@ -158,7 +159,7 @@ namespace MPX
                             queue_draw () ;
 
                             m_expand_direction =
-                                  m_drawer_height < m_drawer_height_max
+                                  m_drawer_width < m_drawer_width_max
                                 ? EXPAND_OUT 
                                 : EXPAND_NONE
                             ;
@@ -166,23 +167,23 @@ namespace MPX
                         else
                         if( m_expand_direction == EXPAND_IN )
                         {
-                            m_drawer_height = std::max( m_drawer_height - 20, 0 ) ;
+                            m_drawer_width = std::max( m_drawer_width - 20, 0 ) ;
 
-                            a1->set_size_request( -1, m_presize_height ) ;
-                            a2->set_size_request( -1, m_drawer_height ) ;
+                            a1->set_size_request( m_presize_width, -1 ) ;
+                            a2->set_size_request( m_drawer_width, -1 ) ;
 
-                            if( m_drawer_height == 0 )
+                            if( m_drawer_width == 0 )
                             {
                                 m_drawer_out = false ;
 
-                                resize( get_allocation().get_width(), m_presize_height ) ;
+                                resize( get_allocation().get_width(), m_presize_width ) ;
                                 set_geom_hints( false ) ;
                             }
 
                             queue_draw () ;
 
                             m_expand_direction =
-                                  m_drawer_height > 0
+                                  m_drawer_width > 0
                                 ? EXPAND_IN
                                 : EXPAND_NONE
                             ;
@@ -194,6 +195,8 @@ namespace MPX
     bool
     MainWindow::on_button_press_event( GdkEventButton* event )
                     {
+                        const Gtk::Allocation& a = get_allocation() ;
+
                         if( event->window != GTK_WIDGET(gobj())->window )
                         {
                             return false ;
@@ -242,7 +245,7 @@ namespace MPX
                             return false ;
                         }
                         else
-                        if( (event->y > (m_presize_height - 16)) && (event->y < m_presize_height) && (event->x > (get_allocation().get_width() - 16)) )
+                        if( (event->x > (m_presize_width - 16)) && (event->x < m_presize_width) && (event->y > (a.get_height() - 16)) )
                         {
                             begin_resize_drag(
                                   Gdk::WINDOW_EDGE_SOUTH_EAST
@@ -255,7 +258,7 @@ namespace MPX
                             return false ;
                         }
                         else
-                        if( (event->y > (m_presize_height - 16)) && (event->y < m_presize_height) && (event->x >=0) && (event->x < 16) )
+                        if( (event->x < 16) && (event->y > a.get_height()-16) ) 
                         {
                             begin_resize_drag(
                                   Gdk::WINDOW_EDGE_SOUTH_WEST
@@ -268,7 +271,7 @@ namespace MPX
                             return false ;
                         }
                         else
-                        if( (event->y <= m_presize_height) && (event->y > m_presize_height-16) )
+                        if( (event->y <= a.get_height()) && (event->y > a.get_height()-16) )
                         {
                             if( m_drawer_out )
                             {
@@ -277,9 +280,9 @@ namespace MPX
                             else
                             if( m_expand_direction == EXPAND_NONE )
                             {
-                                m_presize_height = get_allocation().get_height() - m_drawer_height ;
+                                m_presize_width = a.get_width() - m_drawer_width ;
 
-                                resize( get_allocation().get_width(), m_presize_height + m_drawer_height_max ) ; 
+                                resize( m_presize_width + m_drawer_width_max, a.get_height() ) ; 
 
                                 set_geom_hints( true ) ;
 
@@ -296,13 +299,13 @@ namespace MPX
                         Glib::Mutex::Lock L (m_size_lock) ;
 
                         if( m_expand_direction != EXPAND_NONE || m_drawer_out )
-                            m_presize_height = a.get_height() - m_drawer_height_max ; 
+                            m_presize_width = a.get_width() - m_drawer_width_max ; 
                         else
-                            m_presize_height = a.get_height() ; 
+                            m_presize_width = a.get_width() ; 
 
                         Gtk::Widget::on_size_allocate( a ) ;
 
-                        a1->set_size_request( a.get_width(), m_presize_height ) ;
+                        a1->set_size_request( m_presize_width, a.get_height() ) ;
 
                         queue_draw() ;
                         gdk_flush () ;
@@ -323,10 +326,10 @@ namespace MPX
                                 cr->set_source_rgba( 0.65, 0.65, 0.65, .4 ) ;
                                 RoundedRectangle(
                                       cr
+                                    , m_presize_width - 16 
                                     , 0 
-                                    , m_presize_height - 16
-                                    , get_allocation().get_width()
-                                    , m_drawer_height + 16 
+                                    , m_drawer_width + 16 
+                                    , get_allocation().get_height() 
                                     , rounding
                                     , CairoCorners::CORNERS( CairoCorners::BOTTOMLEFT | CairoCorners::BOTTOMRIGHT )
                                 ) ;
@@ -340,8 +343,8 @@ namespace MPX
                               cr
                             , 0
                             , 0
-                            , get_allocation().get_width()
-                            , get_allocation().get_height() - ( ( m_expand_direction != EXPAND_NONE || m_drawer_out ) ? m_drawer_height_max : 0 )
+                            , get_allocation().get_width() - ( ( m_expand_direction != EXPAND_NONE || m_drawer_out ) ? m_drawer_width_max : 0 )
+                            , get_allocation().get_height()
                             , rounding
                         ) ;
                         cr->fill_preserve() ;
@@ -393,34 +396,49 @@ namespace MPX
 
 
                         //// ICONS
+
+                        GdkRectangle r ;
+
+                        r.x         = m_presize_width - m_title_logo->get_width() - 12 ;
+                        r.y         = (20 / 2) - (m_title_logo->get_height()/2) ; 
+                        r.width     = m_title_logo->get_width() ;
+                        r.height    = m_title_logo->get_height() ;
+
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_title_logo 
-                            , get_allocation().get_width() - m_title_logo->get_width() - 12
-                            , (20 / 2) - (m_title_logo->get_height()/2) 
+                            , r.x 
+                            , r.y 
                         ) ;
 
                         cr->rectangle(
-                              get_allocation().get_width() - m_title_logo->get_width() - 12
-                            , (20 / 2) - (m_title_logo->get_height()/2) 
-                            , m_title_logo->get_width()
-                            , m_title_logo->get_height()
+                              r.x 
+                            , r.y 
+                            , r.width 
+                            , r.height 
                         ) ;
+
                         cr->fill () ;
+
+                        r.x         = 8 ; 
+                        r.y         = (20 - m_button_off->get_height()) / 2. ;
+                        r.width     = m_button_off->get_width() ;
+                        r.height    = m_button_off->get_height() ;
 
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_button_off 
-                            , 8 
-                            , (20 - m_button_off->get_height()) / 2. 
+                            , r.x 
+                            , r.y 
                         ) ;
 
                         cr->rectangle(
-                              8 
-                            , (20 - m_title_logo->get_height()) / 2.
-                            , m_title_logo->get_width()
-                            , m_title_logo->get_height()
+                              r.x 
+                            , r.y 
+                            , r.width 
+                            , r.height 
                         ) ;
+
                         cr->save () ;
                         cr->clip () ;
                         cr->paint_with_alpha( m_quit_clicked ? .9 : .6 ) ; 
@@ -436,8 +454,8 @@ namespace MPX
 
                         RoundedTriangleRight(
                               cr
-                            , get_allocation().get_width() - 16
-                            , m_presize_height
+                            , m_presize_width - 16
+                            , get_allocation().get_height()
                             , 16
                             , 16
                             , rounding
@@ -446,7 +464,7 @@ namespace MPX
                         RoundedTriangleLeft(
                               cr
                             , 16 
-                            , m_presize_height
+                            , get_allocation().get_height()
                             , 16
                             , 16
                             , rounding

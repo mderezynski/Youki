@@ -106,8 +106,8 @@ namespace MPX
         {
                 typedef std::vector<ModelAA_t::iterator> RowRowMapping;
 
-                RowRowMapping           m_mapping ;
-                std::set<gint64>        m_constraint_artist ;
+                RowRowMapping                       m_mapping ;
+                boost::optional<std::set<gint64> >  m_constraint_artist ;
 
                 DataModelFilterAA(DataModelAA_SP_t & model)
                 : DataModelAA(model->m_realmodel)
@@ -117,7 +117,7 @@ namespace MPX
 
                 virtual void
                 set_constraint(
-                    const std::set<gint64>& constraint
+                    const boost::optional<std::set<gint64> >& constraint
                 )
                 {
                     m_constraint_artist = constraint ;
@@ -127,7 +127,7 @@ namespace MPX
                 clear_constraint(
                 )
                 {
-                    m_constraint_artist.clear() ;
+                    m_constraint_artist.reset() ;
                 }
 
                 virtual void
@@ -191,7 +191,7 @@ namespace MPX
                     {
                         const Row2& row = *i;
 
-                        int truth = (m_constraint_artist.empty() || m_constraint_artist.count( get<1>(row) )) ;
+                        int truth = !m_constraint_artist || m_constraint_artist.get().count( get<1>(row)) ;
 
                         if( truth )
                         {
@@ -815,8 +815,6 @@ namespace MPX
                     {
                         m_prop_vadj.get_value()->set_value(0.);
                     } 
-
-                    m_selection.reset();
 
                     m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
                     m_prop_vadj.get_value()->set_value(0.);

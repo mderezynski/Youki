@@ -212,8 +212,8 @@ namespace MPX
                 boost::optional<gint64>                 m_active_track ;
                 boost::optional<gint64>                 m_local_active_track ;
                 gint64                                  m_position ;
-                std::set<gint64>                        m_constraint_albums ;
-                std::set<gint64>                        m_constraint_artist ;
+                boost::optional<std::set<gint64> >      m_constraint_albums ;
+                boost::optional<std::set<gint64> >      m_constraint_artist ;
 
                 typedef std::map<std::string, RowRowMapping>                MappingCache ; 
                 typedef std::map<std::string, std::set<Model_t::iterator> > FragmentCache ;
@@ -463,8 +463,8 @@ namespace MPX
 
                     if( text.empty() )
                     {
-                        m_constraint_albums.clear() ;
-                        m_constraint_artist.clear() ;
+                        m_constraint_albums.reset() ;
+                        m_constraint_artist.reset() ;
 
                         for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                         {
@@ -553,8 +553,8 @@ namespace MPX
                             }
                         }
 
-                        m_constraint_albums.clear() ;
-                        m_constraint_artist.clear() ;
+                        m_constraint_albums = std::set<gint64>() ;
+                        m_constraint_artist = std::set<gint64>() ;
 
                         for( RowSet_t::iterator i = output.begin() ; i != output.end(); ++i )
                         {
@@ -573,8 +573,8 @@ namespace MPX
                                 new_mapping.push_back( *i ) ;
                             }
 
-                            m_constraint_albums.insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                            m_constraint_artist.insert( get<6>(*(*i)) ) ;
+                            m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+                            m_constraint_artist.get().insert( get<6>(*(*i)) ) ;
                         }
                     }
 
@@ -606,8 +606,8 @@ namespace MPX
 
                     if( text.empty() )
                     {
-                        m_constraint_albums.clear() ;
-                        m_constraint_artist.clear() ;
+                        m_constraint_albums.reset() ;
+                        m_constraint_artist.reset() ;
 
                         for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                         {
@@ -696,8 +696,8 @@ namespace MPX
                             }
                         }
 
-                        m_constraint_albums.clear() ;
-                        m_constraint_artist.clear() ;
+                        m_constraint_albums = std::set<gint64>() ;
+                        m_constraint_artist = std::set<gint64>() ;
 
                         for( RowSet_t::iterator i = output.begin() ; i != output.end(); ++i )
                         {
@@ -716,8 +716,8 @@ namespace MPX
                                 new_mapping.push_back( *i ) ;
                             }
 
-                            m_constraint_albums.insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                            m_constraint_artist.insert( get<6>(*(*i)) ) ;
+                            m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
+                            m_constraint_artist.get().insert( get<6>(*(*i)) ) ;
                         }
                     }
 

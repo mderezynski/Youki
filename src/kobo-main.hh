@@ -14,8 +14,8 @@ namespace MPX
                     Glib::RefPtr<Gdk::Pixbuf>   m_button_off ;
 
                     bool                        m_drawer_out ;
-                    int                         m_presize_height ;
-                    int                         m_drawer_height ;
+                    int                         m_presize_width ;
+                    int                         m_drawer_width ;
                     int                         m_bottom_pad ;
                     bool                        m_quit_clicked ;
 
@@ -26,7 +26,7 @@ namespace MPX
                         , EXPAND_NONE
                     } ; 
 
-                    const int                   m_drawer_height_max ;
+                    const int                   m_drawer_width_max ;
 
                     ExpandDirection             m_expand_direction ;        
 
@@ -35,7 +35,7 @@ namespace MPX
                     Gtk::Alignment            * a1
                                             , * a2 ; 
 
-                    Gtk::VBox                 * v ;
+                    Gtk::HBox                 * v ;
 
                     sigc::signal<void>          SignalQuit ;
 

@@ -22,6 +22,7 @@ public:
     {
         connect_signal(MLibMan_proxy, ScanStart, _ScanStart_stub);
         connect_signal(MLibMan_proxy, ScanEnd, _ScanEnd_stub);
+        connect_signal(MLibMan_proxy, NewAlbum, _NewAlbum_stub);
     }
 
 public:
@@ -53,6 +54,7 @@ public:
      */
     virtual void ScanStart() = 0;
     virtual void ScanEnd() = 0;
+    virtual void NewAlbum(const int64_t& argin0, const std::string& argin1, const std::string& argin2, const std::string& argin3, const std::string& argin4, const std::string& argin5) = 0;
 
 private:
 
@@ -65,6 +67,18 @@ private:
     void _ScanEnd_stub(const ::DBus::SignalMessage &sig)
     {
         ScanEnd();
+    }
+    void _NewAlbum_stub(const ::DBus::SignalMessage &sig)
+    {
+        ::DBus::MessageIter ri = sig.reader();
+
+        int64_t arg0; ri >> arg0;
+        std::string arg1; ri >> arg1;
+        std::string arg2; ri >> arg2;
+        std::string arg3; ri >> arg3;
+        std::string arg4; ri >> arg4;
+        std::string arg5; ri >> arg5;
+        NewAlbum(arg0, arg1, arg2, arg3, arg4, arg5);
     }
 };
 

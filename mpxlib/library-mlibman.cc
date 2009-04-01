@@ -424,10 +424,15 @@ namespace MPX
 
         void
                 Library_MLibMan::on_new_album(
-                    gint64 album_id
+                      gint64                album_id
+                    , const std::string&    s1
+                    , const std::string&    s2
+                    , const std::string&    s3
+                    , const std::string&    s4
+                    , const std::string&    s5
                 )
                 {
-                        Signals.NewAlbum.emit( album_id );
+                        Signals.NewAlbum.emit( album_id, s1, s2, s3, s4, s5 );
                 }
 
         void

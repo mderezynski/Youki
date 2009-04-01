@@ -157,7 +157,12 @@ namespace MPX
         public:
 
             typedef sigc::signal<void,
-                gint64 /*album id*/>                            SignalNewAlbum; 
+                  gint64
+                , std::string
+                , std::string
+                , std::string
+                , std::string
+                , std::string>                                  SignalNewAlbum; 
 
             typedef sigc::signal<void,
                 gint64 /*artist id*/>                           SignalNewArtist;
@@ -258,12 +263,17 @@ namespace MPX
 
             void
             on_new_album(
-                gint64
+                  gint64
+                , const std::string&
+                , const std::string&
+                , const std::string&
+                , const std::string&
+                , const std::string&
             ) ;
 
             void
             on_new_artist(
-                gint64
+                  gint64
             ) ;
 
             void

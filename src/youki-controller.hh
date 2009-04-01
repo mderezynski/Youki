@@ -8,6 +8,7 @@
 #include "kobo-cover.hh"
 #include "kobo-titleinfo.hh"
 #include "kobo-volume.hh"
+#include "mpx/mpx-services.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/com/view-albumartist.hh"
 #include "mpx/com/view-albums.hh"
@@ -20,12 +21,15 @@
 
 namespace MPX
 {
+    class Covers ;
     class Play ;
+
     class YoukiController
     : public Glib::Object
     , public ::info::backtrace::Youki::App_adaptor
     , public DBus::ObjectAdaptor
     , public DBus::IntrospectableAdaptor
+    , public Service::Base
     {
         protected:
 
@@ -69,16 +73,18 @@ namespace MPX
             Glib::RefPtr<Gdk::Pixbuf>           m_icon ; 
             Cairo::RefPtr<Cairo::ImageSurface>  m_disc ;
             Cairo::RefPtr<Cairo::ImageSurface>  m_disc_multiple ;
-
+    
+            Covers                          * m_covers ;
             Play                            * m_play ;
             gint64                            m_seek_position ;
     
             boost::optional<MPX::Track>       m_current_track ;          
-            Glib::Mutex                       m_current_track_lock ;
 
             info::backtrace::Youki::MLibMan_proxy_actual  * m_mlibman_dbus_proxy ;
 
             sigc::connection                  m_conn1, m_conn2, m_conn3 ;
+
+            guint                             m_C_SIG_ID_metadata_updated ;
 
         public: 
 
@@ -118,15 +124,12 @@ namespace MPX
                 , bool              /*play or not*/
             ) ;
 
-            enum ModelOrigin
-            {
-                  ORIGIN_MODEL_ALBUM_ARTISTS
-                , ORIGIN_MODEL_ALBUMS
-            } ;
+            void
+            on_list_view_aa_selection_changed(
+            ) ;
 
             void
-            on_list_view_selection_changed(
-                ModelOrigin
+            on_list_view_ab_selection_changed(
             ) ;
 
             //// MISCELLANEOUS WIDGETS 
@@ -176,10 +179,22 @@ namespace MPX
         protected:
 
             void
-            reload_library() ;
+            on_library_scan_end() ;
 
             void
-            on_library_scan_end() ;
+            on_library_new_album(
+                  gint64
+                , const std::string&
+                , const std::string&
+                , const std::string&
+                , const std::string&
+                , const std::string&
+            ) ;
+
+        protected:
+
+            void
+            reload_library() ;
 
             void
             initiate_quit() ;
@@ -219,6 +234,10 @@ namespace MPX
             get_metadata(
             )
             {
+                if( m_current_track )
+                    return m_current_track.get() ;
+                else
+                    throw std::runtime_error("No current track!") ;
             }
 
             void
@@ -229,10 +248,12 @@ namespace MPX
 
             void        
             add_info_widget(
-                  Gtk::Widget*
-                , const std::string& name
+                  Gtk::Widget*          w
+                , const std::string&    name
             )
             {
+                w->set_size_request( -1, 280 ) ; 
+                m_main_window->set_widget_drawer( *w ) ; 
             }
 
             void

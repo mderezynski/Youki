@@ -96,7 +96,7 @@ namespace MPX
             typedef sigc::signal<void>                              SignalScanStart_t ;
             typedef sigc::signal<void>                              SignalScanEnd_t ;
             typedef sigc::signal<void, ScanSummary const&>          SignalScanSummary_t ;
-            typedef sigc::signal<void, gint64>                      SignalNewAlbum_t ;
+            typedef sigc::signal<void, gint64, std::string, std::string, std::string, std::string, std::string> SignalNewAlbum_t ;
             typedef sigc::signal<void, gint64>                      SignalNewArtist_t ;
             typedef sigc::signal<void, Track&, gint64, gint64>      SignalNewTrack_t ;
             typedef sigc::signal<void, Track&, gint64, gint64>      SignalTrackUpdated_t ;

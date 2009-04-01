@@ -49,7 +49,6 @@ body {
 }
 
 .SectionHeaderSmall {
-
     background-color: #1d96dc;
     border-color: #1d96dc;
     border-width: 4px;
@@ -64,11 +63,6 @@ body {
 }
 
 .SectionContentSmall {
-    -webkit-border-bottom-left-radius: 10px;
-    -webkit-border-bottom-right-radius: 10px;
-    border-color: #dfdfdf;
-    border-width: 2px;
-    border-style: solid;
     padding: 0.5em;
     margin-bottom: 1.5em;
     background-color: #dfdfdf;
@@ -85,20 +79,14 @@ body {
     height: 2em;
     line-height: 2em;
     padding-left: 0.5em;
-    -webkit-border-top-left-radius: 10px;
-    -webkit-border-top-right-radius: 10px;
+    -webkit-border-top-left-radius: 2px;
+    -webkit-border-top-right-radius: 2px;
 }
 
 .SectionContent {
-    -webkit-border-bottom-left-radius: 10px;
-    -webkit-border-bottom-right-radius: 10px;
-    border-color: #1d96dc;
-    border-width: 2px;
-    border-style: solid;
     padding: 0.5em;
     margin-bottom: 1.5em;
     background-color: #ffffff;
-    font-size: 115%;
 }
 
 .InfoBadge {
@@ -398,6 +386,7 @@ class WebBrowser():
                               self._javascript_script_prompt_cb)
 
         self._scrolled_window = gtk.ScrolledWindow()
+        self._scrolled_window.props.border_width = 0
         self._scrolled_window.props.hscrollbar_policy = gtk.POLICY_AUTOMATIC
         self._scrolled_window.props.vscrollbar_policy = gtk.POLICY_AUTOMATIC
         self._scrolled_window.add(self._browser)
@@ -407,10 +396,13 @@ class WebBrowser():
 
         self._statusbar = WebStatusBar()
 
-        self._vbox = gtk.VBox(spacing=4)
-        self._vbox.pack_start(self._toolbar, expand=False, fill=False)
-        self._vbox.pack_start(self._scrolled_window)
+#        self._vbox = gtk.VBox(spacing=4)
+#        self._vbox.pack_start(self._toolbar, expand=False, fill=False)
+#        self._vbox.pack_start(self._scrolled_window)
         #self._vbox.pack_end(self._statusbar, expand=False, fill=False)
+#        self._vbox.show_all()
+
+        self._vbox = self._scrolled_window
         self._vbox.show_all()
 
     def get_entry(self):
@@ -459,8 +451,12 @@ class WebBrowser():
         print "selection changed"
 
     def _set_scroll_adjustments_cb(self, page, hadjustment, vadjustment):
-        self._scrolled_window.props.hadjustment = hadjustment
-        self._scrolled_window.props.vadjustment = vadjustment
+
+        if hadjstument:
+            self._scrolled_window.props.hadjustment = hadjustment
+
+        if vadjustment:
+            self._scrolled_window.props.vadjustment = vadjustment
 
     def _javascript_console_message_cb(self, page, message, line, sourceid):
         self._statusbar.show_javascript_info()
@@ -599,7 +595,7 @@ class ArtistInfoQuery (threading.Thread):
                 self.html += "<div class='SectionContent'>"
                 self.html += "<table><tr valign='top'><td valign='top'>"
                 self.html += "<img src='%s'/>" % artist_info["picture"]
-                self.html += "</td><td>"
+                self.html += "</td><td width='90%'>"
 
                 value = artist_info["wikiText"]
                 re1 = re.compile("(\\[[^\\]]+\\])")
@@ -609,7 +605,7 @@ class ArtistInfoQuery (threading.Thread):
 
                 if len(value) > 0:
                     self.html += value 
-                    self.html += "<a href='%s'>(%s)</a>" % (artist_info["wikiPageUrl"], _("more"))
+                    self.html += "<div style='text-align: right'><a href='%s'>(%s)</a></div>" % (artist_info["wikiPageUrl"], _("more"))
 
                 self.html += "</td></tr></table>"
                 self.html += "</div>"
@@ -697,18 +693,18 @@ class TrackInfoQuery (threading.Thread):
         value = re1.sub("",value)
         value = re2.sub("",value)
         if len(value) > 0:
-            self.html += "<span style='font-size: 115%'>" + value + "</span>"
+            self.html += value 
             self.html += "<a href='%s'>(%s)</a>" % (self.artist_info["wikiPageUrl"], _("more"))
         self.html += "</td><td style='width: 20%'>"
 
-        self.html += "<table style='width: 100%' cellspacing=0 cellpadding=0>"
-        self.html += "<tr><td class='InfoBadge'><span style='width: 100%'>Similar Artists</span></td></tr>"
-        self.html += "<tr><td class='InfoBadgeContent'>"
-        if self.artist_info["similar"] and len(self.artist_info["similar"]):
-            for artist in self.artist_info["similar"]:
-                self.html += getEntityLink(artist, "", "artist")
-                self.html += "<br/>"
-        self.html += "</td></tr></table>"
+#        self.html += "<table style='width: 100%' cellspacing=0 cellpadding=0>"
+#        self.html += "<tr><td class='InfoBadge'><span style='width: 100%'>Similar Artists</span></td></tr>"
+#        self.html += "<tr><td class='InfoBadgeContent'>"
+#        if self.artist_info["similar"] and len(self.artist_info["similar"]):
+#            for artist in self.artist_info["similar"]:
+#                self.html += getEntityLink(artist, "", "artist")
+#                self.html += "<br/>"
+#        self.html += "</td></tr></table>"
 
         self.html += "</td></tr></table>"
         self.html += "</div>"
@@ -954,9 +950,7 @@ class TrackInfoQuery (threading.Thread):
 
 class TrackInfo:
 
-    def __init__(self, xml, mpx):
-
-        self.mpx = mpx
+    def __init__(self, xml):
 
         self.query = ws.Query(musicbrainz2.webservice.WebService("www.uk.musicbrainz.org"))
         self.wsinc = musicbrainz2.webservice.TrackIncludes(trackRelations=True,artist=True,puids=True,releases=True,artistRelations=True,releaseRelations=True,urlRelations=True)
@@ -1103,22 +1097,22 @@ class LiveInfo(mpx.Plugin):
 
     """The Trackinfo Plugin provides a Last.fm/Musicbrainz based track info for the currently played track."""
 
-    def __init__(self,id,player,mcs):
+    def __init__(self,id,youki,mcs):
     
         self.id = id
-        self.player = player
-        self.xml = gtk.glade.XML("@PLUGIN_DIR@" + "/plugins-python/trackinfo-webkit/trackinfo-webkit.glade")
-        self.vbox = self.xml.get_widget("vbox")
+        self.youki = youki
+        self.xml = gtk.glade.XML( "@PLUGIN_DIR@" + "/plugins-python/trackinfo-webkit/trackinfo-webkit.glade" )
+        self.vbox = self.xml.get_widget( "vbox" )
         self.vbox.unparent()
-        self.info = TrackInfo(self.xml,self.player)
+        self.info = TrackInfo( self.xml )
 
     def activate(self):
 
-        self.player_infoarea_click_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
-        self.player.add_info_widget(self.vbox, _("Browser"))
+        self.youki_metadata_updated_id = self.youki.gobj().connect("metadata-updated", self.metadata_updated)
+        self.youki.add_info_widget(self.vbox, _("Browser"))
 
         try:
-            self.info.run(self.player.get_metadata())
+            self.info.run(self.youki.get_metadata())
         except:
             pass # We just try to display it after activation
 
@@ -1126,8 +1120,8 @@ class LiveInfo(mpx.Plugin):
 
     def deactivate(self):
 
-        self.player.remove_info_widget(self.vbox)
-        self.player.gobj().disconnect(self.player_infoarea_click_id)
+        self.youki.remove_info_widget(self.vbox)
+        self.youki.gobj().disconnect(self.youki_metadata_updated_id)
         self.info.clear()
 
         return True
@@ -1135,7 +1129,7 @@ class LiveInfo(mpx.Plugin):
     def metadata_updated(self, blah):
 
         try:
-            self.info.run(self.player.get_metadata())
+            self.info.run(self.youki.get_metadata())
         except Exception, e:
             print e
 

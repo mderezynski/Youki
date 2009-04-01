@@ -1,4 +1,4 @@
-[MPX Plugin]
+[YoukiPlugin]
 Loader=python
 Module=trackinfo-webkit
 IAge=1
