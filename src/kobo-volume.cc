@@ -247,4 +247,33 @@ namespace MPX
 
         return true ;
     }
+
+    bool
+    KoboVolume::on_scroll_event(
+        GdkEventScroll* event
+    ) 
+    {
+        if( event->direction == GDK_SCROLL_DOWN )
+        {
+            m_volume = m_volume - 3 ; 
+            m_volume = std::max( m_volume, 0 ) ;
+            m_volume = std::min( m_volume, 100 ) ;
+
+            m_SIGNAL_set_volume.emit( m_volume ) ;
+
+            queue_draw () ;
+        }
+        else if( event->direction == GDK_SCROLL_UP )
+        {
+            m_volume = m_volume + 3 ; 
+            m_volume = std::max( m_volume, 0 ) ;
+            m_volume = std::min( m_volume, 100 ) ;
+
+            m_SIGNAL_set_volume.emit( m_volume ) ;
+
+            queue_draw () ;
+        }
+
+        return true ;
+    }
 }
