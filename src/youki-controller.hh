@@ -10,9 +10,9 @@
 #include "kobo-volume.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/mpx-types.hh"
-#include "mpx/com/view-albumartist.hh"
-#include "mpx/com/view-albums.hh"
-#include "mpx/com/view-tracklist.hh"
+#include "mpx/com/view-album-artist.hh"
+#include "mpx/com/view-album.hh"
+#include "mpx/com/view-tracks.hh"
 #include "infoarea.hh"
 
 #include "mpx-mlibman-dbus-proxy-actual.hh"

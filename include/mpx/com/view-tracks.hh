@@ -42,7 +42,7 @@ namespace MPX
         typedef sigc::signal<void, gint64>                                                              Signal0 ;
         typedef std::map<gint64, Model_t::iterator>                                                     IdIterMap_t ;
 
-        struct DataModelTracks : public sigx::trackable
+        struct DataModelTracks : public sigc::trackable
         {
                 Model_SP_t      m_realmodel;
                 Signal0         m_changed;
@@ -585,8 +585,8 @@ namespace MPX
 
                     if( new_mapping != m_mapping )
                     {
-                        scan_active () ;
                         std::swap( new_mapping, m_mapping ) ;
+                        scan_active () ;
                         m_changed.emit( m_position ) ;
                     }                
                 }
@@ -728,8 +728,8 @@ namespace MPX
 
                     if( new_mapping != m_mapping )
                     {
-                        scan_active () ;
                         std::swap( new_mapping, m_mapping ) ;
+                        scan_active () ;
                         m_changed.emit( m_position ) ;
                     }
                 }
