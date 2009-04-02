@@ -1233,11 +1233,7 @@ namespace MPX
 
                     if( event->type == GDK_BUTTON_PRESS )
                     {
-                        if( !has_focus )
-                        {
-                            grab_focus() ;
-                            return true ;                    
-                        }
+                        grab_focus() ;
 
                         if( event->y < (m_row_height+4))
                         {
@@ -1256,23 +1252,23 @@ namespace MPX
                             return true;
                         }
     
-                        gint64 row = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
+                        int row = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
+
+                        m_selection.clear();
+                        m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
+                        m_clicked_row = row ;
+                        m_clicked = true ;
+                        queue_draw() ;
+                    }
+                    else
+                    if( event->type == GDK_2BUTTON_PRESS )
+                    {
+                        int row = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
 
                         if( row < m_model->size() )
                         {
-                            if( event->x < m_columns[0]->get_width() )
-                            {
-                                MPX::Track track = get<4>(m_model->row(row)) ;
-                                m_SIGNAL_track_activated.emit(track, true) ;
-                            }
-                            else
-                            {
-                                m_selection.clear();
-                                m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
-                                m_clicked_row = row ;
-                                m_clicked = true ;
-                                queue_draw() ;
-                            }
+                            MPX::Track track = get<4>(m_model->row(row)) ;
+                            m_SIGNAL_track_activated.emit(track, true) ;
                         }
                     }
                 
@@ -1920,6 +1916,8 @@ namespace MPX
 
                     set_has_tooltip( true ) ;
                     */
+
+                    property_can_focus() = true ;
                 }
 
                 virtual ~ListViewTracks ()

@@ -657,11 +657,7 @@ namespace MPX
 
                     if( event->type == GDK_BUTTON_PRESS )
                     {
-                        if( !has_focus )
-                        {
-                            grab_focus() ;
-                            return true ;                    
-                        }
+                        grab_focus() ;
 
                         gint64 row = get_upper_row() + (event->y / m_row_height) ;
 
@@ -1038,6 +1034,8 @@ namespace MPX
 
                     gtk_widget_realize(GTK_WIDGET(gobj()));
                     initialize_metrics();
+
+                    property_can_focus() = true ;
                }
 
                 virtual ~ListViewAlbums ()
