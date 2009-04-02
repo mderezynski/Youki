@@ -1012,14 +1012,16 @@ namespace MPX
 
             Glib::ustring new_prediction = private_->MarkovPredictor->predict( text ) ;
 
-            if( m_predicted && new_prediction == m_prediction && m_Entry_Text.substr( 0, m_Entry_Text.length() - m_prediction.length()) == text )
+            m_Entry_Text = text ; 
+
+            bool was_predicted = m_predicted ;
+            m_predicted  = false ;
+
+            if( was_predicted && new_prediction == m_prediction && m_Entry_Text.substr( 0, m_Entry_Text.length() - m_prediction.length()) == text )
             {
-                m_predicted  = false ;
                 return ;
             }
 
-            m_Entry_Text = text ; 
-            m_predicted  = false ;
             m_prediction = new_prediction ; 
 
             if( !m_prediction.empty() && !m_conn_completion ) 
