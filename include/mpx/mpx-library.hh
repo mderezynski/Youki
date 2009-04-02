@@ -80,7 +80,7 @@ namespace MPX
                 const std::string&
             ) ;
 
-			void
+			int64_t
 			execSQL(
                 const std::string&
             ) ;

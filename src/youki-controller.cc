@@ -464,17 +464,6 @@ namespace MPX
 
         reload_library () ;
 
-        {
-            SQL::RowV v ;
-            m_library->getSQL( v, "SELECT album FROM album WHERE album_playscore > 0 ORDER BY album_playscore DESC LIMIT 50" ) ; 
-            for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
-            {
-                private_->MarkovPredictor->process_string(
-                      boost::get<std::string>((*i)["album"])
-                ) ;
-            }
-        }
-
         m_Completion = Gtk::EntryCompletion::create() ;
         m_Completion_Store = Gtk::ListStore::create( CC ) ;
 
@@ -517,6 +506,8 @@ namespace MPX
         delete m_main_window ;
         m_mlibman_dbus_proxy->Exit () ;
         delete m_mlibman_dbus_proxy ;
+
+        delete private_ ;
 
         ShutdownComplete () ;
     }
@@ -899,6 +890,10 @@ namespace MPX
                     , time(NULL)
                 ) ;
 
+                private_->MarkovPredictor->process_string(
+                      boost::get<std::string>(m_track_previous.get()[ATTRIBUTE_ALBUM_ARTIST].get())
+                ) ;
+        
                 m_track_previous.reset() ;
         }
     }

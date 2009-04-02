@@ -632,10 +632,10 @@ namespace MPX
                         m_SQL->get (rows, sql); 
                 }
 
-        void
+        int64_t
                 Library::execSQL(const std::string& sql)
                 {
-                        m_SQL->exec_sql(sql);
+                        return m_SQL->exec_sql(sql) ;
                 }
 
         void

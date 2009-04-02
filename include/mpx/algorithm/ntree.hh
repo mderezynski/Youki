@@ -16,15 +16,10 @@ namespace MPX
         { 
             public:
 
-            private:
-
-                    friend class NTree ;
-
                     Node ()
                     {
                     }
 
-            public:
 
                     Node_SP_t               Parent ;
                     Children_t              Children ;
