@@ -471,7 +471,7 @@ namespace MPX
                         return false ;
                     }
 
-                    int step; 
+                    int row ; 
 
                     switch( event->keyval )
                     {
@@ -485,16 +485,14 @@ namespace MPX
                                 break ;
                             }
 
-                            int row = boost::get<2>(m_selection.get()) ;
+                            row = boost::get<2>(m_selection.get()) ;
 
                             if( !get_row_is_visible( row ) )
                             {
                                 m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
-                                break ;
                             }
 
                             if( event->keyval == GDK_Page_Up )
-
                             {
                                 row = std::max( 0, row - (m_visible_height/m_row_height) - 1 ) ;
                             }
@@ -523,21 +521,20 @@ namespace MPX
                                 break ;
                             }
 
-                            int row = boost::get<2>(m_selection.get()) ;
+                            row = boost::get<2>(m_selection.get()) ;
 
                             if( !get_row_is_visible( row ) )
                             {
                                 m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
-                                break ;
                             }
 
                             if( event->keyval == GDK_Page_Down )
                             {
-                                row = std::min( m_model->m_mapping.size(), row + (m_visible_height/m_row_height) + 1 ) ;
+                                row = std::min( m_model->m_mapping.size(), std::size_t(row + (m_visible_height/m_row_height) + 1) ) ;
                             }
                             else
                             {
-                                row = std::min( 0, row + 1 ) ;
+                                row = std::min( m_model->m_mapping.size(), std::size_t(row + 1) ) ;
                             }
 
                             select_row( row ) ;
@@ -558,34 +555,43 @@ namespace MPX
                         case GDK_KP_Home:
                         case GDK_End:
                         case GDK_KP_End:
+                        case GDK_KP_Enter:
+                        case GDK_Return:
                             return false ;
+
+                        case GDK_Tab:
+                                Gtk::DrawingArea::on_key_press_event( event ) ;
+                            return true ;
 
                         default:
 
-                            int x, y, x_root, y_root ;
+                            if( !Gtk::DrawingArea::on_key_press_event( event ))
+                            { 
+                                    int x, y, x_root, y_root ;
 
-                            dynamic_cast<Gtk::Window*>(get_toplevel())->get_position( x_root, y_root ) ;
+                                    dynamic_cast<Gtk::Window*>(get_toplevel())->get_position( x_root, y_root ) ;
 
-                            x = x_root + get_allocation().get_x() ;
-                            y = y_root + get_allocation().get_y() + get_allocation().get_height() ;
+                                    x = x_root + get_allocation().get_x() ;
+                                    y = y_root + get_allocation().get_y() + get_allocation().get_height() ;
 
-                            m_SearchWindow->set_size_request( get_allocation().get_width(), -1 ) ;
-                            m_SearchWindow->move( x, y ) ;
-                            m_SearchWindow->show() ;
+                                    m_SearchWindow->set_size_request( get_allocation().get_width(), -1 ) ;
+                                    m_SearchWindow->move( x, y ) ;
+                                    m_SearchWindow->show() ;
 
-                            send_focus_change( *m_SearchEntry, true ) ;
+                                    send_focus_change( *m_SearchEntry, true ) ;
 
-                            GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
-                            g_object_unref( ((GdkEventKey*)new_event)->window ) ;
-                            gtk_widget_realize( GTK_WIDGET(m_SearchWindow->gobj()) ) ;
-                            ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
-                            gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
-                            gdk_event_free(new_event) ;
+                                    GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
+                                    g_object_unref( ((GdkEventKey*)new_event)->window ) ;
+                                    gtk_widget_realize( GTK_WIDGET(m_SearchWindow->gobj()) ) ;
+                                    ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
+                                    gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
+                                    gdk_event_free(new_event) ;
 
-                            m_search_active = true ;
+                                    m_search_active = true ;
+                            }
                     }
 
-                    return false;
+                    return true ;
                 }
 
                 void
@@ -628,7 +634,11 @@ namespace MPX
 
                     if(event->type == GDK_BUTTON_PRESS)
                     {
-                            grab_focus() ;
+                            if( !has_focus )
+                            {
+                                grab_focus() ;
+                                return true ;                    
+                            }
 
                             int row = get_upper_row() + (int(event->y) / m_row_height);
 
@@ -773,6 +783,8 @@ namespace MPX
         
                             cairo->save () ;
 
+                            double factor = has_focus() ? 1. : 0.3 ;
+
                             Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
                                   r.x + r.width / 2
                                 , r.y  
@@ -785,7 +797,7 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.90 
+                                , 0.90 * factor  
                             ) ;
                             
                             background_gradient_ptr->add_color_stop_rgba(
@@ -793,7 +805,7 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.75 
+                                , 0.75 * factor
                             ) ;
                             
                             background_gradient_ptr->add_color_stop_rgba(
@@ -801,7 +813,7 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.45 
+                                , 0.45 * factor 
                             ) ;
 
                             cairo->set_source( background_gradient_ptr ) ;

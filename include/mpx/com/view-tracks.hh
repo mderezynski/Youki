@@ -979,7 +979,6 @@ namespace MPX
                 bool                                m_dnd ;
                 gint64                              m_clicked_row ;
                 bool                                m_clicked ;
-                gint64                              m_sel_size_was ;
                 bool                                m_highlight ;
 
                 boost::optional<gint64>             m_active_track ;
@@ -1232,27 +1231,31 @@ namespace MPX
                 {
                     using boost::get;
 
-                    if( event->y < (m_row_height+4))
-                    {
-                        int x = event->x ;
-                        int p = 0 ;
-                        for( int n = 0; n < m_columns.size() ; ++n )
-                        {
-                            int w = m_columns[n]->get_width() ;
-                            if( (x >= p) && (x <= p + w))
-                            {
-                                column_set_collapsed( n, !m_collapsed.count( n ) ) ;
-                                break ;
-                            }
-                            p += w ;
-                        }
-                        return true;
-                    }
-        
-                    m_sel_size_was = m_selection.size();
-
                     if( event->type == GDK_BUTTON_PRESS )
                     {
+                        if( !has_focus )
+                        {
+                            grab_focus() ;
+                            return true ;                    
+                        }
+
+                        if( event->y < (m_row_height+4))
+                        {
+                            int x = event->x ;
+                            int p = 0 ;
+                            for( int n = 0; n < m_columns.size() ; ++n )
+                            {
+                                int w = m_columns[n]->get_width() ;
+                                if( (x >= p) && (x <= p + w))
+                                {
+                                    column_set_collapsed( n, !m_collapsed.count( n ) ) ;
+                                    break ;
+                                }
+                                p += w ;
+                            }
+                            return true;
+                        }
+    
                         gint64 row = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
 
                         if( row < m_model->size() )
@@ -1439,6 +1442,7 @@ namespace MPX
                         xpos = 0 ;
 
                         Model_t::iterator selected = m_model->m_mapping[row];
+
                         bool iter_is_selected = ( !m_selection.empty() && m_selection.count(std::make_pair(selected, row))) ;
 
                         if( ! event->area.width <= 16 )
@@ -1471,6 +1475,8 @@ namespace MPX
                                     cairo->fill() ;
                                 }
 
+                                double factor = has_focus() ? 1. : 0.3 ;
+
                                 if( iter_is_selected )
                                 {
                                     Gdk::Color c = get_style()->get_base( Gtk::STATE_SELECTED ) ;
@@ -1496,7 +1502,7 @@ namespace MPX
                                         , c.get_red_p() 
                                         , c.get_green_p()
                                         , c.get_blue_p()
-                                        , 0.90 
+                                        , 0.90 * factor 
                                     ) ;
                                     
                                     background_gradient_ptr->add_color_stop_rgba(
@@ -1504,7 +1510,7 @@ namespace MPX
                                         , c.get_red_p() 
                                         , c.get_green_p()
                                         , c.get_blue_p()
-                                        , 0.75 
+                                        , 0.75 * factor 
                                     ) ;
                                     
                                     background_gradient_ptr->add_color_stop_rgba(
@@ -1512,7 +1518,7 @@ namespace MPX
                                         , c.get_red_p() 
                                         , c.get_green_p()
                                         , c.get_blue_p()
-                                        , 0.45 
+                                        , 0.45 * factor
                                     ) ;
 
                                     cairo->set_source( background_gradient_ptr ) ;
@@ -1871,7 +1877,6 @@ namespace MPX
                         , m_dnd( false )
                         , m_clicked_row( 0 ) 
                         , m_clicked( false )
-                        , m_sel_size_was( 0 )
                         , m_highlight( false )
                         , m_fixed_total_width( 0 )
 

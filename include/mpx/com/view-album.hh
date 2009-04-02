@@ -657,6 +657,12 @@ namespace MPX
 
                     if( event->type == GDK_BUTTON_PRESS )
                     {
+                        if( !has_focus )
+                        {
+                            grab_focus() ;
+                            return true ;                    
+                        }
+
                         gint64 row = get_upper_row() + (event->y / m_row_height) ;
 
                         if( row < m_model->size() )
@@ -746,6 +752,8 @@ namespace MPX
                         ModelAlbums_t::iterator  selected           = m_model->m_mapping[row] ;
                         bool                     iter_is_selected   = ( m_selection && get<1>(m_selection.get()) == row ) ;
 
+                        double factor = has_focus() ? 1. : 0.3 ;
+
                         if( iter_is_selected )
                         {
                             Gdk::Color c = get_style()->get_base( Gtk::STATE_SELECTED ) ;
@@ -771,7 +779,7 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.90 
+                                , 0.90 * factor
                             ) ;
                             
                             background_gradient_ptr->add_color_stop_rgba(
@@ -779,7 +787,7 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.75 
+                                , 0.75 * factor
                             ) ;
                             
                             background_gradient_ptr->add_color_stop_rgba(
@@ -787,7 +795,7 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.45 
+                                , 0.45 * factor
                             ) ;
 
                             cairo->set_source( background_gradient_ptr ) ;
