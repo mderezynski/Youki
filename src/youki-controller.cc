@@ -956,7 +956,8 @@ namespace MPX
     YoukiController::on_entry_activated(
     ) 
     {
-        if( m_Entry_Text.substr( m_Entry_Text.length() - m_prediction.length(), -1 ) == m_prediction )
+        std::size_t pos = m_Entry_Text.length() - m_prediction.length() ;
+        if( m_Entry_Text.length() > pos && m_Entry_Text.substr( pos, -1 ) == m_prediction )
         {
             m_prediction.clear() ;
             m_Entry->select_region( -1, -1 ) ;
