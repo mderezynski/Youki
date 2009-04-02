@@ -126,7 +126,6 @@ namespace MPX
     , Service::Base("mpx-service-controller")
     , m_main_window( 0 )
     , m_seek_position( -1 )
-    , m_predicted( false )
     , private_( new Private )
     {
         m_C_SIG_ID_metadata_updated =
@@ -957,17 +956,13 @@ namespace MPX
     YoukiController::on_entry_activated(
     ) 
     {
-        if( m_predicted )
+        if( m_Entry_Text.substr( m_Entry_Text.length() - m_prediction.length(), -1 ) == m_prediction )
         {
+            m_prediction.clear() ;
             m_Entry->select_region( -1, -1 ) ;
-            m_Entry->set_position( m_Entry->get_text().length() ) ;
-            m_predicted = false ;
-            return ;
         }
-        else
-        {
-            on_entry_changed__process_filtering() ;
-        }
+        
+        on_entry_changed__process_filtering() ;
     }
 
     bool
@@ -978,13 +973,11 @@ namespace MPX
 
         if( m_completion_timer.elapsed() > 0.25 ) 
         {
-            m_Entry->set_text( m_Entry_Text + m_prediction ) ;
-            m_Entry->select_region( m_Entry_Text.length() - m_prediction.length(), -1 ) ;
-
             m_completion_timer.stop() ;
             m_completion_timer.reset() ;
 
-            m_predicted = true ;
+            m_Entry->set_text( m_Entry_Text + m_prediction ) ;
+            m_Entry->select_region( m_Entry_Text.length() - m_prediction.length(), -1 ) ;
 
             return false ;
         }
@@ -1004,7 +997,7 @@ namespace MPX
 
         if( text.size() > 0 )
         {
-            if( text == m_Entry_Text + m_prediction)
+            if( text == m_Entry_Text + m_prediction )
             {
                 m_Entry_Text += m_prediction ;
                 return ;
@@ -1014,10 +1007,7 @@ namespace MPX
 
             m_Entry_Text = text ; 
 
-            bool was_predicted = m_predicted ;
-            m_predicted  = false ;
-
-            if( was_predicted && new_prediction == m_prediction && m_Entry_Text.substr( 0, m_Entry_Text.length() - m_prediction.length()) == text )
+            if( new_prediction == m_prediction && m_Entry_Text.substr( 0, m_Entry_Text.length() - m_prediction.length()) == text )
             {
                 return ;
             }
@@ -1071,7 +1061,7 @@ namespace MPX
 
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
 
-        private_->FilterModelTracks->set_filter( m_Entry_Text );
+        private_->FilterModelTracks->set_filter( m_Entry_Text.substr( 0, m_Entry_Text.length() - m_prediction.length()));
 
         private_->FilterModelArtist->set_constraint( private_->FilterModelTracks->m_constraint_artist ) ;
         private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;

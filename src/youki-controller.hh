@@ -93,7 +93,7 @@ namespace MPX
 
             info::backtrace::Youki::MLibMan_proxy_actual  * m_mlibman_dbus_proxy ;
 
-            sigc::connection                  m_conn1, m_conn2, m_conn3 ;
+            sigc::connection                  m_conn1, m_conn2, m_conn3, m_conn4, m_conn5 ;
             sigc::connection                  m_conn_completion ;
 
             guint                             m_C_SIG_ID_metadata_updated ;
