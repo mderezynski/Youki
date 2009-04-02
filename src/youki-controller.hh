@@ -26,17 +26,6 @@ namespace MPX
     class ListViewAlbums ;
     class ListViewArtist ;
 
-    struct FakeModel
-    : public Gtk::TreeModelColumnRecord 
-    {
-            Gtk::TreeModelColumn<std::string> Fake ;
-
-            FakeModel ()
-            {
-                add( Fake ) ;
-            }
-    } ;
-
     class YoukiController
     : public Glib::Object
     , public ::info::backtrace::Youki::App_adaptor
@@ -72,17 +61,14 @@ namespace MPX
             
             Gtk::Entry                        * m_Entry ;
             Glib::ustring                       m_Entry_Text ;
-            Glib::RefPtr<Gtk::ListStore>        m_Completion_Store ;
-            Glib::RefPtr<Gtk::EntryCompletion>  m_Completion ;
-            FakeModel                           CC ;
             Glib::ustring                       m_prediction ;
 
             Gtk::Alignment                  * m_Alignment_Entry ;
             Gtk::HBox                       * m_HBox_Entry ;
             Gtk::HBox                       * m_HBox_Controls ;
             Gtk::Label                      * m_Label_Search ;
-            bool                              m_completion_enabled ;
             Glib::Timer                       m_completion_timer ;
+            bool                              m_predicted ;
 
             Gtk::VBox                       * m_VBox ;
             Gtk::HBox                       * m_HBox ;
@@ -108,6 +94,7 @@ namespace MPX
             info::backtrace::Youki::MLibMan_proxy_actual  * m_mlibman_dbus_proxy ;
 
             sigc::connection                  m_conn1, m_conn2, m_conn3 ;
+            sigc::connection                  m_conn_completion ;
 
             guint                             m_C_SIG_ID_metadata_updated ;
             guint                             m_C_SIG_ID_track_cancelled ;
@@ -170,12 +157,16 @@ namespace MPX
             ) ;
 
             void
-            on_entry_changed(
+            on_entry_changed__update_completion(
             ) ;
 
-            bool
-            on_entry_key_press_event(
-                  GdkEventKey*
+            void
+            on_entry_changed__process_filtering(
+                bool = false /*force processing*/
+            ) ;
+
+            void
+            on_entry_activated(
             ) ;
 
             bool

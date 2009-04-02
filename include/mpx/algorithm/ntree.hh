@@ -8,9 +8,10 @@ namespace MPX
     template <typename T>
     struct NTree
     {
-        struct Node ;
-        typedef Node*                   Node_SP_t ;
-        typedef std::vector<Node_SP_t>  Children_t ;
+        struct                           Node ;
+
+        typedef Node*                    Node_SP_t ;
+        typedef std::vector<Node_SP_t >  Children_t ;
 
         struct Node
         { 
@@ -47,6 +48,24 @@ namespace MPX
         NTree()
         {
             Root = new Node ; 
+        }
+
+        virtual ~NTree()
+        {
+            delete_node( Root ) ;
+        }
+
+        void
+        delete_node(
+            Node_SP_t node
+        )
+        {
+            for( std::size_t n = 0 ; n < node->Children.size() ; ++n ) 
+            {
+                delete_node( node->Children[n] ) ;
+            }
+
+            delete node ;
         }
     } ;
 }
