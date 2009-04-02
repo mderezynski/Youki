@@ -409,7 +409,7 @@ namespace MPX
 
                         GdkRectangle r ;
 
-                        r.x         = m_presize_width - m_title_logo->get_width() - 12 ;
+                        r.x         = m_presize_width - m_title_logo->get_width() - 6 ;
                         r.y         = (20 / 2) - (m_title_logo->get_height()/2) ; 
                         r.width     = m_title_logo->get_width() ;
                         r.height    = m_title_logo->get_height() ;

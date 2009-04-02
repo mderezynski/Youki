@@ -31,9 +31,9 @@ namespace MPX
 {
         typedef boost::tuple<std::string, gint64>           Row2 ;
         typedef std::vector<Row2>                           ModelArtist_t ;
-        typedef boost::shared_ptr<ModelArtist_t>                ModelArtist_SP_t ;
+        typedef boost::shared_ptr<ModelArtist_t>            ModelArtist_SP_t ;
         typedef sigc::signal<void>                          SignalArtist_0 ;
-        typedef std::map<gint64, ModelArtist_t::iterator>       IdIterMapArtist_t ;
+        typedef std::map<gint64, ModelArtist_t::iterator>   IdIterMapArtist_t ;
 
         struct DataModelArtist : public sigc::trackable
         {
@@ -358,7 +358,7 @@ namespace MPX
 
         typedef boost::shared_ptr<ColumnArtist> ColumnArtist_SP_t ;
         typedef std::vector<ColumnArtist_SP_t>  ColumnArtist_SP_vector_t ;
-        typedef sigc::signal<void>          SignalSelectionChanged ;
+        typedef sigc::signal<void>              SignalSelectionChanged ;
 
         class ListViewArtist : public Gtk::DrawingArea
         {
@@ -374,7 +374,7 @@ namespace MPX
 
                 guint                               m_signal0 ; 
 
-                boost::optional<std::pair<ModelArtist_t::iterator, gint64> > m_selection ;
+                boost::optional<boost::tuple<ModelArtist_t::iterator, gint64, int> > m_selection ;
 
                 bool                                m_highlight ;
 
@@ -388,6 +388,9 @@ namespace MPX
 
                 Gtk::Entry                        * m_SearchEntry ;
                 Gtk::Window                       * m_SearchWindow ;
+
+                sigc::connection                    m_search_changed_conn ;
+                bool                                m_search_active ;
 
                 void
                 initialize_metrics ()
@@ -438,12 +441,36 @@ namespace MPX
                 on_focus (Gtk::DirectionType direction)
                 { 
                     grab_focus() ;
-                    return false ;
+                    if( !m_selection )
+                    {
+                        select_row( get_upper_row() ) ;
+                    }
+                    return true ;
                 }
 
                 virtual bool
                 on_key_press_event (GdkEventKey * event)
                 {
+                    if( m_search_active )
+                    {
+                        switch( event->keyval )
+                        {
+                            case GDK_Escape:
+                                cancel_search() ;
+                                return false ;
+        
+                            default: ;
+                        }
+
+                        GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
+                        g_object_unref( ((GdkEventKey*)new_event)->window ) ;
+                        ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
+                        gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
+                        gdk_event_free(new_event) ;
+
+                        return false ;
+                    }
+
                     int step; 
 
                     switch( event->keyval )
@@ -464,33 +491,22 @@ namespace MPX
                             if( !m_selection )
                             {
                                 mark_first_row_up:
-    
-                                int row = get_upper_row();
-                                m_selection = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
-                                m_SIGNAL_selection_changed.emit() ;
+                                select_row( get_upper_row() ) ;
                             }
                             else
                             {
-                                int row = m_selection.get().second;
+                                int row = boost::get<2>(m_selection.get()) ;
 
                                 if( get_row_is_visible( row ))
                                 {
-                                    ModelArtist_t::iterator i = m_selection.get().first;
+                                    row = std::max( 0, row + step ) ;
+                                    select_row( row ) ;
 
-                                    std::advance(i, step);
-                                    row += step;
-
-                                    if( row >= 0 )
+                                    if( row < get_upper_row()) 
                                     {
-                                        m_selection = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
-                                        m_SIGNAL_selection_changed.emit() ;
-
-                                        if( row < get_upper_row()) 
-                                        {
-                                            double value = m_prop_vadj.get_value()->get_value();
-                                            value += step*m_row_height;
-                                            m_prop_vadj.get_value()->set_value( value );
-                                        }
+                                        double value = m_prop_vadj.get_value()->get_value();
+                                        value += step*m_row_height+1;
+                                        m_prop_vadj.get_value()->set_value( value );
                                     }
                                 }
                                 else
@@ -517,33 +533,22 @@ namespace MPX
                             if( !m_selection ) 
                             {
                                 mark_first_row_down:
-
-                                int row = get_upper_row();
-                                m_selection = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
-                                m_SIGNAL_selection_changed.emit() ;
+                                select_row( get_upper_row() ) ;
                             }
                             else
                             {
-                                int row = m_selection.get().second;
+                                int row = boost::get<2>(m_selection.get()) ;
 
                                 if( get_row_is_visible( row ) )
                                 {
-                                    ModelArtist_t::iterator i = m_selection.get().first;
-    
-                                    std::advance(i, step);
-                                    row += step;
+                                    row = std::min( int(m_model->m_mapping.size()), row + step ) ;
+                                    select_row( row ) ;
 
-                                    if( row < m_model->m_mapping.size() )
+                                    if( row >= (get_upper_row() + (m_visible_height/m_row_height) + 1))
                                     {
-                                        m_selection = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
-                                        m_SIGNAL_selection_changed.emit() ;
-
-                                        if( row >= (get_upper_row() + (m_visible_height/m_row_height)))
-                                        {
-                                            double value = m_prop_vadj.get_value()->get_value();
-                                            value += step*m_row_height;
-                                            m_prop_vadj.get_value()->set_value( value );
-                                        }
+                                        double value = m_prop_vadj.get_value()->get_value();
+                                        value += step*m_row_height+1;
+                                        m_prop_vadj.get_value()->set_value( value );
                                     }
                                 }
                                 else
@@ -553,6 +558,16 @@ namespace MPX
                             }
                             queue_draw();
                             return true;
+
+                        case GDK_Left:
+                        case GDK_KP_Left:
+                        case GDK_Right:
+                        case GDK_KP_Right:
+                        case GDK_Home:
+                        case GDK_KP_Home:
+                        case GDK_End:
+                        case GDK_KP_End:
+                            return false ;
 
                         default:
 
@@ -565,12 +580,55 @@ namespace MPX
 
                             m_SearchWindow->set_size_request( get_allocation().get_width(), -1 ) ;
                             m_SearchWindow->move( x, y ) ;
-
                             m_SearchWindow->show() ;
+
+                            send_focus_change( *m_SearchEntry, true ) ;
+
+                            GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
+                            g_object_unref( ((GdkEventKey*)new_event)->window ) ;
+                            gtk_widget_realize( GTK_WIDGET(m_SearchWindow->gobj()) ) ;
+                            ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
+                            gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
+                            gdk_event_free(new_event) ;
+
+                            m_search_active = true ;
                     }
 
                     return false;
                 }
+
+                void
+                send_focus_change(
+                      Gtk::Widget&  w
+                    , bool          in
+                    )
+                {
+                    GtkWidget * widget = w.gobj() ;
+
+                    GdkEvent *fevent = gdk_event_new (GDK_FOCUS_CHANGE);
+
+                    g_object_ref (widget);
+
+                   if( in )
+                      GTK_WIDGET_SET_FLAGS( widget, GTK_HAS_FOCUS ) ;
+                    else
+                      GTK_WIDGET_UNSET_FLAGS( widget, GTK_HAS_FOCUS ) ;
+
+                    fevent->focus_change.type   = GDK_FOCUS_CHANGE;
+                    fevent->focus_change.window = GDK_WINDOW(g_object_ref( widget->window )) ;
+                    fevent->focus_change.in     = in;
+
+                    gtk_widget_event( widget, fevent ) ;
+
+                    g_object_notify(
+                          G_OBJECT (widget)
+                        , "has-focus"
+                    ) ;
+
+                    g_object_unref( widget ) ;
+                    gdk_event_free( fevent ) ;
+                }
+
 
                 bool
                 on_button_press_event (GdkEventButton * event)
@@ -579,13 +637,13 @@ namespace MPX
 
                     if(event->type == GDK_BUTTON_PRESS)
                     {
+                            grab_focus() ;
+
                             int row = get_upper_row() + (int(event->y) / m_row_height);
 
                             if( row < m_model->m_mapping.size() )
                             {
-                                m_selection = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
-                                m_SIGNAL_selection_changed.emit() ;
-                                queue_draw();
+                                select_row( row ) ;
                             }
                     }
                 
@@ -681,7 +739,7 @@ namespace MPX
 
                         xpos = 0 ;
 
-                        bool iter_is_selected = ( m_selection && m_selection.get().second == get<1>(*m_model->m_mapping[row])) ;
+                        bool iter_is_selected = ( m_selection && boost::get<1>(m_selection.get()) == get<1>(*m_model->m_mapping[row])) ;
 
                         if( !(row % 2) ) 
                         {
@@ -826,6 +884,16 @@ namespace MPX
                     queue_draw();
                 }
 
+                void
+                select_row(
+                      int row
+                )
+                {
+                    m_selection = boost::make_tuple(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row]), row) ;
+                    m_SIGNAL_selection_changed.emit() ;
+                    queue_draw();
+                }
+
                 static gboolean
                 list_view_set_adjustments(
                     GtkWidget*obj,
@@ -863,7 +931,7 @@ namespace MPX
                 gint64
                 get_selected()
                 {
-                    return m_selection ? m_selection.get().second : -1 ;
+                    return m_selection ? boost::get<1>(m_selection.get()) : -1 ;
                 }
     
                 void
@@ -944,6 +1012,61 @@ namespace MPX
                     }
                 }
 
+            protected:
+
+                void
+                on_search_entry_changed()
+                {
+                    using boost::get ;
+
+                    Glib::ustring text = m_SearchEntry->get_text() ;
+
+                    if( text.empty() )
+                    {
+                        select_row( 0 ) ;
+                        return ;
+                    }
+
+                    DataModelFilterArtist::RowRowMapping::iterator i = m_model->m_mapping.begin(); 
+                    ++i ; // first row is "All" FIXME this sucks
+
+                    for( ; i != m_model->m_mapping.end(); ++i )
+                    {
+                        const Row2& row = **i ;
+                        Glib::ustring match = get<0>(row) ;
+
+                        if( match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )   
+                        {
+                            int row = std::distance( m_model->m_mapping.begin(), i ) ; 
+                            m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
+                            select_row( row ) ;
+                            break ;
+                        }
+                    }
+                }
+
+                void
+                cancel_search()
+                {
+                    send_focus_change( *m_SearchEntry, false ) ;
+                    m_SearchWindow->hide() ;
+                    m_search_changed_conn.block () ;
+                    m_SearchEntry->set_text("") ;
+                    m_search_changed_conn.unblock () ;
+                    m_search_active = false ;
+                }
+
+                bool
+                on_search_window_focus_out(
+                      GdkEventFocus* G_GNUC_UNUSED
+                )
+                {
+                    cancel_search() ;
+                    return false ;
+                }
+
+            public:
+
                 ListViewArtist ()
 
                         : ObjectBase( "YoukiListViewArtist" )
@@ -952,6 +1075,7 @@ namespace MPX
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_highlight( false )
                         , m_fixed_total_width( 0 )
+                        , m_search_active( false )
 
                 {
                     m_treeview = gtk_tree_view_new();
@@ -974,9 +1098,22 @@ namespace MPX
                     initialize_metrics();
 
                     m_SearchEntry = Gtk::manage( new Gtk::Entry ) ;
-                    m_SearchWindow = Gtk::manage( new Gtk::Window( Gtk::WINDOW_TOPLEVEL )) ;
+                    m_search_changed_conn = m_SearchEntry->signal_changed().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &ListViewArtist::on_search_entry_changed
+                    )) ;
+    
+                    m_SearchWindow = Gtk::manage( new Gtk::Window( Gtk::WINDOW_POPUP )) ;
+                    m_SearchWindow->set_decorated( false ) ;
+                    m_SearchWindow->signal_focus_out_event().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &ListViewArtist::on_search_window_focus_out
+                    )) ;
 
                     m_SearchWindow->add( *m_SearchEntry ) ;
+                    m_SearchEntry->show() ;
                 }
 
                 virtual ~ListViewArtist ()
