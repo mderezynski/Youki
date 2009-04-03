@@ -324,65 +324,62 @@ main (int    argc,
         // we don't exit here since it could just mean it's not running
     }
 
-    youki = dbus_g_proxy_new_for_name(
-              session
-            , "info.backtrace.Youki.App"
-            , "/info/backtrace/Youki/App"
-            , "info.backtrace.Youki.App"
-    ) ;
-
-    dbus_g_proxy_call(
-              youki
-            , "Startup"
-            , &error
-            , G_TYPE_INVALID
-            , G_TYPE_INVALID
-    ) ;
-
-    if( error )
-    {
-        g_message("Youki-Startup DBus Error: Domain: %s, code: %d, message: %s", g_quark_to_string (error->domain), error->code, error->message);
-        g_error_free( error ) ;
-        g_main_loop_unref (mainloop);
-        display_startup_crash ();
-        return EXIT_FAILURE ; 
-    }
-
     if( !youki_running )
     {
-        dbus_g_proxy_add_signal(
-              youki
-            , "StartupComplete"
-            , G_TYPE_INVALID
-        ) ;
+            youki = dbus_g_proxy_new_for_name(
+                      session
+                    , "info.backtrace.Youki.App"
+                    , "/info/backtrace/Youki/App"
+                    , "info.backtrace.Youki.App"
+            ) ;
 
-        dbus_g_proxy_add_signal(
-              youki
-            , "Quit"
-            , G_TYPE_INVALID
-        ) ;
+            dbus_g_proxy_call(
+                      youki
+                    , "Startup"
+                    , &error
+                    , G_TYPE_INVALID
+                    , G_TYPE_INVALID
+            ) ;
 
-        dbus_g_proxy_connect_signal(
-              youki
-            , "StartupComplete"
-            , G_CALLBACK( app_startup_completed )
-            , NULL
-            , NULL
-        ) ;
+            if( error )
+            {
+                g_error_free( error ) ;
+                error = NULL ;
+            }
 
-        dbus_g_proxy_connect_signal(
-              youki
-            , "Quit"
-            , G_CALLBACK( app_quit )
-            , NULL
-            , NULL
-        ) ;
+            dbus_g_proxy_add_signal(
+                  youki
+                , "StartupComplete"
+                , G_TYPE_INVALID
+            ) ;
 
-        g_main_loop_run (mainloop);
+            dbus_g_proxy_add_signal(
+                  youki
+                , "Quit"
+                , G_TYPE_INVALID
+            ) ;
+
+            dbus_g_proxy_connect_signal(
+                  youki
+                , "StartupComplete"
+                , G_CALLBACK( app_startup_completed )
+                , NULL
+                , NULL
+            ) ;
+
+            dbus_g_proxy_connect_signal(
+                  youki
+                , "Quit"
+                , G_CALLBACK( app_quit )
+                , NULL
+                , NULL
+            ) ;
+
+            g_main_loop_run (mainloop);
     }
     else
     {
-        g_message( "Youki-Startup: Youki already running" ) ;
+            g_message( "Youki-Startup: Youki already running" ) ;
     }
 
     g_main_loop_unref (mainloop);

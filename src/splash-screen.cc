@@ -167,7 +167,7 @@ namespace MPX
         int text_size_px = 8 ;
         int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
 
-        font_desc.set_absolute_size(
+        font_desc.set_size(
               text_size_pt * PANGO_SCALE
         ) ;
 
@@ -188,8 +188,8 @@ namespace MPX
 
         cairo->set_operator( Cairo::OPERATOR_ATOP );
         cairo->move_to(
-                m_bar_x + m_bar_w + 2
-              , m_bar_y - 1
+                m_bar_x + m_bar_w + 4
+              , m_bar_y - 4
         ) ; 
         cairo->set_source_rgba( 1., 1., 1., 1.);
         pango_cairo_show_layout(
