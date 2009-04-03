@@ -785,6 +785,7 @@ namespace MPX
                 m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
                 m_main_position->set_position( 0, 0 ) ;
                 m_seek_position.reset() ; 
+                m_playqueue.clear() ;
                 break ;
 
             case PLAYSTATUS_WAITING:
