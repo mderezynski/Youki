@@ -84,6 +84,8 @@ namespace MPX
 
     private:
 
+        bool m_active ;
+
         struct KeyControls
         {
           gint key, mask;

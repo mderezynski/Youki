@@ -80,6 +80,7 @@ namespace MPX
         , gint64                                    id
     )
         : Gnome::Glade::WidgetLoader<Gtk::VBox>(xml, "mmkeys-vbox")
+        , m_active( false )
         , m_mmkeys_dbusproxy( 0 )
     {
         show() ;
@@ -642,6 +643,11 @@ namespace MPX
     /*static*/ void
         MMKeys::mmkeys_activate ()
     {
+        if( m_active )
+            return ;
+
+        m_active = true ;
+
         DBusGConnection *bus;
 
         g_message(G_STRLOC ": Activating media player keys");
@@ -735,6 +741,11 @@ namespace MPX
     /*static*/ void
         MMKeys::mmkeys_deactivate ()
     {
+        if( !m_active )
+            return ;
+
+        m_active = false ;
+
         if( m_mmkeys_dbusproxy )
         {
             if( m_mmkeys_grab_type == SETTINGS_DAEMON )
