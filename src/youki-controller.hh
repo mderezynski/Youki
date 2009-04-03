@@ -172,6 +172,10 @@ namespace MPX
                 GdkEventKey*
             ) ;
 
+            void
+            on_entry_activated(
+            ) ;
+
             bool
             completion_timer_check(
             ) ;

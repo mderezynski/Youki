@@ -420,6 +420,12 @@ namespace MPX
                 , &YoukiController::on_entry_key_press_event
         )) ;
 
+        m_Entry->signal_activate().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_entry_activated
+        )) ;
+
         m_Paned1->add1( *m_ScrolledWinArtist ) ;
         m_Paned1->add2( *m_ScrolledWinTracks ) ;
         m_Paned2->add1( *m_Paned1 ) ;
@@ -965,6 +971,21 @@ namespace MPX
         private_->FilterModelTracks->regen_mapping() ;
     }
 
+    void
+    YoukiController::on_entry_activated(
+    )
+    {
+        std::size_t pos = m_Entry_Text.length() - m_prediction.length() ;
+        
+        if( m_Entry_Text.length() > pos && m_Entry_Text.substr( pos, -1 ) == m_prediction )
+        {
+            m_prediction.clear() ;
+            m_Entry->select_region( -1, -1 ) ;
+        }
+        
+        on_entry_changed__process_filtering() ;
+    }
+
     bool
     YoukiController::on_entry_key_press_event(
           GdkEventKey* event
@@ -977,22 +998,13 @@ namespace MPX
             case GDK_3270_Enter:
             case GDK_Return:
             {
-                if( (event->state & GDK_CONTROL_MASK) && private_->FilterModelTracks->size() )
+                if( event->state & GDK_CONTROL_MASK )  
                 {
-                    play_track( boost::get<4>(private_->FilterModelTracks->row( m_ListViewTracks->get_upper_row()  )) ) ;
+                    if( private_->FilterModelTracks->size() )
+                    {
+                        play_track( boost::get<4>(private_->FilterModelTracks->row( m_ListViewTracks->get_upper_row()  )) ) ;
+                    }
                 }
-                else
-                {
-                        std::size_t pos = m_Entry_Text.length() - m_prediction.length() ;
-                        if( m_Entry_Text.length() > pos && m_Entry_Text.substr( pos, -1 ) == m_prediction )
-                        {
-                            m_prediction.clear() ;
-                            m_Entry->select_region( -1, -1 ) ;
-                        }
-                        
-                        on_entry_changed__process_filtering() ;
-                }
-
                 return true ;
             }
 

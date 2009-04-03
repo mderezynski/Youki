@@ -949,7 +949,10 @@ namespace MPX
                     if( m_selection )
                     {
                         m_selection.reset() ;
-                        // so we ESPECIALLY don't signal out if there is no selection anyway
+                        if( m_model->m_mapping.size()) 
+                        {
+                            m_selection = boost::make_tuple(m_model->m_mapping[0], get<1>(*m_model->m_mapping[0]), 0) ;
+                        }
                     }
                 }
 
@@ -964,6 +967,7 @@ namespace MPX
                 set_model(DataModelFilterArtist_SP_t model)
                 {
                     m_model = model;
+                    clear_selection() ;
                     m_model->signal_changed().connect(
                         sigc::mem_fun(
                             *this,
