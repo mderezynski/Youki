@@ -30,15 +30,12 @@ namespace MPX
                 {
                     m_library = services->get<Library>("mpx-service-library").get() ;
 
-/*
-
                     bool exists = m_library->get_sql_db()->table_exists( "markov_predictor_node_chain" ) ;
 
                     m_library->execSQL( "CREATE TABLE IF NOT EXISTS markov_predictor_node_chain (id INTEGER PRIMARY KEY AUTOINCREMENT, parent INTEGER DEFAULT NULL)" ) ;
                     m_library->execSQL( "CREATE TABLE IF NOT EXISTS markov_predictor_node_data  (id INTEGER, char STRING, intensity INTEGER)" ) ;
 
                     if( !exists )
-*/
                     {
                         SQL::RowV v ;
                         m_library->getSQL( v, "SELECT album_artist FROM album_artist ORDER BY album_artist" ) ; 
@@ -50,12 +47,10 @@ namespace MPX
                             ) ;
                         }
                     }
-/*
                     else
                     {
                         restore_node( m_tree.Root, 1 ) ;
                     }
-*/
                 }
 
                 void
@@ -134,18 +129,20 @@ namespace MPX
 
                 virtual ~MarkovTypingPredictor()
                 {
-/*
                     boost::shared_ptr<Library> lib = services->get<Library>("mpx-service-library") ;
 
                     m_library->execSQL( "DELETE FROM markov_predictor_node_chain" ) ;
                     m_library->execSQL( "DELETE FROM markov_predictor_node_data" ) ;
 
+                    //// STORE ROOT NODE ////
+
                     m_library->execSQL((boost::format("INSERT INTO markov_predictor_node_chain (id, parent) VALUES ('%lld', NULL)")
                             % int64_t(1) 
                     ).str()) ; 
 
+                    //// STORE REST OF THE TREE ////
+
                     store_node( m_tree.Root, 1 ) ;
-*/
                 }
 
                 void
