@@ -364,9 +364,9 @@ namespace MPX
 
                         //// TITLEBAR 
                         Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
-                              get_allocation().get_width() / 2. 
+                              m_presize_width / 2. 
                             , 0
-                            , get_allocation().get_width() / 2.
+                            , m_presize_width / 2. 
                             , 20 
                         ) ;
                         
@@ -399,7 +399,7 @@ namespace MPX
                         cr->rectangle(
                               0
                             , 0
-                            , get_allocation().get_width()
+                            , m_presize_width 
                             , 20
                         ) ;
                         cr->fill();

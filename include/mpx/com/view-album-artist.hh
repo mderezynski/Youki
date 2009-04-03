@@ -364,17 +364,16 @@ namespace MPX
         {
                 int                                 m_row_height ;
                 int                                 m_visible_height ;
-                int                                 m_previous_drawn_row ;
 
-                DataModelFilterArtist_SP_t              m_model ;
-                ColumnArtist_SP_vector_t                m_columns ;
+                DataModelFilterArtist_SP_t          m_model ;
+                ColumnArtist_SP_vector_t            m_columns ;
 
                 PropAdj                             m_prop_vadj ;
                 PropAdj                             m_prop_hadj ;
 
                 guint                               m_signal0 ; 
 
-                boost::optional<boost::tuple<ModelArtist_t::iterator, gint64, int> > m_selection ;
+                boost::optional<boost::tuple<ModelArtist_t::iterator, gint64, std::size_t> > m_selection ;
 
                 bool                                m_highlight ;
 
@@ -406,18 +405,12 @@ namespace MPX
                     m_row_height =
                         (pango_font_metrics_get_ascent (metrics)/PANGO_SCALE) + 
                         (pango_font_metrics_get_descent (metrics)/PANGO_SCALE) + 8;
-
-                    const int visible_area_pad = 2 ;
                 }
 
                 void
                 on_vadj_value_changed ()
                 {
-                    int row = (double(m_prop_vadj.get_value()->get_value()-m_row_height) / double(m_row_height));
-                    if( m_previous_drawn_row != row )
-                    {
-                        queue_draw ();
-                    }
+                    queue_draw ();
                 }
 
                 int
@@ -437,7 +430,7 @@ namespace MPX
 
             protected:
 
-               virtual bool
+                virtual bool
                 on_focus (Gtk::DirectionType direction)
                 { 
                     grab_focus() ;
@@ -646,7 +639,7 @@ namespace MPX
                     {
                             grab_focus() ;
 
-                            int row = get_upper_row() + (int(event->y) / m_row_height);
+                            std::size_t row = get_upper_row() + (event->y / m_row_height);
 
                             if( row < m_model->m_mapping.size() )
                             {
@@ -693,7 +686,7 @@ namespace MPX
 
                     double column_width = (double(event->width) - m_fixed_total_width - (40*m_collapsed.size()) ) / double(m_columns.size()-m_collapsed.size()-m_fixed.size());
 
-                    for(int n = 0; n < m_columns.size(); ++n)
+                    for( std::size_t n = 0; n < m_columns.size(); ++n)
                     {
                         if( m_fixed.count( n ) )
                         {
@@ -730,20 +723,17 @@ namespace MPX
 
                     const Gtk::Allocation& alloc = get_allocation();
 
-                    int row = get_upper_row() ;
-                    m_previous_drawn_row = row;
+                    std::size_t row     = get_upper_row() ;
+                    std::size_t ypos    = 0 ;
+                    std::size_t xpos    = 0 ;
+                    std::size_t cnt     = m_visible_height / m_row_height + 1 ;
 
-                    int ypos    = 0 ;
-                    int xpos    = 0 ;
-                    int col     = 0 ;
-                    int cnt     = m_visible_height / m_row_height + 1 ;
+                    const std::size_t inner_pad  = 1 ;
 
                     cairo->set_operator(Cairo::OPERATOR_ATOP);
     
                     while( m_model->is_set() && cnt && (row < m_model->m_mapping.size()) ) 
                     {
-                        const int inner_pad  = 1 ;
-
                         xpos = 0 ;
 
                         bool iter_is_selected = ( m_selection && boost::get<1>(m_selection.get()) == get<1>(*m_model->m_mapping[row])) ;
@@ -893,16 +883,6 @@ namespace MPX
                     queue_draw();
                 }
 
-                void
-                select_row(
-                      int row
-                )
-                {
-                    m_selection = boost::make_tuple(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row]), row) ;
-                    m_SIGNAL_selection_changed.emit() ;
-                    queue_draw();
-                }
-
                 static gboolean
                 list_view_set_adjustments(
                     GtkWidget*obj,
@@ -930,6 +910,38 @@ namespace MPX
                 }
 
             public:
+
+                void
+                select_id(
+                    gint64 id
+                )
+                {
+                    using boost::get;
+
+                    for( DataModelFilterArtist::RowRowMapping::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
+                    {
+                        if( id == get<1>(**i))
+                        {
+                            select_row( std::distance( m_model->m_mapping.begin(), i )) ;
+                            return ;
+                        }
+                    }
+                
+                    clear_selection() ;
+                }
+
+                void
+                select_row(
+                      std::size_t row
+                )
+                {
+                    if( row < m_model->m_mapping.size() )
+                    {
+                        m_selection = boost::make_tuple(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row]), row) ;
+                        m_SIGNAL_selection_changed.emit() ;
+                        queue_draw();
+                    }
+                }
 
                 SignalSelectionChanged&
                 signal_selection_changed()
@@ -1083,7 +1095,6 @@ namespace MPX
                 ListViewArtist ()
 
                         : ObjectBase( "YoukiListViewArtist" )
-                        , m_previous_drawn_row( 0 )
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_highlight( false )

@@ -241,7 +241,7 @@ namespace MPX
         m_ScrolledWinAlbums = Gtk::manage( new Gtk::ScrolledWindow ) ;
         m_ScrolledWinTracks = Gtk::manage( new Gtk::ScrolledWindow ) ;
 
-        m_main_window       = Gtk::manage( new MainWindow ) ;
+        m_main_window       = new MainWindow ;
         m_main_window->signal_key_press_event().connect(
             sigc::mem_fun(
                   *this
@@ -622,14 +622,15 @@ namespace MPX
         }
 
         model_album_artists->m_constraint_artist = private_->FilterModelArtist->m_constraint_artist ; 
-
         model_albums->m_constraint_id_album  = private_->FilterModelAlbums->m_constraint_id_album ; 
         model_albums->m_constraint_id_artist = private_->FilterModelAlbums->m_constraint_id_artist ; 
-    
         model_tracks->m_constraints = private_->FilterModelTracks->m_constraints ;
         model_tracks->m_constraints_synthetic = private_->FilterModelTracks->m_constraints_synthetic ;
 
-        private_->FilterModelArtist     = model_album_artists ;
+        gint64 id_albums = m_ListViewAlbums->get_selected() ;
+        gint64 id_artist = m_ListViewArtist->get_selected() ;
+
+        private_->FilterModelArtist = model_album_artists ;
         private_->FilterModelAlbums = model_albums ;
         private_->FilterModelTracks = model_tracks ;
 
@@ -637,9 +638,12 @@ namespace MPX
         m_ListViewAlbums->set_model( private_->FilterModelAlbums ) ;
         m_ListViewTracks->set_model( private_->FilterModelTracks ) ; 
 
-        private_->FilterModelTracks->regen_mapping () ;
         private_->FilterModelArtist->regen_mapping () ;
         private_->FilterModelAlbums->regen_mapping () ;
+        private_->FilterModelTracks->regen_mapping () ;
+
+        m_ListViewArtist->select_id( id_artist ) ;
+        m_ListViewAlbums->select_id( id_albums ) ;
     }
 
     void
@@ -704,7 +708,7 @@ namespace MPX
         if( duration < 0 )
             return ;
 
-        if( m_seek_position && position >= m_seek_position.get() ) 
+        if( m_seek_position && guint64(position) >= m_seek_position.get() ) 
         {
             m_seek_position.reset() ; 
         }
@@ -1303,6 +1307,31 @@ namespace MPX
     YoukiController::Pause ()
     {
         API_pause_toggle() ;
+    }
+
+    void
+    YoukiController::queue_next_track(
+          gint64 id
+    )
+    {
+        m_next_track_queue_id = id ;
+    }
+
+    PlayStatus
+    YoukiController::get_status(
+    )
+    {
+        return PlayStatus( m_play->property_status().get_value() ) ;
+    }
+
+    MPX::Track&
+    YoukiController::get_metadata(
+    )
+    {
+        if( m_track_current )
+            return m_track_current.get() ;
+        else
+            throw std::runtime_error("No current track!") ;
     }
 
     void

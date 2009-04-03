@@ -47,7 +47,7 @@ namespace MPX
                 Model_SP_t      m_realmodel;
                 Signal0         m_changed;
                 IdIterMap_t     m_iter_map;
-                gint64          m_current_row ;
+                std::size_t     m_current_row ;
 
                 DataModelTracks()
                 : m_current_row( 0 )
@@ -81,14 +81,14 @@ namespace MPX
                     return bool(m_realmodel) ;
                 }
 
-                virtual int
+                virtual std::size_t
                 size ()
                 {
                     return m_realmodel->size() ;
                 }
 
                 virtual Row7&
-                row (int row)
+                row (std::size_t row)
                 {
                     return (*m_realmodel)[row] ;
                 }
@@ -294,14 +294,14 @@ namespace MPX
                     scan_active() ;
                 }
 
-                virtual int 
+                virtual std::size_t 
                 size ()
                 {
                     return m_mapping.size();
                 }
 
                 virtual Row7&
-                row (int row)
+                row (std::size_t row)
                 {
                     return *(m_mapping[row]);
                 }
@@ -505,7 +505,7 @@ namespace MPX
 
                         CacheVec_t m_cachevec ; 
 
-                        for( int n = 0 ; n < m.size(); ++n )
+                        for( std::size_t n = 0 ; n < m.size(); ++n )
                         {
                             if( !m[n].length() )
                             {
@@ -539,7 +539,7 @@ namespace MPX
                         }
 
                         RowSet_t output  ;
-                        for( int n = 0 ; n < m_cachevec.size() ; ++n )
+                        for( std::size_t n = 0 ; n < m_cachevec.size() ; ++n )
                         {
                             if( n == 0 ) 
                             {
@@ -648,7 +648,7 @@ namespace MPX
 
                         CacheVec_t m_cachevec ; 
 
-                        for( int n = 0 ; n < m.size(); ++n )
+                        for( std::size_t n = 0 ; n < m.size(); ++n )
                         {
                             if( !m[n].length() )
                             {
@@ -682,7 +682,7 @@ namespace MPX
                         }
 
                         RowSet_t output  ;
-                        for( int n = 0 ; n < m_cachevec.size() ; ++n )
+                        for( std::size_t n = 0 ; n < m_cachevec.size() ; ++n )
                         {
                             if( n == 0 ) 
                             {
@@ -1017,7 +1017,7 @@ namespace MPX
                 {
                     if( m_model->size() )
                     {
-                            int row = get_upper_row() ; 
+                            std::size_t row = get_upper_row() ; 
 
                             m_model->set_current_row( row ) ;        
 
@@ -1120,7 +1120,7 @@ namespace MPX
                             {
                                 mark_first_row_up:
     
-                                int row = get_upper_row();
+                                std::size_t row = get_upper_row();
 
                                 m_selection.clear();
                                 m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
@@ -1130,7 +1130,7 @@ namespace MPX
                                 if( get_row_is_visible( (*(m_selection.begin())).second ))
                                 {
                                     Model_t::iterator i = (*(m_selection.begin())).first;
-                                    int row = (*(m_selection.begin())).second;
+                                    std::size_t row = (*(m_selection.begin())).second;
 
                                     std::advance(i, step);
                                     row += step;
@@ -1173,7 +1173,7 @@ namespace MPX
                             {
                                 mark_first_row_down:
 
-                                int row = get_upper_row();
+                                std::size_t row = get_upper_row();
                                 m_selection.clear();
                                 m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
                             }
@@ -1182,7 +1182,7 @@ namespace MPX
                                 if( get_row_is_visible( (*(m_selection.begin())).second ))
                                 {
                                     Model_t::iterator i = (*(m_selection.begin())).first;
-                                    int row = (*(m_selection.begin())).second;
+                                    std::size_t row = (*(m_selection.begin())).second;
     
                                     std::advance(i, step);
                                     row += step;
@@ -1225,7 +1225,7 @@ namespace MPX
                         {
                             int x = event->x ;
                             int p = 0 ;
-                            for( int n = 0; n < m_columns.size() ; ++n )
+                            for( std::size_t n = 0; n < m_columns.size() ; ++n )
                             {
                                 int w = m_columns[n]->get_width() ;
                                 if( (x >= p) && (x <= p + w) && !m_fixed.count(n))
@@ -1238,7 +1238,7 @@ namespace MPX
                             return true;
                         }
     
-                        int row = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
+                        std::size_t row = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
 
                         m_selection.clear();
                         m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
@@ -1249,7 +1249,7 @@ namespace MPX
                     else
                     if( event->type == GDK_2BUTTON_PRESS )
                     {
-                        int row = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
+                        std::size_t row = get_upper_row() + ((event->y-m_row_start) / m_row_height);
 
                         if( row < m_model->size() )
                         {
@@ -1347,35 +1347,13 @@ namespace MPX
                     double n = m_columns.size() - m_collapsed.size() - m_fixed.size() ;
                     double column_width_calculated = (double(event->width) - double(m_fixed_total_width) - double(column_width_collapsed*double(m_collapsed.size()))) / n ; 
 
-                    for( int n = 0; n < m_columns.size(); ++n )
+                    for( std::size_t n = 0; n < m_columns.size(); ++n )
                     {
                         if( !m_fixed.count( n ) )
                         {
                             m_columns[n]->set_width(m_collapsed.count( n ) ? column_width_collapsed : column_width_calculated ) ; 
                         }
                     }
-
-/*
-                    g_print("total_width: %d    ", int(event->width) ) ;
-
-                    int xpos = 0 ;
-
-                    for( int n = 0; n < m_columns.size(); ++n )
-                    {
-                        if( m_collapsed.count( n ) )
-                        {
-                            g_print("%d:x=%d w=%d  ", n, xpos, int(column_width_collapsed) ) ;
-                            xpos += column_width_collapsed + 1 ;
-                        }
-                        else
-                        {
-                            g_print("%d:x=%d w=%d  ", n, xpos, int(m_columns[n]->get_width()) ) ;
-                            xpos += m_columns[n]->get_width() + 1 ;
-                        }
-                    }
-
-                    g_print("\n") ;
-*/
 
                     return false;
                 }
@@ -1388,7 +1366,7 @@ namespace MPX
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
-                    int row = get_upper_row() ;
+                    std::size_t row = get_upper_row() ;
                     m_previous_drawn_row = row;
 
                     int ypos    = m_row_start ;
@@ -1658,7 +1636,7 @@ namespace MPX
                 void
                 on_model_changed( gint64 position )
                 {
-                    int view_count = m_visible_height / m_row_height ;
+                    std::size_t view_count = m_visible_height / m_row_height ;
 
                     m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
 
@@ -1712,7 +1690,7 @@ namespace MPX
                     , const Glib::RefPtr<Gtk::Tooltip>&     tooltip
                 )
                 {
-                    int row = (double( tooltip_y ) - m_row_start) / double(m_row_height) ;
+                    std::size_t row = (double( tooltip_y ) - m_row_start) / double(m_row_height) ;
 
                     MPX::Track track = boost::get<4>(m_model->row(row));
 
@@ -1738,17 +1716,17 @@ namespace MPX
 
             public:
     
-                int
+                std::size_t
                 get_upper_row ()
                 {
                     return double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ;
                 }
 
                 bool
-                get_row_is_visible (int row)
+                get_row_is_visible (std::size_t row)
                 {
-                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
-                    int row_lower = row_upper + m_visible_height/m_row_height;
+                    std::size_t row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
+                    std::size_t row_lower = row_upper + m_visible_height/m_row_height;
                     return ( row >= row_upper && row <= row_lower);
                 }
 

@@ -1,8 +1,8 @@
-[MPX Plugin]
+[YoukiPlugin]
 Loader=python
 Module=tracktags
 IAge=1
-Name=Track Tags
+Name=Last.fm-Tags
 Authors=Milosz Derezynski <milosz@backtrace.info>
-Copyright=Copyright © 2008 Milosz Derezynski 
+Copyright=Copyright © 2009 Milosz Derezynski 
 Website=http://mpx.backtrace.info/

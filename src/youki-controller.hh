@@ -265,27 +265,16 @@ namespace MPX
 
             void
             queue_next_track(
-                  gint64 id
-            )
-            {
-                m_next_track_queue_id = id ;
-            }
+                gint64
+            ) ;
 
             PlayStatus
             get_status(
-            )
-            {
-            }
+            ) ;
 
             MPX::Track&
             get_metadata(
-            )
-            {
-                if( m_track_current )
-                    return m_track_current.get() ;
-                else
-                    throw std::runtime_error("No current track!") ;
-            }
+            ) ;
 
             void
             API_pause_toggle(
