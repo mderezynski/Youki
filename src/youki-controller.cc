@@ -1239,7 +1239,7 @@ namespace MPX
     //// DBUS
 
     void
-    YoukiController::Raise ()
+    YoukiController::Present ()
     {
         if( m_main_window )
         {

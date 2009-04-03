@@ -244,7 +244,7 @@ namespace MPX
         protected: // DBUS
 
             virtual void
-            Raise () ;
+            Present () ;
 
             virtual void
             Startup () ;
