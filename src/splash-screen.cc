@@ -28,23 +28,25 @@
 #include <glib/gi18n.h>
 #include <gtkmm.h>
 #include <gdkmm.h>
+#include "mpx/util-graphics.hh"
 #include "splash-screen.hh"
 using namespace Glib;
 
 namespace MPX
 {
-    Splashscreen::Splashscreen ()
-    : Gtk::Window (Gtk::WINDOW_TOPLEVEL)
-    , m_image (Gdk::Pixbuf::create_from_file (build_filename(DATA_DIR, "images" G_DIR_SEPARATOR_S "splash.png")))
-    , m_image_w (m_image->get_width())
-    , m_image_h (m_image->get_height())
-    , m_bar_w (160)
-    , m_bar_h (2)
-    , m_bar_x (6)
-    , m_bar_y (68)
-    , m_percent (0.0)
+    Splashscreen::Splashscreen(
+    )
+            : Gtk::Window (Gtk::WINDOW_TOPLEVEL)
+            , m_logo (Gdk::Pixbuf::create_from_file (build_filename(DATA_DIR, "images" G_DIR_SEPARATOR_S "splash.png")))
+            , m_logo_w (m_logo->get_width())
+            , m_logo_h (m_logo->get_height())
+            , m_bar_w (160)
+            , m_bar_h (2)
+            , m_bar_x (6)
+            , m_bar_y (68)
+            , m_percent (0.0)
     {
-        set_size_request (m_image_w, m_image_h);
+        set_size_request (m_logo_w, m_logo_h);
         set_title (_("Youki is starting!"));
         set_skip_taskbar_hint (true);
         set_skip_pager_hint (true);
@@ -57,19 +59,35 @@ namespace MPX
         set_type_hint (Gdk::WINDOW_TYPE_HINT_SPLASHSCREEN);
 
         Glib::RefPtr<Gdk::Screen> screen = Gdk::Screen::get_default();
+
         m_has_alpha = screen->is_composited();
 
-        if (m_has_alpha)
+        if( m_has_alpha )
         {
-          set_colormap (screen->get_rgba_colormap());
+            set_colormap (screen->get_rgba_colormap());
         }
         else
         {
-          Glib::RefPtr<Gdk::Pixmap> mask_pixmap_window1, mask_pixmap_window2;
-          Glib::RefPtr<Gdk::Bitmap> mask_bitmap_window1, mask_bitmap_window2;
-          m_image->render_pixmap_and_mask (mask_pixmap_window1, mask_bitmap_window1, 0);
-          m_image->render_pixmap_and_mask (mask_pixmap_window2, mask_bitmap_window2, 128);
-          shape_combine_mask (mask_bitmap_window2, 0, 0);
+            Glib::RefPtr<Gdk::Pixmap> mask_pixmap_window1, mask_pixmap_window2;
+            Glib::RefPtr<Gdk::Bitmap> mask_bitmap_window1, mask_bitmap_window2;
+
+            m_logo->render_pixmap_and_mask(
+                  mask_pixmap_window1
+                , mask_bitmap_window1
+                , 0
+            ) ;
+
+            m_logo->render_pixmap_and_mask(
+                  mask_pixmap_window2
+                , mask_bitmap_window2
+                , 128
+            ) ;
+
+            shape_combine_mask(
+                  mask_bitmap_window2
+                , 0
+                , 0
+            ) ;
         }
 
         show ();
@@ -79,65 +97,105 @@ namespace MPX
     }
 
     void
-    Splashscreen::set_message (char const * message, double percent)
+    Splashscreen::set_message(
+          const std::string&    message
+        , double                percent
+    )
     {
         m_percent = percent;
         m_message = message;
-        queue_draw ();
-        while (gtk_events_pending()) gtk_main_iteration();
-    }
 
-    void
-    Splashscreen::on_realize ()
-    {
-        Gtk::Window::on_realize ();
-        m_layout = create_pango_layout ("");
-        while (gtk_events_pending()) gtk_main_iteration();
+        queue_draw ();
+
+        while (gtk_events_pending())
+            gtk_main_iteration();
     }
 
     bool
     Splashscreen::on_expose_event (GdkEventExpose *event)
     {
-        Cairo::RefPtr<Cairo::Context> m_cr = get_window ()->create_cairo_context ();
+        Cairo::RefPtr<Cairo::Context> cairo = get_window ()->create_cairo_context () ;
 
-        m_cr->set_operator (Cairo::OPERATOR_SOURCE);
+        cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
+
         if(m_has_alpha)
         {
-            m_cr->set_source_rgba (.0, .0, .0, .0);
-            m_cr->paint ();
+            cairo->set_source_rgba( .0, .0, .0, .0 ) ;
+            cairo->paint ();
         }
 
-        gdk_cairo_set_source_pixbuf (m_cr->cobj(), m_image->gobj(), 0, 0);
-        m_cr->paint ();
+        Gdk::Cairo::set_source_pixbuf(
+              cairo
+            , m_logo
+            , 0
+            , 0
+        ) ;
+        cairo->paint () ;
 
-        m_cr->set_operator( Cairo::OPERATOR_ATOP );
-        m_cr->set_source_rgba( 1., 1., 1., 1.); 
-        m_cr->rectangle( m_bar_x - 2, m_bar_y - 2, m_bar_w + 4 , m_bar_h + 4);
-        m_cr->set_line_width (0.5);
-        m_cr->stroke ();
+        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+        cairo->set_source_rgba(
+              1.
+            , 1.
+            , 1.
+            , 1.
+        ) ; 
+        cairo->rectangle(
+              m_bar_x - 2
+            , m_bar_y - 2
+            , m_bar_w + 4
+            , m_bar_h + 4
+        ) ;
+        cairo->set_line_width(
+              0.5
+        ) ;
+        cairo->stroke () ;
 
-        m_cr->set_operator( Cairo::OPERATOR_ATOP );
-        m_cr->set_source_rgba( 1., 1., 1., .55); 
-        m_cr->rectangle( m_bar_x , m_bar_y , m_bar_w * m_percent, m_bar_h );
-        m_cr->fill ();
+        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+        cairo->set_source_rgba( 1., 1., 1., .55 ) ; 
+        cairo->rectangle(
+              m_bar_x
+            , m_bar_y
+            , m_bar_w * m_percent
+            , m_bar_h
+        ) ;
+        cairo->fill ();
 
         int lw, lh;
 
-        Pango::FontDescription desc = get_style()->get_font ();
-        pango_font_description_set_absolute_size (desc.gobj(), 8 * PANGO_SCALE);
-        pango_layout_set_font_description (m_layout->gobj(), desc.gobj ()); 
+        Pango::FontDescription font_desc = get_style()->get_font ();
 
-        m_layout->set_markup (m_message); 
-        m_layout->get_pixel_size (lw, lh);
+        int text_size_px = 8 ;
+        int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
 
-        m_cr->set_operator( Cairo::OPERATOR_ATOP );
-        m_cr->move_to( m_bar_x - 2, m_bar_y - 3 - lh ); 
-        m_cr->set_source_rgba( 1., 1., 1., 1.);
-        pango_cairo_show_layout (m_cr->cobj(), m_layout->gobj());
+        font_desc.set_absolute_size(
+              text_size_pt * PANGO_SCALE
+        ) ;
 
-        desc = get_style()->get_font ();
-        pango_font_description_set_absolute_size (desc.gobj(), 8 * PANGO_SCALE);
-        pango_layout_set_font_description (m_layout->gobj(), desc.gobj ()); 
+        Glib::RefPtr<Pango::Layout> layout = create_pango_layout("") ;
+
+        layout->set_font_description(
+              font_desc
+        ) ;
+
+        layout->set_markup(
+              m_message
+        ) ; 
+
+        layout->get_pixel_size(
+              lw
+            , lh
+        ) ;
+
+        cairo->set_operator( Cairo::OPERATOR_ATOP );
+        cairo->move_to(
+                m_bar_x + m_bar_w + 2
+              , m_bar_y - 1
+        ) ; 
+        cairo->set_source_rgba( 1., 1., 1., 1.);
+        pango_cairo_show_layout(
+              cairo->cobj()
+            , layout->gobj()
+        ) ;
 
         return false;
     }

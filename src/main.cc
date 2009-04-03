@@ -316,10 +316,6 @@ main (int argc, char ** argv)
     Glib::init();
     Gio::init();
 
-    signal_handlers_install ();
-    create_user_dirs ();
-    setup_mcs ();
-
     GOptionContext * context_c = g_option_context_new (_(" - run AudioSource Player"));
     g_option_context_add_group (context_c, gst_init_get_option_group ());
     Glib::OptionContext context (context_c, true);
@@ -332,6 +328,9 @@ main (int argc, char ** argv)
         std::exit(EXIT_FAILURE);
     }
 
+    signal_handlers_install ();
+    create_user_dirs ();
+    setup_mcs ();
     gst_init(&argc, &argv);
     mpx_py_init() ;
 

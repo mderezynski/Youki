@@ -31,38 +31,49 @@
 
 namespace MPX
 {
-  class Splashscreen : public Gtk::Window
-  {
-    public:
+    class Splashscreen
+    : public Gtk::Window
+    {
+      public:
 
-        Splashscreen ();
-        void set_message (char const * message, double percent);
+          Splashscreen();
 
-    protected:
+          virtual ~Splashscreen()
+          {}
 
-        virtual void
-        on_realize ();
+          void
+          set_message(
+                const std::string&
+              , double
+          ) ;
 
-        virtual bool
-        on_expose_event (GdkEventExpose *event);
+      protected:
 
-    private:
+          virtual bool
+          on_expose_event(
+                GdkEventExpose*
+          ) ;
 
-        Glib::RefPtr<Gdk::Pixbuf>     m_image;
-        Glib::RefPtr<Pango::Layout>   m_layout;
+      private:
 
-        unsigned int  m_image_w;
-        unsigned int  m_image_h;
-        unsigned int  m_bar_w;
-        unsigned int  m_bar_h;
-        unsigned int  m_bar_x;
-        unsigned int  m_bar_y;
-        bool          m_has_alpha;
-        double        m_percent;
-        Glib::ustring m_message;
+          Glib::RefPtr<Gdk::Pixbuf> m_logo ;
 
-  };
+          unsigned int  m_logo_w ;
+          unsigned int  m_logo_h ;
 
+          unsigned int  m_bar_w ;
+          unsigned int  m_bar_h ;
+
+          unsigned int  m_bar_x ;
+          unsigned int  m_bar_y ;
+
+          bool          m_has_alpha ;
+
+          double        m_percent ;
+
+          std::string   m_message ;
+
+    } ;
 } // MPX
 
 #endif // !MPX_UI_SPLASH_HH

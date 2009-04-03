@@ -859,15 +859,15 @@ namespace MPX
                     if( has_focus() )
                     {
                         get_style()->paint_focus(
-                            get_window(),
-                            Gtk::STATE_NORMAL,
-                            get_allocation(),
-                            *this,
-                            "treeview",
-                            0, 
-                            0, 
-                            get_allocation().get_width(), 
-                            get_allocation().get_height()
+                              get_window()
+                            , Gtk::STATE_NORMAL
+                            , get_allocation()
+                            , *this
+                            , "treeview"
+                            , 0 
+                            , 0 
+                            , get_allocation().get_width() 
+                            , get_allocation().get_height()
                         );
                     }
 
