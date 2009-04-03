@@ -379,7 +379,22 @@ main (int    argc,
     }
     else
     {
-            g_message( "Youki-Startup: Youki already running" ) ;
+            g_message( "Youki-Startup: Youki already running, raising window." ) ;
+
+            youki = dbus_g_proxy_new_for_name(
+                      session
+                    , "info.backtrace.Youki.App"
+                    , "/info/backtrace/Youki/App"
+                    , "info.backtrace.Youki.App"
+            ) ;
+
+            dbus_g_proxy_call(
+                      youki
+                    , "Present"
+                    , &error
+                    , G_TYPE_INVALID
+                    , G_TYPE_INVALID
+            ) ;
     }
 
     g_main_loop_unref (mainloop);

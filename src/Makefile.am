@@ -227,5 +227,5 @@ DISTCLEANFILES = $(BUILT_SOURCES)
 mpx-mlibman-dbus-proxy.hh: $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml
 	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml --proxy=mpx-mlibman-dbus-proxy.hh
 
-mpx-app-dbus-adaptor.hh:
+mpx-app-dbus-adaptor.hh: $(top_srcdir)/dbus/dbus-obj-YOUKI.xml
 	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-YOUKI.xml --adaptor=mpx-app-dbus-adaptor.hh

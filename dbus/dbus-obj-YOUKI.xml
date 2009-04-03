@@ -4,6 +4,8 @@
 
   <interface name="info.backtrace.Youki.App">
 
+        <method name="Present"/>
+
         <method name="Startup"/>
         <method name="Quit" />
 

@@ -20,6 +20,7 @@ public:
     App_adaptor()
     : ::DBus::InterfaceAdaptor("info.backtrace.Youki.App")
     {
+        register_method(App_adaptor, Present, _Present_stub);
         register_method(App_adaptor, Startup, _Startup_stub);
         register_method(App_adaptor, Quit, _Quit_stub);
         register_method(App_adaptor, GetMetadata, _GetMetadata_stub);
@@ -30,6 +31,10 @@ public:
 
     ::DBus::IntrospectedInterface *const introspect() const 
     {
+        static ::DBus::IntrospectedArgument Present_args[] = 
+        {
+            { 0, 0, 0 }
+        };
         static ::DBus::IntrospectedArgument Startup_args[] = 
         {
             { 0, 0, 0 }
@@ -82,6 +87,7 @@ public:
         };
         static ::DBus::IntrospectedMethod App_adaptor_methods[] = 
         {
+            { "Present", Present_args },
             { "Startup", Startup_args },
             { "Quit", Quit_args },
             { "GetMetadata", GetMetadata_args },
@@ -125,6 +131,7 @@ public:
     /* methods exported by this interface,
      * you will have to implement them in your ObjectAdaptor
      */
+    virtual void Present() = 0;
     virtual void Startup() = 0;
     virtual void Quit() = 0;
     virtual std::map< std::string, ::DBus::Variant > GetMetadata() = 0;
@@ -173,6 +180,14 @@ private:
 
     /* unmarshalers (to unpack the DBus message before calling the actual interface method)
      */
+    ::DBus::Message _Present_stub(const ::DBus::CallMessage &call)
+    {
+        ::DBus::MessageIter ri = call.reader();
+
+        Present();
+        ::DBus::ReturnMessage reply(call);
+        return reply;
+    }
     ::DBus::Message _Startup_stub(const ::DBus::CallMessage &call)
     {
         ::DBus::MessageIter ri = call.reader();
