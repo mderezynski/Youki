@@ -699,26 +699,18 @@ namespace MPX
         if( position < 0 )
             return ;
 
-        gint64 duration ;
+        gint64 duration = m_play->property_duration().get_value() ;
+    
+        if( duration < 0 )
+            return ;
 
-        if( m_seek_position ) 
+        if( m_seek_position && position >= m_seek_position.get() ) 
         {
-            if( position >= m_seek_position.get() )
-            {
-                duration = m_play->property_duration().get_value() ;
-                m_seek_position.reset() ; 
-            }
-        }
-        else
-        {
-            duration = m_play->property_duration().get_value() ;
+            m_seek_position.reset() ; 
         }
 
-        if( duration >= 0 )
-        {
-            m_main_position->set_position( duration, position ) ;
-            m_control_status_icon->set_position( duration, position ) ;
-        }
+        m_main_position->set_position( duration, position ) ;
+        m_control_status_icon->set_position( duration, position ) ;
     }
 
     void
@@ -1052,13 +1044,12 @@ namespace MPX
 
             Glib::ustring new_prediction = private_->MarkovPredictor->predict( text ) ;
 
-            m_Entry_Text = text ; 
-
-            if( new_prediction == m_prediction && m_Entry_Text.substr( 0, m_Entry_Text.length() - m_prediction.length()) == text )
+            if( new_prediction == m_prediction && m_Entry_Text.length() == (text.length()+m_prediction.length()) )
             {
                 return ;
             }
 
+            m_Entry_Text = text ; 
             m_prediction = new_prediction ; 
 
             if( !m_prediction.empty() && !m_conn_completion ) 

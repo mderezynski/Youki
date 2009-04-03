@@ -30,12 +30,14 @@ namespace MPX
                 {
                     m_library = services->get<Library>("mpx-service-library").get() ;
 
+/*
                     bool exists = m_library->get_sql_db()->table_exists( "markov_predictor_node_chain" ) ;
 
                     m_library->execSQL( "CREATE TABLE IF NOT EXISTS markov_predictor_node_chain (id INTEGER PRIMARY KEY AUTOINCREMENT, parent INTEGER DEFAULT NULL)" ) ;
                     m_library->execSQL( "CREATE TABLE IF NOT EXISTS markov_predictor_node_data  (id INTEGER, char STRING, intensity INTEGER)" ) ;
 
                     if( !exists )
+*/
                     {
                         SQL::RowV v ;
                         m_library->getSQL( v, "SELECT album_artist FROM album_artist ORDER BY album_artist" ) ; 
@@ -46,23 +48,45 @@ namespace MPX
                                 boost::get<std::string>((*i)["album_artist"])
                             ) ;
                         }
+
+                        v.clear() ;
+                        m_library->getSQL( v, "SELECT album_artist FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album_playscore > 0.1" ) ; 
+
+                        for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
+                        {
+                            int inc = 1 ;
+
+                            const Variant& vr = (*i)["album_playscore"] ;
+
+                            if( vr.which() == 0 )
+                                inc = boost::get<gint64>( vr ) ;
+                            else
+                                inc = boost::get<double>( vr ) ;
+
+                            process_string(
+                                  boost::get<std::string>((*i)["album_artist"])
+                                , inc 
+                            ) ;
+                        }
                     }
+/*
                     else
                     {
                         restore_node( m_tree.Root, 1 ) ;
                     }
+*/
                 }
 
                 void
                 restore_node(
                       const NTree<GlyphData>::Node_SP_t&    node 
-                    , int64_t                               id_cur 
+                    , int64_t                               parent 
                 )
                 {
                     SQL::RowV v ;
                     m_library->getSQL(v, (
                         boost::format("SELECT * FROM markov_predictor_node_chain WHERE parent = '%lld'")
-                            % id_cur
+                            % parent
                     ).str()) ; // get all the node's children
 
                     if( v.empty() )
@@ -71,34 +95,29 @@ namespace MPX
                     for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i ) 
                     {
                         int64_t id = boost::get<gint64>((*i)["id"]) ;
-                        NTree<GlyphData>::Node_SP_t node_new = new NTree<GlyphData>::Node ;
 
                         SQL::RowV v2 ;
                         m_library->getSQL(v2, (
                             boost::format("SELECT char, intensity FROM markov_predictor_node_data WHERE id = '%lld'")
                                 % id
-                        ).str() ) ; 
+                        ).str()) ; // get all the node's children
 
-                        if( !v2.empty() )
+                        NTree<GlyphData>::Node_SP_t node_new = new NTree<GlyphData>::Node ;
+
+                        gunichar c ;    
+
+                        if( v2[0]["char"].which() == 0 )
                         {
-                            gunichar c ;    
-
-                            if( v2[0]["char"].which() == 0 )
-                            {
-                                c = Glib::ustring(boost::lexical_cast<std::string>(boost::get<gint64>(v2[0]["char"])))[0] ;
-                            }
-                            else
-                            {
-                                c = Glib::ustring(boost::get<std::string>(v2[0]["char"]))[0] ;
-                            }
-
-                            node_new->Data.Char = c ; 
-                            node_new->Data.Intensity = boost::get<gint64>(v2[0]["intensity"]) ;
+                            c = Glib::ustring(boost::lexical_cast<std::string>(boost::get<gint64>(v2[0]["char"])))[0] ;
+                        }
+                        else
+                        {
+                            c = Glib::ustring(boost::get<std::string>(v2[0]["char"]))[0] ;
                         }
 
+                        node_new->Data.Char = c ; 
+                        node_new->Data.Intensity = boost::get<gint64>(v2[0]["intensity"]) ;
                         node->append( node_new ) ;
-
-                        g_message( "Restoring node with parent: %lld and node id: %lld", id_cur, id ) ;
                         restore_node( node_new, id ) ;
                     }
                 }
@@ -129,6 +148,7 @@ namespace MPX
 
                 virtual ~MarkovTypingPredictor()
                 {
+/*
                     boost::shared_ptr<Library> lib = services->get<Library>("mpx-service-library") ;
 
                     m_library->execSQL( "DELETE FROM markov_predictor_node_chain" ) ;
@@ -143,11 +163,13 @@ namespace MPX
                     //// STORE REST OF THE TREE ////
 
                     store_node( m_tree.Root, 1 ) ;
+*/
                 }
 
                 void
                 process_string(     
-                    const Glib::ustring& u
+                      const Glib::ustring&  u
+                    , int                   intensity_inc = 1
                 )
                 {
                     NTree<GlyphData>::Node_SP_t root = m_tree.Root ;
@@ -163,7 +185,7 @@ namespace MPX
 
                             if( g_unichar_tolower(data.Char) == g_unichar_tolower(*i) )
                             {
-                                data.Intensity++ ; 
+                                data.Intensity += intensity_inc ; 
                                 curr = *n ;
                                 found = 1 ; 
                                 break ;
@@ -173,7 +195,7 @@ namespace MPX
                         if( !found )
                         {
                             GlyphData new_glyph_data ;
-                            new_glyph_data.Intensity = 0 ;
+                            new_glyph_data.Intensity = intensity_inc - 1 ;
                             new_glyph_data.Char = *i ; 
                             NTree<GlyphData>::Node_SP_t n =  new NTree<GlyphData>::Node( new_glyph_data ) ;
                             curr->append( n ) ; 
@@ -241,6 +263,8 @@ namespace MPX
                             prediction += curr->Data.Char ;
                         }
                     }
+
+                    return prediction ;
                 }
     } ;
 }
