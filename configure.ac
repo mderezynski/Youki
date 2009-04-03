@@ -285,9 +285,6 @@ PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.10.0 gobject-2.0 gthread-2.0 gmodule-2.
 PKG_CHECK_MODULES([GLIBMM], [glibmm-2.4 >= 2.8.3])
 PKG_CHECK_MODULES([SIGC], [sigc++-2.0 >= 2.0.0])
 
-# clutter
-# PKG_CHECK_MODULES([CLUTTER], [clutter-0.6 >= 0.6.0 clutter-cairo-0.6 >= 0.6.0 clutter-gtk-0.6 >= 0.6.0])
-
 # GIOMM
 PKG_CHECK_MODULES([GIOMM], [giomm-2.4])
 
@@ -489,14 +486,8 @@ AM_CONDITIONAL([HAVE_ZIP], [test "x$ZIP" != "x"])
 # libofa
 PKG_CHECK_MODULES([LIBOFA], [libofa >= 0.9.3])
 
-# GDL
-PKG_CHECK_MODULES([GDL], [gdl-1.0])
-
 # SIGX
 PKG_CHECK_MODULES([SIGX], [sigx-2.0])
-
-# GTKGLEXT
-PKG_CHECK_MODULES([GTKGLEXT], [gtkglextmm-1.2])
 
 # GAMIN
 AC_CHECK_LIB(fam,FAMOpen,,[echo "To build this software, you must install the FAM development package"; exit 1])
