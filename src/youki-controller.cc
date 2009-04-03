@@ -1331,16 +1331,17 @@ namespace MPX
     YoukiController::API_prev(
     )
     {
-/*
         if( m_track_current )
         {
                 if( m_playqueue.size() > 1 )
                 {
                     m_playqueue.pop_back() ;
-                    Track_sp p = m_library->getTrackById( m_playqueue.back() ) ; 
+
+                    SQL::RowV v ;
+                    m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % m_playqueue.back() ).str()) ; 
+                    Track_sp p = m_library->sqlToTrack( v[0], true, false ) ;
                     play_track( *(p.get()) ) ;
                 }
         }
-*/
     }
 }
