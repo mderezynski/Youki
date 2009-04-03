@@ -383,13 +383,13 @@ namespace MPX
                             cairo->set_source(
                                   s
                                 , r.x
-                                , r.y + 16
+                                , r.y + 3
                             ) ; 
 
                             RoundedRectangle(
                                   cairo
                                 , r.x
-                                , r.y + 16
+                                , r.y + 3
                                 , s->get_width() 
                                 , s->get_height() 
                                 , 4.
@@ -405,7 +405,6 @@ namespace MPX
 
                     int width, height;
 
-                    cairo->set_source_rgba( 1., 1., 1., .8 ) ;
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
                     Pango::FontDescription font_desc( "sans" ) ;
@@ -421,10 +420,12 @@ namespace MPX
 
                     layout->set_text( get<4>(data_row) )  ;
                     layout->get_pixel_size (width, height) ;
+
                     cairo->move_to(
                           xpos + (m_width - width) / 2.
-                        , (row > 0) ? (r.y + 2) : (r.y + ((row_height - height) / 2))
+                        , r.y + 71 
                     ) ;
+                    cairo->set_source_rgba( 1., 1., 1., .7 ) ;
                     pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
 
                     //// ALBUM
@@ -437,6 +438,7 @@ namespace MPX
                                   xpos + (m_width - width) / 2.
                                 , r.y + 84 
                             ) ;
+                            cairo->set_source_rgba( 1., 1., 1., .8 ) ;
                             pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
                     }
 
@@ -757,8 +759,8 @@ namespace MPX
                             GdkRectangle r ;
 
                             r.x         = inner_pad + 2 ; 
-                            r.y         = ypos + inner_pad ;
-                            r.width     = alloc.get_width() - 2*inner_pad  - 4 ;  
+                            r.y         = inner_pad + ypos ;
+                            r.width     = alloc.get_width() - 2*inner_pad  - 2 ;  
                             r.height    = m_row_height - 2*inner_pad - 2 ;
 
                             cairo->save () ;

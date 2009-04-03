@@ -1028,20 +1028,6 @@ namespace MPX
                     }
                 }
 
-                int
-                get_upper_row ()
-                {
-                    return double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ;
-                }
-
-                bool
-                get_row_is_visible (int row)
-                {
-                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
-                    int row_lower = row_upper + m_visible_height/m_row_height;
-                    return ( row >= row_upper && row <= row_lower);
-                }
-
             protected:
 
                 virtual void 
@@ -1242,7 +1228,7 @@ namespace MPX
                             for( int n = 0; n < m_columns.size() ; ++n )
                             {
                                 int w = m_columns[n]->get_width() ;
-                                if( (x >= p) && (x <= p + w))
+                                if( (x >= p) && (x <= p + w) && !m_fixed.count(n))
                                 {
                                     column_set_collapsed( n, !m_collapsed.count( n ) ) ;
                                     break ;
@@ -1752,6 +1738,21 @@ namespace MPX
 
             public:
     
+                int
+                get_upper_row ()
+                {
+                    return double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ;
+                }
+
+                bool
+                get_row_is_visible (int row)
+                {
+                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
+                    int row_lower = row_upper + m_visible_height/m_row_height;
+                    return ( row >= row_upper && row <= row_lower);
+                }
+
+
                 void
                 set_highlight(bool highlight)
                 {

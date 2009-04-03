@@ -244,7 +244,7 @@ namespace MPX
         m_main_window->signal_key_press_event().connect(
             sigc::mem_fun(
                   *this
-                , &YoukiController::on_main_window_key_press
+                , &YoukiController::on_main_window_key_press_event
         )) ;
 
         m_main_window->signal_quit().connect(
@@ -413,16 +413,21 @@ namespace MPX
                 m_ScrolledWinAlbums->show_all() ;
         }
 
-        m_Entry->signal_activate().connect(
+        m_Entry->signal_key_press_event().connect(
             sigc::mem_fun(
                   *this
-                , &YoukiController::on_entry_activated
+                , &YoukiController::on_entry_key_press_event
         )) ;
 
         m_Paned1->add1( *m_ScrolledWinArtist ) ;
-        m_Paned1->add2( *m_Paned2 ) ;
-        m_Paned2->add1( *m_ScrolledWinTracks ) ;
+        m_Paned1->add2( *m_ScrolledWinTracks ) ;
+        m_Paned2->add1( *m_Paned1 ) ;
         m_Paned2->add2( *m_ScrolledWinAlbums ) ;
+
+        std::vector<Gtk::Widget*> v (2) ;
+        v[0] = m_ScrolledWinArtist ;
+        v[1] = m_ScrolledWinTracks ;
+        m_Paned1->set_focus_chain( v ) ;
 
         m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
         m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
@@ -432,7 +437,7 @@ namespace MPX
         m_main_window->set_widget_drawer( *m_NotebookPlugins ) ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
-        m_VBox->pack_start( *m_Paned1, true, true, 0 ) ;
+        m_VBox->pack_start( *m_Paned2, true, true, 0 ) ;
         m_VBox->pack_start( *m_main_titleinfo, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
         m_VBox->pack_start( *m_main_infoarea, false, false, 0 ) ;
@@ -952,18 +957,41 @@ namespace MPX
         private_->FilterModelTracks->regen_mapping() ;
     }
 
-    void
-    YoukiController::on_entry_activated(
+    bool
+    YoukiController::on_entry_key_press_event(
+          GdkEventKey* event
     ) 
     {
-        std::size_t pos = m_Entry_Text.length() - m_prediction.length() ;
-        if( m_Entry_Text.length() > pos && m_Entry_Text.substr( pos, -1 ) == m_prediction )
+        switch( event->keyval )
         {
-            m_prediction.clear() ;
-            m_Entry->select_region( -1, -1 ) ;
+            case GDK_KP_Enter:
+            case GDK_ISO_Enter:
+            case GDK_3270_Enter:
+            case GDK_Return:
+            {
+                if( (event->state & GDK_CONTROL_MASK) && private_->FilterModelTracks->size() )
+                {
+                    play_track( boost::get<4>(private_->FilterModelTracks->row( m_ListViewTracks->get_upper_row()  )) ) ;
+                }
+                else
+                {
+                        std::size_t pos = m_Entry_Text.length() - m_prediction.length() ;
+                        if( m_Entry_Text.length() > pos && m_Entry_Text.substr( pos, -1 ) == m_prediction )
+                        {
+                            m_prediction.clear() ;
+                            m_Entry->select_region( -1, -1 ) ;
+                        }
+                        
+                        on_entry_changed__process_filtering() ;
+                }
+
+                return true ;
+            }
+
+            default: break ;
         }
-        
-        on_entry_changed__process_filtering() ;
+
+        return false ;
     }
 
     bool
@@ -1108,7 +1136,7 @@ namespace MPX
     }
 
     bool
-    YoukiController::on_main_window_key_press(
+    YoukiController::on_main_window_key_press_event(
         GdkEventKey* event
     ) 
     {

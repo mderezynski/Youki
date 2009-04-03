@@ -152,7 +152,7 @@ namespace MPX
             ) ;
 
             bool
-            on_main_window_key_press(
+            on_main_window_key_press_event(
                 GdkEventKey*
             ) ;
 
@@ -165,8 +165,9 @@ namespace MPX
                 bool = false /*force processing*/
             ) ;
 
-            void
-            on_entry_activated(
+            bool
+            on_entry_key_press_event(
+                GdkEventKey*
             ) ;
 
             bool
