@@ -29,14 +29,16 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
+#ifndef PLUGIN_BUILD
 #include "mpx/mpx-audio.hh"
+#endif
+
 #include "mpx/mpx-services.hh"
 #include "mpx/widgets/widgetloader.hh"
 
 #include <set>
 #include <string>
 #include <vector>
-
 #include <glibmm/ustring.h>
 #include <gdkmm/pixbuf.h>
 #include <gtkmm.h>
@@ -63,20 +65,29 @@ namespace MPX
 
       Preferences (Glib::RefPtr<Gnome::Glade::Xml> const&);
 
-      static
-      Preferences*
-      create ();
+        static Preferences*
+        create ();
 
-      virtual
-      ~Preferences();
+        virtual
+        ~Preferences();
 
-        virtual void present ();
+        virtual void
+        present ();
 
+        void
+        add_page(
+              Gtk::Widget*
+            , const std::string&
+        ) ;
+
+#ifndef PLUGIN_BUILD
     protected:
 
-        virtual bool on_delete_event(GdkEventAny*);
+        virtual bool
+        on_delete_event(GdkEventAny*);
 
-        virtual void hide ();
+        virtual void
+        hide ();
 
     private:
 
@@ -355,6 +366,8 @@ namespace MPX
         void
         on_library_use_hal_toggled() ;
 #endif // HAVE_HAL
+
+#endif
 
   }; // class Preferences
 } // namespace MPX

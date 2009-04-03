@@ -1,17 +1,12 @@
 gladedir = $(pkgdatadir)/glade
 
 glade_DATA = 							\
-		dialog-filebrowser.glade		\
-		dialog-simple-entry.glade		\
-		equalizer.glade					\
-		import-folder.glade				\
-		import-share.glade				\
-		mlibmanager.glade				\
-		mpx.glade						\
-		playlist-plugin-manager.glade	\
-		plugin-manager.glade			\
+        cppmod-mmkeys.glade             \
+                                        \
+        equalizer.glade                 \
+		pluginmanager.glade	            \
 		preferences.glade				\
-		request-value.glade				\
-		timed-confirmation.glade
+        timed-confirmation.glade
+                                
 
 EXTRA_DIST = $(glade_DATA)

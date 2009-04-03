@@ -110,7 +110,7 @@ namespace MPX
     void
     PluginManager::shutdown ()
     {
-        for(PluginHoldMap_t::iterator i = m_Map.begin(); i != m_Map.end(); ++i)
+        for( PluginHoldMap_t::iterator i = m_Map.begin(); i != m_Map.end(); ++i )
         {
                 if(!i->second->m_Active)
                 {
@@ -118,12 +118,17 @@ namespace MPX
                 }
 
                 i->second->deactivate();
+
+                delete i->second ;
         }
     }
 
 	PluginManager::~PluginManager ()
 	{
         shutdown();
+
+        delete m_PluginLoader_Python ;
+        delete m_PluginLoader_CPP ;
 	}
 
 	const PluginHoldMap_t&

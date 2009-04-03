@@ -1,10 +1,13 @@
 #include "config.h"
-#include "infoarea.hh"
 #include <glibmm.h>
+
 #include "mpx/widgets/cairo-extensions.hh"
+#include "mpx/util-graphics.hh"
+#include "mpx/mpx-play.hh"
+
+#include "infoarea.hh"
 
 using namespace Glib;
-using boost::get;
 
 namespace
 {

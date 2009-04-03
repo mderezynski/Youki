@@ -336,20 +336,8 @@ namespace mpxpy
 		return self[id];
 	}
 
-	MPX::OVariant &
-	metadata_getitem(MPX::Metadata &self, int id) 
-	{
-		return self[id];
-	}
-
 	int
 	track_len(MPX::Track &self)
-	{
-		return MPX::N_ATTRIBUTES_INT;
-	}
-
-	int
-	metadata_len(MPX::Metadata &self)
 	{
 		return MPX::N_ATTRIBUTES_INT;
 	}
@@ -360,22 +348,10 @@ namespace mpxpy
 		return self.has(id);
 	}
 
-    bool	
-	metadata_contains(MPX::Metadata &self, MPX::AttributeId id)
-	{
-		return self.has(id);
-	}
-
     std::string
     track_repr (MPX::Track &self)
     {
         return "mpx.Track";
-    }
-
-    std::string
-    metadata_repr(MPX::Metadata &self)
-    {
-        return "mpx.Metadata";
     }
 }
 
@@ -828,7 +804,7 @@ BOOST_PYTHON_MODULE(mpx)
 //        .def("activate_plugin",     &MPX::YoukiController::activate_plugin)
 //        .def("show_plugin",         &MPX::YoukiController::show_plugin)
 
-		.def("pause",               &MPX::YoukiController::pause)
+		.def("pause",               &MPX::YoukiController::API_pause_toggle)
 
         .def("add_info_widget",     &mpxpy::player_add_info_widget)
         .def("remove_info_widget",  &mpxpy::player_remove_info_widget)
@@ -884,16 +860,6 @@ BOOST_PYTHON_MODULE(mpx)
 		.def("__len__",     &mpxpy::track_len,      return_value_policy<return_by_value>())
         .def("__contains__",&mpxpy::track_contains, return_value_policy<return_by_value>())
 		.def("get",         &mpxpy::track_getitem,  return_value_policy<return_by_value>()) 
-	;
-
-	/*-------------------------------------------------------------------------------------*/
-
-	class_<MPX::Metadata >("Metadata")
-		.def("__getitem__", &mpxpy::metadata_getitem,   return_internal_reference<>()) 
-		.def("__len__",     &mpxpy::metadata_len,       return_value_policy<return_by_value>())
-        .def("__contains__",&mpxpy::metadata_contains,  return_value_policy<return_by_value>())
-		.def("get",         &mpxpy::metadata_getitem,   return_internal_reference<>()) 
-		.def("get_image",   &MPX::Metadata::get_image)
 	;
 
 	/*-------------------------------------------------------------------------------------*/

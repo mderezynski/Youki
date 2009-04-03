@@ -365,7 +365,7 @@ namespace MPX
 		PluginManagerGUI*
 		PluginManagerGUI::create ()
 		{
-			const std::string path (build_filename(DATA_DIR, build_filename("glade","plugin-manager.glade")));
+			const std::string path (build_filename(DATA_DIR, build_filename("glade","pluginmanager.glade")));
 			PluginManagerGUI * p = new PluginManagerGUI(Gnome::Glade::Xml::create (path)); 
 			return p;
 		}
@@ -423,7 +423,10 @@ namespace MPX
 				Gtk::Widget * widget = m_PluginTreeView->get_gui(iter);
 				if(widget != 0)
 				{
+                    g_object_ref(G_OBJECT(widget->gobj())) ;
+                    widget->unparent() ;
 					m_Options->add(*widget);
+                    g_object_unref(G_OBJECT(widget->gobj())) ;
 					widget->show();
 				}
                 m_Notebook->set_current_page(1);

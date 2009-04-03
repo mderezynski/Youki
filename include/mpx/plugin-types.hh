@@ -94,7 +94,8 @@ namespace MPX
         friend class PluginActivate;
 	};
 
-	typedef boost::shared_ptr<PluginHolderBase> PluginHolderRefP_t ;
+//	typedef boost::shared_ptr<PluginHolderBase> PluginHolderRefP_t ;
+	typedef PluginHolderBase* PluginHolderRefP_t ;
 
     class MethodInvocationError : public std::exception
     {

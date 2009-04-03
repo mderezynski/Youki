@@ -1,7 +1,10 @@
 #include "config.h"
-#include "infoarea.hh"
 #include <glibmm/i18n.h>
 #include <cmath>
+
+#include "infoarea.hh"
+#include "mpx/mpx-audio-types.hh"
+#include "mpx/mpx-play.hh"
 
 namespace MPX
 {

@@ -474,9 +474,21 @@ namespace MPX
         setup_audio();
     }
 
+    void
+    Preferences::add_page(
+          Gtk::Widget*          widget
+        , const std::string&    name
+    )
+    {
+        m_notebook_preferences->append_page(
+              *widget
+            , name
+        ) ;
+    }
+
     Preferences::Preferences(
         const Glib::RefPtr<Gnome::Glade::Xml>&  xml
-        )
+    )
         : Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "preferences")
         , MPX::Service::Base("mpx-service-preferences")
     {

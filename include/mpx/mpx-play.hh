@@ -28,19 +28,19 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
-#include "mcs/mcs.h"
-
 #include "mpx/mpx-audio-messages.hh"
 #include "mpx/mpx-audio-types.hh"
-#include "mpx/aux/glibaddons.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/mpx-uri.hh"
+
+#include "mpx/aux/glibaddons.hh"
 
 #include "video-playback.hh"
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include <glibmm/object.h>
 #include <glibmm/property.h>
@@ -57,9 +57,49 @@
 #include <gst/interfaces/mixertrack.h>
 #include <gst/interfaces/mixeroptions.h>
 
+#include <sigc++/sigc++.h>
+#include <glibmm/ustring.h>
+#include <glibmm/refptr.h>
+#include <gdkmm/pixbuf.h>
+#include <gst/gst.h>
+
 namespace MPX
 {
-        const int SPECT_BANDS = 64;
+        const int SPECT_BANDS = 64 ;
+
+        typedef std::vector<float>                        Spectrum ;
+        typedef std::map<std::string, bool>               MPXFileExtensions ;
+
+        enum GstMetadataField
+        {
+            FIELD_TITLE,
+            FIELD_ALBUM,
+            FIELD_IMAGE,
+            FIELD_AUDIO_BITRATE,
+            FIELD_AUDIO_CODEC,
+            FIELD_VIDEO_CODEC,
+        };
+
+        struct GstMetadata
+        {
+            boost::optional<Glib::ustring>                m_title;
+            boost::optional<Glib::ustring>                m_album;
+            boost::optional<Glib::RefPtr<Gdk::Pixbuf> >   m_image;
+            boost::optional<unsigned int>                 m_audio_bitrate;
+            boost::optional<Glib::ustring>                m_audio_codec;
+            boost::optional<Glib::ustring>                m_video_codec;
+
+            void reset ()
+            {
+                m_title.reset ();
+                m_album.reset ();
+                m_image.reset ();
+                m_audio_bitrate.reset ();
+                m_audio_codec.reset ();
+                m_video_codec.reset ();
+                m_audio_bitrate.reset ();
+            }
+        };
 
         /** Playback Engine
          *

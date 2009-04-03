@@ -1,22 +1,15 @@
 #ifndef MPX_INFOAREA_HH
 #define MPX_INFOAREA_HH
 
-#include "mpx/widgets/widgetloader.hh"
-#include "mpx/util-file.hh"
-#include "mpx/util-graphics.hh"
-#include "mpx/util-string.hh"
-#include "mpx/mpx-play.hh"
-#include "mpx/mpx-types.hh"
-
-#include "mpx/i-playbacksource.hh"
-
-#include <boost/optional.hpp>
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
+#include <vector>
+#include <string>
+#include <sigc++/sigc++.h>
 
 namespace MPX
 {
-  typedef std::vector<std::string> TextSet; 
+  typedef std::vector<std::string>  TextSet ; 
   /*
   struct TextSet
   {
@@ -31,7 +24,7 @@ namespace MPX
   {
     private:
 
-          Spectrum m_spectrum_data, m_spectrum_peak;
+          std::vector<float> m_spectrum_data, m_spectrum_peak;
 
           sigc::signal<void>  m_signal ;
 
@@ -66,7 +59,7 @@ namespace MPX
 
           void
           update_spectrum(
-            const Spectrum&
+            const std::vector<float>&
           );
 
     private:

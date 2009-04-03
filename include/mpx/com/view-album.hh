@@ -367,6 +367,7 @@ namespace MPX
                     using boost::get;
 
                     GdkRectangle r ;
+                    r.y = ypos ; 
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 

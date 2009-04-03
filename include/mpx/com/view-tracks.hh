@@ -444,7 +444,7 @@ namespace MPX
                     {
                         if( m_active_track && get<3>(*(*i)) == m_active_track.get() )
                         {
-                            m_local_active_track = std::distance( m_mapping.begin(), i ) ;  
+                            m_local_active_track = std::distance( m_mapping.begin(), i ) ; 
                             return ;
                         }
                     }

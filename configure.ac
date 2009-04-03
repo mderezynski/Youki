@@ -745,6 +745,10 @@ AC_CONFIG_FILES([
     python/pyapi/lastfm/Makefile
     python/pyapi/lastfm/model/Makefile
 
+    cpp/Makefile
+    cpp/plugins/Makefile
+    cpp/plugins/mmkeys/Makefile
+
     api/Makefile
     com/Makefile
     musicbrainz/Makefile

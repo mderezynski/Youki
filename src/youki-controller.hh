@@ -14,7 +14,6 @@
 
 #include "mpx-mlibman-dbus-proxy-actual.hh"
 #include "mpx-app-dbus-adaptor.hh"
-#include "youki-controller-status-icon.hh"
 
 namespace MPX
 {
@@ -25,6 +24,7 @@ namespace MPX
     class ListViewTracks ;
     class ListViewAlbums ;
     class ListViewArtist ;
+    struct YoukiControllerStatusIcon ;
 
     class YoukiController
     : public Glib::Object
@@ -34,6 +34,9 @@ namespace MPX
     , public Service::Base
     {
         protected:
+
+            struct Private ;
+            Private                         * private_ ;
 
             YoukiControllerStatusIcon       * m_control_status_icon ;
 
@@ -75,9 +78,6 @@ namespace MPX
 
             Gtk::Notebook                   * m_NotebookPlugins ;
 
-            struct Private ;
-            Private                         * private_ ;
-
             Glib::RefPtr<Gdk::Pixbuf>           m_icon ; 
             Cairo::RefPtr<Cairo::ImageSurface>  m_disc ;
             Cairo::RefPtr<Cairo::ImageSurface>  m_disc_multiple ;
@@ -85,11 +85,11 @@ namespace MPX
             Covers                          * m_covers ;
             Play                            * m_play ;
             Library                         * m_library ;
-            gint64                            m_seek_position ;
+            boost::optional<guint64>          m_seek_position ;
     
             boost::optional<MPX::Track>       m_track_current ;          
             boost::optional<MPX::Track>       m_track_previous ;          
-            boost::optional<gint64>           m_next_track_queue_id ;
+            boost::optional<guint64>          m_next_track_queue_id ;
 
             info::backtrace::Youki::MLibMan_proxy_actual  * m_mlibman_dbus_proxy ;
 
@@ -98,6 +98,8 @@ namespace MPX
 
             guint                             m_C_SIG_ID_metadata_updated ;
             guint                             m_C_SIG_ID_track_cancelled ;
+
+            std::vector<guint64>              m_playqueue ;
 
         public: 
 
@@ -282,10 +284,16 @@ namespace MPX
             }
 
             void
-            pause(
-            )
-            {
-            }
+            API_pause_toggle(
+            ) ;
+
+            void
+            API_next(
+            ) ;
+
+            void
+            API_prev(
+            ) ;
 
             void        
             add_info_widget(

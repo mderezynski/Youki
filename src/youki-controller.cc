@@ -16,6 +16,8 @@
 
 #include "mpx/algorithm/youki-markov-predictor.hh"
 
+#include "youki-controller-status-icon.hh"
+
 namespace
 {
     bool
@@ -124,9 +126,8 @@ namespace MPX
     : Glib::ObjectBase( "YoukiController" )
     , DBus::ObjectAdaptor( conn, "/info/backtrace/Youki/App" )
     , Service::Base("mpx-service-controller")
-    , m_main_window( 0 )
-    , m_seek_position( -1 )
     , private_( new Private )
+    , m_main_window( 0 )
     {
         m_C_SIG_ID_metadata_updated =
             g_signal_new(
@@ -476,6 +477,8 @@ namespace MPX
 
     YoukiController::~YoukiController ()
     {
+        m_play->request_status( PLAYSTATUS_STOPPED ) ; 
+
         mcs->key_set<int>("main-window","paned1", m_Paned1->get_position() ) ;
         mcs->key_set<int>("main-window","paned2", m_Paned2->get_position() ) ;
 
@@ -687,24 +690,29 @@ namespace MPX
           gint64 position
     )
     {
+        if( position < 0 )
+            return ;
+
         gint64 duration ;
 
-        if( m_seek_position != -1 )
+        if( m_seek_position ) 
         {
-            if( position >= m_seek_position )
+            if( position >= m_seek_position.get() )
             {
                 duration = m_play->property_duration().get_value() ;
-                m_seek_position = -1 ;
+                m_seek_position.reset() ; 
             }
         }
         else
-        if( m_seek_position == -1 )
         {
             duration = m_play->property_duration().get_value() ;
         }
 
-        m_main_position->set_position( duration, position ) ;
-        m_control_status_icon->set_position( duration, position ) ;
+        if( duration >= 0 )
+        {
+            m_main_position->set_position( duration, position ) ;
+            m_control_status_icon->set_position( duration, position ) ;
+        }
     }
 
     void
@@ -712,13 +720,10 @@ namespace MPX
     {
         if( m_next_track_queue_id )
         {
-            boost::shared_ptr<Library> lib = services->get<Library>("mpx-service-library") ;
             SQL::RowV v ;
-            lib->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % m_next_track_queue_id.get() ).str()) ; 
-            Track_sp p = lib->sqlToTrack( v[0], true, false ) ;
-
+            m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % m_next_track_queue_id.get() ).str()) ; 
+            Track_sp p = m_library->sqlToTrack( v[0], true, false ) ;
             m_next_track_queue_id.reset() ;
-
             play_track( *(p.get()) ) ;
         }
         else
@@ -779,7 +784,7 @@ namespace MPX
                 m_main_cover->clear() ;
                 m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
                 m_main_position->set_position( 0, 0 ) ;
-                m_seek_position = -1 ;
+                m_seek_position.reset() ; 
                 break ;
 
             case PLAYSTATUS_WAITING:
@@ -788,7 +793,7 @@ namespace MPX
 
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
-                m_seek_position = -1 ;
+                m_seek_position.reset() ; 
                 break ;
 
             case PLAYSTATUS_PAUSED:
@@ -873,6 +878,8 @@ namespace MPX
         
                 m_track_previous.reset() ;
         }
+
+        m_playqueue.push_back( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
     }
 
     void
@@ -998,8 +1005,6 @@ namespace MPX
     YoukiController::completion_timer_check(
     ) 
     {
-        double elapsed = m_completion_timer.elapsed() ;
-
         if( m_completion_timer.elapsed() > 0.25 ) 
         {
             m_completion_timer.stop() ;
@@ -1126,13 +1131,7 @@ namespace MPX
     void
     YoukiController::on_info_area_clicked ()
     {
-        PlayStatus s = PlayStatus(m_play->property_status().get_value()) ;
-
-        if( s == PLAYSTATUS_PAUSED )
-            m_play->request_status( PLAYSTATUS_PLAYING ) ;
-        else
-        if( s == PLAYSTATUS_PLAYING )
-            m_play->request_status( PLAYSTATUS_PAUSED ) ;
+        API_pause_toggle() ;
     }
 
     bool
@@ -1287,15 +1286,61 @@ namespace MPX
     void
     YoukiController::Next ()
     {
+        API_next() ;
     }
 
     void
     YoukiController::Prev ()
     {
+        API_prev() ;
     }
 
     void
     YoukiController::Pause ()
     {
+        API_pause_toggle() ;
+    }
+
+    void
+    YoukiController::API_pause_toggle(
+    )
+    {
+        if( m_track_current )
+        {
+                PlayStatus s = PlayStatus(m_play->property_status().get_value()) ;
+
+                if( s == PLAYSTATUS_PAUSED )
+                    m_play->request_status( PLAYSTATUS_PLAYING ) ;
+                else
+                if( s == PLAYSTATUS_PLAYING )
+                    m_play->request_status( PLAYSTATUS_PAUSED ) ;
+        }
+    }
+
+    void
+    YoukiController::API_next(
+    )
+    {
+        if( m_track_current )
+        {
+            on_play_eos() ;
+        }
+    }
+
+    void
+    YoukiController::API_prev(
+    )
+    {
+/*
+        if( m_track_current )
+        {
+                if( m_playqueue.size() > 1 )
+                {
+                    m_playqueue.pop_back() ;
+                    Track_sp p = m_library->getTrackById( m_playqueue.back() ) ; 
+                    play_track( *(p.get()) ) ;
+                }
+        }
+*/
     }
 }

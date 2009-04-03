@@ -35,10 +35,11 @@
 #include <gtkmm/widget.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/algorithm/string.hpp>
-#include <mcs/mcs.h>
 #include <Python.h>
 
+#include "mpx/mpx-main.hh" 
 #include "mpx/util-string.hh"
+
 #include "plugin-loader-cpp.hh"
 
 using namespace Glib;
@@ -62,6 +63,10 @@ namespace MPX
     
     PluginLoaderCPP::~PluginLoaderCPP ()
     {
+        for( CPPPluginKeeper_t::const_iterator i = m_Plugins.begin(); i != m_Plugins.end() ; ++i )
+        {
+            (*i)->del_instance( (*i)->instance ) ;
+        }
     }
 
     void
@@ -69,7 +74,7 @@ namespace MPX
         gint64& next_id
     ) 
     {
-        const std::string plugin_path = build_filename( PLUGIN_DIR, "plugins-cpp" );
+        const std::string plugin_path = build_filename( PLUGIN_DIR, "cppmod" );
 
         if(! file_test( plugin_path, FILE_TEST_EXISTS ))
             return;
@@ -100,7 +105,7 @@ namespace MPX
                 StrV subs;
                 split (subs, basename, is_any_of ("-."));
                 std::string name  = type + std::string("-") + subs[LIB_PLUGNAME];
-                std::string mpath = Module::build_path(build_filename(PLUGIN_DIR, "plugins-cpp"), name);
+                std::string mpath = Module::build_path(build_filename(PLUGIN_DIR, "cppmod"), name);
 
                 Module module (mpath, ModuleFlags (0));
                 if( !module )
@@ -113,6 +118,8 @@ namespace MPX
                 module.make_resident();
 
                 CPPPluginLoaderRefP_t plugin = CPPPluginLoaderRefP_t( new CPPPluginLoader );
+
+                m_Plugins.insert( plugin ) ;
 
                 if( !g_module_symbol( module.gobj(), "get_instance", (gpointer*)(&plugin->get_instance) ))
                 {
@@ -127,6 +134,8 @@ namespace MPX
                 }
 
                 plugin->instance = plugin->get_instance(next_id++);
+
+                mcs->key_register("plugins", plugin->instance->get_name(), false ) ; 
 
                 signal_plugin_loaded_.emit( PluginHolderRefP_t( plugin->instance ));
         }
