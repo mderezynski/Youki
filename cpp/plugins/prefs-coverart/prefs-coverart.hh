@@ -22,66 +22,76 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 
-#ifndef MPX_PREFERENCES_HH
-#define MPX_PREFERENCES_HH
+#ifndef MPX_PREFS_COVERART_HH
+#define MPX_PREFS_COVERART_HH
 
 #include "config.h"
-#endif //HAVE_CONFIG_H
 
+#include "mpx/mpx-services.hh"
 #include "mpx/widgets/widgetloader.hh"
+
+#include <string>
+#include <set>
+#include <vector>
+#include <glibmm.h>
+#include <glibmm/i18n.h>
 #include <gtkmm.h>
+
+#include "mpx/plugin-types.hh"
 
 namespace MPX
 {
-  /** Preferences dialog
+  class CoverArtSourceView;
+
+  /** PrefsCoverart dialog
    *
-   * MPX::Preferences is a complex dialog for adjusting run time parameters
+   * MPX::PrefsCoverart is a complex dialog for adjusting run time parameters
    * of MPX trough the GUI instead of having to manipulate the configuration
    * file.
    */
-  class Preferences
-  : public Gnome::Glade::WidgetLoader<Gtk::Window>
-  , public Service::Base
+  class PrefsCoverart
+  : public Gnome::Glade::WidgetLoader<Gtk::VBox>
+  , public PluginHolderBase 
   {
     public:
 
-        Preferences(
-            const Glib::RefPtr<Gnome::Glade::Xml>&
+        PrefsCoverart(
+              const Glib::RefPtr<Gnome::Glade::Xml>&
+            , gint64
         ) ;
 
-        static Preferences*
+        static PrefsCoverart*
         create(
+              gint64
         ) ;
 
         virtual
-        ~Preferences(
+        ~PrefsCoverart(
         ) ;
 
-        virtual void
-        present(
-        ) ;
+        virtual bool activate(
+        )
+        {
+            return true ;
+        }
 
-        void
-        add_page(
-              Gtk::Widget*
-            , const std::string&
-        ) ;
+        virtual bool deactivate(
+        )
+        {
+            return true ;
+        }
 
-#ifndef PLUGIN_BUILD
-    protected:
-
-        virtual bool
-        on_delete_event(GdkEventAny*) ;
-
-        virtual void
-        hide() ;
+        virtual Gtk::Widget* get_gui(
+        )
+        {
+            return 0 ;
+        }
 
     private:
 
-        Gtk::Notebook               * m_notebook_preferences ;
-#endif
+      	CoverArtSourceView *m_Covers_CoverArtSources ; 
 
-  } ; // class Preferences
+  } ; // class PrefsCoverart
 } // namespace MPX
 
-#endif // MPX_PREFERENCES_HH
+#endif // MPX_PREFS_COVERART?g_HH

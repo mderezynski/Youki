@@ -23,8 +23,6 @@
 #ifndef MPX_LIBRARY_CLASS_HH
 #define MPX_LIBRARY_CLASS_HH
 
-#include "mpx/mpx-covers.hh"
-#include "mpx/mpx-hal.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/mpx-services.hh"
@@ -42,7 +40,6 @@ namespace MPX
         gint64      Id;
     };
 
-    class HAL;
     class MetadataReaderTagLib;
     class Library
     : public Service::Base
