@@ -26,7 +26,6 @@
 #define MPX_PREFERENCES_HH
 
 #include "config.h"
-#endif //HAVE_CONFIG_H
 
 #include "mpx/widgets/widgetloader.hh"
 #include <gtkmm.h>
