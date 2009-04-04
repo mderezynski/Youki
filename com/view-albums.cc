@@ -211,6 +211,7 @@ namespace MPX
                                                "emblem-soundtrack.png" 
                         ));
 
+/*
                         services->get<Library>("mpx-service-library")->signal_new_album().connect(
                             sigc::mem_fun(
                                 *this,
@@ -258,6 +259,7 @@ namespace MPX
                                 *this,
                                 &AlbumTreeView::on_got_cover
                         )); 
+*/
 
                         if( !name_showing_label.empty() )
                             m_LabelShowing = new RoundedLayout(xml, name_showing_label);

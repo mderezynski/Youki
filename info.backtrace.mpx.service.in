@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=info.backtrace.mpx
-Exec=@libexecdir@/audiosource-bin

@@ -10,6 +10,8 @@ noinst_HEADERS =							\
 		metadatareader-taglib.hh			\
 		mpx-artist-images.hh				\
 		mpx-audio.hh						\
+        mpx-audio-messages.hh               \
+        mpx-audio-types.hh                  \
 		mpx-covers.hh						\
 		mpx-covers-stores.hh				\
 		mpx-hal.hh							\

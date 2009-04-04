@@ -1,16 +1,16 @@
-libexec_PROGRAMS = mpx-sentinel 
+libexec_PROGRAMS = youki-sentinel-bin 
 
-mpx_sentinel_LDADD =	\
-	$(GLIB_LIBS)		\
-	$(GTK_LIBS)			\
-	$(DBUS_LIBS)		\
+youki_sentinel_bin_LDADD =	    \
+	$(GLIB_LIBS)		        \
+	$(GTK_LIBS)			        \
+	$(DBUS_LIBS)		        \
 	$(SOUP_LIBS)
 
-mpx_sentinel_CXXFLAGS =	\
-	$(GLIB_CFLAGS)		\
-	$(GTK_CFLAGS)		\
-	$(DBUS_CFLAGS)		\
+youki_sentinel_bin_CXXFLAGS =	\
+	$(GLIB_CFLAGS)		        \
+	$(GTK_CFLAGS)		        \
+	$(DBUS_CFLAGS)		        \
 	$(SOUP_CFLAGS)													
 
-mpx_sentinel_SOURCES =	\
-	mpx-sentinel.cc
+youki_sentinel_bin_SOURCES =	\
+	youki-sentinel.cc

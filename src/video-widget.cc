@@ -66,11 +66,9 @@ namespace MPX
     , m_Play(obj_play)
     , m_Mapped(false)
     {
-      property_playing().signal_changed().connect( sigc::mem_fun( *this, &VideoWidget::queue_resize ) );
-      property_aspect_ratio().signal_changed().connect( sigc::mem_fun( *this, &VideoWidget::queue_resize ) );
-      property_playing().signal_changed().connect( sigc::mem_fun( *this, &VideoWidget::on_playing_changed ));
-
-      modify_bg( Gtk::STATE_NORMAL, get_style()->get_black() );
+        property_aspect_ratio().signal_changed().connect( sigc::mem_fun( *this, &VideoWidget::queue_resize ) );
+        property_playing().signal_changed().connect( sigc::mem_fun( *this, &VideoWidget::queue_resize ) );
+//        modify_bg( Gtk::STATE_NORMAL, get_style()->get_black() );
     }
 
     VideoWidget::~VideoWidget ()
@@ -80,69 +78,64 @@ namespace MPX
     void
     VideoWidget::on_playing_changed ()
     {
-        if(property_playing().get_value() == true)
-        {
-            if(m_Mapped)
-            {
-                mVideo->show();
-                gdk_flush ();
-                while(gtk_events_pending())
-                    gtk_main_iteration();
-            }
-        }
-        else
-        if(property_playing().get_value() == false)
-        {
-            mVideo->hide();
-        }
     } 
 
     void
     VideoWidget::on_size_allocate (Gtk::Allocation& allocation)
     {
-      GTK_WIDGET(gobj())->allocation = *(allocation.gobj());
+        GTK_WIDGET(gobj())->allocation = *(allocation.gobj());
 
-      if(is_realized())
-      {
-        get_window()->move_resize (allocation.get_x(), allocation.get_y(),
-            allocation.get_width(), allocation.get_height());
-
-        if(property_playing() == true)
+        if(is_realized())
         {
-          /* resize video_window */
-          int w = 0, h = 0;
-          get_media_size (w, h);
+            get_window()->move_resize(
+                  allocation.get_x()
+                , allocation.get_y()
+                , allocation.get_width()
+                , allocation.get_height()
+            ) ;
 
-          if (!w || !h)
-          {
-            w = allocation.get_width();
-            h = allocation.get_height();
-          }
+/*
+            int w = 0, h = 0;
+            get_media_size (w, h);
 
-          gdouble width = w;
-          gdouble height = h;
-          gdouble ratio = 0.;
+            if (!w || !h)
+            {
+                w = allocation.get_width();
+                h = allocation.get_height();
+            }
 
-          if (((gdouble (allocation.get_width())) / width) >
-               ((gdouble (allocation.get_height())) / height))
-          {
-            ratio = (gdouble (allocation.get_height())) / height;
-          }
-          else
-          {
-            ratio = (gdouble (allocation.get_width())) / width;
-          }
+            gdouble width = w;
+            gdouble height = h;
 
-          width *= ratio;
-          height *= ratio;
+            gdouble ratio = 0.;
 
-          mVideo->move_resize (int ((allocation.get_width() - width) / 2),
-                               int ((allocation.get_height() - height) / 2),
-                               int (width), int(height));
+            if (((gdouble (allocation.get_width())) / width) >
+                 ((gdouble (allocation.get_height())) / height))
+            {
+              ratio = (gdouble (allocation.get_height())) / height;
+            }
+            else
+            {
+              ratio = (gdouble (allocation.get_width())) / width;
+            }
+
+            width *= ratio;
+            height *= ratio;
+*/
+
+            int width = allocation.get_width() ;
+            int height = allocation.get_height() ;
+
+            property_geometry() = Geometry( width, height ) ;
+
+            mVideo->move_resize(
+                    int ((allocation.get_width() - width) / 2)
+                  , int ((allocation.get_height() - height) / 2)
+                  , int (width), int(height)
+            ) ;
+
+            queue_draw ();
         }
-
-        queue_draw ();
-      }
     }
 
     void
@@ -150,86 +143,64 @@ namespace MPX
     {
       if (!requisition)
       {
-        *requisition = Gtk::Requisition();
-        requisition->width = 240;
-        requisition->height = 180;
+            *requisition = Gtk::Requisition();
+            requisition->width = property_geometry().get_value().first ; 
+            requisition->height = property_geometry().get_value().second ; 
       }
     }
 
     bool
     VideoWidget::on_toplevel_configure_event (GdkEventConfigure * event)
     {
-      if( property_playing() == true )
-      {
         queue_draw ();
-      }
-
-      return false;
+        return false;
     }
 
     bool
     VideoWidget::on_configure_event (GdkEventConfigure * event)
     {
-      Widget::on_configure_event( event );
-
-      if( property_playing() == true )
-      {
+        Widget::on_configure_event( event );
         queue_draw ();
-      }
-
-      return false;
+        return true ;
     }
 
     bool
     VideoWidget::on_expose_event (GdkEventExpose * event)
     {
-      if (event && event->count > 0)
+        if (event && event->count > 0)
+          return true;
+
+        if( property_playing() == true )
+        {
+          m_Play->video_expose(); 
+        }
+        else
+        {
+          Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context() ;
+
+          cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
+          cairo->set_source_rgba( 0.65, 0.65, 0.65, .4 ) ;
+          cairo->paint() ;
+
+          cairo = mVideo->create_cairo_context() ;
+          cairo->set_operator( Cairo::OPERATOR_CLEAR ) ;
+          cairo->paint() ;
+
+/*
+          GtkWidget * widget = GTK_WIDGET(gobj());
+          gdk_draw_rectangle (mWindow->gobj(), widget->style->black_gc, TRUE, 0, 0,
+              widget->allocation.width, widget->allocation.height);
+*/
+        }
+
         return true;
-
-      if( property_playing() == true )
-      {
-        m_Play->set_window_id (GDK_WINDOW_XID (mVideo->gobj()));
-      }
-
-      GtkWidget * widget = GTK_WIDGET(gobj());
-
-      if( property_playing() == true )
-      {
-        m_Play->video_expose(); 
-      }
-      else
-      {
-        gdk_draw_rectangle (mWindow->gobj(), widget->style->black_gc, TRUE, 0, 0,
-            widget->allocation.width, widget->allocation.height);
-
-#if 0
-        Cairo::RefPtr<Cairo::Context> cr = mWindow->create_cairo_context();
-
-        int x,y,w,h,d,x0,y0;
-
-        mWindow->get_geometry(x,y,w,h,d);
-        x0 = (w/2 - mEmblem->get_width()/2);
-        y0 = (h/2 - mEmblem->get_height()/2);
-
-        Gdk::Cairo::set_source_pixbuf( cr, mEmblem, x0, y0 );
-        cr->rectangle(x0, y0, mEmblem->get_width(), mEmblem->get_height());
-        cr->fill();
-#endif
-      }
-
-      return true;
     }
      
     void
     VideoWidget::on_map ()
     {
         Widget::on_map();
-
-        if(property_playing().get_value() == true)
-        {
-            mVideo->show();
-        }
-
+        mVideo->show () ;
         m_Mapped = true;
     } 
 
@@ -237,14 +208,13 @@ namespace MPX
     VideoWidget::on_unmap ()
     {
         Widget::on_unmap();
-        mVideo->hide();
+        mVideo->hide () ;
         m_Mapped = false;
     }
 
     void
     VideoWidget::on_unrealize ()
     {
-        mVideo.clear();
         Widget::on_unrealize (); 
     }
 
@@ -432,7 +402,7 @@ namespace MPX
         mVideo = Gdk::Window::create (mWindow, &attributes,
             GDK_WA_X | GDK_WA_Y);
         mVideo->set_user_data (gobj());
-        mVideo->hide();
+        mVideo->show() ;
 
         mWindow->set_background (get_style()->get_black());
         GTK_WIDGET(gobj())->style = gtk_style_attach (GTK_WIDGET(gobj())->style, mWindow->gobj()); 

@@ -332,6 +332,64 @@ namespace MPX
         return true;
     }
 
+    bool
+    match_vec(
+          const std::string&              n
+        , const std::vector<std::string>& h
+    )
+    {
+        using boost::algorithm::split;
+        using boost::algorithm::is_any_of;
+        using boost::algorithm::find_first;
+
+        for( int i = 0 ; i < h.size(); ++i )
+        {
+			if (h[i].length() < 1)
+            {
+				continue;
+            }
+
+    	    if (find_first (h[i], n))
+            {
+                return true ;
+            }
+        }
+
+        return false ;
+
+/*
+        using boost::algorithm::split;
+        using boost::algorithm::is_any_of;
+        using boost::algorithm::find_first;
+
+        StrV m;
+        split( m, n, is_any_of(" ") );
+
+        int cnt = 0 ;
+
+        for( int i = 0 ; i < m.size(); ++i )
+        {
+			if (m[i].length() < 1)
+            {
+                cnt += 1 ;
+				continue;
+            }
+
+            for( int n = 0 ; n < h.size(); ++n ) 
+            {
+    	        if (find_first (h[n], m[i]))
+                {
+	    		    cnt += 1 ;	
+                    break ;
+                }
+            }
+        }
+
+        return cnt == m.size() ;
+*/
+
+    }
+
     std::string
     sanitize_lastfm (std::string const& in)
     {
@@ -430,7 +488,7 @@ namespace MPX
                                     c_open += (*(i_begin.find(idx))).second;
                                     if( !c_open_prev && c_open >= 1 )
                                     {
-                                        output += Glib::Markup::escape_text(chunk).raw();
+                                        output += Glib::Markup::escape_text( chunk ).raw();
                                         chunk.clear();
                                         output += "<span color='"+color+"'>";
                                     }
@@ -441,7 +499,7 @@ namespace MPX
                                     c_close += (*(i_end.find(idx))).second;
                                     if( c_close == c_open )
                                     {
-                                        output += Glib::Markup::escape_text(chunk).raw();
+                                        output += Glib::Markup::escape_text( chunk ).raw();
                                         chunk.clear();
                                         output += "</span>"; 
                                         c_close = 0;
@@ -452,7 +510,7 @@ namespace MPX
                                 chunk += *i;
                             }
 
-                            output += Glib::Markup::escape_text(chunk).raw();
+                            output += Glib::Markup::escape_text( chunk ).raw();
 
                             if( c_open )
                             {
@@ -464,7 +522,7 @@ namespace MPX
             }
             else
             {
-                return text;
+                return Glib::Markup::escape_text( text ) ;
             }
     }
   }

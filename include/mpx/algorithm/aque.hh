@@ -14,14 +14,14 @@ namespace AQE
 {
     enum MatchType_t
     {
-        MT_UNDEFINED,
-        MT_EQUAL,
-        MT_NOT_EQUAL,
-        MT_GREATER_THAN,
-        MT_LESSER_THAN,
-        MT_GREATER_THAN_OR_EQUAL,
-        MT_LESSER_THAN_OR_EQUAL,
-        MT_FUZZY_EQUAL
+          MT_UNDEFINED
+        , MT_EQUAL
+        , MT_NOT_EQUAL
+        , MT_GREATER_THAN
+        , MT_LESSER_THAN
+        , MT_GREATER_THAN_OR_EQUAL
+        , MT_LESSER_THAN_OR_EQUAL
+        , MT_FUZZY_EQUAL
     };
 
     struct Constraint_t
@@ -34,17 +34,30 @@ namespace AQE
     typedef std::vector<Constraint_t> Constraints_t;
 
     Glib::ustring
-    parse_advanced_query (Constraints_t& constraints, const std::string& text);
+    parse_advanced_query(
+          Constraints_t&        /*OUT: constraints*/
+        , const std::string&    /*IN:  text*/
+    ) ;
 
     template <typename T>
     bool
-    determine_match (const Constraint_t& c, MPX::Track& track);
+    determine_match(
+          const Constraint_t&   /*IN: constraints*/
+        , const MPX::Track&     /*IN: track*/
+    ) ;
 
     template <>
-    bool determine_match<std::string>(const Constraint_t& c, MPX::Track& track);
+    bool
+    determine_match<std::string>(
+          const Constraint_t&   /*IN: constraints*/
+        , const MPX::Track&     /*IN: track*/
+    ) ;
 
     bool
-    match_track( const Constraints_t& c, MPX::Track& track);
+    match_track(
+          const Constraints_t&
+        , const MPX::Track&
+    ) ;
 }
 }
 

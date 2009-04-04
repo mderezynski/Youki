@@ -287,24 +287,6 @@ namespace MPX
 
                 boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
 
-                library->signal_new_artist().connect(
-                    sigc::mem_fun(
-                          *this
-                        , &ArtistListView::on_new_artist
-                ));
-
-                library->scanner()->signal_entity_deleted().connect(
-                    sigc::mem_fun(
-                          *this
-                        , &ArtistListView::on_entity_deleted
-                ));
-
-                library->scanner()->signal_entity_updated().connect(
-                    sigc::mem_fun(
-                          *this
-                        , &ArtistListView::on_entity_updated
-                ));
-
                 build_list();
                 set_model(Store);
                 set_enable_search();

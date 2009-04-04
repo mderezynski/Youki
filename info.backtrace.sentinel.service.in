@@ -1,3 +1,0 @@
-[D-BUS Service]
-Name=info.backtrace.sentinel
-Exec=@libexecdir@/audiosource-sentinel

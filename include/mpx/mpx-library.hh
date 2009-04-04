@@ -23,16 +23,9 @@
 #ifndef MPX_LIBRARY_CLASS_HH
 #define MPX_LIBRARY_CLASS_HH
 
-#include <sigx/sigx.h>
-
-#include "mpx/mpx-covers.hh"
-#include "mpx/mpx-hal.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/mpx-services.hh"
-
-#include "mpx/mpx-library-scanner-thread.hh"
-
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
 
@@ -47,14 +40,10 @@ namespace MPX
         gint64      Id;
     };
 
-    class HAL;
     class MetadataReaderTagLib;
     class Library
     : public Service::Base
-    , public sigx::glib_auto_dispatchable
     {
-        friend class LibraryScannerThread;
-
         public:
 
 #include "mpx/exception.hh"
@@ -79,52 +68,8 @@ namespace MPX
                 return m_SQL;
             }
 
-            boost::shared_ptr<LibraryScannerThread>
-            scanner()
-            {
-                return m_ScannerThread;
-            }
-
-            void
-            removeDupes() ;
-
-            void
-            vacuum() ;
-
-#ifdef HAVE_HAL    
-            void
-            switch_mode(
-                bool /* use hal */
-            );
-
-			void
-			vacuumVolumeList(
-                const HAL::VolumeKey_v&
-            ) ;
-
-            void
-            deletePath(
-                const std::string& /*hal_device_udi*/,
-                const std::string& /*hal_volume_udi*/,
-                const std::string& /*insert_path*/
-            ) ;
-#endif
             void
             reload() ;
-
-            void
-            initScanAll(
-            ); 
-
-            void
-            initScan(
-                const Util::FileList& /*list*/
-            ); 
-
-            void
-            initAdd(
-                const Util::FileList& /*list*/
-            ); 
 
             void
             getSQL(
@@ -132,13 +77,10 @@ namespace MPX
                 const std::string&
             ) ;
 
-			void
+			int64_t
 			execSQL(
                 const std::string&
             ) ;
-
-            void
-            recacheCovers() ;
 
             Track_sp 
             sqlToTrack(
@@ -146,6 +88,14 @@ namespace MPX
                 , bool /*all metadata?*/ = true
                 , bool /*no_location?*/  = false
             ) ;
+
+            Track_sp
+            getTrackById(
+                  gint64
+            ) ;
+
+            void
+            recacheCovers() ;
 
             void
             getMetadata(const std::string&, Track&) ;
@@ -192,13 +142,11 @@ namespace MPX
                 gint64
             ) ;
 
-
             void
             markovUpdate(gint64 /* track a */, gint64 /* track b */) ;
 
             gint64 
             markovGetRandomProbableTrack(gint64 /* track a*/); 
-
 
             gint64
             collectionCreate(const std::string& /*name*/, const std::string& /*blurb*/) ;
@@ -304,26 +252,8 @@ namespace MPX
 
             struct SignalsT
             {
-                SignalNewAlbum                  NewAlbum;
-                SignalNewArtist                 NewArtist;
-                SignalNewTrack                  NewTrack;
-
-				SignalAlbumUpdated	            AlbumUpdated;
-				SignalTrackUpdated              TrackUpdated;
-
-                SignalAlbumDeleted              AlbumDeleted;
-                SignalTrackDeleted              TrackDeleted;
-                SignalArtistDeleted             ArtistDeleted;
-                SignalAlbumArtistDeleted        AlbumArtistDeleted;
-
                 SignalTrackTagged               TrackTagged;
-
-                SignalScanStart                 ScanStart;  
-                SignalScanRun                   ScanRun;
-                SignalScanEnd                   ScanEnd;
-
 				SignalReload                    Reload;
-
                 CollectionSignalsT              Collection;
             };
 
@@ -345,119 +275,29 @@ namespace MPX
             signal_collection_track_deleted()
             { return Signals.Collection.TrackDeleted ; }
 
-            SignalNewAlbum&
-            signal_new_album()
-            { return Signals.NewAlbum ; }
-            
-            SignalAlbumDeleted&
-            signal_album_deleted()
-            { return Signals.AlbumDeleted ; }
-
-            SignalNewArtist&
-            signal_new_artist()
-            { return Signals.NewArtist ; }
-            
-            SignalNewTrack&
-            signal_new_track()
-            { return Signals.NewTrack ; }
-
-            SignalTrackDeleted&
-            signal_track_deleted()
-            { return Signals.TrackDeleted ; }
-
-            SignalTrackUpdated&
-            signal_track_updated()
-            { return Signals.TrackUpdated ; }
-
             SignalTrackTagged&
             signal_track_tagged()
             { return Signals.TrackTagged ; }
 
-            SignalScanStart&
-            signal_scan_start()
-            { return Signals.ScanStart ; }
-            
-            SignalScanRun&
-            signal_scan_run()
-            { return Signals.ScanRun ; }
-            
-            SignalScanEnd&
-            signal_scan_end()
-            { return Signals.ScanEnd ; }
-
-            SignalAlbumUpdated&
-            signal_album_updated()
-            { return Signals.AlbumUpdated ; }
-
             SignalReload&
             signal_reload()
             { return Signals.Reload ; }
-
-            SignalArtistDeleted&
-            signal_artist_deleted()
-            { return Signals.ArtistDeleted ; }
-
-            SignalAlbumArtistDeleted&
-            signal_album_artist_deleted()
-            { return Signals.AlbumArtistDeleted ; }
 
         public:
 
             enum Flags
             {
                   F_NONE            = 0
-                , F_USING_HAL       = 1 << 0,
+                , F_USING_HAL       = 1 << 0
             };
 
         private:
 
-            SQL::SQLDB                              * m_SQL;
-            boost::shared_ptr<LibraryScannerThread>   m_ScannerThread;
-            gint64                                    m_Flags;
+            SQL::SQLDB  * m_SQL ;
+            gint64        m_Flags ;
 
         protected:
 
-            void
-            on_new_album(
-                gint64
-            ) ;
-
-            void
-            on_new_artist(
-                gint64
-            ) ;
-
-            void
-            on_new_track(
-                  Track&
-                , gint64
-                , gint64
-            ) ;
-
-            void
-            on_entity_deleted(
-                  gint64
-                , EntityType
-            ) ;
-
-            void
-            on_entity_updated(
-                  gint64
-                , EntityType
-            ) ;
-
-            void
-            on_track_updated(
-                  Track&
-                , gint64
-                , gint64
-            ) ;
-
-            void
-            on_message(
-                const std::string&
-            );
-        
             bool
             recache_covers_handler(
                   SQL::RowV*
@@ -468,18 +308,6 @@ namespace MPX
             get_tag_id(
                 std::string const&
             ) ;
-
-            void
-            remove_dangling() ;
-
-            void
-            on_priority_settings_changed(
-                MCS_CB_DEFAULT_SIGNATURE
-            );
-
-            void
-            library_scanner_thread_set_priorities(
-            );
     };
 } // namespace MPX
 

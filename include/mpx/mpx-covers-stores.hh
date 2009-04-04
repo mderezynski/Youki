@@ -27,8 +27,6 @@
 
 #include <string>
 
-#include <sigx/sigx.h>
-
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-minisoup.hh"
 
@@ -168,8 +166,8 @@ namespace MPX
         reply_cb(char const*, guint, guint, CoverFetchData*);
     };
 
-    class LocalCovers : public CoverStore,
-                         public sigx::glib_auto_dispatchable
+    class LocalCovers
+    : public CoverStore
     {
     public:
         LocalCovers(Covers& c) : CoverStore(c)
@@ -179,8 +177,8 @@ namespace MPX
         load_artwork(CoverFetchData*);
     };
 
-    class InlineCovers : public CoverStore,
-                         public sigx::glib_auto_dispatchable
+    class InlineCovers
+    : public CoverStore
     {
     public:
        InlineCovers(Covers& c) : CoverStore(c)

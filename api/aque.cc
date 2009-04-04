@@ -199,7 +199,7 @@ namespace AQE
 
     template <typename T>
     bool
-    determine_match (const Constraint_t& c, MPX::Track& track)
+    determine_match (const Constraint_t& c, const MPX::Track& track)
     {
         g_return_val_if_fail(track.has(c.TargetAttr), false);
 
@@ -240,7 +240,7 @@ namespace AQE
 
     template <>
     bool
-    determine_match<std::string>(const Constraint_t& c, MPX::Track& track)
+    determine_match<std::string>(const Constraint_t& c, const MPX::Track& track)
     {
         g_return_val_if_fail(track.has(c.TargetAttr), false);
 
@@ -282,7 +282,7 @@ namespace AQE
 
 
     bool
-    match_track( const Constraints_t& c, MPX::Track& track)
+    match_track( const Constraints_t& c, const MPX::Track& track)
     {
         for( Constraints_t::const_iterator i = c.begin(); i != c.end(); ++i )
         {

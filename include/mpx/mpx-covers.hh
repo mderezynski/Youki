@@ -46,15 +46,14 @@
 #include <cairomm/cairomm.h>
 
 #include <boost/shared_ptr.hpp>
-#include <sigx/sigx.h>
 
 namespace MPX
 {
   enum CoverSize
   {
-    COVER_SIZE_ALBUM        = 0,
-    COVER_SIZE_DEFAULT      = 1,
-    N_COVER_SIZES
+        COVER_SIZE_ALBUM        = 0,
+        COVER_SIZE_DEFAULT      = 1,
+        N_COVER_SIZES
   };
 
   typedef std::map <std::string, int>                                   RequestStoreCounter;
@@ -67,8 +66,8 @@ namespace MPX
 
   struct RequestQualifier
   {
-      std::string asin;
       std::string mbid;
+      std::string asin;
       std::string uri;
       std::string artist;
       std::string album;
@@ -95,7 +94,8 @@ namespace MPX
 
   class CoverStore;
   class Library;
-  class Covers : public sigx::glib_auto_dispatchable, public Service::Base
+  class Covers
+  : public Service::Base
   {
     public:
 

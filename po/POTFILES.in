@@ -46,7 +46,7 @@ python/plugins/mpxdj/mpxdj.glade
 python/plugins/mtpplayer/mtpplayer.glade
 python/plugins/trackinfo-webkit/__init__.py
 python/plugins/trackinfo-webkit/trackinfo-webkit.glade
-remote/audiosource.cc
+remote/youki.cc
 sources/lastfm/source-lastfm.cc
 sources/lastfm/source-lastfm.glade
 sources/musiclib/source-musiclib.cc
@@ -55,7 +55,7 @@ sources/radio/radio-directory-view-base.cc
 sources/radio/source-radio.cc
 sources/radio/source-radio.glade
 sources/radio/streams-shoutcast.cc
-widgets/bmp_status_icon.c
+widgets/youki-status-icon.c
 python/plugins/lastfmstuff/__init__.py
 python/plugins/mpxdj/__init__.py
 python/plugins/trackinfo-webkit/__init__.py

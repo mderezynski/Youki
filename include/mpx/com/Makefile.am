@@ -6,6 +6,6 @@ noinst_HEADERS =						\
 		tagview.hh						\
 		treeview-popup.hh				\
 		view-albums-filter-plugin.hh	\
-		view-albums.hh					\
-		view-collections.hh				\
-		view-tracklist.hh
+		view-album.hh					\
+        view-album-artist.hh            \
+		view-tracks.hh

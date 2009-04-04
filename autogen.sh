@@ -75,7 +75,7 @@ run_or_die ()
 
     # check for empty commands
     if test -z "$COMMAND" ; then
-        echo -e "\033[1;33m*warning* no command specified!\033[0m\n"
+        echo "\033[1;33m*warning* no command specified!\033[0m\n"
         return 1
     fi
 
@@ -94,7 +94,7 @@ run_or_die ()
     # run or die
     $COMMAND $OPTIONS ; RESULT=$?
     if test $RESULT -ne 0 ; then
-        echo -e "\033[1;31m*error* $COMMAND failed. (exit code = $RESULT)\033[0m"
+        echo "\033[1;31m*error* $COMMAND failed. (exit code = $RESULT)\033[0m"
         exit 1
     fi
 
@@ -105,18 +105,18 @@ compare_version() {
 	LHS=$1;
 	RHS=$2;
 
-	LHS_1=$(echo $LHS | cut -f 1 -d . | sed -e 's:^\([0-9]\+\).*$:\1:');
+	LHS_1=$(echo $LHS | cut -f 1 -d . | sed 's:^\([0-9]\+\).*$:\1:');
 	if [ "x$LHS_1" = "x" ]; then LHS_1=0; fi
-	LHS_2=$(echo $LHS | cut -f 2 -d . | sed -e 's:^\([0-9]\+\).*$:\1:');
+	LHS_2=$(echo $LHS | cut -f 2 -d . | sed 's:^\([0-9]\+\).*$:\1:');
 	if [ "x$LHS_2" = "x" ]; then LHS_2=0; fi
-	LHS_3=$(echo $LHS | cut -f 3 -d . | sed -e 's:^\([0-9]\+\).*$:\1:');
+	LHS_3=$(echo $LHS | cut -f 3 -d . | sed 's:^\([0-9]\+\).*$:\1:');
 	if [ "x$LHS_3" = "x" ]; then LHS_3=0; fi
 
-	RHS_1=$(echo $RHS | cut -f 1 -d . | sed -e 's:^\([0-9]\+\).*$:\1:');
+	RHS_1=$(echo $RHS | cut -f 1 -d . | sed 's:^\([0-9]\+\).*$:\1:');
 	if [ "x$RHS_1" = "x" ]; then RHS_1=0; fi
-	RHS_2=$(echo $RHS | cut -f 2 -d . | sed -e 's:^\([0-9]\+\).*$:\1:');
+	RHS_2=$(echo $RHS | cut -f 2 -d . | sed 's:^\([0-9]\+\).*$:\1:');
 	if [ "x$RHS_2" = "x" ]; then RHS_2=0; fi
-	RHS_3=$(echo $RHS | cut -f 3 -d . | sed -e 's:^\([0-9]\+\).*$:\1:');
+	RHS_3=$(echo $RHS | cut -f 3 -d . | sed 's:^\([0-9]\+\).*$:\1:');
 	if [ "x$RHS_3" = "x" ]; then RHS_3=0; fi
 
 	if [ $LHS_1 -ge $RHS_1 ]; then
@@ -162,8 +162,8 @@ printf "$automake_version: \033[0m"
 if compare_version $automake_version $automake_req; then
 	echo -e "\033[1;32mok\033[0m"
 else
-  echo -e "\033[1;31m!!"
-	echo -e "*error*: mpx requires automake $automake_req\033[0m"
+  echo "\033[1;31m!!"
+	echo "*error*: mpx requires automake $automake_req\033[0m"
 	exit 1
 fi
 
@@ -178,8 +178,8 @@ printf "$autoconf_version: \033[0m"
 if compare_version $autoconf_version $autoconf_req; then
 	echo -e "\033[1;32mok\033[0m"
 else
-  echo -e "\033[1;31m!!"
-	echo -e "*error* mpx requires autoconf $autoconf_req\033[0m"
+  echo "\033[1;31m!!"
+	echo "*error* mpx requires autoconf $autoconf_req\033[0m"
 	exit 1
 fi
 
@@ -195,8 +195,8 @@ printf "$libtool_version: \033[0m"
 if compare_version $libtool_version $libtool_req; then
 	echo -e "\033[1;32mok\033[0m"
 else
-  echo -e "\033[1;31m!!"
-	echo -e "*error* mpx requires libtool $libtool_req\033[0m"
+  echo "\033[1;31m!!"
+	echo "*error* mpx requires libtool $libtool_req\033[0m"
 	exit 1
 fi
 
@@ -211,8 +211,8 @@ printf "$gettext_version: \033[0m"
 if compare_version $gettext_version $gettext_req; then
 	echo -e "\033[1;32mok\033[0m"
 else
-  echo -e "\033[1;31m!!"
-	echo -e "*error* mpx requires gettext $gettext_req\033[0m"
+  echo "\033[1;31m!!"
+	echo "*error* mpx requires gettext $gettext_req\033[0m"
 	exit 1
 fi
 
@@ -230,7 +230,7 @@ if [ -d .svn ]; then
     fi
 fi
 
-if [ ! -e Changelog ]; then
+if [ ! Changelog ]; then
   touch ChangeLog
 fi
 
@@ -244,6 +244,6 @@ run_or_die $AUTOMAKE --add-missing --copy --include-deps
 cd $LAST_DIR
 
 echo
-echo -e "\033[1m*info* running 'configure' with options: $GLOBOPTIONS\033[0m"
+echo "\033[1m*info* running 'configure' with options: $GLOBOPTIONS\033[0m"
 echo
 ./configure "$@"

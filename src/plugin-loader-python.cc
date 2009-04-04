@@ -42,7 +42,7 @@ typedef int Py_ssize_t;
 #include <Python.h>
 
 #include "mpx/mpx-main.hh"
-#include "mpx/mpx-public-mpx.hh"
+#include "youki-controller.hh"
 
 #include "plugin-loader-python.hh"
 
@@ -153,7 +153,7 @@ namespace MPX
 						if (PyObject_IsSubclass (value, (PyObject*) PyMPXPlugin_Type))
 						{
                             try{
-                                object instance = boost::python::call<object>(value, ID, boost::ref(*(services->get<Player>("mpx-service-player").get())), boost::ref(*mcs));
+                                object instance = boost::python::call<object>(value, ID, boost::ref(*(services->get<YoukiController>("mpx-service-controller").get())), boost::ref(*mcs));
                                 if(!instance)
                                 {
                                     PyErr_Print();
@@ -183,16 +183,16 @@ namespace MPX
                                 ptr->m_Id = ID++;
 
                                 Glib::KeyFile keyfile;
-                                std::string key_filename = build_filename(*p, build_filename(*i, (*i)+".mpx-plugin"));
+                                std::string key_filename = build_filename(*p, build_filename(*i, (*i)+".youki-plugin"));
                                 if(file_test(key_filename, FILE_TEST_EXISTS))
                                 {
                                     try{
-                                        keyfile.load_from_file(build_filename(*p, build_filename(*i, (*i)+".mpx-plugin")));
-                                        ptr->m_Name = keyfile.get_string("MPX Plugin", "Name"); 
-                                        ptr->m_Authors = keyfile.get_string("MPX Plugin", "Authors"); 
-                                        ptr->m_Copyright = keyfile.get_string("MPX Plugin", "Copyright"); 
-                                        ptr->m_IAge = keyfile.get_integer("MPX Plugin", "IAge");
-                                        ptr->m_Website = keyfile.get_string("MPX Plugin", "Website");
+                                        keyfile.load_from_file(build_filename(*p, build_filename(*i, (*i)+".youki-plugin")));
+                                        ptr->m_Name = keyfile.get_string("YoukiPlugin", "Name"); 
+                                        ptr->m_Authors = keyfile.get_string("YoukiPlugin", "Authors"); 
+                                        ptr->m_Copyright = keyfile.get_string("YoukiPlugin", "Copyright"); 
+                                        ptr->m_IAge = keyfile.get_integer("YoukiPlugin", "IAge");
+                                        ptr->m_Website = keyfile.get_string("YoukiPlugin", "Website");
                                     } catch (Glib::KeyFileError) {
                                     }
                                 }
@@ -205,6 +205,7 @@ namespace MPX
                                 mcs->key_register("plugins", ptr->m_Name, false);
 
                                 ptr->m_Active = false; 
+                                ptr->m_Hidden = false; // FIXME: Make this an option from the plugin 
                                 ptr->m_HasGUI = PyObject_HasAttrString(instance.ptr(), "get_gui");
                                 if(PyErr_Occurred())
                                 {

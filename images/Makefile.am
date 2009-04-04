@@ -3,14 +3,25 @@ images_DATA =						\
 		about.png					\
 		artist.png					\
 		disc.png					\
+        disc-multiple.png           \
+        off.png                     \
 		splash.png					\
 		throbber.gif				\
+        youki.png                   \
+                                    \
+        speaker.png                 \
+        speaker_ghost.png           \
 									\
 		emblem-compilation.png		\
 		emblem-soundtrack.png		\
 									\
 		icon-plugins-tab.png		\
 		icon-now-playing-tab.png	\
+                                    \
+        jewelcase_bot.png           \
+        jewelcase_top.png           \
+                                    \
+        title-logo.png              \
 									\
 		qual0.png					\
 		qual1.png					\

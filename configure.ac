@@ -1,7 +1,7 @@
 #libxml (C) 2003-2007 MPX developers, see AUTHORS
 
 AC_PREREQ(2.60)
-AC_INIT([audiosource],[0.01],[http://mpx.backtrace.info/report])
+AC_INIT([youki],[0.01],[http://mpx.backtrace.info/report])
 AC_CONFIG_SRCDIR([src/main.cc])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_AUX_DIR([aux])
@@ -206,6 +206,13 @@ AX_BOOST_REGEX
 AX_BOOST_IOSTREAMS
 AX_BOOST_PYTHON
 
+# libdir
+AC_ARG_WITH([libprefix],
+    [AS_HELP_STRING([--with-libprefix], [Specify libdir name (default=lib)])],
+    [libprefix="$withval"],
+    [libprefix="lib"]
+)
+
 # tr1
 AC_ARG_WITH([tr1],
     [AS_HELP_STRING([--with-tr1], [Use C++ TR1 extensions])],
@@ -278,9 +285,6 @@ PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.10.0 gobject-2.0 gthread-2.0 gmodule-2.
 PKG_CHECK_MODULES([GLIBMM], [glibmm-2.4 >= 2.8.3])
 PKG_CHECK_MODULES([SIGC], [sigc++-2.0 >= 2.0.0])
 
-# clutter
-# PKG_CHECK_MODULES([CLUTTER], [clutter-0.6 >= 0.6.0 clutter-cairo-0.6 >= 0.6.0 clutter-gtk-0.6 >= 0.6.0])
-
 # GIOMM
 PKG_CHECK_MODULES([GIOMM], [giomm-2.4])
 
@@ -327,7 +331,7 @@ AC_ARG_WITH([xerces-prefix],
 AC_CHECK_LIB([xerces-c], [_init], [have_xerces=yes], [have_xerces=no])
 if test "$have_xerces" = "yes"; then
     XML_INCLUDES="-I$xml_prefix/xercesc"
-    XML_LIBS="-L$xml_prefix/lib -lxerces-c"
+    XML_LIBS="-L$xml_prefix/$libprefix -lxerces-c"
 else
     AC_MSG_ERROR([Xerces-C not found])
 fi
@@ -339,10 +343,10 @@ PKG_CHECK_MODULES([GST], [gstreamer-0.10 >= 0.10.14 gstreamer-base-0.10 >= 0.10.
 PKG_CHECK_MODULES([GST_PLUGINS_BASE], [gstreamer-plugins-base-0.10 >= 0.10.9])
 
 # D-BUS
-PKG_CHECK_MODULES([DBUS], [dbus-1 >= 0.93 dbus-glib-1 >= 0.61])
+PKG_CHECK_MODULES([DBUS], [dbus-c++-1 dbus-1 >= 0.93 dbus-glib-1 >= 0.61])
 DEFAULT_DBUS_PREFIX=`pkg-config --variable=prefix dbus-1` 
 
-AC_PATH_PROG(DBUSBINDINGTOOL, dbus-binding-tool)
+AC_PATH_PROG(DBUSBINDINGTOOL, dbusxx-xml2cpp)
 AC_SUBST(DBUSBINDINGTOOL)
 
 GLIB_GENMARSHAL=`$PKG_CONFIG glib-2.0 --variable=glib_genmarshal`
@@ -415,7 +419,7 @@ if test "$have_sid" != "no"; then
     if test "$have_sid" = "yes"; then
         AC_DEFINE([HAVE_SID], [1], [have sid])
         SID_INCLUDES="-I$sid_prefix/sidplay"
-        SID_LIBS="-L$sid_prefix/lib -lsidplay"
+        SID_LIBS="-L$sid_prefix/$libprefix -lsidplay"
     else
         AC_MSG_ERROR([libsidplay 1.x not found!])
     fi
@@ -482,14 +486,8 @@ AM_CONDITIONAL([HAVE_ZIP], [test "x$ZIP" != "x"])
 # libofa
 PKG_CHECK_MODULES([LIBOFA], [libofa >= 0.9.3])
 
-# GDL
-PKG_CHECK_MODULES([GDL], [gdl-1.0])
-
 # SIGX
 PKG_CHECK_MODULES([SIGX], [sigx-2.0])
-
-# GTKGLEXT
-PKG_CHECK_MODULES([GTKGLEXT], [gtkglextmm-1.2])
 
 # GAMIN
 AC_CHECK_LIB(fam,FAMOpen,,[echo "To build this software, you must install the FAM development package"; exit 1])
@@ -609,7 +607,7 @@ else
           else
             CDPARANOIA_INCLUDES="-I$cdparanoia_prefix/include"
           fi
-          CDPARANOIA_LIBS="-L$cdparanoia_prefix/lib -lcdda_interface"
+          CDPARANOIA_LIBS="-L$cdparanoia_prefix/$libprefix -lcdda_interface"
   else
           AC_MSG_ERROR([cdparanoia not found!])
   fi
@@ -704,8 +702,6 @@ AC_CONFIG_FILES([
     icons/hicolor/16x16/stock/Makefile
 
 	desktop/Makefile
-	desktop/mpx.desktop
-
     glade/Makefile
     images/Makefile
     jnetlib/Makefile
@@ -740,14 +736,22 @@ AC_CONFIG_FILES([
     python/pyapi/lastfm/Makefile
     python/pyapi/lastfm/model/Makefile
 
+    cpp/Makefile
+    cpp/plugins/Makefile
+    cpp/plugins/mmkeys/Makefile
+    cpp/plugins/prefs-audio/Makefile
+    cpp/plugins/prefs-audio-quality/Makefile
+    cpp/plugins/prefs-library/Makefile
+    cpp/plugins/prefs-coverart/Makefile
 
+    api/Makefile
+    com/Makefile
+    musicbrainz/Makefile
 	remote/Makefile
+    sentinel/Makefile
     scripts/Makefile
     widgets/Makefile
-    musicbrainz/Makefile
-    com/Makefile
     xmlcpp/Makefile
-    api/Makefile
 
     include/Makefile
     include/mpx/Makefile
@@ -793,6 +797,7 @@ AC_CONFIG_FILES([
     xsd/cxx/parser/expat/Makefile
     
     src/Makefile
+    mpxlib/Makefile
 
     po/Makefile.in
 

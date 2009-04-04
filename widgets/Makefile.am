@@ -13,10 +13,10 @@ libmpx_widgets_la_LIBADD =	\
 
 libmpx_widgets_la_SOURCES = 			\
 										\
-		bmp_status_icon.c     			\
-		bmp_status_icon.h	    		\
-    	bmp_tray_icon.c       			\
-	    bmp_tray_icon.h	      			\
+		youki-status-icon.c    			\
+		youki-status-icon.h	    		\
+    	youki-tray-icon.c      			\
+	    youki-tray-icon.h      			\
 										\
 		cairo-extensions.cc				\
 										\

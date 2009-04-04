@@ -129,8 +129,7 @@ namespace
 namespace MPX
 {
     Covers::Covers ()
-    : sigx::glib_auto_dispatchable()
-    , Service::Base("mpx-service-covers")
+    : Service::Base("mpx-service-covers")
     , m_rebuild(0)
     , m_rebuilt(0)
     {
@@ -298,7 +297,7 @@ namespace MPX
     )
     {
         cover->save( get_thumb_path( mbid ), "png" );
-        //m_pixbuf_cache[mbid] = cover;
+        m_pixbuf_cache[mbid] = cover;
     }
 
     std::string
@@ -365,21 +364,19 @@ namespace MPX
         RefPtr<Gdk::Pixbuf>&    cover
     )
     {
-        /*
         PixbufCache::const_iterator i = m_pixbuf_cache.find(mbid);
         if (i != m_pixbuf_cache.end())
         {
             cover = (*i).second; 
             return true;
         }
-        */
 
         std::string thumb_path = get_thumb_path (mbid);
         if (file_test( thumb_path, FILE_TEST_EXISTS ))
         {
             try{
               cover = Gdk::Pixbuf::create_from_file( thumb_path ); 
-              //m_pixbuf_cache.insert (std::make_pair(mbid, cover));
+              m_pixbuf_cache.insert (std::make_pair(mbid, cover));
               return true;
             }
             catch( Gdk::PixbufError )
