@@ -1130,7 +1130,14 @@ namespace MPX
     
                     m_SearchWindow = Gtk::manage( new Gtk::Window( Gtk::WINDOW_POPUP )) ;
                     m_SearchWindow->set_decorated( false ) ;
+
                     m_SearchWindow->signal_focus_out_event().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &ListViewArtist::on_search_window_focus_out
+                    )) ;
+
+                    signal_focus_out_event().connect(
                             sigc::mem_fun(
                                   *this
                                 , &ListViewArtist::on_search_window_focus_out
