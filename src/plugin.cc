@@ -118,8 +118,6 @@ namespace MPX
                 }
 
                 i->second->deactivate();
-
-                delete i->second ;
         }
     }
 

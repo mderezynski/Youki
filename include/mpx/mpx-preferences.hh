@@ -59,20 +59,25 @@ namespace MPX
    */
   class Preferences
   : public Gnome::Glade::WidgetLoader<Gtk::Window>
-  , public MPX::Service::Base
+  , public Service::Base
   {
     public:
 
-      Preferences (Glib::RefPtr<Gnome::Glade::Xml> const&);
+        Preferences(
+            const Glib::RefPtr<Gnome::Glade::Xml>&
+        ) ;
 
         static Preferences*
-        create ();
+        create(
+        ) ;
 
         virtual
-        ~Preferences();
+        ~Preferences(
+        ) ;
 
         virtual void
-        present ();
+        present(
+        ) ;
 
         void
         add_page(
@@ -84,292 +89,44 @@ namespace MPX
     protected:
 
         virtual bool
-        on_delete_event(GdkEventAny*);
+        on_delete_event(GdkEventAny*) ;
 
         virtual void
-        hide ();
+        hide() ;
 
     private:
 
-      class AudioSystemColumnRecord
-        : public Gtk::TreeModel::ColumnRecord
-      {
-        public:
-
-          Gtk::TreeModelColumn<Glib::ustring> description;
-          Gtk::TreeModelColumn<std::string>   name;
-          Gtk::TreeModelColumn<int>           tab;
-          Gtk::TreeModelColumn<Audio::Sink>   sink;
-
-          AudioSystemColumnRecord()
-          {
-              add (description);
-              add (name);
-              add (tab);
-              add (sink);
-          }
-      };
-
-      AudioSystemColumnRecord   audio_system_columns;
-      std::vector<int>          audio_system_cbox_ids;
-
-      Gtk::StockID
-      get_plugin_stock(bool /*available*/);
-
-      void
-      setup_audio_widgets ();
-
-      void
-      setup_audio ();
-
-      void
-      audio_system_apply_set_sensitive ();
-    
-      void
-      audio_system_apply_set_insensitive ();
-
-      void
-      audio_system_changed ();
-
-      void
-      audio_system_apply ();
-
-      Gtk::Button                       * m_button_audio_system_apply;
-      Gtk::Button                       * m_button_audio_system_reset;
-      Gtk::ComboBox                     * m_cbox_audio_system;
-      Gtk::HBox                         * m_warning_audio_system_changed;
-      Gtk::Notebook                     * m_notebook_audio_system;
-      Gtk::Notebook                     * m_notebook_preferences;
-      std::set<std::string>               m_sinks;
-      Glib::RefPtr<Gtk::ListStore>        m_list_store_audio_systems;
-
-#ifdef HAVE_ALSA
-      // ALSA
-      struct AlsaDevice
-      {
-          std::string   m_handle;
-          int	        m_card_id;
-          int	        m_device_id;
-          std::string   m_name;
-
-          AlsaDevice  () {}
-          AlsaDevice  ( std::string const&  handle,
-                        int                 card_id,
-                        int                 device_id,
-                        std::string const&  name)
-
-          : m_handle    (handle),
-            m_card_id   (card_id),
-            m_device_id (device_id),
-            m_name      (name) {}
-      };
-      typedef std::vector <AlsaDevice> AlsaDevices;
-
-      struct AlsaCard
-      {
-          std::string   m_handle;
-          int           m_card_id;
-          std::string   m_id;
-          std::string   m_name;
-          std::string   m_longname;
-          std::string   m_driver;
-          std::string   m_mixer;
-
-          AlsaDevices   m_devices;
-
-          AlsaCard () {}
-          AlsaCard (std::string const&  handle,
-                    int                 card_id,
-                    std::string const&  id,
-                    std::string const&  name,
-                    std::string const&  longname,
-                    std::string const&  driver,
-                    std::string const&  mixer,
-                    AlsaDevices      &  devices)
-
-          : m_handle    (handle),
-            m_card_id   (card_id),
-            m_id        (id),
-            m_name      (name),
-            m_longname  (longname),
-            m_driver    (driver),
-            m_mixer     (mixer)
-          {
-            std::swap (devices, m_devices);
-          }
-
-          operator Glib::ustring ()
-          {
-            return Glib::ustring ((m_longname.size() ? m_longname : m_name));
-          }
-      };
-      typedef std::vector <AlsaCard> AlsaCards;
-
-      class AlsaCardColumnRecord
-        : public Gtk::TreeModel::ColumnRecord
-      {
-        public:
-
-          Gtk::TreeModelColumn <Glib::ustring> name;
-          Gtk::TreeModelColumn <AlsaCard>      card;
-
-          AlsaCardColumnRecord ()
-          {
-            add (name);
-            add (card);
-          }
-      };
-
-      class AlsaDeviceColumnRecord
-        : public Gtk::TreeModel::ColumnRecord
-      {
-        public:
-
-          Gtk::TreeModelColumn <Glib::ustring> name;
-          Gtk::TreeModelColumn <AlsaDevice>    device;
-
-          AlsaDeviceColumnRecord ()
-          {
-            add (name);
-            add (device);
-          }
-      };
-
-      AlsaCardColumnRecord                m_alsa_card_columns;
-      AlsaDeviceColumnRecord              m_alsa_device_columns;
-      Gtk::ComboBox                     * m_cbox_alsa_card;
-      Gtk::ComboBox                     * m_cbox_alsa_device;
-      Gtk::SpinButton                   * m_alsa_buffer_time;
-      Gtk::Entry                        * m_alsa_device_string;
-      Glib::RefPtr<Gtk::ListStore>        m_list_store_alsa_cards;
-      Glib::RefPtr<Gtk::ListStore>        m_list_store_alsa_device;
-      sigc::connection                    m_conn_alsa_card_changed;
-      sigc::connection                    m_conn_alsa_device_changed;
-      sigc::connection                    m_conn_alsa_device_string_changed;
-
-      AlsaCards get_alsa_cards ();
-      void on_alsa_card_changed ();
-      void on_alsa_device_changed ();
-      void on_alsa_device_string_changed ();
-#endif //HAVE_ALSA
-
-      // Video
-      Gtk::ComboBox                     * m_cbox_video_out;
-
-      // OSS
-      Gtk::ComboBoxEntry                * m_oss_cbe_device;
-      Gtk::SpinButton                   * m_oss_buffer_time;
-
-      // ESD
-      Gtk::Entry                        * m_esd_host;
-      Gtk::SpinButton                   * m_esd_buffer_time;
-
-      // PulseAudio
-      Gtk::Entry                        * m_pulse_server;
-      Gtk::Entry                        * m_pulse_device;
-      Gtk::SpinButton                   * m_pulse_buffer_time;
-
-      // Jack
-      Gtk::Entry                        * m_jack_server;
-      Gtk::SpinButton                   * m_jack_buffer_time;
-
-#ifdef HAVE_SUN
-      Gtk::ComboBoxEntry                * m_sun_cbe_device;
-      Gtk::SpinButton                   * m_sun_buffer_time;
-#endif // HAVE_SUN
-
-#ifdef HAVE_HAL
-      Gtk::Entry                        * m_halaudio_udi;
-#endif // HAVE_SUN
-
-
-      // MM Keys
-      struct KeyControls
-      {
-        gint key, mask;
-
-        KeyControls () : key(0), mask(0) {}
-      };
-
-      std::vector<KeyControls> m_mm_key_controls;
-      int m_mm_option;
-
-      void  set_keytext (gint entry_id, gint key, gint mask);
-      bool  on_entry_key_press_event(GdkEventKey * event, gint entry_id);
-      bool  on_entry_key_release_event(GdkEventKey * event, gint entry_id);
-      void  on_clear_keyboard (gint entry_id);
-      void  on_mm_option_changed (gint option);
-      void  mm_load ();
-      void  mm_apply ();
-      void  mm_toggled ();
-
-    public:
-
-        typedef sigc::signal<void> Signal;
-        struct Signals_t
-        {
-          Signal  HotkeyEditBegin;
-          Signal  HotkeyEditEnd;
-        };
-
-    private:
-
-        Signals_t Signals;
-
-    public:
-
-        Signal&
-        signal_mm_edit_begin ()
-        {
-          return Signals.HotkeyEditBegin;
-        }
-
-        Signal&
-        signal_mm_edit_done ()
-        {
-          return Signals.HotkeyEditEnd;
-        }
-
-    private:
+        Gtk::Notebook               * m_notebook_preferences ;
 
         // Misc
-        Gtk::SpinButton             * m_Radio_MinimalBitrate;
+        Gtk::SpinButton             * m_Radio_MinimalBitrate ;
 
-      	CoverArtSourceView          * m_Covers_CoverArtSources; 
+      	CoverArtSourceView          * m_Covers_CoverArtSources ; 
 
         // File Formats
-        FileFormatPrioritiesView    * m_Fmts_PrioritiesView;
-        Gtk::CheckButton            * m_Fmts_PrioritizeByFileType;
-        Gtk::CheckButton            * m_Fmts_PrioritizeByBitrate;
+        FileFormatPrioritiesView    * m_Fmts_PrioritiesView ;
+        Gtk::CheckButton            * m_Fmts_PrioritizeByFileType ;
+        Gtk::CheckButton            * m_Fmts_PrioritizeByBitrate ;
 
         // Library
-        Gtk::CheckButton            * m_Library_RescanAtStartup;
-        Gtk::CheckButton            * m_Library_RescanInIntervals;
-        Gtk::SpinButton             * m_Library_RescanInterval;
-        Gtk::HBox                   * m_Library_RescanIntervalBox;
-        Gtk::ToggleButton           * m_Library_RescanAlwaysVacuum;
-        Gtk::RadioButton            * m_Library_UseHAL_Yes;
-        Gtk::RadioButton            * m_Library_UseHAL_No;
-
-/*
-        void
-        on_library_scan_start () ;
-
-        void
-        on_library_scan_end () ;
-
-        void
-        on_library_scan_summary ( const ScanSummary& G_GNUC_UNUSED ) ;
-*/
+        Gtk::CheckButton            * m_Library_RescanAtStartup ;
+        Gtk::CheckButton            * m_Library_RescanInIntervals ;
+        Gtk::SpinButton             * m_Library_RescanInterval ; 
+        Gtk::HBox                   * m_Library_RescanIntervalBox ;
+        Gtk::ToggleButton           * m_Library_RescanAlwaysVacuum ;
+#endif // PLUGIN_BUILD
 
 #ifdef HAVE_HAL
+
         void
         on_library_use_hal_toggled() ;
-#endif // HAVE_HAL
 
-#endif
+        Gtk::RadioButton            * m_Library_UseHAL_Yes ;
+        Gtk::RadioButton            * m_Library_UseHAL_No ;
 
-  }; // class Preferences
+#endif // hAVE_HAL
+
+  } ; // class Preferences
 } // namespace MPX
 
 #endif // MPX_PREFERENCES_HH

@@ -85,8 +85,6 @@ namespace MPX
     {
         show() ;
 
-        get_parent()->hide() ;
-
         m_Name = "Multimedia Keys" ;
         m_Description = "This plugin allows Youki to be controlled using the keyboard's multimedia keys" ;
         m_Authors = "Rhythmbox developers (original code), M. Derezynski (adaptation for Youki)" ;

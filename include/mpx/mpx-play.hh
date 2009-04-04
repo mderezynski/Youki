@@ -36,8 +36,6 @@
 
 #include "mpx/aux/glibaddons.hh"
 
-#include "video-playback.hh"
-
 #include <map>
 #include <string>
 #include <vector>
@@ -48,7 +46,6 @@
 #include <glibmm/ustring.h>
 #include <sigc++/signal.h>
 #include <sigc++/connection.h>
-
 #include <boost/optional.hpp>
 
 #include <gst/gst.h>
@@ -66,9 +63,7 @@
 namespace MPX
 {
         const int SPECT_BANDS = 64 ;
-
-        typedef std::vector<float>                        Spectrum ;
-        typedef std::map<std::string, bool>               MPXFileExtensions ;
+        typedef std::vector<float> Spectrum ;
 
         enum GstMetadataField
         {
@@ -107,6 +102,9 @@ namespace MPX
          * using a rather simple design. (http://www.gstreamer.net)
          *
          */
+    
+        class VideoPipe ;
+
         class Play
         : public Glib::Object
         , public Service::Base
@@ -115,24 +113,24 @@ namespace MPX
 
                         enum PipelineId
                         {
-                                PIPELINE_NONE = 0,
-                                PIPELINE_HTTP,
-                                PIPELINE_HTTP_MP3,
-                                PIPELINE_MMSX,
-                                PIPELINE_FILE,
-                                PIPELINE_CDDA,
-                                PIPELINE_VIDEO // not really a *pipeline* but anyway
+                              PIPELINE_NONE = 0
+                            , PIPELINE_HTTP
+                            , PIPELINE_HTTP_MP3
+                            , PIPELINE_MMSX
+                            , PIPELINE_FILE
+                            , PIPELINE_CDDA
+                            , PIPELINE_VIDEO // not really a *pipeline* but anyway
                         };
 
                         enum BinId
                         {
-                                BIN_OUTPUT = 0,
-                                BIN_HTTP,
-                                BIN_HTTP_MP3,
-                                BIN_MMSX,
-                                BIN_FILE,
-                                BIN_CDDA,
-                                N_BINS,
+                              BIN_OUTPUT = 0
+                            , BIN_HTTP
+                            , BIN_HTTP_MP3
+                            , BIN_MMSX
+                            , BIN_FILE
+                            , BIN_CDDA
+                            , N_BINS
                         };
 
                         PipelineId          m_pipeline_id ;
@@ -150,46 +148,19 @@ namespace MPX
                         Spectrum            m_spectrum
                                           , m_spectrum_zero ;
 
-                        enum FadeDirection
-                        {
-                              FADE_NONE
-                            , FADE_OUT
-                            , FADE_IN
-                        } ;
-
-                        sigc::connection    m_FadeConn ;
-                        Glib::Timer         m_FadeTimer ;
-                        int                 m_InFade ;
-                        FadeDirection       m_FadeDirection ;
-
-                        sigc::connection    m_conn_stream_position;
+                        sigc::connection    m_conn_stream_position ;
 
                 private:
 
-                        //// FADING
+                        //// MESSAGE QUEUE
 
                         void
-                                fade_in () ;
-   
-                        void 
-                                fade_out () ;
+                        process_queue () ;
 
                         void
-                                fade_stop () ;
-
-                        void
-                                update_fade_volume ( double ) ;
-
-                        bool
-                                fade_timeout () ;
-
-                        //// QUEUE
-
-                        void
-                                process_queue () ;
-
-                        void
-                                push_message (Audio::Message const& message);
+                        push_message(
+                              const Audio::Message&
+                        ) ;
 
                 public:
 
@@ -205,15 +176,16 @@ namespace MPX
                         ProxyOf<PropInt>::ReadOnly      property_position() const; 
                         ProxyOf<PropInt>::ReadOnly      property_duration() const; 
 
-                        typedef sigc::signal<void>                    SignalEos;
-                        typedef sigc::signal<void, gint64>            SignalSeek;
-                        typedef sigc::signal<void, gint64>            SignalPosition;
-                        typedef sigc::signal<void, int>               SignalHttpStatus;
-                        typedef sigc::signal<void>                    SignalLastFMSync;
-                        typedef sigc::signal<void, double>            SignalBuffering;
-                        typedef sigc::signal<void, GstState>          SignalPipelineState;
-                        typedef sigc::signal<void, PlayStatus>        SignalPlayStatus;
-                        typedef sigc::signal<void, Spectrum const&>   SignalSpectrum;
+                        typedef sigc::signal<void>                          SignalEos;
+                        typedef sigc::signal<void, gint64>                  SignalSeek;
+                        typedef sigc::signal<void, gint64>                  SignalPosition;
+                        typedef sigc::signal<void, int>                     SignalHttpStatus;
+                        typedef sigc::signal<void>                          SignalLastFMSync;
+                        typedef sigc::signal<void, double>                  SignalBuffering;
+                        typedef sigc::signal<void, GstState>                SignalPipelineState;
+                        typedef sigc::signal<void, PlayStatus>              SignalPlayStatus;
+                        typedef sigc::signal<void, Spectrum>                SignalSpectrum;
+
                         typedef sigc::signal<void, int, int, GValue const*> SignalVideoGeom;
 
                         typedef sigc::signal<void, Glib::ustring const&   /* element name */
@@ -225,11 +197,11 @@ namespace MPX
                         typedef sigc::signal<void, GstMetadataField>  SignalMetadata;
                         typedef sigc::signal<void>                    SignalStreamSwitched;
 
-                        /** Signal emitted when video output requests a window ID
-                         *
-                         */ 
-                        VideoPipe::SignalRequestWindowId&
-                                signal_request_window_id();
+                        VideoPipe*
+                        get_video_pipe()
+                        {
+                            return m_video_pipe ;
+                        }
 
                         /** Signal emitted on error state 
                          *
@@ -305,44 +277,54 @@ namespace MPX
 
 
 
-                        GstMetadata const&
-                                get_metadata ();
-
-
-                        void
-                                request_status (PlayStatus status);
+                        const GstMetadata&
+                        get_metadata ();
 
                         void
-                                switch_stream (Glib::ustring const& stream, Glib::ustring const& type = Glib::ustring());
+                        request_status(
+                              PlayStatus
+                        ) ;
 
                         void
-                                set_custom_httpheader (char const*);
+                        switch_stream(
+                              const std::string&
+                            , const std::string& = std::string()
+                        ) ;
 
                         void
-                                seek (gint64 position);
+                        set_custom_httpheader(
+                              char const*
+                        ) ;
 
                         void
-                                reset ();
+                        seek(
+                              gint64
+                        ) ;
+
+                        void
+                        reset(
+                        ) ;
 
 
                         bool
-                                has_video ();
+                        has_video(
+                        ) ;
 
                         void
-                                video_expose ();
-
-                        void
-                                set_window_id (::Window id);
+                        video_expose(
+                        ) ;
 
                         GstElement*
-                                x_overlay ();
-
-
-                        GstElement*
-                                tap ();
+                        x_overlay(
+                        ) ;
 
                         GstElement*
-                                pipeline ();
+                        tap(
+                        ) ;
+
+                        GstElement*
+                        pipeline(
+                        ) ;
 
                 private:
 
@@ -411,9 +393,12 @@ namespace MPX
                         bool  tick ();
                         void  on_stream_changed ();
                         void  on_volume_changed ();
-                        void  pipeline_configure (PipelineId id);
-                        void  request_status_real (PlayStatus status);
-                        void  switch_stream_real (Glib::ustring const& stream, Glib::ustring const& type = Glib::ustring());
+                        void  pipeline_configure(PipelineId);
+                        void  request_status_real(PlayStatus);
+                        void  switch_stream_real(
+                              const std::string&
+                            , const std::string& = std::string()
+                        ) ;
 
                         bool  clock_idle_handler();
 

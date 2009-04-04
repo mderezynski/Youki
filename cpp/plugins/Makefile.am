@@ -1,3 +1,3 @@
-PLUGINS = mmkeys
+PLUGINS = mmkeys prefs-audio
 
 SUBDIRS = $(PLUGINS)

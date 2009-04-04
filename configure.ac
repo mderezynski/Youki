@@ -748,6 +748,7 @@ AC_CONFIG_FILES([
     cpp/Makefile
     cpp/plugins/Makefile
     cpp/plugins/mmkeys/Makefile
+    cpp/plugins/prefs-audio/Makefile
 
     api/Makefile
     com/Makefile
