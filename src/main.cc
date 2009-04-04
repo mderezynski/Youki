@@ -31,7 +31,6 @@
 #include <giomm.h>
 #include <gst/gst.h>
 #include <gtkmm/main.h>
-#include <gtkglmm.h>
 #include <cstdlib>
 #include <string>
 #include <dbus-c++/glib-integration.h>
