@@ -28,6 +28,7 @@
 #include "config.h"
 
 #include "mpx/widgets/widgetloader.hh"
+#include "mpx/mpx-main.hh"
 #include <gtkmm.h>
 
 namespace MPX
