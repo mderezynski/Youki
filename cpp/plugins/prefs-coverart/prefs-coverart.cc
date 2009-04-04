@@ -111,11 +111,11 @@ namespace MPX
                 {
                     TreeIter iter = Store->append();
 
-                    int source = mcs->key_get<int>("PreferencesCoverart-CoverArtSources", (boost::format ("Source%d") % i).str());
+                    int source = mcs->key_get<int>("Preferences-CoverArtSources", (boost::format ("Source%d") % i).str());
 
                     (*iter)[Columns.Name]   = _(sources[source]);
                     (*iter)[Columns.ID]     = source;
-                    (*iter)[Columns.Active] = mcs->key_get<bool>("PreferencesCoverart-CoverArtSources", (boost::format ("SourceActive%d") % i).str());
+                    (*iter)[Columns.Active] = mcs->key_get<bool>("Preferences-CoverArtSources", (boost::format ("SourceActive%d") % i).str());
                 }
 
                 Store->signal_row_deleted().connect(
@@ -136,8 +136,8 @@ namespace MPX
                 {
                     int n = std::distance(children.begin(), i);
 
-                    mcs->key_set<int>("PreferencesCoverart-CoverArtSources", (boost::format ("Source%d") % n).str(), (*i)[Columns.ID]);
-                    mcs->key_set<bool>("PreferencesCoverart-CoverArtSources", (boost::format ("SourceActive%d") % n).str(), (*i)[Columns.Active]);
+                    mcs->key_set<int>("Preferences-CoverArtSources", (boost::format ("Source%d") % n).str(), (*i)[Columns.ID]);
+                    mcs->key_set<bool>("Preferences-CoverArtSources", (boost::format ("SourceActive%d") % n).str(), (*i)[Columns.Active]);
                 }
             }
 
