@@ -94,6 +94,7 @@ namespace MPX
         m_Active = false ;
         m_HasGUI = true ;
         m_CanActivate = true ;
+        m_Hidden = false ;
         m_Id = id ;
 
         boost::shared_ptr<Preferences> p = services->get<Preferences>("mpx-service-preferences") ;

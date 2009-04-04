@@ -205,6 +205,7 @@ namespace MPX
                                 mcs->key_register("plugins", ptr->m_Name, false);
 
                                 ptr->m_Active = false; 
+                                ptr->m_Hidden = false; // FIXME: Make this an option from the plugin 
                                 ptr->m_HasGUI = PyObject_HasAttrString(instance.ptr(), "get_gui");
                                 if(PyErr_Occurred())
                                 {

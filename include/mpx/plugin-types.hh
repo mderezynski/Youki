@@ -38,16 +38,17 @@ namespace MPX
 	{
 		protected:
 
-			std::string		m_Name;
-			std::string		m_Description;
-			std::string		m_Authors;
-			std::string		m_Copyright;
-			int				m_IAge;
-			std::string		m_Website;
-			bool			m_Active;
-            bool            m_HasGUI;
-            bool            m_CanActivate;
-			gint64			m_Id;
+			std::string		m_Name ;
+			std::string		m_Description ;
+			std::string		m_Authors ;
+			std::string		m_Copyright ;
+			int				m_IAge ;
+			std::string		m_Website ;
+			bool			m_Active ;
+            bool            m_HasGUI ;
+            bool            m_CanActivate ;
+            bool            m_Hidden ;
+			gint64			m_Id ;
 
 		public:
 
@@ -86,6 +87,9 @@ namespace MPX
 
             virtual bool
             get_can_activate () const   { return m_CanActivate; }
+
+            virtual bool
+            get_hidden ()       const   { return m_Hidden; }
 
 			virtual gint64
 			get_id ()			const	{ return m_Id; }

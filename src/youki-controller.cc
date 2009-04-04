@@ -638,12 +638,10 @@ namespace MPX
         m_ListViewAlbums->set_model( private_->FilterModelAlbums ) ;
         m_ListViewTracks->set_model( private_->FilterModelTracks ) ; 
 
-        private_->FilterModelArtist->regen_mapping () ;
-        private_->FilterModelAlbums->regen_mapping () ;
-        private_->FilterModelTracks->regen_mapping () ;
-
         m_ListViewArtist->select_id( id_artist ) ;
         m_ListViewAlbums->select_id( id_albums ) ;
+
+        on_entry_changed__process_filtering() ;
     }
 
     void
