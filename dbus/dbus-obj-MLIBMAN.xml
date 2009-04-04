@@ -10,5 +10,14 @@
         <signal name="ScanStart"/>
         <signal name="ScanEnd"/>
 
+        <signal name="NewAlbum">
+            <arg type="x" direction="out"/> 
+            <arg type="s" direction="out"/> 
+            <arg type="s" direction="out"/> 
+            <arg type="s" direction="out"/> 
+            <arg type="s" direction="out"/> 
+            <arg type="s" direction="out"/> 
+        </signal>
+
   </interface>
 </node>

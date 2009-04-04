@@ -173,6 +173,15 @@ youki_bin_SOURCES =             \
                                 \
     play.cc                     \
                                 \
+    python.cc                   \
+    plugin.cc                   \
+    plugin-loader-python.cc     \
+    plugin-types-python.cc      \
+    plugin-loader-cpp.cc        \
+    plugin-manager-gui.cc       \
+    gtkmm.cc                    \
+    gtkmmmodule.cc              \
+                                \
     playbacksource.cc           \
                                 \
     preferences.cc              \
@@ -218,5 +227,5 @@ DISTCLEANFILES = $(BUILT_SOURCES)
 mpx-mlibman-dbus-proxy.hh: $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml
 	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml --proxy=mpx-mlibman-dbus-proxy.hh
 
-mpx-app-dbus-adaptor.hh:
+mpx-app-dbus-adaptor.hh: $(top_srcdir)/dbus/dbus-obj-YOUKI.xml
 	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-YOUKI.xml --adaptor=mpx-app-dbus-adaptor.hh

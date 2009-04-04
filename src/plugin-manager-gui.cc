@@ -130,27 +130,29 @@ namespace MPX
 
 				PluginHoldMap_t const& map = services->get<PluginManager>("mpx-service-plugins")->get_map();	
 
-				for(PluginHoldMap_t::const_iterator i = map.begin(); i != map.end(); ++i)
+				for( PluginHoldMap_t::const_iterator i = map.begin(); i != map.end(); ++i )
 				{
-					TreeIter iter = Store->append();
-
-					(*iter)[Columns.Id]             = i->second->get_id();
-					(*iter)[Columns.Name]           = i->second->get_name();
-					(*iter)[Columns.Desc]           = i->second->get_desc();
-					(*iter)[Columns.Authors]        = i->second->get_authors();
-					(*iter)[Columns.Copyright]      = i->second->get_copyright();
-					(*iter)[Columns.Website]        = i->second->get_website();
-					(*iter)[Columns.Active]         = i->second->get_active();
-					(*iter)[Columns.HasGUI]         = i->second->get_has_gui();
-					(*iter)[Columns.CanActivate]    = i->second->get_can_activate();
-
-					if(!i->second->get_can_activate())
+                    if( !i->second->get_hidden() )
                     {
-						(*iter)[Columns.Pixbuf] = Theme->load_icon("emblem-readonly", 16, Gtk::ICON_LOOKUP_NO_SVG);
+                            TreeIter iter = Store->append();
+
+                            (*iter)[Columns.Id]             = i->second->get_id();
+                            (*iter)[Columns.Name]           = i->second->get_name();
+                            (*iter)[Columns.Desc]           = i->second->get_desc();
+                            (*iter)[Columns.Authors]        = i->second->get_authors();
+                            (*iter)[Columns.Copyright]      = i->second->get_copyright();
+                            (*iter)[Columns.Website]        = i->second->get_website();
+                            (*iter)[Columns.Active]         = i->second->get_active();
+                            (*iter)[Columns.HasGUI]         = i->second->get_has_gui();
+                            (*iter)[Columns.CanActivate]    = i->second->get_can_activate();
+
+                            if(!i->second->get_can_activate())
+                            {
+                                (*iter)[Columns.Pixbuf] = Theme->load_icon("emblem-readonly", 16, Gtk::ICON_LOOKUP_NO_SVG);
+                            }
+
+                            m_IdIterMap.insert(std::make_pair(i->second->get_id(), iter));
                     }
-
-                    m_IdIterMap.insert(std::make_pair(i->second->get_id(), iter));
-
 				}
 
                 Store->set_default_sort_func( sigc::mem_fun( *this, &PluginTreeView::plugin_sort_func ));
@@ -365,7 +367,7 @@ namespace MPX
 		PluginManagerGUI*
 		PluginManagerGUI::create ()
 		{
-			const std::string path (build_filename(DATA_DIR, build_filename("glade","plugin-manager.glade")));
+			const std::string path (build_filename(DATA_DIR, build_filename("glade","pluginmanager.glade")));
 			PluginManagerGUI * p = new PluginManagerGUI(Gnome::Glade::Xml::create (path)); 
 			return p;
 		}
@@ -423,7 +425,10 @@ namespace MPX
 				Gtk::Widget * widget = m_PluginTreeView->get_gui(iter);
 				if(widget != 0)
 				{
+                    g_object_ref(G_OBJECT(widget->gobj())) ;
+                    widget->unparent() ;
 					m_Options->add(*widget);
+                    g_object_unref(G_OBJECT(widget->gobj())) ;
 					widget->show();
 				}
                 m_Notebook->set_current_page(1);

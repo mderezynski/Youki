@@ -8,25 +8,35 @@
 #include "kobo-cover.hh"
 #include "kobo-titleinfo.hh"
 #include "kobo-volume.hh"
+#include "mpx/mpx-services.hh"
 #include "mpx/mpx-types.hh"
-#include "mpx/com/view-albumartist.hh"
-#include "mpx/com/view-albums.hh"
-#include "mpx/com/view-tracklist.hh"
 #include "infoarea.hh"
 
 #include "mpx-mlibman-dbus-proxy-actual.hh"
 #include "mpx-app-dbus-adaptor.hh"
-#include "youki-controller-status-icon.hh"
 
 namespace MPX
 {
+    class Covers ;
+    class Library ;
     class Play ;
+
+    class ListViewTracks ;
+    class ListViewAlbums ;
+    class ListViewArtist ;
+    struct YoukiControllerStatusIcon ;
+
     class YoukiController
-    : public ::info::backtrace::Youki::App_adaptor
+    : public Glib::Object
+    , public ::info::backtrace::Youki::App_adaptor
     , public DBus::ObjectAdaptor
     , public DBus::IntrospectableAdaptor
+    , public Service::Base
     {
         protected:
+
+            struct Private ;
+            Private                         * private_ ;
 
             YoukiControllerStatusIcon       * m_control_status_icon ;
 
@@ -41,38 +51,55 @@ namespace MPX
             KoboTitleInfo                   * m_main_titleinfo ;
             KoboVolume                      * m_main_volume ;
 
-            ListViewAA                      * m_ListViewAA ;
+            ListViewArtist                  * m_ListViewArtist ;
             ListViewAlbums                  * m_ListViewAlbums ;
-            ListView                        * m_ListViewTracks ;
+            ListViewTracks                  * m_ListViewTracks ;
 
-            Gtk::ScrolledWindow             * m_ScrolledWinAA ;
+            Gtk::ScrolledWindow             * m_ScrolledWinArtist ;
             Gtk::ScrolledWindow             * m_ScrolledWinAlbums ;
             Gtk::ScrolledWindow             * m_ScrolledWinTracks ;
 
             Gtk::HPaned                     * m_Paned1 ;
             Gtk::HPaned                     * m_Paned2 ;
             
-            Gtk::Entry                      * m_Entry ;
+            Gtk::Entry                        * m_Entry ;
+            Glib::ustring                       m_Entry_Text ;
+            Glib::ustring                       m_prediction ;
+
             Gtk::Alignment                  * m_Alignment_Entry ;
             Gtk::HBox                       * m_HBox_Entry ;
             Gtk::HBox                       * m_HBox_Controls ;
             Gtk::Label                      * m_Label_Search ;
+            Glib::Timer                       m_completion_timer ;
+            bool                              m_predicted ;
 
             Gtk::VBox                       * m_VBox ;
             Gtk::HBox                       * m_HBox ;
 
-            DataModelFilterAA_SP_t            m_FilterModelAA ;
-            DataModelFilterAlbums_SP_t        m_FilterModelAlbums ;
-            DataModelFilterTracks_SP_t        m_FilterModel ;
+            Gtk::Notebook                   * m_NotebookPlugins ;
 
-            Glib::RefPtr<Gdk::Pixbuf>         m_icon ; 
-
-            Play                            * m_play ;
-            gint64                            m_seek_position ;
+            Glib::RefPtr<Gdk::Pixbuf>           m_icon ; 
+            Cairo::RefPtr<Cairo::ImageSurface>  m_disc ;
+            Cairo::RefPtr<Cairo::ImageSurface>  m_disc_multiple ;
     
-            boost::optional<MPX::Track>       m_current_track ;          
+            Covers                          * m_covers ;
+            Play                            * m_play ;
+            Library                         * m_library ;
+            boost::optional<guint64>          m_seek_position ;
+    
+            boost::optional<MPX::Track>       m_track_current ;          
+            boost::optional<MPX::Track>       m_track_previous ;          
+            boost::optional<guint64>          m_next_track_queue_id ;
 
             info::backtrace::Youki::MLibMan_proxy_actual  * m_mlibman_dbus_proxy ;
+
+            sigc::connection                  m_conn1, m_conn2, m_conn3, m_conn4, m_conn5 ;
+            sigc::connection                  m_conn_completion ;
+
+            guint                             m_C_SIG_ID_metadata_updated ;
+            guint                             m_C_SIG_ID_track_cancelled ;
+
+            std::vector<guint64>              m_playqueue ;
 
         public: 
 
@@ -112,15 +139,12 @@ namespace MPX
                 , bool              /*play or not*/
             ) ;
 
-            enum ModelOrigin
-            {
-                  ORIGIN_MODEL_ALBUM_ARTISTS
-                , ORIGIN_MODEL_ALBUMS
-            } ;
+            void
+            on_list_view_aa_selection_changed(
+            ) ;
 
             void
-            on_list_view_selection_changed(
-                ModelOrigin
+            on_list_view_ab_selection_changed(
             ) ;
 
             //// MISCELLANEOUS WIDGETS 
@@ -130,15 +154,31 @@ namespace MPX
             ) ;
 
             bool
-            on_main_window_key_press(
+            on_main_window_key_press_event(
                 GdkEventKey*
             ) ;
 
             void
-            on_entry_changed (DataModelFilterTracks_SP_t model, Gtk::Entry* entry)
-            {
-                model->set_filter(entry->get_text());
-            }
+            on_entry_changed__update_completion(
+            ) ;
+
+            void
+            on_entry_changed__process_filtering(
+                bool = false /*force processing*/
+            ) ;
+
+            bool
+            on_entry_key_press_event(
+                GdkEventKey*
+            ) ;
+
+            void
+            on_entry_activated(
+            ) ;
+
+            bool
+            completion_timer_check(
+            ) ;
 
             void
             on_position_seek(
@@ -172,10 +212,28 @@ namespace MPX
         protected:
 
             void
-            reload_library() ;
+            on_library_scan_end() ;
 
             void
-            on_library_scan_end() ;
+            on_library_new_album(
+                  gint64
+                , const std::string&
+                , const std::string&
+                , const std::string&
+                , const std::string&
+                , const std::string&
+            ) ;
+
+        protected:
+    
+            bool
+            on_completion_match(
+                  const Glib::ustring&
+                , const Gtk::TreeIter&
+            ) ;
+
+            void
+            reload_library() ;
 
             void
             initiate_quit() ;
@@ -184,6 +242,9 @@ namespace MPX
             quit_timeout() ;
 
         protected: // DBUS
+
+            virtual void
+            Present () ;
 
             virtual void
             Startup () ;
@@ -202,6 +263,55 @@ namespace MPX
 
             virtual void
             Pause () ;
+
+        public: // PLUGIN API
+
+            void
+            queue_next_track(
+                gint64
+            ) ;
+
+            PlayStatus
+            get_status(
+            ) ;
+
+            MPX::Track&
+            get_metadata(
+            ) ;
+
+            void
+            API_pause_toggle(
+            ) ;
+
+            void
+            API_next(
+            ) ;
+
+            void
+            API_prev(
+            ) ;
+
+            void        
+            add_info_widget(
+                  Gtk::Widget*          w
+                , const std::string&    name
+            )
+            {
+                m_NotebookPlugins->append_page(
+                      *w
+                    , name
+                ) ;
+            }
+
+            void
+            remove_info_widget(
+                  Gtk::Widget*          w
+            )
+            {
+                m_NotebookPlugins->remove_page(
+                      *w
+                ) ;
+            }
     } ;
 }
 

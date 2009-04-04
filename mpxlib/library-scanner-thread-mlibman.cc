@@ -1492,7 +1492,6 @@ MPX::LibraryScannerThread_MLibMan::signal_new_entities(
 
     if( m_AlbumIDs.find( album_id ) != m_AlbumIDs.end() )
     {
-            pthreaddata->NewAlbum.emit( album_id );
             m_AlbumIDs.erase( album_id );
 
             RequestQualifier rq;
@@ -1509,7 +1508,7 @@ MPX::LibraryScannerThread_MLibMan::signal_new_entities(
 
             rq.album      = get<std::string>((*(p->Track.get()))[ATTRIBUTE_ALBUM].get());
 
-            pthreaddata->CacheCover( rq );
+            pthreaddata->NewAlbum.emit( album_id, rq.mbid, rq.asin, rq.uri, rq.artist, rq.album );
     }
 }
 

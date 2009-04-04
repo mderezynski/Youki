@@ -8,42 +8,38 @@ namespace MPX
     template <typename T>
     struct NTree
     {
-        struct Node ;
-        typedef boost::shared_ptr<Node> Node_SP_t ;
-    
+        struct                           Node ;
+
+        typedef Node*                    Node_SP_t ;
+        typedef std::vector<Node_SP_t >  Children_t ;
+
         struct Node
         { 
-            private:
-
-                    friend class NTree ;
+            public:
 
                     Node ()
                     {
                     }
 
-            public:
 
-                    const Node_SP_t         Parent ;
-                    std::vector<Node_SP_t>  Children ;
+                    Node_SP_t               Parent ;
+                    Children_t              Children ;
                     T                       Data ;
 
                     Node(
-                          const Node_SP_t   parent
-                        , const T&          data
+                        const T&            data
                     )
-                    : Parent( parent )
-                    , Data( data )
+                    : Data( data )
                     {
                     }
 
                     void
                     append(
-                          Node_SP_t         node
-                        , const Node_SP_t   parent
-                        , const T&          data
+                        Node_SP_t           node
                     )
                     {
-                        Children.push_back( Node_SP_t( new Node( parent, data ))) ;
+                        node->Parent = this ;
+                        Children.push_back( node ) ; 
                     }
         } ;
 
@@ -51,21 +47,25 @@ namespace MPX
 
         NTree()
         {
-            Root = Node_SP_t( new Node ) ;
+            Root = new Node ; 
+        }
+
+        virtual ~NTree()
+        {
+            delete_node( Root ) ;
         }
 
         void
-        append(
-              Node_SP_t         node
-            , const Node_SP_t   parent
-            , const T&          data
+        delete_node(
+            Node_SP_t node
         )
         {
-            node->append(
-                  node
-                , parent
-                , data
-            ) ;
+            for( std::size_t n = 0 ; n < node->Children.size() ; ++n ) 
+            {
+                delete_node( node->Children[n] ) ;
+            }
+
+            delete node ;
         }
     } ;
 }

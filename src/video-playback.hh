@@ -36,7 +36,6 @@
 #include <sigc++/sigc++.h>
 #include <boost/format.hpp>
 #include "mpx/mpx-audio.hh"
-#include "mpx/mpx-audio-types.hh"
 
 namespace MPX
 {
@@ -48,9 +47,9 @@ namespace MPX
     {
         public:
 
+            typedef sigc::signal<void, GstBus*, GstMessage*>  SignalBusWatchCascade ;
             typedef sigc::signal< ::Window> SignalRequestWindowId;
             typedef sigc::signal<void, int, int> SignalVideoGeom;
-
       
         private:
 

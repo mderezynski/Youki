@@ -1,7 +1,8 @@
-#ifndef YOUKI_LISTVIEW_AA_HH
-#define YOUKI_LISTVIEW_AA_HH
+#ifndef YOUKI_LISTVIEW_Artist_HH
+#define YOUKI_LISTVIEW_Artist_HH
 
 #include <gtkmm.h>
+#include <gtk/gtktreeview.h>
 #include <cairomm/cairomm.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/algorithm/string.hpp>
@@ -31,24 +32,24 @@ namespace
 namespace MPX
 {
         typedef boost::tuple<std::string, gint64>           Row2 ;
-        typedef std::vector<Row2>                           ModelAA_t ;
-        typedef boost::shared_ptr<ModelAA_t>                ModelAA_SP_t ;
-        typedef sigc::signal<void>                          SignalAA_0 ;
-        typedef std::map<gint64, ModelAA_t::iterator>       IdIterMapAA_t ;
+        typedef std::vector<Row2>                           ModelArtist_t ;
+        typedef boost::shared_ptr<ModelArtist_t>            ModelArtist_SP_t ;
+        typedef sigc::signal<void>                          SignalArtist_0 ;
+        typedef std::map<gint64, ModelArtist_t::iterator>   IdIterMapArtist_t ;
 
-        struct DataModelAA
+        struct DataModelArtist : public sigc::trackable
         {
-                ModelAA_SP_t        m_realmodel ;
-                SignalAA_0          m_changed ;
-                IdIterMapAA_t       m_iter_map ;
+                ModelArtist_SP_t        m_realmodel ;
+                SignalArtist_0          m_changed ;
+                IdIterMapArtist_t       m_iter_map ;
 
-                DataModelAA()
+                DataModelArtist()
                 {
-                    m_realmodel = ModelAA_SP_t( new ModelAA_t ) ; 
+                    m_realmodel = ModelArtist_SP_t( new ModelArtist_t ) ; 
                 }
 
-                DataModelAA(
-                    ModelAA_SP_t model
+                DataModelArtist(
+                    ModelArtist_SP_t model
                 )
                 {
                     m_realmodel = model; 
@@ -62,7 +63,7 @@ namespace MPX
                     m_changed.emit () ;
                 } 
 
-                virtual SignalAA_0&
+                virtual SignalArtist_0&
                 signal_changed ()
                 {
                     return m_changed;
@@ -95,25 +96,44 @@ namespace MPX
                     Row2 row ( artist, artist_id ) ;
                     m_realmodel->push_back(row);
 
-                    ModelAA_t::iterator i = m_realmodel->end();
+                    ModelArtist_t::iterator i = m_realmodel->end();
                     std::advance( i, -1 );
                     m_iter_map.insert(std::make_pair(artist_id, i)); 
                 }
         };
 
-        typedef boost::shared_ptr<DataModelAA> DataModelAA_SP_t;
+        typedef boost::shared_ptr<DataModelArtist> DataModelArtist_SP_t;
 
-        struct DataModelFilterAA : public DataModelAA
+        struct DataModelFilterArtist : public DataModelArtist
         {
-                typedef std::vector<ModelAA_t::iterator> RowRowMapping;
+                typedef std::vector<ModelArtist_t::iterator> RowRowMapping;
 
-                RowRowMapping           m_mapping ;
-                std::string             m_filter ;
+                RowRowMapping                       m_mapping ;
+                boost::optional<std::set<gint64> >  m_constraint_artist ;
 
-                DataModelFilterAA(DataModelAA_SP_t & model)
-                : DataModelAA(model->m_realmodel)
+                DataModelFilterArtist(DataModelArtist_SP_t & model)
+                : DataModelArtist(model->m_realmodel)
                 {
                     regen_mapping ();
+                }
+
+                virtual ~DataModelFilterArtist()
+                {
+                }
+
+                virtual void
+                set_constraint(
+                    const boost::optional<std::set<gint64> >& constraint
+                )
+                {
+                    m_constraint_artist = constraint ;
+                }
+
+                virtual void
+                clear_constraint(
+                )
+                {
+                    m_constraint_artist.reset() ;
                 }
 
                 virtual void
@@ -143,7 +163,7 @@ namespace MPX
                     , gint64                    artist_id
                 )
                 {
-                    DataModelAA::append_artist( artist, artist_id ) ;
+                    DataModelArtist::append_artist( artist, artist_id ) ;
                     regen_mapping();
                 }
                 
@@ -153,78 +173,49 @@ namespace MPX
                     , gint64                    artist_id
                 )
                 {
-                    DataModelAA::append_artist( artist, artist_id ) ;
-                }
-
-                virtual void
-                set_filter(
-                    const std::string&          filter
-                )
-                { 
-                    m_filter = filter ;
-
-                    if( !m_filter.empty() && (filter.substr(0, filter.size()-1) == m_filter) ) 
-                        regen_mapping_iterative();
-                    else
-                        regen_mapping();
+                    DataModelArtist::append_artist( artist, artist_id ) ;
                 }
 
                 void
-                regen_mapping ()
+                regen_mapping(
+                )
                 {
-                    using boost::get;
-
-                    m_mapping.clear();
-                    
-                    for( ModelAA_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
+                    if( !m_realmodel->size() )
                     {
-                        Row2 const& row = *i;
-
-                        if( m_filter.empty() ) 
-                        {
-                            m_mapping.push_back( i ) ;
-                        }
-                        else
-                        if( Util::match_keys( get<0>(row), m_filter )) 
-                        {
-                            m_mapping.push_back( i ) ;
-                        }
+                        return ;
                     }
 
-                    m_changed.emit();
-                }
-
-                void
-                regen_mapping_iterative ()
-                {
                     using boost::get;
 
                     RowRowMapping new_mapping;
 
-                    for( RowRowMapping::const_iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
-                    {
-                        Row2 const& row = *(*i);
+                    ModelArtist_t::iterator i = m_realmodel->begin() ; 
+                    new_mapping.push_back( i ) ;
+                    ++i ;
 
-                        if( m_filter.empty() ) 
+                    for( ; i != m_realmodel->end(); ++i )
+                    {
+                        const Row2& row = *i;
+
+                        int truth = !m_constraint_artist || m_constraint_artist.get().count( get<1>(row)) ;
+
+                        if( truth )
                         {
-                            new_mapping.push_back( *i ) ;
-                        }
-                        else
-                        if( Util::match_keys( get<0>(row), m_filter ))  
-                        {
-                            new_mapping.push_back( *i ) ;
+                            new_mapping.push_back( i ) ;
                         }
                     }
 
-                    std::swap(m_mapping, new_mapping);
-                    m_changed.emit();
+                    if( new_mapping != m_mapping )
+                    {
+                        std::swap(m_mapping, new_mapping);
+                        m_changed.emit();
+                    }
                 }
-
         };
 
-        typedef boost::shared_ptr<DataModelFilterAA> DataModelFilterAA_SP_t;
+        typedef boost::shared_ptr<DataModelFilterArtist> DataModelFilterArtist_SP_t;
 
-        class ColumnAA
+        class ColumnArtist
         {
                 int                 m_width ;
                 int                 m_column ;
@@ -233,7 +224,7 @@ namespace MPX
 
             public:
 
-                ColumnAA (std::string const& title)
+                ColumnArtist (std::string const& title)
                 : m_width( 0 )
                 , m_column( 0 )
                 , m_title( title )
@@ -241,7 +232,7 @@ namespace MPX
                 {
                 }
 
-                ~ColumnAA ()
+                ~ColumnArtist ()
                 {
                 }
 
@@ -299,16 +290,14 @@ namespace MPX
 
                 void
                 render(
-                    Cairo::RefPtr<Cairo::Context>   cairo,
-                    Row2 const&                     datarow,
-                    std::string const&              filter,
-                    Gtk::Widget&                    widget,
-                    int                             row,
-                    int                             xpos,
-                    int                             ypos,
-                    int                             rowheight,
-                    bool                            selected,
-                    bool                            highlight = true
+                      Cairo::RefPtr<Cairo::Context>   cairo
+                    , const Row2&                     datarow
+                    , Gtk::Widget&                    widget
+                    , int                             row
+                    , int                             xpos
+                    , int                             ypos
+                    , int                             rowheight
+                    , bool                            selected
                 )
                 {
                     using boost::get;
@@ -338,22 +327,14 @@ namespace MPX
 
                     Glib::RefPtr<Pango::Layout> layout; 
 
-                    if( highlight )
+                    if( row == 0 )
                     {
-                        layout = widget.create_pango_layout("") ;
-                        layout->set_markup( Util::text_match_highlight( str, filter, "#ff3030") ) ;
+                        layout = widget.create_pango_layout("");
+                        layout->set_markup("<b>" + Glib::Markup::escape_text(str) + "</b>") ;
                     }
                     else
                     {
-                        if( row == 0 )
-                        {
-                            layout = widget.create_pango_layout("");
-                            layout->set_markup("<b>" + Glib::Markup::escape_text(str) + "</b>") ;
-                        }
-                        else
-                        {
-                            layout = widget.create_pango_layout(str);
-                        }
+                        layout = widget.create_pango_layout(str);
                     }
 
                     layout->set_ellipsize(
@@ -377,25 +358,24 @@ namespace MPX
                 }
         };
 
-        typedef boost::shared_ptr<ColumnAA> ColumnAA_SP_t ;
-        typedef std::vector<ColumnAA_SP_t>  ColumnAA_SP_vector_t ;
-        typedef sigc::signal<void>          SignalSelectionChanged ;
+        typedef boost::shared_ptr<ColumnArtist> ColumnArtist_SP_t ;
+        typedef std::vector<ColumnArtist_SP_t>  ColumnArtist_SP_vector_t ;
+        typedef sigc::signal<void>              SignalSelectionChanged ;
 
-        class ListViewAA : public Gtk::DrawingArea
+        class ListViewArtist : public Gtk::DrawingArea
         {
                 int                                 m_row_height ;
                 int                                 m_visible_height ;
-                int                                 m_previous_drawn_row ;
 
-                DataModelFilterAA_SP_t              m_model ;
-                ColumnAA_SP_vector_t                m_columns ;
+                DataModelFilterArtist_SP_t          m_model ;
+                ColumnArtist_SP_vector_t            m_columns ;
 
                 PropAdj                             m_prop_vadj ;
                 PropAdj                             m_prop_hadj ;
 
                 guint                               m_signal0 ; 
 
-                boost::optional<std::pair<ModelAA_t::iterator, gint64> > m_selected ;
+                boost::optional<boost::tuple<ModelArtist_t::iterator, gint64, std::size_t> > m_selection ;
 
                 bool                                m_highlight ;
 
@@ -409,6 +389,9 @@ namespace MPX
 
                 Gtk::Entry                        * m_SearchEntry ;
                 Gtk::Window                       * m_SearchWindow ;
+
+                sigc::connection                    m_search_changed_conn ;
+                bool                                m_search_active ;
 
                 void
                 initialize_metrics ()
@@ -424,18 +407,12 @@ namespace MPX
                     m_row_height =
                         (pango_font_metrics_get_ascent (metrics)/PANGO_SCALE) + 
                         (pango_font_metrics_get_descent (metrics)/PANGO_SCALE) + 8;
-
-                    const int visible_area_pad = 2 ;
                 }
 
                 void
                 on_vadj_value_changed ()
                 {
-                    int row = (double(m_prop_vadj.get_value()->get_value()-m_row_height) / double(m_row_height));
-                    if( m_previous_drawn_row != row )
-                    {
-                        queue_draw ();
-                    }
+                    queue_draw ();
                 }
 
                 int
@@ -455,17 +432,41 @@ namespace MPX
 
             protected:
 
-               virtual bool
+                virtual bool
                 on_focus (Gtk::DirectionType direction)
                 { 
                     grab_focus() ;
-                    return false ;
+                    if( !m_selection )
+                    {
+                        select_row( get_upper_row() ) ;
+                    }
+                    return true ;
                 }
 
                 virtual bool
                 on_key_press_event (GdkEventKey * event)
                 {
-                    int step; 
+                    if( m_search_active )
+                    {
+                        switch( event->keyval )
+                        {
+                            case GDK_Escape:
+                                cancel_search() ;
+                                return true ;
+        
+                            default: ;
+                        }
+
+                        GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
+                        g_object_unref( ((GdkEventKey*)new_event)->window ) ;
+                        ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
+                        gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
+                        gdk_event_free(new_event) ;
+
+                        return false ;
+                    }
+
+                    int row ; 
 
                     switch( event->keyval )
                     {
@@ -473,52 +474,42 @@ namespace MPX
                         case GDK_KP_Up:
                         case GDK_Page_Up:
 
+                            if( !m_selection ) 
+                            {
+                                select_row( get_upper_row() ) ;
+                                break ;
+                            }
+
+                            row = boost::get<2>(m_selection.get()) ;
+
+                            if( !get_row_is_visible( row ) )
+                            {
+                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
+                            }
+
                             if( event->keyval == GDK_Page_Up )
                             {
-                                step = - (m_visible_height / m_row_height) + 1;
+                                row = std::max( 0, row - m_visible_height/m_row_height ) ;
+
+                                if( row < get_upper_row()) 
+                                {
+                                    double value = m_prop_vadj.get_value()->get_value() - m_visible_height ;
+                                    m_prop_vadj.get_value()->set_value( value ) ; 
+                                }
                             }
                             else
                             {
-                                step = -1;
-                            }
+                                row = std::max( 0, row - 1 ) ;
 
-                            if( !m_selected )
-                            {
-                                mark_first_row_up:
-    
-                                int row = get_upper_row();
-                                m_selected = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
-                                m_SIGNAL_selection_changed.emit() ;
-                            }
-                            else
-                            {
-                                int row = m_selected.get().second;
-
-                                if( get_row_is_visible( row ))
+                                if( row < get_upper_row()) 
                                 {
-                                    ModelAA_t::iterator i = m_selected.get().first;
-
-                                    std::advance(i, step);
-                                    row += step;
-
-                                    if( row >= 0 )
-                                    {
-                                        m_selected = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
-                                        m_SIGNAL_selection_changed.emit() ;
-
-                                        if( row < get_upper_row()) 
-                                        {
-                                            double value = m_prop_vadj.get_value()->get_value();
-                                            value += step*m_row_height;
-                                            m_prop_vadj.get_value()->set_value( value );
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    goto mark_first_row_up;
+                                    m_prop_vadj.get_value()->set_value( (get_upper_row()-1) * m_row_height ) ; 
                                 }
                             }
+
+                            select_row( row ) ;
+
+
                             queue_draw();
                             return true;
 
@@ -526,72 +517,120 @@ namespace MPX
                         case GDK_KP_Down:
                         case GDK_Page_Down:
 
+                            if( !m_selection ) 
+                            {
+                                select_row( get_upper_row() ) ;
+                                break ;
+                            }
+
+                            row = boost::get<2>(m_selection.get()) ;
+
+                            if( !get_row_is_visible( row ) )
+                            {
+                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
+                            }
+
                             if( event->keyval == GDK_Page_Down )
                             {
-                                step = (m_visible_height / m_row_height) - 1;
+                                row = std::min( m_model->m_mapping.size(), std::size_t(row + (m_visible_height/m_row_height)) ) ;
+
+                                double value = m_prop_vadj.get_value()->get_value() ; 
+                                m_prop_vadj.get_value()->set_value( value + m_visible_height ) ;
                             }
                             else
                             {
-                                step = 1;
-                            }
+                                row = std::min( m_model->m_mapping.size(), std::size_t(row + 1) ) ;
 
-                            if( !m_selected ) 
-                            {
-                                mark_first_row_down:
-
-                                int row = get_upper_row();
-                                m_selected = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
-                                m_SIGNAL_selection_changed.emit() ;
-                            }
-                            else
-                            {
-                                int row = m_selected.get().second;
-
-                                if( get_row_is_visible( row ) )
+                                if( row > (get_upper_row()+(m_visible_height/m_row_height))) 
                                 {
-                                    ModelAA_t::iterator i = m_selected.get().first;
-    
-                                    std::advance(i, step);
-                                    row += step;
-
-                                    if( row < m_model->m_mapping.size() )
-                                    {
-                                        m_selected = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
-                                        m_SIGNAL_selection_changed.emit() ;
-
-                                        if( row >= (get_upper_row() + (m_visible_height/m_row_height)))
-                                        {
-                                            double value = m_prop_vadj.get_value()->get_value();
-                                            value += step*m_row_height;
-                                            m_prop_vadj.get_value()->set_value( value );
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    goto mark_first_row_down;
+                                    m_prop_vadj.get_value()->set_value( (get_upper_row()+1) * m_row_height ) ;
                                 }
                             }
+
+                            select_row( row ) ;
+
                             queue_draw();
                             return true;
 
+                        case GDK_Left:
+                        case GDK_KP_Left:
+                        case GDK_Right:
+                        case GDK_KP_Right:
+                        case GDK_Home:
+                        case GDK_KP_Home:
+                        case GDK_End:
+                        case GDK_KP_End:
+                        case GDK_KP_Enter:
+                        case GDK_Return:
+                            return false ;
+
+                        case GDK_Tab:
+                                Gtk::DrawingArea::on_key_press_event( event ) ;
+                            return true ;
+
                         default:
 
-                            int x, y, x_root, y_root ;
+                            if( !Gtk::DrawingArea::on_key_press_event( event ))
+                            { 
+                                    int x, y, x_root, y_root ;
 
-                            dynamic_cast<Gtk::Window*>(get_toplevel())->get_position( x_root, y_root ) ;
+                                    dynamic_cast<Gtk::Window*>(get_toplevel())->get_position( x_root, y_root ) ;
 
-                            x = x_root + get_allocation().get_x() ;
-                            y = y_root + get_allocation().get_y() + get_allocation().get_height() ;
+                                    x = x_root + get_allocation().get_x() ;
+                                    y = y_root + get_allocation().get_y() + get_allocation().get_height() ;
 
-                            m_SearchWindow->set_size_request( get_allocation().get_width(), -1 ) ;
-                            m_SearchWindow->move( x, y ) ;
+                                    m_SearchWindow->set_size_request( get_allocation().get_width(), -1 ) ;
+                                    m_SearchWindow->move( x, y ) ;
+                                    m_SearchWindow->show() ;
 
-                            m_SearchWindow->show() ;
+                                    send_focus_change( *m_SearchEntry, true ) ;
+
+                                    GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
+                                    g_object_unref( ((GdkEventKey*)new_event)->window ) ;
+                                    gtk_widget_realize( GTK_WIDGET(m_SearchWindow->gobj()) ) ;
+                                    ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
+                                    gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
+                                    gdk_event_free(new_event) ;
+
+                                    m_search_active = true ;
+                            }
                     }
 
-                    return false;
+                    return true ;
                 }
+
+                void
+                send_focus_change(
+                      Gtk::Widget&  w
+                    , bool          in
+                    )
+                {
+                    GtkWidget * widget = w.gobj() ;
+
+                    GdkEvent *fevent = gdk_event_new (GDK_FOCUS_CHANGE);
+
+                    g_object_ref (widget);
+
+                   if( in )
+                      GTK_WIDGET_SET_FLAGS( widget, GTK_HAS_FOCUS ) ;
+                    else
+                      GTK_WIDGET_UNSET_FLAGS( widget, GTK_HAS_FOCUS ) ;
+
+                    fevent->focus_change.type   = GDK_FOCUS_CHANGE;
+                    fevent->focus_change.window = GDK_WINDOW(g_object_ref( widget->window )) ;
+                    fevent->focus_change.in     = in;
+
+                    gtk_widget_event( widget, fevent ) ;
+
+                    g_object_notify(
+                          G_OBJECT (widget)
+                        , "has-focus"
+                    ) ;
+
+                    g_object_unref( widget ) ;
+                    gdk_event_free( fevent ) ;
+                }
+
 
                 bool
                 on_button_press_event (GdkEventButton * event)
@@ -600,13 +639,13 @@ namespace MPX
 
                     if(event->type == GDK_BUTTON_PRESS)
                     {
-                            int row = get_upper_row() + (int(event->y) / m_row_height);
+                            grab_focus() ;
+
+                            std::size_t row = get_upper_row() + (event->y / m_row_height);
 
                             if( row < m_model->m_mapping.size() )
                             {
-                                m_selected = std::make_pair(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row])) ;
-                                m_SIGNAL_selection_changed.emit() ;
-                                queue_draw();
+                                select_row( row ) ;
                             }
                     }
                 
@@ -649,7 +688,7 @@ namespace MPX
 
                     double column_width = (double(event->width) - m_fixed_total_width - (40*m_collapsed.size()) ) / double(m_columns.size()-m_collapsed.size()-m_fixed.size());
 
-                    for(int n = 0; n < m_columns.size(); ++n)
+                    for( std::size_t n = 0; n < m_columns.size(); ++n)
                     {
                         if( m_fixed.count( n ) )
                         {
@@ -686,23 +725,20 @@ namespace MPX
 
                     const Gtk::Allocation& alloc = get_allocation();
 
-                    int row = get_upper_row() ;
-                    m_previous_drawn_row = row;
+                    std::size_t row     = get_upper_row() ;
+                    std::size_t ypos    = 0 ;
+                    std::size_t xpos    = 0 ;
+                    std::size_t cnt     = m_visible_height / m_row_height + 1 ;
 
-                    int ypos    = 0 ;
-                    int xpos    = 0 ;
-                    int col     = 0 ;
-                    int cnt     = m_visible_height / m_row_height + 1 ;
+                    const std::size_t inner_pad  = 1 ;
 
                     cairo->set_operator(Cairo::OPERATOR_ATOP);
     
                     while( m_model->is_set() && cnt && (row < m_model->m_mapping.size()) ) 
                     {
-                        const int inner_pad  = 1 ;
-
                         xpos = 0 ;
 
-                        bool iter_is_selected = ( m_selected && m_selected.get().second == get<1>(*m_model->m_mapping[row])) ;
+                        bool iter_is_selected = ( m_selection && boost::get<1>(m_selection.get()) == get<1>(*m_model->m_mapping[row])) ;
 
                         if( !(row % 2) ) 
                         {
@@ -745,6 +781,8 @@ namespace MPX
         
                             cairo->save () ;
 
+                            double factor = has_focus() ? 1. : 0.3 ;
+
                             Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
                                   r.x + r.width / 2
                                 , r.y  
@@ -757,7 +795,7 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.90 
+                                , 0.90 * factor  
                             ) ;
                             
                             background_gradient_ptr->add_color_stop_rgba(
@@ -765,7 +803,7 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.75 
+                                , 0.75 * factor
                             ) ;
                             
                             background_gradient_ptr->add_color_stop_rgba(
@@ -773,7 +811,7 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.45 
+                                , 0.45 * factor 
                             ) ;
 
                             cairo->set_source( background_gradient_ptr ) ;
@@ -802,9 +840,9 @@ namespace MPX
                             cairo->restore () ;
                         }
 
-                        for(ColumnAA_SP_vector_t::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
+                        for(ColumnArtist_SP_vector_t::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                         {
-                            (*i)->render(cairo, m_model->row(row), m_model->m_filter, *this, row, xpos, ypos, m_row_height, iter_is_selected, m_highlight);
+                            (*i)->render(cairo, m_model->row(row), *this, row, xpos, ypos, m_row_height, iter_is_selected);
                             xpos += (*i)->get_width();
                         }
 
@@ -816,16 +854,16 @@ namespace MPX
                     if( has_focus() )
                     {
                         get_style()->paint_focus(
-                            get_window(),
-                            Gtk::STATE_NORMAL,
-                            get_allocation(),
-                            *this,
-                            "treeview",
-                            0, 
-                            0, 
-                            get_allocation().get_width(), 
-                            get_allocation().get_height()
-                        );
+                              get_window()
+                            , Gtk::STATE_NORMAL
+                            , get_allocation()
+                            , *this
+                            , "treeview"
+                            , 0 
+                            , 0
+                            , get_allocation().get_width()
+                            , get_allocation().get_height()
+                        ) ;
                     }
 
                     return true;
@@ -840,8 +878,6 @@ namespace MPX
                     {
                         m_prop_vadj.get_value()->set_value(0.);
                     } 
-
-                    m_selected.reset();
 
                     m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
                     m_prop_vadj.get_value()->set_value(0.);
@@ -863,12 +899,12 @@ namespace MPX
                             g_object_set(G_OBJECT(obj), "hadjustment", hadj, NULL);
                             g_object_set(G_OBJECT(vadj), "page-size", 0.05, "upper", 1.0, NULL);
 
-                            ListViewAA & view = *(reinterpret_cast<ListViewAA*>(data));
+                            ListViewArtist & view = *(reinterpret_cast<ListViewArtist*>(data));
 
                             view.m_prop_vadj.get_value()->signal_value_changed().connect(
                                 sigc::mem_fun(
                                     view,
-                                    &ListViewAA::on_vadj_value_changed
+                                    &ListViewArtist::on_vadj_value_changed
                             ));
                     }
 
@@ -876,6 +912,38 @@ namespace MPX
                 }
 
             public:
+
+                void
+                select_id(
+                    gint64 id
+                )
+                {
+                    using boost::get;
+
+                    for( DataModelFilterArtist::RowRowMapping::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
+                    {
+                        if( id == get<1>(**i))
+                        {
+                            select_row( std::distance( m_model->m_mapping.begin(), i )) ;
+                            return ;
+                        }
+                    }
+                
+                    clear_selection() ;
+                }
+
+                void
+                select_row(
+                      std::size_t row
+                )
+                {
+                    if( row < m_model->m_mapping.size() )
+                    {
+                        m_selection = boost::make_tuple(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row]), row) ;
+                        m_SIGNAL_selection_changed.emit() ;
+                        queue_draw();
+                    }
+                }
 
                 SignalSelectionChanged&
                 signal_selection_changed()
@@ -886,9 +954,22 @@ namespace MPX
                 gint64
                 get_selected()
                 {
-                    return m_selected ? m_selected.get().second : -1 ;
+                    return m_selection ? boost::get<1>(m_selection.get()) : -1 ;
                 }
     
+                void
+                clear_selection()
+                {
+                    if( m_selection )
+                    {
+                        m_selection.reset() ;
+                        if( m_model->m_mapping.size()) 
+                        {
+                            m_selection = boost::make_tuple(m_model->m_mapping[0], get<1>(*m_model->m_mapping[0]), 0) ;
+                        }
+                    }
+                }
+
                 void
                 set_highlight(bool highlight)
                 {
@@ -897,19 +978,19 @@ namespace MPX
                 }
 
                 void
-                set_model(DataModelFilterAA_SP_t model)
+                set_model(DataModelFilterArtist_SP_t model)
                 {
                     m_model = model;
-                    set_size_request(200, 8 * m_row_height);
+                    clear_selection() ;
                     m_model->signal_changed().connect(
                         sigc::mem_fun(
                             *this,
-                            &ListViewAA::on_model_changed
+                            &ListViewArtist::on_model_changed
                     ));
                 }
 
                 void
-                append_column (ColumnAA_SP_t column)
+                append_column (ColumnArtist_SP_t column)
                 {
                     m_columns.push_back(column);
                 }
@@ -958,14 +1039,69 @@ namespace MPX
                     }
                 }
 
-                ListViewAA ()
+            protected:
 
-                        : ObjectBase( "YoukiListViewAA" )
-                        , m_previous_drawn_row( 0 )
+                void
+                on_search_entry_changed()
+                {
+                    using boost::get ;
+
+                    Glib::ustring text = m_SearchEntry->get_text() ;
+
+                    if( text.empty() )
+                    {
+                        select_row( 0 ) ;
+                        return ;
+                    }
+
+                    DataModelFilterArtist::RowRowMapping::iterator i = m_model->m_mapping.begin(); 
+                    ++i ; // first row is "All" FIXME this sucks
+
+                    for( ; i != m_model->m_mapping.end(); ++i )
+                    {
+                        const Row2& row = **i ;
+                        Glib::ustring match = get<0>(row) ;
+
+                        if( match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )   
+                        {
+                            int row = std::distance( m_model->m_mapping.begin(), i ) ; 
+                            m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
+                            select_row( row ) ;
+                            break ;
+                        }
+                    }
+                }
+
+                void
+                cancel_search()
+                {
+                    send_focus_change( *m_SearchEntry, false ) ;
+                    m_SearchWindow->hide() ;
+                    m_search_changed_conn.block () ;
+                    m_SearchEntry->set_text("") ;
+                    m_search_changed_conn.unblock () ;
+                    m_search_active = false ;
+                }
+
+                bool
+                on_search_window_focus_out(
+                      GdkEventFocus* G_GNUC_UNUSED
+                )
+                {
+                    cancel_search() ;
+                    return false ;
+                }
+
+            public:
+
+                ListViewArtist ()
+
+                        : ObjectBase( "YoukiListViewArtist" )
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_highlight( false )
                         , m_fixed_total_width( 0 )
+                        , m_search_active( false )
 
                 {
                     m_treeview = gtk_tree_view_new();
@@ -988,12 +1124,34 @@ namespace MPX
                     initialize_metrics();
 
                     m_SearchEntry = Gtk::manage( new Gtk::Entry ) ;
-                    m_SearchWindow = Gtk::manage( new Gtk::Window( Gtk::WINDOW_TOPLEVEL )) ;
+                    m_search_changed_conn = m_SearchEntry->signal_changed().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &ListViewArtist::on_search_entry_changed
+                    )) ;
+    
+                    m_SearchWindow = Gtk::manage( new Gtk::Window( Gtk::WINDOW_POPUP )) ;
+                    m_SearchWindow->set_decorated( false ) ;
+
+                    m_SearchWindow->signal_focus_out_event().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &ListViewArtist::on_search_window_focus_out
+                    )) ;
+
+                    signal_focus_out_event().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &ListViewArtist::on_search_window_focus_out
+                    )) ;
 
                     m_SearchWindow->add( *m_SearchEntry ) ;
+                    m_SearchEntry->show() ;
+
+                    property_can_focus() = true ;
                 }
 
-                ~ListViewAA ()
+                virtual ~ListViewArtist ()
                 {
                 }
         };

@@ -101,10 +101,14 @@ namespace MPX
             ) ;
 
             void
-            push_message (const std::string&) ;
+            push_message(
+                const std::string&
+            ) ;
 
             virtual bool
-            on_delete_event(GdkEventAny*);
+            on_delete_event(
+                GdkEventAny*
+            ) ;
 
             virtual void
             present () ;
@@ -120,6 +124,10 @@ namespace MPX
             ) ;
 
             void
+            scan_start(
+            ) ;
+
+            void
             scan_end(
             ) ;
 
@@ -129,7 +137,13 @@ namespace MPX
             ) ;
 
             void
-            scan_start(
+            new_album(
+                  gint64
+                , const std::string&
+                , const std::string&
+                , const std::string&
+                , const std::string&
+                , const std::string&
             ) ;
 
 #ifdef HAVE_HAL
@@ -240,7 +254,6 @@ namespace MPX
             } ;
             FSTreeColumnsT FSTreeColumns ;
             Glib::RefPtr<Gtk::TreeStore> FSTreeStore ;
-
 
             void
             cell_data_func_active(

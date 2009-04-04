@@ -67,7 +67,7 @@ namespace MPX
               0
             , 0 
             , a.get_width()
-            , 14 
+            , a.get_height() 
         ) ;
         cairo->fill () ;
 
@@ -76,7 +76,7 @@ namespace MPX
             GdkRectangle r ;
 
             r.x         = pad ; 
-            r.y         = 0 ; 
+            r.y         = (a.get_height() - 14) / 2 ; 
             r.width     = fmax( 0, (a.get_width()-2*pad) * double(percent)) ;
             r.height    = 14 ; 
 
@@ -149,7 +149,7 @@ namespace MPX
 
             cairo->move_to(
                   fmax( 2, 2 + double((a.get_width() - pad*2)) * double(percent) - width - (pad+4) ) 
-                , 1 
+                , (get_height() - height)/2.
             ) ;
 
             cairo->set_source_rgba( 1., 1., 1., 1. ) ;
@@ -237,6 +237,35 @@ namespace MPX
             }
 
             m_volume = x_orig ;
+            m_volume = std::max( m_volume, 0 ) ;
+            m_volume = std::min( m_volume, 100 ) ;
+
+            m_SIGNAL_set_volume.emit( m_volume ) ;
+
+            queue_draw () ;
+        }
+
+        return true ;
+    }
+
+    bool
+    KoboVolume::on_scroll_event(
+        GdkEventScroll* event
+    ) 
+    {
+        if( event->direction == GDK_SCROLL_DOWN )
+        {
+            m_volume = m_volume - 3 ; 
+            m_volume = std::max( m_volume, 0 ) ;
+            m_volume = std::min( m_volume, 100 ) ;
+
+            m_SIGNAL_set_volume.emit( m_volume ) ;
+
+            queue_draw () ;
+        }
+        else if( event->direction == GDK_SCROLL_UP )
+        {
+            m_volume = m_volume + 3 ; 
             m_volume = std::max( m_volume, 0 ) ;
             m_volume = std::min( m_volume, 100 ) ;
 

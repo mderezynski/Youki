@@ -79,65 +79,43 @@ class TrackTags(mpx.Plugin):
 
     """The TrackTags Plugin displays Last.fm tags for the currently played track, and allows you to start playing on Last.fm off of one of the tags!"""
 
-    def __init__(self, id, player, mcs):
+    def __init__(self, id, youki, mcs):
 
-        self.id = id
-        self.player = player
-        self.lock = mutex.mutex()
+        self.id     = id
+        self.youki  = youki
         self.serial = 0
 
     def activate(self):
 
         self.tagview = mpx.TagView()
-        self.player.add_info_widget(self.tagview.get_widget(), "Last.fm Tags")
-        self.player_tagview_tag_handler_id = self.tagview.get_widget().connect("tag-clicked", self.tag_clicked)
-        self.player_metadata_updated_handler_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
-        self.player_playtstatus_changed_handler_id = self.player.gobj().connect("play-status-changed", self.status_changed)
+        self.youki.add_info_widget(self.tagview.get_widget(), "Last.fm Tags")
+        self.youki_metadata_updated_handler_id = self.youki.gobj().connect("metadata-updated", self.metadata_updated)
 
         try:
-          self.tagview.clear()
-          self.tagview.display(False)
-          self.lock.lock(self.display_track_tags, blah)
+            self.tagview.clear()
+            self.tagview.display(False)
         except:
-          pass 
+            pass 
 
         return True
 
     def deactivate(self):
 
-        self.player.remove_info_widget(self.tagview.get_widget())
-        self.player.gobj().disconnect(self.player_metadata_updated_handler_id)
-        self.player.gobj().disconnect(self.player_playtstatus_changed_handler_id)
-        self.tagview.get_widget().disconnect(self.player_tagview_tag_handler_id)
+        self.youki.remove_info_widget(self.tagview.get_widget())
+        self.youki.gobj().disconnect(self.youki_metadata_updated_handler_id)
         return True
-
-    def tag_clicked(self, blah, tag):
-        
-        if self.player and len(tag) > 0:
-          print "Asking to play Tag '%s'" % tag
-          self.player.play_uri("lastfm://globaltags/%s" % tag)
-        else:
-          print "No player obj or tag length is 0"
-
-    def status_changed(self, blah, state):
-    
-        # Workaround for asynchronicity between signal emission and new-track
-        if self.player.get_status() == mpx.PlayStatus.STOPPED: self.tagview.clear()
 
     def metadata_updated(self, blah):
 
         self.serial = self.serial + 1
-        self.lock.lock(self.display_track_tags, self.serial)
 
     def display_track_tags(self, serial):
 
         current_serial = serial
 
-        m = self.player.get_metadata()
+        m = self.youki.get_metadata()
 
         if m[mpx.AttributeId.ARTIST] and m[mpx.AttributeId.TITLE]:
-
-            self.player.info_set("Fetching Last.fm track tags")
 
             instance = TrackTagsDataAcquire(m[mpx.AttributeId.ARTIST].get(), m[mpx.AttributeId.TITLE].get())
             instance.start()
@@ -155,8 +133,4 @@ class TrackTags(mpx.Plugin):
                     for t in tags:
                         self.tagview.add_tag(str(t[0]), float(t[1]))
 
-            self.player.info_clear()
-
         self.tagview.display(True)
-        self.lock.unlock()
-

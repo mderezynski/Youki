@@ -2,6 +2,7 @@
 #define _YOUKI_ALBUM_LIST_HH
 
 #include <gtkmm.h>
+#include <gtk/gtktreeview.h>
 #include <cairomm/cairomm.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/algorithm/string.hpp>
@@ -36,18 +37,18 @@ namespace
 
 namespace MPX
 {
-        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string>   Row4 ;
-        typedef std::vector<Row4>                                                               ModelAlbums_t ;
-        typedef boost::shared_ptr<ModelAlbums_t>                                                ModelAlbums_SP_t ;
-        typedef sigc::signal<void, gint64>                                                      Signal1 ;
-        typedef std::map<gint64, ModelAlbums_t::iterator>                                       IdIterMapAlbums_t ;
+        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string>  Row5 ;
+        typedef std::vector<Row5>                                                                           ModelAlbums_t ;
+        typedef boost::shared_ptr<ModelAlbums_t>                                                            ModelAlbums_SP_t ;
+        typedef sigc::signal<void, gint64>                                                                  Signal1 ;
+        typedef std::map<gint64, ModelAlbums_t::iterator>                                                   IdIterMapAlbums_t ;
 
-        struct DataModelAlbums
+        struct DataModelAlbums : public sigc::trackable
         {
                 ModelAlbums_SP_t    m_realmodel;
                 Signal1             m_changed;
                 IdIterMapAlbums_t   m_iter_map;
-                gint64              m_current_row ;
+                std::size_t         m_current_row ;
 
                 DataModelAlbums()
                 : m_current_row( 0 )
@@ -81,21 +82,21 @@ namespace MPX
                     return bool(m_realmodel) ;
                 }
 
-                virtual int
+                virtual std::size_t
                 size ()
                 {
                     return m_realmodel->size() ;
                 }
 
-                virtual Row4&
-                row (int row)
+                virtual Row5&
+                row (std::size_t row)
                 {
                     return (*m_realmodel)[row] ;
                 }
 
                 virtual void
                 set_current_row(
-                    gint64 row
+                    std::size_t row
                 )
                 {
                     m_current_row = row ;
@@ -107,9 +108,10 @@ namespace MPX
                     , gint64                                id_album
                     , gint64                                id_artist
                     , const std::string&                    album
+                    , const std::string&                    album_artist
                 )
                 {
-                    Row4 row ( surface, id_album, id_artist, album ) ; 
+                    Row5 row ( surface, id_album, id_artist, album, album_artist ) ; 
                     m_realmodel->push_back( row ) ;
 
                     ModelAlbums_t::iterator i = m_realmodel->end() ;
@@ -136,16 +138,56 @@ namespace MPX
 
         struct DataModelFilterAlbums : public DataModelAlbums
         {
+            public:
+
                 typedef std::vector<ModelAlbums_t::iterator> RowRowMapping ;
 
                 RowRowMapping                           m_mapping ;
-                gint64                                  m_position ;
-                boost::optional<gint64>                 m_current_artist ;
+                std::size_t                             m_position ;
+
+                boost::optional<std::set<gint64> >      m_constraint_id_album ;
+                boost::optional<std::set<gint64> >      m_constraint_id_artist ;
+
+            public:
 
                 DataModelFilterAlbums(DataModelAlbums_SP_t & model)
                 : DataModelAlbums(model->m_realmodel)
                 {
                     regen_mapping() ;
+                }
+
+                virtual ~DataModelFilterAlbums()
+                {
+                }
+
+                virtual void
+                set_constraint_albums(
+                    const boost::optional<std::set<gint64> >& constraint
+                )
+                {
+                    m_constraint_id_album = constraint ;
+                }
+
+                virtual void
+                clear_constraint_album(
+                )
+                {
+                    m_constraint_id_album.reset() ;
+                }
+
+                virtual void
+                set_constraint_artist(
+                    const boost::optional<std::set<gint64> >& constraint
+                )
+                {
+                    m_constraint_id_artist = constraint ;
+                }
+
+                virtual void
+                clear_constraint_artist(
+                )
+                {
+                    m_constraint_id_artist.reset() ;
                 }
 
                 virtual void
@@ -157,31 +199,14 @@ namespace MPX
                     m_changed.emit( 0 ) ;
                 } 
 
-                virtual void
-                artist_set(
-                    gint64 id_artist
-                )
-                {
-                    m_current_artist = id_artist ;
-                    regen_mapping() ;
-                }
-
-                virtual void
-                artist_clear(
-                )
-                {
-                    m_current_artist.reset() ; 
-                    regen_mapping() ;
-                }
-
-                virtual int 
+                virtual std::size_t 
                 size ()
                 {
                     return m_mapping.size();
                 }
 
-                virtual Row4&
-                row (int row)
+                virtual Row5&
+                row (std::size_t row)
                 {
                     return *(m_mapping[row]);
                 }
@@ -199,6 +224,7 @@ namespace MPX
                     , gint64                                    id_album
                     , gint64                                    id_artist
                     , const std::string&                        album
+                    , const std::string&                        album_artist
                 )
                 {
                     DataModelAlbums::append_album(
@@ -206,6 +232,7 @@ namespace MPX
                         , id_album
                         , id_artist
                         , album
+                        , album_artist
                     ) ;
 
                     regen_mapping();
@@ -217,6 +244,7 @@ namespace MPX
                     , gint64                                    id_album
                     , gint64                                    id_artist
                     , const std::string&                        album
+                    , const std::string&                        album_artist
                 )
                 {
                     DataModelAlbums::append_album(
@@ -224,6 +252,7 @@ namespace MPX
                         , id_album
                         , id_artist
                         , album
+                        , album_artist
                     ) ;
                 }
 
@@ -259,7 +288,11 @@ namespace MPX
 
                     for( ; i != m_realmodel->end(); ++i )
                     {
-                            int truth = !m_current_artist || ( get<2>(*i) == m_current_artist.get() ) ; 
+                            int truth = 
+                                        (!m_constraint_id_album  || m_constraint_id_album.get().count( get<1>(*i)) )
+                                                                        &&
+                                        (!m_constraint_id_artist || m_constraint_id_artist.get().count( get<2>(*i)) )
+                            ; 
 
                             if( truth )
                             {
@@ -327,7 +360,7 @@ namespace MPX
                 void
                 render(
                       Cairo::RefPtr<Cairo::Context>   cairo
-                    , const Row4&                     data_row
+                    , const Row5&                     data_row
                     , Gtk::Widget&                    widget
                     , int                             row
                     , int                             xpos
@@ -338,76 +371,91 @@ namespace MPX
                 {
                     using boost::get;
 
-                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
-
                     GdkRectangle r ;
-            
-                    r.x         = xpos + (m_width - 64) / 2 + 4 ; 
-                    r.y         = ypos ;
-                    r.width     = m_width - 4;
-                    r.height    = row_height ;
+                    r.y = ypos ; 
+
+                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
                     Cairo::RefPtr<Cairo::ImageSurface> s = get<0>(data_row) ;
 
-                    if( s )
+                    if( row > 0 && s )
                     {
+                            r.x         = xpos + (m_width - s->get_width()) / 2 ; 
+                            r.y         = ypos ;
+                            r.width     = m_width ;
+                            r.height    = row_height ;
+
+
                             cairo->set_source(
                                   s
-                                , r.x + 1 
-                                , r.y + 1
+                                , r.x
+                                , r.y + 3
                             ) ; 
 
                             RoundedRectangle(
                                   cairo
-                                , r.x + 1
-                                , r.y + 1
-                                , 64 
-                                , 64 
+                                , r.x
+                                , r.y + 3
+                                , s->get_width() 
+                                , s->get_height() 
                                 , 4.
                             ) ;
 
-                            cairo->fill_preserve() ;
-
-                            cairo->set_line_width( 0.5 ) ;
-                            cairo->set_source_rgba( 0., 0., 0., 1. ) ;
-                            cairo->stroke() ; 
+                            cairo->fill() ;
                     }
                 
                     cairo->save() ;
 
                     const int text_size_px = 9 ;
                     const int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+
+                    int width, height;
+
+                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+
                     Pango::FontDescription font_desc( "sans" ) ;
                     font_desc.set_size( text_size_pt * PANGO_SCALE ) ;
                     font_desc.set_weight( Pango::WEIGHT_BOLD ) ;
 
                     Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
-
                     layout->set_font_description( font_desc ) ;
-                    layout->set_text( get<3>(data_row) )  ;
                     layout->set_ellipsize( Pango::ELLIPSIZE_MIDDLE ) ;
                     layout->set_width( (m_width-8) * PANGO_SCALE ) ;
 
-                    int width, height;
+                    //// ARTIST
+
+                    layout->set_text( get<4>(data_row) )  ;
                     layout->get_pixel_size (width, height) ;
 
                     cairo->move_to(
-                          xpos + (m_width - 4 - width) / 2. + 4
-                        , r.y + 68 
+                          xpos + (m_width - width) / 2.
+                        , r.y + 71 
                     ) ;
-
-                    cairo->set_source_rgba( 1., 1., 1., .5 ) ;
-                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+                    cairo->set_source_rgba( 1., 1., 1., .7 ) ;
                     pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+
+                    //// ALBUM
+
+                    if( row > 0 )
+                    {
+                            layout->set_text( get<3>(data_row) )  ;
+                            layout->get_pixel_size (width, height) ;
+                            cairo->move_to(
+                                  xpos + (m_width - width) / 2.
+                                , r.y + 84 
+                            ) ;
+                            cairo->set_source_rgba( 1., 1., 1., .8 ) ;
+                            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+                    }
 
                     cairo->restore() ;
                 }
         };
 
-        typedef boost::shared_ptr<ColumnAlbums>                                         ColumnAlbums_SP_t ;
-        typedef std::vector<ColumnAlbums_SP_t>                                          ColumnAlbums_SP_t_vector_t ;
-        typedef boost::optional<boost::tuple<ModelAlbums_t::iterator, int, gint64> >    SelectionAlbums ;
-        typedef sigc::signal<void>                                                      SignalSelectionChanged ;
+        typedef boost::shared_ptr<ColumnAlbums>                                                 ColumnAlbums_SP_t ;
+        typedef std::vector<ColumnAlbums_SP_t>                                                  ColumnAlbums_SP_t_vector_t ;
+        typedef boost::optional<boost::tuple<ModelAlbums_t::iterator, std::size_t, gint64> >    SelectionAlbums ;
+        typedef sigc::signal<void>                                                              SignalSelectionChanged ;
 
         class ListViewAlbums : public Gtk::DrawingArea
         {
@@ -419,7 +467,6 @@ namespace MPX
 
                 int                                 m_row_height ;
                 int                                 m_visible_height ;
-                gint64                              m_previous_drawn_row ;
 
                 ColumnAlbums_SP_t_vector_t          m_columns ;
 
@@ -431,16 +478,12 @@ namespace MPX
                 SelectionAlbums                     m_selection ;
                 SignalSelectionChanged              m_SIGNAL_selection_changed ;
 
-                gint64                              m_clicked_row ;
-                bool                                m_clicked ;
-                bool                                m_highlight ;
-
                 GtkWidget                         * m_treeview ;
 
                 void
                 initialize_metrics ()
                 {
-                   m_row_height = 88 ; 
+                   m_row_height = 106 ; 
                 }
 
                 void
@@ -448,14 +491,8 @@ namespace MPX
                 {
                     if( m_model->size() )
                     {
-                            int row = get_upper_row() ; 
-
-                            m_model->set_current_row( row ) ;        
-
-                            if( m_previous_drawn_row != row )
-                            {
-                                queue_draw ();
-                            }
+                        m_model->set_current_row( get_upper_row() ) ;        
+                        queue_draw ();
                     }
                 }
 
@@ -514,10 +551,7 @@ namespace MPX
                             if( !m_selection ) 
                             {
                                 mark_first_row_up:
-    
-                                int row = get_upper_row();
-                                m_selection = boost::make_tuple(m_model->m_mapping[row], row, get<1>(*m_model->m_mapping[row])) ;
-                                m_SIGNAL_selection_changed.emit() ;
+                                select_row( get_upper_row() ) ;
                             }
                             else
                             {
@@ -531,7 +565,7 @@ namespace MPX
 
                                     if( row >= 0 )
                                     {
-                                        m_selection = boost::make_tuple( m_model->m_mapping[row], row, get<1>(*m_model->m_mapping[row])) ;
+                                        select_row( row ) ;
 
                                         if( row < get_upper_row()) 
                                         {
@@ -539,8 +573,6 @@ namespace MPX
                                             value += step*m_row_height;
                                             m_prop_vadj.get_value()->set_value( value );
                                         }
-
-                                        m_SIGNAL_selection_changed.emit() ;
                                     }
                                 }
                                 else
@@ -567,35 +599,28 @@ namespace MPX
                             if( !m_selection ) 
                             {
                                 mark_first_row_down:
-
-                                int row = get_upper_row();
-
-                                m_selection = boost::make_tuple(m_model->m_mapping[row], row, get<1>(*m_model->m_mapping[row]) );
-
-                                m_SIGNAL_selection_changed.emit() ;
+                                select_row( get_upper_row() ) ;
                             }
                             else
                             {
                                 if( get_row_is_visible( get<1>(m_selection.get())) )
                                 {
                                     ModelAlbums_t::iterator i   = get<0>(m_selection.get()) ;
-                                    int                     row = get<1>(m_selection.get()) ;
+                                    std::size_t             row = get<1>(m_selection.get()) ;
     
                                     std::advance( i, step ) ;
                                     row += step;
 
                                     if( row < m_model->m_mapping.size() )
                                     {
-                                        m_selection = boost::make_tuple( m_model->m_mapping[row], row, get<1>(*m_model->m_mapping[row])) ;
+                                        select_row( row ) ;
 
-                                        if( row >= (get_upper_row() + (m_visible_height/m_row_height)))
+                                        if( row >= std::size_t(get_upper_row() + (m_visible_height/m_row_height)))
                                         {
                                             double value = m_prop_vadj.get_value()->get_value();
                                             value += step*m_row_height;
                                             m_prop_vadj.get_value()->set_value( value );
                                         }
-
-                                        m_SIGNAL_selection_changed.emit() ;
                                     }
                                 }
                                 else
@@ -617,13 +642,13 @@ namespace MPX
 
                     if( event->type == GDK_BUTTON_PRESS )
                     {
-                        gint64 row = get_upper_row() + (event->y / m_row_height) ;
+                        grab_focus() ;
+
+                        std::size_t row = get_upper_row() + (event->y / m_row_height) ;
 
                         if( row < m_model->size() )
                         {
-                            m_selection = boost::make_tuple( m_model->m_mapping[row], row, get<1>(*m_model->m_mapping[row])) ;
-                            m_clicked_row = row ;
-                            m_clicked = true ;
+                            select_row( row ) ;
                             queue_draw() ;
                             m_SIGNAL_selection_changed.emit() ;
                         }
@@ -635,7 +660,6 @@ namespace MPX
                 bool
                 on_button_release_event (GdkEventButton * event)
                 {
-                    m_clicked = false ;
                     return true ;
                 }
 
@@ -668,12 +692,14 @@ namespace MPX
                     double n                       = m_columns.size() ; 
                     double column_width_calculated = event->width / n ;
 
-                    for( int n = 0; n < m_columns.size(); ++n )
+                    for( std::size_t n = 0; n < m_columns.size(); ++n )
                     {
                         m_columns[n]->set_width( column_width_calculated ) ; 
                     }
 
-                    return false;
+                    queue_draw() ;
+
+                    return true ;
                 }
 
                 bool
@@ -684,18 +710,14 @@ namespace MPX
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
-                    int row     = get_upper_row() ;
-                    int ypos    = 0 ;
-                    int xpos    = 0 ;
-                    int col     = 0 ;
-                    int cnt     = m_visible_height / m_row_height ; 
+                    std::size_t row     = get_upper_row() ;
+                    std::size_t ypos    = 0 ;
+                    std::size_t xpos    = 0 ;
+                    std::size_t cnt     = m_visible_height / m_row_height ; 
 
-                    m_previous_drawn_row = row;
+                    const std::size_t inner_pad = 1 ;
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
-    
-                    const int xpad      = 0 ;
-                    const int inner_pad = 1 ;
 
                     while( m_model->is_set() && cnt && (row < m_model->m_mapping.size()) ) 
                     {
@@ -704,33 +726,7 @@ namespace MPX
                         ModelAlbums_t::iterator  selected           = m_model->m_mapping[row] ;
                         bool                     iter_is_selected   = ( m_selection && get<1>(m_selection.get()) == row ) ;
 
-                        if( !(row % 2) ) 
-                        {
-                            GdkRectangle r ;
-
-                            r.x       = xpad + inner_pad ;
-                            r.y       = ypos + inner_pad ;
-                            r.width   = alloc.get_width() - xpad - 2 * inner_pad ;
-                            r.height  = m_row_height - 2 * inner_pad ;
-
-                            RoundedRectangle(
-                                  cairo
-                                , r.x
-                                , r.y
-                                , r.width
-                                , r.height
-                                , rounding_albums
-                            ) ;
-
-                            cairo->set_source_rgba(
-                                  0.2
-                                , 0.2
-                                , 0.2
-                                , 1.
-                            ) ;
-
-                            cairo->fill() ;
-                        }
+                        double factor = has_focus() ? 1. : 0.3 ;
 
                         if( iter_is_selected )
                         {
@@ -738,10 +734,10 @@ namespace MPX
 
                             GdkRectangle r ;
 
-                            r.x         = inner_pad ; 
-                            r.y         = ypos + inner_pad ;
-                            r.width     = alloc.get_width() - 2*inner_pad ;  
-                            r.height    = m_row_height - 2*inner_pad ;
+                            r.x         = inner_pad + 2 ; 
+                            r.y         = inner_pad + ypos ;
+                            r.width     = alloc.get_width() - 2*inner_pad  - 2 ;  
+                            r.height    = m_row_height - 2*inner_pad - 2 ;
 
                             cairo->save () ;
 
@@ -757,7 +753,7 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.90 
+                                , 0.90 * factor
                             ) ;
                             
                             background_gradient_ptr->add_color_stop_rgba(
@@ -765,7 +761,7 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.75 
+                                , 0.75 * factor
                             ) ;
                             
                             background_gradient_ptr->add_color_stop_rgba(
@@ -773,7 +769,7 @@ namespace MPX
                                 , c.get_red_p() 
                                 , c.get_green_p()
                                 , c.get_blue_p()
-                                , 0.45 
+                                , 0.45 * factor
                             ) ;
 
                             cairo->set_source( background_gradient_ptr ) ;
@@ -812,7 +808,7 @@ namespace MPX
                                   , row
                                   , xpos
                                   , ypos + 4
-                                  , 64
+                                  , 112
                                   , iter_is_selected
                             ) ;
 
@@ -820,6 +816,42 @@ namespace MPX
                         }
 
                         ypos += m_row_height;
+
+                        std::valarray<double> dashes ( 3 ) ;
+                        dashes[0] = 0. ;
+                        dashes[1] = 3. ;
+                        dashes[2] = 0. ;
+
+                        cairo->save(); 
+                        cairo->set_line_width(
+                              .5
+                        ) ;
+
+                        cairo->set_dash(
+                              dashes
+                            , 0
+                        ) ;
+
+                        cairo->set_source_rgba(
+                              1.
+                            , 1.
+                            , 1.
+                            , .5
+                        ) ;
+
+                        cairo->move_to(
+                              0
+                            , ypos - 1 
+                        ) ; 
+
+                        cairo->line_to(
+                              alloc.get_width()
+                            , ypos - 1 
+                        ) ;
+
+                        cairo->stroke() ;
+                        cairo->restore(); 
+
                         row ++;
                         cnt --;
                     }
@@ -827,15 +859,15 @@ namespace MPX
                     if( has_focus() )
                     {
                         get_style()->paint_focus(
-                            get_window(),
-                            Gtk::STATE_NORMAL,
-                            get_allocation(),
-                            *this,
-                            "treeview",
-                            0, 
-                            0, 
-                            get_allocation().get_width(), 
-                            get_allocation().get_height()
+                              get_window()
+                            , Gtk::STATE_NORMAL
+                            , get_allocation()
+                            , *this
+                            , "treeview"
+                            , 0 
+                            , 0 
+                            , get_allocation().get_width() 
+                            , get_allocation().get_height()
                         );
                     }
 
@@ -843,9 +875,9 @@ namespace MPX
                 }
 
                 void
-                on_model_changed( gint64 position )
+                on_model_changed( std::size_t position )
                 {
-                    int view_count = m_visible_height / m_row_height ;
+                    std::size_t view_count = m_visible_height / m_row_height ;
 
                     m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
 
@@ -857,18 +889,6 @@ namespace MPX
                     {
                         m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
                     }
-
-/*
-                    if( m_selection )
-                    {
-                        DataModelFilterAlbums::RowRowMapping::iterator i = std::find( m_model->m_mapping.begin(), m_model->m_mapping.end(), get<0>(m_selection.get())) ;                        
-                       if( i == m_model->m_mapping.end() )
-                       {
-                            m_selection.reset() ;
-                            m_SIGNAL_selection_changed.emit() ;
-                       }
-                    }
-*/
 
                     queue_draw() ;
                 }
@@ -904,6 +924,38 @@ namespace MPX
 
             public:
 
+                void
+                select_id(
+                    gint64 id
+                )
+                {
+                    using boost::get;
+
+                    for( DataModelFilterAlbums::RowRowMapping::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
+                    {
+                        if( id == get<1>(**i))
+                        {
+                            select_row( std::distance( m_model->m_mapping.begin(), i )) ;
+                            return ;
+                        }
+                    }
+                
+                    clear_selection() ;
+                }
+
+                void
+                select_row(
+                      std::size_t row
+                )
+                {
+                    if( row < m_model->m_mapping.size() )
+                    {
+                        m_selection = boost::make_tuple(m_model->m_mapping[row], row, get<1>(*m_model->m_mapping[row])) ;
+                        m_SIGNAL_selection_changed.emit() ;
+                        queue_draw();
+                    }
+                }
+
                 SignalSelectionChanged&
                 signal_selection_changed()
                 {
@@ -919,15 +971,21 @@ namespace MPX
                 void
                 clear_selection()
                 {
-                    m_selection.reset() ;
-                    queue_draw() ;
+                    if( m_selection )
+                    {
+                        m_selection.reset() ;
+                        if( m_model->m_mapping.size() )
+                        {
+                            m_selection = boost::make_tuple(m_model->m_mapping[0], 0, get<1>(*m_model->m_mapping[0])) ;
+                        }
+                    }
                 }
     
                 void
                 set_model(DataModelFilterAlbums_SP_t model)
                 {
                     m_model = model;
-                    set_size_request(200, 8 * m_row_height);
+                    clear_selection() ;
                     m_model->signal_changed().connect(
                         sigc::mem_fun(
                             *this,
@@ -944,12 +1002,8 @@ namespace MPX
                 ListViewAlbums ()
 
                         : ObjectBase( "YoukiListViewAlbums" )
-                        , m_previous_drawn_row( 0 )
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
-                        , m_clicked_row( 0 ) 
-                        , m_clicked( false )
-                        , m_highlight( false )
 
                 {
                     Gdk::Color c ;
@@ -978,9 +1032,11 @@ namespace MPX
 
                     gtk_widget_realize(GTK_WIDGET(gobj()));
                     initialize_metrics();
+
+                    property_can_focus() = true ;
                }
 
-                ~ListViewAlbums ()
+                virtual ~ListViewAlbums ()
                 {
                 }
         };

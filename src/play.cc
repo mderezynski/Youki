@@ -39,12 +39,12 @@
 #include <boost/optional.hpp>
 
 #include "mpx/mpx-play.hh"
-
 #include "mcs/mcs.h"
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-uri.hh"
 
+#include "video-playback.hh"
 
 #define MPX_GST_BUFFER_TIME   ((gint64) 50000)
 #define MPX_GST_PLAY_TIMEOUT  ((gint64) 3000000000)
@@ -72,7 +72,7 @@ namespace
         };
 
         bool
-                video_type (std::string const& type)
+                video_type (const std::string& type)
                 {
                         return (type.substr (0, 6) == std::string("video/"));
                 }
@@ -86,7 +86,7 @@ namespace
                 }
 
         char const*
-                nullify_string (std::string const& in)
+                nullify_string (const std::string& in)
                 {
                         return (in.size() ? in.c_str() : NULL);
                 }
@@ -285,7 +285,7 @@ namespace MPX
                 {
                         if (control_pipe())
                         {
-                                gst_element_set_state (control_pipe (), GST_STATE_NULL);
+                                gst_element_set_state (control_pipe (), GST_STATE_READY);
                                 gst_element_get_state (control_pipe (), NULL, NULL, GST_CLOCK_TIME_NONE); 
                                 property_status_ = PLAYSTATUS_WAITING;
                         }
@@ -410,11 +410,12 @@ namespace MPX
 */
                                                 {
                                                         try{
+                                                                pipeline_configure (PIPELINE_FILE);
+
                                                                 GstElement* filesrc = gst_bin_get_by_name( GST_BIN(m_bin[BIN_FILE]), "src" ) ;
                                                                 g_object_set( filesrc, "location", filename_from_uri( property_stream().get_value()).c_str(), NULL ) ;
                                                                 gst_object_unref( filesrc );
 
-                                                                pipeline_configure (PIPELINE_FILE);
                                                         } catch( ConvertError& cxe )
                                                         {
                                                                 // FIXME
@@ -473,8 +474,8 @@ namespace MPX
 
         void
                 Play::switch_stream_real(
-                    ustring const& stream,
-                    ustring const& type
+                    const std::string& stream,
+                    const std::string& type
                 )
                 {
                         set_custom_httpheader(NULL);
@@ -491,8 +492,8 @@ namespace MPX
 
         void
                 Play::switch_stream(
-                    ustring const& stream,
-                    ustring const& type
+                    const std::string& stream,
+                    const std::string& type
                 )
                 {
                         Audio::Message message;
@@ -529,7 +530,7 @@ namespace MPX
                                 case PLAYSTATUS_WAITING:
 
                                         m_metadata.reset();
-                                        property_stream_type_ = ustring();
+                                        property_stream_type_ = std::string();
 
                                         readify_stream (); 
                                         break;
@@ -559,7 +560,7 @@ namespace MPX
                                         }
 
                                         m_metadata.reset();
-                                        property_stream_type_ = ustring();
+                                        property_stream_type_ = std::string();
 
                                         stop_stream ();
                                         break;
@@ -583,7 +584,7 @@ namespace MPX
                 {
                         m_conn_stream_position.disconnect ();
 
-                        if (!gst_element_seek (control_pipe(), 1.0, GST_FORMAT_TIME, GST_SEEK_FLAG_FLUSH,
+                        if (!gst_element_seek (control_pipe(), 1.0, GST_FORMAT_TIME, GstSeekFlags(GST_SEEK_FLAG_FLUSH|GST_SEEK_FLAG_ACCURATE),
                                                  GST_SEEK_TYPE_SET, position * GST_SECOND,
                                                  GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE))
                         {
@@ -937,7 +938,6 @@ namespace MPX
                                 GstElement* convert   = gst_element_factory_make ("audioconvert", (NAME_CONVERT));
                                 GstElement* resample  = gst_element_factory_make ("audioresample", (NAME_RESAMPLE));
                                 GstElement* volume    = gst_element_factory_make ("volume", (NAME_VOLUME));
-                                GstElement* vol_fade  = gst_element_factory_make ("volume", "VolumeFade");
                                 GstElement* spectrum  = gst_element_factory_make ("spectrum", (NAME_SPECTRUM));
 
                                 if (GST_IS_ELEMENT (spectrum))
@@ -958,8 +958,6 @@ namespace MPX
 
                                         if (GST_IS_ELEMENT (spectrum))
                                         {
-                                                GstElement* idn = gst_element_factory_make ("identity", "identity1"); 
-
                                                 gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]),
                                                                 convert,
                                                                 resample,
@@ -972,7 +970,6 @@ namespace MPX
                                         }
                                         else
                                         {
-                                                GstElement* idn = gst_element_factory_make ("identity", "identity1"); 
                                                 gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, volume, sink_element, NULL);
                                                 gst_element_link_many( convert, resample, volume, sink_element, NULL);
                                         }
@@ -1014,8 +1011,6 @@ namespace MPX
                                 {
                                         if (GST_IS_ELEMENT (spectrum))
                                         {
-                                                GstElement* idn = gst_element_factory_make ("identity", "identity1"); 
-
                                                 gst_bin_add_many (GST_BIN (m_bin[BIN_OUTPUT]),
                                                                 convert,
                                                                 resample,
@@ -1028,7 +1023,6 @@ namespace MPX
                                         }
                                         else
                                         {
-                                                GstElement* idn = gst_element_factory_make ("identity", "identity1"); 
                                                 gst_bin_add_many( GST_BIN (m_bin[BIN_OUTPUT]), convert, resample, volume, sink_element, NULL);
                                                 gst_element_link_many (convert, resample, volume, sink_element, NULL);
                                         }
@@ -1047,20 +1041,34 @@ namespace MPX
 
                         ////////////////// FILE BIN
                         {
-                                GstElement  * source    = gst_element_factory_make ("filesrc", "src");
-                                GstElement  * decoder   = gst_element_factory_make ("decodebin", "Decoder File"); 
-                                GstElement  * identity  = gst_element_factory_make ("identity", "Identity File"); 
+                                GstElement*   source  = gst_element_factory_make ("filesrc", "src");
+                                GstElement*  decoder  = gst_element_factory_make ("decodebin", "Decoder File"); 
+                                GstElement* identity  = gst_element_factory_make ("identity", "Identity File"); 
 
-                                if (source && decoder && identity)
+                                if( source && decoder && identity )
                                 {
                                         m_bin[BIN_FILE] = gst_bin_new ("bin-file");
-                                        gst_bin_add_many (GST_BIN (m_bin[BIN_FILE]), source, decoder, identity, NULL);
-                                        gst_element_link_many (source, decoder, NULL);
 
-                                        g_signal_connect (G_OBJECT (decoder),
-                                                        "new-decoded-pad",
-                                                        G_CALLBACK (Play::link_pad),
-                                                        identity);
+                                        gst_bin_add_many(
+                                              GST_BIN(m_bin[BIN_FILE])
+                                            , source
+                                            , decoder
+                                            , identity
+                                            , NULL
+                                        ) ;
+
+                                        gst_element_link_many(
+                                              source
+                                            , decoder
+                                            , NULL
+                                        ) ;
+
+                                        g_signal_connect(
+                                              G_OBJECT (decoder)
+                                            , "new-decoded-pad"
+                                            , G_CALLBACK(Play::link_pad)
+                                            , identity
+                                        ) ;
 
                                         GstPad * pad = gst_element_get_static_pad (identity, "src");
                                         gst_element_add_pad (m_bin[BIN_FILE], gst_ghost_pad_new ("src", pad));
@@ -1227,15 +1235,6 @@ namespace MPX
                 }
 
         void
-                Play::set_window_id ( ::Window id)
-                {
-                        if (m_video_pipe)
-                        {
-                                m_video_pipe->set_window_id (id);
-                        }
-                }
-
-        void
                 Play::set_custom_httpheader( char const* header ) 
                 {
                         if(!m_bin[BIN_HTTP] && !m_bin[BIN_HTTP_MP3])
@@ -1374,12 +1373,6 @@ namespace MPX
                         return signal_video_geom_;
                 }
 
-        VideoPipe::SignalRequestWindowId&
-                Play::signal_request_window_id()
-                {
-                        return m_video_pipe->signal_request_window_id();
-                }
-
         Play::SignalMetadata &
                 Play::signal_metadata ()
                 {
@@ -1431,128 +1424,6 @@ namespace MPX
                 Play::get_metadata ()
                 {
                         return m_metadata;
-                }
-
-        void
-                Play::fade_in ()
-                {
-                        g_atomic_int_set(&m_InFade, 1);
-
-                        update_fade_volume( 0. ) ;
-
-                        m_FadeTimer.reset () ;
-
-                        m_FadeDirection = FADE_IN ;
-
-                        if( !m_FadeConn )
-                        {
-                            m_FadeConn = Glib::signal_timeout().connect(
-                                    sigc::mem_fun(
-                                            *this
-                                          , &Play::fade_timeout
-                                    )
-                                  , 30
-                           ) ;
-                        }
-
-                        play_stream () ;
-
-                        m_FadeTimer.start () ;
-                }
-
-        void
-                Play::fade_out ()
-                {
-                        update_fade_volume( 1. ) ;
-
-                        m_FadeTimer.reset () ;
-
-                        m_FadeDirection = FADE_OUT ;
-
-                        if( !m_FadeConn )
-                        {
-                            m_FadeConn = Glib::signal_timeout().connect(
-                                    sigc::mem_fun(
-                                            *this
-                                          , &Play::fade_timeout
-                                    )
-                                  , 30
-                           ) ;
-                        }
-
-                        g_atomic_int_set(&m_InFade, 1);
-
-                        m_FadeTimer.start () ;
-                }
-
-        void
-                Play::fade_stop ()
-                {
-                        g_atomic_int_set(&m_InFade, 0);
-
-                        m_FadeTimer.stop () ;
-                        m_FadeTimer.reset () ;
-                }
-
-        void
-                Play::update_fade_volume(
-                    double  volume
-                )
-                {
-                        GstElement *e = gst_bin_get_by_name(
-                              GST_BIN(m_bin[BIN_OUTPUT])
-                            , "VolumeFade"
-                        ) ;
-
-                        g_object_set(
-                              G_OBJECT( e )
-                            , "volume"
-                            , cos_smooth( volume )
-                            , NULL
-                        ) ;
-
-                        gst_object_unref( e ) ;
-                }
-
-        bool
-                Play::fade_timeout ()
-                {
-                    if( g_atomic_int_get(&m_InFade) )
-                    {
-                        double elapsed = m_FadeTimer.elapsed () ;
-
-                        if( elapsed > 0.400 )
-                        {
-                            update_fade_volume( 0. ) ;
-
-                            if( m_FadeDirection == FADE_OUT )
-                            {
-                                pause_stream () ;
-                            }
-
-                            g_atomic_int_set(&m_InFade, 0);
-
-                            m_FadeDirection = FADE_NONE ;
-
-                            return false ;
-                        }
-
-                        if( m_FadeDirection == FADE_IN )
-                        {
-                            double position = elapsed * 1000 ;
-                            update_fade_volume( position / 400. );
-                        }
-                        else
-                        if( m_FadeDirection == FADE_OUT )
-                        {
-                            double position = (elapsed * 1000 ) ; 
-                            update_fade_volume( 1. - (position / 400.) );
-                        }
-
-                        return true;
-                    }
-
-                    return false ;
                 }
 
         void

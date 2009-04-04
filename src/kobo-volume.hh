@@ -72,6 +72,11 @@ namespace MPX
             on_motion_notify_event(
                 GdkEventMotion*
             ) ;
+
+            virtual bool
+            on_scroll_event(
+                GdkEventScroll*
+            ) ;
     } ; 
 }
 

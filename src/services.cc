@@ -13,20 +13,15 @@ namespace Service
     {
         const char* services[] =
         {
-                "mpx-service-plugins-gui"
-                "mpx-service-plugins"
-                "mpx-service-player"
-                "mpx-service-mbimport"
-                "mpx-service-mlibman"
-                "mpx-service-preferences"
-                "mpx-service-play"
-                "mpx-service-markov"
-                "mpx-service-artist-images"
-                "mpx-service-library"
-                "mpx-service-taglib"
-                "mpx-service-covers"
+              "mpx-service-plugins-gui"
+            , "mpx-service-plugins"
+            , "mpx-service-controller"
+            , "mpx-service-preferences"
+            , "mpx-service-play"
+            , "mpx-service-library"
+            , "mpx-service-covers"
 #ifdef HAVE_HAL
-                "mpx-service-hal"
+            , "mpx-service-hal"
 #endif // HAVE_HAL
         } ;
 
