@@ -94,4 +94,17 @@ namespace MPX
   } ; // class PrefsCoverart
 } // namespace MPX
 
+extern "C" MPX::PluginHolderBase*
+get_instance(gint64 id)
+{
+    return MPX::PrefsCoverart::create( id ) ;
+}
+
+extern "C" bool
+del_instance(MPX::PluginHolderBase* b)
+{
+    delete dynamic_cast<MPX::PrefsCoverart*>(b) ;
+    return true ;
+}
+
 #endif // MPX_PREFS_COVERART?g_HH

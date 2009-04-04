@@ -7,10 +7,9 @@ glade_DATA = 							    \
         cppmod-prefs-library.glade          \
         cppmod-prefs-coverart.glade         \
                                             \
-        equalizer.glade                     \
+        mlibmanager.glade                   \
 		pluginmanager.glade	                \
-		preferences.glade				    \
-        timed-confirmation.glade
+		preferences.glade				    
                                 
 
 EXTRA_DIST = $(glade_DATA)
