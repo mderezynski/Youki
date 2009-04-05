@@ -93,6 +93,7 @@ youki_mlibman_bin_SOURCES =                     \
         metadatareader-taglib.cc            \
         minisoup.cc                         \
         mlibmanager.cc                      \
+        mpx-mlibman-dbus.hh                 \
         network.cc                          \
         paths.cc                            \
         request-value.cc                    \
@@ -105,13 +106,12 @@ youki_mlibman_bin_SOURCES =                     \
         util-ui.cc
 
 
-#BUILT_SOURCES =                             \
-youki_mlibman_bin_SOURCES += \
-    mpx-mlibman-dbus.hh    
+BUILT_SOURCES =                             \
+        mpx-mlibman-dbus.hh                 
 
-#CLEANFILES = $(BUILT_SOURCES)
-#DISTCLEANFILES = $(BUILT_SOURCES)
+CLEANFILES = $(BUILT_SOURCES)
+DISTCLEANFILES = $(BUILT_SOURCES)
 
-#mpx-mlibman-dbus.hh: $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml
-#	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml --adaptor=$(abs_top_srcdir)/mpxlib/mpx-mlibman-dbus.hh
+mpx-mlibman-dbus.hh: $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml
+	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml --adaptor=$(abs_top_srcdir)/mpxlib/mpx-mlibman-dbus.hh
 

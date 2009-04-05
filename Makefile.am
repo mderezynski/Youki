@@ -32,37 +32,41 @@ DISTCLEANFILES = $(CLEANFILES) intltool-extract intltool-merge intltool-update
 SUBDIRS =			\
 	po				\
 	scripts			\
+                    \
 	desktop			\
 	glade			\
+    dbus            \
+                    \
 	icons			\
 	images			\
-					\
-					\
+                    \
 	include			\
 	xsd				\
-	widgets			\
-	musicbrainz		\
-	com				\
 	xmlcpp			\
+                    \
+	musicbrainz		\
+	widgets			\
+	com				\
+    api             \
 	taglib			
 
 if HAVE_HAL
 SUBDIRS += libhal++
 endif
 
-SUBDIRS +=		\
-				\
-	jnetlib		\
-	mcs			\
-				\
-	remote		\
-	python		\
-    cpp         \
-				\
-	api			\
-	src         \
-    mpxlib      
-
+SUBDIRS +=		    \
+				    \
+	jnetlib		    \
+	mcs			    \
+				    \
+    mpxlib          \
+	src             \
+                    \
+	remote		    \
+    sentinel        \
+	python		    \
+    cpp    
+			
 man_MANS = mpx.1
 
 EXTRA_DIST =                                        \

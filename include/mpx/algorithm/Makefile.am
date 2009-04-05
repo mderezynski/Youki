@@ -3,6 +3,7 @@ noinst_HEADERS =					\
 	base64.h						\
 	ld.hh							\
 	md5.h							\
-	random.hh						
-								
+    ntree.hh                        \
+	random.hh						\
+    youki-markov-predictor.hh       
 
