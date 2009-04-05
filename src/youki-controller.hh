@@ -65,6 +65,7 @@ namespace MPX
             Gtk::Entry                        * m_Entry ;
             Glib::ustring                       m_Entry_Text ;
             Glib::ustring                       m_prediction ;
+            Glib::ustring                       m_prediction_last ;
 
             Gtk::Alignment                  * m_Alignment_Entry ;
             Gtk::HBox                       * m_HBox_Entry ;

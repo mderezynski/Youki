@@ -372,13 +372,13 @@ namespace MPX
                 m_ScrolledWinTracks->add( *m_ListViewTracks ) ;
                 m_ScrolledWinTracks->show_all() ;
 
-                m_Entry->signal_changed().connect(
+                m_conn3 = m_Entry->signal_changed().connect(
                     sigc::mem_fun(
                           *this
                         , &YoukiController::on_entry_changed__update_completion
                 )) ;
 
-                m_Entry->signal_changed().connect(sigc::bind(
+                m_conn4 = m_Entry->signal_changed().connect(sigc::bind(
                     sigc::mem_fun(
                           *this
                         , &YoukiController::on_entry_changed__process_filtering)
@@ -621,14 +621,16 @@ namespace MPX
                 ) ;
         }
 
-        model_album_artists->m_constraint_artist = private_->FilterModelArtist->m_constraint_artist ; 
+        model_album_artists->m_constraint_id_artist = private_->FilterModelArtist->m_constraint_id_artist ; 
+
         model_albums->m_constraint_id_album  = private_->FilterModelAlbums->m_constraint_id_album ; 
         model_albums->m_constraint_id_artist = private_->FilterModelAlbums->m_constraint_id_artist ; 
+
         model_tracks->m_constraints = private_->FilterModelTracks->m_constraints ;
         model_tracks->m_constraints_synthetic = private_->FilterModelTracks->m_constraints_synthetic ;
 
-        gint64 id_albums = m_ListViewAlbums->get_selected() ;
-        gint64 id_artist = m_ListViewArtist->get_selected() ;
+        boost::optional<gint64> id_albums = m_ListViewAlbums->get_selected() ;
+        boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
 
         private_->FilterModelArtist = model_album_artists ;
         private_->FilterModelAlbums = model_albums ;
@@ -902,33 +904,27 @@ namespace MPX
     YoukiController::on_list_view_aa_selection_changed(
     ) 
     {
-        m_ListViewAlbums->clear_selection() ;
-
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
-        gint64 id_artist = m_ListViewArtist->get_selected() ;
 
         //// SET UP CONSTRAINTS
 
+        boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
 
         boost::optional<std::set<gint64> > constraint ; 
-        if( id_artist != -1 )
-        {
-            constraint = std::set<gint64>() ; 
-            constraint.get().insert( id_artist ) ;
-        }
-        private_->FilterModelAlbums->set_constraint_artist( constraint ) ;
 
-        if( id_artist != -1 )
+        if( id_artist ) 
         {
             AQE::Constraint_t c ;
-
             c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ARTIST_ID ;
-            c.TargetValue = id_artist ;
+            c.TargetValue = id_artist.get() ;
             c.MatchType = AQE::MT_EQUAL ;
-
             private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
+
+            constraint = std::set<gint64>() ; 
+            constraint.get().insert( id_artist.get() ) ;
         }
 
+        private_->FilterModelAlbums->set_constraint_artist( constraint ) ;
         private_->FilterModelAlbums->regen_mapping() ;
         private_->FilterModelTracks->regen_mapping() ;
     }
@@ -938,27 +934,25 @@ namespace MPX
     ) 
     {
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
-        gint64 id_artist = m_ListViewArtist->get_selected() ;
-        gint64 id_albums = m_ListViewAlbums->get_selected() ;
 
-        if( id_albums != -1 )
+        boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
+        boost::optional<gint64> id_albums = m_ListViewAlbums->get_selected() ;
+
+        if( id_albums ) 
         {
             AQE::Constraint_t c ;
-
             c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ID ;
-            c.TargetValue = id_albums ;
+            c.TargetValue = id_albums.get() ;
             c.MatchType = AQE::MT_EQUAL ;
-
             private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
         }
-        if( id_artist != -1 )
+
+        if( id_artist ) 
         {
             AQE::Constraint_t c ;
-
             c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ARTIST_ID ;
-            c.TargetValue = id_artist ;
+            c.TargetValue = id_artist.get() ;
             c.MatchType = AQE::MT_EQUAL ;
-
             private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
         }
 
@@ -969,15 +963,16 @@ namespace MPX
     YoukiController::on_entry_activated(
     )
     {
-        std::size_t pos = m_Entry_Text.length() - m_prediction.length() ;
-        
-        if( m_Entry_Text.length() > pos && m_Entry_Text.substr( pos, -1 ) == m_prediction )
+        if( m_prediction_last.length() )
         {
-            m_prediction.clear() ;
+            m_conn3.block() ;
+            m_conn4.block() ;
+            m_Entry_Text += m_prediction_last ;
             m_Entry->select_region( -1, -1 ) ;
+            m_conn3.unblock() ;
+            m_conn4.unblock() ;
+            on_entry_changed__process_filtering() ;
         }
-        
-        on_entry_changed__process_filtering() ;
     }
 
     bool
@@ -1017,8 +1012,19 @@ namespace MPX
             m_completion_timer.stop() ;
             m_completion_timer.reset() ;
 
-            m_Entry->set_text( m_Entry_Text + m_prediction ) ;
-            m_Entry->select_region( m_Entry_Text.length() - m_prediction.length(), -1 ) ;
+            m_conn3.block() ;
+            m_conn4.block() ;
+
+            m_Entry->set_text( m_Entry_Text + m_prediction ) ; 
+            m_Entry->select_region( m_Entry_Text.length(), -1 ) ;
+
+            m_prediction_last = m_prediction ;
+            m_prediction.clear() ;
+
+            m_conn3.unblock() ;
+            m_conn4.unblock() ;
+
+            on_entry_changed__process_filtering() ;
 
             return false ;
         }
@@ -1038,15 +1044,14 @@ namespace MPX
 
         if( text.size() > 0 )
         {
-            if( text == m_Entry_Text + m_prediction )
+            if( text == m_Entry_Text + m_prediction_last ) 
             {
-                m_Entry_Text += m_prediction ;
                 return ;
             }
 
             Glib::ustring new_prediction = private_->MarkovPredictor->predict( text ) ;
 
-            if( new_prediction == m_prediction && m_Entry_Text.length() == (text.length()+m_prediction.length()) )
+            if( text == m_Entry_Text && new_prediction == m_prediction_last ) 
             {
                 return ;
             }
@@ -1071,6 +1076,7 @@ namespace MPX
         {
             m_Entry_Text.clear() ;
             m_prediction.clear() ;
+            m_prediction_last.clear() ;
         }
     }
 
@@ -1079,31 +1085,12 @@ namespace MPX
         bool forced
     )
     {
-        Glib::ustring text = m_Entry->get_text() ; 
-
-        boost::optional<std::set<gint64> > constraint ; 
-
-        gint64 id_artist = m_ListViewArtist->get_selected() ;
-        gint64 id_albums = m_ListViewAlbums->get_selected() ;
-
-        if( id_artist != -1 )
-        {
-            m_ListViewArtist->clear_selection() ;
-            private_->FilterModelArtist->set_constraint( constraint ) ;
-        }
-
-        if( id_albums != -1 )
-        {
-            m_ListViewAlbums->clear_selection() ;
-            private_->FilterModelAlbums->set_constraint_albums( constraint ) ;
-            private_->FilterModelAlbums->set_constraint_artist( constraint ) ;
-        }
-
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
 
-        private_->FilterModelTracks->set_filter( m_Entry_Text.substr( 0, m_Entry_Text.length() - m_prediction.length()));
+        private_->FilterModelTracks->set_filter( m_Entry_Text ) ;
 
-        private_->FilterModelArtist->set_constraint( private_->FilterModelTracks->m_constraint_artist ) ;
+        private_->FilterModelArtist->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
+
         private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;
         private_->FilterModelAlbums->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
 

@@ -34,16 +34,20 @@ namespace MPX
         typedef boost::tuple<std::string, gint64>           Row2 ;
         typedef std::vector<Row2>                           ModelArtist_t ;
         typedef boost::shared_ptr<ModelArtist_t>            ModelArtist_SP_t ;
-        typedef sigc::signal<void>                          SignalArtist_0 ;
+        typedef sigc::signal<void, std::size_t>             SignalArtist_1 ;
         typedef std::map<gint64, ModelArtist_t::iterator>   IdIterMapArtist_t ;
 
         struct DataModelArtist : public sigc::trackable
         {
                 ModelArtist_SP_t        m_realmodel ;
-                SignalArtist_0          m_changed ;
+                SignalArtist_1          m_changed ;
+                SignalArtist_1          m_select ;
                 IdIterMapArtist_t       m_iter_map ;
+                std::size_t             m_position ;
+                boost::optional<gint64> m_selected ;
 
                 DataModelArtist()
+                : m_position( 0 )
                 {
                     m_realmodel = ModelArtist_SP_t( new ModelArtist_t ) ; 
                 }
@@ -51,6 +55,7 @@ namespace MPX
                 DataModelArtist(
                     ModelArtist_SP_t model
                 )
+                : m_position( 0 )
                 {
                     m_realmodel = model; 
                 }
@@ -60,14 +65,21 @@ namespace MPX
                 {
                     m_realmodel->clear () ;
                     m_iter_map.clear() ;
-                    m_changed.emit () ;
+                    m_changed.emit( m_position ) ;
                 } 
 
-                virtual SignalArtist_0&
+                virtual SignalArtist_1&
                 signal_changed ()
                 {
-                    return m_changed;
+                    return m_changed ;
                 }
+
+                virtual SignalArtist_1&
+                signal_select ()
+                {
+                    return m_select ;
+                }
+
 
                 virtual bool
                 is_set ()
@@ -75,16 +87,32 @@ namespace MPX
                     return bool(m_realmodel);
                 }
 
-                virtual int
+                virtual std::size_t
                 size ()
                 {
                     return m_realmodel->size();
                 }
 
                 virtual Row2&
-                row (int row)
+                row (std::size_t row)
                 {
                     return (*m_realmodel)[row];
+                }
+
+                virtual void
+                set_current_row(
+                    std::size_t row
+                )
+                {
+                    m_position = row ;
+                }
+
+                virtual void
+                set_selected(
+                    boost::optional<gint64> row
+                )
+                {
+                    m_selected = row ;
                 }
 
                 virtual void
@@ -109,7 +137,8 @@ namespace MPX
                 typedef std::vector<ModelArtist_t::iterator> RowRowMapping;
 
                 RowRowMapping                       m_mapping ;
-                boost::optional<std::set<gint64> >  m_constraint_artist ;
+
+                boost::optional<std::set<gint64> >  m_constraint_id_artist ;
 
                 DataModelFilterArtist(DataModelArtist_SP_t & model)
                 : DataModelArtist(model->m_realmodel)
@@ -122,37 +151,37 @@ namespace MPX
                 }
 
                 virtual void
-                set_constraint(
+                set_constraint_artist(
                     const boost::optional<std::set<gint64> >& constraint
                 )
                 {
-                    m_constraint_artist = constraint ;
+                    m_constraint_id_artist = constraint ;
                 }
 
                 virtual void
-                clear_constraint(
+                clear_constraint_artist(
                 )
                 {
-                    m_constraint_artist.reset() ;
+                    m_constraint_id_artist.reset() ;
                 }
 
                 virtual void
                 clear ()
                 {
-                    m_realmodel->clear () ;
-                    m_mapping.clear () ;
-                    m_iter_map.clear() ;
-                    m_changed.emit () ;
+                    m_realmodel->clear( ) ;
+                    m_mapping.clear( ) ;
+                    m_iter_map.clear( ) ;
+                    m_changed.emit( m_position ) ;
                 } 
 
-                virtual int 
+                virtual std::size_t 
                 size ()
                 {
                     return m_mapping.size();
                 }
 
                 virtual Row2&
-                row (int row)
+                row (std::size_t row)
                 {
                     return *(m_mapping[row]);
                 }
@@ -180,35 +209,55 @@ namespace MPX
                 regen_mapping(
                 )
                 {
-                    if( !m_realmodel->size() )
+                    using boost::get;
+
+                    if( m_realmodel->size() == 0 )
                     {
                         return ;
                     }
 
-                    using boost::get;
-
                     RowRowMapping new_mapping;
 
+                    if( !m_constraint_id_artist )
+                    {
+                        m_selected.reset() ;
+                    }
+
+                    boost::optional<gint64> id_cur = ( m_position < m_mapping.size()) ? get<1>(row( m_position )) : boost::optional<gint64>() ;
+                    boost::optional<gint64> id_sel = m_selected ;
+
+                    m_position = 0 ;
+
+                    std::size_t new_sel_pos = 0 ;
+
                     ModelArtist_t::iterator i = m_realmodel->begin() ; 
-                    new_mapping.push_back( i ) ;
-                    ++i ;
+                    new_mapping.push_back( i++ ) ;
 
                     for( ; i != m_realmodel->end(); ++i )
                     {
-                        const Row2& row = *i;
-
-                        int truth = !m_constraint_artist || m_constraint_artist.get().count( get<1>(row)) ;
+                        int truth = !m_constraint_id_artist || m_constraint_id_artist.get().count( get<1>(*i)) ;
 
                         if( truth )
                         {
                             new_mapping.push_back( i ) ;
+                        }
+
+                        if( id_cur && get<1>(*i) == id_cur.get() )
+                        {
+                            m_position = new_mapping.size()  - 1 ;
+                        }
+
+                        if( id_sel && get<1>(*i) == id_sel.get() )
+                        {
+                            new_sel_pos = new_mapping.size()  - 1 ;
                         }
                     }
 
                     if( new_mapping != m_mapping )
                     {
                         std::swap(m_mapping, new_mapping);
-                        m_changed.emit();
+                        m_changed.emit( m_position );
+                        m_select.emit( new_sel_pos ) ;
                     }
                 }
         };
@@ -412,7 +461,11 @@ namespace MPX
                 void
                 on_vadj_value_changed ()
                 {
-                    queue_draw ();
+                    if( m_model->m_mapping.size() )
+                    {
+                        m_model->set_current_row( get_upper_row() ) ;
+                        queue_draw ();
+                    }
                 }
 
                 int
@@ -870,17 +923,20 @@ namespace MPX
                 }
 
                 void
-                on_model_changed()
+                on_model_changed( std::size_t position )
                 {
-                    int view_count = m_visible_height / m_row_height;
+                    std::size_t view_count = m_visible_height / m_row_height;
+
+                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
 
                     if( m_model->size() < view_count )
                     {
                         m_prop_vadj.get_value()->set_value(0.);
                     } 
-
-                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
-                    m_prop_vadj.get_value()->set_value(0.);
+                    else
+                    {
+                        m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                    }
 
                     queue_draw();
                 }
@@ -915,18 +971,23 @@ namespace MPX
 
                 void
                 select_id(
-                    gint64 id
+                    boost::optional<gint64> id
                 )
                 {
                     using boost::get;
 
-                    for( DataModelFilterArtist::RowRowMapping::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
+                    if( id )
                     {
-                        if( id == get<1>(**i))
-                        {
-                            select_row( std::distance( m_model->m_mapping.begin(), i )) ;
-                            return ;
-                        }
+                            const gint64& real_id = id.get() ;
+
+                            for( DataModelFilterArtist::RowRowMapping::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
+                            {
+                                if( real_id == get<1>(**i))
+                                {
+                                    select_row( std::distance( m_model->m_mapping.begin(), i )) ;
+                                    return ;
+                                }
+                            }
                     }
                 
                     clear_selection() ;
@@ -939,7 +1000,10 @@ namespace MPX
                 {
                     if( row < m_model->m_mapping.size() )
                     {
-                        m_selection = boost::make_tuple(m_model->m_mapping[row], get<1>(*m_model->m_mapping[row]), row) ;
+                        const gint64& id = get<1>(*m_model->m_mapping[row]) ;
+
+                        m_selection = boost::make_tuple (m_model->m_mapping[row], id, row ) ;
+                        m_model->set_selected( id ) ;
                         m_SIGNAL_selection_changed.emit() ;
                         queue_draw();
                     }
@@ -951,10 +1015,20 @@ namespace MPX
                     return m_SIGNAL_selection_changed ;
                 }
 
-                gint64
+                boost::optional<gint64>
                 get_selected()
                 {
-                    return m_selection ? boost::get<1>(m_selection.get()) : -1 ;
+                    if( m_selection )
+                    {
+                            const gint64& sel_id = boost::get<1>(m_selection.get()) ;
+
+                            if( sel_id != -1 )
+                            {
+                                return boost::optional<gint64>( sel_id ) ;
+                            }
+                    }
+
+                    return boost::optional<gint64>() ;
                 }
     
                 void
@@ -963,6 +1037,8 @@ namespace MPX
                     if( m_selection )
                     {
                         m_selection.reset() ;
+                        m_model->set_selected( boost::optional<gint64>() ) ;
+
                         if( m_model->m_mapping.size()) 
                         {
                             m_selection = boost::make_tuple(m_model->m_mapping[0], get<1>(*m_model->m_mapping[0]), 0) ;
@@ -981,12 +1057,20 @@ namespace MPX
                 set_model(DataModelFilterArtist_SP_t model)
                 {
                     m_model = model;
-                    clear_selection() ;
+
                     m_model->signal_changed().connect(
                         sigc::mem_fun(
                             *this,
                             &ListViewArtist::on_model_changed
                     ));
+
+                    m_model->signal_select().connect(
+                        sigc::mem_fun(
+                            *this,
+                            &ListViewArtist::select_row
+                    ));
+
+                    clear_selection() ;
                 }
 
                 void
