@@ -244,6 +244,6 @@ run_or_die $AUTOMAKE --add-missing --copy --include-deps
 cd $LAST_DIR
 
 echo
-echo "\033[1m*info* running 'configure' with options: $GLOBOPTIONS\033[0m"
+printf "\033[1m*info* running 'configure' with options: $GLOBOPTIONS\033[0m"
 echo
 ./configure "$@"
