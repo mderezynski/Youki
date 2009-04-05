@@ -34,18 +34,14 @@ namespace MPX
         typedef boost::tuple<std::string, gint64>           Row2 ;
         typedef std::vector<Row2>                           ModelArtist_t ;
         typedef boost::shared_ptr<ModelArtist_t>            ModelArtist_SP_t ;
-
-        typedef std::map<gint64, ModelArtist_t::iterator>   IdIterMapArtist_t ;
-
-        typedef sigc::signal<void>                          SignalArtist_0 ;
         typedef sigc::signal<void, std::size_t>             SignalArtist_1 ;
+        typedef std::map<gint64, ModelArtist_t::iterator>   IdIterMapArtist_t ;
 
         struct DataModelArtist : public sigc::trackable
         {
-                SignalArtist_0          m_select_clear ;
-                SignalArtist_1          m_changed ;
-
                 ModelArtist_SP_t        m_realmodel ;
+                SignalArtist_1          m_changed ;
+                SignalArtist_1          m_select ;
                 IdIterMapArtist_t       m_iter_map ;
                 std::size_t             m_position ;
                 boost::optional<gint64> m_selected ;
@@ -78,10 +74,10 @@ namespace MPX
                     return m_changed ;
                 }
 
-                virtual SignalArtist_0&
-                signal_select_clear ()
+                virtual SignalArtist_1&
+                signal_select ()
                 {
-                    return m_select_clear ;
+                    return m_select ;
                 }
 
 
@@ -232,7 +228,7 @@ namespace MPX
 
                     m_position = 0 ;
 
-                    bool have_sel = false ;
+                    std::size_t new_sel_pos = 0 ;
 
                     ModelArtist_t::iterator i = m_realmodel->begin() ; 
                     new_mapping.push_back( i++ ) ;
@@ -253,20 +249,15 @@ namespace MPX
 
                         if( id_sel && get<1>(*i) == id_sel.get() )
                         {
-                            have_sel = true ;
+                            new_sel_pos = new_mapping.size()  - 1 ;
                         }
                     }
 
                     if( new_mapping != m_mapping )
                     {
                         std::swap(m_mapping, new_mapping);
-
                         m_changed.emit( m_position );
-
-                        if( !have_sel )
-                        {
-                            m_select_clear.emit() ;
-                        }
+                        m_select.emit( new_sel_pos ) ;
                     }
                 }
         };
@@ -950,14 +941,6 @@ namespace MPX
                     queue_draw();
                 }
 
-                void
-                on_model_select( std::size_t position )
-                {
-                    m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
-                    select_row( position ) ;
-                    queue_draw();
-                }
-
                 static gboolean
                 list_view_set_adjustments(
                     GtkWidget*obj,
@@ -1054,15 +1037,12 @@ namespace MPX
                     if( m_selection )
                     {
                         m_selection.reset() ;
+                        m_model->set_selected( boost::optional<gint64>() ) ;
 
                         if( m_model->m_mapping.size()) 
                         {
                             m_selection = boost::make_tuple(m_model->m_mapping[0], get<1>(*m_model->m_mapping[0]), 0) ;
-                            m_model->set_selected( gint64(0) ) ;
-                            return ; 
                         }
-
-                        m_model->set_selected( boost::optional<gint64>() ) ;
                     }
                 }
 
@@ -1084,10 +1064,10 @@ namespace MPX
                             &ListViewArtist::on_model_changed
                     ));
 
-                    m_model->signal_select_clear().connect(
+                    m_model->signal_select().connect(
                         sigc::mem_fun(
                             *this,
-                            &ListViewArtist::clear_selection
+                            &ListViewArtist::select_row
                     ));
 
                     clear_selection() ;

@@ -621,6 +621,14 @@ namespace MPX
                 ) ;
         }
 
+        model_album_artists->m_constraint_id_artist = private_->FilterModelArtist->m_constraint_id_artist ; 
+
+        model_albums->m_constraint_id_album  = private_->FilterModelAlbums->m_constraint_id_album ; 
+        model_albums->m_constraint_id_artist = private_->FilterModelAlbums->m_constraint_id_artist ; 
+
+        model_tracks->m_constraints = private_->FilterModelTracks->m_constraints ;
+        model_tracks->m_constraints_synthetic = private_->FilterModelTracks->m_constraints_synthetic ;
+
         boost::optional<gint64> id_albums = m_ListViewAlbums->get_selected() ;
         boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
 
@@ -632,16 +640,10 @@ namespace MPX
         m_ListViewAlbums->set_model( private_->FilterModelAlbums ) ;
         m_ListViewTracks->set_model( private_->FilterModelTracks ) ; 
 
-        boost::optional<MPX::Track> t = m_track_current ;
-        if( t )
-        {
-            m_ListViewTracks->set_active_track( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
-        }
-
-        on_entry_changed__process_filtering() ;
-
         m_ListViewArtist->select_id( id_artist ) ;
         m_ListViewAlbums->select_id( id_albums ) ;
+
+        on_entry_changed__process_filtering() ;
     }
 
     void
@@ -1088,6 +1090,7 @@ namespace MPX
         private_->FilterModelTracks->set_filter( m_Entry_Text ) ;
 
         private_->FilterModelArtist->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
+
         private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;
         private_->FilterModelAlbums->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
 
