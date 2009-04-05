@@ -713,24 +713,8 @@ AC_CONFIG_FILES([
 	python/plugins/trackinfo-webkit/Makefile
 	python/plugins/trackinfo-webkit/__init__.py
 	python/plugins/tracktags/Makefile
-	python/plugins/trackcover/Makefile
-	python/plugins/trackcover/__init__.py
-	python/plugins/osd/Makefile
-	python/plugins/osd/__init__.py
 	python/plugins/mpxdj/Makefile
 	python/plugins/mpxdj/__init__.py
-    python/plugins/albumactions/Makefile
-    python/plugins/albumactions/__init__.py
-    python/plugins/mtpplayer/Makefile
-    python/plugins/mtpplayer/__init__.py
-    python/plugins/musicbrainz-tools/Makefile
-    python/plugins/musicbrainz-tools/__init__.py
-	python/plugins/audioscrobbler/Makefile
-	python/plugins/audioscrobbler/__init__.py
-	python/plugins/puid-scan/Makefile
-	python/plugins/puid-scan/__init__.py
-	python/plugins/lastfmstuff/Makefile
-	python/plugins/lastfmstuff/__init__.py
 
     python/pyapi/Makefile
     python/pyapi/lastfm/Makefile
@@ -761,11 +745,6 @@ AC_CONFIG_FILES([
     include/mpx/widgets/Makefile
     include/mpx/xml/Makefile
     include/mpx/com/Makefile
-
-    sources/Makefile
-    sources/musiclib/Makefile
-    sources/radio/Makefile
-    sources/lastfm/Makefile
 
     taglib/Makefile
     taglib/id3v2/Makefile
@@ -798,6 +777,8 @@ AC_CONFIG_FILES([
     
     src/Makefile
     mpxlib/Makefile
+
+    dbus/Makefile
 
     po/Makefile.in
 

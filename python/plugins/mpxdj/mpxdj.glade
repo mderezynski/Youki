@@ -4,7 +4,6 @@
 <glade-interface>
 
 <widget class="GtkWindow" id="window">
-  <property name="border_width">4</property>
   <property name="title" translatable="yes"></property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
@@ -21,7 +20,7 @@
 
   <child>
     <widget class="GtkVBox" id="widget">
-      <property name="width_request">561</property>
+      <property name="width_request">542</property>
       <property name="visible">True</property>
       <property name="homogeneous">False</property>
       <property name="spacing">4</property>

@@ -47,16 +47,16 @@ namespace MPX
                 Model_SP_t      m_realmodel;
                 Signal0         m_changed;
                 IdIterMap_t     m_iter_map;
-                std::size_t     m_current_row ;
+                std::size_t     m_position ;
 
                 DataModelTracks()
-                : m_current_row( 0 )
+                : m_position( 0 )
                 {
                     m_realmodel = Model_SP_t(new Model_t); 
                 }
 
                 DataModelTracks(Model_SP_t model)
-                : m_current_row( 0 )
+                : m_position( 0 )
                 {
                     m_realmodel = model; 
                 }
@@ -98,7 +98,7 @@ namespace MPX
                     gint64 row
                 )
                 {
-                    m_current_row = row ;
+                    m_position = row ;
                 }
 
                 virtual void
@@ -211,7 +211,6 @@ namespace MPX
                 bool                                    m_advanced ;
                 boost::optional<gint64>                 m_active_track ;
                 boost::optional<gint64>                 m_local_active_track ;
-                gint64                                  m_position ;
                 boost::optional<std::set<gint64> >      m_constraint_albums ;
                 boost::optional<std::set<gint64> >      m_constraint_artist ;
 
@@ -466,7 +465,7 @@ namespace MPX
 
                     RowRowMapping   new_mapping ;
                     std::string     text        = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
-                    gint64          id          = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
+                    gint64          id          = ( m_position < m_mapping.size()) ? get<3>(row( m_position )) : -1 ; 
 
                     m_position = 0 ;
 
@@ -609,7 +608,7 @@ namespace MPX
 
                     RowRowMapping   new_mapping ;
                     std::string     text        = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
-                    gint64          id          = ( m_current_row < m_mapping.size()) ? get<3>(row( m_current_row )) : -1 ; 
+                    gint64          id          = ( m_position < m_mapping.size()) ? get<3>(row( m_position )) : -1 ; 
 
                     m_position  = 0 ;
 

@@ -163,6 +163,8 @@ youki_bin_SOURCES =             \
     main.cc                     \
                                 \
     mpx-mlibman-dbus-proxy-actual.hh \
+    mpx-mlibman-dbus-proxy.hh   \
+    mpx-app-dbus-adaptor.hh     \
                                 \
     markov-analyzer-thread.cc   \
     metadatareader-taglib.cc    \
@@ -228,16 +230,12 @@ youki_bin_SOURCES +=            \
     hal.cc                      
 endif
 
-#BUILT_SOURCES =                 \
-youki_bin_SOURCES +=            \
+BUILT_SOURCES =                 \
     mpx-mlibman-dbus-proxy.hh   \
     mpx-app-dbus-adaptor.hh
 
-#CLEANFILES = $(BUILT_SOURCES)
-#DISTCLEANFILES = $(BUILT_SOURCES)
+mpx-mlibman-dbus-proxy.hh: $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml
+	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml --proxy=$(abs_top_srcdir)/src/mpx-mlibman-dbus-proxy.hh
 
-#mpx-mlibman-dbus-proxy.hh: $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml
-#	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml --proxy=$(abs_top_srcdir)/src/mpx-mlibman-dbus-proxy.hh
-
-#mpx-app-dbus-adaptor.hh: $(top_srcdir)/dbus/dbus-obj-YOUKI.xml
-#	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-YOUKI.xml --adaptor=$(abs_top_srcdir)/src/mpx-app-dbus-adaptor.hh
+mpx-app-dbus-adaptor.hh: $(top_srcdir)/dbus/dbus-obj-YOUKI.xml
+	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-YOUKI.xml --adaptor=$(abs_top_srcdir)/src/mpx-app-dbus-adaptor.hh

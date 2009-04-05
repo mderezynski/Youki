@@ -1191,6 +1191,8 @@ MPX::LibraryScannerThread_MLibMan::insert_file_no_mtime_check(
         if( !services->get<MetadataReaderTagLib>("mpx-service-taglib")->get( uri, *(track.get()) ) )
         {
             add_erroneous_track( uri, _("Could not acquire metadata (using taglib-gio)"));
+
+            quarantine_file( uri ) ;
         }
         else try{
             create_insertion_track( *(track.get()), uri, insert_path, update );
@@ -1308,17 +1310,17 @@ MPX::LibraryScannerThread_MLibMan::create_insertion_track(
 
     if( !(track.has(ATTRIBUTE_ALBUM) && track.has(ATTRIBUTE_ARTIST) && track.has(ATTRIBUTE_TITLE)) )
     {
-      // check if the track already exists; if so, metadata has been removed
-      gint64 id = get_track_id( track );
-      if( id != 0 )
-      {
-          pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
+        gint64 id = get_track_id( track );
 
-          m_SQL->exec_sql(mprintf( delete_track_f, id));
-      }
+        if( id != 0 )
+        {
+            pthreaddata->EntityDeleted.emit( id , ENTITY_TRACK ); 
+            m_SQL->exec_sql(mprintf( delete_track_f, id));
+        }
 
-      // FIXME/TODO: Still throw if deleted?
-      throw ScanError(_("Insufficient Metadata (artist, album and title must be given)"));
+        quarantine_file( uri ) ;
+
+        throw ScanError(_("Insufficient Metadata (artist, album and title must be given)"));
     }
 
     track[ATTRIBUTE_INSERT_PATH] = Util::normalize_path( insert_path ) ;
@@ -1906,6 +1908,38 @@ MPX::LibraryScannerThread_MLibMan::update_album(
     m_SQL->exec_sql(mprintf("UPDATE album SET album_genre = '%q', album_quality = '%lld' WHERE id = '%lld'", genre.c_str(), quality, id));
 
     pthreaddata->EntityUpdated( id, ENTITY_ALBUM );
+}
+
+void
+MPX::LibraryScannerThread_MLibMan::quarantine_file(
+      const std::string& uri
+)
+{
+    if( mcs->key_get<bool>("library","quarantine-invalid") ) 
+    {
+        std::string new_dir_path ;
+        std::string new_file_path ;
+
+        Glib::RefPtr<Gio::File> orig = Gio::File::create_for_uri( uri ) ;
+
+        try{
+            Glib::RefPtr<Gio::File> orig_parent_dir = orig->get_parent() ;
+            new_dir_path = Glib::build_filename( mcs->key_get<std::string>("mpx","music-quarantine-path"), orig_parent_dir->get_basename() ) ;
+            Glib::RefPtr<Gio::File> new_dir = Gio::File::create_for_path( new_dir_path ) ;
+            new_dir->make_directory_with_parents() ;
+        } catch( Glib::Error & cxe ) {
+        }
+
+        try{
+            new_file_path = Glib::build_filename( new_dir_path, orig->get_basename() ) ;
+            Glib::RefPtr<Gio::File> target = Gio::File::create_for_path( new_file_path ) ;
+            g_message("%s: Moving file to '%s'", G_STRLOC, new_file_path.c_str() ) ;
+            orig->move( target ) ;
+        } catch( Glib::Error & cxe )
+        {
+            g_message("%s: Error moving file into quarantine: %s", G_STRLOC, cxe.what().c_str() ) ;
+        }
+    }
 }
 
 void
