@@ -228,7 +228,6 @@ namespace MPX
                     boost::optional<gint64> id_sel = m_selected ;
 
                     m_position = 0 ;
-                    bool have_sel = 0 ;
 
                     ModelArtist_t::iterator i = m_realmodel->begin() ; 
                     new_mapping.push_back( i++ ) ;
@@ -246,22 +245,13 @@ namespace MPX
                         {
                             m_position = new_mapping.size()  - 1 ;
                         }
-
-                        if( id_sel && get<1>(*i) == id_sel.get() )
-                        {
-                            have_sel = true ; 
-                        }
                     }
 
                     if( new_mapping != m_mapping )
                     {
                         std::swap(m_mapping, new_mapping);
                         m_changed.emit( m_position );
-
-                        if( !have_sel )
-                        {
-                            m_select.emit() ;
-                        }
+                        m_select.emit() ;
                     }
                 }
         };
@@ -1038,12 +1028,9 @@ namespace MPX
                 void
                 clear_selection()
                 {
-                    m_selection.reset() ;
-
-                    if( m_model->m_mapping.size()) 
+                    if( m_model->m_mapping.size() && boost::get<2>(m_selection.get()) != 0 ) 
                     {
-                        m_selection = boost::make_tuple(m_model->m_mapping[0], get<1>(*m_model->m_mapping[0]), 0) ;
-                        m_model->set_selected( boost::optional<gint64>(0) ) ;
+                        select_row( 0 ) ;
                         return ;
                     }
 

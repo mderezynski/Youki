@@ -297,16 +297,10 @@ namespace MPX
 
                     RowRowMapping new_mapping ;
 
-                    if( !m_constraint_id_album && !m_constraint_id_artist )
-                    {
-                        m_selected.reset() ;
-                    }
-
                     boost::optional<gint64> id_cur = ( m_position < m_mapping.size()) ? get<1>(row( m_position )) : boost::optional<gint64>() ; 
                     boost::optional<gint64> id_sel = m_selected ; 
 
                     m_position = 0 ;
-                    bool have_sel = 0 ;
     
                     ModelAlbums_t::iterator i = m_realmodel->begin() ;
                     new_mapping.push_back( i++ ) ;
@@ -328,22 +322,13 @@ namespace MPX
                             {
                                 m_position = new_mapping.size()  - 1 ;
                             }
-
-                            if( id_sel && get<1>(*i) == id_sel.get() )
-                            {
-                                have_sel = true ; 
-                            }
-                    }
+                       }
 
                     if( new_mapping != m_mapping )
                     {
                         std::swap( new_mapping, m_mapping ) ;
                         m_changed.emit( m_position ) ;
-
-                        if( !have_sel )
-                        {
-                            m_select.emit() ;
-                        }
+                        m_select.emit() ;
                     }                
                 }
         };
@@ -489,7 +474,7 @@ namespace MPX
 
         typedef boost::shared_ptr<ColumnAlbums>                                                 ColumnAlbums_SP_t ;
         typedef std::vector<ColumnAlbums_SP_t>                                                  ColumnAlbums_SP_t_vector_t ;
-        typedef boost::optional<boost::tuple<ModelAlbums_t::iterator, std::size_t, gint64> >    SelectionAlbums ;
+
         typedef sigc::signal<void>                                                              SignalSelectionChanged ;
 
         class ListViewAlbums : public Gtk::DrawingArea
@@ -510,7 +495,8 @@ namespace MPX
 
                 guint                               m_signal0 ; 
 
-                SelectionAlbums                     m_selection ;
+                boost::optional<boost::tuple<ModelAlbums_t::iterator, gint64, std::size_t> >  m_selection ; 
+
                 SignalSelectionChanged              m_SIGNAL_selection_changed ;
 
                 GtkWidget                         * m_treeview ;
@@ -590,10 +576,10 @@ namespace MPX
                             }
                             else
                             {
-                                if( get_row_is_visible( get<1>(m_selection.get()) ))
+                                if( get_row_is_visible( get<2>(m_selection.get()) ))
                                 {
                                     ModelAlbums_t::iterator i   = get<0>(m_selection.get()) ;
-                                    int                     row = get<1>(m_selection.get()) ; 
+                                    std::size_t             row = get<2>(m_selection.get()) ; 
 
                                     std::advance( i, step ) ;
                                     row += step;
@@ -641,7 +627,7 @@ namespace MPX
                                 if( get_row_is_visible( get<1>(m_selection.get())) )
                                 {
                                     ModelAlbums_t::iterator i   = get<0>(m_selection.get()) ;
-                                    std::size_t             row = get<1>(m_selection.get()) ;
+                                    std::size_t             row = get<2>(m_selection.get()) ;
     
                                     std::advance( i, step ) ;
                                     row += step;
@@ -759,7 +745,7 @@ namespace MPX
                         xpos = 0 ;
 
                         ModelAlbums_t::iterator  selected           = m_model->m_mapping[row] ;
-                        bool                     iter_is_selected   = ( m_selection && get<1>(m_selection.get()) == row ) ;
+                        bool                     iter_is_selected   = ( m_selection && get<2>(m_selection.get()) == row ) ;
 
                         double factor = has_focus() ? 1. : 0.3 ;
 
@@ -992,7 +978,7 @@ namespace MPX
                     {
                         const gint64& id = get<1>(*m_model->m_mapping[row]) ;
 
-                        m_selection = boost::make_tuple( m_model->m_mapping[row], row, id ) ;
+                        m_selection = boost::make_tuple( m_model->m_mapping[row], id, row ) ;
                         m_model->set_selected( id ) ;
                         m_SIGNAL_selection_changed.emit() ;
                         queue_draw();
@@ -1010,7 +996,7 @@ namespace MPX
                 {
                     if( m_selection )
                     {
-                            const gint64& sel_id = boost::get<2>(m_selection.get()) ;
+                            const gint64& sel_id = boost::get<1>(m_selection.get()) ;
                             if( sel_id != -1 )
                             {
                                 return boost::optional<gint64>( sel_id ) ;
@@ -1023,12 +1009,9 @@ namespace MPX
                 void
                 clear_selection()
                 {
-                    m_selection.reset() ;
-
-                    if( m_model->m_mapping.size() )
+                    if( m_model->m_mapping.size() && boost::get<2>(m_selection.get()) != 0 )
                     {
-                        m_selection = boost::make_tuple(m_model->m_mapping[0], 0, get<1>(*m_model->m_mapping[0])) ;
-                        m_model->set_selected( boost::optional<gint64>(0) ) ;
+                        select_row( 0 ) ;
                         return ;
                     }
 
