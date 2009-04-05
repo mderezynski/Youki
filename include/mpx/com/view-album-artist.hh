@@ -18,8 +18,6 @@
 
 #include "glib-marshalers.h"
 
-#include <set>
-
 using boost::get ;
 
 typedef Glib::Property<Gtk::Adjustment*> PropAdj;
@@ -1040,19 +1038,16 @@ namespace MPX
                 void
                 clear_selection()
                 {
-                    if( m_selection )
+                    m_selection.reset() ;
+
+                    if( m_model->m_mapping.size()) 
                     {
-                        m_selection.reset() ;
-
-                        if( m_model->m_mapping.size()) 
-                        {
-                            m_selection = boost::make_tuple(m_model->m_mapping[0], get<1>(*m_model->m_mapping[0]), 0) ;
-                            m_model->set_selected( boost::optional<gint64>(0) ) ;
-                            return ;
-                        }
-
-                        m_model->set_selected( boost::optional<gint64>() ) ;
+                        m_selection = boost::make_tuple(m_model->m_mapping[0], get<1>(*m_model->m_mapping[0]), 0) ;
+                        m_model->set_selected( boost::optional<gint64>(0) ) ;
+                        return ;
                     }
+
+                    m_model->set_selected( boost::optional<gint64>() ) ;
                 }
 
                 void

@@ -467,6 +467,8 @@ namespace MPX
         )) ;
 
         reload_library () ;
+        m_ListViewArtist->clear_selection() ;
+        m_ListViewAlbums->clear_selection() ;
 
         m_play->signal_spectrum().connect(
             sigc::mem_fun(
