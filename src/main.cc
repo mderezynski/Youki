@@ -182,6 +182,7 @@ namespace MPX
         mcs->key_register ("mpx", "window-plugins-x", 140);
         mcs->key_register ("mpx", "window-plugins-y", 140);
         mcs->key_register ("mpx", "music-import-path", Glib::build_filename(Glib::get_home_dir (),"Music"));
+        mcs->key_register ("mpx", "music-quarantine-path", Glib::build_filename(Glib::get_home_dir (),"Music Youki-Quarantined"));
         mcs->key_register ("mpx", "completion-enabled", true);
 
         mcs->domain_register ("audio");
@@ -257,6 +258,7 @@ namespace MPX
         mcs->key_register ("library", "rescan-at-startup", true);
         mcs->key_register ("library", "rescan-in-intervals", true);
         mcs->key_register ("library", "rescan-interval", 30); // in minutes
+        mcs->key_register ("library", "quarantine-invalid", false);
 #ifdef HAVE_HAL
         mcs->key_register ("library", "use-hal", true);
 #endif // HAVE_HAL

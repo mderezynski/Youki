@@ -413,6 +413,11 @@ namespace MPX
             check_abort_scan( 
             ) ;
 
+            void
+            quarantine_file(
+                  const std::string&
+            ) ;
+
         private:
 
             ScannerConnectable                    * m_Connectable ;

@@ -90,15 +90,34 @@ namespace MPX
 
         //// LIBRARY
         mcs_bind->bind_filechooser(
-            *dynamic_cast<Gtk::FileChooser*>( m_Xml->get_widget( "preferences-fc-music-import-path" ))
+            *dynamic_cast<Gtk::FileChooser*>( m_Xml->get_widget( "fc-music-import-path" ))
             , "mpx"
             , "music-import-path"
             );
 
-        m_Xml->get_widget("rescan-at-startup", m_Library_RescanAtStartup);
-        m_Xml->get_widget("rescan-in-intervals", m_Library_RescanInIntervals);
-        m_Xml->get_widget("rescan-interval", m_Library_RescanInterval);
-        m_Xml->get_widget("hbox-rescan-interval", m_Library_RescanIntervalBox);
+        mcs_bind->bind_filechooser(
+            *dynamic_cast<Gtk::FileChooser*>( m_Xml->get_widget( "fc-quarantine-path" ))
+            , "mpx"
+            , "music-quarantine-path"
+            );
+
+        Glib::RefPtr<Gio::File> quarantine_path = Gio::File::create_for_path( mcs->key_get<std::string>("mpx","music-quarantine-path")) ;
+    
+        try{
+            quarantine_path->make_directory() ;
+        } catch( Glib::Error & cxe )
+        {
+            g_message( "Error creating quarantine path: %s", cxe.what().c_str() ) ;
+        }
+
+
+        m_Xml->get_widget( "rescan-at-startup", m_Library_RescanAtStartup ) ;
+        m_Xml->get_widget( "rescan-in-intervals", m_Library_RescanInIntervals) ;
+        m_Xml->get_widget( "rescan-interval", m_Library_RescanInterval ) ;
+        m_Xml->get_widget( "quarantine-files", m_Library_QuarantineInvalid ) ;
+
+        m_Xml->get_widget( "hbox-rescan-interval", m_Library_RescanIntervalBox ) ;
+        m_Xml->get_widget( "hbox-quarantine", m_Library_QuarantineBox ) ;
 
         mcs_bind->bind_spin_button(
             *m_Library_RescanInterval
@@ -118,10 +137,22 @@ namespace MPX
             , "rescan-in-intervals"
             );
 
+        mcs_bind->bind_toggle_button(
+            *m_Library_QuarantineInvalid
+            , "library"
+            , "quarantine-invalid"
+            );
+
         m_Library_RescanInIntervals->signal_toggled().connect(
             sigc::compose(
             sigc::mem_fun(*m_Library_RescanIntervalBox, &Gtk::Widget::set_sensitive),
             sigc::mem_fun(*m_Library_RescanInIntervals, &Gtk::ToggleButton::get_active)
+            ));
+
+        m_Library_QuarantineInvalid->signal_toggled().connect(
+            sigc::compose(
+            sigc::mem_fun(*m_Library_QuarantineBox, &Gtk::Widget::set_sensitive),
+            sigc::mem_fun(*m_Library_QuarantineInvalid, &Gtk::ToggleButton::get_active)
             ));
 
 #ifdef HAVE_HAL

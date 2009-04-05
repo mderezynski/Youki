@@ -85,8 +85,11 @@ namespace MPX
         Gtk::CheckButton            * m_Library_RescanAtStartup ;
         Gtk::CheckButton            * m_Library_RescanInIntervals ;
         Gtk::SpinButton             * m_Library_RescanInterval ; 
-        Gtk::HBox                   * m_Library_RescanIntervalBox ;
         Gtk::ToggleButton           * m_Library_RescanAlwaysVacuum ;
+        Gtk::ToggleButton           * m_Library_QuarantineInvalid ;
+
+        Gtk::HBox                   * m_Library_RescanIntervalBox ;
+        Gtk::HBox                   * m_Library_QuarantineBox ;
 
 #ifdef HAVE_HAL
         void
