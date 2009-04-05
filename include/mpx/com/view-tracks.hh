@@ -948,7 +948,6 @@ namespace MPX
 
         typedef boost::shared_ptr<Column> ColumnP;
         typedef std::vector<ColumnP> Columns;
-        typedef std::set<std::pair<Model_t::iterator, int> > Selection;
 
         typedef sigc::signal<void, MPX::Track, bool> SignalTrackActivated;
 
@@ -972,8 +971,7 @@ namespace MPX
 
                 guint                               m_signal0 ; 
 
-                Selection                           m_selection ;
-                boost::optional<Model_t::iterator>   m_selected ;
+                boost::optional<boost::tuple<Model_t::iterator, std::size_t> >  m_selection ;
 
                 IdV                                 m_dnd_idv ;
                 bool                                m_dnd ;
@@ -1030,52 +1028,13 @@ namespace MPX
 
             protected:
 
-                virtual void 
-                on_drag_begin (const Glib::RefPtr<Gdk::DragContext>& context)
-                {
-                    if(m_selection.empty())
-                    {
-                        m_selection.insert(std::make_pair(m_model->m_mapping[m_clicked_row], m_clicked_row));
-                        queue_draw ();
-                    }
-
-                    m_dnd = true;
-                }
-
-                virtual void
-                on_drag_end (const Glib::RefPtr<Gdk::DragContext>& context)
-                {
-                    m_dnd = false;
-                } 
-
-                virtual void
-                on_drag_data_get (const Glib::RefPtr<Gdk::DragContext>& context, Gtk::SelectionData& selection_data, guint info, guint time)
-                {
-                    using boost::get;
-
-                    if(m_selection.empty())
-                        return;
-
-                    m_dnd_idv.clear();
-
-                    for(Selection::const_iterator i = m_selection.begin(); i != m_selection.end(); ++i)
-                    {
-                        Row7 const& r = *(i->first);
-                        m_dnd_idv.push_back(get<3>(r));
-                    }
-
-                    selection_data.set("mpx-idvec", 8, reinterpret_cast<const guint8*>(&m_dnd_idv), 8);
-
-                    m_dnd = false;
-                }
-
                 virtual bool
                 on_focus (Gtk::DirectionType direction)
                 { 
                     grab_focus();
-                    if( m_selection.empty() && !m_model->m_mapping.empty() )
+                    if( !m_selection && !m_model->m_mapping.empty() )
                     {
-                        m_selection.insert(std::make_pair(m_model->m_mapping[0], 0));
+                        m_selection = (boost::make_tuple(m_model->m_mapping[0], 0));
                         queue_draw() ;
                     }
                     return true;
@@ -1092,13 +1051,13 @@ namespace MPX
                         case GDK_KP_Enter:
                         case GDK_ISO_Enter:
                         case GDK_3270_Enter:
-                            if( m_selection.size() == 1 )
+                            if( m_selection )
                             {
                                 using boost::get;
 
-                                MPX::Track track = get<4>(*(m_selection.begin()->first)) ;
+                                MPX::Track track = get<4>(*(get<0>(m_selection.get()))) ;
                                 m_SIGNAL_track_activated.emit(track, !(event->state & GDK_CONTROL_MASK)) ;
-                                m_selection.clear() ;
+                                m_selection.reset() ;
                                 queue_draw () ;
                             }
                             return true;
@@ -1109,43 +1068,33 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Up )
                             {
-                                step = - (m_visible_height / m_row_height) + 1;
+                                step = - (m_visible_height / m_row_height) ; 
                             }
                             else
                             {
                                 step = -1;
                             }
 
-                            if( m_selection.size() > 1 || m_selection.size() == 0 )
+                            if( !m_selection )
                             {
                                 mark_first_row_up:
-    
                                 std::size_t row = get_upper_row();
-
-                                m_selection.clear();
-                                m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
+                                m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
                             }
                             else
                             {
-                                if( get_row_is_visible( (*(m_selection.begin())).second ))
+                                if( get_row_is_visible( boost::get<1>(m_selection.get()) ))
                                 {
-                                    Model_t::iterator i = (*(m_selection.begin())).first;
-                                    std::size_t row = (*(m_selection.begin())).second;
+                                    std::size_t row = boost::get<1>(m_selection.get());
+                                    row = std::max( 0, int(row) + int(step) ) ;
 
-                                    std::advance(i, step);
-                                    row += step;
+                                    m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
 
-                                    if( row >= 0 )
+                                    if( row < get_upper_row() ) 
                                     {
-                                        m_selection.clear();
-                                        m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
-
-                                        if( row < get_upper_row()) 
-                                        {
-                                            double value = m_prop_vadj.get_value()->get_value();
-                                            value += step*m_row_height;
-                                            m_prop_vadj.get_value()->set_value( value );
-                                        }
+                                        double value = m_prop_vadj.get_value()->get_value();
+                                        value += step*m_row_height;
+                                        m_prop_vadj.get_value()->set_value( value );
                                     }
                                 }
                                 else
@@ -1162,42 +1111,34 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Down )
                             {
-                                step = (m_visible_height / m_row_height) - 1;
+                                step = (m_visible_height / m_row_height) ; 
                             }
                             else
                             {
                                 step = 1;
                             }
 
-                            if( m_selection.size() > 1 || m_selection.size() == 0 )
+                            if( !m_selection )
                             {
                                 mark_first_row_down:
 
                                 std::size_t row = get_upper_row();
-                                m_selection.clear();
-                                m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
+                                m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
                             }
                             else
                             {
-                                if( get_row_is_visible( (*(m_selection.begin())).second ))
+                                if( get_row_is_visible( boost::get<1>(m_selection.get()) ))
                                 {
-                                    Model_t::iterator i = (*(m_selection.begin())).first;
-                                    std::size_t row = (*(m_selection.begin())).second;
-    
-                                    std::advance(i, step);
-                                    row += step;
+                                    std::size_t row = boost::get<1>(m_selection.get());
+                                    row = std::min( int(m_model->m_mapping.size()) - 1 , int(row) + int(step) ) ;
 
-                                    if( row < m_model->m_mapping.size() )
+                                    m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
+
+                                    if( row >= (get_upper_row() + (m_visible_height/m_row_height)))
                                     {
-                                        m_selection.clear();
-                                        m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
-
-                                        if( row >= (get_upper_row() + (m_visible_height/m_row_height)))
-                                        {
-                                            double value = m_prop_vadj.get_value()->get_value();
-                                            value += step*m_row_height;
-                                            m_prop_vadj.get_value()->set_value( value );
-                                        }
+                                        double value = m_prop_vadj.get_value()->get_value();
+                                        value += step*m_row_height;
+                                        m_prop_vadj.get_value()->set_value( value );
                                     }
                                 }
                                 else
@@ -1240,8 +1181,7 @@ namespace MPX
     
                         std::size_t row = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
 
-                        m_selection.clear();
-                        m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
+                        m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
                         m_clicked_row = row ;
                         m_clicked = true ;
                         queue_draw() ;
@@ -1320,10 +1260,7 @@ namespace MPX
                                 if( row >= 0 && row < m_model->size() )
                                 {
                                         m_model->swap( row, m_clicked_row ) ;
-
-                                        m_selection.clear();
-                                        m_selection.insert(std::make_pair(m_model->m_mapping[row], row));
-
+                                        m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
                                         m_clicked_row = row ;
                                 }
                             }
@@ -1403,7 +1340,7 @@ namespace MPX
 
                         Model_t::iterator selected = m_model->m_mapping[row];
 
-                        bool iter_is_selected = ( !m_selection.empty() && m_selection.count(std::make_pair(selected, row))) ;
+                        bool iter_is_selected = ( m_selection && boost::get<1>(m_selection.get()) == row ) ;
 
                         if( ! event->area.width <= 16 )
                         {
@@ -1649,7 +1586,7 @@ namespace MPX
                         m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
                     }
 
-                    m_selection.clear() ;
+                    m_selection.reset() ;
                     queue_draw() ;
                 }
 

@@ -517,17 +517,19 @@ namespace MPX
                     }
                 }
 
-                int
+                std::size_t
                 get_upper_row ()
                 {
                     return double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ;
                 }
 
                 bool
-                get_row_is_visible (int row)
+                get_row_is_visible(
+                      std::size_t row
+                )
                 {
-                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
-                    int row_lower = row_upper + m_visible_height/m_row_height;
+                    std::size_t row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
+                    std::size_t row_lower = row_upper + m_visible_height/m_row_height;
                     return ( row >= row_upper && row <= row_lower);
                 }
 
@@ -624,7 +626,7 @@ namespace MPX
                             }
                             else
                             {
-                                if( get_row_is_visible( get<1>(m_selection.get())) )
+                                if( get_row_is_visible( get<2>(m_selection.get())) )
                                 {
                                     ModelAlbums_t::iterator i   = get<0>(m_selection.get()) ;
                                     std::size_t             row = get<2>(m_selection.get()) ;
@@ -1009,7 +1011,7 @@ namespace MPX
                 void
                 clear_selection()
                 {
-                    if( m_model->m_mapping.size() && boost::get<2>(m_selection.get()) != 0 )
+                    if( m_model->m_mapping.size() && (!m_selection || boost::get<2>(m_selection.get()) != 0) )
                     {
                         select_row( 0 ) ;
                         return ;

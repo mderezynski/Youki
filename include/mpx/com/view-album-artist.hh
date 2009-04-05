@@ -1028,7 +1028,7 @@ namespace MPX
                 void
                 clear_selection()
                 {
-                    if( m_model->m_mapping.size() && boost::get<2>(m_selection.get()) != 0 ) 
+                    if( m_model->m_mapping.size() && (!m_selection || boost::get<2>(m_selection.get()) != 0) ) 
                     {
                         select_row( 0 ) ;
                         return ;

@@ -897,7 +897,14 @@ namespace MPX
             , 0
         ) ;
 
-        play_track( t ) ;
+        if( play )
+        {
+            play_track( t ) ;
+        }
+        else
+        {
+            m_next_track_queue_id = boost::get<gint64>(t[ATTRIBUTE_MPX_TRACK_ID].get()) ; 
+        }
     }
 
     void
