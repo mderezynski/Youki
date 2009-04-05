@@ -118,6 +118,7 @@ youki_bin_SOURCES =             \
     error.cc                    \
                                 \
     glib-marshalers.c           \
+    glib-marshalers.h           \
                                 \
     import-share.hh             \
     import-share.cc             \
@@ -160,7 +161,8 @@ youki_bin_SOURCES =             \
     library.cc                  \
                                 \
     main.cc                     \
-    messages.hh                 \
+                                \
+    mpx-mlibman-dbus-proxy-actual.hh \
                                 \
     markov-analyzer-thread.cc   \
     metadatareader-taglib.cc    \
@@ -174,13 +176,22 @@ youki_bin_SOURCES =             \
     play.cc                     \
                                 \
     python.cc                   \
+    pysigc.hh                   \
+    plugin.hh                   \
     plugin.cc                   \
+    plugin-loader-python.hh     \
     plugin-loader-python.cc     \
     plugin-types-python.cc      \
+    plugin-types-python.hh      \
     plugin-loader-cpp.cc        \
+    plugin-loader-cpp.hh        \
+    plugin-types-cpp.hh         \
+    plugin-loader.hh            \
+    plugin-manager-gui.hh       \
     plugin-manager-gui.cc       \
     gtkmm.cc                    \
     gtkmmmodule.cc              \
+    gtkmmmodule.h               \
                                 \
     playbacksource.cc           \
                                 \
@@ -217,15 +228,16 @@ youki_bin_SOURCES +=            \
     hal.cc                      
 endif
 
-BUILT_SOURCES =                 \
+#BUILT_SOURCES =                 \
+youki_bin_SOURCES +=            \
     mpx-mlibman-dbus-proxy.hh   \
     mpx-app-dbus-adaptor.hh
 
-CLEANFILES = $(BUILT_SOURCES)
-DISTCLEANFILES = $(BUILT_SOURCES)
+#CLEANFILES = $(BUILT_SOURCES)
+#DISTCLEANFILES = $(BUILT_SOURCES)
 
-mpx-mlibman-dbus-proxy.hh: $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml
-	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml --proxy=mpx-mlibman-dbus-proxy.hh
+#mpx-mlibman-dbus-proxy.hh: $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml
+#	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml --proxy=$(abs_top_srcdir)/src/mpx-mlibman-dbus-proxy.hh
 
-mpx-app-dbus-adaptor.hh: $(top_srcdir)/dbus/dbus-obj-YOUKI.xml
-	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-YOUKI.xml --adaptor=mpx-app-dbus-adaptor.hh
+#mpx-app-dbus-adaptor.hh: $(top_srcdir)/dbus/dbus-obj-YOUKI.xml
+#	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-YOUKI.xml --adaptor=$(abs_top_srcdir)/src/mpx-app-dbus-adaptor.hh

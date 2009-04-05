@@ -105,17 +105,13 @@ youki_mlibman_bin_SOURCES =                     \
         util-ui.cc
 
 
-
-EXTRA_DIST =                                \
-    dbus-obj-MLIBMAN.xml      
-
-
-BUILT_SOURCES =                             \
+#BUILT_SOURCES =                             \
+youki_mlibman_bin_SOURCES += \
     mpx-mlibman-dbus.hh    
 
-CLEANFILES = $(BUILT_SOURCES)
-DISTCLEANFILES = $(BUILT_SOURCES)
+#CLEANFILES = $(BUILT_SOURCES)
+#DISTCLEANFILES = $(BUILT_SOURCES)
 
-mpx-mlibman-dbus.hh: $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml
-	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml --adaptor=mpx-mlibman-dbus.hh
+#mpx-mlibman-dbus.hh: $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml
+#	$(DBUSBINDINGTOOL) $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml --adaptor=$(abs_top_srcdir)/mpxlib/mpx-mlibman-dbus.hh
 
