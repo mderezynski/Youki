@@ -259,7 +259,7 @@ namespace MPX
         m_ScrolledWinTracks = Gtk::manage( new Gtk::ScrolledWindow ) ;
 
         m_main_window       = new MainWindow ;
-        m_main_window->signal_key_press_cascade().connect(
+        m_main_window->signal_key_press_event().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_main_window_key_press_event
@@ -1161,47 +1161,41 @@ namespace MPX
         API_pause_toggle() ;
     }
 
-    void
+    bool
     YoukiController::on_main_window_key_press_event(
           GdkEventKey* event
-        , bool&        rv
     ) 
     {
         switch( event->keyval )
         {
             case GDK_Escape:
                 m_main_window->hide() ;
-                rv = true ;
-                return ;
+                return true ;
 
             case GDK_F1:
                 m_mlibman_dbus_proxy->ShowWindow () ;
-                rv = true ;
-                return ;
+                return true ;
 
             case GDK_F2:
                 services->get<Preferences>("mpx-service-preferences")->present () ;
-                rv = true ;
-                return ;
+                return true ;
 
             case GDK_F3:
                 services->get<PluginManagerGUI>("mpx-service-plugins-gui")->present () ;
-                rv = true ;
-                return ;
+                return true ;
 
             case GDK_q:
             case GDK_Q:
                 if( event->state & GDK_CONTROL_MASK )
                 {
                     initiate_quit() ;
-                    rv = true ;
-                    return ;
+                    return true ;
                 }
 
             default: break ;
         }
 
-        rv = false ;
+        return false ;
     }
 
     void

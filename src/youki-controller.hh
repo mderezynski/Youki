@@ -200,8 +200,6 @@ namespace MPX
             on_play_stream_switched(        
             ) ;
 
-            //// TRACK LIST 
-
             void
             on_list_view_tr_track_activated(
                   MPX::Track        /*track*/
@@ -216,16 +214,13 @@ namespace MPX
             on_list_view_ab_selection_changed(
             ) ;
 
-            //// MISCELLANEOUS WIDGETS 
-
             void
             on_info_area_clicked(
             ) ;
 
-            void
+            bool
             on_main_window_key_press_event(
                   GdkEventKey*
-                , bool&
             ) ;
 
             void

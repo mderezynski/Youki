@@ -75,7 +75,6 @@ void LastFmScrobbler::startedPlaying(const SubmissionInfo& info)
     authenticateIfNecessary();
 
     log::info("startedPlaying " + info.getTrack());
-    m_PreviousTrackInfo = m_CurrentTrackInfo;
     m_CurrentTrackInfo = info;
 
     if (m_CurrentTrackInfo.getTimeStarted() < 0)
@@ -113,6 +112,9 @@ void LastFmScrobbler::pausePlaying(bool paused)
 void LastFmScrobbler::finishedPlaying()
 {
     authenticateIfNecessary();
+
+    m_PreviousTrackInfo = m_CurrentTrackInfo;
+
     if (m_Synchronous)
     {
         submitTrack(m_CurrentTrackInfo);
