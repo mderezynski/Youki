@@ -78,6 +78,11 @@ public:
      */
     void set_credentials(const std::string& user, const std::string& pass);
 
+    /** Set authentication to false 
+     *
+     */
+    void set_enabled( bool ) ;
+
 protected:
     LastFmClient*   m_pLastFmClient;
     /** \brief Last time a connection attempt was made */
@@ -108,21 +113,22 @@ private:
     static void* sendInfoThread(void* pInstance);
     static void* finishPlayingThread(void* pInstance);
 
-    SubmissionInfo              m_PreviousTrackInfo;
-    SubmissionInfo              m_CurrentTrackInfo;
-    SubmissionInfoCollection    m_BufferedTrackInfos;
+    SubmissionInfo              m_PreviousTrackInfo ;
+    SubmissionInfo              m_CurrentTrackInfo ;
+    SubmissionInfoCollection    m_BufferedTrackInfos ;
 
-    bool                        m_Authenticated;
-    int                         m_HardConnectionFailureCount;
-    utils::Condition            m_AuthenticatedCondition;
-    utils::Mutex                m_AuthenticatedMutex;
-    utils::Mutex                m_TrackInfosMutex;
+    bool                        m_Authenticated ;
+    bool                        m_Disabled ;
+    int                         m_HardConnectionFailureCount ;
+    utils::Condition            m_AuthenticatedCondition ;
+    utils::Mutex                m_AuthenticatedMutex ;
+    utils::Mutex                m_TrackInfosMutex ;
 
-    std::string                 m_Username;
-    std::string                 m_Password;
+    std::string                 m_Username ;
+    std::string                 m_Password ;
 
-    bool                        m_Synchronous;
-    bool                        m_CommitOnly;
+    bool                        m_Synchronous ;
+    bool                        m_CommitOnly ;
 
     ILog                       & m_Log ;
 };

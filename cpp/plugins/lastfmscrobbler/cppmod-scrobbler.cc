@@ -155,6 +155,8 @@ namespace MPX
     {
         m_Active = true ;
 
+        m_LastFmScrobbler->set_enabled( true ) ;
+
         m_LastFmScrobbler->set_credentials(
               mcs->key_get<std::string>( "lastfm", "username" )
             , mcs->key_get<std::string>( "lastfm", "password" )
@@ -168,6 +170,7 @@ namespace MPX
     bool
     CPPModLastFmScrobbler::deactivate()
     {
+        m_LastFmScrobbler->set_enabled( false ) ;
         m_Active = false ;
 
         *m_Log << "Scrobbling turned OFF\n" ;

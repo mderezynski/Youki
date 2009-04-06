@@ -41,6 +41,7 @@ LastFmScrobbler::LastFmScrobbler(bool synchronous, ILog & log )
 , m_SendInfoThread(LastFmScrobbler::sendInfoThread, this)
 , m_FinishPlayingThread(LastFmScrobbler::finishPlayingThread, this)
 , m_Authenticated(false)
+, m_Disabled(true)
 , m_HardConnectionFailureCount(0)
 , m_Synchronous(synchronous)
 , m_CommitOnly(false)
@@ -52,6 +53,12 @@ LastFmScrobbler::~LastFmScrobbler()
 {
     joinThreads();
     delete m_pLastFmClient;
+}
+
+void
+LastFmScrobbler::set_enabled( bool enable )
+{
+    m_Disabled = !enable ;
 }
 
 void
@@ -191,6 +198,9 @@ void LastFmScrobbler::authenticate()
 
 bool LastFmScrobbler::canReconnect()
 {
+    if( m_Disabled )
+        return false ;
+
     time_t curTime = time(NULL);
     time_t timeSinceLastConnectionAttempt = curTime - m_LastConnectionAttempt;
     time_t connectionDelay = max(MAX_SECS_BETWEEN_CONNECT, m_HardConnectionFailureCount * MIN_SECS_BETWEEN_CONNECT);
