@@ -5,16 +5,18 @@
 *.la
 *.a
 .deps/
-.lib/
+.libs/
 Makefile.in
 Makefile
 
+ABOUT-NLS
 aclocal.m4
 autom4te.cache
 compile
 config.guess
 config.h
 config.h.in
+config.h.in~
 config.log
 config.status
 config.sub
@@ -27,6 +29,9 @@ ltmain.sh
 missing
 mkinstalldirs
 stamp-h1
+info.backtrace.youki.app.service
+info.backtrace.youki.mlibman.service
+info.backtrace.youki.sentinel.service
 aux/
 m4/codeset.m4
 m4/gettext.m4
@@ -83,4 +88,8 @@ python/plugins/osd/__init__.py
 python/plugins/puid-scan/__init__.py
 python/plugins/trackcover/__init__.py
 python/plugins/trackinfo-webkit/__init__.py
+mpxlib/youki-mlibman-bin
+remote/youki
+sentinel/youki-sentinel-bin
+src/youki-bin
 
