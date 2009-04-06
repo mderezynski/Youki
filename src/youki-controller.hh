@@ -84,6 +84,7 @@ namespace MPX
                       *w
                     , name
                 ) ;
+                w->show_all() ;
             }
 
             void

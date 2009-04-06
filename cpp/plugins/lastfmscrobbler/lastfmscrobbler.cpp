@@ -82,7 +82,7 @@ void LastFmScrobbler::startedPlaying(const SubmissionInfo& info)
 {
     authenticateIfNecessary();
 
-//    log::info( m_Log, "startedPlaying \"" + info.getTrack() + "\"" );
+    m_PreviousTrackInfo = m_CurrentTrackInfo;
     m_CurrentTrackInfo = info;
 
     if (m_CurrentTrackInfo.getTimeStarted() < 0)
@@ -121,11 +121,9 @@ void LastFmScrobbler::finishedPlaying()
 {
     authenticateIfNecessary();
 
-    m_PreviousTrackInfo = m_CurrentTrackInfo;
-
     if (m_Synchronous)
     {
-        submitTrack(m_PreviousTrackInfo);
+        submitTrack(m_CurrentTrackInfo);
     }
     else
     {
@@ -227,9 +225,8 @@ void* LastFmScrobbler::authenticateThread(void* pInstance)
 void* LastFmScrobbler::sendInfoThread(void* pInstance)
 {
     LastFmScrobbler* pScrobbler = reinterpret_cast<LastFmScrobbler*>(pInstance);
-//    log::debug( pScrobbler->m_Log, "sendInfo thread started");
 
-/*
+
     {
         ScopedLock lock(pScrobbler->m_AuthenticatedMutex);
         if (!pScrobbler->m_Authenticated)
@@ -242,25 +239,25 @@ void* LastFmScrobbler::sendInfoThread(void* pInstance)
             }
         }
     }
-*/
 
     if (pScrobbler->m_Authenticated)
     {
-        //pScrobbler->submitTrack(pScrobbler->m_PreviousTrackInfo);
+        pScrobbler->submitTrack(pScrobbler->m_PreviousTrackInfo);
+
         if (!pScrobbler->m_CommitOnly)
         {
             pScrobbler->setNowPlaying();
         }
     }
 
-//    log::debug( pScrobbler->m_Log, "sendInfo thread finished");
+
     return NULL;
 }
 
 void* LastFmScrobbler::finishPlayingThread(void* pInstance)
 {
     LastFmScrobbler* pScrobbler = reinterpret_cast<LastFmScrobbler*>(pInstance);
-//    log::debug( pScrobbler->m_Log, "finishPlaying thread started");
+
 
     {
         ScopedLock lock(pScrobbler->m_AuthenticatedMutex);
@@ -313,7 +310,7 @@ void LastFmScrobbler::submitTrack(const SubmissionInfo& info)
 {
     if (info.getTrackLength() < 0 || !trackCanBeCommited(info))
     {
-//        log::info( m_Log, "Won't submit (nothing to submit)");
+
         m_TrackPlayTime = 0;
         m_TrackResumeTime = m_CurrentTrackInfo.getTimeStarted();
         return;

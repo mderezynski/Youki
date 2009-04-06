@@ -88,8 +88,8 @@ class TrackTags(mpx.Plugin):
     def activate(self):
 
         self.tagview = mpx.TagView()
-        self.youki.add_info_widget(self.tagview.get_widget(), "Last.fm Tags")
-        self.youki_metadata_updated_handler_id = self.youki.gobj().connect("metadata-updated", self.metadata_updated)
+        self.youki.add_info_widget(self.tagview.get_widget(), "Last.fm-Tags")
+        self.youki_metadata_updated_handler_id = self.youki.gobj().connect("track-new", self.metadata_updated)
 
         try:
             self.tagview.clear()
@@ -108,29 +108,36 @@ class TrackTags(mpx.Plugin):
     def metadata_updated(self, blah):
 
         self.serial = self.serial + 1
+        self.display_track_tags( self.serial )
 
     def display_track_tags(self, serial):
 
         current_serial = serial
 
-        m = self.youki.get_metadata()
+        try:
+                m = self.youki.get_metadata()
 
-        if m[mpx.AttributeId.ARTIST] and m[mpx.AttributeId.TITLE]:
+                if m[mpx.AttributeId.ARTIST] and m[mpx.AttributeId.TITLE]:
 
-            instance = TrackTagsDataAcquire(m[mpx.AttributeId.ARTIST].get(), m[mpx.AttributeId.TITLE].get())
-            instance.start()
+                    instance = TrackTagsDataAcquire(m[mpx.AttributeId.ARTIST].get(), m[mpx.AttributeId.TITLE].get())
+                    instance.start()
 
-            while not instance.is_finished():
-                while gtk.events_pending(): gtk.main_iteration()
+                    while not instance.is_finished():
+                        while gtk.events_pending(): gtk.main_iteration()
 
-            tags = instance.get_tags()
-    
-            if current_serial == self.serial:
+                    tags = instance.get_tags()
+            
+                    if current_serial == self.serial:
 
-                    self.tagview.clear()
-                    self.tagview.display(False)
+                            self.tagview.clear()
+                            self.tagview.display(False)
 
-                    for t in tags:
-                        self.tagview.add_tag(str(t[0]), float(t[1]))
+                            for t in tags:
+                                self.tagview.add_tag(str(t[0]), float(t[1]))
 
-        self.tagview.display(True)
+                    else:
+                            self.display_track_tags( self.serial )
+
+                self.tagview.display(True)
+        except:
+                pass
