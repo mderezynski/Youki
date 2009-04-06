@@ -704,7 +704,8 @@ class MPXDJ(mpx.Plugin):
                         print "Next track: " + str(idv[0])
                         self.youki.queue_next_track(idv[0]) 
                     
-                self.abort = False
-                self.working = False
         except:
                 pass
+
+        self.abort = False
+        self.working = False

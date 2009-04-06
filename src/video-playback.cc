@@ -180,7 +180,7 @@ namespace MPX
             queue1              = element ("queue", "Queue1") ;
             queue2              = element ("queue", "Queue2");
             queue3              = element ("queue", "Queue3");
-            infinite            = element ("libvisual_jess", "Visualization") ;
+//            infinite            = element ("libvisual_jess", "Visualization") ;
             ffmpegcolorspace    = element ("ffmpegcolorspace", "FFMPEG Colorspace Converter") ;
             audioconvert        = element ("audioconvert", "Audio Rate Converter") ;
             tee                 = element ("tee", "T") ;
@@ -216,7 +216,7 @@ namespace MPX
         m_elements.insert (ElementPair ("queue1", queue1));
         m_elements.insert (ElementPair ("queue2", queue2));
         m_elements.insert (ElementPair ("queue3", queue3));
-        m_elements.insert (ElementPair ("libvisual_infinite", infinite));
+//        m_elements.insert (ElementPair ("libvisual_infinite", infinite));
         m_elements.insert (ElementPair ("ffmpegcolorspace", ffmpegcolorspace));
         m_elements.insert (ElementPair ("videoscale", videoscale));
         m_elements.insert (ElementPair ("videosink1", imagesink));
