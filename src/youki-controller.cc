@@ -1,13 +1,18 @@
 #include "youki-controller.hh"
-#include "mpx/widgets/cairo-extensions.hh"
+
 #include <glibmm/i18n.h>
+#include <boost/format.hpp>
+
 #include <gdk/gdkkeysyms.h>
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-play.hh"
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-types.hh"
+
 #include "mpx/mpx-preferences.hh"
+#include "mpx/widgets/cairo-extensions.hh"
+
 #include "plugin-manager-gui.hh"
 
 #include "mpx/com/view-album-artist.hh"
@@ -1060,6 +1065,8 @@ namespace MPX
 
             if( text == m_Entry_Text && new_prediction == m_prediction_last ) 
             {
+                m_prediction.clear() ;
+                m_prediction_last.clear() ;
                 return ;
             }
 

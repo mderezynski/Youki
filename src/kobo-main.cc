@@ -52,7 +52,7 @@ namespace MPX
         , m_expand_direction( EXPAND_NONE )
 
                      {
-                        set_title( "Youki" ) ;
+                        set_title( "YOUKI player" ) ;
                         set_decorated( false ) ;
                         set_colormap(Glib::wrap(gdk_screen_get_rgba_colormap(gdk_screen_get_default()), true)) ; 
 

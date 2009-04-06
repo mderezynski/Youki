@@ -480,17 +480,6 @@ namespace MPX
             protected:
 
                 virtual bool
-                on_focus (Gtk::DirectionType direction)
-                { 
-                    grab_focus() ;
-                    if( !m_selection )
-                    {
-                        select_row( get_upper_row() ) ;
-                    }
-                    return true ;
-                }
-
-                virtual bool
                 on_key_press_event (GdkEventKey * event)
                 {
                     if( m_search_active )
@@ -609,11 +598,9 @@ namespace MPX
                         case GDK_KP_End:
                         case GDK_KP_Enter:
                         case GDK_Return:
-                            return false ;
-
+                        case GDK_Escape:
                         case GDK_Tab:
-                                Gtk::DrawingArea::on_key_press_event( event ) ;
-                            return true ;
+                            return false ;
 
                         default:
 
@@ -1183,7 +1170,7 @@ namespace MPX
                     gtk_widget_realize(GTK_WIDGET(m_treeview));
 
                     set_flags(Gtk::CAN_FOCUS);
-                    add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_FOCUS_CHANGE_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK ));
+                    add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK ));
 
                     ((GtkWidgetClass*)(G_OBJECT_GET_CLASS(G_OBJECT(gobj()))))->set_scroll_adjustments_signal = 
                             g_signal_new ("set_scroll_adjustments",
