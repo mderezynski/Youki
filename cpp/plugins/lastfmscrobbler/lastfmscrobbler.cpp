@@ -118,7 +118,7 @@ void LastFmScrobbler::finishedPlaying()
 
     if (m_Synchronous)
     {
-        submitTrack(m_CurrentTrackInfo);
+        submitTrack(m_PreviousTrackInfo);
     }
     else
     {
@@ -146,7 +146,7 @@ bool LastFmScrobbler::trackCanBeCommited(const SubmissionInfo& info)
     }
     else
     {
-        log::info( m_Log, "Track \"" + info.getTrack() + "\" can be committed: conditions OK");
+//        log::info( m_Log, "Track \"" + info.getTrack() + "\" can be committed: conditions OK");
     }
 
     return (!trackTooShort) && trackPlayedLongEnough;
@@ -219,6 +219,7 @@ void* LastFmScrobbler::sendInfoThread(void* pInstance)
     LastFmScrobbler* pScrobbler = reinterpret_cast<LastFmScrobbler*>(pInstance);
 //    log::debug( pScrobbler->m_Log, "sendInfo thread started");
 
+/*
     {
         ScopedLock lock(pScrobbler->m_AuthenticatedMutex);
         if (!pScrobbler->m_Authenticated)
@@ -231,10 +232,11 @@ void* LastFmScrobbler::sendInfoThread(void* pInstance)
             }
         }
     }
+*/
 
     if (pScrobbler->m_Authenticated)
     {
-        pScrobbler->submitTrack(pScrobbler->m_PreviousTrackInfo);
+        //pScrobbler->submitTrack(pScrobbler->m_PreviousTrackInfo);
         if (!pScrobbler->m_CommitOnly)
         {
             pScrobbler->setNowPlaying();
@@ -323,7 +325,7 @@ void LastFmScrobbler::submitTrack(const SubmissionInfo& info)
         if (m_Authenticated)
         {
             m_pLastFmClient->submit(tracksToSubmit);
-            log::info( m_Log, "Tracks submitted...");
+            log::info( m_Log, "...submitted");
             m_BufferedTrackInfos.clear();
         }
         else
