@@ -493,10 +493,10 @@ namespace MPX
                 , &InfoArea::update_spectrum
         )) ;
 
-        m_Paned2->set_position( mcs->key_get<int>("main-window","paned2") ) ;
+        m_Paned1->set_position( mcs->key_get<int>("main-window","paned1") ) ;
         while (gtk_events_pending()) gtk_main_iteration() ;
 
-        m_Paned1->set_position( mcs->key_get<int>("main-window","paned1") ) ;
+        m_Paned2->set_position( mcs->key_get<int>("main-window","paned2") ) ;
         while (gtk_events_pending()) gtk_main_iteration() ;
     }
 
