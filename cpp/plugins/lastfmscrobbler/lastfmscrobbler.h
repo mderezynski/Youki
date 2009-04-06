@@ -33,6 +33,8 @@
 #include "mutex.h"
 #include "thread.h"
 
+#include "i-log.hh"
+
 
 class LastFmScrobbler
 {
@@ -45,7 +47,7 @@ public:
      * a thread and return immediately (prevents long blocking methods in
      * case of network problems)
      */
-    LastFmScrobbler(bool synchronous);
+    LastFmScrobbler(bool synchronous, ILog&);
     /** Destructor */
     virtual ~LastFmScrobbler();
 
@@ -121,6 +123,8 @@ private:
 
     bool                        m_Synchronous;
     bool                        m_CommitOnly;
+
+    ILog                       & m_Log ;
 };
 
 #endif

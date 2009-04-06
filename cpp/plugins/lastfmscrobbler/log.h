@@ -19,13 +19,15 @@
 
 #include <string>
 
+#include "i-log.hh"
+
 namespace log
 {
-    void error(const std::string& message);
-    void info(const std::string& message);
-    void warn(const std::string& message);
-    void debug(const std::string& message);
-    void critical(const std::string& message);
+    void error(ILog&, const std::string& message);
+    void info(ILog&, const std::string& message);
+    void warn(ILog&, const std::string& message);
+    void debug(ILog&, const std::string& message);
+    void critical(ILog&, const std::string& message);
 }
 
 #endif

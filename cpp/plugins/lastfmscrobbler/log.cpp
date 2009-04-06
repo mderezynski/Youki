@@ -33,53 +33,53 @@ using namespace std;
 namespace log
 {
 
-void error(const std::string& message)
+void error(ILog& obj, const std::string& message)
 {
 #ifdef ENABLE_LOGGING
     syslog(LOG_ERR, "%s", message.c_str());
 #endif
 
-    cerr << "ERROR: " << message << endl;
+    obj << "ERROR: " << message << "\n";
 }
 
-void info(const std::string& message)
+void info(ILog& obj, const std::string& message)
 {
 #ifdef ENABLE_LOGGING
     syslog(LOG_INFO, "%s", message.c_str());
 #endif
 
 #ifdef ENABLE_DEBUG
-    cout << "INFO:  " << message << endl;
+    obj << "INFO:  " << message << "\n";
 #endif
 }
 
-void warn(const std::string& message)
+void warn(ILog& obj, const std::string& message)
 {
 #ifdef ENABLE_LOGGING
     syslog(LOG_WARNING, "%s", message.c_str());
 #endif
 
-    cout << "WARN:  " << message << endl;
+    obj << "WARN:  " << message << "\n";
 }
 
-void debug(const std::string& message)
+void debug(ILog& obj, const std::string& message)
 {
 #ifdef ENABLE_LOGGING
     syslog(LOG_DEBUG, "%s", message.c_str());
 #endif
 
 #ifdef ENABLE_DEBUG
-    cout << "DEBUG: " << message << endl;
+    obj << "DEBUG: " << message << "\n";
 #endif
 }
 
-void critical(const std::string& message)
+void critical(ILog& obj, const std::string& message)
 {
 #ifdef ENABLE_LOGGING
     syslog(LOG_CRIT, "%s", message.c_str());
 #endif
 
-    cerr << "CRIT:  " << message << endl;
+    obj << "CRIT:  " << message << "\n";
 }
 
 }
