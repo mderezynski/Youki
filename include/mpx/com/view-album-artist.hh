@@ -518,35 +518,21 @@ namespace MPX
 
                             row = boost::get<2>(m_selection.get()) ;
 
-                            if( !get_row_is_visible( row ) )
-                            {
-                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
-                            }
-
                             if( event->keyval == GDK_Page_Up )
                             {
-                                row = std::max( 0, row - m_visible_height/m_row_height ) ;
-
-                                if( row < get_upper_row()) 
-                                {
-                                    double value = m_prop_vadj.get_value()->get_value() - m_visible_height ;
-                                    m_prop_vadj.get_value()->set_value( value ) ; 
-                                }
+                                row = std::max( 0, row - (m_visible_height/m_row_height)  ) ;
                             }
                             else
                             {
                                 row = std::max( 0, row - 1 ) ;
+                            }
 
-                                if( row < get_upper_row()) 
-                                {
-                                    m_prop_vadj.get_value()->set_value( (get_upper_row()-1) * m_row_height ) ; 
-                                }
+                            if( row < get_upper_row() ) 
+                            {
+                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
                             }
 
                             select_row( row ) ;
-
-
-                            queue_draw();
                             return true;
 
                         case GDK_Down:
@@ -561,31 +547,22 @@ namespace MPX
 
                             row = boost::get<2>(m_selection.get()) ;
 
-                            if( !get_row_is_visible( row ) )
-                            {
-                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
-                            }
-
                             if( event->keyval == GDK_Page_Down )
                             {
                                 row = std::min( m_model->m_mapping.size(), std::size_t(row + (m_visible_height/m_row_height)) ) ;
-
-                                double value = m_prop_vadj.get_value()->get_value() ; 
-                                m_prop_vadj.get_value()->set_value( value + m_visible_height ) ;
                             }
                             else
                             {
                                 row = std::min( m_model->m_mapping.size(), std::size_t(row + 1) ) ;
 
-                                if( row > (get_upper_row()+(m_visible_height/m_row_height))) 
-                                {
-                                    m_prop_vadj.get_value()->set_value( (get_upper_row()+1) * m_row_height ) ;
-                                }
+                            }
+
+                            if( row > (get_upper_row()+(m_visible_height/m_row_height))) 
+                            {
+                                m_prop_vadj.get_value()->set_value( (get_upper_row()+1) * m_row_height ) ;
                             }
 
                             select_row( row ) ;
-
-                            queue_draw();
                             return true;
 
                         case GDK_Left:

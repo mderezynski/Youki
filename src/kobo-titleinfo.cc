@@ -84,7 +84,7 @@ namespace MPX
     KoboTitleInfo::get_text_alpha_at_time (double time)
     {
         {
-            double offset = std::fmod (time, text_time*(m_info.size()-1));
+            double offset = std::fmod( time, text_time ) ;
 
             if (offset < text_fade_in_time)
             {
