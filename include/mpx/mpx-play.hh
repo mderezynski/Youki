@@ -115,7 +115,6 @@ namespace MPX
                         {
                               PIPELINE_NONE = 0
                             , PIPELINE_HTTP
-                            , PIPELINE_HTTP_MP3
                             , PIPELINE_MMSX
                             , PIPELINE_FILE
                             , PIPELINE_CDDA
@@ -126,7 +125,6 @@ namespace MPX
                         {
                               BIN_OUTPUT = 0
                             , BIN_HTTP
-                            , BIN_HTTP_MP3
                             , BIN_MMSX
                             , BIN_FILE
                             , BIN_CDDA
@@ -135,11 +133,9 @@ namespace MPX
 
                         PipelineId          m_pipeline_id ;
 
-                        VideoPipe         * m_video_pipe ;
-
                         GstElement        * m_pipeline ;
                         GstElement        * m_equalizer ;
-                        GstElement        * m_play_elmt ;
+                        GstElement        * m_playback_bin ;
                         GstElement        * m_bin[N_BINS] ;
 
                         GAsyncQueue       * m_message_queue ;
@@ -197,12 +193,6 @@ namespace MPX
                         typedef sigc::signal<void, GstMetadataField>  SignalMetadata;
                         typedef sigc::signal<void>                    SignalStreamSwitched;
 
-                        VideoPipe*
-                        get_video_pipe()
-                        {
-                            return m_video_pipe ;
-                        }
-
                         /** Signal emitted on error state 
                          *
                          */
@@ -257,12 +247,6 @@ namespace MPX
                         SignalBuffering &
                                 signal_buffering();
 
-                        /** Signal emitted for video geometry 
-                         *
-                         */
-                        SignalVideoGeom &
-                                signal_video_geom ();
-
                         /** Signal on new metadata 
                          *
                          */
@@ -305,19 +289,6 @@ namespace MPX
                         reset(
                         ) ;
 
-
-                        bool
-                        has_video(
-                        ) ;
-
-                        void
-                        video_expose(
-                        ) ;
-
-                        GstElement*
-                        x_overlay(
-                        ) ;
-
                         GstElement*
                         tap(
                         ) ;
@@ -338,7 +309,6 @@ namespace MPX
                         SignalPipelineState     signal_pipeline_state_;
                         SignalEos               signal_eos_;
                         SignalError             signal_error_;
-                        SignalVideoGeom         signal_video_geom_;
                         SignalStreamSwitched    signal_stream_switched_;
 
                         void
