@@ -2,9 +2,12 @@
 #define KOBO_MAIN_WINDOW_HH
 
 #include <gtkmm.h>
+#include <boost/ref.hpp>
 
 namespace MPX
 {
+        typedef sigc::signal<void, GdkEventKey*, bool&> SignalKeyPressEvent_t ;
+
         class MainWindow
         : public Gtk::Window
         {
@@ -38,6 +41,7 @@ namespace MPX
                     Gtk::HBox                 * v ;
 
                     sigc::signal<void>          SignalQuit ;
+                    SignalKeyPressEvent_t       SignalKeyPressEvent ;
 
             public:
 
@@ -49,6 +53,12 @@ namespace MPX
                     signal_quit()
                     {
                         return SignalQuit ;
+                    }
+
+                    SignalKeyPressEvent_t& 
+                    signal_key_press_cascade()
+                    {
+                        return SignalKeyPressEvent ;
                     }
 
                     void
@@ -83,7 +93,19 @@ namespace MPX
             protected:
 
                     bool
-                    on_button_press_event( GdkEventButton* event ) ;
+                    on_button_press_event(
+                          GdkEventButton    *event
+                    ) ;
+
+                    bool
+                    on_key_press_event(
+                          GdkEventKey       *event
+                    )
+                    {
+                        bool rv = false ;
+                        SignalKeyPressEvent.emit( event, boost::ref(rv) ) ;
+                        return rv ;
+                    }
 
                     void
                     on_size_allocate( Gtk::Allocation & a ) ;

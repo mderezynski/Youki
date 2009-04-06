@@ -24,7 +24,6 @@
 #endif // HAVE_HAL
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
-#include "mpx/mpx-play.hh"
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/mpx-python.hh"
 
@@ -36,6 +35,7 @@
 #include "pysigc.hh"
 #include "gtkmmmodule.h"
 
+#include "play.hh"
 #include "youki-controller.hh"
 
 using namespace boost::python;

@@ -177,6 +177,7 @@ youki_bin_SOURCES =             \
     paths.hh                    \
     paths.cc                    \
                                 \
+    play.hh                     \
     play.cc                     \
                                 \
     python.cc                   \

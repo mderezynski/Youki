@@ -51,12 +51,12 @@
 #include "mpx/mpx-preferences.hh"
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-main.hh"
-#include "mpx/mpx-play.hh"
 #include "mpx/mpx-stock.hh"
 #include "mpx/util-string.hh"
 #include "mpx/widgets/widgetloader.hh"
 
 #include "prefs-audio.hh"
+#include "mpx/i-youki-play.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -319,8 +319,6 @@ namespace MPX
     void
         PrefsAudio::audio_system_apply ()
     {
-        services->get<Play>("mpx-service-play")->request_status( PLAYSTATUS_STOPPED ) ;
-
         TreeModel::iterator iter (m_cbox_audio_system->get_active ());
         Sink sink = (*iter)[audio_system_columns.sink];
         std::string name = (*iter)[audio_system_columns.name];
@@ -345,7 +343,7 @@ namespace MPX
         m_button_audio_system_apply->set_sensitive(false);
         m_button_audio_system_reset->set_sensitive(false);
 
-        services->get<Play>("mpx-service-play")->reset();
+        services->get<IPlay>("mpx-service-play")->reset();
     }
 
     #ifdef HAVE_ALSA

@@ -39,7 +39,6 @@
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-network.hh"
-#include "mpx/mpx-play.hh"
 #include "mpx/mpx-plugin.hh"
 #include "mpx/mpx-preferences.hh"
 #include "mpx/mpx-python.hh"
@@ -52,6 +51,7 @@
 #include "mpx/metadatareader-taglib.hh"
 
 #include "paths.hh"
+#include "play.hh"
 #include "plugin-manager-gui.hh"
 #include "signals.hh"
 #include "splash-screen.hh"

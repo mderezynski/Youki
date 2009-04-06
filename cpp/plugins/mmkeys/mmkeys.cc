@@ -44,13 +44,13 @@
 #include "mpx/util-string.hh"
 
 #include "src/glib-marshalers.h"
-#include "src/youki-controller.hh"
 
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <X11/XF86keysym.h>
 
 #include "mmkeys.hh"
+#include "mpx/i-youki-controller.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -522,7 +522,7 @@ namespace MPX
             gpointer     data
         )
     {
-        boost::shared_ptr<YoukiController> ctrl = services->get<YoukiController>("mpx-service-controller") ; 
+        boost::shared_ptr<IYoukiController> ctrl = services->get<IYoukiController>("mpx-service-controller") ; 
 
         XEvent * xev = (XEvent *) xevent;
 
@@ -699,7 +699,8 @@ namespace MPX
                             G_CALLBACK (media_player_key_pressed),
                             this, NULL);
 
-                        boost::shared_ptr<YoukiController> ctrl = services->get<YoukiController>("mpx-service-controller") ; 
+                        boost::shared_ptr<IYoukiController> ctrl = services->get<IYoukiController>("mpx-service-controller") ; 
+
                         mWindowFocusConn = ctrl->get_widget()->signal_focus_in_event().connect( sigc::mem_fun( *this, &MMKeys::window_focus_cb ) );
                     }
                     else if (error->domain == DBUS_GERROR &&
@@ -813,7 +814,7 @@ namespace MPX
         if( strcmp (application, "MPX"))
             return;
 
-        boost::shared_ptr<YoukiController> ctrl = services->get<YoukiController>("mpx-service-controller") ; 
+        boost::shared_ptr<IYoukiController> ctrl = services->get<IYoukiController>("mpx-service-controller") ; 
 
         if (strcmp (key, "Play") == 0)
         {

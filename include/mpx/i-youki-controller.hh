@@ -16,6 +16,9 @@ namespace MPX
             IYoukiController() {} ;
             virtual ~IYoukiController () {} ;
 
+            virtual Gtk::Window*
+            get_widget () = 0 ; 
+
             virtual void
             queue_next_track(
                 gint64

@@ -15,11 +15,12 @@
 #include <pangomm/layout.h>
 
 #include "mpx/mpx-types.hh"
-#include "mpx/mpx-play.hh"
 
 #include <string>
 
 #include "kobo-position.hh"
+
+#include "mpx/i-youki-play.hh"
 
 namespace MPX
 {

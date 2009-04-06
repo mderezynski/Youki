@@ -21,9 +21,7 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 
-#ifdef HAVE_CONFIG_H
-#  include <config.h>
-#endif // HAVE_CONFIG_H
+#include "config.h"
 
 #include <iostream>
 #include <cstring>
@@ -38,11 +36,11 @@
 #include <boost/format.hpp>
 #include <boost/optional.hpp>
 
-#include "mpx/mpx-play.hh"
-#include "mcs/mcs.h"
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-uri.hh"
+
+#include "play.hh"
 
 #define MPX_GST_BUFFER_TIME   ((gint64) 50000)
 #define MPX_GST_PLAY_TIMEOUT  ((gint64) 3000000000)
@@ -1441,67 +1439,67 @@ namespace MPX
 
         /* Signals --------------------------------------------------------------------*/
 
-        Play::SignalSpectrum &
+        SignalSpectrum &
                 Play::signal_spectrum ()
                 {
                         return signal_spectrum_ ;
                 }
 
-        Play::SignalPlayStatus &
+        SignalPlayStatus &
                 Play::signal_playstatus ()
                 {
                         return signal_playstatus_ ;
                 }
 
-        Play::SignalPipelineState &
+        SignalPipelineState &
                 Play::signal_pipeline_state ()
                 {
                         return signal_pipeline_state_ ;
                 }
 
-        Play::SignalEos &
+        SignalEos &
                 Play::signal_eos ()
                 {
                         return signal_eos_ ;
                 }
 
-        Play::SignalSeek &
+        SignalSeek &
                 Play::signal_seek ()
                 {
                         return signal_seek_ ;
                 }
 
-        Play::SignalPosition &
+        SignalPosition &
                 Play::signal_position ()
                 {
                         return signal_position_ ;
                 }
 
-        Play::SignalHttpStatus &
+        SignalHttpStatus &
                 Play::signal_http_status ()
                 {
                         return signal_http_status_ ;
                 }
 
-        Play::SignalBuffering &
+        SignalBuffering &
                 Play::signal_buffering ()
                 {
                         return signal_buffering_ ;
                 }
 
-        Play::SignalError &
+        SignalError &
                 Play::signal_error ()
                 {
                         return signal_error_ ;
                 }
 
-        Play::SignalMetadata &
+        SignalMetadata &
                 Play::signal_metadata ()
                 {
                         return signal_metadata_ ;
                 }
 
-        Play::SignalStreamSwitched &
+        SignalStreamSwitched &
                 Play::signal_stream_switched ()
                 {
                         return signal_stream_switched_ ;

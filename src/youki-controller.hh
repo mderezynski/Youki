@@ -193,7 +193,7 @@ namespace MPX
 
             void
             on_play_playstatus(
-                  PlayStatus
+                  int
             ) ;
 
             void
@@ -222,9 +222,10 @@ namespace MPX
             on_info_area_clicked(
             ) ;
 
-            bool
+            void
             on_main_window_key_press_event(
-                GdkEventKey*
+                  GdkEventKey*
+                , bool&
             ) ;
 
             void

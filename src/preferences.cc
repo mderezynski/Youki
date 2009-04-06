@@ -55,10 +55,11 @@
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
-#include "mpx/mpx-play.hh"
 #include "mpx/mpx-stock.hh"
 #include "mpx/util-string.hh"
 #include "mpx/widgets/widgetloader.hh"
+
+#include "mpx/i-youki-play.hh"
 
 using namespace Glib;
 using namespace Gtk;

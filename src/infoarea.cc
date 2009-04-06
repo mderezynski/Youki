@@ -4,7 +4,7 @@
 
 #include "infoarea.hh"
 #include "mpx/mpx-audio-types.hh"
-#include "mpx/mpx-play.hh"
+#include "mpx/i-youki-play.hh"
 
 namespace MPX
 {

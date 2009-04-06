@@ -7,7 +7,7 @@
 
 namespace MPX
 {
-    class Play ;
+    class IPlay ;
     class YoukiControllerStatusIcon
     {
         protected:
@@ -15,7 +15,7 @@ namespace MPX
             YoukiStatusIcon                 * m_main_status_icon ;
             Notification                    * m_notification ;
             Glib::RefPtr<Gdk::Pixbuf>         m_icon ;
-            Play                            * m_play ;
+            IPlay                           * m_play ;
 
         public: 
 

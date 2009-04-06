@@ -1,19 +1,16 @@
 #include "youki-controller.hh"
 
 #include <glibmm/i18n.h>
+#include <gdk/gdkkeysyms.h>
 #include <boost/format.hpp>
 
-#include <gdk/gdkkeysyms.h>
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-library.hh"
-#include "mpx/mpx-play.hh"
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-types.hh"
 
 #include "mpx/mpx-preferences.hh"
 #include "mpx/widgets/cairo-extensions.hh"
-
-#include "plugin-manager-gui.hh"
 
 #include "mpx/com/view-album-artist.hh"
 #include "mpx/com/view-album.hh"
@@ -22,6 +19,8 @@
 #include "mpx/algorithm/youki-markov-predictor.hh"
 
 #include "youki-controller-status-icon.hh"
+#include "plugin-manager-gui.hh"
+#include "play.hh"
 
 namespace
 {
@@ -260,7 +259,7 @@ namespace MPX
         m_ScrolledWinTracks = Gtk::manage( new Gtk::ScrolledWindow ) ;
 
         m_main_window       = new MainWindow ;
-        m_main_window->signal_key_press_event().connect(
+        m_main_window->signal_key_press_cascade().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_main_window_key_press_event
@@ -784,9 +783,11 @@ namespace MPX
 
     void
     YoukiController::on_play_playstatus(
-          PlayStatus status
+          int s
     )
     {
+        PlayStatus status =  PlayStatus( s ) ;
+
         m_control_status_icon->set_playstatus( status ) ;
 
         switch( status )
@@ -1160,39 +1161,47 @@ namespace MPX
         API_pause_toggle() ;
     }
 
-    bool
+    void
     YoukiController::on_main_window_key_press_event(
-        GdkEventKey* event
+          GdkEventKey* event
+        , bool&        rv
     ) 
     {
         switch( event->keyval )
         {
             case GDK_Escape:
                 m_main_window->hide() ;
-                return true ;
+                rv = true ;
+                return ;
 
             case GDK_F1:
                 m_mlibman_dbus_proxy->ShowWindow () ;
-                return true ;
+                rv = true ;
+                return ;
 
             case GDK_F2:
                 services->get<Preferences>("mpx-service-preferences")->present () ;
-                return true ;
+                rv = true ;
+                return ;
 
             case GDK_F3:
                 services->get<PluginManagerGUI>("mpx-service-plugins-gui")->present () ;
-                return true ;
+                rv = true ;
+                return ;
 
             case GDK_q:
             case GDK_Q:
                 if( event->state & GDK_CONTROL_MASK )
                 {
                     initiate_quit() ;
-                    return true ;
+                    rv = true ;
+                    return ;
                 }
+
+            default: break ;
         }
 
-        return false ;
+        rv = false ;
     }
 
     void

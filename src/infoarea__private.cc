@@ -3,7 +3,7 @@
 
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/util-graphics.hh"
-#include "mpx/mpx-play.hh"
+#include "mpx/i-youki-play.hh"
 
 #include "infoarea.hh"
 

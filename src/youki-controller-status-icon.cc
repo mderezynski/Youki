@@ -8,8 +8,7 @@ namespace MPX
     : m_notification( 0 )
     {
 
-        m_play              = services->get<Play>("mpx-service-play").get() ;
-
+        m_play              = services->get<IPlay>("mpx-service-play").get() ;
         m_icon              = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "youki.png" )) ;
 
         m_main_status_icon  = youki_status_icon_new_from_pixbuf( m_icon->gobj() ) ;
@@ -140,7 +139,6 @@ namespace MPX
                 , data 
             ) ;
 
-            Notification * p = controller.m_notification ;
             g_atomic_pointer_set( (gpointer*)&controller.m_notification, 0 ) ;
         }
     }

@@ -1044,8 +1044,9 @@ namespace MPX
                     {
                         std::size_t row = get_upper_row();
                         m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
-                        queue_draw() ;
                     }
+
+                    queue_draw() ;
 
                     return false ;
                 }
