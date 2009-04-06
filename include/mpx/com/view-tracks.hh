@@ -313,6 +313,16 @@ namespace MPX
                     m_changed.emit( m_position ) ;
                 }
 
+                void
+                erase( std::size_t p )
+                {
+                    RowRowMapping::iterator i = m_mapping.begin() ;
+                    std::advance( i, p ) ;
+                    m_mapping.erase( i ) ;
+                    scan_active() ;
+                    m_changed.emit( m_position ) ;
+                }
+
                 virtual void
                 append_track(MPX::Track& track)
                 {
@@ -1034,6 +1044,15 @@ namespace MPX
 
                     switch( event->keyval )
                     {
+                        case GDK_Delete:
+                            if( m_selection )
+                            {
+                                std::size_t p = get<1>(m_selection.get()) ;
+                                m_selection.reset() ;
+                                m_model->erase( p ) ;
+                            }
+                            return true ;
+
                         case GDK_Return:
                         case GDK_KP_Enter:
                         case GDK_ISO_Enter:

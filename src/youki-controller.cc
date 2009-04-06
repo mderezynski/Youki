@@ -983,8 +983,9 @@ namespace MPX
             m_Entry->select_region( -1, -1 ) ;
             m_conn3.unblock() ;
             m_conn4.unblock() ;
-            on_entry_changed__process_filtering() ;
         }
+
+        on_entry_changed__process_filtering() ;
     }
 
     bool
