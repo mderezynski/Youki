@@ -21,7 +21,8 @@ libcppmod_lastfmscrobbler_la_CXXFLAGS =         \
         $(GTKMM_CFLAGS)                         \
         -I$(top_srcdir)                         \
         -I$(top_srcdir)/include                 \
-        -DPLUGIN_BUILD=1            
+        -DPLUGIN_BUILD=1                        \
+        -DENABLE_DEBUG=1            
 
 
 libcppmod_lastfmscrobbler_la_SOURCES =          \

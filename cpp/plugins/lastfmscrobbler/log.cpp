@@ -26,6 +26,8 @@
 
 #include <iostream>
 
+#define ENABLE_DEBUG 1
+
 using namespace std;
 
 namespace log
