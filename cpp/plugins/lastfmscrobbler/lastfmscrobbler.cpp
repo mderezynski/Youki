@@ -217,7 +217,7 @@ void* LastFmScrobbler::authenticateThread(void* pInstance)
 void* LastFmScrobbler::sendInfoThread(void* pInstance)
 {
     LastFmScrobbler* pScrobbler = reinterpret_cast<LastFmScrobbler*>(pInstance);
-    log::debug( pScrobbler->m_Log, "sendInfo thread started");
+//    log::debug( pScrobbler->m_Log, "sendInfo thread started");
 
     {
         ScopedLock lock(pScrobbler->m_AuthenticatedMutex);
@@ -241,14 +241,14 @@ void* LastFmScrobbler::sendInfoThread(void* pInstance)
         }
     }
 
-    log::debug( pScrobbler->m_Log, "sendInfo thread finished");
+//    log::debug( pScrobbler->m_Log, "sendInfo thread finished");
     return NULL;
 }
 
 void* LastFmScrobbler::finishPlayingThread(void* pInstance)
 {
     LastFmScrobbler* pScrobbler = reinterpret_cast<LastFmScrobbler*>(pInstance);
-    log::debug( pScrobbler->m_Log, "finishPlaying thread started");
+//    log::debug( pScrobbler->m_Log, "finishPlaying thread started");
 
     {
         ScopedLock lock(pScrobbler->m_AuthenticatedMutex);
@@ -264,7 +264,7 @@ void* LastFmScrobbler::finishPlayingThread(void* pInstance)
         pScrobbler->submitTrack(pScrobbler->m_PreviousTrackInfo);
     }
 
-    log::debug( pScrobbler->m_Log, "finishPlaying thread finished");
+//    log::debug( pScrobbler->m_Log, "finishPlaying thread finished");
     return NULL;
 }
 
@@ -301,7 +301,7 @@ void LastFmScrobbler::submitTrack(const SubmissionInfo& info)
 {
     if (info.getTrackLength() < 0 || !trackCanBeCommited(info))
     {
-        log::info( m_Log, "Won't submit");
+//        log::info( m_Log, "Won't submit (nothing to submit)");
         m_TrackPlayTime = 0;
         m_TrackResumeTime = m_CurrentTrackInfo.getTimeStarted();
         return;
