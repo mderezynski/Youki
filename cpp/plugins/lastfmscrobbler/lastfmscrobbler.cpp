@@ -75,7 +75,7 @@ void LastFmScrobbler::startedPlaying(const SubmissionInfo& info)
 {
     authenticateIfNecessary();
 
-    log::info( m_Log, "startedPlaying " + info.getTrack());
+    log::info( m_Log, "startedPlaying \"" + info.getTrack() + "\"" );
     m_CurrentTrackInfo = info;
 
     if (m_CurrentTrackInfo.getTimeStarted() < 0)
@@ -174,7 +174,7 @@ void LastFmScrobbler::authenticate()
     try
     {
         m_pLastFmClient->handshake(m_Username, m_Password);
-        log::info( m_Log, "Authentication successfull for user: " + m_Username);
+        log::info( m_Log, "Authentication successfull for user: \"" + m_Username + "\"" );
         m_HardConnectionFailureCount = 0;
         m_Authenticated = true;
     }
@@ -201,7 +201,7 @@ bool LastFmScrobbler::canReconnect()
 void* LastFmScrobbler::authenticateThread(void* pInstance)
 {
     LastFmScrobbler* pScrobbler = reinterpret_cast<LastFmScrobbler*>(pInstance);
-    log::info( pScrobbler->m_Log, "Authenticate thread started");
+    log::info( pScrobbler->m_Log, "Authentication begun...");
 
     pScrobbler->authenticate();
 
@@ -210,7 +210,7 @@ void* LastFmScrobbler::authenticateThread(void* pInstance)
         pScrobbler->m_AuthenticatedCondition.broadcast();
     }
 
-    log::info( pScrobbler->m_Log, "Authenticate thread finished");
+    log::info( pScrobbler->m_Log, "Authentication done...");
     return NULL;
 }
 
@@ -225,7 +225,7 @@ void* LastFmScrobbler::sendInfoThread(void* pInstance)
         {
             if (!pScrobbler->m_AuthenticatedCondition.wait(pScrobbler->m_AuthenticatedMutex, 4000))
             {
-                log::info( pScrobbler->m_Log, "send info terminated because no connection");
+                log::info( pScrobbler->m_Log, "Send Info terminated: no connection");
                 pScrobbler->submitTrack(pScrobbler->m_PreviousTrackInfo);
                 return NULL;
             }
@@ -279,7 +279,7 @@ void LastFmScrobbler::setNowPlaying()
     try
     {
         m_pLastFmClient->nowPlaying(m_CurrentTrackInfo);
-        log::info( m_Log, "Now playing info submitted: " + m_CurrentTrackInfo.getArtist() + " - " + m_CurrentTrackInfo.getTrack());
+        log::info( m_Log, "Now playing info submitted: \"" + m_CurrentTrackInfo.getArtist() + "\" - \"" + m_CurrentTrackInfo.getTrack() + "\"" );
     }
     catch (BadSessionError& e)
     {
