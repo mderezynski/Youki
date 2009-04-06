@@ -284,6 +284,11 @@ namespace MPX
         )) ;
 
         m_main_titleinfo    = Gtk::manage( new KoboTitleInfo ) ;
+        m_main_titleinfo->signal_button_press_event().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_title_clicked
+        )) ;
 
         m_main_infoarea     = Gtk::manage( new InfoArea ) ;
         m_main_infoarea->signal_clicked().connect(
@@ -1159,6 +1164,23 @@ namespace MPX
     YoukiController::on_info_area_clicked ()
     {
         API_pause_toggle() ;
+    }
+
+    bool
+    YoukiController::on_title_clicked(
+          GdkEventButton* event
+    )
+    {
+        if( event->type == GDK_BUTTON_PRESS )
+        {
+            boost::optional<MPX::Track> t = m_track_current ;
+            if( t )
+            {
+                m_ListViewTracks->scroll_to_id( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
+            }
+        }
+
+        return false ;
     }
 
     bool

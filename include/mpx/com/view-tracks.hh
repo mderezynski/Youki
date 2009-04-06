@@ -363,39 +363,6 @@ namespace MPX
                 { 
                     using boost::get ;
 
-/*
-                    const int max_cache_size = 2048 ;
-
-                    MappingCache::const_iterator f = m_mapping_cache.find( text ) ;
-                    if( f != m_mapping_cache.end() )
-                    {
-                        m_mapping = (*f).second ;    
-   
-                        m_position = 0 ;
- 
-                        if( m_active_track )
-                        {
-                            gint64 id = m_active_track.get() ;
-
-                            for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
-                            {
-                                const Row7& row = *(*i);
-
-                                if( get<3>(row) == id )
-                                {
-                                    m_position = std::distance( m_mapping.begin(), i ) ; 
-                                }
-                            }
-                        }
-
-                        scan_active() ;
-
-                        m_changed.emit( m_position ) ;
-
-                        return ;
-                    }
-*/
-
                     if(!m_filter_full.empty() && (text.substr(0, text.size()-1) == m_filter_full) && !m_advanced)
                     {
                         m_filter_full = text ; 
@@ -419,16 +386,6 @@ namespace MPX
 
                         regen_mapping();
                     }
-
-/*
-                    if( m_mapping_cache.size() == max_cache_size ) 
-                    {
-                        MappingCache::iterator i = m_mapping_cache.begin() ;
-                        m_mapping_cache.erase( i ) ; //FIXME: arbitrary 
-                    }
-
-                    m_mapping_cache.insert( std::make_pair( text, m_mapping )) ;
-*/
                 }
 
                 virtual void
@@ -1687,7 +1644,6 @@ namespace MPX
                     return ( row >= row_upper && row <= row_lower);
                 }
 
-
                 void
                 set_highlight(bool highlight)
                 {
@@ -1798,6 +1754,23 @@ namespace MPX
                         queue_resize () ;
                         queue_draw () ;
                     }
+                }
+
+                void
+                scroll_to_id(
+                      gint64 id
+                )
+                {
+                    for( DataModelFilterTracks::RowRowMapping::iterator i = m_model->m_mapping.begin() ; i != m_model->m_mapping.end(); ++i )
+                    {
+                        const Row7& row = **i ;
+                        if( boost::get<3>(row) == id )
+                        {
+                            std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ;
+                            m_prop_vadj.get_value()->set_value( d * m_row_height );
+                            break ;
+                        }
+                    } 
                 }
 
                 ListViewTracks ()
