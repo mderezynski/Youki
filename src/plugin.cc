@@ -21,11 +21,18 @@
 //  plugins to be used and distributed together with GStreamer and MPX. This
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
+
 #include "config.h"
+
 #include <glibmm/i18n.h>
-#include "plugin.hh"
+
+#include "mpx/mpx-plugin.hh"
 #include "mpx/mpx-main.hh"
-#include "mcs/mcs.h"
+
+#include "plugin-types-python.hh"
+#include "plugin-types-cpp.hh"
+#include "plugin-loader-python.hh"
+#include "plugin-loader-cpp.hh"
 
 using namespace Glib;
 

@@ -16,8 +16,6 @@
 #include "mcs/mcs.h"
 #include "mcs/types.h"
 
-#include "youki-controller.hh"
-
 #include "mpx/mpx-types.hh"
 #include "mpx/mpx-lyrics.hh"
 #include "mpx/mpx-covers.hh"
@@ -37,6 +35,8 @@
 
 #include "pysigc.hh"
 #include "gtkmmmodule.h"
+
+#include "youki-controller.hh"
 
 using namespace boost::python;
 

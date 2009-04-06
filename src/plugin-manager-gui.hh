@@ -28,12 +28,12 @@
 #include <config.h>
 #endif
 
-#include "plugin.hh"
-#include "mpx/widgets/widgetloader.hh"
-#include "mpx/mpx-services.hh"
-
 #include <libglademm/xml.h>
 #include <boost/python.hpp>
+
+#include "mpx/widgets/widgetloader.hh"
+#include "mpx/mpx-services.hh"
+#include "mpx/mpx-plugin.hh"
 
 namespace MPX
 {

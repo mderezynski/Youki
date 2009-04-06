@@ -636,7 +636,7 @@ class MPXDJ(mpx.Plugin):
 
     def activate(self):
 
-        self.conn_metadata_updated = self.youki.gobj().connect("metadata-updated", self.on_metadata_updated)
+        self.conn_metadata_updated = self.youki.gobj().connect("track-new", self.on_metadata_updated)
         self.conn_track_cancelled = self.youki.gobj().connect("track-cancelled", self.on_track_cancelled)
 
         self.on_metadata_updated([]) 

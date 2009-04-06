@@ -134,9 +134,9 @@ namespace MPX
     , private_( new Private )
     , m_main_window( 0 )
     {
-        m_C_SIG_ID_metadata_updated =
+        m_C_SIG_ID_track_new =
             g_signal_new(
-                  "metadata-updated"
+                  "track-new"
                 , G_OBJECT_CLASS_TYPE(G_OBJECT_GET_CLASS(gobj()))
                 , GSignalFlags(G_SIGNAL_RUN_FIRST)
                 , 0
@@ -150,6 +150,19 @@ namespace MPX
         m_C_SIG_ID_track_cancelled =
             g_signal_new(
                   "track-cancelled"
+                , G_OBJECT_CLASS_TYPE(G_OBJECT_GET_CLASS(gobj()))
+                , GSignalFlags(G_SIGNAL_RUN_FIRST)
+                , 0
+                , NULL
+                , NULL
+                , g_cclosure_marshal_VOID__VOID
+                , G_TYPE_NONE
+                , 0
+        ) ;
+
+        m_C_SIG_ID_track_out =
+            g_signal_new(
+                  "track-out"
                 , G_OBJECT_CLASS_TYPE(G_OBJECT_GET_CLASS(gobj()))
                 , GSignalFlags(G_SIGNAL_RUN_FIRST)
                 , 0
@@ -866,12 +879,6 @@ namespace MPX
 
         m_main_titleinfo->set_info( info ) ;
 
-        g_signal_emit(
-              G_OBJECT(gobj())
-            , m_C_SIG_ID_metadata_updated
-            , 0
-        ) ;
-
         if( m_track_previous )
         {
                 m_library->trackPlayed(
@@ -888,6 +895,18 @@ namespace MPX
         }
 
         m_playqueue.push_back( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
+
+        g_signal_emit(
+              G_OBJECT(gobj())
+            , m_C_SIG_ID_track_out
+            , 0
+        ) ;
+
+        g_signal_emit(
+              G_OBJECT(gobj())
+            , m_C_SIG_ID_track_new
+            , 0
+        ) ;
     }
 
     void
@@ -1321,7 +1340,7 @@ namespace MPX
         m_next_track_queue_id = id ;
     }
 
-    PlayStatus
+    int
     YoukiController::get_status(
     )
     {
@@ -1336,6 +1355,16 @@ namespace MPX
             return m_track_current.get() ;
         else
             throw std::runtime_error("No current track!") ;
+    }
+
+    MPX::Track&
+    YoukiController::get_metadata_previous(
+    )
+    {
+        if( m_track_previous )
+            return m_track_previous.get() ;
+        else
+            throw std::runtime_error("No previous track!") ;
     }
 
     void

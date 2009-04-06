@@ -32,8 +32,8 @@
 #include <libglademm/xml.h>
 
 #include "mpx/mpx-main.hh"
+#include "mpx/mpx-plugin.hh"
 
-#include "plugin.hh"
 #include "plugin-manager-gui.hh"
 
 using namespace Glib;

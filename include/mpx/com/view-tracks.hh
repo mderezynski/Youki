@@ -1038,6 +1038,19 @@ namespace MPX
             protected:
 
                 virtual bool
+                on_focus_in_event (GdkEventFocus* G_GNUC_UNUSED)
+                {
+                    if( !m_selection && m_model->m_mapping.size() )
+                    {
+                        std::size_t row = get_upper_row();
+                        m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
+                        queue_draw() ;
+                    }
+
+                    return false ;
+                }
+
+                virtual bool
                 on_key_press_event (GdkEventKey * event)
                 {
                     int step; 

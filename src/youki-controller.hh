@@ -1,5 +1,5 @@
-#ifndef KOBO_CONTROLLER_HH
-#define KOBO_CONTROLLER_HH
+#ifndef _YOUKI_CONTROLLER__HH
+#define _YOUKI_CONTROLLER__HH
 
 #include <boost/optional.hpp>
 
@@ -15,6 +15,8 @@
 #include "mpx-mlibman-dbus-proxy-actual.hh"
 #include "mpx-app-dbus-adaptor.hh"
 
+#include "mpx/i-youki-controller.hh"
+
 namespace MPX
 {
     class Covers ;
@@ -27,12 +29,73 @@ namespace MPX
     struct YoukiControllerStatusIcon ;
 
     class YoukiController
-    : public Glib::Object
+    : public IYoukiController
     , public ::info::backtrace::Youki::App_adaptor
     , public DBus::ObjectAdaptor
     , public DBus::IntrospectableAdaptor
     , public Service::Base
     {
+        public: 
+
+            YoukiController( DBus::Connection ) ;
+            virtual ~YoukiController () ;
+
+            Gtk::Window*
+            get_widget () ;
+
+        public: // PLUGIN API
+
+            void
+            queue_next_track(
+                gint64
+            ) ;
+
+            int
+            get_status(
+            ) ;
+
+            MPX::Track&
+            get_metadata(
+            ) ;
+
+            MPX::Track&
+            get_metadata_previous(
+            ) ;
+
+            void
+            API_pause_toggle(
+            ) ;
+
+            void
+            API_next(
+            ) ;
+
+            void
+            API_prev(
+            ) ;
+
+            void        
+            add_info_widget(
+                  Gtk::Widget*          w
+                , const std::string&    name
+            )
+            {
+                m_NotebookPlugins->append_page(
+                      *w
+                    , name
+                ) ;
+            }
+
+            void
+            remove_info_widget(
+                  Gtk::Widget*          w
+            )
+            {
+                m_NotebookPlugins->remove_page(
+                      *w
+                ) ;
+            }
+
         protected:
 
             struct Private ;
@@ -62,10 +125,10 @@ namespace MPX
             Gtk::HPaned                     * m_Paned1 ;
             Gtk::HPaned                     * m_Paned2 ;
             
-            Gtk::Entry                        * m_Entry ;
-            Glib::ustring                       m_Entry_Text ;
-            Glib::ustring                       m_prediction ;
-            Glib::ustring                       m_prediction_last ;
+            Gtk::Entry                      * m_Entry ;
+            Glib::ustring                     m_Entry_Text ;
+            Glib::ustring                     m_prediction ;
+            Glib::ustring                     m_prediction_last ;
 
             Gtk::Alignment                  * m_Alignment_Entry ;
             Gtk::HBox                       * m_HBox_Entry ;
@@ -79,9 +142,14 @@ namespace MPX
 
             Gtk::Notebook                   * m_NotebookPlugins ;
 
-            Glib::RefPtr<Gdk::Pixbuf>           m_icon ; 
-            Cairo::RefPtr<Cairo::ImageSurface>  m_disc ;
-            Cairo::RefPtr<Cairo::ImageSurface>  m_disc_multiple ;
+            Glib::RefPtr<Gdk::Pixbuf>         
+                                              m_icon ; 
+
+            Cairo::RefPtr<Cairo::ImageSurface>
+                                              m_disc ;
+
+            Cairo::RefPtr<Cairo::ImageSurface>
+                                              m_disc_multiple ;
     
             Covers                          * m_covers ;
             Play                            * m_play ;
@@ -92,23 +160,23 @@ namespace MPX
             boost::optional<MPX::Track>       m_track_previous ;          
             boost::optional<guint64>          m_next_track_queue_id ;
 
-            info::backtrace::Youki::MLibMan_proxy_actual  * m_mlibman_dbus_proxy ;
+            info::backtrace::Youki::MLibMan_proxy_actual
+                                            * m_mlibman_dbus_proxy ;
 
-            sigc::connection                  m_conn1, m_conn2, m_conn3, m_conn4, m_conn5 ;
+            sigc::connection                  m_conn1
+                                            , m_conn2
+                                            , m_conn3
+                                            , m_conn4
+                                            , m_conn5 ;
+
             sigc::connection                  m_conn_completion ;
 
-            guint                             m_C_SIG_ID_metadata_updated ;
+            guint                             m_C_SIG_ID_track_new ;
+            guint                             m_C_SIG_ID_track_out ;
             guint                             m_C_SIG_ID_track_cancelled ;
 
             std::vector<guint64>              m_playqueue ;
 
-        public: 
-
-            YoukiController( DBus::Connection ) ;
-            virtual ~YoukiController () ;
-
-            Gtk::Window*
-            get_widget () ;
 
         protected:
 
@@ -264,56 +332,7 @@ namespace MPX
 
             virtual void
             Pause () ;
-
-        public: // PLUGIN API
-
-            void
-            queue_next_track(
-                gint64
-            ) ;
-
-            PlayStatus
-            get_status(
-            ) ;
-
-            MPX::Track&
-            get_metadata(
-            ) ;
-
-            void
-            API_pause_toggle(
-            ) ;
-
-            void
-            API_next(
-            ) ;
-
-            void
-            API_prev(
-            ) ;
-
-            void        
-            add_info_widget(
-                  Gtk::Widget*          w
-                , const std::string&    name
-            )
-            {
-                m_NotebookPlugins->append_page(
-                      *w
-                    , name
-                ) ;
-            }
-
-            void
-            remove_info_widget(
-                  Gtk::Widget*          w
-            )
-            {
-                m_NotebookPlugins->remove_page(
-                      *w
-                ) ;
-            }
     } ;
 }
 
-#endif // KOBO_CONTROLLER_HH
+#endif // YOUKI_CONTROLLER_HH

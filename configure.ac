@@ -276,6 +276,7 @@ PKG_CHECK_MODULES([XML], [libxml-2.0 >= 2.6.1])
 
 # libsoup
 PKG_CHECK_MODULES([SOUP], [libsoup-2.4 >= 2.2.101])
+PKG_CHECK_MODULES([CURL], [libcurl >= 7.18.2])
 
 # sqlite
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.4])
@@ -704,6 +705,7 @@ AC_CONFIG_FILES([
 
     cpp/Makefile
     cpp/plugins/Makefile
+    cpp/plugins/lastfmscrobbler/Makefile
     cpp/plugins/mmkeys/Makefile
     cpp/plugins/prefs-audio/Makefile
     cpp/plugins/prefs-audio-quality/Makefile

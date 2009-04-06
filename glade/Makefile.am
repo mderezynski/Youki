@@ -6,6 +6,7 @@ glade_DATA = 							    \
         cppmod-prefs-audio-quality.glade    \
         cppmod-prefs-library.glade          \
         cppmod-prefs-coverart.glade         \
+        cppmod-scrobbler.glade              \
                                             \
         mlibmanager.glade                   \
 		pluginmanager.glade	                \

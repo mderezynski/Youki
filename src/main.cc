@@ -40,6 +40,7 @@
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-network.hh"
 #include "mpx/mpx-play.hh"
+#include "mpx/mpx-plugin.hh"
 #include "mpx/mpx-preferences.hh"
 #include "mpx/mpx-python.hh"
 #include "mpx/mpx-services.hh"
@@ -51,11 +52,11 @@
 #include "mpx/metadatareader-taglib.hh"
 
 #include "paths.hh"
-#include "plugin.hh"
 #include "plugin-manager-gui.hh"
 #include "signals.hh"
-#include "youki-controller.hh"
 #include "splash-screen.hh"
+
+#include "youki-controller.hh"
 
 using namespace MPX;
 using namespace Glib;
@@ -229,29 +230,6 @@ namespace MPX
         mcs->key_register ("audio", "jack-server", std::string ());
 
         mcs->key_register ("audio", "video-output", 0);
-
-        mcs->domain_register ("lastfm");
-        mcs->key_register ("lastfm", "username", std::string ());
-        mcs->key_register ("lastfm", "password", std::string ());
-
-        mcs->domain_register ("musicbrainz");
-        mcs->key_register ("musicbrainz", "username", std::string ());
-        mcs->key_register ("musicbrainz", "password", std::string ());
-
-        mcs->domain_register ("albums");
-        mcs->key_register ("albums", "continuous-play", false);
-
-        mcs->domain_register ("podcasts");
-        mcs->key_register ("podcasts", "download-dir", Glib::get_home_dir ());
-        mcs->key_register ("podcasts", "download-policy", 0);
-        mcs->key_register ("podcasts", "update-interval", 0);
-        mcs->key_register ("podcasts", "cache-policy", 0);
-
-        mcs->domain_register ("radio");
-        mcs->key_register ("radio", "minimal-bitrate", 96); 
-
-        mcs->domain_register ("playlist");
-        mcs->key_register ("playlist", "rootpath", Glib::get_home_dir ());
 
         mcs->domain_register ("library");
         mcs->key_register ("library", "rootpath", std::string (Glib::build_filename (Glib::get_home_dir (), "Music")));

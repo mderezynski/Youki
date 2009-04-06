@@ -9,6 +9,7 @@ youki_bin_CXXFLAGS =                            \
         $(CLUTTER_CFLAGS)                       \
         $(CDIO_CFLAGS)                          \
         $(CDPARANOIA_INCLUDES)                  \
+        $(CURL_CFLAGS)                          \
         $(DBUS_CFLAGS)                          \
         $(EXO_CFLAGS)                           \
         $(GDL_CFLAGS)                           \
@@ -48,6 +49,7 @@ youki_bin_LDADD =                               \
         $(CLUTTER_LIBS)                         \
         $(CDIO_LIBS)                            \
         $(CDPARANOIA_LIBS)                      \
+        $(CURL_LIBS)                            \
         $(DBUS_LIBS)                            \
         $(EXO_LIBS)                             \
         $(GDL_LIBS)                             \

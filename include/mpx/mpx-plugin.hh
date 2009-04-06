@@ -38,16 +38,8 @@
 #include <gtkmm/widget.h>
 #include <boost/shared_ptr.hpp>
 
-#include "mcs/mcs.h"
-
 #include "mpx/mpx-services.hh"
 #include "mpx/plugin-types.hh"
-
-#include "plugin-types-python.hh"
-#include "plugin-types-cpp.hh"
-
-#include "plugin-loader-python.hh"
-#include "plugin-loader-cpp.hh"
 
 namespace MPX
 {
@@ -76,7 +68,11 @@ namespace MPX
     typedef sigc::signal<void, gint64> SignalPlugin;
     typedef sigc::signal<void>         Signal;
 
-    class PluginManager : public Service::Base
+    class PluginLoaderPython ;
+    class PluginLoaderCPP ;
+
+    class PluginManager
+    : public Service::Base
     {
             SignalPlugin    signal_activated_ ;
             SignalPlugin    signal_deactivated_ ;
