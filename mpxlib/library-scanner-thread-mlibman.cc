@@ -1926,7 +1926,8 @@ MPX::LibraryScannerThread_MLibMan::quarantine_file(
             Glib::RefPtr<Gio::File> orig_parent_dir = orig->get_parent() ;
             new_dir_path = Glib::build_filename( mcs->key_get<std::string>("mpx","music-quarantine-path"), orig_parent_dir->get_basename() ) ;
             Glib::RefPtr<Gio::File> new_dir = Gio::File::create_for_path( new_dir_path ) ;
-            new_dir->make_directory_with_parents() ;
+            Glib::RefPtr<Gio::Cancellable> cancellable = Gio::Cancellable::create();
+            new_dir->make_directory_with_parents(cancellable) ;
         } catch( Glib::Error & cxe ) {
         }
 

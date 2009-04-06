@@ -9,7 +9,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: audiosource alpha6\n"
 "Report-Msgid-Bugs-To: http://mpx.backtrace.info/report\n"
-"POT-Creation-Date: 2009-03-30 13:52+0200\n"
+"POT-Creation-Date: 2009-04-05 15:52+0430\n"
 "PO-Revision-Date: 2009-01-05 23:46+0100\n"
 "Last-Translator: Carl Furstenberg <azatoth@gmail.com>\n"
 "Language-Team: Swedish <sv@li.org>\n"
@@ -26,161 +26,157 @@ msgstr "Jag älskar detta spår!"
 msgid "Tag Track"
 msgstr "Tagga spår"
 
-#: python/plugins/mpxdj/__init__.py:761 python/plugins/mpxdj/__init__.py:794
-msgid "Unable to Create New Track!"
-msgstr "Oförmögen att skapa nytt spår"
-
-#: python/plugins/trackinfo-webkit/__init__.py:225
+#: python/plugins/trackinfo-webkit/__init__.py:213
 msgid "Back"
 msgstr "Tillbaka"
 
-#: python/plugins/trackinfo-webkit/__init__.py:231
+#: python/plugins/trackinfo-webkit/__init__.py:219
 msgid "Forward"
 msgstr "Framåt"
 
-#: python/plugins/trackinfo-webkit/__init__.py:238
+#: python/plugins/trackinfo-webkit/__init__.py:226
 msgid "Stop and reload current page"
 msgstr "Stanna och ladda om sida"
 
-#: python/plugins/trackinfo-webkit/__init__.py:248
+#: python/plugins/trackinfo-webkit/__init__.py:236
 msgid "Zoom in"
 msgstr "Zooma in"
 
-#: python/plugins/trackinfo-webkit/__init__.py:254
+#: python/plugins/trackinfo-webkit/__init__.py:242
 msgid "Zoom out"
 msgstr "Zooma ut"
 
-#: python/plugins/trackinfo-webkit/__init__.py:260
+#: python/plugins/trackinfo-webkit/__init__.py:248
 msgid "100% zoom"
 msgstr "100% zoom"
 
-#: python/plugins/trackinfo-webkit/__init__.py:294 src/mpx.cc:986
+#: python/plugins/trackinfo-webkit/__init__.py:282 src/mpx.cc:986
 msgid "Stop"
 msgstr "Stanna"
 
-#: python/plugins/trackinfo-webkit/__init__.py:297
+#: python/plugins/trackinfo-webkit/__init__.py:285
 msgid "Reload"
 msgstr "Ladda om"
 
-#: python/plugins/trackinfo-webkit/__init__.py:437
+#: python/plugins/trackinfo-webkit/__init__.py:429
 #, python-format
 msgid "%s%s loaded"
 msgstr "%s%s laddat"
 
-#: python/plugins/trackinfo-webkit/__init__.py:517
+#: python/plugins/trackinfo-webkit/__init__.py:513
 msgid "Discogs"
 msgstr "Discogs"
 
-#: python/plugins/trackinfo-webkit/__init__.py:518
+#: python/plugins/trackinfo-webkit/__init__.py:514
 msgid "Wikipedia"
 msgstr "Wikipedia"
 
-#: python/plugins/trackinfo-webkit/__init__.py:519
+#: python/plugins/trackinfo-webkit/__init__.py:515
 msgid "Myspace"
 msgstr "Myspace"
 
-#: python/plugins/trackinfo-webkit/__init__.py:520
+#: python/plugins/trackinfo-webkit/__init__.py:516
 msgid "Homepage"
 msgstr "Hemsida"
 
-#: python/plugins/trackinfo-webkit/__init__.py:598
-#: python/plugins/trackinfo-webkit/__init__.py:689
+#: python/plugins/trackinfo-webkit/__init__.py:594
+#: python/plugins/trackinfo-webkit/__init__.py:685
 #, python-format
 msgid "About %s"
 msgstr "Om %s"
 
-#: python/plugins/trackinfo-webkit/__init__.py:612
-#: python/plugins/trackinfo-webkit/__init__.py:701
+#: python/plugins/trackinfo-webkit/__init__.py:608
+#: python/plugins/trackinfo-webkit/__init__.py:697
 msgid "more"
 msgstr "mer"
 
-#: python/plugins/trackinfo-webkit/__init__.py:619
-#: python/plugins/trackinfo-webkit/__init__.py:830
+#: python/plugins/trackinfo-webkit/__init__.py:615
+#: python/plugins/trackinfo-webkit/__init__.py:826
 msgid "Track Artists"
 msgstr "Spårartister"
 
-#: python/plugins/trackinfo-webkit/__init__.py:742
+#: python/plugins/trackinfo-webkit/__init__.py:738
 msgid "was composed by"
 msgstr "var hopsamlad av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:743
+#: python/plugins/trackinfo-webkit/__init__.py:739
 msgid "was remixed by"
 msgstr "var remixad av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:744
+#: python/plugins/trackinfo-webkit/__init__.py:740
 msgid "has lyrics by"
 msgstr "har text av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:745
+#: python/plugins/trackinfo-webkit/__init__.py:741
 msgid "was produced by"
 msgstr "var producerad av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:746
+#: python/plugins/trackinfo-webkit/__init__.py:742
 msgid "was performed by"
 msgstr "var framförd av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:747
+#: python/plugins/trackinfo-webkit/__init__.py:743
 msgid "was orchestrated by"
 msgstr "var iscensatt av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:748
+#: python/plugins/trackinfo-webkit/__init__.py:744
 msgid "was conducted by"
 msgstr "var dirigerad av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:749
+#: python/plugins/trackinfo-webkit/__init__.py:745
 msgid "has vocals performed by"
 msgstr "har stämmor framförda av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:750
+#: python/plugins/trackinfo-webkit/__init__.py:746
 msgid "was engineered by"
 msgstr "var arrangerad av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:751
+#: python/plugins/trackinfo-webkit/__init__.py:747
 msgid "was mixed by"
 msgstr "var mixad av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:752
+#: python/plugins/trackinfo-webkit/__init__.py:748
 msgid "was programmed by"
 msgstr "var programmerad av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:753
+#: python/plugins/trackinfo-webkit/__init__.py:749
 msgid "was recorded by"
 msgstr "var inspelad av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:787
+#: python/plugins/trackinfo-webkit/__init__.py:783
 msgid "This Track..."
 msgstr "Detta spår..."
 
-#: python/plugins/trackinfo-webkit/__init__.py:810
+#: python/plugins/trackinfo-webkit/__init__.py:806
 msgid "Album Links"
 msgstr "Albumlänkar"
 
-#: python/plugins/trackinfo-webkit/__init__.py:878
+#: python/plugins/trackinfo-webkit/__init__.py:874
 msgid "is a cover version of"
 msgstr "är en cover-version av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:883
+#: python/plugins/trackinfo-webkit/__init__.py:879
 #, python-format
 msgid "...has <b>%s</b> performed by <b>%s</b>"
 msgstr "... har <b>%s</b> framfört av <b>%s</b>"
 
-#: python/plugins/trackinfo-webkit/__init__.py:884
+#: python/plugins/trackinfo-webkit/__init__.py:880
 #, python-format
 msgid "...has <b>%s %s</b> performed by <b>%s</b>"
 msgstr "...har <b>%s %s</b> framfört av <b>%s</b>"
 
-#: python/plugins/trackinfo-webkit/__init__.py:885
+#: python/plugins/trackinfo-webkit/__init__.py:881
 #, python-format
 msgid "...has <b>%s %s %s</b> performed by <b>%s</b>"
 msgstr "...har <b>%s %s %s</b> framfört av <b>%s</b>"
 
-#: python/plugins/trackinfo-webkit/__init__.py:936
+#: python/plugins/trackinfo-webkit/__init__.py:932
 msgid "contains samples from"
 msgstr "innehåller samplar av"
 
-#: python/plugins/trackinfo-webkit/__init__.py:1118
-msgid "Browser"
-msgstr "Läsare"
+#: python/plugins/trackinfo-webkit/__init__.py:1112
+msgid "LiveInfo"
+msgstr ""
 
 #: api/xml.cc:141
 msgid "Couldn't parse document"
@@ -390,111 +386,26 @@ msgstr "utgåvor av alla dess slag"
 msgid "%lld of %lld"
 msgstr "%lld av %lld"
 
-#: glade/dialog-filebrowser.glade:14
-msgid "AudioSource: Play Files"
-msgstr "AudioSource: Spela filer"
-
-#: glade/dialog-simple-entry.glade:124
-msgid "   "
-msgstr ""
-
-#: glade/equalizer.glade:8
-msgid "AudioSource: Equalizer"
-msgstr "AudioSource: Equalizer"
-
-#: glade/equalizer.glade:43
-msgid "<small><b>29 Hz</b></small>"
-msgstr "<small><b>29 Hz</b></small>"
-
-#: glade/equalizer.glade:101
-msgid "<small><b>59 Hz</b></small>"
-msgstr "<small><b>59 Hz</b></small>"
-
-#: glade/equalizer.glade:159
-msgid "<small><b>119 Hz</b></small>"
-msgstr "<small><b>119 Hz</b></small>"
-
-#: glade/equalizer.glade:217
-msgid "<small><b>227 Hz</b></small>"
-msgstr "<small><b>227 Hz</b></small>"
-
-#: glade/equalizer.glade:275
-msgid "<small><b>474 Hz</b></small>"
-msgstr "<small><b>474 Hz</b></small>"
-
-#: glade/equalizer.glade:333
-msgid "<small><b>947 Hz</b></small>"
-msgstr "<small><b>947 Hz</b></small>"
-
-#: glade/equalizer.glade:391
-msgid "<small><b>1889 Hz</b></small>"
-msgstr "<small><b>1889 Hz</b></small>"
-
-#: glade/equalizer.glade:449
-msgid "<small><b>3770 Hz</b></small>"
-msgstr "<small><b>3770 Hz</b></small>"
-
-#: glade/equalizer.glade:507
-msgid "<small><b>7523 Hz</b></small>"
-msgstr "<small><b>7523 Hz</b></small>"
-
-#: glade/equalizer.glade:565
-msgid "<small><b>15011 Hz</b></small>"
-msgstr "<small><b>15011 Hz</b></small>"
-
-#: glade/import-folder.glade:9
-msgid "Import Folder (MPX)"
-msgstr "Importera folder (MPX)"
-
-#: glade/import-folder.glade:95 glade/import-share.glade:95
-msgid "Import"
-msgstr "Importera"
-
-#: glade/import-folder.glade:175
-msgid "<b>Please specify the Folder to import:</b>"
-msgstr "<b>Vänligen specifiera katalog att importera:</b>"
-
-#: glade/import-folder.glade:200
-msgid "Select Folder to Import"
-msgstr "Välj folder att importera"
-
-#: glade/import-share.glade:9
-msgid "Import SMB Share (MPX)"
-msgstr "Importera SMB-utdelning (MPX)"
-
-#: glade/import-share.glade:175
-msgid "<b>Please specify Details for the SMB Share to import:</b>"
-msgstr ""
-"<b>Vänligen specifiera detaljer för SMB-utdelningen some skall importeras</b>"
-
-#: glade/import-share.glade:209
-msgid "Share Location:"
-msgstr "UItdelningssökväg:"
-
-#: glade/import-share.glade:237
-msgid "Share Name:"
-msgstr "Utdelningsnamn:"
-
-#: glade/import-share.glade:349
-msgid "Share Login:"
-msgstr "Utdelningsinloggningsnamn:"
-
-#: glade/import-share.glade:377
-msgid "Share Password:"
-msgstr "Utdelningsingoggningslösenord:"
-
-#: glade/import-share.glade:406
-msgid "_Show Credentials"
-msgstr "_Visa kreditiv"
-
 #: glade/mlibmanager.glade:7
 #, fuzzy
-msgid "Youki: Music Library Management"
+msgid "Youki Music Library Management"
 msgstr "AudioSource: Musikbibliotekshandhavande"
 
 #: glade/mlibmanager.glade:89
 msgid "<b>Volumes</b>"
 msgstr "<b>Volymer</b>"
+
+#: glade/mlibmanager.glade:120 glade/mlibmanager.glade:226
+#: glade/mlibmanager.glade:520 glade/mlibmanager.glade:764
+#: glade/mlibmanager.glade:795 glade/mlibmanager.glade:947
+#: glade/mlibmanager.glade:978
+#: python/plugins/albumactions/albumactions.glade:298
+#: python/plugins/albumactions/albumactions.glade:387
+#: sources/musiclib/source-musiclib.glade:542
+#: sources/radio/source-radio.glade:129 sources/radio/source-radio.glade:245
+#: sources/radio/source-radio.glade:502
+msgid "  "
+msgstr ""
 
 #: glade/mlibmanager.glade:154
 msgid ""
@@ -568,406 +479,10 @@ msgstr "Biblioteksstatistik"
 msgid "Last Scan Details"
 msgstr "Senaste detaljer från genomläsningen"
 
-#: glade/mpx.glade:7
-msgid "AudioSource"
-msgstr "AudioSource"
-
-#: glade/mpx.glade:625
-msgid "AudioSource: Volume Control"
-msgstr "AudioSource: Volymkontroll"
-
-#: glade/playlist-plugin-manager.glade:8
-msgid "Playlist Plugin Manager - MPX"
-msgstr "Spellistehanterade - MPX"
-
-#: glade/plugin-manager.glade:9
-msgid "AudioSource: Plugin Manager"
-msgstr "AudioSource: Pluginhanterare"
-
-#: glade/plugin-manager.glade:47
-msgid ""
-"The check box indicates whether a plugin is active. Plugins with a lock "
-"symbol don't need to be activated."
-msgstr ""
-"Kryssrutan indikerar om ett plugin är aktiverat. Plugin med en låssymbol "
-"behöver inte bli aktiverade."
-
-#: glade/plugin-manager.glade:131
-msgid "Plugin Details"
-msgstr "Plugindetaljer"
-
-#: glade/plugin-manager.glade:190
-msgid "Plugin Controls"
-msgstr "Pluginkontroller"
-
 #: glade/preferences.glade:7
-msgid "AudioSource: Preferences"
+#, fuzzy
+msgid "Youki Preferences"
 msgstr "AudioSource: Inställningar"
-
-#: glade/preferences.glade:78
-msgid "<b>Music Import Path</b>"
-msgstr "<b>Sökväg för import av musik</b>"
-
-#: glade/preferences.glade:110
-msgid ""
-"<small>Default Path at which MusicBrainz-imported music will be stored.</"
-"small>"
-msgstr ""
-"<small>Standardsökväg med vilken importerad MusicBrainz musik kommer att bli "
-"lagrad</small>"
-
-#: glade/preferences.glade:180
-msgid "Please select Music import Path"
-msgstr "Vänligen välj sökväg för import av musik"
-
-#: glade/preferences.glade:223
-msgid "<b>Library Rescanning</b>"
-msgstr "<b>Bibliotek scannas om</b>"
-
-#: glade/preferences.glade:255
-msgid ""
-"<small>Here you can set options for automatic library rescanning. Automatic "
-"rescans keep your library in AudioSource up to date.</small>"
-msgstr ""
-
-#: glade/preferences.glade:325 glade/preferences.glade:383
-#: glade/preferences.glade:3883
-msgid ""
-"This option will make AudioSource rescan music at startup from all "
-"partitions mounted and all devices connected to the computer at that time."
-msgstr ""
-
-#: glade/preferences.glade:327
-msgid "Automatic Rescan at Startup"
-msgstr ""
-
-#: glade/preferences.glade:385
-msgid "Automatic Rescan in Intervals"
-msgstr ""
-
-#: glade/preferences.glade:472
-msgid "Rescan Interval (in Minutes):"
-msgstr ""
-
-#: glade/preferences.glade:549
-msgid "<b>Library Configuration</b>"
-msgstr ""
-
-#: glade/preferences.glade:581
-msgid ""
-"<small>The Library can be configured to either use HAL for additional "
-"flexibility, or not to use it.</small>"
-msgstr ""
-
-#: glade/preferences.glade:651
-msgid "Library should use HAL information:"
-msgstr ""
-
-#: glade/preferences.glade:752
-msgid "Yes"
-msgstr ""
-
-#: glade/preferences.glade:809
-msgid "No"
-msgstr ""
-
-#: glade/preferences.glade:901
-msgid ""
-"<small>Change of this setting is applied immediately. Disabling HAL is not "
-"recommended. Switching from non-HAL to HAL mode\n"
-"will remove all information about non-locally stored tracks (i.e. non-"
-"file:/// URIs).</small>"
-msgstr ""
-
-#: glade/preferences.glade:1038
-msgid "Recreate Library"
-msgstr ""
-
-#: glade/preferences.glade:1134 sources/musiclib/source-musiclib.cc:1956
-msgid "Music Library"
-msgstr ""
-
-#: glade/preferences.glade:1170
-msgid "<b>_Audio System</b>"
-msgstr ""
-
-#: glade/preferences.glade:1343
-msgid "(Placeholder)"
-msgstr ""
-
-#: glade/preferences.glade:1415
-msgid "Card:"
-msgstr ""
-
-#: glade/preferences.glade:1443 glade/preferences.glade:1760
-#: glade/preferences.glade:2008 glade/preferences.glade:2674
-msgid "Device:"
-msgstr ""
-
-#: glade/preferences.glade:1500
-msgid "<b>ALSA Device String</b>"
-msgstr ""
-
-#: glade/preferences.glade:1595 glade/preferences.glade:1843
-#: glade/preferences.glade:2091 glade/preferences.glade:2331
-#: glade/preferences.glade:2769 glade/preferences.glade:3009
-msgid "<b>Buffer Time</b> <small>(in Milliseconds)</small>"
-msgstr ""
-
-#: glade/preferences.glade:1686 glade/preferences.glade:1934
-#: glade/preferences.glade:2182 glade/preferences.glade:2473
-#: glade/preferences.glade:2860 glade/preferences.glade:3100
-msgid "Advanced Options"
-msgstr ""
-
-#: glade/preferences.glade:2256
-msgid "Host:"
-msgstr ""
-
-#: glade/preferences.glade:2509
-msgid "ESD"
-msgstr ""
-
-#: glade/preferences.glade:2547
-msgid "UDI:"
-msgstr ""
-
-#: glade/preferences.glade:2608
-msgid "HAL"
-msgstr ""
-
-#: glade/preferences.glade:2646 glade/preferences.glade:2934
-msgid "Server:"
-msgstr ""
-
-#: glade/preferences.glade:2896
-msgid "Pulse Audio"
-msgstr ""
-
-#: glade/preferences.glade:3136
-msgid "Jack"
-msgstr ""
-
-#: glade/preferences.glade:3185
-msgid "<b>_Optical Device</b>"
-msgstr ""
-
-#: glade/preferences.glade:3263
-msgid "<b>_Video Output</b>"
-msgstr ""
-
-#: glade/preferences.glade:3301
-msgid ""
-"Accelerated (Recommended for most users)\n"
-"Non-accelerated (Use this when problems arise with Accelerated)"
-msgstr ""
-
-#: glade/preferences.glade:3331
-msgid "<b>_Equalizer</b>"
-msgstr ""
-
-#: glade/preferences.glade:3379
-msgid ""
-"Enable Equalizer\n"
-"<small>Enabling the Equalizer will lower the overall volume, even when not "
-"adjusted!</small>"
-msgstr ""
-
-#: glade/preferences.glade:3446
-msgid "<small>Changing the settings will interrupt playback.</small>"
-msgstr ""
-
-#: glade/preferences.glade:3528 glade/preferences.glade:5892
-msgid "Revert"
-msgstr ""
-
-#: glade/preferences.glade:3592
-msgid "Playback"
-msgstr ""
-
-#: glade/preferences.glade:3634
-msgid "<b>Minimal Stream Bitrate</b>"
-msgstr ""
-
-#: glade/preferences.glade:3666
-msgid ""
-"<small>Set the minimal bitrate for audio streams (streams with lower "
-"bitrates will be ignored):</small>"
-msgstr ""
-
-#: glade/preferences.glade:3781
-msgid "<b>File Type Priorization</b>"
-msgstr ""
-
-#: glade/preferences.glade:3813
-msgid ""
-"<small>You can optionally configure AudioSource to prefer some file types "
-"over others, as well as higher bitrates over lower.</small>"
-msgstr ""
-
-#: glade/preferences.glade:3885
-msgid "Prioritize by File Type"
-msgstr ""
-
-#: glade/preferences.glade:4008
-msgid ""
-"<small>Filetypes are prioritized in descending order. File types not listed "
-"here have an equal priority, depending on occurence on the \n"
-"filesystem, below the last type listed.</small>"
-msgstr ""
-
-#: glade/preferences.glade:4096
-msgid ""
-"Prioritize by Bitrate\n"
-"<small>Using this option, AudioSource will prefer higher bitrates over lower."
-"</small>"
-msgstr ""
-
-#: glade/preferences.glade:4144 sources/musiclib/source-musiclib.cc:284
-msgid "Audio Quality"
-msgstr ""
-
-#: glade/preferences.glade:4186
-msgid "<b>Audio Formats</b>"
-msgstr ""
-
-#: glade/preferences.glade:4290
-msgid "MP3"
-msgstr ""
-
-#: glade/preferences.glade:4317
-msgid "Ogg Vorbis"
-msgstr ""
-
-#: glade/preferences.glade:4439
-msgid "MPC"
-msgstr ""
-
-#: glade/preferences.glade:4466
-msgid "MP4/AAC/M4A"
-msgstr ""
-
-#: glade/preferences.glade:4493
-msgid "WMA"
-msgstr ""
-
-#: glade/preferences.glade:4520
-msgid "SID"
-msgstr ""
-
-#: glade/preferences.glade:4547
-msgid "WAV"
-msgstr ""
-
-#: glade/preferences.glade:4593
-msgid "MOD (.mod, .xm, .s3m)"
-msgstr ""
-
-#: glade/preferences.glade:4639
-msgid "FLAC"
-msgstr ""
-
-#: glade/preferences.glade:4685
-msgid "SPC"
-msgstr ""
-
-#: glade/preferences.glade:4731
-msgid "CDDA"
-msgstr ""
-
-#: glade/preferences.glade:4777
-msgid "Video Playback"
-msgstr ""
-
-#: glade/preferences.glade:4831
-msgid "<b>Stream Types</b>"
-msgstr ""
-
-#: glade/preferences.glade:4916
-msgid "HTTP Streams"
-msgstr ""
-
-#: glade/preferences.glade:4963
-msgid "MMS Streams"
-msgstr ""
-
-#: glade/preferences.glade:5025
-msgid "Playback Capabilities"
-msgstr ""
-
-#: glade/preferences.glade:5061
-msgid "Enable Multimedia Keys"
-msgstr ""
-
-#: glade/preferences.glade:5093
-msgid "<b>Mode</b>"
-msgstr ""
-
-#: glade/preferences.glade:5151
-msgid "X Configured (xmodmap)"
-msgstr ""
-
-#: glade/preferences.glade:5208
-msgid "GNOME"
-msgstr ""
-
-#: glade/preferences.glade:5266
-msgid "Custom Layout:"
-msgstr ""
-
-#: glade/preferences.glade:5298
-msgid "              "
-msgstr ""
-
-#: glade/preferences.glade:5340
-msgid "<b>Press a key combination inside a text field.</b>"
-msgstr ""
-
-#: glade/preferences.glade:5378
-msgid "                        "
-msgstr ""
-
-#: glade/preferences.glade:5663 sources/lastfm/source-lastfm.glade:65
-msgid "Play:"
-msgstr ""
-
-#: glade/preferences.glade:5691
-msgid "Pause:"
-msgstr ""
-
-#: glade/preferences.glade:5719
-msgid "Previous Track:"
-msgstr ""
-
-#: glade/preferences.glade:5747
-msgid "Next Track:"
-msgstr ""
-
-#: glade/preferences.glade:5775
-msgid "Stop:"
-msgstr ""
-
-#: glade/preferences.glade:5958
-msgid "Multimedia Keys"
-msgstr ""
-
-#: glade/preferences.glade:6000
-msgid "<b>Covert Art Sources</b>"
-msgstr ""
-
-#: glade/preferences.glade:6032
-msgid ""
-"<small>Select which cover art sources should be used, and in what order.</"
-"small>"
-msgstr ""
-
-#: glade/preferences.glade:6152
-msgid "Cover Art"
-msgstr ""
-
-#: glade/request-value.glade:10
-msgid "Information Needed"
-msgstr ""
 
 #: src/dialog-about.cc:66
 msgid "<big>AudioSource is brought to you by</big>"
@@ -1153,16 +668,49 @@ msgstr ""
 msgid "Got SIGTERM: Exiting (It's all right!)"
 msgstr ""
 
-#: src/main.cc:321
+#: src/main.cc:318
 msgid " - run AudioSource Player"
 msgstr ""
 
-#: src/main.cc:339
-msgid "Starting Services..."
+#: src/main.cc:351
+msgid "Starting HAL..."
+msgstr ""
+
+#: src/main.cc:354
+msgid "Starting Covers"
+msgstr ""
+
+#: src/main.cc:357
+msgid "Starting Library"
 msgstr ""
 
 #: src/main.cc:360
-msgid "Done"
+msgid "Precaching covers..."
+msgstr ""
+
+#: src/main.cc:363
+msgid "Starting Playback engine..."
+msgstr ""
+
+#: src/main.cc:366
+msgid "Starting Preferences..."
+msgstr ""
+
+#: src/main.cc:369
+msgid "Starting Youki..."
+msgstr ""
+
+#: src/main.cc:372
+msgid "Starting Plugins..."
+msgstr ""
+
+#: src/main.cc:375
+#, fuzzy
+msgid "Starting Plugin Manager..."
+msgstr "AudioSource: Pluginhanterare"
+
+#: src/main.cc:381
+msgid "Startup complete!"
 msgstr ""
 
 #: src/minisoup.cc:292
@@ -1509,20 +1057,18 @@ msgstr ""
 msgid "Spectrum"
 msgstr ""
 
-#: src/plugin-manager-gui.cc:103 src/preferences.cc:274
-#: sources/musiclib/source-musiclib.cc:283
+#: src/plugin-manager-gui.cc:103 sources/musiclib/source-musiclib.cc:283
 #: sources/musiclib/source-musiclib.cc:327
 msgid "Active"
 msgstr ""
 
-#: src/plugin-manager-gui.cc:104 src/preferences.cc:377
-#: sources/musiclib/source-musiclib.cc:248
+#: src/plugin-manager-gui.cc:104 sources/musiclib/source-musiclib.cc:248
 #: sources/musiclib/source-musiclib.cc:598
 #: sources/musiclib/source-musiclib.cc:1746
 msgid "Name"
 msgstr "Namn"
 
-#: src/plugin-manager-gui.cc:409
+#: src/plugin-manager-gui.cc:411
 msgid ""
 "%1%\n"
 "\n"
@@ -1531,70 +1077,29 @@ msgid ""
 "<b>Website:</b> %4%"
 msgstr ""
 
-#: src/plugin-manager-gui.cc:456
+#: src/plugin-manager-gui.cc:461
 msgid "Failed to %1%: %2%"
 msgstr ""
 
-#: src/plugin-manager-gui.cc:457
+#: src/plugin-manager-gui.cc:462
 msgid "Plugin traceback - MPX"
 msgstr ""
 
-#: src/plugin-manager-gui.cc:475
+#: src/plugin-manager-gui.cc:480
 msgid "<b>Failed to %1%: %2%</b>"
 msgstr ""
 
-#: src/plugin-manager-gui.cc:479
+#: src/plugin-manager-gui.cc:484
 #, c-format
 msgid " (%d more errors)"
-msgstr ""
-
-#: src/preferences.cc:173
-msgid "Local files (folder.jpg, cover.jpg, etc.)"
-msgstr ""
-
-#: src/preferences.cc:174
-msgid "MusicBrainz Advanced Relations"
-msgstr ""
-
-#: src/preferences.cc:175 sources/musiclib/source-musiclib.cc:262
-msgid "Amazon ASIN"
-msgstr ""
-
-#: src/preferences.cc:176
-msgid "Amazon Search API"
-msgstr ""
-
-#: src/preferences.cc:177
-msgid "Inline Covers (File Metadata)"
-msgstr ""
-
-#: src/preferences.cc:286 sources/musiclib/source-musiclib.cc:338
-#: sources/musiclib/source-musiclib.cc:456
-msgid "Column"
-msgstr ""
-
-#: src/preferences.cc:378
-msgid "Description"
-msgstr ""
-
-#: src/preferences.cc:379 sources/musiclib/source-musiclib.cc:266
-msgid "MIME Type"
-msgstr ""
-
-#: src/preferences.cc:1367
-msgid "System Default"
-msgstr ""
-
-#: src/preferences.cc:1572
-msgid "(none)"
 msgstr ""
 
 #: src/sidebar.cc:129
 msgid "No active Id"
 msgstr ""
 
-#: src/splash-screen.cc:48
-msgid "MPX Starting..."
+#: src/splash-screen.cc:50
+msgid "Youki is starting!"
 msgstr ""
 
 #: src/util-ui.cc:52
@@ -1616,14 +1121,6 @@ msgstr ""
 
 #: python/plugins/albumactions/albumactions.glade:261
 msgid "<b>Name</b>"
-msgstr ""
-
-#: python/plugins/albumactions/albumactions.glade:298
-#: python/plugins/albumactions/albumactions.glade:387
-#: sources/musiclib/source-musiclib.glade:542
-#: sources/radio/source-radio.glade:129 sources/radio/source-radio.glade:245
-#: sources/radio/source-radio.glade:502
-msgid "  "
 msgstr ""
 
 #: python/plugins/albumactions/albumactions.glade:356
@@ -1652,35 +1149,35 @@ msgstr ""
 msgid "Tag"
 msgstr ""
 
-#: python/plugins/mpxdj/mpxdj.glade:174
+#: python/plugins/mpxdj/mpxdj.glade:127
 msgid "Range:"
 msgstr ""
 
-#: python/plugins/mpxdj/mpxdj.glade:232
+#: python/plugins/mpxdj/mpxdj.glade:185
 msgid "page 11"
 msgstr ""
 
-#: python/plugins/mpxdj/mpxdj.glade:290
+#: python/plugins/mpxdj/mpxdj.glade:243
 msgid "label4"
 msgstr ""
 
-#: python/plugins/mpxdj/mpxdj.glade:348
+#: python/plugins/mpxdj/mpxdj.glade:301
 msgid "label5"
 msgstr ""
 
-#: python/plugins/mpxdj/mpxdj.glade:406
+#: python/plugins/mpxdj/mpxdj.glade:359
 msgid "label6"
 msgstr ""
 
-#: python/plugins/mpxdj/mpxdj.glade:464
+#: python/plugins/mpxdj/mpxdj.glade:417
 msgid "label7"
 msgstr ""
 
-#: python/plugins/mpxdj/mpxdj.glade:493
+#: python/plugins/mpxdj/mpxdj.glade:446
 msgid "Decade:"
 msgstr ""
 
-#: python/plugins/mpxdj/mpxdj.glade:518
+#: python/plugins/mpxdj/mpxdj.glade:471
 msgid ""
 "1940ies\n"
 "1950ies\n"
@@ -1691,32 +1188,24 @@ msgid ""
 "2000's"
 msgstr ""
 
-#: python/plugins/mpxdj/mpxdj.glade:544
+#: python/plugins/mpxdj/mpxdj.glade:497
 msgid "label8"
 msgstr ""
 
-#: python/plugins/mpxdj/mpxdj.glade:602
+#: python/plugins/mpxdj/mpxdj.glade:555
 msgid "label9"
 msgstr ""
 
-#: python/plugins/mpxdj/mpxdj.glade:660
+#: python/plugins/mpxdj/mpxdj.glade:613
 msgid "label10"
 msgstr ""
 
-#: python/plugins/mpxdj/mpxdj.glade:689
+#: python/plugins/mpxdj/mpxdj.glade:642
 msgid "_Tag:"
 msgstr ""
 
-#: python/plugins/mpxdj/mpxdj.glade:740
+#: python/plugins/mpxdj/mpxdj.glade:693
 msgid "label11"
-msgstr ""
-
-#: python/plugins/mpxdj/mpxdj.glade:785
-msgid "Give it a shot!"
-msgstr ""
-
-#: python/plugins/mpxdj/mpxdj.glade:789
-msgid "Go One-Shot!"
 msgstr ""
 
 #: python/plugins/mtpplayer/mtpplayer.glade:65
@@ -1803,6 +1292,10 @@ msgstr ""
 msgid "LastFM"
 msgstr ""
 
+#: sources/lastfm/source-lastfm.glade:65
+msgid "Play:"
+msgstr ""
+
 #: sources/lastfm/source-lastfm.glade:90
 msgid ""
 "Artist\n"
@@ -1863,6 +1356,10 @@ msgstr ""
 msgid "Release Type"
 msgstr ""
 
+#: sources/musiclib/source-musiclib.cc:262
+msgid "Amazon ASIN"
+msgstr ""
+
 #: sources/musiclib/source-musiclib.cc:263
 msgid "Album Artist"
 msgstr ""
@@ -1873,6 +1370,10 @@ msgstr ""
 
 #: sources/musiclib/source-musiclib.cc:265
 msgid "MusicBrainz Album Artist ID"
+msgstr ""
+
+#: sources/musiclib/source-musiclib.cc:266
+msgid "MIME Type"
 msgstr ""
 
 #: sources/musiclib/source-musiclib.cc:267
@@ -1929,12 +1430,21 @@ msgstr ""
 msgid "Is MB Album Artist"
 msgstr ""
 
+#: sources/musiclib/source-musiclib.cc:284
+msgid "Audio Quality"
+msgstr ""
+
 #: sources/musiclib/source-musiclib.cc:285
 msgid "MPX Track ID"
 msgstr ""
 
 #: sources/musiclib/source-musiclib.cc:286
 msgid "MPX Album ID"
+msgstr ""
+
+#: sources/musiclib/source-musiclib.cc:338
+#: sources/musiclib/source-musiclib.cc:456
+msgid "Column"
 msgstr ""
 
 #: sources/musiclib/source-musiclib.cc:613
@@ -1972,6 +1482,10 @@ msgstr ""
 #: sources/musiclib/source-musiclib.cc:769
 msgid ""
 "Drag and drop albums, tracks and files here to add them to the playlist."
+msgstr ""
+
+#: sources/musiclib/source-musiclib.cc:1956
+msgid "Music Library"
 msgstr ""
 
 #: sources/musiclib/source-musiclib.cc:2000
@@ -2251,6 +1765,121 @@ msgstr ""
 #: widgets/youki-status-icon.c:192
 msgid "Whether or not the status icon is visible"
 msgstr ""
+
+#~ msgid "Unable to Create New Track!"
+#~ msgstr "Oförmögen att skapa nytt spår"
+
+#~ msgid "Browser"
+#~ msgstr "Läsare"
+
+#~ msgid "AudioSource: Play Files"
+#~ msgstr "AudioSource: Spela filer"
+
+#~ msgid "AudioSource: Equalizer"
+#~ msgstr "AudioSource: Equalizer"
+
+#~ msgid "<small><b>29 Hz</b></small>"
+#~ msgstr "<small><b>29 Hz</b></small>"
+
+#~ msgid "<small><b>59 Hz</b></small>"
+#~ msgstr "<small><b>59 Hz</b></small>"
+
+#~ msgid "<small><b>119 Hz</b></small>"
+#~ msgstr "<small><b>119 Hz</b></small>"
+
+#~ msgid "<small><b>227 Hz</b></small>"
+#~ msgstr "<small><b>227 Hz</b></small>"
+
+#~ msgid "<small><b>474 Hz</b></small>"
+#~ msgstr "<small><b>474 Hz</b></small>"
+
+#~ msgid "<small><b>947 Hz</b></small>"
+#~ msgstr "<small><b>947 Hz</b></small>"
+
+#~ msgid "<small><b>1889 Hz</b></small>"
+#~ msgstr "<small><b>1889 Hz</b></small>"
+
+#~ msgid "<small><b>3770 Hz</b></small>"
+#~ msgstr "<small><b>3770 Hz</b></small>"
+
+#~ msgid "<small><b>7523 Hz</b></small>"
+#~ msgstr "<small><b>7523 Hz</b></small>"
+
+#~ msgid "<small><b>15011 Hz</b></small>"
+#~ msgstr "<small><b>15011 Hz</b></small>"
+
+#~ msgid "Import Folder (MPX)"
+#~ msgstr "Importera folder (MPX)"
+
+#~ msgid "Import"
+#~ msgstr "Importera"
+
+#~ msgid "<b>Please specify the Folder to import:</b>"
+#~ msgstr "<b>Vänligen specifiera katalog att importera:</b>"
+
+#~ msgid "Select Folder to Import"
+#~ msgstr "Välj folder att importera"
+
+#~ msgid "Import SMB Share (MPX)"
+#~ msgstr "Importera SMB-utdelning (MPX)"
+
+#~ msgid "<b>Please specify Details for the SMB Share to import:</b>"
+#~ msgstr ""
+#~ "<b>Vänligen specifiera detaljer för SMB-utdelningen some skall "
+#~ "importeras</b>"
+
+#~ msgid "Share Location:"
+#~ msgstr "UItdelningssökväg:"
+
+#~ msgid "Share Name:"
+#~ msgstr "Utdelningsnamn:"
+
+#~ msgid "Share Login:"
+#~ msgstr "Utdelningsinloggningsnamn:"
+
+#~ msgid "Share Password:"
+#~ msgstr "Utdelningsingoggningslösenord:"
+
+#~ msgid "_Show Credentials"
+#~ msgstr "_Visa kreditiv"
+
+#~ msgid "AudioSource"
+#~ msgstr "AudioSource"
+
+#~ msgid "AudioSource: Volume Control"
+#~ msgstr "AudioSource: Volymkontroll"
+
+#~ msgid "Playlist Plugin Manager - MPX"
+#~ msgstr "Spellistehanterade - MPX"
+
+#~ msgid ""
+#~ "The check box indicates whether a plugin is active. Plugins with a lock "
+#~ "symbol don't need to be activated."
+#~ msgstr ""
+#~ "Kryssrutan indikerar om ett plugin är aktiverat. Plugin med en låssymbol "
+#~ "behöver inte bli aktiverade."
+
+#~ msgid "Plugin Details"
+#~ msgstr "Plugindetaljer"
+
+#~ msgid "Plugin Controls"
+#~ msgstr "Pluginkontroller"
+
+#~ msgid "<b>Music Import Path</b>"
+#~ msgstr "<b>Sökväg för import av musik</b>"
+
+#~ msgid ""
+#~ "<small>Default Path at which MusicBrainz-imported music will be stored.</"
+#~ "small>"
+#~ msgstr ""
+#~ "<small>Standardsökväg med vilken importerad MusicBrainz musik kommer att "
+#~ "bli lagrad</small>"
+
+#~ msgid "Please select Music import Path"
+#~ msgstr "Vänligen välj sökväg för import av musik"
+
+#~ msgid "<b>Library Rescanning</b>"
+#~ msgstr "<b>Bibliotek scannas om</b>"
 
 #~ msgid "Contributor Links"
 #~ msgstr "Bidragande länkar"
