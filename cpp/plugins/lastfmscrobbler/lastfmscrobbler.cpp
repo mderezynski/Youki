@@ -75,7 +75,7 @@ void LastFmScrobbler::startedPlaying(const SubmissionInfo& info)
 {
     authenticateIfNecessary();
 
-    log::info( m_Log, "startedPlaying \"" + info.getTrack() + "\"" );
+//    log::info( m_Log, "startedPlaying \"" + info.getTrack() + "\"" );
     m_CurrentTrackInfo = info;
 
     if (m_CurrentTrackInfo.getTimeStarted() < 0)
@@ -174,7 +174,7 @@ void LastFmScrobbler::authenticate()
     try
     {
         m_pLastFmClient->handshake(m_Username, m_Password);
-        log::info( m_Log, "Authentication successfull for user: \"" + m_Username + "\"" );
+        log::info( m_Log, "Authentication successful for user: \"" + m_Username + "\"" );
         m_HardConnectionFailureCount = 0;
         m_Authenticated = true;
     }
@@ -225,7 +225,7 @@ void* LastFmScrobbler::sendInfoThread(void* pInstance)
         {
             if (!pScrobbler->m_AuthenticatedCondition.wait(pScrobbler->m_AuthenticatedMutex, 4000))
             {
-                log::info( pScrobbler->m_Log, "Send Info terminated: no connection");
+                log::info( pScrobbler->m_Log, "Send info terminated: no connection");
                 pScrobbler->submitTrack(pScrobbler->m_PreviousTrackInfo);
                 return NULL;
             }
@@ -323,12 +323,12 @@ void LastFmScrobbler::submitTrack(const SubmissionInfo& info)
         if (m_Authenticated)
         {
             m_pLastFmClient->submit(tracksToSubmit);
-            log::info( m_Log, "Buffered tracks submitted");
+            log::info( m_Log, "Tracks submitted...");
             m_BufferedTrackInfos.clear();
         }
         else
         {
-            log::info( m_Log, "Track info buffered: not connected");
+            log::info( m_Log, "Track info queued: not currently connected");
         }
     }
     catch (BadSessionError& e)
