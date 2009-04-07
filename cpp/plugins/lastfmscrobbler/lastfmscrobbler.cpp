@@ -98,8 +98,6 @@ void LastFmScrobbler::on_play_seek( int64_t diff )
 
 void LastFmScrobbler::startedPlaying(const SubmissionInfo& info)
 {
-    ScopedLock lock(m_TrackInfosMutex);
-
     m_CurrentTrackInfo = info;
     m_SeekDiff = 0. ;
 
@@ -124,8 +122,6 @@ void LastFmScrobbler::pausePlaying(bool paused)
 
 void LastFmScrobbler::finishedPlaying()
 {
-    ScopedLock lock(m_TrackInfosMutex);
-
     if( !m_CurrentTrackInfo )
         return ;
 
@@ -244,7 +240,7 @@ void* LastFmScrobbler::sendInfoThread(void* pInstance)
 
     ScopedLock lock(pScrobbler->m_TrackInfosMutex);
 
-    if (pScrobbler->m_Authenticated)
+    if (pScrobbler->m_Authenticated && pScrobbler->m_CurrentTrackInfo && !pScrobbler->m_Disabled)
     {
         if (!pScrobbler->m_CommitOnly)
         {
@@ -270,12 +266,11 @@ void* LastFmScrobbler::finishPlayingThread(void* pInstance)
         }
     }
 
-    if (pScrobbler->m_Authenticated && pScrobbler->m_CurrentTrackInfo)
+    if (pScrobbler->m_Authenticated && pScrobbler->m_CurrentTrackInfo && !pScrobbler->m_Disabled)
     {
         pScrobbler->submitTrack(pScrobbler->m_CurrentTrackInfo.get());
     }
 
-//    logger::debug( pScrobbler->m_Log, "finishPlaying thread finished");
     return NULL;
 }
 
