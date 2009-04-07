@@ -28,9 +28,7 @@
 
 #define ENABLE_DEBUG 1
 
-using namespace std;
-
-namespace log
+namespace logger
 {
 
 void error(ILog& obj, const std::string& message)

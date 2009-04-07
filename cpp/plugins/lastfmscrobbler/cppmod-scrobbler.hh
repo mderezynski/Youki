@@ -88,19 +88,17 @@ namespace MPX
                 m_lock.lock() ;
                 m_msgqueue.push( msg );
                 m_lock.unlock() ;
-
                 m_disp.emit() ;
-
                 return *this ;
             }
 
             TextViewLog& 
             operator<< (const char* msg)
             {
-                Glib::RefPtr<Gtk::TextBuffer> buf = get_buffer() ;
-
-                buf->insert( buf->end(), msg ) ;
-
+                m_lock.lock() ;
+                m_msgqueue.push( msg );
+                m_lock.unlock() ;
+                m_disp.emit() ;
                 return *this ;
             }
     } ;

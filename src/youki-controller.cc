@@ -194,6 +194,12 @@ namespace MPX
                 , &YoukiController::on_play_eos
         )) ;
 
+        m_play->signal_seek().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_play_seek
+        )) ;
+
         m_play->signal_position().connect(
             sigc::mem_fun(
                   *this
@@ -716,6 +722,14 @@ namespace MPX
             g_message("%s: Error: What: %s", G_STRLOC, cxe.what());
         }
     }
+    
+    void
+    YoukiController::on_play_seek(
+          gint64 G_GNUC_UNUSED
+    )
+    {
+        m_seek_position.reset() ; 
+    }
 
     void
     YoukiController::on_play_position(
@@ -730,9 +744,9 @@ namespace MPX
         if( duration < 0 )
             return ;
 
-        if( m_seek_position && guint64(position) >= m_seek_position.get() ) 
+        if( m_seek_position && guint64(position) < m_seek_position.get() ) 
         {
-            m_seek_position.reset() ; 
+            return ;
         }
 
         m_main_position->set_position( duration, position ) ;
@@ -742,6 +756,12 @@ namespace MPX
     void
     YoukiController::on_play_eos ()
     {
+        g_signal_emit(
+              G_OBJECT(gobj())
+            , m_C_SIG_ID_track_out
+            , 0
+        ) ;
+
         if( m_next_track_queue_id )
         {
             SQL::RowV v ;
@@ -907,12 +927,6 @@ namespace MPX
         }
 
         m_playqueue.push_back( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
-
-        g_signal_emit(
-              G_OBJECT(gobj())
-            , m_C_SIG_ID_track_out
-            , 0
-        ) ;
 
         g_signal_emit(
               G_OBJECT(gobj())

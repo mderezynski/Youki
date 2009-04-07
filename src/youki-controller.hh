@@ -188,6 +188,11 @@ namespace MPX
             ) ;
 
             void
+            on_play_seek(
+                  gint64
+            ) ;
+
+            void
             on_play_position(
                   gint64
             ) ;

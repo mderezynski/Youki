@@ -23,8 +23,12 @@
 #ifndef LAST_FM_SCROBBLER_H
 #define LAST_FM_SCROBBLER_H
 
+#include <glibmm/timer.h>
+
 #include <string>
 #include <ctime>
+
+#include <boost/optional.hpp>
 
 #include "lastfmclient.h"
 #include "submissioninfo.h"
@@ -88,9 +92,12 @@ protected:
     /** \brief Last time a connection attempt was made */
     time_t          m_LastConnectionAttempt;
     /** \brief The time that the current track has been played, is set on pause */
-    time_t          m_TrackPlayTime;
+    //time_t          m_TrackPlayTime;
     /** \brief The time that the current track was resumed after a pause */
-    time_t          m_TrackResumeTime;
+    //time_t          m_TrackResumeTime;
+    // Glib::Timer     m_TrackPlayTimer ;
+    double          m_Elapsed ;
+    double          m_SeekDiff ;
     /** \brief Thread handle of authentication thread (protected for testing) */
     utils::Thread   m_AuthenticateThread;
     /** \brief Thread handle of sendinfo thread (protected for testing) */
@@ -99,9 +106,12 @@ protected:
     utils::Thread   m_FinishPlayingThread;
 
 private:
+
+    void on_play_seek(int64_t) ;
+
     void authenticateIfNecessary();
     void authenticate();
-    bool trackCanBeCommited(const SubmissionInfo& info);
+    bool trackCanBeCommitted(const SubmissionInfo& info);
     bool canReconnect();
     void submitTrack(const SubmissionInfo& info);
     void setNowPlaying();
@@ -113,8 +123,9 @@ private:
     static void* sendInfoThread(void* pInstance);
     static void* finishPlayingThread(void* pInstance);
 
-    SubmissionInfo              m_PreviousTrackInfo ;
-    SubmissionInfo              m_CurrentTrackInfo ;
+    boost::optional<SubmissionInfo> m_PreviousTrackInfo ;
+    boost::optional<SubmissionInfo> m_CurrentTrackInfo ;
+
     SubmissionInfoCollection    m_BufferedTrackInfos ;
 
     bool                        m_Authenticated ;
@@ -123,6 +134,7 @@ private:
     utils::Condition            m_AuthenticatedCondition ;
     utils::Mutex                m_AuthenticatedMutex ;
     utils::Mutex                m_TrackInfosMutex ;
+    utils::Mutex                m_TimerMutex ;
 
     std::string                 m_Username ;
     std::string                 m_Password ;

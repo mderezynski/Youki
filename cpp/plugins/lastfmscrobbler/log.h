@@ -21,7 +21,7 @@
 
 #include "i-log.hh"
 
-namespace log
+namespace logger
 {
     void error(ILog&, const std::string& message);
     void info(ILog&, const std::string& message);
