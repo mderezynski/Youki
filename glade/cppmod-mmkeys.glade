@@ -379,7 +379,7 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkEntry" id="mm-entry-3">
+		    <widget class="GtkEntry" id="mm-entry-2">
 		      <property name="visible">True</property>
 		      <property name="can_focus">True</property>
 		      <property name="editable">False</property>
@@ -400,7 +400,7 @@
 		  </child>
 
 		  <child>
-		    <widget class="GtkEntry" id="mm-entry-4">
+		    <widget class="GtkEntry" id="mm-entry-3">
 		      <property name="visible">True</property>
 		      <property name="can_focus">True</property>
 		      <property name="editable">False</property>
