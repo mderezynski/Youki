@@ -642,7 +642,6 @@ namespace MPX
                     gdk_event_free( fevent ) ;
                 }
 
-
                 bool
                 on_button_press_event (GdkEventButton * event)
                 {
@@ -1111,6 +1110,15 @@ namespace MPX
                     }
                 }
 
+                bool
+                on_search_window_focus_out(
+                      GdkEventFocus* G_GNUC_UNUSED
+                )
+                {
+                    cancel_search() ;
+                    return false ;
+                }
+
                 void
                 cancel_search()
                 {
@@ -1120,15 +1128,6 @@ namespace MPX
                     m_SearchEntry->set_text("") ;
                     m_search_changed_conn.unblock () ;
                     m_search_active = false ;
-                }
-
-                bool
-                on_search_window_focus_out(
-                      GdkEventFocus* G_GNUC_UNUSED
-                )
-                {
-                    cancel_search() ;
-                    return false ;
                 }
 
             public:
@@ -1169,7 +1168,7 @@ namespace MPX
                                 , &ListViewArtist::on_search_entry_changed
                     )) ;
     
-                    m_SearchWindow = Gtk::manage( new Gtk::Window( Gtk::WINDOW_POPUP )) ;
+                    m_SearchWindow = new Gtk::Window( Gtk::WINDOW_POPUP ) ;
                     m_SearchWindow->set_decorated( false ) ;
 
                     m_SearchWindow->signal_focus_out_event().connect(
@@ -1186,8 +1185,6 @@ namespace MPX
 
                     m_SearchWindow->add( *m_SearchEntry ) ;
                     m_SearchEntry->show() ;
-
-                    property_can_focus() = true ;
                 }
 
                 virtual ~ListViewArtist ()

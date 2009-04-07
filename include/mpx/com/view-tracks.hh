@@ -958,6 +958,12 @@ namespace MPX
                 SignalTrackActivated                m_SIGNAL_track_activated;
 
                 GtkWidget                         * m_treeview ;
+                Gtk::Entry                        * m_SearchEntry ;
+                Gtk::Window                       * m_SearchWindow ;
+
+                sigc::connection                    m_search_changed_conn ; 
+
+                bool                                m_search_active ;
 
                 void
                 initialize_metrics ()
@@ -1012,6 +1018,35 @@ namespace MPX
                 on_key_press_event (GdkEventKey * event)
                 {
                     int step; 
+
+                    if( m_search_active )
+                    {
+                        switch( event->keyval )
+                        {
+                            case GDK_Escape:
+                                cancel_search() ;
+                                return true ;
+
+                            case GDK_Return:
+                            case GDK_KP_Enter:
+                            case GDK_ISO_Enter:
+                            case GDK_3270_Enter:
+                                cancel_search() ;
+                                goto continue_matching ;
+        
+                            default: ;
+                        }
+
+                        GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
+                        g_object_unref( ((GdkEventKey*)new_event)->window ) ;
+                        ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
+                        gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
+                        gdk_event_free(new_event) ;
+
+                        return false ;
+                    }
+
+                    continue_matching:
 
                     switch( event->keyval )
                     {
@@ -1125,9 +1160,80 @@ namespace MPX
                             }
                             queue_draw();
                             return true;
+
+                        case GDK_Left:
+                        case GDK_KP_Left:
+                        case GDK_Right:
+                        case GDK_KP_Right:
+                        case GDK_Home:
+                        case GDK_KP_Home:
+                        case GDK_End:
+                        case GDK_KP_End:
+                        case GDK_Escape:
+                        case GDK_Tab:
+                            return false ;
+
+                        default:
+
+                            if( !Gtk::DrawingArea::on_key_press_event( event ))
+                            { 
+                                    int x, y, x_root, y_root ;
+
+                                    dynamic_cast<Gtk::Window*>(get_toplevel())->get_position( x_root, y_root ) ;
+
+                                    x = x_root + get_allocation().get_x() ;
+                                    y = y_root + get_allocation().get_y() + get_allocation().get_height() ;
+
+                                    m_SearchWindow->set_size_request( m_columns[0]->get_width(), -1 ) ;
+                                    m_SearchWindow->move( x, y ) ;
+                                    m_SearchWindow->show() ;
+
+                                    send_focus_change( *m_SearchEntry, true ) ;
+
+                                    GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
+                                    g_object_unref( ((GdkEventKey*)new_event)->window ) ;
+                                    gtk_widget_realize( GTK_WIDGET(m_SearchWindow->gobj()) ) ;
+                                    ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
+                                    gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
+                                    gdk_event_free(new_event) ;
+
+                                    m_search_active = true ;
+                            }
                     }
 
                     return false;
+                }
+
+                void
+                send_focus_change(
+                      Gtk::Widget&  w
+                    , bool          in
+                    )
+                {
+                    GtkWidget * widget = w.gobj() ;
+
+                    GdkEvent *fevent = gdk_event_new (GDK_FOCUS_CHANGE);
+
+                    g_object_ref (widget);
+
+                   if( in )
+                      GTK_WIDGET_SET_FLAGS( widget, GTK_HAS_FOCUS ) ;
+                    else
+                      GTK_WIDGET_UNSET_FLAGS( widget, GTK_HAS_FOCUS ) ;
+
+                    fevent->focus_change.type   = GDK_FOCUS_CHANGE;
+                    fevent->focus_change.window = GDK_WINDOW(g_object_ref( widget->window )) ;
+                    fevent->focus_change.in     = in;
+
+                    gtk_widget_event( widget, fevent ) ;
+
+                    g_object_notify(
+                          G_OBJECT (widget)
+                        , "has-focus"
+                    ) ;
+
+                    g_object_unref( widget ) ;
+                    gdk_event_free( fevent ) ;
                 }
 
                 bool
@@ -1773,6 +1879,71 @@ namespace MPX
                     } 
                 }
 
+        
+                void
+                select_row(
+                      std::size_t row
+                )
+                {
+                    m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
+                    queue_draw() ;
+                }
+
+            protected:
+
+                void
+                on_search_entry_changed()
+                {
+                    using boost::get ;
+
+                    Glib::ustring text = m_SearchEntry->get_text() ;
+
+                    if( text.empty() )
+                    {
+                        select_row( 0 ) ;
+                        return ;
+                    }
+
+                    DataModelFilterTracks::RowRowMapping::iterator i = m_model->m_mapping.begin(); 
+                    ++i ; // first row is "All" FIXME this sucks
+
+                    for( ; i != m_model->m_mapping.end(); ++i )
+                    {
+                        const Row7& row = **i ;
+                        Glib::ustring match = get<0>(row) ;
+
+                        if( match.length() && match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )   
+                        {
+                            int row = std::distance( m_model->m_mapping.begin(), i ) ; 
+                            m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
+                            select_row( row ) ;
+                            break ;
+                        }
+                    }
+                }
+
+                bool
+                on_search_window_focus_out(
+                      GdkEventFocus* G_GNUC_UNUSED
+                )
+                {
+                    cancel_search() ;
+                    return false ;
+                }
+
+                void
+                cancel_search()
+                {
+                    send_focus_change( *m_SearchEntry, false ) ;
+                    m_SearchWindow->hide() ;
+                    m_search_changed_conn.block () ;
+                    m_SearchEntry->set_text("") ;
+                    m_search_changed_conn.unblock () ;
+                    m_search_active = false ;
+                }
+
+            public:
+
                 ListViewTracks ()
 
                         : ObjectBase( "YoukiListViewTracksTracks" )
@@ -1784,6 +1955,7 @@ namespace MPX
                         , m_clicked( false )
                         , m_highlight( false )
                         , m_fixed_total_width( 0 )
+                        , m_search_active( false )
 
                 {
                     Gdk::Color c ;
@@ -1825,6 +1997,31 @@ namespace MPX
 
                     set_has_tooltip( true ) ;
                     */
+
+                    m_SearchEntry = Gtk::manage( new Gtk::Entry ) ;
+                    m_search_changed_conn = m_SearchEntry->signal_changed().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &ListViewTracks::on_search_entry_changed
+                    )) ;
+    
+                    m_SearchWindow = new Gtk::Window( Gtk::WINDOW_POPUP ) ;
+                    m_SearchWindow->set_decorated( false ) ;
+
+                    m_SearchWindow->signal_focus_out_event().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &ListViewTracks::on_search_window_focus_out
+                    )) ;
+
+                    signal_focus_out_event().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &ListViewTracks::on_search_window_focus_out
+                    )) ;
+
+                    m_SearchWindow->add( *m_SearchEntry ) ;
+                    m_SearchEntry->show() ;
 
                     property_can_focus() = true ;
                 }

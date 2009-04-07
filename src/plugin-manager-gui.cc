@@ -101,7 +101,7 @@ namespace MPX
 				Glib::RefPtr<Gtk::IconTheme> Theme = Gtk::IconTheme::get_default();
 
 				append_column_editable(_("Active"), Columns.Active);
-				append_column(_("Name"), Columns.Name);
+				append_column(_("Plugin"), Columns.Name);
 
 				Gtk::TreeViewColumn* pColumn = get_column(0);
 
