@@ -221,7 +221,7 @@ namespace MPX
             const gint64&       time_   =   boost::get<gint64>(t[ATTRIBUTE_TIME].get()) ;
             const gint64&       tracknr =   boost::get<gint64>(t[ATTRIBUTE_TRACK].get()) ;
 
-            SubmissionInfo info ( artist, title ) ;
+            SubmissionInfo info ( artist, title, time(NULL) ) ;
             info.setTrackLength( int(time_) ) ;
             info.setTrackNr( int(tracknr) ) ;
             info.setAlbum( album ) ; 

@@ -113,6 +113,7 @@ void LastFmClient::submit(const string& postData)
 
     try
     {
+        std::cerr << "Posting data: " << postData << std::endl ;
         m_UrlClient.post(m_SubmissionUrl, postData, response);
     }
     catch (logic_error& e)

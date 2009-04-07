@@ -158,7 +158,7 @@ bool LastFmScrobbler::trackCanBeCommitted(const SubmissionInfo& info)
     }
     else
    {
-        logger::info( m_Log, "Track \"" + info.getTrack() + "\" can be committed: conditions OK");
+//        logger::info( m_Log, "Track \"" + info.getTrack() + "\" can be committed: conditions OK");
     }
 
     return (!trackTooShort) && trackPlayedLongEnough;
@@ -305,6 +305,7 @@ void LastFmScrobbler::submitTrack(const SubmissionInfo& info)
 {
     if (info.getTrackLength() < 0 || !trackCanBeCommitted(info))
     {
+        logger::debug( m_Log, "Track can not be committed");
         return;
     }
     else
@@ -324,22 +325,23 @@ void LastFmScrobbler::submitTrack(const SubmissionInfo& info)
         if (m_Authenticated)
         {
             m_pLastFmClient->submit(tracksToSubmit);
-            logger::info( m_Log, "...submitted");
+            logger::info( m_Log, "Tracks submitted...");
             m_BufferedTrackInfos.clear();
         }
         else
         {
-            logger::info( m_Log, "Track info queued: not currently connected");
+            logger::warn( m_Log, "Track info queued: not currently connected");
         }
     }
     catch (BadSessionError& e)
     {
-        logger::info( m_Log, "Session has become invalid: starting new handshake");
+        logger::error( m_Log, "Session has become invalid: starting new handshake");
         authenticate();
         submitTrack(info);
     }
     catch (ConnectionError& e)
     {
+        logger::error( m_Log, "Connection error ocurred");
         m_Authenticated = false;
     }
     catch (logic_error& e)
