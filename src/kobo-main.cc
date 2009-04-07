@@ -359,8 +359,10 @@ namespace MPX
                         ) ;
                         cr->fill_preserve() ;
                         cr->set_source_rgba( 0.22, 0.22, 0.22, 1. ) ;
-                        cr->set_line_width( 1. ) ;
-                        cr->stroke() ;
+                        cr->set_line_width( 2.5 ) ;
+                        cr->stroke_preserve() ;
+
+                        cr->clip() ;
 
                         //// TITLEBAR 
                         Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
@@ -372,29 +374,29 @@ namespace MPX
                         
                         background_gradient_ptr->add_color_stop_rgba(
                               0
-                            , 1.
-                            , 1.
-                            , 1.
-                            , 0.6 
+                            , 0.33 
+                            , 0.33
+                            , 0.33
+                            , 0.93 
                         ) ;
                         
                         background_gradient_ptr->add_color_stop_rgba(
                               .9                       
-                            , 1.
-                            , 1.
-                            , 1.
-                            , 0.2 
+                            , 0.22 
+                            , 0.22
+                            , 0.22
+                            , 0.93 
                         ) ;
                         
                         background_gradient_ptr->add_color_stop_rgba(
                               1 
-                            , 1.
-                            , 1.
-                            , 1.
-                            , 0.15 
+                            , 0.17
+                            , 0.17
+                            , 0.17
+                            , 0.93 
                         ) ;
 
-                        cr->set_operator( Cairo::OPERATOR_ATOP ) ;
+                        cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
                         cr->set_source( background_gradient_ptr ) ;
                         cr->rectangle(
                               0
@@ -404,8 +406,8 @@ namespace MPX
                         ) ;
                         cr->fill();
 
-
                         //// ICONS
+                        cr->set_operator( Cairo::OPERATOR_ATOP ) ;
 
                         GdkRectangle r ;
 
@@ -428,7 +430,10 @@ namespace MPX
                             , r.height 
                         ) ;
 
-                        cr->fill () ;
+                        cr->save () ;
+                        cr->clip () ;
+                        cr->paint_with_alpha( .8 ) ; 
+                        cr->restore () ;
 
                         r.x         = 8 ; 
                         r.y         = (20 - m_button_off->get_height()) / 2. ;
@@ -459,7 +464,7 @@ namespace MPX
                               1.
                             , 1.
                             , 1.
-                            , 0.4
+                            , 0.20
                         ) ;
 
                         RoundedTriangleRight(

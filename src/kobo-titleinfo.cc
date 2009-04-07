@@ -160,7 +160,7 @@ namespace MPX
         const Gtk::Allocation& a = get_allocation() ;
 
         cairo->set_operator(Cairo::OPERATOR_SOURCE) ;
-        cairo->set_source_rgba( 0.12, 0.12, 0.12, 1. ) ;
+        cairo->set_source_rgba( 0.10, 0.10, 0.10, 1. ) ;
         cairo->paint () ;
 
         cairo->set_operator( Cairo::OPERATOR_ATOP ) ;

@@ -218,6 +218,13 @@ namespace MPX
                 , &YoukiController::on_play_stream_switched
         )) ;
 
+        m_play->signal_metadata().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_play_metadata
+        )) ;
+
+
         m_NotebookPlugins   = Gtk::manage( new Gtk::Notebook ) ;
         m_NotebookPlugins->property_show_border() = false ;
         m_NotebookPlugins->property_tab_border() = 0 ;
@@ -229,6 +236,7 @@ namespace MPX
         m_VBox              = Gtk::manage( new Gtk::VBox ) ;
 
         m_HBox_Entry        = Gtk::manage( new Gtk::HBox ) ;
+        m_HBox_Info         = Gtk::manage( new Gtk::HBox ) ;
         m_HBox_Controls     = Gtk::manage( new Gtk::HBox ) ;
 
         m_Entry             = Gtk::manage( new Gtk::Entry ) ;
@@ -295,6 +303,12 @@ namespace MPX
                   *this
                 , &YoukiController::on_title_clicked
         )) ;
+
+        m_main_info_bitrate = Gtk::manage( new YoukiSimpleInfo ) ;
+        m_main_info_bitrate->set_size_request( 60, -1 ) ;
+
+        m_main_info_codec   = Gtk::manage( new YoukiSimpleInfo ) ;
+        m_main_info_codec->set_size_request( 140, -1 ) ;
 
         m_main_infoarea     = Gtk::manage( new InfoArea ) ;
         m_main_infoarea->signal_clicked().connect(
@@ -471,9 +485,14 @@ namespace MPX
         m_main_window->set_widget_top( *m_VBox ) ;
         m_main_window->set_widget_drawer( *m_NotebookPlugins ) ; 
 
+        m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
+        m_HBox_Info->pack_start( *m_main_info_bitrate, false, false, 0 ) ;
+        m_HBox_Info->pack_start( *m_main_info_codec, false, false, 0 ) ;
+        m_HBox_Info->property_spacing() = 4 ; 
+
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
         m_VBox->pack_start( *m_Paned2, true, true, 0 ) ;
-        m_VBox->pack_start( *m_main_titleinfo, false, false, 0 ) ;
+        m_VBox->pack_start( *m_HBox_Info, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
         m_VBox->pack_start( *m_main_infoarea, false, false, 0 ) ;
 
@@ -829,24 +848,28 @@ namespace MPX
             case PLAYSTATUS_STOPPED:
 
                 m_track_current.reset() ;
-
-                m_main_titleinfo->clear() ;
-                m_main_window->queue_draw () ;    
                 m_ListViewTracks->clear_active_track() ;
+                m_main_titleinfo->clear() ;
+                m_main_info_bitrate->clear() ;
+                m_main_info_codec->clear() ;
                 m_main_cover->clear() ;
-                m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
                 m_main_position->set_position( 0, 0 ) ;
                 m_seek_position.reset() ; 
                 m_playqueue.clear() ;
+                m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
+                m_main_window->queue_draw () ;    
+
                 break ;
 
             case PLAYSTATUS_WAITING:
 
                 m_track_current.reset() ;
-
                 m_main_titleinfo->clear() ;
-                m_main_window->queue_draw () ;    
+                m_main_info_bitrate->clear() ;
+                m_main_info_codec->clear() ;
                 m_seek_position.reset() ; 
+                m_main_window->queue_draw () ;    
+
                 break ;
 
             case PLAYSTATUS_PAUSED:
@@ -933,6 +956,24 @@ namespace MPX
             , m_C_SIG_ID_track_new
             , 0
         ) ;
+    }
+
+    void
+    YoukiController::on_play_metadata(
+            GstMetadataField    field
+    )
+    {
+        const GstMetadata& m = m_play->get_metadata() ;
+
+        if( field == FIELD_AUDIO_BITRATE )
+        {
+            m_main_info_bitrate->set_info(( boost::format( "%u kbps" ) % ((m.m_audio_bitrate.get())/1000) ).str() ) ;
+        }
+        else
+        if( field == FIELD_AUDIO_CODEC )
+        {
+            m_main_info_codec->set_info( m.m_audio_codec.get() ) ;
+        }
     }
 
     void

@@ -114,19 +114,10 @@ youki_bin_SOURCES =             \
     dialog-equalizer.hh         \
     dialog-equalizer.cc         \
                                 \
-    dialog-filebrowser.hh       \
-    dialog-filebrowser.cc       \
-                                \
     error.cc                    \
                                 \
     glib-marshalers.c           \
     glib-marshalers.h           \
-                                \
-    import-share.hh             \
-    import-share.cc             \
-                                \
-    import-folder.hh            \
-    import-folder.cc            \
                                 \
     infoarea.hh                 \
     infoarea.cc                 \
@@ -147,6 +138,9 @@ youki_bin_SOURCES =             \
                                 \
     youki-notification.hh       \
     youki-notification.cc       \
+                                \
+    youki-simpleinfo.hh         \
+    youki-simpleinfo.cc         \
                                 \
     kobo-cover.hh               \
     kobo-cover.cc               \
@@ -198,8 +192,6 @@ youki_bin_SOURCES =             \
     gtkmmmodule.cc              \
     gtkmmmodule.h               \
                                 \
-    playbacksource.cc           \
-                                \
     preferences.cc              \
                                 \
     request-value.hh            \
@@ -209,23 +201,17 @@ youki_bin_SOURCES =             \
     splash-screen.cc            \
                                 \
     services.cc                 \
-                                \
     signals.cc                  \
     signals.hh                  \
                                 \
     sql.cc                      \
-                                \
     stock.cc                    \
-                                \
     uri.cc                      \
                                 \
     util-file.cc                \
     util-graphics.cc            \
     util-string.cc              \
-    util-ui.cc                  \
-                                \
-    video-playback.hh           \
-    video-playback.cc          
+    util-ui.cc                  
                                 
 
 if HAVE_HAL                             

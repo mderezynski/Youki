@@ -3,19 +3,22 @@
 
 #include <boost/optional.hpp>
 
+#include "mpx/mpx-services.hh"
+#include "mpx/mpx-types.hh"
+
 #include "kobo-main.hh"
 #include "kobo-position.hh"
 #include "kobo-cover.hh"
 #include "kobo-titleinfo.hh"
 #include "kobo-volume.hh"
-#include "mpx/mpx-services.hh"
-#include "mpx/mpx-types.hh"
+#include "youki-simpleinfo.hh"
 #include "infoarea.hh"
 
 #include "mpx-mlibman-dbus-proxy-actual.hh"
 #include "mpx-app-dbus-adaptor.hh"
 
 #include "mpx/i-youki-controller.hh"
+#include "mpx/i-youki-play.hh"
 
 namespace MPX
 {
@@ -114,6 +117,8 @@ namespace MPX
             KoboCover                       * m_main_cover ;
             KoboTitleInfo                   * m_main_titleinfo ;
             KoboVolume                      * m_main_volume ;
+            YoukiSimpleInfo                 * m_main_info_bitrate ;
+            YoukiSimpleInfo                 * m_main_info_codec ;
 
             ListViewArtist                  * m_ListViewArtist ;
             ListViewAlbums                  * m_ListViewAlbums ;
@@ -133,13 +138,13 @@ namespace MPX
 
             Gtk::Alignment                  * m_Alignment_Entry ;
             Gtk::HBox                       * m_HBox_Entry ;
+            Gtk::HBox                       * m_HBox_Info ;
             Gtk::HBox                       * m_HBox_Controls ;
             Gtk::Label                      * m_Label_Search ;
             Glib::Timer                       m_completion_timer ;
             bool                              m_predicted ;
 
             Gtk::VBox                       * m_VBox ;
-            Gtk::HBox                       * m_HBox ;
 
             Gtk::Notebook                   * m_NotebookPlugins ;
 
@@ -155,11 +160,12 @@ namespace MPX
             Covers                          * m_covers ;
             Play                            * m_play ;
             Library                         * m_library ;
-            boost::optional<guint64>          m_seek_position ;
     
             boost::optional<MPX::Track>       m_track_current ;          
             boost::optional<MPX::Track>       m_track_previous ;          
             boost::optional<guint64>          m_next_track_queue_id ;
+
+            boost::optional<guint64>          m_seek_position ;
 
             info::backtrace::Youki::MLibMan_proxy_actual
                                             * m_mlibman_dbus_proxy ;
@@ -204,6 +210,11 @@ namespace MPX
 
             void
             on_play_stream_switched(        
+            ) ;
+
+            void
+            on_play_metadata(        
+                GstMetadataField
             ) ;
 
             void
