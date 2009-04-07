@@ -101,10 +101,10 @@ namespace MPX
     
         // MM-Keys
 
-        const int N_MM_KEYS = 6;
-        const int N_MM_KEY_SYSTEMS = 4;
+        const int N_MM_KEYS = 3 ;
+        const int N_MM_KEY_SYSTEMS = 3 ;
 
-        for( int n = 1; n < N_MM_KEYS; ++n)
+        for( int n = 1; n <= N_MM_KEYS; ++n)
         {
             Gtk::Widget * entry = m_Xml->get_widget((boost::format ("mm-entry-%d") % n).str());
 
@@ -140,7 +140,7 @@ namespace MPX
         m_mm_key_controls.resize( N_MM_KEYS );
 
         int active = mcs->key_get<int>("hotkeys","system") ;
-        for( int n = 1; n < N_MM_KEY_SYSTEMS; ++n )
+        for( int n = 1; n <= N_MM_KEY_SYSTEMS; ++n )
         {
             Gtk::RadioButton * button = dynamic_cast<Gtk::RadioButton*>(m_Xml->get_widget ((boost::format ("mm-rb-%d") % n).str(), button));
 
@@ -182,7 +182,7 @@ namespace MPX
     {
         mcs->key_set<int>("hotkeys","system", m_mm_option);
 
-        for(int n = 1; n < 6; ++n)
+        for(int n = 1; n <= 3; ++n)
         {
             KeyControls & c = m_mm_key_controls[n-1];
             mcs->key_set<int>("hotkeys", (boost::format ("key-%d") % n).str(), c.key);
@@ -198,7 +198,7 @@ namespace MPX
     void
         MMKeys::mm_load ()
     {
-        for(int n = 1; n < 6; ++n)
+        for(int n = 1; n <= 3; ++n)
         {
             KeyControls c;
             c.key = mcs->key_get<int>("hotkeys", (boost::format ("key-%d") % n).str());
@@ -224,7 +224,7 @@ namespace MPX
 
         std::string text;
 
-        if (key == 0 && mask == 0)
+        if( key == 0 && mask == 0 )
         {
             text = (_("(none)"));
         }
@@ -239,7 +239,7 @@ namespace MPX
             KeySym keysym;
 
             keysym = XKeycodeToKeysym(gdk_x11_display_get_xdisplay (get_display()->gobj()), key, 0);
-            if (keysym == 0 || keysym == NoSymbol)
+            if( keysym == 0 || keysym == NoSymbol )
             {
                 keytext = (boost::format ("#%3d") % key).str();
             }
@@ -250,10 +250,10 @@ namespace MPX
 
             for (i = 0, j=0; j<7; j++)
             {
-                if (mask & modifiers[j])
+                if( mask & modifiers[j] )
                     strings.push_back (modifier_string[j]);
             }
-            if (key != 0)
+            if( key != 0 )
             {
                 strings.push_back( keytext );
             }
@@ -275,26 +275,26 @@ namespace MPX
         int is_mod;
         int mod;
 
-        if (event->keyval == GDK_Tab) return false;
+        if( event->keyval == GDK_Tab ) return false;
         mod = 0;
         is_mod = 0;
 
-        if ((event->state & GDK_CONTROL_MASK) | (!is_mod && (is_mod = (event->keyval == GDK_Control_L || event->keyval == GDK_Control_R))))
+        if( (event->state & GDK_CONTROL_MASK) | (!is_mod && (is_mod = (event->keyval == GDK_Control_L || event->keyval == GDK_Control_R))) )
             mod |= ControlMask;
 
-        if ((event->state & GDK_MOD1_MASK) | (!is_mod && (is_mod = (event->keyval == GDK_Alt_L || event->keyval == GDK_Alt_R))))
+        if( (event->state & GDK_MOD1_MASK) | (!is_mod && (is_mod = (event->keyval == GDK_Alt_L || event->keyval == GDK_Alt_R))) )
             mod |= Mod1Mask;
 
-        if ((event->state & GDK_SHIFT_MASK) | (!is_mod && (is_mod = (event->keyval == GDK_Shift_L || event->keyval == GDK_Shift_R))))
+        if( (event->state & GDK_SHIFT_MASK) | (!is_mod && (is_mod = (event->keyval == GDK_Shift_L || event->keyval == GDK_Shift_R))) )
             mod |= ShiftMask;
 
-        if ((event->state & GDK_MOD5_MASK) | (!is_mod && (is_mod = (event->keyval == GDK_ISO_Level3_Shift))))
+        if( (event->state & GDK_MOD5_MASK) | (!is_mod && (is_mod = (event->keyval == GDK_ISO_Level3_Shift))) )
             mod |= Mod5Mask;
 
-        if ((event->state & GDK_MOD4_MASK) | (!is_mod && (is_mod = (event->keyval == GDK_Super_L || event->keyval == GDK_Super_R))))
+        if( (event->state & GDK_MOD4_MASK) | (!is_mod && (is_mod = (event->keyval == GDK_Super_L || event->keyval == GDK_Super_R))) )
             mod |= Mod4Mask;
 
-        if (!is_mod)
+        if( !is_mod )
         {
             controls.key = event->hardware_keycode;
             controls.mask = mod;
@@ -310,7 +310,7 @@ namespace MPX
         MMKeys::on_entry_key_release_event(GdkEventKey * event, gint entry_id)
     {
         KeyControls & controls = m_mm_key_controls[entry_id-1];
-        if (controls.key == 0)
+        if( controls.key == 0 )
         {
             controls.mask = 0;
         }
@@ -373,20 +373,20 @@ namespace MPX
          */
         modmap = XGetModifierMapping (dpy);
 
-        if (modmap != NULL && modmap->max_keypermod > 0)
+        if( modmap != NULL && modmap->max_keypermod > 0 )
         {
             for (i = 0; i < 8 * modmap->max_keypermod; i++)
             {
-                if (modmap->modifiermap[i] == nlock && nlock != 0)
+                if( modmap->modifiermap[i] == nlock && nlock != 0 )
                     m_numlock_mask = mask_table[i / modmap->max_keypermod];
-                else if (modmap->modifiermap[i] == slock && slock != 0)
+                else if( modmap->modifiermap[i] == slock && slock != 0 )
                     m_scrolllock_mask = mask_table[i / modmap->max_keypermod];
             }
         }
 
         m_capslock_mask = LockMask;
 
-        if (modmap)
+        if( modmap )
             XFreeModifiermap (modmap);
     }
 
@@ -433,7 +433,7 @@ namespace MPX
 
         gdk_flush ();
 
-        if (gdk_error_trap_pop ())
+        if( gdk_error_trap_pop () )
         {
             g_message(G_STRLOC ": Error grabbing key");
         }
@@ -453,40 +453,40 @@ namespace MPX
         XGrabKey (GDK_DISPLAY (), key_code, modifier, GDK_WINDOW_XID (root),
             False, GrabModeAsync, GrabModeAsync);
 
-        if (modifier == AnyModifier)
+        if( modifier == AnyModifier )
             return;
 
-        if (m_numlock_mask)
+        if( m_numlock_mask )
             XGrabKey (GDK_DISPLAY (), key_code, modifier | m_numlock_mask,
                 GDK_WINDOW_XID (root),
                 False, GrabModeAsync, GrabModeAsync);
 
-        if (m_capslock_mask)
+        if( m_capslock_mask )
             XGrabKey (GDK_DISPLAY (), key_code, modifier | m_capslock_mask,
                 GDK_WINDOW_XID (root),
                 False, GrabModeAsync, GrabModeAsync);
 
-        if (m_scrolllock_mask)
+        if( m_scrolllock_mask )
             XGrabKey (GDK_DISPLAY (), key_code, modifier | m_scrolllock_mask,
                 GDK_WINDOW_XID (root),
                 False, GrabModeAsync, GrabModeAsync);
 
-        if (m_numlock_mask && m_capslock_mask)
+        if( m_numlock_mask && m_capslock_mask )
             XGrabKey (GDK_DISPLAY (), key_code, modifier | m_numlock_mask | m_capslock_mask,
                 GDK_WINDOW_XID (root),
                 False, GrabModeAsync, GrabModeAsync);
 
-        if (m_numlock_mask && m_scrolllock_mask)
+        if( m_numlock_mask && m_scrolllock_mask )
             XGrabKey (GDK_DISPLAY (), key_code, modifier | m_numlock_mask | m_scrolllock_mask,
                 GDK_WINDOW_XID (root),
                 False, GrabModeAsync, GrabModeAsync);
 
-        if (m_capslock_mask && m_scrolllock_mask)
+        if( m_capslock_mask && m_scrolllock_mask )
             XGrabKey (GDK_DISPLAY (), key_code, modifier | m_capslock_mask | m_scrolllock_mask,
                 GDK_WINDOW_XID (root),
                 False, GrabModeAsync, GrabModeAsync);
 
-        if (m_numlock_mask && m_capslock_mask && m_scrolllock_mask)
+        if( m_numlock_mask && m_capslock_mask && m_scrolllock_mask )
             XGrabKey (GDK_DISPLAY (), key_code,
                 modifier | m_numlock_mask | m_capslock_mask | m_scrolllock_mask,
                 GDK_WINDOW_XID (root), False, GrabModeAsync,
@@ -494,7 +494,7 @@ namespace MPX
 
         gdk_flush ();
 
-        if (gdk_error_trap_pop ())
+        if( gdk_error_trap_pop () )
         {
             g_message(G_STRLOC ": Error grabbing key");
         }
@@ -509,7 +509,7 @@ namespace MPX
 
         gdk_flush ();
 
-        if (gdk_error_trap_pop ())
+        if( gdk_error_trap_pop () )
         {
             g_message(G_STRLOC ": Error grabbing key");
         }
@@ -526,71 +526,57 @@ namespace MPX
 
         XEvent * xev = (XEvent *) xevent;
 
-        if (xev->type != KeyPress)
+        if( xev->type != KeyPress )
         {
             return GDK_FILTER_CONTINUE;
         }
 
         XKeyEvent * key = (XKeyEvent *) xevent;
 
-        guint keycodes[] = {0, 0, 0, 0, 0};
+        guint keycodes[] = { 0, 0, 0 };
         int sys = mcs->key_get<int>("hotkeys","system");
 
-        if( sys == 0)
+        if( sys == 0 )
         {
             keycodes[0] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioPlay);
-            keycodes[1] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioPause);
-            keycodes[2] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioPrev);
-            keycodes[3] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioNext);
-            keycodes[4] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioStop);
+            keycodes[1] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioPrev);
+            keycodes[2] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioNext);
         }
         else
         {
             keycodes[0] = mcs->key_get<int>("hotkeys","key-1");
             keycodes[1] = mcs->key_get<int>("hotkeys","key-2");
             keycodes[2] = mcs->key_get<int>("hotkeys","key-3");
-            keycodes[3] = mcs->key_get<int>("hotkeys","key-4");
-            keycodes[4] = mcs->key_get<int>("hotkeys","key-5");
         }
 
-        if (keycodes[0] == key->keycode)
+        if( keycodes[0] == key->keycode )
         {
             ctrl->API_pause_toggle() ;
-            return GDK_FILTER_REMOVE;
-        }
-        else if (keycodes[1] == key->keycode)
-        {
-            return GDK_FILTER_REMOVE;
-        }
-        else if (keycodes[2] == key->keycode)
-        {
-            ctrl->API_prev() ;
-            return GDK_FILTER_REMOVE;
-        }
-        else if (keycodes[3] == key->keycode)
-        {
-            ctrl->API_next() ;
-            return GDK_FILTER_REMOVE;
-        }
-        else if (keycodes[4] == key->keycode)
-        {
-            return GDK_FILTER_REMOVE;
+            return GDK_FILTER_REMOVE ;
         }
         else
+        if( keycodes[1] == key->keycode )
         {
-            return GDK_FILTER_CONTINUE;
+            ctrl->API_prev() ;
+            return GDK_FILTER_REMOVE ;
         }
+        else    
+        if( keycodes[2] == key->keycode )
+        {
+            ctrl->API_next() ;
+            return GDK_FILTER_REMOVE ;
+        }
+
+        return GDK_FILTER_CONTINUE ;
     }
 
     /*static*/ void
         MMKeys::mmkeys_grab (bool grab)
     {
-        gint keycodes[] = {0, 0, 0, 0, 0};
+        gint keycodes[] = { 0, 0, 0 };
         keycodes[0] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioPlay);
-        keycodes[1] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioStop);
-        keycodes[2] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioPrev);
-        keycodes[3] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioNext);
-        keycodes[4] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioPause);
+        keycodes[1] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioPrev);
+        keycodes[2] = XKeysymToKeycode (GDK_DISPLAY (), XF86XK_AudioNext);
 
         GdkDisplay  * display ;
         GdkScreen   * screen ;
@@ -603,7 +589,7 @@ namespace MPX
         {
             screen = gdk_display_get_screen (display, i);
 
-            if (screen != NULL)
+            if( screen != NULL )
             {
                 root = gdk_screen_get_root_window (screen);
                 if(!grab)
@@ -612,14 +598,14 @@ namespace MPX
                     continue;
                 }
 
-                for (guint j = 1; j < 6 ; ++j)
+                for (guint j = 1; j <= G_N_ELEMENTS(keycodes) ; ++j)
                 {
                     if( sys == 2 )
                     {
                         int key = mcs->key_get<int>("hotkeys", (boost::format ("key-%d") % j).str());
                         int mask = mcs->key_get<int>("hotkeys", (boost::format ("key-%d-mask") % j).str());
 
-                        if (key)
+                        if( key )
                         {
                             grab_mmkey (key, mask, root);
                         }
@@ -631,7 +617,7 @@ namespace MPX
                     }
                 }
 
-                if (grab)
+                if( grab )
                     gdk_window_add_filter (root, filter_mmkeys, this);
                 else
                     gdk_window_remove_filter (root, filter_mmkeys, this);
@@ -757,7 +743,7 @@ namespace MPX
                     G_TYPE_STRING, "MPX",
                     G_TYPE_INVALID, G_TYPE_INVALID);
 
-                if (error != NULL)
+                if( error != NULL )
                 {
                     g_warning (G_STRLOC ": Could not release media player keys: %s", error->message);
                     g_error_free (error);
@@ -771,7 +757,7 @@ namespace MPX
             m_mmkeys_dbusproxy = 0;
         }
 
-        if (m_mmkeys_grab_type == X_KEY_GRAB)
+        if( m_mmkeys_grab_type == X_KEY_GRAB )
         {
             g_message(G_STRLOC ": undoing old-style key grabs");
             mmkeys_grab( false ) ;
@@ -816,17 +802,17 @@ namespace MPX
 
         boost::shared_ptr<IYoukiController> ctrl = services->get<IYoukiController>("mpx-service-controller") ; 
 
-        if (strcmp (key, "Play") == 0)
+        if( strcmp (key, "Play") == 0 )
         {
             ctrl->API_pause_toggle() ;
         }
         else
-        if (strcmp (key, "Previous") == 0)
+        if( strcmp (key, "Previous") == 0 )
         {
             ctrl->API_prev() ;
         }
         else
-        if (strcmp (key, "Next") == 0)
+        if( strcmp (key, "Next") == 0 )
         {
             ctrl->API_next() ;
         }
