@@ -155,6 +155,8 @@ namespace MPX
     bool
     CPPModLastFmScrobbler::activate()
     {
+        logger::info( *m_Log, "Scrobbling turned ON" ) ;
+
         m_Active = true ;
 
         m_LastFmScrobbler->set_enabled( true ) ;
@@ -164,7 +166,6 @@ namespace MPX
             , mcs->key_get<std::string>( "lastfm", "password" )
         ) ;
 
-        logger::info( *m_Log, "Scrobbling turned ON\n" ) ;
 
         return true ;
     }
@@ -172,10 +173,10 @@ namespace MPX
     bool
     CPPModLastFmScrobbler::deactivate()
     {
+        logger::info( *m_Log, "Scrobbling turned OFF" ) ;
+
         m_LastFmScrobbler->set_enabled( false ) ;
         m_Active = false ;
-
-        logger::info( *m_Log, "Scrobbling turned OFF\n" ) ;
 
         return true ;
     }
