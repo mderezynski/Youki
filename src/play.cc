@@ -361,34 +361,15 @@ namespace MPX
                 {
                     if( GST_STATE (control_pipe() ) == GST_STATE_PAUSED )
                     {
-                            play_stream()  ;
-                            return ;
+                        GstStateChangeReturn G_GNUC_UNUSED statechange = gst_element_set_state( control_pipe (), GST_STATE_PLAYING )  ;
+                        return ; 
                     }
                     else
                     if( GST_STATE (control_pipe() ) == GST_STATE_PLAYING )
                     {
-                        GstStateChangeReturn statechange = gst_element_set_state( control_pipe (), GST_STATE_PAUSED )  ;
-
-                        if( statechange != GST_STATE_CHANGE_FAILURE )
-                        {
-                            GstState state  ;
-
-                            gst_element_get_state(
-                                  control_pipe()
-                                , &state
-                                , NULL
-                                , GST_CLOCK_TIME_NONE
-                            ) ; 
-
-                            if( state == GST_STATE_PAUSED )
-                            {
-                                property_status_ = PLAYSTATUS_PAUSED  ;
-                                return  ;
-                            }
-                        }
+                        GstStateChangeReturn G_GNUC_UNUSED statechange = gst_element_set_state( control_pipe (), GST_STATE_PAUSED )  ;
+                        return ; 
                     }
-
-                    stop_stream () ;
                 }
 
         void

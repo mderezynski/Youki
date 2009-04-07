@@ -221,7 +221,7 @@ bool LastFmScrobbler::canReconnect()
 void* LastFmScrobbler::authenticateThread(void* pInstance)
 {
     LastFmScrobbler* pScrobbler = reinterpret_cast<LastFmScrobbler*>(pInstance);
-    logger::info( pScrobbler->m_Log, "Authentication begun...");
+    logger::info( pScrobbler->m_Log, "Authenticating...");
 
     pScrobbler->authenticate();
 
@@ -230,7 +230,6 @@ void* LastFmScrobbler::authenticateThread(void* pInstance)
         pScrobbler->m_AuthenticatedCondition.broadcast();
     }
 
-    logger::info( pScrobbler->m_Log, "Authentication done...");
     return NULL;
 }
 

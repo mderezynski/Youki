@@ -36,6 +36,8 @@
 
 #include "cppmod-scrobbler.hh"
 
+#include "log.h"
+
 using namespace Glib;
 using namespace Gtk;
 
@@ -162,7 +164,7 @@ namespace MPX
             , mcs->key_get<std::string>( "lastfm", "password" )
         ) ;
 
-        *m_Log << "Scrobbling turned ON\n" ;
+        logger::info( *m_Log, "Scrobbling turned ON\n" ) ;
 
         return true ;
     }
@@ -173,7 +175,7 @@ namespace MPX
         m_LastFmScrobbler->set_enabled( false ) ;
         m_Active = false ;
 
-        *m_Log << "Scrobbling turned OFF\n" ;
+        logger::info( *m_Log, "Scrobbling turned OFF\n" ) ;
 
         return true ;
     }
