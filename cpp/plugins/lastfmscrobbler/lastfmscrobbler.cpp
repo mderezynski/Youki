@@ -68,10 +68,7 @@ LastFmScrobbler::~LastFmScrobbler()
 void
 LastFmScrobbler::set_enabled( bool enable )
 {
-    ScopedLock lock(m_TrackInfosMutex);
-
     m_Disabled = !enable ;
-    m_CurrentTrackInfo.reset() ;
 }
 
 void
@@ -129,8 +126,6 @@ void LastFmScrobbler::finishedPlaying()
 
     m_Elapsed = p->property_position().get_value() + m_SeekDiff ;
     m_SeekDiff = 0 ;
-
-    logger::debug( m_Log, (boost::format("Elapsed: %f") % m_Elapsed).str() ) ;
 
     authenticateIfNecessary();
 
@@ -268,6 +263,7 @@ void* LastFmScrobbler::finishPlayingThread(void* pInstance)
     if (pScrobbler->m_Authenticated && pScrobbler->m_CurrentTrackInfo && !pScrobbler->m_Disabled)
     {
         pScrobbler->submitTrack(pScrobbler->m_CurrentTrackInfo.get());
+        pScrobbler->m_CurrentTrackInfo.reset() ;
     }
 
     return NULL;
@@ -313,13 +309,13 @@ void LastFmScrobbler::submitTrack(const SubmissionInfo& info)
     }
     else
     {
-        ScopedLock lock(m_TrackInfosMutex);
+        //ScopedLock lock(m_TrackInfosMutex);
         m_BufferedTrackInfos.addInfo(info);
     }
 
     SubmissionInfoCollection tracksToSubmit;
     {
-        ScopedLock lock(m_TrackInfosMutex);
+        //ScopedLock lock(m_TrackInfosMutex);
         tracksToSubmit = m_BufferedTrackInfos;
     }
 
