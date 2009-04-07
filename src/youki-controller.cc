@@ -773,6 +773,12 @@ namespace MPX
 
                 m_play->request_status( PLAYSTATUS_STOPPED ) ; 
 
+                g_signal_emit(
+                      G_OBJECT(gobj())
+                    , m_C_SIG_ID_track_out
+                    , 0
+                ) ;
+
                 if( m_track_previous )
                 {
                         m_library->trackPlayed(
