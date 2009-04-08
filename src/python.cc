@@ -459,24 +459,6 @@ namespace mpxpy
 
 namespace mpxpy
 {
-    struct Play
-    {
-            static PyObject*
-            tap (MPX::Play & obj)
-            {
-                return pygobject_new((GObject*)(obj.tap()));
-            }
-
-            static PyObject*
-            pipeline (MPX::Play & obj)
-            {
-                return pygobject_new((GObject*)(obj.pipeline()));
-            }
-    };
-}
-
-namespace mpxpy
-{
 	MPX::Variant&
 	sql_row_getitem (MPX::SQL::Row & self, std::string const& key)
 	{
@@ -1001,12 +983,8 @@ BOOST_PYTHON_MODULE(mpx)
     /* Play */
     /*-------------------------------------------------------------------------------------*/
 
-/*
-    class_<MPX::Play, boost::noncopyable>("Play", boost::python::no_init)
-        .def("tap", &mpxpy::Play::tap)
-        .def("pipeline", &mpxpy::Play::pipeline)
+    class_<MPX::IPlay, boost::noncopyable>("IPlay", boost::python::no_init)
     ;
-*/
 }
 
 namespace

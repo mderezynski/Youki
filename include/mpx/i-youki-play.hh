@@ -82,14 +82,9 @@ namespace MPX
         typedef sigc::signal<void>                          SignalEos ;
         typedef sigc::signal<void, gint64>                  SignalSeek ;
         typedef sigc::signal<void, gint64>                  SignalPosition ;
-        typedef sigc::signal<void, int>                     SignalHttpStatus ;
-        typedef sigc::signal<void>                          SignalLastFMSync ;
         typedef sigc::signal<void, double>                  SignalBuffering ;
-        typedef sigc::signal<void, int>                     SignalPipelineState ;
-        typedef sigc::signal<void, int>                     SignalPlayStatus ;
         typedef sigc::signal<void>                          SignalStreamSwitched;
         typedef sigc::signal<void, Spectrum>                SignalSpectrum ;
-        typedef sigc::signal<void, int, int, GValue const*> SignalVideoGeom ;
         typedef sigc::signal<void, GstMetadataField>        SignalMetadata ;
         typedef sigc::signal<void
                 , const Glib::ustring&   /* element name */
@@ -137,19 +132,7 @@ namespace MPX
                         virtual SignalSpectrum&
                                 signal_spectrum() = 0 ;
 
-                        /** Signal emitted when the engine state changes 
-                         *
-                         */
-                        virtual SignalPlayStatus&
-                                signal_playstatus() = 0 ;
-
-                        /** Signal emitted when a stream title is incoming 
-                         *
-                         */
-                        virtual SignalPipelineState&
-                                signal_pipeline_state() = 0 ;
-
-                        /** Signal emitted on end of stream
+                       /** Signal emitted on end of stream
                          *
                          */
                         virtual SignalEos&  
@@ -166,12 +149,6 @@ namespace MPX
                          */
                         virtual SignalPosition&
                                 signal_position() = 0 ;
-
-                        /** Signal emitted on Last.fm HTTP "Status Code" 
-                         *
-                         */
-                        virtual SignalHttpStatus&
-                                signal_http_status() = 0 ;
 
                         /** Signal emitted when prebuffering live stream data 
                          *
@@ -194,11 +171,6 @@ namespace MPX
 
                         virtual const GstMetadata&
                         get_metadata () = 0 ;
-
-                        virtual void
-                        set_custom_httpheader(
-                              char const*
-                        ) = 0 ;
 
                         virtual void
                         reset(

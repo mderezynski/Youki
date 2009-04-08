@@ -94,7 +94,7 @@ namespace MPX
         Play::Play()
         : ObjectBase              ("MPXPlaybackEngine")
         , Service::Base           ("mpx-service-play")
-        , m_playback_bin             (0)
+        , m_playback_bin          (0)
         , property_stream_        (*this, "stream", "")
         , property_stream_type_   (*this, "stream-type", "")
         , property_volume_        (*this, "volume", 50)
@@ -297,7 +297,6 @@ namespace MPX
                         property_status_ = PLAYSTATUS_STOPPED ;
                     }
 
-                    set_custom_httpheader(NULL) ;
                     signal_spectrum_.emit( m_spectrum_zero ) ;
                 }
 
@@ -596,7 +595,6 @@ namespace MPX
                     , const std::string& type
                 )
                 {
-                    set_custom_httpheader(NULL) ;
                     m_metadata.reset() ;
 
                     property_stream_type_ = type ;
@@ -655,6 +653,7 @@ namespace MPX
                         {
                                 m_metadata.reset() ;
                                 property_stream_type_ = std::string() ;
+
                                 readify_stream (); 
                         }
                         break ;
@@ -673,9 +672,10 @@ namespace MPX
                                     ) ; 
                                 }
 
+                                stop_stream () ;
+
                                 m_metadata.reset() ;
                                 property_stream_type_ = std::string() ;
-                                stop_stream () ;
                         }
                         break ;
 
@@ -691,8 +691,6 @@ namespace MPX
                         }
                         break ;
                     }
-
-                    signal_playstatus_.emit( PlayStatus( property_status().get_value() )) ;
                 }
 
         void
@@ -933,8 +931,6 @@ namespace MPX
                                         play.m_conn_stream_position = signal_timeout().connect(sigc::mem_fun (play, &Play::tick), 500) ;
                                     }
                                 }
-
-                                play.signal_pipeline_state_.emit (new_state) ;
                             }
                             break ;
 
@@ -1373,21 +1369,6 @@ namespace MPX
                     m_accurate_seek = mcs->key_get<bool>( "audio","accurate-seek" ) ;
                 }
 
-        void
-                Play::set_custom_httpheader( char const* header ) 
-                {
-                    if( !m_bin[BIN_HTTP] ) 
-                    {
-                        return ;
-                    }
-
-                    if(m_bin[BIN_HTTP])
-                    {
-                        GstElement *e = gst_bin_get_by_name (GST_BIN (m_bin[BIN_HTTP]), "src") ;
-                        g_object_set(G_OBJECT(e), "customheader", header, NULL) ;
-                    }
-                }
-
         ///////////////////////////////////////////////
         /// Object Properties
         ///////////////////////////////////////////////
@@ -1452,18 +1433,6 @@ namespace MPX
                         return signal_spectrum_ ;
                 }
 
-        SignalPlayStatus &
-                Play::signal_playstatus ()
-                {
-                        return signal_playstatus_ ;
-                }
-
-        SignalPipelineState &
-                Play::signal_pipeline_state ()
-                {
-                        return signal_pipeline_state_ ;
-                }
-
         SignalEos &
                 Play::signal_eos ()
                 {
@@ -1480,12 +1449,6 @@ namespace MPX
                 Play::signal_position ()
                 {
                         return signal_position_ ;
-                }
-
-        SignalHttpStatus &
-                Play::signal_http_status ()
-                {
-                        return signal_http_status_ ;
                 }
 
         SignalBuffering &
@@ -1513,18 +1476,6 @@ namespace MPX
                 }
 
         /*--------------------------------------------------------*/
-
-        GstElement*
-                Play::tap ()
-                {
-                        return gst_bin_get_by_name (GST_BIN (m_bin[BIN_OUTPUT]), "identity1") ;
-                }
-
-        GstElement*
-                Play::pipeline ()
-                {
-                        return m_bin[BIN_OUTPUT]; 
-                }
 
         GstMetadata const&
                 Play::get_metadata ()

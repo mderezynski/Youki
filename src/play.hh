@@ -79,17 +79,16 @@ namespace MPX
 
                         enum PipelineId
                         {
-                              PIPELINE_NONE = 0
+                              PIPELINE_NONE     = 0
                             , PIPELINE_HTTP
                             , PIPELINE_MMSX
                             , PIPELINE_FILE
                             , PIPELINE_CDDA
-                            , PIPELINE_VIDEO // not really a *pipeline* but anyway
                         };
 
                         enum BinId
                         {
-                              BIN_OUTPUT = 0
+                              BIN_OUTPUT        = 0
                             , BIN_HTTP
                             , BIN_MMSX
                             , BIN_FILE
@@ -98,20 +97,15 @@ namespace MPX
                         };
 
                         PipelineId          m_pipeline_id ;
-
                         GstElement        * m_pipeline ;
                         GstElement        * m_equalizer ;
                         GstElement        * m_playback_bin ;
                         GstElement        * m_bin[N_BINS] ;
-
                         GAsyncQueue       * m_message_queue ;
                         GstMetadata         m_metadata ;
-
                         Spectrum            m_spectrum
                                           , m_spectrum_zero ;
-
                         sigc::connection    m_conn_stream_position ;
-    
                         bool                m_accurate_seek ;
 
                 private:
@@ -155,67 +149,49 @@ namespace MPX
                         /** Signal emitted on error state 
                          *
                          */
-                        SignalError &
+                        SignalError&
                                 signal_error();
 
                         /** Signal emitted on spectrum data 
                          *
                          */
-                        SignalSpectrum &
+                        SignalSpectrum&
                                 signal_spectrum();
-
-                        /** Signal emitted when the engine state changes 
-                         *
-                         */
-                        SignalPlayStatus &
-                                signal_playstatus();
-
-                        /** Signal emitted when a stream title is incoming 
-                         *
-                         */
-                        SignalPipelineState &
-                                signal_pipeline_state();
 
                         /** Signal emitted on end of stream
                          *
                          */
-                        SignalEos &  
+                        SignalEos&  
                                 signal_eos();
 
                         /** Signal emitted on a successful seek event
                          *
                          */
-                        SignalSeek &
+                        SignalSeek&
                                 signal_seek();
 
                         /** Signal emitted on stream position change
                          *
                          */
-                        SignalPosition &
+                        SignalPosition&
                                 signal_position();
-
-                        /** Signal emitted on Last.fm HTTP "Status Code" 
-                         *
-                         */
-                        SignalHttpStatus &
-                                signal_http_status();
 
                         /** Signal emitted when prebuffering live stream data 
                          *
                          */
-                        SignalBuffering &
+                        SignalBuffering&
                                 signal_buffering();
 
                         /** Signal on new metadata 
                          *
                          */
-                        SignalMetadata &
+                        SignalMetadata&
                                 signal_metadata();
 
                         /** Signal sent after stream switch is complete 
                          *
                          */
-                        SignalStreamSwitched &
+                        SignalStreamSwitched&
                                 signal_stream_switched();
 
 
@@ -234,11 +210,6 @@ namespace MPX
                         ) ;
 
                         void
-                        set_custom_httpheader(
-                              char const*
-                        ) ;
-
-                        void
                         seek(
                               gint64
                         ) ;
@@ -247,60 +218,57 @@ namespace MPX
                         reset(
                         ) ;
 
-                        GstElement*
-                        tap(
-                        ) ;
-
-                        GstElement*
-                        pipeline(
-                        ) ;
-
                 private:
 
-                        SignalPlayStatus        signal_playstatus_;
                         SignalMetadata          signal_metadata_;
                         SignalSeek              signal_seek_;
                         SignalBuffering         signal_buffering_;
                         SignalSpectrum          signal_spectrum_;
                         SignalPosition          signal_position_;
-                        SignalHttpStatus        signal_http_status_;
-                        SignalPipelineState     signal_pipeline_state_;
                         SignalEos               signal_eos_;
                         SignalError             signal_error_;
                         SignalStreamSwitched    signal_stream_switched_;
 
                         void
-                                eq_band_changed (MCS_CB_DEFAULT_SIGNATURE, unsigned int band);
+                        eq_band_changed(
+                              MCS_CB_DEFAULT_SIGNATURE
+                            , unsigned int band
+                        ) ;
 
                         static void
-                                queue_underrun (GstElement *element,
-                                                gpointer data);
+                        queue_underrun(
+                              GstElement*
+                            , gpointer 
+                        ) ;
 
                         static void
-                                http_status  (GstElement *element,
-                                                int status,
-                                                gpointer data);
+                        link_pad(
+                              GstElement*
+                            , GstPad*
+                            , gboolean
+                            , gpointer
+                        ) ;
 
                         static void
-                                link_pad  (GstElement *element,
-                                                GstPad     *pad,
-                                                gboolean    last,
-                                                gpointer    data);
-
-                        static void
-                                bus_watch (GstBus     *bus,
-                                                GstMessage *message,
-                                                gpointer    data);
+                        bus_watch(
+                              GstBus*
+                            , GstMessage*
+                            , gpointer
+                        ) ;
 
                         static gboolean
-                                foreach_structure (GQuark	       field_id,
-                                                const GValue	*value,
-                                                gpointer	     data);
+                        foreach_structure(
+                              GQuark
+                            , const GValue*
+                            , gpointer
+                        ) ;
 
                         static void
-                                for_each_tag (const GstTagList * list,
-                                                const gchar * tag,
-                                                gpointer data);
+                        for_each_tag(
+                              const GstTagList*
+                            , const gchar*
+                            , gpointer
+                        ) ;
 
                         // Properties
 
@@ -312,32 +280,72 @@ namespace MPX
                         PropInt             property_position_;
                         PropInt             property_duration_;
 
-                        void  destroy_bins ();
-                        void  create_bins ();
-                        void  stop_stream ();
-                        void  play_stream ();
-                        void  pause_stream ();
-                        void  readify_stream ();
-                        bool  tick ();
-                        bool  clock_idle_handler();
-                        void  on_stream_changed ();
-                        void  on_volume_changed ();
-                        void  pipeline_configure(PipelineId);
-                        void  request_status_real(PlayStatus);
-                        void  switch_stream_real(
+                        void
+                        destroy_bins(
+                        ) ;
+
+                        void
+                        create_bins(
+                        ) ;
+
+                        void
+                        stop_stream(
+                        ) ;
+
+                        void
+                        play_stream(
+                        ) ;
+
+                        void
+                        pause_stream(
+                        ) ;
+
+                        void
+                        readify_stream(
+                        ) ;
+
+                        bool
+                        tick(
+                        ) ;
+
+                        bool
+                        clock_idle_handler(
+                        ) ;
+
+                        void
+                        on_stream_changed(
+                        ) ;
+
+                        void
+                        on_volume_changed(
+                        ) ;
+
+                        void
+                        pipeline_configure(
+                              PipelineId
+                        ) ;
+
+                        void
+                        request_status_real(
+                              PlayStatus
+                        ) ;
+
+                        void
+                        switch_stream_real(
                               const std::string&
                             , const std::string& = std::string()
                         ) ;
 
-                        static gboolean clock_callback(
-                                        GstClock *clock,
-                                        GstClockTime time,
-                                        GstClockID id,
-                                        gpointer user_data
-                                        );
+                        static gboolean
+                        clock_callback(
+                              GstClock*
+                            , GstClockTime 
+                            , GstClockID
+                            , gpointer
+                        ) ;
 
                         GstElement*
-                        control_pipe () const;
+                        control_pipe() const ;
         };
 }
 
