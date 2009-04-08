@@ -308,9 +308,6 @@ namespace MPX
         m_main_info_bitrate = Gtk::manage( new YoukiSimpleInfo ) ;
         m_main_info_bitrate->set_size_request( 60, -1 ) ;
 
-//        m_main_info_codec   = Gtk::manage( new YoukiSimpleInfo ) ;
-//        m_main_info_codec->set_size_request( 140, -1 ) ;
-
         m_main_infoarea     = Gtk::manage( new InfoArea ) ;
         m_main_infoarea->signal_clicked().connect(
             sigc::mem_fun(
@@ -488,7 +485,6 @@ namespace MPX
 
         m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
         m_HBox_Info->pack_start( *m_main_info_bitrate, false, false, 0 ) ;
-//        m_HBox_Info->pack_start( *m_main_info_codec, false, false, 0 ) ;
         m_HBox_Info->property_spacing() = 4 ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
@@ -838,6 +834,8 @@ namespace MPX
     {
         PlayStatus status = PlayStatus( m_play->property_status().get_value() ) ;
 
+        g_message( "Status: %d", int(status) ) ;
+
         m_control_status_icon->set_playstatus( status ) ;
 
         switch( status )
@@ -848,14 +846,17 @@ namespace MPX
             case PLAYSTATUS_STOPPED:
 
                 m_track_current.reset() ;
+                m_track_previous.reset() ;
+                m_playqueue.clear() ;
+                m_seek_position.reset() ; 
+
                 m_ListViewTracks->clear_active_track() ;
+
                 m_main_titleinfo->clear() ;
                 m_main_info_bitrate->clear() ;
-//                m_main_info_codec->clear() ;
                 m_main_cover->clear() ;
                 m_main_position->set_position( 0, 0 ) ;
-                m_seek_position.reset() ; 
-                m_playqueue.clear() ;
+
                 m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
                 m_main_window->queue_draw () ;    
 
@@ -863,13 +864,10 @@ namespace MPX
 
             case PLAYSTATUS_WAITING:
 
-                m_track_current.reset() ;
+                m_seek_position.reset() ; 
                 m_main_titleinfo->clear() ;
                 m_main_info_bitrate->clear() ;
-//                m_main_info_codec->clear() ;
-                m_seek_position.reset() ; 
                 m_main_window->queue_draw () ;    
-
                 break ;
 
             case PLAYSTATUS_PAUSED:
@@ -980,7 +978,6 @@ namespace MPX
         else
         if( field == FIELD_AUDIO_CODEC )
         {
-//            m_main_info_codec->set_info( m.m_audio_codec.get() ) ;
         }
     }
 
