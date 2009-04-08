@@ -48,8 +48,7 @@
 #include "hal++.hh"
 
 #include "mpx/mpx-sql.hh"
-
-#include "hal.hh"
+#include "mpx/mpx-hal.hh"
 
 using namespace Glib;
 using namespace Gtk;

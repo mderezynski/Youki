@@ -46,7 +46,7 @@
 #include "mpx/mpx-types.hh"
 #include "mpx/util-file.hh"
 #ifdef HAVE_HAL
-#include "hal.hh"
+#include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
 #include "mpx/metadatareader-taglib.hh"
 

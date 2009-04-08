@@ -37,8 +37,6 @@
 #include <glibmm/ustring.h>
 #include <boost/functional/hash.hpp>
 #include "libhal++/hal++.hh"
-#include "mpx/mpx-sql.hh"
-#include "mpx/mpx-services.hh"
 
 namespace MPX
 {

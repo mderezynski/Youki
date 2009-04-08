@@ -20,7 +20,7 @@
 #include "mpx/mpx-lyrics.hh"
 #include "mpx/mpx-covers.hh"
 #ifdef HAVE_HAL
-#include "hal.hh"
+#include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"

@@ -30,9 +30,6 @@
 
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-covers.hh"
-#ifdef HAVE_HAL
-#include "hal.hh"
-#endif // HAVE_HAL
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-sql.hh"
@@ -41,6 +38,10 @@
 #include "mpx/algorithm/random.hh"
 #include "mpx/metadatareader-taglib.hh"
 #include "mpx/util-string.hh"
+
+#ifdef HAVE_HAL
+#include "mpx/i-youki-hal.hh"
+#endif // HAVE_HAL
 
 using namespace Glib;
 using boost::get;
@@ -529,7 +530,7 @@ namespace MPX
                                                         track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
                                                                 filename_from_uri (uri).substr (volume.mount_point.length()) ;
                                                 }
-                                                catch( HAL::Exception& cxe )
+                                                catch( IHAL::Exception& cxe )
                                                 {
                                                         g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
                                                         throw FileQualificationError((boost::format("%s: %s") % uri % cxe.what()).str());
@@ -574,12 +575,12 @@ namespace MPX
                                                         track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
                                                                 filename_from_uri( uri ).substr( volume.mount_point.length() ) ;
                                                 }
-                                                catch (HAL::Exception & cxe)
+                                                catch( IHAL::Exception & cxe )
                                                 {
                                                         g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
                                                         throw FileQualificationError((boost::format("%s: %s") % uri % cxe.what()).str());
                                                 }
-                                                catch (Glib::ConvertError & cxe)
+                                                catch( Glib::ConvertError & cxe )
                                                 {
                                                         g_warning( "%s: %s", G_STRLOC, cxe.what().c_str() ); 
                                                         throw FileQualificationError((boost::format("%s: %s") % uri % cxe.what()).str());
@@ -611,7 +612,7 @@ namespace MPX
 
                                         return filename_to_uri( build_filename( Util::normalize_path(mount_point), path ) );
 
-                                } catch (HAL::NoMountPathForVolumeError & cxe)
+                                } catch( IHAL::NoMountPathForVolumeError & cxe )
                                 {
                                         g_message("%s: Error: What: %s", G_STRLOC, cxe.what());
                                         throw FileQualificationError((boost::format("No available mountpoint for Track %lld: %s") % get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) % cxe.what() ).str());
@@ -854,10 +855,10 @@ namespace MPX
 #ifdef HAVE_HAL
                                 if( m_Flags & F_USING_HAL )
                                 {
-                                    if (row.count("device_id"))
+                                    if( row.count("device_id") )
                                             (*track.get())[ATTRIBUTE_MPX_DEVICE_ID] = get<gint64>(row["device_id"]);
 
-                                    if (row.count("hal_vrp"))
+                                    if( row.count("hal_vrp") )
                                             (*track.get())[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);
 
                                     (*track.get())[ATTRIBUTE_LOCATION] = trackGetLocation( (*track.get()) ); 
@@ -879,73 +880,73 @@ namespace MPX
 
                         if( all_metadata )
                         {
-                                if (row.count("album_artist"))
+                                if( row.count("album_artist") )
                                         (*track.get())[ATTRIBUTE_ALBUM_ARTIST] = get<std::string>(row["album_artist"]);
 
-                                if (row.count("artist"))
+                                if( row.count("artist") )
                                         (*track.get())[ATTRIBUTE_ARTIST] = get<std::string>(row["artist"]);
 
-                                if (row.count("album"))
+                                if( row.count("album") )
                                         (*track.get())[ATTRIBUTE_ALBUM] = get<std::string>(row["album"]);
 
-                                if (row.count("track"))
+                                if( row.count("track") )
                                         (*track.get())[ATTRIBUTE_TRACK] = gint64(get<gint64>(row["track"]));
 
-                                if (row.count("title"))
+                                if( row.count("title") )
                                         (*track.get())[ATTRIBUTE_TITLE] = get<std::string>(row["title"]);
 
-                                if (row.count("time"))
+                                if( row.count("time") )
                                         (*track.get())[ATTRIBUTE_TIME] = gint64(get<gint64>(row["time"]));
 
-                                if (row.count("mb_artist_id"))
+                                if( row.count("mb_artist_id") )
                                         (*track.get())[ATTRIBUTE_MB_ARTIST_ID] = get<std::string>(row["mb_artist_id"]);
 
-                                if (row.count("mb_album_id"))
+                                if( row.count("mb_album_id") )
                                         (*track.get())[ATTRIBUTE_MB_ALBUM_ID] = get<std::string>(row["mb_album_id"]);
 
-                                if (row.count("mb_track_id"))
+                                if( row.count("mb_track_id") )
                                         (*track.get())[ATTRIBUTE_MB_TRACK_ID] = get<std::string>(row["mb_track_id"]);
 
-                                if (row.count("mb_album_artist_id"))
+                                if( row.count("mb_album_artist_id") )
                                         (*track.get())[ATTRIBUTE_MB_ALBUM_ARTIST_ID] = get<std::string>(row["mb_album_artist_id"]);
 
-                                if (row.count("mb_release_country"))
+                                if( row.count("mb_release_country") )
                                         (*track.get())[ATTRIBUTE_MB_RELEASE_COUNTRY] = get<std::string>(row["mb_release_country"]);
 
-                                if (row.count("mb_release_type"))
+                                if( row.count("mb_release_type") )
                                         (*track.get())[ATTRIBUTE_MB_RELEASE_TYPE] = get<std::string>(row["mb_release_type"]);
 
-                                if (row.count("musicip_puid"))
+                                if( row.count("musicip_puid") )
                                         (*track.get())[ATTRIBUTE_MUSICIP_PUID] = get<std::string>(row["musicip_puid"]);
 
-                                if (row.count("date"))
+                                if( row.count("date") )
                                         (*track.get())[ATTRIBUTE_DATE] = get<gint64>(row["date"]);
 
-                                if (row.count("amazon_asin"))
+                                if( row.count("amazon_asin") )
                                         (*track.get())[ATTRIBUTE_ASIN] = get<std::string>(row["amazon_asin"]);
 
-                                if (row.count("album_j"))
+                                if( row.count("album_j") )
                                         (*track.get())[ATTRIBUTE_MPX_ALBUM_ID] = get<gint64>(row["album_j"]);
 
-                                if (row.count("artist_j"))
+                                if( row.count("artist_j") )
                                         (*track.get())[ATTRIBUTE_MPX_ARTIST_ID] = get<gint64>(row["artist_j"]);
 
-                                if (row.count("mpx_album_artist_id"))
+                                if( row.count("mpx_album_artist_id") )
                                         (*track.get())[ATTRIBUTE_MPX_ALBUM_ARTIST_ID] = get<gint64>(row["mpx_album_artist_id"]);
 
-                                if (row.count("type"))
+                                if( row.count("type") )
                                         (*track.get())[ATTRIBUTE_TYPE] = get<std::string>(row["type"]);
 
-                                if (row.count("bitrate"))
+                                if( row.count("bitrate") )
                                         (*track.get())[ATTRIBUTE_BITRATE] = get<gint64>(row["bitrate"]);
 
-                                if (row.count("samplerate"))
+                                if( row.count("samplerate") )
                                         (*track.get())[ATTRIBUTE_SAMPLERATE] = get<gint64>(row["samplerate"]);
 
-                                if (row.count("type"))
+                                if( row.count("type") )
                                         (*track.get())[ATTRIBUTE_TYPE] = get<std::string>(row["type"]);
 
-                                if (row.count("audio_quality"))
+                                if( row.count("audio_quality") )
                                         (*track.get())[ATTRIBUTE_QUALITY] = get<gint64>(row["audio_quality"]);
                         }
 

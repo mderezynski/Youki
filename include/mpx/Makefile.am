@@ -26,8 +26,6 @@ noinst_HEADERS =							\
 		mpx-network.hh						\
 		mpx-preferences.hh					\
 		mpx-protected-access.hh				\
-		mpx-public-mpx.hh					\
-		mpx-public-play.hh					\
 		mpx-python.hh						\
 		mpx-services.hh						\
 		mpx-sql.hh							\
