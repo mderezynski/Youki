@@ -311,13 +311,13 @@ namespace MPX
 
             Map_L1      m_InsertionTracks;
 
-            typedef boost::tuple<std::string, std::string, std::string>        FileTriplet_t;
-            typedef std::map<FileTriplet_t, gint64>                            Triplet_MTIME_t;
+            typedef boost::tuple<gint64, std::string>                          FileDuplet_t;
+            typedef std::map<FileDuplet_t, time_t>                             Duplet_MTIME_t;
             typedef std::set<gint64>                                           IdSet_t;
 
             IdSet_t                                 m_AlbumIDs, m_AlbumArtistIDs; 
             IdSet_t                                 m_ProcessedAlbums;
-            Triplet_MTIME_t                         m_MTIME_Map;
+            Duplet_MTIME_t                          m_MTIME_Map;
 
             void
             cache_mtimes(

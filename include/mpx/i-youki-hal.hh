@@ -115,20 +115,9 @@ namespace MPX
                   const std::string&
             ) const = 0 ;
 
-            virtual std::string
-            get_mount_point_for_volume(
-                  const std::string& /*volume_udi*/
-                , const std::string& /*device_udi*/
-            ) const = 0 ;
-
             virtual Volume
             get_volume_for_uri(
                   const std::string&
-            ) const = 0 ;
-
-            virtual std::string
-            get_volume_drive_bus(
-                  const Volume&
             ) const = 0 ;
 
             virtual gint64

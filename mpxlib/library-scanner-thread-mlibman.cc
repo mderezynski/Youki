@@ -428,7 +428,7 @@ MPX::LibraryScannerThread_MLibMan::cache_mtimes(
     RowV v;
     m_SQL->get(
           v
-        , "SELECT hal_device_udi, hal_volume_udi, hal_vrp, mtime FROM track"
+        , "SELECT device_id, hal_vrp, mtime FROM track"
     );
 
     for( RowV::iterator i = v.begin(); i != v.end(); ++i )
@@ -436,8 +436,7 @@ MPX::LibraryScannerThread_MLibMan::cache_mtimes(
         m_MTIME_Map.insert(
             std::make_pair(
                   boost::make_tuple(
-                      get<std::string>((*i)["hal_device_udi"])
-                    , get<std::string>((*i)["hal_volume_udi"])
+                      get<gint64>((*i)["device_id"])
                     , get<std::string>((*i)["hal_vrp"])
                   )
                 , get<gint64>((*i)["mtime"])
@@ -481,7 +480,7 @@ MPX::LibraryScannerThread_MLibMan::on_scan_all(
         { 
             m_SQL->get(
                 v,
-                "SELECT id, hal_volume_udi, hal_device_udi, hal_vrp, mtime, insert_path FROM track"
+                "SELECT id, device_id, hal_vrp, mtime, insert_path FROM track"
             );
         }
         else
@@ -728,15 +727,15 @@ MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
             try{
                 if (m_Flags & Library_MLibMan::F_USING_HAL)
                 { 
-                    const Volume& volume (m_HAL.get_volume_for_uri (*i));
+                    const Volume& volume = m_HAL.get_volume_for_uri (*i) ;
+                    gint64 device_id = m_HAL.get_id_for_volume( volume.volume_udi, volume.device_udi ) ;
                     insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr(volume.mount_point.length())) ;
 
                     m_SQL->get(
                         v,
                         mprintf( 
-                              "SELECT id, hal_volume_udi, hal_device_udi, hal_vrp, mtime FROM track WHERE hal_volume_udi = '%s' AND hal_device_udi ='%s' AND insert_path ='%s'"
-                            , volume.volume_udi.c_str()
-                            , volume.device_udi.c_str() 
+                              "SELECT id, device_id, hal_vrp, mtime FROM track WHERE device_id ='%lld' AND insert_path ='%s'"
+                            , device_id 
                             , insert_path_sql.c_str())
                     );
                 }
@@ -1104,11 +1103,10 @@ MPX::LibraryScannerThread_MLibMan::get_track_mtime(
     Track& track
 ) const
 {
-    Triplet_MTIME_t::const_iterator i =
+    Duplet_MTIME_t::const_iterator i =
          m_MTIME_Map.find(
             boost::make_tuple(
-                get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get())
-              , get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get())
+                get<gint64>(track[ATTRIBUTE_MPX_DEVICE_ID].get())
               , get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get())
     ));
 
@@ -1128,12 +1126,10 @@ MPX::LibraryScannerThread_MLibMan::get_track_id (Track& track) const
   if( m_Flags & Library_MLibMan::F_USING_HAL )
   {
     static boost::format
-      select_f ("SELECT id FROM track WHERE %s='%s' AND %s='%s' AND %s='%s';");
+      select_f ("SELECT id FROM track WHERE %s='%lld' AND %s='%s';");
 
-    m_SQL->get (rows, (select_f % attrs[ATTRIBUTE_HAL_VOLUME_UDI].id 
-                                % get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get())
-                                % attrs[ATTRIBUTE_HAL_DEVICE_UDI].id
-                                % get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get())
+    m_SQL->get (rows, (select_f % attrs[ATTRIBUTE_MPX_DEVICE_ID].id
+                                % get<gint64>(track[ATTRIBUTE_MPX_DEVICE_ID].get())
                                 % attrs[ATTRIBUTE_VOLUME_RELATIVE_PATH].id
                                 % mprintf ("%q", Util::normalize_path(get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get())).c_str())).str());
   }
@@ -1580,9 +1576,8 @@ MPX::LibraryScannerThread_MLibMan::insert(
             m_SQL->get(
                 rv,
                 mprintf(
-                      "SELECT id FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND hal_vrp = '%s'"
-                    , get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get()).c_str() 
-                    , get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get()).c_str() 
+                      "SELECT id FROM track WHERE device_id = '%lld' AND hal_vrp = '%s'"
+                    , get<gint64>(track[ATTRIBUTE_MPX_DEVICE_ID].get())
                     , get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()).c_str() 
             )); 
         }
@@ -1767,7 +1762,7 @@ MPX::LibraryScannerThread_MLibMan::on_vacuum()
   pthreaddata->ScanStart.emit();
 
   RowV rows;
-  m_SQL->get (rows, "SELECT id, hal_volume_udi, hal_device_udi, hal_vrp, location FROM track"); // FIXME: We shouldn't need to do this here, it should be transparent (HAL vs. non HAL)
+  m_SQL->get (rows, "SELECT id, device_id, hal_vrp, location FROM track"); // FIXME: We shouldn't need to do this here, it should be transparent (HAL vs. non HAL)
 
   for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
   {
@@ -1815,12 +1810,13 @@ MPX::LibraryScannerThread_MLibMan::on_vacuum_volume_list(
 
   for( VolumeKey_v::const_iterator i = volumes.begin(); i != volumes.end(); ++i )
   {
+          gint64 device_id = m_HAL.get_id_for_volume( (*i).first, (*i).second ) ;
+
           RowV rows;
           m_SQL->get(
               rows,
-              (boost::format ("SELECT * FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
-                      % (*i).first 
-                      % (*i).second 
+              (boost::format ("SELECT * FROM track WHERE device_id = '%lld'")
+                      % device_id 
               ).str());
 
           for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )

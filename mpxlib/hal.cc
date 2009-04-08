@@ -471,12 +471,6 @@ namespace MPX
         }
     }
 
-    std::string
-        HAL::get_volume_drive_bus( const Volume& volume ) const
-    {
-        return std::string( HALBus[volume.drive_bus] );
-    }
-
     bool
         HAL::path_is_mount_path( const std::string& path ) const
     {
@@ -575,23 +569,6 @@ namespace MPX
     
             throw std::runtime_error(_("No volume with this id")) ;
         }
-
-    std::string
-        HAL::get_mount_point_for_volume( const std::string& volume_udi, const std::string& device_udi ) const
-    {
-        VolumeKey match( volume_udi, device_udi );
-        Volumes::const_iterator v_iter = m_volumes.find( match );
-
-        if( v_iter == m_volumes.end() )
-        {
-            g_message("%s: Got no volume for %s, %s", G_STRFUNC, volume_udi.c_str(), device_udi.c_str());
-            throw NoMountPathForVolumeError( (boost::format ("No mount path for given volume: device: %s, volume: %s" ) % device_udi % volume_udi).str());
-        }
-        else
-        {
-            return v_iter->second.first.mount_point;
-        }
-    }
 
     void
         HAL::volume_process( const std::string &udi )

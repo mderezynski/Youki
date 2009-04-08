@@ -471,12 +471,6 @@ namespace MPX
         }
     }
 
-    std::string
-        HAL::get_volume_drive_bus( const Volume& volume ) const
-    {
-        return std::string( HALBus[volume.drive_bus] );
-    }
-
     bool
         HAL::path_is_mount_path( const std::string& path ) const
     {
