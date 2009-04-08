@@ -8,7 +8,7 @@
 namespace
 {
     const double rounding = 2. ; 
-    const int    pad = 0 ;
+    const int    pad = 1 ;
 }
 
 namespace MPX
@@ -30,7 +30,7 @@ namespace MPX
     KoboVolume::on_size_request( Gtk::Requisition * req )
     {
         req->width  = 100 + 2*pad ;
-        req->height = 14 ;
+        req->height = 16 ;
     }
 
     void

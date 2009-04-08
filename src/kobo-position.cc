@@ -24,6 +24,7 @@ namespace MPX
         , m_bg( bg )
     {
         add_events(Gdk::EventMask(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK )) ;
+        set_flags(Gtk::CAN_FOCUS) ;
     }
 
     KoboPosition::~KoboPosition () 
@@ -33,7 +34,7 @@ namespace MPX
     void
     KoboPosition::on_size_request( Gtk::Requisition * req )
     {
-        req->height = 14 ;  
+        req->height = 16 ;  
     }
 
     void
@@ -72,8 +73,8 @@ namespace MPX
         ) ;
         cairo->fill () ;
 
-       cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
-       cairo->set_source_rgba(
+        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+        cairo->set_source_rgba(
               c.get_red_p() 
             , c.get_green_p() 
             , c.get_blue_p()
@@ -81,9 +82,9 @@ namespace MPX
         ) ;
         RoundedRectangle(
               cairo
-            , 0 
-            , 0 
-            , a.get_width()
+            , 1 
+            , 1 
+            , a.get_width() - 2
             , 14
             , rounding
         ) ;
@@ -102,9 +103,9 @@ namespace MPX
         {
             GdkRectangle r ;
 
-            r.x         = 0 ; 
-            r.y         = 0 ; 
-            r.width     = a.get_width() * percent ; 
+            r.x         = 1 ; 
+            r.y         = 1 ; 
+            r.width     = (a.get_width() - 2) * percent ; 
             r.height    = 14 ; 
 
             cairo->save () ;
@@ -165,7 +166,6 @@ namespace MPX
             Pango::FontDescription font_desc ("Sans") ;
             int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
             font_desc.set_size (text_size_pt * PANGO_SCALE) ;
-//            font_desc.set_weight (Pango::WEIGHT_BOLD) ;
             Glib::RefPtr<Pango::Layout> layout = Glib::wrap (pango_cairo_create_layout (cairo->cobj ())) ;
             layout->set_font_description (font_desc) ;
 
@@ -177,8 +177,8 @@ namespace MPX
             layout->get_pixel_size (width, height) ;
 
             cairo->move_to(
-                  fmax( 2, 2 + double(a.get_width()) * double(percent) - width - 4 ) 
-                , 1 
+                  fmax( 3, 3 + double(a.get_width()) * double(percent) - width - 6 ) 
+                , 2 
             ) ;
             cairo->set_source_rgba( 1., 1., 1., 1. ) ;
             cairo->set_operator( Cairo::OPERATOR_OVER ) ;
@@ -191,13 +191,47 @@ namespace MPX
                     ) ;
                     layout->get_pixel_size (width, height) ;
                     cairo->move_to(
-                          2 + double(a.get_width()) - width - 4  
-                        , 1
+                          3 + double(a.get_width()) - width - 6  
+                        , 2
                     ) ;
                     cairo->set_source_rgba( 1., 1., 1., 1. * factor ) ;
                     cairo->set_operator( Cairo::OPERATOR_OVER ) ;
                     pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
             }
+        }
+
+        if( has_focus() )
+        {
+                double h, s, b ;
+
+                Util::color_to_hsb( c, h, s, b ) ;
+                b = std::min( 1., b+0.12 ) ;
+                s = std::min( 1., s+0.12 ) ;
+                Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
+
+                cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+                cairo->set_source_rgba(
+                      c1.get_red_p() 
+                    , c1.get_green_p()
+                    , c1.get_blue_p()
+                    , 1. 
+                ) ;
+                RoundedRectangle(
+                      cairo
+                    , 1 
+                    , 1 
+                    , a.get_width() - 2
+                    , 14
+                    , rounding
+                ) ;
+
+                std::valarray<double> dashes ( 2 ) ;
+                dashes[0] = 1. ;
+                dashes[1] = 1. ;
+
+                cairo->set_dash( dashes, 2 ) ;
+                cairo->set_line_width( .75 ) ; 
+                cairo->stroke () ;
         }
 
         return true ;
@@ -226,13 +260,17 @@ namespace MPX
     {
         if( event->button == 1 )
         {
+            grab_focus() ;
+        
             const Gtk::Allocation& a = get_allocation() ;
 
             m_clicked = true ;
+
             m_seek_factor = double(a.get_width()) / double(m_duration) ;
+
             m_seek_position = double(event->x) / m_seek_factor ;
-            m_seek_position = (m_seek_position > m_duration) ? m_duration : m_seek_position ;
-            m_seek_position = (m_seek_position < 0) ? 0 : m_seek_position ;
+            m_seek_position = std::min( std::max( gint64(0), m_seek_position ),  m_duration ) ; 
+
             queue_draw () ;
         }
 
@@ -273,11 +311,47 @@ namespace MPX
             }
 
             m_seek_position = double(x_orig) / m_seek_factor ;
-            m_seek_position = (m_seek_position > m_duration) ? m_duration : m_seek_position ;
-            m_seek_position = (m_seek_position < 0) ? 0 : m_seek_position ;
+            m_seek_position = std::min( std::max( gint64(0), m_seek_position),  m_duration ) ; 
+
             queue_draw () ;
         }
 
         return true ;
+    }
+
+    bool
+    KoboPosition::on_focus_in_event(
+        GdkEventFocus* event
+    )
+    {
+        queue_draw() ;
+        return false ;
+    }
+
+    bool
+    KoboPosition::on_key_press_event(
+        GdkEventKey* event
+    )
+    {
+        switch( event->keyval )
+        {
+            case GDK_Down:
+            case GDK_KP_Down:
+                m_seek_position = m_position - 5 ; 
+                m_seek_position = std::min( std::max( gint64(0), m_seek_position ),  m_duration ) ; 
+                m_SIGNAL_seek_event.emit( m_seek_position ) ;
+                return true ;
+
+            case GDK_Up:
+            case GDK_KP_Up:
+                m_seek_position = m_position + 5 ; 
+                m_seek_position = std::min( std::max( gint64(0), m_seek_position ),  m_duration ) ; 
+                m_SIGNAL_seek_event.emit( m_seek_position ) ;
+                return true ;
+
+            default: break;
+        }
+
+        return false ;
     }
 }

@@ -172,9 +172,9 @@ namespace MPX
         ) ;
         RoundedRectangle(
               cairo
-            , 0
             , 1 
-            , a.get_width() 
+            , 1 
+            , (a.get_width() - 2)
             , double((a.get_height() - 2))
             , 4. 
         ) ;

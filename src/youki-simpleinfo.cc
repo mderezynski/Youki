@@ -86,16 +86,16 @@ namespace MPX
         ) ;
         RoundedRectangle(
               cairo
-            , 0
             , 1 
-            , a.get_width() 
+            , 1 
+            , (a.get_width() - 2)
             , double((a.get_height() - 2))
             , 4. 
         ) ;
         cairo->fill () ;
 
         Pango::FontDescription font_desc ("sans") ;
-        int text_size_pt = static_cast<int> ((9 * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+        int text_size_pt = static_cast<int> ((10 * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
         font_desc.set_size (text_size_pt * PANGO_SCALE) ;
         font_desc.set_weight (Pango::WEIGHT_BOLD) ;
 

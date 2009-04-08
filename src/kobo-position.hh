@@ -47,37 +47,47 @@ namespace MPX
 
             virtual void
             on_size_request(
-                Gtk::Requisition*
+                  Gtk::Requisition*
             ) ;
 
             virtual bool
             on_expose_event(
-                GdkEventExpose*
+                  GdkEventExpose*
             ) ;
 
             virtual bool
             on_leave_notify_event(
-                GdkEventCrossing*
+                  GdkEventCrossing*
             ) ;
 
             virtual bool
             on_enter_notify_event(
-                GdkEventCrossing*
+                  GdkEventCrossing*
             ) ;
 
             virtual bool
             on_button_press_event(
-                GdkEventButton*
+                  GdkEventButton*
             ) ;
 
             virtual bool
             on_button_release_event(
-                GdkEventButton*
+                  GdkEventButton*
             ) ;
 
             virtual bool
             on_motion_notify_event(
-                GdkEventMotion*
+                  GdkEventMotion*
+            ) ;
+
+            virtual bool
+            on_focus_in_event(
+                  GdkEventFocus*
+            ) ;
+
+            virtual bool
+            on_key_press_event(
+                  GdkEventKey*
             ) ;
     } ; 
 }
