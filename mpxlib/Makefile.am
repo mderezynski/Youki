@@ -25,7 +25,7 @@ youki_mlibman_bin_CXXFLAGS =                        \
         -I$(top_srcdir)/include                 \
         -I$(top_srcdir)/libhal++    
 
-youki_mlibman_bin_LDADD =                           \
+youki_mlibman_bin_LDADD =                       \
         $(BOOST_LDFLAGS)                        \
         $(BOOST_REGEX_LIB)                      \
         $(BOOST_FILESYSTEM_LIB)                 \
@@ -84,7 +84,6 @@ youki_mlibman_bin_SOURCES =                     \
                                             \
         audio.cc                            \
         error.cc                            \
-        hal.cc                              \
         import-folder.cc                    \
         import-share.cc                     \
         library-mlibman.cc                  \

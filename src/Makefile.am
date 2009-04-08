@@ -213,12 +213,6 @@ youki_bin_SOURCES =             \
     util-string.cc              \
     util-ui.cc                  
                                 
-
-if HAVE_HAL                             
-youki_bin_SOURCES +=            \
-    hal.cc                      
-endif
-
 BUILT_SOURCES =                 \
     mpx-mlibman-dbus-proxy.hh   \
     mpx-app-dbus-adaptor.hh

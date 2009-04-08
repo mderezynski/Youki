@@ -73,6 +73,11 @@ libmpx_api_la_LIBADD =								\
 		-lgstvideo-0.10								\
 		$(top_builddir)/xmlcpp/libmpx-parsers.la
 
+if HAVE_HAL
+libmpx_api_la_LIBADD += $(top_builddir)/libhal++/libhalcc.la
+libmpx_api_la_CXXFLAGS += -I$(top_srcdir)/libhal++
+endif # HAVE_HAL
+
 libmpx_api_la_CFLAGS =								\
     $(GLIB_CFLAGS) $(GST_CFLAGS) -I$(top_srcdir)/include
 
@@ -85,7 +90,7 @@ libmpx_api_la_SOURCES = 							\
 		random.cc									\
 													\
 		gstpuid.cc									\
-													\
+                                                    \
 		libxml2-sax-base.cc							\
 		xspf-libxml2-sax.cc							\
 													\
@@ -96,3 +101,11 @@ libmpx_api_la_SOURCES = 							\
 													\
 		xml.cc										\
 		xpath.cc									
+
+
+if HAVE_HAL
+libmpx_api_la_SOURCES +=                            \
+        hal.hh                                      \
+        hal.cc                                      
+												
+endif
