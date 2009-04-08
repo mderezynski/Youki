@@ -164,6 +164,7 @@ namespace MPX
             boost::optional<MPX::Track>       m_track_current ;          
             boost::optional<MPX::Track>       m_track_previous ;          
             boost::optional<guint64>          m_next_track_queue_id ;
+            bool                              m_follow_track ;
 
             boost::optional<guint64>          m_seek_position ;
 
@@ -229,6 +230,10 @@ namespace MPX
 
             void
             on_list_view_ab_selection_changed(
+            ) ;
+
+            void
+            on_list_view_tr_vadj_changed(
             ) ;
 
             void

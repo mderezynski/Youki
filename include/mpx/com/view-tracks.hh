@@ -915,7 +915,8 @@ namespace MPX
         typedef boost::shared_ptr<Column> ColumnP;
         typedef std::vector<ColumnP> Columns;
 
-        typedef sigc::signal<void, MPX::Track, bool> SignalTrackActivated;
+        typedef sigc::signal<void, MPX::Track, bool> SignalTrackActivated ;
+        typedef sigc::signal<void>                   SignalVAdjChanged ;
 
         class ListViewTracks : public Gtk::DrawingArea
         {
@@ -955,15 +956,15 @@ namespace MPX
                 std::set<int>                       m_fixed ;
                 gint64                              m_fixed_total_width ;
         
-                SignalTrackActivated                m_SIGNAL_track_activated;
-
                 GtkWidget                         * m_treeview ;
                 Gtk::Entry                        * m_SearchEntry ;
                 Gtk::Window                       * m_SearchWindow ;
 
                 sigc::connection                    m_search_changed_conn ; 
-
                 bool                                m_search_active ;
+
+                SignalTrackActivated                m_SIGNAL_track_activated ;
+                SignalVAdjChanged                   m_SIGNAL_vadj_changed ;
 
                 void
                 initialize_metrics ()
@@ -995,6 +996,8 @@ namespace MPX
                             {
                                 queue_draw ();
                             }
+
+                            m_SIGNAL_vadj_changed.emit() ;
                     }
                 }
 
@@ -1782,19 +1785,25 @@ namespace MPX
                 void
                 append_column (ColumnP column)
                 {
-                    m_columns.push_back(column);
+                    m_columns.push_back(column) ;
                 }
 
                 SignalTrackActivated&
                 signal_track_activated()
                 {
-                    return m_SIGNAL_track_activated;
+                    return m_SIGNAL_track_activated ;
+                }
+
+                SignalVAdjChanged&
+                signal_vadj_changed()
+                {
+                    return m_SIGNAL_vadj_changed ;
                 }
 
                 void
                 set_advanced (bool advanced)
                 {
-                    m_model->set_advanced(advanced);
+                    m_model->set_advanced(advanced) ;
                 }
 
                 void

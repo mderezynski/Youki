@@ -132,6 +132,7 @@ namespace MPX
     , Service::Base("mpx-service-controller")
     , private_( new Private )
     , m_main_window( 0 )
+    , m_follow_track( false )
     {
         m_C_SIG_ID_track_new =
             g_signal_new(
@@ -886,7 +887,15 @@ namespace MPX
 
         g_return_if_fail( bool(t) ) ;
 
-        m_ListViewTracks->set_active_track( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
+        gint64 id_track = boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ;
+
+        m_ListViewTracks->set_active_track( id_track ) ;
+
+        if( m_follow_track )
+        {
+            m_ListViewTracks->scroll_to_id( id_track ) ;
+        }
+
         m_control_status_icon->set_metadata( t.get() ) ;
 
         if( t.get().has( ATTRIBUTE_MB_ALBUM_ID ) )
@@ -949,7 +958,7 @@ namespace MPX
                 m_track_previous.reset() ;
         }
 
-        m_playqueue.push_back( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
+        m_playqueue.push_back( id_track ) ; 
 
         g_signal_emit(
               G_OBJECT(gobj())
@@ -1007,6 +1016,7 @@ namespace MPX
         //// SET UP CONSTRAINTS
 
         boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
+        boost::optional<gint64> id_albums = m_ListViewAlbums->get_selected() ;
 
         boost::optional<std::set<gint64> > constraint ; 
 
@@ -1022,7 +1032,17 @@ namespace MPX
             constraint.get().insert( id_artist.get() ) ;
         }
 
+        if( id_albums ) 
+        {
+            AQE::Constraint_t c ;
+            c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ID ;
+            c.TargetValue = id_albums.get() ;
+            c.MatchType = AQE::MT_EQUAL ;
+            private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
+        }
+
         private_->FilterModelAlbums->set_constraint_artist( constraint ) ;
+
         private_->FilterModelAlbums->regen_mapping() ;
         private_->FilterModelTracks->regen_mapping() ;
     }
@@ -1055,6 +1075,13 @@ namespace MPX
         }
 
         private_->FilterModelTracks->regen_mapping() ;
+    }
+
+    void
+    YoukiController::on_list_view_tr_vadj_changed(
+    ) 
+    {
+        m_follow_track = false ;
     }
 
     void
@@ -1238,6 +1265,7 @@ namespace MPX
             if( t )
             {
                 m_ListViewTracks->scroll_to_id( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
+                m_follow_track = true ;
             }
         }
 
