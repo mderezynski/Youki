@@ -66,6 +66,27 @@ namespace MPX
 {
     namespace
     {
+        // Various Toggle Buttons
+        struct DomainKeyPair
+        {
+            char const* domain;
+            char const* key;
+            char const* widget;
+        };
+
+        DomainKeyPair buttons[] =
+        {
+            {     "audio"
+                , "enable-eq"
+                , "cb-enable-eq"
+            },
+
+            {     "audio"
+                , "accurate-seek"
+                , "cb-accurate-seek"
+            },
+        };
+
         class SignalBlocker
         {
             public:
@@ -249,39 +270,32 @@ namespace MPX
         m_Xml->get_widget ("audio-system-reset-changes", m_button_audio_system_reset);
         m_Xml->get_widget ("audio-system-changed-warning", m_warning_audio_system_changed);
 
-        setup_audio_widgets ();
-        setup_audio ();
-
-        // Various Toggle Buttons
-
-        struct DomainKeyPair
-        {
-            char const * domain;
-            char const * key;
-            char const * widget;
-        };
-
-        DomainKeyPair buttons[] =
-        {
-            { "audio", "enable-eq", "enable-eq" },
-        };
-
         for (unsigned n = 0; n < G_N_ELEMENTS( buttons ); ++n)
         {
             ToggleButton* button = dynamic_cast<ToggleButton*>( m_Xml->get_widget( buttons[n].widget ));
+
             if( button )
             {
                 mcs_bind->bind_toggle_button(
-                    *button
+                      *button
                     , buttons[n].domain
                     , buttons[n].key
-                    ) ;
+                ) ;
+
+                button->signal_toggled().connect(
+                    sigc::mem_fun(
+                          *this
+                        , &PrefsAudio::audio_system_apply_set_sensitive
+                ));
             }
             else
             {
-                g_warning ("%s: Widget '%s' not found in 'preferences.glade'", G_STRLOC, buttons[n].widget);
+                g_warning( "%s: Widget '%s' not found in Glade::Xml", G_STRLOC, buttons[n].widget );
             }
         }
+
+        setup_audio_widgets ();
+        setup_audio ();
     }
 
     void
@@ -336,8 +350,6 @@ namespace MPX
 #endif //// ALSA
             default: ;
         }
-
-        mcs->key_set <int> ("audio", "video-output", m_cbox_video_out->get_active_row_number());
 
         m_warning_audio_system_changed->set_sensitive(false);
         m_button_audio_system_apply->set_sensitive(false);
@@ -584,8 +596,6 @@ namespace MPX
     {
         audio_system_cbox_ids.resize(16);
 
-        m_Xml->get_widget ("cbox_video_out", m_cbox_video_out);
-
         CellRendererText * cell;
         m_list_store_audio_systems = ListStore::create (audio_system_columns);
         cell = manage (new CellRendererText() );
@@ -731,73 +741,6 @@ namespace MPX
 
         m_cbox_audio_system->signal_changed().connect
             (sigc::mem_fun (*this, &PrefsAudio::audio_system_apply_set_sensitive));
-
-        dynamic_cast<ToggleButton *>(m_Xml->get_widget ("enable-eq"))->signal_toggled().connect
-            (sigc::mem_fun( *this, &PrefsAudio::audio_system_apply_set_sensitive) );
-
-
-/*
-        //// SUPPORT STATUS INDICATORS
-
-#if defined (HAVE_CDPARANOIA)
-        bool has_cdda = test_element ("cdparanoiasrc");
-#elif defined (HAVE_CDIO)
-        bool has_cdda = test_element ("cdiocddasrc");
-#endif
-        bool has_mmsx = test_element ("mmssrc");
-        bool has_http = true;    // built-in http src
-
-        dynamic_cast<Image*> (m_Xml->get_widget ("img_status_cdda"))->set
-            (get_plugin_stock (has_cdda), ICON_SIZE_SMALL_TOOLBAR);
-
-        dynamic_cast<Image*> (m_Xml->get_widget ("img_status_http"))->set
-            (get_plugin_stock (has_http), ICON_SIZE_SMALL_TOOLBAR);
-
-        dynamic_cast<Image*> (m_Xml->get_widget ("img_status_mms"))->set
-            (get_plugin_stock (has_mmsx), ICON_SIZE_SMALL_TOOLBAR);
-
-        struct SupportCheckTuple
-        {
-            char const* widget;
-            char const* element;
-        };
-
-        const SupportCheckTuple support_check[] =
-        {
-            {"img_status_mpc",    "musepackdec"},
-            {"img_status_flac",   "flacdec"},
-            {"img_status_m4a",    "faad"},
-            {"img_status_wma",    "ffdec_wmav2"},
-            {"img_status_sid",    "siddec"},
-            {"img_status_wav",    "wavparse"},
-            {"img_status_mod",    "modplug"},
-            {"img_status_spc",    "spcdec"},
-        };
-
-        // Check for either mad or flump3dec
-        dynamic_cast<Image*> (m_Xml->get_widget ("img_status_mp3"))->set
-            (get_plugin_stock ((test_element ("mad") ||
-            test_element ("flump3dec")) &&
-            test_element("id3demux") &&
-            test_element ("apedemux")),
-            ICON_SIZE_SMALL_TOOLBAR);
-
-        dynamic_cast<Image*> (m_Xml->get_widget ("img_status_ogg"))->set
-            (get_plugin_stock (test_element ("oggdemux") && test_element("vorbisdec")), ICON_SIZE_SMALL_TOOLBAR);
-
-        for (unsigned n = 0; n < G_N_ELEMENTS (support_check); ++n)
-        {
-            dynamic_cast<Image*> (m_Xml->get_widget (support_check[n].widget))->set
-                (get_plugin_stock (test_element (support_check[n].element)), ICON_SIZE_SMALL_TOOLBAR);
-        }
-
-        bool video = (test_element ("filesrc") && test_element ("decodebin") && test_element ("queue") &&
-            test_element ("ffmpegcolorspace") && test_element ("xvimagesink"));
-
-        dynamic_cast<Image*> (m_Xml->get_widget ("img_status_video"))->set (get_plugin_stock (video), ICON_SIZE_SMALL_TOOLBAR);
-        m_cbox_video_out->signal_changed().connect
-            (sigc::mem_fun( *this, &PrefsAudio::audio_system_apply_set_sensitive) );
-*/
     }
 
     void
@@ -973,9 +916,11 @@ namespace MPX
         }
         #endif                   // HAVE_HAL
 
-        m_cbox_video_out->set_active (mcs->key_get <int> ("audio", "video-output"));
+        mcs->key_push( "audio","enable-eq" ) ;
+        mcs->key_push( "audio","accurate-seek" ) ;
 
         m_warning_audio_system_changed->set_sensitive(false);
+
         m_button_audio_system_apply->set_sensitive(false);
         m_button_audio_system_reset->set_sensitive(false);
     }

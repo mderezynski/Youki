@@ -111,6 +111,8 @@ namespace MPX
                                           , m_spectrum_zero ;
 
                         sigc::connection    m_conn_stream_position ;
+    
+                        bool                m_accurate_seek ;
 
                 private:
 

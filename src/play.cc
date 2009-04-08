@@ -704,9 +704,29 @@ namespace MPX
 
                     gint64 position_cur = property_position().get_value() ;
 
-                    if( !gst_element_seek (control_pipe( ), 1.0, GST_FORMAT_TIME, GstSeekFlags(GST_SEEK_FLAG_FLUSH|GST_SEEK_FLAG_ACCURATE),
-                                             GST_SEEK_TYPE_SET, position * GST_SECOND,
-                                             GST_SEEK_TYPE_NONE, GST_CLOCK_TIME_NONE))
+                    GstSeekFlags flags = GST_SEEK_FLAG_FLUSH ;
+
+                    if( m_accurate_seek )
+                    {
+                        flags = GstSeekFlags( flags | GST_SEEK_FLAG_ACCURATE ) ;
+                    }
+
+                    if( !gst_element_seek(
+
+                              control_pipe()
+
+                            , 1.0
+
+                            , GST_FORMAT_TIME
+
+                            , flags
+
+                            , GST_SEEK_TYPE_SET
+                            , position * GST_SECOND
+
+                            , GST_SEEK_TYPE_NONE
+                            , GST_CLOCK_TIME_NONE
+                    ))
                     {
                         g_print ("Seek failed!\n") ;
                     }
@@ -1349,6 +1369,8 @@ namespace MPX
 
                     destroy_bins()  ;
                     create_bins()  ;
+
+                    m_accurate_seek = mcs->key_get<bool>( "audio","accurate-seek" ) ;
                 }
 
         void

@@ -201,6 +201,7 @@ namespace MPX
         mcs->key_register ("audio", "cdrom-device", std::string ("/dev/cdrom"));
         mcs->key_register ("audio", "sink", std::string (DEFAULT_SINK));
         mcs->key_register ("audio", "enable-eq", bool( false ));
+        mcs->key_register ("audio", "accurate-seek", bool( false ));
 
 #ifdef HAVE_HAL
         mcs->key_register ("audio", "hal-udi", std::string (""));

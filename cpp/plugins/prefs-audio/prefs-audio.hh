@@ -270,9 +270,6 @@ namespace MPX
             ) ;
 #endif //HAVE_ALSA
 
-            // Video
-            Gtk::ComboBox                     * m_cbox_video_out;
-
             // OSS
             Gtk::ComboBoxEntry                * m_oss_cbe_device;
             Gtk::SpinButton                   * m_oss_buffer_time;
