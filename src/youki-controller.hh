@@ -205,8 +205,7 @@ namespace MPX
             ) ;
 
             void
-            on_play_playstatus(
-                  int
+            on_play_playstatus_changed(
             ) ;
 
             void

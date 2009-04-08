@@ -207,10 +207,10 @@ namespace MPX
                 , &YoukiController::on_play_position
         )) ;
 
-        m_play->signal_playstatus().connect(
+        m_play->property_status().signal_changed().connect(
             sigc::mem_fun(
                   *this
-                , &YoukiController::on_play_playstatus
+                , &YoukiController::on_play_playstatus_changed
         )) ;
 
         m_play->signal_stream_switched().connect(
@@ -833,11 +833,10 @@ namespace MPX
     }
 
     void
-    YoukiController::on_play_playstatus(
-          int s
+    YoukiController::on_play_playstatus_changed(
     )
     {
-        PlayStatus status =  PlayStatus( s ) ;
+        PlayStatus status = PlayStatus( m_play->property_status().get_value() ) ;
 
         m_control_status_icon->set_playstatus( status ) ;
 
