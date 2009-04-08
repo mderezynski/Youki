@@ -1315,6 +1315,8 @@ namespace MPX
         void
                 Play::reset ()
                 {
+                    stop_stream() ;
+
                     if( m_pipeline )
                     {
                             if( property_status().get_value() != PLAYSTATUS_STOPPED )
