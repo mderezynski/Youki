@@ -307,8 +307,8 @@ namespace MPX
         m_main_info_bitrate = Gtk::manage( new YoukiSimpleInfo ) ;
         m_main_info_bitrate->set_size_request( 60, -1 ) ;
 
-        m_main_info_codec   = Gtk::manage( new YoukiSimpleInfo ) ;
-        m_main_info_codec->set_size_request( 140, -1 ) ;
+//        m_main_info_codec   = Gtk::manage( new YoukiSimpleInfo ) ;
+//        m_main_info_codec->set_size_request( 140, -1 ) ;
 
         m_main_infoarea     = Gtk::manage( new InfoArea ) ;
         m_main_infoarea->signal_clicked().connect(
@@ -487,7 +487,7 @@ namespace MPX
 
         m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
         m_HBox_Info->pack_start( *m_main_info_bitrate, false, false, 0 ) ;
-        m_HBox_Info->pack_start( *m_main_info_codec, false, false, 0 ) ;
+//        m_HBox_Info->pack_start( *m_main_info_codec, false, false, 0 ) ;
         m_HBox_Info->property_spacing() = 4 ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
@@ -851,7 +851,7 @@ namespace MPX
                 m_ListViewTracks->clear_active_track() ;
                 m_main_titleinfo->clear() ;
                 m_main_info_bitrate->clear() ;
-                m_main_info_codec->clear() ;
+//                m_main_info_codec->clear() ;
                 m_main_cover->clear() ;
                 m_main_position->set_position( 0, 0 ) ;
                 m_seek_position.reset() ; 
@@ -866,7 +866,7 @@ namespace MPX
                 m_track_current.reset() ;
                 m_main_titleinfo->clear() ;
                 m_main_info_bitrate->clear() ;
-                m_main_info_codec->clear() ;
+//                m_main_info_codec->clear() ;
                 m_seek_position.reset() ; 
                 m_main_window->queue_draw () ;    
 
@@ -972,7 +972,7 @@ namespace MPX
         else
         if( field == FIELD_AUDIO_CODEC )
         {
-            m_main_info_codec->set_info( m.m_audio_codec.get() ) ;
+//            m_main_info_codec->set_info( m.m_audio_codec.get() ) ;
         }
     }
 
@@ -1106,7 +1106,7 @@ namespace MPX
     YoukiController::completion_timer_check(
     ) 
     {
-        if( m_completion_timer.elapsed() > 0.25 ) 
+        if( m_completion_timer.elapsed() > 0.15 ) 
         {
             m_completion_timer.stop() ;
             m_completion_timer.reset() ;

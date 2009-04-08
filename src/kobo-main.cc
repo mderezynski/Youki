@@ -346,6 +346,7 @@ namespace MPX
                                 cr->fill () ;
                         }
 
+
                         //// MAINAREA 
                         cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
                         cr->set_source_rgba( 0.10, 0.10, 0.10, 1. ) ;
@@ -353,16 +354,13 @@ namespace MPX
                               cr
                             , 0
                             , 0
-                            , get_allocation().get_width() - ( ( m_expand_direction != EXPAND_NONE || m_drawer_out ) ? m_drawer_width_max : 0 )
+                            , m_presize_width 
                             , get_allocation().get_height()
                             , rounding
                         ) ;
                         cr->fill_preserve() ;
-                        cr->set_source_rgba( 0.22, 0.22, 0.22, 1. ) ;
-                        cr->set_line_width( 2.5 ) ;
-                        cr->stroke_preserve() ;
-
                         cr->clip() ;
+
 
                         //// TITLEBAR 
                         Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
@@ -381,7 +379,7 @@ namespace MPX
                         ) ;
                         
                         background_gradient_ptr->add_color_stop_rgba(
-                              .9                       
+                              .85                       
                             , 0.22 
                             , 0.22
                             , 0.22
@@ -390,9 +388,9 @@ namespace MPX
                         
                         background_gradient_ptr->add_color_stop_rgba(
                               1 
-                            , 0.17
-                            , 0.17
-                            , 0.17
+                            , 0.13
+                            , 0.13
+                            , 0.13
                             , 0.93 
                         ) ;
 
@@ -406,58 +404,50 @@ namespace MPX
                         ) ;
                         cr->fill();
 
+
                         //// ICONS
                         cr->set_operator( Cairo::OPERATOR_ATOP ) ;
 
                         GdkRectangle r ;
-
                         r.x         = m_presize_width - m_title_logo->get_width() - 6 ;
                         r.y         = (20 / 2) - (m_title_logo->get_height()/2) ; 
                         r.width     = m_title_logo->get_width() ;
                         r.height    = m_title_logo->get_height() ;
-
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_title_logo 
                             , r.x 
                             , r.y 
                         ) ;
-
                         cr->rectangle(
                               r.x 
                             , r.y 
                             , r.width 
                             , r.height 
                         ) ;
-
-                        cr->save () ;
-                        cr->clip () ;
-                        cr->paint_with_alpha( .8 ) ; 
-                        cr->restore () ;
+                        cr->fill() ; 
 
                         r.x         = 8 ; 
                         r.y         = (20 - m_button_off->get_height()) / 2. ;
                         r.width     = m_button_off->get_width() ;
                         r.height    = m_button_off->get_height() ;
-
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_button_off 
                             , r.x 
                             , r.y 
                         ) ;
-
                         cr->rectangle(
                               r.x 
                             , r.y 
                             , r.width 
                             , r.height 
                         ) ;
-
                         cr->save () ;
                         cr->clip () ;
                         cr->paint_with_alpha( m_quit_clicked ? .9 : .6 ) ; 
                         cr->restore () ;
+
 
                         //// RESIZE GRIP 
                         cr->set_source_rgba(
@@ -492,6 +482,42 @@ namespace MPX
                             propagate_expose( *get_child(), event ) ;
                         }
 
-                        return false ;
+
+                        //// MAINAREA BORDER 
+                        RoundedRectangle(
+                              cr
+                            , 0
+                            , 0
+                            , m_presize_width 
+                            , get_allocation().get_height()
+                            , rounding
+                        ) ;
+                        cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
+                        cr->set_source_rgba( 0.35, 0.35, 0.35, 1. ) ;
+                        cr->set_line_width( 1.5 ) ;
+                        cr->stroke() ;
+
+                        cr->rectangle(
+                              0
+                            , 0
+                            , m_presize_width 
+                            , 20 
+                        ) ;
+                        cr->clip() ;
+
+                        RoundedRectangle(
+                              cr
+                            , 0
+                            , 0
+                            , m_presize_width 
+                            , 20 + rounding
+                            , rounding
+                        ) ;
+
+                        cr->set_source_rgba( 0.39, 0.39, 0.39, 1. ) ;
+                        cr->set_line_width( 1.5 ) ;
+                        cr->stroke() ;
+
+                        return true ;
                     }
 }

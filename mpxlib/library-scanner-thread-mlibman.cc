@@ -1,7 +1,6 @@
 #include "config.h"
 
 #include "mpx/mpx-audio.hh"
-#include "mpx/mpx-hal.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/metadatareader-taglib.hh"
@@ -19,6 +18,8 @@
 #include "library-scanner-thread-mlibman.hh"
 #include "library-mlibman.hh"
 
+#include "mpx/i-youki-hal.hh"
+
 using boost::get;
 using namespace MPX;
 using namespace MPX::SQL;
@@ -34,119 +35,122 @@ namespace
 
     AttrInfo attrs[] =
     {
-        {   "location",
-            VALUE_TYPE_STRING   }, 
+            {   "location",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "title",
-            VALUE_TYPE_STRING   }, 
+            {   "title",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "genre",
-            VALUE_TYPE_STRING   }, 
+            {   "genre",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "comment",
-            VALUE_TYPE_STRING   }, 
+            {   "comment",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "musicip_puid",
-            VALUE_TYPE_STRING   }, 
+            {   "musicip_puid",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "hash",
-            VALUE_TYPE_STRING   }, 
+            {   "hash",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "mb_track_id",
-            VALUE_TYPE_STRING   }, 
+            {   "mb_track_id",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "artist",
-            VALUE_TYPE_STRING   }, 
+            {   "artist",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "artist_sortname",
-            VALUE_TYPE_STRING   }, 
+            {   "artist_sortname",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "mb_artist_id",
-            VALUE_TYPE_STRING   }, 
+            {   "mb_artist_id",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "album",
-            VALUE_TYPE_STRING   }, 
+            {   "album",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "mb_album_id",
-            VALUE_TYPE_STRING   }, 
+            {   "mb_album_id",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "mb_release_date",
-            VALUE_TYPE_STRING   }, 
+            {   "mb_release_date",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "mb_release_country",
-            VALUE_TYPE_STRING   }, 
+            {   "mb_release_country",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "mb_release_type",
-            VALUE_TYPE_STRING   }, 
+            {   "mb_release_type",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "amazon_asin",
-            VALUE_TYPE_STRING   }, 
+            {   "amazon_asin",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "album_artist",
-            VALUE_TYPE_STRING   }, 
+            {   "album_artist",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "album_artist_sortname",
-            VALUE_TYPE_STRING   }, 
+            {   "album_artist_sortname",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "mb_album_artist_id",
-            VALUE_TYPE_STRING   }, 
+            {   "mb_album_artist_id",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "type",
-            VALUE_TYPE_STRING   }, 
+            {   "type",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "hal_volume_udi",
-            VALUE_TYPE_STRING   }, 
+            {   "hal_volume_udi",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "hal_device_udi",
-            VALUE_TYPE_STRING   }, 
+            {   "hal_device_udi",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "hal_vrp",
-            VALUE_TYPE_STRING   }, 
+            {   "hal_vrp",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "insert_path",
-            VALUE_TYPE_STRING   }, 
+            {   "insert_path",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "location_name",
-            VALUE_TYPE_STRING   }, 
+            {   "location_name",
+                    VALUE_TYPE_STRING   }, 
 
-        {   "track",
-            VALUE_TYPE_INT      },
+            {   "track",
+                    VALUE_TYPE_INT      },
 
-        {   "time",
-            VALUE_TYPE_INT      },
+            {   "time",
+                    VALUE_TYPE_INT      },
 
-        {   "rating",
-            VALUE_TYPE_INT      },
+            {   "rating",
+                    VALUE_TYPE_INT      },
 
-        {   "date",
-            VALUE_TYPE_INT      },
+            {   "date",
+                    VALUE_TYPE_INT      },
 
-        {   "mtime",
-            VALUE_TYPE_INT      },
+            {   "mtime",
+                    VALUE_TYPE_INT      },
 
-        {   "bitrate",
-            VALUE_TYPE_INT      },
+            {   "bitrate",
+                    VALUE_TYPE_INT      },
 
-        {   "samplerate",
-            VALUE_TYPE_INT      },
+            {   "samplerate",
+                    VALUE_TYPE_INT      },
 
-        {   "pcount",
-            VALUE_TYPE_INT      },
+            {   "pcount",
+                    VALUE_TYPE_INT      },
 
-        {   "pdate",
-            VALUE_TYPE_INT      },
+            {   "pdate",
+                    VALUE_TYPE_INT      },
 
-        {   "insert_date",
-            VALUE_TYPE_INT      },
+            {   "insert_date",
+                    VALUE_TYPE_INT      },
 
-        {   "is_mb_album_artist",
-            VALUE_TYPE_INT      },
+            {   "is_mb_album_artist",
+                    VALUE_TYPE_INT      },
 
-        {   "active",
-            VALUE_TYPE_INT      },
+            {   "active",
+                    VALUE_TYPE_INT      },
 
-        {   "audio_quality",
-            VALUE_TYPE_INT      },
+            {   "audio_quality",
+                    VALUE_TYPE_INT      },
+
+            {   "device_id",
+                    VALUE_TYPE_INT      },
     };
 
     const char delete_track_f[] = "DELETE FROM track WHERE id='%lld';";
@@ -322,11 +326,11 @@ MPX::LibraryScannerThread_MLibMan::LibraryScannerThread_MLibMan(
 , scan_all(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_scan_all))
 , scan_stop(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_scan_stop))
 , vacuum(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_vacuum))
+, set_priority_data(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_set_priority_data))
 #ifdef HAVE_HAL
 , vacuum_volume_list(sigc::bind(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_vacuum_volume_list), true))
 #endif // HAVE_HAL
 , update_statistics(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_update_statistics))
-, set_priority_data(sigc::mem_fun(*this, &LibraryScannerThread_MLibMan::on_set_priority_data))
 , signal_scan_start(*this, m_ThreadData, &ThreadData::ScanStart)
 , signal_scan_end(*this, m_ThreadData, &ThreadData::ScanEnd)
 , signal_scan_summary(*this, m_ThreadData, &ThreadData::ScanSummary)
@@ -342,6 +346,7 @@ MPX::LibraryScannerThread_MLibMan::LibraryScannerThread_MLibMan(
 , m_Library_MLibMan(*obj_library)
 , m_SQL(new SQL::SQLDB(*((m_Library_MLibMan.get_sql_db()))))
 , m_Flags(flags)
+, m_HAL( *(services->get<IHAL>("mpx-service-hal").get()) )
 {
     m_Connectable =
         new ScannerConnectable(
@@ -489,7 +494,7 @@ MPX::LibraryScannerThread_MLibMan::on_scan_all(
         }
 #ifdef HAVE_HAL
     }
-    catch( HAL::Exception& cxe )
+    catch( IHAL::Exception& cxe )
     {
         g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
         return;
@@ -601,7 +606,7 @@ MPX::LibraryScannerThread_MLibMan::on_add(
             try{
                 if (m_Flags & Library_MLibMan::F_USING_HAL)
                 { 
-                    HAL::Volume const& volume (services->get<HAL>("mpx-service-hal")->get_volume_for_uri (*i));
+                    const Volume& volume (m_HAL.get_volume_for_uri (*i));
                     insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr (volume.mount_point.length())) ;
                 }
                 else
@@ -612,7 +617,7 @@ MPX::LibraryScannerThread_MLibMan::on_add(
 #ifdef HAVE_HAL
             }
             catch(
-              HAL::Exception&     cxe
+              IHAL::Exception&     cxe
             )
             {
                 g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
@@ -723,7 +728,7 @@ MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
             try{
                 if (m_Flags & Library_MLibMan::F_USING_HAL)
                 { 
-                    HAL::Volume const& volume (services->get<HAL>("mpx-service-hal")->get_volume_for_uri (*i));
+                    const Volume& volume (m_HAL.get_volume_for_uri (*i));
                     insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr(volume.mount_point.length())) ;
 
                     m_SQL->get(
@@ -749,7 +754,7 @@ MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
                 }
 #ifdef HAVE_HAL
             }
-            catch( HAL::Exception& cxe )
+            catch( IHAL::Exception& cxe )
             {
                 g_warning( "%s: %s", G_STRLOC, cxe.what() ); 
                 continue;
@@ -1798,7 +1803,7 @@ MPX::LibraryScannerThread_MLibMan::on_vacuum()
 #ifdef HAVE_HAL
 void
 MPX::LibraryScannerThread_MLibMan::on_vacuum_volume_list(
-      const HAL::VolumeKey_v&    volumes
+      const VolumeKey_v&    volumes
     , bool                    do_signal
 )
 {
@@ -1808,7 +1813,7 @@ MPX::LibraryScannerThread_MLibMan::on_vacuum_volume_list(
       pthreaddata->ScanStart.emit();
 
 
-  for( HAL::VolumeKey_v::const_iterator i = volumes.begin(); i != volumes.end(); ++i )
+  for( VolumeKey_v::const_iterator i = volumes.begin(); i != volumes.end(); ++i )
   {
           RowV rows;
           m_SQL->get(

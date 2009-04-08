@@ -29,6 +29,7 @@
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
 
+#include "mpx/i-youki-hal.hh"
 
 namespace MPX
 {
@@ -294,6 +295,7 @@ namespace MPX
         private:
 
             SQL::SQLDB  * m_SQL ;
+            IHAL        * m_HAL ;
             gint64        m_Flags ;
 
         protected:

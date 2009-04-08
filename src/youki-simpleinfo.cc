@@ -95,7 +95,7 @@ namespace MPX
         cairo->fill () ;
 
         Pango::FontDescription font_desc ("sans") ;
-        int text_size_pt = static_cast<int> ((8 * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+        int text_size_pt = static_cast<int> ((9 * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
         font_desc.set_size (text_size_pt * PANGO_SCALE) ;
         font_desc.set_weight (Pango::WEIGHT_BOLD) ;
 

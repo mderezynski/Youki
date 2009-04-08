@@ -42,7 +42,7 @@ namespace MPX
             , m_logo_h (m_logo->get_height())
             , m_bar_w (160)
             , m_bar_h (2)
-            , m_bar_x (6)
+            , m_bar_x (20)
             , m_bar_y (68)
             , m_percent (0.0)
     {

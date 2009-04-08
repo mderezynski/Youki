@@ -44,11 +44,12 @@
 #include "libhal++/hal++.hh"
 
 #include "mpx/widgets/widgetloader.hh"
-#include "mpx/mpx-hal.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-services.hh"
 
 #include "mpx-mlibman-dbus.hh"
+
+#include "mpx/i-youki-hal.hh"
 
 namespace MPX
 {
@@ -210,12 +211,12 @@ namespace MPX
 
             void
             on_volume_added(
-                const HAL::Volume&
+                const Volume&
             ) ;
 
             void
             on_volume_removed(
-                const HAL::Volume&
+                const Volume&
             ) ;
 
             // ui stuff

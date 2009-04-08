@@ -20,7 +20,7 @@
 #include "mpx/mpx-lyrics.hh"
 #include "mpx/mpx-covers.hh"
 #ifdef HAVE_HAL
-#include "mpx/mpx-hal.hh"
+#include "hal.hh"
 #endif // HAVE_HAL
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
@@ -970,23 +970,22 @@ BOOST_PYTHON_MODULE(mpx)
     /* HAL */
 	/*-------------------------------------------------------------------------------------*/
 
-    class_<MPX::HAL::Volume>("HalVolume", boost::python::init<>())   
-        .def_readwrite("volume_udi", &MPX::HAL::Volume::volume_udi)
-        .def_readwrite("device_udi", &MPX::HAL::Volume::device_udi)
-        .def_readwrite("label", &MPX::HAL::Volume::label)
-        .def_readwrite("size", &MPX::HAL::Volume::size)
-        .def_readwrite("mount_point", &MPX::HAL::Volume::mount_point)
-        .def_readwrite("mount_time", &MPX::HAL::Volume::mount_time)
-        .def_readwrite("device_file", &MPX::HAL::Volume::device_file)
-        .def_readwrite("drive_serial", &MPX::HAL::Volume::drive_serial)
-        .def_readwrite("drive_bus", &MPX::HAL::Volume::drive_bus)
-        .def_readwrite("drive_type", &MPX::HAL::Volume::drive_type)
-        .def_readwrite("drive_size", &MPX::HAL::Volume::drive_size)
-        .def_readwrite("disc", &MPX::HAL::Volume::disc)
+    class_<MPX::Volume>("HalVolume", boost::python::init<>())   
+        .def_readwrite("volume_udi", &MPX::Volume::volume_udi)
+        .def_readwrite("device_udi", &MPX::Volume::device_udi)
+        .def_readwrite("label", &MPX::Volume::label)
+        .def_readwrite("size", &MPX::Volume::size)
+        .def_readwrite("mount_point", &MPX::Volume::mount_point)
+        .def_readwrite("mount_time", &MPX::Volume::mount_time)
+        .def_readwrite("device_file", &MPX::Volume::device_file)
+        .def_readwrite("drive_serial", &MPX::Volume::drive_serial)
+        .def_readwrite("drive_bus", &MPX::Volume::drive_bus)
+        .def_readwrite("drive_type", &MPX::Volume::drive_type)
+        .def_readwrite("drive_size", &MPX::Volume::drive_size)
+        .def_readwrite("disc", &MPX::Volume::disc)
     ;
 
     class_<MPX::HAL>("MPXHal", boost::python::no_init)
-        .def("get_mount_point_for_volume", &MPX::HAL::get_mount_point_for_volume)
     ;
 
     /*-------------------------------------------------------------------------------------*/

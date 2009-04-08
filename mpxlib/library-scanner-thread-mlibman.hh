@@ -34,12 +34,13 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
 #include "mpx/mpx-covers.hh"
-#include "mpx/mpx-hal.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/util-string.hh"
 #include "mpx/util-file.hh"
+
+#include "mpx/i-youki-hal.hh"
 
 namespace MPX
 {
@@ -85,7 +86,7 @@ namespace MPX
 
     EXCEPTION(ScanError)
 
-    class HAL ;
+    class IHAL ;
     class Library_MLibMan ;
     class MetadataReaderTagLib ;
 
@@ -128,7 +129,7 @@ namespace MPX
             sigx::request_f<>                                               vacuum ;
             sigx::request_f<const std::vector<std::string>&, bool, bool>    set_priority_data ;
 #ifdef HAVE_HAL
-            sigx::request_f<const HAL::VolumeKey_v&>                        vacuum_volume_list ;
+            sigx::request_f<const VolumeKey_v&>                        vacuum_volume_list ;
 #endif // HAVE_HAL
             sigx::request_f<>                                               update_statistics ;
 
@@ -223,7 +224,7 @@ namespace MPX
 
 #ifdef HAVE_HAL
             void on_vacuum_volume_list(
-                  const HAL::VolumeKey_v&
+                  const VolumeKey_v&
                 , bool = true
             );
 #endif // HAVE_HAL
@@ -427,6 +428,7 @@ namespace MPX
 
             MPX::Library_MLibMan                  & m_Library_MLibMan;
             boost::shared_ptr<MPX::SQL::SQLDB>      m_SQL ;
+            const IHAL                            & m_HAL ;
             gint64                                  m_Flags ;
 
             ScanSummary                             m_ScanSummary ;

@@ -248,7 +248,7 @@ namespace MPX
         Gtk::CellRendererText * cell = 0; 
         Gtk::TreeViewColumn * col = 0; 
 
-        services->get<HAL>("mpx-service-hal")->signal_volume_added().connect(
+        services->get<IHAL>("mpx-service-hal")->signal_volume_added().connect(
             sigc::mem_fun(
                 *this,
                 &MLibManager::on_volume_added
@@ -836,17 +836,17 @@ namespace MPX
 
 #ifdef HAVE_HAL
     void
-    MLibManager::on_volume_removed (const HAL::Volume& volume)
+    MLibManager::on_volume_removed (const Volume& volume)
     {
     } 
 
     void
-    MLibManager::on_volume_added (const HAL::Volume& volume)
+    MLibManager::on_volume_added (const Volume& volume)
     {
         static boost::format volume_label_f1 ("%1%: %2%");
 
         try{
-            Hal::RefPtr<Hal::Context> Ctx = services->get<HAL>("mpx-service-hal")->get_context();
+            Hal::RefPtr<Hal::Context> Ctx = services->get<IHAL>("mpx-service-hal")->get_context();
             Hal::RefPtr<Hal::Volume> Vol = Hal::Volume::create_from_udi(Ctx, volume.volume_udi); 
             std::string vol_label = Vol->get_partition_label();
             std::string vol_mount = Vol->get_mount_point();
@@ -896,11 +896,11 @@ namespace MPX
         m_MountPoint    = std::string();
 
         try { 
-                Hal::RefPtr<Hal::Context> Ctx = services->get<HAL>("mpx-service-hal")->get_context();
-                HAL::VolumesHALCC_v volumes;
-                services->get<HAL>("mpx-service-hal")->volumes(volumes);
+                Hal::RefPtr<Hal::Context> Ctx = services->get<IHAL>("mpx-service-hal")->get_context();
+                VolumesHALCC_v volumes;
+                services->get<IHAL>("mpx-service-hal")->volumes(volumes);
 
-                for(HAL::VolumesHALCC_v::const_iterator i = volumes.begin(); i != volumes.end(); ++i)
+                for(VolumesHALCC_v::const_iterator i = volumes.begin(); i != volumes.end(); ++i)
                 {
                     Hal::RefPtr<Hal::Volume> Vol = *i;
                     std::string vol_label = Vol->get_partition_label();
@@ -946,11 +946,11 @@ namespace MPX
     {
         if( Glib::file_test(path, Glib::FILE_TEST_EXISTS) )
         {
-            HAL::Volume volume ;
+            Volume volume ;
 
             try{
-                volume = services->get<HAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
-            } catch( MPX::HAL::NoVolumeForUriError & cxe ) {
+                volume = services->get<IHAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
+            } catch( MPX::IHAL::NoVolumeForUriError & cxe ) {
                 std::abort();
             }
             
@@ -1005,7 +1005,7 @@ namespace MPX
         std::string volume_udi_source, device_udi_source;
         std::string volume_udi_target, device_udi_target;
         std::string vrp_source, vrp_target;
-        HAL::Volume volume_source, volume_target;
+        Volume volume_source, volume_target;
         std::string uri;
 
         FileChooserDialog fcdialog (
@@ -1036,7 +1036,7 @@ namespace MPX
 
               uri = fcdialog.get_current_folder_uri();
 
-              volume_source = services->get<HAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
+              volume_source = services->get<IHAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
               volume_udi_source =
                   volume_source.volume_udi ;
               device_udi_source =  
@@ -1044,7 +1044,7 @@ namespace MPX
               vrp_source = 
                   path.substr(volume_source.mount_point.length()) ;
 
-              volume_target = services->get<HAL>("mpx-service-hal")->get_volume_for_uri(uri);
+              volume_target = services->get<IHAL>("mpx-service-hal")->get_volume_for_uri(uri);
               volume_udi_target =
                   volume_target.volume_udi ;
               device_udi_target =  
@@ -1076,7 +1076,7 @@ namespace MPX
 
           case 1:
 
-              volume_target = services->get<HAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
+              volume_target = services->get<IHAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
 
               volume_udi_target =
                   volume_target.volume_udi ;
@@ -1127,7 +1127,7 @@ namespace MPX
                     if((i->operator[](0) != '.')
                       && file_test(path, FILE_TEST_IS_DIR))
                     {
-                        if(!services->get<HAL>("mpx-service-hal")->path_is_mount_path(path))
+                        if(!services->get<IHAL>("mpx-service-hal")->path_is_mount_path(path))
                         {
                             FSTreeStore->append(iter->children());
                             return;
@@ -1153,7 +1153,7 @@ namespace MPX
                         try{
                             if(file_test(path, FILE_TEST_IS_DIR))
                             {
-                                if(!services->get<HAL>("mpx-service-hal")->path_is_mount_path(path))
+                                if(!services->get<IHAL>("mpx-service-hal")->path_is_mount_path(path))
                                 {
                                     TreeIter iter = FSTreeStore->append(root_iter->children());
                                     (*iter)[FSTreeColumns.SegName] = *i; 

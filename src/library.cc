@@ -31,7 +31,7 @@
 #include "mpx/mpx-audio.hh"
 #include "mpx/mpx-covers.hh"
 #ifdef HAVE_HAL
-#include "mpx/mpx-hal.hh"
+#include "hal.hh"
 #endif // HAVE_HAL
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
@@ -170,6 +170,9 @@ namespace
 
                 {   "audio_quality",
                         VALUE_TYPE_INT      },
+
+                {   "device_id",
+                        VALUE_TYPE_INT      },
         };
 }
 
@@ -181,7 +184,9 @@ namespace MPX
         : Service::Base("mpx-service-library")
         , m_Flags(0)
         {
-                const int MLIB_VERSION_CUR = 1;
+                m_HAL = services->get<IHAL>("mpx-service-hal").get() ;
+
+                const int MLIB_VERSION_CUR = 2;
                 const int MLIB_VERSION_REV = 0;
                 const int MLIB_VERSION_AGE = 0;
 
@@ -516,13 +521,10 @@ namespace MPX
                                         if( u.get_protocol() == URI::PROTOCOL_FILE )
                                         {
                                                 try{
-                                                        HAL::Volume const& volume (services->get<HAL>("mpx-service-hal")->get_volume_for_uri (uri));
+                                                        const Volume& volume = m_HAL->get_volume_for_uri (uri) ;
 
-                                                        track[ATTRIBUTE_HAL_VOLUME_UDI] =
-                                                                volume.volume_udi ;
-
-                                                        track[ATTRIBUTE_HAL_DEVICE_UDI] =
-                                                                volume.device_udi ;
+                                                        track[ATTRIBUTE_MPX_DEVICE_ID] =
+                                                                m_HAL->get_id_for_volume( volume.volume_udi, volume.device_udi ) ;
 
                                                         track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
                                                                 filename_from_uri (uri).substr (volume.mount_point.length()) ;
@@ -564,18 +566,13 @@ namespace MPX
                                         if( u.get_protocol() == URI::PROTOCOL_FILE )
                                         {
                                                 try{
-                                                        {
-                                                                HAL::Volume const& volume ( services->get<HAL>("mpx-service-hal")->get_volume_for_uri( uri ));
+                                                        const Volume& volume = m_HAL->get_volume_for_uri( uri ) ;
 
-                                                                track[ATTRIBUTE_HAL_VOLUME_UDI] =
-                                                                        volume.volume_udi ;
+                                                        track[ATTRIBUTE_MPX_DEVICE_ID] =
+                                                                m_HAL->get_id_for_volume( volume.volume_udi, volume.device_udi ) ;
 
-                                                                track[ATTRIBUTE_HAL_DEVICE_UDI] =
-                                                                        volume.device_udi ;
-
-                                                                track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
-                                                                        filename_from_uri( uri ).substr( volume.mount_point.length() ) ;
-                                                        }
+                                                        track[ATTRIBUTE_VOLUME_RELATIVE_PATH] =
+                                                                filename_from_uri( uri ).substr( volume.mount_point.length() ) ;
                                                 }
                                                 catch (HAL::Exception & cxe)
                                                 {
@@ -608,12 +605,11 @@ namespace MPX
                         if( m_Flags & F_USING_HAL )
                         {
                                 try{
-                                        const std::string& volume_udi  = get<std::string>(track[ATTRIBUTE_HAL_VOLUME_UDI].get()) ;
-                                        const std::string& device_udi  = get<std::string>(track[ATTRIBUTE_HAL_DEVICE_UDI].get()) ;
-                                        const std::string& vrp         = get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()) ;
-                                        const std::string& mount_point = services->get<HAL>("mpx-service-hal")->get_mount_point_for_volume(volume_udi, device_udi) ;
+                                        const gint64&      id          = get<gint64>(track[ATTRIBUTE_MPX_DEVICE_ID].get()) ;
+                                        const std::string& path        = get<std::string>(track[ATTRIBUTE_VOLUME_RELATIVE_PATH].get()) ;
+                                        const std::string& mount_point = m_HAL->get_mount_point_for_id( id ) ;
 
-                                        return filename_to_uri( build_filename( Util::normalize_path(mount_point), vrp) );
+                                        return filename_to_uri( build_filename( Util::normalize_path(mount_point), path ) );
 
                                 } catch (HAL::NoMountPathForVolumeError & cxe)
                                 {
@@ -858,11 +854,8 @@ namespace MPX
 #ifdef HAVE_HAL
                                 if( m_Flags & F_USING_HAL )
                                 {
-                                    if (row.count("hal_volume_udi"))
-                                            (*track.get())[ATTRIBUTE_HAL_VOLUME_UDI] = get<std::string>(row["hal_volume_udi"]);
-
-                                    if (row.count("hal_device_udi"))
-                                            (*track.get())[ATTRIBUTE_HAL_DEVICE_UDI] = get<std::string>(row["hal_device_udi"]);
+                                    if (row.count("device_id"))
+                                            (*track.get())[ATTRIBUTE_MPX_DEVICE_ID] = get<gint64>(row["device_id"]);
 
                                     if (row.count("hal_vrp"))
                                             (*track.get())[ATTRIBUTE_VOLUME_RELATIVE_PATH] = get<std::string>(row["hal_vrp"]);

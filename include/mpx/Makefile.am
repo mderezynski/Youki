@@ -7,6 +7,9 @@ noinst_HEADERS =							\
 		i-metadatareader.hh					\
 		i-playbacksource.hh					\
 		i-playlistparser.hh					\
+        i-youki-play.hh                     \
+        i-youki-hal.hh                      \
+        i-youki-controller.hh               \
 		metadatareader-taglib.hh			\
 		mpx-artist-images.hh				\
 		mpx-audio.hh						\
@@ -14,7 +17,6 @@ noinst_HEADERS =							\
         mpx-audio-types.hh                  \
 		mpx-covers.hh						\
 		mpx-covers-stores.hh				\
-		mpx-hal.hh							\
 		mpx-library.hh						\
 		mpx-library-scanner-thread.hh		\
 		mpx-lyrics.hh						\
@@ -22,7 +24,6 @@ noinst_HEADERS =							\
 		mpx-markov-analyzer-thread.hh		\
 		mpx-minisoup.hh						\
 		mpx-network.hh						\
-		mpx-play.hh							\
 		mpx-preferences.hh					\
 		mpx-protected-access.hh				\
 		mpx-public-mpx.hh					\

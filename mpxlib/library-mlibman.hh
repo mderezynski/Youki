@@ -25,7 +25,6 @@
 
 #include <sigx/sigx.h>
 
-#include "mpx/mpx-hal.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/mpx-services.hh"
@@ -34,6 +33,8 @@
 
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
+
+#include "mpx/i-youki-hal.hh"
 
 
 namespace MPX
@@ -46,7 +47,7 @@ namespace MPX
         gint64      Id;
     };
 
-    class HAL;
+    class IHAL;
     class MetadataReaderTagLib;
     class Library_MLibMan
     : public Service::Base
@@ -97,7 +98,7 @@ namespace MPX
 
 			void
 			vacuumVolumeList(
-                const HAL::VolumeKey_v&
+                const VolumeKey_v&
             ) ;
 
             void
@@ -255,9 +256,10 @@ namespace MPX
 
         private:
 
-            SQL::SQLDB                                          * m_SQL;
-            boost::shared_ptr<LibraryScannerThread_MLibMan>       m_ScannerThread;
-            gint64                                                m_Flags;
+            SQL::SQLDB                                          * m_SQL ;
+            IHAL                                                * m_HAL ;
+            boost::shared_ptr<LibraryScannerThread_MLibMan>       m_ScannerThread ;
+            gint64                                                m_Flags ;
 
         protected:
 
