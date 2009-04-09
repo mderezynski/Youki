@@ -1407,7 +1407,7 @@ namespace MPX
 
                     const ThemeColor& c_text        = theme->get_color( THEME_COLOR_TEXT ) ;
                     const ThemeColor& c_rules_hint  = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) ;
-                    const ThemeColor& c_sel         = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) ;
+                    const ThemeColor& c_sel         = theme->get_color( THEME_COLOR_SELECT ) ;
 
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
