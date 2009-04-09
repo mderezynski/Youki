@@ -73,13 +73,13 @@ namespace MPX
       std::string album;
   };
 
-  struct CoverFetchData
+  struct CoverFetchContext
   {
       RequestQualifier      qualifier;
       StoresVec             stores;
       StoresVec::iterator   stores_i;
 
-      CoverFetchData(
+      CoverFetchContext(
               const RequestQualifier& qual
             , StoresVec               stores 
       )
@@ -158,10 +158,10 @@ namespace MPX
     private:
 
       void
-      store_has_found_cb (CoverFetchData*);
+      store_has_found_cb (CoverFetchContext*);
 
       void
-      store_not_found_cb (CoverFetchData*);
+      store_not_found_cb (CoverFetchContext*);
 
       void
       source_pref_changed_callback(const std::string& domain, const std::string& key, const Mcs::KeyVariant& value );

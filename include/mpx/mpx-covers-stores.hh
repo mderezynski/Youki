@@ -33,44 +33,36 @@
 namespace MPX
 {
     class Covers;
-    struct CoverFetchData;
+    struct CoverFetchContext;
+
+    enum FetchState
+    {
+          FETCH_STATE_NOT_FETCHED
+        , FETCH_STATE_COVER_SAVED
+    } ;
+
 
     class CoverStore
     {
     protected:
 
-        Covers& covers;
+        Covers & covers;
 
-        typedef sigc::signal<void, CoverFetchData*> SignalNotFoundT;
-        typedef sigc::signal<void, CoverFetchData*> SignalHasFoundT;
-
-        struct SignalsT
-        {
-          // Fired if a store could not find artwork
-          SignalNotFoundT NotFound;
-          SignalHasFoundT HasFound;
-        };
-
-        SignalsT Signals;
+        FetchState m_fetch_state ;
 
     public:
-        SignalHasFoundT&
-        has_found_callback()
-        {
-            return Signals.HasFound;
-        }
 
-        SignalNotFoundT&
-        not_found_callback()
-        {
-            return Signals.NotFound;
-        }
-
-        CoverStore(Covers& c) : covers(c)
-        { }
+        CoverStore(Covers& c) : covers(c), m_fetch_state(FETCH_STATE_NOT_FETCHED)
+        {}
 
         virtual void
-        load_artwork(CoverFetchData* /*cover_data*/) = 0;
+        load_artwork(CoverFetchContext* /*cover_data*/) = 0;
+
+        FetchState
+        get_state()
+        {
+            return m_fetch_state ;
+        }
     };
 
     class RemoteStore : public CoverStore
@@ -79,49 +71,44 @@ namespace MPX
         RemoteStore(Covers& c) : CoverStore(c) { }
 
         virtual void
-        load_artwork(CoverFetchData*);
+        fetch_image(const std::string&, CoverFetchContext*);
+
+        virtual void
+        load_artwork(CoverFetchContext*);
 
         virtual std::string
-        get_url(CoverFetchData*) = 0; 
+        get_url(CoverFetchContext*) = 0; 
 
         virtual bool
-        can_load_artwork(CoverFetchData*);
-
-        void
-        request_cb(
-              char const*     data
-            , guint           size
-            , guint           code
-            , CoverFetchData* cb_data
-        );
+        can_load_artwork(CoverFetchContext*);
 
         void
         save_image(
               char const*
             , guint
-            , CoverFetchData*
+            , CoverFetchContext*
         );
 
         virtual void
-        request_failed( CoverFetchData* );
+        request_failed( CoverFetchContext* );
 
-        Soup::RequestRefP request;
+        Soup::RequestSyncRefP request;
     };
 
     class AmazonCovers : public RemoteStore
     {
     public:
         AmazonCovers(Covers& c) : RemoteStore(c), n(0)
-        { }
+        {}
 
         bool
-        can_load_artwork(CoverFetchData*);
+        can_load_artwork(CoverFetchContext*);
 
         std::string
-        get_url(CoverFetchData*);
+        get_url(CoverFetchContext*);
 
         virtual void
-        request_failed( CoverFetchData* );
+        request_failed( CoverFetchContext* );
 
     private:
 
@@ -135,16 +122,12 @@ namespace MPX
         { }
         
         void
-        load_artwork(CoverFetchData*);
+        load_artwork(CoverFetchContext*);
 
     protected:        
 
         virtual std::string
-        get_url(CoverFetchData*);
-
-    private:
-        void
-        reply_cb(char const*, guint, guint, CoverFetchData*);
+        get_url(CoverFetchContext*);
     };
 
     class MusicBrainzCovers : public RemoteStore
@@ -154,16 +137,16 @@ namespace MPX
         { }
 
         void
-        load_artwork(CoverFetchData*);
+        load_artwork(CoverFetchContext*);
 
     protected:
 
         virtual std::string
-        get_url(CoverFetchData*); 
+        get_url(CoverFetchContext*); 
 
     private:
         void
-        reply_cb(char const*, guint, guint, CoverFetchData*);
+        reply_cb(char const*, guint, guint, CoverFetchContext*);
     };
 
     class LocalCovers
@@ -174,7 +157,7 @@ namespace MPX
         { }
 
         void
-        load_artwork(CoverFetchData*);
+        load_artwork(CoverFetchContext*);
     };
 
     class InlineCovers
@@ -185,7 +168,7 @@ namespace MPX
         { }
 
         void
-        load_artwork(CoverFetchData*);
+        load_artwork(CoverFetchContext*);
     };
 
 }

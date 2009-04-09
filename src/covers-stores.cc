@@ -81,86 +81,78 @@ namespace MPX
     //
     // --------------------------------------------------
     void
-    RemoteStore::load_artwork(CoverFetchData* data)
+    RemoteStore::load_artwork(CoverFetchContext* ctx)
     {
-        if( can_load_artwork(data) )
+        if( can_load_artwork( ctx ) )
         {
-            request = Soup::Request::create ( get_url(data) );
-            request->request_callback().connect(sigc::bind(
-                  sigc::mem_fun(
-                      *this,
-                      &RemoteStore::request_cb)
-                , data
-            ));
-            request->run();
+            fetch_image( get_url( ctx ), ctx ) ;
         }
-        else
+    }
+
+    void
+    RemoteStore::fetch_image(const std::string& url, CoverFetchContext* ctx)
+    {
+        if( can_load_artwork( ctx ) )
         {
-            g_message("%s: Not Found", G_STRLOC);
-            Signals.NotFound.emit(data);
+            request = Soup::RequestSync::create ( url ) ; 
+            guint code = request->run() ;
+
+            if (code == 200)
+            {
+                save_image(
+                      request->get_data_raw()
+                    , request->get_data_size()
+                    , ctx
+                ) ;
+                m_fetch_state = FETCH_STATE_COVER_SAVED ; 
+            }
+            else
+            {
+                request_failed( ctx );
+            }
         }
     }
 
     bool
-    RemoteStore::can_load_artwork(CoverFetchData* data)
+    RemoteStore::can_load_artwork(CoverFetchContext* ctx)
     {
         return true;
     }
 
     void
-    RemoteStore::request_cb(
-          char const*     data
-        , guint           size
-        , guint           code
-        , CoverFetchData* cb_data
-    )
-    {
-        if (code == 200)
-        {
-            save_image( data, size, cb_data );
-        }
-        else
-        {
-            request_failed( cb_data );
-        }
-    }
-
-    void
     RemoteStore::save_image(
-          char const*     data
-        , guint           size
-        , CoverFetchData* cb_data
+          char const*        data
+        , guint              size
+        , CoverFetchContext* ctx
     )
     {
         RefPtr<Gdk::PixbufLoader> loader = Gdk::PixbufLoader::create ();
-        loader->write (reinterpret_cast<const guint8*>(data), size);
+        loader->write (reinterpret_cast<const guint8*>( data ), size);
         loader->close ();
 
         RefPtr<Gdk::Pixbuf> cover = loader->get_pixbuf();
 
         if (cover->get_width() == 1 && cover->get_height() == 1)
         {
-            request_failed( cb_data );
+            request_failed( ctx );
             return;
         }
         else
         { 
             try{
-                    covers.cache_artwork( cb_data->qualifier.mbid, cover );
+                    covers.cache_artwork( ctx->qualifier.mbid, cover );
+                    m_fetch_state = FETCH_STATE_COVER_SAVED;
             } catch( Glib::FileError & cxe )
             {
                     g_message("File Error while trying to save cover image: %s", cxe.what().c_str());
             }
-
-            g_message("%s: Have Found", G_STRLOC);
-            Signals.HasFound.emit( cb_data );
         }
     }
     
     void
-    RemoteStore::request_failed( CoverFetchData *data )
+    RemoteStore::request_failed( CoverFetchContext *ctx )
     {
-        Signals.NotFound.emit(data);
+        m_fetch_state = FETCH_STATE_NOT_FETCHED;
     }
 
     // --------------------------------------------------
@@ -170,36 +162,17 @@ namespace MPX
     // --------------------------------------------------
 
     std::string
-    AmapiCovers::get_url( CoverFetchData* data )
+    AmapiCovers::get_url( CoverFetchContext* ctx )
     {
-        return (amapi2_f % (URI::escape_string(data->qualifier.artist)) % (URI::escape_string(data->qualifier.album))).str();
+        return (amapi2_f % (URI::escape_string(ctx->qualifier.artist)) % (URI::escape_string(ctx->qualifier.album))).str();
     }
  
     void
-    AmapiCovers::load_artwork(CoverFetchData* data)
+    AmapiCovers::load_artwork(CoverFetchContext* ctx)
     {
-        request = Soup::Request::create( get_url( data ));
+        request = Soup::RequestSync::create( get_url( ctx ));
+        guint code = request->run();
 
-        request->request_callback().connect(
-                sigc::bind(
-                      sigc::mem_fun(
-                          *this,
-                          &AmapiCovers::reply_cb
-                      )
-                    , data
-        ));
-
-        request->run();
-    }
-
-    void
-    AmapiCovers::reply_cb(
-        char const*     data,
-        guint           size,
-        guint           code,
-        CoverFetchData* cb_data
-    )
-    {
         if( code == 200 )
         {
 			try
@@ -207,49 +180,49 @@ namespace MPX
                 std::string album;
 
                 album = xpath_get_text(
-                    data,
-                    size,
+                    request->get_data_raw(),
+                    request->get_data_size(),
 					"/amazon:ItemSearchResponse/amazon:Items//amazon:Item//amazon:ItemAttributes//amazon:Title",
                     "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
                 ); 
 
-                if( ld_distance<std::string>(album, cb_data->qualifier.album) > 3 )
+                if( ld_distance<std::string>(album, ctx->qualifier.album) > 3 )
                 {
-                    Signals.NotFound.emit( cb_data );
                     return;
                 }
-
 			}
             catch (std::runtime_error & cxe)
-			{ }
+			{}
 
             std::string image_url;
             bool got_image = false;
-
-			try
-            {
-                image_url = xpath_get_text(
-                    data,
-                    size,
-					"//amazon:Items//amazon:Item//amazon:LargeImage//amazon:URL",
-                    "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
-                ); 
-
-                got_image = true;
-
-			} 
-            catch (std::runtime_error & cxe)
-			{
-                //g_message(cxe.what());
-			}
 
             if(!got_image)
             {
                 try
                 {
                     image_url = xpath_get_text(
-                        data,
-                        size,
+                        request->get_data_raw(),
+                        request->get_data_size(),
+                        "//amazon:Items//amazon:Item//amazon:LargeImage//amazon:URL",
+                        "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
+                    ); 
+
+                    got_image = true;
+
+                } 
+                catch (std::runtime_error & cxe)
+                {
+                }
+            }
+
+            if(!got_image)
+            {
+                try
+                {
+                    image_url = xpath_get_text(
+                        request->get_data_raw(),
+                        request->get_data_size(),
 	    				"//amazon:Items//amazon:Item//amazon:MediumImage//amazon:URL",
                         "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
                     ); 
@@ -258,7 +231,6 @@ namespace MPX
     			}
                 catch (std::runtime_error & cxe)
 			    {
-                    //g_message(cxe.what());
     			}
             }
 
@@ -267,8 +239,8 @@ namespace MPX
                 try
                 {
                     image_url = xpath_get_text(
-                        data,
-                        size,
+                        request->get_data_raw(),
+                        request->get_data_size(),
 			    		"//amazon:Items//amazon:Item//amazon:SmallImage//amazon:URL",
                         "amazon=http://webservices.amazon.com/AWSECommerceService/2008-06-26"
                     ); 
@@ -277,25 +249,12 @@ namespace MPX
     			}
                 catch (std::runtime_error & cxe)
 	    		{
-                    //g_message(cxe.what());
     			}
             }
 
             if( got_image && image_url.length() )
             {
-                //g_message("Fetching Image from URL: %s", image_url.c_str());
-
-    	        request = Soup::Request::create(image_url);
-	    	    request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &RemoteStore::request_cb ), cb_data ));
-		    	request->run();
-
-                return;
-            }
-            else
-            {
-                g_message("%s: Cover NotFound", G_STRFUNC);
-                Signals.NotFound.emit( cb_data );
-                return;
+                RemoteStore::fetch_image( image_url, ctx ) ;
             }
         }
     }
@@ -307,27 +266,17 @@ namespace MPX
     // --------------------------------------------------
 
     std::string
-    MusicBrainzCovers::get_url(CoverFetchData* data)
+    MusicBrainzCovers::get_url(CoverFetchContext* ctx)
     {
-        return (mbxml_f % data->qualifier.mbid).str();
+        return (mbxml_f % ctx->qualifier.mbid).str();
     }
 
     void
-    MusicBrainzCovers::load_artwork(CoverFetchData* data)
+    MusicBrainzCovers::load_artwork(CoverFetchContext* ctx)
     {
-        request = Soup::Request::create( get_url( data ));
-        request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &MusicBrainzCovers::reply_cb ), data ));
-        request->run();
-    }
+        request = Soup::RequestSync::create( get_url( ctx ));
+        guint code = request->run();
 
-    void
-    MusicBrainzCovers::reply_cb(
-        char const*     data,
-        guint           size,
-        guint           code,
-        CoverFetchData* cb_data
-    )
-    {
         if( code == 200 )
         {
 			std::string image_url;
@@ -335,25 +284,18 @@ namespace MPX
 			try
             {
 			    image_url = xpath_get_text(
-                    data,
-                    size,
+                    request->get_data_raw(),
+                    request->get_data_size(),
 					"/metadata/release/relation-list//relation[@type='CoverArtLink']/@target",
                     "mb=http://musicbrainz.org/ns/mmd-1.0#"
                 ); 
 			}
             catch (std::runtime_error & cxe)
 			{
-                Signals.NotFound.emit( cb_data );
 				return;
 			}
 
-	        request = Soup::Request::create(image_url);
-		    request->request_callback().connect( sigc::bind( sigc::mem_fun( *this, &RemoteStore::request_cb ), cb_data ));
-			request->run();
-        }
-        else
-        {
-            Signals.NotFound.emit( cb_data );
+            RemoteStore::fetch_image( image_url, ctx ) ;
         }
     }
 
@@ -363,30 +305,30 @@ namespace MPX
     //
     // --------------------------------------------------
     bool
-    AmazonCovers::can_load_artwork(CoverFetchData* data)
+    AmazonCovers::can_load_artwork(CoverFetchContext* ctx)
     {
-        return !data->qualifier.asin.empty();
+        return !ctx->qualifier.asin.empty();
     }
 
     std::string
-    AmazonCovers::get_url(CoverFetchData* data)
+    AmazonCovers::get_url(CoverFetchContext* ctx)
     {
-        return (amazon_f[n] % data->qualifier.asin).str();
+        return (amazon_f[n] % ctx->qualifier.asin).str();
     }
 
     void
-    AmazonCovers::request_failed( CoverFetchData *data )
+    AmazonCovers::request_failed( CoverFetchContext *ctx )
     {
         ++(n);
 
         if(n < G_N_ELEMENTS(amazon_f))
         {
-            load_artwork(data);
+            load_artwork( ctx );
             return;
         }
 
         n = 0;
-        Signals.NotFound.emit(data);
+        m_fetch_state = FETCH_STATE_NOT_FETCHED;
     }
 
     // --------------------------------------------------
@@ -395,14 +337,14 @@ namespace MPX
     //
     // --------------------------------------------------
     void
-    LocalCovers::load_artwork(CoverFetchData* data)
+    LocalCovers::load_artwork(CoverFetchContext* ctx)
     {
-        Glib::RefPtr<Gio::File> directory = Gio::File::create_for_uri( data->qualifier.uri )->get_parent( );
+        Glib::RefPtr<Gio::File> directory = Gio::File::create_for_uri( ctx->qualifier.uri )->get_parent( );
         Glib::RefPtr<Gio::FileEnumerator> files = directory->enumerate_children( );
     
         Glib::RefPtr<Gio::FileInfo> file;
-
         std::string cover_art;
+
         while ( (file = files->next_file()) != 0 )
         {
             if( file->get_content_type().find("image") != std::string::npos &&
@@ -416,26 +358,18 @@ namespace MPX
             }
         }
 
-        if(cover_art.empty())
-        {
-            g_message("%s: Cover NotFound", G_STRFUNC);
-            Signals.NotFound.emit(data);
-        }
-        else
+        if( !cover_art.empty() )
         {
             try{
-                    RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cover_art );
-                    covers.cache_artwork( data->qualifier.mbid, cover );
-                    g_message("%s: Cover HasFound", G_STRFUNC);
-                    Signals.HasFound.emit(data);
+                RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cover_art );
+                covers.cache_artwork( ctx->qualifier.mbid, cover );
+                m_fetch_state = FETCH_STATE_COVER_SAVED;
             }
             catch (Gdk::PixbufError)
             {
-                Signals.NotFound.emit(data);
             }
             catch (Glib::FileError)
             {
-                Signals.NotFound.emit(data);
             }
         }
     }
@@ -446,13 +380,13 @@ namespace MPX
     //
     // --------------------------------------------------
     void
-    InlineCovers::load_artwork(CoverFetchData* data)
+    InlineCovers::load_artwork(CoverFetchContext* ctx)
     {
         Glib::RefPtr<Gdk::Pixbuf> cover;
 
-        if( !data->qualifier.uri.empty() )
+        if( !ctx->qualifier.uri.empty() )
         try{
-            MPEG::File opfile (data->qualifier.uri.c_str());
+            MPEG::File opfile (ctx->qualifier.uri.c_str());
             if(opfile.isOpen() && opfile.isValid())
             {
                 using TagLib::ID3v2::FrameList;
@@ -487,15 +421,8 @@ namespace MPX
 
         if( cover )
         {
-            g_message("%s: Cover HasFound", G_STRFUNC);
-            covers.cache_artwork( data->qualifier.mbid, cover );
-            Signals.HasFound.emit( data );
-        }
-        else
-        {
-            g_message("%s: Cover NotFound", G_STRFUNC);
-            Signals.NotFound.emit(data);
+            covers.cache_artwork( ctx->qualifier.mbid, cover );
+            m_fetch_state = FETCH_STATE_COVER_SAVED;
         }
     }
-
 }

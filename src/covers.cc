@@ -97,7 +97,7 @@ namespace
   using namespace MPX;
 
   void
-  create_or_lock( CoverFetchData* data, MutexMap & mmap )
+  create_or_lock( CoverFetchContext* data, MutexMap & mmap )
   {
     if( mmap.find( data->qualifier.mbid ) == mmap.end() )
     {
@@ -112,7 +112,7 @@ namespace
   }
 
   void
-  create_or_unlock( CoverFetchData* data, MutexMap & mmap )
+  create_or_unlock( CoverFetchContext* data, MutexMap & mmap )
   {
     if( mmap.find( data->qualifier.mbid ) == mmap.end() )
     {
@@ -141,21 +141,6 @@ namespace MPX
         m_stores_all.push_back(StorePtr(new AmazonCovers(*this)));
         m_stores_all.push_back(StorePtr(new AmapiCovers(*this)));
         m_stores_all.push_back(StorePtr(new InlineCovers(*this)));
-
-        for( size_t i = 0; i < m_stores_all.size(); i++ )
-        {
-            m_stores_all[i]->not_found_callback().connect(
-                sigc::mem_fun(
-                    *this,
-                    &Covers::store_not_found_cb
-            ));
-
-            m_stores_all[i]->has_found_callback().connect(
-                sigc::mem_fun(
-                    *this,
-                    &Covers::store_has_found_cb
-            ));
-        }
 
         rebuild_stores();
 
@@ -248,47 +233,6 @@ namespace MPX
                 m_stores_cur[4] = m_stores_all[at4];
             }
     }
- 
-    void
-    Covers::store_has_found_cb( CoverFetchData* data )
-    {
-        Signals.GotCover.emit( data->qualifier.mbid );
-        create_or_unlock( data, m_mutexes );
-        delete data;
-    }
- 
-    void
-    Covers::store_not_found_cb( CoverFetchData* data )
-    {
-        g_message("%s: Cover Not Found", G_STRLOC);
-
-        if( !g_atomic_int_get(&m_rebuilt) )
-        {
-                int & i = m_req_store_ctr[data->qualifier.mbid];
-                i++;
-
-                if(i < data->stores.size())
-                {
-                    while( !data->stores[i] )
-                    {
-                        i++;
-                    }
-                
-                    if(i < data->stores.size())
-                    { 
-                        g_message("%s: Using Next Store", G_STRLOC);
-
-                        StorePtr store = data->stores[i]; // to avoid race conditions
-                        store->load_artwork(data);
-                        return;
-                    }
-                }
-        }
-
-        m_req_store_ctr.erase( data->qualifier.mbid );
-        create_or_unlock( data, m_mutexes );
-        delete data;
-    }
 
     void
     Covers::cache_artwork(
@@ -312,6 +256,14 @@ namespace MPX
         return std::string(path.get());
     }
 
+/*
+    void
+    Covers::store_has_found_cb( CoverFetchContext* data )
+    {
+    }
+ 
+*/
+
     void 
     Covers::cache(
           const RequestQualifier& qual
@@ -325,7 +277,8 @@ namespace MPX
             g_atomic_int_set(&m_rebuilt, 1);
         }
 
-        std::string thumb_path = get_thumb_path (qual.mbid);
+        std::string thumb_path = get_thumb_path( qual.mbid ) ;
+
         if( file_test( thumb_path, FILE_TEST_EXISTS ))
         {
             Signals.GotCover.emit( qual.mbid );
@@ -336,21 +289,30 @@ namespace MPX
         {
             int i = 0; 
 
-            CoverFetchData * data = new CoverFetchData( qual, m_stores_cur );
+            CoverFetchContext * data = new CoverFetchContext( qual, m_stores_cur );
 
-            if(i < data->stores.size())
+            if( i < data->stores.size() )
             {
                 while( !data->stores[i] )
                 {
                     i++;
                 }
             
-                if(i < data->stores.size())
+                if( i < data->stores.size() )
                 { 
-                    m_req_store_ctr[qual.mbid] = i;
-                    create_or_lock( data, m_mutexes );
-                    data->stores[m_req_store_ctr[qual.mbid]]->load_artwork(data);
-                    return;
+                    create_or_lock( data, m_mutexes ) ;
+
+                    StorePtr store = data->stores[i] ; 
+
+                    store->load_artwork( data ) ;
+
+                    if( store->get_state() == FETCH_STATE_COVER_SAVED )
+                    {
+                        Signals.GotCover.emit( data->qualifier.mbid );
+                        create_or_unlock( data, m_mutexes );
+                        delete data;
+                        return;
+                    }
                 }
             }
 
