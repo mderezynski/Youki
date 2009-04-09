@@ -396,14 +396,9 @@ namespace MPX
 	void
 		Notification::set_playstatus (PlayStatus status)
 	{
-		if( (status == PLAYSTATUS_STOPPED ) || (status == PLAYSTATUS_WAITING))
+		if( (status == PLAYSTATUS_STOPPED ) || (status == PLAYSTATUS_WAITING) )
 		{
-			m_kobo_position->hide () ;
 			m_kobo_position->set_position( 0, 0 ) ;
-		}
-		else
-		{
-			m_kobo_position->show () ;
 		}
 	}
 

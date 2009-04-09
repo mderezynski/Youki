@@ -117,8 +117,6 @@ namespace MPX
             KoboCover                       * m_main_cover ;
             KoboTitleInfo                   * m_main_titleinfo ;
             KoboVolume                      * m_main_volume ;
-            YoukiSimpleInfo                 * m_main_info_bitrate ;
-            YoukiSimpleInfo                 * m_main_info_codec ;
 
             ListViewArtist                  * m_ListViewArtist ;
             ListViewAlbums                  * m_ListViewAlbums ;

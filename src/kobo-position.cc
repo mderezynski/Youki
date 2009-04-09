@@ -177,7 +177,7 @@ namespace MPX
             layout->get_pixel_size (width, height) ;
 
             cairo->move_to(
-                  fmax( 3, 3 + double(a.get_width()) * double(percent) - width - 6 ) 
+                  fmax( 3, 3 + double(a.get_width()) * double(percent) - width - 7 ) 
                 , 2 
             ) ;
             cairo->set_source_rgba( 1., 1., 1., 1. ) ;
@@ -191,7 +191,7 @@ namespace MPX
                     ) ;
                     layout->get_pixel_size (width, height) ;
                     cairo->move_to(
-                          3 + double(a.get_width()) - width - 6  
+                          3 + double(a.get_width()) - width - 7  
                         , 2
                     ) ;
                     cairo->set_source_rgba( 1., 1., 1., 1. * factor ) ;
@@ -264,11 +264,12 @@ namespace MPX
         
             const Gtk::Allocation& a = get_allocation() ;
 
-            m_clicked = true ;
+            if( event->x < 1 && (event->x > a.get_width() - 2))
+                return false ;
 
-            m_seek_factor = double(a.get_width()) / double(m_duration) ;
-
-            m_seek_position = double(event->x) / m_seek_factor ;
+            m_clicked       = true ;
+            m_seek_factor   = double(a.get_width()-2) / double(m_duration) ;
+            m_seek_position = double(event->x-1) / m_seek_factor ;
             m_seek_position = std::min( std::max( gint64(0), m_seek_position ),  m_duration ) ; 
 
             queue_draw () ;
@@ -282,9 +283,9 @@ namespace MPX
         GdkEventButton* G_GNUC_UNUSED
     )
     {
-        m_position = m_seek_position ;
+        m_position  = m_seek_position ;
+        m_clicked   = false ;
         m_SIGNAL_seek_event.emit( m_seek_position ) ;
-        m_clicked = false ;
         queue_draw () ;
         return true ;
     }
@@ -310,7 +311,12 @@ namespace MPX
                 state = GdkModifierType (event->state);
             }
 
-            m_seek_position = double(x_orig) / m_seek_factor ;
+            const Gtk::Allocation& a = get_allocation() ;
+
+            if( x_orig < 1 && ( x_orig > a.get_width() - 2))
+                return false ;
+
+            m_seek_position = double(x_orig-1) / m_seek_factor ;
             m_seek_position = std::min( std::max( gint64(0), m_seek_position),  m_duration ) ; 
 
             queue_draw () ;

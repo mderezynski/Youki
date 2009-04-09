@@ -305,9 +305,6 @@ namespace MPX
                 , &YoukiController::on_title_clicked
         )) ;
 
-        m_main_info_bitrate = Gtk::manage( new YoukiSimpleInfo ) ;
-        m_main_info_bitrate->set_size_request( 60, -1 ) ;
-
         m_main_infoarea     = Gtk::manage( new InfoArea ) ;
         m_main_infoarea->signal_clicked().connect(
             sigc::mem_fun(
@@ -484,7 +481,6 @@ namespace MPX
         m_main_window->set_widget_drawer( *m_NotebookPlugins ) ; 
 
         m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
-        m_HBox_Info->pack_start( *m_main_info_bitrate, false, false, 0 ) ;
         m_HBox_Info->property_spacing() = 4 ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
@@ -853,7 +849,6 @@ namespace MPX
                 m_ListViewTracks->clear_active_track() ;
 
                 m_main_titleinfo->clear() ;
-                m_main_info_bitrate->clear() ;
                 m_main_cover->clear() ;
                 m_main_position->set_position( 0, 0 ) ;
 
@@ -866,7 +861,6 @@ namespace MPX
 
                 m_seek_position.reset() ; 
                 m_main_titleinfo->clear() ;
-                m_main_info_bitrate->clear() ;
                 m_main_window->queue_draw () ;    
                 break ;
 
@@ -973,7 +967,6 @@ namespace MPX
 
         if( field == FIELD_AUDIO_BITRATE )
         {
-            m_main_info_bitrate->set_info(( boost::format( "%u kbps" ) % ((m.m_audio_bitrate.get())/1000) ).str() ) ;
         }
         else
         if( field == FIELD_AUDIO_CODEC )
