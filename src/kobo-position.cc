@@ -30,6 +30,13 @@ namespace MPX
     {
         add_events(Gdk::EventMask(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK )) ;
         set_flags(Gtk::CAN_FOCUS) ;
+
+        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+        const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
+        Gdk::Color cgdk ;
+        cgdk.set_rgb_p( c.r, c.g, c.b ) ; 
+        modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
+        modify_base( Gtk::STATE_NORMAL, cgdk ) ;
     }
 
     KoboPosition::~KoboPosition () 
@@ -65,21 +72,6 @@ namespace MPX
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
         const ThemeColor& c = theme->get_color( THEME_COLOR_SELECT ) ;
-
-        cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
-        cairo->set_source_rgba(
-              m_bg.get_red_p() 
-            , m_bg.get_green_p()
-            , m_bg.get_blue_p()
-            , 1.
-        ) ;
-        cairo->rectangle(
-              0 
-            , 0 
-            , a.get_width()
-            , a.get_height()
-        ) ;
-        cairo->fill () ;
 
         cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
         cairo->set_source_rgba(

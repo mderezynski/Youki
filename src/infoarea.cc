@@ -6,6 +6,9 @@
 #include "mpx/mpx-audio-types.hh"
 #include "mpx/i-youki-play.hh"
 
+#include "mpx/i-youki-theme-engine.hh"
+#include "mpx/mpx-main.hh"
+
 namespace MPX
 {
     InfoArea::InfoArea(
@@ -15,6 +18,13 @@ namespace MPX
     {
         add_events (Gdk::BUTTON_PRESS_MASK);
         set_size_request( -1, 36 ) ;
+
+        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+        const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
+        Gdk::Color cgdk ;
+        cgdk.set_rgb_p( c.r, c.g, c.b ) ; 
+        modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
+        modify_base( Gtk::STATE_NORMAL, cgdk ) ;
     }
 
     void

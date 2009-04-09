@@ -5,6 +5,9 @@
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/util-graphics.hh"
 
+#include "mpx/i-youki-theme-engine.hh"
+#include "mpx/mpx-main.hh"
+
 namespace
 {
     const double rounding = 2. ; 
@@ -20,6 +23,13 @@ namespace MPX
 
     {
         add_events(Gdk::EventMask(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK )) ;
+
+        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+        const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
+        Gdk::Color cgdk ;
+        cgdk.set_rgb_p( c.r, c.g, c.b ) ; 
+        modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
+        modify_base( Gtk::STATE_NORMAL, cgdk ) ;
     }
 
     KoboVolume::~KoboVolume () 
@@ -56,20 +66,7 @@ namespace MPX
 
         double percent = double(m_volume) / 100. ; 
 
-        cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
-        cairo->set_source_rgba(
-              .10 
-            , .10 
-            , .10 
-            , 1. 
-        ) ;
-        cairo->rectangle(
-              0
-            , 0 
-            , a.get_width()
-            , a.get_height() 
-        ) ;
-        cairo->fill () ;
+        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
         if( m_volume )
         {

@@ -43,22 +43,6 @@ namespace MPX
   void
   InfoArea::draw_background (Cairo::RefPtr<Cairo::Context> & cairo)
   {
-    const Gtk::Allocation& a = get_allocation ();
-
-    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
-    cairo->set_source_rgba(
-          .10
-        , .10
-        , .10 
-        , 1. 
-    ) ;
-    cairo->rectangle(
-          0
-        , 0 
-        , a.get_width() 
-        , a.get_height()
-    ) ;
-    cairo->fill () ;
   }
 
   void

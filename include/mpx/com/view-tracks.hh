@@ -2006,12 +2006,12 @@ namespace MPX
                         , m_search_active( false )
 
                 {
-                    Gdk::Color c ;
-    
-                    c.set_rgb_p( .10, .10, .10 ) ;
-
-                    modify_bg( Gtk::STATE_NORMAL, c ) ;
-                    modify_base( Gtk::STATE_NORMAL, c ) ;
+                    boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+                    const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
+                    Gdk::Color cgdk ;
+                    cgdk.set_rgb_p( c.r, c.g, c.b ) ; 
+                    modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
+                    modify_base( Gtk::STATE_NORMAL, cgdk ) ;
 
                     m_playing_pixbuf = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "speaker.png" )) ;
                     m_hover_pixbuf = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "speaker_ghost.png" )) ;
