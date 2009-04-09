@@ -403,7 +403,7 @@ namespace MPX
         /*- Actions -------------------------------------------------------*/ 
 
         m_UIManager    = UIManager::create ();
-        m_Actions       = ActionGroup::create ("Actions_MLibMan");
+        m_Actions      = ActionGroup::create ("Actions_MLibMan");
 
         m_Actions->add(Action::create(
             "MenuMLib",
@@ -525,6 +525,14 @@ namespace MPX
         {
             m_Xml->get_widget("notebook1")->hide();
         }
+
+        boost::shared_ptr<Library_MLibMan> library = services->get<Library_MLibMan>("mpx-service-library");
+
+        library->signal_new_album().connect(
+            sigc::mem_fun(
+                  *this
+                , &MLibManager::new_album
+        )) ;
 
         /*- Setup Window Geometry -----------------------------------------*/ 
     

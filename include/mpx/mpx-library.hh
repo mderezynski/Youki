@@ -76,7 +76,7 @@ namespace MPX
             getSQL(
                 SQL::RowV&,
                 const std::string&
-            ) ;
+            ) const ;
 
 			int64_t
 			execSQL(

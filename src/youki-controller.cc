@@ -830,8 +830,6 @@ namespace MPX
     {
         PlayStatus status = PlayStatus( m_play->property_status().get_value() ) ;
 
-        g_message( "Status: %d", int(status) ) ;
-
         m_control_status_icon->set_playstatus( status ) ;
 
         switch( status )

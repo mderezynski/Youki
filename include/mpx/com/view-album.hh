@@ -37,8 +37,8 @@ namespace
 
 namespace MPX
 {
-        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string>  Row5 ;
-        typedef std::vector<Row5>                                                                           ModelAlbums_t ;
+        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string>  Row6 ;
+        typedef std::vector<Row6>                                                                           ModelAlbums_t ;
         typedef boost::shared_ptr<ModelAlbums_t>                                                            ModelAlbums_SP_t ;
         typedef std::map<gint64, ModelAlbums_t::iterator>                                                   IdIterMapAlbums_t ;
 
@@ -100,7 +100,7 @@ namespace MPX
                     return m_realmodel->size() ;
                 }
 
-                virtual Row5&
+                virtual Row6&
                 row (std::size_t row)
                 {
                     return (*m_realmodel)[row] ;
@@ -129,9 +129,10 @@ namespace MPX
                     , gint64                                id_artist
                     , const std::string&                    album
                     , const std::string&                    album_artist
+                    , const std::string&                    mbid
                 )
                 {
-                    Row5 row ( surface, id_album, id_artist, album, album_artist ) ; 
+                    Row6 row ( surface, id_album, id_artist, album, album_artist, mbid ) ; 
                     m_realmodel->push_back( row ) ;
 
                     ModelAlbums_t::iterator i = m_realmodel->end() ;
@@ -224,7 +225,7 @@ namespace MPX
                     return m_mapping.size();
                 }
 
-                virtual Row5&
+                virtual Row6&
                 row (std::size_t row)
                 {
                     return *(m_mapping[row]);
@@ -380,7 +381,7 @@ namespace MPX
                 void
                 render(
                       Cairo::RefPtr<Cairo::Context>   cairo
-                    , const Row5&                     data_row
+                    , const Row6&                     data_row
                     , Gtk::Widget&                    widget
                     , int                             row
                     , int                             xpos

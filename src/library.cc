@@ -626,7 +626,7 @@ namespace MPX
                 }
 
         void
-                Library::getSQL( RowV & rows, const std::string& sql)
+                Library::getSQL( RowV & rows, const std::string& sql) const
                 {
                         m_SQL->get (rows, sql); 
                 }

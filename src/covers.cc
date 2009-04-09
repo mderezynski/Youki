@@ -31,6 +31,7 @@
 #include <giomm.h>
 #include <glibmm/i18n.h>
 #include <glib/gstdio.h>
+#include <boost/ref.hpp>
 
 #include <cstdio>
 #include <cstdlib>
@@ -128,10 +129,19 @@ namespace
 
 namespace MPX
 {
+    struct Covers::ThreadData
+    {
+        SignalGotCover_t GotCover ;
+    } ;
+
     Covers::Covers ()
     : Service::Base("mpx-service-covers")
+    , sigx::glib_threadable()
     , m_rebuild(0)
     , m_rebuilt(0)
+    , cache(sigc::mem_fun(*this, &Covers::on_cache))
+    , precache(sigc::mem_fun(*this, &Covers::on_precache))
+    , signal_got_cover(*this, m_ThreadData, &ThreadData::GotCover)
     {
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), PACKAGE, "covers", NULL));
         g_mkdir(path.get(), 0700);
@@ -154,38 +164,55 @@ namespace MPX
     }
 
     void
-    Covers::precache(
-        MPX::Library* const library
-    )
+    Covers::on_startup()
     {
-        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), PACKAGE, "covers", NULL));
-
-        SQL::RowV v;
-
-        library->getSQL( v, "SELECT DISTINCT mb_album_id FROM album" );
-
-        for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
-        {
-            try{
-                const std::string& mbid = boost::get<std::string>((*i)["mb_album_id"]);
-                const std::string& cpth = build_filename( path.get(), mbid) + ".png";
-                if( Glib::file_test( cpth, Glib::FILE_TEST_EXISTS )) 
-                {
-                    Glib::RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cpth ); 
-                    m_pixbuf_cache.insert(std::make_pair( mbid, cover ));
-                }
-            }
-            catch( Gdk::PixbufError )
-            {
-            }
-            catch( Glib::FileError )
-            {  
-            }
-        }
+        m_ThreadData.set( new ThreadData ) ;
     }
 
     void
-    Covers::source_pref_changed_callback(const std::string& domain, const std::string& key, const Mcs::KeyVariant& value )
+    Covers::on_cleanup()
+    {
+        m_ThreadData.set( new ThreadData ) ;
+    }
+
+    void
+    Covers::on_cache(
+          const RequestQualifier& qual
+        , bool                    acquire
+    )
+    {
+        maincontext()->signal_idle().connect(
+            sigc::bind(
+            sigc::mem_fun(
+                  *this
+                , &Covers::handle_cache
+           )
+            , qual
+            , acquire
+        )) ;
+    }
+
+    void
+    Covers::on_precache(
+        const MPX::Library* library
+    )
+    {
+        maincontext()->signal_idle().connect(
+            sigc::bind(
+            sigc::mem_fun(
+                  *this
+                , &Covers::handle_precache
+           )
+            , library
+        )) ;
+    }
+
+    void
+    Covers::source_pref_changed_callback(
+          const std::string&        domain
+        , const std::string&        key
+        , const Mcs::KeyVariant&    value
+    )
     {
         g_atomic_int_set(&m_rebuilt, 0);
         g_atomic_int_set(&m_rebuild, 1);
@@ -256,20 +283,14 @@ namespace MPX
         return std::string(path.get());
     }
 
-/*
-    void
-    Covers::store_has_found_cb( CoverFetchContext* data )
-    {
-    }
- 
-*/
-
-    void 
-    Covers::cache(
+    bool
+    Covers::handle_cache(
           const RequestQualifier& qual
         , bool                    acquire
     )
     {
+        ThreadData * pthreaddata = m_ThreadData.get() ;
+
         if( g_atomic_int_get(&m_rebuild) )
         {
             rebuild_stores();
@@ -281,8 +302,8 @@ namespace MPX
 
         if( file_test( thumb_path, FILE_TEST_EXISTS ))
         {
-            Signals.GotCover.emit( qual.mbid );
-            return; 
+            pthreaddata->GotCover.emit( qual.mbid ) ;
+            return false ; 
         }
 
         if( acquire && m_stores_cur.size() )
@@ -301,27 +322,114 @@ namespace MPX
                 if( i < data->stores.size() )
                 { 
                     create_or_lock( data, m_mutexes ) ;
-
                     StorePtr store = data->stores[i] ; 
-
                     store->load_artwork( data ) ;
-
                     if( store->get_state() == FETCH_STATE_COVER_SAVED )
                     {
-                        Signals.GotCover.emit( data->qualifier.mbid );
+                        pthreaddata->GotCover.emit( qual.mbid ) ;
                         create_or_unlock( data, m_mutexes );
                         delete data;
-                        return;
+                        return false;
                     }
                 }
             }
 
             delete data;
         }
+
+        return false;
+    }
+
+    bool
+    Covers::handle_precache(
+        const MPX::Library* library
+    )
+    {
+        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), PACKAGE, "covers", NULL));
+
+        SQL::RowV v;
+
+        library->getSQL( v, "SELECT DISTINCT mb_album_id FROM album" );
+
+        for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
+        {
+            try{
+                const std::string& mbid = boost::get<std::string>((*i)["mb_album_id"]);
+                const std::string& cpth = build_filename( path.get(), mbid) + ".png";
+                if( Glib::file_test( cpth, Glib::FILE_TEST_EXISTS )) 
+                {
+                    Glib::RefPtr<Gdk::Pixbuf> cover = Gdk::Pixbuf::create_from_file( cpth ); 
+                    m_pixbuf_cache.insert(std::make_pair( mbid, cover ));
+                }
+            }
+            catch( Gdk::PixbufError )
+            {
+            }
+            catch( Glib::FileError )
+            {  
+            }
+        }
+
+        return false ;
     }
 
     bool
     Covers::fetch(
+        const std::string&      mbid,
+        RefPtr<Gdk::Pixbuf>&    cover
+    )
+    {
+        return sigx::open_sync_tunnel(
+                    sigc::bind(
+                    sigc::mem_fun(
+                            *this
+                          , &Covers::fetch_back1
+                    )
+                    , mbid
+                    , boost::ref(cover)
+        ))() ;
+    }
+
+    bool
+    Covers::fetch(
+        const std::string&                  mbid,
+        Cairo::RefPtr<Cairo::ImageSurface>& surface,
+        CoverSize                           size
+    )
+    {
+        return sigx::open_sync_tunnel(
+                    sigc::bind(
+                    sigc::mem_fun(
+                            *this
+                          , &Covers::fetch_back2
+                    )
+                    , mbid
+                    , boost::ref(surface)
+                    , size
+        ))() ;
+
+    }
+
+    void
+    Covers::purge()
+    {
+        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), PACKAGE, "covers", NULL));
+
+        Glib::Dir dir (path.get());
+        StrV v (dir.begin(), dir.end());
+        dir.close ();
+
+        for(StrV::const_iterator i = v.begin(); i != v.end(); ++i)
+        {
+            std::string fullpath = build_filename(path.get(), *i);
+            g_unlink(fullpath.c_str());
+        }
+    }
+
+    ////
+
+    bool
+    Covers::fetch_back1(
         const std::string&      mbid,
         RefPtr<Gdk::Pixbuf>&    cover
     )
@@ -353,7 +461,7 @@ namespace MPX
     }
 
     bool
-    Covers::fetch(
+    Covers::fetch_back2(
         const std::string&                  mbid,
         Cairo::RefPtr<Cairo::ImageSurface>& surface,
         CoverSize                           size
@@ -385,19 +493,4 @@ namespace MPX
         return false;
     }
 
-    void
-    Covers::purge()
-    {
-        Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), PACKAGE, "covers", NULL));
-
-        Glib::Dir dir (path.get());
-        StrV v (dir.begin(), dir.end());
-        dir.close ();
-
-        for(StrV::const_iterator i = v.begin(); i != v.end(); ++i)
-        {
-            std::string fullpath = build_filename(path.get(), *i);
-            g_unlink(fullpath.c_str());
-        }
-    }
 }

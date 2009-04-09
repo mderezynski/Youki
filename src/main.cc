@@ -334,6 +334,7 @@ main (int argc, char ** argv)
 #endif //HAVE_HAL
         splash->set_message(_("Starting Covers"),2/10.);
         services->add(boost::shared_ptr<Covers>(new MPX::Covers));
+        services->get<Covers>("mpx-service-covers")->run() ;
 
         splash->set_message(_("Starting Library"),3/10.);
         services->add(boost::shared_ptr<Library>(new MPX::Library));
@@ -371,6 +372,8 @@ main (int argc, char ** argv)
         g_message("%s: Critical! HAL Error: %s", G_STRLOC, cxe.what());
     }
 #endif
+
+    services->get<Covers>("mpx-service-covers")->finish() ;
 
     delete services ;
     delete gtk ;
