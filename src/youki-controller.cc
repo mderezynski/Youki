@@ -624,10 +624,11 @@ namespace MPX
             , -1
             , ""
             , _("All Albums")
+            , ""
         ) ;
 
         v.clear () ; 
-        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album")).str()) ; 
+        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album")).str()) ; 
 
         for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
         {
@@ -660,6 +661,7 @@ namespace MPX
                     , get<gint64>(r["album_artist_id"])
                     , get<std::string>(r["album"])
                     , r.count("album_artist_sortname") ? get<std::string>(r["album_artist_sortname"]) : get<std::string>(r["album_artist"])
+                    , get<std::string>(r["mb_album_id"])
                 ) ;
         }
 

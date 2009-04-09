@@ -37,7 +37,7 @@ namespace
 
 namespace MPX
 {
-        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string>  Row6 ;
+        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string>  Row6 ;
         typedef std::vector<Row6>                                                                           ModelAlbums_t ;
         typedef boost::shared_ptr<ModelAlbums_t>                                                            ModelAlbums_SP_t ;
         typedef std::map<gint64, ModelAlbums_t::iterator>                                                   IdIterMapAlbums_t ;
@@ -245,6 +245,7 @@ namespace MPX
                     , gint64                                    id_artist
                     , const std::string&                        album
                     , const std::string&                        album_artist
+                    , const std::string&                        mbid
                 )
                 {
                     DataModelAlbums::append_album(
@@ -253,6 +254,7 @@ namespace MPX
                         , id_artist
                         , album
                         , album_artist
+                        , mbid
                     ) ;
 
                     regen_mapping();
@@ -265,6 +267,7 @@ namespace MPX
                     , gint64                                    id_artist
                     , const std::string&                        album
                     , const std::string&                        album_artist
+                    , const std::string&                        mbid
                 )
                 {
                     DataModelAlbums::append_album(
@@ -273,6 +276,7 @@ namespace MPX
                         , id_artist
                         , album
                         , album_artist
+                        , mbid
                     ) ;
                 }
 

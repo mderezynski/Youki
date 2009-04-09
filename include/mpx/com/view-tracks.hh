@@ -713,7 +713,7 @@ namespace MPX
                 int                 m_column ;
                 std::string         m_title ;
                 Pango::Alignment    m_alignment ;
-
+                
             public:
 
                 Column (std::string const& title)
@@ -731,7 +731,10 @@ namespace MPX
                 void
                 set_width (int width)
                 {
-                    m_width = width; 
+                    if( m_width != width )
+                    {
+                        m_width = width; 
+                    }
                 }
 
                 int
