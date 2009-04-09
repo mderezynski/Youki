@@ -16,6 +16,8 @@
 #include "mpx/com/view-album.hh"
 #include "mpx/com/view-tracks.hh"
 
+#include "mpx/i-youki-theme-engine.hh"
+
 #include "mpx/algorithm/youki-markov-predictor.hh"
 
 #include "youki-controller-status-icon.hh"
@@ -24,39 +26,6 @@
 
 namespace
 {
-    bool
-    on_alignment_expose(
-          GdkEventExpose* event
-        , Gtk::Alignment* widget
-    )
-    {
-            Cairo::RefPtr<Cairo::Context> cairo = widget->get_window()->create_cairo_context() ;
-
-            cairo->set_operator( Cairo::OPERATOR_ATOP ) ; 
-
-            cairo->set_source_rgba(
-                  .65
-                , .65
-                , .65
-                , 0.4 
-            ) ;
-
-            cairo->set_line_width( 1. ) ;
-           
-            MPX::RoundedRectangle( 
-                  cairo
-                , widget->get_allocation().get_x() + 1
-                , widget->get_allocation().get_y() + 1
-                , widget->get_allocation().get_width() - 2
-                , widget->get_allocation().get_height() - 2
-                , 4.
-            ) ;
-
-            cairo->stroke () ;
-
-            return true ;
-    }
-
     std::string mpris_attribute_id_str[] =
     {
             "location",
@@ -344,12 +313,20 @@ namespace MPX
         m_Alignment_Entry->property_right_padding() = 2 ;
         m_Alignment_Entry->signal_expose_event().connect(
             sigc::bind(
-                      &on_alignment_expose
-                    , m_Alignment_Entry
-        )) ;    
+                sigc::mem_fun(
+                      *this  
+                    , &YoukiController::on_alignment_expose
+                )
+                , m_Alignment_Entry
+        )) ; 
+
+        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+
+        const ThemeColor& c_base = theme->get_color( THEME_COLOR_BASE ) ; 
+        const ThemeColor& c_text = theme->get_color( THEME_COLOR_TEXT ) ;
 
         Gdk::Color c ;
-        c.set_rgb_p( 0.12, 0.12, 0.12 ) ;
+        c.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
         m_Entry->modify_bg( Gtk::STATE_NORMAL, c ) ;
         m_Entry->modify_base( Gtk::STATE_NORMAL, c ) ;
         m_Entry->modify_bg( Gtk::STATE_ACTIVE, c ) ;
@@ -357,7 +334,7 @@ namespace MPX
         m_Entry->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
         m_Entry->modify_base( Gtk::STATE_PRELIGHT, c ) ;
 
-        c.set_rgb_p( 1., 1., 1. ) ; 
+        c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
         m_Entry->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Entry->modify_fg( Gtk::STATE_NORMAL, c ) ;
         m_Entry->property_has_frame() = false ; 
@@ -368,7 +345,7 @@ namespace MPX
         m_Label_Search->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
         m_Label_Search->modify_base( Gtk::STATE_PRELIGHT, c ) ;
 
-        c.set_rgb_p( 1., 1., 1. ) ; 
+        c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
         m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
 
@@ -963,7 +940,7 @@ namespace MPX
             GstMetadataField    field
     )
     {
-        const GstMetadata& m = m_play->get_metadata() ;
+        // const GstMetadata& m = m_play->get_metadata() ;
 
         if( field == FIELD_AUDIO_BITRATE )
         {
@@ -1513,4 +1490,41 @@ namespace MPX
                 }
         }
     }
+
+    bool
+    YoukiController::on_alignment_expose(
+          GdkEventExpose* event
+        , Gtk::Alignment* widget
+    )
+    {
+            boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+
+            const ThemeColor& c = theme->get_color( THEME_COLOR_ENTRY_OUTLINE ) ;
+
+            Cairo::RefPtr<Cairo::Context> cairo = widget->get_window()->create_cairo_context() ;
+            cairo->set_operator( Cairo::OPERATOR_ATOP ) ; 
+            cairo->set_source_rgba(
+                  c.r 
+                , c.g
+                , c.b
+                , c.a 
+            ) ;
+
+            cairo->set_line_width( 1. ) ;
+           
+            MPX::RoundedRectangle( 
+                  cairo
+                , widget->get_allocation().get_x() + 1
+                , widget->get_allocation().get_y() + 1
+                , widget->get_allocation().get_width() - 2
+                , widget->get_allocation().get_height() - 2
+                , 4.
+            ) ;
+
+            cairo->stroke () ;
+
+            return true ;
+    }
+
+
 }

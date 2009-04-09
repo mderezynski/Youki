@@ -291,6 +291,12 @@ namespace MPX
             on_status_icon_scroll_down(
             ) ;
 
+            bool
+            on_alignment_expose(
+                  GdkEventExpose* event
+                , Gtk::Alignment* widget
+            ) ;
+
         protected:
 
             void

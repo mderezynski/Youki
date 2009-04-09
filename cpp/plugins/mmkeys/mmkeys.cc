@@ -99,6 +99,20 @@ namespace MPX
 
         boost::shared_ptr<Preferences> p = services->get<Preferences>("mpx-service-preferences") ;
     
+        mcs->domain_register ("hotkeys");
+        mcs->key_register ("hotkeys", "enable", bool (true));
+        mcs->key_register ("hotkeys", "system", int (1)); // GNOME Configured is default
+        mcs->key_register ("hotkeys", "key-1", int (0)); // Play
+        mcs->key_register ("hotkeys", "key-1-mask", int (0));
+        mcs->key_register ("hotkeys", "key-2", int (0)); // Pause
+        mcs->key_register ("hotkeys", "key-2-mask", int (0));
+        mcs->key_register ("hotkeys", "key-3", int (0)); // Prev
+        mcs->key_register ("hotkeys", "key-3-mask", int (0));
+        mcs->key_register ("hotkeys", "key-4", int (0)); // Next
+        mcs->key_register ("hotkeys", "key-4-mask", int (0));
+        mcs->key_register ("hotkeys", "key-5", int (0)); // Stop
+        mcs->key_register ("hotkeys", "key-5-mask", int (0));
+
         // MM-Keys
 
         const int N_MM_KEYS = 3 ;

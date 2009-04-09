@@ -1,9 +1,14 @@
 #include <gtkmm.h>
 #include <boost/format.hpp>
 #include <cmath>
-#include "kobo-position.hh"
+
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/util-graphics.hh"
+#include "mpx/mpx-main.hh"
+
+#include "mpx/i-youki-theme-engine.hh"
+
+#include "kobo-position.hh"
 
 namespace
 {
@@ -56,7 +61,10 @@ namespace MPX
     {
         Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context() ;
         const Gdk::Rectangle& a = get_allocation() ;
-        const Gdk::Color& c = get_style()->get_base( Gtk::STATE_SELECTED ) ;
+
+        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+
+        const ThemeColor& c = theme->get_color( THEME_COLOR_SELECT ) ;
 
         cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
         cairo->set_source_rgba(
@@ -75,9 +83,9 @@ namespace MPX
 
         cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
         cairo->set_source_rgba(
-              c.get_red_p() 
-            , c.get_green_p() 
-            , c.get_blue_p()
+              c.r
+            , c.g 
+            , c.b
             , .2 
         ) ;
         RoundedRectangle(
@@ -119,25 +127,25 @@ namespace MPX
             
             background_gradient_ptr->add_color_stop_rgba(
                   0. 
-                , c.get_red_p() 
-                , c.get_green_p()
-                , c.get_blue_p()
+                , c.r
+                , c.g
+                , c.b
                 , 0.85 * factor 
             ) ;
 
             background_gradient_ptr->add_color_stop_rgba(
                   .60
-                , c.get_red_p() 
-                , c.get_green_p()
-                , c.get_blue_p()
+                , c.r
+                , c.g
+                , c.b
                 , 0.55 * factor
             ) ;
             
             background_gradient_ptr->add_color_stop_rgba(
                   1. 
-                , c.get_red_p() 
-                , c.get_green_p()
-                , c.get_blue_p()
+                , c.r
+                , c.g
+                , c.b
                 , 0.35 * factor
             ) ;
 
@@ -159,8 +167,9 @@ namespace MPX
 
         if( m_duration > 0 ) 
         {
-            const int text_size_px = 10 ;
+            const ThemeColor& ct = theme->get_color( THEME_COLOR_TEXT ) ;
 
+            const int text_size_px = 10 ;
             const Gtk::Allocation& a = get_allocation() ;
 
             Pango::FontDescription font_desc ("Sans") ;
@@ -175,26 +184,40 @@ namespace MPX
 
             int width, height;
             layout->get_pixel_size (width, height) ;
-
             cairo->move_to(
                   fmax( 3, 3 + double(a.get_width()) * double(percent) - width - 7 ) 
                 , 2 
             ) ;
-            cairo->set_source_rgba( 1., 1., 1., 1. ) ;
+            cairo->set_source_rgba(
+                  ct.r
+                , ct.g
+                , ct.b
+                , ct.a
+            ) ;
             cairo->set_operator( Cairo::OPERATOR_OVER ) ;
             pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+
 
             if( (m_duration - m_position) > 1 )
             {
                     layout->set_markup(
                         (boost::format("<b>%02d</b>:<b>%02d</b>") % ( m_duration / 60 ) % ( m_duration % 60 )).str()
                     ) ;
+
                     layout->get_pixel_size (width, height) ;
+
                     cairo->move_to(
                           3 + double(a.get_width()) - width - 7  
                         , 2
                     ) ;
-                    cairo->set_source_rgba( 1., 1., 1., 1. * factor ) ;
+
+                    cairo->set_source_rgba(
+                          ct.r
+                        , ct.g
+                        , ct.b
+                        , ct.a * factor
+                    ) ;
+
                     cairo->set_operator( Cairo::OPERATOR_OVER ) ;
                     pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
             }
@@ -204,7 +227,10 @@ namespace MPX
         {
                 double h, s, b ;
 
-                Util::color_to_hsb( c, h, s, b ) ;
+                Gdk::Color cgdk ;
+                cgdk.set_rgb_p( c.r, c.g, c.b ) ;
+
+                Util::color_to_hsb( cgdk, h, s, b ) ;
                 b = std::min( 1., b+0.12 ) ;
                 s = std::min( 1., s+0.12 ) ;
                 Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;

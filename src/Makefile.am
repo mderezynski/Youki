@@ -154,6 +154,9 @@ youki_bin_SOURCES =             \
     kobo-volume.hh              \
     kobo-volume.cc              \
                                 \
+    youki-theme-engine.hh       \
+    youki-theme-engine.cc       \
+                                \
     library.cc                  \
                                 \
     main.cc                     \

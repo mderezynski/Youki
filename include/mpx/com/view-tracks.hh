@@ -27,6 +27,8 @@
 
 #include "glib-marshalers.h"
 
+#include "mpx/i-youki-theme-engine.hh"
+
 typedef Glib::Property<Gtk::Adjustment*> PropAdj;
 
 namespace
@@ -785,7 +787,15 @@ namespace MPX
 
 
                 void
-                render_header(Cairo::RefPtr<Cairo::Context> cairo, Gtk::Widget& widget, int xpos, int ypos, int rowheight, int column)
+                render_header(
+                      Cairo::RefPtr<Cairo::Context>     cairo
+                    , Gtk::Widget&                      widget
+                    , int                               xpos
+                    , int                               ypos
+                    , int                               rowheight
+                    , int                               column
+                    , const ThemeColor&                 color
+                )
                 {
                     using boost::get;
 
@@ -797,14 +807,22 @@ namespace MPX
                         , m_width
                         , rowheight
                     ) ;
+
                     cairo->clip() ;
 
                     cairo->move_to(
                           xpos + off + 5
                         , ypos + 6
                     ) ;
+
                     cairo->set_operator(Cairo::OPERATOR_ATOP);
-                    cairo->set_source_rgba( 1., 1., 1., 1. ) ;
+
+                    cairo->set_source_rgba(
+                          color.r
+                        , color.g
+                        , color.b
+                        , color.a   
+                    ) ; 
 
                     Glib::RefPtr<Pango::Layout> layout = widget.create_pango_layout(""); 
 
@@ -834,22 +852,28 @@ namespace MPX
 
                 void
                 render(
-                    Cairo::RefPtr<Cairo::Context>   cairo,
-                    Row7 const&                     datarow,
-                    std::string const&              filter,
-                    Gtk::Widget&                    widget,
-                    int                             row,
-                    int                             xpos,
-                    int                             ypos,
-                    int                             rowheight,
-                    bool                            selected,
-                    bool                            highlight = true
+                      Cairo::RefPtr<Cairo::Context>     cairo
+                    , const Row7&                       datarow
+                    , const std::string&                filter
+                    , Gtk::Widget&                      widget
+                    , int                               row
+                    , int                               xpos
+                    , int                               ypos
+                    , int                               rowheight
+                    , bool                              selected
+                    , const ThemeColor&                 color
                 )
                 {
                     using boost::get;
 
                     cairo->set_operator(Cairo::OPERATOR_ATOP);
-                    cairo->set_source_rgba( 1., 1., 1., 1. ) ;
+
+                    cairo->set_source_rgba(
+                          color.r
+                        , color.g
+                        , color.b
+                        , color.a   
+                    ) ; 
 
                     int off = (m_column == 0) ? 16 : 0 ;
 
@@ -1387,10 +1411,16 @@ namespace MPX
                 bool
                 on_expose_event (GdkEventExpose *event)
                 {
-                    Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
-                    const Gtk::Allocation& alloc = get_allocation();
+                    boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-services-theme") ;
 
+                    const ThemeColor& c_text        = theme->get_color( THEME_COLOR_TEXT ) ;
+                    const ThemeColor& c_rules_hint  = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) 
+                    const ThemeColor& c_sel         = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) 
+
+                    Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+
+                    const Gtk::Allocation& a = get_allocation();
 
                     std::size_t row = get_upper_row() ;
                     m_previous_drawn_row = row;
@@ -1411,6 +1441,7 @@ namespace MPX
                                   , 0
                                   , m_row_start
                                   , col
+                                  , c_text
                                 ) ;
 
                                 xpos += (*i)->get_width() + 1 ;
@@ -1439,7 +1470,7 @@ namespace MPX
 
                                     r.x       = xpad  + inner_pad ;
                                     r.y       = ypos  + inner_pad ;
-                                    r.width   = alloc.get_width() - xpad - 2 * inner_pad ;
+                                    r.width   = a.get_width() - xpad - 2 * inner_pad ;
                                     r.height  = m_row_height - 2 * inner_pad ;
 
                                     RoundedRectangle(
@@ -1452,10 +1483,10 @@ namespace MPX
                                     ) ;
 
                                     cairo->set_source_rgba(
-                                          0.2
-                                        , 0.2
-                                        , 0.2
-                                        , 1.
+                                          c_rules_hint.r 
+                                        , c_rules_hint.g
+                                        , c_rules_hint.b 
+                                        , c_rules_hint.a
                                     ) ;
 
                                     cairo->fill() ;
@@ -1470,9 +1501,9 @@ namespace MPX
                                     GdkRectangle r ;
 
                                     r.x         = inner_pad + 16 ;
-                                    r.y         = ypos + inner_pad ;
-                                    r.width     = alloc.get_width() - 2*inner_pad - 16 ;  
-                                    r.height    = m_row_height - 2*inner_pad ;
+                                    r.y         = inner_pad + ypos;
+                                    r.width     = a.get_width() - 2*inner_pad - 16 ;  
+                                    r.height    = m_row_height  - 2*inner_pad ;
 
                                     cairo->save () ;
 
@@ -1485,25 +1516,25 @@ namespace MPX
                                     
                                     background_gradient_ptr->add_color_stop_rgba(
                                           0
-                                        , c.get_red_p() 
-                                        , c.get_green_p()
-                                        , c.get_blue_p()
+                                        , c_sel.r 
+                                        , c_sel.g 
+                                        , c_sel.b 
                                         , 0.90 * factor 
                                     ) ;
                                     
                                     background_gradient_ptr->add_color_stop_rgba(
                                           .40
-                                        , c.get_red_p() 
-                                        , c.get_green_p()
-                                        , c.get_blue_p()
+                                        , c_sel.r
+                                        , c_sel.g
+                                        , c_sel.b
                                         , 0.75 * factor 
                                     ) ;
                                     
                                     background_gradient_ptr->add_color_stop_rgba(
                                           1. 
-                                        , c.get_red_p() 
-                                        , c.get_green_p()
-                                        , c.get_blue_p()
+                                        , c_sel.r
+                                        , c_sel.g
+                                        , c_sel.b
                                         , 0.45 * factor
                                     ) ;
 
@@ -1522,14 +1553,13 @@ namespace MPX
                                     cairo->fill_preserve (); 
 
                                     cairo->set_source_rgb(
-                                          c.get_red_p()
-                                        , c.get_green_p()
-                                        , c.get_blue_p()
+                                          c_sel.r
+                                        , c_sel.g
+                                        , c_sel.b
                                     ) ;
 
                                     cairo->set_line_width( 0.8 ) ;
                                     cairo->stroke () ;
-
                                     cairo->restore () ;
 
                                     iter_is_selected = true;
@@ -1537,7 +1567,20 @@ namespace MPX
 
                                 for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                                 {
-                                    (*i)->render(cairo, m_model->row(row), m_model->m_filter_effective, *this, row, xpos, ypos, m_row_height, iter_is_selected, m_highlight);
+                                    (*i)->render(
+                                          cairo
+                                        , m_model->row(row)
+                                        , m_model->m_filter_effective
+                                        , *this
+                                        , row
+                                        , xpos
+                                        , ypos
+                                        , m_row_height
+                                        , iter_is_selected
+                                        , m_highlight
+                                        , c_text
+                                    ) ;
+
                                     xpos += (*i)->get_width() + 1;
                                 }
                         }
@@ -1606,24 +1649,26 @@ namespace MPX
 
                     cairo->save() ;
 
+                    const TextColor& c_treelines = theme->get_color( TEXT_COLOR_TREELINES ) ;
+
+                    cairo->set_line_width(
+                          .5
+                    ) ;
+
+                    cairo->set_dash(
+                          dashes
+                        , 0
+                    ) ;
+
                     for( Columns::const_iterator i = m_columns.begin(); i != i2; ++i )
                     {
                                 xpos += (*i)->get_width() ; 
 
-                                cairo->set_line_width(
-                                      .5
-                                ) ;
-
-                                cairo->set_dash(
-                                      dashes
-                                    , 0
-                                ) ;
-
                                 cairo->set_source_rgba(
-                                      1.
-                                    , 1.
-                                    , 1.
-                                    , .5
+                                      c_treelines.r
+                                    , c_treelines.g
+                                    , c_treelines.b
+                                    , c_treelines.a
                                 ) ;
 
                                 cairo->move_to(
@@ -1633,7 +1678,7 @@ namespace MPX
 
                                 cairo->line_to(
                                       xpos
-                                    , alloc.get_height()
+                                    , a.get_height()
                                 ) ;
 
                                 cairo->stroke() ;
@@ -1646,13 +1691,13 @@ namespace MPX
                         get_style()->paint_focus(
                               get_window()
                             , Gtk::STATE_NORMAL
-                            , get_allocation()
+                            , a 
                             , *this
                             , "treeview"
                             , 0 
                             , 0 
-                            , get_allocation().get_width()
-                            , get_allocation().get_height()
+                            , a.get_width()
+                            , a.get_height()
                         ) ;
                     }
 

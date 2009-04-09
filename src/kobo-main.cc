@@ -3,6 +3,9 @@
 #include <gtkmm.h>
 #include "mpx/mpx-main.hh"
 #include "mpx/widgets/cairo-extensions.hh"
+
+#include "mpx/i-youki-theme-engine.hh"
+
 #include "kobo-main.hh"
 
 namespace
@@ -324,6 +327,8 @@ namespace MPX
     bool
     MainWindow::on_expose_event( GdkEventExpose* event )
                     {
+                        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+
                         Cairo::RefPtr<Cairo::Context> cr = get_window()->create_cairo_context() ;
 
                         cr->set_operator( Cairo::OPERATOR_CLEAR ) ;
@@ -332,8 +337,15 @@ namespace MPX
                         //// DRAWER 
                         if( m_expand_direction != EXPAND_NONE || m_drawer_out )
                         {
+                                const ThemeColor& c = theme->get_color( THEME_COLOR_DRAWER ) ;
+
                                 cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
-                                cr->set_source_rgba( 0.65, 0.65, 0.65, .4 ) ;
+                                cr->set_source_rgba(
+                                      c.r
+                                    , c.g
+                                    , c.b
+                                    , c.a
+                                ) ;
                                 RoundedRectangle(
                                       cr
                                     , m_presize_width - 16 
@@ -348,8 +360,15 @@ namespace MPX
 
 
                         //// MAINAREA 
+                        const ThemeColor& c1 = theme->get_color( THEME_COLOR_BASE ) ;
+
                         cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
-                        cr->set_source_rgba( 0.10, 0.10, 0.10, 1. ) ;
+                        cr->set_source_rgba(
+                              c1.r
+                            , c1.g
+                            , c1.b
+                            , c1.a
+                        ) ;
                         RoundedRectangle(
                               cr
                             , 0
@@ -363,6 +382,10 @@ namespace MPX
 
 
                         //// TITLEBAR 
+                        const ThemeColor& t1 = theme->get_color( THEME_COLOR_TITLEBAR_1 ) ;
+                        const ThemeColor& t2 = theme->get_color( THEME_COLOR_TITLEBAR_2 ) ;
+                        const ThemeColor& t3 = theme->get_color( THEME_COLOR_TITLEBAR_3 ) ;
+
                         Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
                               m_presize_width / 2. 
                             , 0
@@ -372,26 +395,26 @@ namespace MPX
                         
                         background_gradient_ptr->add_color_stop_rgba(
                               0
-                            , 0.33 
-                            , 0.33
-                            , 0.33
-                            , 0.93 
+                            , t1.r 
+                            , t1.g
+                            , t1.b
+                            , t1.a 
                         ) ;
                         
                         background_gradient_ptr->add_color_stop_rgba(
                               .85                       
-                            , 0.22 
-                            , 0.22
-                            , 0.22
-                            , 0.93 
+                            , t2.r 
+                            , t2.g
+                            , t2.b
+                            , t2.a 
                         ) ;
                         
                         background_gradient_ptr->add_color_stop_rgba(
                               1 
-                            , 0.13
-                            , 0.13
-                            , 0.13
-                            , 0.93 
+                            , t3.r 
+                            , t3.g
+                            , t3.b
+                            , t3.a 
                         ) ;
 
                         cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
@@ -450,11 +473,13 @@ namespace MPX
 
 
                         //// RESIZE GRIP 
+                        const ThemeColor& crg = theme->get_color( THEME_COLOR_RESIZE_GRIP ) ;
+
                         cr->set_source_rgba(
-                              1.
-                            , 1.
-                            , 1.
-                            , 0.20
+                              crg.r
+                            , crg.g
+                            , crg.b
+                            , crg.a
                         ) ;
 
                         RoundedTriangleRight(
@@ -484,6 +509,8 @@ namespace MPX
 
 
                         //// MAINAREA BORDER 
+                        const ThemeColor& brd = theme->get_color( THEME_COLOR_WINDOW_BORDER ) ;
+
                         RoundedRectangle(
                               cr
                             , 0
@@ -493,9 +520,17 @@ namespace MPX
                             , rounding
                         ) ;
                         cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
-                        cr->set_source_rgba( 0.35, 0.35, 0.35, 1. ) ;
+                        cr->set_source_rgba(
+                              brd.r
+                            , brd.g
+                            , brd.b
+                            , brd.a
+                        ) ;
                         cr->set_line_width( 1.5 ) ;
                         cr->stroke() ;
+
+                        //// TITLEBAR TOP
+                        const ThemeColor& tbt = theme->get_color( THEME_COLOR_TITLEBAR_TOP ) ;
 
                         cr->rectangle(
                               0
@@ -514,7 +549,12 @@ namespace MPX
                             , rounding
                         ) ;
 
-                        cr->set_source_rgba( 0.39, 0.39, 0.39, 1. ) ;
+                        cr->set_source_rgba(
+                              tbt.r
+                            , tbt.g
+                            , tbt.b
+                            , tbt.a
+                        ) ;
                         cr->set_line_width( 1.5 ) ;
                         cr->stroke() ;
 

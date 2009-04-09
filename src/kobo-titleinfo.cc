@@ -34,8 +34,12 @@
 #include <gdkmm/general.h>
 #include <cairomm/cairomm.h>
 #include <cmath>
+
 #include "mpx/util-graphics.hh"
 #include "mpx/widgets/cairo-extensions.hh"
+
+#include "mpx/i-youki-theme-engine.hh"
+#include "mpx/mpx-main.hh"
 
 namespace
 {
@@ -48,7 +52,6 @@ namespace
 
     char const*  text_font              = "Sans" ;
     int const    text_size_px           = 14 ;
-    double const text_colour[3]         = { 1.0, 1.0, 1.0 } ;
     double const text_fade_in_time      = 0.2 ;
     double const text_fade_out_time     = 0.05 ;
     double const text_hold_time         = 5. ; 
@@ -155,20 +158,28 @@ namespace MPX
     void
     KoboTitleInfo::draw_frame ()
     {
-        Cairo::RefPtr<Cairo::Context> cairo = get_window ()->create_cairo_context () ;
+        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
+        Cairo::RefPtr<Cairo::Context> cairo = get_window ()->create_cairo_context () ;
         const Gtk::Allocation& a = get_allocation() ;
 
+        const ThemeColor& c_base /* :) */ = theme->get_color( THEME_COLOR_BASE ) ; 
         cairo->set_operator(Cairo::OPERATOR_SOURCE) ;
-        cairo->set_source_rgba( 0.10, 0.10, 0.10, 1. ) ;
+        cairo->set_source_rgba(
+              c_base.r
+            , c_base.g
+            , c_base.b
+            , c_base.a
+        ) ;
         cairo->paint () ;
 
+        const ThemeColor& c_info = theme->get_color( THEME_COLOR_INFO_AREA ) ; 
         cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
         cairo->set_source_rgba(
-              .8
-            , .8
-            , .8 
-            , .08
+              c_info.r 
+            , c_info.g
+            , c_info.b
+            , c_info.a
         ) ;
         RoundedRectangle(
               cairo
@@ -203,7 +214,14 @@ namespace MPX
                 , (a.get_height () - height) / 2
             ) ;
 
-            cairo->set_source_rgba (text_colour[0], text_colour[1], text_colour[2], alpha) ;
+            const ThemeColor& c_text = theme->get_color( THEME_COLOR_TEXT ) ; 
+
+            cairo->set_source_rgba(
+                  c_text.r
+                , c_text.g
+                , c_text.b
+                , alpha 
+            ) ; 
             cairo->set_operator (Cairo::OPERATOR_ATOP) ;
 
             pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
