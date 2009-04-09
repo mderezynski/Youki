@@ -908,15 +908,7 @@ namespace MPX
 
                     Glib::RefPtr<Pango::Layout> layout; 
 
-                    if( highlight )
-                    {
-                        layout = widget.create_pango_layout("") ;
-                        layout->set_markup( Util::text_match_highlight( str, filter, "#ff3030") ) ;
-                    }
-                    else
-                    {
-                        layout = widget.create_pango_layout( str );
-                    }
+                    layout = widget.create_pango_layout( str );
 
                     layout->set_ellipsize(
                           Pango::ELLIPSIZE_END
@@ -1414,8 +1406,8 @@ namespace MPX
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-services-theme") ;
 
                     const ThemeColor& c_text        = theme->get_color( THEME_COLOR_TEXT ) ;
-                    const ThemeColor& c_rules_hint  = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) 
-                    const ThemeColor& c_sel         = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) 
+                    const ThemeColor& c_rules_hint  = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) ;
+                    const ThemeColor& c_sel         = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) ;
 
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
@@ -1423,7 +1415,7 @@ namespace MPX
                     const Gtk::Allocation& a = get_allocation();
 
                     std::size_t row = get_upper_row() ;
-                    m_previous_drawn_row = row;
+                    m_previous_drawn_row = row ;
 
                     int ypos    = m_row_start ;
                     int xpos    = 0 ;
@@ -1577,7 +1569,6 @@ namespace MPX
                                         , ypos
                                         , m_row_height
                                         , iter_is_selected
-                                        , m_highlight
                                         , c_text
                                     ) ;
 
@@ -1649,7 +1640,7 @@ namespace MPX
 
                     cairo->save() ;
 
-                    const TextColor& c_treelines = theme->get_color( TEXT_COLOR_TREELINES ) ;
+                    const ThemeColor& c_treelines = theme->get_color( THEME_COLOR_TREELINES ) ;
 
                     cairo->set_line_width(
                           .5

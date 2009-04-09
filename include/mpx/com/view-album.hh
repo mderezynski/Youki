@@ -750,7 +750,7 @@ namespace MPX
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
                     const ThemeColor& c_sel         = theme->get_color( THEME_COLOR_SELECT ) ;
-                    const ThemeColor& c_text        = theme->get_color( THEME_COLOR_SELECT ) ;
+                    const ThemeColor& c_text        = theme->get_color( THEME_COLOR_TEXT ) ;
                     const ThemeColor& c_treelines   = theme->get_color( THEME_COLOR_TREELINES ) ;
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
