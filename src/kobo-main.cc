@@ -429,7 +429,7 @@ namespace MPX
 
 
                         //// ICONS
-                        cr->set_operator( Cairo::OPERATOR_ATOP ) ;
+                        cr->set_operator( Cairo::OPERATOR_OVER ) ;
 
                         GdkRectangle r ;
                         r.x         = m_presize_width - m_title_logo->get_width() - 6 ;
@@ -470,7 +470,6 @@ namespace MPX
                         cr->clip () ;
                         cr->paint_with_alpha( m_quit_clicked ? .9 : .6 ) ; 
                         cr->restore () ;
-
 
                         //// RESIZE GRIP 
                         const ThemeColor& crg = theme->get_color( THEME_COLOR_RESIZE_GRIP ) ;

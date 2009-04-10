@@ -860,7 +860,6 @@ namespace MPX
                     , int                               xpos
                     , int                               ypos
                     , int                               rowheight
-                    , bool                              selected
                     , const ThemeColor&                 color
                 )
                 {
@@ -1441,21 +1440,18 @@ namespace MPX
                     }
 
                     cairo->set_operator(Cairo::OPERATOR_ATOP);
+
+                    //// ROWS
     
-                    const int xpad = 16 ;
+                    const int xpad      = 16 ;
+                    const int inner_pad =  1 ;
 
-                    while( m_model->is_set() && cnt && (row < m_model->m_mapping.size()) ) 
+                    if( event->area.width > 16 )
                     {
-                        const int inner_pad  = 1 ;
+                            while( m_model->is_set() && cnt && (row < m_model->m_mapping.size()) ) 
+                            {
+                                xpos = 0 ;
 
-                        xpos = 0 ;
-
-                        Model_t::iterator selected = m_model->m_mapping[row];
-
-                        bool iter_is_selected = ( m_selection && boost::get<1>(m_selection.get()) == row ) ;
-
-                        if( ! event->area.width <= 16 )
-                        {
                                 if( !(row % 2) ) 
                                 {
                                     GdkRectangle r ;
@@ -1484,78 +1480,92 @@ namespace MPX
                                     cairo->fill() ;
                                 }
 
+                                ypos += m_row_height ;
+                                row  ++ ;
+                                cnt  -- ;
+                            }
+
+                            if( m_selection )
+                            {
+                                std::size_t row =  boost::get<1>(m_selection.get()) ; 
+
                                 double factor = has_focus() ? 1. : 0.3 ;
+                                double ypos   = row * m_row_height + m_row_start ;
 
-                                if( iter_is_selected )
-                                {
-                                    Gdk::Color c = get_style()->get_base( Gtk::STATE_SELECTED ) ;
+                                GdkRectangle r ;
 
-                                    GdkRectangle r ;
+                                r.x         = inner_pad + 16 ;
+                                r.y         = inner_pad + ypos;
+                                r.width     = a.get_width() - 2*inner_pad - 16 ;  
+                                r.height    = m_row_height  - 2*inner_pad ;
 
-                                    r.x         = inner_pad + 16 ;
-                                    r.y         = inner_pad + ypos;
-                                    r.width     = a.get_width() - 2*inner_pad - 16 ;  
-                                    r.height    = m_row_height  - 2*inner_pad ;
+                                cairo->save () ;
 
-                                    cairo->save () ;
+                                Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
+                                      r.x + r.width / 2
+                                    , r.y  
+                                    , r.x + r.width / 2
+                                    , r.y + r.height
+                                ) ;
+                                
+                                background_gradient_ptr->add_color_stop_rgba(
+                                      0
+                                    , c_sel.r 
+                                    , c_sel.g 
+                                    , c_sel.b 
+                                    , 0.90 * factor 
+                                ) ;
+                                
+                                background_gradient_ptr->add_color_stop_rgba(
+                                      .40
+                                    , c_sel.r
+                                    , c_sel.g
+                                    , c_sel.b
+                                    , 0.75 * factor 
+                                ) ;
+                                
+                                background_gradient_ptr->add_color_stop_rgba(
+                                      1. 
+                                    , c_sel.r
+                                    , c_sel.g
+                                    , c_sel.b
+                                    , 0.45 * factor
+                                ) ;
 
-                                    Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
-                                          r.x + r.width / 2
-                                        , r.y  
-                                        , r.x + r.width / 2
-                                        , r.y + r.height
-                                    ) ;
-                                    
-                                    background_gradient_ptr->add_color_stop_rgba(
-                                          0
-                                        , c_sel.r 
-                                        , c_sel.g 
-                                        , c_sel.b 
-                                        , 0.90 * factor 
-                                    ) ;
-                                    
-                                    background_gradient_ptr->add_color_stop_rgba(
-                                          .40
-                                        , c_sel.r
-                                        , c_sel.g
-                                        , c_sel.b
-                                        , 0.75 * factor 
-                                    ) ;
-                                    
-                                    background_gradient_ptr->add_color_stop_rgba(
-                                          1. 
-                                        , c_sel.r
-                                        , c_sel.g
-                                        , c_sel.b
-                                        , 0.45 * factor
-                                    ) ;
+                                cairo->set_source( background_gradient_ptr ) ;
+                                cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
-                                    cairo->set_source( background_gradient_ptr ) ;
-                                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+                                RoundedRectangle(
+                                      cairo
+                                    , r.x 
+                                    , r.y 
+                                    , r.width 
+                                    , r.height 
+                                    , rounding
+                                ) ;
 
-                                    RoundedRectangle(
-                                          cairo
-                                        , r.x 
-                                        , r.y 
-                                        , r.width 
-                                        , r.height 
-                                        , rounding
-                                    ) ;
+                                cairo->fill_preserve (); 
 
-                                    cairo->fill_preserve (); 
+                                cairo->set_source_rgb(
+                                      c_sel.r
+                                    , c_sel.g
+                                    , c_sel.b
+                                ) ;
 
-                                    cairo->set_source_rgb(
-                                          c_sel.r
-                                        , c_sel.g
-                                        , c_sel.b
-                                    ) ;
+                                cairo->set_line_width( 0.8 ) ;
+                                cairo->stroke () ;
+                                cairo->restore () ;
+                            }
 
-                                    cairo->set_line_width( 0.8 ) ;
-                                    cairo->stroke () ;
-                                    cairo->restore () ;
+                            ypos    = m_row_start ;
+                            xpos    = 0 ;
+                            col     = 0 ;
+                            cnt     = m_visible_height / m_row_height + 1 ; 
+                            row     = get_upper_row() ;
 
-                                    iter_is_selected = true;
-                                }
+                            while( m_model->is_set() && cnt && (row < m_model->m_mapping.size()) ) 
+                            {
+                                xpos = 0 ;
 
                                 for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                                 {
@@ -1568,114 +1578,117 @@ namespace MPX
                                         , xpos
                                         , ypos
                                         , m_row_height
-                                        , iter_is_selected
                                         , c_text
                                     ) ;
 
                                     xpos += (*i)->get_width() + 1;
                                 }
-                        }
-                    
-                        const int icon_lateral = 16 ;
-                        const int icon_xorigin = 0 ;
 
-                        if( m_active_track && boost::get<3>(m_model->row(row)) == m_active_track.get() )
-                        {
-                            const int icon_x = icon_xorigin ;
-                            const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
+                                ypos += m_row_height ;
+                                row  ++ ;
+                                cnt  -- ;
+                            }
 
-                            Gdk::Cairo::set_source_pixbuf(
-                                  cairo
-                                , m_playing_pixbuf
-                                , icon_x
-                                , icon_y 
-                            ) ;
+                            if( true /*m_render_dashes*/)
+                            {
+                                std::valarray<double> dashes ( 3 ) ;
+                                dashes[0] = 0. ;
+                                dashes[1] = 3. ;
+                                dashes[2] = 0. ;
 
-                            cairo->rectangle(
-                                  icon_x
-                                , icon_y 
-                                , icon_lateral
-                                , icon_lateral
-                            ) ;
+                                xpos = 0 ;
 
-                            cairo->fill () ;
-                        }
-                        else
-                        if( m_hover_track && row == m_hover_track.get() )
-                        {
-                            const int icon_x = icon_xorigin ;
-                            const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
+                                cairo->save() ;
 
-                            Gdk::Cairo::set_source_pixbuf(
-                                  cairo
-                                , m_hover_pixbuf
-                                , icon_x
-                                , icon_y 
-                            ) ;
+                                const ThemeColor& c_treelines = theme->get_color( THEME_COLOR_TREELINES ) ;
 
-                            cairo->rectangle(
-                                  icon_x 
-                                , icon_y 
-                                , icon_lateral
-                                , icon_lateral
-                            ) ;
+                                cairo->set_line_width(
+                                      .3
+                                ) ;
+                                cairo->set_dash(
+                                      dashes
+                                    , 0
+                                ) ;
 
-                            cairo->fill () ;
-                        }
+                                Columns::iterator i2 = m_columns.end() ;
+                                --i2 ;
 
-                        ypos += m_row_height;
-                        row ++;
-                        cnt --;
+                                for( Columns::const_iterator i = m_columns.begin(); i != i2; ++i )
+                                {
+                                    xpos += (*i)->get_width() ; 
+
+                                    cairo->set_source_rgba(
+                                          c_treelines.r
+                                        , c_treelines.g
+                                        , c_treelines.b
+                                        , c_treelines.a
+                                    ) ;
+
+                                    cairo->move_to(
+                                          xpos
+                                        , 0 
+                                    ) ; 
+
+                                    cairo->line_to(
+                                          xpos
+                                        , a.get_height()
+                                    ) ;
+
+                                    cairo->stroke() ;
+                                }
+
+                                cairo->restore(); 
+                            }
                     }
+                   
+                    //// ICONS
 
-                    std::valarray<double> dashes ( 3 ) ;
-                    dashes[0] = 0. ;
-                    dashes[1] = 3. ;
-                    dashes[2] = 0. ;
+                    const int icon_lateral = 16 ;
+                    const int icon_xorigin = 0 ;
 
-                    xpos = 0 ;
-
-                    Columns::iterator i2 = m_columns.end() ;
-                    --i2 ;
-
-                    cairo->save() ;
-
-                    const ThemeColor& c_treelines = theme->get_color( THEME_COLOR_TREELINES ) ;
-
-                    cairo->set_line_width(
-                          .5
-                    ) ;
-
-                    cairo->set_dash(
-                          dashes
-                        , 0
-                    ) ;
-
-                    for( Columns::const_iterator i = m_columns.begin(); i != i2; ++i )
+                    if( m_active_track && boost::get<3>(m_model->row(row)) == m_active_track.get() )
                     {
-                                xpos += (*i)->get_width() ; 
+                        const int icon_x = icon_xorigin ;
+                        const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
 
-                                cairo->set_source_rgba(
-                                      c_treelines.r
-                                    , c_treelines.g
-                                    , c_treelines.b
-                                    , c_treelines.a
-                                ) ;
+                        Gdk::Cairo::set_source_pixbuf(
+                              cairo
+                            , m_playing_pixbuf
+                            , icon_x
+                            , icon_y 
+                        ) ;
 
-                                cairo->move_to(
-                                      xpos
-                                    , 0 
-                                ) ; 
+                        cairo->rectangle(
+                              icon_x
+                            , icon_y 
+                            , icon_lateral
+                            , icon_lateral
+                        ) ;
 
-                                cairo->line_to(
-                                      xpos
-                                    , a.get_height()
-                                ) ;
-
-                                cairo->stroke() ;
+                        cairo->fill () ;
                     }
+                    else
+                    if( m_hover_track && row == m_hover_track.get() )
+                    {
+                        const int icon_x = icon_xorigin ;
+                        const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
 
-                    cairo->restore(); 
+                        Gdk::Cairo::set_source_pixbuf(
+                              cairo
+                            , m_hover_pixbuf
+                            , icon_x
+                            , icon_y 
+                        ) ;
+
+                        cairo->rectangle(
+                              icon_x 
+                            , icon_y 
+                            , icon_lateral
+                            , icon_lateral
+                        ) ;
+
+                        cairo->fill () ;
+                    }
 
                     return true;
                 }
