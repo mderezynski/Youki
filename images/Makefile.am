@@ -1,6 +1,7 @@
 images_DATA =						\
         about.png                   \
         artist.png                  \
+        blowup.png                  \
         disc-multiple.png           \
         disc.png                    \
         emblem-compilation.png      \

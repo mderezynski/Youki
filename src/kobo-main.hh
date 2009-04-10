@@ -13,12 +13,14 @@ namespace MPX
 
                     Glib::RefPtr<Gdk::Pixbuf>   m_title_logo ;
                     Glib::RefPtr<Gdk::Pixbuf>   m_button_off ;
+                    Glib::RefPtr<Gdk::Pixbuf>   m_button_blowup ;
 
                     bool                        m_drawer_out ;
                     int                         m_presize_width ;
                     int                         m_drawer_width ;
                     int                         m_bottom_pad ;
                     bool                        m_quit_clicked ;
+                    bool                        m_maximized ;
 
                     enum ExpandDirection
                     {
@@ -84,15 +86,23 @@ namespace MPX
 
                     bool
                     on_button_press_event(
-                          GdkEventButton    *event
+                          GdkEventButton*
                     ) ;
 
                     void
-                    on_size_allocate( Gtk::Allocation & a ) ;
+                    on_size_allocate(
+                          Gtk::Allocation&
+                    ) ;
 
                     bool
-                    on_expose_event( GdkEventExpose* event ) ;
+                    on_expose_event(
+                          GdkEventExpose*
+                    ) ;
 
+                    bool
+                    on_window_state_event(
+                          GdkEventWindowState*
+                    ) ;
         } ;
 }
 

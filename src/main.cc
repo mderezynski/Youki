@@ -235,10 +235,10 @@ namespace MPX
 
         mcs->domain_register ("library");
         mcs->key_register ("library", "rootpath", std::string (Glib::build_filename (Glib::get_home_dir (), "Music")));
-        mcs->key_register ("library", "rescan-at-startup", true);
-        mcs->key_register ("library", "rescan-in-intervals", true);
+        mcs->key_register ("library", "rescan-at-startup", false);
+        mcs->key_register ("library", "rescan-in-intervals", false);
         mcs->key_register ("library", "rescan-interval", 30); // in minutes
-        mcs->key_register ("library", "quarantine-invalid", false);
+        mcs->key_register ("library", "quarantine-invalid", true);
 #ifdef HAVE_HAL
         mcs->key_register ("library", "use-hal", true);
 #endif // HAVE_HAL

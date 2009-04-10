@@ -148,14 +148,9 @@ namespace MPX
 
             Gtk::Notebook                   * m_NotebookPlugins ;
 
-            Glib::RefPtr<Gdk::Pixbuf>         
-                                              m_icon ; 
-
-            Cairo::RefPtr<Cairo::ImageSurface>
-                                              m_disc ;
-
-            Cairo::RefPtr<Cairo::ImageSurface>
-                                              m_disc_multiple ;
+            Glib::RefPtr<Gdk::Pixbuf>           m_icon ;  
+            Cairo::RefPtr<Cairo::ImageSurface>  m_disc ;
+            Cairo::RefPtr<Cairo::ImageSurface>  m_disc_multiple ;
     
             Covers                          * m_covers ;
             Play                            * m_play ;
@@ -163,16 +158,12 @@ namespace MPX
     
             boost::optional<MPX::Track>       m_track_current ;          
             boost::optional<MPX::Track>       m_track_previous ;          
-            boost::optional<guint64>          m_next_track_queue_id ;
-
             std::queue<gint64>                m_play_queue ;
-
             bool                              m_follow_track ;
 
             boost::optional<guint64>          m_seek_position ;
 
-            info::backtrace::Youki::MLibMan_proxy_actual
-                                            * m_mlibman_dbus_proxy ;
+            info::backtrace::Youki::MLibMan_proxy_actual * m_mlibman_dbus_proxy ;
 
             sigc::connection                  m_conn1
                                             , m_conn2

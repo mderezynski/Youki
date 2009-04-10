@@ -51,6 +51,7 @@ namespace MPX
         , m_drawer_width( 0 )
         , m_bottom_pad( 0 )
         , m_quit_clicked( false )
+        , m_maximized( false )
         , m_drawer_width_max( 500 )
         , m_expand_direction( EXPAND_NONE )
 
@@ -63,6 +64,7 @@ namespace MPX
 
                         m_title_logo = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "title-logo.png" )) ;
                         m_button_off = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "off.png" )) ;
+                        m_button_blowup = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "blowup.png" )) ;
 
                         set_geom_hints( false ) ;
 
@@ -217,7 +219,7 @@ namespace MPX
                             return false ;
                         }
 
-                        Gdk::Rectangle r1, r2 ;
+                        Gdk::Rectangle r1, r2, r3 ;
 
                         r1.set_x( event->x ) ;
                         r1.set_y( event->y ) ;
@@ -229,24 +231,33 @@ namespace MPX
                         r2.set_width( m_button_off->get_width() ) ;
                         r2.set_height( m_button_off->get_height() ) ;
 
+                        r3.set_x( 23 ) ;
+                        r3.set_y( (20 - m_button_off->get_height()) / 2 ) ;
+                        r3.set_width( m_button_blowup->get_width() ) ;
+                        r3.set_height( m_button_blowup->get_height() ) ;
+
                         bool intersect = false ;
 
                         r2.intersect( r1, intersect ) ;
-
                         if( intersect )
                         {
                             SignalQuit.emit() ; 
-                            return false ;
+                            return true ;
                         }
-                        if( event->y < 20 )
+
+                        r3.intersect( r1, intersect ) ;
+                        if( intersect )
                         {
-                            begin_move_drag(
-                                  event->button
-                                , event->x_root
-                                , event->y_root
-                                , event->time
-                            ) ;
-                            return false ;
+                            if( m_maximized )
+                            {
+                                unmaximize() ;
+                            }
+                            else
+                            {
+                                maximize() ;
+                            }
+
+                            return true ;
                         }
 
                         if( event->y < 20 )
@@ -471,6 +482,28 @@ namespace MPX
                         cr->paint_with_alpha( m_quit_clicked ? .9 : .6 ) ; 
                         cr->restore () ;
 
+                        r.x         = 23 ; 
+                        r.y         = (20 - m_button_blowup->get_height()) / 2. ;
+                        r.width     = m_button_blowup->get_width() ;
+                        r.height    = m_button_blowup->get_height() ;
+
+                        Gdk::Cairo::set_source_pixbuf(
+                              cr
+                            , m_button_blowup 
+                            , r.x 
+                            , r.y 
+                        ) ;
+                        cr->rectangle(
+                              r.x 
+                            , r.y 
+                            , r.width 
+                            , r.height 
+                        ) ;
+                        cr->save () ;
+                        cr->clip () ;
+                        cr->paint_with_alpha( m_maximized ? .9 : .6 ) ;
+                        cr->restore () ;
+
                         //// RESIZE GRIP 
                         const ThemeColor& crg = theme->get_color( THEME_COLOR_RESIZE_GRIP ) ;
 
@@ -558,5 +591,13 @@ namespace MPX
                         cr->stroke() ;
 
                         return true ;
+                    }
+    bool
+    MainWindow::on_window_state_event( GdkEventWindowState* event )
+                    {
+                        m_maximized = ( event->new_window_state & GDK_WINDOW_STATE_MAXIMIZED ) ;
+                        queue_draw () ;
+
+                        return false ;
                     }
 }

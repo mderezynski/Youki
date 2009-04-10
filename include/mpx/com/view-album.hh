@@ -418,13 +418,13 @@ namespace MPX
                             cairo->set_source(
                                   s
                                 , r.x
-                                , r.y + 3
+                                , r.y + 19
                             ) ; 
 
                             RoundedRectangle(
                                   cairo
                                 , r.x
-                                , r.y + 3
+                                , r.y + 19
                                 , s->get_width() 
                                 , s->get_height() 
                                 , 4.
@@ -458,7 +458,7 @@ namespace MPX
 
                     cairo->move_to(
                           xpos + (m_width - width) / 2.
-                        , r.y + 71 
+                        , r.y + 86 
                     ) ;
 
                     cairo->set_source_rgba(
@@ -478,7 +478,7 @@ namespace MPX
                             layout->get_pixel_size (width, height) ;
                             cairo->move_to(
                                   xpos + (m_width - width) / 2.
-                                , r.y + 84 
+                                , r.y + 3 
                             ) ;
 
                             cairo->set_source_rgba(

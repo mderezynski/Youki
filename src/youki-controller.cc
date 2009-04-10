@@ -1294,7 +1294,7 @@ namespace MPX
             if( t )
             {
                 m_ListViewTracks->scroll_to_id( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
-                m_follow_track = true ;
+                //m_follow_track = true ;
             }
         }
 
