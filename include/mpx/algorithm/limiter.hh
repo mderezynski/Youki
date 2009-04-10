@@ -25,6 +25,10 @@ namespace MPX
         public:
 
             Limiter(
+            )
+            {}
+
+            Limiter(
                   Type      type
                 , const T&  min
                 , const T&  max

@@ -10,10 +10,14 @@
 #include <boost/optional.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
+
+#include "mpx/algorithm/aque.hh"
+#include "mpx/algorithm/interval.hh"
+#include "mpx/algorithm/limiter.hh"
+
 #include "mpx/aux/glibaddons.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/widgets/cairo-extensions.hh"
-#include "mpx/algorithm/aque.hh"
 #include "mpx/util-string.hh"
 #include "mpx/util-graphics.hh"
 
@@ -483,9 +487,15 @@ namespace MPX
                 bool
                 get_row_is_visible (int row)
                 {
-                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
-                    int row_lower = row_upper + m_visible_height/m_row_height;
-                    return ( row >= row_upper && row <= row_lower);
+                    std::size_t up = get_upper_row() ;
+
+                    Interval<std::size_t> i (
+                          Interval<std::size_t>::IN_IN
+                        , up 
+                        , up + (m_visible_height/m_row_height)
+                    ) ;
+            
+                    return i.in( row ) ;
                 }
 
             protected:
@@ -513,7 +523,8 @@ namespace MPX
                         return false ;
                     }
 
-                    int row ; 
+                    Limiter<std::size_t> row ;
+                    Interval<std::size_t> i ;
 
                     switch( event->keyval )
                     {
@@ -527,23 +538,38 @@ namespace MPX
                                 break ;
                             }
 
-                            row = boost::get<2>(m_selection.get()) ;
-
                             if( event->keyval == GDK_Page_Up )
                             {
-                                row = std::max( 0, row - (m_visible_height/m_row_height)  ) ;
+                                row = Limiter<std::size_t> ( 
+                                      Limiter<std::size_t>::ABS_ABS
+                                    , 0
+                                    , m_model->size() - 1 
+                                    , boost::get<2>(m_selection.get()) - (m_visible_height/m_row_height)
+                                ) ;
+                                select_row( row ) ;
                             }
                             else
                             {
-                                row = std::max( 0, row - 1 ) ;
+                                row = Limiter<std::size_t> ( 
+                                      Limiter<std::size_t>::ABS_ABS
+                                    , 0
+                                    , m_model->size() - 1 
+                                    , boost::get<2>(m_selection.get()) - 1
+                                ) ;
+                                select_row( row ) ;
                             }
 
-                            if( row < get_upper_row() ) 
+                            i = Interval<std::size_t> (
+                                  Interval<std::size_t>::IN_EX
+                                , 0
+                                , get_upper_row()
+                            ) ;
+
+                            if( i.in( row )) 
                             {
                                 m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
                             }
 
-                            select_row( row ) ;
                             return true;
 
                         case GDK_Down:
@@ -556,25 +582,39 @@ namespace MPX
                                 break ;
                             }
 
-                            row = boost::get<2>(m_selection.get()) ;
-
                             if( event->keyval == GDK_Page_Down )
                             {
-                                row = std::min( m_model->m_mapping.size(), std::size_t(row + (m_visible_height/m_row_height)) ) ;
+                                row = Limiter<std::size_t> ( 
+                                      Limiter<std::size_t>::ABS_ABS
+                                    , 0 
+                                    , m_model->size() - 1 
+                                    , boost::get<2>(m_selection.get()) + (m_visible_height/m_row_height) 
+                                ) ;
+                                select_row( row ) ;
                             }
                             else
                             {
-                                row = std::min( m_model->m_mapping.size(), std::size_t(row + 1) ) ;
-
+                                row = Limiter<std::size_t> ( 
+                                      Limiter<std::size_t>::ABS_ABS
+                                    , 0 
+                                    , m_model->size() - 1
+                                    , boost::get<2>(m_selection.get()) + 1
+                                ) ;
+                                select_row( row ) ;
                             }
 
-                            if( row > (get_upper_row()+(m_visible_height/m_row_height))) 
+                            i = Interval<std::size_t> (
+                                  Interval<std::size_t>::EX_EX
+                                , get_upper_row() + (m_visible_height/m_row_height) 
+                                , m_model->size() 
+                            ) ;
+
+                            if( i.in( row )) 
                             {
-                                m_prop_vadj.get_value()->set_value( (get_upper_row()+1) * m_row_height ) ;
+                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
                             }
 
-                            select_row( row ) ;
-                            return true;
+                            return true ;
 
                         case GDK_Left:
                         case GDK_KP_Left:

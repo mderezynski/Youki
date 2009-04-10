@@ -5,8 +5,10 @@
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/util-graphics.hh"
 #include "mpx/mpx-main.hh"
+#include "mpx/algorithm/limiter.hh"
 
 #include "mpx/i-youki-theme-engine.hh"
+
 
 #include "kobo-position.hh"
 
@@ -273,15 +275,29 @@ namespace MPX
         
             const Gtk::Allocation& a = get_allocation() ;
 
-            if( event->x < 1 && (event->x > a.get_width() - 2))
-                return false ;
+            Interval<std::size_t> i (
+                  Interval<std::size_t>::IN_IN
+                , 1
+                , a.get_width() - 2
+            ) ;
 
-            m_clicked       = true ;
-            m_seek_factor   = double(a.get_width()-2) / double(m_duration) ;
-            m_seek_position = double(event->x-1) / m_seek_factor ;
-            m_seek_position = std::min( std::max( gint64(0), m_seek_position ),  m_duration ) ; 
+            if( i.in( event->x ) ) 
+            {
+                m_clicked       = true ;
 
-            queue_draw () ;
+                m_seek_factor   = double(a.get_width()-2) / double(m_duration) ;
+
+                Limiter<gint64> p (
+                      Limiter<gint64>::ABS_ABS
+                    , 0
+                    , m_duration
+                    , (event->x - 1 ) / m_seek_factor
+                ) ;
+
+                m_seek_position = p ; 
+
+                queue_draw () ;
+            }
         }
 
         return true ;
@@ -322,11 +338,23 @@ namespace MPX
 
             const Gtk::Allocation& a = get_allocation() ;
 
-            if( x_orig < 1 && ( x_orig > a.get_width() - 2))
-                return false ;
+            Interval<std::size_t> i (
+                  Interval<std::size_t>::IN_IN
+                , 1
+                , a.get_width() - 2 
+            ) ;
 
-            m_seek_position = double(x_orig-1) / m_seek_factor ;
-            m_seek_position = std::min( std::max( gint64(0), m_seek_position),  m_duration ) ; 
+            if( i.in( x_orig ))
+            {
+                Limiter<gint64> p (
+                      Limiter<gint64>::ABS_ABS
+                    , 0
+                    , m_duration
+                    , (x_orig - 1 ) / m_seek_factor
+                ) ;
+
+                m_seek_position = p ; 
+            }
 
             queue_draw () ;
         }
@@ -352,16 +380,32 @@ namespace MPX
         {
             case GDK_Down:
             case GDK_KP_Down:
-                m_seek_position = m_position - 5 ; 
-                m_seek_position = std::min( std::max( gint64(0), m_seek_position ),  m_duration ) ; 
+
+                Limiter<gint64> p (
+                      Limiter<gint64>::ABS_ABS
+                    , 0
+                    , m_duration
+                    , m_position - 5 
+                ) ;
+
+                m_seek_position = p ; 
                 m_SIGNAL_seek_event.emit( m_seek_position ) ;
+
                 return true ;
 
             case GDK_Up:
             case GDK_KP_Up:
-                m_seek_position = m_position + 5 ; 
-                m_seek_position = std::min( std::max( gint64(0), m_seek_position ),  m_duration ) ; 
+
+                Limiter<gint64> p (
+                      Limiter<gint64>::ABS_ABS
+                    , 0
+                    , m_duration
+                    , m_position + 5 
+                ) ;
+
+                m_seek_position = p ; 
                 m_SIGNAL_seek_event.emit( m_seek_position ) ;
+
                 return true ;
 
             default: break;
