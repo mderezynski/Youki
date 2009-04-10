@@ -238,7 +238,7 @@ namespace MPX
                 , &YoukiController::on_list_view_ab_selection_changed
         )) ;
 
-        m_ScrolledWinArtist     = Gtk::manage( new Gtk::ScrolledWindow ) ;
+        m_ScrolledWinArtist = Gtk::manage( new Gtk::ScrolledWindow ) ;
         m_ScrolledWinAlbums = Gtk::manage( new Gtk::ScrolledWindow ) ;
         m_ScrolledWinTracks = Gtk::manage( new Gtk::ScrolledWindow ) ;
 
@@ -320,34 +320,14 @@ namespace MPX
                 , m_Alignment_Entry
         )) ; 
 
-        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+        on_style_changed() ;
 
-        const ThemeColor& c_base = theme->get_color( THEME_COLOR_BASE ) ; 
-        const ThemeColor& c_text = theme->get_color( THEME_COLOR_TEXT ) ;
-
-        Gdk::Color c ;
-        c.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
-        m_Entry->modify_bg( Gtk::STATE_NORMAL, c ) ;
-        m_Entry->modify_base( Gtk::STATE_NORMAL, c ) ;
-        m_Entry->modify_bg( Gtk::STATE_ACTIVE, c ) ;
-        m_Entry->modify_base( Gtk::STATE_ACTIVE, c ) ;
-        m_Entry->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
-        m_Entry->modify_base( Gtk::STATE_PRELIGHT, c ) ;
-
-        c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
-        m_Entry->modify_text( Gtk::STATE_NORMAL, c ) ;
-        m_Entry->modify_fg( Gtk::STATE_NORMAL, c ) ;
-        m_Entry->property_has_frame() = false ; 
-        m_Label_Search->modify_bg( Gtk::STATE_NORMAL, c ) ;
-        m_Label_Search->modify_base( Gtk::STATE_NORMAL, c ) ;
-        m_Label_Search->modify_bg( Gtk::STATE_ACTIVE, c ) ;
-        m_Label_Search->modify_base( Gtk::STATE_ACTIVE, c ) ;
-        m_Label_Search->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
-        m_Label_Search->modify_base( Gtk::STATE_PRELIGHT, c ) ;
-
-        c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
-        m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
-        m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
+        m_main_window->signal_style_changed().connect(
+            sigc::hide(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_style_changed
+        ))) ;
 
         m_ScrolledWinArtist->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
         m_ScrolledWinAlbums->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
@@ -524,6 +504,78 @@ namespace MPX
     }
 
 ////////////////
+
+    void
+    YoukiController::on_style_changed(
+    )
+    {
+        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+
+        theme->reload() ;
+
+        const ThemeColor& c_base = theme->get_color( THEME_COLOR_BASE ) ; 
+        const ThemeColor& c_text = theme->get_color( THEME_COLOR_TEXT ) ;
+        const ThemeColor& c_sel  = theme->get_color( THEME_COLOR_SELECT ) ;
+
+        Gdk::Color c ;
+        c.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
+        m_Entry->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_Entry->modify_base( Gtk::STATE_NORMAL, c ) ;
+        m_Entry->modify_bg( Gtk::STATE_ACTIVE, c ) ;
+        m_Entry->modify_base( Gtk::STATE_ACTIVE, c ) ;
+        m_Entry->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+        m_Entry->modify_base( Gtk::STATE_PRELIGHT, c ) ;
+
+        c.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
+        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c ) ;
+        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c ) ;
+        m_ScrolledWinArtist->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c ) ;
+
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c ) ;
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c ) ;
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c ) ;
+
+        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c ) ;
+        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c ) ;
+        m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c ) ;
+
+        m_Paned1->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_Paned2->modify_bg( Gtk::STATE_NORMAL, c ) ;
+
+        c.set_rgb_p( c_sel.r, c_sel.g, c_sel.b ) ; 
+        m_ScrolledWinArtist->get_vscrollbar()->modify_fg( Gtk::STATE_NORMAL, c ) ;
+        m_ScrolledWinArtist->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
+        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_fg( Gtk::STATE_NORMAL, c ) ;
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+
+        m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_NORMAL, c ) ;
+        m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
+        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+
+        m_Paned1->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+        m_Paned2->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+
+        c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
+        m_Entry->modify_text( Gtk::STATE_NORMAL, c ) ;
+        m_Entry->modify_fg( Gtk::STATE_NORMAL, c ) ;
+        m_Entry->property_has_frame() = false ; 
+        m_Label_Search->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_Label_Search->modify_base( Gtk::STATE_NORMAL, c ) ;
+        m_Label_Search->modify_bg( Gtk::STATE_ACTIVE, c ) ;
+        m_Label_Search->modify_base( Gtk::STATE_ACTIVE, c ) ;
+        m_Label_Search->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+        m_Label_Search->modify_base( Gtk::STATE_PRELIGHT, c ) ;
+
+        c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
+        m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
+        m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
+    }
 
     void
     YoukiController::initiate_quit ()

@@ -26,6 +26,8 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <gtkmm/treeview.h>
+#include "mpx/util-graphics.hh"
 
 #include "youki-theme-engine.hh"
 
@@ -35,19 +37,50 @@ namespace MPX
     )
     : Service::Base( "mpx-service-theme" )
     {
+        reload() ;
+    }
+
+    void
+    YoukiThemeEngine::reload(
+    )
+    {
         // FIXME for now, we have one default theme engine
 
+        double h, s, b ;
+
+        Gtk::Window tv ;
+        gtk_widget_realize(GTK_WIDGET(tv.gobj())) ;
+
+        const Gdk::Color& csel = tv.get_style()->get_base( Gtk::STATE_SELECTED ) ;
+       // csel.set_rgb_p( .976, .455, .071 ) ;
+        
         ThemeColorMap_t colors ;
+
+        colors[THEME_COLOR_SELECT] = ThemeColor( csel.get_red_p(), csel.get_green_p(), csel.get_blue_p(), 1. ) ;
+        colors[THEME_COLOR_TITLEBAR_1] = ThemeColor( csel.get_red_p(), csel.get_green_p(), csel.get_blue_p(), 1. ) ;
+
+        Util::color_to_hsb( csel, h, s, b ) ;
+        b = std::max( 0., b-0.10 ) ;
+        s = std::max( 0., s-0.14 ) ;
+        Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
+        colors[THEME_COLOR_TITLEBAR_2] = ThemeColor( c1.get_red_p(), c1.get_green_p(), c1.get_blue_p(), 0.90 ) ;
+
+        Util::color_to_hsb( c1, h, s, b ) ;
+        b = std::max( 0., b-0.15 ) ;
+        s = std::max( 0., s-0.20 ) ;
+        Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
+        colors[THEME_COLOR_TITLEBAR_3] = ThemeColor( c2.get_red_p(), c2.get_green_p(), c2.get_blue_p(), 0.90 ) ;
+
+        Util::color_to_hsb( csel, h, s, b ) ;
+        b = std::min( 1., b+0.25 ) ;
+        s = std::min( 1., s+0.10 ) ;
+        Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
+        colors[THEME_COLOR_TITLEBAR_TOP] = ThemeColor( c3.get_red_p(), c3.get_green_p(), c3.get_blue_p(), 0.90 ) ; 
 
         colors[THEME_COLOR_BASE] = ThemeColor( 0.10, 0.10, 0.10, 1. ) ; 
         colors[THEME_COLOR_BASE_ALTERNATE] = ThemeColor( .2, .2, .2, 1. ) ;
         colors[THEME_COLOR_TEXT] = ThemeColor( 1., 1., 1., 1. ) ;
-        colors[THEME_COLOR_SELECT] = ThemeColor( 1., 0.863, 0.102, 1. ) ;
         colors[THEME_COLOR_DRAWER] = ThemeColor( 0.65, 0.65, 0.65, .4 ) ;
-        colors[THEME_COLOR_TITLEBAR_1] = ThemeColor( 1., 0.863, 0.102, 0.90 ) ;
-        colors[THEME_COLOR_TITLEBAR_2] = ThemeColor( 0.953, 0.820, 0.094, 0.93 ) ;
-        colors[THEME_COLOR_TITLEBAR_3] = ThemeColor( 0.886, 0.764, 0.098, 0.93 ) ;
-        colors[THEME_COLOR_TITLEBAR_TOP] = ThemeColor( 0.95, 0.95, 0.95, 1. ) ; 
         colors[THEME_COLOR_WINDOW_BORDER] = ThemeColor( 0.35, 0.35, 0.35, 1. ) ; 
         colors[THEME_COLOR_ENTRY_OUTLINE] = ThemeColor( 0.65, 0.65, 0.65, .4 ) ;
         colors[THEME_COLOR_TREELINES] = ThemeColor( 1., 1., 1., .5 ) ;
@@ -64,6 +97,7 @@ namespace MPX
             , colors 
         ) ;
 
+        m_Themes.clear() ;
         m_Themes["default"] = theme ;
         m_CurrentTheme = m_Themes.begin() ;
     }

@@ -296,6 +296,12 @@ namespace MPX
                   GdkEventExpose* event
                 , Gtk::Alignment* widget
             ) ;
+    
+        protected:
+
+            void
+            on_style_changed(
+            ) ;
 
         protected:
 

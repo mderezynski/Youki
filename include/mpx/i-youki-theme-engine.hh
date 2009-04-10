@@ -128,6 +128,10 @@ namespace MPX
             get_color(
                   ThemeColorID
             )  = 0 ;
+
+            virtual void
+            reload(
+            ) = 0 ;
     } ;
 }
 

@@ -902,21 +902,6 @@ namespace MPX
                         cnt --;
                     }
 
-                    if( has_focus() )
-                    {
-                        get_style()->paint_focus(
-                              get_window()
-                            , Gtk::STATE_NORMAL
-                            , a
-                            , *this
-                            , "treeview"
-                            , 0 
-                            , 0 
-                            , a.get_width() 
-                            , a.get_height()
-                        );
-                    }
-
                     return true;
                 }
 

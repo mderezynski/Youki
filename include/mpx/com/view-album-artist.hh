@@ -12,9 +12,10 @@
 #include <boost/lexical_cast.hpp>
 #include "mpx/aux/glibaddons.hh"
 #include "mpx/mpx-types.hh"
-#include "mpx/util-string.hh"
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/algorithm/aque.hh"
+#include "mpx/util-string.hh"
+#include "mpx/util-graphics.hh"
 
 #include "glib-marshalers.h"
 
@@ -736,6 +737,7 @@ namespace MPX
 
                     const ThemeColor& c_base_rules_hint = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) ;
                     const ThemeColor& c_text            = theme->get_color( THEME_COLOR_TEXT ) ;
+                    const ThemeColor& c_sel             = theme->get_color( THEME_COLOR_SELECT ) ;
 
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
 
@@ -786,8 +788,6 @@ namespace MPX
 
                         if( iter_is_selected ) 
                         {
-                            const ThemeColor& c_sel = theme->get_color( THEME_COLOR_SELECT ) ;
-
                             GdkRectangle r ;
 
                             r.x         = inner_pad ;
@@ -876,21 +876,6 @@ namespace MPX
                         ypos += m_row_height;
                         row ++;
                         cnt --;
-                    }
-
-                    if( has_focus() )
-                    {
-                        get_style()->paint_focus(
-                              get_window()
-                            , Gtk::STATE_NORMAL
-                            , a 
-                            , *this
-                            , "treeview"
-                            , 0 
-                            , 0
-                            , a.get_width()
-                            , a.get_height()
-                        ) ;
                     }
 
                     return true;

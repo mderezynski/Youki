@@ -61,6 +61,10 @@ namespace MPX
             get_color(
                   ThemeColorID
             ) ; 
+
+            void
+            reload(
+            ) ;
     } ;
 }
 
