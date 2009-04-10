@@ -20,6 +20,8 @@
 
 #include "mpx/algorithm/aque.hh"
 #include "mpx/algorithm/ntree.hh"
+#include "mpx/algorithm/interval.hh"
+#include "mpx/algorithm/limiter.hh"
 
 #include "mpx/aux/glibaddons.hh"
 
@@ -34,6 +36,7 @@ typedef Glib::Property<Gtk::Adjustment*> PropAdj;
 namespace
 {
     const double rounding = 4. ; 
+
 }
 
 namespace MPX
@@ -984,6 +987,8 @@ namespace MPX
                 SignalTrackActivated                m_SIGNAL_track_activated ;
                 SignalVAdjChanged                   m_SIGNAL_vadj_changed ;
 
+                Interval<std::size_t>               m_Model_I ;
+
                 void
                 initialize_metrics ()
                 {
@@ -1118,12 +1123,22 @@ namespace MPX
                             {
                                 if( get_row_is_visible( boost::get<1>(m_selection.get()) ))
                                 {
-                                    std::size_t row = boost::get<1>(m_selection.get());
-                                    row = std::max( 0, int(row) + int(step) ) ;
+                                    Limiter<std::size_t> row (
+                                          Limiter<std::size_t>::ABS_REL
+                                        , 0 
+                                        , step
+                                        , boost::get<1>(m_selection.get())
+                                    ) ;
 
                                     m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
 
-                                    if( row < get_upper_row() ) 
+                                    Interval<std::size_t> i (
+                                          Interval<std::size_t>::IN_EX
+                                        , 0 
+                                        , get_upper_row() 
+                                    ) ;
+
+                                    if( i.in( row )) 
                                     {
                                         double value = m_prop_vadj.get_value()->get_value();
                                         value += step*m_row_height;
@@ -1162,12 +1177,22 @@ namespace MPX
                             {
                                 if( get_row_is_visible( boost::get<1>(m_selection.get()) ))
                                 {
-                                    std::size_t row = boost::get<1>(m_selection.get());
-                                    row = std::min( int(m_model->m_mapping.size()) - 1 , int(row) + int(step) ) ;
+                                    Limiter<std::size_t> row (
+                                          Limiter<std::size_t>::ABS_REL
+                                        , m_model->m_mapping.size() - 1
+                                        , step
+                                        , boost::get<1>(m_selection.get())
+                                    ) ;
 
                                     m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
 
-                                    if( row >= (get_upper_row() + (m_visible_height/m_row_height)))
+                                    Interval<std::size_t> i (
+                                          Interval<std::size_t>::IN_EX
+                                        , get_upper_row() + (m_visible_height/m_row_height)
+                                        , m_model->m_mapping.size()
+                                    ) ;
+
+                                    if( i.in( row )) 
                                     {
                                         double value = m_prop_vadj.get_value()->get_value();
                                         value += step*m_row_height;
@@ -1282,20 +1307,37 @@ namespace MPX
                             }
                             return true;
                         }
-    
-                        std::size_t row = get_upper_row() + ((int(event->y)-(m_row_start)) / m_row_height);
 
-                        m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
-                        m_clicked_row = row ;
-                        m_clicked = true ;
+                        Limiter<std::size_t> row ( 
+                              Limiter<std::size_t>::ABS_ABS
+                            , 0
+                            , m_model->size() - 1
+                            , get_upper_row() + (event->y-m_row_start) / m_row_height
+                        ) ;
+
+                        m_selection     = boost::make_tuple( m_model->m_mapping[row], row ) ;
+                        m_clicked_row   = row ;
+                        m_clicked       = true ;
+
                         queue_draw() ;
                     }
                     else
                     if( event->type == GDK_2BUTTON_PRESS )
                     {
-                        std::size_t row = get_upper_row() + ((event->y-m_row_start) / m_row_height);
+                        Limiter<std::size_t> row ( 
+                              Limiter<std::size_t>::ABS_ABS
+                            , 0
+                            , m_model->m_mapping.size()
+                            , get_upper_row() + (event->y-m_row_start) / m_row_height
+                        ) ;
 
-                        if( row < m_model->size() )
+                        Interval<std::size_t> i (
+                              Interval<std::size_t>::IN_EX
+                            , 0
+                            , m_model->size()
+                        ) ;
+
+                        if( i.in( row )) 
                         {
                             MPX::Track track = get<4>(m_model->row(row)) ;
                             m_SIGNAL_track_activated.emit(track, true) ;
@@ -1346,7 +1388,7 @@ namespace MPX
 
                     if( !m_clicked )
                     {
-                            if( row < m_model->m_mapping.size() && (x_orig < m_columns[0]->get_width()) )
+                            if( m_Model_I.in( row ) && (x_orig < m_columns[0]->get_width()))
                             {
                                 m_hover_track = row ;
                                 queue_draw_area (0, m_row_start, 16, get_allocation().get_height() - m_row_start ) ;
@@ -1361,7 +1403,7 @@ namespace MPX
                     {
                             if( row != m_clicked_row )
                             {
-                                if( row >= 0 && row < m_model->size() )
+                                if( m_Model_I.in( row )) 
                                 {
                                         m_model->swap( row, m_clicked_row ) ;
                                         m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
@@ -1385,7 +1427,7 @@ namespace MPX
 
                     const double column_width_collapsed = 40. ;
 
-                    double n = m_columns.size() - m_collapsed.size() - m_fixed.size() ;
+                    double                       n = m_columns.size() - m_collapsed.size() - m_fixed.size() ;
                     double column_width_calculated = (double(event->width) - double(m_fixed_total_width) - double(column_width_collapsed*double(m_collapsed.size()))) / n ; 
 
                     for( std::size_t n = 0; n < m_columns.size(); ++n )
@@ -1415,6 +1457,8 @@ namespace MPX
 
                     std::size_t row = get_upper_row() ;
                     m_previous_drawn_row = row ;
+        
+                    boost::optional<std::size_t> active_row ;
 
                     int ypos    = m_row_start ;
                     int xpos    = 0 ;
@@ -1448,7 +1492,7 @@ namespace MPX
 
                     if( event->area.width > 16 )
                     {
-                            while( m_model->is_set() && cnt && (row < m_model->m_mapping.size()) ) 
+                            while( m_model->is_set() && cnt && m_Model_I.in( row ) ) 
                             {
                                 xpos = 0 ;
 
@@ -1487,74 +1531,83 @@ namespace MPX
 
                             if( m_selection )
                             {
-                                std::size_t row =  boost::get<1>(m_selection.get()) ; 
-
-                                double factor = has_focus() ? 1. : 0.3 ;
-                                double ypos   = row * m_row_height + m_row_start ;
-
-                                GdkRectangle r ;
-
-                                r.x         = inner_pad + 16 ;
-                                r.y         = inner_pad + ypos;
-                                r.width     = a.get_width() - 2*inner_pad - 16 ;  
-                                r.height    = m_row_height  - 2*inner_pad ;
-
-                                cairo->save () ;
-
-                                Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
-                                      r.x + r.width / 2
-                                    , r.y  
-                                    , r.x + r.width / 2
-                                    , r.y + r.height
-                                ) ;
-                                
-                                background_gradient_ptr->add_color_stop_rgba(
-                                      0
-                                    , c_sel.r 
-                                    , c_sel.g 
-                                    , c_sel.b 
-                                    , 0.90 * factor 
-                                ) ;
-                                
-                                background_gradient_ptr->add_color_stop_rgba(
-                                      .40
-                                    , c_sel.r
-                                    , c_sel.g
-                                    , c_sel.b
-                                    , 0.75 * factor 
-                                ) ;
-                                
-                                background_gradient_ptr->add_color_stop_rgba(
-                                      1. 
-                                    , c_sel.r
-                                    , c_sel.g
-                                    , c_sel.b
-                                    , 0.45 * factor
+                                Interval<std::size_t> i (
+                                      Interval<std::size_t>::IN_IN
+                                    , get_upper_row()
+                                    , get_upper_row() + (m_visible_height/m_row_height)
                                 ) ;
 
-                                cairo->set_source( background_gradient_ptr ) ;
-                                cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+                                std::size_t row = boost::get<1>(m_selection.get()) ; 
 
-                                RoundedRectangle(
-                                      cairo
-                                    , r.x 
-                                    , r.y 
-                                    , r.width 
-                                    , r.height 
-                                    , rounding
-                                ) ;
+                                if( i.in( row ) )
+                                {
+                                        double factor = has_focus() ? 1. : 0.3 ;
+                                        double ypos   = (row - get_upper_row()) * m_row_height + m_row_start ;
 
-                                cairo->fill_preserve (); 
+                                        GdkRectangle r ;
 
-                                cairo->set_source_rgb(
-                                      c_sel.r
-                                    , c_sel.g
-                                    , c_sel.b
-                                ) ;
+                                        r.x         = inner_pad + 16 ;
+                                        r.y         = inner_pad + ypos;
+                                        r.width     = a.get_width() - 2*inner_pad - 16 ;  
+                                        r.height    = m_row_height  - 2*inner_pad ;
 
-                                cairo->set_line_width( 0.8 ) ;
-                                cairo->stroke () ;
-                                cairo->restore () ;
+                                        cairo->save () ;
+
+                                        Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
+                                              r.x + r.width / 2
+                                            , r.y  
+                                            , r.x + r.width / 2
+                                            , r.y + r.height
+                                        ) ;
+                                        
+                                        background_gradient_ptr->add_color_stop_rgba(
+                                              0
+                                            , c_sel.r 
+                                            , c_sel.g 
+                                            , c_sel.b 
+                                            , 0.90 * factor 
+                                        ) ;
+                                        
+                                        background_gradient_ptr->add_color_stop_rgba(
+                                              .40
+                                            , c_sel.r
+                                            , c_sel.g
+                                            , c_sel.b
+                                            , 0.75 * factor 
+                                        ) ;
+                                        
+                                        background_gradient_ptr->add_color_stop_rgba(
+                                              1. 
+                                            , c_sel.r
+                                            , c_sel.g
+                                            , c_sel.b
+                                            , 0.45 * factor
+                                        ) ;
+
+                                        cairo->set_source( background_gradient_ptr ) ;
+                                        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+
+                                        RoundedRectangle(
+                                              cairo
+                                            , r.x 
+                                            , r.y 
+                                            , r.width 
+                                            , r.height 
+                                            , rounding
+                                        ) ;
+
+                                        cairo->fill_preserve (); 
+
+                                        cairo->set_source_rgb(
+                                              c_sel.r
+                                            , c_sel.g
+                                            , c_sel.b
+                                        ) ;
+
+                                        cairo->set_line_width( 0.8 ) ;
+                                        cairo->stroke () ;
+                                        cairo->restore () ;
+                                    }
                             }
 
                             ypos    = m_row_start ;
@@ -1563,7 +1616,7 @@ namespace MPX
                             cnt     = m_visible_height / m_row_height + 1 ; 
                             row     = get_upper_row() ;
 
-                            while( m_model->is_set() && cnt && (row < m_model->m_mapping.size()) ) 
+                            while( m_model->is_set() && cnt && m_Model_I.in( row ) ) 
                             {
                                 xpos = 0 ;
 
@@ -1640,54 +1693,65 @@ namespace MPX
                                 cairo->restore(); 
                             }
                     }
-                   
+    
                     //// ICONS
 
                     const int icon_lateral = 16 ;
                     const int icon_xorigin = 0 ;
 
-                    if( m_active_track && boost::get<3>(m_model->row(row)) == m_active_track.get() )
+                    ypos    = m_row_start ;
+                    cnt     = m_visible_height / m_row_height + 1 ; 
+                    row     = get_upper_row() ;
+
+                    while( m_model->is_set() && cnt && m_Model_I.in( row ) )
                     {
-                        const int icon_x = icon_xorigin ;
-                        const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
+                        if( m_active_track && boost::get<3>(m_model->row(row)) == m_active_track.get() )
+                        {
+                            const int icon_x = icon_xorigin ;
+                            const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
 
-                        Gdk::Cairo::set_source_pixbuf(
-                              cairo
-                            , m_playing_pixbuf
-                            , icon_x
-                            , icon_y 
-                        ) ;
+                            Gdk::Cairo::set_source_pixbuf(
+                                  cairo
+                                , m_playing_pixbuf
+                                , icon_x
+                                , icon_y 
+                            ) ;
 
-                        cairo->rectangle(
-                              icon_x
-                            , icon_y 
-                            , icon_lateral
-                            , icon_lateral
-                        ) ;
+                            cairo->rectangle(
+                                  icon_x
+                                , icon_y 
+                                , icon_lateral
+                                , icon_lateral
+                            ) ;
 
-                        cairo->fill () ;
-                    }
-                    else
-                    if( m_hover_track && row == m_hover_track.get() )
-                    {
-                        const int icon_x = icon_xorigin ;
-                        const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
+                            cairo->fill () ;
+                        }
+                        else
+                        if( m_hover_track && row == m_hover_track.get() )
+                        {
+                            const int icon_x = icon_xorigin ;
+                            const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
 
-                        Gdk::Cairo::set_source_pixbuf(
-                              cairo
-                            , m_hover_pixbuf
-                            , icon_x
-                            , icon_y 
-                        ) ;
+                            Gdk::Cairo::set_source_pixbuf(
+                                  cairo
+                                , m_hover_pixbuf
+                                , icon_x
+                                , icon_y 
+                            ) ;
 
-                        cairo->rectangle(
-                              icon_x 
-                            , icon_y 
-                            , icon_lateral
-                            , icon_lateral
-                        ) ;
+                            cairo->rectangle(
+                                  icon_x 
+                                , icon_y 
+                                , icon_lateral
+                                , icon_lateral
+                            ) ;
 
-                        cairo->fill () ;
+                            cairo->fill () ;
+                        }
+
+                        ypos += m_row_height ;
+                        row  ++ ;
+                        cnt  -- ;
                     }
 
                     return true;
@@ -1708,6 +1772,12 @@ namespace MPX
                     {
                         m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
                     }
+
+                    m_Model_I = Interval<std::size_t> (
+                          Interval<std::size_t>::IN_EX
+                        , 0
+                        , m_model->size()
+                    ) ;
 
                     m_selection.reset() ;
                     queue_draw() ;
@@ -1785,9 +1855,15 @@ namespace MPX
                 bool
                 get_row_is_visible (std::size_t row)
                 {
-                    std::size_t row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
-                    std::size_t row_lower = row_upper + m_visible_height/m_row_height;
-                    return ( row >= row_upper && row <= row_lower);
+                    std::size_t up = get_upper_row() ;
+
+                    Interval<std::size_t> i (
+                          Interval<std::size_t>::IN_IN
+                        , up 
+                        , up + (m_visible_height/m_row_height)
+                    ) ;
+            
+                    return i.in( row ) ;
                 }
 
                 void
@@ -1803,8 +1879,11 @@ namespace MPX
                     if( m_model )
                     {
                             boost::optional<gint64> active_track = m_model->m_active_track ;
+
                             m_model = model;
+
                             m_model->m_active_track = active_track ;
+
                             m_model->scan_active() ;
                     }
                     else

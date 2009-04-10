@@ -27,7 +27,11 @@ namespace MPX
         public:
 
             Interval(
-                , Type      t_
+            )
+            {}
+
+            Interval(
+                  Type      t_
                 , const T&  a_
                 , const T&  b_
             )
@@ -37,20 +41,20 @@ namespace MPX
             {}
 
             inline bool
-            in_interval(
-                  const T&  i_
+            in(
+                  const T&  i
             )
             {
                 switch( t )
                 {
                     case IN_IN:
-                        return i >= a_ && i <= b_ ;
+                        return i >= a && i <= b ;
                     case EX_EX:
-                        return i >  a_ && i <  b_ ;
+                        return i >  a && i <  b ;
                     case IN_EX:
-                        return i >= a_ && i <  b_ ;
+                        return i >= a && i <  b ;
                     case EX_IN:
-                        return i >  a_ && i <= b_ ;
+                        return i >  a && i <= b ;
 
                     default: std::abort() ;
                 } ;
