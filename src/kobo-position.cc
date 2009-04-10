@@ -18,7 +18,6 @@ namespace
 namespace MPX
 {
     KoboPosition::KoboPosition(
-        const Gdk::Color& bg
     )
 
         : m_duration( 0 )
@@ -26,17 +25,9 @@ namespace MPX
         , m_seek_position( 0 )
         , m_seek_factor( 0 )
         , m_clicked( false )
-        , m_bg( bg )
     {
         add_events(Gdk::EventMask(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK )) ;
         set_flags(Gtk::CAN_FOCUS) ;
-
-        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
-        const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
-        Gdk::Color cgdk ;
-        cgdk.set_rgb_p( c.r, c.g, c.b ) ; 
-        modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
-        modify_base( Gtk::STATE_NORMAL, cgdk ) ;
     }
 
     KoboPosition::~KoboPosition () 

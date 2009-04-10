@@ -57,19 +57,19 @@ namespace MPX
         ThemeColorMap_t colors ;
 
         colors[THEME_COLOR_SELECT] = ThemeColor( csel.get_red_p(), csel.get_green_p(), csel.get_blue_p(), 1. ) ;
-        colors[THEME_COLOR_TITLEBAR_1] = ThemeColor( csel.get_red_p(), csel.get_green_p(), csel.get_blue_p(), 1. ) ;
+        colors[THEME_COLOR_TITLEBAR_1] = ThemeColor( csel.get_red_p(), csel.get_green_p(), csel.get_blue_p(), 0.80 ) ;
 
         Util::color_to_hsb( csel, h, s, b ) ;
         b = std::max( 0., b-0.10 ) ;
         s = std::max( 0., s-0.14 ) ;
         Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
-        colors[THEME_COLOR_TITLEBAR_2] = ThemeColor( c1.get_red_p(), c1.get_green_p(), c1.get_blue_p(), 0.90 ) ;
+        colors[THEME_COLOR_TITLEBAR_2] = ThemeColor( c1.get_red_p(), c1.get_green_p(), c1.get_blue_p(), 0.80 ) ;
 
         Util::color_to_hsb( c1, h, s, b ) ;
         b = std::max( 0., b-0.15 ) ;
         s = std::max( 0., s-0.20 ) ;
         Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
-        colors[THEME_COLOR_TITLEBAR_3] = ThemeColor( c2.get_red_p(), c2.get_green_p(), c2.get_blue_p(), 0.90 ) ;
+        colors[THEME_COLOR_TITLEBAR_3] = ThemeColor( c2.get_red_p(), c2.get_green_p(), c2.get_blue_p(), 0.80 ) ;
 
         Util::color_to_hsb( csel, h, s, b ) ;
         b = std::min( 1., b+0.25 ) ;

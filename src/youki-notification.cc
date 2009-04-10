@@ -181,7 +181,12 @@ namespace MPX
         Gdk::Color background ;
         background.set_rgb_p( 1., 1., 1. ) ; 
 
-        m_kobo_position = new KoboPosition( background ) ;
+        m_kobo_position = new KoboPosition() ;
+
+        Gdk::Color cgdk ;
+        cgdk.set_rgb_p( 1., 1., 1. ) ; 
+        m_kobo_position->modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
+        m_kobo_position->modify_base( Gtk::STATE_NORMAL, cgdk ) ;
 
 		m_fixed.set_size_request( m_width, m_height )  ;
 		m_kobo_position->set_size_request( m_width - 102, 18 )  ;

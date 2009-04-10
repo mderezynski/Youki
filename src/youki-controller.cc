@@ -260,7 +260,7 @@ namespace MPX
         Gdk::Color background ;
         background.set_rgb_p( 0.1, 0.1, 0.1 ) ;
 
-        m_main_position     = Gtk::manage( new KoboPosition( background ) ) ;
+        m_main_position     = Gtk::manage( new KoboPosition ) ;
         m_main_position->signal_seek_event().connect(
             sigc::mem_fun(
                   *this
@@ -579,6 +579,11 @@ namespace MPX
         c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
         m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
+
+        Gdk::Color cgdk ;
+        cgdk.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
+        m_main_position->modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
+        m_main_position->modify_base( Gtk::STATE_NORMAL, cgdk ) ;
     }
 
     void

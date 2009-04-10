@@ -14,17 +14,16 @@ namespace MPX
             gint64      m_seek_position ;
             double      m_seek_factor ;
             bool        m_clicked ;
-            Gdk::Color  m_bg ;
         
             sigc::connection m_scrollback_conn ;
     
         public:
 
-            typedef sigc::signal<void, gint64>      SignalSeekEvent ;
+            typedef sigc::signal<void, gint64> SignalSeekEvent ;
 
         protected:
     
-            SignalSeekEvent    m_SIGNAL_seek_event ;
+            SignalSeekEvent m_SIGNAL_seek_event ;
 
         public:
 
@@ -34,7 +33,7 @@ namespace MPX
                 return m_SIGNAL_seek_event ;
             }
 
-            KoboPosition ( const Gdk::Color& ) ;
+            KoboPosition () ;
             virtual ~KoboPosition () ;
 
             void
