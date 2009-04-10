@@ -131,7 +131,7 @@ namespace MPX
 
             const Gtk::Allocation& a = get_allocation() ;
 
-            Pango::FontDescription font_desc ("Sans") ;
+            Pango::FontDescription font_desc = get_style()->get_font() ; 
             int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
             font_desc.set_size (text_size_pt * PANGO_SCALE) ;
             font_desc.set_weight (Pango::WEIGHT_BOLD) ;

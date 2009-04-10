@@ -442,7 +442,7 @@ namespace MPX
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
-                    Pango::FontDescription font_desc( "sans" ) ;
+                    Pango::FontDescription font_desc =  widget.get_style()->get_font() ;
                     font_desc.set_size( text_size_pt * PANGO_SCALE ) ;
                     font_desc.set_weight( Pango::WEIGHT_BOLD ) ;
 
@@ -613,7 +613,7 @@ namespace MPX
                                           Limiter<std::size_t>::ABS_ABS
                                         , 0
                                         , m_model->size()
-                                        , get<2>(m_selection.get() + step ) ;
+                                        , get<2>(m_selection.get()) + step
                                     ) ;
 
                                     select_row( row ) ;
@@ -663,7 +663,7 @@ namespace MPX
                                           Limiter<std::size_t>::ABS_ABS
                                         , 0
                                         , m_model->size()
-                                        , get<2>(m_selection.get() + step ) ;
+                                        , get<2>(m_selection.get()) + step
                                     ) ;
 
                                     select_row( row ) ;

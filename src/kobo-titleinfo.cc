@@ -50,7 +50,6 @@ namespace
     int const animation_fps = 24;
     int const animation_frame_period_ms = 1000 / animation_fps;
 
-    char const*  text_font              = "Sans" ;
     int const    text_size_px           = 14 ;
     double const text_fade_in_time      = 0.2 ;
     double const text_fade_out_time     = 0.05 ;
@@ -195,7 +194,7 @@ namespace MPX
         m_current_time = m_timer.elapsed () ;
 
         {
-            Pango::FontDescription font_desc (text_font) ;
+            Pango::FontDescription font_desc = get_style()->get_font() ;
             int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
             font_desc.set_size (text_size_pt * PANGO_SCALE) ;
             font_desc.set_weight (Pango::WEIGHT_BOLD) ;
