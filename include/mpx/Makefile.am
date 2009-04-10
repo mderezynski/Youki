@@ -10,6 +10,7 @@ noinst_HEADERS =							\
         i-youki-play.hh                     \
         i-youki-hal.hh                      \
         i-youki-controller.hh               \
+        i-youki-theme-engine.hh             \
 		metadatareader-taglib.hh			\
 		mpx-artist-images.hh				\
 		mpx-audio.hh						\
@@ -17,6 +18,7 @@ noinst_HEADERS =							\
         mpx-audio-types.hh                  \
 		mpx-covers.hh						\
 		mpx-covers-stores.hh				\
+        mpx-hal.hh                          \
 		mpx-library.hh						\
 		mpx-library-scanner-thread.hh		\
 		mpx-lyrics.hh						\

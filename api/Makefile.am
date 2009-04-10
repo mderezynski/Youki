@@ -105,7 +105,6 @@ libmpx_api_la_SOURCES = 							\
 
 if HAVE_HAL
 libmpx_api_la_SOURCES +=                            \
-        hal.hh                                      \
         hal.cc                                      
 												
 endif

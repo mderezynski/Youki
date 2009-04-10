@@ -74,9 +74,6 @@ youki_bin_LDADD =                               \
         $(TAGLIB_LIBS)                          \
         $(XML_LIBS)                             \
         $(XLIB_LIBS)                            \
-        -lgstinterfaces-0.10                    \
-        -lgstvideo-0.10                         \
-                                                \
                                                 \
         $(top_builddir)/jnetlib/libjnetlib.la               \
         $(top_builddir)/mcs/libmconfig.la                   \
@@ -179,7 +176,6 @@ youki_bin_SOURCES =             \
                                 \
     python.cc                   \
     pysigc.hh                   \
-    plugin.hh                   \
     plugin.cc                   \
     plugin-loader-python.hh     \
     plugin-loader-python.cc     \
