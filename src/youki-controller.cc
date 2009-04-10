@@ -814,12 +814,14 @@ namespace MPX
             , 0
         ) ;
 
-        if( m_next_track_queue_id )
+        if( !m_play_queue.empty() )
         {
+            gint64 next_id = m_play_queue.front() ;
+            m_play_queue.pop() ;
+
             SQL::RowV v ;
-            m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % m_next_track_queue_id.get() ).str()) ; 
+            m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % next_id ).str()) ; 
             Track_sp p = m_library->sqlToTrack( v[0], true, false ) ;
-            m_next_track_queue_id.reset() ;
             play_track( *(p.get()) ) ;
         }
         else
@@ -1030,7 +1032,7 @@ namespace MPX
         }
         else
         {
-            m_next_track_queue_id = boost::get<gint64>(t[ATTRIBUTE_MPX_TRACK_ID].get()) ; 
+            m_play_queue.push( boost::get<gint64>(t[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
         }
     }
 
@@ -1478,7 +1480,7 @@ namespace MPX
           gint64 id
     )
     {
-        m_next_track_queue_id = id ;
+        m_play_queue.push( id ) ;
     }
 
     int

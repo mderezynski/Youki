@@ -72,8 +72,8 @@ namespace MPX
         colors[THEME_COLOR_TITLEBAR_3] = ThemeColor( c2.get_red_p(), c2.get_green_p(), c2.get_blue_p(), 0.80 ) ;
 
         Util::color_to_hsb( csel, h, s, b ) ;
-        b = std::min( 1., b+0.25 ) ;
-        s = std::min( 1., s+0.10 ) ;
+        b = std::min( 1., b+0.10 ) ;
+        s = std::min( 1., s+0.05 ) ;
         Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
         colors[THEME_COLOR_TITLEBAR_TOP] = ThemeColor( c3.get_red_p(), c3.get_green_p(), c3.get_blue_p(), 0.90 ) ; 
 

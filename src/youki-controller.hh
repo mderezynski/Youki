@@ -1,6 +1,8 @@
 #ifndef _YOUKI_CONTROLLER__HH
 #define _YOUKI_CONTROLLER__HH
 
+#include <queue>
+
 #include <boost/optional.hpp>
 
 #include "mpx/mpx-services.hh"
@@ -162,6 +164,9 @@ namespace MPX
             boost::optional<MPX::Track>       m_track_current ;          
             boost::optional<MPX::Track>       m_track_previous ;          
             boost::optional<guint64>          m_next_track_queue_id ;
+
+            std::queue<gint64>                m_play_queue ;
+
             bool                              m_follow_track ;
 
             boost::optional<guint64>          m_seek_position ;
