@@ -20,7 +20,8 @@
 #include "mpx/mpx-covers.hh"
 
 #include "mpx/algorithm/aque.hh"
-#include "mpx/algorithm/ntree.hh"
+#include "mpx/algorithm/limiter.hh"
+#include "mpx/algorithm/interval.hh"
 
 #include "mpx/aux/glibaddons.hh"
 
@@ -523,6 +524,9 @@ namespace MPX
 
                 GtkWidget                         * m_treeview ;
 
+                Interval<std::size_t>               m_Model_I ;
+
+
                 void
                 initialize_metrics ()
                 {
@@ -550,9 +554,16 @@ namespace MPX
                       std::size_t row
                 )
                 {
-                    std::size_t row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
-                    std::size_t row_lower = row_upper + m_visible_height/m_row_height;
-                    return ( row >= row_upper && row <= row_lower);
+                
+                    std::size_t up = get_upper_row() ;
+
+                    Interval<std::size_t> i (
+                          Interval<std::size_t>::IN_IN
+                        , up 
+                        , up + (m_visible_height/m_row_height)
+                    ) ;
+            
+                    return i.in( row ) ;
                 }
 
             protected:
@@ -561,6 +572,9 @@ namespace MPX
                 on_key_press_event (GdkEventKey * event)
                 {
                     int step; 
+
+                    Limiter<std::size_t> row ;
+                    Interval<std::size_t> i ;
 
                     switch( event->keyval )
                     {
@@ -579,11 +593,11 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Up )
                             {
-                                step = - (m_visible_height / m_row_height) + 1;
+                                step = - (m_visible_height / m_row_height) ; 
                             }
                             else
                             {
-                                step = -1;
+                                step = - 1 ;
                             }
 
                             if( !m_selection ) 
@@ -595,22 +609,24 @@ namespace MPX
                             {
                                 if( get_row_is_visible( get<2>(m_selection.get()) ))
                                 {
-                                    ModelAlbums_t::iterator i   = get<0>(m_selection.get()) ;
-                                    std::size_t             row = get<2>(m_selection.get()) ; 
+                                    row = Limiter<std::size_t> (
+                                          Limiter<std::size_t>::ABS_ABS
+                                        , 0
+                                        , m_model->size()
+                                        , get<2>(m_selection.get() + step ) ;
+                                    ) ;
 
-                                    std::advance( i, step ) ;
-                                    row += step;
+                                    select_row( row ) ;
 
-                                    if( row >= 0 )
+                                    Interval<std::size_t> i (
+                                          Interval<std::size_t>::IN_EX
+                                        , 0
+                                        , get_upper_row()
+                                    ) ;
+
+                                    if( i.in( row )) 
                                     {
-                                        select_row( row ) ;
-
-                                        if( row < get_upper_row()) 
-                                        {
-                                            double value = m_prop_vadj.get_value()->get_value();
-                                            value += step*m_row_height;
-                                            m_prop_vadj.get_value()->set_value( value );
-                                        }
+                                        m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
                                     }
                                 }
                                 else
@@ -627,11 +643,11 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Down )
                             {
-                                step = (m_visible_height / m_row_height) - 1;
+                                step = (m_visible_height / m_row_height) ;  
                             }
                             else
                             {
-                                step = 1;
+                                step = 1 ;
                             }
 
                             if( !m_selection ) 
@@ -641,24 +657,26 @@ namespace MPX
                             }
                             else
                             {
-                                if( get_row_is_visible( get<2>(m_selection.get())) )
+                                if( get_row_is_visible( get<2>(m_selection.get()) ))
                                 {
-                                    ModelAlbums_t::iterator i   = get<0>(m_selection.get()) ;
-                                    std::size_t             row = get<2>(m_selection.get()) ;
-    
-                                    std::advance( i, step ) ;
-                                    row += step;
+                                    row = Limiter<std::size_t> (
+                                          Limiter<std::size_t>::ABS_ABS
+                                        , 0
+                                        , m_model->size()
+                                        , get<2>(m_selection.get() + step ) ;
+                                    ) ;
 
-                                    if( row < m_model->m_mapping.size() )
+                                    select_row( row ) ;
+
+                                    Interval<std::size_t> i (
+                                          Interval<std::size_t>::IN_EX
+                                        , get_upper_row() + (m_visible_height/m_row_height)
+                                        , m_model->size() 
+                                    ) ;
+
+                                    if( i.in( row )) 
                                     {
-                                        select_row( row ) ;
-
-                                        if( row >= std::size_t(get_upper_row() + (m_visible_height/m_row_height)))
-                                        {
-                                            double value = m_prop_vadj.get_value()->get_value();
-                                            value += step*m_row_height;
-                                            m_prop_vadj.get_value()->set_value( value );
-                                        }
+                                        m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
                                     }
                                 }
                                 else
@@ -684,7 +702,7 @@ namespace MPX
 
                         std::size_t row = get_upper_row() + (event->y / m_row_height) ;
 
-                        if( row < m_model->size() )
+                        if( m_Model_I.in( row )) 
                         {
                             select_row( row ) ;
                             queue_draw() ;
@@ -764,7 +782,7 @@ namespace MPX
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
-                    while( m_model->is_set() && cnt && (row < m_model->m_mapping.size()) ) 
+                    while( m_model->is_set() && cnt && m_Model_I.in( row )) 
                     {
                         xpos = 0 ;
 
@@ -921,6 +939,12 @@ namespace MPX
                         m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
                     }
 
+                    m_Model_I = Interval<std::size_t>(
+                          Interval<std::size_t>::IN_IN
+                        , 0
+                        , m_model->size() - 1
+                    ) ;
+
                     queue_draw() ;
                 }
 
@@ -984,7 +1008,7 @@ namespace MPX
                       std::size_t row
                 )
                 {
-                    if( row < m_model->m_mapping.size() )
+                    if( m_Model_I.in( row )) 
                     {
                         const gint64& id = get<1>(*m_model->m_mapping[row]) ;
 
