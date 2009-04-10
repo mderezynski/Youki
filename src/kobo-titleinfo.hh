@@ -29,6 +29,7 @@
 #include <gdkmm/pixbuf.h>
 #include <gtkmm/drawingarea.h>
 #include <sigc++/connection.h>
+#include "mpx/algorithm/modulo.hh"
 
 namespace MPX
 {
@@ -57,9 +58,13 @@ namespace MPX
         double start_time ;
         double end_time ; 
 
-        Glib::Timer                 m_timer;
-        sigc::connection            m_update_connection;
         std::vector<std::string>    m_info ;
+
+        sigc::connection            m_update_connection;
+
+        Glib::Timer                 m_timer;
+        Modulo<double>              m_tmod ;
+        double                      m_current_time ;
 
         void
         draw_frame ();
@@ -71,10 +76,10 @@ namespace MPX
         cos_smooth (double x) ;
 
         std::string 
-        get_text_at_time (double time) ;
+        get_text_at_time () ;
 
         double
-        get_text_alpha_at_time (double time) ;
+        get_text_alpha_at_time () ;
   };
 
 } // MPX

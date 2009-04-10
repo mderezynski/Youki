@@ -2,13 +2,16 @@
 #include <boost/format.hpp>
 #include <cmath>
 
-#include "mpx/widgets/cairo-extensions.hh"
-#include "mpx/util-graphics.hh"
 #include "mpx/mpx-main.hh"
+
+#include "mpx/widgets/cairo-extensions.hh"
+
 #include "mpx/algorithm/limiter.hh"
+#include "mpx/algorithm/interval.hh"
 
 #include "mpx/i-youki-theme-engine.hh"
 
+#include "mpx/util-graphics.hh"
 
 #include "kobo-position.hh"
 
@@ -376,12 +379,14 @@ namespace MPX
         GdkEventKey* event
     )
     {
+        Limiter<gint64> p ;
+
         switch( event->keyval )
         {
             case GDK_Down:
             case GDK_KP_Down:
 
-                Limiter<gint64> p (
+                p = Limiter<gint64> (
                       Limiter<gint64>::ABS_ABS
                     , 0
                     , m_duration
@@ -396,7 +401,7 @@ namespace MPX
             case GDK_Up:
             case GDK_KP_Up:
 
-                Limiter<gint64> p (
+                p = Limiter<gint64> (
                       Limiter<gint64>::ABS_ABS
                     , 0
                     , m_duration

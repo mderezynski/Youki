@@ -37,8 +37,8 @@
 
 #include "mpx/util-graphics.hh"
 #include "mpx/widgets/cairo-extensions.hh"
-
 #include "mpx/i-youki-theme-engine.hh"
+
 #include "mpx/mpx-main.hh"
 
 namespace
@@ -70,11 +70,11 @@ namespace MPX
     }
 
     std::string
-    KoboTitleInfo::get_text_at_time (double time)
+    KoboTitleInfo::get_text_at_time ()
     {
         if( !m_info.empty() )
         {
-            unsigned int line = std::fmod( ( time / text_time ), m_info.size() ) ;
+            unsigned int line = std::fmod( ( m_current_time / text_time ), m_info.size() ) ;
             return m_info[line];
         }
         else
@@ -84,10 +84,10 @@ namespace MPX
     }
 
     double
-    KoboTitleInfo::get_text_alpha_at_time (double time)
+    KoboTitleInfo::get_text_alpha_at_time ()
     {
         {
-            double offset = std::fmod( time, text_time ) ;
+            double offset = m_tmod ; 
 
             if (offset < text_fade_in_time)
             {
@@ -105,6 +105,7 @@ namespace MPX
     }
 
     KoboTitleInfo::KoboTitleInfo ()
+    : m_tmod( m_current_time, text_time )
     {
         set_app_paintable (true);
         add_events( Gdk::BUTTON_PRESS_MASK ) ;
@@ -191,7 +192,7 @@ namespace MPX
         ) ;
         cairo->fill () ;
 
-        double current_time = m_timer.elapsed () ;
+        m_current_time = m_timer.elapsed () ;
 
         {
             Pango::FontDescription font_desc (text_font) ;
@@ -199,8 +200,8 @@ namespace MPX
             font_desc.set_size (text_size_pt * PANGO_SCALE) ;
             font_desc.set_weight (Pango::WEIGHT_BOLD) ;
 
-            std::string text  = get_text_at_time (current_time) ;
-            double      alpha = get_text_alpha_at_time (current_time) ;
+            std::string text  = get_text_at_time () ;
+            double      alpha = get_text_alpha_at_time () ;
 
             Glib::RefPtr<Pango::Layout> layout = Glib::wrap (pango_cairo_create_layout (cairo->cobj ())) ;
             layout->set_font_description (font_desc) ;
