@@ -83,6 +83,7 @@ m4_defun([AC_PROG_F77],[])
 AC_DISABLE_STATIC
 AC_ENABLE_SHARED
 AC_PROG_LIBTOOL
+DOLT
 
 ####################################
 ########## BUILDING FLAGS ##########
@@ -673,7 +674,12 @@ AM_CONDITIONAL([HAVE_GTK], [test "1" = "1"])
 CFLAGS="$CFLAGS $C_COMMON_FLAGS"
 CXXFLAGS="$CXXFLAGS $C_COMMON_FLAGS"
 
+SHAVE_INIT([m4], [enable])
+
 AC_CONFIG_FILES([
+
+    m4/shave
+    m4/shave-libtool
 
     icons/Makefile
     icons/hicolor/Makefile

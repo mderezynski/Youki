@@ -43,6 +43,7 @@
 #include "mpx/mpx-preferences.hh"
 #include "mpx/mpx-python.hh"
 #include "mpx/mpx-services.hh"
+#include "mpx/mpx-stock.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/util-file.hh"
 #ifdef HAVE_HAL
@@ -292,6 +293,8 @@ main (int argc, char ** argv)
         g_warning(G_STRLOC ": %s", cxe.what().c_str());
         std::exit(EXIT_FAILURE);
     }
+
+    register_default_stock_icons();
 
     signal_handlers_install ();
     create_user_dirs ();

@@ -314,6 +314,8 @@ namespace MPX
                 , &YoukiController::on_title_clicked
         )) ;
 
+        m_main_love_button  = Gtk::manage(new YoukiToggleButton(16, "mpx-loved-none", "mpx-loved-yes", "mpx-loved-no") ) ;
+
         m_main_infoarea     = Gtk::manage( new InfoArea ) ;
         m_main_infoarea->signal_clicked().connect(
             sigc::mem_fun(
@@ -478,6 +480,7 @@ namespace MPX
         m_main_window->set_widget_drawer( *m_NotebookPlugins ) ; 
 
         m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
+        m_HBox_Info->pack_start( *m_main_love_button, false, false, 0 ) ;
         m_HBox_Info->property_spacing() = 4 ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;

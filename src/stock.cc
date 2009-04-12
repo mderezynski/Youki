@@ -33,17 +33,16 @@ namespace MPX
   using namespace Gtk;
 
   void
-  register_stock_icons (StockIconSpecV const& icons, std::string const& base_path)
+  register_stock_icons (StockIconSpecV const& icons, int size, std::string const& base_path)
   {
-    RefPtr<Gtk::IconFactory> factory = IconFactory::create ();
+    RefPtr<Gtk::IconTheme> theme = IconTheme::get_default ();
     for (StockIconSpecV::const_iterator i = icons.begin(); i != icons.end(); ++i)
     {
       StockIconSpec const& icon = *i;
       std::string filename = build_filename( base_path, icon.filename );
       RefPtr<Pixbuf> pixbuf = Pixbuf::create_from_file( filename );
-      factory->add( StockID( icon.stock_id.c_str() ), IconSet( pixbuf ) );
+      theme->add_builtin_icon(icon.stock_id, size, pixbuf);
     }
-    factory->add_default ();
   }
 
   std::string
@@ -71,12 +70,15 @@ namespace MPX
     v.push_back(StockIconSpec( "equalizer.png",                MPX_STOCK_EQUALIZER         ));
     v.push_back(StockIconSpec( "preferences.png",              "mpx-stock-preferences"     ));
     v.push_back(StockIconSpec( "musiclibrary.png",             "mpx-stock-musiclibrary"    ));
-    register_stock_icons (v, default_stock_path("24x24")); 
+    register_stock_icons (v, 24, default_stock_path("24x24")); 
 
     v.clear();
 
     v.push_back(StockIconSpec( "error.png",                    MPX_STOCK_ERROR             ));
     v.push_back(StockIconSpec( "add.png",                      "mpx-stock-add"             ));
-    register_stock_icons (v, default_stock_path("16x16")); 
+    v.push_back(StockIconSpec( "heart-black.png",              "mpx-loved-no"              ));
+    v.push_back(StockIconSpec( "heart-br.png",                 "mpx-loved-none"            ));
+    v.push_back(StockIconSpec( "heart-red.png",                "mpx-loved-yes"             ));
+    register_stock_icons (v, 16, default_stock_path("16x16")); 
   }
 }
