@@ -673,7 +673,12 @@ AM_CONDITIONAL([HAVE_GTK], [test "1" = "1"])
 CFLAGS="$CFLAGS $C_COMMON_FLAGS"
 CXXFLAGS="$CXXFLAGS $C_COMMON_FLAGS"
 
+SHAVE_INIT([m4], [enable])
+
 AC_CONFIG_FILES([
+
+    m4/shave
+    m4/shave-libtool
 
     icons/Makefile
     icons/hicolor/Makefile
