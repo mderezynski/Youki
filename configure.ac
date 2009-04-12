@@ -83,6 +83,7 @@ m4_defun([AC_PROG_F77],[])
 AC_DISABLE_STATIC
 AC_ENABLE_SHARED
 AC_PROG_LIBTOOL
+DOLT
 
 ####################################
 ########## BUILDING FLAGS ##########
