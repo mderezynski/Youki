@@ -69,8 +69,6 @@ libmpx_api_la_LIBADD =								\
 		$(TAGLIB_LIBS)								\
 		$(XML_LIBS)									\
 		$(XLIB_LIBS)								\
-		-lgstinterfaces-0.10 						\
-		-lgstvideo-0.10								\
 		$(top_builddir)/xmlcpp/libmpx-parsers.la
 
 if HAVE_HAL
@@ -83,28 +81,30 @@ libmpx_api_la_CFLAGS =								\
 
 libmpx_api_la_SOURCES = 							\
 													\
-		aque.cc										\
-													\
-		base64.c									\
-		md5.c										\
-		random.cc									\
-													\
-		gstpuid.cc									\
-                                                    \
-		libxml2-sax-base.cc							\
-		xspf-libxml2-sax.cc							\
-													\
-		lyrics.cc									\
-													\
-		playlistparser-xspf.cc						\
-		playlistparser-pls.cc						\
-													\
-		xml.cc										\
-		xpath.cc									
-
+        aque.cc                                     \
+        base64.c                                    \
+        error.cc                                    \
+        gstpuid.cc                                  \
+        hal.cc                                      \
+        lyrics.cc                                   \
+        md5.c                                       \
+        metadatareader-taglib.cc                    \
+        minisoup.cc                                 \
+        network.cc                                  \
+        paths.cc                                    \
+        random.cc                                   \
+        services.cc                                 \
+        signals.cc                                  \
+        sql.cc                                      \
+        uri.cc                                      \
+        util-file.cc                                \
+        util-graphics.cc                            \
+        util-string.cc                              \
+        util-ui.cc                                  \
+        xml.cc                                      \
+        xpath.cc                                    
 
 if HAVE_HAL
-libmpx_api_la_SOURCES +=                            \
-        hal.cc                                      
-												
+libmpx_api_la_SOURCES += hal.cc 
 endif
+

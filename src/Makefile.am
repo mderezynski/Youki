@@ -98,125 +98,103 @@ youki_bin_CXXFLAGS += -D_XOPEN_SOURCE=600
 youki_bin_CFLAGS += -D_XOPEN_SOURCE=600
 endif
 
-youki_bin_SOURCES =             \
-                                \
-    audio.cc                    \
-                                \
-    covers.cc                   \
-    covers-stores.cc            \
-                                \
-    dialog-about.hh             \
-    dialog-about.cc             \
-                                \
-    dialog-equalizer.hh         \
-    dialog-equalizer.cc         \
-                                \
-    error.cc                    \
-                                \
-    glib-marshalers.c           \
-    glib-marshalers.h           \
-                                \
-    infoarea.hh                 \
-    infoarea.cc                 \
-    infoarea__protected.cc      \
-    infoarea__private.cc        \
-                                \
-    jnethttpsrc.h               \
-    jnethttpsrc.cc              \
-                                \
-    kobo-position.hh            \
-    kobo-position.cc            \
-                                \
-    youki-controller.hh         \
-    youki-controller.cc         \
-                                \
-    youki-controller-status-icon.hh \
-    youki-controller-status-icon.cc \
-                                \
-    youki-notification.hh       \
-    youki-notification.cc       \
-                                \
-    youki-simpleinfo.hh         \
-    youki-simpleinfo.cc         \
-																\
-		youki-togglebutton.hh				\
-		youki-togglebutton.cc				\
-                                \
-    kobo-cover.hh               \
-    kobo-cover.cc               \
-                                \
-    kobo-main.hh                \
-    kobo-main.cc                \
-                                \
-    kobo-titleinfo.hh           \
-    kobo-titleinfo.cc           \
-                                \
-    kobo-volume.hh              \
-    kobo-volume.cc              \
-                                \
-    youki-theme-engine.hh       \
-    youki-theme-engine.cc       \
-                                \
-    library.cc                  \
-                                \
-    main.cc                     \
-                                \
-    mpx-mlibman-dbus-proxy-actual.hh \
-    mpx-mlibman-dbus-proxy.hh   \
-    mpx-app-dbus-adaptor.hh     \
-                                \
-    markov-analyzer-thread.cc   \
-    metadatareader-taglib.cc    \
-    minisoup.cc                 \
-                                \
-    network.cc                  \
-                                \
-    paths.hh                    \
-    paths.cc                    \
-                                \
-    play.hh                     \
-    play.cc                     \
-                                \
-    python.cc                   \
-    pysigc.hh                   \
-    plugin.cc                   \
-    plugin-loader-python.hh     \
-    plugin-loader-python.cc     \
-    plugin-types-python.cc      \
-    plugin-types-python.hh      \
-    plugin-loader-cpp.cc        \
-    plugin-loader-cpp.hh        \
-    plugin-types-cpp.hh         \
-    plugin-loader.hh            \
-    plugin-manager-gui.hh       \
-    plugin-manager-gui.cc       \
-    gtkmm.cc                    \
-    gtkmmmodule.cc              \
-    gtkmmmodule.h               \
-                                \
-    preferences.cc              \
-                                \
-    request-value.hh            \
-    request-value.cc            \
-                                \
-    splash-screen.hh            \
-    splash-screen.cc            \
-                                \
-    services.cc                 \
-    signals.cc                  \
-    signals.hh                  \
-                                \
-    sql.cc                      \
-    stock.cc                    \
-    uri.cc                      \
-                                \
-    util-file.cc                \
-    util-graphics.cc            \
-    util-string.cc              \
-    util-ui.cc                  
+youki_bin_SOURCES =                         \
+                                            \
+        covers.cc                           \
+        covers-stores.cc                    \
+                                            \
+        dialog-about.hh                     \
+        dialog-about.cc                     \
+                                            \
+        dialog-equalizer.hh                 \
+        dialog-equalizer.cc                 \
+                                            \
+        glib-marshalers.c                   \
+        glib-marshalers.h                   \
+                                            \
+        infoarea.hh                         \
+        infoarea.cc                         \
+        infoarea__protected.cc              \
+        infoarea__private.cc                \
+                                            \
+        jnethttpsrc.h                       \
+        jnethttpsrc.cc                      \
+                                            \
+        kobo-position.hh                    \
+        kobo-position.cc                    \
+                                            \
+        youki-controller.hh                 \
+        youki-controller.cc                 \
+                                            \
+        youki-controller-status-icon.hh     \
+        youki-controller-status-icon.cc     \
+                                            \
+        youki-notification.hh               \
+        youki-notification.cc               \
+                                            \
+        youki-simpleinfo.hh                 \
+        youki-simpleinfo.cc                 \
+                                            \
+        youki-togglebutton.hh		        \
+        youki-togglebutton.cc		        \
+                                            \
+        kobo-cover.hh                       \
+        kobo-cover.cc                       \
+                                            \
+        kobo-main.hh                        \
+        kobo-main.cc                        \
+                                            \
+        kobo-titleinfo.hh                   \
+        kobo-titleinfo.cc                   \
+                                            \
+        kobo-volume.hh                      \
+        kobo-volume.cc                      \
+                                            \
+        youki-theme-engine.hh               \
+        youki-theme-engine.cc               \
+                                            \
+        library.cc                          \
+        main.cc                             \
+                                            \
+        mpx-mlibman-dbus-proxy-actual.hh    \
+        mpx-mlibman-dbus-proxy.hh           \
+        mpx-app-dbus-adaptor.hh             \
+                                            \
+        markov-analyzer-thread.cc           \
+        metadatareader-taglib.cc            \
+                                            \
+        play.hh                             \
+        play.cc                             \
+                                            \
+        python.cc                           \
+        pysigc.hh                           \
+        plugin.cc                           \
+        plugin-loader-python.hh             \
+        plugin-loader-python.cc             \
+        plugin-types-python.cc              \
+        plugin-types-python.hh              \
+        plugin-loader-cpp.cc                \
+        plugin-loader-cpp.hh                \
+        plugin-types-cpp.hh                 \
+        plugin-loader.hh                    \
+        plugin-manager-gui.hh               \
+        plugin-manager-gui.cc               \
+        gtkmm.cc                            \
+        gtkmmmodule.cc                      \
+        gtkmmmodule.h                       \
+                                            \
+        preferences.cc                      \
+                                            \
+        splash-screen.hh                    \
+        splash-screen.cc                    \
+                                            \
+        services.cc                         \
+        signals.cc                          \
+        signals.hh                          \
+        stock.cc                         
                                 
-BUILT_SOURCES =                 \
-    mpx-mlibman-dbus-proxy.hh   \
+BUILT_SOURCES =                             \
+    mpx-mlibman-dbus-proxy.hh               \
     mpx-app-dbus-adaptor.hh
 
 mpx-mlibman-dbus-proxy.hh: $(top_srcdir)/dbus/dbus-obj-MLIBMAN.xml

@@ -193,7 +193,7 @@ namespace MPX
 
                 try{
                         m_SQL = new SQL::SQLDB(
-                                (boost::format ("mpxdb-%d-%d-%d")
+                                (boost::format ("mpx-musicdata-%d-%d-%d")
                                     % MLIB_VERSION_CUR 
                                     % MLIB_VERSION_REV
                                     % MLIB_VERSION_AGE
@@ -208,211 +208,16 @@ namespace MPX
                         throw;
                 }
 
-                if(!m_SQL->table_exists("meta"))
+
+                RowV v;
+                m_SQL->get( v, "SELECT flags FROM meta WHERE rowid = 1" ) ; 
+
+                if( !v.empty() )
                 {
-#ifdef HAVE_HAL
-                        m_Flags |= ( mcs->key_get<bool>("library","use-hal") ? F_USING_HAL : 0) ; 
-#endif // HAVE_HAL
-                        m_SQL->exec_sql("CREATE TABLE meta (version STRING, flags INTEGER DEFAULT 0, last_scan_date INTEGER DEFAULT 0)");
-                        m_SQL->exec_sql((boost::format ("INSERT INTO meta (flags) VALUES (%lld)") % m_Flags).str());
-                }
-                else
-                {
-                        RowV rows;
-                        m_SQL->get( rows, "SELECT flags FROM meta WHERE rowid = 1" ) ; 
-                        m_Flags |= get<gint64>(rows[0].find("flags")->second); 
+                    m_Flags |= get<gint64>(v[0]["flags"]); 
                 }
 
                 mcs->key_set<bool>("library","use-hal", bool(m_Flags & F_USING_HAL));
-
-                ///////////////////////////////////////////////////////////////
-                /// ARTIST TABLE 
-                ///////////////////////////////////////////////////////////////
-
-                m_SQL->exec_sql((
-                    boost::format("CREATE TABLE IF NOT EXISTS artist (id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, '%s' TEXT, UNIQUE ('%s', '%s', '%s'))")
-                        % attrs[ATTRIBUTE_ARTIST].id
-                        % attrs[ATTRIBUTE_MB_ARTIST_ID].id
-                        % attrs[ATTRIBUTE_ARTIST_SORTNAME].id
-                        % attrs[ATTRIBUTE_ARTIST].id
-                        % attrs[ATTRIBUTE_MB_ARTIST_ID].id
-                        % attrs[ATTRIBUTE_ARTIST_SORTNAME].id
-                ).str());
-
-                ///////////////////////////////////////////////////////////////
-                /// ALBUM ARTIST TABLE 
-                ///////////////////////////////////////////////////////////////
-
-                m_SQL->exec_sql((
-                    boost::format("CREATE TABLE IF NOT EXISTS album_artist (id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' INTEGER, UNIQUE ('%s', '%s', '%s', '%s'))")
-                        % attrs[ATTRIBUTE_ALBUM_ARTIST].id
-                        % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id
-                        % attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id
-                        % "life_span_begin"
-                        % "life_span_end"
-                        % attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id
-                        % attrs[ATTRIBUTE_ALBUM_ARTIST].id
-                        % attrs[ATTRIBUTE_MB_ALBUM_ARTIST_ID].id
-                        % attrs[ATTRIBUTE_IS_MB_ALBUM_ARTIST].id
-                        % attrs[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].id
-                ).str());
-
-                ///////////////////////////////////////////////////////////////
-                /// ALBUM TABLE 
-                ///////////////////////////////////////////////////////////////
-
-                m_SQL->exec_sql((
-                    boost::format("CREATE TABLE IF NOT EXISTS album (id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT, '%s' TEXT DEFAULT NULL, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT 0, '%s' INTEGER DEFAULT NULL, '%s' FLOAT DEFAULT 0, UNIQUE ('%s', '%s', '%s', '%s', '%s', '%s', '%s'))")
-                        % attrs[ATTRIBUTE_ALBUM].id
-                        % attrs[ATTRIBUTE_MB_ALBUM_ID].id
-                        % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
-                        % attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id
-                        % attrs[ATTRIBUTE_MB_RELEASE_TYPE].id
-                        % attrs[ATTRIBUTE_ASIN].id
-                        % "album_genre" 
-                        % "album_rating"
-                        % "album_artist_j"
-                        % "album_insert_date"
-                        % "album_new"
-                        % "album_quality"
-                        % "album_playscore"
-                        % attrs[ATTRIBUTE_ALBUM].id
-                        % attrs[ATTRIBUTE_MB_ALBUM_ID].id
-                        % attrs[ATTRIBUTE_MB_RELEASE_DATE].id
-                        % attrs[ATTRIBUTE_MB_RELEASE_COUNTRY].id
-                        % attrs[ATTRIBUTE_MB_RELEASE_TYPE].id
-                        % attrs[ATTRIBUTE_ASIN].id
-                        % "album_artist_j"
-                ).str());
-
-                ///////////////////////////////////////////////////////////////
-                /// TAG TABLE 
-                ///////////////////////////////////////////////////////////////
-
-                m_SQL->exec_sql((
-                    boost::format("CREATE TABLE IF NOT EXISTS tag (id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT, UNIQUE ('%s'))")
-                        % "tag"
-                        % "tag"
-                ).str()); 
-
-                ///////////////////////////////////////////////////////////////
-                /// TAGS TABLE 
-                ///////////////////////////////////////////////////////////////
-
-                m_SQL->exec_sql((
-                    boost::format("CREATE TABLE IF NOT EXISTS tags (id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' INTEGER NOT NULL, '%s' INTEGER NOT NULL, '%s' INTEGER DEFAULT 1, UNIQUE ('%s', '%s'))")
-                        % "tagid"
-                        % "trackid"
-                        % "amplitude" 
-                        % "tagid"
-                        % "trackid"
-                ).str()); 
-
-                ///////////////////////////////////////////////////////////////
-                /// ALBUM TAGS TABLE 
-                ///////////////////////////////////////////////////////////////
-
-                m_SQL->exec_sql((
-                    boost::format("CREATE TABLE IF NOT EXISTS tags_album (id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' INTEGER NOT NULL, '%s' INTEGER NOT NULL, '%s' INTEGER DEFAULT 1, UNIQUE ('%s', '%s'))")
-                        % "tagid"
-                        % "albumid"
-                        % "amplitude" 
-                        % "tagid"
-                        % "albumid"
-                ).str()); 
-
-                ///////////////////////////////////////////////////////////////
-                /// ALBUM RATING HISTORY TABLE 
-                ///////////////////////////////////////////////////////////////
-
-                m_SQL->exec_sql((
-                    boost::format("CREATE TABLE IF NOT EXISTS album_rating_history (id INTEGER PRIMARY KEY AUTOINCREMENT, '%s' TEXT NOT NULL, '%s' INTEGER NOT NULL, '%s' TEXT DEFAULT NULL, '%s' INTEGER NOT NULL)")
-                        % "mbid"
-                        % "rating"
-                        % "comment"
-                        % "time"
-                ).str()); 
-
-                ///////////////////////////////////////////////////////////////
-                /// TRACK TABLE 
-                ///////////////////////////////////////////////////////////////
-
-                StrV columns;
-                for( unsigned n = 0; n < G_N_ELEMENTS(attrs); ++n )
-                {
-                        std::string column (attrs[n].id);
-
-                        switch (attrs[n].type)
-                        {
-                                case VALUE_TYPE_STRING:
-                                        column += (" TEXT DEFAULT NULL ");
-                                        break;
-
-                                case VALUE_TYPE_INT:
-                                        column += (" INTEGER DEFAULT NULL ");
-                                        break;
-
-                                case VALUE_TYPE_REAL:
-                                        column += (" REAL DEFAULT NULL ");
-                                        break;
-                        }
-
-                        columns.push_back (column);
-                }
-
-                std::string column_names (Util::stdstrjoin (columns, ", "));
-
-                m_SQL->exec_sql((
-                    boost::format("CREATE TABLE IF NOT EXISTS track (id INTEGER PRIMARY KEY AUTOINCREMENT, %s, %s, %s, UNIQUE (%s, %s, %s, %s))")
-                        % column_names
-                        % "artist_j INTEGER NOT NULL"   // track artist information 
-                        % "album_j INTEGER NOT NULL"    // album + album artist
-                        % "album_j" 
-                        % "artist_j" 
-                        % "track" 
-                        % "title"
-                ).str());
-
-                ///////////////////////////////////////////////////////////////
-                /// TRACK VIEW VIEW 
-                ///////////////////////////////////////////////////////////////
-
-                m_SQL->exec_sql(
-                        "  CREATE VIEW IF NOT EXISTS track_view AS " 
-                        "  SELECT"
-                        "  track.* "
-                        ", album.id AS mpx_album_id"
-                        ", album.album_rating AS album_rating"
-                        ", artist.id AS mpx_artist_id "
-                        ", album_artist.id AS mpx_album_artist_id "
-                        "  FROM track "
-                        "  JOIN album ON album.id = track.album_j JOIN artist "
-                        "  ON artist.id = track.artist_j JOIN album_artist ON album.album_artist_j = album_artist.id"
-                );
-
-                ///////////////////////////////////////////////////////////////
-                /// DEVICES TABLE 
-                ///////////////////////////////////////////////////////////////
-
-                m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS devices (id INTEGER PRIMARY KEY AUTOINCREMENT, device_udi TEXT, volume_udi TEXT)");
-
-                ///////////////////////////////////////////////////////////////
-                /// MARKOV TABLE 
-                ///////////////////////////////////////////////////////////////
-
-                m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS markov (id INTEGER PRIMARY KEY AUTOINCREMENT, count INTEGER DEFAULT 0, track_id_a INTEGER DEFAULT NULL, track_id_b INTEGER DEFAULT NULL)");
-
-                ///////////////////////////////////////////////////////////////
-                /// COLLECTIONS TABLE 
-                ///////////////////////////////////////////////////////////////
-
-                m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS collection (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, blurb TEXT NOT NULL, cover_url TEXT)");
-
-                ///////////////////////////////////////////////////////////////
-                /// ARTIST ALIASES 
-                ///////////////////////////////////////////////////////////////
-
-                m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS artist_aliases (id INTEGER PRIMARY KEY AUTOINCREMENT, mbid_alias TEXT NOT NULL, mbid_for TEXT NOT NULL, UNIQUE( mbid_alias, mbid_for))");
         }
 
         Library::~Library ()

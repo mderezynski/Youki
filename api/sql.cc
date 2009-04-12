@@ -627,7 +627,7 @@ namespace MPX
     {
       m_rand.set_seed(time(NULL));
 
-      m_filename = build_filename (path, name) + ".mlib";
+      m_filename = build_filename (path, name) + ".sql";
 
       if (file_test (m_filename, FILE_TEST_EXISTS) && openmode == SQLDB_TRUNCATE) {
         g_unlink (m_filename.c_str());

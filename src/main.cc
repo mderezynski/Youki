@@ -39,22 +39,25 @@
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-network.hh"
+#include "mpx/mpx-paths.hh"
 #include "mpx/mpx-plugin.hh"
 #include "mpx/mpx-preferences.hh"
 #include "mpx/mpx-python.hh"
 #include "mpx/mpx-services.hh"
+#include "mpx/mpx-signals.hh"
 #include "mpx/mpx-stock.hh"
 #include "mpx/mpx-types.hh"
+
 #include "mpx/util-file.hh"
+
 #ifdef HAVE_HAL
 #include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
+
 #include "mpx/metadatareader-taglib.hh"
 
-#include "paths.hh"
 #include "play.hh"
 #include "plugin-manager-gui.hh"
-#include "signals.hh"
 #include "splash-screen.hh"
 
 #include "youki-controller.hh"
@@ -282,7 +285,7 @@ main (int argc, char ** argv)
     Glib::init();
     Gio::init();
 
-    GOptionContext * context_c = g_option_context_new (_(" - run AudioSource Player"));
+    GOptionContext * context_c = g_option_context_new (_(" - run Youki"));
     g_option_context_add_group (context_c, gst_init_get_option_group ());
     Glib::OptionContext context (context_c, true);
 

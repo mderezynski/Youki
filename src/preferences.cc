@@ -51,8 +51,6 @@
 #include <mcs/mcs.h>
 
 #include "mpx/mpx-preferences.hh"
-
-#include "mpx/mpx-audio.hh"
 #include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-stock.hh"
@@ -63,7 +61,6 @@
 
 using namespace Glib;
 using namespace Gtk;
-using namespace MPX::Audio;
 
 namespace MPX
 {

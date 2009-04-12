@@ -683,8 +683,6 @@ AC_CONFIG_FILES([
 
     icons/Makefile
     icons/hicolor/Makefile
-    icons/hicolor/64x64/Makefile
-    icons/hicolor/64x64/places/Makefile
     icons/hicolor/24x24/Makefile
     icons/hicolor/24x24/stock/Makefile
     icons/hicolor/16x16/Makefile

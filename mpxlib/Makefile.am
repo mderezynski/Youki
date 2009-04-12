@@ -46,7 +46,6 @@ youki_mlibman_bin_LDADD =                       \
         $(TAGLIB_LIBS)                          \
         $(XML_LIBS)                             \
         $(XLIB_LIBS)                            \
-        -lgstinterfaces-0.10                    \
         $(top_builddir)/mcs/libmconfig.la                   \
         $(top_builddir)/api/libmpx-api.la                   \
         $(top_builddir)/widgets/libmpx-widgets.la           \
@@ -71,38 +70,26 @@ endif
 
 youki_mlibman_bin_SOURCES =                     \
                                             \
-        audio-types.hh                      \
         import-folder.hh                    \
         import-share.hh                     \
         library-mlibman.hh                  \
         library-scanner-thread-mlibman.hh   \
         messages.hh                         \
         mlibmanager.hh                      \
-        paths.hh                            \
         request-value.hh                    \
         signals.hh                          \
                                             \
-        audio.cc                            \
         error.cc                            \
         import-folder.cc                    \
         import-share.cc                     \
         library-mlibman.cc                  \
         library-scanner-thread-mlibman.cc   \
         main.cc                             \
-        metadatareader-taglib.cc            \
-        minisoup.cc                         \
         mlibmanager.cc                      \
         mpx-mlibman-dbus.hh                 \
-        network.cc                          \
-        paths.cc                            \
         request-value.cc                    \
         services.cc                         \
-        signals.cc                          \
-        sql.cc                              \
-        uri.cc                              \
-        util-file.cc                        \
-        util-string.cc                      \
-        util-ui.cc
+        signals.cc                          
 
 
 BUILT_SOURCES =                             \

@@ -63,8 +63,8 @@ namespace MPX
                         add_events( Gdk::BUTTON_PRESS_MASK ) ;
 
                         m_title_logo = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "title-logo.png" )) ;
-                        m_button_off = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "off.png" )) ;
-                        m_button_blowup = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "blowup.png" )) ;
+                        m_button_off = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "mainwindow-button-off.png" )) ;
+                        m_button_blowup = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "mainwindow-button-maximize.png" )) ;
 
                         set_geom_hints( false ) ;
 

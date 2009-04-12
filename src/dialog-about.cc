@@ -63,7 +63,7 @@ namespace
 
   char const* credit_text[] =
   {
-      N_("<big>AudioSource is brought to you by</big>"),
+      N_("<big>Youki is brought to you by</big>"),
       "Milosz Derezynski",
       "David Le Brun",
       "Chong Kai Xiong",

@@ -34,8 +34,7 @@
 #include <cstdlib>
 #include <string>
 
-#include "paths.hh"
-#include "signals.hh"
+#include "mpx/mpx-paths.hh"
 #include "library-mlibman.hh"
 
 #include "mpx/mpx-main.hh"
@@ -49,8 +48,9 @@
 
 #include "mlibmanager.hh"
 #include "mpx/metadatareader-taglib.hh"
-
 #include <dbus-c++/glib-integration.h>
+
+#include "mpx/mpx-signals.hh"
 
 using namespace MPX;
 using namespace Glib;
