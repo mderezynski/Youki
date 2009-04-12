@@ -29,6 +29,7 @@ libcppmod_lastfmscrobbler_la_SOURCES =          \
                                                 \
         cppmod-scrobbler.hh                     \
         cppmod-scrobbler.cc                     \
+        i-log.hh                                \
                                                 \
         condition.cpp                           \
         condition.h                             \

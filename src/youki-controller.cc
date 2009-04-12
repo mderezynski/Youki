@@ -75,6 +75,46 @@ namespace
             "mpx artist id",
             "mpx album artist id",
     };
+
+    std::string
+    RowGetArtistName(
+          const MPX::SQL::Row&   r
+    )
+    {
+        std::string name ;
+
+        if( r.count("album_artist_sortname") ) 
+        {
+            std::string in = boost::get<std::string>(r.find("album_artist_sortname")->second) ; 
+
+            boost::iterator_range <std::string::iterator> match1 = boost::find_nth( in, ", ", 0 ) ;
+            boost::iterator_range <std::string::iterator> match2 = boost::find_nth( in, ", ", 1 ) ;
+
+            if( !match1.empty() && match2.empty() ) 
+            {
+                name = std::string (match1.end(), in.end()) + " " + std::string (in.begin(), match1.begin());
+            }
+            else
+            {      
+                name = in ;
+            }
+        }
+        else
+        {
+            name = boost::get<std::string>(r.find("album_artist")->second) ;
+        }
+
+        return name ;
+    }
+
+    bool
+    CompareAlbumArtists(
+          const MPX::SQL::Row&   r1
+        , const MPX::SQL::Row&   r2
+    )
+    {
+        return Glib::ustring(RowGetArtistName( r1 )).casefold() < Glib::ustring(RowGetArtistName( r2 )).casefold() ;
+    }
 }
 
 namespace MPX
@@ -643,13 +683,16 @@ namespace MPX
         ) ;
 
         v.clear () ; 
-        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album_artist ORDER BY album_artist")).str()) ; 
+        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album_artist")).str()) ; 
+
+        std::stable_sort( v.begin(), v.end(), CompareAlbumArtists ) ;
 
         for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
         {
                 SQL::Row & r = *i;
+
                 model_album_artists->append_artist_quiet(
-                      r.count("album_artist_sortname") ? boost::get<std::string>(r["album_artist_sortname"]) : boost::get<std::string>(r["album_artist"])
+                      RowGetArtistName( r )
                     , boost::get<gint64>(r["id"])
                 ) ;
         }

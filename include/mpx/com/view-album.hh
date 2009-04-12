@@ -573,7 +573,7 @@ namespace MPX
                 {
                     int step; 
 
-                    Limiter<std::size_t> row ;
+                    Limiter<int64_t> row ;
                     Interval<std::size_t> i ;
 
                     switch( event->keyval )
@@ -609,8 +609,8 @@ namespace MPX
                             {
                                 if( get_row_is_visible( get<2>(m_selection.get()) ))
                                 {
-                                    row = Limiter<std::size_t> (
-                                          Limiter<std::size_t>::ABS_ABS
+                                    row = Limiter<int64_t> (
+                                          Limiter<int64_t>::ABS_ABS
                                         , 0
                                         , m_model->size()
                                         , get<2>(m_selection.get()) + step
@@ -659,8 +659,8 @@ namespace MPX
                             {
                                 if( get_row_is_visible( get<2>(m_selection.get()) ))
                                 {
-                                    row = Limiter<std::size_t> (
-                                          Limiter<std::size_t>::ABS_ABS
+                                    row = Limiter<int64_t> (
+                                          Limiter<int64_t>::ABS_ABS
                                         , 0
                                         , m_model->size()
                                         , get<2>(m_selection.get()) + step

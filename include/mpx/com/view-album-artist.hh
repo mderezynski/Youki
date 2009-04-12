@@ -523,7 +523,7 @@ namespace MPX
                         return false ;
                     }
 
-                    Limiter<std::size_t> row ;
+                    Limiter<int64_t> row ;
                     Interval<std::size_t> i ;
 
                     switch( event->keyval )
@@ -540,8 +540,8 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Up )
                             {
-                                row = Limiter<std::size_t> ( 
-                                      Limiter<std::size_t>::ABS_ABS
+                                row = Limiter<int64_t>( 
+                                      Limiter<int64_t>::ABS_ABS
                                     , 0
                                     , m_model->size() - 1 
                                     , boost::get<2>(m_selection.get()) - (m_visible_height/m_row_height)
@@ -550,8 +550,8 @@ namespace MPX
                             }
                             else
                             {
-                                row = Limiter<std::size_t> ( 
-                                      Limiter<std::size_t>::ABS_ABS
+                                row = Limiter<int64_t> ( 
+                                      Limiter<int64_t>::ABS_ABS
                                     , 0
                                     , m_model->size() - 1 
                                     , boost::get<2>(m_selection.get()) - 1
@@ -584,8 +584,8 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Down )
                             {
-                                row = Limiter<std::size_t> ( 
-                                      Limiter<std::size_t>::ABS_ABS
+                                row = Limiter<int64_t> ( 
+                                      Limiter<int64_t>::ABS_ABS
                                     , 0 
                                     , m_model->size() - 1 
                                     , boost::get<2>(m_selection.get()) + (m_visible_height/m_row_height) 
@@ -594,8 +594,8 @@ namespace MPX
                             }
                             else
                             {
-                                row = Limiter<std::size_t> ( 
-                                      Limiter<std::size_t>::ABS_ABS
+                                row = Limiter<int64_t> ( 
+                                      Limiter<int64_t>::ABS_ABS
                                     , 0 
                                     , m_model->size() - 1
                                     , boost::get<2>(m_selection.get()) + 1
@@ -1126,7 +1126,7 @@ namespace MPX
                 {
                     using boost::get ;
 
-                    Glib::ustring text = m_SearchEntry->get_text() ;
+                    Glib::ustring text = m_SearchEntry->get_text().casefold() ;
 
                     if( text.empty() )
                     {
@@ -1140,7 +1140,7 @@ namespace MPX
                     for( ; i != m_model->m_mapping.end(); ++i )
                     {
                         const Row2& row = **i ;
-                        Glib::ustring match = get<0>(row) ;
+                        Glib::ustring match = Glib::ustring(get<0>(row)).casefold() ;
 
                         if( match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )   
                         {

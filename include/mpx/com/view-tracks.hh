@@ -121,14 +121,12 @@ namespace MPX
                     else
                         g_critical("%s: No id for track, extremely suspicious", G_STRLOC) ;
 
-                    if(r.count("artist_sortname"))
-                        artist = get<std::string>(r["artist_sortname"]) ;
-                    else
                     if(r.count("artist"))
                         artist = get<std::string>(r["artist"]) ;
 
                     if(r.count("album"))
                         album = get<std::string>(r["album"]) ;
+
                     if(r.count("title"))
                         title = get<std::string>(r["title"]) ;
 
@@ -164,9 +162,6 @@ namespace MPX
                         g_critical("Warning, no id given for track; this is totally wrong and should never happen.") ;
 
 
-                    if(track[ATTRIBUTE_ARTIST_SORTNAME])
-                        artist = get<std::string>(track[ATTRIBUTE_ARTIST_SORTNAME].get()) ;
-                    else
                     if(track[ATTRIBUTE_ARTIST])
                         artist = get<std::string>(track[ATTRIBUTE_ARTIST].get()) ;
 
@@ -1123,8 +1118,8 @@ namespace MPX
                             {
                                 if( get_row_is_visible( boost::get<1>(m_selection.get()) ))
                                 {
-                                    Limiter<std::size_t> row (
-                                          Limiter<std::size_t>::ABS_REL
+                                    Limiter<int64_t> row (
+                                          Limiter<int64_t>::ABS_REL
                                         , 0 
                                         , step
                                         , boost::get<1>(m_selection.get())
@@ -1177,8 +1172,8 @@ namespace MPX
                             {
                                 if( get_row_is_visible( boost::get<1>(m_selection.get()) ))
                                 {
-                                    Limiter<std::size_t> row (
-                                          Limiter<std::size_t>::ABS_REL
+                                    Limiter<int64_t> row (
+                                          Limiter<int64_t>::ABS_REL
                                         , m_model->m_mapping.size() - 1
                                         , step
                                         , boost::get<1>(m_selection.get())
@@ -1308,8 +1303,8 @@ namespace MPX
                             return true;
                         }
 
-                        Limiter<std::size_t> row ( 
-                              Limiter<std::size_t>::ABS_ABS
+                        Limiter<int64_t> row ( 
+                              Limiter<int64_t>::ABS_ABS
                             , 0
                             , m_model->size() - 1
                             , get_upper_row() + (event->y-m_row_start) / m_row_height
@@ -1324,8 +1319,8 @@ namespace MPX
                     else
                     if( event->type == GDK_2BUTTON_PRESS )
                     {
-                        Limiter<std::size_t> row ( 
-                              Limiter<std::size_t>::ABS_ABS
+                        Limiter<int64_t> row ( 
+                              Limiter<int64_t>::ABS_ABS
                             , 0
                             , m_model->m_mapping.size()
                             , get_upper_row() + (event->y-m_row_start) / m_row_height

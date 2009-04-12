@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = dist-bzip2
-DISTCHECK_CONFIGURE_FLAGS = --with-dbus-services-dir=/tmp --enable-hal
+DISTCHECK_CONFIGURE_FLAGS = --with-dbus-services-dir=/tmp
 
 # Youki 
 info_backtrace_youki_appdir = $(DBUS_SERVICES_DIR)
@@ -42,19 +42,19 @@ SUBDIRS =			\
                     \
 	include			\
 	xsd				\
-	xmlcpp			\
+	xmlcpp			
+                    
+if HAVE_HAL
+SUBDIRS += libhal++
+endif
+
+SUBDIRS +=          \
                     \
 	musicbrainz		\
 	widgets			\
 	com				\
     api             \
-	taglib			
-
-if HAVE_HAL
-SUBDIRS += libhal++
-endif
-
-SUBDIRS +=		    \
+	taglib		    \
 				    \
 	jnetlib		    \
 	mcs			    \

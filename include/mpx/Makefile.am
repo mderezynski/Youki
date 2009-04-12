@@ -26,6 +26,7 @@ noinst_HEADERS =							\
 		mpx-markov-analyzer-thread.hh		\
 		mpx-minisoup.hh						\
 		mpx-network.hh						\
+        mpx-plugin.hh                       \
 		mpx-preferences.hh					\
 		mpx-protected-access.hh				\
 		mpx-python.hh						\
