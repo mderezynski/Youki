@@ -168,6 +168,12 @@ namespace
 
                 {   "device_id",
                         VALUE_TYPE_INT      },
+
+                {   "loved",
+                        VALUE_TYPE_INT      },
+
+                {   "hated",
+                        VALUE_TYPE_INT      },
         };
 }
 

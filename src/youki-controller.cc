@@ -316,6 +316,8 @@ namespace MPX
         )) ;
 
         m_main_love_button  = Gtk::manage(new YoukiToggleButton(16, "mpx-loved-none", "mpx-loved-yes", "mpx-loved-no") ) ;
+        m_main_love_button->set_default_state( TOGGLE_BUTTON_STATE_NONE ) ;
+        m_main_love_button->set_state( TOGGLE_BUTTON_STATE_NONE ) ;
 
         m_main_infoarea     = Gtk::manage( new InfoArea ) ;
         m_main_infoarea->signal_clicked().connect(
@@ -1018,6 +1020,8 @@ namespace MPX
 
         m_main_titleinfo->set_info( info ) ;
 
+        boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library") ;
+
         if( m_track_previous )
         {
                 m_library->trackPlayed(
@@ -1030,10 +1034,20 @@ namespace MPX
                       boost::get<std::string>(m_track_previous.get()[ATTRIBUTE_ALBUM_ARTIST].get())
                 ) ;
         
+                Library::LovedHatedStatus status = Library::LovedHatedStatus(int(m_main_love_button->get_state())) ;
+                library->trackLovedHated(                
+                      boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_TRACK_ID].get())
+                    , status
+                ) ;
+
                 m_track_previous.reset() ;
         }
 
         m_playqueue.push_back( id_track ) ; 
+
+        ToggleButtonState state = ToggleButtonState(int(library->getTrackLovedHated( id_track ))) ;
+        m_main_love_button->set_default_state( state ) ; 
+        m_main_love_button->set_state( state ) ; 
 
         g_signal_emit(
               G_OBJECT(gobj())

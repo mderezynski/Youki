@@ -40,13 +40,27 @@
 #include "mpx/i-youki-theme-engine.hh"
 #include "mpx/mpx-main.hh"
 
+namespace
+{
+    const int xpad = 5 ;
+}
+
 namespace MPX
 {
-    YoukiToggleButton::YoukiToggleButton (int pixbuf_size, const std::string& stock_none, const std::string& stock_on, const std::string& stock_off)
-    : m_pixbuf_size(pixbuf_size)
+    YoukiToggleButton::YoukiToggleButton(
+              int                   pixbuf_size
+            , const std::string&    stock_none
+            , const std::string&    stock_on
+            , const std::string&    stock_off
+    )
+
+        : m_pixbuf_size( pixbuf_size )
+
     {
-        set_size_request(pixbuf_size + 10);
+        set_size_request( pixbuf_size + 2*xpad ) ;
+
         Glib::RefPtr<Gtk::IconTheme> theme = Gtk::IconTheme::get_default();
+
         m_pixbuf_none = theme->load_icon(stock_none, m_pixbuf_size);
         m_pixbuf_on = theme->load_icon(stock_on, m_pixbuf_size);
         m_pixbuf_off = theme->load_icon(stock_off, m_pixbuf_size);
@@ -60,6 +74,16 @@ namespace MPX
         m_state = state;
         queue_draw() ;
     }
+
+    void
+    YoukiToggleButton::set_default_state(
+        ToggleButtonState state
+    )
+    {
+        m_default_state = state;
+        queue_draw() ;
+    }
+
 
     ToggleButtonState
     YoukiToggleButton::get_state()
@@ -86,10 +110,14 @@ namespace MPX
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
         Cairo::RefPtr<Cairo::Context> cairo = get_window ()->create_cairo_context () ;
+
         const Gtk::Allocation& a = get_allocation() ;
 
         const ThemeColor& c_info = theme->get_color( THEME_COLOR_INFO_AREA ) ;
+        const ThemeColor& c_sel  = theme->get_color( THEME_COLOR_SELECT ) ;
+
         cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+
         cairo->set_source_rgba(
               c_info.r
             , c_info.g
@@ -104,7 +132,23 @@ namespace MPX
             , double((a.get_height() - 2))
             , 4.
         ) ;
-        cairo->fill () ;
+
+        if( m_state == m_default_state )
+            cairo->fill_preserve () ;
+        else
+            cairo->fill () ;
+
+        if( m_state == m_default_state )
+        {
+                cairo->set_source_rgba(
+                      c_sel.r
+                    , c_sel.g
+                    , c_sel.b
+                    , 0.15
+                ) ;
+
+                cairo->fill() ;
+        }
 
         int x = a.get_x() + (a.get_width() - m_pixbuf_size) / 2;
         int y = a.get_y() + (a.get_height() - m_pixbuf_size) / 2;

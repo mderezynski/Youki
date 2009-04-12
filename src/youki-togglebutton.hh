@@ -30,48 +30,68 @@
 #include <gtkmm/button.h>
 #include <sigc++/connection.h>
 
-
 namespace MPX
 {
+    enum ToggleButtonState
+    {
+          TOGGLE_BUTTON_STATE_ON
+        , TOGGLE_BUTTON_STATE_OFF
+        , TOGGLE_BUTTON_STATE_NONE
 
-  enum ToggleButtonState
-  {
-      TOGGLE_BUTTON_STATE_NONE,
-      TOGGLE_BUTTON_STATE_ON,
-      TOGGLE_BUTTON_STATE_OFF,
-      N_TOGGLE_BUTTON_STATES
-  };
+        , N_TOGGLE_BUTTON_STATES
+    } ;
 
-  class YoukiToggleButton : public Gtk::Button
-  {
-    public:
+    class YoukiToggleButton
 
-        YoukiToggleButton (int, const std::string&, const std::string&, const std::string&);
+        : public Gtk::Button
 
-        void
-        set_state (ToggleButtonState);
+    {
+        public:
 
-        ToggleButtonState
-        get_state ();
+            YoukiToggleButton(
+                  int
+                , const std::string&
+                , const std::string&
+                , const std::string&
+            ) ;
 
-    protected:
+            void
+            set_state(
+                  ToggleButtonState
+            ) ;
 
-        virtual void
-        on_clicked();
+            void
+            set_default_state(
+                  ToggleButtonState
+            ) ;
 
-        virtual bool
-        on_expose_event (GdkEventExpose *event);
+            ToggleButtonState
+            get_state(
+            ) ;
 
-    private:
+        protected:
 
-        void
-        draw_frame ();
+            virtual void
+            on_clicked();
 
-        int m_pixbuf_size;
-        ToggleButtonState m_state;
+            virtual bool
+            on_expose_event(
+                  GdkEventExpose*
+            ) ;
 
-        Glib::RefPtr<Gdk::Pixbuf> m_pixbuf_none, m_pixbuf_on, m_pixbuf_off;
-  };
+        protected:
+
+            void
+            draw_frame ();
+
+            int                         m_pixbuf_size;
+            ToggleButtonState           m_state ;
+            ToggleButtonState           m_default_state ;
+
+            Glib::RefPtr<Gdk::Pixbuf>   m_pixbuf_none
+                                      , m_pixbuf_on
+                                      , m_pixbuf_off ;
+    } ;
 } // MPX
 
 #endif // _YOUKI_TOGGLEBUTTON__HH

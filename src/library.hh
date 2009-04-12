@@ -99,32 +99,65 @@ namespace MPX
             recacheCovers() ;
 
             void
-            getMetadata(const std::string&, Track&) ;
-
+            getMetadata(
+                  const std::string&
+                , Track&
+            ) ;
             void
-            albumAddNewRating(gint64 id, int rating, std::string const& comment) ;
-
+            albumAddNewRating(
+                  gint64
+                , int
+                , const std::string&
+            ) ;
             void
-            albumGetAllRatings(gint64 id, SQL::RowV & v) ;
-
+            albumGetAllRatings(
+                  gint64
+                , SQL::RowV& v
+            ) ;
             int
-            albumGetMeanRatingValue(gint64 id) ;
-
+            albumGetMeanRatingValue(
+                  gint64
+            ) ;
             void
-            albumDeleteRating(gint64 rating_id, gint64 album_idd) ;
-
+            albumDeleteRating(
+                  gint64
+                , gint64
+            ) ;
             void
-            albumTagged(gint64, std::string const&) ;
-
+            albumTagged(
+                  gint64
+                , const std::string&
+            ) ;
 
 			void
-			trackRated(gint64, int) ;
-		
+			trackRated(
+                  gint64
+                , int
+            ) ;
 			void
-			trackPlayed(gint64, gint64, time_t) ;
+			trackPlayed(
+                  gint64
+                , gint64
+                , time_t
+            ) ;
+            void
+            trackTagged(
+                  gint64
+                , const std::string&
+            ) ;
+
+            enum LovedHatedStatus
+            {
+                  TRACK_LOVED
+                , TRACK_HATED
+                , TRACK_INDIFFERENT
+            } ;
 
             void
-            trackTagged(gint64, std::string const&) ;
+            trackLovedHated(
+                  gint64
+                , LovedHatedStatus 
+            ) ;
 
 #ifndef HAVE_HAL
             inline
@@ -140,6 +173,11 @@ namespace MPX
 
             SQL::RowV
             getTrackTags(
+                gint64
+            ) ;
+
+            LovedHatedStatus
+            getTrackLovedHated(
                 gint64
             ) ;
 
@@ -169,7 +207,6 @@ namespace MPX
 
             void
             collectionGetTracks(gint64 id, IdV& /*collections*/) ;
-
 
         public:
 

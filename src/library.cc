@@ -303,14 +303,34 @@ namespace MPX
         RowV
                 Library::getTrackTags (gint64 id)
                 {
-                        RowV rows ;
-
                         char const get_f[] = "SELECT tagid, amplitude FROM tags WHERE trackid = %lld" ;
 
-                        getSQL(rows, mprintf(get_f, id)) ; 
+                        RowV v ;
+                        getSQL( v, mprintf(get_f, id) ) ; 
 
-                        return rows ;
+                        return v ;
                 }
+
+        Library::LovedHatedStatus
+                Library::getTrackLovedHated (gint64 id)
+                {
+                        char const get_f[] = "SELECT loved, hated FROM track WHERE id = %lld" ;
+
+                        RowV v ;
+                        getSQL(v, mprintf(get_f, id)) ; 
+
+                        gint64 loved = 0 ; 
+                        gint64 hated = 0 ; 
+
+                        if ( v[0].count("loved") )
+                            loved = get<gint64>(v[0]["loved"]) ;
+
+                        if ( v[0].count("hated") )
+                            hated = get<gint64>(v[0]["hated"]) ;
+
+                        return (loved > hated) ? TRACK_LOVED : ((hated > loved) ? TRACK_HATED : TRACK_INDIFFERENT) ;
+                }
+
 
         void
                 Library::getMetadata (const std::string& uri, Track & track)
@@ -603,6 +623,25 @@ namespace MPX
                         } catch( SqlConstraintError & cxe )
                         {
                                 execSQL(mprintf(update_f, id, tag_id));
+                        }
+                }
+
+        void
+                Library::trackLovedHated(gint64 id, LovedHatedStatus status ) 
+                {
+                        if( status == TRACK_INDIFFERENT )
+                            return ;
+
+                        char const update_f[] = "UPDATE track SET %s = %s + 1 WHERE id = %lld" ;
+
+                        try{
+                                execSQL(mprintf(update_f,
+                                      (status == TRACK_LOVED) ? "loved" : "hated"
+                                    , (status == TRACK_LOVED) ? "loved" : "hated"
+                                    , id
+                                ));
+                        } catch( SqlConstraintError & cxe )
+                        {
                         }
                 }
 
