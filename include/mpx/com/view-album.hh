@@ -335,6 +335,12 @@ namespace MPX
 
                     if( new_mapping != m_mapping )
                     {
+                        Row6 & row = *(m_realmodel->begin()) ;
+
+                        long long int sz = new_mapping.size() - 1 ;
+    
+                        get<4>(row) = (boost::format(_("All %lld %s")) % sz % ((sz > 1) ? _("Albums") : _("Album"))).str() ;
+
                         std::swap( new_mapping, m_mapping ) ;
                         m_changed.emit( m_position ) ;
                         m_select.emit() ;
@@ -451,43 +457,56 @@ namespace MPX
                     layout->set_ellipsize( Pango::ELLIPSIZE_MIDDLE ) ;
                     layout->set_width( (m_width-8) * PANGO_SCALE ) ;
 
-                    //// ARTIST
-
-                    layout->set_text( get<4>(data_row) )  ;
-                    layout->get_pixel_size (width, height) ;
-
-                    cairo->move_to(
-                          xpos + (m_width - width) / 2.
-                        , r.y + 86 
-                    ) ;
-
-                    cairo->set_source_rgba(
-                          color.r
-                        , color.g
-                        , color.b
-                        , .6
-                    ) ;
-
-                    pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
-
-                    //// ALBUM
-
                     if( row > 0 )
                     {
+                            //// ARTIST
+                            layout->set_text( get<4>(data_row) )  ;
+                            layout->get_pixel_size (width, height) ;
+                            cairo->move_to(
+                                  xpos + (m_width - width) / 2
+                                , r.y + 86 
+                            ) ;
+                            cairo->set_source_rgba(
+                                  color.r
+                                , color.g
+                                , color.b
+                                , .6
+                            ) ;
+                            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+
+                            //// ALBUM
                             layout->set_text( get<3>(data_row) )  ;
                             layout->get_pixel_size (width, height) ;
                             cairo->move_to(
-                                  xpos + (m_width - width) / 2.
+                                  xpos + (m_width - width) / 2
                                 , r.y + 3 
                             ) ;
-
                             cairo->set_source_rgba(
                                   color.r
                                 , color.g
                                 , color.b
                                 , .8
                             ) ;
-
+                            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+                    }
+                    else
+                    {
+                            //// ARTIST
+                            Pango::FontDescription desc = layout->get_font_description() ;
+                            desc.set_weight( Pango::WEIGHT_BOLD ) ;
+                            layout->set_font_description( desc ) ;
+                            layout->set_text( get<4>(data_row) )  ;
+                            layout->get_pixel_size (width, height) ;
+                            cairo->move_to(
+                                  xpos + (m_width - width) / 2
+                                , r.y + (row_height - height) / 2
+                            ) ;
+                            cairo->set_source_rgba(
+                                  color.r
+                                , color.g
+                                , color.b
+                                , 1.
+                            ) ;
                             pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
                     }
 
@@ -526,6 +545,12 @@ namespace MPX
 
                 Interval<std::size_t>               m_Model_I ;
 
+                Gtk::Entry                        * m_SearchEntry ;
+                Gtk::Window                       * m_SearchWindow ;
+
+                sigc::connection                    m_search_changed_conn ;
+                bool                                m_search_active ;
+                int                                 m_search_idx ;
 
                 void
                 initialize_metrics ()
@@ -571,6 +596,48 @@ namespace MPX
                 virtual bool
                 on_key_press_event (GdkEventKey * event)
                 {
+                    if( m_search_active )
+                    {
+                        switch( event->keyval )
+                        {
+                            case GDK_Up:
+                            case GDK_KP_Up:
+                                m_search_idx = Limiter<int> (
+                                      Limiter<int>::ABS_ABS
+                                    , 0
+                                    , std::numeric_limits<int>::max() 
+                                    , m_search_idx - 1 
+                                ) ;
+                                on_search_entry_changed() ;
+                                return true ;
+
+                            case GDK_Down:
+                            case GDK_KP_Down:
+                                m_search_idx = Limiter<int> (
+                                      Limiter<int>::ABS_ABS
+                                    , 0
+                                    , std::numeric_limits<int>::max() 
+                                    , m_search_idx + 1 
+                                ) ;
+                                on_search_entry_changed() ;
+                                return true ;
+
+                            case GDK_Escape:
+                                cancel_search() ;
+                                return true ;
+        
+                            default: ;
+                        }
+
+                        GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
+                        g_object_unref( ((GdkEventKey*)new_event)->window ) ;
+                        ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
+                        gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
+                        gdk_event_free(new_event) ;
+
+                        return false ;
+                    }
+
                     int step; 
 
                     Limiter<int64_t> row ;
@@ -686,9 +753,80 @@ namespace MPX
                             }
                             queue_draw();
                             return true;
+
+                        case GDK_Left:
+                        case GDK_KP_Left:
+                        case GDK_Right:
+                        case GDK_KP_Right:
+                        case GDK_Home:
+                        case GDK_KP_Home:
+                        case GDK_End:
+                        case GDK_KP_End:
+                        case GDK_Escape:
+                        case GDK_Tab:
+                            return false ;
+
+                        default:
+
+                            if( !Gtk::DrawingArea::on_key_press_event( event ))
+                            { 
+                                    int x, y, x_root, y_root ;
+
+                                    dynamic_cast<Gtk::Window*>(get_toplevel())->get_position( x_root, y_root ) ;
+
+                                    x = x_root + get_allocation().get_x() ;
+                                    y = y_root + get_allocation().get_y() + get_allocation().get_height() ;
+
+                                    m_SearchWindow->set_size_request( get_allocation().get_width(), -1 ) ;
+                                    m_SearchWindow->move( x, y ) ;
+                                    m_SearchWindow->show() ;
+
+                                    send_focus_change( *m_SearchEntry, true ) ;
+
+                                    GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
+                                    g_object_unref( ((GdkEventKey*)new_event)->window ) ;
+                                    gtk_widget_realize( GTK_WIDGET(m_SearchWindow->gobj()) ) ;
+                                    ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
+                                    gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
+                                    gdk_event_free(new_event) ;
+
+                                    m_search_active = true ;
+                            }
                     }
 
                     return false;
+                }
+
+                void
+                send_focus_change(
+                      Gtk::Widget&  w
+                    , bool          in
+                    )
+                {
+                    GtkWidget * widget = w.gobj() ;
+
+                    GdkEvent *fevent = gdk_event_new (GDK_FOCUS_CHANGE);
+
+                    g_object_ref (widget);
+
+                   if( in )
+                      GTK_WIDGET_SET_FLAGS( widget, GTK_HAS_FOCUS ) ;
+                    else
+                      GTK_WIDGET_UNSET_FLAGS( widget, GTK_HAS_FOCUS ) ;
+
+                    fevent->focus_change.type   = GDK_FOCUS_CHANGE;
+                    fevent->focus_change.window = GDK_WINDOW(g_object_ref( widget->window )) ;
+                    fevent->focus_change.in     = in;
+
+                    gtk_widget_event( widget, fevent ) ;
+
+                    g_object_notify(
+                          G_OBJECT (widget)
+                        , "has-focus"
+                    ) ;
+
+                    g_object_unref( widget ) ;
+                    gdk_event_free( fevent ) ;
                 }
 
                 bool
@@ -1078,11 +1216,78 @@ namespace MPX
                     m_columns.push_back(column);
                 }
 
+            protected:
+
+                void
+                on_search_entry_changed()
+                {
+                    using boost::get ;
+
+                    Glib::ustring text = m_SearchEntry->get_text().casefold() ;
+
+                    if( text.empty() )
+                    {
+                        select_row( 0 ) ;
+                        return ;
+                    }
+
+                    DataModelFilterAlbums::RowRowMapping::iterator i = m_model->m_mapping.begin(); 
+                    ++i ; // first row is "All" FIXME this sucks
+
+                    int idx = m_search_idx ;
+
+                    for( ; i != m_model->m_mapping.end(); ++i )
+                    {
+                        const Row6& row = **i ;
+                        Glib::ustring match = Glib::ustring(get<3>(row)).casefold() ;
+
+                        if( match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )   
+                        {
+                            if( idx <= 0 ) 
+                            {
+                                std::size_t row = std::distance( m_model->m_mapping.begin(), i ) ; 
+                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
+                                select_row( row ) ;
+                                break ;
+                            }
+                            else
+                            {
+                                --idx ;
+                            }
+                        }
+                    }
+                }
+
+                bool
+                on_search_window_focus_out(
+                      GdkEventFocus* G_GNUC_UNUSED
+                )
+                {
+                    cancel_search() ;
+                    return false ;
+                }
+
+                void
+                cancel_search()
+                {
+                    send_focus_change( *m_SearchEntry, false ) ;
+                    m_SearchWindow->hide() ;
+                    m_search_changed_conn.block () ;
+                    m_SearchEntry->set_text("") ;
+                    m_search_changed_conn.unblock () ;
+                    m_search_active = false ;
+                    m_search_idx = 0 ;
+                }
+
+            public:
+
                 ListViewAlbums ()
 
                         : ObjectBase( "YoukiListViewAlbums" )
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
+                        , m_search_active( false )
+                        , m_search_idx( 0 )
 
                 {
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
@@ -1097,6 +1302,7 @@ namespace MPX
                     gtk_widget_realize(GTK_WIDGET(m_treeview));
 
                     set_flags(Gtk::CAN_FOCUS);
+
                     add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK ));
 
                     ((GtkWidgetClass*)(G_OBJECT_GET_CLASS(G_OBJECT(gobj()))))->set_scroll_adjustments_signal = 
@@ -1112,7 +1318,30 @@ namespace MPX
                     gtk_widget_realize(GTK_WIDGET(gobj()));
                     initialize_metrics();
 
-                    property_can_focus() = true ;
+                    m_SearchEntry = Gtk::manage( new Gtk::Entry ) ;
+                    m_search_changed_conn = m_SearchEntry->signal_changed().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &ListViewAlbums::on_search_entry_changed
+                    )) ;
+    
+                    m_SearchWindow = new Gtk::Window( Gtk::WINDOW_POPUP ) ;
+                    m_SearchWindow->set_decorated( false ) ;
+
+                    m_SearchWindow->signal_focus_out_event().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &ListViewAlbums::on_search_window_focus_out
+                    )) ;
+
+                    signal_focus_out_event().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &ListViewAlbums::on_search_window_focus_out
+                    )) ;
+
+                    m_SearchWindow->add( *m_SearchEntry ) ;
+                    m_SearchEntry->show() ;
                }
 
                 virtual ~ListViewAlbums ()

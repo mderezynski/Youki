@@ -978,6 +978,7 @@ namespace MPX
 
                 sigc::connection                    m_search_changed_conn ; 
                 bool                                m_search_active ;
+                int                                 m_search_idx ;
 
                 SignalTrackActivated                m_SIGNAL_track_activated ;
                 SignalVAdjChanged                   m_SIGNAL_vadj_changed ;
@@ -1038,12 +1039,32 @@ namespace MPX
                 virtual bool
                 on_key_press_event (GdkEventKey * event)
                 {
-                    int step; 
-
                     if( m_search_active )
                     {
                         switch( event->keyval )
                         {
+                            case GDK_Up:
+                            case GDK_KP_Up:
+                                m_search_idx = Limiter<int> (
+                                      Limiter<int>::ABS_ABS
+                                    , 0
+                                    , std::numeric_limits<int>::max() 
+                                    , m_search_idx - 1 
+                                ) ;
+                                on_search_entry_changed() ;
+                                return true ;
+
+                            case GDK_Down:
+                            case GDK_KP_Down:
+                                m_search_idx = Limiter<int> (
+                                      Limiter<int>::ABS_ABS
+                                    , 0
+                                    , std::numeric_limits<int>::max() 
+                                    , m_search_idx + 1 
+                                ) ;
+                                on_search_entry_changed() ;
+                                return true ;
+
                             case GDK_Escape:
                                 cancel_search() ;
                                 return true ;
@@ -1069,12 +1090,15 @@ namespace MPX
 
                     continue_matching:
 
+                    int step = 0 ; 
+                    int64_t origin = boost::get<1>(m_selection.get()) ;
+
                     switch( event->keyval )
                     {
                         case GDK_Delete:
                             if( m_selection )
                             {
-                                std::size_t p = get<1>(m_selection.get()) ;
+                                std::size_t p = origin ;
                                 m_selection.reset() ;
                                 m_model->erase( p ) ;
                             }
@@ -1105,24 +1129,25 @@ namespace MPX
                             }
                             else
                             {
-                                step = -1;
+                                step = - 1 ;
                             }
 
                             if( !m_selection )
                             {
                                 mark_first_row_up:
+
                                 std::size_t row = get_upper_row();
                                 m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
                             }
                             else
                             {
-                                if( get_row_is_visible( boost::get<1>(m_selection.get()) ))
+                                if( get_row_is_visible( origin ))
                                 {
                                     Limiter<int64_t> row (
-                                          Limiter<int64_t>::ABS_REL
+                                          Limiter<int64_t>::ABS_ABS
                                         , 0 
-                                        , step
-                                        , boost::get<1>(m_selection.get())
+                                        , origin + step
+                                        , origin 
                                     ) ;
 
                                     m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
@@ -1135,9 +1160,7 @@ namespace MPX
 
                                     if( i.in( row )) 
                                     {
-                                        double value = m_prop_vadj.get_value()->get_value();
-                                        value += step*m_row_height;
-                                        m_prop_vadj.get_value()->set_value( value );
+                                        m_prop_vadj.get_value()->set_value( row * m_row_height );
                                     }
                                 }
                                 else
@@ -1158,7 +1181,7 @@ namespace MPX
                             }
                             else
                             {
-                                step = 1;
+                                step = 1 ;
                             }
 
                             if( !m_selection )
@@ -1170,13 +1193,13 @@ namespace MPX
                             }
                             else
                             {
-                                if( get_row_is_visible( boost::get<1>(m_selection.get()) ))
+                                if( get_row_is_visible( origin ))
                                 {
                                     Limiter<int64_t> row (
-                                          Limiter<int64_t>::ABS_REL
+                                          Limiter<int64_t>::ABS_ABS
                                         , m_model->m_mapping.size() - 1
-                                        , step
-                                        , boost::get<1>(m_selection.get())
+                                        , origin + step
+                                        , origin 
                                     ) ;
 
                                     m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
@@ -1189,9 +1212,7 @@ namespace MPX
 
                                     if( i.in( row )) 
                                     {
-                                        double value = m_prop_vadj.get_value()->get_value();
-                                        value += step*m_row_height;
-                                        m_prop_vadj.get_value()->set_value( value );
+                                        m_prop_vadj.get_value()->set_value( row * m_row_height );
                                     }
                                 }
                                 else
@@ -2027,6 +2048,8 @@ namespace MPX
                     DataModelFilterTracks::RowRowMapping::iterator i = m_model->m_mapping.begin(); 
                     ++i ; // first row is "All" FIXME this sucks
 
+                    int idx = m_search_idx ;
+
                     for( ; i != m_model->m_mapping.end(); ++i )
                     {
                         const Row7& row = **i ;
@@ -2034,10 +2057,17 @@ namespace MPX
 
                         if( match.length() && match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )   
                         {
-                            int row = std::distance( m_model->m_mapping.begin(), i ) ; 
-                            m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
-                            select_row( row ) ;
-                            break ;
+                            if( idx <= 0 )
+                            {
+                                std::size_t row = std::distance( m_model->m_mapping.begin(), i ) ; 
+                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
+                                select_row( row ) ;
+                                break ;
+                            }
+                            else
+                            {
+                                --idx ;
+                            }
                         }
                     }
                 }
@@ -2060,6 +2090,7 @@ namespace MPX
                     m_SearchEntry->set_text("") ;
                     m_search_changed_conn.unblock () ;
                     m_search_active = false ;
+                    m_search_idx = 0 ;
                 }
 
             public:
@@ -2076,6 +2107,7 @@ namespace MPX
                         , m_highlight( false )
                         , m_fixed_total_width( 0 )
                         , m_search_active( false )
+                        , m_search_idx( 0 )
 
                 {
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;

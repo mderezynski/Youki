@@ -257,6 +257,12 @@ namespace MPX
 
                     if( new_mapping != m_mapping )
                     {
+                        Row2 & row = *(m_realmodel->begin()) ;
+
+                        long long int sz = new_mapping.size() - 1 ;
+    
+                        get<0>(row) = (boost::format(_("All %lld %s")) % sz % ((sz > 1) ? _("Artists") : _("Artist"))).str() ;
+
                         std::swap(m_mapping, new_mapping);
                         m_changed.emit( m_position );
                         m_select.emit() ;
@@ -450,6 +456,7 @@ namespace MPX
 
                 sigc::connection                    m_search_changed_conn ;
                 bool                                m_search_active ;
+                int                                 m_search_idx ;
 
                 void
                 initialize_metrics ()
@@ -507,6 +514,28 @@ namespace MPX
                     {
                         switch( event->keyval )
                         {
+                            case GDK_Up:
+                            case GDK_KP_Up:
+                                m_search_idx = Limiter<int> (
+                                      Limiter<int>::ABS_ABS
+                                    , 0
+                                    , std::numeric_limits<int>::max() 
+                                    , m_search_idx - 1 
+                                ) ;
+                                on_search_entry_changed() ;
+                                return true ;
+
+                            case GDK_Down:
+                            case GDK_KP_Down:
+                                m_search_idx = Limiter<int> (
+                                      Limiter<int>::ABS_ABS
+                                    , 0
+                                    , std::numeric_limits<int>::max() 
+                                    , m_search_idx + 1 
+                                ) ;
+                                on_search_entry_changed() ;
+                                return true ;
+
                             case GDK_Escape:
                                 cancel_search() ;
                                 return true ;
@@ -525,12 +554,16 @@ namespace MPX
 
                     Limiter<int64_t> row ;
                     Interval<std::size_t> i ;
+                    int64_t origin = boost::get<2>(m_selection.get()) ; 
 
                     switch( event->keyval )
                     {
                         case GDK_Up:
                         case GDK_KP_Up:
                         case GDK_Page_Up:
+
+                            if( !origin )
+                                break ;
 
                             if( !m_selection ) 
                             {
@@ -544,8 +577,11 @@ namespace MPX
                                       Limiter<int64_t>::ABS_ABS
                                     , 0
                                     , m_model->size() - 1 
-                                    , boost::get<2>(m_selection.get()) - (m_visible_height/m_row_height)
+                                    , origin - (m_visible_height/m_row_height)
                                 ) ;
+
+                                g_message("Row: %lld", int64_t(row)) ;
+
                                 select_row( row ) ;
                             }
                             else
@@ -554,7 +590,7 @@ namespace MPX
                                       Limiter<int64_t>::ABS_ABS
                                     , 0
                                     , m_model->size() - 1 
-                                    , boost::get<2>(m_selection.get()) - 1
+                                    , origin - 1
                                 ) ;
                                 select_row( row ) ;
                             }
@@ -576,6 +612,9 @@ namespace MPX
                         case GDK_KP_Down:
                         case GDK_Page_Down:
 
+                            if( origin == (m_model->size() - 1))
+                                break ;
+
                             if( !m_selection ) 
                             {
                                 select_row( get_upper_row() ) ;
@@ -588,7 +627,7 @@ namespace MPX
                                       Limiter<int64_t>::ABS_ABS
                                     , 0 
                                     , m_model->size() - 1 
-                                    , boost::get<2>(m_selection.get()) + (m_visible_height/m_row_height) 
+                                    , origin + (m_visible_height/m_row_height) 
                                 ) ;
                                 select_row( row ) ;
                             }
@@ -598,7 +637,7 @@ namespace MPX
                                       Limiter<int64_t>::ABS_ABS
                                     , 0 
                                     , m_model->size() - 1
-                                    , boost::get<2>(m_selection.get()) + 1
+                                    , origin + 1
                                 ) ;
                                 select_row( row ) ;
                             }
@@ -1137,17 +1176,27 @@ namespace MPX
                     DataModelFilterArtist::RowRowMapping::iterator i = m_model->m_mapping.begin(); 
                     ++i ; // first row is "All" FIXME this sucks
 
+                    int idx = m_search_idx ;
+
                     for( ; i != m_model->m_mapping.end(); ++i )
                     {
                         const Row2& row = **i ;
+
                         Glib::ustring match = Glib::ustring(get<0>(row)).casefold() ;
 
                         if( match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )   
                         {
-                            int row = std::distance( m_model->m_mapping.begin(), i ) ; 
-                            m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
-                            select_row( row ) ;
-                            break ;
+                            if( idx <= 0 )
+                            {
+                                std::size_t row = std::distance( m_model->m_mapping.begin(), i ) ; 
+                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
+                                select_row( row ) ;
+                                break ;
+                            }
+                            else
+                            {
+                                --idx ;
+                            }
                         }
                     }
                 }
@@ -1170,6 +1219,7 @@ namespace MPX
                     m_SearchEntry->set_text("") ;
                     m_search_changed_conn.unblock () ;
                     m_search_active = false ;
+                    m_search_idx = 0 ;
                 }
 
             public:
@@ -1182,6 +1232,7 @@ namespace MPX
                         , m_highlight( false )
                         , m_fixed_total_width( 0 )
                         , m_search_active( false )
+                        , m_search_idx( 0 )
 
                 {
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
@@ -1195,6 +1246,7 @@ namespace MPX
                     gtk_widget_realize(GTK_WIDGET(m_treeview));
 
                     set_flags(Gtk::CAN_FOCUS);
+
                     add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK ));
 
                     ((GtkWidgetClass*)(G_OBJECT_GET_CLASS(G_OBJECT(gobj()))))->set_scroll_adjustments_signal = 
