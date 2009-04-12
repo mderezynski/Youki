@@ -1,4 +1,5 @@
-#include "mpx/mpx-markov-analyzer-thread.hh"
+#include "markov-analyzer-thread.hh"
+
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/mpx-main.hh"

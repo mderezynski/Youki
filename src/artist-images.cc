@@ -1,6 +1,3 @@
-#include "mpx/mpx-artist-images.hh"
-#include "mpx/mpx-library.hh"
-#include "mpx/util-file.hh"
 #include <queue>
 #include <boost/ref.hpp>
 #include <boost/format.hpp>
@@ -9,13 +6,17 @@
 #include <glibmm.h>
 #include <glibmm/i18n.h>
 #include <tr1/unordered_set>
+
+#include "mpx/mpx-artist-images.hh"
 #include "mpx/mpx-artist-images.hh"
 #include "mpx/xml/xmltoc++.hh"
-#include "mpx/mpx-library.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/util-string.hh"
 #include "mpx/util-graphics.hh"
+#include "mpx/util-file.hh"
 #include "xmlcpp/xsd-artist-info-2.0.hxx"
+
+#include "library.hh"
 
 using boost::get;
 using namespace MPX;

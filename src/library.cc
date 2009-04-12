@@ -28,9 +28,7 @@
 
 #include <tr1/unordered_set>
 
-#include "mpx/mpx-audio.hh"
 #include "mpx/mpx-covers.hh"
-#include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-uri.hh"
@@ -42,6 +40,8 @@
 #ifdef HAVE_HAL
 #include "mpx/i-youki-hal.hh"
 #endif // HAVE_HAL
+
+#include "library.hh"
 
 using namespace Glib;
 using boost::get;
@@ -225,7 +225,7 @@ namespace MPX
         }
 
         bool
-                Library::recache_covers_handler (SQL::RowV *v, int* position)
+                Library::recache_covers_handler (SQL::RowV *v, std::size_t* position)
                 {
                         Row & r = (*v)[*position]; 
 
@@ -287,7 +287,7 @@ namespace MPX
                         RowV * v = new RowV;
                         getSQL(*v, "SELECT DISTINCT album_j, location, hal_volume_udi, hal_device_udi, hal_vrp, album.mb_album_id, album.amazon_asin, album_artist.album_artist, album.album "
                                         "FROM track JOIN album ON album_j = album.id JOIN album_artist ON album.album_artist_j = album_artist.id GROUP BY album_j");
-                        int * position = new int;
+                        std::size_t * position = new std::size_t ;
                         *position = 0;
 
                         signal_timeout().connect( sigc::bind( sigc::mem_fun( *this, &Library::recache_covers_handler ), v, position), 500);
@@ -539,6 +539,7 @@ namespace MPX
                 {
                         execSQL((boost::format ("UPDATE track SET rating = '%d' WHERE id = %lld") % rating % id).str());
 
+/*
                         RowV v;
                         getSQL(
                               v
@@ -550,7 +551,8 @@ namespace MPX
                         gint64 id_album = get<gint64>(v[0]["album_j"]);
                         gint64 id_artst = get<gint64>(v[0]["album_artist_j"]);
 
-                        //Signals.TrackUpdated.emit( *(t.get()), id_album, id_artst );
+                        Signals.TrackUpdated.emit( *(t.get()), id_album, id_artst );
+*/
                 }
 
         void	
@@ -572,6 +574,7 @@ namespace MPX
 
                         execSQL((boost::format ("UPDATE album SET album_playscore = '%f' WHERE album.id = '%lld'") % score % album_id).str());
 
+/*
                         v.clear(); 
                         getSQL(
                               v
@@ -583,8 +586,9 @@ namespace MPX
                         gint64 id_album = get<gint64>(v[0]["album_j"]);
                         gint64 id_artst = get<gint64>(v[0]["album_artist_j"]);
 
-                        //Signals.AlbumUpdated.emit( album_id ) ;
-                        //Signals.TrackUpdated.emit( (*t.get()), id_album, id_artst );
+                        Signals.AlbumUpdated.emit( album_id ) ;
+                        Signals.TrackUpdated.emit( (*t.get()), id_album, id_artst );
+*/
                 }
 
         void
@@ -619,28 +623,28 @@ namespace MPX
                 }
 
         gint64
-                Library::markovGetRandomProbableTrack(gint64 a)
+                Library::markovGetRandomProbableTrack( gint64 a )
                 {
                         try{
-                                std::vector<double> ratios;
-                                RowV rows;
-                                getSQL (rows, (boost::format("SELECT * FROM markov WHERE track_id_a = '%lld' AND count > 0") % a).str());
-                                if( !rows.empty() )
+                                std::vector<double> ratios ;
+
+                                RowV v ;
+                                getSQL( v, (boost::format("SELECT * FROM markov WHERE track_id_a = '%lld' AND count > 0") % a).str() );
+
+                                if( !v.empty() )
                                 {
-                                        for( RowV::const_iterator i = rows.begin(); i != rows.end(); ++i )
+                                        for( RowV::iterator i = v.begin(); i != v.end(); ++i )
                                         {
-                                                gint64 count = get <gint64> ((*i).find ("count")->second);
-                                                ratios.push_back(double(count) / double(rows.size()));
+                                            ratios.push_back(double(get<gint64>((*i)["count"]))/double(v.size()));
                                         }
-                                        int row = MPX::rand(ratios);
-                                        g_assert( row < rows.size() );
-                                        gint64 id = get <gint64> (rows[row].find ("track_id_b")->second);
-                                        g_message("Determined Markov-track-chain-ID [%lld], for track [%lld]", id, a);
-                                        return id;
+
+                                        std::size_t row = MPX::rand(ratios);
+
+                                        g_assert( row < v.size() );
+
+                                        return get<gint64>( v[row]["track_id_b"] ) ;
                                 }
-                                g_message("No rows based on Markov chain for track [%lld]", a);
                         } catch( ... ) {
-                                g_message("Exception in %s", G_STRFUNC);
                         }
 
                         return 0;

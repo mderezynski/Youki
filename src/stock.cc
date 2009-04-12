@@ -26,59 +26,67 @@
 
 #include "mpx/mpx-stock.hh"
 
+using namespace Glib ;
+using namespace Gtk ;
+using namespace Gdk ;
+
 namespace MPX
 {
-  using namespace Gdk;
-  using namespace Glib;
-  using namespace Gtk;
-
-  void
-  register_stock_icons (StockIconSpecV const& icons, int size, std::string const& base_path)
-  {
-    RefPtr<Gtk::IconTheme> theme = IconTheme::get_default ();
-    for (StockIconSpecV::const_iterator i = icons.begin(); i != icons.end(); ++i)
+    void
+    register_stock_icons(
+          const StockIconSpecV&     spec
+        , int                       size
+        , const std::string&        path
+    )
     {
-      StockIconSpec const& icon = *i;
-      std::string filename = build_filename( base_path, icon.filename );
-      RefPtr<Pixbuf> pixbuf = Pixbuf::create_from_file( filename );
-      theme->add_builtin_icon(icon.stock_id, size, pixbuf);
+        RefPtr<Gtk::IconTheme> theme = IconTheme::get_default ();
+
+        for( StockIconSpecV::const_iterator i = spec.begin(); i != spec.end(); ++i )
+        {
+            const StockIconSpec& icon = *i;
+
+            theme->add_builtin_icon(
+                  icon.stock_id
+                , size
+                , Pixbuf::create_from_file( build_filename( path, icon.filename ))
+            ) ;
+        }
     }
-  }
 
-  std::string
-  default_stock_path (std::string const& size)
-  {
-   return build_filename (DATA_DIR, build_filename("icons",
-						                build_filename("hicolor",
-                                            build_filename(size.c_str(),
-									            "stock"
-          ))));
-  }
+    std::string
+    default_stock_path(
+          const std::string& s
+    )
+    {
+        return build_filename(
+              DATA_DIR
+            , build_filename("icons"
+                    , build_filename("hicolor"
+                            , build_filename( s, "stock"
+        ))));
+    }
 
-  void
-  register_default_stock_icons ()
-  {
-    StockIconSpecV v; 
+    void
+    register_default_stock_icons()
+    {
+        StockIconSpecV v; 
 
-    v.push_back(StockIconSpec( "audio-volume-muted.png",       "audio-volume-muted"        ));
-    v.push_back(StockIconSpec( "audio-volume-low.png",         "audio-volume-low"          ));
-    v.push_back(StockIconSpec( "audio-volume-medium.png",      "audio-volume-medium"       ));
-    v.push_back(StockIconSpec( "audio-volume-high.png",        "audio-volume-high"         ));
-    v.push_back(StockIconSpec( "lastfm.png",                   MPX_STOCK_LASTFM            ));
-    v.push_back(StockIconSpec( "plugin.png",                   MPX_STOCK_PLUGIN            ));
-    v.push_back(StockIconSpec( "plugin-disabled.png",          MPX_STOCK_PLUGIN_DISABLED   ));
-    v.push_back(StockIconSpec( "equalizer.png",                MPX_STOCK_EQUALIZER         ));
-    v.push_back(StockIconSpec( "preferences.png",              "mpx-stock-preferences"     ));
-    v.push_back(StockIconSpec( "musiclibrary.png",             "mpx-stock-musiclibrary"    ));
-    register_stock_icons (v, 24, default_stock_path("24x24")); 
+        v.push_back(StockIconSpec( "audio-volume-muted.png",       "audio-volume-muted"        ));
+        v.push_back(StockIconSpec( "audio-volume-low.png",         "audio-volume-low"          ));
+        v.push_back(StockIconSpec( "audio-volume-medium.png",      "audio-volume-medium"       ));
+        v.push_back(StockIconSpec( "audio-volume-high.png",        "audio-volume-high"         ));
+        v.push_back(StockIconSpec( "icon-plugins.png",             MPX_STOCK_PLUGIN            ));
+        v.push_back(StockIconSpec( "icon-equalizer.png",           MPX_STOCK_EQUALIZER         ));
+        v.push_back(StockIconSpec( "icon-preferences.png",         "mpx-stock-preferences"     ));
+        v.push_back(StockIconSpec( "icon-musiclibrary.png",        "mpx-stock-musiclibrary"    ));
+        register_stock_icons (v, 24, default_stock_path("24x24")); 
 
-    v.clear();
-
-    v.push_back(StockIconSpec( "error.png",                    MPX_STOCK_ERROR             ));
-    v.push_back(StockIconSpec( "add.png",                      "mpx-stock-add"             ));
-    v.push_back(StockIconSpec( "heart-black.png",              "mpx-loved-no"              ));
-    v.push_back(StockIconSpec( "heart-br.png",                 "mpx-loved-none"            ));
-    v.push_back(StockIconSpec( "heart-red.png",                "mpx-loved-yes"             ));
-    register_stock_icons (v, 16, default_stock_path("16x16")); 
-  }
+        v.clear();
+        v.push_back(StockIconSpec( "icon-add.png",                 "mpx-stock-add"             ));
+        v.push_back(StockIconSpec( "icon-error.png",               MPX_STOCK_ERROR             ));
+        v.push_back(StockIconSpec( "heart-black.png",              "mpx-loved-no"              ));
+        v.push_back(StockIconSpec( "heart-redblack.png",           "mpx-loved-none"            ));
+        v.push_back(StockIconSpec( "heart-red.png",                "mpx-loved-yes"             ));
+        register_stock_icons (v, 16, default_stock_path("16x16")); 
+    }
 }

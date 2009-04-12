@@ -242,7 +242,7 @@ AC_ARG_WITH([pkgconfig-dir],
 )
 AC_SUBST([pkgconfigdir])
 
-PYTHON_CFLAGS=`python-config --cflags`
+PYTHON_CFLAGS=`python-config --cflags|sed s:-Wstrict-prototypes::g`
 PYTHON_LIBS=`python-config --libs`
 AC_SUBST(PYTHON_CFLAGS)
 AC_SUBST(PYTHON_LIBS)

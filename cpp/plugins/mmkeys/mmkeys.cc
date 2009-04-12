@@ -40,7 +40,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 
 #include "mpx/mpx-main.hh" 
-#include "mpx/mpx-preferences.hh"
+#include "mpx/i-youki-preferences.hh"
 #include "mpx/util-string.hh"
 
 #include "src/glib-marshalers.h"
@@ -97,7 +97,7 @@ namespace MPX
         m_Hidden = false ;
         m_Id = id ;
 
-        boost::shared_ptr<Preferences> p = services->get<Preferences>("mpx-service-preferences") ;
+        boost::shared_ptr<IPreferences> p = services->get<IPreferences>("mpx-service-preferences") ;
     
         mcs->domain_register ("hotkeys");
         mcs->key_register ("hotkeys", "enable", bool (true));

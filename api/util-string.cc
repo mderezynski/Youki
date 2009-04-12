@@ -342,7 +342,7 @@ namespace MPX
         using boost::algorithm::is_any_of;
         using boost::algorithm::find_first;
 
-        for( int i = 0 ; i < h.size(); ++i )
+        for( std::size_t i = 0 ; i < h.size(); ++i )
         {
 			if (h[i].length() < 1)
             {

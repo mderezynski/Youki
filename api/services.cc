@@ -22,7 +22,7 @@ namespace Service
 #endif // HAVE_HAL
         } ;
 
-        for( int n = 0; n < G_N_ELEMENTS(services); ++n )
+        for( unsigned int n = 0; n < G_N_ELEMENTS(services); ++n )
         {
             if(m_services.count(services[n]))
             {

@@ -1,16 +1,15 @@
+#include "config.h"
+
 #include "youki-controller.hh"
+#include "youki-controller-status-icon.hh"
 
 #include <glibmm/i18n.h>
 #include <gdk/gdkkeysyms.h>
 #include <boost/format.hpp>
 
 #include "mpx/mpx-main.hh"
-#include "mpx/mpx-library.hh"
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-types.hh"
-
-#include "mpx/mpx-preferences.hh"
-#include "mpx/widgets/cairo-extensions.hh"
 
 #include "mpx/com/view-album-artist.hh"
 #include "mpx/com/view-album.hh"
@@ -19,10 +18,12 @@
 #include "mpx/i-youki-theme-engine.hh"
 
 #include "mpx/algorithm/youki-markov-predictor.hh"
+#include "mpx/widgets/cairo-extensions.hh"
 
-#include "youki-controller-status-icon.hh"
+#include "library.hh"
 #include "plugin-manager-gui.hh"
 #include "play.hh"
+#include "preferences.hh"
 
 namespace
 {

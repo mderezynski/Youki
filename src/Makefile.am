@@ -154,14 +154,15 @@ youki_bin_SOURCES =                         \
         youki-theme-engine.cc               \
                                             \
         library.cc                          \
-        main.cc                             \
+        library.hh                          \
                                             \
         mpx-mlibman-dbus-proxy-actual.hh    \
         mpx-mlibman-dbus-proxy.hh           \
+                                            \
         mpx-app-dbus-adaptor.hh             \
                                             \
         markov-analyzer-thread.cc           \
-        metadatareader-taglib.cc            \
+        markov-analyzer-thread.hh           \
                                             \
         play.hh                             \
         play.cc                             \
@@ -184,14 +185,14 @@ youki_bin_SOURCES =                         \
         gtkmmmodule.h                       \
                                             \
         preferences.cc                      \
+        preferences.hh                      \
                                             \
         splash-screen.hh                    \
         splash-screen.cc                    \
                                             \
-        services.cc                         \
-        signals.cc                          \
-        signals.hh                          \
-        stock.cc                         
+        stock.cc                            \
+                                            \
+        main.cc                             
                                 
 BUILT_SOURCES =                             \
     mpx-mlibman-dbus-proxy.hh               \

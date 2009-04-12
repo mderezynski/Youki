@@ -36,14 +36,11 @@
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 
-#include <mcs/mcs.h>
-
-#include "mpx/mpx-preferences.hh"
-#include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/widgets/widgetloader.hh"
 
 #include "prefs-library.hh"
+#include "mpx/i-youki-preferences.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -81,7 +78,7 @@ namespace MPX
         m_Hidden = true ;
         m_Id = id ;
 
-        boost::shared_ptr<Preferences> p = services->get<Preferences>("mpx-service-preferences") ;
+        boost::shared_ptr<IPreferences> p = services->get<IPreferences>("mpx-service-preferences") ;
 
         p->add_page(
               this
@@ -179,6 +176,7 @@ namespace MPX
     void
         PrefsLibrary::on_library_use_hal_toggled()
     {
+/*
         boost::shared_ptr<Library> l = services->get<Library>("mpx-service-library");
 
         if( m_Library_UseHAL_Yes->get_active() )
@@ -198,6 +196,7 @@ namespace MPX
             mcs->key_set("library","use-hal", false);
             m_Xml->get_widget("vbox135")->set_sensitive( true );
         }
+*/
     }
 #endif
 

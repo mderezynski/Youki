@@ -36,7 +36,6 @@
 #include <boost/format.hpp>
 #include <boost/optional.hpp>
 
-#include "mpx/mpx-audio.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-uri.hh"
 
@@ -69,24 +68,39 @@ namespace
 
 
         gboolean
-                drop_data (GstPad *        pad,
-                                GstMiniObject* mini_obj,
-                                gpointer       data)
+                drop_data(
+                      GstPad*           G_GNUC_UNUSED 
+                    , GstMiniObject*    G_GNUC_UNUSED 
+                    , gpointer          G_GNUC_UNUSED 
+                )
                 {
                         return FALSE ;
                 }
 
         char const*
-                nullify_string (const std::string& in)
+                nullify_string(
+                      const std::string& in
+                )
                 {
-                        return (in.size() ? in.c_str() : NULL) ;
+                        return( in.size() ? in.c_str() : NULL ) ;
                 }
 
-        inline double
-                cos_smooth (double x)
-                {
-                    return (1.0 - std::cos (x * G_PI)) / 2.0 ;
-                }
+        bool
+        test_element(
+              const std::string& name
+        )
+        {
+            GstElementFactory* factory = gst_element_factory_find (name.c_str ());
+
+            bool exists = ( factory != NULL ) ;
+
+            if( factory )
+            {
+                gst_object_unref( factory ) ;
+            }
+
+            return exists;
+        }
 }
 
 namespace MPX
@@ -612,7 +626,7 @@ namespace MPX
                     , const std::string& type
                 )
                 {
-                    Audio::Message message ;
+                    Message message ;
                     message.stream = stream ;
                     message.type = type ;
                     message.id = 1 ;
@@ -624,7 +638,7 @@ namespace MPX
                     PlayStatus status
                 )
                 {
-                    Audio::Message message ;
+                    Message message ;
                     message.status = status;
                     message.id = 0 ;
                     push_message (message) ;
@@ -1092,7 +1106,7 @@ namespace MPX
                                                     "message", gboolean (TRUE), NULL) ;
                             }
 
-                            if( Audio::test_element ("equalizer-10bands" ) && mcs->key_get<bool>("audio","enable-eq"))
+                            if( test_element ("equalizer-10bands" ) && mcs->key_get<bool>("audio","enable-eq"))
                             {
                                     m_equalizer = gst_element_factory_make ("equalizer-10bands", (NAME_EQUALIZER)) ;
 
@@ -1490,7 +1504,7 @@ namespace MPX
                         {
                                 gpointer data = g_async_queue_pop( m_message_queue ) ;
 
-                                Audio::Message * message = reinterpret_cast<Audio::Message*>(data) ;
+                                Message * message = reinterpret_cast<Message*>(data) ;
 
                                 switch( message->id )
                                 {
@@ -1509,10 +1523,10 @@ namespace MPX
 
         void
                 Play::push_message(
-                      const Audio::Message& message
+                      const Message& message
                 )
                 {
-                        g_async_queue_push (m_message_queue, (gpointer)(new Audio::Message (message))) ;
+                        g_async_queue_push (m_message_queue, (gpointer)(new Message (message))) ;
                         process_queue () ;
                 }
 }

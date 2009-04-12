@@ -1,33 +1,28 @@
 SUBDIRS = algorithm aux parser widgets xml com
 
 noinst_HEADERS =							\
-		error.hh							\
-		exception-db.hh						\
+                                            \
+		exception-sql.hh					\
 		exception.hh						\
+                                            \
 		i-metadatareader.hh					\
-		i-playbacksource.hh					\
-		i-playlistparser.hh					\
+		metadatareader-taglib.hh			\
+                                            \
         i-youki-play.hh                     \
         i-youki-hal.hh                      \
         i-youki-controller.hh               \
         i-youki-theme-engine.hh             \
-		metadatareader-taglib.hh			\
+                                            \
 		mpx-artist-images.hh				\
-		mpx-audio.hh						\
-        mpx-audio-messages.hh               \
-        mpx-audio-types.hh                  \
 		mpx-covers.hh						\
 		mpx-covers-stores.hh				\
+		mpx-error.hh				        \
         mpx-hal.hh                          \
-		mpx-library.hh						\
-		mpx-library-scanner-thread.hh		\
 		mpx-lyrics.hh						\
 		mpx-main.hh							\
-		mpx-markov-analyzer-thread.hh		\
 		mpx-minisoup.hh						\
 		mpx-network.hh						\
         mpx-plugin.hh                       \
-		mpx-preferences.hh					\
 		mpx-protected-access.hh				\
 		mpx-python.hh						\
 		mpx-services.hh						\
@@ -35,9 +30,9 @@ noinst_HEADERS =							\
 		mpx-stock.hh						\
 		mpx-types.hh						\
 		mpx-uri.hh							\
-		playlistparser-pls.hh				\
-		playlistparser-xspf.hh				\
+                                            \
 		plugin-types.hh						\
+                                            \
 		util-file.hh						\
 		util-graphics.hh					\
 		util-string.hh						\

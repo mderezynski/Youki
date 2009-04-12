@@ -210,8 +210,6 @@ main (int argc, char ** argv)
         services->add(boost::shared_ptr<MLibManager>(MPX::MLibManager::create( conn )));
 #endif // HAVE_HAL
 
-        Gtk::Window * w = services->get<MLibManager>("mpx-service-mlibman").get() ;
-
         gtk->run() ;
 
 #ifdef HAVE_HAL

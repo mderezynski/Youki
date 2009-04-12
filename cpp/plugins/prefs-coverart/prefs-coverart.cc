@@ -30,11 +30,11 @@
 
 #include <boost/format.hpp>
 
-#include "mpx/mpx-preferences.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/widgets/widgetloader.hh"
 
 #include "prefs-coverart.hh"
+#include "mpx/i-youki-preferences.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -190,7 +190,7 @@ namespace MPX
         m_Hidden = true ;
         m_Id = id ;
 
-        boost::shared_ptr<Preferences> p = services->get<Preferences>("mpx-service-preferences") ;
+        boost::shared_ptr<IPreferences> p = services->get<IPreferences>("mpx-service-preferences") ;
 
         p->add_page(
               this

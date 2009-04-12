@@ -1,12 +1,5 @@
 #include "config.h"
 
-#include "mpx/mpx-audio.hh"
-#include "mpx/mpx-sql.hh"
-#include "mpx/mpx-types.hh"
-#include "mpx/metadatareader-taglib.hh"
-#include "mpx/util-file.hh"
-#include "xmlcpp/mb-artist-basic-1.0.hxx"
-#include "mpx/xml/xmltoc++.hh"
 #include <queue>
 #include <boost/ref.hpp>
 #include <boost/format.hpp>
@@ -14,6 +7,17 @@
 #include <glibmm.h>
 #include <glibmm/i18n.h>
 #include <tr1/unordered_set>
+
+#include "mpx/mpx-sql.hh"
+#include "mpx/mpx-types.hh"
+#include "mpx/mpx-uri.hh"
+
+#include "mpx/util-file.hh"
+
+#include "mpx/metadatareader-taglib.hh"
+
+#include "mpx/xml/xmltoc++.hh"
+#include "xmlcpp/mb-artist-basic-1.0.hxx"
 
 #include "library-scanner-thread-mlibman.hh"
 #include "library-mlibman.hh"
@@ -317,7 +321,7 @@ struct MPX::LibraryScannerThread_MLibMan::ThreadData
 };
 
 MPX::LibraryScannerThread_MLibMan::LibraryScannerThread_MLibMan(
-    MPX::Library_MLibMan*               obj_library
+    MPX::Library_MLibMan*       obj_library
   , gint64                      flags
 )
 : sigx::glib_threadable()
@@ -345,8 +349,8 @@ MPX::LibraryScannerThread_MLibMan::LibraryScannerThread_MLibMan(
 , signal_message(*this, m_ThreadData, &ThreadData::Message)
 , m_Library_MLibMan(*obj_library)
 , m_SQL(new SQL::SQLDB(*((m_Library_MLibMan.get_sql_db()))))
-, m_Flags(flags)
 , m_HAL( *(services->get<IHAL>("mpx-service-hal").get()) )
+, m_Flags(flags)
 {
     m_Connectable =
         new ScannerConnectable(

@@ -1,11 +1,11 @@
 #include "config.h"
+
+#include "infoarea.hh"
+
 #include <glibmm/i18n.h>
 #include <cmath>
 
-#include "infoarea.hh"
-#include "mpx/mpx-audio-types.hh"
 #include "mpx/i-youki-play.hh"
-
 #include "mpx/i-youki-theme-engine.hh"
 #include "mpx/mpx-main.hh"
 

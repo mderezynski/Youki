@@ -30,7 +30,6 @@
 
 #include <tr1/unordered_set>
 
-#include "mpx/mpx-audio.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-uri.hh"
 #include "mpx/metadatareader-taglib.hh"
@@ -418,7 +417,7 @@ namespace MPX
 
                         m_ScannerThread = boost::shared_ptr<LibraryScannerThread_MLibMan>(
                                 new LibraryScannerThread_MLibMan(
-                                      *this
+                                      this
                                     , m_Flags
                         ));
 

@@ -39,9 +39,10 @@
 #include <glibmm.h>
 #include <giomm.h>
 
-#include "mpx/mpx-audio.hh"
-#include "mpx/mpx-uri.hh"
 #include "mpx/util-file.hh"
+#include "mpx/util-string.hh"
+
+#include "mpx/mpx-uri.hh"
 
 using namespace Glib;
 
@@ -51,13 +52,54 @@ namespace MPX
   {
     namespace
     {
-      typedef std::list<std::string> DirEntries;
+        typedef std::list<std::string> DirEntries;
 
-      bool
-      always_true (std::string const& filename)
-      {
-        return true;
-      }
+        bool
+        always_true(
+              const std::string& G_GNUC_UNUSED 
+        )
+        {
+            return true;
+        }
+
+        bool
+        is_audio_file(
+              const std::string& uri 
+        )
+        {
+          static char const* extensions[] =
+          { ".mp3",
+            ".aac",
+            ".mp4",
+            ".m4a",
+            ".m4b",
+            ".m4p",
+            ".m4v",
+            ".mp4v",
+            ".flac",
+            ".wma",
+            ".asf",
+            ".sid",
+            ".psid",
+            ".mod",
+            ".oct",
+            ".xm",
+            ".669",
+            ".sht",
+            ".mpc",
+            ".ogg",
+            ".wav",
+            0 };
+
+            try{
+                return Util::str_has_suffixes_nocase( uri, extensions ) ;
+            }
+            catch (...)
+            {
+                return false ;
+            }
+        }
+
     } // <anonymous> namespace
 
     std::string
@@ -193,7 +235,7 @@ namespace MPX
                          FileList&          collection,
                          bool               clear)
     {
-      collect_paths (dir_path, collection, sigc::ptr_fun (&::MPX::Audio::is_audio_file), clear);
+      collect_paths (dir_path, collection, sigc::ptr_fun (&is_audio_file), clear);
     }
 
     void
@@ -201,7 +243,7 @@ namespace MPX
                                    FileList&          collection,
                                    bool               clear)
     {
-      collect_paths_recursive (dir_path, collection, sigc::ptr_fun (&::MPX::Audio::is_audio_file), clear);
+      collect_paths_recursive (dir_path, collection, sigc::ptr_fun (&is_audio_file), clear);
     }
 
     void

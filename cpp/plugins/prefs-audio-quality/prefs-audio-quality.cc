@@ -27,14 +27,14 @@
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 
-#include "mpx/mpx-preferences.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/widgets/widgetloader.hh"
 
 #include "prefs-audio-quality.hh"
+#include "mpx/i-youki-preferences.hh"
 
-using namespace Glib;
-using namespace Gtk;
+using namespace Glib ;
+using namespace Gtk ;
 
 namespace MPX
 {
@@ -45,7 +45,7 @@ namespace MPX
             std::string     MIME;
             std::string     Name;
             std::string     Description;
-        };
+        } ;
 
         FileFormatInfo formats[] =
         {
@@ -90,7 +90,7 @@ namespace MPX
                 "WMA",
                 "Microsoft Windows Media Audio"
             }
-        };
+        } ;
 
     }                            // namespace
 
@@ -98,7 +98,8 @@ namespace MPX
 
     typedef sigc::signal<void, int, bool> SignalColumnState;
 
-    class FileFormatPrioritiesView : public WidgetLoader<Gtk::TreeView>
+    class FileFormatPrioritiesView
+    : public WidgetLoader<Gtk::TreeView>
     {
         public:
 
@@ -222,7 +223,7 @@ namespace MPX
         m_Hidden = true ;
         m_Id = id ;
 
-        boost::shared_ptr<Preferences> p = services->get<Preferences>("mpx-service-preferences") ;
+        boost::shared_ptr<IPreferences> p = services->get<IPreferences>("mpx-service-preferences") ;
 
         p->add_page(
               this

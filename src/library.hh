@@ -303,7 +303,7 @@ namespace MPX
             bool
             recache_covers_handler(
                   SQL::RowV*
-                , int*
+                , std::size_t*
             ) ; 
 
             gint64

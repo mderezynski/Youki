@@ -22,7 +22,6 @@
 #ifdef HAVE_HAL
 #include "mpx/mpx-hal.hh"
 #endif // HAVE_HAL
-#include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-protected-access.hh"
 #include "mpx/mpx-python.hh"
@@ -30,11 +29,11 @@
 #include "mpx/util-graphics.hh"
 #include "mpx/algorithm/random.hh"
 #include "mpx/com/tagview.hh"
-#include "mpx/mpx-audio-types.hh"
 
 #include "pysigc.hh"
 #include "gtkmmmodule.h"
 
+#include "library.hh"
 #include "play.hh"
 #include "youki-controller.hh"
 

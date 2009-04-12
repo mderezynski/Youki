@@ -210,7 +210,7 @@ namespace MPX
           }
       };
 
-#include "mpx/exception-db.hh"
+#include "mpx/exception-sql.hh"
 
     EXCEPTION(DbInitError)
 

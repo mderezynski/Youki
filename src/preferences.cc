@@ -48,10 +48,6 @@
 #  include <alsa/control.h>
 #endif
 
-#include <mcs/mcs.h>
-
-#include "mpx/mpx-preferences.hh"
-#include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-stock.hh"
 #include "mpx/util-string.hh"
@@ -59,8 +55,11 @@
 
 #include "mpx/i-youki-play.hh"
 
-using namespace Glib;
-using namespace Gtk;
+#include "library.hh"
+#include "preferences.hh"
+
+using namespace Glib ;
+using namespace Gtk ;
 
 namespace MPX
 {

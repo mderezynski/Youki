@@ -28,14 +28,6 @@
 #  include <config.h>
 #endif //HAVE_CONFIG_H
 
-#include "mpx/mpx-audio-messages.hh"
-#include "mpx/mpx-audio-types.hh"
-#include "mpx/mpx-main.hh"
-#include "mpx/mpx-services.hh"
-#include "mpx/mpx-uri.hh"
-
-#include "mpx/aux/glibaddons.hh"
-
 #include <map>
 #include <string>
 #include <vector>
@@ -60,6 +52,12 @@
 #include <gdkmm/pixbuf.h>
 #include <gst/gst.h>
 
+#include "mpx/mpx-main.hh"
+#include "mpx/mpx-services.hh"
+#include "mpx/mpx-types.hh"
+#include "mpx/mpx-uri.hh"
+#include "mpx/aux/glibaddons.hh"
+
 #include "mpx/i-youki-play.hh"
 
 namespace MPX
@@ -70,6 +68,19 @@ namespace MPX
          * using a rather simple design. (http://www.gstreamer.net)
          *
          */
+
+        struct Message
+    	{
+	    	int         id ;
+
+    		PlayStatus  status ;
+	    	std::string stream ;
+		    std::string type ;
+
+    		Message()
+            : id( -1 )
+            {}
+    	} ;
     
         class Play
         : public IPlay
@@ -117,7 +128,7 @@ namespace MPX
 
                         void
                         push_message(
-                              const Audio::Message&
+                              const Message&
                         ) ;
 
                 public:

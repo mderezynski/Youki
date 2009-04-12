@@ -6,10 +6,11 @@
 #include <glibmm.h>
 #include <gmodule.h>
 
-#include "mpx/mpx-audio.hh"
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
 #include "mpx/metadatareader-taglib.hh"
+
+#include <gst/gst.h>
 
 using namespace Glib;
 using boost::algorithm::is_any_of;
@@ -17,12 +18,155 @@ using boost::get;
 
 namespace
 {
-  inline bool
-  is_module (std::string const& basename)
-  {
-    return MPX::Util::str_has_suffix_nocase
-      (basename.c_str (), G_MODULE_SUFFIX);
-  } 
+    inline bool
+    is_module(
+          const std::string& modname
+    )
+    {
+        return MPX::Util::str_has_suffix_nocase( modname, G_MODULE_SUFFIX ) ;
+           
+    } 
+
+    struct PipelineUnref
+    {
+        GstElement * pipeline ;
+
+        PipelineUnref(GstElement * e)
+            : pipeline( e )
+        {}
+
+        ~PipelineUnref()
+        {
+            gst_element_set_state( pipeline, GST_STATE_NULL ) ;
+            gst_object_unref( pipeline ) ;
+        }
+    } ;
+
+    void
+    have_type_handler(
+          GstElement*    typefind
+        , guint          probability
+        , const GstCaps* caps
+        , GstCaps**      caps_p
+    )
+    {
+        if( caps_p )
+        {
+            *caps_p = gst_caps_copy( caps ) ;
+        }
+    }
+
+    bool
+    typefind(
+          const std::string& uri
+        , std::string&       found
+    )
+    {
+        GstElement*             pipeline  = 0 ;
+        GstElement*             source    = 0 ;
+        GstElement*             typefind  = 0 ;
+        GstElement*             fakesink  = 0 ;
+        GstCaps*                caps      = 0 ;
+
+        GstState                state ;
+        GstStateChangeReturn    state_change ;
+
+        if( uri.empty() )
+        {
+            return false ;
+        }
+
+        pipeline  = gst_pipeline_new( "pipeline" ) ;
+        source    = gst_element_factory_make( "giosrc"   , NULL ) ;
+        typefind  = gst_element_factory_make( "typefind" , NULL ) ; 
+        fakesink  = gst_element_factory_make( "fakesink" , NULL ) ; 
+
+        gst_bin_add_many(
+              GST_BIN( pipeline )
+            , source
+            , typefind
+            , fakesink
+            , NULL
+        ) ;
+
+        gst_element_link_many(
+              source
+            , typefind
+            , fakesink
+            , NULL
+        ) ;
+
+        g_signal_connect(
+              G_OBJECT( typefind )
+            , "have-type"
+            , G_CALLBACK( have_type_handler)
+            , &caps
+        ) ;
+
+        g_object_set(
+              source
+            , "location"
+            , uri.c_str()
+            , NULL
+        ) ;
+
+        gst_element_set_state(
+              GST_ELEMENT( pipeline )
+            , GST_STATE_PAUSED
+        ) ;
+
+        state_change = gst_element_get_state(
+                              GST_ELEMENT( pipeline )
+                            , &state
+                            , NULL
+                            , 5 * GST_SECOND
+        ) ;
+
+        PipelineUnref R ( pipeline ) ;
+
+        switch( state_change )
+        {
+            case GST_STATE_CHANGE_FAILURE:
+            {
+            }
+            break;
+
+            case GST_STATE_CHANGE_SUCCESS:
+            {
+                using boost::algorithm::is_any_of ;
+                using boost::algorithm::split ;
+
+                if( caps )
+                {
+                    Glib::ScopedPtr<char> caps_c_str (gst_caps_to_string( caps )) ;
+                    gst_caps_unref( caps ) ;
+
+                    std::vector<std::string> v ;
+                    std::string splitstring = caps_c_str.get() ;
+                    split( v, splitstring, is_any_of(",") ) ;
+
+                    if( v.empty() )
+                    {
+                        found = caps_c_str.get() ;
+                    }
+                    else
+                    {
+                        found = v[0] ;
+                    }
+
+                    return true ;
+                }
+            }
+            break ;
+
+            default:
+            {
+            }
+            break ;
+        }
+
+        return false;
+    }
 }
 
 namespace MPX
@@ -126,7 +270,7 @@ namespace MPX
         std::string type;
 
         try{
-            if( MPX::Audio::typefind( uri, type ))
+            if( typefind( uri, type ))
             {
                 TaglibPluginsMap::const_iterator i = m_taglib_plugins.find( type );
 

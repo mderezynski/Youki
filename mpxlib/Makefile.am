@@ -68,28 +68,25 @@ youki_mlibman_bin_CXXFLAGS += -D_XOPEN_SOURCE=600
 youki_mlibman_bin_CFLAGS += -D_XOPEN_SOURCE=600
 endif
 
-youki_mlibman_bin_SOURCES =                     \
+youki_mlibman_bin_SOURCES =                 \
+                                            \
+        main.cc                             \
                                             \
         import-folder.hh                    \
         import-share.hh                     \
         library-mlibman.hh                  \
         library-scanner-thread-mlibman.hh   \
-        messages.hh                         \
         mlibmanager.hh                      \
         request-value.hh                    \
-        signals.hh                          \
                                             \
-        error.cc                            \
         import-folder.cc                    \
         import-share.cc                     \
         library-mlibman.cc                  \
         library-scanner-thread-mlibman.cc   \
-        main.cc                             \
         mlibmanager.cc                      \
-        mpx-mlibman-dbus.hh                 \
         request-value.cc                    \
-        services.cc                         \
-        signals.cc                          
+                                            \
+        mpx-mlibman-dbus.hh                 
 
 
 BUILT_SOURCES =                             \

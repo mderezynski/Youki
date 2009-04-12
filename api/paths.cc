@@ -1,8 +1,8 @@
 #include <config.h>
-#include "paths.hh"
-
 #include <glib/gstdio.h>
 #include <glibmm/miscutils.h>
+
+#include "mpx/mpx-paths.hh"
 
 namespace MPX
 {

@@ -55,7 +55,7 @@ namespace AQE
                 if( v2.size() == 2) 
                 {
                     type = data[n].type; 
-                    break;
+                    break ;
                 }
             }
 
@@ -209,30 +209,31 @@ namespace AQE
         {
             case MT_EQUAL:
                 truthvalue = boost::get<T>(track[c.TargetAttr].get()) == boost::get<T>(c.TargetValue.get());
-                break;
+                break ;
 
             case MT_NOT_EQUAL:
                 truthvalue = boost::get<T>(track[c.TargetAttr].get()) != boost::get<T>(c.TargetValue.get());
-                break;
+                break ;
 
             case MT_GREATER_THAN:
                 truthvalue = boost::get<T>(track[c.TargetAttr].get())  > boost::get<T>(c.TargetValue.get());
-                break;
+                break ;
 
             case MT_LESSER_THAN:
                 truthvalue = boost::get<T>(track[c.TargetAttr].get())  < boost::get<T>(c.TargetValue.get());
-                break;
+                break ;
 
             case MT_GREATER_THAN_OR_EQUAL:
                 truthvalue = boost::get<T>(track[c.TargetAttr].get()) >= boost::get<T>(c.TargetValue.get());
-                break;
+                break ;
 
             case MT_LESSER_THAN_OR_EQUAL:
                 truthvalue = boost::get<T>(track[c.TargetAttr].get()) <= boost::get<T>(c.TargetValue.get());
-                break;
+                break ;
 
-            case MT_FUZZY_EQUAL:
-                break;
+            default:
+                truthvalue = false ;
+                break ;
         }
 
         return truthvalue;
@@ -250,34 +251,38 @@ namespace AQE
         {
             case MT_EQUAL:
                 truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) == boost::get<std::string>(c.TargetValue.get());
-                break;
+                break ;
 
             case MT_NOT_EQUAL:
                 truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) != boost::get<std::string>(c.TargetValue.get());
-                break;
+                break ;
 
             case MT_GREATER_THAN:
                 truthvalue = boost::get<std::string>(track[c.TargetAttr].get())  > boost::get<std::string>(c.TargetValue.get());
-                break;
+                break ;
 
             case MT_LESSER_THAN:
                 truthvalue = boost::get<std::string>(track[c.TargetAttr].get())  < boost::get<std::string>(c.TargetValue.get());
-                break;
+                break ;
 
             case MT_GREATER_THAN_OR_EQUAL:
                 truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) >= boost::get<std::string>(c.TargetValue.get());
-                break;
+                break ;
 
             case MT_LESSER_THAN_OR_EQUAL:
                 truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) <= boost::get<std::string>(c.TargetValue.get());
-                break;
+                break ;
 
             case MT_FUZZY_EQUAL:
                 truthvalue = Util::match_keys(boost::get<std::string>(track[c.TargetAttr].get()), boost::get<std::string>(c.TargetValue.get()));
-                break;
+                break ;
+
+            default:
+                truthvalue = false ;
+                break ;
         }
 
-        return truthvalue;
+        return truthvalue ;
     }
 
 

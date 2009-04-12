@@ -1039,6 +1039,9 @@ namespace MPX
                 virtual bool
                 on_key_press_event (GdkEventKey * event)
                 {
+                    if( event->is_modifier )
+                        return false ;
+
                     if( m_search_active )
                     {
                         switch( event->keyval )

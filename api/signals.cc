@@ -1,13 +1,11 @@
 #include <config.h>
-#include "signals.hh"
-
 #include <cstdlib>
-
 #include <glib.h>
-
 #include <signal.h>
 #include <unistd.h>
 #include <sys/types.h>
+
+#include "mpx/mpx-signals.hh"
 
 namespace MPX
 {

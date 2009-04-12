@@ -1,9 +1,14 @@
-#include "mpx/error.hh"
+#include "config.h"
+
+#include "mpx/mpx-error.hh"
+
+#include <string>
+#include <glibmm.h>
 
 namespace MPX
 {
     void
-    ErrorManager::append_error( const Error& error)
+    ErrorManager::append_error( const Error& error )
     {
         Glib::RecMutex::Lock L (m_queue_lock);
         m_queue.push_back(ErrorRefP(new Error(error)));
@@ -47,7 +52,7 @@ namespace MPX
     }
 
     void
-    ErrorManager::new_error( const Error& error)
+    ErrorManager::new_error( const Error& error )
     {
         append_error (error);
         display_errors ();

@@ -36,12 +36,10 @@
 #include <dbus-c++/glib-integration.h>
 
 #include "mpx/mpx-covers.hh"
-#include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-network.hh"
 #include "mpx/mpx-paths.hh"
 #include "mpx/mpx-plugin.hh"
-#include "mpx/mpx-preferences.hh"
 #include "mpx/mpx-python.hh"
 #include "mpx/mpx-services.hh"
 #include "mpx/mpx-signals.hh"
@@ -56,8 +54,10 @@
 
 #include "mpx/metadatareader-taglib.hh"
 
+#include "library.hh"
 #include "play.hh"
 #include "plugin-manager-gui.hh"
+#include "preferences.hh"
 #include "splash-screen.hh"
 
 #include "youki-controller.hh"

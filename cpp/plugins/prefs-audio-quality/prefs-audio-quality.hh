@@ -27,23 +27,14 @@
 
 #include "config.h"
 
-#ifndef PLUGIN_BUILD
-#include "mpx/mpx-audio.hh"
-#endif // PLUGIN_BUILD
-
-#include "mpx/mpx-services.hh"
-#include "mpx/widgets/widgetloader.hh"
-
 #include <string>
 #include <set>
 #include <vector>
-
 #include <glibmm.h>
 #include <gtkmm.h>
 
-#include <mcs/mcs.h>
-#include <mcs/gtk-bind.h>
-
+#include "mpx/mpx-services.hh"
+#include "mpx/widgets/widgetloader.hh"
 #include "mpx/plugin-types.hh"
 
 namespace MPX

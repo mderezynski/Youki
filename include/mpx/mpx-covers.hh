@@ -92,11 +92,14 @@ namespace MPX
     typedef sigc::signal<void, const std::string&>  SignalGotCover_t ;
     typedef sigx::signal_f<SignalGotCover_t>        SignalGotCover_xt ;
 
-    class CoverStore;
-    class Library;
+    class CoverStore ;
+    class Library ;
+
     class Covers
-    : public Service::Base
-    , public sigx::glib_threadable
+
+        : public Service::Base
+        , public sigx::glib_threadable
+
     {
         protected:
 

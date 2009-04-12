@@ -27,10 +27,6 @@
 
 #include "config.h"
 
-#include "mpx/mpx-audio.hh"
-#include "mpx/mpx-services.hh"
-#include "mpx/widgets/widgetloader.hh"
-
 #include <glibmm.h>
 #include <gtkmm.h>
 #include <string>
@@ -38,21 +34,28 @@
 #include <vector>
 
 #include "mpx/mpx-main.hh" 
-#include <mcs/gtk-bind.h>
-
+#include "mpx/mpx-services.hh"
+#include "mpx/widgets/widgetloader.hh"
 #include "mpx/plugin-types.hh"
 
 namespace MPX
 {
-    class CoverArtSourceView;
-    class FileFormatPrioritiesView;
+    class CoverArtSourceView ;
+    class FileFormatPrioritiesView ;
 
-    /** PrefsAudio dialog
-     *
-     * MPX::PrefsAudio is a complex dialog for adjusting run time parameters
-     * of MPX trough the GUI instead of having to manipulate the configuration
-     * file.
-     */
+    enum Sink
+    {
+          SINK_ALSA
+        , SINK_GCONF
+        , SINK_OSS
+        , SINK_SUNAUDIO
+        , SINK_ESD
+        , SINK_HAL
+        , SINK_PULSEAUDIO
+        , SINK_JACKSINK
+        , SINK_AUTO
+    };
+
     class PrefsAudio
     : public Gnome::Glade::WidgetLoader<Gtk::VBox>
     , public PluginHolderBase
@@ -100,7 +103,7 @@ namespace MPX
                 Gtk::TreeModelColumn<Glib::ustring> description;
                 Gtk::TreeModelColumn<std::string>   name;
                 Gtk::TreeModelColumn<int>           tab;
-                Gtk::TreeModelColumn<Audio::Sink>   sink;
+                Gtk::TreeModelColumn<Sink>          sink;
 
                 AudioSystemColumnRecord()
                 {

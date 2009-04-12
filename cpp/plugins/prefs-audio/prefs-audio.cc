@@ -30,6 +30,7 @@
 #include <glibmm.h>
 #include <glib/gi18n.h>
 #include <gtk/gtkstock.h>
+#include <gst/gst.h>
 #include <gtkmm.h>
 #include <libglademm.h>
 
@@ -46,27 +47,24 @@
 #  include <alsa/control.h>
 #endif
 
-#include <mcs/mcs.h>
-
-#include "mpx/mpx-preferences.hh"
-#include "mpx/mpx-audio.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-stock.hh"
 #include "mpx/util-string.hh"
 #include "mpx/widgets/widgetloader.hh"
 
-#include "prefs-audio.hh"
 #include "mpx/i-youki-play.hh"
+#include "mpx/i-youki-preferences.hh"
+
+#include "prefs-audio.hh"
 
 using namespace Glib;
 using namespace Gtk;
-using namespace MPX::Audio;
 
 namespace MPX
 {
     namespace
     {
-        // Various Toggle Buttons
+        //// VARIOUS TOGGLE BUTTONS 
         struct DomainKeyPair
         {
             char const* domain;
@@ -185,6 +183,23 @@ namespace MPX
                 SINK_JACKSINK
             },
         } ;
+
+        bool
+        test_element(
+              const std::string& name
+        )
+        {
+            GstElementFactory* factory = gst_element_factory_find (name.c_str ());
+
+            bool exists = ( factory != NULL ) ;
+
+            if( factory )
+            {
+                gst_object_unref( factory ) ;
+            }
+
+            return exists;
+        }
     } // namespace
 
     using namespace Gnome::Glade;
@@ -217,7 +232,7 @@ namespace MPX
     {
         show() ;
 
-        m_Name = "PreferencesModule AUDIO" ;
+        m_Name = "IPreferencesModule AUDIO" ;
         m_Description = "This plugin provides audio preferences" ;
         m_Authors = "M. Derezynski" ;
         m_Copyright = "(C) 2009 MPX Project" ;
@@ -229,7 +244,7 @@ namespace MPX
         m_Hidden = true ;
         m_Id = id ;
 
-        boost::shared_ptr<Preferences> p = services->get<Preferences>("mpx-service-preferences") ;
+        boost::shared_ptr<IPreferences> p = services->get<IPreferences>("mpx-service-preferences") ;
 
         p->add_page(
               this
@@ -605,14 +620,19 @@ namespace MPX
         m_cbox_audio_system->set_model (m_list_store_audio_systems);
 
         std::string sink = mcs->key_get<std::string> ("audio", "sink");
-        int cbox_counter = 0;
-        for (unsigned n = 0; n < G_N_ELEMENTS (audiosystems); n++)
+
+        int idx = 0;
+
+        for( unsigned n = 0; n < G_N_ELEMENTS (audiosystems); n++ )
         {
-            if (test_element (audiosystems[n].name))
+            if( test_element (audiosystems[n].name) )
             {
-                audio_system_cbox_ids[n] = cbox_counter++;
-                m_sinks.insert (audiosystems[n].name);
+                audio_system_cbox_ids[n] = idx++;
+
+                m_sinks.insert( audiosystems[n].name ) ;
+
                 TreeIter iter = m_list_store_audio_systems->append ();
+
                 (*iter)[audio_system_columns.description] = audiosystems[n].description;
                 (*iter)[audio_system_columns.name] = audiosystems[n].name;
                 (*iter)[audio_system_columns.tab] = audiosystems[n].tab;

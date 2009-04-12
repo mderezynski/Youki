@@ -1,12 +1,14 @@
-#ifndef MPX_MARKOV_PREDICTOR
-#define MPX_MARKOV_PREDICTOR
+#ifndef _MPX_MARKOV_PREDICTOR__HH
+#define _MPX_MARKOV_PREDICTOR__HH
 
 #include <glibmm.h>
 #include <glib.h>
 #include <boost/lexical_cast.hpp>
+
 #include "mpx/algorithm/ntree.hh"
 #include "mpx/mpx-main.hh"
-#include "mpx/mpx-library.hh"
+
+#include "library.hh"
 
 namespace MPX
 {

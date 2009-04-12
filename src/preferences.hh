@@ -27,9 +27,13 @@
 
 #include "config.h"
 
+#include <gtkmm.h>
+
 #include "mpx/widgets/widgetloader.hh"
 #include "mpx/mpx-main.hh"
-#include <gtkmm.h>
+
+#include "mpx/i-youki-preferences.hh"
+
 
 namespace MPX
 {
@@ -40,7 +44,8 @@ namespace MPX
    * file.
    */
   class Preferences
-  : public Gnome::Glade::WidgetLoader<Gtk::Window>
+  : public IPreferences
+  , public Gnome::Glade::WidgetLoader<Gtk::Window>
   , public Service::Base
   {
     public:

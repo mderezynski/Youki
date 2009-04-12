@@ -54,10 +54,8 @@
 #include <uniquefileidentifierframe.h>
 #include <attachedpictureframe.h>
 
-#include "mpx/mpx-audio.hh"
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-covers-stores.hh"
-#include "mpx/mpx-library.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-minisoup.hh"
 #include "mpx/mpx-network.hh"
@@ -67,6 +65,8 @@
 #include "mpx/util-string.hh"
 #include "mpx/xml/xml.hh"
 #include "mpx/algorithm/ld.hh"
+
+#include "library.hh"
 
 using namespace Glib;
 using namespace TagLib;
@@ -135,13 +135,16 @@ namespace MPX
     } ;
 
     Covers::Covers ()
-    : Service::Base("mpx-service-covers")
-    , sigx::glib_threadable()
-    , m_rebuild(0)
-    , m_rebuilt(0)
-    , cache(sigc::mem_fun(*this, &Covers::on_cache))
-    , precache(sigc::mem_fun(*this, &Covers::on_precache))
-    , signal_got_cover(*this, m_ThreadData, &ThreadData::GotCover)
+
+        : Service::Base("mpx-service-covers")
+
+        , sigx::glib_threadable()
+        , cache(sigc::mem_fun(*this, &Covers::on_cache))
+        , precache(sigc::mem_fun(*this, &Covers::on_precache))
+        , signal_got_cover(*this, m_ThreadData, &ThreadData::GotCover)
+        , m_rebuild(0)
+        , m_rebuilt(0)
+
     {
         Glib::ScopedPtr<char> path (g_build_filename(g_get_user_cache_dir(), PACKAGE, "covers", NULL));
         g_mkdir(path.get(), 0700);
@@ -308,7 +311,7 @@ namespace MPX
 
         if( acquire && m_stores_cur.size() )
         {
-            int i = 0; 
+            std::size_t i = 0 ;
 
             CoverFetchContext * data = new CoverFetchContext( qual, m_stores_cur );
 
