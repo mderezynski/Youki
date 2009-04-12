@@ -37,7 +37,7 @@ AC_DEFUN([SHAVE_INIT],
     AC_SUBST(shavedir)
 
     dnl make is now quiet
-    AC_SUBST([MAKEFLAGS], [-s])
+    AC_SUBST([MAKEFLAGS], [-sw])
     AC_SUBST([AM_MAKEFLAGS], ['`test -z $V && echo -s`'])
 
     dnl we need sed

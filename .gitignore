@@ -22,6 +22,8 @@ config.status
 config.sub
 configure
 depcomp
+doltcompile
+doltlibtool
 install-sh
 intltool-*
 libtool
@@ -56,6 +58,8 @@ m4/po.m4
 m4/printf-posix.m4
 m4/progtest.m4
 m4/size_max.m4
+m4/shave
+m4/shave-libtool
 m4/stdint_h.m4
 m4/uintmax_t.m4
 m4/visibility.m4
@@ -88,6 +92,7 @@ python/plugins/osd/__init__.py
 python/plugins/puid-scan/__init__.py
 python/plugins/trackcover/__init__.py
 python/plugins/trackinfo-webkit/__init__.py
+mpxlib/mpx-mlibman-dbus.hh
 mpxlib/youki-mlibman-bin
 remote/youki
 sentinel/youki-sentinel-bin
