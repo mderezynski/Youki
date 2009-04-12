@@ -14,6 +14,7 @@
 #include "kobo-titleinfo.hh"
 #include "kobo-volume.hh"
 #include "youki-simpleinfo.hh"
+#include "youki-togglebutton.hh"
 #include "infoarea.hh"
 
 #include "mpx-mlibman-dbus-proxy-actual.hh"
@@ -119,6 +120,7 @@ namespace MPX
             KoboCover                       * m_main_cover ;
             KoboTitleInfo                   * m_main_titleinfo ;
             KoboVolume                      * m_main_volume ;
+            YoukiToggleButton               * m_main_love_button;
 
             ListViewArtist                  * m_ListViewArtist ;
             ListViewAlbums                  * m_ListViewAlbums ;

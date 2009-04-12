@@ -26,7 +26,7 @@
 
 namespace MPX
 {
-  void register_stock_icons ();
+  void register_default_stock_icons ();
 }
 
 #endif //MPX_STOCK_REGISTER_HH
