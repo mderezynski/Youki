@@ -326,7 +326,7 @@ main (int argc, char ** argv)
         services->add(boost::shared_ptr<Covers>(new MPX::Covers));
         services->get<Covers>("mpx-service-covers")->run() ;
 
-        splash->set_message(_("Starting Library Manager..."), 7./10.);
+        splash->set_message(_("Starting Library Manager..."), 2.5/10.);
         info::backtrace::Youki::MLibMan_proxy_actual * p = new info::backtrace::Youki::MLibMan_proxy_actual( conn ) ;
         p->Start() ;
         services->add(boost::shared_ptr<info::backtrace::Youki::MLibMan_proxy_actual>( p ));
