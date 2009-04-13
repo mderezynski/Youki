@@ -18,10 +18,25 @@
 namespace
 {
     const double rounding = 2. ; 
+
+    int const animation_fps = 10;
+    int const animation_frame_period_ms = 1000 / animation_fps;
 }
 
 namespace MPX
 {
+    inline double
+    KoboPosition::cos_smooth (double x)
+    {
+        return (2.0 - std::cos (x * G_PI)) / 2.0;
+    }
+
+    double
+    KoboPosition::get_position ()
+    {
+        return m_push_factor * cos_smooth( m_timer.elapsed() ) ;
+    }
+
     KoboPosition::KoboPosition(
     )
 
@@ -29,16 +44,59 @@ namespace MPX
         , m_position( 0 )
         , m_seek_position( 0 )
         , m_seek_factor( 0 )
+        , m_push_factor( 0 )
         , m_clicked( false )
     {
         add_events(Gdk::EventMask(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK )) ;
         set_flags(Gtk::CAN_FOCUS) ;
+
+/*
+        m_timer.reset() ;
+        m_timer.start() ;
+
+        Glib::signal_timeout().connect(
+            sigc::mem_fun(
+                  *this
+                , &KoboPosition::draw_frame 
+        ), animation_frame_period_ms) ;
+*/
     }
 
     KoboPosition::~KoboPosition () 
     {
     }
-    
+
+    void
+    KoboPosition::stop()
+    {
+/*
+        m_timer.stop() ;
+        m_timer.reset() ;
+        m_push_factor = 0 ;
+        queue_draw() ;
+*/
+    }
+
+    void
+    KoboPosition::start()
+    {
+/*
+        m_timer.reset() ;
+        m_push_factor = (get_allocation().get_width() / double(m_duration)) ;
+        m_timer.start() ;
+        queue_draw() ;
+*/
+    }
+
+    void
+    KoboPosition::on_size_allocate( Gtk::Allocation& alloc )
+    {
+        Gtk::DrawingArea::on_size_allocate( alloc ) ;
+/*
+        m_push_factor = (get_allocation().get_width() / double(m_duration)) ;
+*/
+    }
+
     void
     KoboPosition::on_size_request( Gtk::Requisition * req )
     {
@@ -51,8 +109,19 @@ namespace MPX
         , gint64    position
     )
     {
+/*
+        if( (position - m_position) == 1 )
+        {
+            m_timer.reset() ;
+        }
+*/
+
         m_duration = duration ;
         m_position = position ;
+
+/*
+        m_push_factor = (get_allocation().get_width() / double(m_duration)) ;
+*/
 
         queue_draw () ;
     }
@@ -90,6 +159,10 @@ namespace MPX
         gint64 position = m_clicked ? m_seek_position : m_position ;
         double percent  = double(position) / double(m_duration) ; 
 
+/*
+        double posadd   = get_position() ; 
+*/
+
         if( percent >= 0.90 )
         {
             factor = (1. - percent) * 10. ; 
@@ -101,19 +174,19 @@ namespace MPX
 
             r.x         = 1 ; 
             r.y         = 1 ; 
-            r.width     = (a.get_width() - 2) * percent ; 
+            r.width     = ((a.get_width() - 2) * percent) /*+ posadd*/ ;
             r.height    = 14 ; 
 
             cairo->save () ;
 
-            Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
+            Cairo::RefPtr<Cairo::LinearGradient> volume_bar_gradient = Cairo::LinearGradient::create(
                   r.x + r.width / 2
                 , r.y  
                 , r.x + r.width / 2
                 , r.y + r.height
             ) ;
             
-            background_gradient_ptr->add_color_stop_rgba(
+            volume_bar_gradient->add_color_stop_rgba(
                   0. 
                 , c.r
                 , c.g
@@ -121,7 +194,7 @@ namespace MPX
                 , 0.85 * factor 
             ) ;
 
-            background_gradient_ptr->add_color_stop_rgba(
+            volume_bar_gradient->add_color_stop_rgba(
                   .60
                 , c.r
                 , c.g
@@ -129,7 +202,7 @@ namespace MPX
                 , 0.55 * factor
             ) ;
             
-            background_gradient_ptr->add_color_stop_rgba(
+            volume_bar_gradient->add_color_stop_rgba(
                   1. 
                 , c.r
                 , c.g
@@ -137,7 +210,7 @@ namespace MPX
                 , 0.35 * factor
             ) ;
 
-            cairo->set_source( background_gradient_ptr ) ;
+            cairo->set_source( volume_bar_gradient ) ;
             cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
             RoundedRectangle(

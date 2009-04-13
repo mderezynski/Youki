@@ -632,12 +632,29 @@ namespace MPX
                         if( status == TRACK_INDIFFERENT )
                             return ;
 
-                        char const update_f[] = "UPDATE track SET %s = %s + 1 WHERE id = %lld" ;
+                        gint64 val = 0 ;
+                        SQL::RowV v ;
+
+                        std::string col = (status == TRACK_LOVED) ? "loved" : "hated" ;
+
+                        char const get_f[] = "SELECT %s FROM track WHERE id = %lld" ;
+                    
+                        getSQL(v, mprintf(get_f,
+                              col.c_str()
+                            , id
+                        ));
+
+                        if( !v.empty() )
+                        {
+                            val = get<gint64>(v[0][col]) ;
+                        }
+
+                        char const update_f[] = "UPDATE track SET '%s' = '%lld' WHERE id = '%lld'" ;
 
                         try{
                                 execSQL(mprintf(update_f,
-                                      (status == TRACK_LOVED) ? "loved" : "hated"
-                                    , (status == TRACK_LOVED) ? "loved" : "hated"
+                                      col.c_str()
+                                    , ++val
                                     , id
                                 ));
                         } catch( SqlConstraintError & cxe )

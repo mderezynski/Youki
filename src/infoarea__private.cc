@@ -1,5 +1,7 @@
 #include "config.h"
+
 #include <glibmm.h>
+#include <cmath>
 
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/util-graphics.hh"
@@ -67,7 +69,7 @@ namespace MPX
         y = (HEIGHT - (peak+HEIGHT)); 
         h = peak+HEIGHT;
 
-        if( w>0 && h>0)
+        if( w && h ) 
         {
             cairo->set_source_rgba(1., 1., 1., 0.1);
             Util::cairo_rounded_rect(cairo, x, y, w, h, 1.);
@@ -76,10 +78,10 @@ namespace MPX
 
         // Bar
         int data = (int(m_spectrum_data[n]/2) / 3) * 3;
-        y = (HEIGHT - (data+HEIGHT)); 
-        h = data+HEIGHT;
+        y = ( HEIGHT - (data + HEIGHT) ) ; 
+        h = data + HEIGHT ;
 
-        if( w>0 && h>0)
+        if( w && h ) 
         {
             cairo->set_source_rgba (double(colors[n/6].red)/255., double(colors[n/6].green)/255., double(colors[n/6].blue)/255., ALPHA);
             Util::cairo_rounded_rect(cairo, x, y, w, h, 1.);

@@ -13,10 +13,29 @@ namespace MPX
             gint64      m_position ;
             gint64      m_seek_position ;
             double      m_seek_factor ;
+            double      m_push_factor ;
             bool        m_clicked ;
-        
-            sigc::connection m_scrollback_conn ;
+            Glib::Timer m_timer ;
+
+       protected:
     
+            inline double
+            cos_smooth(
+                  double
+            ) ;
+
+            double
+            get_position(
+            ) ;
+
+            bool
+            draw_frame(
+            )
+            {
+                queue_draw() ;
+                return true ;
+            }
+
         public:
 
             typedef sigc::signal<void, gint64> SignalSeekEvent ;
@@ -42,7 +61,20 @@ namespace MPX
                 , gint64
             ) ;
 
+            void
+            start(
+            ) ;
+
+            void
+            stop(
+            ) ;
+
         protected:
+
+            virtual void
+            on_size_allocate(
+                   Gtk::Allocation&
+            ) ;
 
             virtual void
             on_size_request(

@@ -854,6 +854,8 @@ namespace MPX
     void
     YoukiController::on_play_eos ()
     {
+        m_main_position->stop() ;
+
         g_signal_emit(
               G_OBJECT(gobj())
             , m_C_SIG_ID_track_out
@@ -960,20 +962,18 @@ namespace MPX
     void
     YoukiController::on_play_stream_switched()
     {
-        boost::optional<MPX::Track> t = m_track_current ;
+        m_main_position->start() ;
 
+        boost::optional<MPX::Track> t = m_track_current ;
         g_return_if_fail( bool(t) ) ;
 
         gint64 id_track = boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ;
 
         m_ListViewTracks->set_active_track( id_track ) ;
-
         if( m_follow_track )
         {
             m_ListViewTracks->scroll_to_id( id_track ) ;
         }
-
-        m_control_status_icon->set_metadata( t.get() ) ;
 
         if( t.get().has( ATTRIBUTE_MB_ALBUM_ID ) )
         {
@@ -1018,6 +1018,7 @@ namespace MPX
                     info.push_back( boost::get<std::string>(t.get()[id[n]].get()) ) ;
         }
 
+        m_control_status_icon->set_metadata( t.get() ) ;
         m_main_titleinfo->set_info( info ) ;
 
         boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library") ;

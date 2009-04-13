@@ -1096,7 +1096,6 @@ namespace MPX
 
                             if( GST_IS_ELEMENT (spectrum ))
                             {
-                                    g_message( "%s: Have spectrum", G_STRLOC )  ;
                                     g_object_set (G_OBJECT (spectrum),
                                                     "interval", guint64 (50 * GST_MSECOND),
                                                     "bands", SPECT_BANDS,

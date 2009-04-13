@@ -43,8 +43,6 @@
 
 namespace
 {
-    int const mask_alpha_threshold = 128;
-
     // Animation settings
 
     int const animation_fps = 24;
