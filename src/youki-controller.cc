@@ -183,7 +183,7 @@ namespace MPX
                 , 0
         ) ;
 
-        m_mlibman_dbus_proxy = new info::backtrace::Youki::MLibMan_proxy_actual( conn ) ;
+        m_mlibman_dbus_proxy = services->get<info::backtrace::Youki::MLibMan_proxy_actual>("mpx-service-mlibman").get() ; 
         m_mlibman_dbus_proxy->signal_scan_end().connect(
             sigc::mem_fun(
                   *this

@@ -4,8 +4,10 @@
 
   <interface name="info.backtrace.Youki.MLibMan">
 
-        <method name="ShowWindow"/>
+        <method name="Start"/>
         <method name="Exit"/>
+
+        <method name="ShowWindow"/>
 
         <signal name="ScanStart"/>
         <signal name="ScanEnd"/>

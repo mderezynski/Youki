@@ -53,7 +53,7 @@ namespace MPX
                         v = std::min( std::max( v_ + min, v_ ), max ) ;
                         break; 
 
-                    default: std::abort() ;
+                    default: v = T() ; 
                 }
             }
 

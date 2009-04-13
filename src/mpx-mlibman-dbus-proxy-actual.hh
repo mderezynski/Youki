@@ -7,6 +7,7 @@
 #define YOUKI_MLIBMAN_DBUS_ACTUAL_HH 
 
 #include <dbus-c++/dbus.h>
+#include "mpx/mpx-services.hh"
 #include "mpx-mlibman-dbus-proxy.hh"
 
 namespace info {
@@ -16,6 +17,7 @@ namespace Youki {
 class MLibMan_proxy_actual
 : public info::backtrace::Youki::MLibMan_proxy 
 , public DBus::ObjectProxy
+, public Service::Base
 {
 public:
 
@@ -23,6 +25,7 @@ public:
         DBus::Connection conn
     )
     : DBus::ObjectProxy( conn, "/info/backtrace/Youki/MLibMan", "info.backtrace.Youki.MLibMan" )
+    , Service::Base("mpx-service-mlibman")
     {
     }
 

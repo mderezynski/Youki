@@ -383,6 +383,9 @@ namespace MPX
 
             virtual void
             Exit () ;
+
+            virtual void
+            Start() {}
     } ;
 }
 #endif

@@ -56,7 +56,7 @@ namespace MPX
                     case EX_IN:
                         return i >  a && i <= b ;
 
-                    default: std::abort() ;
+                    default: return false ;
                 } ;
             }
     } ;

@@ -63,6 +63,8 @@
 #include "youki-controller.hh"
 #include "youki-theme-engine.hh"
 
+#include "mpx-mlibman-dbus-proxy-actual.hh"
+
 using namespace MPX;
 using namespace Glib;
 
@@ -311,10 +313,7 @@ main (int argc, char ** argv)
     DBus::default_dispatcher = &dispatcher ;
     dispatcher.attach( g_main_context_default() ) ;
     DBus::Connection conn = DBus::Connection::SessionBus () ;
-    DBus::Connection actv = DBus::Connection::ActivationBus () ;
-
     conn.request_name( "info.backtrace.Youki.App" ) ;
-    actv.start_service( "info.backtrace.Youki.MLibMan", 0 ) ;
 
     Splashscreen* splash = new Splashscreen;
 
@@ -342,7 +341,12 @@ main (int argc, char ** argv)
         splash->set_message(_("Starting Theme Engine..."),6.5/10.);
         services->add(boost::shared_ptr<YoukiThemeEngine>( new YoukiThemeEngine ));
 
-        splash->set_message(_("Starting Youki..."),7/10.);
+        splash->set_message(_("Starting Library Manager..."), 7./10.);
+        info::backtrace::Youki::MLibMan_proxy_actual * p = new info::backtrace::Youki::MLibMan_proxy_actual( conn ) ;
+        p->Start() ;
+        services->add(boost::shared_ptr<info::backtrace::Youki::MLibMan_proxy_actual>( p ));
+
+        splash->set_message(_("Starting Youki..."),7.5/10.);
         services->add(boost::shared_ptr<YoukiController>(new YoukiController( conn )));
 
         splash->set_message(_("Starting Plugins..."),8/10.);
