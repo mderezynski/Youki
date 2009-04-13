@@ -326,6 +326,11 @@ main (int argc, char ** argv)
         services->add(boost::shared_ptr<Covers>(new MPX::Covers));
         services->get<Covers>("mpx-service-covers")->run() ;
 
+        splash->set_message(_("Starting Library Manager..."), 7./10.);
+        info::backtrace::Youki::MLibMan_proxy_actual * p = new info::backtrace::Youki::MLibMan_proxy_actual( conn ) ;
+        p->Start() ;
+        services->add(boost::shared_ptr<info::backtrace::Youki::MLibMan_proxy_actual>( p ));
+
         splash->set_message(_("Starting Library"),3/10.);
         services->add(boost::shared_ptr<Library>(new MPX::Library));
 
@@ -340,11 +345,6 @@ main (int argc, char ** argv)
 
         splash->set_message(_("Starting Theme Engine..."),6.5/10.);
         services->add(boost::shared_ptr<YoukiThemeEngine>( new YoukiThemeEngine ));
-
-        splash->set_message(_("Starting Library Manager..."), 7./10.);
-        info::backtrace::Youki::MLibMan_proxy_actual * p = new info::backtrace::Youki::MLibMan_proxy_actual( conn ) ;
-        p->Start() ;
-        services->add(boost::shared_ptr<info::backtrace::Youki::MLibMan_proxy_actual>( p ));
 
         splash->set_message(_("Starting Youki..."),7.5/10.);
         services->add(boost::shared_ptr<YoukiController>(new YoukiController( conn )));
