@@ -14,11 +14,12 @@ namespace Service
     {
         const char* services[] =
         {
-                "mpx-service-mlibman"
-                "mpx-service-library"
-                "mpx-service-taglib"
+              "mpx-service-mlibman"
+            , "mpx-service-library"
+            , "mpx-service-taglib"
+            , "mpx-service-covers"
 #ifdef HAVE_HAL
-                "mpx-service-hal"
+            , "mpx-service-hal"
 #endif // HAVE_HAL
         } ;
 
@@ -31,6 +32,7 @@ namespace Service
                     if( service )
                     {
                             sigx::glib_threadable * p = dynamic_cast<sigx::glib_threadable*>(service.get());
+
                             if( p )
                             {
                                 p->finish ();
@@ -46,6 +48,7 @@ namespace Service
     Manager::add(Base_p service)
     {
         sigx::glib_threadable * p = dynamic_cast<sigx::glib_threadable*>(service.get());
+
         if( p )
         {
             p->run ();

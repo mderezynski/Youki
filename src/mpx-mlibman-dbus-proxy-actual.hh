@@ -17,7 +17,7 @@ namespace Youki {
 class MLibMan_proxy_actual
 : public info::backtrace::Youki::MLibMan_proxy 
 , public DBus::ObjectProxy
-, public Service::Base
+, public ::MPX::Service::Base
 {
 public:
 
@@ -25,7 +25,7 @@ public:
         DBus::Connection conn
     )
     : DBus::ObjectProxy( conn, "/info/backtrace/Youki/MLibMan", "info.backtrace.Youki.MLibMan" )
-    , Service::Base("mpx-service-mlibman")
+    , ::MPX::Service::Base("mpx-service-mlibman")
     {
     }
 

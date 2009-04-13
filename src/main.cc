@@ -329,7 +329,7 @@ main (int argc, char ** argv)
         splash->set_message(_("Starting Library"),3/10.);
         services->add(boost::shared_ptr<Library>(new MPX::Library));
 
-        splash->set_message(_("Precaching covers..."),4/10.);
+        splash->set_message(_("Precaching Covers..."),4/10.);
         services->get<Covers>("mpx-service-covers")->precache( services->get<Library>("mpx-service-library").get() );
 
         splash->set_message(_("Starting Playback engine..."),5/10.);
@@ -362,6 +362,8 @@ main (int argc, char ** argv)
 
         delete splash;
         gtk->run() ;
+
+        p->Exit () ;
 
 #ifdef HAVE_HAL
     }

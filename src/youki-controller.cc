@@ -535,9 +535,6 @@ namespace MPX
 
         delete m_control_status_icon ;
         delete m_main_window ;
-        m_mlibman_dbus_proxy->Exit () ;
-        delete m_mlibman_dbus_proxy ;
-
         delete private_ ;
 
         ShutdownComplete () ;

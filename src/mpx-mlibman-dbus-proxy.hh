@@ -33,10 +33,10 @@ public:
     /* methods exported by this interface,
      * this functions will invoke the corresponding methods on the remote objects
      */
-    void ShowWindow()
+    void Start()
     {
         ::DBus::CallMessage call;
-        call.member("ShowWindow");
+        call.member("Start");
         ::DBus::Message ret = invoke_method(call);
     }
 
@@ -44,6 +44,13 @@ public:
     {
         ::DBus::CallMessage call;
         call.member("Exit");
+        ::DBus::Message ret = invoke_method(call);
+    }
+
+    void ShowWindow()
+    {
+        ::DBus::CallMessage call;
+        call.member("ShowWindow");
         ::DBus::Message ret = invoke_method(call);
     }
 
