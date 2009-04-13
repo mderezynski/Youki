@@ -335,12 +335,18 @@ namespace MPX
 
                         if( state == GST_STATE_READY )
                         {
+                            gst_pipeline_set_new_stream_time(
+                                  GST_PIPELINE(control_pipe())
+                                , 0
+                            ) ;
+
                             property_status_ = PLAYSTATUS_WAITING ;
-                            return  ;
+
+                            return ;
                         }
                     }
                     
-                    stop_stream()  ;
+                    stop_stream() ;
                 }
 
         void
@@ -667,7 +673,6 @@ namespace MPX
                         {
                                 m_metadata.reset() ;
                                 property_stream_type_ = std::string() ;
-
                                 readify_stream (); 
                         }
                         break ;

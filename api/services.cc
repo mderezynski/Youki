@@ -14,9 +14,14 @@ namespace Service
     {
         const char* services[] =
         {
-              "mpx-service-mlibman"
+              "mpx-service-plugins-gui"
+            , "mpx-service-plugins"
+            , "mpx-service-controller"
+            , "mpx-service-theme"
+            , "mpx-service-preferences"
+            , "mpx-service-play"
             , "mpx-service-library"
-            , "mpx-service-taglib"
+            , "mpx-service-mlibman"
             , "mpx-service-covers"
 #ifdef HAVE_HAL
             , "mpx-service-hal"

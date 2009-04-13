@@ -166,7 +166,6 @@ namespace MPX
             , mcs->key_get<std::string>( "lastfm", "password" )
         ) ;
 
-
         return true ;
     }
 

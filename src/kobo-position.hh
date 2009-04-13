@@ -38,9 +38,12 @@ namespace MPX
             draw_frame(
             )
             {
+/*
                 m_position = m_clock ? GST_TIME_AS_SECONDS(gst_clock_get_time(m_clock)) : 0 ;
                 queue_draw() ;
                 return bool(m_update_conn) ;
+*/
+                return false ;
             }
 
         public:

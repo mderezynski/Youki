@@ -853,6 +853,8 @@ namespace MPX
     {
         m_main_position->stop() ;
 
+        m_play->request_status( PLAYSTATUS_WAITING ) ;
+
         g_signal_emit(
               G_OBJECT(gobj())
             , m_C_SIG_ID_track_out

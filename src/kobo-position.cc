@@ -33,6 +33,7 @@ namespace MPX
     double
     KoboPosition::get_position ()
     {
+        return 0. ;
     }
 
     KoboPosition::KoboPosition(
@@ -56,14 +57,17 @@ namespace MPX
     void
     KoboPosition::stop()
     {
+/*
         m_update_conn.disconnect() ;
         m_clock = 0 ;
         queue_draw() ;
+*/
     }
 
     void
     KoboPosition::start()
     {
+/*
         boost::shared_ptr<IPlay> p = services->get<IPlay>("mpx-service-play") ;
 
         m_clock = p->get_clock() ;
@@ -76,6 +80,7 @@ namespace MPX
                     , &KoboPosition::draw_frame 
             ), animation_frame_period_ms) ;
         }
+*/
     }
 
     void
@@ -96,6 +101,7 @@ namespace MPX
         , gint64    position
     )
     {
+        m_position = position ;
         m_duration = duration ;
         queue_draw () ;
     }
@@ -322,8 +328,8 @@ namespace MPX
 
             Interval<std::size_t> i (
                   Interval<std::size_t>::IN_IN
-                , 1
-                , a.get_width() - 2
+                , 0 
+                , a.get_width()
             ) ;
 
             if( i.in( event->x ) ) 
@@ -334,8 +340,8 @@ namespace MPX
                 Limiter<gint64> p (
                       Limiter<gint64>::ABS_ABS
                     , 0
-                    , m_duration
-                    , (event->x - 1 ) / m_seek_factor
+                    , m_duration 
+                    , event->x / m_seek_factor
                 ) ;
 
                 m_seek_position = p ; 
@@ -344,17 +350,6 @@ namespace MPX
             }
         }
 
-        return true ;
-    }
-
-    bool
-    KoboPosition::on_button_release_event(
-        GdkEventButton* G_GNUC_UNUSED
-    )
-    {
-        m_clicked = false ;
-        m_SIGNAL_seek_event.emit( m_seek_position ) ;
-        queue_draw () ;
         return true ;
     }
 
@@ -383,8 +378,8 @@ namespace MPX
 
             Interval<std::size_t> i (
                   Interval<std::size_t>::IN_IN
-                , 1
-                , a.get_width() - 2 
+                , 0 
+                , a.get_width()
             ) ;
 
             if( i.in( x_orig ))
@@ -392,8 +387,8 @@ namespace MPX
                 Limiter<gint64> p (
                       Limiter<gint64>::ABS_ABS
                     , 0
-                    , m_duration + 1
-                    , ( x_orig - 1 ) / m_seek_factor
+                    , m_duration
+                    , x_orig / m_seek_factor
                 ) ;
 
                 m_seek_position = p ; 
@@ -401,6 +396,21 @@ namespace MPX
 
             queue_draw () ;
         }
+
+        return true ;
+    }
+
+    bool
+    KoboPosition::on_button_release_event(
+        GdkEventButton* G_GNUC_UNUSED
+    )
+    {
+        m_position = m_seek_position ;
+        m_clicked  = false ;
+
+        m_SIGNAL_seek_event.emit( m_seek_position ) ;
+
+        queue_draw () ;
 
         return true ;
     }
