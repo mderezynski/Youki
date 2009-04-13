@@ -674,27 +674,41 @@ namespace MPX
 
                             if( !Gtk::DrawingArea::on_key_press_event( event ))
                             { 
-                                    int x, y, x_root, y_root ;
+                                if( (event->state & GDK_CONTROL_MASK)
+                                                ||
+                                    (event->state & GDK_MOD1_MASK)
+                                                ||
+                                    (event->state & GDK_SUPER_MASK)
+                                                ||
+                                    (event->state & GDK_HYPER_MASK)
+                                                ||
+                                    (event->state & GDK_META_MASK)
+                                )
+                                {
+                                    return false ;
+                                }
 
-                                    dynamic_cast<Gtk::Window*>(get_toplevel())->get_position( x_root, y_root ) ;
+                                int x, y, x_root, y_root ;
 
-                                    x = x_root + get_allocation().get_x() ;
-                                    y = y_root + get_allocation().get_y() + get_allocation().get_height() ;
+                                dynamic_cast<Gtk::Window*>(get_toplevel())->get_position( x_root, y_root ) ;
 
-                                    m_SearchWindow->set_size_request( get_allocation().get_width(), -1 ) ;
-                                    m_SearchWindow->move( x, y ) ;
-                                    m_SearchWindow->show() ;
+                                x = x_root + get_allocation().get_x() ;
+                                y = y_root + get_allocation().get_y() + get_allocation().get_height() ;
 
-                                    send_focus_change( *m_SearchEntry, true ) ;
+                                m_SearchWindow->set_size_request( get_allocation().get_width(), -1 ) ;
+                                m_SearchWindow->move( x, y ) ;
+                                m_SearchWindow->show() ;
 
-                                    GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
-                                    g_object_unref( ((GdkEventKey*)new_event)->window ) ;
-                                    gtk_widget_realize( GTK_WIDGET(m_SearchWindow->gobj()) ) ;
-                                    ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
-                                    gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
-                                    gdk_event_free(new_event) ;
+                                send_focus_change( *m_SearchEntry, true ) ;
 
-                                    m_search_active = true ;
+                                GdkEvent *new_event = gdk_event_copy( (GdkEvent*)(event) ) ;
+                                g_object_unref( ((GdkEventKey*)new_event)->window ) ;
+                                gtk_widget_realize( GTK_WIDGET(m_SearchWindow->gobj()) ) ;
+                                ((GdkEventKey *) new_event)->window = GDK_WINDOW(g_object_ref(G_OBJECT(GTK_WIDGET(m_SearchWindow->gobj())->window))) ;
+                                gtk_widget_event(GTK_WIDGET(m_SearchEntry->gobj()), new_event) ;
+                                gdk_event_free(new_event) ;
+
+                                m_search_active = true ;
                             }
                     }
 
