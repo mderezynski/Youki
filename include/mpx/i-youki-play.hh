@@ -36,6 +36,9 @@
 
 #include "mpx/aux/glibaddons.hh"
 
+struct _GstClock ;
+typedef _GstClock GstClock ;
+
 namespace MPX
 {
         const int SPECT_BANDS = 64 ;
@@ -175,6 +178,9 @@ namespace MPX
                         virtual void
                         reset(
                         ) = 0 ;
+
+                        virtual GstClock*
+                        get_clock() = 0 ;
         };
 }
 

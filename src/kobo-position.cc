@@ -3,12 +3,11 @@
 #include <cmath>
 
 #include "mpx/mpx-main.hh"
-
-#include "mpx/widgets/cairo-extensions.hh"
-
 #include "mpx/algorithm/limiter.hh"
 #include "mpx/algorithm/interval.hh"
+#include "mpx/widgets/cairo-extensions.hh"
 
+#include "mpx/i-youki-play.hh"
 #include "mpx/i-youki-theme-engine.hh"
 
 #include "mpx/util-graphics.hh"
@@ -19,8 +18,8 @@ namespace
 {
     const double rounding = 2. ; 
 
-    int const animation_fps = 10;
-    int const animation_frame_period_ms = 1000 / animation_fps;
+    int const animation_fps = 2 ;
+    int const animation_frame_period_ms = 1000 / animation_fps ;
 }
 
 namespace MPX
@@ -34,32 +33,20 @@ namespace MPX
     double
     KoboPosition::get_position ()
     {
-        return m_push_factor * cos_smooth( m_timer.elapsed() ) ;
     }
 
     KoboPosition::KoboPosition(
     )
 
         : m_duration( 0 )
-        , m_position( 0 )
         , m_seek_position( 0 )
         , m_seek_factor( 0 )
-        , m_push_factor( 0 )
         , m_clicked( false )
+        , m_clock( 0 )
+
     {
         add_events(Gdk::EventMask(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK )) ;
         set_flags(Gtk::CAN_FOCUS) ;
-
-/*
-        m_timer.reset() ;
-        m_timer.start() ;
-
-        Glib::signal_timeout().connect(
-            sigc::mem_fun(
-                  *this
-                , &KoboPosition::draw_frame 
-        ), animation_frame_period_ms) ;
-*/
     }
 
     KoboPosition::~KoboPosition () 
@@ -69,32 +56,32 @@ namespace MPX
     void
     KoboPosition::stop()
     {
-/*
-        m_timer.stop() ;
-        m_timer.reset() ;
-        m_push_factor = 0 ;
+        m_update_conn.disconnect() ;
+        m_clock = 0 ;
         queue_draw() ;
-*/
     }
 
     void
     KoboPosition::start()
     {
-/*
-        m_timer.reset() ;
-        m_push_factor = (get_allocation().get_width() / double(m_duration)) ;
-        m_timer.start() ;
-        queue_draw() ;
-*/
+        boost::shared_ptr<IPlay> p = services->get<IPlay>("mpx-service-play") ;
+
+        m_clock = p->get_clock() ;
+
+        if( !m_update_conn )
+        {
+            m_update_conn = Glib::signal_timeout().connect(
+                sigc::mem_fun(
+                      *this
+                    , &KoboPosition::draw_frame 
+            ), animation_frame_period_ms) ;
+        }
     }
 
     void
     KoboPosition::on_size_allocate( Gtk::Allocation& alloc )
     {
         Gtk::DrawingArea::on_size_allocate( alloc ) ;
-/*
-        m_push_factor = (get_allocation().get_width() / double(m_duration)) ;
-*/
     }
 
     void
@@ -109,20 +96,7 @@ namespace MPX
         , gint64    position
     )
     {
-/*
-        if( (position - m_position) == 1 )
-        {
-            m_timer.reset() ;
-        }
-*/
-
         m_duration = duration ;
-        m_position = position ;
-
-/*
-        m_push_factor = (get_allocation().get_width() / double(m_duration)) ;
-*/
-
         queue_draw () ;
     }
 
@@ -135,7 +109,6 @@ namespace MPX
         const Gdk::Rectangle& a = get_allocation() ;
 
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
-
         const ThemeColor& c = theme->get_color( THEME_COLOR_SELECT ) ;
 
         cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
@@ -155,13 +128,9 @@ namespace MPX
         ) ;
         cairo->fill () ;
 
-        double factor   = 1. ;
-        gint64 position = m_clicked ? m_seek_position : m_position ;
-        double percent  = double(position) / double(m_duration) ; 
-
-/*
-        double posadd   = get_position() ; 
-*/
+        double factor           = 1. ;
+        gint64 position         = m_clicked ? m_seek_position : m_position ;
+        double percent          = double(position) / double(m_duration) ; 
 
         if( percent >= 0.90 )
         {
@@ -259,7 +228,7 @@ namespace MPX
             pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
 
 
-            if( (m_duration - m_position) > 1 )
+            if( ( m_duration - m_position ) > 1 )
             {
                     layout->set_markup(
                         (boost::format("<b>%02d</b>:<b>%02d</b>") % ( m_duration / 60 ) % ( m_duration % 60 )).str()
@@ -360,7 +329,6 @@ namespace MPX
             if( i.in( event->x ) ) 
             {
                 m_clicked       = true ;
-
                 m_seek_factor   = double(a.get_width()-2) / double(m_duration) ;
 
                 Limiter<gint64> p (
@@ -384,8 +352,7 @@ namespace MPX
         GdkEventButton* G_GNUC_UNUSED
     )
     {
-        m_position  = m_seek_position ;
-        m_clicked   = false ;
+        m_clicked = false ;
         m_SIGNAL_seek_event.emit( m_seek_position ) ;
         queue_draw () ;
         return true ;
@@ -425,8 +392,8 @@ namespace MPX
                 Limiter<gint64> p (
                       Limiter<gint64>::ABS_ABS
                     , 0
-                    , m_duration
-                    , (x_orig - 1 ) / m_seek_factor
+                    , m_duration + 1
+                    , ( x_orig - 1 ) / m_seek_factor
                 ) ;
 
                 m_seek_position = p ; 

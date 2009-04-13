@@ -100,7 +100,6 @@ namespace MPX
         boost::shared_ptr<IPreferences> p = services->get<IPreferences>("mpx-service-preferences") ;
     
         mcs->domain_register ("hotkeys");
-        mcs->key_register ("hotkeys", "enable", bool (true));
         mcs->key_register ("hotkeys", "system", int (1)); // GNOME Configured is default
         mcs->key_register ("hotkeys", "key-1", int (0)); // Play
         mcs->key_register ("hotkeys", "key-1-mask", int (0));
@@ -788,7 +787,7 @@ namespace MPX
     void
         MMKeys::on_mm_edit_done ()
     {
-        if( mcs->key_get<bool>("hotkeys","enable") )
+        if( m_active ) 
         {
             int sys = mcs->key_get<int>("hotkeys","system");
 

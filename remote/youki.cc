@@ -95,18 +95,16 @@ namespace
     display_startup_crash ()
     {
       // We assume Youki started up, but crashed again
-/*
+
       if (!g_getenv ("DISPLAY"))
       {
-*/
           char *message = g_strconcat
             (_("\n       Youki seems to have crashed.\n\n       Please try starting it from a terminal using '"),
              PREFIX,
              _("/libexec/mpx-bin --no-log'\n       for further information on what could have caused the crash\n"),
-             _("       and report it to our IRC channel, #mpx on irc.freenode.net\n\n"), NULL);
-          g_print( message ) ;
+             _("       and report it to our IRC channel, #youki on irc.freenode.net\n\n"), NULL);
+          g_print( "%s", message ) ;
           g_free( message ) ;
-/*
       }
       else
       {
@@ -120,7 +118,6 @@ namespace
           gtk_dialog_run (GTK_DIALOG (dialog));
           gtk_widget_destroy (dialog);
       }
-*/
 
       exit( EXIT_FAILURE ) ;
     }

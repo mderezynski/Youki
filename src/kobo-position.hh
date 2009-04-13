@@ -2,10 +2,14 @@
 #define KOBO_POSITION_HH
 
 #include <gtkmm.h>
+#include <gst/gst.h>
 
 namespace MPX
 {
-    class KoboPosition : public Gtk::DrawingArea
+    class KoboPosition
+
+        : public Gtk::DrawingArea
+
     {
         protected:
         
@@ -13,9 +17,11 @@ namespace MPX
             gint64      m_position ;
             gint64      m_seek_position ;
             double      m_seek_factor ;
-            double      m_push_factor ;
             bool        m_clicked ;
-            Glib::Timer m_timer ;
+
+            sigc::connection m_update_conn ;
+
+            GstClock* m_clock ;
 
        protected:
     
@@ -32,8 +38,9 @@ namespace MPX
             draw_frame(
             )
             {
+                m_position = m_clock ? GST_TIME_AS_SECONDS(gst_clock_get_time(m_clock)) : 0 ;
                 queue_draw() ;
-                return true ;
+                return bool(m_update_conn) ;
             }
 
         public:

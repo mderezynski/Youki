@@ -208,6 +208,12 @@ namespace MPX
 
                         const GstMetadata&
                         get_metadata ();
+    
+                        GstClock*
+                        get_clock()
+                        {
+                            return gst_pipeline_get_clock(GST_PIPELINE( m_pipeline )) ;
+                        }
 
                         void
                         request_status(
