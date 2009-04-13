@@ -56,80 +56,45 @@
 #   special exception to the GPL to apply to your modified version as well.
 
 AC_DEFUN([AX_BOOST_PYTHON],
-[
-	AC_ARG_WITH([boost-python],
-	AS_HELP_STRING([--with-boost-python@<:@=special-lib@:>@],
-                   [use the Python library from boost - it is possible to specify a certain library for the linker
-                        e.g. --with-boost-python=boost_python-gcc-mt-d-1_33_1 ]),
-        [
-        if test "$withval" = "no"; then
-			want_boost="no"
-        elif test "$withval" = "yes"; then
-            want_boost="yes"
-            ax_boost_user_python_lib=""
-        else
-		    want_boost="yes"
-        	ax_boost_user_python_lib="$withval"
-		fi
-        ],
-        [want_boost="yes"]
-	)
-
-	if test "x$want_boost" = "xyes"; then
-		AC_REQUIRE([AX_PYTHON])
-        AC_REQUIRE([AC_PROG_CC])
-		CPPFLAGS_SAVED="$CPPFLAGS"
-		CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
-		if test x$PYTHON_INCLUDE_DIR != x; then
-			CPPFLAGS="-I$PYTHON_INCLUDE_DIR $CPPFLAGS"
-		fi
-		export CPPFLAGS
-
-		LDFLAGS_SAVED="$LDFLAGS"
-		LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
-		export LDFLAGS
-
-        AC_CACHE_CHECK(whether the Boost::Python library is available,
-					   ax_cv_boost_python,
-        [AC_LANG_PUSH([C++])
-			 AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[@%:@include <boost/python.hpp>
-												]],
-                                   [[boost::python::str("");]]),
-                   ax_cv_boost_python=yes, ax_cv_boost_python=no)
-         AC_LANG_POP([C++])
-		])
-		if test "x$ax_cv_boost_python" = "xyes"; then
-			AC_DEFINE(HAVE_BOOST_PYTHON,,[define if the Boost::Python library is available])
-            BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
-            if test "x$ax_boost_user_python_lib" = "x"; then
-                for libextension in `ls $BOOSTLIBDIR/libboost_python*.{so,a}* 2>/dev/null | sed 's,.*/,,' | sed -e 's;^lib\(boost_python.*\)\.so.*$;\1;' -e 's;^lib\(boost_python.*\)\.a*$;\1;'` ; do
-                     ax_lib=${libextension}
-				    AC_CHECK_LIB($ax_lib, exit,
-                                 [BOOST_PYTHON_LIB="-l$ax_lib"; AC_SUBST(BOOST_PYTHON_LIB) link_python="yes"; break],
-                                 [link_python="no"])
-  				done
-                if test "x$link_python" != "xyes"; then
-                for libextension in `ls $BOOSTLIBDIR/boost_python*.{dll,a}* 2>/dev/null | sed 's,.*/,,' | sed -e 's;^\(boost_python.*\)\.dll.*$;\1;' -e 's;^\(boost_python.*\)\.a*$;\1;'` ; do
-                     ax_lib=${libextension}
-				    AC_CHECK_LIB($ax_lib, exit,
-                                 [BOOST_PYTHON_LIB="-l$ax_lib"; AC_SUBST(BOOST_PYTHON_LIB) link_python="yes"; break],
-                                 [link_python="no"])
-  				done
-                fi
-
-            else
-               for ax_lib in $ax_boost_user_python_lib boost_python-$ax_boost_user_python_lib; do
-				      AC_CHECK_LIB($ax_lib, main,
-                                   [BOOST_PYTHON_LIB="-l$ax_lib"; AC_SUBST(BOOST_PYTHON_LIB) link_python="yes"; break],
-                                   [link_python="no"])
-               done
-            fi
-			if test "x$link_python" != "xyes"; then
-				AC_MSG_ERROR(Could not link against $ax_lib !)
-			fi
-		fi
-
-		CPPFLAGS="$CPPFLAGS_SAVED"
-    	LDFLAGS="$LDFLAGS_SAVED"
-	fi
+[AC_REQUIRE([AX_PYTHON])dnl
+AC_CACHE_CHECK(whether the Boost::Python library is available,
+ac_cv_boost_python,
+[AC_LANG_SAVE
+ AC_LANG_CPLUSPLUS
+ CPPFLAGS_SAVE=$CPPFLAGS
+ if test x$PYTHON_INCLUDE_DIR != x; then
+   CPPFLAGS="-I$PYTHON_INCLUDE_DIR $CPPFLAGS"
+ fi
+ AC_COMPILE_IFELSE(AC_LANG_PROGRAM([[
+ #include <boost/python/module.hpp>
+ using namespace boost::python;
+ BOOST_PYTHON_MODULE(test) { throw "Boost::Python test."; }]],
+ 			   [[return 0;]]),
+  			   ac_cv_boost_python=yes, ac_cv_boost_python=no)
+ AC_LANG_RESTORE
+ CPPFLAGS=$CPPFLAGS_SAVE
 ])
+if test "$ac_cv_boost_python" = "yes"; then
+  AC_DEFINE(HAVE_BOOST_PYTHON,,[define if the Boost::Python library is available])
+  LDFLAGS_SAVE=$LDFLAGS
+  if test x$PYTHON_LIB != x; then
+    LDFLAGS="$LDFLAGS -l$PYTHON_LIB"
+  fi
+  LDFLAGS="$LDFLAGS $BOOST_LDFLAGS"
+  CPPFLAGS="$CPPFLAGS $BOOST_CPPFLAGS"
+
+  ax_python_lib=boost_python
+  AC_ARG_WITH([boost-python],AS_HELP_STRING([--with-boost-python],[specify the boost python library or suffix to use]),
+  [if test "x$with_boost_python" != "xno"; then
+     ax_python_lib=$with_boost_python
+     ax_boost_python_lib=boost_python-$with_boost_python
+   fi])
+  for ax_lib in $ax_python_lib $ax_boost_python_lib boost_python; do
+    AC_CHECK_LIB($ax_lib, exit, [BOOST_PYTHON_LIB=-l$ax_lib break])
+  done
+  AC_SUBST(BOOST_PYTHON_LIB)
+
+  LDFLAGS=$LDFLAGS_SAVE
+  CPPFLAGS=$CPPFLAGS_SAVE
+fi
+])dnl
