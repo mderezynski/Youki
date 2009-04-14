@@ -854,8 +854,7 @@ namespace MPX
                     {
                         grab_focus() ;
 
-                        double row = m_prop_vadj.get_value()->get_value() / double(m_row_height) ; 
-                        row = int(row) + (int(event->y) / int(m_row_height)) ;
+                        double row = (int(event->y) / int(m_row_height)) + (m_prop_vadj.get_value()->get_value() / double(m_row_height)) ; 
 
                         if( m_Model_I.in( row )) 
                         {
