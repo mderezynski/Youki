@@ -854,7 +854,11 @@ namespace MPX
                     {
                         grab_focus() ;
 
-                        double row = (int(event->y) / int(m_row_height)) + (m_prop_vadj.get_value()->get_value() / double(m_row_height)) ; 
+                        int row = int(m_prop_vadj.get_value()->get_value()) / int(m_row_height) ; 
+                        int off = int(m_prop_vadj.get_value()->get_value()) - (row*m_row_height) ;
+                        int y   = event->y ;
+
+                        row += y / m_row_height ; 
 
                         if( m_Model_I.in( row )) 
                         {
@@ -898,6 +902,7 @@ namespace MPX
 
                     m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
                     m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*int(m_row_height) ) ;
+                    m_prop_vadj.get_value()->set_step_increment( m_row_height ) ; 
 
                     double n                       = m_columns.size() ; 
                     double column_width_calculated = event->width / n ;
@@ -927,18 +932,15 @@ namespace MPX
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
-                    std::size_t row     = get_upper_row() ;
-                    int offset  = m_prop_vadj.get_value()->get_value() - (row*m_row_height) ;
-
+                    std::size_t row     = m_prop_vadj.get_value()->get_value() / double(m_row_height) ;
+                    int offset          = m_prop_vadj.get_value()->get_value() - (row*m_row_height) ;
                     int ypos            = 0 ;
                     std::size_t xpos    = 0 ;
-                    std::size_t cnt     = m_visible_height / m_row_height ; 
-
-                    if( row && offset )  
+                    std::size_t cnt     = m_visible_height / m_row_height + 1 ;
+            
+                    if( row && offset ) 
                     {
-                        row -- ;
-                        ypos = -offset ;
-                        cnt ++ ;
+                        ypos = - (m_row_height-offset) ;
                     }
 
                     cairo->rectangle(
