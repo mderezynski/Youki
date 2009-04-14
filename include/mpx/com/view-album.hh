@@ -854,15 +854,8 @@ namespace MPX
                     {
                         grab_focus() ;
 
-                        std::size_t row = get_upper_row() ;
-                        int offset  = m_prop_vadj.get_value()->get_value() - (row*m_row_height) ;
-
-                        if( row && offset )  
-                        {
-                            row -- ;
-                        }
-
-                        row += event->y / m_row_height ;
+                        double row = m_prop_vadj.get_value()->get_value() / double(m_row_height) ; 
+                        row = int(row) + (int(event->y) / int(m_row_height)) ;
 
                         if( m_Model_I.in( row )) 
                         {
