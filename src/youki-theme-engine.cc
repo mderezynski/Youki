@@ -45,39 +45,38 @@ namespace MPX
     )
     {
         // FIXME for now, we have one default theme engine
-
         double h, s, b ;
 
         Gtk::Window tv ;
         gtk_widget_realize(GTK_WIDGET(tv.gobj())) ;
 
         const Gdk::Color& csel = tv.get_style()->get_base( Gtk::STATE_SELECTED ) ;
-       // csel.set_rgb_p( .976, .455, .071 ) ;
         
         ThemeColorMap_t colors ;
 
         colors[THEME_COLOR_SELECT] = ThemeColor( csel.get_red_p(), csel.get_green_p(), csel.get_blue_p(), 1. ) ;
 
-        Gdk::Color ctit ;
-        ctit.set_rgb_p( .4, .4, .4 ) ;
+        Util::color_to_hsb( csel, h, s, b ) ;
+        b = std::max( 0.15, b-0.10 ) ;
+        s = 0.20 ; 
+        Gdk::Color c0 = Util::color_from_hsb( h, s, b ) ;
+        colors[THEME_COLOR_TITLEBAR_1] = ThemeColor( c0.get_red_p(), c0.get_green_p(), c0.get_blue_p(), 0.90 ) ;
 
-        colors[THEME_COLOR_TITLEBAR_1] = ThemeColor( ctit.get_red_p(), ctit.get_green_p(), ctit.get_blue_p(), 0.90 ) ;
-
-        Util::color_to_hsb( ctit, h, s, b ) ;
-        b = std::max( 0., b-0.10 ) ;
-        s = std::max( 0., s-0.14 ) ;
+        Util::color_to_hsb( csel, h, s, b ) ;
+        b = std::max( 0.08, b-0.20 ) ;
+        s = 0.10 ;
         Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
         colors[THEME_COLOR_TITLEBAR_2] = ThemeColor( c1.get_red_p(), c1.get_green_p(), c1.get_blue_p(), 0.90 ) ;
 
-        Util::color_to_hsb( c1, h, s, b ) ;
-        b = std::max( 0., b-0.15 ) ;
-        s = std::max( 0., s-0.20 ) ;
+        Util::color_to_hsb( csel, h, s, b ) ;
+        b = std::max( 0.05, b-0.25 ) ;
+        s = 0.05 ; 
         Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
         colors[THEME_COLOR_TITLEBAR_3] = ThemeColor( c2.get_red_p(), c2.get_green_p(), c2.get_blue_p(), 0.90 ) ;
 
-        Util::color_to_hsb( ctit, h, s, b ) ;
-        b = std::max( 0., b-0.20 ) ;
-        s = std::max( 0., s-0.10 ) ;
+        Util::color_to_hsb( csel, h, s, b ) ;
+        b = std::max( 0., b+0.15 ) ;
+        s = std::max( 0., s+0.05 ) ;
         Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
         colors[THEME_COLOR_TITLEBAR_TOP] = ThemeColor( c3.get_red_p(), c3.get_green_p(), c3.get_blue_p(), 0.90 ) ; 
 
@@ -85,12 +84,12 @@ namespace MPX
         colors[THEME_COLOR_BASE_ALTERNATE] = ThemeColor( .2, .2, .2, 1. ) ;
         colors[THEME_COLOR_TEXT] = ThemeColor( 1., 1., 1., 1. ) ;
         colors[THEME_COLOR_DRAWER] = ThemeColor( 0.65, 0.65, 0.65, .4 ) ;
-        colors[THEME_COLOR_WINDOW_BORDER] = ThemeColor( 0.35, 0.35, 0.35, 1. ) ; 
+        colors[THEME_COLOR_WINDOW_BORDER] = ThemeColor( 0.25, 0.25, 0.25, 1. ) ; 
         colors[THEME_COLOR_ENTRY_OUTLINE] = ThemeColor( 0.65, 0.65, 0.65, .4 ) ;
         colors[THEME_COLOR_TREELINES] = ThemeColor( .5, .5, .5, 1. ) ; 
         colors[THEME_COLOR_INFO_AREA] = ThemeColor( .8, .8, .8, .08 ) ;
         colors[THEME_COLOR_VOLUME] = ThemeColor( .7, .7, .7, 1. ) ;
-        colors[THEME_COLOR_RESIZE_GRIP] = ThemeColor( 1., 1., 1., .20 ) ; 
+        colors[THEME_COLOR_RESIZE_GRIP] = ThemeColor( 1., 1., 1., .10 ) ; 
 
         Theme theme (
               "Youki-Default"

@@ -414,23 +414,24 @@ namespace MPX
 
                     Cairo::RefPtr<Cairo::ImageSurface> s = get<0>(data_row) ;
 
+                    int off = 0 ;
+
                     if( row > 0 && s )
                     {
-                            r.x         = xpos + (m_width - s->get_width()) / 2 ; 
-                            r.y         = ypos ;
-                            r.width     = m_width ;
-                            r.height    = row_height ;
+                            off = s->get_width() ; 
+
+                            r.x = xpos + m_width - off - 4 ; 
 
                             cairo->set_source(
                                   s
                                 , r.x
-                                , r.y + 19
+                                , ypos + 2 
                             ) ; 
 
                             RoundedRectangle(
                                   cairo
                                 , r.x
-                                , r.y + 19
+                                , ypos + 2 
                                 , s->get_width() 
                                 , s->get_height() 
                                 , 4.
@@ -441,7 +442,7 @@ namespace MPX
                 
                     cairo->save() ;
 
-                    const int text_size_px = 9 ;
+                    const int text_size_px = 9 ; 
                     const int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
 
                     int width, height;
@@ -455,7 +456,7 @@ namespace MPX
                     Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
                     layout->set_font_description( font_desc ) ;
                     layout->set_ellipsize( Pango::ELLIPSIZE_MIDDLE ) ;
-                    layout->set_width( (m_width-8) * PANGO_SCALE ) ;
+                    layout->set_width( (m_width-off-14) * PANGO_SCALE ) ;
 
                     if( row > 0 )
                     {
@@ -463,8 +464,8 @@ namespace MPX
                             layout->set_text( get<4>(data_row) )  ;
                             layout->get_pixel_size (width, height) ;
                             cairo->move_to(
-                                  xpos + (m_width - width) / 2
-                                , r.y + 86 
+                                  xpos + 6 
+                                , ypos 
                             ) ;
                             cairo->set_source_rgba(
                                   color.r
@@ -478,8 +479,8 @@ namespace MPX
                             layout->set_text( get<3>(data_row) )  ;
                             layout->get_pixel_size (width, height) ;
                             cairo->move_to(
-                                  xpos + (m_width - width) / 2
-                                , r.y + 3 
+                                  xpos + 6 
+                                , ypos + 14 
                             ) ;
                             cairo->set_source_rgba(
                                   color.r
@@ -553,7 +554,7 @@ namespace MPX
                 void
                 initialize_metrics ()
                 {
-                   m_row_height = 112 ; 
+                   m_row_height = 78 ; 
                 }
 
                 void
@@ -853,7 +854,15 @@ namespace MPX
                     {
                         grab_focus() ;
 
-                        std::size_t row = get_upper_row() + (event->y / m_row_height) ;
+                        std::size_t row = get_upper_row() ;
+                        int offset  = m_prop_vadj.get_value()->get_value() - (row*m_row_height) ;
+
+                        if( row && offset )  
+                        {
+                            row -- ;
+                        }
+
+                        row += event->y / m_row_height ;
 
                         if( m_Model_I.in( row )) 
                         {
@@ -927,9 +936,26 @@ namespace MPX
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
                     std::size_t row     = get_upper_row() ;
-                    std::size_t ypos    = 0 ;
+                    int offset  = m_prop_vadj.get_value()->get_value() - (row*m_row_height) ;
+
+                    int ypos            = 0 ;
                     std::size_t xpos    = 0 ;
                     std::size_t cnt     = m_visible_height / m_row_height ; 
+
+                    if( row && offset )  
+                    {
+                        row -- ;
+                        ypos = -offset ;
+                        cnt ++ ;
+                    }
+
+                    cairo->rectangle(
+                          0 
+                        , 0 
+                        , a.get_width()
+                        , a.get_height()
+                    ) ;
+                    cairo->clip() ;
 
                     const std::size_t inner_pad = 1 ;
 

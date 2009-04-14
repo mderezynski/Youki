@@ -84,25 +84,31 @@ namespace
     {
         std::string name ;
 
-        if( r.count("album_artist_sortname") ) 
+        if( r.count("album_artist") ) 
         {
-            std::string in = boost::get<std::string>(r.find("album_artist_sortname")->second) ; 
+            Glib::ustring in_utf8 = boost::get<std::string>(r.find("album_artist")->second) ; 
+            gunichar c = in_utf8[0] ;
 
-            boost::iterator_range <std::string::iterator> match1 = boost::find_nth( in, ", ", 0 ) ;
-            boost::iterator_range <std::string::iterator> match2 = boost::find_nth( in, ", ", 1 ) ;
-
-            if( !match1.empty() && match2.empty() ) 
+            if( g_unichar_get_script( c ) != G_UNICODE_SCRIPT_LATIN && r.count("album_artist_sortname") ) 
             {
-                name = std::string (match1.end(), in.end()) + " " + std::string (in.begin(), match1.begin());
+                    std::string in = boost::get<std::string>(r.find("album_artist_sortname")->second) ; 
+
+                    boost::iterator_range <std::string::iterator> match1 = boost::find_nth( in, ", ", 0 ) ;
+                    boost::iterator_range <std::string::iterator> match2 = boost::find_nth( in, ", ", 1 ) ;
+
+                    if( !match1.empty() && match2.empty() ) 
+                    {
+                        name = std::string (match1.end(), in.end()) + " " + std::string (in.begin(), match1.begin());
+                    }
+                    else
+                    {
+                        name = in ;
+                    }
+
+                    return name ;
             }
-            else
-            {      
-                name = in ;
-            }
-        }
-        else
-        {
-            name = boost::get<std::string>(r.find("album_artist")->second) ;
+
+            name = in_utf8 ;
         }
 
         return name ;
@@ -924,6 +930,7 @@ namespace MPX
         switch( status )
         {
             case PLAYSTATUS_PLAYING:
+                m_main_love_button->set_sensitive( true ) ;
                 break ;
 
             case PLAYSTATUS_STOPPED:
@@ -935,6 +942,7 @@ namespace MPX
 
                 m_ListViewTracks->clear_active_track() ;
 
+                m_main_love_button->set_sensitive( false ) ;
                 m_main_titleinfo->clear() ;
                 m_main_cover->clear() ;
                 m_main_position->set_position( 0, 0 ) ;
@@ -949,6 +957,7 @@ namespace MPX
                 m_seek_position.reset() ; 
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
+                m_main_love_button->set_sensitive( false ) ;
                 break ;
 
             case PLAYSTATUS_PAUSED:

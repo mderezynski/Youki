@@ -391,7 +391,6 @@ namespace MPX
                         cr->fill_preserve() ;
                         cr->clip() ;
 
-
                         //// TITLEBAR 
                         const ThemeColor& t1 = theme->get_color( THEME_COLOR_TITLEBAR_1 ) ;
                         const ThemeColor& t2 = theme->get_color( THEME_COLOR_TITLEBAR_2 ) ;
@@ -430,14 +429,48 @@ namespace MPX
 
                         cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
                         cr->set_source( background_gradient_ptr ) ;
+                        RoundedRectangle(
+                              cr
+                            , 0
+                            , 0
+                            , m_presize_width 
+                            , 20
+                            , rounding
+                            , CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::TOPRIGHT )
+                        ) ;
+                        cr->fill();
+
+                        //// TITLEBAR TOP
+                        const ThemeColor& tbt = theme->get_color( THEME_COLOR_TITLEBAR_TOP ) ;
+
+                        cr->save() ;
+                            
                         cr->rectangle(
                               0
                             , 0
                             , m_presize_width 
-                            , 20
+                            , 20 
                         ) ;
-                        cr->fill();
+                        cr->clip() ;
 
+                        RoundedRectangle(
+                              cr
+                            , 0
+                            , 0
+                            , m_presize_width 
+                            , 20 + rounding
+                            , rounding
+                        ) ;
+
+                        cr->set_source_rgba(
+                              tbt.r
+                            , tbt.g
+                            , tbt.b
+                            , tbt.a
+                        ) ;
+                        cr->set_line_width( 1.5 ) ;
+                        cr->stroke() ;
+                        cr->restore() ;
 
                         //// ICONS
                         cr->set_operator( Cairo::OPERATOR_OVER ) ;
@@ -539,7 +572,6 @@ namespace MPX
                             propagate_expose( *get_child(), event ) ;
                         }
 
-
                         //// MAINAREA BORDER 
                         const ThemeColor& brd = theme->get_color( THEME_COLOR_WINDOW_BORDER ) ;
 
@@ -557,35 +589,6 @@ namespace MPX
                             , brd.g
                             , brd.b
                             , brd.a
-                        ) ;
-                        cr->set_line_width( 1.5 ) ;
-                        cr->stroke() ;
-
-                        //// TITLEBAR TOP
-                        const ThemeColor& tbt = theme->get_color( THEME_COLOR_TITLEBAR_TOP ) ;
-
-                        cr->rectangle(
-                              0
-                            , 0
-                            , m_presize_width 
-                            , 20 
-                        ) ;
-                        cr->clip() ;
-
-                        RoundedRectangle(
-                              cr
-                            , 0
-                            , 0
-                            , m_presize_width 
-                            , 20 + rounding
-                            , rounding
-                        ) ;
-
-                        cr->set_source_rgba(
-                              tbt.r
-                            , tbt.g
-                            , tbt.b
-                            , tbt.a
                         ) ;
                         cr->set_line_width( 1.5 ) ;
                         cr->stroke() ;

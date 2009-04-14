@@ -71,10 +71,6 @@ namespace MPX
     {
         StockIconSpecV v; 
 
-        v.push_back(StockIconSpec( "audio-volume-muted.png",       "audio-volume-muted"        ));
-        v.push_back(StockIconSpec( "audio-volume-low.png",         "audio-volume-low"          ));
-        v.push_back(StockIconSpec( "audio-volume-medium.png",      "audio-volume-medium"       ));
-        v.push_back(StockIconSpec( "audio-volume-high.png",        "audio-volume-high"         ));
         v.push_back(StockIconSpec( "icon-plugins.png",             MPX_STOCK_PLUGIN            ));
         v.push_back(StockIconSpec( "icon-equalizer.png",           MPX_STOCK_EQUALIZER         ));
         v.push_back(StockIconSpec( "icon-preferences.png",         "mpx-stock-preferences"     ));

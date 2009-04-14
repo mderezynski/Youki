@@ -88,9 +88,7 @@ namespace MPX
             ToggleButtonState           m_state ;
             ToggleButtonState           m_default_state ;
 
-            Glib::RefPtr<Gdk::Pixbuf>   m_pixbuf_none
-                                      , m_pixbuf_on
-                                      , m_pixbuf_off ;
+            Glib::RefPtr<Gdk::Pixbuf>   m_pixbuf[N_TOGGLE_BUTTON_STATES] ;
     } ;
 } // MPX
 

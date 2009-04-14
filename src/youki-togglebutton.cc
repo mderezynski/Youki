@@ -49,9 +49,9 @@ namespace MPX
 {
     YoukiToggleButton::YoukiToggleButton(
               int                   pixbuf_size
-            , const std::string&    stock_none
-            , const std::string&    stock_on
-            , const std::string&    stock_off
+            , const std::string&    s1
+            , const std::string&    s2
+            , const std::string&    s3
     )
 
         : m_pixbuf_size( pixbuf_size )
@@ -61,9 +61,9 @@ namespace MPX
 
         Glib::RefPtr<Gtk::IconTheme> theme = Gtk::IconTheme::get_default();
 
-        m_pixbuf_none = theme->load_icon(stock_none, m_pixbuf_size);
-        m_pixbuf_on = theme->load_icon(stock_on, m_pixbuf_size);
-        m_pixbuf_off = theme->load_icon(stock_off, m_pixbuf_size);
+        m_pixbuf[TOGGLE_BUTTON_STATE_NONE]  = theme->load_icon( s1, m_pixbuf_size ) ;
+        m_pixbuf[TOGGLE_BUTTON_STATE_ON]    = theme->load_icon( s2, m_pixbuf_size ) ;
+        m_pixbuf[TOGGLE_BUTTON_STATE_OFF]   = theme->load_icon( s3, m_pixbuf_size ) ;
     }
 
     void
@@ -101,7 +101,11 @@ namespace MPX
     void
     YoukiToggleButton::on_clicked()
     {
-        m_state = ToggleButtonState( int(m_state+1) % N_TOGGLE_BUTTON_STATES );
+        if( is_sensitive() )
+        {
+            m_state = ToggleButtonState( int(m_state+1) % N_TOGGLE_BUTTON_STATES );
+            queue_draw() ;
+        }
     }
 
     void
@@ -133,38 +137,48 @@ namespace MPX
             , 4.
         ) ;
 
-        if( m_state == m_default_state )
-            cairo->fill_preserve () ;
-        else
-            cairo->fill () ;
-
-        if( m_state == m_default_state )
+        if( is_sensitive() )
         {
+            if( m_state == m_default_state )
+            {
+                cairo->fill_preserve () ;
                 cairo->set_source_rgba(
                       c_sel.r
                     , c_sel.g
                     , c_sel.b
                     , 0.15
                 ) ;
+            }
 
-                cairo->fill() ;
+            cairo->fill() ;
+
+            GdkRectangle r ;
+
+            r.x         = a.get_x() + (a.get_width() - m_pixbuf_size) / 2 ;
+            r.y         = a.get_y() + (a.get_height() - m_pixbuf_size) / 2 ;
+            r.width     = m_pixbuf_size ;
+            r.height    = m_pixbuf_size ;
+
+            Gdk::Cairo::set_source_pixbuf(
+                  cairo
+                , m_pixbuf[m_state]
+                , r.x
+                , r.y
+            ) ;
+
+            cairo->rectangle(
+                  r.x
+                , r.y
+                , r.width
+                , r.height
+            ) ;
+
+            cairo->fill(
+            ) ;
         }
-
-        int x = a.get_x() + (a.get_width() - m_pixbuf_size) / 2;
-        int y = a.get_y() + (a.get_height() - m_pixbuf_size) / 2;
-
-        switch(m_state)
+        else
         {
-          case TOGGLE_BUTTON_STATE_ON:
-              Gdk::Cairo::set_source_pixbuf(cairo, m_pixbuf_on, x, y);
-              break;
-          case TOGGLE_BUTTON_STATE_OFF:
-              Gdk::Cairo::set_source_pixbuf(cairo, m_pixbuf_off, x, y);
-              break;
-          default:
-              Gdk::Cairo::set_source_pixbuf(cairo, m_pixbuf_none, x, y);
+            cairo->fill () ;
         }
-
-        cairo->paint();
     }
 } // namespace MPX
