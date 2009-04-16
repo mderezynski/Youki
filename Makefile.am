@@ -27,7 +27,7 @@ CLEANFILES =  $(info_backtrace_youki_app_DATA)          \
               $(info_backtrace_youki_sentinel_DATA)     \
               $(info_backtrace_youki_mlibman_DATA)   
 
-DISTCLEANFILES = $(CLEANFILES) intltool-extract intltool-merge intltool-update
+DISTCLEANFILES = $(CLEANFILES) intltool-extract intltool-merge intltool-update doltlibtool doltcompile
 
 SUBDIRS =			\
 	po				\

@@ -154,8 +154,10 @@ namespace MPX
 
             GdkRectangle r ;
 
-            r.x         = a.get_x() + (a.get_width() - m_pixbuf_size) / 2 ;
-            r.y         = a.get_y() + (a.get_height() - m_pixbuf_size) / 2 ;
+            int off = GTK_BUTTON(gobj())->GSEAL(depressed) ? 1 : 0 ;
+
+            r.x         = a.get_x() + (a.get_width() - m_pixbuf_size) / 2 + off ;
+            r.y         = a.get_y() + (a.get_height() - m_pixbuf_size) / 2 + off ;
             r.width     = m_pixbuf_size ;
             r.height    = m_pixbuf_size ;
 

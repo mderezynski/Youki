@@ -1794,15 +1794,19 @@ namespace MPX
                 {
                     std::size_t view_count = m_visible_height / m_row_height ;
 
-                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                    if( m_prop_vadj.get_value() )
+                    {
+                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                        m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*int(m_row_height) ) ;
 
-                    if( m_model->size() < view_count )
-                    {
-                        m_prop_vadj.get_value()->set_value(0.) ;
-                    } 
-                    else
-                    {
-                        m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                        if( m_model->size() < view_count )
+                        {
+                            m_prop_vadj.get_value()->set_value(0.) ;
+                        } 
+                        else
+                        {
+                            m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                        }
                     }
 
                     m_Model_I = Interval<std::size_t> (
@@ -1812,6 +1816,8 @@ namespace MPX
                     ) ;
 
                     m_selection.reset() ;
+
+                    queue_resize() ;
                     queue_draw() ;
                 }
 
@@ -1829,10 +1835,6 @@ namespace MPX
                             g_object_set(G_OBJECT(obj), "hadjustment", hadj, NULL);
 
                             ListViewTracks & view = *(reinterpret_cast<ListViewTracks*>(data));
-
-                            view.m_prop_vadj.get_value()->set_value(0.);
-                            view.m_prop_vadj.get_value()->set_upper( view.m_model->size() * view.m_row_height ) ;
-                            view.m_prop_vadj.get_value()->set_page_size( (view.m_visible_height/view.m_row_height)*int(view.m_row_height) ) ; 
 
                             view.m_prop_vadj.get_value()->signal_value_changed().connect(
                                 sigc::mem_fun(

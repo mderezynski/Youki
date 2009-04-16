@@ -8,9 +8,10 @@ noinst_HEADERS =							\
 		i-metadatareader.hh					\
 		metadatareader-taglib.hh			\
                                             \
-        i-youki-play.hh                     \
-        i-youki-hal.hh                      \
         i-youki-controller.hh               \
+        i-youki-hal.hh                      \
+        i-youki-play.hh                     \
+        i-youki-preferences.hh              \
         i-youki-theme-engine.hh             \
                                             \
 		mpx-artist-images.hh				\
@@ -22,10 +23,12 @@ noinst_HEADERS =							\
 		mpx-main.hh							\
 		mpx-minisoup.hh						\
 		mpx-network.hh						\
+        mpx-paths.hh                        \
         mpx-plugin.hh                       \
 		mpx-protected-access.hh				\
 		mpx-python.hh						\
 		mpx-services.hh						\
+        mpx-signals.hh                      \
 		mpx-sql.hh							\
 		mpx-stock.hh						\
 		mpx-types.hh						\

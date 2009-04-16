@@ -978,20 +978,22 @@ namespace MPX
                 void
                 on_model_changed( std::size_t position )
                 {
-                    std::size_t view_count = m_visible_height / m_row_height;
+                    std::size_t view_count = m_visible_height / m_row_height ;
 
-                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
-
-                    if( m_model->size() < view_count )
+                    if( m_prop_vadj.get_value() )
                     {
-                        m_prop_vadj.get_value()->set_value(0.);
-                    } 
-                    else
-                    {
-                        m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                        if( m_model->size() < view_count )
+                        {
+                            m_prop_vadj.get_value()->set_value(0.);
+                        } 
+                        else
+                        {
+                            m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                        }
                     }
 
-                    queue_draw();
+                    queue_resize() ;
+                    queue_draw() ;
                 }
 
                 static gboolean
@@ -1120,7 +1122,7 @@ namespace MPX
                             &ListViewArtist::clear_selection
                     ));
 
-                    clear_selection() ;
+                    on_model_changed( 0 ) ;
                 }
 
                 void

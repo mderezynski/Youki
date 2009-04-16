@@ -4,7 +4,6 @@
 
 #include "resolver.h"
 #include "sidfile.h"
-#include "mpx/mpx-audio.hh"
 
 TagLib::File *SIDFileTypeResolver::createFile (const char                        *filename,
                                                bool                               read_properties,

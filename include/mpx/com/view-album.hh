@@ -854,10 +854,9 @@ namespace MPX
                     {
                         grab_focus() ;
 
-                        int row = int(m_prop_vadj.get_value()->get_value()) / int(m_row_height) ; 
-                        int off = int(m_prop_vadj.get_value()->get_value()) - (row*m_row_height) ;
-                        int y   = event->y ;
-
+                        int row = double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ; 
+                        int off = m_prop_vadj.get_value()->get_value() - (row*m_row_height) ;
+                        int y   = event->y + (off ? (m_row_height-off) : 0) ;
                         row += y / m_row_height ; 
 
                         if( m_Model_I.in( row )) 
@@ -901,7 +900,7 @@ namespace MPX
                     m_visible_height = event->height ; 
 
                     m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
-                    m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*int(m_row_height) ) ;
+                    m_prop_vadj.get_value()->set_page_size( m_visible_height ) ;
                     m_prop_vadj.get_value()->set_step_increment( m_row_height ) ; 
 
                     double n                       = m_columns.size() ; 
@@ -1097,19 +1096,22 @@ namespace MPX
                 }
 
                 void
-                on_model_changed( std::size_t position )
+                on_model_changed(
+                      std::size_t position
+                )
                 {
                     std::size_t view_count = m_visible_height / m_row_height ;
 
-                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
-
-                    if( m_model->size() < view_count )
+                    if( m_prop_vadj.get_value() )
                     {
-                        m_prop_vadj.get_value()->set_value(0.) ;
-                    } 
-                    else
-                    {
-                        m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                        if( m_model->size() < view_count )
+                        {
+                            m_prop_vadj.get_value()->set_value(0.) ;
+                        } 
+                        else
+                        {
+                            m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                        }
                     }
 
                     m_Model_I = Interval<std::size_t>(
@@ -1118,6 +1120,8 @@ namespace MPX
                         , m_model->size() - 1
                     ) ;
 
+                    select_row( 0 ) ;
+                    queue_resize() ;
                     queue_draw() ;
                 }
 
@@ -1135,10 +1139,6 @@ namespace MPX
                             g_object_set(G_OBJECT(obj), "hadjustment", hadj, NULL);
 
                             ListViewAlbums & view = *(reinterpret_cast<ListViewAlbums*>(data));
-
-                            view.m_prop_vadj.get_value()->set_value(0.);
-                            view.m_prop_vadj.get_value()->set_upper( view.m_model->size() * view.m_row_height ) ;
-                            view.m_prop_vadj.get_value()->set_page_size( (view.m_visible_height/view.m_row_height)*int(view.m_row_height) ) ; 
 
                             view.m_prop_vadj.get_value()->signal_value_changed().connect(
                                 sigc::mem_fun(
