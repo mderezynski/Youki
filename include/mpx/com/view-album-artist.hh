@@ -43,7 +43,7 @@ namespace MPX
         typedef std::map<gint64, ModelArtist_t::iterator>   IdIterMapArtist_t ;
 
         typedef sigc::signal<void>                          SignalArtist_0 ;
-        typedef sigc::signal<void, std::size_t>             SignalArtist_1 ;
+        typedef sigc::signal<void, std::size_t, bool>       SignalArtist_1 ;
 
         struct DataModelArtist : public sigc::trackable
         {
@@ -74,7 +74,7 @@ namespace MPX
                 {
                     m_realmodel->clear () ;
                     m_iter_map.clear() ;
-                    m_changed.emit( m_position ) ;
+                    m_changed.emit( m_position, true ) ;
                 } 
 
                 virtual SignalArtist_1&
@@ -180,7 +180,7 @@ namespace MPX
                     m_realmodel->clear( ) ;
                     m_mapping.clear( ) ;
                     m_iter_map.clear( ) ;
-                    m_changed.emit( m_position ) ;
+                    m_changed.emit( m_position, true ) ;
                 } 
 
                 virtual std::size_t 
@@ -264,7 +264,7 @@ namespace MPX
                         get<0>(row) = (boost::format(_("All %lld %s")) % sz % ((sz > 1) ? _("Artists") : _("Artist"))).str() ;
 
                         std::swap(m_mapping, new_mapping);
-                        m_changed.emit( m_position );
+                        m_changed.emit( m_position, m_mapping.size() != new_mapping.size() );
                         m_select.emit() ;
                     }
                 }
@@ -980,7 +980,10 @@ namespace MPX
                 }
 
                 void
-                on_model_changed( std::size_t position )
+                on_model_changed(
+                      std::size_t       position
+                    , bool              size_changed
+                )
                 {
                     if( m_prop_vadj.get_value() && m_visible_height && m_row_height )
                     {
@@ -996,7 +999,6 @@ namespace MPX
                         }
                     }
 
-                    queue_resize() ;
                     queue_draw() ;
                 }
 
@@ -1126,7 +1128,7 @@ namespace MPX
                             &ListViewArtist::clear_selection
                     ));
 
-                    on_model_changed( 0 ) ;
+                    on_model_changed( 0, true ) ;
                 }
 
                 void

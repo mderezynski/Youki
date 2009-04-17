@@ -47,7 +47,7 @@ namespace MPX
         typedef std::map<gint64, ModelAlbums_t::iterator>                                                   IdIterMapAlbums_t ;
 
         typedef sigc::signal<void>                                                                          SignalAlbums_0 ;
-        typedef sigc::signal<void, std::size_t>                                                             SignalAlbums_1 ;
+        typedef sigc::signal<void, std::size_t, bool>                                                       SignalAlbums_1 ;
 
         struct DataModelAlbums : public sigc::trackable
         {
@@ -76,7 +76,7 @@ namespace MPX
                 {
                     m_realmodel->clear () ;
                     m_iter_map.clear() ;
-                    m_changed.emit( 0 ) ;
+                    m_changed.emit( 0, true ) ;
                 } 
 
                 virtual SignalAlbums_1&
@@ -220,7 +220,7 @@ namespace MPX
                     m_realmodel->clear () ;
                     m_mapping.clear() ;
                     m_iter_map.clear() ;
-                    m_changed.emit( 0 ) ;
+                    m_changed.emit( 0, true ) ;
                 } 
 
                 virtual std::size_t 
@@ -239,7 +239,7 @@ namespace MPX
                 swap( std::size_t p1, std::size_t p2 )
                 {
                     std::swap( m_mapping[p1], m_mapping[p2] ) ;
-                    m_changed.emit( m_position ) ;
+                    m_changed.emit( m_position, false ) ;
                 }
 
                 virtual void
@@ -342,7 +342,7 @@ namespace MPX
                         get<4>(row) = (boost::format(_("All %lld %s")) % sz % ((sz > 1) ? _("Albums") : _("Album"))).str() ;
 
                         std::swap( new_mapping, m_mapping ) ;
-                        m_changed.emit( m_position ) ;
+                        m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ;
                         m_select.emit() ;
                     }                
                 }
@@ -1116,31 +1116,36 @@ namespace MPX
 
                 void
                 on_model_changed(
-                      std::size_t position
+                      std::size_t   position
+                    , bool          size_changed
                 )
                 {
-                    std::size_t view_count = m_visible_height / m_row_height ;
-
-                    if( m_prop_vadj.get_value() )
+                    if( size_changed )
                     {
-                        if( m_model->size() < view_count )
-                        {
-                            m_prop_vadj.get_value()->set_value(0.) ;
-                        } 
-                        else
-                        {
-                            m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
-                        }
+                            std::size_t view_count = m_visible_height / m_row_height ;
+
+                            if( m_prop_vadj.get_value() )
+                            {
+                                if( m_model->size() < view_count )
+                                {
+                                    m_prop_vadj.get_value()->set_value(0.) ;
+                                } 
+                                else
+                                {
+                                    m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                                }
+                            }
+
+                            m_Model_I = Interval<std::size_t>(
+                                  Interval<std::size_t>::IN_IN
+                                , 0
+                                , m_model->size() - 1
+                            ) ;
                     }
 
-                    m_Model_I = Interval<std::size_t>(
-                          Interval<std::size_t>::IN_IN
-                        , 0
-                        , m_model->size() - 1
-                    ) ;
+                    //select_row( 0 ) ;
+                    //queue_resize() ;
 
-                    select_row( 0 ) ;
-                    queue_resize() ;
                     queue_draw() ;
                 }
 
