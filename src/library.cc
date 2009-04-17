@@ -224,6 +224,23 @@ namespace MPX
         {
         }
 
+        void
+                Library::switch_mode(
+                      bool          use_hal
+                )
+                {
+                    if( !use_hal )
+                    {
+                        m_Flags &= ~F_USING_HAL ;
+                    }
+                    else
+                    {
+                        m_Flags |=  F_USING_HAL ;
+                    }
+
+                    execSQL((boost::format ("UPDATE meta SET flags = '%lld' WHERE rowid = 1") % m_Flags).str());
+                }
+
         bool
                 Library::recache_covers_handler (SQL::RowV *v, std::size_t* position)
                 {

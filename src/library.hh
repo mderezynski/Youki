@@ -30,6 +30,7 @@
 #include "mpx/util-string.hh"
 
 #include "mpx/i-youki-hal.hh"
+#include "mpx/i-youki-library.hh"
 
 namespace MPX
 {
@@ -43,7 +44,8 @@ namespace MPX
 
     class MetadataReaderTagLib;
     class Library
-    : public Service::Base
+    : public ILibrary
+    , public Service::Base
     {
         public:
 
@@ -54,23 +56,30 @@ namespace MPX
             Library(
             ) ;
 
-            ~Library () ;
+            virtual ~Library () ;
+
+            void
+            switch_mode(
+                  bool
+            ) ;
 
             gint64
-            get_flags ()
+            get_flags(
+            )
             {
                 return m_Flags;
             }
 
-
             SQL::SQLDB*
-            get_sql_db ()
+            get_sql_db(
+            )
             {
                 return m_SQL;
             }
 
             void
-            reload() ;
+            reload(
+            ) ;
 
             void
             getSQL(

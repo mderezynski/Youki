@@ -55,7 +55,7 @@ SUBDIRS +=          \
 	com				\
     api             \
 	taglib		    \
-				    \
+    json            \
 	jnetlib		    \
 	mcs			    \
 				    \

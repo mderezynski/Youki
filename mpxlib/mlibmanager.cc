@@ -562,6 +562,12 @@ namespace MPX
         Gtk::Main::quit () ;
     }
 
+    void
+    MLibManager::Start ()
+    {
+        services->get<Library_MLibMan>("mpx-service-library")->create_and_init() ;
+    }
+
 #ifdef HAVE_HAL
     void
     MLibManager::on_library_use_hal_changed (MCS_CB_DEFAULT_SIGNATURE)

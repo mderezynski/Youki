@@ -44,13 +44,13 @@ namespace MPX
         typedef boost::tuple<std::string, std::string, std::string, gint64, MPX::Track, gint64, gint64> Row7 ;
         typedef std::vector<Row7>                                                                       Model_t ;
         typedef boost::shared_ptr<Model_t>                                                              Model_SP_t ;
-        typedef sigc::signal<void, gint64>                                                              Signal0 ;
+        typedef sigc::signal<void, gint64, bool>                                                        Signal1 ;
         typedef std::map<gint64, Model_t::iterator>                                                     IdIterMap_t ;
 
         struct DataModelTracks : public sigc::trackable
         {
                 Model_SP_t      m_realmodel;
-                Signal0         m_changed;
+                Signal1         m_changed;
                 IdIterMap_t     m_iter_map;
                 std::size_t     m_position ;
 
@@ -71,11 +71,11 @@ namespace MPX
                 {
                     m_realmodel->clear () ;
                     m_iter_map.clear() ;
-                    m_changed.emit( 0 ) ;
+                    m_changed.emit( 0, true ) ;
                 } 
 
-                virtual Signal0&
-                signal_changed ()
+                virtual Signal1&
+                signal_changed()
                 {
                     return m_changed ;
                 }
@@ -238,7 +238,7 @@ namespace MPX
                     m_mapping.clear() ;
                     m_iter_map.clear() ;
                     clear_active_track() ;
-                    m_changed.emit( 0 ) ;
+                    m_changed.emit( 0, true ) ;
                 } 
 
                 void
@@ -310,7 +310,7 @@ namespace MPX
                 {
                     std::swap( m_mapping[p1], m_mapping[p2] ) ;
                     scan_active() ;
-                    m_changed.emit( m_position ) ;
+                    m_changed.emit( m_position, false ) ;
                 }
 
                 void
@@ -320,7 +320,7 @@ namespace MPX
                     std::advance( i, p ) ;
                     m_mapping.erase( i ) ;
                     scan_active() ;
-                    m_changed.emit( m_position ) ;
+                    m_changed.emit( m_position, true ) ;
                 }
 
                 virtual void
@@ -557,7 +557,7 @@ namespace MPX
                     {
                         std::swap( new_mapping, m_mapping ) ;
                         scan_active () ;
-                        m_changed.emit( m_position ) ;
+                        m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ;
                     }                
                 }
 
@@ -700,7 +700,7 @@ namespace MPX
                     {
                         std::swap( new_mapping, m_mapping ) ;
                         scan_active () ;
-                        m_changed.emit( m_position ) ;
+                        m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ;
                     }
                 }
         };
@@ -1790,34 +1790,39 @@ namespace MPX
                 }
 
                 void
-                on_model_changed( gint64 position )
+                on_model_changed(
+                      gint64    position
+                    , bool      size_changed
+                )
                 {
-                    std::size_t view_count = m_visible_height / m_row_height ;
-
-                    if( m_prop_vadj.get_value() )
+                    if( size_changed )
                     {
-                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
-                        m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*int(m_row_height) ) ;
+                            std::size_t view_count = m_visible_height / m_row_height ;
 
-                        if( m_model->size() < view_count )
-                        {
-                            m_prop_vadj.get_value()->set_value(0.) ;
-                        } 
-                        else
-                        {
-                            m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
-                        }
+                            if( m_prop_vadj.get_value() )
+                            {
+                                m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                                m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*int(m_row_height) ) ;
+
+                                if( m_model->size() < view_count )
+                                {
+                                    m_prop_vadj.get_value()->set_value(0.) ;
+                                } 
+                                else
+                                {
+                                    m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                                }
+                            }
+
+                            m_Model_I = Interval<std::size_t> (
+                                  Interval<std::size_t>::IN_EX
+                                , 0
+                                , m_model->size()
+                            ) ;
+
+                            m_selection.reset() ;
                     }
 
-                    m_Model_I = Interval<std::size_t> (
-                          Interval<std::size_t>::IN_EX
-                        , 0
-                        , m_model->size()
-                    ) ;
-
-                    m_selection.reset() ;
-
-                    queue_resize() ;
                     queue_draw() ;
                 }
 

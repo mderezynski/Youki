@@ -83,6 +83,7 @@ namespace MPX
         colors[THEME_COLOR_BASE] = ThemeColor( 0.10, 0.10, 0.10, 1. ) ; 
         colors[THEME_COLOR_BASE_ALTERNATE] = ThemeColor( .2, .2, .2, 1. ) ;
         colors[THEME_COLOR_TEXT] = ThemeColor( 1., 1., 1., 1. ) ;
+        colors[THEME_COLOR_TEXT_SELECTED] = ThemeColor( 1., 1., 1., 1. ) ;
         colors[THEME_COLOR_DRAWER] = ThemeColor( 0.65, 0.65, 0.65, .4 ) ;
         colors[THEME_COLOR_WINDOW_BORDER] = ThemeColor( 0.25, 0.25, 0.25, 1. ) ; 
         colors[THEME_COLOR_ENTRY_OUTLINE] = ThemeColor( 0.65, 0.65, 0.65, .4 ) ;

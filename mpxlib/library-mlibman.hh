@@ -64,7 +64,10 @@ namespace MPX
             Library_MLibMan(
             ) ;
 
-            ~Library_MLibMan () ;
+            virtual ~Library_MLibMan () ;
+
+            void
+            create_and_init () ;
 
             gint64
             get_flags ()

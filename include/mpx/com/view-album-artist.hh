@@ -798,8 +798,11 @@ namespace MPX
                 {
                     m_visible_height = event->height ;
 
-                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
-                    m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*int(m_row_height) ) ; 
+                    if( m_row_height )
+                    {
+                            m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                            m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*m_row_height ) ; 
+                    }
 
                     double column_width = (double(event->width) - m_fixed_total_width - (40*m_collapsed.size()) ) / double(m_columns.size()-m_collapsed.size()-m_fixed.size());
 
@@ -831,6 +834,7 @@ namespace MPX
 
                     const ThemeColor& c_base_rules_hint = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) ;
                     const ThemeColor& c_text            = theme->get_color( THEME_COLOR_TEXT ) ;
+                    const ThemeColor& c_text_sel        = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
                     const ThemeColor& c_sel             = theme->get_color( THEME_COLOR_SELECT ) ;
 
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
@@ -961,7 +965,7 @@ namespace MPX
                                 , ypos
                                 , m_row_height
                                 , iter_is_selected
-                                , c_text
+                                , iter_is_selected ? c_text_sel : c_text
                             ) ;
 
                             xpos += (*i)->get_width();
@@ -978,10 +982,10 @@ namespace MPX
                 void
                 on_model_changed( std::size_t position )
                 {
-                    std::size_t view_count = m_visible_height / m_row_height ;
-
-                    if( m_prop_vadj.get_value() )
+                    if( m_prop_vadj.get_value() && m_visible_height && m_row_height )
                     {
+                        std::size_t view_count = m_visible_height / m_row_height ;
+
                         if( m_model->size() < view_count )
                         {
                             m_prop_vadj.get_value()->set_value(0.);

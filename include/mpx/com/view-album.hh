@@ -856,16 +856,31 @@ namespace MPX
 
                         int row = double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ; 
                         int off = m_prop_vadj.get_value()->get_value() - (row*m_row_height) ;
-                        int y   = event->y + (off ? (m_row_height-off) : 0) ;
-                        row += y / m_row_height ; 
 
-                        if( m_Model_I.in( row )) 
+                        if( event->y > off )
                         {
-                            select_row( row ) ;
-                            queue_draw() ;
-                            m_SIGNAL_selection_changed.emit() ;
+                            int row2 = row + (event->y + (off ? (m_row_height-off) : 0)) / m_row_height ; 
+                            if( m_Model_I.in( row2 )) 
+                            {
+                                if( row2 == (row+(m_visible_height/m_row_height)))
+                                {
+                                }
+                                select_row( row2 ) ;
+                            }
                         }
+                        else
+                        {
+                            if( m_Model_I.in( row )) 
+                            {
+                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
+                                select_row( row ) ;
+                            }
+                        }
+
+                        queue_draw() ;
+                        m_SIGNAL_selection_changed.emit() ;
                     }
+
                 
                     return true;
                 }
@@ -899,9 +914,12 @@ namespace MPX
                 {
                     m_visible_height = event->height ; 
 
-                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
-                    m_prop_vadj.get_value()->set_page_size( m_visible_height ) ;
-                    m_prop_vadj.get_value()->set_step_increment( m_row_height ) ; 
+                    if( m_row_height )
+                    {
+                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                        m_prop_vadj.get_value()->set_page_size( m_visible_height ) ;
+                        m_prop_vadj.get_value()->set_step_increment( m_row_height ) ; 
+                    }
 
                     double n                       = m_columns.size() ; 
                     double column_width_calculated = event->width / n ;
@@ -925,9 +943,10 @@ namespace MPX
 
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
-                    const ThemeColor& c_sel         = theme->get_color( THEME_COLOR_SELECT ) ;
-                    const ThemeColor& c_text        = theme->get_color( THEME_COLOR_TEXT ) ;
                     const ThemeColor& c_treelines   = theme->get_color( THEME_COLOR_TREELINES ) ;
+                    const ThemeColor& c_text        = theme->get_color( THEME_COLOR_TEXT ) ;
+                    const ThemeColor& c_text_sel    = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
+                    const ThemeColor& c_sel         = theme->get_color( THEME_COLOR_SELECT ) ;
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
@@ -1045,7 +1064,7 @@ namespace MPX
                                   , ypos + 4
                                   , m_row_height
                                   , iter_is_selected
-                                  , c_text
+                                  , iter_is_selected ? c_text_sel : c_text
                             ) ;
 
                             xpos += (*i)->get_width() ; 

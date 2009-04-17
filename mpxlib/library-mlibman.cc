@@ -188,6 +188,91 @@ namespace MPX
                 {
                         m_HAL = services->get<IHAL>("mpx-service-hal").get() ;
 
+                        create_and_init() ;
+
+                        m_ScannerThread = boost::shared_ptr<LibraryScannerThread_MLibMan>(
+                                new LibraryScannerThread_MLibMan(
+                                      this
+                                    , m_Flags
+                        ));
+
+                        m_ScannerThread->run();
+
+                        m_ScannerThread->connect().signal_new_album().connect(
+                            sigc::mem_fun(
+                                 *this
+                               , &Library_MLibMan::on_new_album
+                        ));
+
+                        m_ScannerThread->connect().signal_new_artist().connect(
+                            sigc::mem_fun(
+                                 *this
+                               , &Library_MLibMan::on_new_artist
+                        ));
+
+                        m_ScannerThread->connect().signal_new_track().connect(
+                            sigc::mem_fun(
+                                 *this
+                               , &Library_MLibMan::on_new_track
+                        ));
+
+                        m_ScannerThread->connect().signal_entity_deleted().connect(
+                            sigc::mem_fun(
+                                 *this
+                               , &Library_MLibMan::on_entity_deleted
+                        ));
+
+                        m_ScannerThread->connect().signal_entity_updated().connect(
+                            sigc::mem_fun(
+                                 *this
+                               , &Library_MLibMan::on_entity_updated
+                        ));
+
+                        m_ScannerThread->connect().signal_track_updated().connect(
+                            sigc::mem_fun(
+                                 *this
+                               , &Library_MLibMan::on_track_updated
+                        ));
+
+                        m_ScannerThread->connect().signal_message().connect(
+                            sigc::mem_fun(
+                                 *this
+                               , &Library_MLibMan::on_message
+                        ));
+
+                        /*
+                        mcs->subscribe(
+                              "Preferences-FileFormatPriorities"
+                            , "Format6"
+                            , sigc::mem_fun(
+                                    *this,
+                                   &Library_MLibMan::on_priority_settings_changed
+                        ));
+
+                        mcs->subscribe(
+                              "Preferences-FileFormatPriorities"
+                            , "prioritize-by-filetype"
+                            , sigc::mem_fun(
+                                    *this,
+                                   &Library_MLibMan::on_priority_settings_changed
+                        ));
+
+                        mcs->subscribe(
+                              "Preferences-FileFormatPriorities"
+                            , "prioritize-by-bitrate"
+                            , sigc::mem_fun(
+                                    *this,
+                                   &Library_MLibMan::on_priority_settings_changed
+                        ));
+                        */
+
+                        library_scanner_thread_set_priorities();
+                }
+
+        void
+                Library_MLibMan::create_and_init(
+                )
+                {
                         const int MLIB_VERSION_CUR = 2;
                         const int MLIB_VERSION_REV = 0;
                         const int MLIB_VERSION_AGE = 0;
@@ -345,6 +430,7 @@ namespace MPX
                         ///////////////////////////////////////////////////////////////
 
                         StrV columns;
+
                         for( unsigned n = 0; n < G_N_ELEMENTS(attrs); ++n )
                         {
                                 std::string column (attrs[n].id);
@@ -420,85 +506,8 @@ namespace MPX
                         ///////////////////////////////////////////////////////////////
 
                         m_SQL->exec_sql ("CREATE TABLE IF NOT EXISTS artist_aliases (id INTEGER PRIMARY KEY AUTOINCREMENT, mbid_alias TEXT NOT NULL, mbid_for TEXT NOT NULL, UNIQUE( mbid_alias, mbid_for))");
-
-                        m_ScannerThread = boost::shared_ptr<LibraryScannerThread_MLibMan>(
-                                new LibraryScannerThread_MLibMan(
-                                      this
-                                    , m_Flags
-                        ));
-
-                        m_ScannerThread->run();
-
-                        m_ScannerThread->connect().signal_new_album().connect(
-                            sigc::mem_fun(
-                                 *this
-                               , &Library_MLibMan::on_new_album
-                        ));
-
-                        m_ScannerThread->connect().signal_new_artist().connect(
-                            sigc::mem_fun(
-                                 *this
-                               , &Library_MLibMan::on_new_artist
-                        ));
-
-                        m_ScannerThread->connect().signal_new_track().connect(
-                            sigc::mem_fun(
-                                 *this
-                               , &Library_MLibMan::on_new_track
-                        ));
-
-                        m_ScannerThread->connect().signal_entity_deleted().connect(
-                            sigc::mem_fun(
-                                 *this
-                               , &Library_MLibMan::on_entity_deleted
-                        ));
-
-                        m_ScannerThread->connect().signal_entity_updated().connect(
-                            sigc::mem_fun(
-                                 *this
-                               , &Library_MLibMan::on_entity_updated
-                        ));
-
-                        m_ScannerThread->connect().signal_track_updated().connect(
-                            sigc::mem_fun(
-                                 *this
-                               , &Library_MLibMan::on_track_updated
-                        ));
-
-                        m_ScannerThread->connect().signal_message().connect(
-                            sigc::mem_fun(
-                                 *this
-                               , &Library_MLibMan::on_message
-                        ));
-
-                        /*
-                        mcs->subscribe(
-                              "Preferences-FileFormatPriorities"
-                            , "Format6"
-                            , sigc::mem_fun(
-                                    *this,
-                                   &Library_MLibMan::on_priority_settings_changed
-                        ));
-
-                        mcs->subscribe(
-                              "Preferences-FileFormatPriorities"
-                            , "prioritize-by-filetype"
-                            , sigc::mem_fun(
-                                    *this,
-                                   &Library_MLibMan::on_priority_settings_changed
-                        ));
-
-                        mcs->subscribe(
-                              "Preferences-FileFormatPriorities"
-                            , "prioritize-by-bitrate"
-                            , sigc::mem_fun(
-                                    *this,
-                                   &Library_MLibMan::on_priority_settings_changed
-                        ));
-                        */
-
-                        library_scanner_thread_set_priorities();
                 }
+
 
         Library_MLibMan::~Library_MLibMan ()
                 {

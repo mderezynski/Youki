@@ -385,7 +385,7 @@ namespace MPX
             Exit () ;
 
             virtual void
-            Start() {}
+            Start() ; 
     } ;
 }
 #endif

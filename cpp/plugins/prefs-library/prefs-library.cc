@@ -39,8 +39,10 @@
 #include "mpx/mpx-main.hh"
 #include "mpx/widgets/widgetloader.hh"
 
-#include "prefs-library.hh"
+#include "mpx/i-youki-library.hh"
 #include "mpx/i-youki-preferences.hh"
+
+#include "prefs-library.hh"
 
 using namespace Glib;
 using namespace Gtk;
@@ -177,13 +179,13 @@ namespace MPX
         PrefsLibrary::on_library_use_hal_toggled()
     {
 /*
-        boost::shared_ptr<Library> l = services->get<Library>("mpx-service-library");
+        boost::shared_ptr<ILibrary> l = services->get<Library>("mpx-service-library");
 
         if( m_Library_UseHAL_Yes->get_active() )
         {
             m_Xml->get_widget("vbox135")->set_sensitive( false );
             g_message("%s: Switching to HAL mode", G_STRLOC);
-            //l->switch_mode( true );
+            l->switch_mode( true );
             mcs->key_set("library","use-hal", true);
             m_Xml->get_widget("vbox135")->set_sensitive( true );
         }
@@ -192,7 +194,7 @@ namespace MPX
         {
             m_Xml->get_widget("vbox135")->set_sensitive( false );
             g_message("%s: Switching to NO HAL mode", G_STRLOC);
-            //l->switch_mode( false );
+            l->switch_mode( false );
             mcs->key_set("library","use-hal", false);
             m_Xml->get_widget("vbox135")->set_sensitive( true );
         }
