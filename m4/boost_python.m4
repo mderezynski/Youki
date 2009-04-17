@@ -102,11 +102,13 @@ AC_DEFUN([AX_BOOST_PYTHON],
 			AC_DEFINE(HAVE_BOOST_PYTHON,,[define if the Boost::Python library is available])
             BOOSTLIBDIR=`echo $BOOST_LDFLAGS | sed -e 's/@<:@^\/@:>@*//'`
             if test "x$ax_boost_user_python_lib" = "x"; then
-                for libextension in `ls $BOOSTLIBDIR/libboost_python*.{so,a}* 2>/dev/null | sed 's,.*/,,' | sed -e 's;^lib\(boost_python.*\)\.so.*$;\1;' -e 's;^lib\(boost_python.*\)\.a*$;\1;'` ; do
-                     ax_lib=${libextension}
-				    AC_CHECK_LIB($ax_lib, exit,
-                                 [BOOST_PYTHON_LIB="-l$ax_lib"; AC_SUBST(BOOST_PYTHON_LIB) link_python="yes"; break],
-                                 [link_python="no"])
+				for end in "-mt.so" "-mt-py$PYTHON_VERSION_SHORT.so" "-mt-py$PYTHON_VERSION_SHORT.so.*" "-gcc*.so.*"; do
+					for lib in `find $BOOSTLIBDIR/libboost_python$end -nowarn 2>&-| sort -nr`; do
+						ax_lib=`echo  -n ${lib} | perl -p -e 's#.*lib(boost_python.*)\.(?:so|a).*#@S|@1#'`
+					    AC_CHECK_LIB($ax_lib, exit,
+							[BOOST_PYTHON_LIB="-l$ax_lib"; AC_SUBST(BOOST_PYTHON_LIB) link_python="yes"; break 2],
+							[link_python="no"])
+					done
 				done
                 if test "x$link_python" != "xyes"; then
                 for libextension in `ls $BOOSTLIBDIR/boost_python*.{dll,a}* 2>/dev/null | sed 's,.*/,,' | sed -e 's;^\(boost_python.*\)\.dll.*$;\1;' -e 's;^\(boost_python.*\)\.a*$;\1;'` ; do
