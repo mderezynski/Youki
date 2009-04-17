@@ -800,8 +800,8 @@ namespace MPX
 
                     if( m_row_height )
                     {
-                            m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
-                            m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*m_row_height ) ; 
+                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                        m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*m_row_height ) ; 
                     }
 
                     double column_width = (double(event->width) - m_fixed_total_width - (40*m_collapsed.size()) ) / double(m_columns.size()-m_collapsed.size()-m_fixed.size());
@@ -985,18 +985,17 @@ namespace MPX
                     , bool              size_changed
                 )
                 {
-                    if( m_prop_vadj.get_value() && m_visible_height && m_row_height )
+                    if( size_changed && m_prop_vadj.get_value() && m_visible_height && m_row_height )
                     {
                         std::size_t view_count = m_visible_height / m_row_height ;
 
+                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                        m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*m_row_height ) ; 
+
                         if( m_model->size() < view_count )
-                        {
                             m_prop_vadj.get_value()->set_value(0.);
-                        } 
                         else
-                        {
                             m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
-                        }
                     }
 
                     queue_draw() ;
