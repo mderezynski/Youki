@@ -48,7 +48,6 @@
 #include "mpx/mpx-services.hh"
 
 #include "mpx-mlibman-dbus.hh"
-
 #include "mpx/i-youki-hal.hh"
 
 namespace MPX
@@ -285,9 +284,10 @@ namespace MPX
             StrSetT     m_ManagedPaths ;
             PathFragsV  m_ManagedPathFrags ;
 
-            std::string m_VolumeUDI;  // holds current VUDI
-            std::string m_DeviceUDI;  //     - " -     DUDI
-            std::string m_MountPoint; //     - " -     mount point
+            std::string m_VolumeUDI ;  // holds current VUDI
+            std::string m_DeviceUDI ;  //     - " -     DUDI
+            std::string m_MountPoint ; //     - " -     mount point
+            gint64      m_DeviceID ;
 #endif // HAVE_HAL
 
             Gtk::Button     * m_Close ;
@@ -314,6 +314,8 @@ namespace MPX
 
             Glib::RefPtr<Glib::MainLoop>    m_InnerdialogMainloop ;
             int                             m_InnerdialogResponse ;
+
+            boost::shared_ptr<IHAL>         m_HAL ;
 
             void
             innerdialog_response(int) ;

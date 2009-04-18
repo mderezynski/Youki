@@ -10,6 +10,7 @@ noinst_HEADERS =							\
                                             \
         i-youki-controller.hh               \
         i-youki-hal.hh                      \
+        i-youki-library.hh                  \
         i-youki-play.hh                     \
         i-youki-preferences.hh              \
         i-youki-theme-engine.hh             \

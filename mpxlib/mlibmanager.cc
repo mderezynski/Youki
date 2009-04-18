@@ -182,6 +182,8 @@ namespace MPX
     , Service::Base("mpx-service-mlibman")
     , m_InnerdialogMainloop(0)
     {
+        m_HAL = services->get<IHAL>("mpx-service-hal") ;
+
        /*- Widgets -------------------------------------------------------*/ 
 
         m_Xml->get_widget("treeview-filestats", m_FileStats_View );
@@ -248,7 +250,7 @@ namespace MPX
         Gtk::CellRendererText * cell = 0; 
         Gtk::TreeViewColumn * col = 0; 
 
-        services->get<IHAL>("mpx-service-hal")->signal_volume_added().connect(
+        m_HAL->signal_volume_added().connect(
             sigc::mem_fun(
                 *this,
                 &MLibManager::on_volume_added
@@ -753,19 +755,19 @@ namespace MPX
               {
                     Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
 
-                    std::string VolumeUDI     = Vol->get_udi();
-                    std::string DeviceUDI     = Vol->get_storage_device_udi();
-                    std::string MountPoint    = Vol->get_mount_point();
+                    std::string VolumeUDI   = Vol->get_udi();
+                    std::string DeviceUDI   = Vol->get_storage_device_udi();
+                    std::string MountPoint  = Vol->get_mount_point();
+                    gint64      DeviceID    = m_HAL->get_id_for_volume( VolumeUDI, DeviceUDI ) ;
 
                     reread_paths:
 
                     SQL::RowV v;
                     services->get<Library_MLibMan>("mpx-service-library")->getSQL(
                             v,
-                            (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
-                             % DeviceUDI
-                             % VolumeUDI
-                             ).str()
+                            (boost::format ("SELECT DISTINCT insert_path FROM track WHERE device_id = '%lld'")
+                                % DeviceID
+                            ).str()
                     );
 
                     StrSetT ManagedPaths; 
@@ -860,7 +862,7 @@ namespace MPX
         static boost::format volume_label_f1 ("%1%: %2%");
 
         try{
-            Hal::RefPtr<Hal::Context> Ctx = services->get<IHAL>("mpx-service-hal")->get_context();
+            Hal::RefPtr<Hal::Context> Ctx = m_HAL->get_context();
             Hal::RefPtr<Hal::Volume> Vol = Hal::Volume::create_from_udi(Ctx, volume.volume_udi); 
             std::string vol_label = Vol->get_partition_label();
             std::string vol_mount = Vol->get_mount_point();
@@ -890,29 +892,24 @@ namespace MPX
         VolumeStore->clear();
         FSTreeStore->clear();
 
-        m_ManagedPaths  = StrSetT();
-        m_VolumeUDI     = std::string(); 
-        m_DeviceUDI     = std::string(); 
-        m_MountPoint    = std::string();
+        m_ManagedPaths.clear() ; 
+        m_VolumeUDI.clear() ; 
+        m_DeviceUDI.clear() ;
+        m_MountPoint.clear() ; 
+        m_DeviceID = 0 ; 
     }
 
     void
     MLibManager::populate_volumes ()
     {
         static boost::format volume_label_f1 ("%1%: %2%");
-        
-        FSTreeStore->clear();
-        VolumeStore->clear();
 
-        m_ManagedPaths  = StrSetT();
-        m_VolumeUDI     = std::string(); 
-        m_DeviceUDI     = std::string(); 
-        m_MountPoint    = std::string();
+        clear_volumes() ;        
 
         try { 
-                Hal::RefPtr<Hal::Context> Ctx = services->get<IHAL>("mpx-service-hal")->get_context();
+                Hal::RefPtr<Hal::Context> Ctx = m_HAL->get_context();
                 VolumesHALCC_v volumes;
-                services->get<IHAL>("mpx-service-hal")->volumes(volumes);
+                m_HAL->volumes(volumes);
 
                 for(VolumesHALCC_v::const_iterator i = volumes.begin(); i != volumes.end(); ++i)
                 {
@@ -963,7 +960,7 @@ namespace MPX
             Volume volume ;
 
             try{
-                volume = services->get<IHAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
+                volume = m_HAL->get_volume_for_uri(Glib::filename_to_uri(path));
             } catch( MPX::IHAL::NoVolumeForUriError & cxe ) {
                 std::abort();
             }
@@ -1016,11 +1013,23 @@ namespace MPX
 
         int result = dialog.run();
 
-        std::string volume_udi_source, device_udi_source;
-        std::string volume_udi_target, device_udi_target;
-        std::string vrp_source, vrp_target;
-        Volume volume_source, volume_target;
-        std::string uri;
+        std::string     volume_udi_source
+                      , device_udi_source ;
+
+        std::string     volume_udi_target
+                      , device_udi_target ;
+
+        std::string     vrp_source
+                      , vrp_target ;
+
+        Volume          volume_source
+                      , volume_target ;
+
+        gint64          device_id_source
+                      , device_id_target ;
+
+        std::string     uri ;
+
 
         FileChooserDialog fcdialog (
               _("Youki: Select relocated path target"),
@@ -1041,83 +1050,86 @@ namespace MPX
 
         switch(result)
         {
-          case 0:
-              response = fcdialog.run();
-              fcdialog.hide();
+            case 0:
 
-              if( response == Gtk::RESPONSE_CANCEL ) 
-                  goto rerun_taskdialog;
+                response = fcdialog.run();
+                fcdialog.hide();
 
-              uri = fcdialog.get_current_folder_uri();
+                if( response == Gtk::RESPONSE_CANCEL ) 
+                {
+                    goto rerun_taskdialog ;
+                }
 
-              volume_source = services->get<IHAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
-              volume_udi_source =
-                  volume_source.volume_udi ;
-              device_udi_source =  
-                  volume_source.device_udi ;
-              vrp_source = 
-                  path.substr(volume_source.mount_point.length()) ;
+                uri = fcdialog.get_current_folder_uri() ;
 
-              volume_target = services->get<IHAL>("mpx-service-hal")->get_volume_for_uri(uri);
-              volume_udi_target =
-                  volume_target.volume_udi ;
-              device_udi_target =  
-                  volume_target.device_udi ;
-              vrp_target = 
-                  Glib::filename_from_uri(uri).substr(volume_target.mount_point.length()) ;
+                volume_source = m_HAL->get_volume_for_uri(Glib::filename_to_uri(path)) ;
 
-              services->get<Library_MLibMan>("mpx-service-library")->execSQL(
-                  (boost::format("UPDATE track SET hal_device_udi = '%s', hal_volume_udi = '%s', insert_path = '%s' "
-                                 "WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path = '%s'")
-                      % device_udi_target
-                      % volume_udi_target
-                      % vrp_target
-                      % device_udi_source
-                      % volume_udi_source
-                      % vrp_source
-              ).str());
+                volume_udi_source =
+                    volume_source.volume_udi ;
+                device_udi_source =  
+                    volume_source.device_udi ;
+                vrp_source = 
+                    path.substr(volume_source.mount_point.length()) ;
+                device_id_source =
+                    m_HAL->get_id_for_volume( volume_udi_source, device_udi_source ) ;
 
-              on_volumes_changed ();
 
-              /*
-              services->get<Library_MLibMan>("mpx-service-library")->vacuumVolume(
-                  device_udi_target,
-                  volume_udi_target 
-              );*/
+                volume_target = m_HAL->get_volume_for_uri(uri);
 
-              return RELOCATED;
-            break;
+                volume_udi_target =
+                    volume_target.volume_udi ;
+                device_udi_target =  
+                    volume_target.device_udi ;
+                vrp_target = 
+                    Glib::filename_from_uri(uri).substr(volume_target.mount_point.length()) ;
+                device_id_target =
+                    m_HAL->get_id_for_volume( volume_udi_target, device_udi_target ) ;
+
+                services->get<Library_MLibMan>("mpx-service-library")->execSQL(
+                    (boost::format("UPDATE track SET device_id = '%lld', insert_path = '%s' WHERE device_id = '%lld' AND insert_path = '%s'")
+                        % device_id_target
+                        % vrp_target
+                        % device_id_source
+                        % vrp_source
+                ).str());
+
+                on_volumes_changed ();
+
+                return RELOCATED;
+                break;
 
           case 1:
 
-              volume_target = services->get<IHAL>("mpx-service-hal")->get_volume_for_uri(Glib::filename_to_uri(path));
+                volume_target = m_HAL->get_volume_for_uri(Glib::filename_to_uri(path));
 
-              volume_udi_target =
-                  volume_target.volume_udi ;
+                volume_udi_target =
+                    volume_target.volume_udi ;
 
-              device_udi_target =  
-                  volume_target.device_udi ;
+                device_udi_target =  
+                    volume_target.device_udi ;
 
-              vrp_target = 
-                  path.substr(volume_target.mount_point.length()) ;
+                vrp_target = 
+                    path.substr(volume_target.mount_point.length()) ;
 
-              services->get<Library_MLibMan>("mpx-service-library")->execSQL(
-                  (boost::format("DELETE FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s' AND insert_path LIKE '%s%%'")
-                      % device_udi_target
-                      % volume_udi_target
-                      % vrp_target
-              ).str());
+                device_id_target =
+                    m_HAL->get_id_for_volume( volume_udi_target, device_udi_target ) ;
 
-              on_volumes_changed();
+                services->get<Library_MLibMan>("mpx-service-library")->execSQL(
+                    (boost::format("DELETE FROM track WHERE device_id = '%lld' AND insert_path LIKE '%s%%'")
+                        % device_id_target
+                        % vrp_target
+                ).str()) ;
 
-              /*
-              services->get<Library_MLibMan>("mpx-service-library")->vacuumVolume(
-                  device_udi_target,
-                  volume_udi_target 
-              );*/
+                on_volumes_changed() ;
 
-              return DELETED;
-            break;
+                /*
+                services->get<Library_MLibMan>("mpx-service-library")->vacuumVolume(
+                    device_udi_target,
+                    volume_udi_target 
+                );*/
+
+                return DELETED ;
+                break ;
 
           case 2:
               return IGNORED;
@@ -1141,7 +1153,7 @@ namespace MPX
                     if((i->operator[](0) != '.')
                       && file_test(path, FILE_TEST_IS_DIR))
                     {
-                        if(!services->get<IHAL>("mpx-service-hal")->path_is_mount_path(path))
+                        if(!m_HAL->path_is_mount_path(path))
                         {
                             FSTreeStore->append(iter->children());
                             return;
@@ -1167,7 +1179,7 @@ namespace MPX
                         try{
                             if(file_test(path, FILE_TEST_IS_DIR))
                             {
-                                if(!services->get<IHAL>("mpx-service-hal")->path_is_mount_path(path))
+                                if(!m_HAL->path_is_mount_path(path))
                                 {
                                     TreeIter iter = FSTreeStore->append(root_iter->children());
                                     (*iter)[FSTreeColumns.SegName] = *i; 
@@ -1239,10 +1251,11 @@ namespace MPX
     void
     MLibManager::on_volumes_changed ()
     {
-        m_ManagedPaths.clear() ;
-        m_VolumeUDI.clear() ;   
+        m_ManagedPaths.clear() ; 
+        m_VolumeUDI.clear() ; 
         m_DeviceUDI.clear() ;
-        m_MountPoint.clear() ;
+        m_MountPoint.clear() ; 
+        m_DeviceID = 0 ; 
 
         bool has_selection = m_VolumesView->get_selection()->count_selected_rows();
 
@@ -1255,15 +1268,14 @@ namespace MPX
             m_VolumeUDI     = Vol->get_udi();
             m_DeviceUDI     = Vol->get_storage_device_udi();
             m_MountPoint    = Vol->get_mount_point();
+            m_DeviceID      = m_HAL->get_id_for_volume( m_VolumeUDI, m_DeviceUDI ) ;
 
             SQL::RowV v;
             services->get<Library_MLibMan>("mpx-service-library")->getSQL(
                     v,
-                    (boost::format ("SELECT DISTINCT insert_path FROM track WHERE hal_device_udi = '%s' AND hal_volume_udi = '%s'")
-                        % m_DeviceUDI
-                        % m_VolumeUDI
-                    ).str()
-            );
+                    (boost::format ("SELECT DISTINCT insert_path FROM track WHERE device_id = '%lld'")
+                        % m_DeviceID
+            ).str()) ;
 
             for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
             {
