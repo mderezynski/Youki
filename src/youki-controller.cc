@@ -302,8 +302,6 @@ namespace MPX
                 , &YoukiController::initiate_quit
         )) ;
 
-        m_main_cover        = Gtk::manage( new KoboCover ) ;
-
         Gdk::Color background ;
         background.set_rgb_p( 0.1, 0.1, 0.1 ) ;
 
@@ -325,8 +323,8 @@ namespace MPX
         m_main_love_button->set_default_state( TOGGLE_BUTTON_STATE_NONE ) ;
         m_main_love_button->set_state( TOGGLE_BUTTON_STATE_NONE ) ;
 
-        m_main_infoarea     = Gtk::manage( new InfoArea ) ;
-        m_main_infoarea->signal_clicked().connect(
+        m_main_spectrum     = Gtk::manage( new YoukiSpectrum ) ;
+        m_main_spectrum->signal_clicked().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_info_area_clicked
@@ -496,7 +494,7 @@ namespace MPX
         m_VBox->pack_start( *m_Paned2, true, true, 0 ) ;
         m_VBox->pack_start( *m_HBox_Info, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
-        m_VBox->pack_start( *m_main_infoarea, false, false, 0 ) ;
+        m_VBox->pack_start( *m_main_spectrum, false, false, 0 ) ;
 
         m_control_status_icon = new YoukiControllerStatusIcon ;
         m_control_status_icon->signal_clicked().connect(
@@ -518,12 +516,6 @@ namespace MPX
         reload_library () ;
         m_ListViewArtist->clear_selection() ;
         m_ListViewAlbums->clear_selection() ;
-
-        m_play->signal_spectrum().connect(
-            sigc::mem_fun(
-                  *m_main_infoarea
-                , &InfoArea::update_spectrum
-        )) ;
 
         m_Paned1->set_position( mcs->key_get<int>("main-window","paned1") ) ;
         while (gtk_events_pending()) gtk_main_iteration() ;
@@ -942,7 +934,6 @@ namespace MPX
 
                 m_main_love_button->set_sensitive( false ) ;
                 m_main_titleinfo->clear() ;
-                m_main_cover->clear() ;
                 m_main_position->set_position( 0, 0 ) ;
 
                 m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
@@ -993,25 +984,16 @@ namespace MPX
                     , cover
                 ))
                 {
-                    m_main_cover->set(
-                        cover->scale_simple(
-                              160
-                            , 160
-                            , Gdk::INTERP_BILINEAR
-                    )) ;
-
                     m_control_status_icon->set_image( cover ) ;
                 }
                 else
                 {
-                    m_main_cover->clear() ;
-
                     m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
                 }
         }
         else
         {
-                m_main_cover->clear() ;
+            m_control_status_icon->set_image( Glib::RefPtr<Gdk::Pixbuf>(0) ) ;
         }
 
         std::vector<std::string> info ;

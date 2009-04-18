@@ -1,7 +1,7 @@
 #libxml (C) 2003-2007 MPX developers, see AUTHORS
 
 AC_PREREQ(2.60)
-AC_INIT([youki],[0.05.1],[http://mpx.backtrace.info/report])
+AC_INIT([youki],[0.05.2],[http://mpx.backtrace.info/report])
 AC_CONFIG_SRCDIR([src/main.cc])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_AUX_DIR([aux])

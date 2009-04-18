@@ -121,8 +121,7 @@ namespace MPX
 
                 for (int n = 0; n < SPECT_BANDS; ++n)
                 {
-                    m_spectrum.push_back (0) ;
-                    m_spectrum_zero.push_back (0) ;
+                    m_spectrum.push_back( 0 ) ;
                 }
 
                 property_volume().signal_changed().connect(
@@ -310,8 +309,6 @@ namespace MPX
 
                         property_status_ = PLAYSTATUS_STOPPED ;
                     }
-
-                    signal_spectrum_.emit( m_spectrum_zero ) ;
                 }
 
         void
@@ -381,12 +378,14 @@ namespace MPX
                     if( GST_STATE (control_pipe() ) == GST_STATE_PAUSED )
                     {
                         GstStateChangeReturn G_GNUC_UNUSED statechange = gst_element_set_state( control_pipe (), GST_STATE_PLAYING )  ;
+                        property_status_ = PLAYSTATUS_PLAYING ;
                         return ; 
                     }
                     else
                     if( GST_STATE (control_pipe() ) == GST_STATE_PLAYING )
                     {
                         GstStateChangeReturn G_GNUC_UNUSED statechange = gst_element_set_state( control_pipe (), GST_STATE_PAUSED )  ;
+                        property_status_ = PLAYSTATUS_PAUSED ;
                         return ; 
                     }
                 }

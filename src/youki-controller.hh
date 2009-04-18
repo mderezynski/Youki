@@ -15,7 +15,7 @@
 #include "kobo-volume.hh"
 #include "youki-simpleinfo.hh"
 #include "youki-togglebutton.hh"
-#include "infoarea.hh"
+#include "youki-spectrum.hh"
 
 #include "mpx-mlibman-dbus-proxy-actual.hh"
 #include "mpx-app-dbus-adaptor.hh"
@@ -115,9 +115,8 @@ namespace MPX
             int                               m_main_window_x 
                                             , m_main_window_y ;
             
-            InfoArea                        * m_main_infoarea ;
+            YoukiSpectrum                   * m_main_spectrum ;
             KoboPosition                    * m_main_position ;
-            KoboCover                       * m_main_cover ;
             KoboTitleInfo                   * m_main_titleinfo ;
             KoboVolume                      * m_main_volume ;
             YoukiToggleButton               * m_main_love_button;

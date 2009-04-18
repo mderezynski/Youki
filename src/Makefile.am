@@ -113,10 +113,8 @@ youki_bin_SOURCES =                         \
         glib-marshalers.c                   \
         glib-marshalers.h                   \
                                             \
-        infoarea.hh                         \
-        infoarea.cc                         \
-        infoarea__protected.cc              \
-        infoarea__private.cc                \
+        youki-spectrum.hh                   \
+        youki-spectrum.cc                   \
                                             \
         jnethttpsrc.h                       \
         jnethttpsrc.cc                      \
