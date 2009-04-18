@@ -58,7 +58,7 @@ namespace MPX
         modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
         modify_base( Gtk::STATE_NORMAL, cgdk ) ;
 
-        m_play = services->get<IPlay>("mpx-service-play").get() ; 
+        m_play = services->get<IPlay>("mpx-service-play") ; 
 
         m_play_status = PlayStatus(m_play->property_status().get_value()) ;
 

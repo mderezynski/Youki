@@ -12,6 +12,24 @@ namespace
 {
     const double rounding = 2. ; 
     const int    pad = 1 ;
+
+    Gdk::Color
+    get_color_at_pos(
+          const Gdk::Color&     c1
+        , const Gdk::Color&     c2
+        , const double          ratio
+    )
+    {
+        Gdk::Color c ;
+
+        double r = ( c1.get_red_p() * ( 1 - ratio ) + c2.get_red_p() * ratio ) ;
+        double g = ( c1.get_green_p() * ( 1 - ratio ) + c2.get_green_p() * ratio ) ;
+        double b = ( c1.get_blue_p() * ( 1 - ratio ) + c2.get_blue_p() * ratio ) ; 
+
+        c.set_rgb_p( r, g, b ) ;
+
+        return c ;
+    }
 }
 
 namespace MPX
@@ -79,6 +97,7 @@ namespace MPX
 
             cairo->save () ;
 
+/*
             Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
                   r.x + r.width / 2
                 , r.y  
@@ -109,9 +128,26 @@ namespace MPX
                 , c.get_blue_p()
                 , 0.35
             ) ;
+*/
 
-            cairo->set_source( background_gradient_ptr ) ;
-            cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+            Gdk::Color c1 ;
+            Gdk::Color c2 ;
+
+            c1.set_rgb_p( .2, .2, .2 ) ;
+            c2.set_rgb_p( .568, .114, .114 ) ;
+
+            Gdk::Color c_gradient = get_color_at_pos( c1, c2,  percent ) ;
+
+            cairo->set_source_rgba(
+                  c_gradient.get_red_p()
+                , c_gradient.get_green_p()
+                , c_gradient.get_blue_p()
+                , .8
+            ) ;
+
+            cairo->set_operator(
+                  Cairo::OPERATOR_ATOP
+            ) ;
 
             RoundedRectangle(
                   cairo

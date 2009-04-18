@@ -322,6 +322,7 @@ namespace MPX
         m_main_love_button  = Gtk::manage(new YoukiToggleButton(16, "mpx-loved-none", "mpx-loved-yes", "mpx-loved-no") ) ;
         m_main_love_button->set_default_state( TOGGLE_BUTTON_STATE_NONE ) ;
         m_main_love_button->set_state( TOGGLE_BUTTON_STATE_NONE ) ;
+        m_main_love_button->set_sensitive( false ) ;
 
         m_main_spectrum     = Gtk::manage( new YoukiSpectrum ) ;
         m_main_spectrum->signal_clicked().connect(
@@ -488,7 +489,7 @@ namespace MPX
 
         m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
         m_HBox_Info->pack_start( *m_main_love_button, false, false, 0 ) ;
-        m_HBox_Info->property_spacing() = 4 ; 
+        m_HBox_Info->property_spacing() = 2 ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
         m_VBox->pack_start( *m_Paned2, true, true, 0 ) ;
@@ -698,7 +699,7 @@ namespace MPX
         // Albums
 
         v.clear () ; 
-        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album")).str()) ; 
+        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album")).str()) ; 
 
         model_albums->append_album_quiet(
               m_disc_multiple 
@@ -706,6 +707,7 @@ namespace MPX
             , -1
             , ""
             , "" 
+            , ""
             , ""
         ) ;
 
@@ -741,6 +743,7 @@ namespace MPX
                     , get<std::string>(r["album"])
                     , r.count("album_artist_sortname") ? get<std::string>(r["album_artist_sortname"]) : get<std::string>(r["album_artist"])
                     , get<std::string>(r["mb_album_id"])
+                    , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
                 ) ;
         }
 

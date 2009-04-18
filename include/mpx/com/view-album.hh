@@ -37,12 +37,56 @@ typedef Glib::Property<Gtk::Adjustment*> PropAdj;
 namespace
 {
     const double rounding_albums = 4. ; 
+
+    enum ReleaseType
+    {
+        RT_NONE             =   0,
+        RT_ALBUM            =   1 << 0,
+        RT_SINGLE           =   1 << 1,
+        RT_COMPILATION      =   1 << 2,
+        RT_EP               =   1 << 3,
+        RT_LIVE             =   1 << 4,
+        RT_REMIX            =   1 << 5,
+        RT_SOUNDTRACK       =   1 << 6,
+        RT_OTHER            =   1 << 7,
+        RT_ALL              =   (RT_ALBUM|RT_SINGLE|RT_COMPILATION|RT_EP|RT_LIVE|RT_REMIX|RT_SOUNDTRACK|RT_OTHER)
+    };
+
+    ReleaseType
+    get_rt(
+          const std::string& type
+    )
+    {
+        if( type == "album" )
+                return RT_ALBUM;
+
+        if( type == "single" )
+                return RT_SINGLE;
+
+        if( type == "compilation" )
+                return RT_COMPILATION;
+
+        if( type == "ep" )
+                return RT_EP;
+
+        if( type == "live" )
+                return RT_LIVE;
+
+        if( type == "remix" )
+                return RT_REMIX;
+
+        if( type == "soundtrack" )
+                return RT_SOUNDTRACK;
+
+        return RT_OTHER;
+    }
 }
 
 namespace MPX
 {
-        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string>  Row6 ;
-        typedef std::vector<Row6>                                                                           ModelAlbums_t ;
+        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType>  RowAlbum ;
+
+        typedef std::vector<RowAlbum>                                                                       ModelAlbums_t ;
         typedef boost::shared_ptr<ModelAlbums_t>                                                            ModelAlbums_SP_t ;
         typedef std::map<gint64, ModelAlbums_t::iterator>                                                   IdIterMapAlbums_t ;
 
@@ -104,7 +148,7 @@ namespace MPX
                     return m_realmodel->size() ;
                 }
 
-                virtual Row6&
+                virtual RowAlbum&
                 row (std::size_t row)
                 {
                     return (*m_realmodel)[row] ;
@@ -134,9 +178,10 @@ namespace MPX
                     , const std::string&                    album
                     , const std::string&                    album_artist
                     , const std::string&                    mbid
+                    , const std::string&                    type
                 )
                 {
-                    Row6 row ( surface, id_album, id_artist, album, album_artist, mbid ) ; 
+                    RowAlbum row ( surface, id_album, id_artist, album, album_artist, mbid, get_rt( type ) ) ; 
                     m_realmodel->push_back( row ) ;
 
                     ModelAlbums_t::iterator i = m_realmodel->end() ;
@@ -229,7 +274,7 @@ namespace MPX
                     return m_mapping.size();
                 }
 
-                virtual Row6&
+                virtual RowAlbum&
                 row (std::size_t row)
                 {
                     return *(m_mapping[row]);
@@ -244,12 +289,13 @@ namespace MPX
 
                 virtual void
                 append_album(
-                      Cairo::RefPtr<Cairo::ImageSurface>        surface
-                    , gint64                                    id_album
-                    , gint64                                    id_artist
-                    , const std::string&                        album
-                    , const std::string&                        album_artist
-                    , const std::string&                        mbid
+                      Cairo::RefPtr<Cairo::ImageSurface>    surface
+                    , gint64                                id_album
+                    , gint64                                id_artist
+                    , const std::string&                    album
+                    , const std::string&                    album_artist
+                    , const std::string&                    mbid
+                    , const std::string&                    type
                 )
                 {
                     DataModelAlbums::append_album(
@@ -259,6 +305,7 @@ namespace MPX
                         , album
                         , album_artist
                         , mbid
+                        , type
                     ) ;
 
                     regen_mapping();
@@ -272,6 +319,7 @@ namespace MPX
                     , const std::string&                        album
                     , const std::string&                        album_artist
                     , const std::string&                        mbid
+                    , const std::string&                        type
                 )
                 {
                     DataModelAlbums::append_album(
@@ -281,6 +329,7 @@ namespace MPX
                         , album
                         , album_artist
                         , mbid
+                        , type
                     ) ;
                 }
 
@@ -335,7 +384,7 @@ namespace MPX
 
                     if( new_mapping != m_mapping )
                     {
-                        Row6 & row = *(m_realmodel->begin()) ;
+                        RowAlbum & row = *(m_realmodel->begin()) ;
 
                         long long int sz = new_mapping.size() - 1 ;
     
@@ -395,7 +444,7 @@ namespace MPX
                 void
                 render(
                       Cairo::RefPtr<Cairo::Context>     cairo
-                    , const Row6&                       data_row
+                    , const RowAlbum&                   data_row
                     , Gtk::Widget&                      widget
                     , int                               row
                     , int                               xpos
@@ -438,6 +487,69 @@ namespace MPX
                             ) ;
 
                             cairo->fill() ;
+
+                            ReleaseType rt = get<6>(data_row) ;
+
+                            if( rt == RT_SINGLE )
+                            {
+                                cairo->save() ;
+
+                                cairo->rectangle(
+                                      r.x
+                                    , ypos+2+54
+                                    , s->get_width()
+                                    , 10
+                                ) ;
+
+                                cairo->clip() ;
+
+                                cairo->set_source_rgba(
+                                      0. 
+                                    , 0.
+                                    , 0.
+                                    , 0.6 
+                                ) ; 
+
+                                RoundedRectangle(
+                                      cairo
+                                    , r.x
+                                    , ypos+2+50 
+                                    , s->get_width() 
+                                    , 14 
+                                    , 3.
+                                ) ;
+
+                                cairo->fill() ;
+
+                                cairo->restore() ;
+
+                                const int text_size_px = 6 ; 
+                                const int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+
+                                int width, height;
+
+                                Pango::FontDescription font_desc =  widget.get_style()->get_font() ;
+                                font_desc.set_size( text_size_pt * PANGO_SCALE ) ;
+                                font_desc.set_weight( Pango::WEIGHT_BOLD ) ;
+
+                                Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
+                                layout->set_font_description( font_desc ) ;
+                                layout->set_ellipsize( Pango::ELLIPSIZE_MIDDLE ) ;
+                                layout->set_width( 64 * PANGO_SCALE ) ;
+                                layout->set_text( _("SINGLE")) ; 
+                                layout->get_pixel_size (width, height) ;
+                                cairo->move_to(
+                                      r.x + ((64 - width)/2)
+                                    , ypos+2+54+((10 - height)/2)
+                                ) ;
+                                cairo->set_source_rgba(
+                                      1. 
+                                    , 1. 
+                                    , 1. 
+                                    , 1. 
+                                ) ;
+                                pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+                            }
                     }
                 
                     cairo->save() ;
@@ -1261,6 +1373,7 @@ namespace MPX
                     ));
 
                     clear_selection() ;
+                    on_model_changed( 0, true ) ;
                 }
 
                 void
@@ -1291,7 +1404,7 @@ namespace MPX
 
                     for( ; i != m_model->m_mapping.end(); ++i )
                     {
-                        const Row6& row = **i ;
+                        const RowAlbum& row = **i ;
                         Glib::ustring match = Glib::ustring(get<3>(row)).casefold() ;
 
                         if( match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )   

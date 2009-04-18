@@ -24,7 +24,7 @@ namespace MPX
 
             PlayStatus                m_play_status ;
 
-            IPlay                   * m_play ;
+            boost::shared_ptr<IPlay>  m_play ;
 
         public:
 
