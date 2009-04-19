@@ -553,33 +553,42 @@ namespace MPX
     {
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
-        theme->reload() ;
+        //theme->reload() ;
 
+        const ThemeColor& c_bg   = theme->get_color( THEME_COLOR_BACKGROUND ) ; 
         const ThemeColor& c_base = theme->get_color( THEME_COLOR_BASE ) ; 
         const ThemeColor& c_text = theme->get_color( THEME_COLOR_TEXT ) ;
         const ThemeColor& c_sel  = theme->get_color( THEME_COLOR_SELECT ) ;
 
         Gdk::Color c ;
         c.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
-        m_Entry->modify_bg( Gtk::STATE_NORMAL, c ) ;
+
+        Gdk::Color c2 ;
+        c2.set_rgb_p( c_bg.r, c_bg.g, c_bg.b ) ; 
+
+        m_ListViewArtist->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
+        m_ListViewAlbums->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
+        m_ListViewTracks->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
+
         m_Entry->modify_base( Gtk::STATE_NORMAL, c ) ;
-        m_Entry->modify_bg( Gtk::STATE_ACTIVE, c ) ;
         m_Entry->modify_base( Gtk::STATE_ACTIVE, c ) ;
-        m_Entry->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
         m_Entry->modify_base( Gtk::STATE_PRELIGHT, c ) ;
+        m_Entry->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
+        m_Entry->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
+        m_Entry->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
 
-        c.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
-        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c ) ;
-        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c ) ;
-        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c ) ;
+        c.set_rgb_p( c_bg.r, c_bg.g, c_bg.b ) ; 
+        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
+        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
 
-        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c ) ;
+        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c2 ) ;
         m_ScrolledWinArtist->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c ) ;
 
-        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c ) ;
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c2 ) ;
         m_ScrolledWinAlbums->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c ) ;
 
-        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c ) ;
+        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c2 ) ;
         m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c ) ;
 
         m_Paned1->modify_bg( Gtk::STATE_NORMAL, c ) ;
@@ -587,36 +596,38 @@ namespace MPX
 
         c.set_rgb_p( c_sel.r, c_sel.g, c_sel.b ) ; 
 
-        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
-        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
-        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
+        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
 
         m_ScrolledWinArtist->get_vscrollbar()->modify_fg( Gtk::STATE_NORMAL, c ) ;
         m_ScrolledWinAlbums->get_vscrollbar()->modify_fg( Gtk::STATE_NORMAL, c ) ;
         m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_NORMAL, c ) ;
 
         m_ScrolledWinArtist->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
-        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
 
         m_ScrolledWinAlbums->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
-        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
 
         m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
-        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
 
         m_Paned1->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
         m_Paned2->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
 
         c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
+
         m_Entry->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Entry->modify_fg( Gtk::STATE_NORMAL, c ) ;
         m_Entry->property_has_frame() = false ; 
-        m_Label_Search->modify_bg( Gtk::STATE_NORMAL, c ) ;
+
         m_Label_Search->modify_base( Gtk::STATE_NORMAL, c ) ;
-        m_Label_Search->modify_bg( Gtk::STATE_ACTIVE, c ) ;
         m_Label_Search->modify_base( Gtk::STATE_ACTIVE, c ) ;
-        m_Label_Search->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
         m_Label_Search->modify_base( Gtk::STATE_PRELIGHT, c ) ;
+        m_Label_Search->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
+        m_Label_Search->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
+        m_Label_Search->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
 
         c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
         m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
@@ -624,7 +635,7 @@ namespace MPX
 
         Gdk::Color cgdk ;
         cgdk.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
-        m_main_position->modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
+        m_main_position->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
         m_main_position->modify_base( Gtk::STATE_NORMAL, cgdk ) ;
     }
 

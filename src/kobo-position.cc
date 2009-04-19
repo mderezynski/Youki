@@ -203,7 +203,7 @@ namespace MPX
 
         if( m_duration > 0 ) 
         {
-            const ThemeColor& ct = theme->get_color( THEME_COLOR_TEXT ) ;
+            const ThemeColor& ct = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
 
             const int text_size_px = 10 ;
             const Gtk::Allocation& a = get_allocation() ;

@@ -371,7 +371,7 @@ namespace MPX
 
 
                         //// MAINAREA 
-                        const ThemeColor& c1 = theme->get_color( THEME_COLOR_BASE ) ;
+                        const ThemeColor& c1 = theme->get_color( THEME_COLOR_BACKGROUND ) ;
 
                         cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
                         cr->set_source_rgba(

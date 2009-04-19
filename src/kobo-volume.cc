@@ -76,14 +76,24 @@ namespace MPX
     )
     {
         Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context() ;
+        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
         const Gdk::Rectangle& a = get_allocation() ;
 
-        Gdk::Color c ;
-        c.set_rgb_p( .7, .7, .7 ) ;
+        const ThemeColor& c_base /* :) */ = theme->get_color( THEME_COLOR_BACKGROUND ) ; 
+        const ThemeColor& c = theme->get_color( THEME_COLOR_SELECT ) ;
+        const ThemeColor& ct = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
+
+        cairo->set_operator(Cairo::OPERATOR_SOURCE) ;
+        cairo->set_source_rgba(
+              c_base.r
+            , c_base.g
+            , c_base.b
+            , c_base.a
+        ) ;
+        cairo->paint () ;
 
         double percent = double(m_volume) / 100. ; 
-
         cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
         if( m_volume )
@@ -97,44 +107,11 @@ namespace MPX
 
             cairo->save () ;
 
-/*
-            Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
-                  r.x + r.width / 2
-                , r.y  
-                , r.x + r.width / 2
-                , r.y + r.height
-            ) ;
-            
-            background_gradient_ptr->add_color_stop_rgba(
-                  0. 
-                , c.get_red_p() 
-                , c.get_green_p()
-                , c.get_blue_p()
-                , 0.85
-            ) ;
-
-            background_gradient_ptr->add_color_stop_rgba(
-                  .60
-                , c.get_red_p() 
-                , c.get_green_p()
-                , c.get_blue_p()
-                , 0.55
-            ) ;
-            
-            background_gradient_ptr->add_color_stop_rgba(
-                  1. 
-                , c.get_red_p() 
-                , c.get_green_p()
-                , c.get_blue_p()
-                , 0.35
-            ) ;
-*/
-
             Gdk::Color c1 ;
-            Gdk::Color c2 ;
-
             c1.set_rgb_p( .2, .2, .2 ) ;
-            c2.set_rgb_p( .568, .114, .114 ) ;
+
+            Gdk::Color c2 ;
+            c2.set_rgb_p( c.r, c.g, c.b ) ; 
 
             Gdk::Color c_gradient = get_color_at_pos( c1, c2,  percent ) ;
 
@@ -142,7 +119,7 @@ namespace MPX
                   c_gradient.get_red_p()
                 , c_gradient.get_green_p()
                 , c_gradient.get_blue_p()
-                , .8
+                , .6
             ) ;
 
             cairo->set_operator(
@@ -185,7 +162,12 @@ namespace MPX
                 , (get_height() - height)/2.
             ) ;
 
-            cairo->set_source_rgba( 1., 1., 1., 1. ) ;
+            cairo->set_source_rgba(
+                  ct.r
+                , ct.g
+                , ct.b
+                , ct.a
+            ) ;
             cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
             pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
         }

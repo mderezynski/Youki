@@ -179,6 +179,21 @@ namespace MPX
     {
         const Gtk::Allocation& a = get_allocation ();
 
+        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+        const ThemeColor& c_base /* :) */ = theme->get_color( THEME_COLOR_BACKGROUND ) ; 
+
+        cairo->set_operator(
+              Cairo::OPERATOR_SOURCE
+        ) ;
+
+        cairo->set_source_rgba(
+              c_base.r
+            , c_base.g
+            , c_base.b
+            , c_base.a
+        ) ;
+        cairo->paint () ;
+
         cairo->set_operator(
               Cairo::OPERATOR_ATOP
         ) ;

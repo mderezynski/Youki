@@ -1476,16 +1476,36 @@ namespace MPX
                 bool
                 on_expose_event (GdkEventExpose *event)
                 {
+                    const Gtk::Allocation& a = get_allocation();
+
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
+                    const ThemeColor& c_base        = theme->get_color( THEME_COLOR_BASE ) ;
                     const ThemeColor& c_text        = theme->get_color( THEME_COLOR_TEXT ) ;
+                    const ThemeColor& c_text_sel    = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
                     const ThemeColor& c_rules_hint  = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) ;
                     const ThemeColor& c_sel         = theme->get_color( THEME_COLOR_SELECT ) ;
 
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
-                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
-                    const Gtk::Allocation& a = get_allocation();
+                    cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
+                    RoundedRectangle(
+                          cairo
+                        , 0
+                        , 0
+                        , a.get_width()
+                        , a.get_height()
+                        , 4.
+                    ) ;
+                    cairo->set_source_rgba(
+                          c_base.r
+                        , c_base.g
+                        , c_base.b
+                        , c_base.a
+                    ) ;
+                    cairo->fill() ;
+
+                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
                     std::size_t row = get_upper_row() ;
                     m_previous_drawn_row = row ;
@@ -1561,6 +1581,8 @@ namespace MPX
                                 cnt  -- ;
                             }
 
+                            boost::optional<std::size_t> row_select ;
+
                             if( m_selection )
                             {
                                 Interval<std::size_t> i (
@@ -1570,6 +1592,7 @@ namespace MPX
                                 ) ;
 
                                 std::size_t row = boost::get<1>(m_selection.get()) ; 
+                                row_select = row ;
 
                                 if( i.in( row ) )
                                 {
@@ -1663,7 +1686,7 @@ namespace MPX
                                         , xpos
                                         , ypos
                                         , m_row_height
-                                        , c_text
+                                        , (row_select && (row == row_select.get())) ? c_text_sel : c_text
                                     ) ;
 
                                     xpos += (*i)->get_width() + 1;

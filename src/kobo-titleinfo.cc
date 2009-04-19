@@ -161,7 +161,7 @@ namespace MPX
         Cairo::RefPtr<Cairo::Context> cairo = get_window ()->create_cairo_context () ;
         const Gtk::Allocation& a = get_allocation() ;
 
-        const ThemeColor& c_base /* :) */ = theme->get_color( THEME_COLOR_BASE ) ; 
+        const ThemeColor& c_base /* :) */ = theme->get_color( THEME_COLOR_BACKGROUND ) ; 
         cairo->set_operator(Cairo::OPERATOR_SOURCE) ;
         cairo->set_source_rgba(
               c_base.r
