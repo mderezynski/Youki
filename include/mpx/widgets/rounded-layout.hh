@@ -3,6 +3,7 @@
 
 #include <gtkmm.h>
 #include "mpx/widgets/widgetloader.hh"
+#include "mpx/widgets/cairo-extensions.hh"
 
 namespace MPX
 {
@@ -10,7 +11,9 @@ namespace MPX
     {
         private:
 
-                Glib::ustring       m_text;
+                Glib::ustring           m_text ;
+                CairoCorners::CORNERS   m_corners ;
+                double                  m_radius ;
 
         protected:
 
@@ -22,8 +25,14 @@ namespace MPX
 
         public:
 
-                RoundedLayout (Glib::RefPtr<Gnome::Glade::Xml> const &xml, std::string const &name);
-                virtual ~RoundedLayout();
+                RoundedLayout(
+                      const Glib::RefPtr<Gnome::Glade::Xml>& xml
+                    , const std::string&                     name
+                    , CairoCorners::CORNERS = CairoCorners::ALL
+                    , double = 2.
+                ) ;
+
+                virtual ~RoundedLayout() ;
 
                 void
                 set_text(Glib::ustring const&);

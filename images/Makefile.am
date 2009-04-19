@@ -1,28 +1,29 @@
-images_DATA =						\
-									\
-		about.png					\
-		artist.png					\
-		disc.png					\
-		splash.png					\
-		throbber.gif				\
-									\
-		emblem-compilation.png		\
-		emblem-soundtrack.png		\
-									\
-		icon-plugins-tab.png		\
-		icon-now-playing-tab.png	\
-									\
-		qual0.png					\
-		qual1.png					\
-		qual2.png					\
-		qual3.png					\
-									\
-		stars0.png					\
-		stars1.png					\
-		stars2.png					\
-		stars3.png					\
-		stars4.png					\
-		stars5.png					
+images_DATA =						    \
+                                        \
+        disc-multiple.png		        \
+        disc.png		                \
+        emblem-compilation.png		    \
+        emblem-soundtrack.png		    \
+        jewelcase_bot.png		        \
+        jewelcase_top.png		        \
+        mainwindow-button-maximize.png	\
+        mainwindow-button-off.png		\
+        qual0.png		                \
+        qual1.png		                \
+        qual2.png		                \
+        qual3.png		                \
+        speaker_ghost.png		        \
+        speaker.png		                \
+        splash.png		                \
+        stars0.png		                \
+        stars1.png		                \
+        stars2.png		                \
+        stars3.png		                \
+        stars4.png		                \
+        stars5.png		                \
+        title-logo.png		            \
+        youki.png									
 
 imagesdir = $(pkgdatadir)/images
 EXTRA_DIST = $(images_DATA)
+

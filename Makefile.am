@@ -1,74 +1,78 @@
 ACLOCAL_AMFLAGS = -I m4
 AUTOMAKE_OPTIONS = dist-bzip2
-DISTCHECK_CONFIGURE_FLAGS = --with-dbus-services-dir=/tmp --enable-hal
+DISTCHECK_CONFIGURE_FLAGS = --with-dbus-services-dir=/tmp
 
-# Main Service
-servicedir = $(DBUS_SERVICES_DIR)
-service_in_files = info.backtrace.mpx.service.in
-service_DATA = info.backtrace.mpx.service
-$(service_DATA): $(service_in_files) Makefile
+# Youki 
+info_backtrace_youki_appdir = $(DBUS_SERVICES_DIR)
+info_backtrace_youki_app_in_files = info.backtrace.youki.app.service.in
+info_backtrace_youki_app_DATA = info.backtrace.youki.app.service
+$(info_backtrace_youki_app_DATA): $(info_backtrace_youki_app_in_files) Makefile
 	@sed -e "s|\@libexecdir\@|$(libexecdir)|" $< > $@
 
 # Sentinel
-sentineldir = $(DBUS_SERVICES_DIR)
-sentinel_in_files = info.backtrace.sentinel.service.in
-sentinel_DATA = info.backtrace.sentinel.service
-$(sentinel_DATA): $(sentinel_in_files) Makefile
+info_backtrace_youki_sentineldir = $(DBUS_SERVICES_DIR)
+info_backtrace_youki_sentinel_in_files = info.backtrace.youki.sentinel.service.in
+info_backtrace_youki_sentinel_DATA = info.backtrace.youki.sentinel.service
+$(info_backtrace_youki_sentinel_DATA): $(info_backtrace_youki_sentinel_in_files) Makefile
 	@sed -e "s|\@libexecdir\@|$(libexecdir)|" $< > $@
 
-CLEANFILES =  $(service_DATA) \
-              $(sentinel_DATA) 
+# MLibMan
+info_backtrace_youki_mlibmandir = $(DBUS_SERVICES_DIR)
+info_backtrace_youki_mlibman_in_files = info.backtrace.youki.mlibman.service.in
+info_backtrace_youki_mlibman_DATA = info.backtrace.youki.mlibman.service
+$(info_backtrace_youki_mlibman_DATA): $(info_backtrace_youki_mlibman_in_files) Makefile
+	@sed -e "s|\@libexecdir\@|$(libexecdir)|" $< > $@
 
-DISTCLEANFILES = $(CLEANFILES) intltool-extract intltool-merge intltool-update
+CLEANFILES =  $(info_backtrace_youki_app_DATA)          \
+              $(info_backtrace_youki_sentinel_DATA)     \
+              $(info_backtrace_youki_mlibman_DATA)   
+
+DISTCLEANFILES = $(CLEANFILES) intltool-extract intltool-merge intltool-update doltlibtool doltcompile
 
 SUBDIRS =			\
+	po				\
 	scripts			\
+                    \
 	desktop			\
 	glade			\
+    dbus            \
+                    \
 	icons			\
 	images			\
-					\
-	po				\
-					\
+    themes          \
+                    \
 	include			\
 	xsd				\
-	widgets			\
-	musicbrainz		\
-	com				\
-	xmlcpp			\
-	taglib			
-
+	xmlcpp			
+                    
 if HAVE_HAL
 SUBDIRS += libhal++
 endif
 
-SUBDIRS +=		\
-				\
-	jnetlib		\
-	mcs			\
-				\
-	remote		\
-	python		\
-	sources		\
-				\
-	api			\
-	mpx
-
+SUBDIRS +=          \
+                    \
+	musicbrainz		\
+	widgets			\
+	com				\
+    api             \
+	taglib		    \
+    json            \
+	jnetlib		    \
+	mcs			    \
+				    \
+    mpxlib          \
+	src             \
+	remote		    \
+    sentinel        \
+	python		    \
+    cpp    
+			
 man_MANS = mpx.1
 
-pkgconfigdir = @pkgconfigdir@
-pkgconfig_DATA = mpx.pc
-
-EXTRA_DIST =									\
-												\
-	autogen.sh									\
-												\
-	info.backtrace.mpx.service.in				\
-	info.backtrace.sentinel.service.in			\
-												\
-	mpx.1.in									\
-	mpx.pc.in									\
-												\
-	intltool-extract.in							\
-	intltool-merge.in							\
-	intltool-update.in
+EXTRA_DIST =                                        \
+                                                    \
+        autogen.sh                                  \
+        mpx.1.in                                    \
+        info.backtrace.youki.app.service.in         \
+        info.backtrace.youki.sentinel.service.in    \
+        info.backtrace.youki.mlibman.service.in

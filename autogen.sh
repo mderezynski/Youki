@@ -57,7 +57,7 @@ parse_options ()
             shift 2
             ;;
         *)
-            printf "\033[1mAssuming configure arguments!\033[0m\n"
+            echo -e "\033[1mAssuming configure arguments!\033[0m\n"
             ;;
     esac
 
@@ -75,7 +75,7 @@ run_or_die ()
 
     # check for empty commands
     if test -z "$COMMAND" ; then
-        printf "\033[1;33m*warning* no command specified!\033[0m\n"
+        echo "\033[1;33m*warning* no command specified!\033[0m\n"
         return 1
     fi
 
@@ -94,11 +94,50 @@ run_or_die ()
     # run or die
     $COMMAND $OPTIONS ; RESULT=$?
     if test $RESULT -ne 0 ; then
-        echo -e "\033[1;31m*error* $COMMAND failed. (exit code = $RESULT)\033[0m"
+        echo "\033[1;31m*error* $COMMAND failed. (exit code = $RESULT)\033[0m"
         exit 1
     fi
 
     return 0
+}
+
+compare_version() {
+	LHS=$1;
+	RHS=$2;
+
+	LHS_1=$(echo $LHS | cut -f 1 -d . | sed 's:^\([0-9]\+\).*$:\1:');
+	if [ "x$LHS_1" = "x" ]; then LHS_1=0; fi
+	LHS_2=$(echo $LHS | cut -f 2 -d . | sed 's:^\([0-9]\+\).*$:\1:');
+	if [ "x$LHS_2" = "x" ]; then LHS_2=0; fi
+	LHS_3=$(echo $LHS | cut -f 3 -d . | sed 's:^\([0-9]\+\).*$:\1:');
+	if [ "x$LHS_3" = "x" ]; then LHS_3=0; fi
+
+	RHS_1=$(echo $RHS | cut -f 1 -d . | sed 's:^\([0-9]\+\).*$:\1:');
+	if [ "x$RHS_1" = "x" ]; then RHS_1=0; fi
+	RHS_2=$(echo $RHS | cut -f 2 -d . | sed 's:^\([0-9]\+\).*$:\1:');
+	if [ "x$RHS_2" = "x" ]; then RHS_2=0; fi
+	RHS_3=$(echo $RHS | cut -f 3 -d . | sed 's:^\([0-9]\+\).*$:\1:');
+	if [ "x$RHS_3" = "x" ]; then RHS_3=0; fi
+
+	if [ $LHS_1 -ge $RHS_1 ]; then
+		if [ $LHS_1 -gt $RHS_1 ]; then
+			return 0;
+		fi
+		if [ $LHS_2 -ge $RHS_2 ]; then
+			if [ $LHS_2 -gt $RHS_2 ]; then
+				return 0;
+			fi
+			if [ $LHS_3 -ge $RHS_3 ]; then
+				if [ $LHS_3 -gt $RHS_3 ]; then
+					return 0;
+				fi
+				return 0;
+			fi
+			return 1;
+		fi
+		return 1;
+	fi
+	return 1;
 }
 
 # Main run
@@ -109,52 +148,72 @@ AUTOCONF=${AUTOCONF:-autoconf}
 AUTOMAKE=${AUTOMAKE:-automake}
 ACLOCAL=${ACLOCAL:-aclocal}
 AUTOHEADER=${AUTOHEADER:-autoheader}
-#AUTOPOINT=${AUTOPOINT:-autopoint}
+AUTOPOINT=${AUTOPOINT:-autopoint}
 LIBTOOLIZE=${LIBTOOLIZE:-libtoolize}
-GLIB_GETTEXTIZE=${GLIB_GETTEXTIZE:-glib-gettextize}
-INTLTOOLIZE=${INTLTOOLIZE:-intltoolize}
 
 # Check for proper automake version
-automake_maj_req=1
-automake_min_req=9
+automake_req=1.9
 
 printf "\033[1mChecking Automake version... "
 
 automake_version=`$AUTOMAKE --version | head -n1 | cut -f 4 -d \ `
-automake_major=$(echo $automake_version | cut -f 1 -d . | sed -e 's:^\([0-9]\+\).*$:\1:')
-automake_minor=$(echo $automake_version | cut -f 2 -d . | sed -e 's:^\([0-9]\+\).*$:\1:')
-automake_micro=$(echo $automake_version | cut -f 3 -d . | sed -e 's:^\([0-9]\+\).*$:\1:')
 
-printf "$automake_major.$automake_minor.$automake_micro: \033[0m"
-
-if [ $automake_major -ge $automake_maj_req ]; then
-    if [ $automake_minor -lt $automake_min_req ]; then 
-      echo -e "\033[1;31m*error*: mpx requires automake $automake_maj_req.$automake_min_req\033[0m"
-      exit 1
-    else
-      echo -e "\033[1;32mok\033[0m"
-    fi
+printf "$automake_version: \033[0m"
+if compare_version $automake_version $automake_req; then
+	echo -e "\033[1;32mok\033[0m"
+else
+  echo "\033[1;31m!!"
+	echo "*error*: mpx requires automake $automake_req\033[0m"
+	exit 1
 fi
 
 # Check for proper autoconf version
-autoconf_maj_req=2
-autoconf_min_req=60
+autoconf_req=2.60
 
 printf "\033[1mChecking Autoconf version... "
 
 autoconf_version=`$AUTOCONF --version | head -n1 | cut -f 4 -d \ `
-autoconf_major=$(echo $autoconf_version | cut -f 1 -d . | sed -e 's:^\([0-9]\+\).*$:\1:')
-autoconf_minor=$(echo $autoconf_version | cut -f 2 -d . | sed -e 's:^\([0-9]\+\).*$:\1:')
 
-printf "$autoconf_major.$autoconf_minor: \033[0m"
+printf "$autoconf_version: \033[0m"
+if compare_version $autoconf_version $autoconf_req; then
+	echo -e "\033[1;32mok\033[0m"
+else
+  echo "\033[1;31m!!"
+	echo "*error* mpx requires autoconf $autoconf_req\033[0m"
+	exit 1
+fi
 
-if [ $autoconf_major -ge $autoconf_maj_req ]; then
-    if [ $autoconf_minor -lt $autoconf_min_req ]; then 
-      printf "\033[1;31m*error* mpx requires autoconf $autoconf_maj_req.$autoconf_min_req\033[0m"
-      exit 1
-    else
-      echo -e "\033[1;32mok\033[0m"
-    fi
+
+# Check for proper libtool version
+libtool_req=1.5.21
+
+printf "\033[1mChecking Libtool version... "
+
+libtool_version=`$LIBTOOLIZE --version | head -n1 | cut -f 4 -d \ `
+
+printf "$libtool_version: \033[0m"
+if compare_version $libtool_version $libtool_req; then
+	echo -e "\033[1;32mok\033[0m"
+else
+  echo "\033[1;31m!!"
+	echo "*error* mpx requires libtool $libtool_req\033[0m"
+	exit 1
+fi
+
+# Check for proper gettext version
+gettext_req=0.16
+
+printf "\033[1mChecking Gettext version... "
+
+gettext_version=`$AUTOPOINT --version | head -n1 | cut -f 4 -d \ `
+
+printf "$gettext_version: \033[0m"
+if compare_version $gettext_version $gettext_req; then
+	echo -e "\033[1;32mok\033[0m"
+else
+  echo "\033[1;31m!!"
+	echo "*error* mpx requires gettext $gettext_req\033[0m"
+	exit 1
 fi
 
 # Changelog from SVN (svn2cl)
@@ -171,22 +230,20 @@ if [ -d .svn ]; then
     fi
 fi
 
-if [ ! -e Changelog ]; then
+if [ ! Changelog ]; then
   touch ChangeLog
 fi
 
-run_or_die $ACLOCAL -I m4
-#run_or_die $AUTOPOINT --force
-run_or_die $GLIB_GETTEXTIZE --force --copy
-run_or_die $INTLTOOLIZE --force --copy --automake
+run_or_die $AUTOPOINT --force
+run_or_die $ACLOCAL --force -I m4
+run_or_die $AUTOHEADER --force
 run_or_die $LIBTOOLIZE --force --copy --automake
-run_or_die $AUTOCONF
-run_or_die $AUTOHEADER
-run_or_die $AUTOMAKE -a -c
+run_or_die $AUTOCONF --force
+run_or_die $AUTOMAKE --add-missing --copy --include-deps
 
 cd $LAST_DIR
 
 echo
-echo -e "\033[1m*info* running 'configure' with options: $GLOBOPTIONS\033[0m"
+printf "\033[1m*info* running 'configure' with options: $GLOBOPTIONS\033[0m"
 echo
 ./configure "$@"

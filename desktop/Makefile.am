@@ -1,8 +1,6 @@
 desktopdir = $(datadir)/applications
 
 desktop_DATA = \
-	mpx.desktop             
+	youki.desktop             
 
-EXTRA_DIST =    \
-	mpx.desktop.in
-
+EXTRA_DIST = $(desktop_DATA)

@@ -3,6 +3,6 @@ python_DATA = 					\
 		lastfmvis.mpx-plugin 	\
 		lastfmvis.glade			
 
-pythondir = $(pkgdatadir)/python-plugins/lastfmvis
+pythondir = $(pkglibdir)/plugins/plugins-python/lastfmvis
 BUILT_SOURCES = __init__.py
 EXTRA_DIST = $(python_DATA)

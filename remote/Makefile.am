@@ -1,14 +1,14 @@
-bin_PROGRAMS = audiosource 
+bin_PROGRAMS = youki 
 
-audiosource_LDADD =			\
-	$(GLIBMM_LIBS)			\
-	$(GTK_LIBS)				\
+youki_LDADD =			\
+	$(GLIBMM_LIBS)	    \
+	$(GTK_LIBS)		    \
 	$(DBUS_LIBS)
 
-audiosource_CXXFLAGS =		\
-	$(GLIBMM_CFLAGS)		\
-	$(GTK_CFLAGS)			\
+youki_CXXFLAGS =		\
+	$(GLIBMM_CFLAGS)    \
+	$(GTK_CFLAGS)	    \
 	$(DBUS_CFLAGS)		
 
-audiosource_SOURCES =		\
-    audiosource.cc
+youki_SOURCES =		    \
+    youki.cc

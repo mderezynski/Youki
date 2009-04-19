@@ -1,23 +1,27 @@
 #libxml (C) 2003-2007 MPX developers, see AUTHORS
 
-AC_PREREQ([2.60])
-AC_INIT([audiosource], [0.01], [http://mpx.backtrace.info/report])
+AC_PREREQ(2.60)
+AC_INIT([youki],[0.05.4],[http://mpx.backtrace.info/report])
+AC_CONFIG_SRCDIR([src/main.cc])
+AC_CONFIG_HEADER([config.h])
+AC_CONFIG_AUX_DIR([aux])
+AC_GNU_SOURCE
+
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
 AM_INIT_AUTOMAKE([1.8])
+
+# gettext
 AM_GNU_GETTEXT_VERSION(0.17)
 AM_GNU_GETTEXT([external])
-
-AC_CONFIG_HEADERS([config.h])
 
 # stash the configure arguments in config.h
 AC_DEFINE_UNQUOTED(CONFIGURE_ARGS, "$ac_configure_args", [configure arguments])
 
 # Check for compilers 
-AC_LANG([C])
 AC_LANG([C++])
-AC_ISC_POSIX
+AC_SEARCH_LIBS([strerror],[cposix])
 
 # Various checks
 AC_PROG_CXX
@@ -33,7 +37,6 @@ AC_PROG_MAKE_SET
 AC_FUNC_ALLOCA
 AC_HEADER_DIRENT
 AC_HEADER_STDC
-AC_CHECK_HEADERS([argz.h arpa/inet.h fcntl.h float.h inttypes.h langinfo.h libintl.h limits.h locale.h malloc.h netdb.h netinet/in.h stddef.h stdint.h stdio_ext.h stdlib.h string.h strings.h sys/param.h sys/socket.h sys/time.h unistd.h wchar.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -47,7 +50,6 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
 AC_C_VOLATILE
-AC_CHECK_TYPES([ptrdiff_t])
 
 AC_FUNC_ERROR_AT_LINE
 AC_FUNC_FORK
@@ -59,7 +61,6 @@ AC_FUNC_SELECT_ARGTYPES
 AC_FUNC_STAT
 AC_FUNC_STRFTIME
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([__argz_count __argz_next __argz_stringify dup2 fdatasync ftime ftruncate getcwd gethostbyname gettimeofday localtime_r mempcpy memset mkdir munmap nl_langinfo rmdir select setlocale socket stpcpy strcasecmp strchr strcspn strdup strerror strncasecmp strrchr strstr strtol strtoul access])
 
 AC_CHECK_SIZEOF(int, 4)
 AC_CHECK_SIZEOF(long, 8)
@@ -74,13 +75,6 @@ AC_SUBST(SIZEOF_LONG_LONG, "$ac_cv_sizeof_long_long")
 AC_SEARCH_LIBS([connect], socket)
 AC_SEARCH_LIBS([getrpcbyname], nsl)
 
-# i18n
-AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$PACKAGE", [Package])
-GETTEXT_PACKAGE="$PACKAGE"
-AC_SUBST(GETTEXT_PACKAGE)
-
-IT_PROG_INTLTOOL([0.40.0])
-
 # Next 2 lines is a hack to prevent libtool checking for F77
 m4_undefine([AC_PROG_F77])
 m4_defun([AC_PROG_F77],[])
@@ -89,6 +83,7 @@ m4_defun([AC_PROG_F77],[])
 AC_DISABLE_STATIC
 AC_ENABLE_SHARED
 AC_PROG_LIBTOOL
+DOLT
 
 ####################################
 ########## BUILDING FLAGS ##########
@@ -212,6 +207,13 @@ AX_BOOST_REGEX
 AX_BOOST_IOSTREAMS
 AX_BOOST_PYTHON
 
+# libdir
+AC_ARG_WITH([libprefix],
+    [AS_HELP_STRING([--with-libprefix], [Specify libdir name (default=lib)])],
+    [libprefix="$withval"],
+    [libprefix="lib"]
+)
+
 # tr1
 AC_ARG_WITH([tr1],
     [AS_HELP_STRING([--with-tr1], [Use C++ TR1 extensions])],
@@ -240,7 +242,7 @@ AC_ARG_WITH([pkgconfig-dir],
 )
 AC_SUBST([pkgconfigdir])
 
-PYTHON_CFLAGS=`python-config --cflags`
+PYTHON_CFLAGS=`python-config --cflags|sed s:-Wstrict-prototypes::g`
 PYTHON_LIBS=`python-config --libs`
 AC_SUBST(PYTHON_CFLAGS)
 AC_SUBST(PYTHON_LIBS)
@@ -275,6 +277,7 @@ PKG_CHECK_MODULES([XML], [libxml-2.0 >= 2.6.1])
 
 # libsoup
 PKG_CHECK_MODULES([SOUP], [libsoup-2.4 >= 2.2.101])
+PKG_CHECK_MODULES([CURL], [libcurl >= 7.18.2])
 
 # sqlite
 PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.4])
@@ -283,11 +286,6 @@ PKG_CHECK_MODULES([SQLITE], [sqlite3 >= 3.4])
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.10.0 gobject-2.0 gthread-2.0 gmodule-2.0])
 PKG_CHECK_MODULES([GLIBMM], [glibmm-2.4 >= 2.8.3])
 PKG_CHECK_MODULES([SIGC], [sigc++-2.0 >= 2.0.0])
-
-AM_GLIB_GNU_GETTEXT
-
-# clutter
-# PKG_CHECK_MODULES([CLUTTER], [clutter-0.6 >= 0.6.0 clutter-cairo-0.6 >= 0.6.0 clutter-gtk-0.6 >= 0.6.0])
 
 # GIOMM
 PKG_CHECK_MODULES([GIOMM], [giomm-2.4])
@@ -327,7 +325,7 @@ AM_CONDITIONAL([HAVE_NM], [test "x$have_nm" = "xyes"])
 
 # xerces
 AC_ARG_WITH([xerces-prefix],
-    [AC_HELP_STRING([--with-xerces-prefix],[xerces prefix [default=/usr]])],
+    [AS_HELP_STRING([--with-xerces-prefix],[xerces prefix [default=/usr]])],
     [xerces_prefix="$withval"],
     [xerces_prefix="/usr"]
 )
@@ -335,7 +333,7 @@ AC_ARG_WITH([xerces-prefix],
 AC_CHECK_LIB([xerces-c], [_init], [have_xerces=yes], [have_xerces=no])
 if test "$have_xerces" = "yes"; then
     XML_INCLUDES="-I$xml_prefix/xercesc"
-    XML_LIBS="-L$xml_prefix/lib -lxerces-c"
+    XML_LIBS="-L$xml_prefix/$libprefix -lxerces-c"
 else
     AC_MSG_ERROR([Xerces-C not found])
 fi
@@ -347,10 +345,10 @@ PKG_CHECK_MODULES([GST], [gstreamer-0.10 >= 0.10.14 gstreamer-base-0.10 >= 0.10.
 PKG_CHECK_MODULES([GST_PLUGINS_BASE], [gstreamer-plugins-base-0.10 >= 0.10.9])
 
 # D-BUS
-PKG_CHECK_MODULES([DBUS], [dbus-1 >= 0.93 dbus-glib-1 >= 0.61])
+PKG_CHECK_MODULES([DBUS], [dbus-c++-1 dbus-1 >= 0.93 dbus-glib-1 >= 0.61])
 DEFAULT_DBUS_PREFIX=`pkg-config --variable=prefix dbus-1` 
 
-AC_PATH_PROG(DBUSBINDINGTOOL, dbus-binding-tool)
+AC_PATH_PROG(DBUSBINDINGTOOL, dbusxx-xml2cpp)
 AC_SUBST(DBUSBINDINGTOOL)
 
 GLIB_GENMARSHAL=`$PKG_CONFIG glib-2.0 --variable=glib_genmarshal`
@@ -404,35 +402,31 @@ PKG_CHECK_MODULES([TAGLIB], [taglib-gio >= 1.4])
 
 # libsidplay (v1.x)
 AC_ARG_ENABLE([sid],
-    [AC_HELP_STRING([--enable-sid],[build MPX with .sid/.psid taglib support])],
+    [AS_HELP_STRING([--enable-sid],[build MPX with .sid/.psid taglib support])],
     [have_sid="$enableval"],
     [have_sid="no"]
 )
 
 AC_ARG_WITH([sid-prefix],
-    [AC_HELP_STRING([--with-sid-prefix],[sidplay prefix [default=/usr]])],
+    [AS_HELP_STRING([--with-sid-prefix],[sidplay prefix [default=/usr]])],
     [sid_prefix="$withval"],
     [sid_prefix="/usr"]
 )
 
-echo $have_sid
-
 if test "$have_sid" != "no"; then
-
-    AC_LANG_SAVE
-    AC_LANG_CPLUSPLUS
+	AC_LANG_PUSH([C++])
 
     AC_CHECK_LIB([sidplay], [C64_clockSpeed], [have_sid=yes], [have_sid=no])
 
     if test "$have_sid" = "yes"; then
         AC_DEFINE([HAVE_SID], [1], [have sid])
         SID_INCLUDES="-I$sid_prefix/sidplay"
-        SID_LIBS="-L$sid_prefix/lib -lsidplay"
+        SID_LIBS="-L$sid_prefix/$libprefix -lsidplay"
     else
         AC_MSG_ERROR([libsidplay 1.x not found!])
     fi
 
-    AC_LANG_RESTORE
+    AC_LANG_POP([C++])
 fi
 AC_SUBST([SID_INCLUDES])
 AC_SUBST([SID_LIBS])
@@ -440,7 +434,7 @@ AM_CONDITIONAL([HAVE_SID], [test "$have_sid" != "no"])
 
 # ModPlug check
 AC_ARG_ENABLE([modplug],
-    [AC_HELP_STRING([--enable-modplug],[build MPX with modplug taglib support])],
+    [AS_HELP_STRING([--enable-modplug],[build MPX with modplug taglib support])],
     [have_mod="$enableval"],
     [have_mod="no"]
 )
@@ -494,14 +488,8 @@ AM_CONDITIONAL([HAVE_ZIP], [test "x$ZIP" != "x"])
 # libofa
 PKG_CHECK_MODULES([LIBOFA], [libofa >= 0.9.3])
 
-# GDL
-PKG_CHECK_MODULES([GDL], [gdl-1.0])
-
 # SIGX
 PKG_CHECK_MODULES([SIGX], [sigx-2.0])
-
-# GTKGLEXT
-PKG_CHECK_MODULES([GTKGLEXT], [gtkglextmm-1.2])
 
 # GAMIN
 AC_CHECK_LIB(fam,FAMOpen,,[echo "To build this software, you must install the FAM development package"; exit 1])
@@ -601,7 +589,7 @@ if test "$system" = "solaris"; then
   AC_DEFINE([HAVE_CDIO], [1], [have cdio])
 else
   AC_ARG_WITH([cdparanoia-prefix],
-      [AC_HELP_STRING([--with-cdparanoia-prefix],[cdparanoia prefix [default=/usr]])],
+      [AS_HELP_STRING([--with-cdparanoia-prefix],[cdparanoia prefix [default=/usr]])],
       [cdparanoia_prefix="$withval"],
       [cdparanoia_prefix="/usr"]
   )
@@ -621,7 +609,7 @@ else
           else
             CDPARANOIA_INCLUDES="-I$cdparanoia_prefix/include"
           fi
-          CDPARANOIA_LIBS="-L$cdparanoia_prefix/lib -lcdda_interface"
+          CDPARANOIA_LIBS="-L$cdparanoia_prefix/$libprefix -lcdda_interface"
   else
           AC_MSG_ERROR([cdparanoia not found!])
   fi
@@ -673,24 +661,6 @@ AX_DEFINE_UNQUOTED([PLUGIN_DIR], [${libdir}/${PACKAGE}/plugins], [Plugins path])
 AX_DEFINE_UNQUOTED([LOCALE_DIR], [${localedir}], [The locale directory])
 AX_DEFINE_UNQUOTED([DATA_DIR], [${prefix}/share/${PACKAGE}], [Data directory])
 
-MPX_DBUS_SERVICE_="\"org.mpris.mpx\""
-
-MPX_DBUS_INTERFACE__MPRIS_="\"org.freedesktop.MediaPlayer\""
-MPX_DBUS_PATH__MPRIS_ROOT_="\"/\""
-MPX_DBUS_PATH__MPRIS_PLAYER_="\"/Player\""
-MPX_DBUS_PATH__MPRIS_TRACKLIST_="\"/TrackList\""
-
-MPX_DBUS_INTERFACE__MPX_="\"info.backtrace.mpx\""
-MPX_DBUS_PATH__MPX_="\"/MPX\""
-
-AC_SUBST(MPX_DBUS_PATH__MPRIS_ROOT_)
-AC_SUBST(MPX_DBUS_PATH__MPRIS_PLAYER_)
-AC_SUBST(MPX_DBUS_PATH__MPRIS_TRACKLIST_)
-AC_SUBST(MPX_DBUS_PATH__MPX_)
-AC_SUBST(MPX_DBUS_INTERFACE__MPRIS_)
-AC_SUBST(MPX_DBUS_INTERFACE__MPX_)
-AC_SUBST(MPX_DBUS_SERVICE_)
-
 AC_DEFINE([PLUGIN_VERSION], [10], [Plugin Version])
 
 # MCS stubs
@@ -704,20 +674,21 @@ AM_CONDITIONAL([HAVE_GTK], [test "1" = "1"])
 CFLAGS="$CFLAGS $C_COMMON_FLAGS"
 CXXFLAGS="$CXXFLAGS $C_COMMON_FLAGS"
 
-AC_OUTPUT([
+SHAVE_INIT([m4], [enable])
+
+AC_CONFIG_FILES([
+
+    m4/shave
+    m4/shave-libtool
 
     icons/Makefile
     icons/hicolor/Makefile
-    icons/hicolor/64x64/Makefile
-    icons/hicolor/64x64/places/Makefile
     icons/hicolor/24x24/Makefile
     icons/hicolor/24x24/stock/Makefile
     icons/hicolor/16x16/Makefile
     icons/hicolor/16x16/stock/Makefile
 
 	desktop/Makefile
-	desktop/mpx.desktop
-
     glade/Makefile
     images/Makefile
     jnetlib/Makefile
@@ -729,34 +700,31 @@ AC_OUTPUT([
 	python/plugins/trackinfo-webkit/Makefile
 	python/plugins/trackinfo-webkit/__init__.py
 	python/plugins/tracktags/Makefile
-	python/plugins/trackcover/Makefile
-	python/plugins/osd/Makefile
-	python/plugins/osd/__init__.py
 	python/plugins/mpxdj/Makefile
 	python/plugins/mpxdj/__init__.py
-    python/plugins/albumactions/Makefile
-    python/plugins/albumactions/__init__.py
-    python/plugins/mtpplayer/Makefile
-    python/plugins/mtpplayer/__init__.py
-	python/plugins/audioscrobbler/Makefile
-	python/plugins/audioscrobbler/__init__.py
-	python/plugins/puid-scan/Makefile
-	python/plugins/puid-scan/__init__.py
-	python/plugins/lastfmstuff/Makefile
-	python/plugins/lastfmstuff/__init__.py
 
     python/pyapi/Makefile
     python/pyapi/lastfm/Makefile
     python/pyapi/lastfm/model/Makefile
 
+    cpp/Makefile
+    cpp/plugins/Makefile
+    cpp/plugins/lastfmscrobbler/Makefile
+    cpp/plugins/mmkeys/Makefile
+    cpp/plugins/prefs-audio/Makefile
+    cpp/plugins/prefs-audio-quality/Makefile
+    cpp/plugins/prefs-library/Makefile
+    cpp/plugins/prefs-coverart/Makefile
 
+    api/Makefile
+    com/Makefile
+    json/Makefile
+    musicbrainz/Makefile
 	remote/Makefile
+    sentinel/Makefile
     scripts/Makefile
     widgets/Makefile
-    musicbrainz/Makefile
-    com/Makefile
     xmlcpp/Makefile
-    api/Makefile
 
     include/Makefile
     include/mpx/Makefile
@@ -766,11 +734,6 @@ AC_OUTPUT([
     include/mpx/widgets/Makefile
     include/mpx/xml/Makefile
     include/mpx/com/Makefile
-
-    sources/Makefile
-    sources/musiclib/Makefile
-    sources/radio/Makefile
-    sources/lastfm/Makefile
 
     taglib/Makefile
     taglib/id3v2/Makefile
@@ -800,9 +763,12 @@ AC_OUTPUT([
     xsd/cxx/parser/validating/Makefile
     xsd/cxx/parser/non-validating/Makefile
     xsd/cxx/parser/expat/Makefile
-    
-    mpx/Makefile
 
+    themes/Makefile
+    
+    src/Makefile
+    mpxlib/Makefile
+    dbus/Makefile
     po/Makefile.in
 
     mpx.pc
@@ -810,6 +776,7 @@ AC_OUTPUT([
 
     Makefile
 ])
+AC_OUTPUT
 
 
 echo

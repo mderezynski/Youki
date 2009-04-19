@@ -44,139 +44,168 @@
 #include <glibmm/ustring.h>
 #include <gdkmm/pixbuf.h> // bleh!
 #include <cairomm/cairomm.h>
+#include <sigx/sigx.h>
 
 #include <boost/shared_ptr.hpp>
-#include <sigx/sigx.h>
 
 namespace MPX
 {
-  enum CoverSize
-  {
-    COVER_SIZE_ALBUM        = 0,
-    COVER_SIZE_DEFAULT      = 1,
-    N_COVER_SIZES
-  };
+    enum CoverSize
+    {
+          COVER_SIZE_ALBUM        = 0,
+          COVER_SIZE_DEFAULT      = 1,
+          N_COVER_SIZES
+    };
 
-  typedef std::map <std::string, int>                                   RequestStoreCounter;
-  typedef std::map <std::string, Glib::RefPtr<Gdk::Pixbuf> >            PixbufCache;
-  typedef boost::shared_ptr<CoverStore>                                 StorePtr;
-  typedef std::vector<StorePtr>                                         StoresVec;
-  typedef boost::shared_ptr<Glib::RecMutex>                             MutexPtr;
-  typedef std::map<std::string, MutexPtr>                               MutexMap; // TODO: Use shared_ptr
-  typedef sigc::slot<void, const std::string&>                          SlotGotCover; 
+    typedef std::map <std::string, Glib::RefPtr<Gdk::Pixbuf> >            PixbufCache ;
+    typedef boost::shared_ptr<CoverStore>                                 StorePtr ;
+    typedef std::vector<StorePtr>                                         StoresVec ;
+    typedef boost::shared_ptr<Glib::RecMutex>                             MutexPtr ;
+    typedef std::map<std::string, MutexPtr>                               MutexMap ;
 
-  struct RequestQualifier
-  {
-      std::string asin;
-      std::string mbid;
-      std::string uri;
-      std::string artist;
-      std::string album;
-  };
+    struct RequestQualifier
+    {
+        std::string mbid;
+        std::string asin;
+        std::string uri;
+        std::string artist;
+        std::string album;
+    };
 
-  struct CoverFetchData
-  {
-      RequestQualifier      qualifier;
-      StoresVec             stores;
-      StoresVec::iterator   stores_i;
+    struct CoverFetchContext
+    {
+        RequestQualifier      qualifier;
+        StoresVec             stores;
+        StoresVec::iterator   stores_i;
 
-      CoverFetchData(
-              const RequestQualifier& qual
-            , StoresVec               stores 
-      )
-      : qualifier(qual)
-      , stores(stores) // we COPY intentionally
-      , stores_i(stores.begin())
-      {
-      }
-  };
+        CoverFetchContext(
+                const RequestQualifier& qual
+              , StoresVec               stores 
+        )
+        : qualifier(qual)
+        , stores(stores) // we COPY intentionally
+        , stores_i(stores.begin())
+        {
+        }
+    };
 
-  typedef sigc::signal<void, const std::string&> SignalGotCover;
+    typedef sigc::signal<void, const std::string&>  SignalGotCover_t ;
+    typedef sigx::signal_f<SignalGotCover_t>        SignalGotCover_xt ;
 
-  class CoverStore;
-  class Library;
-  class Covers : public sigx::glib_auto_dispatchable, public Service::Base
-  {
-    public:
+    class CoverStore ;
+    class Library ;
 
-      Glib::Mutex                 StoresLock;
+    class Covers
 
-      typedef bool (Covers::*FetchFunc) (const std::string&, Glib::RefPtr<Gdk::Pixbuf>&);
+        : public Service::Base
+        , public sigx::glib_threadable
 
-      Covers ();
+    {
+        protected:
 
-      struct Signals_t
-      {
-            SignalGotCover      GotCover;
+            struct ThreadData ; 
+            Glib::Private<ThreadData>   m_ThreadData ;
 
-      };
+            virtual void
+            on_startup () ;
 
-      Signals_t Signals;
+            virtual void
+            on_cleanup () ;
 
-      SignalGotCover&
-      signal_got_cover()
-      {
-            return Signals.GotCover;
-      }
+        public:
 
-      bool
-      fetch(
-        const std::string&                      /*mbid*/,
-        Glib::RefPtr<Gdk::Pixbuf>&              /*cover*/
-      );
+            typedef bool (Covers::*FetchFunc) (const std::string&, Glib::RefPtr<Gdk::Pixbuf>&);
 
-      bool
-      fetch(
-        const std::string&                      /*mbid*/,
-        Cairo::RefPtr<Cairo::ImageSurface>&     /*cover*/,
-        CoverSize                               /*size*/
-      );
+            Covers ();
+            virtual ~Covers() {}
 
-      void
-      cache(
-          const RequestQualifier&     rql
-        , bool                        acquire  = false
-      );
 
-      void
-      precache(
-        ::MPX::Library* const
-      );
+            sigx::request_f<const RequestQualifier&, bool> cache ;
+            sigx::request_f<const ::MPX::Library*>         precache ;
 
-      void
-      purge();
+            SignalGotCover_xt  signal_got_cover ;
 
-      void
-      cache_artwork(
-        const std::string& /* mbid */,
-        Glib::RefPtr<Gdk::Pixbuf> /*cover*/
-      );
+            bool
+            fetch(
+              const std::string&                      /*mbid*/,
+              Glib::RefPtr<Gdk::Pixbuf>&              /*cover*/
+            );
 
-      std::string
-      get_thumb_path (std::string /*mbid*/);
+            bool
+            fetch(
+              const std::string&                      /*mbid*/,
+              Cairo::RefPtr<Cairo::ImageSurface>&     /*cover*/,
+              CoverSize                               /*size*/
+            );
 
-    private:
+            void
+            purge();
 
-      void
-      store_has_found_cb (CoverFetchData*);
+            void
+            cache_artwork(
+              const std::string& /* mbid */,
+              Glib::RefPtr<Gdk::Pixbuf> /*cover*/
+            );
 
-      void
-      store_not_found_cb (CoverFetchData*);
+            std::string
+            get_thumb_path (std::string /*mbid*/);
 
-      void
-      source_pref_changed_callback(const std::string& domain, const std::string& key, const Mcs::KeyVariant& value );
+        protected:
 
-      void
-      rebuild_stores ();
+            void
+            on_cache(
+                const RequestQualifier&     rql
+              , bool                        acquire
+            ) ;
 
-      RequestStoreCounter         m_req_store_ctr;
-      PixbufCache                 m_pixbuf_cache;
-      StoresVec                   m_stores_all,
-                                  m_stores_cur;
-      int                         m_rebuild;
-      int                         m_rebuilt;
-      MutexMap                    m_mutexes;
-  };
+            void
+            on_precache(
+              const ::MPX::Library*
+            );
+
+
+            bool
+            handle_cache(
+                const RequestQualifier&     rql
+              , bool                        acquire
+            ) ;
+
+            bool
+            handle_precache(
+              const ::MPX::Library*
+            );
+
+            bool
+            fetch_back1(
+              const std::string&                      /*mbid*/,
+              Glib::RefPtr<Gdk::Pixbuf>&              /*cover*/
+            );
+
+            bool
+            fetch_back2(
+              const std::string&                      /*mbid*/,
+              Cairo::RefPtr<Cairo::ImageSurface>&     /*cover*/,
+              CoverSize                               /*size*/
+            );
+
+            void
+            source_pref_changed_callback(
+                  const std::string&
+                , const std::string&
+                , const Mcs::KeyVariant&
+            ) ;
+
+            void
+            rebuild_stores(
+            ) ;
+
+            PixbufCache                 m_pixbuf_cache;
+            StoresVec                   m_stores_all,
+                                        m_stores_cur;
+            int                         m_rebuild;
+            int                         m_rebuilt;
+            MutexMap                    m_mutexes;
+    };
 }
 
 #endif

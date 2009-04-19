@@ -4,6 +4,6 @@ python_DATA = 						\
 		ratings_export.glade		\
 		rexp-icon.png
 
-pythondir = $(pkgdatadir)/python-plugins/ratings_export
+pythondir = $(pkglibdir)/plugins/plugins-python/ratings_export
 BUILT_SOURCES = __init__.py
 EXTRA_DIST= $(python_DATA)

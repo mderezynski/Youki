@@ -22,8 +22,8 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 
-#ifndef MPX_HAL_HH
-#define MPX_HAL_HH
+#ifndef _YOUKI_HAL__HH
+#define _YOUKI_HAL__HH
 
 #include "config.h"
 
@@ -40,156 +40,146 @@
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-services.hh"
 
+#include "mpx/i-youki-hal.hh"
+
 namespace MPX
 {
-    class HAL : public Service::Base
+    class HAL
+    : public Service::Base
+    , public IHAL
     {
         public:
-
-  #include "mpx/exception.hh"
-
-            EXCEPTION(NotInitializedError)
-            EXCEPTION(NoVolumeForUriError)
-            EXCEPTION(NoMountPathForVolumeError)
-            EXCEPTION(InvalidVolumeSpecifiedError)
-
-            struct Volume
-            {
-              std::string	    volume_udi;
-              std::string	    device_udi;
-              std::string	    label;
-              gint64            size;
-
-              std::string	    mount_point;
-              std::time_t       mount_time;
-              std::string	    device_file;
-
-              std::string	    drive_serial;
-              Hal::DriveBus     drive_bus;
-              Hal::DriveType    drive_type;
-              gint64            drive_size;
-
-              bool		        disc;
-
-              Volume () {}
-
-              Volume (SQL::Row const& row);
-              Volume (Hal::RefPtr<Hal::Context> const& context,
-                      Hal::RefPtr<Hal::Volume>  const& volume) throw ();
-            };
-
-            typedef std::vector<Hal::RefPtr<Hal::Volume> >                                                  VolumesHALCC_v;
-            typedef std::pair<Volume, Hal::RefPtr<Hal::Volume> >                                            Volume_VolumeHALCC_pair;
-
-            typedef std::pair<std::string, std::string>                                                     VolumeKey;
-            typedef std::vector<HAL::VolumeKey>                                                             VolumeKey_v;
-
-            typedef std::tr1::unordered_map<VolumeKey , Volume_VolumeHALCC_pair, boost::hash<VolumeKey> >   Volumes;
-            typedef std::tr1::unordered_map<VolumeKey , bool, boost::hash<VolumeKey> >                      VolumesMounted;
-
-            typedef std::set<std::string>                                                                   MountedPaths;
-
-            typedef sigc::signal  <void, Volume const&>                 SignalVolume;
-            typedef sigc::signal  <void, std::string, std::string >     SignalCDDAInserted;
-            typedef sigc::signal  <void, std::string >                  SignalDeviceRemoved;
-            typedef sigc::signal  <void, std::string >                  SignalEjected;
 
             HAL ();
             ~HAL ();
 
-            Hal::RefPtr<Hal::Context>
-            get_context ();
+            virtual Hal::RefPtr<Hal::Context>
+            get_context() ;
 
-            Volumes const&
-            volumes () const;
+            virtual void
+            volumes(
+                  VolumesHALCC_v&
+            ) const ;
 
-            void
-            volumes (VolumesHALCC_v & volumes) const;
+            virtual bool
+            path_is_mount_path(
+                  const std::string&
+            ) const ;
 
-            bool
-            path_is_mount_path (std::string const& path);
+            virtual Volume
+            get_volume_for_uri(
+                  const std::string&
+            ) const ;
 
-            bool
-            volume_is_mounted (VolumeKey const& volume_key) const;
+            virtual gint64
+            get_id_for_volume(
+                  const std::string&
+                , const std::string&
+            ) const ;
 
-            bool
-            volume_is_mounted (Volume const& volume) const;
+            virtual const std::string&
+            get_mount_point_for_id(
+                  gint64 
+            ) const ;
 
-            std::string
-            get_mount_point_for_volume (std::string const& volume_udi, std::string const& device_udi) const;
 
-            Volume
-            get_volume_for_uri (Glib::ustring const& uri) const;
 
-            Glib::ustring
-            get_volume_drive_bus (Volume const& volume) const;
+            virtual SignalVolume&
+            signal_volume_removed(
+            ) ;
 
-            SignalVolume&
-            signal_volume_removed ();
+            virtual SignalVolume&
+            signal_volume_added(
+            ) ;
 
-            SignalVolume&
-            signal_volume_added ();
+            virtual SignalCDDAInserted&
+            signal_cdda_inserted(
+            ) ;
 
-            SignalCDDAInserted&
-            signal_cdda_inserted ();
+            virtual SignalEjected&
+            signal_ejected(
+            ) ;
 
-            SignalEjected&
-            signal_ejected ();
 
-            bool
-            is_initialized () const
+
+            virtual bool
+            is_initialized(
+            ) const
             {
-              return m_initialized;
+                return m_initialized;
             }
 
-        private:
+        protected:
 
             bool
-            hal_init ();
+            hal_init(
+            ) ;
 
             void
-            cdrom_policy (Hal::RefPtr<Hal::Volume> const& volume);
+            cdrom_policy(
+                  const Hal::RefPtr<Hal::Volume>&
+            ) ;
+
+            gint64 
+            volume_register(
+                  const Volume&
+            ) ;
 
             void
-            volume_register (Volume const& volume);
+            volume_insert(
+                  const std::string&
+            ) ;
 
             void
-            volume_insert (std::string const& udi);
+            volume_remove(
+                  const std::string&
+            ) ;
 
             void
-            volume_remove (std::string const& udi);
+            volume_process(
+                  const std::string&
+            ) ;
 
             void
-            volume_process (std::string const& udi);
+            device_condition(
+                  const std::string&        /*udi*/
+                , const std::string&        /*cond_name*/
+                , const std::string&        /*cond_details*/
+            ) ;
 
             void
-            device_condition (std::string const& udi,
-                              std::string const& cond_name,
-                              std::string const& cond_details );
-            void
-            device_added (std::string const& udi );
+            device_added(
+                  const std::string&
+            ) ;
 
             void
-            device_removed (std::string const& udi );
+            device_removed(
+                  const std::string&
+            ) ;
 
             void
-            device_property (std::string const& udi,
-                             std::string const& key,
-                             bool is_removed,
-                             bool is_added);
+            device_property(
+                  const std::string&        /*udi*/
+                , const std::string&        /*key*/
+                , bool                      /*is_removed*/
+                , bool                      /*is_added*/
+            ) ;
 
-            SignalVolume                    signal_volume_removed_;
-            SignalVolume                    signal_volume_added_;
-            SignalCDDAInserted              signal_cdda_inserted_;
-            SignalEjected                   signal_ejected_;
+            SignalVolume                    signal_volume_removed_ ;
+            SignalVolume                    signal_volume_added_ ;
+            SignalCDDAInserted              signal_cdda_inserted_ ;
+            SignalEjected                   signal_ejected_ ;
 
-            Hal::RefPtr<Hal::Context>       m_context;
-            Volumes		                    m_volumes;
-            VolumesMounted                  m_volumes_mounted;
-            MountedPaths                    m_mounted_paths;
+            Hal::RefPtr<Hal::Context>       m_context ;
+            Volumes		                    m_volumes ;
+            VolumesMounted                  m_volumes_mounted ;
+            MountedPaths                    m_mounted_paths ;
 
-            SQL::SQLDB                    * m_SQL;
-            bool                            m_initialized;
+            VolumeIdMap_t                   m_volume_id_map ;
+            IdMountMap_t                    m_id_mount_map ;
+
+            SQL::SQLDB                    * m_SQL ;
+            bool                            m_initialized ;
     };
 }
-#endif //!MPX_HAL_HH
+#endif //!_YOUKI_HAL__HH

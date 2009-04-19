@@ -64,7 +64,7 @@ class TagTrack():
         self.model      = gtk.ListStore(gobject.TYPE_STRING)
         self.tags       = {}
 
-        self.xml        = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/lastfmstuff/tag-track.glade")
+        self.xml        = gtk.glade.XML("@PLUGIN_DIR@" + "/plugins-python/lastfmstuff/tag-track.glade")
         self.dialog     = self.xml.get_widget("dialog")
         self.box        = self.xml.get_widget("entry")
         self.entry      = self.box.child
@@ -122,8 +122,10 @@ class LastFmActions(mpx.Plugin):
 
     def deactivate(self):
 
-        self.ui.remove_ui(self.merge_id)
         self.player.gobj().disconnect(self.handler1_id)
+        self.player.gobj().disconnect(self.handler2_id)
+        self.ui.remove_ui(self.merge_id)
+        return True
 
     def __init__(self,id,player,mcs):
 

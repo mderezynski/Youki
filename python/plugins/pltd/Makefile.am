@@ -3,6 +3,6 @@ python_DATA = 				\
 		pltd.glade			\
 		pltd.mpx-plugin 	
 
-pythondir = $(pkgdatadir)/python-plugins/pltd
+pythondir = $(pkglibdir)/plugins/plugins-python/pltd
 BUILT_SOURCES = __init__.py
 EXTRA_DIST = $(python_DATA)

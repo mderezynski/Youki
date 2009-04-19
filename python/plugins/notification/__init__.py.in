@@ -31,7 +31,7 @@ class Notification(mpx.Plugin):
         self.mcs.domain_register("MPX-notification-plugin")
         self.mcs.key_register("MPX-notification-plugin", "notification-enabled", False)
 
-        self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/notification/notification.glade")
+        self.xml = gtk.glade.XML("@PLUGIN_DIR@" + "/plugins-python/notification/notification.glade")
 
         self.widget = self.xml.get_widget("widget")
         self.widget.unparent()

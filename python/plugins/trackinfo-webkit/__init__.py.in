@@ -43,15 +43,14 @@ body {
     padding-left: 0.5em;
     padding-right: 0.5em;
     color: #404040;
-    background-color: #000000;
+    background-color: #dfdfdf;
     padding-left: 3em;
     padding-right: 3em;
 }
 
 .SectionHeaderSmall {
-
-    background-color: #9fa782;
-    border-color: #9fa782;
+    background-color: #1d96dc;
+    border-color: #1d96dc;
     border-width: 4px;
     border-style: solid;
     color: white;
@@ -64,20 +63,14 @@ body {
 }
 
 .SectionContentSmall {
-    -webkit-border-bottom-left-radius: 10px;
-    -webkit-border-bottom-right-radius: 10px;
-    border-color: #dfdfdf;
-    border-width: 2px;
-    border-style: solid;
     padding: 0.5em;
     margin-bottom: 1.5em;
     background-color: #dfdfdf;
 }
 
 .SectionHeader {
-
-    background-color: #9fa782;
-    border-color: #9fa782;
+    background-color: #1d96dc;
+    border-color: #1d96dc;
     border-width: 4px;
     border-style: solid;
     color: white;
@@ -86,20 +79,14 @@ body {
     height: 2em;
     line-height: 2em;
     padding-left: 0.5em;
-    -webkit-border-top-left-radius: 10px;
-    -webkit-border-top-right-radius: 10px;
+    -webkit-border-top-left-radius: 2px;
+    -webkit-border-top-right-radius: 2px;
 }
 
 .SectionContent {
-    -webkit-border-bottom-left-radius: 10px;
-    -webkit-border-bottom-right-radius: 10px;
-    border-color: #dfdfdf;
-    border-width: 2px;
-    border-style: solid;
     padding: 0.5em;
     margin-bottom: 1.5em;
-    background-color: #dfdfdf;
-    font-size: 115%;
+    background-color: #ffffff;
 }
 
 .InfoBadge {
@@ -399,6 +386,7 @@ class WebBrowser():
                               self._javascript_script_prompt_cb)
 
         self._scrolled_window = gtk.ScrolledWindow()
+        self._scrolled_window.props.border_width = 0
         self._scrolled_window.props.hscrollbar_policy = gtk.POLICY_AUTOMATIC
         self._scrolled_window.props.vscrollbar_policy = gtk.POLICY_AUTOMATIC
         self._scrolled_window.add(self._browser)
@@ -408,10 +396,13 @@ class WebBrowser():
 
         self._statusbar = WebStatusBar()
 
-        self._vbox = gtk.VBox(spacing=4)
-        self._vbox.pack_start(self._toolbar, expand=False, fill=False)
-        self._vbox.pack_start(self._scrolled_window)
+#        self._vbox = gtk.VBox(spacing=4)
+#        self._vbox.pack_start(self._toolbar, expand=False, fill=False)
+#        self._vbox.pack_start(self._scrolled_window)
         #self._vbox.pack_end(self._statusbar, expand=False, fill=False)
+#        self._vbox.show_all()
+
+        self._vbox = self._scrolled_window
         self._vbox.show_all()
 
     def get_entry(self):
@@ -460,8 +451,12 @@ class WebBrowser():
         print "selection changed"
 
     def _set_scroll_adjustments_cb(self, page, hadjustment, vadjustment):
-        self._scrolled_window.props.hadjustment = hadjustment
-        self._scrolled_window.props.vadjustment = vadjustment
+
+        if hadjustment:
+            self._scrolled_window.props.hadjustment = hadjustment
+
+        if vadjustment:
+            self._scrolled_window.props.vadjustment = vadjustment
 
     def _javascript_console_message_cb(self, page, message, line, sourceid):
         self._statusbar.show_javascript_info()
@@ -539,12 +534,9 @@ def append_url_rels(entity):
 
             rls = rel_links[a]
             for rel in rls:
-                if len(rls) > 1:
-                    links.append("<a href='%s'>%s</a>(%s)" % (rel.getTargetId(), mapping[a], str(rls.index(rel)+1)))
-                else:
-                    links.append("<a href='%s'>%s</a>" % (rel.getTargetId(), mapping[a]))
+                html += "<tr><td style='width: 25%'>"+mapping[a]+":</td><td><a href='"+rel.getTargetId()+"'>"+rel.getTargetId()+"</a></td></tr>"
 
-    return ", ".join(links) 
+    return html 
 
 def append_artist_rels(entity): 
 
@@ -603,7 +595,7 @@ class ArtistInfoQuery (threading.Thread):
                 self.html += "<div class='SectionContent'>"
                 self.html += "<table><tr valign='top'><td valign='top'>"
                 self.html += "<img src='%s'/>" % artist_info["picture"]
-                self.html += "</td><td>"
+                self.html += "</td><td width='90%'>"
 
                 value = artist_info["wikiText"]
                 re1 = re.compile("(\\[[^\\]]+\\])")
@@ -613,22 +605,23 @@ class ArtistInfoQuery (threading.Thread):
 
                 if len(value) > 0:
                     self.html += value 
-                    self.html += "<a href='%s'>(%s)</a>" % (artist_info["wikiPageUrl"], _("more"))
+                    self.html += "<div style='text-align: right'><a href='%s'>(%s)</a></div>" % (artist_info["wikiPageUrl"], _("more"))
 
                 self.html += "</td></tr></table>"
                 self.html += "</div>"
         except Exception, e:
                 print "Error: " + str(e)
         
-        self.html += Template(tmpl_section_header).render(header=_('Contributor Links'))
+        self.html += Template(tmpl_section_header).render(header=_('Track Artists'))
 
         try:
                 entity = self.query.getArtistById(self.artistid, self.wsinc)   
                 self.html += "<div class='SectionContent'>"
                 self.html += "<br/><b>%s</b>(%s): <br/>" % (entity.getName(), self.artistid)
                 self.html += append_artist_rels(entity)
-                self.html += "<br/><br/>"
+                self.html += "<table style='width: 100%'>"
                 self.html += append_url_rels(entity)
+                self.html += "</table>"
                 self.html += "</div>"
         except Exception, e:
                 print "Error: " + str(e)
@@ -677,10 +670,10 @@ class TrackInfoQuery (threading.Thread):
         except Exception, e:
             print "Error in TrackInfoQuery.run Lyrics: " +str(e)
     
-        try:
-            self.APPEND_MBData()
-        except Exception, e:
-            print "Error in TrackInfoQuery.run MBData: " +str(e)
+        #try:
+        self.APPEND_MBData()
+        #except Exception, e:
+        #    print "Error in TrackInfoQuery.run MBData: " +str(e)
 
         self.html += "</body></html>"
         self.finished.set()
@@ -700,18 +693,18 @@ class TrackInfoQuery (threading.Thread):
         value = re1.sub("",value)
         value = re2.sub("",value)
         if len(value) > 0:
-            self.html += "<span style='font-size: 115%'>" + value + "</span>"
+            self.html += value 
             self.html += "<a href='%s'>(%s)</a>" % (self.artist_info["wikiPageUrl"], _("more"))
         self.html += "</td><td style='width: 20%'>"
 
-        self.html += "<table style='width: 100%' cellspacing=0 cellpadding=0>"
-        self.html += "<tr><td class='InfoBadge'><span style='width: 100%'>Similar Artists</span></td></tr>"
-        self.html += "<tr><td class='InfoBadgeContent'>"
-        if self.artist_info["similar"] and len(self.artist_info["similar"]):
-            for artist in self.artist_info["similar"]:
-                self.html += getEntityLink(artist, "", "artist")
-                self.html += "<br/>"
-        self.html += "</td></tr></table>"
+#        self.html += "<table style='width: 100%' cellspacing=0 cellpadding=0>"
+#        self.html += "<tr><td class='InfoBadge'><span style='width: 100%'>Similar Artists</span></td></tr>"
+#        self.html += "<tr><td class='InfoBadgeContent'>"
+#        if self.artist_info["similar"] and len(self.artist_info["similar"]):
+#            for artist in self.artist_info["similar"]:
+#                self.html += getEntityLink(artist, "", "artist")
+#                self.html += "<br/>"
+#        self.html += "</td></tr></table>"
 
         self.html += "</td></tr></table>"
         self.html += "</div>"
@@ -719,7 +712,7 @@ class TrackInfoQuery (threading.Thread):
     def APPEND_Lyrics(self):
 
         req  = urllib2.urlopen("http://lyricwiki.org/api.php?fmt=text&artist=%s&song=%s"
-                % (urllib.quote(self.track[mpx.AttributeId.ARTIST].get()), urllib.quote(self.track[mpx.AttributeId.TITLE].get())))
+                % (urllib.quote(self.track[mpx.AttributeId.ARTIST].get().encode("utf-8")), urllib.quote(self.track[mpx.AttributeId.TITLE].get().encode("utf-8"))))
 
         lyrics = req.read()
 
@@ -727,11 +720,15 @@ class TrackInfoQuery (threading.Thread):
 
             self.html += Template(tmpl_section_header).render(header='Lyrics')
             self.html += "<div class='SectionContent'>"
-            self.html += "<a href='%s'>(Edit Lyrics on LyricWiki)</a>" % ("http://lyricwiki.org/index.php?title=%s:%s&action=edit" % (urllib.quote(self.track[mpx.AttributeId.ARTIST].get()), urllib.quote(self.track[mpx.AttributeId.TITLE].get())))
+            self.html += "<a href='%s'>(Edit Lyrics on LyricWiki)</a>" % ("http://lyricwiki.org/index.php?title=%s:%s&action=edit" % (urllib.quote(self.track[mpx.AttributeId.ARTIST].get().encode("utf-8")), urllib.quote(self.track[mpx.AttributeId.TITLE].get().encode("utf-8"))))
             self.html += "<br/>"
             self.html += "<br/>"
             self.html += lyrics.replace("\n","<br/>")
             self.html += "</div>"
+
+    def APPEND_MBData_RelLink(self, linktitle, linkurl):
+
+        self.html += "<tr><td style='width: 25%'>" + linktitle +":</td><td><a href='"+linkurl+"'>"+linkurl+"</a></td></tr>"
 
     def APPEND_MBData(self):
 
@@ -808,16 +805,16 @@ class TrackInfoQuery (threading.Thread):
 
             self.html += Template(tmpl_section_header).render(header=_('Album Links'))
             self.html += "<div class='SectionContent'>"
+            self.html += "<table style='width: 100%'>"
 
             if self.track[mpx.AttributeId.ALBUM_ARTIST] and self.track[mpx.AttributeId.ALBUM]: 
-                self.html += "<a href='http://rateyourmusic.com/release/album/%s/%s/'>RateYourMusic</a>" % (self.track[mpx.AttributeId.ALBUM_ARTIST].get().replace(" ","_").lower(), self.track[mpx.AttributeId.ALBUM].get().replace(" ","_").lower())
+                url = "http://rateyourmusic.com/release/album/%s/%s/" % (self.track[mpx.AttributeId.ALBUM_ARTIST].get().replace(" ","_").lower(), self.track[mpx.AttributeId.ALBUM].get().replace(" ","_").lower())
+                self.html += "<tr><td style='width: 25%'>RateYourMusic:</td><td><a href='"+url+"'>"+url+"</a></td></tr>"
 
             if self.track[mpx.AttributeId.MB_ALBUM_ID]: 
-                url_rels = append_url_rels(self.query.getReleaseById(self.track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release))
-                if len(url_rels) > 0:
-                    self.html += ", ";
-                    self.html += url_rels
+                self.html += append_url_rels(self.query.getReleaseById(self.track[mpx.AttributeId.MB_ALBUM_ID].get(), self.wsinc_release))
 
+            self.html += "</table>"
             self.html += "</div>"
 
             # Contributor Links
@@ -833,19 +830,24 @@ class TrackInfoQuery (threading.Thread):
 
                     entity = self.query.getArtistById(id, self.wsinc)   
 
-                    self.html += "<span style='font-weight:bold; font-size: large; text-decoration: underline'>%s</span><br/><br/>" % entity.getName()
+                    self.html += "<div style='margin-bottom: 0.5em'>"
+                    self.html += "<span style='font-weight:bold; font-size: large'>%s</span>" % entity.getName()
 
                     artist_rels = append_artist_rels(entity)
 
                     if len(artist_rels):
-                        self.html += artist_rels 
+                        self.html += "<br/><br/>"
+                        self.html += append_artist_rels(entity)
                         self.html += "<br/><br/>"
 
-                    self.html += "<a href='http://www.google.com/search?q=%s'>Google</a>, " % urllib.quote(entity.getName())
-                    self.html += "<a href='http://www.last.fm/music/%s'>Last.fm</a>, " % urllib.quote_plus(entity.getName())
-                    self.html += "<a href='http://www.bbc.co.uk/music/artists/%s'>BBC</a>, " % id 
+                    self.html += "<table style='width: 100%'>"
+                    self.APPEND_MBData_RelLink("Google", u"http://www.google.com/search?q=%s" % urllib.quote(entity.getName().encode("utf-8")))
+                    self.APPEND_MBData_RelLink("Last.fm", u"http://www.last.fm/music/%s" % urllib.quote_plus(entity.getName().encode("utf-8")))
+                    self.APPEND_MBData_RelLink("BBC Music", u"http://www.bbc.co.uk/music/artists/%s" % id)
                     self.html += append_url_rels(entity)
-                    self.html += "<br/><br/>"
+                    self.html += "</table>"
+
+                    self.html += "</div>"
 
 
                 self.html += "</div>"
@@ -948,9 +950,7 @@ class TrackInfoQuery (threading.Thread):
 
 class TrackInfo:
 
-    def __init__(self, xml, mpx):
-
-        self.mpx = mpx
+    def __init__(self, xml):
 
         self.query = ws.Query(musicbrainz2.webservice.WebService("www.uk.musicbrainz.org"))
         self.wsinc = musicbrainz2.webservice.TrackIncludes(trackRelations=True,artist=True,puids=True,releases=True,artistRelations=True,releaseRelations=True,urlRelations=True)
@@ -967,7 +967,7 @@ class TrackInfo:
         self.alignment.add_with_viewport(self.browser.get_gui())
 
         self.throb = xml.get_widget("throbber")
-        self.throb.set_from_file("@DATA_DIR@" + "/images/throbber.gif")
+        self.throb.set_from_file("@DATA_DIR@" + "/images/animated-throbber.gif")
         self.notebook.set_current_page(0)
 
         self.artist_cached = {}
@@ -1097,36 +1097,39 @@ class LiveInfo(mpx.Plugin):
 
     """The Trackinfo Plugin provides a Last.fm/Musicbrainz based track info for the currently played track."""
 
-    def __init__(self,id,player,mcs):
+    def __init__(self,id,youki,mcs):
     
         self.id = id
-        self.player = player
-        self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/trackinfo-webkit/trackinfo-webkit.glade")
-        self.vbox = self.xml.get_widget("vbox")
+        self.youki = youki
+        self.xml = gtk.glade.XML( "@PLUGIN_DIR@" + "/plugins-python/trackinfo-webkit/trackinfo-webkit.glade" )
+        self.vbox = self.xml.get_widget( "vbox" )
         self.vbox.unparent()
-        self.info = TrackInfo(self.xml,self.player)
+        self.info = TrackInfo( self.xml )
 
     def activate(self):
 
-        self.player_infoarea_click_id = self.player.gobj().connect("metadata-updated", self.metadata_updated)
-        self.player.add_info_widget(self.vbox, _("Browser"))
+        self.youki_metadata_updated_id = self.youki.gobj().connect("track-new", self.metadata_updated)
+        self.youki.add_info_widget(self.vbox, _("LiveInfo"))
 
         try:
-            self.info.run(self.player.get_metadata())
+            self.info.run(self.youki.get_metadata())
         except:
             pass # We just try to display it after activation
 
         return True
 
     def deactivate(self):
-        self.player.remove_info_widget(self.vbox)
-        self.player.gobj().disconnect(self.player_infoarea_click_id)
+
+        self.youki.remove_info_widget(self.vbox)
+        self.youki.gobj().disconnect(self.youki_metadata_updated_id)
         self.info.clear()
+
+        return True
 
     def metadata_updated(self, blah):
 
         try:
-            self.info.run(self.player.get_metadata())
+            self.info.run(self.youki.get_metadata())
         except Exception, e:
             print e
 

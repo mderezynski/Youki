@@ -1,5 +1,0 @@
-SUBDIRS =		\
-				\
-	lastfm		\
-	musiclib 	\
-	radio		

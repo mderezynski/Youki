@@ -40,6 +40,7 @@
 #include "xmlcpp/xsd-topalbums-2.0.hxx"
 #include "xmlcpp/xsd-artist-similar-2.0.hxx"
 #include "mpx/xml/xmltoc++.hh"
+#include "mpx/widgets/cell-renderer-vbox.hh"
 #include "mpx/widgets/widgetloader.hh"
 
 
@@ -191,7 +192,7 @@ namespace MPX
 
                     (*iter)[Columns.Date_Raw] = date; 
 
-                    //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>\n" + date; 
+                    //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>"; //\n" + date; 
                     (*iter)[Columns.Name] = Glib::Markup::escape_text(name);
                     (*iter)[Columns.SortKey] = Glib::ustring(name).collate_key();
                     (*iter)[Columns.ID] = get<gint64>((*i)["id"]);
@@ -203,6 +204,19 @@ namespace MPX
                         m_MBIDIterMap.insert(std::make_pair( get<std::string>((*i)["mb_album_artist_id"]), iter));
                 }
             }
+
+            void
+            cell_data_func_artist( CellRenderer * basecell, const TreeIter& iter )
+            {
+                CellRendererVBox & cvbox = *dynamic_cast<CellRendererVBox*>(basecell);
+
+                CellRendererPixbuf *cell1 = dynamic_cast<CellRendererPixbuf*>(cvbox.property_renderer1().get_value());
+                CellRendererText   *cell2 = dynamic_cast<CellRendererText*>(cvbox.property_renderer2().get_value());
+
+                cell1->property_pixbuf() = (*iter)[Columns.Image] ;
+                cell2->property_markup() = Glib::ustring((*iter)[Columns.Name]) ;
+            }
+        
 
         public:
 
@@ -223,53 +237,60 @@ namespace MPX
                 ));
                 Store->set_sort_column_id( -1, Gtk::SORT_ASCENDING );
 
-                /*
-                // Image
-                { 
-                        TreeViewColumn * col = manage (new TreeViewColumn(_("Image")));
+                //CellRendererVBox *cvbox = manage( new CellRendererVBox ) ;
+                TreeViewColumn *col = manage( new TreeViewColumn ) ;
 
-                        CellRendererPixbuf *cell = manage (new CellRendererPixbuf);
-                        col->pack_start( *cell, true );
-                        col->add_attribute( *cell, "pixbuf", Columns.Image );
-                        append_column(*col);
+                /*
+                CellRendererPixbuf *cell1 = manage( new CellRendererPixbuf ) ;
+                cell1->property_ypad() = 8 ;
+                cvbox->property_renderer1() = cell1 ;
+                */
+
+                CellRendererText *cell2 = manage( new CellRendererText ) ;
+                cell2->property_xalign() = 0.0 ;
+                cell2->property_ellipsize() = Pango::ELLIPSIZE_END ;
+                //cvbox->property_renderer2() = cell2 ;
+
+                col->pack_start( *cell2, true ) ;
+                col->add_attribute( *cell2, "markup", Columns.Name ); 
+            
+                /*
+                col->set_cell_data_func(
+                          *cvbox    
+                        , sigc::mem_fun(
+                            *this,
+                            &ArtistListView::cell_data_func_artist
+                        ));
+                */
+
+                append_column( *col ) ;
+
+                /*
+                { 
+                    // Image
+                    TreeViewColumn * col = manage (new TreeViewColumn(_("Image")));
+                    CellRendererPixbuf *cell = manage (new CellRendererPixbuf);
+                    col->pack_start( *cell, true );
+                    col->add_attribute( *cell, "pixbuf", Columns.Image );
+                    append_column(*col);
+                }
+
+                { 
+                    // Text
+                    TreeViewColumn * col = manage (new TreeViewColumn(_("Name")));
+                    CellRendererText *cell = manage (new CellRendererText);
+                    col->pack_start( *cell, false );
+                    col->add_attribute( *cell, "markup", Columns.Name );
+                    append_column(*col);
                 }
                 */
 
-                
-                // Text
-                { 
-                        TreeViewColumn * col = manage (new TreeViewColumn(_("Name")));
-
-                        CellRendererText *cell = manage (new CellRendererText);
-                        //cell->property_yalign() = 0.;
-                        col->pack_start( *cell, false );
-                        col->add_attribute( *cell, "markup", Columns.Name );
-                        append_column(*col);
-                }
-
                 boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library");
 
-                library->signal_new_artist().connect(
-                    sigc::mem_fun(
-                          *this
-                        , &ArtistListView::on_new_artist
-                ));
-
-                library->scanner()->signal_entity_deleted().connect(
-                    sigc::mem_fun(
-                          *this
-                        , &ArtistListView::on_entity_deleted
-                ));
-
-                library->scanner()->signal_entity_updated().connect(
-                    sigc::mem_fun(
-                          *this
-                        , &ArtistListView::on_entity_updated
-                ));
-
                 build_list();
-
                 set_model(Store);
+                set_enable_search();
+                set_search_column( Columns.Name_Raw ) ; 
 
                 get_selection()->signal_changed().connect(
                     sigc::mem_fun(
@@ -277,6 +298,7 @@ namespace MPX
                         &ArtistListView::on_selection_changed
                 ));
 
+                /*
                 boost::shared_ptr<ArtistImages> artist_images = services->get<ArtistImages>("mpx-service-artist-images");
 
                 artist_images->signal_got_artist_image().connect(
@@ -286,6 +308,7 @@ namespace MPX
                 ));
 
                 artist_images->recache_images();
+                */
             }
 
             void
@@ -298,7 +321,7 @@ namespace MPX
                 {
                     TreeIter iter = m_MBIDIterMap.find( mbid )->second;
 
-                    Cairo::RefPtr<Cairo::ImageSurface> surface = Util::cairo_image_surface_round( Util::cairo_image_surface_from_pixbuf( artist_image->scale_simple( 48, 48, Gdk::INTERP_BILINEAR) ), 2.88 );
+                    Cairo::RefPtr<Cairo::ImageSurface> surface = Util::cairo_image_surface_round( Util::cairo_image_surface_from_pixbuf( artist_image->scale_simple( 90, 90, Gdk::INTERP_BILINEAR) ), 2.88 );
                     Util::cairo_image_surface_rounded_border(surface, .5, 2.88, 0., 0., 0., 1.); 
                     (*iter)[Columns.Image] = Util::cairo_image_surface_to_pixbuf( surface ); 
                 }
@@ -358,13 +381,13 @@ namespace MPX
 
                 (*iter)[Columns.Date_Raw] = date; 
 
-                //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>\n" + date; 
+                //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>"; //\n" + date; 
                 (*iter)[Columns.Name] = Glib::Markup::escape_text(name);
                 (*iter)[Columns.SortKey] = Glib::ustring(name).collate_key();
-                (*iter)[Columns.ID] = get<gint64>(v[0]["id"]);
+                (*iter)[Columns.ID] = id; 
                 (*iter)[Columns.Image] = m_Artist_Default;
 
-                m_IdIterMap.insert(std::make_pair( get<gint64>(v[0]["id"]), iter));
+                m_IdIterMap.insert(std::make_pair( id, iter));
 
                 if( v[0].count("mb_album_artist_id"))
                     m_MBIDIterMap.insert(std::make_pair( get<std::string>(v[0]["mb_album_artist_id"]), iter));
@@ -452,7 +475,7 @@ namespace MPX
 
                     (*iter)[Columns.Date_Raw] = date; 
 
-                    //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>\n" + date; 
+                    //(*iter)[Columns.Name] = "<span><b>"+Glib::Markup::escape_text(name)+"</b></span>"; //\n" + date; 
                     (*iter)[Columns.Name] = Glib::Markup::escape_text(name);
                     (*iter)[Columns.SortKey] = Glib::ustring(name).collate_key();
                     (*iter)[Columns.ID] = get<gint64>(v[0]["id"]);
@@ -505,12 +528,6 @@ namespace MPX
             , m_ArtistListView( new ArtistListView )
             {
                 m_UI = manage( new Gtk::VBox );
-                m_Advanced_CB = manage( new Gtk::CheckButton( _("Advanced Query")));
-                m_Advanced_CB->signal_toggled().connect(
-                    sigc::mem_fun(
-                            *this,
-                            &TextMatch::on_advanced_toggled
-                ));
 
                 Gtk::ScrolledWindow * sw = manage( new Gtk::ScrolledWindow );
 
@@ -525,8 +542,8 @@ namespace MPX
                 sw->add( *m_ArtistListView );
                 sw->set_policy( Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC );
                 sw->set_size_request( -1, 180 );
+                sw->set_shadow_type( Gtk::SHADOW_IN );
 
-                m_UI->pack_start( *m_Advanced_CB, false, false );
                 m_UI->pack_start( *sw );
                 m_UI->show_all();
             }
@@ -549,22 +566,6 @@ namespace MPX
             }
 
             void
-            TextMatch::on_advanced_toggled ()
-            {
-                if( m_Advanced_CB->get_active() )
-                {
-                    m_Constraints.clear();
-                    m_FilterEffective = AQE::parse_advanced_query( m_Constraints, m_FilterText ); 
-                }
-                else
-                {
-                    m_FilterEffective = m_FilterText;
-                }
-
-                Signals.Refilter.emit();
-            }
-
-            void
             TextMatch::on_filter_issued( const Glib::ustring& G_GNUC_UNUSED )
             {
                 // for textmach, we don't need to do anything
@@ -574,17 +575,8 @@ namespace MPX
             TextMatch::on_filter_changed( const Glib::ustring& text )
             {
                 m_FilterText = text;
-
-                if( m_Advanced_CB->get_active() )
-                {
-                    m_Constraints.clear();
-                    m_FilterEffective = AQE::parse_advanced_query( m_Constraints, m_FilterText ); 
-                }
-                else
-                {
-                    m_FilterEffective = text;
-                }
-
+                m_Constraints.clear();
+                m_FilterEffective = AQE::parse_advanced_query( m_Constraints, m_FilterText ); 
                 Signals.Refilter.emit();
             }
 
@@ -602,13 +594,19 @@ namespace MPX
                         else
                         {
                             bool truth = true;
+
                             if( !m_Constraints.empty() )
                             {
                                 MPX::Track& track = *(Track_sp((*iter)[Columns.AlbumTrack]));
                                 truth = AQE::match_track( m_Constraints, track );
                             }
 
-                            return truth && Util::match_keys( *(ustring_sp((*iter)[Columns.Text])), m_FilterEffective ); 
+                            ustring_sp p = (*iter)[Columns.Text];
+
+                            if( p )
+                                return truth && Util::match_keys( *p, m_FilterEffective ); 
+                            else
+                                return truth;
                         }
                 }
                 else

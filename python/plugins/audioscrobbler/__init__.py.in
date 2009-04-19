@@ -815,7 +815,7 @@ class MPXAudioScrobbler(mpx.Plugin):
         self.id = id
         self.player = player
         self.mcs = mcs
-        self.xml = gtk.glade.XML("@DATA_DIR@" + "/python-plugins/audioscrobbler/audioscrobbler.glade")
+        self.xml = gtk.glade.XML("@PLUGIN_DIR@" + "/plugins-python/audioscrobbler/audioscrobbler.glade")
         self.widget = self.xml.get_widget("widget")
         self.widget.unparent()
 
@@ -850,8 +850,8 @@ class MPXAudioScrobbler(mpx.Plugin):
     
         """ Activate plugin """
 
-        self.as = AudioScrobbler()
-        self.post = self.as.post(self.mcs.key_get_string("lastfm", "username"), self.mcs.key_get_string("lastfm", "password"))
+        self.audioscrobbler = AudioScrobbler()
+        self.post = self.audioscrobbler.post(self.mcs.key_get_string("lastfm", "username"), self.mcs.key_get_string("lastfm", "password"))
         self.post.start()
         
         try:
@@ -861,7 +861,7 @@ class MPXAudioScrobbler(mpx.Plugin):
     
         self.hand1 = self.player.gobj().connect("track-played", self.track_played)
         self.hand2 = self.player.gobj().connect("new-track", self.new_track)
-        self.hand2 = self.player.gobj().connect("metadata-updated", self.now_playing)
+        self.hand3 = self.player.gobj().connect("metadata-updated", self.now_playing)
         self.player_playstatus_changed = self.player.gobj().connect("play-status-changed", self.pstate_changed)
 
         print ("Audioscrobbler activated: " + str(self.post.authenticated))
@@ -878,13 +878,16 @@ class MPXAudioScrobbler(mpx.Plugin):
     def deactivate(self):
 
         """ Deactivate plugin """
-        pass
-        #self.player.gobj().disconnect(self.hand1)
-        #self.player.gobj().disconnect(self.hand2)
-        #self.as = None
+
+        self.player.gobj().disconnect(self.hand1)
+        self.player.gobj().disconnect(self.hand2)
+        self.player.gobj().disconnect(self.hand3)
+        self.audioscrobbler = None
         #self.post.save()
         #self.post.stop()
-        #self.post = None
+        self.post = None
+
+        return True
 
     def pstate_changed(self, blah, state):
 

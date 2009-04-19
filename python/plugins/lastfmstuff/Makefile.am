@@ -3,7 +3,7 @@ python_DATA = 				\
 		tag-track.glade		\
 		lastfmstuff.mpx-plugin 	
 
-pythondir = $(pkgdatadir)/python-plugins/lastfmstuff
+pythondir = $(pkglibdir)/plugins/plugins-python/lastfmstuff
 BUILT_SOURCES = __init__.py
 EXTRA_DIST = $(python_DATA)
 CLEANFILES = __init__.py __init__.pyc

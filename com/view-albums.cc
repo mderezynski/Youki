@@ -211,6 +211,7 @@ namespace MPX
                                                "emblem-soundtrack.png" 
                         ));
 
+/*
                         services->get<Library>("mpx-service-library")->signal_new_album().connect(
                             sigc::mem_fun(
                                 *this,
@@ -258,6 +259,7 @@ namespace MPX
                                 *this,
                                 &AlbumTreeView::on_got_cover
                         )); 
+*/
 
                         if( !name_showing_label.empty() )
                             m_LabelShowing = new RoundedLayout(xml, name_showing_label);
@@ -323,6 +325,26 @@ namespace MPX
                                                         *this,
                                                         &AlbumTreeView::cellDataFuncText1
                                 ));
+                        }
+
+
+
+                        { // Add/Remove
+
+                                CellRendererPixbuf *cell = manage (new CellRendererPixbuf);
+
+                                col->pack_start( *cell, false );
+
+                                col->set_cell_data_func(
+                                                *cell,
+                                                sigc::mem_fun(
+                                                        *this,
+                                                        &AlbumTreeView::cellDataFuncAdd
+                                ));
+
+                                cell->property_width() = 16;
+
+                                m_CellAdd = cell;
                         }
 
 
@@ -395,6 +417,7 @@ namespace MPX
                         }
 
                         append_column(*col);
+
 
                         AlbumsTreeStore = Gtk::TreeStore::create(Columns);
                         AlbumsTreeStoreFilter = Gtk::TreeModelFilter::create(AlbumsTreeStore);
@@ -528,6 +551,8 @@ namespace MPX
                         AlbumsTreeStore->set_sort_func(3 , sigc::mem_fun( *this, &AlbumTreeView::slotSortStrictAlpha ));
                         AlbumsTreeStore->set_sort_func(4 , sigc::mem_fun( *this, &AlbumTreeView::slotSortPlayScore ));
                         AlbumsTreeStore->set_sort_column(0, Gtk::SORT_ASCENDING);
+
+                        set_search_column(Columns.Album);
                 }
 
                 void
@@ -546,6 +571,7 @@ namespace MPX
                 void
                         AlbumTreeView::refilter ()
                         {
+                                m_MouseOverIter.reset();
                                 AlbumsTreeStoreFilter->refilter();
                                 update_album_count_display();
                         }
@@ -671,12 +697,16 @@ namespace MPX
                                 {
                                         if(m_DragAlbumMBID)
                                         {
-                                                Cairo::RefPtr<Cairo::ImageSurface> CoverCairo;
-                                                services->get<Covers>("mpx-service-covers")->fetch(m_DragAlbumMBID.get(), CoverCairo, COVER_SIZE_DEFAULT);
-                                                if(CoverCairo)
+                                                Cairo::RefPtr<Cairo::ImageSurface> surface;
+
+                                                services->get<Covers>("mpx-service-covers")->fetch(m_DragAlbumMBID.get(), surface, COVER_SIZE_DEFAULT);
+
+                                                if( surface )
                                                 {
-                                                        CoverCairo = Util::cairo_image_surface_round(CoverCairo, 28); 
-                                                        Glib::RefPtr<Gdk::Pixbuf> CoverPixbuf = Util::cairo_image_surface_to_pixbuf(CoverCairo);
+                                                        Gdk::Color c = get_style()->get_black();
+                                                        surface = Util::cairo_image_surface_round(surface, 28.); 
+                                                        Util::cairo_image_surface_rounded_border(surface, .5, 28., c.get_red_p(), c.get_green_p(), c.get_blue_p(), 1.);
+                                                        Glib::RefPtr<Gdk::Pixbuf> CoverPixbuf = Util::cairo_image_surface_to_pixbuf(surface);
                                                         drag_source_set_icon(CoverPixbuf->scale_simple(128,128,Gdk::INTERP_BILINEAR));
                                                         return;
                                                 }
@@ -833,12 +863,30 @@ namespace MPX
                                                 }
                                         }
                                         else
-                                                if(m_PathButtonPress.get_depth() == ROW_TRACK)
+                                        if(m_PathButtonPress.get_depth() == ROW_TRACK)
+                                        {
+                                            m_DragAlbumMBID.reset(); 
+                                            m_DragAlbumId.reset();
+                                            m_DragTrackId = (*iter)[Columns.TrackId];
+
+                                            int start_pos, width;
+
+                                            if( m_MouseOverIter && m_MouseOverIter.get() == AlbumsTreeStoreFilter->convert_child_iter_to_iter( iter ) )
+                                            {
+                                                if( get_column(0)->get_cell_position( *m_CellAdd, start_pos, width ) )
                                                 {
-                                                        m_DragAlbumMBID.reset(); 
-                                                        m_DragAlbumId.reset();
-                                                        m_DragTrackId = (*iter)[Columns.TrackId];
+                                                    if( cell_x >= 54 && cell_x <= 64 )
+                                                    {
+                                                        IdV v (1, m_DragTrackId.get());
+                                                        Signals.PlayTracks.emit(v, false);
+                                                        m_MouseOverIter.reset();
+                                                        queue_draw();
+                                                        return true;
+                                                    }
                                                 }
+                                            }
+                                        }
+
                                 }
                                 TreeView::on_button_press_event(event);
                                 return false;
@@ -869,7 +917,23 @@ namespace MPX
 
                             m_motion_x = x;
                             m_motion_y = y; 
-        
+
+                            TreePath path;
+                            TreeViewColumn * col;
+                            int cell_x, cell_y;
+
+                            if( get_path_at_pos (event->x, event->y, path, col, cell_x, cell_y) )
+                            {
+                                if( path.get_depth() == ROW_TRACK )
+                                {
+                                    m_MouseOverIter = AlbumsTreeStoreFilter->get_iter( path );
+                                    queue_draw ();
+                                    return false;
+                                }
+                            }
+
+                            m_MouseOverIter.reset();
+                            queue_draw();
                             return false;
                         } 
 
@@ -1013,18 +1077,21 @@ namespace MPX
                             gint64          id
                         )
                         {
-                                std::string asin;
-                                std::string year; 
-                                std::string country;
                                 std::string artist;
-                                std::string type;
-                                std::string rt_string;
+                                std::string artist_sort;
+                                std::string asin;
+                                std::string country;
                                 std::string genre;
                                 std::string mbid;
                                 std::string mbid_artist;
-                                double      playscore = 0;
-                                gint64      rating = 0;
-                                gint64      quality = -1;
+                                std::string rt_string;
+                                std::string type;
+                                std::string year; 
+
+                                double      playscore   = 0;
+                                gint64      quality     = -1; //FIXME: Use boost::optional
+                                gint64      rating      = 0;
+
                                 ReleaseType rt;
 
                                 Track_sp p (new Track);
@@ -1115,15 +1182,20 @@ namespace MPX
                                         track[ATTRIBUTE_MB_RELEASE_TYPE] = type; 
                                 }
 
+                                if(r.find("album_artist") != r.end())
+                                {
+                                        artist = get<std::string>(r["album_artist"]);
+                                        track[ATTRIBUTE_ALBUM_ARTIST] = artist; 
+                                }
+
                                 if(r.find("album_artist_sortname") != r.end())
                                 {
-                                        artist = get<std::string>(r["album_artist_sortname"]);
-                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
+                                        artist_sort = get<std::string>(r["album_artist_sortname"]); 
+                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist_sort; 
                                 }
                                 else
                                 {
-                                        artist = get<std::string>(r["album_artist"]);
-                                        track[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = artist; 
+                                        artist_sort = artist;
                                 }
 
                                 trim(country);
@@ -1138,12 +1210,13 @@ namespace MPX
                                 (*iter)[Columns.AlbumArtist] = artist;
 
                                 (*iter)[Columns.AlbumId] = get<gint64>(r["id"]);
-                                (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
                                 (*iter)[Columns.AlbumMBID] = mbid; 
 
                                 (*iter)[Columns.AlbumArtistId] = get<gint64>(r["album_artist_j"]);
-                                (*iter)[Columns.AlbumArtistSort] = ustring(artist).collate_key();
                                 (*iter)[Columns.AlbumArtistMBID] = mbid_artist; 
+
+                                (*iter)[Columns.AlbumSort] = ustring(album).collate_key();
+                                (*iter)[Columns.AlbumArtistSort] = ustring(artist_sort).collate_key();
 
                                 (*iter)[Columns.RT] = rt; 
                                 (*iter)[Columns.AlbumTrack] = p;
@@ -1154,8 +1227,8 @@ namespace MPX
 
                                 AlbumInfo_pt renderdata (new AlbumInfo);
                                 renderdata->Name = album; 
-                                renderdata->Artist = artist;
-                                renderdata->Release = (boost::format("%s %s") % country % year).str();
+                                renderdata->Artist = artist_sort;
+                                renderdata->Release = country.empty() ? (year.empty() ? "" : year) : (year.empty() ? country : (boost::format("%s %s") % country % year).str());
                                 renderdata->Type = rt_string;
                                 renderdata->Genre = genre;
                                 renderdata->Qual = quality; 
@@ -1537,6 +1610,35 @@ namespace MPX
                                 else
                                 {
                                         cell->property_visible() = false; 
+                                }
+                        }
+
+                void
+                        AlbumTreeView::cellDataFuncAdd (CellRenderer * basecell, const TreeIter& iter)
+                        {
+                                TreePath path (iter);
+
+                                CellRendererPixbuf *cell = dynamic_cast<CellRendererPixbuf*>(basecell);
+
+                                g_return_if_fail( cell );
+
+                                if( path.get_depth() == ROW_TRACK )
+                                {
+                                         if( m_MouseOverIter && iter == m_MouseOverIter.get() )
+                                          {
+                                                    cell->property_stock_id() = "mpx-stock-add";
+                                                    cell->property_stock_size() = ICON_SIZE_MENU; // 16
+                                          }
+                                          else
+                                          {
+                                                    cell->property_pixbuf() = Glib::RefPtr<Gdk::Pixbuf>(0); 
+                                          }
+
+                                          cell->property_visible() = true;
+                                }
+                                else
+                                {
+                                          cell->property_visible() = false;
                                 }
                         }
 

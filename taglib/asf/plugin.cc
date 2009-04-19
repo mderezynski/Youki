@@ -129,6 +129,8 @@ extern "C" bool _get (std::string const& filename, Track & track)
       { ATTRIBUTE_ALBUM_ARTIST,             "WM/AlbumArtist"                    },
       { ATTRIBUTE_ALBUM_ARTIST_SORTNAME,    "WM/AlbumArtistSortOrder"           },
       { ATTRIBUTE_MB_ALBUM_ARTIST_ID,       "MusicBrainz/Album Artist Id"       },
+      { ATTRIBUTE_MB_RELEASE_TYPE,          "MusicBrainz/Album Type"            },
+      { ATTRIBUTE_MB_RELEASE_COUNTRY,       "MusicBrainz/Album Release Country" },
       { ATTRIBUTE_MB_RELEASE_DATE,          "WM/Year"                           },
       { ATTRIBUTE_ARTIST_SORTNAME,          "WM/ArtistSortOrder"                },
       { ATTRIBUTE_ASIN,                     "Amazon/ASIN"                       },
