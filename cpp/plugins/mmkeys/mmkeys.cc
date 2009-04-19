@@ -645,6 +645,7 @@ namespace MPX
             return ;
 
         m_active = true ;
+        on_mm_edit_done();
 
         DBusGConnection *bus;
 
