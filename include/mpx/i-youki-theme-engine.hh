@@ -26,6 +26,9 @@
 
 #include "config.h"
 
+#include <cairomm/cairomm.h>
+#include <gdk/gdk.h>
+
 #include <map>
 #include <vector>
 #include <string>
@@ -117,6 +120,13 @@ namespace MPX
 
             IYoukiThemeEngine () {}
             virtual ~IYoukiThemeEngine () {}
+
+            virtual void
+            draw_selection_rectangle(
+                  Cairo::RefPtr<Cairo::Context>&                /*cairo ctx*/
+                , const GdkRectangle&                           /*rectangle*/
+                , bool                                          /*sensitive*/
+            ) = 0 ;
 
             virtual std::vector<std::string>
             list_themes() = 0 ;

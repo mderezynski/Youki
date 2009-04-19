@@ -149,9 +149,7 @@ namespace MPX
 
             Gtk::Notebook                   * m_NotebookPlugins ;
 
-            Glib::RefPtr<Gdk::Pixbuf>           m_icon ;  
-            Cairo::RefPtr<Cairo::ImageSurface>  m_disc ;
-            Cairo::RefPtr<Cairo::ImageSurface>  m_disc_multiple ;
+            Glib::RefPtr<Gdk::Pixbuf>         m_icon ;  
     
             Covers                          * m_covers ;
             Play                            * m_play ;

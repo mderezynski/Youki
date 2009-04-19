@@ -842,7 +842,6 @@ namespace MPX
                     const ThemeColor& c_base_rules_hint = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) ;
                     const ThemeColor& c_text            = theme->get_color( THEME_COLOR_TEXT ) ;
                     const ThemeColor& c_text_sel        = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
-                    const ThemeColor& c_sel             = theme->get_color( THEME_COLOR_SELECT ) ;
 
                     const std::size_t inner_pad  = 1 ;
 
@@ -875,8 +874,6 @@ namespace MPX
 
                         xpos = 0 ;
 
-                        bool iter_is_selected = ( m_selection && boost::get<1>(m_selection.get()) == get<1>(*m_model->m_mapping[row])) ;
-
                         if( !(row % 2) && row > 0 ) 
                         {
                             GdkRectangle r ;
@@ -905,6 +902,8 @@ namespace MPX
                             cairo->fill() ;
                         }
 
+                        bool iter_is_selected = ( m_selection && boost::get<1>(m_selection.get()) == get<1>(*m_model->m_mapping[row])) ;
+
                         if( iter_is_selected ) 
                         {
                             GdkRectangle r ;
@@ -913,66 +912,12 @@ namespace MPX
                             r.y         = inner_pad + ypos ;
                             r.width     = a.get_width() - 2*inner_pad ;  
                             r.height    = m_row_height  - 2*inner_pad ;
-        
-                            cairo->save () ;
 
-                            double factor = has_focus() ? 1. : 0.3 ;
-
-                            Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
-                                  r.x + r.width / 2
-                                , r.y  
-                                , r.x + r.width / 2
-                                , r.y + r.height
-                            ) ;
-                            
-                            background_gradient_ptr->add_color_stop_rgba(
-                                  0
-                                , c_sel.r 
-                                , c_sel.g 
-                                , c_sel.b 
-                                , 0.90 * factor  
-                            ) ;
-                            
-                            background_gradient_ptr->add_color_stop_rgba(
-                                  .40
-                                , c_sel.r 
-                                , c_sel.g 
-                                , c_sel.b 
-                                , 0.75 * factor
-                            ) ;
-                            
-                            background_gradient_ptr->add_color_stop_rgba(
-                                  1. 
-                                , c_sel.r 
-                                , c_sel.g 
-                                , c_sel.b 
-                                , 0.45 * factor 
-                            ) ;
-
-                            cairo->set_source( background_gradient_ptr ) ;
-                            cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
-
-                            RoundedRectangle(
+                            theme->draw_selection_rectangle(
                                   cairo
-                                , r.x 
-                                , r.y 
-                                , r.width 
-                                , r.height 
-                                , rounding_aa 
+                                , r
+                                , has_focus()
                             ) ;
-
-                            cairo->fill_preserve (); 
-
-                            cairo->set_source_rgb(
-                                  c_sel.r
-                                , c_sel.g
-                                , c_sel.b
-                            ) ;
-
-                            cairo->set_line_width( 0.8 ) ;
-                            cairo->stroke () ;
-
-                            cairo->restore () ;
                         }
 
                         for( ColumnArtist_SP_vector_t::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i )
@@ -1148,6 +1093,7 @@ namespace MPX
                     ));
 
                     on_model_changed( 0, true ) ;
+                    queue_resize() ;
                 }
 
                 void

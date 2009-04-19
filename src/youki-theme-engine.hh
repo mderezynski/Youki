@@ -49,6 +49,17 @@ namespace MPX
             YoukiThemeEngine () ; 
             virtual ~YoukiThemeEngine () ; 
 
+            //// DRAWING FUNCTIONS
+
+            void
+            draw_selection_rectangle(
+                  Cairo::RefPtr<Cairo::Context>&                /*cairo ctx*/
+                , const GdkRectangle&                           /*rectangle*/
+                , bool                                          /*sensitive*/
+            ) ;
+
+            //// PUBLIC
+
             std::vector<std::string>
             list_themes() ;
 

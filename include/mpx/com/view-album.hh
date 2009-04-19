@@ -443,15 +443,16 @@ namespace MPX
 
                 void
                 render(
-                      Cairo::RefPtr<Cairo::Context>     cairo
-                    , const RowAlbum&                   data_row
-                    , Gtk::Widget&                      widget
-                    , int                               row
-                    , int                               xpos
-                    , int                               ypos
-                    , int                               row_height
-                    , bool                              selected
-                    , const ThemeColor&                 color
+                      Cairo::RefPtr<Cairo::Context>&        cairo
+                    , Cairo::RefPtr<Cairo::ImageSurface>&   s_fallback
+                    , const RowAlbum&                       data_row
+                    , Gtk::Widget&                          widget
+                    , int                                   row
+                    , int                                   xpos
+                    , int                                   ypos
+                    , int                                   row_height
+                    , bool                                  selected
+                    , const ThemeColor&                     color
                 )
                 {
                     using boost::get;
@@ -465,14 +466,14 @@ namespace MPX
 
                     int off = 0 ;
 
-                    if( row > 0 && s )
+                    if( row > 0 ) 
                     {
-                            off = s->get_width() ; 
+                            off = 64 ; 
 
                             r.x = xpos + m_width - off - 6 ; 
 
                             cairo->set_source(
-                                  s
+                                  s ? s : s_fallback
                                 , r.x
                                 , ypos + 2 
                             ) ; 
@@ -481,8 +482,8 @@ namespace MPX
                                   cairo
                                 , r.x
                                 , ypos + 2 
-                                , s->get_width() 
-                                , s->get_height() 
+                                , 64 
+                                , 64 
                                 , 4.
                             ) ;
 
@@ -497,7 +498,7 @@ namespace MPX
                                 cairo->rectangle(
                                       r.x
                                     , ypos+2+54
-                                    , s->get_width()
+                                    , 64 
                                     , 10
                                 ) ;
 
@@ -514,7 +515,7 @@ namespace MPX
                                       cairo
                                     , r.x
                                     , ypos+2+50 
-                                    , s->get_width() 
+                                    , 64 
                                     , 14 
                                     , 3.
                                 ) ;
@@ -550,6 +551,28 @@ namespace MPX
                                 ) ;
                                 pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
                             }
+
+                            if( s )
+                            {
+                                cairo->set_source_rgba(
+                                      .2 
+                                    , .2 
+                                    , .2 
+                                    , 1.
+                                ) ; 
+
+                                RoundedRectangle(
+                                      cairo
+                                    , r.x
+                                    , ypos + 2 
+                                    , 64 
+                                    , 64 
+                                    , 4.
+                                ) ;
+
+                                cairo->set_line_width( 0.5 ) ;
+                                cairo->stroke() ;
+                            }
                     }
                 
                     cairo->save() ;
@@ -576,8 +599,8 @@ namespace MPX
                             layout->set_text( get<4>(data_row) )  ;
                             layout->get_pixel_size (width, height) ;
                             cairo->move_to(
-                                  xpos + 6 
-                                , ypos 
+                                  xpos + 8 
+                                , ypos + 2
                             ) ;
                             cairo->set_source_rgba(
                                   color.r
@@ -591,8 +614,8 @@ namespace MPX
                             layout->set_text( get<3>(data_row) )  ;
                             layout->get_pixel_size (width, height) ;
                             cairo->move_to(
-                                  xpos + 6 
-                                , ypos + 14 
+                                  xpos + 8 
+                                , ypos + 16 
                             ) ;
                             cairo->set_source_rgba(
                                   color.r
@@ -662,6 +685,8 @@ namespace MPX
                 sigc::connection                    m_search_changed_conn ;
                 bool                                m_search_active ;
                 int                                 m_search_idx ;
+
+                Cairo::RefPtr<Cairo::ImageSurface>  m_disc ;
 
                 void
                 initialize_metrics ()
@@ -1056,7 +1081,6 @@ namespace MPX
 
                     const ThemeColor& c_text        = theme->get_color( THEME_COLOR_TEXT ) ;
                     const ThemeColor& c_text_sel    = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
-                    const ThemeColor& c_sel         = theme->get_color( THEME_COLOR_SELECT ) ;
                     const ThemeColor& c_treelines   = theme->get_color( THEME_COLOR_TREELINES ) ;
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
@@ -1091,8 +1115,6 @@ namespace MPX
                         ModelAlbums_t::iterator  selected           = m_model->m_mapping[row] ;
                         bool                     iter_is_selected   = ( m_selection && get<2>(m_selection.get()) == row ) ;
 
-                        double factor = has_focus() ? 1. : 0.3 ;
-
                         if( iter_is_selected )
                         {
                             GdkRectangle r ;
@@ -1102,72 +1124,18 @@ namespace MPX
                             r.width     = a.get_width() - 2*inner_pad  - 4 ;  
                             r.height    = m_row_height - 2*inner_pad - 2 ;
 
-                            cairo->save () ;
-
-                            Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
-                                  r.x + r.width / 2
-                                , r.y  
-                                , r.x + r.width / 2
-                                , r.y + r.height
-                            ) ;
-                            
-                            background_gradient_ptr->add_color_stop_rgba(
-                                  0
-                                , c_sel.r
-                                , c_sel.g
-                                , c_sel.b
-                                , 0.90 * factor
-                            ) ;
-                            
-                            background_gradient_ptr->add_color_stop_rgba(
-                                  .40
-                                , c_sel.r
-                                , c_sel.g
-                                , c_sel.b
-                                , 0.75 * factor
-                            ) ;
-                            
-                            background_gradient_ptr->add_color_stop_rgba(
-                                  1. 
-                                , c_sel.r
-                                , c_sel.g
-                                , c_sel.b
-                                , 0.45 * factor
-                            ) ;
-
-                            cairo->set_source( background_gradient_ptr ) ;
-
-                            cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
-
-                            RoundedRectangle(
+                            theme->draw_selection_rectangle(
                                   cairo
-                                , r.x 
-                                , r.y 
-                                , r.width 
-                                , r.height 
-                                , rounding_albums
+                                , r
+                                , has_focus()
                             ) ;
-
-                            cairo->fill_preserve (); 
-
-                            cairo->set_source_rgb(
-                                  c_sel.r
-                                , c_sel.g
-                                , c_sel.b
-                            ) ;
-
-                            cairo->set_line_width( 0.8 ) ;
-
-                            cairo->stroke () ;
-                            cairo->restore () ;
-
-                            iter_is_selected = true;
                         }
 
                         for( ColumnAlbums_SP_t_vector_t::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i )
                         {
                             (*i)->render(
                                     cairo
+                                  , m_disc
                                   , m_model->row(row)
                                   , *this
                                   , row
@@ -1372,6 +1340,7 @@ namespace MPX
                     ));
 
                     clear_selection() ;
+                    queue_resize() ;
                     on_model_changed( 0, true ) ;
                 }
 
@@ -1464,6 +1433,8 @@ namespace MPX
                         , m_search_idx( 0 )
 
                 {
+                    m_disc = Util::cairo_image_surface_from_pixbuf( Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "disc.png" ))) ;
+
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
                     const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
                     Gdk::Color cgdk ;

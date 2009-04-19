@@ -1452,12 +1452,15 @@ namespace MPX
                     GdkEventConfigure* event
                 )        
                 {
+                    const double column_width_collapsed = 40. ;
+
                     m_visible_height = event->height - m_row_start ;
 
-                    m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
-                    m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*int(m_row_height) ) ;
-
-                    const double column_width_collapsed = 40. ;
+                    if( m_visible_height && m_row_height && m_prop_vadj.get_value() )
+                    {
+                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                        m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*int(m_row_height) ) ;
+                    }
 
                     double                       n = m_columns.size() - m_collapsed.size() - m_fixed.size() ;
                     double column_width_calculated = (double(event->width) - double(m_fixed_total_width) - double(column_width_collapsed*double(m_collapsed.size()))) / n ; 
@@ -1483,7 +1486,6 @@ namespace MPX
                     const ThemeColor& c_text        = theme->get_color( THEME_COLOR_TEXT ) ;
                     const ThemeColor& c_text_sel    = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
                     const ThemeColor& c_rules_hint  = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) ;
-                    const ThemeColor& c_sel         = theme->get_color( THEME_COLOR_SELECT ) ;
 
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
 
@@ -1578,72 +1580,18 @@ namespace MPX
 
                                 if( i.in( row ) )
                                 {
-                                        double factor = has_focus() ? 1. : 0.3 ;
-                                        double ypos   = (row - get_upper_row()) * m_row_height + m_row_start ;
-
                                         GdkRectangle r ;
 
                                         r.x         = inner_pad + 16 ;
-                                        r.y         = inner_pad + ypos;
+                                        r.y         = inner_pad + (row - get_upper_row()) * m_row_height + m_row_start ;
                                         r.width     = a.get_width() - 2*inner_pad - 16 ;  
                                         r.height    = m_row_height  - 2*inner_pad ;
 
-                                        cairo->save () ;
-
-                                        Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
-                                              r.x + r.width / 2
-                                            , r.y  
-                                            , r.x + r.width / 2
-                                            , r.y + r.height
-                                        ) ;
-                                        
-                                        background_gradient_ptr->add_color_stop_rgba(
-                                              0
-                                            , c_sel.r 
-                                            , c_sel.g 
-                                            , c_sel.b 
-                                            , 0.90 * factor 
-                                        ) ;
-                                        
-                                        background_gradient_ptr->add_color_stop_rgba(
-                                              .40
-                                            , c_sel.r
-                                            , c_sel.g
-                                            , c_sel.b
-                                            , 0.75 * factor 
-                                        ) ;
-                                        
-                                        background_gradient_ptr->add_color_stop_rgba(
-                                              1. 
-                                            , c_sel.r
-                                            , c_sel.g
-                                            , c_sel.b
-                                            , 0.45 * factor
-                                        ) ;
-
-                                        cairo->set_source( background_gradient_ptr ) ;
-                                        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
-
-                                        RoundedRectangle(
+                                        theme->draw_selection_rectangle(
                                               cairo
-                                            , r.x 
-                                            , r.y 
-                                            , r.width 
-                                            , r.height 
-                                            , rounding
+                                            , r
+                                            , has_focus()
                                         ) ;
-
-                                        cairo->fill_preserve (); 
-
-                                        cairo->set_source_rgb(
-                                              c_sel.r
-                                            , c_sel.g
-                                            , c_sel.b
-                                        ) ;
-
-                                        cairo->set_line_width( 0.8 ) ;
-                                        cairo->stroke () ;
-                                        cairo->restore () ;
                                     }
                             }
 

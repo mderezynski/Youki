@@ -38,7 +38,7 @@ namespace
     const int WIDTH = 8 ;
     const int SPACING = 1 ;
     const int HEIGHT = 36;
-    const double ALPHA = 0.4;
+    const double ALPHA = 0.8 ;
 }
 
 namespace MPX

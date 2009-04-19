@@ -12,7 +12,7 @@
           }
 
         , {   "name"    : "text"
-            , "value"   : "#202020ff"
+            , "value"   : "#303030ff"
           }
 
         , {   "name"    : "text-selected"
@@ -48,18 +48,18 @@
           }
 
         , {   "name"    : "titlebar-1"
-            , "value"   : "#c2c2c0ff"
+            , "value"   : "#c2c2c0d0"
           }
 
         , {   "name"    : "titlebar-2"
-            , "value"   : "#aaaaaaff"
+            , "value"   : "#aaaaaad0"
           }
 
         , {   "name"    : "titlebar-3"
-            , "value"   : "#989697ff"
+            , "value"   : "#989697d0"
           }
 
         , {   "name"    : "titlebar-top"
-            , "value"   : "#909090ff"
+            , "value"   : "#909090e0"
           }
 ]

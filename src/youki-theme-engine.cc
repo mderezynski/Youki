@@ -32,8 +32,12 @@
 #include <map>
 
 #include "json/json.h"
-#include "mpx/mpx-main.hh"
+
 #include "mpx/util-graphics.hh"
+#include "mpx/widgets/cairo-extensions.hh"
+
+#include "mpx/mpx-main.hh"
+
 #include "youki-theme-engine.hh"
 
 namespace
@@ -343,5 +347,94 @@ namespace MPX
     ) 
     {
         return m_CurrentTheme->second.Colors[color] ;
+    }
+
+    //// DRAWING FUNCTIONS
+
+    void
+    YoukiThemeEngine::draw_selection_rectangle(
+          Cairo::RefPtr<Cairo::Context>&    cairo
+        , const GdkRectangle&               r
+        , bool                              sensitive
+    )
+    {
+        const ThemeColor& c = get_color( THEME_COLOR_SELECT ) ;
+
+        Gdk::Color cgdk ;
+        cgdk.set_rgb_p( c.r, c.g, c.b ) ;
+
+        cairo->save () ;
+
+        Cairo::RefPtr<Cairo::LinearGradient> gradient = Cairo::LinearGradient::create(
+              r.x + r.width / 2
+            , r.y  
+            , r.x + r.width / 2
+            , r.y + r.height
+        ) ;
+
+        double alpha = sensitive ? 1. : .3 ;
+        
+        double h, s, b ;
+        
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b *= 0.90 ; 
+        Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
+
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b *= 0.75 ; 
+        Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
+
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b *= 0.45 ; 
+        Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
+
+        gradient->add_color_stop_rgba(
+              0
+            , c1.get_red_p()
+            , c1.get_green_p()
+            , c1.get_blue_p()
+            , alpha
+        ) ;
+        
+        gradient->add_color_stop_rgba(
+              .40
+            , c2.get_red_p()
+            , c2.get_green_p()
+            , c2.get_blue_p()
+            , alpha
+        ) ;
+        
+        gradient->add_color_stop_rgba(
+              1. 
+            , c3.get_red_p()
+            , c3.get_green_p()
+            , c3.get_blue_p()
+            , alpha
+        ) ;
+
+        cairo->set_source( gradient ) ;
+        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+
+        RoundedRectangle(
+              cairo
+            , r.x 
+            , r.y 
+            , r.width 
+            , r.height 
+            , 4.
+        ) ;
+
+        cairo->fill_preserve (); 
+
+        cairo->set_source_rgb(
+              c.r
+            , c.g
+            , c.b
+        ) ;
+
+        cairo->set_line_width( 0.8 ) ;
+        cairo->stroke () ;
+
+        cairo->restore () ;
     }
 }

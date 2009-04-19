@@ -343,10 +343,7 @@ namespace MPX
                 , &YoukiController::on_volume_set_volume
         )) ;
 
-        m_icon              = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "youki.png" )) ;
-        m_disc              = Util::cairo_image_surface_from_pixbuf( Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "disc.png" ))) ;
-        m_disc_multiple     = Util::cairo_image_surface_from_pixbuf( Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "disc-multiple.png" ))) ;
-
+        m_icon = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "youki.png" )) ;
         m_main_window->set_icon( m_icon ) ;
 
         m_Label_Search->set_mnemonic_widget( *m_Entry ) ;
@@ -715,7 +712,7 @@ namespace MPX
         services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album")).str()) ; 
 
         model_albums->append_album_quiet(
-              m_disc_multiple 
+              Cairo::RefPtr<Cairo::ImageSurface>(0) 
             , -1
             , -1
             , ""
@@ -743,10 +740,6 @@ namespace MPX
                     cover_is = Util::cairo_image_surface_from_pixbuf(
                         cover_pb->scale_simple( 64, 64, Gdk::INTERP_BILINEAR )
                     ) ;
-                }
-                else
-                {
-                    cover_is = m_disc ; 
                 }
                 
                 model_albums->append_album_quiet(

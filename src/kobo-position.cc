@@ -115,14 +115,25 @@ namespace MPX
         const Gdk::Rectangle& a = get_allocation() ;
 
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+
         const ThemeColor& c = theme->get_color( THEME_COLOR_SELECT ) ;
+
+        Gdk::Color cgdk ;
+        cgdk.set_rgb_p( c.r, c.g, c.b ) ;
+
+        double h, s, b ;
+
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        s *= 0.2 ; 
+        b *= 0.4 ;
+        Gdk::Color c_base_gdk = Util::color_from_hsb( h, s, b ) ;
 
         cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
         cairo->set_source_rgba(
-              c.r
-            , c.g 
-            , c.b
-            , .2 
+              c_base_gdk.get_red_p()
+            , c_base_gdk.get_green_p()
+            , c_base_gdk.get_blue_p()
+            , 1. 
         ) ;
         RoundedRectangle(
               cairo
@@ -134,9 +145,9 @@ namespace MPX
         ) ;
         cairo->fill () ;
 
-        double factor           = 1. ;
-        gint64 position         = m_clicked ? m_seek_position : m_position ;
-        double percent          = double(position) / double(m_duration) ; 
+        double factor       = 1. ;
+        gint64 position     = m_clicked ? m_seek_position : m_position ;
+        double percent      = double(position) / double(m_duration) ; 
 
         if( percent >= 0.90 )
         {
@@ -160,29 +171,43 @@ namespace MPX
                 , r.x + r.width / 2
                 , r.y + r.height
             ) ;
+
+            double h, s, b ;
             
+            Util::color_to_hsb( cgdk, h, s, b ) ;
+            b *= 0.85 ; 
+            Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
+
+            Util::color_to_hsb( cgdk, h, s, b ) ;
+            b *= 0.55 ; 
+            Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
+
+            Util::color_to_hsb( cgdk, h, s, b ) ;
+            b *= 0.35 ; 
+            Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
+
             volume_bar_gradient->add_color_stop_rgba(
                   0. 
-                , c.r
-                , c.g
-                , c.b
-                , 0.85 * factor 
+                , c1.get_red_p()
+                , c1.get_green_p()
+                , c1.get_blue_p()
+                , factor 
             ) ;
 
             volume_bar_gradient->add_color_stop_rgba(
                   .60
-                , c.r
-                , c.g
-                , c.b
-                , 0.55 * factor
+                , c2.get_red_p()
+                , c2.get_green_p()
+                , c2.get_blue_p()
+                , factor
             ) ;
             
             volume_bar_gradient->add_color_stop_rgba(
                   1. 
-                , c.r
-                , c.g
-                , c.b
-                , 0.35 * factor
+                , c3.get_red_p()
+                , c3.get_green_p()
+                , c3.get_blue_p()
+                , factor
             ) ;
 
             cairo->set_source( volume_bar_gradient ) ;
@@ -232,7 +257,6 @@ namespace MPX
             ) ;
             cairo->set_operator( Cairo::OPERATOR_OVER ) ;
             pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
-
 
             if( ( m_duration - m_position ) > 1 )
             {
