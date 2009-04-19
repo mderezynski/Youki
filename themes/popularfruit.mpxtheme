@@ -48,18 +48,18 @@
           }
 
         , {   "name"    : "titlebar-1"
-            , "value"   : "#c2c2c0d0"
+            , "value"   : "#c2c2c0ea"
           }
 
         , {   "name"    : "titlebar-2"
-            , "value"   : "#aaaaaad0"
+            , "value"   : "#aaaaaaea"
           }
 
         , {   "name"    : "titlebar-3"
-            , "value"   : "#989697d0"
+            , "value"   : "#989697ea"
           }
 
         , {   "name"    : "titlebar-top"
-            , "value"   : "#909090e0"
+            , "value"   : "#909090fa"
           }
 ]

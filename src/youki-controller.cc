@@ -481,7 +481,7 @@ namespace MPX
 
         m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
         m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
-        m_HBox_Controls->set_spacing( 4 ) ;
+        m_HBox_Controls->set_spacing( 2 ) ;
 
         m_main_window->set_widget_top( *m_VBox ) ;
         m_main_window->set_widget_drawer( *m_NotebookPlugins ) ; 

@@ -49,7 +49,7 @@ namespace MPX
     , m_spectrum_peak( SPECT_BANDS, 0 )
     {
         add_events( Gdk::BUTTON_PRESS_MASK ) ;
-        set_size_request( -1, 36 ) ;
+        set_size_request( -1, 44 ) ;
 
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
         const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
@@ -206,7 +206,7 @@ namespace MPX
                 , h = 0 ;
 
             x = a.get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n ; 
-            w = WIDTH; 
+            w = WIDTH ;
 
             //// PEAK 
 
@@ -225,7 +225,7 @@ namespace MPX
                 RoundedRectangle(
                       cairo
                     , x
-                    , y
+                    , y + 4
                     , w
                     , h
                     , 1.
@@ -250,7 +250,7 @@ namespace MPX
                 RoundedRectangle(
                       cairo
                     , x
-                    , y
+                    , y + 4
                     , w
                     , h
                     , 1.

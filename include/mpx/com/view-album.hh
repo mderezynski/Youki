@@ -1085,7 +1085,7 @@ namespace MPX
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
-                    std::size_t row     = m_prop_vadj.get_value()->get_value() / double(m_row_height) ;
+                    std::size_t row     = m_prop_vadj.get_value()->get_value() / m_row_height ;
                     int offset          = m_prop_vadj.get_value()->get_value() - (row*m_row_height) ;
                     int ypos            = 0 ;
                     std::size_t xpos    = 0 ;
@@ -1093,7 +1093,8 @@ namespace MPX
             
                     if( row && offset ) 
                     {
-                        ypos = - (m_row_height-offset) ;
+//                        ypos = -(m_row_height-offset) ;
+                        ypos -= offset ;
                     }
 
                     cairo->rectangle(

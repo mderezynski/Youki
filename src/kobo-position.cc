@@ -124,8 +124,6 @@ namespace MPX
         double h, s, b ;
 
         Util::color_to_hsb( cgdk, h, s, b ) ;
-        s *= 0.2 ; 
-        b *= 0.4 ;
         Gdk::Color c_base_gdk = Util::color_from_hsb( h, s, b ) ;
 
         cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
@@ -133,7 +131,7 @@ namespace MPX
               c_base_gdk.get_red_p()
             , c_base_gdk.get_green_p()
             , c_base_gdk.get_blue_p()
-            , 1. 
+            , 0.2 
         ) ;
         RoundedRectangle(
               cairo

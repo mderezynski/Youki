@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <gtkmm.h>
+#include <gtk/gtkscrolledwindow.h>
 #include "mpx/widgets/rounded-alignment.hh"
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/mpx-main.hh"
