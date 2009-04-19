@@ -39,6 +39,7 @@ SUBDIRS =			\
                     \
 	icons			\
 	images			\
+    themes          \
                     \
 	include			\
 	xsd				\
@@ -61,7 +62,6 @@ SUBDIRS +=          \
 				    \
     mpxlib          \
 	src             \
-                    \
 	remote		    \
     sentinel        \
 	python		    \

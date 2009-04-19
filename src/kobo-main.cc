@@ -226,12 +226,12 @@ namespace MPX
                         r1.set_width( 1 ) ;
                         r1.set_height( 1 ) ;
 
-                        r2.set_x( 8 ) ;
+                        r2.set_x( 3 ) ;
                         r2.set_y( (20 - m_button_off->get_height()) / 2 ) ;
                         r2.set_width( m_button_off->get_width() ) ;
                         r2.set_height( m_button_off->get_height() ) ;
 
-                        r3.set_x( 23 ) ;
+                        r3.set_x( 18 ) ;
                         r3.set_y( (20 - m_button_off->get_height()) / 2 ) ;
                         r3.set_width( m_button_blowup->get_width() ) ;
                         r3.set_height( m_button_blowup->get_height() ) ;
@@ -440,38 +440,6 @@ namespace MPX
                         ) ;
                         cr->fill();
 
-                        //// TITLEBAR TOP
-                        const ThemeColor& tbt = theme->get_color( THEME_COLOR_TITLEBAR_TOP ) ;
-
-                        cr->save() ;
-                            
-                        cr->rectangle(
-                              0
-                            , 0
-                            , m_presize_width 
-                            , 20 
-                        ) ;
-                        cr->clip() ;
-
-                        RoundedRectangle(
-                              cr
-                            , 0
-                            , 0
-                            , m_presize_width 
-                            , 20 + rounding
-                            , rounding
-                        ) ;
-
-                        cr->set_source_rgba(
-                              tbt.r
-                            , tbt.g
-                            , tbt.b
-                            , tbt.a
-                        ) ;
-                        cr->set_line_width( 1.5 ) ;
-                        cr->stroke() ;
-                        cr->restore() ;
-
                         //// ICONS
                         cr->set_operator( Cairo::OPERATOR_OVER ) ;
 
@@ -494,7 +462,7 @@ namespace MPX
                         ) ;
                         cr->fill() ; 
 
-                        r.x         = 8 ; 
+                        r.x         = 3 ; 
                         r.y         = (20 - m_button_off->get_height()) / 2. ;
                         r.width     = m_button_off->get_width() ;
                         r.height    = m_button_off->get_height() ;
@@ -515,7 +483,7 @@ namespace MPX
                         cr->paint_with_alpha( m_quit_clicked ? .9 : .6 ) ; 
                         cr->restore () ;
 
-                        r.x         = 23 ; 
+                        r.x         = 18 ; 
                         r.y         = (20 - m_button_blowup->get_height()) / 2. ;
                         r.width     = m_button_blowup->get_width() ;
                         r.height    = m_button_blowup->get_height() ;
@@ -536,6 +504,8 @@ namespace MPX
                         cr->clip () ;
                         cr->paint_with_alpha( m_maximized ? .9 : .6 ) ;
                         cr->restore () ;
+
+                        cr->set_operator( Cairo::OPERATOR_ATOP ) ;
 
                         //// RESIZE GRIP 
                         const ThemeColor& crg = theme->get_color( THEME_COLOR_RESIZE_GRIP ) ;
@@ -572,6 +542,8 @@ namespace MPX
                             propagate_expose( *get_child(), event ) ;
                         }
 
+                        cr->set_operator( Cairo::OPERATOR_ATOP ) ;
+
                         //// MAINAREA BORDER 
                         const ThemeColor& brd = theme->get_color( THEME_COLOR_WINDOW_BORDER ) ;
 
@@ -592,6 +564,32 @@ namespace MPX
                         ) ;
                         cr->set_line_width( 1.5 ) ;
                         cr->stroke() ;
+
+                        //// TITLEBAR TOP
+                        const ThemeColor& tbt = theme->get_color( THEME_COLOR_TITLEBAR_TOP ) ;
+
+                        cr->save() ;
+
+                        cr->rectangle( 0, 0, m_presize_width, 20 ) ;
+                        cr->clip() ;
+
+                        RoundedRectangle(
+                              cr
+                            , 0
+                            , 0
+                            , m_presize_width 
+                            , 20 + rounding
+                            , rounding
+                        ) ;
+                        cr->set_source_rgba(
+                              tbt.r
+                            , tbt.g
+                            , tbt.b
+                            , tbt.a
+                        ) ;
+                        cr->set_line_width( 1.5 ) ;
+                        cr->stroke() ;
+                        cr->restore() ;
 
                         return true ;
                     }

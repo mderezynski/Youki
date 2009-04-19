@@ -756,7 +756,13 @@ namespace MPX
                     {
                             grab_focus() ;
 
-                            std::size_t row = get_upper_row() + (event->y / m_row_height);
+                            std::size_t row = 0 ; 
+
+                            if( event->y > m_row_height )
+                            {
+                                std::size_t upper = get_upper_row() ;
+                                row = (upper + (event->y / m_row_height)) - ((upper > 0) ? 1 : 0)  ;
+                            }
 
                             if( row < m_model->m_mapping.size() )
                             {
@@ -800,7 +806,7 @@ namespace MPX
 
                     if( m_row_height )
                     {
-                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height + m_row_height ) ;
                         m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*m_row_height ) ; 
                     }
 
@@ -840,23 +846,40 @@ namespace MPX
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
 
                     const Gtk::Allocation& a = get_allocation();
-
-                    std::size_t row     = get_upper_row() ;
-                    std::size_t ypos    = 0 ;
-                    std::size_t xpos    = 0 ;
-                    std::size_t cnt     = m_visible_height / m_row_height + 1 ;
-
                     const std::size_t inner_pad  = 1 ;
+
+                    std::size_t row_origin  = std::max<std::size_t>( get_upper_row() , 1 ) ;
+
+                    std::size_t cnt         = Limiter<std::size_t>(
+                                                  Limiter<std::size_t>::ABS_ABS
+                                                , 0
+                                                , m_model->size()
+                                                , m_visible_height/m_row_height
+                                              ) ;
+
+                    std::size_t ypos        = 0 ;
+                    std::size_t xpos        = 0 ;
+
+                    std::vector<std::size_t> render_rows ;
+                    render_rows.resize( cnt ) ;
+                    render_rows.push_back( 0 ) ;
+
+                    for( std::size_t n = 0 ; n < cnt ; ++n ) 
+                    {
+                        render_rows[n+1] = n + row_origin ;
+                    }
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
     
-                    while( m_model->is_set() && cnt && (row < m_model->m_mapping.size()) ) 
+                    for( std::vector<std::size_t>::const_iterator i = render_rows.begin(); i != render_rows.end(), *i < m_model->size() ; ++i )
                     {
+                        std::size_t row = *i ;
+
                         xpos = 0 ;
 
                         bool iter_is_selected = ( m_selection && boost::get<1>(m_selection.get()) == get<1>(*m_model->m_mapping[row])) ;
 
-                        if( !(row % 2) ) 
+                        if( !(row % 2) && row > 0 ) 
                         {
                             GdkRectangle r ;
 
@@ -989,7 +1012,7 @@ namespace MPX
                     {
                         std::size_t view_count = m_visible_height / m_row_height ;
 
-                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height + m_row_height ) ;
                         m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*m_row_height ) ; 
 
                         if( m_model->size() < view_count )
@@ -1013,7 +1036,6 @@ namespace MPX
                     {
                             g_object_set(G_OBJECT(obj), "vadjustment", vadj, NULL); 
                             g_object_set(G_OBJECT(obj), "hadjustment", hadj, NULL);
-                            g_object_set(G_OBJECT(vadj), "page-size", 0.05, "upper", 1.0, NULL);
 
                             ListViewArtist & view = *(reinterpret_cast<ListViewArtist*>(data));
 

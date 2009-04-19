@@ -65,6 +65,16 @@ namespace MPX
             void
             reload(
             ) ;
+
+            void
+            load_stored_themes(
+            ) ;
+
+            void
+            load_theme(
+                  const std::string&    /*name*/
+                , const std::string&    /*document*/
+            ) ;
     } ;
 }
 

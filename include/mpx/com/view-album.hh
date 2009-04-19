@@ -1049,6 +1049,9 @@ namespace MPX
                 bool
                 on_expose_event (GdkEventExpose *event)
                 {
+                    if( event->count > 0 )
+                        return false ;
+
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context() ;
 
                     const Gtk::Allocation& a = get_allocation() ;

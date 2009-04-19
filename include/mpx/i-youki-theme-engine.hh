@@ -34,7 +34,8 @@ namespace MPX
 {
     enum ThemeColorID
     {
-          THEME_COLOR_BASE
+          THEME_COLOR_BACKGROUND
+        , THEME_COLOR_BASE
         , THEME_COLOR_BASE_ALTERNATE
         , THEME_COLOR_TEXT
         , THEME_COLOR_TEXT_SELECTED

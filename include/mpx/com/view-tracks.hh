@@ -1795,8 +1795,10 @@ namespace MPX
                     , bool      size_changed
                 )
                 {
-                    if( size_changed && m_prop_vadj.get_value() && m_visible_height && m_row_height )
+                    if( size_changed ) 
                     {
+                        if( m_prop_vadj.get_value() && m_visible_height && m_row_height )
+                        {
                             std::size_t view_count = m_visible_height / m_row_height ;
 
                             m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
@@ -1806,14 +1808,15 @@ namespace MPX
                                 m_prop_vadj.get_value()->set_value(0.) ;
                             else
                                 m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                         }
 
-                            m_Model_I = Interval<std::size_t> (
+                         m_Model_I = Interval<std::size_t> (
                                   Interval<std::size_t>::IN_EX
                                 , 0
                                 , m_model->size()
-                            ) ;
+                         ) ;
 
-                            m_selection.reset() ;
+                         m_selection.reset() ;
                     }
 
                     queue_draw() ;

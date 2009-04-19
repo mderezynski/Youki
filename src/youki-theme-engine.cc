@@ -23,12 +23,15 @@
 
 #include "config.h"
 
+#include <gtkmm.h>
+#include <boost/algorithm/string.hpp>
+
+#include <string>
 #include <map>
 #include <vector>
-#include <string>
-#include <gtkmm/treeview.h>
-#include "mpx/util-graphics.hh"
 
+#include "json/json.h"
+#include "mpx/util-graphics.hh"
 #include "youki-theme-engine.hh"
 
 namespace MPX
@@ -38,6 +41,73 @@ namespace MPX
     : Service::Base( "mpx-service-theme" )
     {
         reload() ;
+        load_stored_themes() ;
+    }
+
+    void
+    YoukiThemeEngine::load_theme(
+          const std::string&    name
+        , const std::string&    document
+    )
+    {
+        Json::Value root ;
+        Json::Reader reader ;
+
+        reader.parse(
+              document
+            , root
+            , false
+        ) ;
+
+        if( !root.isArray() )
+        {
+            g_warning("%s: Theme root node is not array! ('%s')", G_STRLOC, name.c_str() ) ;
+            return ;
+        }
+
+        for( Json::Value::iterator i = root.begin() ; i != root.end() ; ++i )
+        {
+            Json::Value::Members m = (*i).getMemberNames() ;
+
+            Json::Value   val_default ;
+
+            Json::Value   val_name
+                        , val_colr ;
+
+            val_name = (*i).get( "name"  , val_default ) ;
+            val_colr = (*i).get( "value" , val_default ) ;
+
+            std::string name    = val_name.asString() ;
+            std::string color   = val_colr.asString() ;
+        }
+    }
+
+    void
+    YoukiThemeEngine::load_stored_themes()
+    {
+        std::string path = Glib::build_filename( DATA_DIR, "themes" ) ;
+        Glib::Dir d ( path ) ;
+        std::vector<std::string> s (d.begin(), d.end()) ;
+        d.close() ;
+
+        for( std::vector<std::string>::const_iterator i = s.begin(); i != s.end(); ++i )
+        {
+            std::vector<std::string> subs;
+            boost::split( subs, *i, boost::is_any_of (".") ) ;
+
+            if( !subs.empty() )
+            {
+                std::string suffix = subs[subs.size()-1] ;
+    
+                if( suffix == "mpxtheme" )
+                {
+                    std::string document = Glib::file_get_contents( Glib::build_filename( path, *i )) ;
+                    std::string name     = subs[0] ;
+
+                    load_theme( name, document ) ;
+                }
+            }
+        }
     }
 
     void
@@ -80,6 +150,7 @@ namespace MPX
         Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
         colors[THEME_COLOR_TITLEBAR_TOP] = ThemeColor( c3.get_red_p(), c3.get_green_p(), c3.get_blue_p(), 0.90 ) ; 
 
+        colors[THEME_COLOR_BACKGROUND] = ThemeColor( 0.10, 0.10, 0.10, 1. ) ; 
         colors[THEME_COLOR_BASE] = ThemeColor( 0.10, 0.10, 0.10, 1. ) ; 
         colors[THEME_COLOR_BASE_ALTERNATE] = ThemeColor( .2, .2, .2, 1. ) ;
         colors[THEME_COLOR_TEXT] = ThemeColor( 1., 1., 1., 1. ) ;
@@ -101,7 +172,7 @@ namespace MPX
             , colors 
         ) ;
 
-        m_Themes.clear() ;
+        m_Themes.erase("default") ;
         m_Themes["default"] = theme ;
         m_CurrentTheme = m_Themes.begin() ;
     }
