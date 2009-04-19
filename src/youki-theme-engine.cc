@@ -289,7 +289,7 @@ namespace MPX
         colors[THEME_COLOR_TITLEBAR_TOP] = ThemeColor( c3.get_red_p(), c3.get_green_p(), c3.get_blue_p(), 0.90 ) ; 
 
         colors[THEME_COLOR_BACKGROUND] = ThemeColor( 0.10, 0.10, 0.10, 1. ) ; 
-        colors[THEME_COLOR_BASE] = ThemeColor( 0.14, 0.14, 0.14, 1. ) ; 
+        colors[THEME_COLOR_BASE] = ThemeColor( 0.10, 0.10, 0.10, 1. ) ; 
         colors[THEME_COLOR_BASE_ALTERNATE] = ThemeColor( .2, .2, .2, 1. ) ;
         colors[THEME_COLOR_TEXT] = ThemeColor( 1., 1., 1., 1. ) ;
         colors[THEME_COLOR_TEXT_SELECTED] = ThemeColor( 1., 1., 1., 1. ) ;
