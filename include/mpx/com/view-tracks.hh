@@ -1480,30 +1480,12 @@ namespace MPX
 
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
-                    const ThemeColor& c_base        = theme->get_color( THEME_COLOR_BASE ) ;
                     const ThemeColor& c_text        = theme->get_color( THEME_COLOR_TEXT ) ;
                     const ThemeColor& c_text_sel    = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
                     const ThemeColor& c_rules_hint  = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) ;
                     const ThemeColor& c_sel         = theme->get_color( THEME_COLOR_SELECT ) ;
 
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
-
-                    cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
-                    RoundedRectangle(
-                          cairo
-                        , 0
-                        , 0
-                        , a.get_width()
-                        , a.get_height()
-                        , 4.
-                    ) ;
-                    cairo->set_source_rgba(
-                          c_base.r
-                        , c_base.g
-                        , c_base.b
-                        , c_base.a
-                    ) ;
-                    cairo->fill() ;
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 

@@ -156,31 +156,15 @@ namespace MPX
         mcs->key_register ("ui", "show-statusbar", true);
 
         mcs->domain_register ("mpx");
-        mcs->key_register ("mpx", "no-ui", false);
-        mcs->key_register ("mpx", "ui-esc-trayconify", false);
-        mcs->key_register ("mpx", "keep-above", false);
-        mcs->key_register ("mpx", "file-chooser-close-on-open", true);
-        mcs->key_register ("mpx", "file-chooser-close-on-add", false);
         mcs->key_register ("mpx", "file-chooser-path", Glib::get_home_dir ());
-        mcs->key_register ("mpx", "icon-theme", std::string ("tango"));
         mcs->key_register ("mpx", "force-rgba-enable", false);
         mcs->key_register ("mpx", "display-notifications", true);
-        mcs->key_register ("mpx", "no-remote", false);
-        mcs->key_register ("mpx", "time-remaining", false);
         mcs->key_register ("mpx", "volume", 50);
         mcs->key_register ("mpx", "follow-current-track", false);
-        mcs->key_register ("mpx", "shuffle", false);
-        mcs->key_register ("mpx", "repeat", false);
-        mcs->key_register ("mpx", "enable-autoplay", false);
-        mcs->key_register ("mpx", "spm-listen", false);
         mcs->key_register ("mpx", "window-x", 20);
         mcs->key_register ("mpx", "window-y", 20);
         mcs->key_register ("mpx", "window-w", 400);
         mcs->key_register ("mpx", "window-h", 500);
-        mcs->key_register ("mpx", "window-mlib-w", 600);
-        mcs->key_register ("mpx", "window-mlib-h", 400);
-        mcs->key_register ("mpx", "window-mlib-x", 100);
-        mcs->key_register ("mpx", "window-mlib-y", 100);
         mcs->key_register ("mpx", "window-prefs-w", 700);
         mcs->key_register ("mpx", "window-prefs-h", 600);
         mcs->key_register ("mpx", "window-prefs-x", 120);
@@ -192,6 +176,7 @@ namespace MPX
         mcs->key_register ("mpx", "music-import-path", Glib::build_filename(Glib::get_home_dir (),"Music"));
         mcs->key_register ("mpx", "music-quarantine-path", Glib::build_filename(Glib::get_home_dir (),"Music Youki-Quarantined"));
         mcs->key_register ("mpx", "completion-enabled", true);
+        mcs->key_register ("mpx", "theme", std::string("default"));
 
         mcs->domain_register ("audio");
         mcs->key_register ("audio", "band0", 0.0);

@@ -581,8 +581,6 @@ namespace MPX
                                     , origin - (m_visible_height/m_row_height)
                                 ) ;
 
-                                g_message("Row: %lld", int64_t(row)) ;
-
                                 select_row( row ) ;
                             }
                             else
@@ -841,28 +839,10 @@ namespace MPX
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
 
-                    const ThemeColor& c_base            = theme->get_color( THEME_COLOR_BASE ) ;
                     const ThemeColor& c_base_rules_hint = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) ;
                     const ThemeColor& c_text            = theme->get_color( THEME_COLOR_TEXT ) ;
                     const ThemeColor& c_text_sel        = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
                     const ThemeColor& c_sel             = theme->get_color( THEME_COLOR_SELECT ) ;
-
-                    cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
-                    RoundedRectangle(
-                          cairo
-                        , 0
-                        , 0
-                        , a.get_width()
-                        , a.get_height()
-                        , 4.
-                    ) ;
-                    cairo->set_source_rgba(
-                          c_base.r
-                        , c_base.g
-                        , c_base.b
-                        , c_base.a
-                    ) ;
-                    cairo->fill() ;
 
                     const std::size_t inner_pad  = 1 ;
 

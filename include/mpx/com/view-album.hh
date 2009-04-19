@@ -469,7 +469,7 @@ namespace MPX
                     {
                             off = s->get_width() ; 
 
-                            r.x = xpos + m_width - off - 4 ; 
+                            r.x = xpos + m_width - off - 6 ; 
 
                             cairo->set_source(
                                   s
@@ -1049,37 +1049,15 @@ namespace MPX
                 bool
                 on_expose_event (GdkEventExpose *event)
                 {
-                    if( event->count > 0 )
-                        return false ;
-
                     const Gtk::Allocation& a = get_allocation() ;
 
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
-
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context() ;
 
-                    const ThemeColor& c_base        = theme->get_color( THEME_COLOR_BASE ) ;
                     const ThemeColor& c_text        = theme->get_color( THEME_COLOR_TEXT ) ;
                     const ThemeColor& c_text_sel    = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
                     const ThemeColor& c_sel         = theme->get_color( THEME_COLOR_SELECT ) ;
                     const ThemeColor& c_treelines   = theme->get_color( THEME_COLOR_TREELINES ) ;
-
-                    cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
-                    RoundedRectangle(
-                          cairo
-                        , 0
-                        , 0
-                        , a.get_width()
-                        , a.get_height()
-                        , 4.
-                    ) ;
-                    cairo->set_source_rgba(
-                          c_base.r
-                        , c_base.g
-                        , c_base.b
-                        , c_base.a
-                    ) ;
-                    cairo->fill() ;
 
                     cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
@@ -1121,7 +1099,7 @@ namespace MPX
 
                             r.x         = inner_pad + 2 ; 
                             r.y         = inner_pad + ypos ;
-                            r.width     = a.get_width() - 2*inner_pad  - 2 ;  
+                            r.width     = a.get_width() - 2*inner_pad  - 4 ;  
                             r.height    = m_row_height - 2*inner_pad - 2 ;
 
                             cairo->save () ;

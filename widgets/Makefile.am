@@ -30,6 +30,7 @@ libmpx_widgets_la_SOURCES = 			\
 		dialog-simple-entry.cc			\
 										\
 		rounded-layout.cc				\
+        rounded-alignment.cc            \
 										\
 		task-dialog.cc					\
 										\

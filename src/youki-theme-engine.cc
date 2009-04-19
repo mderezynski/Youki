@@ -32,6 +32,7 @@
 #include <map>
 
 #include "json/json.h"
+#include "mpx/mpx-main.hh"
 #include "mpx/util-graphics.hh"
 #include "youki-theme-engine.hh"
 
@@ -117,9 +118,7 @@ namespace MPX
     )
     : Service::Base( "mpx-service-theme" )
     {
-        //reload() ;
-        load_stored_themes() ;
-        m_CurrentTheme = m_Themes.begin() ;
+        reload() ;
     }
 
     void
@@ -196,8 +195,6 @@ namespace MPX
 
             if( n_to_id.count( name ))
             {
-                g_message( "%s: %s", val_name.asString().c_str(), val_colr.asString().c_str() ) ;
-
                 ThemeColor color ;
 
                 hex_to_color(
@@ -292,7 +289,7 @@ namespace MPX
         colors[THEME_COLOR_TITLEBAR_TOP] = ThemeColor( c3.get_red_p(), c3.get_green_p(), c3.get_blue_p(), 0.90 ) ; 
 
         colors[THEME_COLOR_BACKGROUND] = ThemeColor( 0.10, 0.10, 0.10, 1. ) ; 
-        colors[THEME_COLOR_BASE] = ThemeColor( 0.10, 0.10, 0.10, 1. ) ; 
+        colors[THEME_COLOR_BASE] = ThemeColor( 0.14, 0.14, 0.14, 1. ) ; 
         colors[THEME_COLOR_BASE_ALTERNATE] = ThemeColor( .2, .2, .2, 1. ) ;
         colors[THEME_COLOR_TEXT] = ThemeColor( 1., 1., 1., 1. ) ;
         colors[THEME_COLOR_TEXT_SELECTED] = ThemeColor( 1., 1., 1., 1. ) ;
@@ -315,7 +312,10 @@ namespace MPX
 
         m_Themes.erase("default") ;
         m_Themes["default"] = theme ;
-        m_CurrentTheme = m_Themes.begin() ;
+
+        load_stored_themes() ;
+
+        m_CurrentTheme = m_Themes.find( mcs->key_get<std::string>("mpx","theme") ) ;
     }
     
     YoukiThemeEngine::~YoukiThemeEngine(

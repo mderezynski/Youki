@@ -17,8 +17,10 @@
 
 #include "mpx/i-youki-theme-engine.hh"
 
-#include "mpx/algorithm/youki-markov-predictor.hh"
 #include "mpx/widgets/cairo-extensions.hh"
+#include "mpx/widgets/rounded-alignment.hh"
+
+#include "mpx/algorithm/youki-markov-predictor.hh"
 
 #include "library.hh"
 #include "plugin-manager-gui.hh"
@@ -285,9 +287,9 @@ namespace MPX
                 , &YoukiController::on_list_view_ab_selection_changed
         )) ;
 
-        m_ScrolledWinArtist = Gtk::manage( new Gtk::ScrolledWindow ) ;
-        m_ScrolledWinAlbums = Gtk::manage( new Gtk::ScrolledWindow ) ;
-        m_ScrolledWinTracks = Gtk::manage( new Gtk::ScrolledWindow ) ;
+        m_ScrolledWinArtist = Gtk::manage( new RoundedScrolledWindow ) ;
+        m_ScrolledWinAlbums = Gtk::manage( new RoundedScrolledWindow ) ;
+        m_ScrolledWinTracks = Gtk::manage( new RoundedScrolledWindow ) ;
 
         m_main_window       = new MainWindow ;
         m_main_window->signal_key_press_event().connect(
@@ -553,7 +555,7 @@ namespace MPX
     {
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
-        //theme->reload() ;
+        theme->reload() ;
 
         const ThemeColor& c_bg   = theme->get_color( THEME_COLOR_BACKGROUND ) ; 
         const ThemeColor& c_base = theme->get_color( THEME_COLOR_BASE ) ; 
@@ -566,9 +568,9 @@ namespace MPX
         Gdk::Color c2 ;
         c2.set_rgb_p( c_bg.r, c_bg.g, c_bg.b ) ; 
 
-        m_ListViewArtist->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
-        m_ListViewAlbums->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
-        m_ListViewTracks->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
+        m_ListViewArtist->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_ListViewAlbums->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_ListViewTracks->modify_bg( Gtk::STATE_NORMAL, c ) ;
 
         m_Entry->modify_base( Gtk::STATE_NORMAL, c ) ;
         m_Entry->modify_base( Gtk::STATE_ACTIVE, c ) ;
