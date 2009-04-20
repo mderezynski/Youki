@@ -32,7 +32,7 @@
           }
 
         , {   "name"    : "treelines"
-            , "value"   : "#d7d8ddff"
+            , "value"   : "#606060c0"
           }
 
         , {   "name"    : "info-area"

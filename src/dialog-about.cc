@@ -252,7 +252,7 @@ namespace MPX
           cr->move_to ((m_background->get_width () - width) / 2,
                         m_background->get_height () - height - text_bottom_margin);
           cr->set_source_rgba (text_colour[0], text_colour[1], text_colour[2], alpha);
-          cr->set_operator (Cairo::OPERATOR_ATOP);
+          cr->set_operator (Cairo::OPERATOR_OVER);
 
           pango_cairo_show_layout (cr->cobj (), layout->gobj ());
       }

@@ -62,9 +62,10 @@ namespace MPX
 
                         add_events( Gdk::BUTTON_PRESS_MASK ) ;
 
-                        m_title_logo = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "title-logo.png" )) ;
-                        m_button_off = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "mainwindow-button-off.png" )) ;
-                        m_button_blowup = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "mainwindow-button-maximize.png" )) ;
+                        m_title_logo      = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "title-logo.png" )) ;
+                        m_button_quit     = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "mainwindow-button-quit.png" )) ;
+                        m_button_maximize = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "mainwindow-button-maximize.png" )) ;
+                        m_button_minimize = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "mainwindow-button-minimize.png" )) ;
 
                         set_geom_hints( false ) ;
 
@@ -219,22 +220,30 @@ namespace MPX
                             return false ;
                         }
 
-                        Gdk::Rectangle r1, r2, r3 ;
+                        Gdk::Rectangle r1, r2, r3, r4 ;
 
                         r1.set_x( event->x ) ;
                         r1.set_y( event->y ) ;
                         r1.set_width( 1 ) ;
                         r1.set_height( 1 ) ;
 
-                        r2.set_x( 3 ) ;
-                        r2.set_y( (20 - m_button_off->get_height()) / 2 ) ;
-                        r2.set_width( m_button_off->get_width() ) ;
-                        r2.set_height( m_button_off->get_height() ) ;
+                        // quit
+                        r2.set_x( m_presize_width - 12 - 4 ) ;
+                        r2.set_y( 4 ) ; 
+                        r2.set_width( 12 ) ; 
+                        r2.set_height( 12 ) ; 
 
-                        r3.set_x( 18 ) ;
-                        r3.set_y( (20 - m_button_off->get_height()) / 2 ) ;
-                        r3.set_width( m_button_blowup->get_width() ) ;
-                        r3.set_height( m_button_blowup->get_height() ) ;
+                        // maximize
+                        r3.set_x( m_presize_width - 28 - 4 ) ; 
+                        r3.set_y( 4 ) ; 
+                        r3.set_width( 12 ) ; 
+                        r3.set_height( 12 ) ; 
+
+                        // minimize
+                        r4.set_x( m_presize_width - 44 - 4 ) ; 
+                        r4.set_y( 4 ) ; 
+                        r4.set_width( 12 ) ; 
+                        r4.set_height( 12 ) ; 
 
                         bool intersect = false ;
 
@@ -249,14 +258,17 @@ namespace MPX
                         if( intersect )
                         {
                             if( m_maximized )
-                            {
                                 unmaximize() ;
-                            }
                             else
-                            {
                                 maximize() ;
-                            }
 
+                            return true ;
+                        }
+
+                        r4.intersect( r1, intersect ) ;
+                        if( intersect )
+                        {
+                            iconify() ;
                             return true ;
                         }
 
@@ -444,8 +456,8 @@ namespace MPX
                         cr->set_operator( Cairo::OPERATOR_OVER ) ;
 
                         GdkRectangle r ;
-                        r.x         = m_presize_width - m_title_logo->get_width() - 6 ;
-                        r.y         = (20 / 2) - (m_title_logo->get_height()/2) ; 
+                        r.x         = 8 ; 
+                        r.y         = 5 ; 
                         r.width     = m_title_logo->get_width() ;
                         r.height    = m_title_logo->get_height() ;
                         Gdk::Cairo::set_source_pixbuf(
@@ -462,13 +474,16 @@ namespace MPX
                         ) ;
                         cr->fill() ; 
 
-                        r.x         = 3 ; 
-                        r.y         = (20 - m_button_off->get_height()) / 2. ;
-                        r.width     = m_button_off->get_width() ;
-                        r.height    = m_button_off->get_height() ;
+                        // off
+
+                        r.y         = 4 ; 
+                        r.width     = 12 ; 
+                        r.height    = 12 ; 
+
+                        r.x = m_presize_width - 12 - 4 ; 
                         Gdk::Cairo::set_source_pixbuf(
                               cr
-                            , m_button_off 
+                            , m_button_quit 
                             , r.x 
                             , r.y 
                         ) ;
@@ -483,14 +498,12 @@ namespace MPX
                         cr->paint_with_alpha( m_quit_clicked ? .9 : .6 ) ; 
                         cr->restore () ;
 
-                        r.x         = 18 ; 
-                        r.y         = (20 - m_button_blowup->get_height()) / 2. ;
-                        r.width     = m_button_blowup->get_width() ;
-                        r.height    = m_button_blowup->get_height() ;
+                        // maximize
 
+                        r.x = m_presize_width - 28 - 4 ;
                         Gdk::Cairo::set_source_pixbuf(
                               cr
-                            , m_button_blowup 
+                            , m_button_maximize 
                             , r.x 
                             , r.y 
                         ) ;
@@ -505,9 +518,30 @@ namespace MPX
                         cr->paint_with_alpha( m_maximized ? .9 : .6 ) ;
                         cr->restore () ;
 
-                        cr->set_operator( Cairo::OPERATOR_ATOP ) ;
+                        cr->set_operator( Cairo::OPERATOR_OVER ) ;
+
+                        // minimize
+
+                        r.x = m_presize_width - 44 - 4 ;
+                        Gdk::Cairo::set_source_pixbuf(
+                              cr
+                            , m_button_minimize 
+                            , r.x 
+                            , r.y 
+                        ) ;
+                        cr->rectangle(
+                              r.x 
+                            , r.y 
+                            , r.width 
+                            , r.height 
+                        ) ;
+                        cr->save () ;
+                        cr->clip () ;
+                        cr->paint_with_alpha( .6 ) ; 
+                        cr->restore () ;
 
                         //// RESIZE GRIP 
+
                         const ThemeColor& crg = theme->get_color( THEME_COLOR_RESIZE_GRIP ) ;
 
                         cr->set_source_rgba(
@@ -542,7 +576,7 @@ namespace MPX
                             propagate_expose( *get_child(), event ) ;
                         }
 
-                        cr->set_operator( Cairo::OPERATOR_ATOP ) ;
+                        cr->set_operator( Cairo::OPERATOR_OVER ) ;
 
                         //// MAINAREA BORDER 
                         const ThemeColor& brd = theme->get_color( THEME_COLOR_WINDOW_BORDER ) ;

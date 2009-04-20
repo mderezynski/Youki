@@ -360,7 +360,7 @@ namespace MPX
                 {
                     using boost::get;
 
-                    cairo->set_operator(Cairo::OPERATOR_ATOP);
+                    cairo->set_operator(Cairo::OPERATOR_OVER);
 
                     cairo->set_source_rgba(
                           color.r
@@ -754,15 +754,9 @@ namespace MPX
                     {
                             grab_focus() ;
 
-                            std::size_t row = 0 ; 
+                            std::size_t row = get_upper_row() + (event->y/m_row_height) ;
 
-                            if( event->y > m_row_height )
-                            {
-                                std::size_t upper = get_upper_row() ;
-                                row = (upper + (event->y / m_row_height)) - ((upper > 0) ? 1 : 0)  ;
-                            }
-
-                            if( row < m_model->m_mapping.size() )
+                            if( row < m_model->size() )
                             {
                                 select_row( row ) ;
                             }
@@ -804,18 +798,19 @@ namespace MPX
 
                     if( m_row_height )
                     {
-                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height + m_row_height ) ;
+                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
                         m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*m_row_height ) ; 
                     }
 
                     double column_width = (double(event->width) - m_fixed_total_width - (40*m_collapsed.size()) ) / double(m_columns.size()-m_collapsed.size()-m_fixed.size());
 
-                    for( std::size_t n = 0; n < m_columns.size(); ++n)
+                    for( std::size_t n = 0 ; n < m_columns.size() ; ++n )
                     {
                         if( m_fixed.count( n ) )
                         {
                             continue ;
                         } 
+
                         if( m_collapsed.count( n ) )
                         {
                             m_columns[n]->set_width( 40 ) ;
@@ -837,7 +832,9 @@ namespace MPX
                     const Gtk::Allocation& a = get_allocation();
 
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
+                    cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
                     const ThemeColor& c_base_rules_hint = theme->get_color( THEME_COLOR_BASE_ALTERNATE ) ;
                     const ThemeColor& c_text            = theme->get_color( THEME_COLOR_TEXT ) ;
@@ -845,36 +842,23 @@ namespace MPX
 
                     const std::size_t inner_pad  = 1 ;
 
-                    std::size_t row_origin  = std::max<std::size_t>( get_upper_row() , 1 ) ;
+                    std::size_t row = get_upper_row() ; 
 
-                    std::size_t cnt         = Limiter<std::size_t>(
-                                                  Limiter<std::size_t>::ABS_ABS
-                                                , 0
-                                                , m_model->size()
-                                                , m_visible_height/m_row_height
-                                              ) ;
+                    std::size_t cnt = Limiter<std::size_t>(
+                                            Limiter<std::size_t>::ABS_ABS
+                                          , 0
+                                          , m_model->size()
+                                          , m_visible_height/m_row_height
+                                      ) + 1 ;
 
-                    std::size_t ypos        = 0 ;
-                    std::size_t xpos        = 0 ;
+                    std::size_t ypos = 0 ;
+                    std::size_t xpos = 0 ;
 
-                    std::vector<std::size_t> render_rows ;
-                    render_rows.resize( cnt ) ;
-                    render_rows.push_back( 0 ) ;
-
-                    for( std::size_t n = 0 ; n < cnt ; ++n ) 
+                    while( row < m_model->size() && cnt )
                     {
-                        render_rows[n+1] = n + row_origin ;
-                    }
-
-                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
-    
-                    for( std::vector<std::size_t>::const_iterator i = render_rows.begin(); i != render_rows.end(), *i < m_model->size() ; ++i )
-                    {
-                        std::size_t row = *i ;
-
                         xpos = 0 ;
 
-                        if( !(row % 2) && row > 0 ) 
+                        if( !(row % 2) ) 
                         {
                             GdkRectangle r ;
 
@@ -955,13 +939,17 @@ namespace MPX
                     {
                         std::size_t view_count = m_visible_height / m_row_height ;
 
-                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height + m_row_height ) ;
+                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
                         m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*m_row_height ) ; 
 
                         if( m_model->size() < view_count )
-                            m_prop_vadj.get_value()->set_value(0.);
+                        {
+                            m_prop_vadj.get_value()->set_value( 0. ) ;
+                        }
                         else
+                        {
                             m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                        }
                     }
 
                     queue_draw() ;

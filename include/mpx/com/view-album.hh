@@ -460,7 +460,7 @@ namespace MPX
                     GdkRectangle r ;
                     r.y = ypos ; 
 
-                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+                    cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
                     Cairo::RefPtr<Cairo::ImageSurface> s = get<0>(data_row) ;
 
@@ -582,7 +582,7 @@ namespace MPX
 
                     int width, height;
 
-                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+                    cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
                     Pango::FontDescription font_desc =  widget.get_style()->get_font() ;
                     font_desc.set_size( text_size_pt * PANGO_SCALE ) ;
@@ -1083,7 +1083,7 @@ namespace MPX
                     const ThemeColor& c_text_sel    = theme->get_color( THEME_COLOR_TEXT_SELECTED ) ;
                     const ThemeColor& c_treelines   = theme->get_color( THEME_COLOR_TREELINES ) ;
 
-                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+                    cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
                     std::size_t row     = m_prop_vadj.get_value()->get_value() / m_row_height ;
                     int offset          = m_prop_vadj.get_value()->get_value() - (row*m_row_height) ;
@@ -1107,7 +1107,7 @@ namespace MPX
 
                     const std::size_t inner_pad = 1 ;
 
-                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+                    cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
                     while( m_model->is_set() && cnt && m_Model_I.in( row )) 
                     {
@@ -1220,6 +1220,7 @@ namespace MPX
                             ) ;
                     }
 
+                    clear_selection() ;
                     queue_draw() ;
                 }
 

@@ -365,6 +365,8 @@ namespace MPX
 
         cairo->save () ;
 
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+
         Cairo::RefPtr<Cairo::LinearGradient> gradient = Cairo::LinearGradient::create(
               r.x + r.width / 2
             , r.y  
@@ -413,7 +415,6 @@ namespace MPX
         ) ;
 
         cairo->set_source( gradient ) ;
-        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
         RoundedRectangle(
               cairo

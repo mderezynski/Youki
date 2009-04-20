@@ -77,7 +77,7 @@ namespace MPX
         cairo->set_source_rgba( 0.10, 0.10, 0.10, 1. ) ;
         cairo->paint () ;
 
-        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
         cairo->set_source_rgba(
               .8
             , .8
@@ -112,7 +112,7 @@ namespace MPX
         ) ;
 
         cairo->set_source_rgba( 1., 1., 1., 1. ) ;
-        cairo->set_operator (Cairo::OPERATOR_ATOP) ;
+        cairo->set_operator (Cairo::OPERATOR_OVER) ;
         pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
     }
 } // namespace MPX

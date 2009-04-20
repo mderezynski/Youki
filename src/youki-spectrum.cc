@@ -195,7 +195,7 @@ namespace MPX
         cairo->paint () ;
 
         cairo->set_operator(
-              Cairo::OPERATOR_ATOP
+              Cairo::OPERATOR_OVER
         ) ;
 
         for( int n = 0; n < SPECT_BANDS; ++n ) 

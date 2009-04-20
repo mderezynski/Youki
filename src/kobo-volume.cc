@@ -94,7 +94,7 @@ namespace MPX
         cairo->paint () ;
 
         double percent = double(m_volume) / 100. ; 
-        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
         if( m_volume )
         {
@@ -123,7 +123,7 @@ namespace MPX
             ) ;
 
             cairo->set_operator(
-                  Cairo::OPERATOR_ATOP
+                  Cairo::OPERATOR_OVER
             ) ;
 
             RoundedRectangle(

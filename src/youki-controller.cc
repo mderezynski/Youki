@@ -1621,7 +1621,7 @@ namespace MPX
             const ThemeColor& c = theme->get_color( THEME_COLOR_ENTRY_OUTLINE ) ;
 
             Cairo::RefPtr<Cairo::Context> cairo = widget->get_window()->create_cairo_context() ;
-            cairo->set_operator( Cairo::OPERATOR_ATOP ) ; 
+            cairo->set_operator( Cairo::OPERATOR_OVER ) ; 
             cairo->set_source_rgba(
                   c.r 
                 , c.g

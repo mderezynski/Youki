@@ -126,7 +126,7 @@ namespace MPX
         Util::color_to_hsb( cgdk, h, s, b ) ;
         Gdk::Color c_base_gdk = Util::color_from_hsb( h, s, b ) ;
 
-        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
         cairo->set_source_rgba(
               c_base_gdk.get_red_p()
             , c_base_gdk.get_green_p()
@@ -209,7 +209,7 @@ namespace MPX
             ) ;
 
             cairo->set_source( volume_bar_gradient ) ;
-            cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+            cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
             RoundedRectangle(
                   cairo
@@ -293,7 +293,7 @@ namespace MPX
                 s = std::min( 1., s+0.12 ) ;
                 Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
 
-                cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+                cairo->set_operator( Cairo::OPERATOR_OVER ) ;
                 cairo->set_source_rgba(
                       c1.get_red_p() 
                     , c1.get_green_p()
