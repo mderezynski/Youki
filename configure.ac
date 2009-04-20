@@ -302,6 +302,9 @@ PKG_CHECK_MODULES([GLADEMM], [libglademm-2.4 >= 2.6.0])
 # cairomm
 PKG_CHECK_MODULES([CAIROMM], [cairomm-1.0 >= 0.6.0])
 
+#cluttermm
+PKG_CHECK_MODULES([CLUTTERMM], [cluttermm-0.9 clutter-gtkmm-0.9])
+
 #sexymm
 #PKG_CHECK_MODULES([SEXYMM], [libsexymm >= 0.1.9])
 SEXYMM_INCLUDES=

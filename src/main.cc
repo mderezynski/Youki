@@ -31,6 +31,7 @@
 #include <giomm.h>
 #include <gst/gst.h>
 #include <gtkmm/main.h>
+#include <clutter-gtkmm/init.h>
 #include <cstdlib>
 #include <string>
 #include <dbus-c++/glib-integration.h>
@@ -271,6 +272,7 @@ main (int argc, char ** argv)
     Glib::thread_init(0);
     Glib::init();
     Gio::init();
+    Clutter::Gtk::init(&argc, &argv);
 
     GOptionContext * context_c = g_option_context_new (_(" - run Youki"));
     g_option_context_add_group (context_c, gst_init_get_option_group ());

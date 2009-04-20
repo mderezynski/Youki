@@ -52,11 +52,69 @@ namespace MPX
         set_size_request( -1, 44 ) ;
 
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
-        const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
-        Gdk::Color cgdk ;
-        cgdk.set_rgb_p( c.r, c.g, c.b ) ; 
-        modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
-        modify_base( Gtk::STATE_NORMAL, cgdk ) ;
+        //const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
+        const ThemeColor& c /* :) */ = theme->get_color( THEME_COLOR_BACKGROUND ) ;
+        Clutter::Color stage_color( c.r, c.g, c.b ) ; 
+        m_stage = get_stage() ;
+        m_stage->set_color( stage_color ) ;
+        //modify_base( Gtk::STATE_NORMAL, cgdk ) ;
+
+        m_group_peaks = Clutter::Group::create() ;
+        m_group_bars = Clutter::Group::create() ;
+
+        m_stage->add_actor(m_group_peaks) ;
+        m_stage->add_actor(m_group_bars) ;
+
+        for( int n=0; n < SPECT_BANDS; n++ )
+        {
+            int   x = 0
+                , y = 0
+                , w = 0
+                , h = 0 ;
+
+            x = m_stage->get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n ; 
+            w = WIDTH ;
+
+            //// PEAK 
+
+            int  peak = m_spectrum_peak[n] / 2 ; 
+            y = -peak ; 
+            h =  peak + HEIGHT ;
+
+            if( w && h ) 
+            {
+                Clutter::Color color(
+                      1.
+                    , 1.
+                    , 1.
+                    , 0.1
+                ) ;
+                Glib::RefPtr<Clutter::Rectangle> rect = Clutter::Rectangle::create( color ) ;
+                m_group_peaks->add_actor( rect ) ;
+                rect->set_position( x, y + 4 ) ;
+                rect->set_size( w, h ) ;
+            }
+
+            //// BAR 
+
+            int   bar = m_spectrum_data[n] / 2 ;
+            y = - bar ;
+            h =   bar + HEIGHT ;
+
+            if( w && h ) 
+            {
+                Clutter::Color color(
+                      double(colors[n/6].r)/255.
+                    , double(colors[n/6].g)/255.
+                    , double(colors[n/6].b)/255.
+                    , ALPHA
+                ) ;
+                Glib::RefPtr<Clutter::Rectangle> rect = Clutter::Rectangle::create( color ) ;
+                m_group_bars->add_actor( rect ) ;
+                rect->set_position( x, y + 4 ) ;
+                rect->set_size( w, h ) ;
+            }
+        }
 
         m_play = services->get<IPlay>("mpx-service-play") ; 
 
@@ -165,97 +223,48 @@ namespace MPX
         GdkEventExpose* G_GNUC_UNUSED 
     )
     {
-        Cairo::RefPtr<Cairo::Context> cairo = get_window ()->create_cairo_context ();
-
-        draw_spectrum( cairo ) ;
+        draw_spectrum() ;
 
         return true;
     }
 
     void
-    YoukiSpectrum::draw_spectrum(
-          Cairo::RefPtr<Cairo::Context>&                cairo
-    )
+    YoukiSpectrum::on_show()
     {
-        const Gtk::Allocation& a = get_allocation ();
+        Clutter::Gtk::Embed::on_show() ;
+        m_stage->show_all() ;
+    }
 
-        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
-        const ThemeColor& c_base /* :) */ = theme->get_color( THEME_COLOR_BACKGROUND ) ; 
-
-        cairo->set_operator(
-              Cairo::OPERATOR_SOURCE
-        ) ;
-
-        cairo->set_source_rgba(
-              c_base.r
-            , c_base.g
-            , c_base.b
-            , c_base.a
-        ) ;
-        cairo->paint () ;
-
-        cairo->set_operator(
-              Cairo::OPERATOR_ATOP
-        ) ;
-
+    void
+    YoukiSpectrum::draw_spectrum()
+    {
         for( int n = 0; n < SPECT_BANDS; ++n ) 
         {
-            int   x = 0
-                , y = 0
-                , w = 0
+            int   w = 0
                 , h = 0 ;
 
-            x = a.get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n ; 
             w = WIDTH ;
 
             //// PEAK 
 
             int  peak = m_spectrum_peak[n] / 2 ; 
-            y = -peak ; 
             h =  peak + HEIGHT ;
 
             if( w && h ) 
             {
-                cairo->set_source_rgba(
-                      1.
-                    , 1.
-                    , 1.
-                    , 0.1
-                ) ;
-                RoundedRectangle(
-                      cairo
-                    , x
-                    , y + 4
-                    , w
-                    , h
-                    , 1.
-                ) ;
-                cairo->fill ();
+                Glib::RefPtr<Clutter::Actor> rect = m_group_peaks->get_nth_child( n ) ;
+                rect->set_size( w, h ) ;
             }
 
             //// BAR 
 
             int   bar = m_spectrum_data[n] / 2 ;
-            y = - bar ;
             h =   bar + HEIGHT ;
 
             if( w && h ) 
             {
-                cairo->set_source_rgba(
-                      double(colors[n/6].r)/255.
-                    , double(colors[n/6].g)/255.
-                    , double(colors[n/6].b)/255.
-                    , ALPHA
-                ) ;
-                RoundedRectangle(
-                      cairo
-                    , x
-                    , y + 4
-                    , w
-                    , h
-                    , 1.
-                ) ;
-                cairo->fill ();
+                Glib::RefPtr<Clutter::Actor> rect = m_group_bars->get_nth_child( n ) ;
+                rect->set_size( w, h ) ;
             }
         }
     }
