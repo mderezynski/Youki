@@ -456,11 +456,11 @@ namespace MPX
                             if( truth )
                             {
                                 new_mapping.push_back( i ) ;
-                            }
 
-                            if( id >= 0 && get<3>(*i) == id )
-                            {
-                                m_position = new_mapping.size()  - 1 ;
+                                if( id >= 0 && get<3>(*i) == id )
+                                {
+                                    m_position = new_mapping.size()  - 1 ;
+                                }
                             }
                         }
                     }
@@ -535,7 +535,7 @@ namespace MPX
                         {
                             int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
 
-                            const MPX::Track& track = get<4>(*(*i));
+                            const MPX::Track& track = get<4>(**i);
 
                             if( !m_constraints.empty() )
                                 truth |= AQE::match_track( m_constraints, track ) ;
@@ -546,10 +546,15 @@ namespace MPX
                             if( truth )
                             {
                                 new_mapping.push_back( *i ) ;
+
+                                if( id >= 0 && get<3>(**i) == id )
+                                {
+                                    m_position = new_mapping.size()  - 1 ;
+                                }
                             }
 
                             m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                            m_constraint_artist.get().insert( get<6>(*(*i)) ) ;
+                            m_constraint_artist.get().insert( get<6>(**i) ) ;
                         }
                     }
 
@@ -599,11 +604,11 @@ namespace MPX
                             if( truth )
                             {
                                 new_mapping.push_back( *i ) ;
-                            }
 
-                            if( id >= 0 && get<3>(**i) == id )
-                            {
-                                m_position = new_mapping.size()  - 1 ;
+                                if( id >= 0 && get<3>(**i) == id )
+                                {
+                                    m_position = new_mapping.size()  - 1 ;
+                                } 
                             }
                         }
                     }
@@ -689,6 +694,11 @@ namespace MPX
                             if( truth )
                             {
                                 new_mapping.push_back( *i ) ;
+
+                                if( id >= 0 && get<3>(**i) == id )
+                                {
+                                    m_position = new_mapping.size()  - 1 ;
+                                } 
                             }
 
                             m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
@@ -786,7 +796,7 @@ namespace MPX
 
                 void
                 render_header(
-                      Cairo::RefPtr<Cairo::Context>     cairo
+                      Cairo::RefPtr<Cairo::Context>&    cairo
                     , Gtk::Widget&                      widget
                     , int                               xpos
                     , int                               ypos
@@ -813,7 +823,7 @@ namespace MPX
                         , ypos + 6
                     ) ;
 
-                    cairo->set_operator(Cairo::OPERATOR_ATOP);
+                    cairo->set_operator(Cairo::OPERATOR_OVER);
 
                     cairo->set_source_rgba(
                           color.r
@@ -850,10 +860,9 @@ namespace MPX
 
                 void
                 render(
-                      Cairo::RefPtr<Cairo::Context>     cairo
-                    , const Row7&                       datarow
-                    , const std::string&                filter
+                      Cairo::RefPtr<Cairo::Context>&    cairo
                     , Gtk::Widget&                      widget
+                    , const Row7&                       datarow
                     , int                               row
                     , int                               xpos
                     , int                               ypos
@@ -863,7 +872,7 @@ namespace MPX
                 {
                     using boost::get;
 
-                    cairo->set_operator(Cairo::OPERATOR_ATOP);
+                    cairo->set_operator(Cairo::OPERATOR_OVER);
 
                     cairo->set_source_rgba(
                           color.r
@@ -883,7 +892,7 @@ namespace MPX
                     cairo->clip();
                     cairo->move_to(
                           xpos + off + 6
-                        , ypos + 4
+                        , ypos + 2
                     ) ;
 
                     std::string str;
@@ -994,7 +1003,7 @@ namespace MPX
                                                                             pango_context_get_language (context));
 
                     m_row_height = (pango_font_metrics_get_ascent (metrics)/PANGO_SCALE) + 
-                                   (pango_font_metrics_get_descent (metrics)/PANGO_SCALE) + 8;
+                                   (pango_font_metrics_get_descent (metrics)/PANGO_SCALE) + 5 ;
 
                     const int visible_area_pad = 2 ;
 
@@ -1145,8 +1154,8 @@ namespace MPX
                             {
                                 if( get_row_is_visible( origin ))
                                 {
-                                    Limiter<int64_t> row (
-                                          Limiter<int64_t>::ABS_ABS
+                                    Limiter<std::size_t> row (
+                                          Limiter<std::size_t>::ABS_ABS
                                         , 0 
                                         , origin + step
                                         , origin 
@@ -1197,10 +1206,10 @@ namespace MPX
                             {
                                 if( get_row_is_visible( origin ))
                                 {
-                                    Limiter<int64_t> row (
-                                          Limiter<int64_t>::ABS_ABS
-                                        , m_model->m_mapping.size() - 1
+                                    Limiter<std::size_t> row (
+                                          Limiter<std::size_t>::ABS_ABS
                                         , origin + step
+                                        , m_model->size() - 1
                                         , origin 
                                     ) ;
 
@@ -1209,7 +1218,7 @@ namespace MPX
                                     Interval<std::size_t> i (
                                           Interval<std::size_t>::IN_EX
                                         , get_upper_row() + (m_visible_height/m_row_height)
-                                        , m_model->m_mapping.size()
+                                        , m_model->size()
                                     ) ;
 
                                     if( i.in( row )) 
@@ -1489,7 +1498,7 @@ namespace MPX
 
                     Cairo::RefPtr<Cairo::Context> cairo = get_window()->create_cairo_context(); 
 
-                    cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+                    cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
                     std::size_t row = get_upper_row() ;
                     m_previous_drawn_row = row ;
@@ -1519,7 +1528,7 @@ namespace MPX
                             }
                     }
 
-                    cairo->set_operator(Cairo::OPERATOR_ATOP);
+                    cairo->set_operator(Cairo::OPERATOR_OVER);
 
                     //// ROWS
     
@@ -1609,9 +1618,8 @@ namespace MPX
                                 {
                                     (*i)->render(
                                           cairo
-                                        , m_model->row(row)
-                                        , m_model->m_filter_effective
                                         , *this
+                                        , m_model->row(row)
                                         , row
                                         , xpos
                                         , ypos

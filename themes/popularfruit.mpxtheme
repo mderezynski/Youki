@@ -32,7 +32,7 @@
           }
 
         , {   "name"    : "treelines"
-            , "value"   : "#d7d8ddff"
+            , "value"   : "#606060c0"
           }
 
         , {   "name"    : "info-area"
@@ -44,7 +44,7 @@
           }
 
         , {   "name"    : "select"
-            , "value"   : "#3e80e0ff"
+            , "value"   : "#537fe9ff"
           }
 
         , {   "name"    : "titlebar-1"

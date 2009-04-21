@@ -120,7 +120,7 @@ namespace MPX
         const ThemeColor& c_info = theme->get_color( THEME_COLOR_INFO_AREA ) ;
         const ThemeColor& c_sel  = theme->get_color( THEME_COLOR_SELECT ) ;
 
-        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
         cairo->set_source_rgba(
               c_info.r

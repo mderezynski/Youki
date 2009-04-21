@@ -712,7 +712,7 @@ MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
 
     pthreaddata->ScanStart.emit();
 
-    boost::shared_ptr<Library_MLibMan> library = services->get<Library_MLibMan>("mpx-service-library");
+    boost::shared_ptr<Library_MLibMan> library = services->get<Library_MLibMan>("mpx-service-library") ;
 
     for( Util::FileList::const_iterator i = list.begin(); i != list.end(); ++i )
     {  
@@ -738,7 +738,7 @@ MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
                     m_SQL->get(
                         v,
                         mprintf( 
-                              "SELECT id, device_id, hal_vrp, mtime FROM track WHERE device_id ='%lld' AND insert_path ='%s'"
+                              "SELECT id, device_id, hal_vrp, mtime FROM track WHERE device_id ='%lld' AND insert_path ='%q'"
                             , device_id 
                             , insert_path_sql.c_str())
                     );
@@ -751,7 +751,7 @@ MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
                     m_SQL->get(
                         v,
                         mprintf( 
-                              "SELECT id, location, mtime FROM track WHERE insert_path ='%s'"
+                              "SELECT id, location, mtime FROM track WHERE insert_path ='%q'"
                             , insert_path_sql.c_str())
                     );
                 }
@@ -1188,7 +1188,6 @@ MPX::LibraryScannerThread_MLibMan::insert_file_no_mtime_check(
             Glib::RefPtr<Gio::FileInfo> info = file->query_info("standard::content-type");
             (*(track.get()))[ATTRIBUTE_TYPE] = info->get_attribute_string("standard::content-type");
         } catch(Gio::Error & cxe) {
-            g_message("%s: GIO Error: %s", G_STRLOC, cxe.what().c_str());
             add_erroneous_track( uri, _("An error ocurred trying to determine the file type"));
             return;
         }

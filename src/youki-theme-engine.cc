@@ -269,26 +269,26 @@ namespace MPX
         colors[THEME_COLOR_SELECT] = ThemeColor( csel.get_red_p(), csel.get_green_p(), csel.get_blue_p(), 1. ) ;
 
         Util::color_to_hsb( csel, h, s, b ) ;
-        b = std::max( 0.15, b-0.10 ) ;
-        s = 0.20 ; 
+        b = std::max( 0.20, b-0.03 ) ;
+        s = std::max( 0.20, s-0.15 ) ;
         Gdk::Color c0 = Util::color_from_hsb( h, s, b ) ;
-        colors[THEME_COLOR_TITLEBAR_1] = ThemeColor( c0.get_red_p(), c0.get_green_p(), c0.get_blue_p(), 0.90 ) ;
+        colors[THEME_COLOR_TITLEBAR_1] = ThemeColor( c0.get_red_p(), c0.get_green_p(), c0.get_blue_p(), 0.93 ) ;
 
         Util::color_to_hsb( csel, h, s, b ) ;
-        b = std::max( 0.08, b-0.20 ) ;
-        s = 0.10 ;
+        b = std::max( 0.12, b-0.08 ) ;
+        s = std::max( 0.13, s-0.17 ) ;
         Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
-        colors[THEME_COLOR_TITLEBAR_2] = ThemeColor( c1.get_red_p(), c1.get_green_p(), c1.get_blue_p(), 0.90 ) ;
+        colors[THEME_COLOR_TITLEBAR_2] = ThemeColor( c1.get_red_p(), c1.get_green_p(), c1.get_blue_p(), 0.93 ) ;
 
         Util::color_to_hsb( csel, h, s, b ) ;
-        b = std::max( 0.05, b-0.25 ) ;
-        s = 0.05 ; 
+        b = std::max( 0.05, b-0.15 ) ;
+        s = std::max( 0.09, s-0.21 ) ;
         Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
-        colors[THEME_COLOR_TITLEBAR_3] = ThemeColor( c2.get_red_p(), c2.get_green_p(), c2.get_blue_p(), 0.90 ) ;
+        colors[THEME_COLOR_TITLEBAR_3] = ThemeColor( c2.get_red_p(), c2.get_green_p(), c2.get_blue_p(), 0.93 ) ;
 
         Util::color_to_hsb( csel, h, s, b ) ;
-        b = std::max( 0., b+0.15 ) ;
-        s = std::max( 0., s+0.05 ) ;
+        b = std::max( 0.21, b-0.02 ) ;
+        s = std::max( 0.22, s-0.13 ) ;
         Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
         colors[THEME_COLOR_TITLEBAR_TOP] = ThemeColor( c3.get_red_p(), c3.get_green_p(), c3.get_blue_p(), 0.90 ) ; 
 
@@ -365,6 +365,8 @@ namespace MPX
 
         cairo->save () ;
 
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+
         Cairo::RefPtr<Cairo::LinearGradient> gradient = Cairo::LinearGradient::create(
               r.x + r.width / 2
             , r.y  
@@ -413,7 +415,6 @@ namespace MPX
         ) ;
 
         cairo->set_source( gradient ) ;
-        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
 
         RoundedRectangle(
               cairo
@@ -425,14 +426,13 @@ namespace MPX
         ) ;
 
         cairo->fill_preserve (); 
-
-        cairo->set_source_rgb(
+        cairo->set_source_rgba(
               c.r
             , c.g
             , c.b
+            , .75
         ) ;
-
-        cairo->set_line_width( 0.8 ) ;
+        cairo->set_line_width( 0.5 ) ;
         cairo->stroke () ;
 
         cairo->restore () ;

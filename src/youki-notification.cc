@@ -458,7 +458,7 @@ namespace MPX
         ) ;
 
         cr->set_operator(
-            Cairo::OPERATOR_ATOP
+            Cairo::OPERATOR_OVER
         ) ;
 
         Pango::Rectangle ink, logical ;
