@@ -16,6 +16,15 @@ namespace MPX
                       GdkEventExpose*
                 ) ;
 
+                virtual void
+                on_size_allocate(
+                      Gtk::Allocation&
+                ) ;
+
+        protected:
+
+                Cairo::RefPtr<Cairo::LinearGradient> m_gradient ;
+
         public:
 
                 RoundedScrolledWindow(

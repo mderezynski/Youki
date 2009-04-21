@@ -796,7 +796,7 @@ namespace MPX
 
                 void
                 render_header(
-                      Cairo::RefPtr<Cairo::Context>     cairo
+                      Cairo::RefPtr<Cairo::Context>&    cairo
                     , Gtk::Widget&                      widget
                     , int                               xpos
                     , int                               ypos
@@ -860,10 +860,9 @@ namespace MPX
 
                 void
                 render(
-                      Cairo::RefPtr<Cairo::Context>     cairo
-                    , const Row7&                       datarow
-                    , const std::string&                filter
+                      Cairo::RefPtr<Cairo::Context>&    cairo
                     , Gtk::Widget&                      widget
+                    , const Row7&                       datarow
                     , int                               row
                     , int                               xpos
                     , int                               ypos
@@ -893,7 +892,7 @@ namespace MPX
                     cairo->clip();
                     cairo->move_to(
                           xpos + off + 6
-                        , ypos + 4
+                        , ypos + 2
                     ) ;
 
                     std::string str;
@@ -1004,7 +1003,7 @@ namespace MPX
                                                                             pango_context_get_language (context));
 
                     m_row_height = (pango_font_metrics_get_ascent (metrics)/PANGO_SCALE) + 
-                                   (pango_font_metrics_get_descent (metrics)/PANGO_SCALE) + 8;
+                                   (pango_font_metrics_get_descent (metrics)/PANGO_SCALE) + 5 ;
 
                     const int visible_area_pad = 2 ;
 
@@ -1619,9 +1618,8 @@ namespace MPX
                                 {
                                     (*i)->render(
                                           cairo
-                                        , m_model->row(row)
-                                        , m_model->m_filter_effective
                                         , *this
+                                        , m_model->row(row)
                                         , row
                                         , xpos
                                         , ypos

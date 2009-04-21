@@ -591,7 +591,7 @@ namespace MPX
                     Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
                     layout->set_font_description( font_desc ) ;
                     layout->set_ellipsize( Pango::ELLIPSIZE_MIDDLE ) ;
-                    layout->set_width( (m_width-off-14) * PANGO_SCALE ) ;
+                    layout->set_width( (m_width-off-20) * PANGO_SCALE ) ;
 
                     if( row > 0 )
                     {
@@ -992,7 +992,7 @@ namespace MPX
                         grab_focus() ;
 
                         int row = double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ; 
-                        int off = m_prop_vadj.get_value()->get_value() - (row*m_row_height) ;
+                        int off = m_row_height - (m_prop_vadj.get_value()->get_value() - (row*m_row_height)) ;
 
                         if( event->y > off )
                         {

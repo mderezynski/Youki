@@ -378,9 +378,9 @@ namespace MPX
                 , &YoukiController::on_style_changed
         ))) ;
 
-        m_ScrolledWinArtist->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
-        m_ScrolledWinAlbums->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
-        m_ScrolledWinTracks->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
+        m_ScrolledWinArtist->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
+        m_ScrolledWinAlbums->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
+        m_ScrolledWinTracks->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
 
         {
                 DataModelTracks_SP_t m ( new DataModelTracks ) ;
@@ -612,6 +612,8 @@ namespace MPX
         m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
         m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
 
+        m_Paned1->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_Paned2->modify_bg( Gtk::STATE_NORMAL, c ) ;
         m_Paned1->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
         m_Paned2->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
 

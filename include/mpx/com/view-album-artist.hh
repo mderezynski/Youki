@@ -378,7 +378,7 @@ namespace MPX
                     cairo->clip();
                     cairo->move_to(
                           xpos + 6
-                        , ypos + 4
+                        , ypos + 2
                     ) ;
 
                     std::string str;
@@ -469,7 +469,7 @@ namespace MPX
 
                     m_row_height =
                         (pango_font_metrics_get_ascent (metrics)/PANGO_SCALE) + 
-                        (pango_font_metrics_get_descent (metrics)/PANGO_SCALE) + 8;
+                        (pango_font_metrics_get_descent (metrics)/PANGO_SCALE) + 5 ;
                 }
 
                 void
