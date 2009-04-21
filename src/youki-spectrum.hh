@@ -13,9 +13,10 @@
 namespace MPX
 {
     class YoukiSpectrum
-    : public Clutter::Gtk::Embed
+    : public Gtk::Frame
     {
         private:
+            Clutter::Gtk::Embed m_embed;
             Glib::RefPtr<Clutter::Stage> m_stage;
             Glib::RefPtr<Clutter::Group> m_group_peaks ;
             Glib::RefPtr<Clutter::Group> m_group_bars ;

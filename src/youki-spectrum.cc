@@ -38,7 +38,7 @@ namespace
     const int WIDTH = 8 ;
     const int SPACING = 1 ;
     const int HEIGHT = 36;
-    const double ALPHA = 0.8 ;
+    const int ALPHA = 200 ;
 }
 
 namespace MPX
@@ -50,14 +50,12 @@ namespace MPX
     {
         add_events( Gdk::BUTTON_PRESS_MASK ) ;
         set_size_request( -1, 44 ) ;
+        add( m_embed ) ;
 
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
-        //const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
-        const ThemeColor& c /* :) */ = theme->get_color( THEME_COLOR_BACKGROUND ) ;
-        Clutter::Color stage_color( c.r, c.g, c.b ) ; 
-        m_stage = get_stage() ;
-        m_stage->set_color( stage_color ) ;
-        //modify_base( Gtk::STATE_NORMAL, cgdk ) ;
+        const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
+        m_stage = m_embed.get_stage() ;
+        m_stage->set_color( Clutter::Color( c.r * 255, c.g * 255, c.b * 255 ) ) ;
 
         m_group_peaks = Clutter::Group::create() ;
         m_group_bars = Clutter::Group::create() ;
@@ -84,10 +82,10 @@ namespace MPX
             if( w && h ) 
             {
                 Clutter::Color color(
-                      1.
-                    , 1.
-                    , 1.
-                    , 0.1
+                      255
+                    , 255
+                    , 255
+                    , 25
                 ) ;
                 Glib::RefPtr<Clutter::Rectangle> rect = Clutter::Rectangle::create( color ) ;
                 m_group_peaks->add_actor( rect ) ;
@@ -104,9 +102,9 @@ namespace MPX
             if( w && h ) 
             {
                 Clutter::Color color(
-                      double(colors[n/6].r)/255.
-                    , double(colors[n/6].g)/255.
-                    , double(colors[n/6].b)/255.
+                      double(colors[n/6].r)
+                    , double(colors[n/6].g)
+                    , double(colors[n/6].b)
                     , ALPHA
                 ) ;
                 Glib::RefPtr<Clutter::Rectangle> rect = Clutter::Rectangle::create( color ) ;
@@ -132,44 +130,48 @@ namespace MPX
                 , &YoukiSpectrum::update_spectrum
         )) ;
 
-        Glib::signal_timeout().connect(
-            sigc::mem_fun(
-                  *this
-                , &YoukiSpectrum::redraw_handler
-            )
-            , 1000./24.
-        ) ;
     }
 
     void
     YoukiSpectrum::on_play_status_changed()
     {
         m_play_status = PlayStatus(m_play->property_status().get_value()) ;
-        if( m_play_status == PLAYSTATUS_STOPPED )
+        switch( m_play_status )
         {
-            reset() ;
+            case PLAYSTATUS_PLAYING:
+                Glib::signal_timeout().connect(
+                    sigc::mem_fun(
+                        *this
+                      , &YoukiSpectrum::redraw_handler
+                    )
+                    , 1000./24.
+                ) ;
+                break;
+            case PLAYSTATUS_PAUSED:
+                for( int n = 0; n < SPECT_BANDS; ++n )
+                {
+                    m_spectrum_data[n] = fmax(m_spectrum_data[n] - 0.5, 0);
+                    m_spectrum_peak[n] = fmax(m_spectrum_peak[n] - 0.5, 0);
+                }
+                queue_draw() ;
+                break;
+            case PLAYSTATUS_STOPPED:
+                reset() ;
+                break ;
+            default:
+                queue_draw() ;
         }
     }
 
     bool
     YoukiSpectrum::redraw_handler()
     {
-        if( m_play_status == PLAYSTATUS_PAUSED )
-        {
-            for( int n = 0; n < SPECT_BANDS; ++n )
-            {
-                m_spectrum_data[n] = fmax(m_spectrum_data[n] - 0.5, 0);
-                m_spectrum_peak[n] = fmax(m_spectrum_peak[n] - 0.5, 0);
-            }
-            queue_draw() ;
-        }
-        else
         if( m_play_status == PLAYSTATUS_PLAYING )
         {
             queue_draw() ;
+            return true ;
         }
-        
-        return true ;
+        return false ;
     }
 
     void
@@ -231,13 +233,17 @@ namespace MPX
     void
     YoukiSpectrum::on_show()
     {
-        Clutter::Gtk::Embed::on_show() ;
+        Gtk::Widget::on_show() ;
+        m_embed.show() ;
+        draw_spectrum() ;
         m_stage->show_all() ;
     }
 
     void
     YoukiSpectrum::draw_spectrum()
     {
+        const Gtk::Allocation& a = get_allocation ();
+
         for( int n = 0; n < SPECT_BANDS; ++n ) 
         {
             int   w = 0
@@ -254,6 +260,7 @@ namespace MPX
             {
                 Glib::RefPtr<Clutter::Actor> rect = m_group_peaks->get_nth_child( n ) ;
                 rect->set_size( w, h ) ;
+                rect->set_position( a.get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n, HEIGHT - h ) ;
             }
 
             //// BAR 
@@ -265,6 +272,7 @@ namespace MPX
             {
                 Glib::RefPtr<Clutter::Actor> rect = m_group_bars->get_nth_child( n ) ;
                 rect->set_size( w, h ) ;
+                rect->set_position( a.get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n, HEIGHT - h ) ;
             }
         }
     }
