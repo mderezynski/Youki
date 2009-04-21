@@ -326,7 +326,7 @@ namespace MPX
         m_main_love_button->set_state( TOGGLE_BUTTON_STATE_NONE ) ;
         m_main_love_button->set_sensitive( false ) ;
 
-        m_main_spectrum     = Gtk::manage( new YoukiSpectrum ) ;
+        m_main_spectrum     = new YoukiSpectrum ;
         m_main_spectrum->signal_clicked().connect(
             sigc::mem_fun(
                   *this

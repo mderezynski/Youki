@@ -133,10 +133,21 @@ namespace MPX
     }
 
     void
+    YoukiSpectrum::on_size_allocate(
+          Gtk::Allocation& a
+    )
+    {
+        Clutter::Gtk::Embed::on_size_allocate( a ) ;
+        redraw() ;
+        m_stage->queue_redraw() ;
+    }
+
+    void
     YoukiSpectrum::on_show(
     )
     {
         Clutter::Gtk::Embed::on_show() ;
+        redraw() ;
         m_stage->queue_redraw() ;
     }
 
@@ -170,13 +181,13 @@ namespace MPX
                     m_spectrum_data[n] = fmax(m_spectrum_data[n] - 0.5, 0);
                     m_spectrum_peak[n] = fmax(m_spectrum_peak[n] - 0.5, 0);
                 }
-                queue_draw() ;
+                m_stage->queue_redraw() ;
                 break;
             case PLAYSTATUS_STOPPED:
                 reset() ;
                 break ;
             default:
-                queue_draw() ;
+                m_stage->queue_redraw() ;
         }
     }
 
@@ -264,6 +275,6 @@ namespace MPX
     {
         std::fill( m_spectrum_data.begin(), m_spectrum_data.end(), 0. ) ;
         std::fill( m_spectrum_peak.begin(), m_spectrum_peak.end(), 0. ) ;
-        queue_draw() ;
+        m_stage->queue_redraw() ;
     }
 }

@@ -51,6 +51,11 @@ namespace MPX
 
         protected:
 
+            virtual void
+            on_size_allocate(
+                  Gtk::Allocation&
+            ) ;
+
             virtual bool
             on_button_press_event(
                   GdkEventButton*
