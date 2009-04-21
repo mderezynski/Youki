@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include <clutter-gtk/clutter-gtk.h>
 #include <glibmm/i18n.h>
 #include <cmath>
 
@@ -48,13 +49,12 @@ namespace MPX
     : m_spectrum_data( SPECT_BANDS, 0 )
     , m_spectrum_peak( SPECT_BANDS, 0 )
     {
-        add_events( Gdk::BUTTON_PRESS_MASK ) ;
+        add_events( Gdk::EventMask( Gdk::BUTTON_PRESS_MASK | Gdk::EXPOSURE_MASK) ) ;
         set_size_request( -1, 44 ) ;
-        add( m_embed ) ;
 
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
         const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
-        m_stage = m_embed.get_stage() ;
+        m_stage = get_stage() ;
         m_stage->set_color( Clutter::Color( c.r * 255, c.g * 255, c.b * 255 ) ) ;
 
         m_group_peaks = Clutter::Group::create() ;
@@ -133,6 +133,23 @@ namespace MPX
     }
 
     void
+    YoukiSpectrum::on_show(
+    )
+    {
+        Clutter::Gtk::Embed::on_show() ;
+        m_stage->queue_redraw() ;
+    }
+
+    bool
+    YoukiSpectrum::on_button_press_event(
+        GdkEventButton* G_GNUC_UNUSED 
+    )
+    {
+        m_signal.emit() ;
+        return true ;
+    }
+
+    void
     YoukiSpectrum::on_play_status_changed()
     {
         m_play_status = PlayStatus(m_play->property_status().get_value()) ;
@@ -166,21 +183,14 @@ namespace MPX
     bool
     YoukiSpectrum::redraw_handler()
     {
-        if( m_play_status == PLAYSTATUS_PLAYING )
+        if( m_play_status == PLAYSTATUS_PLAYING || m_play_status == PLAYSTATUS_PAUSED )
         {
-            queue_draw() ;
+            redraw() ;
+            m_stage->queue_redraw() ;
             return true ;
         }
+
         return false ;
-    }
-
-    void
-    YoukiSpectrum::reset ()
-    {
-        std::fill( m_spectrum_data.begin(), m_spectrum_data.end(), 0. ) ;
-        std::fill( m_spectrum_peak.begin(), m_spectrum_peak.end(), 0. ) ;
-
-        queue_draw() ;
     }
 
     void
@@ -211,36 +221,8 @@ namespace MPX
         }
     }
 
-    bool
-    YoukiSpectrum::on_button_press_event(
-        GdkEventButton* G_GNUC_UNUSED 
-    )
-    {
-        m_signal.emit() ;
-        return true ;
-    }
-
-    bool
-    YoukiSpectrum::on_expose_event(
-        GdkEventExpose* G_GNUC_UNUSED 
-    )
-    {
-        draw_spectrum() ;
-
-        return true;
-    }
-
     void
-    YoukiSpectrum::on_show()
-    {
-        Gtk::Widget::on_show() ;
-        m_embed.show() ;
-        draw_spectrum() ;
-        m_stage->show_all() ;
-    }
-
-    void
-    YoukiSpectrum::draw_spectrum()
+    YoukiSpectrum::redraw()
     {
         const Gtk::Allocation& a = get_allocation ();
 
@@ -275,5 +257,13 @@ namespace MPX
                 rect->set_position( a.get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n, HEIGHT - h ) ;
             }
         }
+    }
+
+    void
+    YoukiSpectrum::reset ()
+    {
+        std::fill( m_spectrum_data.begin(), m_spectrum_data.end(), 0. ) ;
+        std::fill( m_spectrum_peak.begin(), m_spectrum_peak.end(), 0. ) ;
+        queue_draw() ;
     }
 }

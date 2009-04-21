@@ -13,16 +13,15 @@
 namespace MPX
 {
     class YoukiSpectrum
-    : public Gtk::Frame
+    : public Clutter::Gtk::Embed
     {
         private:
-            Clutter::Gtk::Embed m_embed;
+
             Glib::RefPtr<Clutter::Stage> m_stage;
             Glib::RefPtr<Clutter::Group> m_group_peaks ;
             Glib::RefPtr<Clutter::Group> m_group_bars ;
 
             sigc::signal<void>        m_signal ;
-
             std::vector<float>        m_spectrum_data ;
             std::vector<float>        m_spectrum_peak ;
 
@@ -52,28 +51,25 @@ namespace MPX
 
         protected:
 
-            bool
+            virtual bool
             on_button_press_event(
                   GdkEventButton*
             ) ;
 
             virtual void
-            on_show() ;
-
-            virtual bool
-            on_expose_event(
-                  GdkEventExpose*
+            on_show(
             ) ;
 
             void
-            draw_spectrum () ;
-
-            void
-            on_play_status_changed(
+            redraw(
             ) ;
 
             bool
             redraw_handler(
+            ) ;
+
+            void
+            on_play_status_changed(
             ) ;
    };
 }
