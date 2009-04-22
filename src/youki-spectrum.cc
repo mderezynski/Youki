@@ -165,24 +165,21 @@ namespace MPX
         switch( m_play_status )
         {
             case PLAYSTATUS_PLAYING:
-                Glib::signal_timeout().connect(
-                    sigc::mem_fun(
-                        *this
-                      , &YoukiSpectrum::redraw_handler
-                    )
-                    , 1000./24.
-                ) ;
+                if( !m_timeout.connected() )
+                    m_timeout = Glib::signal_timeout().connect(
+                        sigc::mem_fun(
+                            *this
+                          , &YoukiSpectrum::redraw_handler
+                        )
+                        , 1000./24.
+                    ) ;
                 break;
             case PLAYSTATUS_PAUSED:
-                for( int n = 0; n < SPECT_BANDS; ++n )
-                {
-                    m_spectrum_data[n] = fmax( m_spectrum_data[n] - 1, 0 ) ;
-                    m_spectrum_peak[n] = fmax( m_spectrum_peak[n] - 1, 0 ) ;
-                }
                 redraw() ;
                 break;
             case PLAYSTATUS_STOPPED:
                 reset() ;
+                redraw() ;
                 break ;
             default:
                 redraw() ;
@@ -194,10 +191,20 @@ namespace MPX
     {
         if( m_play_status == PLAYSTATUS_PLAYING || m_play_status == PLAYSTATUS_PAUSED )
         {
+            if( m_play_status == PLAYSTATUS_PAUSED )
+            {
+                for( int n = 0; n < SPECT_BANDS; ++n )
+                {
+                    m_spectrum_data[n] = fmax( m_spectrum_data[n] - 1, -72 ) ;
+                }
+            }
+
             for( int n = 0; n < SPECT_BANDS; ++n )
             {
                     if( m_spectrum_data[n] < m_spectrum_peak[n] ) 
-                        m_spectrum_peak[n] = fmin( m_spectrum_peak[n] - 1, 0 ) ;
+                        m_spectrum_peak[n] = fmin( m_spectrum_peak[n] - 0.5, 0 ) ;
+                    else if( m_spectrum_data[n] == m_spectrum_peak[n] )
+                        m_spectrum_peak[n] = fmin( m_spectrum_peak[n] + 2, 72 ) ;
                     else
                         m_spectrum_peak[n] = m_spectrum_data[n];
             }
@@ -214,8 +221,10 @@ namespace MPX
         const Spectrum& spectrum
     )
     {
-        for( int n = 0; n < SPECT_BANDS; ++n )
+        if( m_play_status == PLAYSTATUS_PLAYING )
         {
+            for( int n = 0; n < SPECT_BANDS; ++n )
+            {
                 if( fabs(spectrum[n] - m_spectrum_data[n]) <= 2)
                 {
                         /* do nothing */
@@ -225,6 +234,7 @@ namespace MPX
                         m_spectrum_data[n] = spectrum[n] ;
                 else
                         m_spectrum_data[n] = fmin( m_spectrum_data[n] - 2, 0 ) ;
+            }
         }
     }
 
