@@ -711,7 +711,7 @@ namespace MPX
         // Albums
 
         v.clear () ; 
-        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album")).str()) ; 
+        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album")).str()) ; 
 
         model_albums->append_album_quiet(
               Cairo::RefPtr<Cairo::ImageSurface>(0) 
@@ -719,6 +719,7 @@ namespace MPX
             , -1
             , ""
             , "" 
+            , ""
             , ""
             , ""
         ) ;
@@ -752,6 +753,7 @@ namespace MPX
                     , r.count("album_artist_sortname") ? get<std::string>(r["album_artist_sortname"]) : get<std::string>(r["album_artist"])
                     , get<std::string>(r["mb_album_id"])
                     , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
+                    , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
                 ) ;
         }
 

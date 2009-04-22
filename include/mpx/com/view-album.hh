@@ -84,7 +84,7 @@ namespace
 
 namespace MPX
 {
-        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType>  RowAlbum ;
+        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string>  RowAlbum ;
 
         typedef std::vector<RowAlbum>                                                                       ModelAlbums_t ;
         typedef boost::shared_ptr<ModelAlbums_t>                                                            ModelAlbums_SP_t ;
@@ -179,9 +179,10 @@ namespace MPX
                     , const std::string&                    album_artist
                     , const std::string&                    mbid
                     , const std::string&                    type
+                    , const std::string&                    year
                 )
                 {
-                    RowAlbum row ( surface, id_album, id_artist, album, album_artist, mbid, get_rt( type ) ) ; 
+                    RowAlbum row ( surface, id_album, id_artist, album, album_artist, mbid, get_rt( type ), year ) ; 
                     m_realmodel->push_back( row ) ;
 
                     ModelAlbums_t::iterator i = m_realmodel->end() ;
@@ -296,6 +297,7 @@ namespace MPX
                     , const std::string&                    album_artist
                     , const std::string&                    mbid
                     , const std::string&                    type
+                    , const std::string&                    year
                 )
                 {
                     DataModelAlbums::append_album(
@@ -306,6 +308,7 @@ namespace MPX
                         , album_artist
                         , mbid
                         , type
+                        , year
                     ) ;
 
                     regen_mapping();
@@ -320,6 +323,7 @@ namespace MPX
                     , const std::string&                        album_artist
                     , const std::string&                        mbid
                     , const std::string&                        type
+                    , const std::string&                        year
                 )
                 {
                     DataModelAlbums::append_album(
@@ -330,6 +334,7 @@ namespace MPX
                         , album_artist
                         , mbid
                         , type
+                        , year
                     ) ;
                 }
 
@@ -622,6 +627,21 @@ namespace MPX
                                 , color.g
                                 , color.b
                                 , .8
+                            ) ;
+                            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+
+                            //// YEAR
+                            layout->set_text( get<7>(data_row) )  ;
+                            layout->get_pixel_size (width, height) ;
+                            cairo->move_to(
+                                  xpos + 8 
+                                , r.y + row_height - height - 14
+                            ) ;
+                            cairo->set_source_rgba(
+                                  color.r
+                                , color.g
+                                , color.b
+                                , .4
                             ) ;
                             pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
                     }

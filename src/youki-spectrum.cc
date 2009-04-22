@@ -139,7 +139,6 @@ namespace MPX
     {
         Clutter::Gtk::Embed::on_size_allocate( a ) ;
         redraw() ;
-        m_stage->queue_redraw() ;
     }
 
     void
@@ -148,7 +147,6 @@ namespace MPX
     {
         Clutter::Gtk::Embed::on_show() ;
         redraw() ;
-        m_stage->queue_redraw() ;
     }
 
     bool
@@ -178,16 +176,16 @@ namespace MPX
             case PLAYSTATUS_PAUSED:
                 for( int n = 0; n < SPECT_BANDS; ++n )
                 {
-                    m_spectrum_data[n] = fmax(m_spectrum_data[n] - 0.5, 0);
-                    m_spectrum_peak[n] = fmax(m_spectrum_peak[n] - 0.5, 0);
+                    m_spectrum_data[n] = fmax( m_spectrum_data[n] - 1, 0 ) ;
+                    m_spectrum_peak[n] = fmax( m_spectrum_peak[n] - 1, 0 ) ;
                 }
-                m_stage->queue_redraw() ;
+                redraw() ;
                 break;
             case PLAYSTATUS_STOPPED:
                 reset() ;
                 break ;
             default:
-                m_stage->queue_redraw() ;
+                redraw() ;
         }
     }
 
@@ -196,8 +194,15 @@ namespace MPX
     {
         if( m_play_status == PLAYSTATUS_PLAYING || m_play_status == PLAYSTATUS_PAUSED )
         {
+            for( int n = 0; n < SPECT_BANDS; ++n )
+            {
+                    if( m_spectrum_data[n] < m_spectrum_peak[n] ) 
+                        m_spectrum_peak[n] = fmin( m_spectrum_peak[n] - 1, 0 ) ;
+                    else
+                        m_spectrum_peak[n] = m_spectrum_data[n];
+            }
+
             redraw() ;
-            m_stage->queue_redraw() ;
             return true ;
         }
 
@@ -215,20 +220,11 @@ namespace MPX
                 {
                         /* do nothing */
                 }
+
                 else if( spectrum[n] > m_spectrum_data[n] )
                         m_spectrum_data[n] = spectrum[n] ;
                 else
                         m_spectrum_data[n] = fmin( m_spectrum_data[n] - 2, 0 ) ;
-        }
-
-        for( int n = 0; n < SPECT_BANDS; ++n )
-        {
-                if( spectrum[n] < m_spectrum_peak[n] ) 
-                        m_spectrum_peak[n] = fmin( m_spectrum_peak[n] - 0.5, 0 ) ;
-                else if( spectrum[n] == m_spectrum_peak[n] ) 
-                        m_spectrum_peak[n] = fmin( m_spectrum_peak[n] + 2.0, 72 ) ;
-                else
-                        m_spectrum_peak[n] = spectrum[n];
         }
     }
 
@@ -253,7 +249,7 @@ namespace MPX
             {
                 Glib::RefPtr<Clutter::Actor> rect = m_group_peaks->get_nth_child( n ) ;
                 rect->set_size( w, h ) ;
-                rect->set_position( a.get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n, HEIGHT - h ) ;
+                rect->set_position( a.get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n, HEIGHT - h + 4 ) ;
             }
 
             //// BAR 
@@ -265,7 +261,7 @@ namespace MPX
             {
                 Glib::RefPtr<Clutter::Actor> rect = m_group_bars->get_nth_child( n ) ;
                 rect->set_size( w, h ) ;
-                rect->set_position( a.get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n, HEIGHT - h ) ;
+                rect->set_position( a.get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n, HEIGHT - h + 4 ) ;
             }
         }
     }
@@ -275,6 +271,6 @@ namespace MPX
     {
         std::fill( m_spectrum_data.begin(), m_spectrum_data.end(), 0. ) ;
         std::fill( m_spectrum_peak.begin(), m_spectrum_peak.end(), 0. ) ;
-        m_stage->queue_redraw() ;
+        redraw() ;
     }
 }
