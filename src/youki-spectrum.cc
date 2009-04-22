@@ -49,7 +49,7 @@ namespace MPX
     : m_spectrum_data( SPECT_BANDS, 0 )
     , m_spectrum_peak( SPECT_BANDS, 0 )
     {
-        add_events( Gdk::EventMask( Gdk::BUTTON_PRESS_MASK | Gdk::EXPOSURE_MASK) ) ;
+        add_events( Gdk::EventMask( Gdk::BUTTON_PRESS_MASK )) ;
         set_size_request( -1, 44 ) ;
 
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;

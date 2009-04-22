@@ -4,9 +4,10 @@ libmpx_widgets_la_CFLAGS = 	\
 	$(GLIB_CFLAGS) $(GTK_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
 
 libmpx_widgets_la_CXXFLAGS = \
-	$(SIGX_CFLAGS) $(GIOMM_CFLAGS) $(GLADEMM_CFLAGS) $(GLIBMM_CFLAGS) $(GTKMM_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
+	$(CLUTTERMM_CFLAGS) $(SIGX_CFLAGS) $(GIOMM_CFLAGS) $(GLADEMM_CFLAGS) $(GLIBMM_CFLAGS) $(GTKMM_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
 
 libmpx_widgets_la_LIBADD =	\
+    $(CLUTTERMM_LIBS)       \
 	$(GLIBMM_LIBS)			\
 	$(GTKMM_LIBS)			\
 	$(GLADEMM_LIBS)
@@ -17,6 +18,8 @@ libmpx_widgets_la_SOURCES = 			\
 		youki-status-icon.h	    		\
     	youki-tray-icon.c      			\
 	    youki-tray-icon.h      			\
+                                        \
+        youki-clutter-widget.cc         \
 										\
 		cairo-extensions.cc				\
 										\
