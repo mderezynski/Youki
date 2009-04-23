@@ -18,13 +18,12 @@ namespace MPX
         private:
 
             Glib::RefPtr<Clutter::Stage> m_stage ;
-            Glib::RefPtr<Clutter::Group> m_group_peaks ;
             Glib::RefPtr<Clutter::Group> m_group_bars ;
+            Glib::RefPtr<Clutter::Actor> m_reflection ;
 
             sigc::connection          m_timeout ;
             sigc::signal<void>        m_signal ;
             std::vector<float>        m_spectrum_data ;
-            std::vector<float>        m_spectrum_peak ;
 
             PlayStatus                m_play_status ;
 

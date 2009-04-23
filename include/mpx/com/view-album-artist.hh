@@ -485,7 +485,7 @@ namespace MPX
                 int
                 get_upper_row ()
                 {
-                    int row_upper = (m_prop_vadj.get_value()->get_value() / m_row_height); 
+                    int row_upper = m_prop_vadj.get_value()->get_value() ; 
                     return row_upper;
                 }
 
@@ -602,7 +602,7 @@ namespace MPX
 
                             if( i.in( row )) 
                             {
-                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
+                                m_prop_vadj.get_value()->set_value( row ) ; 
                             }
 
                             return true;
@@ -642,14 +642,14 @@ namespace MPX
                             }
 
                             i = Interval<std::size_t> (
-                                  Interval<std::size_t>::EX_EX
+                                  Interval<std::size_t>::IN_EX
                                 , get_upper_row() + (m_visible_height/m_row_height) 
                                 , m_model->size() 
                             ) ;
 
                             if( i.in( row )) 
                             {
-                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
+                                m_prop_vadj.get_value()->set_value( row ) ; 
                             }
 
                             return true ;
@@ -798,8 +798,8 @@ namespace MPX
 
                     if( m_row_height )
                     {
-                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
-                        m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*m_row_height ) ; 
+                        m_prop_vadj.get_value()->set_upper( m_model->size() - (m_visible_height/m_row_height) ) ; 
+                        m_prop_vadj.get_value()->set_page_size( m_visible_height/m_row_height ) ; 
                     }
 
                     double column_width = (double(event->width) - m_fixed_total_width - (40*m_collapsed.size()) ) / double(m_columns.size()-m_collapsed.size()-m_fixed.size());
@@ -939,8 +939,8 @@ namespace MPX
                     {
                         std::size_t view_count = m_visible_height / m_row_height ;
 
-                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
-                        m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*m_row_height ) ; 
+                        m_prop_vadj.get_value()->set_upper( m_model->size() - (m_visible_height/m_row_height)) ; 
+                        m_prop_vadj.get_value()->set_page_size( m_visible_height/m_row_height ) ; 
 
                         if( m_model->size() < view_count )
                         {
@@ -948,7 +948,7 @@ namespace MPX
                         }
                         else
                         {
-                            m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                            m_prop_vadj.get_value()->set_value( position ) ; 
                         }
                     }
 
@@ -1165,7 +1165,7 @@ namespace MPX
                             if( idx <= 0 )
                             {
                                 std::size_t row = std::distance( m_model->m_mapping.begin(), i ) ; 
-                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
+                                m_prop_vadj.get_value()->set_value( row ) ; 
                                 select_row( row ) ;
                                 break ;
                             }

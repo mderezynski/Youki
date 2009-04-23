@@ -1,7 +1,7 @@
 lib_LTLIBRARIES = libmpx-widgets.la
 
 libmpx_widgets_la_CFLAGS = 	\
-	$(GLIB_CFLAGS) $(GTK_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
+	$(CLUTTERMM_CFLAGS) $(GLIB_CFLAGS) $(GTK_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
 
 libmpx_widgets_la_CXXFLAGS = \
 	$(CLUTTERMM_CFLAGS) $(SIGX_CFLAGS) $(GIOMM_CFLAGS) $(GLADEMM_CFLAGS) $(GLIBMM_CFLAGS) $(GTKMM_CFLAGS) $(SEXYMM_CFLAGS) -I$(top_srcdir)/include -I$(top_srcdir)/include/mpx
@@ -36,8 +36,20 @@ libmpx_widgets_la_SOURCES = 			\
         rounded-alignment.cc            \
 										\
 		task-dialog.cc					\
-										\
-		timed-confirmation.cc			\
+        tidy-actor.c                    \
+        tidy-actor.h                    \
+        tidy-debug.h                    \
+        tidy-marshal.c                  \
+        tidy-marshal.h                  \
+        tidy-private.h                  \
+        tidy-stylable.c                 \
+        tidy-stylable.h                 \
+        tidy-style.c                    \
+        tidy-style.h                    \
+        tidy-texture-reflection.c       \
+        tidy-texture-reflection.h       \
+        tidy-types.h                    \
+        timed-confirmation.cc			\
 										\
 	    widget-marshalers.c   			
 
@@ -59,3 +71,4 @@ BUILT_SOURCES = \
 
 CLEANFILES = $(BUILT_SOURCES)
 DISTCLEANFILES = $(CLEANFILES)
+

@@ -819,7 +819,7 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Up )
                             {
-                                step = - (m_visible_height / m_row_height) ; 
+                                step = - (m_visible_height / m_row_height) + 1 ; 
                             }
                             else
                             {
@@ -869,7 +869,7 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Down )
                             {
-                                step = (m_visible_height / m_row_height) ;  
+                                step = (m_visible_height / m_row_height) - 1 ;  
                             }
                             else
                             {
@@ -902,7 +902,7 @@ namespace MPX
 
                                     if( i.in( row )) 
                                     {
-                                        m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
+                                        m_prop_vadj.get_value()->set_value( (get_upper_row()+1) * m_row_height ) ;
                                     }
                                 }
                                 else
@@ -1019,7 +1019,7 @@ namespace MPX
                             int row2 = row + (event->y + (off ? (m_row_height-off) : 0)) / m_row_height ; 
                             if( m_Model_I.in( row2 )) 
                             {
-                                if( row2 == (row+(m_visible_height/m_row_height)))
+                                if( row2 >= (row + m_visible_height/m_row_height))
                                 {
                                 }
                                 select_row( row2 ) ;
