@@ -1,6 +1,6 @@
 INCLUDE_DIRECTORIES(
-  ${ALSA_CFLAGS}
-  ${BOOST_INCLUDE_DIR}
+  #${ALSA_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIR}
   ${CAIROMM_INCLUDE_DIRS}
   ${CLUTTER_INCLUDE_DIRS}
   #${CDIO_INCLUDE_DIRS}
@@ -27,7 +27,7 @@ INCLUDE_DIRECTORIES(
   ${SQLITE_INCLUDE_DIRS}
   ${STARTUP_NOTIFY_INCLUDE_DIRS}
   ${TAGLIB_INCLUDE_DIRS}
-  ${X11_INCLUDE_DIR}
+  ${X11_X11_INCLUDE_PATH}
   ${XML_INCLUDE_DIRS}
   ${XPROTO_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}
@@ -159,11 +159,10 @@ TARGET_LINK_LIBRARIES(youki-bin
   ${TAGLIB_LIBRARIES}
   ${XML_LIBRARIES}
   ${X11_X11_LIB}
- 
-  jnetlib
-  mconfig
-  mpx-api
-  mpx-widgets
+  #jnetlib
+  #mconfig
+  #mpx-api
+  #mpx-widgets
   #mpx-musicbrainz
   #mpx-view-components
   #libmpx-json

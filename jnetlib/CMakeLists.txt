@@ -1,3 +1,10 @@
+INCLUDE_DIRECTORIES(
+  ${GLIB_INCLUDE_DIRS}
+  ${SIGC_INCLUDE_DIRS}
+  ${GLIBMM_INCLUDE_DIRS}
+  ${GTK_INCLUDE_DIRS}
+)
+
 SET(jnetlib_SOURCES
   asyncdns.cpp
   connection.cpp
@@ -5,13 +12,6 @@ SET(jnetlib_SOURCES
   httppost.cpp
   listen.cpp
   util.cpp
-)
-
-INCLUDE_DIRECTORIES(
-  ${GLIB_INCLUDE_DIRS}
-  ${SIGC_INCLUDE_DIRS}
-  ${GLIBMM_INCLUDE_DIRS}
-  ${GTK_INCLUDE_DIRS}
 )
 
 ADD_LIBRARY(jnetlib STATIC ${jnetlib_SOURCES})

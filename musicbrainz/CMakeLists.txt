@@ -1,3 +1,13 @@
+INCLUDE_DIRECTORIES(
+  ${SOUP_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIR}
+  ${GLIBMM_INCLUDE_DIRS}
+  ${XML_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/include
+  ${PROJECT_SOURCE_DIR}/mpx
+)
+
 SET(mpx_musicbrainz_SOURCES
   mb-libxml2-sax-release.cc
   mb-libxml2-sax-release-list.cc
@@ -14,19 +24,10 @@ SET(mpx_musicbrainz_SOURCES
 #  mbxml-v2.hh
 #  mbxml-types-v2.hh
 
-INCLUDE_DIRECTORIES(
-  ${PROJECT_SOURCE_DIR}
-  ${PROJECT_SOURCE_DIR}/include
-  ${PROJECT_SOURCE_DIR}/mpx
-  ${SOUP_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DIR}
-  ${GLIBMM_INCLUDE_DIRS}
-  ${XML_INCLUDE_DIRS}
-)
-
 ADD_LIBRARY(mpx_musicbrainz SHARED ${mpx_musicbrainz_SOURCES})
 
 TARGET_LINK_LIBRARIES(mpx_musicbrainz
   ${Boost_FILESYSTEM_LIBRARY}
   ${SOUP_LIBRARIES}
+# mpx-parsers
 )

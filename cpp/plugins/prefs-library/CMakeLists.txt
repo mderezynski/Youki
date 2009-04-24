@@ -1,0 +1,39 @@
+INCLUDE_DIRECTORIES(
+  ${ALSA_INCLUDE_DIRS}
+  ${GST_INCLUDE_DIRS}
+  ${BOOST_CPPFLAGS}
+  ${DBUS_INCLUDE_DIRS}
+  ${GLADEMM_INCLUDE_DIRS}
+  ${GLIBMM_INCLUDE_DIRS}
+  ${GTKMM_INCLUDE_DIRS}
+  ${HAL_INCLUDE_DIRS}
+  ${SOUP_INCLUDE_DIRS}
+  ${X11_X11_INCLUDE_PATH}
+  ${XPROTO_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/include
+  ${PROJECT_SOURCE_DIR}/libhal++
+)
+
+SET(cppmod_libraryprefs_SOURCES
+  prefs-library.cc
+  prefs-library.hh
+)
+
+# FIXME: Are these flags included? -export-dynamic -fPIC -module
+ADD_LIBRARY(cppmod-libraryprefs MODULE ${cppmod_libraryprefs_SOURCES})
+
+TARGET_LINK_LIBRARIES(cppmod-libraryprefs
+  ${ALSA_LIBRARIES}
+  ${GST_LIBRARIES}
+  ${BOOST_LDFLAGS}
+  ${DBUS_LIBRARIES}
+  ${GLADEMM_LIBRARIES}
+  ${GLIBMM_LIBRARIES}
+  ${HAL_LIBRARIES}
+  ${GTKMM_LIBRARIES}
+  ${SOUP_LIBRARIES}
+  ${X11_X11_LIBRARY}
+)
+
+# FIXME: Install plugin into ${PLUGIN_DIR}/cppmod

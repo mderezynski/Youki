@@ -97,6 +97,8 @@ mpxlib/youki-mlibman-bin
 remote/youki
 sentinel/youki-sentinel-bin
 src/youki-bin
+widgets/widget-marshalers.c
+widgets/widget-marshalers.h
 
 CMakeCache.txt
 CMakeFiles
