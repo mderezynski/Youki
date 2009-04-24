@@ -2,19 +2,36 @@ ADD_DEFINITIONS(-DENABLE_DEBUG=1)
 
 SET(cppmod_lastfmscrobbler_SOURCES
   cppmod-scrobbler.cc
+  cppmod-scrobbler.hh
   condition.cpp
+  condition.h
+  i-log.hh
   lastfmclient.cpp
+  lastfmclient.h
+  lastfmexceptions.h
   lastfmscrobbler.cpp
+  lastfmscrobbler.h
+  lastfmtypes.h
   log.cpp
+  log.h
   md5.c
+  md5.h
   mutex.cpp
+  mutex.h
   nowplayinginfo.cpp
+  nowplayinginfo.h
   scopedlock.cpp
   stringoperations.cpp
+  scopedlock.h
+  stringoperations.h
   submissioninfocollection.cpp
+  submissioninfocollection.h
   submissioninfo.cpp
+  submissioninfo.h
   thread.cpp
+  thread.h
   urlclient.cpp
+  urlclient.h
 )
 
 INCLUDE_DIRECTORIES(
@@ -39,23 +56,4 @@ TARGET_LINK_LIBRARIES(cppmod-lastfmscrobbler
   ${GTKMM_LIBRARIES}
 )
 
-# FIXME: Include these into source distribution
-#  condition.h
-#  lastfmclient.h
-#  lastfmexceptions.h
-#  lastfmscrobbler.h
-#  lastfmtypes.h
-#  log.h
-#  md5.h
-#  mutex.h
-#  nowplayinginfo.h
-#  scopedlock.h
-#  cppmod-scrobbler.hh
-#  i-log.hh
-#  urlclient.h
-#  stringoperations.h
-#  submissioninfocollection.h
-#  submissioninfo.h
-#  thread.h
-
-# FIXME: Install plugin into ${PLUGIN_DIR}/cppmod
+INSTALL(TARGETS cppmod-lastfmscrobbler LIBRARY DESTINATION ${PLUGIN_DIR}/cppmod)

@@ -1,3 +1,5 @@
+ADD_DEFINITIONS(-DTHREAD_SAFE -D_THREAD_SAFE -D_REENTRANT)
+
 INCLUDE_DIRECTORIES(
   ${GLIB_INCLUDE_DIRS}
   ${SIGC_INCLUDE_DIRS}
@@ -12,8 +14,22 @@ SET(jnetlib_SOURCES
   httppost.cpp
   listen.cpp
   util.cpp
+  exception.hh
+  asyncdns.h
+  connection.h
+  httpget.h
+  httppost.h
+  httpserv.h
+  jnetlib.h
+  listen.h
+  netinc.h
+  sslconnection.h
+  ssllisten.h
+  udpconnection.h
+  util.h
 )
 
+# FIXME: Do we need to include this? -pthread 
 ADD_LIBRARY(jnetlib STATIC ${jnetlib_SOURCES})
 
 TARGET_LINK_LIBRARIES(jnetlib
@@ -22,20 +38,3 @@ TARGET_LINK_LIBRARIES(jnetlib
   ${SIGC_LIBS}
   ${GTK_LIBS}
 )
-
-#libjnetlib_la_LDFLAGS = -pthread 
-
-# FIXME: Include headers in distribution
-#  exception.hh
-#  asyncdns.h
-#  connection.h
-#  httpget.h
-#  httppost.h
-#  httpserv.h
-#  jnetlib.h
-#  listen.h
-#  netinc.h
-#  sslconnection.h
-#  ssllisten.h
-#  udpconnection.h
-#  util.h

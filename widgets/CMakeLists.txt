@@ -1,6 +1,8 @@
 SET(mpx_widgets_SOURCES
   youki-status-icon.c
+  youki-status-icon.h
   youki-tray-icon.c
+  youki-tray-icon.h
   cairo-extensions.cc
   cell-renderer-album-data.cc
   cell-renderer-cairo-surface.cc
@@ -12,7 +14,8 @@ SET(mpx_widgets_SOURCES
   rounded-layout.cc
   task-dialog.cc
   timed-confirmation.cc
-  widget-marshalers.c   			
+  widget-marshalers.c
+  widget-marshalers.h
 )
 
 SET_SOURCE_FILES_PROPERTIES(widget-marshalers.c PROPERTIES GENERATED true)
@@ -47,10 +50,4 @@ ADD_CUSTOM_COMMAND(
   DEPENDS widget-marshalers.list
 )
 
-# FIXME: Include headers in distribution
-#  youki-status-icon.h
-#  youki-tray-icon.h
-#  widget-marshalers.h
-
-# FIXME: Include marshaller list in distribution
-#  widget-marshalers.list
+INSTALL(TARGETS mpx-widgets LIBRARY DESTINATION ${MPX_LIBDIR})

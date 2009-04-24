@@ -1,27 +1,28 @@
-SET(mconfig_SOURCES
-  subscriber.cpp
-  key.cpp
-  mcs.cpp
-  mcs-gtk-bind.cpp
-)
-
-# FIXME: Include headers in distribution
-#  mcs.h
-#  types.h
-#  subscriber.h
-#  key.h
-#  base.h
-#  gtk-bind.h	  
-
 INCLUDE_DIRECTORIES(
-  ${PROJECT_SOURCE_DIR}
-  ${PROJECT_SOURCE_DIR}/include
   ${XML_INCLUDE_DIRS}
   ${GLIBMM_INCLUDE_DIRS}
   ${GTKMM_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/include
 )
 
-ADD_LIBRARY(mconfig SHARED ${mconfig_SOURCES})
+SET(mconfig_SOURCES
+  base.h
+  gtk-bind.h	  
+  key.h
+  key.cpp
+  mcs.cpp
+  mcs.h
+  mcs-gtk-bind.cpp
+  subscriber.cpp
+  subscriber.h
+  types.h
+)
+
+# FIXME: Have we included these?
+#   -export-dynamic -fPIC -no-undefined -export-symbols $(top_srcdir)/libmconfig/libmconfig.sym
+
+ADD_LIBRARY(mconfig STATIC ${mconfig_SOURCES})
 
 TARGET_LINK_LIBRARIES(mconfig
   ${GLIB_LIBS}
@@ -29,5 +30,3 @@ TARGET_LINK_LIBRARIES(mconfig
   ${GTKMM_LIBS}
   ${XML_LIBS}
 )
-
-#libmconfig_la_LDFLAGS  = -export-dynamic -fPIC -no-undefined #-export-symbols $(top_srcdir)/libmconfig/libmconfig.sym

@@ -9,28 +9,24 @@ INCLUDE_DIRECTORIES(
 SET(taglib_plugin_asf_SOURCES
   plugin.cc
   resolver.cpp
+  resolver.h
   asfattribute.cpp
+  asfattribute.h
   asffile.cpp
+  asffile.h
   asfproperties.cpp
+  asfproperties.h
   asftag.cpp
+  asftag.h
 )
 
+# FIXME: Are these flags included? -fPIC -module
 ADD_LIBRARY(taglib_plugin_asf MODULE ${taglib_plugin_asf_SOURCES})
-
-#libtaglib_plugin_asf_la_LDFLAGS = -fPIC -module
 
 TARGET_LINK_LIBRARIES(taglib_plugin_asf
   ${TAGLIB_LIBRARIES}
   ${GLIBMM_LIBRARIES}
-  ${PROJECT_BINARY_DIR}/taglib/common/libmpx_common_reader.so
+  #mpx_common_reader
 )
 
-# FIXME: Include headers in distribution
-#  resolver.h
-#  asfattribute.h
-#  asffile.h
-#  asfproperties.h
-#  asftag.h
-
-# FIXME: Install plugin in right directory
-#  $(PLUGIN_DIR)/taglib
+INSTALL(TARGETS taglib_plugin_asf LIBRARY DESTINATION ${PLUGIN_DIR}/taglib)

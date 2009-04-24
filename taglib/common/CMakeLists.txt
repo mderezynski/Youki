@@ -7,18 +7,15 @@ INCLUDE_DIRECTORIES(
 
 SET(mpx_common_reader_SOURCES
   common.cc 
+  common.hh
 )
 
+# FIXME: Are these flags included? -fPIC -module
 ADD_LIBRARY(mpx_common_reader MODULE ${mpx_common_reader_SOURCES})
-
-#libmpx_common_reader_la_LDFLAGS = -fPIC -module
 
 TARGET_LINK_LIBRARIES(mpx_common_reader
   ${TAGLIB_LIBRARIES}
   ${GLIBMM_LIBRARIES}
 )
 
-# FIXME: Include headers in distribution
-#  common.hh
-
-#libmpx_common_readerdir = $(libdir)
+INSTALL(TARGETS mpx_common_reader LIBRARY DESTINATION ${MPX_LIBDIR})

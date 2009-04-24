@@ -1,7 +1,6 @@
 INCLUDE_DIRECTORIES(
   ${Boost_INCLUDE_DIR}
   ${DBUS_INCLUDE_DIRS}
-  ${EXO_INCLUDE_DIRS}
   ${GIOMM_INCLUDE_DIRS}
   ${GLADEMM_INCLUDE_DIRS}
   ${GLIBMM_INCLUDE_DIRS}
@@ -26,7 +25,6 @@ TARGET_LINK_LIBRARIES(mpx-view-components
   ${Boost_REGEX_LIBRARY}
   ${Boost_FILESYSTEM_LIBRARY}
   ${Boost_IOSTREAMS_LIBRARY}
-  ${EXO_LIBRARIES}
   ${GIOMM_LIBRARIES}
   ${GLADEMM_LIBRARIES}
   ${GLIBMM_LIBRARIES}
@@ -35,9 +33,12 @@ TARGET_LINK_LIBRARIES(mpx-view-components
   ${PYTHON_LIBRARIES}
   ${PYGTK_LIBRARIES}
   ${SEXYMM_LIBRARIES}
-  #mpx-parsers
+  ${PROJECT_BINARY_DIR}/xmlcpp/libmpx-parsers.so
 )
 
-# FIXME: Install into ${pkgdatadir}/glade
-#  album-info-window.glade
-#  mb-import-album.glade
+INSTALL(TARGETS mpx-view-components LIBRARY DESTINATION ${MPX_LIBDIR})
+
+INSTALL(
+  FILES album-info-window.glade mb-import-album.glade
+  DESTINATION ${MPX_PKGDATADIR}/glade
+)

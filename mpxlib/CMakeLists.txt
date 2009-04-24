@@ -72,7 +72,7 @@ TARGET_LINK_LIBRARIES(youki-mlibman-bin
   ${SQLITE_LIBRARIES}
   ${TAGLIB_LIBRARIES}
   ${XML_LIBRARIES}
-  ${XLIB_LIBRARIES}
+  ${X11_X11_LIBRARY}
   #mconfig
   #mpx-api
   #mpx-widgets
@@ -85,4 +85,4 @@ ADD_CUSTOM_COMMAND(OUTPUT mpx-mlibman-dbus.hh
   MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml
 )
 
-# FIXME: Install youki-mlibman-bin into libexec
+INSTALL(TARGETS youki-mlibman-bin RUNTIME DESTINATION ${MPX_LIBEXECDIR})

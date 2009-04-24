@@ -1,20 +1,3 @@
-SET(mpx_api_SOURCES
-  aque.cc
-  base64.c
-  md5.c
-  random.cc
-  gstpuid.cc
-  libxml2-sax-base.cc
-  xspf-libxml2-sax.cc
-  lyrics.cc
-  playlistparser-xspf.cc
-  playlistparser-pls.cc
-  xml.cc
-  xpath.cc
-)
-
-# FIXME: Re-add CDIO
-
 INCLUDE_DIRECTORIES(
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_SOURCE_DIR}/include	
@@ -49,6 +32,21 @@ INCLUDE_DIRECTORIES(
   ${X_INCLUDE_DIRS}
   ${XML_INCLUDE_DIRS}
   ${XPROTO_INCLUDE_DIRS}
+)
+
+SET(mpx_api_SOURCES
+  aque.cc
+  base64.c
+  md5.c
+  random.cc
+  gstpuid.cc
+  libxml2-sax-base.cc
+  xspf-libxml2-sax.cc
+  lyrics.cc
+  playlistparser-xspf.cc
+  playlistparser-pls.cc
+  xml.cc
+  xpath.cc
 )
 
 ADD_LIBRARY(mpx-api SHARED ${mpx_api_SOURCES})
@@ -91,3 +89,5 @@ TARGET_LINK_LIBRARIES(mpx-api
   gstvideo-0.10
   libmpx-parsers.so
 )
+
+INSTALL(TARGETS mpx-api LIBRARY DESTINATION ${MPX_LIBDIR})

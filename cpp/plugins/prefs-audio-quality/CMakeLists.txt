@@ -1,7 +1,7 @@
 INCLUDE_DIRECTORIES(cppmod_audioqualityprefs
   ${ALSA_INCLUDE_DIRS}
+  ${Boost_INCLUDE_DIR}
   ${GST_INCLUDE_DIRS}
-  ${BOOST_CPPFLAGS}
   ${DBUS_INCLUDE_DIRS}
   ${GLADEMM_INCLUDE_DIRS}
   ${GLIBMM_INCLUDE_DIRS}
@@ -30,4 +30,4 @@ TARGET_LINK_LIBRARIES(cppmod-audioqualityprefs
   ${X11_X11_LIB}
 )
 
-# FIXME: Install plugin into ${PLUGIN_DIR}/cppmod
+INSTALL(TARGETS cppmod-audioqualityprefs LIBRARY DESTINATION ${PLUGIN_DIR}/cppmod)

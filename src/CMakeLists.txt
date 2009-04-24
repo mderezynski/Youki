@@ -164,8 +164,6 @@ TARGET_LINK_LIBRARIES(youki-bin
   #halcc (if HAVE_HAL is true)
 )
 
-# FIXME: Install youki-bin into libexec
-
 ADD_CUSTOM_COMMAND(OUTPUT mpx-mlibman-dbus-proxy.hh
   COMMAND ${DBUSBINDINGTOOL} ARGS "${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml" "--proxy=${PROJECT_SOURCE_DIR}/src/mpx-mlibman-dbus-proxy.hh"
   MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml
@@ -175,3 +173,5 @@ ADD_CUSTOM_COMMAND(OUTPUT mpx-app-dbus-adaptor.hh
   COMMAND ${DBUSBINDINGTOOL} ARGS "${PROJECT_SOURCE_DIR}/dbus/dbus-obj-YOUKI.xml" "--adaptor=${PROJECT_SOURCE_DIR}/src/mpx-app-dbus-adaptor.hh"
   MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/dbus/dbus-obj-YOUKI.xml
 )
+
+INSTALL(TARGETS youki-bin RUNTIME DESTINATION ${MPX_LIBEXECDIR})

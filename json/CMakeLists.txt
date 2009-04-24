@@ -7,6 +7,3 @@ SET(mpx_json_SOURCES
 )
 
 ADD_LIBRARY(mpx-json STATIC ${mpx_json_SOURCES})
-
-# FIXME: install this
-#   json_valueiterator.inl

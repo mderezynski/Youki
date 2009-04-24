@@ -1,17 +1,12 @@
 PKG_CHECK_MODULES(CDIO libcdio_cdda>=0.70)
 
-FIND_PATH(CDDA_INCLUDE_DIR
-  NAMES cdda/cdda_interface.h
+FIND_PATH(CDDA_INCLUDE_DIR cdda/cdda_interface.h
   HINTS $ENV{CDDADIR}
-  PATH_SUFFIXES include
-  PATHS /usr/local /usr /opt/local opt
 )
 
 FIND_LIBRARY(CDDA_LIBRARY
-  NAMES cdda_interface
+  cdda_interface
   HINTS $ENV{CDDADIR}
-  PATH_SUFFIXES lib64 lib
-  PATHS /usr/local /usr /opt/local /opt
 )
 
 SET(CDDA_FOUND "NO")

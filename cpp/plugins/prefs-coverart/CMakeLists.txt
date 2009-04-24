@@ -21,4 +21,4 @@ TARGET_LINK_LIBRARIES(cppmod-coverartprefs
   ${GTKMM_LIBRARIES}
 )
 
-# FIXME: ${PLUGIN_DIR}/cppmod
+INSTALL(TARGETS cppmod-coverartprefs LIBRARY DESTINATION ${PLUGIN_DIR}/cppmod)

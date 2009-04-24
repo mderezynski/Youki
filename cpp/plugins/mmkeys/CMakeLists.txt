@@ -12,11 +12,14 @@ INCLUDE_DIRECTORIES(
 
 SET(cppmod_mmkeys_SOURCES
   mmkeys.cc
+  mmkeys.hh
 )
 
-ADD_LIBRARY(cppmod_mmkeys MODULE ${cppmod_mmkeys_SOURCES})
+# FIXME: Are all these flags included?
+#   -export-dynamic -fPIC -module
+ADD_LIBRARY(cppmod-mmkeys MODULE ${cppmod_mmkeys_SOURCES})
 
-TARGET_LINK_LIBRARIES(cppmod_mmkeys
+TARGET_LINK_LIBRARIES(cppmod-mmkeys
   ${DBUS_LIBRARIES}
   ${GLADEMM_LIBRARIES}
   ${GLIBMM_LIBRARIES}
@@ -24,10 +27,5 @@ TARGET_LINK_LIBRARIES(cppmod_mmkeys
   ${X11_X11_LIB}
 )
 
-# FIXME: Are all these flags included?
-#   libcppmod_mmkeys_la_LDFLAGS = -export-dynamic -fPIC -module
+INSTALL(TARGETS cppmod-mmkeys LIBRARY DESTINATION ${PLUGIN_DIR}/cppmod)
 
-# FIXME: Include this in source distribution
-#   mmkeys.hh
-
-# FIXME: Install plugin in ${PLUGIN_DIR}/cppmod
