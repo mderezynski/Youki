@@ -259,6 +259,16 @@ namespace MPX
         m_HBox_Controls     = Gtk::manage( new Gtk::HBox ) ;
 
         m_Entry             = Gtk::manage( new Gtk::Entry ) ;
+        m_Entry->set_icon_from_stock(
+              Gtk::Stock::CLEAR
+            , Gtk::ENTRY_ICON_SECONDARY
+        ) ; 
+        m_Entry->signal_icon_press().connect(
+              sigc::hide( sigc::hide(
+                sigc::mem_fun(
+                      *this
+                    , &YoukiController::on_entry_clear_clicked
+        )))) ;
 
         m_completion_timer.stop() ;
         m_completion_timer.reset() ;
@@ -1216,6 +1226,41 @@ namespace MPX
         }
 
         return false ;
+    }
+
+    void
+    YoukiController::on_entry_clear_clicked(
+    )
+    {
+        m_conn1.block() ;    
+        m_conn2.block() ;    
+        m_conn3.block() ;    
+        m_conn4.block() ;    
+
+        m_Entry->set_text( "" ) ;
+
+        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
+        private_->FilterModelTracks->set_filter( "" ) ;
+
+        private_->FilterModelArtist->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
+
+        private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;
+        private_->FilterModelAlbums->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
+
+        private_->FilterModelArtist->regen_mapping() ;
+        private_->FilterModelAlbums->regen_mapping() ;
+
+        m_ListViewAlbums->select_row( 0 ) ;
+        m_ListViewArtist->select_row( 0 ) ;
+
+        m_ListViewAlbums->scroll_to_row( 0 ) ;
+        m_ListViewArtist->scroll_to_row( 0 ) ;
+        m_ListViewTracks->scroll_to_row( 0 ) ;
+
+        m_conn1.unblock() ;    
+        m_conn2.unblock() ;    
+        m_conn3.unblock() ;    
+        m_conn4.unblock() ;    
     }
 
     bool

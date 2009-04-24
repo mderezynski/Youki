@@ -395,6 +395,12 @@ namespace MPX
                                 {
                                     m_position = new_mapping.size()  - 1 ;
                                 }
+
+                                if( id_sel && get<1>(*i) == id_sel.get() )
+                                {
+                                    m_selected = id_sel ; 
+                                    m_selected_row = new_mapping.size()  - 1 ;
+                                }
                             }
                        }
 
@@ -1296,6 +1302,14 @@ namespace MPX
                     }
                 
                     clear_selection() ;
+                }
+
+                void
+                scroll_to_row(
+                      std::size_t row
+                )
+                {
+                    m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
                 }
 
                 void

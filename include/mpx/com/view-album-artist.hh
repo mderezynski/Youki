@@ -1032,6 +1032,14 @@ namespace MPX
                 }
 
                 void
+                scroll_to_row(
+                      std::size_t row
+                )
+                {
+                    m_prop_vadj.get_value()->set_value( row ) ; 
+                }
+
+                void
                 select_row(
                       std::size_t row
                 )
