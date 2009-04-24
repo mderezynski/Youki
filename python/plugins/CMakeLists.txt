@@ -1,0 +1,3 @@
+#ADD_SUBDIRECTORY(mpxdj)
+#ADD_SUBDIRECTORY(trackinfo-webkit)
+#ADD_SUBDIRECTORY(tracktags)
