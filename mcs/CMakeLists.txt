@@ -1,6 +1,3 @@
-# FIXME: Centralise this
-SET_PROPERTY(DIRECTORY PROPERTY COMPILE_DEFINITIONS HAVE_CONFIG_H)
-
 SET(mconfig_SOURCES
   subscriber.cpp
   key.cpp

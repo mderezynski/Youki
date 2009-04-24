@@ -19,15 +19,15 @@
 /* Define to the version of this package. */
 #define PACKAGE_VERSION     "@PACKAGE_VERSION@"
 
-/* Building with debug or profiling information */
-#cmakedefine WITH_DEBUG
-#cmakedefine WITH_PROFILING
+/* Dummy define to make compilation success. Code to be changed */
+#define CONFIGURE_ARGS ""
 
 /* Platform defines */
-#cmakedefine HAVE_LINUX
-#cmakedefine HAVE_DRAGONFLYBSD
-#cmakedefine HAVE_FREEBSD
 #cmakedefine HAVE_SUN
+#cmakedefine HAVE_FREEBSD
+#cmakedefine HAVE_NETBSD
+#cmakedefine HAVE_DRAGONFLYBSD
+#cmakedefine HAVE_LINUX
 
 #define PREFIX              "@CMAKE_INSTALL_PREFIX@"
 

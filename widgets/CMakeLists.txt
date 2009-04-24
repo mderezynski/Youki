@@ -1,9 +1,6 @@
-# FIXME: Centralise this
-SET_PROPERTY(DIRECTORY PROPERTY COMPILE_DEFINITIONS HAVE_CONFIG_H)
-
 SET(mpx_widgets_SOURCES
-  bmp_status_icon.c
-  bmp_tray_icon.c
+  youki-status-icon.c
+  youki-tray-icon.c
   cairo-extensions.cc
   cell-renderer-album-data.cc
   cell-renderer-cairo-surface.cc
@@ -51,8 +48,8 @@ ADD_CUSTOM_COMMAND(
 )
 
 # FIXME: Include headers in distribution
-#  bmp_status_icon.h
-#  bmp_tray_icon.h
+#  youki-status-icon.h
+#  youki-tray-icon.h
 #  widget-marshalers.h
 
 # FIXME: Include marshaller list in distribution

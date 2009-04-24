@@ -47,7 +47,7 @@
 #endif /* !G_ENABLE_DEBUG */
 
 
-/* VOID:UINT,UINT (./widget-marshalers.list:1) */
+/* VOID:UINT,UINT (widget-marshalers.list:1) */
 void
 widget_VOID__UINT_UINT (GClosure     *closure,
                         GValue       *return_value G_GNUC_UNUSED,

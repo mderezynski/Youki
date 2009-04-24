@@ -6,7 +6,7 @@
 
 G_BEGIN_DECLS
 
-/* VOID:UINT,UINT (./widget-marshalers.list:1) */
+/* VOID:UINT,UINT (widget-marshalers.list:1) */
 extern void widget_VOID__UINT_UINT (GClosure     *closure,
                                     GValue       *return_value,
                                     guint         n_param_values,

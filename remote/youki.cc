@@ -53,7 +53,7 @@ namespace
     {
       g_print ("%s %s",
                PACKAGE,
-               VERSION);
+               PACKAGE_VERSION);
 
       g_print (_("\nYouki Copyright (c) 2009 MPX Project <http://mpx.backtrace.info>\n\n"));
     }

@@ -1,8 +1,5 @@
-# FIXME: Centralise this
-SET_PROPERTY(DIRECTORY PROPERTY COMPILE_DEFINITIONS HAVE_CONFIG_H)
-
-SET(mpx_sentinel_SOURCES
-  mpx-sentinel.cc
+SET(youki_sentinel_bin_SOURCES
+  youki-sentinel.cc
 )
 
 INCLUDE_DIRECTORIES(
@@ -14,9 +11,9 @@ INCLUDE_DIRECTORIES(
   ${SOUP_INCLUDE_DIRS}
 )
 
-ADD_EXECUTABLE(mpx-sentinel ${mpx_sentinel_SOURCES})
+ADD_EXECUTABLE(youki-sentinel-bin ${youki_sentinel_bin_SOURCES})
 
-TARGET_LINK_LIBRARIES(mpx-sentinel
+TARGET_LINK_LIBRARIES(youki-sentinel-bin
   ${GLIB_LIBRARIES}
   ${GTK_LIBRARIES}
   ${DBUS_LIBRARIES}

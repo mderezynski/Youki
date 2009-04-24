@@ -98,3 +98,7 @@ remote/youki
 sentinel/youki-sentinel-bin
 src/youki-bin
 
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+*.so

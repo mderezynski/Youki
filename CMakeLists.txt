@@ -1,36 +1,19 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-PROJECT(audiosource)
+PROJECT(youki)
 
-SET(PACKAGE           "audiosource")
-SET(PACKAGE_VERSION   "0.01")
-SET(PACKAGE_NAME      "audiosource")
+SET(PACKAGE           "youki")
+SET(PACKAGE_VERSION   "0.05.4")
+SET(PACKAGE_NAME      "youki")
 SET(PACKAGE_BUGREPORT "http://mpx.backtrace.info/report")
 SET(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
-SET(PACKAGE_TARNAME   "audiosource")
+SET(PACKAGE_TARNAME   "youki")
 
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 INCLUDE(CheckIncludeFile)
 INCLUDE(CheckIncludeFiles)
 INCLUDE(CheckLibraryExists)
-
-#SUBDIRS(
-  #scripts
-  #desktop
-  #glade
-  #icons
-  #images
-  #po
-  #include
-  #xsd
-  #widgets
-  #com
-  #python
-  #sources
-  #api
-  #mpx
-#)
 
 CHECK_INCLUDE_FILES(
   argz.h
@@ -65,24 +48,8 @@ CHECK_LIBRARY_EXISTS(nsl getrpcbyname "" HAVE_NSL)
 FIND_PACKAGE(Gettext)
 SET(HAVE_GETTEXT ${GETTEXT_FOUND})
 
-# Profilling
-OPTION(ENABLE_PROFILE "Profiling support [DEVELOPERS only] (default=disabled)" "NO")
-MARK_AS_ADVANCED(ENABLE_PROFILE)
-
-IF(ENABLE_PROFILE)
-  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -pg -fno-inline")
-ENDIF(ENABLE_PROFILE)
-
-# Debugging
-OPTION(ENABLE_DEBUG "Enable Debugging support [DEVELOPERS only] (default=disabled)" "NO")
-MARK_AS_ADVANCED(ENABLE_DEBUG)
-
-IF(ENABLE_DEBUG)
-  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -ggdb3")
-  SET(CFLAGS "${CFLAGS} -ggdb3")
-ENDIF(ENABLE_DEBUG)
-
 # CFLAGS/CXXFLAGS
+
 IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
   # NOTE: We cannot use -pedantic with g++ because GST headers ()@#!@#
   # adds extra commas after the last item in enums
@@ -93,7 +60,7 @@ ELSE(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 ENDIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 
 # pkg-config
-FIND_PACKAGE(PkgConfig)
+FIND_PACKAGE(PkgConfig REQUIRED)
 
 # C++ TR1 extensions
 SET(USE_TR1 "YES")
@@ -129,13 +96,6 @@ PKG_CHECK_MODULES(XML        REQUIRED libxml-2.0>=2.6.1)
 PKG_CHECK_MODULES(SOUP       REQUIRED libsoup-2.4>=2.2.10)
 PKG_CHECK_MODULES(SQLITE     REQUIRED sqlite3>=3.4)
 PKG_CHECK_MODULES(OFA        REQUIRED libofa>=0.9.3)
-PKG_CHECK_MODULES(GDL        REQUIRED gdl-1.0)
-
-# FIXME: Placed here temporarily
-SET(HAVE_GTK ${GTK_FOUND})
-SET(HAVE_XML ${XML_FOUND})
-SET(HAVE_OFA ${OFA_FOUND})
-SET(HAVE_GDL ${GDL_FOUND})
 
 # Python
 FIND_PACKAGE(PythonLibs)
@@ -186,17 +146,6 @@ EXECUTE_PROCESS(
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
-# FIXME: Temporarily placed here
-ADD_SUBDIRECTORY(jnetlib)
-ADD_SUBDIRECTORY(musicbrainz)
-ADD_SUBDIRECTORY(xmlcpp)
-ADD_SUBDIRECTORY(mcs)
-ADD_SUBDIRECTORY(remote)
-#ADD_SUBDIRECTORY(sentinel)
-#ADD_SUBDIRECTORY(taglib)
-ADD_SUBDIRECTORY(widgets)
-ADD_SUBDIRECTORY(api)
-
 # HAL
 OPTION(ENABLE_HAL "Storage management with HAL (default=enabled)" "YES")
 
@@ -205,8 +154,6 @@ IF(ENABLE_HAL)
   IF(NOT HAL_FOUND)
     MESSAGE(FATAL_ERROR "HAL not found")
   ENDIF(NOT HAL_FOUND)
-
-  ADD_SUBDIRECTORY(libhal++)
 
   SET(HAVE_HAL        ${HAL_FOUND})
   SET(HAVE_HAL_058    ${HAL_058_FOUND})
@@ -260,10 +207,26 @@ CHECK_LIBRARY_EXISTS(fam FAMOpen "" HAVE_FAM)
 CHECK_LIBRARY_EXISTS(fam FAMNoExists "" HAVE_FAMNOEXISTS)
 CHECK_INCLUDE_FILE(fam.h HAVE_FAM_H)
 
-# FIXME: Determine default sink to use depending on target system
+# Platform defines
+IF(CMAKE_SYSTEM_NAME MATCHES "SunOS")
+  SET(HAVE_SUN yes)
+ENDIF(CMAKE_SYSTEM_NAME MATCHES "SunOS")
+IF(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+  SET(HAVE_FREEBSD yes)
+ENDIF(CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+IF(CMAKE_SYSTEM_NAME MATCHES "NetBSD")
+  SET(HAVE_NETBSD yes)
+ENDIF(CMAKE_SYSTEM_NAME MATCHES "NetBSD")
+IF(CMAKE_SYSTEM_NAME MATCHES "DragonFly")
+  SET(HAVE_DRAGONFLYBSD yes)
+ENDIF(CMAKE_SYSTEM_NAME MATCHES "DragonFly")
+IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+  SET(HAVE_LINUX yes)
+ENDIF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+
+# Default audio devices
 SET(DEFAULT_SINK "autoaudiosink")
 SET(DEFAULT_DEVICE "/dev/dsp")
-
 SET(DEFAULT_DEVICE_OSS  "/dev/dsp0")
 SET(DEFAULT_DEVICE_ALSA "default")
 SET(DEFAULT_DEVICE_SUN  "/dev/audio")
@@ -278,9 +241,9 @@ SET(HAVE_CDIO ${CDIO_FOUND})
 SET(HAVE_CDPARANOIA ${CDDA_FOUND})
 
 # Multimedia keys
-PKG_CHECK_MODULES(XPROTO xproto>=7.0.10)
+PKG_CHECK_MODULES(XPROTO REQUIRED xproto>=7.0.10)
 
-# TODO: Turn these into options
+# TODO: Add documentation strings
 SET(MPX_PREFIX      ${CMAKE_INSTALL_PREFIX})
 SET(MPX_EXEC_PREFIX ${CMAKE_INSTALL_PREFIX})
 SET(MPX_INCLUDEDIR  ${CMAKE_INSTALL_PREFIX}/include)
@@ -301,16 +264,59 @@ SET(MPX_DBUS_PATH__MPX_ "\"/MPX\"")
 
 SET(PLUGIN_VERSION "10")
 
-SET(HAVE_BMP "YES")
+# MCS stubs
+SET(HAVE_BMP yes)
+SET(HAVE_GTK yes)
+SET(HAVE_XML yes)
 
-SET(CFLAGS "${CFLAGS} ${C_COMMON_FLAGS}")
-SET(CXXFLAGS "${CXXFLAGS} ${C_COMMON_FLAGS}")
+# Standard flags
+SET(CMAKE_C_FLAGS "${C_COMMON_FLAGS}")
+SET(CMAKE_CXX_FLAGS "${C_COMMON_FLAGS}")
 
-SET_PROPERTY(DIRECTORY PROPERTY COMPILE_DEFINITIONS -DHAVE_CONFIG_H)
+# Profile build C/C++ flags
+SET(CMAKE_C_FLAGS_PROFILE "-g3 -fno-inline -pg -fprofile-arcs -ftest-coverage")
+SET(CMAKE_CXX_FLAGS_PROFILE "-g3 -fno-inline -pg -fprofile-arcs -ftest-coverage")
+
+# Debug build C/C++ flags
+SET(CMAKE_C_FLAGS_DEBUG "-ggdb3 -fno-inline")
+SET(CMAKE_CXX_FLAGS_DEBUG "-ggdb3 -fno-inline")
+
+ADD_DEFINITIONS(-DHAVE_CONFIG_H)
 
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/mpx.1.in ${PROJECT_BINARY_DIR}/mpx.1)
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/mpx.pc.in ${PROJECT_BINARY_DIR}/mpx.pc)
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/info.backtrace.mpx.service.in ${PROJECT_BINARY_DIR}/info.backtrace.mpx.service)
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/info.backtrace.sentinel.service.in ${PROJECT_BINARY_DIR}/info.backtrace.sentinel.service)
-CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/desktop/mpx.desktop.in ${PROJECT_BINARY_DIR}/desktop/mpx.desktop)
+#CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/info.backtrace.mpx.service.in ${PROJECT_BINARY_DIR}/info.backtrace.mpx.service)
+#CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/info.backtrace.sentinel.service.in ${PROJECT_BINARY_DIR}/info.backtrace.sentinel.service)
+#CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/desktop/youki.desktop.in ${PROJECT_BINARY_DIR}/desktop/youki.desktop)
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)
+
+ADD_SUBDIRECTORY(jnetlib)
+ADD_SUBDIRECTORY(musicbrainz)
+ADD_SUBDIRECTORY(xmlcpp)
+ADD_SUBDIRECTORY(mcs)
+ADD_SUBDIRECTORY(remote)
+ADD_SUBDIRECTORY(sentinel)
+#ADD_SUBDIRECTORY(taglib)
+ADD_SUBDIRECTORY(widgets)
+#ADD_SUBDIRECTORY(api)
+
+#ADD_SUBDIRECTORY(com)
+#ADD_SUBDIRECTORY(cpp)
+#ADD_SUBDIRECTORY(desktop)
+#ADD_SUBDIRECTORY(dbus)
+#ADD_SUBDIRECTORY(glade)
+#ADD_SUBDIRECTORY(icons)
+#ADD_SUBDIRECTORY(images)
+#ADD_SUBDIRECTORY(include)
+#ADD_SUBDIRECTORY(json)
+#ADD_SUBDIRECTORY(musicbrainz)
+#ADD_SUBDIRECTORY(po)
+#ADD_SUBDIRECTORY(python)
+#ADD_SUBDIRECTORY(scripts)
+ADD_SUBDIRECTORY(src)
+#ADD_SUBDIRECTORY(themes)
+#ADD_SUBDIRECTORY(xsd)
+
+IF(ENABLE_HAL)
+  #ADD_SUBDIRECTORY(libhal++)
+ENDIF(ENABLE_HAL)
