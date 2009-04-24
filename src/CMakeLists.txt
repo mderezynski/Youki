@@ -103,12 +103,7 @@ SET(youki_bin_SOURCES
   main.cc
 )
 
-#SET(youki_bin_CFLAGS "${GLIB_CFLAGS} ${GST_CFLAGS}")
-
-IF(HAVE_HAL)
-  SET(youki_bin_LDADD "${PROJECT_SOURCE_DIR}/libhal++/libhalcc.la")
-  SET(youki_bin_CXXFLAGS "${youki_bin_CXXFLAGS} -I$(PROJECT_SOURCE_DIR}/libhal++")
-ENDIF(HAVE_HAL)
+# FIXME: Add definitions from: ${GLIB_CFLAGS} and ${GST_CFLAGS}
 
 SET(youki_bin_COMPILE_DEFINITIONS __USE_POSIX199309)
 
@@ -132,11 +127,11 @@ TARGET_LINK_LIBRARIES(youki-bin
   ${Boost_PYTHON_LIBRARY}
   ${CAIROMM_LIBRARIES}
   ${CLUTTER_LIBRARIES}
-  #${CDIO_LIBS}
+  #${CDIO_LIBRARIES}
   ${CDPARANOIA_LIBS}
   ${CURL_LIBRARIES}
   ${DBUS_LIBRARIES}
-  #${EXO_LIBS}
+  #${EXO_LIBRARIES}
   ${GDL_LIBRARIES}
   ${GIOMM_LIBRARIES}
   ${GLADEMM_LIBRARIES}
@@ -165,18 +160,18 @@ TARGET_LINK_LIBRARIES(youki-bin
   #mpx-widgets
   #mpx-musicbrainz
   #mpx-view-components
-  #libmpx-json
+  #mpx-json
+  #halcc (if HAVE_HAL is true)
 )
 
 # FIXME: Install youki-bin into libexec
-#libexec_PROGRAMS = youki-bin
 
 ADD_CUSTOM_COMMAND(OUTPUT mpx-mlibman-dbus-proxy.hh
-  COMMAND ${DBUSBINDINGTOOL} ARGS "${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml --proxy=${PROJECT_SOURCE_DIR}/src/mpx-mlibman-dbus-proxy.hh"
+  COMMAND ${DBUSBINDINGTOOL} ARGS "${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml" "--proxy=${PROJECT_SOURCE_DIR}/src/mpx-mlibman-dbus-proxy.hh"
   MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml
 )
 
 ADD_CUSTOM_COMMAND(OUTPUT mpx-app-dbus-adaptor.hh
-  COMMAND ${DBUSBINDINGTOOL} ARGS "${PROJECT_SOURCE_DIR}/dbus/dbus-obj-YOUKI.xml --adaptor=$(PROJECT_SOURCE_DIR}/src/mpx-app-dbus-adaptor.hh"
+  COMMAND ${DBUSBINDINGTOOL} ARGS "${PROJECT_SOURCE_DIR}/dbus/dbus-obj-YOUKI.xml" "--adaptor=${PROJECT_SOURCE_DIR}/src/mpx-app-dbus-adaptor.hh"
   MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/dbus/dbus-obj-YOUKI.xml
 )

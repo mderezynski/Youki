@@ -1,0 +1,43 @@
+INCLUDE_DIRECTORIES(
+  ${Boost_INCLUDE_DIR}
+  ${DBUS_INCLUDE_DIRS}
+  ${EXO_INCLUDE_DIRS}
+  ${GIOMM_INCLUDE_DIRS}
+  ${GLADEMM_INCLUDE_DIRS}
+  ${GLIBMM_INCLUDE_DIRS}
+  ${GTKMM_INCLUDE_DIRS}
+  ${HAL_INCLUDE_DIRS}
+  ${PYTHON_INCLUDE_DIRS}
+  ${PYGTK_INCLUDE_DIRS}
+  ${SEXYMM_INCLUDE_DIRS}
+  ${SIGX_INCLUDE_DIRS}
+  ${SOUP_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/include
+)
+
+SET(mpx_view_components_SOURCES
+  tagview.cc
+)
+
+ADD_LIBRARY(mpx-view-components SHARED ${mpx_view_components_SOURCES})
+
+TARGET_LINK_LIBRARIES(mpx-view-components
+  ${Boost_REGEX_LIBRARY}
+  ${Boost_FILESYSTEM_LIBRARY}
+  ${Boost_IOSTREAMS_LIBRARY}
+  ${EXO_LIBRARIES}
+  ${GIOMM_LIBRARIES}
+  ${GLADEMM_LIBRARIES}
+  ${GLIBMM_LIBRARIES}
+  ${GTKMM_LIBRARIES}
+  ${HAL_LIBRARIES}
+  ${PYTHON_LIBRARIES}
+  ${PYGTK_LIBRARIES}
+  ${SEXYMM_LIBRARIES}
+  #mpx-parsers
+)
+
+# FIXME: Install into ${pkgdatadir}/glade
+#  album-info-window.glade
+#  mb-import-album.glade
