@@ -259,10 +259,7 @@ namespace MPX
         mcs->key_register("Preferences-FileFormatPriorities", "Format6", std::string("audio/x-ms-wma"));
         mcs->key_register("Preferences-FileFormatPriorities", "prioritize-by-filetype", false); 
         mcs->key_register("Preferences-FileFormatPriorities", "prioritize-by-bitrate", false); 
-
-        mcs->domain_register("PlaybackSourceMusicLib");
-        mcs->key_register("PlaybackSourceMusicLib", "divider-position", 250);
-    }
+   }
   } // anonymous namespace
 } // MPX
 

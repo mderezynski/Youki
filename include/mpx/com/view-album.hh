@@ -95,13 +95,14 @@ namespace MPX
 
         struct DataModelAlbums : public sigc::trackable
         {
-                ModelAlbums_SP_t        m_realmodel ;
-                IdIterMapAlbums_t       m_iter_map ;
-                std::size_t             m_position ;
-                boost::optional<gint64> m_selected ;
+                ModelAlbums_SP_t                m_realmodel ;
+                IdIterMapAlbums_t               m_iter_map ;
+                std::size_t                     m_position ;
+                boost::optional<gint64>         m_selected ;
+                boost::optional<std::size_t>    m_selected_row ;
 
-                SignalAlbums_0          m_select ;
-                SignalAlbums_1          m_changed ;
+                SignalAlbums_0                  m_select ;
+                SignalAlbums_1                  m_changed ;
 
                 DataModelAlbums()
                 : m_position( 0 )
@@ -168,6 +169,13 @@ namespace MPX
                 )
                 {
                     m_selected = row ;
+                }
+
+                virtual boost::optional<std::size_t>
+                get_selected_row(
+                )
+                {
+                    return m_selected_row ; 
                 }
 
                 virtual void
@@ -363,6 +371,9 @@ namespace MPX
                     boost::optional<gint64> id_cur = ( m_position < m_mapping.size()) ? get<1>(row( m_position )) : boost::optional<gint64>() ; 
                     boost::optional<gint64> id_sel = m_selected ; 
 
+                    m_selected.reset() ;
+                    m_selected_row.reset() ;
+
                     m_position = 0 ;
     
                     ModelAlbums_t::iterator i = m_realmodel->begin() ;
@@ -379,11 +390,11 @@ namespace MPX
                             if( truth )
                             {
                                 new_mapping.push_back( i ) ;
-                            }
 
-                            if( id_cur && get<1>(*i) == id_cur.get() )
-                            {
-                                m_position = new_mapping.size()  - 1 ;
+                                if( id_cur && get<1>(*i) == id_cur.get() )
+                                {
+                                    m_position = new_mapping.size()  - 1 ;
+                                }
                             }
                        }
 
@@ -392,12 +403,17 @@ namespace MPX
                         RowAlbum & row = *(m_realmodel->begin()) ;
 
                         long long int sz = new_mapping.size() - 1 ;
-    
+
                         get<4>(row) = (boost::format(_("All %lld %s")) % sz % ((sz > 1) ? _("Albums") : _("Album"))).str() ;
 
                         std::swap( new_mapping, m_mapping ) ;
-                        m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ;
-                        m_select.emit() ;
+
+                        if( !m_selected )
+                        {
+                            m_selected_row = 0 ;                        
+                        }
+
+                        m_changed.emit( m_position, m_mapping.size() != new_mapping.size() );
                     }                
                 }
         };
@@ -797,10 +813,8 @@ namespace MPX
                         return false ;
                     }
 
-                    int step; 
-
-                    Limiter<int64_t> row ;
-                    Interval<std::size_t> i ;
+                    int step ; 
+                    int row ;
 
                     switch( event->keyval )
                     {
@@ -819,7 +833,7 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Up )
                             {
-                                step = - (m_visible_height / m_row_height) + 1 ; 
+                                step = - (m_visible_height / m_row_height) ; 
                             }
                             else
                             {
@@ -833,26 +847,17 @@ namespace MPX
                             }
                             else
                             {
-                                if( get_row_is_visible( get<2>(m_selection.get()) ))
+                                int origin = get<2>(m_selection.get()) ;
+
+                                if( get_row_is_visible( origin ) && origin > 0 ) 
                                 {
-                                    row = Limiter<int64_t> (
-                                          Limiter<int64_t>::ABS_ABS
-                                        , 0
-                                        , m_model->size()
-                                        , get<2>(m_selection.get()) + step
-                                    ) ;
+                                    row = ((origin+step)<0) ? 0 : origin+step ; 
 
                                     select_row( row ) ;
 
-                                    Interval<std::size_t> i (
-                                          Interval<std::size_t>::IN_EX
-                                        , 0
-                                        , get_upper_row()
-                                    ) ;
-
-                                    if( i.in( row )) 
+                                    if( row < get_upper_row() ) 
                                     {
-                                        m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
+                                        m_prop_vadj.get_value()->set_value( (get_upper_row() + step) * m_row_height ) ; 
                                     }
                                 }
                                 else
@@ -869,7 +874,7 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Down )
                             {
-                                step = (m_visible_height / m_row_height) - 1 ;  
+                                step = (m_visible_height / m_row_height) ; 
                             }
                             else
                             {
@@ -883,26 +888,17 @@ namespace MPX
                             }
                             else
                             {
-                                if( get_row_is_visible( get<2>(m_selection.get()) ))
+                                int origin = get<2>(m_selection.get()) ;
+
+                                if( get_row_is_visible( origin ) ) 
                                 {
-                                    row = Limiter<int64_t> (
-                                          Limiter<int64_t>::ABS_ABS
-                                        , 0
-                                        , m_model->size()
-                                        , get<2>(m_selection.get()) + step
-                                    ) ;
+                                    row = ((origin+step)>(m_model->size()-1)) ? m_model->size()-1 : origin+step ; 
 
                                     select_row( row ) ;
 
-                                    Interval<std::size_t> i (
-                                          Interval<std::size_t>::IN_EX
-                                        , get_upper_row() + (m_visible_height/m_row_height)
-                                        , m_model->size() 
-                                    ) ;
-
-                                    if( i.in( row )) 
+                                    if( row > ( get_upper_row() + (m_visible_height/m_row_height) ) )
                                     {
-                                        m_prop_vadj.get_value()->set_value( (get_upper_row()+1) * m_row_height ) ;
+                                        m_prop_vadj.get_value()->set_value( (get_upper_row() + step) * m_row_height ) ; 
                                     }
                                 }
                                 else
@@ -1240,7 +1236,14 @@ namespace MPX
                             ) ;
                     }
 
-                    clear_selection() ;
+                    boost::optional<std::size_t> row = m_model->get_selected_row() ;
+
+                    if( row )
+                    {
+                        select_row( row.get() ) ;
+                        m_prop_vadj.get_value()->set_value( row.get() * m_row_height ) ;
+                    }
+
                     queue_draw() ;
                 }
 

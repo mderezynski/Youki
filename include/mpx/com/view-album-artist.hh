@@ -47,13 +47,14 @@ namespace MPX
 
         struct DataModelArtist : public sigc::trackable
         {
-                ModelArtist_SP_t        m_realmodel ;
-                IdIterMapArtist_t       m_iter_map ;
-                std::size_t             m_position ;
-                boost::optional<gint64> m_selected ;
+                ModelArtist_SP_t             m_realmodel ;
+                IdIterMapArtist_t            m_iter_map ;
+                std::size_t                  m_position ;
+                boost::optional<gint64>      m_selected ;
+                boost::optional<std::size_t> m_selected_row ;
 
-                SignalArtist_0          m_select ;
-                SignalArtist_1          m_changed ;
+                SignalArtist_0               m_select ;
+                SignalArtist_1               m_changed ;
 
                 DataModelArtist()
                 : m_position( 0 )
@@ -122,6 +123,13 @@ namespace MPX
                 )
                 {
                     m_selected = row ;
+                }
+
+                virtual boost::optional<std::size_t>
+                get_selected_row(
+                )
+                {
+                    return m_selected_row ;
                 }
 
                 virtual void
@@ -227,13 +235,11 @@ namespace MPX
 
                     RowRowMapping new_mapping;
 
-                    if( !m_constraint_id_artist )
-                    {
-                        m_selected.reset() ;
-                    }
-
                     boost::optional<gint64> id_cur = ( m_position < m_mapping.size()) ? get<1>(row( m_position )) : boost::optional<gint64>() ;
                     boost::optional<gint64> id_sel = m_selected ;
+
+                    m_selected.reset() ;
+                    m_selected_row.reset() ;
 
                     m_position = 0 ;
 
@@ -247,11 +253,17 @@ namespace MPX
                         if( truth )
                         {
                             new_mapping.push_back( i ) ;
-                        }
 
-                        if( id_cur && get<1>(*i) == id_cur.get() )
-                        {
-                            m_position = new_mapping.size()  - 1 ;
+                            if( id_cur && get<1>(*i) == id_cur.get() )
+                            {
+                                m_position = new_mapping.size()  - 1 ;
+                            }
+
+                            if( id_sel && get<1>(*i) == id_sel.get() )
+                            {
+                                m_selected = id_sel ; 
+                                m_selected_row = new_mapping.size()  - 1 ;
+                            }
                         }
                     }
 
@@ -263,9 +275,14 @@ namespace MPX
     
                         get<0>(row) = (boost::format(_("All %lld %s")) % sz % ((sz > 1) ? _("Artists") : _("Artist"))).str() ;
 
-                        std::swap(m_mapping, new_mapping);
+                        std::swap( m_mapping, new_mapping ) ;
+
+                        if( !m_selected )
+                        {
+                            m_selected_row = 0 ;                        
+                        }
+
                         m_changed.emit( m_position, m_mapping.size() != new_mapping.size() );
-                        m_select.emit() ;
                     }
                 }
         };
@@ -798,7 +815,7 @@ namespace MPX
 
                     if( m_row_height )
                     {
-                        m_prop_vadj.get_value()->set_upper( m_model->size() - (m_visible_height/m_row_height) ) ; 
+                        m_prop_vadj.get_value()->set_upper( m_model->size() ) ; 
                         m_prop_vadj.get_value()->set_page_size( m_visible_height/m_row_height ) ; 
                     }
 
@@ -939,7 +956,7 @@ namespace MPX
                     {
                         std::size_t view_count = m_visible_height / m_row_height ;
 
-                        m_prop_vadj.get_value()->set_upper( m_model->size() - (m_visible_height/m_row_height)) ; 
+                        m_prop_vadj.get_value()->set_upper( m_model->size() ) ; 
                         m_prop_vadj.get_value()->set_page_size( m_visible_height/m_row_height ) ; 
 
                         if( m_model->size() < view_count )
@@ -950,6 +967,14 @@ namespace MPX
                         {
                             m_prop_vadj.get_value()->set_value( position ) ; 
                         }
+                    }
+
+                    boost::optional<std::size_t> row = m_model->get_selected_row() ;
+
+                    if( row )
+                    {
+                        select_row( row.get() ) ;
+                        m_prop_vadj.get_value()->set_value( row.get() ) ; 
                     }
 
                     queue_draw() ;
@@ -1015,8 +1040,8 @@ namespace MPX
                     {
                         const gint64& id = get<1>(*m_model->m_mapping[row]) ;
 
-                        m_selection = boost::make_tuple (m_model->m_mapping[row], id, row ) ;
                         m_model->set_selected( id ) ;
+                        m_selection = boost::make_tuple( m_model->m_mapping[row], id, row ) ;
                         m_SIGNAL_selection_changed.emit() ;
                         queue_draw();
                     }

@@ -187,7 +187,7 @@ namespace MPX
             {
                 for( int n = 0; n < SPECT_BANDS; ++n )
                 {
-                    m_spectrum_data[n] = fmax( m_spectrum_data[n] - 1, -72 ) ;
+                    m_spectrum_data[n] = fmax( m_spectrum_data[n] - 1, -72 ) ; 
                 }
             }
 
