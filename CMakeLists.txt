@@ -48,22 +48,11 @@ CHECK_LIBRARY_EXISTS(nsl getrpcbyname "" HAVE_NSL)
 FIND_PACKAGE(Gettext)
 SET(HAVE_GETTEXT ${GETTEXT_FOUND})
 
-# CFLAGS/CXXFLAGS
-
-IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-  # NOTE: We cannot use -pedantic with g++ because GST headers ()@#!@#
-  # adds extra commas after the last item in enums
-  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -fno-strict-aliasing -fmessage-length=0 -Wall -D_FORTIFY_SOURCE=2")
-  SET(CFLAGS "${CFLAGS} -std=c99 -pedantic")
-ELSE(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -Wall -D_FORTIFY_SOURCE=2")
-ENDIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-
 # pkg-config
 FIND_PACKAGE(PkgConfig REQUIRED)
 
 # C++ TR1 extensions
-SET(USE_TR1 "YES")
+SET(USE_TR1 yes)
 IF(USE_TR1)
   FIND_PACKAGE(CxxTR1)
   IF(NOT TR1_FOUND)
@@ -111,7 +100,7 @@ EXECUTE_PROCESS(
 MESSAGE(STATUS "  pygtk defs path at ${PYGTK_DEFSDIR}")
 
 # Network Manager
-OPTION(ENABLE_NM "With GNOME NetworkManager" "NO")
+OPTION(ENABLE_NM "With GNOME NetworkManager" no)
 IF(ENABLE_NM)
   PKG_CHECK_MODULES(NM REQUIRED NetworkManager>=0.6.0)
   SET(HAVE_NM ${NM_FOUND})
@@ -147,7 +136,7 @@ EXECUTE_PROCESS(
 )
 
 # HAL
-OPTION(ENABLE_HAL "Storage management with HAL (default=enabled)" "YES")
+OPTION(ENABLE_HAL "Enable storage management with HAL" yes)
 
 IF(ENABLE_HAL)
   FIND_PACKAGE(HAL)
@@ -163,7 +152,7 @@ ENDIF(ENABLE_HAL)
 PKG_CHECK_MODULES(TAGLIB REQUIRED taglib-gio>=1.4)
 
 # libsidplay (v1.x)
-OPTION(ENABLE_SIDPLAY ".sid/.psid taglib support" "NO")
+OPTION(ENABLE_SIDPLAY "Enable .sid/.psid Taglib support" no)
 IF(ENABLE_SIDPLAY)
   FIND_PACKAGE(SIDPlay)
   IF(NOT SIDPLAY_FOUND)
@@ -173,14 +162,14 @@ IF(ENABLE_SIDPLAY)
 ENDIF(ENABLE_SIDPLAY)
 
 # ModPlug check
-OPTION(ENABLE_MOD "modplug taglib support" "NO")
+OPTION(ENABLE_MOD "Enable modplug taglib support" no)
 IF(ENABLE_MOD)
   PKG_CHECK_MODULES(MOD REQUIRED libmodplug>=0.7)
   SET(HAVE_MOD ${MOD_FOUND})
 ENDIF(ENABLE_MOD)
 
 # SMlib/ICE
-OPTION(ENABLE_SM "Session management support with SMlib (default=enabled" "YES")
+OPTION(ENABLE_SM "Enable session management support with SMlib" yes)
 IF(ENABLE_SM)
   FIND_PACKAGE(SMlib)
   IF(NOT SM_FOUND)
@@ -190,7 +179,7 @@ IF(ENABLE_SM)
 ENDIF(ENABLE_SM)
 
 # Startup Notifications
-OPTION(ENABLE_SN "Enable Startup Notification (default=enabled)" "YES")
+OPTION(ENABLE_SN "Enable Startup Notification" yes)
 IF(ENABLE_SN)
   PKG_CHECK_MODULES(STARTUP_NOTIFY REQUIRED libstartup-notification-1.0>=0.8)
   SET(HAVE_STARTUP_NOTIFICATION ${STARTUP_NOTIFY_FOUND})
@@ -199,7 +188,7 @@ ENDIF(ENABLE_SN)
 # Zip
 FIND_PROGRAM(ZIP "zip")
 IF(NOT ZIP)
-  SET(HAVE_ZIP "NO")
+  SET(HAVE_ZIP no)
 ENDIF(NOT ZIP)
 
 # GAMIN
@@ -270,8 +259,17 @@ SET(HAVE_GTK yes)
 SET(HAVE_XML yes)
 
 # Standard flags
-SET(CMAKE_C_FLAGS "${C_COMMON_FLAGS}")
-SET(CMAKE_CXX_FLAGS "${C_COMMON_FLAGS}")
+IF(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
+  # NOTE: We cannot use -pedantic with g++ because GST headers ()@#!@#
+  # adds extra commas after the last item in enums
+  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -fno-strict-aliasing -fmessage-length=0 -Wall -D_FORTIFY_SOURCE=2")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic")
+ELSE(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
+  SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -Wall -D_FORTIFY_SOURCE=2")
+ENDIF(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
+
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${C_COMMON_FLAGS}")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${C_COMMON_FLAGS}")
 
 # Profile build C/C++ flags
 SET(CMAKE_C_FLAGS_PROFILE "-g3 -fno-inline -pg -fprofile-arcs -ftest-coverage")
@@ -285,9 +283,9 @@ ADD_DEFINITIONS(-DHAVE_CONFIG_H)
 
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/mpx.1.in ${PROJECT_BINARY_DIR}/mpx.1)
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/mpx.pc.in ${PROJECT_BINARY_DIR}/mpx.pc)
-#CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/info.backtrace.mpx.service.in ${PROJECT_BINARY_DIR}/info.backtrace.mpx.service)
-#CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/info.backtrace.sentinel.service.in ${PROJECT_BINARY_DIR}/info.backtrace.sentinel.service)
-#CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/desktop/youki.desktop.in ${PROJECT_BINARY_DIR}/desktop/youki.desktop)
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/info.backtrace.youki.app.service.in ${PROJECT_BINARY_DIR}/info.backtrace.youki.app.service)
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/info.backtrace.youki.mlibman.service.in ${PROJECT_BINARY_DIR}/info.backtrace.youki.mlibman.service)
+CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/info.backtrace.youki.sentinel.service.in ${PROJECT_BINARY_DIR}/info.backtrace.youki.sentinel.service)
 CONFIGURE_FILE(${PROJECT_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)
 
 ADD_SUBDIRECTORY(jnetlib)

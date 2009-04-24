@@ -1,15 +1,10 @@
 FIND_PATH(XERCESC_INCLUDE_DIR
   NAMES xercesc
   HINTS $ENV{XERCESCDIR}
-  PATH_SUFFIXES include
-  PATHS /usr/local /usr /opt/local opt
 )
  
-FIND_LIBRARY(XERCESC_LIBRARY
-  NAMES xerces-c
+FIND_LIBRARY(XERCESC_LIBRARY xerces-c
   HINTS $ENV{XERCESDIR}
-  PATH_SUFFIXES lib64 lib
-  PATHS /usr/local /usr /opt/local opt
 )
 
 SET(XERCESC_FOUND "NO")

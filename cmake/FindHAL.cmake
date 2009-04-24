@@ -5,6 +5,7 @@ IF(HAL_FOUND)
 
   MESSAGE(STATUS "checking for HAL PropertySetIterator")
 
+  # FIXME: Broken, this will always fail
   TRY_RUN(HAL_PSI_TEST_EXITCODE HAL_PSI_TEST_COMPILED
     ${CMAKE_BINARY_DIR}
     ${PROJECT_SOURCE_DIR}/cmake/hal-psi-test.cpp
@@ -20,5 +21,6 @@ IF(HAL_FOUND)
     MESSAGE(STATUS "  PropertySetIterator not found")
     SET(HAL_PSI_FOUND "NO")
   ENDIF(HAL_PSI_TEST_EXITCODE EQUAL 0)
+
 
 ENDIF(HAL_FOUND)

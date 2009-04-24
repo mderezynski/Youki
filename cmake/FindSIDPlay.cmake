@@ -1,15 +1,9 @@
-FIND_PATH(SIDPLAY_INCLUDE_DIR
-  NAMES sidplay
+FIND_PATH(SIDPLAY_INCLUDE_DIR sidplay
   HINTS $ENV{SIDPLAYDIR}
-  PATH_SUFFIXES include
-  PATHS /usr/local /usr /opt/local opt
 )
  
-FIND_LIBRARY(SIDPLAY_LIBRARY
-  NAMES sidplay
+FIND_LIBRARY(SIDPLAY_LIBRARY sidplay
   HINTS $ENV{SIDPLAYDIR}
-  PATH_SUFFIXES lib64 lib
-  PATHS /usr/local /usr /opt/local opt
 )
 
 SET(SIDPLAY_FOUND "NO")

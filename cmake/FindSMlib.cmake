@@ -1,25 +1,16 @@
 #pkg_check_modules (SM sm)
 
 IF(NOT SM_FOUND)
-  FIND_PATH(SM_INCLUDE_DIR
-    NAMES SM
+  FIND_PATH(SM_INCLUDE_DIR SM
     HINTS $ENV{SMDIR}
-    PATHS /usr/local /usr /opt/local /opt
-    PATH_SUFFIXES include/X11 include X11R6/include
   )
 
-  FIND_LIBRARY(SM_LIBRARY
-    NAMES SM
+  FIND_LIBRARY(SM_LIBRARY SM
     HINTS $ENV{SMDIR}
-    PATHS /usr/local/X11R6 /usr/X11R6 /opt/local/X11R6 /opt/X11R6
-    PATH_SUFFIXES lib64 lib
   )
 
-  FIND_LIBRARY(ICE_LIBRARY
-    NAMES ICE
+  FIND_LIBRARY(ICE_LIBRARY ICE
     HINTS $ENV{SMDIR}
-    PATHS /usr/local/X11R6 /usr/X11R6 /opt/local/X11R6 /opt/X11R6
-    PATH_SUFFIXES lib64 lib
   )
 
   IF(SM_INCLUDE_DIR AND SM_LIBRARY AND ICE_LIBRARY)
