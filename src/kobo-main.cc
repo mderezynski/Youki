@@ -42,6 +42,7 @@ namespace MPX
     {
         get_position( Mcs::Key::adaptor<int>(mcs->key("mpx", "window-x")), Mcs::Key::adaptor<int>(mcs->key("mpx", "window-y")));
         get_size( m_presize_width, Mcs::Key::adaptor<int>(mcs->key("mpx", "window-h")) );
+        mcs->key_set<int>("mpx", "window-w", m_presize_width ) ;
     }
 
     MainWindow::MainWindow ()
@@ -55,66 +56,70 @@ namespace MPX
         , m_drawer_width_max( 500 )
         , m_expand_direction( EXPAND_NONE )
 
-                     {
-                        set_title( "YOUKI player" ) ;
-                        set_decorated( false ) ;
-                        set_colormap(Glib::wrap(gdk_screen_get_rgba_colormap(gdk_screen_get_default()), true)) ; 
+    {
+        set_title( "YOUKI player" ) ;
+        set_decorated( false ) ;
+        set_colormap(Glib::wrap(gdk_screen_get_rgba_colormap(gdk_screen_get_default()), true)) ; 
 
-                        add_events( Gdk::BUTTON_PRESS_MASK ) ;
+        add_events( Gdk::BUTTON_PRESS_MASK ) ;
 
-                        m_title_logo      = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "title-logo.png" )) ;
-                        m_button_quit     = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "mainwindow-button-quit.png" )) ;
-                        m_button_maximize = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "mainwindow-button-maximize.png" )) ;
-                        m_button_minimize = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "mainwindow-button-minimize.png" )) ;
+        m_title_logo      = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "title-logo.png" )) ;
+        m_button_quit     = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "mainwindow-button-quit.png" )) ;
+        m_button_maximize = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "mainwindow-button-maximize.png" )) ;
+        m_button_minimize = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "mainwindow-button-minimize.png" )) ;
 
-                        set_geom_hints( false ) ;
+        set_geom_hints( false ) ;
 
-                        Glib::signal_timeout().connect(
-                              sigc::mem_fun(
-                                    *this
-                                  , &MainWindow::drawer_extend_timeout
-                              )
-                            , 20
-                        ) ;
+        Glib::signal_timeout().connect(
+              sigc::mem_fun(
+                    *this
+                  , &MainWindow::drawer_extend_timeout
+              )
+            , 20
+        ) ;
 
-                        m_presize_width = get_allocation().get_width() ;
+        m_presize_width = get_allocation().get_width() ;
 
-                        a1 = Gtk::manage( new Gtk::Alignment  ) ;
-                        a2 = Gtk::manage( new Gtk::Alignment  ) ;
+        a1 = Gtk::manage( new Gtk::Alignment  ) ;
+        a2 = Gtk::manage( new Gtk::Alignment  ) ;
 
-                        //a2->property_yalign() = 0. ;
+        //a2->property_yalign() = 0. ;
 
-                        a1->property_top_padding() = 20 ;
-                        a1->property_bottom_padding() = 16 ;
+        a1->property_top_padding() = 20 ;
+        a1->property_bottom_padding() = 16 ;
 
-                        //a2->property_bottom_padding() = 12 ;
+        //a2->property_bottom_padding() = 12 ;
 
-                        a1->set_border_width( 8 ) ;
-                        a2->set_border_width( 8 ) ;
+        a1->set_border_width( 8 ) ;
+        a2->set_border_width( 8 ) ;
 
-                        v = Gtk::manage( new Gtk::HBox ) ;
-                        v->pack_start( *a1, 0, 0, 0 ) ;
-                        v->pack_start( *a2, 0, 0, 0 ) ;
+        v = Gtk::manage( new Gtk::HBox ) ;
+        v->pack_start( *a1, 0, 0, 0 ) ;
+        v->pack_start( *a2, 0, 0, 0 ) ;
 
-                        a1->set_size_request( -1, 400 ) ;
-                        a2->set_size_request( -1, 0 ) ;
+        a1->set_size_request( -1, 400 ) ;
+        a2->set_size_request( -1, 0 ) ;
 
-                        add( *v ) ;
+        add( *v ) ;
 
-                        resize(
-                              mcs->key_get<int>("mpx","window-w"),
-                              mcs->key_get<int>("mpx","window-h")
-                        );
+        gtk_widget_realize( GTK_WIDGET( gobj() )) ;
 
-                        move(
-                              mcs->key_get<int>("mpx","window-x"),
-                              mcs->key_get<int>("mpx","window-y")
-                        );
+        while (gtk_events_pending())
+          gtk_main_iteration();
 
+        resize(
+              mcs->key_get<int>("mpx","window-w"),
+              mcs->key_get<int>("mpx","window-h")
+        );
 
-                        while (gtk_events_pending())
-                          gtk_main_iteration();
-                    }
+        move(
+              mcs->key_get<int>("mpx","window-x"),
+              mcs->key_get<int>("mpx","window-y")
+        );
+
+        while (gtk_events_pending())
+          gtk_main_iteration();
+    }
 
     void
     MainWindow::set_widget_top( Gtk::Widget & w )
@@ -228,19 +233,19 @@ namespace MPX
                         r1.set_height( 1 ) ;
 
                         // quit
-                        r2.set_x( m_presize_width - 12 - 4 ) ;
+                        r2.set_x( m_presize_width - 12 - 3 ) ;
                         r2.set_y( 4 ) ; 
                         r2.set_width( 12 ) ; 
                         r2.set_height( 12 ) ; 
 
                         // maximize
-                        r3.set_x( m_presize_width - 28 - 4 ) ; 
+                        r3.set_x( m_presize_width - 27 - 3 ) ; 
                         r3.set_y( 4 ) ; 
                         r3.set_width( 12 ) ; 
                         r3.set_height( 12 ) ; 
 
                         // minimize
-                        r4.set_x( m_presize_width - 44 - 4 ) ; 
+                        r4.set_x( m_presize_width - 42 - 3 ) ; 
                         r4.set_y( 4 ) ; 
                         r4.set_width( 12 ) ; 
                         r4.set_height( 12 ) ; 
@@ -476,11 +481,12 @@ namespace MPX
 
                         // off
 
-                        r.y         = 4 ; 
+                        r.y         =  4 ; 
                         r.width     = 12 ; 
                         r.height    = 12 ; 
 
-                        r.x = m_presize_width - 12 - 4 ; 
+                        r.x = m_presize_width - 12 - 3 ; 
+
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_button_quit 
@@ -500,7 +506,7 @@ namespace MPX
 
                         // maximize
 
-                        r.x = m_presize_width - 28 - 4 ;
+                        r.x = m_presize_width - 27 - 3 ;
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_button_maximize 
@@ -522,7 +528,7 @@ namespace MPX
 
                         // minimize
 
-                        r.x = m_presize_width - 44 - 4 ;
+                        r.x = m_presize_width - 42 - 3 ;
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_button_minimize 

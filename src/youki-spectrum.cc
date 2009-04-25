@@ -53,7 +53,7 @@ namespace MPX
         set_size_request( -1, 44 ) ;
 
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
-        const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
+        const ThemeColor& c = theme->get_color( THEME_COLOR_BACKGROUND ) ;
         m_stage = get_stage() ;
         m_stage->set_color( Clutter::Color( c.r * 255, c.g * 255, c.b * 255 ) ) ;
 

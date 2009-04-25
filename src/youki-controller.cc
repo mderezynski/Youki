@@ -524,13 +524,19 @@ namespace MPX
         )) ;
 
         reload_library () ;
-        m_ListViewArtist->clear_selection() ;
-        m_ListViewAlbums->clear_selection() ;
 
-        m_Paned1->set_position( mcs->key_get<int>("main-window","paned1") ) ;
-        while (gtk_events_pending()) gtk_main_iteration() ;
+        m_ListViewAlbums->select_row( 0 ) ;
+        m_ListViewArtist->select_row( 0 ) ;
+
+        private_->FilterModelTracks->set_filter( m_Entry_Text ) ;
+
+        gtk_widget_realize( GTK_WIDGET( m_Paned1->gobj() )) ;
+        gtk_widget_realize( GTK_WIDGET( m_Paned2->gobj() )) ;
 
         m_Paned2->set_position( mcs->key_get<int>("main-window","paned2") ) ;
+        while (gtk_events_pending()) gtk_main_iteration() ;
+
+        m_Paned1->set_position( mcs->key_get<int>("main-window","paned1") ) ;
         while (gtk_events_pending()) gtk_main_iteration() ;
     }
 
