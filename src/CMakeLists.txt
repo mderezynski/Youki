@@ -1,3 +1,8 @@
+IF(HAVE_HAL)
+  SET(youki_bin_ADD_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/libhal++)
+  SET(youki_bin_ADD_LIBRARIES halcc)
+ENDIF(HAVE_HAL)
+
 INCLUDE_DIRECTORIES(
   ${ALSA_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
@@ -31,7 +36,8 @@ INCLUDE_DIRECTORIES(
   ${XPROTO_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_SOURCE_DIR}/include
-  ${PROJECT_SOURCE_DIR}/libhal++
+  ${PROJECT_SOURCE_DIR}/src # FIXME: Get rid of cross header dependencies between /src and /include
+  ${youki_bin_add_INCLUDE_DIRS}
 )
 
 SET(youki_bin_SOURCES
@@ -159,7 +165,7 @@ TARGET_LINK_LIBRARIES(youki-bin
   mpx-musicbrainz
   mpx-view-components
   mpx-json
-  #halcc (if HAVE_HAL is true)
+  ${youki_bin_ADD_LIBRARIES}
 )
 
 ADD_CUSTOM_COMMAND(OUTPUT mpx-mlibman-dbus-proxy.hh

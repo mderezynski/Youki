@@ -1,7 +1,6 @@
 #ifndef MPX_TAGVIEW_HH
 #define MPX_TAGVIEW_HH
 
-
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
 #include <boost/shared_ptr.hpp>

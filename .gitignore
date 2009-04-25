@@ -107,3 +107,4 @@ CMakeFiles
 cmake_install.cmake
 CPack*Config.cmake
 *.so
+*.so.*

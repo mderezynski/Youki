@@ -57,21 +57,6 @@
 /* Define if ALSA is present */
 #cmakedefine HAVE_ALSA
 
-/* define if the Boost library is available */
-#cmakedefine HAVE_BOOST
-
-/* define if the Boost::Filesystem library is available */
-#cmakedefine HAVE_BOOST_FILESYSTEM
-
-/* define if the Boost::IOStreams library is available */
-#cmakedefine HAVE_BOOST_IOSTREAMS
-
-/* define if the Boost::Python library is available */
-#cmakedefine HAVE_BOOST_PYTHON
-
-/* define if the Boost::Regex library is available */
-#cmakedefine HAVE_BOOST_REGEX
-
 /* have cdio */
 #cmakedefine HAVE_CDIO
 

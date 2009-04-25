@@ -1,3 +1,9 @@
+IF(HAVE_HAL)
+  SET(mpx_api_ADD_SOURCES      hal.cc)
+  SET(mpx_api_ADD_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/libhal++)
+  SET(mpx_api_ADD_LIBRARIES    halcc)
+ENDIF(HAVE_HAL)
+
 INCLUDE_DIRECTORIES(
   ${ALSA_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
@@ -32,21 +38,33 @@ INCLUDE_DIRECTORIES(
   ${XPROTO_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_SOURCE_DIR}/include	
+  ${mpx_api_ADD_INCLUDE_DIRS}
 )
 
 SET(mpx_api_SOURCES
   aque.cc
   base64.c
-  md5.c
-  random.cc
+  error.cc
   gstpuid.cc
   libxml2-sax-base.cc
-  xspf-libxml2-sax.cc
   lyrics.cc
-  playlistparser-xspf.cc
-  playlistparser-pls.cc
+  md5.c
+  metadatareader-taglib.cc
+  minisoup.cc
+  network.cc
+  paths.cc
+  random.cc
+  services.cc
+  signals.cc
+  sql.cc
+  uri.cc
+  util-file.cc
+  util-graphics.cc
+  util-string.cc
+  util-ui.cc
   xml.cc
   xpath.cc
+  ${mpx_api_ADD_SOURCES}
 )
 
 ADD_LIBRARY(mpx-api SHARED ${mpx_api_SOURCES})
@@ -85,9 +103,8 @@ TARGET_LINK_LIBRARIES(mpx-api
   ${TAGLIB_LIBRARIES}
   ${XML_LIBRARIES}
   ${X11_X11_LIB}
-  gstinterfaces-0.10
-  gstvideo-0.10
   mpx-parsers
+  ${mpx_api_ADD_LIBRARIES}
 )
 
 INSTALL(TARGETS mpx-api LIBRARY DESTINATION ${MPX_LIBDIR})

@@ -1,3 +1,8 @@
+IF(HAVE_HAL)
+  SET(youki_mlibman_bin_ADD_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/libhal++)
+  SET(youki_mlibman_bin_ADD_LIBRARIES halcc)
+ENDIF(HAVE_HAL)
+
 INCLUDE_DIRECTORIES(
   ${BOOST_CPPFLAGS}
   ${CAIROMM_INCLUDE_DIRS}
@@ -19,7 +24,7 @@ INCLUDE_DIRECTORIES(
   ${XPROTO_INCLUDE_DIRS}
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_SOURCE_DIR}/include
-  ${PROJECT_SOURCE_DIR}/libhal++
+  ${youki_mlibman_bin_ADD_INCLUDE_DIRS}
 )
 
 # FIXME: Check definitions in GLIB_INCLUDE_DIRS and GST_INCLUDE_DIRS
@@ -77,7 +82,7 @@ TARGET_LINK_LIBRARIES(youki-mlibman-bin
   mpx-api
   mpx-widgets
   mpx-musicbrainz
-  #halcc (if HAVE_HAL is defined)
+  ${youki_mlibman_bin_ADD_LIBRARIES}
 )
 
 ADD_CUSTOM_COMMAND(OUTPUT mpx-mlibman-dbus.hh
