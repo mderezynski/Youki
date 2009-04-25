@@ -72,11 +72,11 @@ TARGET_LINK_LIBRARIES(youki-mlibman-bin
   ${SQLITE_LIBRARIES}
   ${TAGLIB_LIBRARIES}
   ${XML_LIBRARIES}
-  ${X11_X11_LIBRARY}
-  #mconfig
-  #mpx-api
-  #mpx-widgets
-  #mpx-musicbrainz
+  ${X11_X11_LIB}
+  mconfig
+  mpx-api
+  mpx-widgets
+  mpx-musicbrainz
   #halcc (if HAVE_HAL is defined)
 )
 

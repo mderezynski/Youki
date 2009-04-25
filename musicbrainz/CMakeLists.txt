@@ -27,5 +27,5 @@ ADD_LIBRARY(mpx-musicbrainz SHARED ${mpx_musicbrainz_SOURCES})
 TARGET_LINK_LIBRARIES(mpx-musicbrainz
   ${Boost_FILESYSTEM_LIBRARY}
   ${SOUP_LIBRARIES}
-# mpx-parsers
+  mpx-parsers
 )

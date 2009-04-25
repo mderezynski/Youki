@@ -1,4 +1,4 @@
-#pkg_check_modules (SM sm)
+#PKG_CHECK_MODULES(SM sm)
 
 IF(NOT SM_FOUND)
   FIND_PATH(SM_INCLUDE_DIR SM

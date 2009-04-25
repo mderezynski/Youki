@@ -1,5 +1,16 @@
 ADD_DEFINITIONS(-DENABLE_DEBUG=1)
 
+INCLUDE_DIRECTORIES(
+  ${Boost_INCLUDE_DIR}
+  ${CURL_INCLUDE_DIRS}
+  ${DBUS_INCLUDE_DIRS}
+  ${GLADEMM_INCLUDE_DIRS}
+  ${GLIBMM_INCLUDE_DIRS}
+  ${GTKMM_INCLUDE_DIRS}
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/include
+)
+
 SET(cppmod_lastfmscrobbler_SOURCES
   cppmod-scrobbler.cc
   cppmod-scrobbler.hh
@@ -32,17 +43,6 @@ SET(cppmod_lastfmscrobbler_SOURCES
   thread.h
   urlclient.cpp
   urlclient.h
-)
-
-INCLUDE_DIRECTORIES(
-  ${Boost_INCLUDE_DIR}
-  ${CURL_INCLUDE_DIRS}
-  ${DBUS_INCLUDE_DIRS}
-  ${GLADEMM_INCLUDE_DIRS}
-  ${GLIBMM_INCLUDE_DIRS}
-  ${GTKMM_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}
-  ${PROJECT_SOURCE_DIR}/include
 )
 
 # FIXME: Are all these flags included? -dynamic -fPIC -module

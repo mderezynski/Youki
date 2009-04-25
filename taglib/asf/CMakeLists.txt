@@ -26,7 +26,7 @@ ADD_LIBRARY(taglib_plugin_asf MODULE ${taglib_plugin_asf_SOURCES})
 TARGET_LINK_LIBRARIES(taglib_plugin_asf
   ${TAGLIB_LIBRARIES}
   ${GLIBMM_LIBRARIES}
-  #mpx_common_reader
+  mpx_common_reader
 )
 
 INSTALL(TARGETS taglib_plugin_asf LIBRARY DESTINATION ${PLUGIN_DIR}/taglib)

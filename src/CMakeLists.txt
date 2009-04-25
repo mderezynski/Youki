@@ -1,13 +1,12 @@
 INCLUDE_DIRECTORIES(
-  #${ALSA_INCLUDE_DIRS}
+  ${ALSA_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
   ${CAIROMM_INCLUDE_DIRS}
-  ${CLUTTER_INCLUDE_DIRS}
-  #${CDIO_INCLUDE_DIRS}
+  ${CDIO_INCLUDE_DIRS}
   ${CDPARANOIA_INCLUDE_DIRS}
-  #${CURL_INCLUDE_DIRS}
+  ${CLUTTER_INCLUDE_DIRS}
+  ${CURL_INCLUDE_DIRS}
   ${DBUS_INCLUDE_DIRS}
-  #${EXO_INCLUDE_DIRS}
   ${GDL_INCLUDE_DIRS}
   ${GIOMM_INCLUDE_DIRS}
   ${GLADEMM_INCLUDE_DIRS}
@@ -127,11 +126,10 @@ TARGET_LINK_LIBRARIES(youki-bin
   ${Boost_PYTHON_LIBRARY}
   ${CAIROMM_LIBRARIES}
   ${CLUTTER_LIBRARIES}
-  #${CDIO_LIBRARIES}
-  ${CDPARANOIA_LIBS}
+  ${CDIO_LIBRARIES}
+  ${CDPARANOIA_LIBRARY}
   ${CURL_LIBRARIES}
   ${DBUS_LIBRARIES}
-  #${EXO_LIBRARIES}
   ${GDL_LIBRARIES}
   ${GIOMM_LIBRARIES}
   ${GLADEMM_LIBRARIES}
@@ -154,13 +152,13 @@ TARGET_LINK_LIBRARIES(youki-bin
   ${TAGLIB_LIBRARIES}
   ${XML_LIBRARIES}
   ${X11_X11_LIB}
-  #jnetlib
-  #mconfig
-  #mpx-api
-  #mpx-widgets
-  #mpx-musicbrainz
-  #mpx-view-components
-  #mpx-json
+  jnetlib
+  mconfig
+  mpx-api
+  mpx-widgets
+  mpx-musicbrainz
+  mpx-view-components
+  mpx-json
   #halcc (if HAVE_HAL is true)
 )
 

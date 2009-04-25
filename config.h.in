@@ -37,7 +37,7 @@
 
 /* Plugins settings */
 #define PLUGIN_DIR          "@PLUGIN_DIR@"
-#define PLUGIN_VERSION      "@PLUGIN_VERSION@"
+#define PLUGIN_VERSION      @PLUGIN_VERSION@
 
 /* Directory for D-BUS service files */
 #define DBUS_SERVICES_DIR   "@DBUS_SERVICES_DIR@"
