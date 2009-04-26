@@ -38,7 +38,6 @@ SET(mpx_widgets_SOURCES
   dialog-simple-entry.cc
   rounded-layout.cc
   rounded-alignment.cc
-  seekscale.cc
   task-dialog.cc
   timed-confirmation.cc
   tidy-actor.c
