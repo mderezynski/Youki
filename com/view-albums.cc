@@ -21,9 +21,6 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 #include "config.h"
-#ifdef HAVE_TR1
-#include <tr1/unordered_map>
-#endif //HAVE_TR1
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include <glib.h>

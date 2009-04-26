@@ -1,4 +1,4 @@
-
+#include <config.h>
 #include "mpx/com/tagview.hh"
 
 #include <gtkmm.h>

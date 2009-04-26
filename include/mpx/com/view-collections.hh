@@ -23,7 +23,6 @@
 #ifndef MPX_MUSICLIB_VIEW_COLLECTIONS_HH
 #define MPX_MUSICLIB_VIEW_COLLECTIONS_HH
 #include "config.h"
-#include <tr1/unordered_map>
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include <glib.h>
@@ -32,6 +31,12 @@
 #include <Python.h>
 #define NO_IMPORT
 #include <pygobject.h>
+
+#ifdef HAVE_TR1
+#include <tr1/unordered_map>
+#else
+#include <map>
+#endif
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -70,7 +75,11 @@ namespace MPX
                     public:
 
                         typedef std::set<Gtk::TreeIter>                         IterSet;
-                        typedef std::tr1::unordered_map<gint64, Gtk::TreeIter>  IdIterMap; 
+#ifdef HAVE_TR1
+                        typedef std::tr1::unordered_map<gint64, Gtk::TreeIter>  IdIterMap;
+#else
+                        typedef std::map<gint64, Gtk::TreeIter>                 IdIterMap;
+#endif
 
                         struct ColumnsT : public Gtk::TreeModel::ColumnRecord 
                         {

@@ -26,8 +26,6 @@
 #include <glibmm/i18n.h>
 #include <giomm.h>
 
-#include <tr1/unordered_set>
-
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-sql.hh"

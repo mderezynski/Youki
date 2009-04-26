@@ -25,12 +25,17 @@
 //  MPX is covered by.
 #ifndef MPX_LIBRARY_SCANNER_THREAD_MLIBMAN_HH
 #define MPX_LIBRARY_SCANNER_THREAD_MLIBMAN_HH
+
 #include <config.h>
 #include <glibmm.h>
 #include <sigx/sigx.h>
 #include <sigx/signal_f.h>
 #include <sigx/request_f.h>
-#include <tr1/unordered_map> 
+#ifdef HAVE_TR1
+#include <tr1/unordered_map>
+#else
+#include <map>
+#endif
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
 #include "mpx/mpx-covers.hh"
@@ -302,10 +307,17 @@ namespace MPX
             typedef boost::shared_ptr<TrackInfo>    TrackInfo_p;
             typedef std::vector<TrackInfo_p>        TrackInfo_p_Vector;
 
+#ifdef HAVE_TR1
             typedef std::tr1::unordered_map<gint64,      TrackInfo_p_Vector>   Map_L4;
             typedef std::tr1::unordered_map<std::string, Map_L4>               Map_L3;
             typedef std::tr1::unordered_map<gint64,      Map_L3>               Map_L2;
             typedef std::tr1::unordered_map<gint64,      Map_L2>               Map_L1;
+#else
+            typedef std::map<gint64,      TrackInfo_p_Vector>   Map_L4;
+            typedef std::map<std::string, Map_L4>               Map_L3;
+            typedef std::map<gint64,      Map_L3>               Map_L2;
+            typedef std::map<gint64,      Map_L2>               Map_L1;
+#endif
 
             //typedef std::map<gint64 , std::map<gint64, std::map<std::string, TrackInfo_p_Vector> > > InsertionTracks_t;
 

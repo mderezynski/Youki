@@ -28,7 +28,11 @@
 #include <glibmm/i18n.h>
 #include <giomm.h>
 
+#ifdef HAVE_TR1
 #include <tr1/unordered_set>
+#else
+#include <set>
+#endif
 
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-uri.hh"
@@ -1138,7 +1142,11 @@ namespace MPX
                 {
                         boost::shared_ptr<MPX::MLibManager> mm = services->get<MLibManager>("mpx-service-mlibman");
 
-                        typedef std::tr1::unordered_set <gint64> IdSet;
+#ifdef HAVE_TR1
+                        typedef std::tr1::unordered_set<gint64> IdSet;
+#else
+                        typedef std::set<gint64> IdSet;
+#endif
                         static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld'");
                         IdSet idset1;
                         IdSet idset2;

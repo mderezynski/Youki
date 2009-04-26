@@ -28,14 +28,7 @@
 #include "config.h"
 
 #include <string>
-#include <vector>
-#include <map>
-#include <set>
-#include <tr1/unordered_map>
-#include <ctime>
 #include <glib/gtypes.h>
-#include <glibmm/ustring.h>
-#include <boost/functional/hash.hpp>
 #include "libhal++/hal++.hh"
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-services.hh"

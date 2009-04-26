@@ -6,7 +6,12 @@
 #include <giomm.h>
 #include <glibmm.h>
 #include <glibmm/i18n.h>
+
+#ifdef HAVE_TR1
 #include <tr1/unordered_set>
+#else
+#include <set>
+#endif
 
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
@@ -1672,7 +1677,12 @@ MPX::LibraryScannerThread_MLibMan::do_remove_dangling ()
 {
   ThreadData * pthreaddata = m_ThreadData.get();
 
-  typedef std::tr1::unordered_set <gint64> IdSet;
+#ifdef HAVE_TR1
+  typedef std::tr1::unordered_set<gint64> IdSet;
+#else
+  typedef std::set<gint64> IdSet;
+#endif HAVE_TR1
+
   static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld'");
   IdSet idset1;
   IdSet idset2;

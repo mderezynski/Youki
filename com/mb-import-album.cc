@@ -22,9 +22,6 @@
 //  MPX is covered by.
 #include "mpx/com/mb-import-album.hh"
 #include "config.h"
-#ifdef HAVE_TR1
-#include <tr1/unordered_map>
-#endif //HAVE_TR1
 #include <glibmm/i18n.h>
 #include <gtkmm.h>
 #include <glib.h>
