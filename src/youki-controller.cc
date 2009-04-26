@@ -130,9 +130,9 @@ namespace MPX
 {
     struct YoukiController::Private
     {
-        DataModelFilterArtist_SP_t        FilterModelArtist ;
-        DataModelFilterAlbums_SP_t        FilterModelAlbums ;
-        DataModelFilterTracks_SP_t        FilterModelTracks ;
+        View::Artist::DataModelFilter_SP_t  FilterModelArtist ;
+        View::Albums::DataModelFilter_SP_t  FilterModelAlbums ;
+        View::Tracks::DataModelFilter_SP_t  FilterModelTracks ;
 
         boost::shared_ptr<MarkovTypingPredictor> MarkovPredictor ;
 
@@ -276,21 +276,21 @@ namespace MPX
         m_Alignment_Entry   = Gtk::manage( new Gtk::Alignment ) ;
         m_Label_Search      = Gtk::manage( new Gtk::Label(_("_Search:"))) ;
 
-        m_ListViewTracks          = Gtk::manage( new ListViewTracks ) ;
+        m_ListViewTracks        = Gtk::manage( new View::Tracks::Class ) ;
         m_ListViewTracks->signal_track_activated().connect(
             sigc::mem_fun(
                       *this
                     , &YoukiController::on_list_view_tr_track_activated
         )) ;
 
-        m_ListViewArtist        = Gtk::manage( new ListViewArtist ) ;
+        m_ListViewArtist        = Gtk::manage( new View::Artist::Class ) ;
         m_conn1 = m_ListViewArtist->signal_selection_changed().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_list_view_aa_selection_changed
         )) ;
 
-        m_ListViewAlbums    = Gtk::manage( new ListViewAlbums ) ;
+        m_ListViewAlbums        = Gtk::manage( new View::Albums::Class ) ;
         m_conn2 = m_ListViewAlbums->signal_selection_changed().connect(
             sigc::mem_fun(
                   *this
@@ -393,20 +393,20 @@ namespace MPX
         m_ScrolledWinTracks->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
 
         {
-                DataModelTracks_SP_t m ( new DataModelTracks ) ;
-                private_->FilterModelTracks = DataModelFilterTracks_SP_t (new DataModelFilterTracks( m )) ;
+                View::Tracks::DataModel_SP_t m ( new View::Tracks::DataModel ) ;
+                private_->FilterModelTracks = View::Tracks::DataModelFilter_SP_t (new View::Tracks::DataModelFilter( m )) ;
 
-                ColumnP c1 (new Column(_("Title"))) ;
+                View::Tracks::Column_SP_t c1 (new View::Tracks::Column(_("Title"))) ;
                 c1->set_column(0) ;
 
-                ColumnP c2 (new Column(_("Track"))) ;
+                View::Tracks::Column_SP_t c2 (new View::Tracks::Column(_("Track"))) ;
                 c2->set_column(5) ;
                 c2->set_alignment( Pango::ALIGN_RIGHT ) ;
 
-                ColumnP c3 (new Column(_("Album"))) ;
+                View::Tracks::Column_SP_t c3 (new View::Tracks::Column(_("Album"))) ;
                 c3->set_column(2) ;
 
-                ColumnP c4 (new Column(_("Artist"))) ;
+                View::Tracks::Column_SP_t c4 (new View::Tracks::Column(_("Artist"))) ;
                 c4->set_column(1) ;
 
                 m_ListViewTracks->append_column(c1) ;
@@ -440,10 +440,10 @@ namespace MPX
         }
 
         {
-                DataModelArtist_SP_t m (new DataModelArtist) ;
-                private_->FilterModelArtist = DataModelFilterArtist_SP_t (new DataModelFilterArtist(m)) ;
+                View::Artist::DataModel_SP_t m (new View::Artist::DataModel) ;
+                private_->FilterModelArtist = View::Artist::DataModelFilter_SP_t (new View::Artist::DataModelFilter( m )) ;
 
-                ColumnArtist_SP_t c1 (new ColumnArtist(_("Album Artist"))) ;
+                View::Artist::Column_SP_t c1 (new View::Artist::Column(_("Album Artist"))) ;
                 c1->set_column(0) ;
 
                 m_ListViewArtist->append_column(c1) ;
@@ -454,10 +454,10 @@ namespace MPX
         }
 
         {
-                DataModelAlbums_SP_t m ( new DataModelAlbums ) ;
-                private_->FilterModelAlbums = DataModelFilterAlbums_SP_t (new DataModelFilterAlbums( m )) ;
+                View::Albums::DataModel_SP_t m ( new View::Albums::DataModel ) ;
+                private_->FilterModelAlbums = View::Albums::DataModelFilter_SP_t (new View::Albums::DataModelFilter( m )) ;
 
-                ColumnAlbums_SP_t c1 ( new ColumnAlbums ) ;
+                View::Albums::Column_SP_t c1 ( new View::Albums::Column ) ;
                 c1->set_column(0) ;
 
                 m_ListViewAlbums->append_column( c1 ) ;
@@ -682,14 +682,14 @@ namespace MPX
     {
         using boost::get ;
 
-        DataModelTracks_SP_t m1 ( new DataModelTracks ) ;
-        DataModelFilterTracks_SP_t model_tracks = DataModelFilterTracks_SP_t (new DataModelFilterTracks( m1 )) ;
+        View::Tracks::DataModel_SP_t m1 ( new View::Tracks::DataModel ) ;
+        View::Tracks::DataModelFilter_SP_t model_tracks = View::Tracks::DataModelFilter_SP_t (new View::Tracks::DataModelFilter( m1 )) ;
 
-        DataModelArtist_SP_t m2 (new DataModelArtist) ;
-        DataModelFilterArtist_SP_t model_album_artists = DataModelFilterArtist_SP_t (new DataModelFilterArtist( m2 )) ;
+        View::Artist::DataModel_SP_t m2 (new View::Artist::DataModel) ;
+        View::Artist::DataModelFilter_SP_t model_album_artists = View::Artist::DataModelFilter_SP_t (new View::Artist::DataModelFilter( m2 )) ;
 
-        DataModelAlbums_SP_t m3 ( new DataModelAlbums ) ;
-        DataModelFilterAlbums_SP_t model_albums = DataModelFilterAlbums_SP_t (new DataModelFilterAlbums( m3 )) ;
+        View::Albums::DataModel_SP_t m3 ( new View::Albums::DataModel ) ;
+        View::Albums::DataModelFilter_SP_t model_albums = View::Albums::DataModelFilter_SP_t (new View::Albums::DataModelFilter( m3 )) ;
 
         // Tracks 
 

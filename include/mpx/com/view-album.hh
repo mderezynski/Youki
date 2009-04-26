@@ -84,33 +84,38 @@ namespace
 
 namespace MPX
 {
-        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string>  RowAlbum ;
+namespace View
+{
+namespace Albums
+{
+        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string>  Row_t ;
 
-        typedef std::vector<RowAlbum>                                                                       ModelAlbums_t ;
-        typedef boost::shared_ptr<ModelAlbums_t>                                                            ModelAlbums_SP_t ;
-        typedef std::map<gint64, ModelAlbums_t::iterator>                                                   IdIterMapAlbums_t ;
+        typedef std::vector<Row_t>                                                      Model_t ;
+        typedef boost::shared_ptr<Model_t>                                              Model_SP_t ;
+        typedef std::map<gint64, Model_t::iterator>                                     IdIterMap_t ;
 
-        typedef sigc::signal<void>                                                                          SignalAlbums_0 ;
-        typedef sigc::signal<void, std::size_t, bool>                                                       SignalAlbums_1 ;
+        typedef sigc::signal<void>                                                      Signal_0 ;
+        typedef sigc::signal<void, std::size_t, bool>                                   Signal_1 ;
 
-        struct DataModelAlbums : public sigc::trackable
+        struct DataModel
+        : public sigc::trackable
         {
-                ModelAlbums_SP_t                m_realmodel ;
-                IdIterMapAlbums_t               m_iter_map ;
+                Model_SP_t                      m_realmodel ;
+                IdIterMap_t                     m_iter_map ;
                 std::size_t                     m_position ;
                 boost::optional<gint64>         m_selected ;
                 boost::optional<std::size_t>    m_selected_row ;
 
-                SignalAlbums_0                  m_select ;
-                SignalAlbums_1                  m_changed ;
+                Signal_0                        m_select ;
+                Signal_1                        m_changed ;
 
-                DataModelAlbums()
+                DataModel()
                 : m_position( 0 )
                 {
-                    m_realmodel = ModelAlbums_SP_t(new ModelAlbums_t); 
+                    m_realmodel = Model_SP_t(new Model_t); 
                 }
 
-                DataModelAlbums(ModelAlbums_SP_t model)
+                DataModel(Model_SP_t model)
                 : m_position( 0 )
                 {
                     m_realmodel = model; 
@@ -124,13 +129,13 @@ namespace MPX
                     m_changed.emit( 0, true ) ;
                 } 
 
-                virtual SignalAlbums_1&
+                virtual Signal_1&
                 signal_changed ()
                 {
                     return m_changed ;
                 }
 
-                virtual SignalAlbums_0&
+                virtual Signal_0&
                 signal_select ()
                 {
                     return m_select ;
@@ -149,7 +154,7 @@ namespace MPX
                     return m_realmodel->size() ;
                 }
 
-                virtual RowAlbum&
+                virtual Row_t&
                 row (std::size_t row)
                 {
                     return (*m_realmodel)[row] ;
@@ -190,10 +195,10 @@ namespace MPX
                     , const std::string&                    year
                 )
                 {
-                    RowAlbum row ( surface, id_album, id_artist, album, album_artist, mbid, get_rt( type ), year ) ; 
+                    Row_t row ( surface, id_album, id_artist, album, album_artist, mbid, get_rt( type ), year ) ; 
                     m_realmodel->push_back( row ) ;
 
-                    ModelAlbums_t::iterator i = m_realmodel->end() ;
+                    Model_t::iterator i = m_realmodel->end() ;
                     std::advance( i, -1 ) ;
                     m_iter_map.insert( std::make_pair( id_album, i) ) ; 
                 }
@@ -203,7 +208,7 @@ namespace MPX
                     gint64 id_album
                 )
                 {
-                    IdIterMapAlbums_t::iterator i = m_iter_map.find( id_album ) ;
+                    IdIterMap_t::iterator i = m_iter_map.find( id_album ) ;
 
                     if( i != m_iter_map.end() )
                     {
@@ -213,13 +218,14 @@ namespace MPX
                 }
         };
 
-        typedef boost::shared_ptr<DataModelAlbums> DataModelAlbums_SP_t;
+        typedef boost::shared_ptr<DataModel> DataModel_SP_t;
 
-        struct DataModelFilterAlbums : public DataModelAlbums
+        struct DataModelFilter
+        : public DataModel
         {
             public:
 
-                typedef std::vector<ModelAlbums_t::iterator> RowRowMapping ;
+                typedef std::vector<Model_t::iterator> RowRowMapping ;
 
                 RowRowMapping                           m_mapping ;
 
@@ -228,13 +234,13 @@ namespace MPX
 
             public:
 
-                DataModelFilterAlbums(DataModelAlbums_SP_t & model)
-                : DataModelAlbums(model->m_realmodel)
+                DataModelFilter(DataModel_SP_t & model)
+                : DataModel(model->m_realmodel)
                 {
                     regen_mapping() ;
                 }
 
-                virtual ~DataModelFilterAlbums()
+                virtual ~DataModelFilter()
                 {
                 }
 
@@ -283,7 +289,7 @@ namespace MPX
                     return m_mapping.size();
                 }
 
-                virtual RowAlbum&
+                virtual Row_t&
                 row (std::size_t row)
                 {
                     return *(m_mapping[row]);
@@ -308,7 +314,7 @@ namespace MPX
                     , const std::string&                    year
                 )
                 {
-                    DataModelAlbums::append_album(
+                    DataModel::append_album(
                           surface
                         , id_album
                         , id_artist
@@ -334,7 +340,7 @@ namespace MPX
                     , const std::string&                        year
                 )
                 {
-                    DataModelAlbums::append_album(
+                    DataModel::append_album(
                           surface
                         , id_album
                         , id_artist
@@ -351,7 +357,7 @@ namespace MPX
                       gint64 id_album
                 )
                 {
-                    DataModelAlbums::erase_album( id_album );
+                    DataModel::erase_album( id_album );
                     regen_mapping();
                 }
 
@@ -376,7 +382,7 @@ namespace MPX
 
                     m_position = 0 ;
     
-                    ModelAlbums_t::iterator i = m_realmodel->begin() ;
+                    Model_t::iterator i = m_realmodel->begin() ;
                     new_mapping.push_back( i++ ) ;
 
                     for( ; i != m_realmodel->end(); ++i )
@@ -406,7 +412,7 @@ namespace MPX
 
                     if( new_mapping != m_mapping )
                     {
-                        RowAlbum & row = *(m_realmodel->begin()) ;
+                        Row_t & row = *(m_realmodel->begin()) ;
 
                         long long int sz = new_mapping.size() - 1 ;
 
@@ -424,23 +430,23 @@ namespace MPX
                 }
         };
 
-        typedef boost::shared_ptr<DataModelFilterAlbums> DataModelFilterAlbums_SP_t;
+        typedef boost::shared_ptr<DataModelFilter> DataModelFilter_SP_t;
 
-        class ColumnAlbums
+        class Column
         {
                 int m_width ;
                 int m_column ;
 
             public:
 
-                ColumnAlbums(
+                Column(
                 )
                     : m_width( 0 )
                     , m_column( 0 )
                 {
                 }
 
-                ~ColumnAlbums ()
+                ~Column ()
                 {
                 }
 
@@ -472,7 +478,7 @@ namespace MPX
                 render(
                       Cairo::RefPtr<Cairo::Context>&        cairo
                     , Cairo::RefPtr<Cairo::ImageSurface>&   s_fallback
-                    , const RowAlbum&                       data_row
+                    , const Row_t&                       data_row
                     , Gtk::Widget&                          widget
                     , int                                   row
                     , int                                   xpos
@@ -692,30 +698,30 @@ namespace MPX
                 }
         };
 
-        typedef boost::shared_ptr<ColumnAlbums>                                                 ColumnAlbums_SP_t ;
-        typedef std::vector<ColumnAlbums_SP_t>                                                  ColumnAlbums_SP_t_vector_t ;
+        typedef boost::shared_ptr<Column>                                                 Column_SP_t ;
+        typedef std::vector<Column_SP_t>                                                  Column_SP_t_vector_t ;
 
         typedef sigc::signal<void>                                                              SignalSelectionChanged ;
 
-        class ListViewAlbums : public Gtk::DrawingArea
+        class Class : public Gtk::DrawingArea
         {
             public:
 
-                DataModelFilterAlbums_SP_t          m_model ;
+                DataModelFilter_SP_t          m_model ;
 
             private:
 
                 int                                 m_row_height ;
                 int                                 m_visible_height ;
 
-                ColumnAlbums_SP_t_vector_t          m_columns ;
+                Column_SP_t_vector_t          m_columns ;
 
                 PropAdj                             m_prop_vadj ;
                 PropAdj                             m_prop_hadj ;
 
                 guint                               m_signal0 ; 
 
-                boost::optional<boost::tuple<ModelAlbums_t::iterator, gint64, std::size_t> >  m_selection ; 
+                boost::optional<boost::tuple<Model_t::iterator, gint64, std::size_t> >  m_selection ; 
 
                 SignalSelectionChanged              m_SIGNAL_selection_changed ;
 
@@ -1135,7 +1141,7 @@ namespace MPX
                     {
                         xpos = 0 ;
 
-                        ModelAlbums_t::iterator  selected           = m_model->m_mapping[row] ;
+                        Model_t::iterator  selected           = m_model->m_mapping[row] ;
                         bool                     iter_is_selected   = ( m_selection && get<2>(m_selection.get()) == row ) ;
 
                         if( iter_is_selected )
@@ -1154,7 +1160,7 @@ namespace MPX
                             ) ;
                         }
 
-                        for( ColumnAlbums_SP_t_vector_t::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i )
+                        for( Column_SP_t_vector_t::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i )
                         {
                             (*i)->render(
                                     cairo
@@ -1276,12 +1282,12 @@ namespace MPX
                             g_object_set(G_OBJECT(obj), "vadjustment", vadj, NULL); 
                             g_object_set(G_OBJECT(obj), "hadjustment", hadj, NULL);
 
-                            ListViewAlbums & view = *(reinterpret_cast<ListViewAlbums*>(data));
+                            Class & view = *(reinterpret_cast<Class*>(data));
 
                             view.m_prop_vadj.get_value()->signal_value_changed().connect(
                                 sigc::mem_fun(
                                     view,
-                                    &ListViewAlbums::on_vadj_value_changed
+                                    &Class::on_vadj_value_changed
                             ));
                     }
 
@@ -1301,7 +1307,7 @@ namespace MPX
                     {
                             const gint64& real_id = id.get() ;
 
-                            for( DataModelFilterAlbums::RowRowMapping::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
+                            for( DataModelFilter::RowRowMapping::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
                             {
                                 if( real_id == get<1>(**i))
                                 {
@@ -1378,20 +1384,20 @@ namespace MPX
                 }
     
                 void
-                set_model(DataModelFilterAlbums_SP_t model)
+                set_model(DataModelFilter_SP_t model)
                 {
                     m_model = model;
 
                     m_model->signal_changed().connect(
                         sigc::mem_fun(
                             *this,
-                            &ListViewAlbums::on_model_changed
+                            &Class::on_model_changed
                     ));
 
                     m_model->signal_select().connect(
                         sigc::mem_fun(
                             *this,
-                            &ListViewAlbums::clear_selection
+                            &Class::clear_selection
                     ));
 
                     clear_selection() ;
@@ -1400,7 +1406,7 @@ namespace MPX
                 }
 
                 void
-                append_column (ColumnAlbums_SP_t column)
+                append_column (Column_SP_t column)
                 {
                     m_columns.push_back(column);
                 }
@@ -1420,14 +1426,14 @@ namespace MPX
                         return ;
                     }
 
-                    DataModelFilterAlbums::RowRowMapping::iterator i = m_model->m_mapping.begin(); 
+                    DataModelFilter::RowRowMapping::iterator i = m_model->m_mapping.begin(); 
                     ++i ; // first row is "All" FIXME this sucks
 
                     int idx = m_search_idx ;
 
                     for( ; i != m_model->m_mapping.end(); ++i )
                     {
-                        const RowAlbum& row = **i ;
+                        const Row_t& row = **i ;
                         Glib::ustring match = Glib::ustring(get<3>(row)).casefold() ;
 
                         if( match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )   
@@ -1479,9 +1485,9 @@ namespace MPX
 
             public:
 
-                ListViewAlbums ()
+                Class ()
 
-                        : ObjectBase( "YoukiListViewAlbums" )
+                        : ObjectBase( "YoukiViewAlbums" )
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_search_active( false )
@@ -1515,7 +1521,7 @@ namespace MPX
                     m_search_changed_conn = m_SearchEntry->signal_changed().connect(
                             sigc::mem_fun(
                                   *this
-                                , &ListViewAlbums::on_search_entry_changed
+                                , &Class::on_search_entry_changed
                     )) ;
     
                     m_SearchWindow = new Gtk::Window( Gtk::WINDOW_POPUP ) ;
@@ -1524,23 +1530,25 @@ namespace MPX
                     m_SearchWindow->signal_focus_out_event().connect(
                             sigc::mem_fun(
                                   *this
-                                , &ListViewAlbums::on_search_window_focus_out
+                                , &Class::on_search_window_focus_out
                     )) ;
 
                     signal_focus_out_event().connect(
                             sigc::mem_fun(
                                   *this
-                                , &ListViewAlbums::on_search_window_focus_out
+                                , &Class::on_search_window_focus_out
                     )) ;
 
                     m_SearchWindow->add( *m_SearchEntry ) ;
                     m_SearchEntry->show() ;
                }
 
-                virtual ~ListViewAlbums ()
+                virtual ~Class ()
                 {
                 }
         };
+}
+}
 }
 
 #endif // _YOUKI_ALBUM_LIST_HH

@@ -29,9 +29,24 @@ namespace MPX
     class Library ;
     class Play ;
 
-    class ListViewTracks ;
-    class ListViewAlbums ;
-    class ListViewArtist ;
+    namespace View
+    {
+        namespace Tracks
+        {
+            class Class ;
+        }
+
+        namespace Albums
+        {
+            class Class ;
+        }
+
+        namespace Artist
+        {
+            class Class ;
+        }
+    }
+
     struct YoukiControllerStatusIcon ;
 
     class YoukiController
@@ -121,9 +136,9 @@ namespace MPX
             KoboVolume                      * m_main_volume ;
             YoukiToggleButton               * m_main_love_button;
 
-            ListViewArtist                  * m_ListViewArtist ;
-            ListViewAlbums                  * m_ListViewAlbums ;
-            ListViewTracks                  * m_ListViewTracks ;
+            View::Artist::Class             * m_ListViewArtist ;
+            View::Albums::Class             * m_ListViewAlbums ;
+            View::Tracks::Class             * m_ListViewTracks ;
 
             Gtk::ScrolledWindow             * m_ScrolledWinArtist ;
             Gtk::ScrolledWindow             * m_ScrolledWinAlbums ;
