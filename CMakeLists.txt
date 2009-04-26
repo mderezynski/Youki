@@ -53,14 +53,14 @@ SET(HAVE_GETTEXT ${GETTEXT_FOUND})
 FIND_PACKAGE(PkgConfig REQUIRED)
 
 # C++ TR1 extensions
-SET(USE_TR1 yes)
-IF(USE_TR1)
+OPTION(ENABLE_TR1 "Make use of C++ TR1 extensions" yes)
+IF(ENABLE_TR1)
   FIND_PACKAGE(CxxTR1)
   IF(NOT TR1_FOUND)
     MESSAGE(FATAL_ERROR "C++ TR1 extensions not found")
   ENDIF(NOT TR1_FOUND)
   SET(HAVE_TR1 ${TR1_FOUND})
-ENDIF(USE_TR1)
+ENDIF(ENABLE_TR1)
 
 # Boost
 FIND_PACKAGE(Boost 1.33.1 COMPONENTS filesystem regex iostreams python REQUIRED)
