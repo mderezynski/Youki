@@ -12,6 +12,10 @@
         <signal name="ScanStart"/>
         <signal name="ScanEnd"/>
 
+        <signal name="NewTracks">
+            <arg type="ax" direction="out"/> 
+        </signal>
+
         <signal name="NewAlbum">
             <arg type="x" direction="out"/> 
             <arg type="s" direction="out"/> 

@@ -1246,7 +1246,17 @@ namespace MPX
 
                     if( row )
                     {
-                        select_row( row.get() ) ;
+                        bool quiet = false ;
+
+                        if( m_selection )
+                        {
+                            gint64 id_1 = get<1>(m_selection.get()) ;
+                            gint64 id_2 = get<1>(m_model->row( row.get() )) ;
+
+                            quiet = ( id_1 == id_2 ) ; 
+                        }
+
+                        select_row( row.get(), quiet ) ;
                         m_prop_vadj.get_value()->set_value( row.get() * m_row_height ) ;
                     }
 
@@ -1314,7 +1324,8 @@ namespace MPX
 
                 void
                 select_row(
-                      std::size_t row
+                      std::size_t   row
+                    , bool          quiet = false
                 )
                 {
                     if( m_Model_I.in( row )) 
@@ -1323,7 +1334,12 @@ namespace MPX
 
                         m_selection = boost::make_tuple( m_model->m_mapping[row], id, row ) ;
                         m_model->set_selected( id ) ;
-                        m_SIGNAL_selection_changed.emit() ;
+
+                        if( !quiet )
+                        {
+                            m_SIGNAL_selection_changed.emit() ;
+                        }
+
                         queue_draw();
                     }
                 }

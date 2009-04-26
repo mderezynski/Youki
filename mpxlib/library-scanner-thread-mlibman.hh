@@ -240,7 +240,7 @@ namespace MPX
 
             void on_add(
                   const Util::FileList&
-                , bool  = false
+                , bool = false
             );
 
             void on_scan_list_quick_stage_1(

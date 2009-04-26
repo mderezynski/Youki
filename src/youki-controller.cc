@@ -1353,7 +1353,7 @@ namespace MPX
         bool forced
     )
     {
-        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
+//        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
 
         private_->FilterModelTracks->set_filter( m_Entry_Text ) ;
 

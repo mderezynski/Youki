@@ -10,6 +10,8 @@
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <cmath>
+#include <deque>
+#include <sigx/sigx.h>
 
 #include "mpx/util-string.hh"
 #include "mpx/util-graphics.hh"
@@ -31,6 +33,9 @@
 
 #include "mpx/i-youki-theme-engine.hh"
 
+#include "src/library.hh"
+// ugh
+
 typedef Glib::Property<Gtk::Adjustment*> PropAdj;
 
 namespace
@@ -41,7 +46,24 @@ namespace
 
 namespace MPX
 {
-        typedef boost::tuple<std::string, std::string, std::string, gint64, MPX::Track, gint64, gint64> Row7 ;
+        typedef boost::tuple<std::string, std::string, std::string, gint64, Track, gint64, gint64> Row7 ;
+
+        bool operator<(const Row7& a, const Row7& b )
+        {
+            const Glib::ustring&    a1 = get<1>(a)
+                                  , a2 = get<0>(a)
+                                  , a3 = get<2>(a) ;
+
+            const Glib::ustring&    b1 = get<1>(b)
+                                  , b2 = get<0>(b)
+                                  , b3 = get<2>(b) ;
+
+            gint64 ta = get<5>(a) ;
+            gint64 tb = get<5>(b) ;
+
+            return (a1 < b1 && a2 < b2 && a3 < b3 && ta < tb ) ; 
+        }
+
         typedef std::vector<Row7>                                                                       Model_t ;
         typedef boost::shared_ptr<Model_t>                                                              Model_SP_t ;
         typedef sigc::signal<void, gint64, bool>                                                        Signal1 ;
@@ -112,7 +134,7 @@ namespace MPX
                     using boost::get ;
 
                     std::string artist, album, title ;
-                    gint64 id = 0, num = 0, artist_id = 0 ;
+                    gint64 id = 0, tnum = 0, artist_id = 0 ;
 
                     if(r.count("id"))
                     { 
@@ -132,7 +154,7 @@ namespace MPX
 
                     if(r.count("track"))
                     { 
-                        num = get<gint64>(r["track"]) ;
+                        tnum = get<gint64>(r["track"]) ;
                     }
 
                     if(r.count("mpx_album_artist_id"))
@@ -140,7 +162,7 @@ namespace MPX
                         artist_id = get<gint64>(r["mpx_album_artist_id"]) ;
                     }
 
-                    Row7 row ( title, artist, album, id, track, num, artist_id ) ;
+                    Row7 row ( title, artist, album, id, track, tnum, artist_id ) ;
                     m_realmodel->push_back(row) ;
 
                     Model_t::iterator i = m_realmodel->end() ;
@@ -199,7 +221,130 @@ namespace MPX
 
         typedef boost::shared_ptr<DataModelTracks> DataModelTracks_SP_t;
 
-        struct DataModelFilterTracks : public DataModelTracks
+#if 0
+        class DataModelTracksInserter
+        : public sigx::glib_threadable
+        {
+            public:
+
+                    typedef std::vector<std::pair<Model_t::const_iterator, Row7> >  SignalData_t ;
+                    typedef sigc::signal<void, SignalData_t>                        SignalRows_t ;
+                    typedef sigx::signal_f<SignalRows_t>                            signal_rows_x ;
+
+                    sigx::request_f<const std::vector<int64_t>&> process ;
+
+                    signal_rows_x signal_rows ; 
+
+            protected:
+
+                    Model_SP_t m_Model ;
+                    boost::shared_ptr<MPX::Library> m_library ; 
+
+                    struct ThreadData                      
+                    {
+                        SignalRows_t Rows ;
+                    } ;
+
+                    Glib::Private<ThreadData> m_ThreadData ;
+
+                    sigc::connection m_conn_idle ;
+
+            public:
+    
+                    DataModelTracksInserter(
+                          Model_SP_t model
+                    )
+                    : sigx::glib_threadable()
+                    , process(sigc::mem_fun( *this, &DataModelTracksInserter::on_process))
+                    , signal_row( *this, m_ThreadData, &ThreadData::Row )
+                    , m_Model( model )
+                    , m_library( services->get<Library>("mpx-service-library") )
+                    {
+                    }
+
+                    virtual
+                    ~DataModelTracksInserter(
+                    )
+                    {}
+
+            protected:
+
+                    virtual void
+                    on_startup(
+                    )
+                    {
+                        m_ThreadData.set( new ThreadData ) ;
+                    }
+
+                    virtual void
+                    on_cleanup(
+                    )
+                    {
+                    }
+
+                    void
+                    on_process(
+                          const std::vector<int64_t>& v
+                    )
+                    {
+                        ThreadData * pthreaddata = m_ThreadData.get() ;
+
+                        SignalData_t data ;
+
+                        const Model_t& m = *(m_Model.get()) ;
+
+                        for( std::vector<int64_t>::const_iterator n = v.begin() ; n != v.end() ; ++n )
+                        {
+                            const int64_t& id = *n ;  
+          
+                            SQL::RowV v ;
+                            m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % id ).str()) ;
+
+                            SQL::Row& r = v[0] ; 
+
+                            MPX::Track_sp track = m_library->sqlToTrack( r, true, true ) ;
+  
+                            using boost::get ;
+
+                            std::string artist, album, title ;
+                            gint64 tnum = 0, artist_id = 0 ;
+
+                            if(r.count("artist"))
+                                artist = get<std::string>(r["artist"]) ;
+
+                            if(r.count("album"))
+                                album = get<std::string>(r["album"]) ;
+
+                            if(r.count("title"))
+                                title = get<std::string>(r["title"]) ;
+
+                            if(r.count("track"))
+                            { 
+                                tnum = get<gint64>(r["track"]) ;
+                            }
+
+                            if(r.count("mpx_album_artist_id"))
+                            { 
+                                artist_id = get<gint64>(r["mpx_album_artist_id"]) ;
+                            }
+
+                            Row7 row ( title, artist, album, id, *track.get(), tnum, artist_id ) ;
+
+                            Model_t::const_iterator i = std::lower_bound( m.begin(), m.end(), row ) ; 
+
+                            if( i != m.end() )
+                            {
+                                data.push_back( std::make_pair( i, row )) ;
+                            }
+                        }
+
+                        pthreaddata->Rows.emit( data ) ; 
+                    }
+        } ;
+#endif
+
+        struct DataModelFilterTracks
+        : public DataModelTracks
         {
                 typedef std::vector<Model_t::iterator> RowRowMapping;
 
@@ -596,10 +741,10 @@ namespace MPX
                             const MPX::Track& track = get<4>(*(*i));
 
                             if( !m_constraints.empty() )
-                                truth |= AQE::match_track( m_constraints, track ) ;
+                                truth |= AQE::match_track( m_constraints, track ) ; 
 
                             if( !m_constraints_synthetic.empty() )
-                                truth |= AQE::match_track( m_constraints_synthetic, track ) ;
+                                truth |= AQE::match_track( m_constraints_synthetic, track ) ; 
 
                             if( truth )
                             {
@@ -683,13 +828,13 @@ namespace MPX
                         {
                             int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
 
-                            const MPX::Track& track = get<4>(*(*i));
+                            const MPX::Track& track = get<4>(**i) ;
 
                             if( !m_constraints.empty() )
-                                truth |= AQE::match_track( m_constraints, track ) ;
+                                truth |= AQE::match_track( m_constraints, track ) ; 
 
                             if( !m_constraints_synthetic.empty() )
-                                truth |= AQE::match_track( m_constraints_synthetic, track ) ;
+                                truth |= AQE::match_track( m_constraints_synthetic, track ) ; 
 
                             if( truth )
                             {
@@ -702,7 +847,7 @@ namespace MPX
                             }
 
                             m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
-                            m_constraint_artist.get().insert( get<6>(*(*i)) ) ;
+                            m_constraint_artist.get().insert( get<6>(**i) ) ;
                         }
                     }
 
@@ -943,11 +1088,14 @@ namespace MPX
         typedef sigc::signal<void, MPX::Track, bool> SignalTrackActivated ;
         typedef sigc::signal<void>                   SignalVAdjChanged ;
 
-        class ListViewTracks : public Gtk::DrawingArea
+        class ListViewTracks
+        : public Gtk::DrawingArea
+//        , public sigx::glib_auto_dispatchable()
         {
             public:
 
-                DataModelFilterTracks_SP_t                    m_model ;
+                DataModelFilterTracks_SP_t          m_model ;
+//                DataModelTracksInserter           * m_inserter ;
 
             private:
 
@@ -1124,7 +1272,7 @@ namespace MPX
                                 using boost::get;
 
                                 MPX::Track track = get<4>(*(get<0>(m_selection.get()))) ;
-                                m_SIGNAL_track_activated.emit(track, !(event->state & GDK_CONTROL_MASK)) ;
+                                m_SIGNAL_track_activated.emit( track, !(event->state & GDK_CONTROL_MASK) ) ;
                                 m_selection.reset() ;
                                 queue_draw () ;
                             }
@@ -1359,7 +1507,7 @@ namespace MPX
                         if( i.in( row )) 
                         {
                             MPX::Track track = get<4>(m_model->row(row)) ;
-                            m_SIGNAL_track_activated.emit(track, true) ;
+                            m_SIGNAL_track_activated.emit( track, true ) ;
                         }
                     }
                 
@@ -1796,12 +1944,12 @@ namespace MPX
                 {
                     std::size_t row = (double( tooltip_y ) - m_row_start) / double(m_row_height) ;
 
-                    MPX::Track track = boost::get<4>(m_model->row(row));
+                    MPX::Track track = boost::get<4>( m_model->row(row) ) ;
 
                     boost::shared_ptr<Covers> covers = services->get<Covers>("mpx-service-covers") ;
                     Glib::RefPtr<Gdk::Pixbuf> cover ;
 
-                    const std::string& mbid = boost::get<std::string>(track[ATTRIBUTE_MB_ALBUM_ID].get()) ;
+                    const std::string& mbid = boost::get<std::string>( track[ATTRIBUTE_MB_ALBUM_ID].get() ) ;
 
                     Gtk::Image * image = Gtk::manage( new Gtk::Image ) ;
 
@@ -1852,13 +2000,10 @@ namespace MPX
                 {
                     if( m_model )
                     {
-                            boost::optional<gint64> active_track = m_model->m_active_track ;
-
-                            m_model = model;
-
-                            m_model->m_active_track = active_track ;
-
-                            m_model->scan_active() ;
+                        boost::optional<gint64> active_track = m_model->m_active_track ;
+                        m_model = model;
+                        m_model->m_active_track = active_track ;
+                        m_model->scan_active() ;
                     }
                     else
                     {
@@ -2072,6 +2217,8 @@ namespace MPX
                 ListViewTracks ()
 
                         : ObjectBase( "YoukiListViewTracksTracks" )
+//                        , sigx::glib_auto_dispatchable()
+//                        , m_inserter( 0 )
                         , m_previous_drawn_row( 0 )
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))

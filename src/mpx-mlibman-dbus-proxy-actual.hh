@@ -33,12 +33,14 @@ public:
 
     typedef sigc::signal<void>                                                                          Signal_t ;
     typedef sigc::signal<void, gint64, std::string, std::string, std::string, std::string, std::string> Signal_1int64_5string_t ;
+    typedef sigc::signal<void, const std::vector<int64_t>&>                                             Signal_1int64v ;
 
 protected:
 
     Signal_t                SignalScanStart ;
     Signal_t                SignalScanEnd ;
     Signal_1int64_5string_t SignalNewAlbum ;
+    Signal_1int64v          SignalNewTracks ;
 
 public:
 
@@ -60,6 +62,12 @@ public:
         return SignalNewAlbum ;
     }
 
+    Signal_1int64v&
+    signal_new_tracks ()
+    {
+        return SignalNewTracks ;
+    }
+
     /* signal handlers for this interface
      */
     virtual
@@ -74,6 +82,14 @@ public:
     ) 
     {
         SignalScanEnd.emit() ;
+    }
+
+    virtual
+    void NewTracks(
+          const std::vector<int64_t>& v
+    ) 
+    {
+        SignalNewTracks.emit( v ) ; 
     }
 
     virtual
