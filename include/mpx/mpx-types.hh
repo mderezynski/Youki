@@ -22,6 +22,7 @@
 //  MPX is covered by.
 #ifndef MPX_LIBRARY_TYPES_HH
 #define MPX_LIBRARY_TYPES_HH
+
 #include "config.h"
 #include <glibmm.h>
 #include <string>
@@ -202,6 +203,9 @@ namespace MPX
             VALUE_TYPE_STRING  
         }; 
 
+        // NOTE: Regrettably, this must be a std::map. ALthough more
+        // efficient, std::tr1::unordered_map cannot be exported to
+        // Python yet
         typedef std::map< std::string, Variant >                 Row;
 
         typedef std::vector< Row >                               RowV;

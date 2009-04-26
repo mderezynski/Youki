@@ -5,7 +5,6 @@
 #include <giomm.h>
 #include <glibmm.h>
 #include <glibmm/i18n.h>
-#include <tr1/unordered_set>
 
 #include "mpx/mpx-artist-images.hh"
 #include "mpx/mpx-artist-images.hh"

@@ -31,7 +31,11 @@
 #include <vector>
 #include <map>
 #include <set>
+#ifdef HAVE_TR1
 #include <tr1/unordered_map>
+#else
+#include <map>
+#endif
 #include <ctime>
 #include <glib/gtypes.h>
 #include <glibmm/ustring.h>
@@ -74,13 +78,23 @@ namespace MPX
     typedef std::pair<Volume, Hal::RefPtr<Hal::Volume> >                                            Volume_VolumeHALCC_pair;
     typedef std::pair<std::string, std::string>                                                     VolumeKey;
     typedef std::vector<VolumeKey>                                                                  VolumeKey_v;
+#ifdef HAVE_TR1
     typedef std::tr1::unordered_map<VolumeKey , Volume_VolumeHALCC_pair, boost::hash<VolumeKey> >   Volumes;
     typedef std::tr1::unordered_map<VolumeKey , bool, boost::hash<VolumeKey> >                      VolumesMounted;
+#else
+    typedef std::map<VolumeKey , Volume_VolumeHALCC_pair>                                           Volumes;
+    typedef std::map<VolumeKey , bool>                                                              VolumesMounted;
+#endif
     typedef std::set<std::string>                                                                   MountedPaths;
 
     //// DONTFIXME: NEW SHIT
+#ifdef HAVE_TR1
     typedef std::tr1::unordered_map<VolumeKey, gint64, boost::hash<VolumeKey> >                     VolumeIdMap_t ;
     typedef std::tr1::unordered_map<gint64, std::string>                                            IdMountMap_t ;
+#else
+    typedef std::map<VolumeKey, gint64>                                                             VolumeIdMap_t ;
+    typedef std::map<gint64, std::string>                                                           IdMountMap_t ;
+#endif
 
     class IHAL
     {
