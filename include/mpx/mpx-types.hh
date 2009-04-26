@@ -26,6 +26,7 @@
 #include "config.h"
 #include <glibmm.h>
 #include <string>
+#include <map>
 #include <vector>
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
