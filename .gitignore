@@ -98,3 +98,5 @@ remote/youki
 sentinel/youki-sentinel-bin
 src/youki-bin
 
+m4/libtool.m4
+m4/lt*

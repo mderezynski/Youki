@@ -31,6 +31,7 @@
 #include <giomm.h>
 #include <gst/gst.h>
 #include <gtkmm/main.h>
+#include <clutter-gtkmm/init.h>
 #include <cstdlib>
 #include <string>
 #include <dbus-c++/glib-integration.h>
@@ -258,10 +259,7 @@ namespace MPX
         mcs->key_register("Preferences-FileFormatPriorities", "Format6", std::string("audio/x-ms-wma"));
         mcs->key_register("Preferences-FileFormatPriorities", "prioritize-by-filetype", false); 
         mcs->key_register("Preferences-FileFormatPriorities", "prioritize-by-bitrate", false); 
-
-        mcs->domain_register("PlaybackSourceMusicLib");
-        mcs->key_register("PlaybackSourceMusicLib", "divider-position", 250);
-    }
+   }
   } // anonymous namespace
 } // MPX
 
@@ -271,6 +269,7 @@ main (int argc, char ** argv)
     Glib::thread_init(0);
     Glib::init();
     Gio::init();
+    Clutter::Gtk::init(&argc, &argv);
 
     GOptionContext * context_c = g_option_context_new (_(" - run Youki"));
     g_option_context_add_group (context_c, gst_init_get_option_group ());

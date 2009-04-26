@@ -6,7 +6,7 @@ youki_bin_CXXFLAGS =                            \
         $(ALSA_CFLAGS)                          \
         $(BOOST_CPPFLAGS)                       \
         $(CAIROMM_CFLAGS)                       \
-        $(CLUTTER_CFLAGS)                       \
+        $(CLUTTERMM_CFLAGS)                     \
         $(CDIO_CFLAGS)                          \
         $(CDPARANOIA_INCLUDES)                  \
         $(CURL_CFLAGS)                          \
@@ -46,7 +46,7 @@ youki_bin_LDADD =                               \
         $(BOOST_IOSTREAMS_LIB)                  \
         $(BOOST_PYTHON_LIB)                     \
         $(CAIROMM_LIBS)                         \
-        $(CLUTTER_LIBS)                         \
+        $(CLUTTERMM_LIBS)                       \
         $(CDIO_LIBS)                            \
         $(CDPARANOIA_LIBS)                      \
         $(CURL_LIBS)                            \

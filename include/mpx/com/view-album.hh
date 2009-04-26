@@ -84,7 +84,7 @@ namespace
 
 namespace MPX
 {
-        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType>  RowAlbum ;
+        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string>  RowAlbum ;
 
         typedef std::vector<RowAlbum>                                                                       ModelAlbums_t ;
         typedef boost::shared_ptr<ModelAlbums_t>                                                            ModelAlbums_SP_t ;
@@ -95,13 +95,14 @@ namespace MPX
 
         struct DataModelAlbums : public sigc::trackable
         {
-                ModelAlbums_SP_t        m_realmodel ;
-                IdIterMapAlbums_t       m_iter_map ;
-                std::size_t             m_position ;
-                boost::optional<gint64> m_selected ;
+                ModelAlbums_SP_t                m_realmodel ;
+                IdIterMapAlbums_t               m_iter_map ;
+                std::size_t                     m_position ;
+                boost::optional<gint64>         m_selected ;
+                boost::optional<std::size_t>    m_selected_row ;
 
-                SignalAlbums_0          m_select ;
-                SignalAlbums_1          m_changed ;
+                SignalAlbums_0                  m_select ;
+                SignalAlbums_1                  m_changed ;
 
                 DataModelAlbums()
                 : m_position( 0 )
@@ -170,6 +171,13 @@ namespace MPX
                     m_selected = row ;
                 }
 
+                virtual boost::optional<std::size_t>
+                get_selected_row(
+                )
+                {
+                    return m_selected_row ; 
+                }
+
                 virtual void
                 append_album(
                       Cairo::RefPtr<Cairo::ImageSurface>    surface
@@ -179,9 +187,10 @@ namespace MPX
                     , const std::string&                    album_artist
                     , const std::string&                    mbid
                     , const std::string&                    type
+                    , const std::string&                    year
                 )
                 {
-                    RowAlbum row ( surface, id_album, id_artist, album, album_artist, mbid, get_rt( type ) ) ; 
+                    RowAlbum row ( surface, id_album, id_artist, album, album_artist, mbid, get_rt( type ), year ) ; 
                     m_realmodel->push_back( row ) ;
 
                     ModelAlbums_t::iterator i = m_realmodel->end() ;
@@ -296,6 +305,7 @@ namespace MPX
                     , const std::string&                    album_artist
                     , const std::string&                    mbid
                     , const std::string&                    type
+                    , const std::string&                    year
                 )
                 {
                     DataModelAlbums::append_album(
@@ -306,6 +316,7 @@ namespace MPX
                         , album_artist
                         , mbid
                         , type
+                        , year
                     ) ;
 
                     regen_mapping();
@@ -320,6 +331,7 @@ namespace MPX
                     , const std::string&                        album_artist
                     , const std::string&                        mbid
                     , const std::string&                        type
+                    , const std::string&                        year
                 )
                 {
                     DataModelAlbums::append_album(
@@ -330,6 +342,7 @@ namespace MPX
                         , album_artist
                         , mbid
                         , type
+                        , year
                     ) ;
                 }
 
@@ -358,6 +371,9 @@ namespace MPX
                     boost::optional<gint64> id_cur = ( m_position < m_mapping.size()) ? get<1>(row( m_position )) : boost::optional<gint64>() ; 
                     boost::optional<gint64> id_sel = m_selected ; 
 
+                    m_selected.reset() ;
+                    m_selected_row.reset() ;
+
                     m_position = 0 ;
     
                     ModelAlbums_t::iterator i = m_realmodel->begin() ;
@@ -374,11 +390,17 @@ namespace MPX
                             if( truth )
                             {
                                 new_mapping.push_back( i ) ;
-                            }
 
-                            if( id_cur && get<1>(*i) == id_cur.get() )
-                            {
-                                m_position = new_mapping.size()  - 1 ;
+                                if( id_cur && get<1>(*i) == id_cur.get() )
+                                {
+                                    m_position = new_mapping.size()  - 1 ;
+                                }
+
+                                if( id_sel && get<1>(*i) == id_sel.get() )
+                                {
+                                    m_selected = id_sel ; 
+                                    m_selected_row = new_mapping.size()  - 1 ;
+                                }
                             }
                        }
 
@@ -387,12 +409,17 @@ namespace MPX
                         RowAlbum & row = *(m_realmodel->begin()) ;
 
                         long long int sz = new_mapping.size() - 1 ;
-    
+
                         get<4>(row) = (boost::format(_("All %lld %s")) % sz % ((sz > 1) ? _("Albums") : _("Album"))).str() ;
 
                         std::swap( new_mapping, m_mapping ) ;
-                        m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ;
-                        m_select.emit() ;
+
+                        if( !m_selected )
+                        {
+                            m_selected_row = 0 ;                        
+                        }
+
+                        m_changed.emit( m_position, m_mapping.size() != new_mapping.size() );
                     }                
                 }
         };
@@ -624,6 +651,21 @@ namespace MPX
                                 , .8
                             ) ;
                             pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+
+                            //// YEAR
+                            layout->set_text( get<7>(data_row) )  ;
+                            layout->get_pixel_size (width, height) ;
+                            cairo->move_to(
+                                  xpos + 8 
+                                , r.y + row_height - height - 14
+                            ) ;
+                            cairo->set_source_rgba(
+                                  color.r
+                                , color.g
+                                , color.b
+                                , .4
+                            ) ;
+                            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
                     }
                     else
                     {
@@ -777,10 +819,8 @@ namespace MPX
                         return false ;
                     }
 
-                    int step; 
-
-                    Limiter<int64_t> row ;
-                    Interval<std::size_t> i ;
+                    int step ; 
+                    int row ;
 
                     switch( event->keyval )
                     {
@@ -813,26 +853,17 @@ namespace MPX
                             }
                             else
                             {
-                                if( get_row_is_visible( get<2>(m_selection.get()) ))
+                                int origin = get<2>(m_selection.get()) ;
+
+                                if( get_row_is_visible( origin ) && origin > 0 ) 
                                 {
-                                    row = Limiter<int64_t> (
-                                          Limiter<int64_t>::ABS_ABS
-                                        , 0
-                                        , m_model->size()
-                                        , get<2>(m_selection.get()) + step
-                                    ) ;
+                                    row = ((origin+step)<0) ? 0 : origin+step ; 
 
                                     select_row( row ) ;
 
-                                    Interval<std::size_t> i (
-                                          Interval<std::size_t>::IN_EX
-                                        , 0
-                                        , get_upper_row()
-                                    ) ;
-
-                                    if( i.in( row )) 
+                                    if( row < get_upper_row() ) 
                                     {
-                                        m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
+                                        m_prop_vadj.get_value()->set_value( (get_upper_row() + step) * m_row_height ) ; 
                                     }
                                 }
                                 else
@@ -849,7 +880,7 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Down )
                             {
-                                step = (m_visible_height / m_row_height) ;  
+                                step = (m_visible_height / m_row_height) ; 
                             }
                             else
                             {
@@ -863,26 +894,17 @@ namespace MPX
                             }
                             else
                             {
-                                if( get_row_is_visible( get<2>(m_selection.get()) ))
+                                int origin = get<2>(m_selection.get()) ;
+
+                                if( get_row_is_visible( origin ) ) 
                                 {
-                                    row = Limiter<int64_t> (
-                                          Limiter<int64_t>::ABS_ABS
-                                        , 0
-                                        , m_model->size()
-                                        , get<2>(m_selection.get()) + step
-                                    ) ;
+                                    row = ((origin+step)>(m_model->size()-1)) ? m_model->size()-1 : origin+step ; 
 
                                     select_row( row ) ;
 
-                                    Interval<std::size_t> i (
-                                          Interval<std::size_t>::IN_EX
-                                        , get_upper_row() + (m_visible_height/m_row_height)
-                                        , m_model->size() 
-                                    ) ;
-
-                                    if( i.in( row )) 
+                                    if( row > ( get_upper_row() + (m_visible_height/m_row_height) ) )
                                     {
-                                        m_prop_vadj.get_value()->set_value( row * m_row_height ) ;
+                                        m_prop_vadj.get_value()->set_value( (get_upper_row() + step) * m_row_height ) ; 
                                     }
                                 }
                                 else
@@ -999,7 +1021,7 @@ namespace MPX
                             int row2 = row + (event->y + (off ? (m_row_height-off) : 0)) / m_row_height ; 
                             if( m_Model_I.in( row2 )) 
                             {
-                                if( row2 == (row+(m_visible_height/m_row_height)))
+                                if( row2 >= (row + m_visible_height/m_row_height))
                                 {
                                 }
                                 select_row( row2 ) ;
@@ -1220,7 +1242,14 @@ namespace MPX
                             ) ;
                     }
 
-                    clear_selection() ;
+                    boost::optional<std::size_t> row = m_model->get_selected_row() ;
+
+                    if( row )
+                    {
+                        select_row( row.get() ) ;
+                        m_prop_vadj.get_value()->set_value( row.get() * m_row_height ) ;
+                    }
+
                     queue_draw() ;
                 }
 
@@ -1273,6 +1302,14 @@ namespace MPX
                     }
                 
                     clear_selection() ;
+                }
+
+                void
+                scroll_to_row(
+                      std::size_t row
+                )
+                {
+                    m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
                 }
 
                 void

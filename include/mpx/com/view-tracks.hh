@@ -562,7 +562,7 @@ namespace MPX
                     {
                         std::swap( new_mapping, m_mapping ) ;
                         scan_active () ;
-                        m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ;
+                        m_changed.emit( m_position, true ) ; 
                     }                
                 }
 
@@ -710,7 +710,7 @@ namespace MPX
                     {
                         std::swap( new_mapping, m_mapping ) ;
                         scan_active () ;
-                        m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ;
+                        m_changed.emit( m_position, true ) ; 
                     }
                 }
         };
@@ -1102,7 +1102,7 @@ namespace MPX
                     continue_matching:
 
                     int step = 0 ; 
-                    int64_t origin = boost::get<1>(m_selection.get()) ;
+                    int origin = boost::get<1>(m_selection.get()) ;
 
                     switch( event->keyval )
                     {
@@ -1136,11 +1136,11 @@ namespace MPX
 
                             if( event->keyval == GDK_Page_Up )
                             {
-                                step = - (m_visible_height / m_row_height) ; 
+                                step = m_visible_height / m_row_height ; 
                             }
                             else
                             {
-                                step = - 1 ;
+                                step = 1 ;
                             }
 
                             if( !m_selection )
@@ -1154,25 +1154,14 @@ namespace MPX
                             {
                                 if( get_row_is_visible( origin ))
                                 {
-                                    Limiter<std::size_t> row (
-                                          Limiter<std::size_t>::ABS_ABS
-                                        , 0 
-                                        , origin + step
-                                        , origin 
-                                    ) ;
+                                    int row = ((origin-step)<0) ? 0 : origin-step ;
+
+                                    if( row < get_upper_row() ) 
+                                    {
+                                        m_prop_vadj.get_value()->set_value( get_upper_row() - step ) ; 
+                                    }
 
                                     m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
-
-                                    Interval<std::size_t> i (
-                                          Interval<std::size_t>::IN_EX
-                                        , 0 
-                                        , get_upper_row() 
-                                    ) ;
-
-                                    if( i.in( row )) 
-                                    {
-                                        m_prop_vadj.get_value()->set_value( row * m_row_height );
-                                    }
                                 }
                                 else
                                 {
@@ -1206,25 +1195,14 @@ namespace MPX
                             {
                                 if( get_row_is_visible( origin ))
                                 {
-                                    Limiter<std::size_t> row (
-                                          Limiter<std::size_t>::ABS_ABS
-                                        , origin + step
-                                        , m_model->size() - 1
-                                        , origin 
-                                    ) ;
+                                    int row = ((origin+step)>m_model->size()-1) ? m_model->size()-1 : origin+step ;
+
+                                    if( row > (get_upper_row() + (m_visible_height/m_row_height))) ;
+                                    {
+                                        m_prop_vadj.get_value()->set_value( get_upper_row()+step ) ; 
+                                    }
 
                                     m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
-
-                                    Interval<std::size_t> i (
-                                          Interval<std::size_t>::IN_EX
-                                        , get_upper_row() + (m_visible_height/m_row_height)
-                                        , m_model->size()
-                                    ) ;
-
-                                    if( i.in( row )) 
-                                    {
-                                        m_prop_vadj.get_value()->set_value( row * m_row_height );
-                                    }
                                 }
                                 else
                                 {
@@ -1467,8 +1445,8 @@ namespace MPX
 
                     if( m_visible_height && m_row_height && m_prop_vadj.get_value() )
                     {
-                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
-                        m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*int(m_row_height) ) ;
+                        m_prop_vadj.get_value()->set_upper( m_model->size() ) ; 
+                        m_prop_vadj.get_value()->set_page_size( m_visible_height/m_row_height ) ;
                     }
 
                     double                       n = m_columns.size() - m_collapsed.size() - m_fixed.size() ;
@@ -1762,13 +1740,13 @@ namespace MPX
                         {
                             std::size_t view_count = m_visible_height / m_row_height ;
 
-                            m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
-                            m_prop_vadj.get_value()->set_page_size( (m_visible_height/m_row_height)*int(m_row_height) ) ;
+                            m_prop_vadj.get_value()->set_upper( m_model->size() ) ; 
+                            m_prop_vadj.get_value()->set_page_size( m_visible_height/m_row_height ) ;
 
                             if( m_model->size() < view_count )
                                 m_prop_vadj.get_value()->set_value(0.) ;
                             else
-                                m_prop_vadj.get_value()->set_value( position * m_row_height ) ;
+                                m_prop_vadj.get_value()->set_value( position ) ; 
                          }
 
                          m_Model_I = Interval<std::size_t> (
@@ -1845,7 +1823,7 @@ namespace MPX
                 std::size_t
                 get_upper_row ()
                 {
-                    return double(m_prop_vadj.get_value()->get_value()) / double(m_row_height) ;
+                    return m_prop_vadj.get_value()->get_value() ;
                 }
 
                 bool
@@ -1994,13 +1972,20 @@ namespace MPX
                         if( boost::get<3>(row) == id )
                         {
                             std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ;
-                            m_prop_vadj.get_value()->set_value( d * m_row_height );
+                            m_prop_vadj.get_value()->set_value( d ) ; 
                             break ;
                         }
                     } 
                 }
 
-        
+                void
+                scroll_to_row(
+                      std::size_t row
+                )
+                {
+                    m_prop_vadj.get_value()->set_value( row ) ; 
+                }
+
                 void
                 select_row(
                       std::size_t row
@@ -2039,9 +2024,9 @@ namespace MPX
                         {
                             if( idx <= 0 )
                             {
-                                std::size_t row = std::distance( m_model->m_mapping.begin(), i ) ; 
-                                m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
-                                select_row( row ) ;
+                                std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
+                                m_prop_vadj.get_value()->set_value( d ) ; 
+                                select_row( d ) ;
                                 break ;
                             }
                             else

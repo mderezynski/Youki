@@ -1,8 +1,8 @@
 #ifndef _YOUKI_SPECTRUM__HH
 #define _YOUKI_SPECTRUM__HH
 
-#include <gtkmm.h>
-#include <cairomm/cairomm.h>
+#include <cluttermm.h>
+#include <clutter-gtkmm.h>
 #include <vector>
 #include <string>
 #include <sigc++/sigc++.h>
@@ -13,14 +13,17 @@
 namespace MPX
 {
     class YoukiSpectrum
-    : public Gtk::DrawingArea 
+    : public Clutter::Gtk::Embed
     {
         private:
 
-            sigc::signal<void>        m_signal ;
+            Glib::RefPtr<Clutter::Stage> m_stage ;
+            Glib::RefPtr<Clutter::Group> m_group_bars ;
+            Glib::RefPtr<Clutter::Actor> m_reflection ;
 
+            sigc::connection          m_timeout ;
+            sigc::signal<void>        m_signal ;
             std::vector<float>        m_spectrum_data ;
-            std::vector<float>        m_spectrum_peak ;
 
             PlayStatus                m_play_status ;
 
@@ -48,27 +51,30 @@ namespace MPX
 
         protected:
 
-            bool
+            virtual void
+            on_size_allocate(
+                  Gtk::Allocation&
+            ) ;
+
+            virtual bool
             on_button_press_event(
                   GdkEventButton*
             ) ;
 
-            virtual bool
-            on_expose_event(
-                  GdkEventExpose*
+            virtual void
+            on_show(
             ) ;
 
             void
-            draw_spectrum(
-                  Cairo::RefPtr<Cairo::Context>&
-            ) ;
-
-            void
-            on_play_status_changed(
+            redraw(
             ) ;
 
             bool
             redraw_handler(
+            ) ;
+
+            void
+            on_play_status_changed(
             ) ;
    };
 }

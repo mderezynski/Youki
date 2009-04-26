@@ -10,4 +10,5 @@ noinst_HEADERS =							\
 		rounded-layout.hh					\
 		task-dialog.hh						\
 		timed-confirmation.hh				\
-		widgetloader.hh
+		widgetloader.hh                     \
+        youki-clutter-widget.hh
