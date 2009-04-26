@@ -257,6 +257,10 @@ namespace MPX
             ) ;
 
             void
+            on_entry_clear_clicked(
+            ) ;
+
+            void
             on_entry_activated(
             ) ;
 

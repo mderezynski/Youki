@@ -27,6 +27,7 @@ SET(mpx_widgets_SOURCES
   youki-status-icon.h
   youki-tray-icon.c
   youki-tray-icon.h
+  youki-clutter-widget.cc
   cairo-extensions.cc
   cell-renderer-album-data.cc
   cell-renderer-cairo-surface.cc
@@ -37,11 +38,24 @@ SET(mpx_widgets_SOURCES
   dialog-simple-entry.cc
   rounded-layout.cc
   rounded-alignment.cc
+  seekscale.cc
   task-dialog.cc
   timed-confirmation.cc
+  tidy-actor.c
+  tidy-actor.h
+  tidy-debug.h
+  tidy-marshal.c
+  tidy-marshal.h
+  tidy-private.h
+  tidy-stylable.c
+  tidy-stylable.h
+  tidy-style.c
+  tidy-style.h
+  tidy-texture-reflection.c
+  tidy-texture-reflection.h
+  tidy-types.h
   ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c
   ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.h
-  ${PROJECT_SOURCE_DIR}
 )
 
 SET_SOURCE_FILES_PROPERTIES(widget-marshalers.c PROPERTIES GENERATED true)

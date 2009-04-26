@@ -259,6 +259,16 @@ namespace MPX
         m_HBox_Controls     = Gtk::manage( new Gtk::HBox ) ;
 
         m_Entry             = Gtk::manage( new Gtk::Entry ) ;
+        m_Entry->set_icon_from_stock(
+              Gtk::Stock::CLEAR
+            , Gtk::ENTRY_ICON_SECONDARY
+        ) ; 
+        m_Entry->signal_icon_press().connect(
+              sigc::hide( sigc::hide(
+                sigc::mem_fun(
+                      *this
+                    , &YoukiController::on_entry_clear_clicked
+        )))) ;
 
         m_completion_timer.stop() ;
         m_completion_timer.reset() ;
@@ -326,7 +336,7 @@ namespace MPX
         m_main_love_button->set_state( TOGGLE_BUTTON_STATE_NONE ) ;
         m_main_love_button->set_sensitive( false ) ;
 
-        m_main_spectrum     = Gtk::manage( new YoukiSpectrum ) ;
+        m_main_spectrum     = new YoukiSpectrum ;
         m_main_spectrum->signal_clicked().connect(
             sigc::mem_fun(
                   *this
@@ -514,13 +524,19 @@ namespace MPX
         )) ;
 
         reload_library () ;
-        m_ListViewArtist->clear_selection() ;
-        m_ListViewAlbums->clear_selection() ;
 
-        m_Paned1->set_position( mcs->key_get<int>("main-window","paned1") ) ;
-        while (gtk_events_pending()) gtk_main_iteration() ;
+        m_ListViewAlbums->select_row( 0 ) ;
+        m_ListViewArtist->select_row( 0 ) ;
+
+        private_->FilterModelTracks->set_filter( m_Entry_Text ) ;
+
+        gtk_widget_realize( GTK_WIDGET( m_Paned1->gobj() )) ;
+        gtk_widget_realize( GTK_WIDGET( m_Paned2->gobj() )) ;
 
         m_Paned2->set_position( mcs->key_get<int>("main-window","paned2") ) ;
+        while (gtk_events_pending()) gtk_main_iteration() ;
+
+        m_Paned1->set_position( mcs->key_get<int>("main-window","paned1") ) ;
         while (gtk_events_pending()) gtk_main_iteration() ;
     }
 
@@ -711,7 +727,7 @@ namespace MPX
         // Albums
 
         v.clear () ; 
-        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album")).str()) ; 
+        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album")).str()) ; 
 
         model_albums->append_album_quiet(
               Cairo::RefPtr<Cairo::ImageSurface>(0) 
@@ -719,6 +735,7 @@ namespace MPX
             , -1
             , ""
             , "" 
+            , ""
             , ""
             , ""
         ) ;
@@ -752,6 +769,7 @@ namespace MPX
                     , r.count("album_artist_sortname") ? get<std::string>(r["album_artist_sortname"]) : get<std::string>(r["album_artist"])
                     , get<std::string>(r["mb_album_id"])
                     , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
+                    , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
                 ) ;
         }
 
@@ -1214,6 +1232,41 @@ namespace MPX
         }
 
         return false ;
+    }
+
+    void
+    YoukiController::on_entry_clear_clicked(
+    )
+    {
+        m_conn1.block() ;    
+        m_conn2.block() ;    
+        m_conn3.block() ;    
+        m_conn4.block() ;    
+
+        m_Entry->set_text( "" ) ;
+
+        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
+        private_->FilterModelTracks->set_filter( "" ) ;
+
+        private_->FilterModelArtist->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
+
+        private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;
+        private_->FilterModelAlbums->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
+
+        private_->FilterModelArtist->regen_mapping() ;
+        private_->FilterModelAlbums->regen_mapping() ;
+
+        m_ListViewAlbums->select_row( 0 ) ;
+        m_ListViewArtist->select_row( 0 ) ;
+
+        m_ListViewAlbums->scroll_to_row( 0 ) ;
+        m_ListViewArtist->scroll_to_row( 0 ) ;
+        m_ListViewTracks->scroll_to_row( 0 ) ;
+
+        m_conn1.unblock() ;    
+        m_conn2.unblock() ;    
+        m_conn3.unblock() ;    
+        m_conn4.unblock() ;    
     }
 
     bool
