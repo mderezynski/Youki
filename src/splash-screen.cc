@@ -132,7 +132,7 @@ namespace MPX
         ) ;
         cairo->paint () ;
 
-        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
         cairo->set_source_rgba(
               1.
             , 1.
@@ -150,7 +150,7 @@ namespace MPX
         ) ;
         cairo->stroke () ;
 
-        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
         cairo->set_source_rgba( 1., 1., 1., .55 ) ; 
         cairo->rectangle(
               m_bar_x
@@ -186,7 +186,7 @@ namespace MPX
             , lh
         ) ;
 
-        cairo->set_operator( Cairo::OPERATOR_ATOP );
+        cairo->set_operator( Cairo::OPERATOR_OVER );
         cairo->move_to(
                 m_bar_x + m_bar_w + 4
               , m_bar_y - 4

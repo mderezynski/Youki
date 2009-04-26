@@ -32,7 +32,12 @@
 #include <map>
 
 #include "json/json.h"
+
 #include "mpx/util-graphics.hh"
+#include "mpx/widgets/cairo-extensions.hh"
+
+#include "mpx/mpx-main.hh"
+
 #include "youki-theme-engine.hh"
 
 namespace
@@ -117,9 +122,7 @@ namespace MPX
     )
     : Service::Base( "mpx-service-theme" )
     {
-        //reload() ;
-        load_stored_themes() ;
-        m_CurrentTheme = m_Themes.begin() ;
+        reload() ;
     }
 
     void
@@ -196,8 +199,6 @@ namespace MPX
 
             if( n_to_id.count( name ))
             {
-                g_message( "%s: %s", val_name.asString().c_str(), val_colr.asString().c_str() ) ;
-
                 ThemeColor color ;
 
                 hex_to_color(
@@ -268,26 +269,26 @@ namespace MPX
         colors[THEME_COLOR_SELECT] = ThemeColor( csel.get_red_p(), csel.get_green_p(), csel.get_blue_p(), 1. ) ;
 
         Util::color_to_hsb( csel, h, s, b ) ;
-        b = std::max( 0.15, b-0.10 ) ;
-        s = 0.20 ; 
+        b = std::max( 0.20, b-0.03 ) ;
+        s = std::max( 0.20, s-0.15 ) ;
         Gdk::Color c0 = Util::color_from_hsb( h, s, b ) ;
-        colors[THEME_COLOR_TITLEBAR_1] = ThemeColor( c0.get_red_p(), c0.get_green_p(), c0.get_blue_p(), 0.90 ) ;
+        colors[THEME_COLOR_TITLEBAR_1] = ThemeColor( c0.get_red_p(), c0.get_green_p(), c0.get_blue_p(), 0.93 ) ;
 
         Util::color_to_hsb( csel, h, s, b ) ;
-        b = std::max( 0.08, b-0.20 ) ;
-        s = 0.10 ;
+        b = std::max( 0.12, b-0.08 ) ;
+        s = std::max( 0.13, s-0.17 ) ;
         Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
-        colors[THEME_COLOR_TITLEBAR_2] = ThemeColor( c1.get_red_p(), c1.get_green_p(), c1.get_blue_p(), 0.90 ) ;
+        colors[THEME_COLOR_TITLEBAR_2] = ThemeColor( c1.get_red_p(), c1.get_green_p(), c1.get_blue_p(), 0.93 ) ;
 
         Util::color_to_hsb( csel, h, s, b ) ;
-        b = std::max( 0.05, b-0.25 ) ;
-        s = 0.05 ; 
+        b = std::max( 0.05, b-0.15 ) ;
+        s = std::max( 0.09, s-0.21 ) ;
         Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
-        colors[THEME_COLOR_TITLEBAR_3] = ThemeColor( c2.get_red_p(), c2.get_green_p(), c2.get_blue_p(), 0.90 ) ;
+        colors[THEME_COLOR_TITLEBAR_3] = ThemeColor( c2.get_red_p(), c2.get_green_p(), c2.get_blue_p(), 0.93 ) ;
 
         Util::color_to_hsb( csel, h, s, b ) ;
-        b = std::max( 0., b+0.15 ) ;
-        s = std::max( 0., s+0.05 ) ;
+        b = std::max( 0.21, b-0.02 ) ;
+        s = std::max( 0.22, s-0.13 ) ;
         Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
         colors[THEME_COLOR_TITLEBAR_TOP] = ThemeColor( c3.get_red_p(), c3.get_green_p(), c3.get_blue_p(), 0.90 ) ; 
 
@@ -315,7 +316,10 @@ namespace MPX
 
         m_Themes.erase("default") ;
         m_Themes["default"] = theme ;
-        m_CurrentTheme = m_Themes.begin() ;
+
+        load_stored_themes() ;
+
+        m_CurrentTheme = m_Themes.find( mcs->key_get<std::string>("mpx","theme") ) ;
     }
     
     YoukiThemeEngine::~YoukiThemeEngine(
@@ -343,5 +347,94 @@ namespace MPX
     ) 
     {
         return m_CurrentTheme->second.Colors[color] ;
+    }
+
+    //// DRAWING FUNCTIONS
+
+    void
+    YoukiThemeEngine::draw_selection_rectangle(
+          Cairo::RefPtr<Cairo::Context>&    cairo
+        , const GdkRectangle&               r
+        , bool                              sensitive
+    )
+    {
+        const ThemeColor& c = get_color( THEME_COLOR_SELECT ) ;
+
+        Gdk::Color cgdk ;
+        cgdk.set_rgb_p( c.r, c.g, c.b ) ;
+
+        cairo->save () ;
+
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+
+        Cairo::RefPtr<Cairo::LinearGradient> gradient = Cairo::LinearGradient::create(
+              r.x + r.width / 2
+            , r.y  
+            , r.x + r.width / 2
+            , r.y + r.height
+        ) ;
+
+        double alpha = sensitive ? 1. : .3 ;
+        
+        double h, s, b ;
+        
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b *= 0.90 ; 
+        Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
+
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b *= 0.75 ; 
+        Gdk::Color c2 = Util::color_from_hsb( h, s, b ) ;
+
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b *= 0.45 ; 
+        Gdk::Color c3 = Util::color_from_hsb( h, s, b ) ;
+
+        gradient->add_color_stop_rgba(
+              0
+            , c1.get_red_p()
+            , c1.get_green_p()
+            , c1.get_blue_p()
+            , alpha
+        ) ;
+        
+        gradient->add_color_stop_rgba(
+              .40
+            , c2.get_red_p()
+            , c2.get_green_p()
+            , c2.get_blue_p()
+            , alpha
+        ) ;
+        
+        gradient->add_color_stop_rgba(
+              1. 
+            , c3.get_red_p()
+            , c3.get_green_p()
+            , c3.get_blue_p()
+            , alpha
+        ) ;
+
+        cairo->set_source( gradient ) ;
+
+        RoundedRectangle(
+              cairo
+            , r.x 
+            , r.y 
+            , r.width 
+            , r.height 
+            , 4.
+        ) ;
+
+        cairo->fill_preserve (); 
+        cairo->set_source_rgba(
+              c.r
+            , c.g
+            , c.b
+            , .75
+        ) ;
+        cairo->set_line_width( 0.5 ) ;
+        cairo->stroke () ;
+
+        cairo->restore () ;
     }
 }

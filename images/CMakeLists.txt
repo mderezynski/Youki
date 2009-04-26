@@ -6,7 +6,8 @@ INSTALL(
         jewelcase_bot.png
         jewelcase_top.png
         mainwindow-button-maximize.png
-        mainwindow-button-off.png
+        mainwindow-button-minimize.png
+        mainwindow-button-quit.png
         qual0.png
         qual1.png
         qual2.png

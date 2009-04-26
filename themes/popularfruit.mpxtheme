@@ -12,7 +12,7 @@
           }
 
         , {   "name"    : "text"
-            , "value"   : "#202020ff"
+            , "value"   : "#303030ff"
           }
 
         , {   "name"    : "text-selected"
@@ -32,7 +32,7 @@
           }
 
         , {   "name"    : "treelines"
-            , "value"   : "#d7d8ddff"
+            , "value"   : "#606060c0"
           }
 
         , {   "name"    : "info-area"
@@ -44,22 +44,22 @@
           }
 
         , {   "name"    : "select"
-            , "value"   : "#3e80e0ff"
+            , "value"   : "#537fe9ff"
           }
 
         , {   "name"    : "titlebar-1"
-            , "value"   : "#c2c2c0ff"
+            , "value"   : "#c2c2c0ea"
           }
 
         , {   "name"    : "titlebar-2"
-            , "value"   : "#aaaaaaff"
+            , "value"   : "#aaaaaaea"
           }
 
         , {   "name"    : "titlebar-3"
-            , "value"   : "#989697ff"
+            , "value"   : "#989697ea"
           }
 
         , {   "name"    : "titlebar-top"
-            , "value"   : "#909090ff"
+            , "value"   : "#909090fa"
           }
 ]

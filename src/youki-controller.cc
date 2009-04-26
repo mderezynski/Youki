@@ -17,8 +17,10 @@
 
 #include "mpx/i-youki-theme-engine.hh"
 
-#include "mpx/algorithm/youki-markov-predictor.hh"
 #include "mpx/widgets/cairo-extensions.hh"
+#include "mpx/widgets/rounded-alignment.hh"
+
+#include "mpx/algorithm/youki-markov-predictor.hh"
 
 #include "library.hh"
 #include "plugin-manager-gui.hh"
@@ -285,9 +287,9 @@ namespace MPX
                 , &YoukiController::on_list_view_ab_selection_changed
         )) ;
 
-        m_ScrolledWinArtist = Gtk::manage( new Gtk::ScrolledWindow ) ;
-        m_ScrolledWinAlbums = Gtk::manage( new Gtk::ScrolledWindow ) ;
-        m_ScrolledWinTracks = Gtk::manage( new Gtk::ScrolledWindow ) ;
+        m_ScrolledWinArtist = Gtk::manage( new RoundedScrolledWindow ) ;
+        m_ScrolledWinAlbums = Gtk::manage( new RoundedScrolledWindow ) ;
+        m_ScrolledWinTracks = Gtk::manage( new RoundedScrolledWindow ) ;
 
         m_main_window       = new MainWindow ;
         m_main_window->signal_key_press_event().connect(
@@ -341,10 +343,7 @@ namespace MPX
                 , &YoukiController::on_volume_set_volume
         )) ;
 
-        m_icon              = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "youki.png" )) ;
-        m_disc              = Util::cairo_image_surface_from_pixbuf( Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "disc.png" ))) ;
-        m_disc_multiple     = Util::cairo_image_surface_from_pixbuf( Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "disc-multiple.png" ))) ;
-
+        m_icon = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "youki.png" )) ;
         m_main_window->set_icon( m_icon ) ;
 
         m_Label_Search->set_mnemonic_widget( *m_Entry ) ;
@@ -379,9 +378,9 @@ namespace MPX
                 , &YoukiController::on_style_changed
         ))) ;
 
-        m_ScrolledWinArtist->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
-        m_ScrolledWinAlbums->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
-        m_ScrolledWinTracks->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
+        m_ScrolledWinArtist->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
+        m_ScrolledWinAlbums->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
+        m_ScrolledWinTracks->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
 
         {
                 DataModelTracks_SP_t m ( new DataModelTracks ) ;
@@ -482,7 +481,7 @@ namespace MPX
 
         m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
         m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
-        m_HBox_Controls->set_spacing( 4 ) ;
+        m_HBox_Controls->set_spacing( 2 ) ;
 
         m_main_window->set_widget_top( *m_VBox ) ;
         m_main_window->set_widget_drawer( *m_NotebookPlugins ) ; 
@@ -553,7 +552,7 @@ namespace MPX
     {
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
 
-        //theme->reload() ;
+        theme->reload() ;
 
         const ThemeColor& c_bg   = theme->get_color( THEME_COLOR_BACKGROUND ) ; 
         const ThemeColor& c_base = theme->get_color( THEME_COLOR_BASE ) ; 
@@ -566,9 +565,9 @@ namespace MPX
         Gdk::Color c2 ;
         c2.set_rgb_p( c_bg.r, c_bg.g, c_bg.b ) ; 
 
-        m_ListViewArtist->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
-        m_ListViewAlbums->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
-        m_ListViewTracks->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
+        m_ListViewArtist->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_ListViewAlbums->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_ListViewTracks->modify_bg( Gtk::STATE_NORMAL, c ) ;
 
         m_Entry->modify_base( Gtk::STATE_NORMAL, c ) ;
         m_Entry->modify_base( Gtk::STATE_ACTIVE, c ) ;
@@ -583,36 +582,38 @@ namespace MPX
         m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
 
         m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c2 ) ;
-        m_ScrolledWinArtist->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c ) ;
+        m_ScrolledWinArtist->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c2 ) ;
 
         m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c2 ) ;
-        m_ScrolledWinAlbums->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c ) ;
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c2 ) ;
 
         m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c2 ) ;
-        m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c ) ;
+        m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c2 ) ;
 
         m_Paned1->modify_bg( Gtk::STATE_NORMAL, c ) ;
         m_Paned2->modify_bg( Gtk::STATE_NORMAL, c ) ;
 
         c.set_rgb_p( c_sel.r, c_sel.g, c_sel.b ) ; 
 
-        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
-        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
-        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
+        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_NORMAL, c ) ;
 
         m_ScrolledWinArtist->get_vscrollbar()->modify_fg( Gtk::STATE_NORMAL, c ) ;
         m_ScrolledWinAlbums->get_vscrollbar()->modify_fg( Gtk::STATE_NORMAL, c ) ;
         m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_NORMAL, c ) ;
 
         m_ScrolledWinArtist->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
-        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
+        m_ScrolledWinArtist->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
 
         m_ScrolledWinAlbums->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
-        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
+        m_ScrolledWinAlbums->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
 
         m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
-        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
+        m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
 
+        m_Paned1->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_Paned2->modify_bg( Gtk::STATE_NORMAL, c ) ;
         m_Paned1->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
         m_Paned2->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
 
@@ -713,7 +714,7 @@ namespace MPX
         services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album")).str()) ; 
 
         model_albums->append_album_quiet(
-              m_disc_multiple 
+              Cairo::RefPtr<Cairo::ImageSurface>(0) 
             , -1
             , -1
             , ""
@@ -741,10 +742,6 @@ namespace MPX
                     cover_is = Util::cairo_image_surface_from_pixbuf(
                         cover_pb->scale_simple( 64, 64, Gdk::INTERP_BILINEAR )
                     ) ;
-                }
-                else
-                {
-                    cover_is = m_disc ; 
                 }
                 
                 model_albums->append_album_quiet(
@@ -1626,7 +1623,7 @@ namespace MPX
             const ThemeColor& c = theme->get_color( THEME_COLOR_ENTRY_OUTLINE ) ;
 
             Cairo::RefPtr<Cairo::Context> cairo = widget->get_window()->create_cairo_context() ;
-            cairo->set_operator( Cairo::OPERATOR_ATOP ) ; 
+            cairo->set_operator( Cairo::OPERATOR_OVER ) ; 
             cairo->set_source_rgba(
                   c.r 
                 , c.g

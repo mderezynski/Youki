@@ -66,7 +66,7 @@ namespace MPX
         ) ;
         cairo->fill () ;
 
-        cairo->set_operator( Cairo::OPERATOR_ATOP ) ; 
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ; 
         Gdk::Cairo::set_source_pixbuf(    
               cairo
             , m_cover

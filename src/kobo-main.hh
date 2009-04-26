@@ -12,8 +12,10 @@ namespace MPX
             protected:
 
                     Glib::RefPtr<Gdk::Pixbuf>   m_title_logo ;
-                    Glib::RefPtr<Gdk::Pixbuf>   m_button_off ;
-                    Glib::RefPtr<Gdk::Pixbuf>   m_button_blowup ;
+
+                    Glib::RefPtr<Gdk::Pixbuf>   m_button_quit ;
+                    Glib::RefPtr<Gdk::Pixbuf>   m_button_maximize ;
+                    Glib::RefPtr<Gdk::Pixbuf>   m_button_minimize ;
 
                     bool                        m_drawer_out ;
                     int                         m_presize_width ;

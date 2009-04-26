@@ -172,7 +172,7 @@ namespace MPX
         cairo->paint () ;
 
         const ThemeColor& c_info = theme->get_color( THEME_COLOR_INFO_AREA ) ; 
-        cairo->set_operator( Cairo::OPERATOR_ATOP ) ;
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
         cairo->set_source_rgba(
               c_info.r 
             , c_info.g
@@ -220,7 +220,7 @@ namespace MPX
                 , c_text.b
                 , alpha 
             ) ; 
-            cairo->set_operator (Cairo::OPERATOR_ATOP) ;
+            cairo->set_operator (Cairo::OPERATOR_OVER) ;
 
             pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
         }

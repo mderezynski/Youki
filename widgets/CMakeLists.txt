@@ -12,6 +12,7 @@ SET(mpx_widgets_SOURCES
   cell-renderer-vbox.cc
   dialog-simple-entry.cc
   rounded-layout.cc
+  rounded-alignment.cc
   task-dialog.cc
   timed-confirmation.cc
   widget-marshalers.c
