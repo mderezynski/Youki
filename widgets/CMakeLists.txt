@@ -46,8 +46,8 @@ TARGET_LINK_LIBRARIES(mpx-widgets
 
 ADD_CUSTOM_COMMAND(
   OUTPUT widget-marshalers.c widget-marshalers.h
-  COMMAND ${GLIB_GENMARSHAL} --prefix=widget --body ${PROJECT_SOURCE_DIR}/widgets/widget-marshalers.list   > ${PROJECT_SOURCE_DIR}/widgets/widget-marshalers.c
-  COMMAND ${GLIB_GENMARSHAL} --prefix=widget --header ${PROJECT_SOURCE_DIR}/widgets/widget-marshalers.list > ${PROJECT_SOURCE_DIR}/widgets/widget-marshalers.h
+  COMMAND ${GLIB_GENMARSHAL} --prefix=widget --body ${PROJECT_SOURCE_DIR}/widgets/widget-marshalers.list   > ${PROJECT_BINARY_DIR}/widgets/widget-marshalers.c
+  COMMAND ${GLIB_GENMARSHAL} --prefix=widget --header ${PROJECT_SOURCE_DIR}/widgets/widget-marshalers.list > ${PROJECT_BINARY_DIR}/widgets/widget-marshalers.h
   DEPENDS widget-marshalers.list
 )
 
