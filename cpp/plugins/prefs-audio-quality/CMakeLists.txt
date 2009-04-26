@@ -1,4 +1,7 @@
 INCLUDE_DIRECTORIES(cppmod_audioqualityprefs
+  ${PROJECT_BINARY_DIR}
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/include
   ${ALSA_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
   ${GST_INCLUDE_DIRS}
@@ -8,8 +11,6 @@ INCLUDE_DIRECTORIES(cppmod_audioqualityprefs
   ${GTKMM_INCLUDE_DIRS}
   ${X11_X11_INCLUDE_PATH}
   ${XPROTO_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}
-  ${PROJECT_SOURCE_DIR}/include
 )
 
 SET(cppmod_audioqualityprefs

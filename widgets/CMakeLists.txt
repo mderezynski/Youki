@@ -1,3 +1,27 @@
+INCLUDE_DIRECTORIES(
+  ${PROJECT_BINARY_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR} # For generated headers
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/include
+  ${PROJECT_SOURCE_DIR}/include/mpx
+  ${GLIB_INCLUDE_DIRS}
+  ${GTK_INCLUDE_DIRS}
+  ${SEXYMM_INCLUDE_DIRS}
+  ${SIGX_INCLUDE_DIRS}
+  ${GIOMM_INCLUDE_DIRS}
+  ${GLADEMM_INCLUDE_DIRS}
+  ${GLIBMM_INCLUDE_DIRS}
+  ${GTKMM_INCLUDE_DIRS}
+  ${SEXYMM_INCLUDE_DIRS}
+)
+
+ADD_CUSTOM_COMMAND(
+  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.h
+  COMMAND ${GLIB_GENMARSHAL} --prefix=widget --body ${CMAKE_CURRENT_SOURCE_DIR}/widget-marshalers.list   > ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c
+  COMMAND ${GLIB_GENMARSHAL} --prefix=widget --header ${CMAKE_CURRENT_SOURCE_DIR}/widget-marshalers.list > ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.h
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/widget-marshalers.list
+)
+
 SET(mpx_widgets_SOURCES
   youki-status-icon.c
   youki-status-icon.h
@@ -15,40 +39,26 @@ SET(mpx_widgets_SOURCES
   rounded-alignment.cc
   task-dialog.cc
   timed-confirmation.cc
-  widget-marshalers.c
-  widget-marshalers.h
+  ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c
+  ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.h
+  ${PROJECT_SOURCE_DIR}
 )
 
 SET_SOURCE_FILES_PROPERTIES(widget-marshalers.c PROPERTIES GENERATED true)
 
-INCLUDE_DIRECTORIES(
-  ${PROJECT_SOURCE_DIR}
-  ${PROJECT_SOURCE_DIR}/include
-  ${PROJECT_SOURCE_DIR}/include/mpx
-  ${GLIB_INCLUDE_DIRS}
-  ${GTK_INCLUDE_DIRS}
-  ${SEXYMM_INCLUDE_DIRS}
-  ${SIGX_INCLUDE_DIRS}
-  ${GIOMM_INCLUDE_DIRS}
-  ${GLADEMM_INCLUDE_DIRS}
-  ${GLIBMM_INCLUDE_DIRS}
-  ${GTKMM_INCLUDE_DIRS}
-  ${SEXYMM_INCLUDE_DIRS}
-)
-
 ADD_LIBRARY(mpx-widgets SHARED ${mpx_widgets_SOURCES})
+
+SET_SOURCE_FILES_PROPERTIES(
+  widget-marshalers.c
+  widget-marshalers.h
+  PROPERTIES
+  GENERATED yes
+)
 
 TARGET_LINK_LIBRARIES(mpx-widgets
   ${GLIBMM_LIBS}
   ${GTKMM_LIBS}
   ${GLADEMM_LIBS}
-)
-
-ADD_CUSTOM_COMMAND(
-  OUTPUT widget-marshalers.c widget-marshalers.h
-  COMMAND ${GLIB_GENMARSHAL} --prefix=widget --body ${PROJECT_SOURCE_DIR}/widgets/widget-marshalers.list   > ${PROJECT_BINARY_DIR}/widgets/widget-marshalers.c
-  COMMAND ${GLIB_GENMARSHAL} --prefix=widget --header ${PROJECT_SOURCE_DIR}/widgets/widget-marshalers.list > ${PROJECT_BINARY_DIR}/widgets/widget-marshalers.h
-  DEPENDS widget-marshalers.list
 )
 
 INSTALL(TARGETS mpx-widgets LIBRARY DESTINATION ${MPX_LIBDIR})

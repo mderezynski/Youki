@@ -29,9 +29,7 @@
 #include <boost/optional.hpp>
 #include <boost/variant.hpp>
 #include <boost/shared_ptr.hpp>
-#ifdef HAVE_TR1
-#include<tr1/unordered_map>
-#endif // HAVE_TR1
+#include <map>
 #include <string>
 #include <vector>
 
@@ -204,11 +202,7 @@ namespace MPX
             VALUE_TYPE_STRING  
         }; 
 
-#ifdef HAVE_TR1
-        typedef std::tr1::unordered_map< std::string, Variant >  Row;
-#else //!HAVE_TR1
         typedef std::map< std::string, Variant >                 Row;
-#endif //HAVE_TR1
 
         typedef std::vector< Row >                               RowV;
         typedef std::vector< std::string >                       ColumnV;

@@ -4,6 +4,10 @@ IF(HAVE_HAL)
 ENDIF(HAVE_HAL)
 
 INCLUDE_DIRECTORIES(
+  ${PROJECT_BINARY_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR}   # For generated headers
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/include
   ${BOOST_CPPFLAGS}
   ${CAIROMM_INCLUDE_DIRS}
   ${DBUS_INCLUDE_DIRS}
@@ -22,8 +26,6 @@ INCLUDE_DIRECTORIES(
   ${X11_X11_INCLUDE_PATH}
   ${XML_INCLUDE_DIRS}
   ${XPROTO_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}
-  ${PROJECT_SOURCE_DIR}/include
   ${youki_mlibman_bin_ADD_INCLUDE_DIRS}
 )
 
@@ -33,6 +35,11 @@ ADD_DEFINITIONS(-D__USE_POSIX199309)
 IF(HAVE_LINUX)
   ADD_DEFINITIONS(-D_XOPEN_SOURCE=600)
 ENDIF(HAVE_LINUX)
+
+ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/mpx-mlibman-dbus.hh
+  COMMAND ${DBUSBINDINGTOOL} ARGS "${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml" "--adaptor=${CMAKE_CURRENT_BINARY_DIR}/mpx-mlibman-dbus.hh"
+  MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml
+)
 
 SET(youki_mlibman_bin_SOURCES
   main.cc
@@ -48,7 +55,7 @@ SET(youki_mlibman_bin_SOURCES
   library-scanner-thread-mlibman.cc
   mlibmanager.cc
   request-value.cc
-  mpx-mlibman-dbus.hh
+  ${CMAKE_CURRENT_BINARY_DIR}/mpx-mlibman-dbus.hh
 )
 
 ADD_EXECUTABLE(youki-mlibman-bin ${youki_mlibman_bin_SOURCES})
@@ -83,11 +90,6 @@ TARGET_LINK_LIBRARIES(youki-mlibman-bin
   mpx-widgets
   mpx-musicbrainz
   ${youki_mlibman_bin_ADD_LIBRARIES}
-)
-
-ADD_CUSTOM_COMMAND(OUTPUT mpx-mlibman-dbus.hh
-  COMMAND ${DBUSBINDINGTOOL} ARGS "${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml" "--adaptor=${PROJECT_SOURCE_DIR}/mpxlib/mpx-mlibman-dbus.hh"
-  MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml
 )
 
 INSTALL(TARGETS youki-mlibman-bin RUNTIME DESTINATION ${MPX_LIBEXECDIR})

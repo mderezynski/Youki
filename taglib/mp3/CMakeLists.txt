@@ -6,19 +6,18 @@ INCLUDE_DIRECTORIES(
   ${GLIBMM_INCLUDE_DIRS}
 )
 
-SET(taglib_plugin_flac_SOURCES
+SET(taglib_plugin_mp3_SOURCES
   plugin.cc
 )
 
 # FIXME: Are these flags included? -fPIC -module
-ADD_LIBRARY(taglib_plugin_flac MODULE ${taglib_plugin_flac_SOURCES})
+ADD_LIBRARY(taglib_plugin_mp3 MODULE ${taglib_plugin_mp3_SOURCES})
 
-TARGET_LINK_LIBRARIES(taglib_plugin_flac
+TARGET_LINK_LIBRARIES(taglib_plugin_mp3
   ${TAGLIB_LIBRARIES}
   ${GLIBMM_LIBRARIES}
   mpx_id3v2_reader
-  mpx_xiph_reader
   mpx_common_reader
 )
 
-INSTALL(TARGETS taglib_plugin_flac LIBRARY DESTINATION ${PLUGIN_DIR}/taglib)
+INSTALL(TARGETS taglib_plugin_mp3 LIBRARY DESTINATION ${PLUGIN_DIR}/taglib)

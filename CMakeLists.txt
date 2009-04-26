@@ -275,6 +275,7 @@ IF(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
   # adds extra commas after the last item in enums
   SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -fno-strict-aliasing -fmessage-length=0 -Wall -D_FORTIFY_SOURCE=2")
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic")
+
 ELSE(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
   SET(C_COMMON_FLAGS "${C_COMMON_FLAGS} -Wall -D_FORTIFY_SOURCE=2")
 ENDIF(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")

@@ -4,6 +4,11 @@ IF(HAVE_HAL)
 ENDIF(HAVE_HAL)
 
 INCLUDE_DIRECTORIES(
+  ${PROJECT_BINARY_DIR}
+  ${CMAKE_CURRENT_BINARY_DIR} # For generated files
+  ${CMAKE_CURRENT_SOURCE_DIR} # FIXME: Get rid of cross header dependencies between /src and /include
+  ${PROJECT_SOURCE_DIR}
+  ${PROJECT_SOURCE_DIR}/include
   ${ALSA_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
   ${CAIROMM_INCLUDE_DIRS}
@@ -34,10 +39,17 @@ INCLUDE_DIRECTORIES(
   ${X11_X11_INCLUDE_PATH}
   ${XML_INCLUDE_DIRS}
   ${XPROTO_INCLUDE_DIRS}
-  ${PROJECT_SOURCE_DIR}
-  ${PROJECT_SOURCE_DIR}/include
-  ${PROJECT_SOURCE_DIR}/src # FIXME: Get rid of cross header dependencies between /src and /include
   ${youki_bin_add_INCLUDE_DIRS}
+)
+
+ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/mpx-mlibman-dbus-proxy.hh
+  COMMAND ${DBUSBINDINGTOOL} ARGS "${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml" "--proxy=${CMAKE_CURRENT_BINARY_DIR}/mpx-mlibman-dbus-proxy.hh"
+  MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml
+)
+
+ADD_CUSTOM_COMMAND(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/mpx-app-dbus-adaptor.hh
+  COMMAND ${DBUSBINDINGTOOL} ARGS "${PROJECT_SOURCE_DIR}/dbus/dbus-obj-YOUKI.xml" "--adaptor=${CMAKE_CURRENT_BINARY_DIR}/mpx-app-dbus-adaptor.hh"
+  MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/dbus/dbus-obj-YOUKI.xml
 )
 
 SET(youki_bin_SOURCES
@@ -78,8 +90,8 @@ SET(youki_bin_SOURCES
   library.cc
   library.hh
   mpx-mlibman-dbus-proxy-actual.hh
-  mpx-mlibman-dbus-proxy.hh
-  mpx-app-dbus-adaptor.hh
+  ${CMAKE_CURRENT_BINARY_DIR}/mpx-mlibman-dbus-proxy.hh
+  ${CMAKE_CURRENT_BINARY_DIR}/mpx-app-dbus-adaptor.hh
   markov-analyzer-thread.cc
   markov-analyzer-thread.hh
   play.hh
@@ -166,16 +178,6 @@ TARGET_LINK_LIBRARIES(youki-bin
   mpx-view-components
   mpx-json
   ${youki_bin_ADD_LIBRARIES}
-)
-
-ADD_CUSTOM_COMMAND(OUTPUT mpx-mlibman-dbus-proxy.hh
-  COMMAND ${DBUSBINDINGTOOL} ARGS "${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml" "--proxy=${PROJECT_SOURCE_DIR}/src/mpx-mlibman-dbus-proxy.hh"
-  MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/dbus/dbus-obj-MLIBMAN.xml
-)
-
-ADD_CUSTOM_COMMAND(OUTPUT mpx-app-dbus-adaptor.hh
-  COMMAND ${DBUSBINDINGTOOL} ARGS "${PROJECT_SOURCE_DIR}/dbus/dbus-obj-YOUKI.xml" "--adaptor=${PROJECT_SOURCE_DIR}/src/mpx-app-dbus-adaptor.hh"
-  MAIN_DEPENDENCY ${PROJECT_SOURCE_DIR}/dbus/dbus-obj-YOUKI.xml
 )
 
 INSTALL(TARGETS youki-bin RUNTIME DESTINATION ${MPX_LIBEXECDIR})
