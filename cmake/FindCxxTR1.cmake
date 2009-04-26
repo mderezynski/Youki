@@ -2,7 +2,7 @@ MESSAGE(STATUS "checking for C++ TR1 extensions")
 
 TRY_RUN(TR1_TEST_EXITCODE TR1_TEST_COMPILED
   ${CMAKE_BINARY_DIR}
-  ${PROJECT_SOURCE_DIR}/cmake/tr1-test.cpp
+  ${CMAKE_SOURCE_DIR}/cmake/tr1-test.cpp
 )
 
 IF(TR1_TEST_EXITCODE EQUAL 0)
