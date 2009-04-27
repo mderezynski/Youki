@@ -29,3 +29,5 @@ TARGET_LINK_LIBRARIES(mpx-musicbrainz
   ${SOUP_LIBRARIES}
   mpx-parsers
 )
+
+INSTALL(TARGETS mpx-musicbrainz LIBRARY DESTINATION ${MPX_LIBDIR})
