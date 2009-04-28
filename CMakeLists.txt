@@ -383,26 +383,32 @@ ADD_CUSTOM_TARGET(uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
 )
 
-# Packaging
+# Source packaging
+
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME "${PACKAGE}-${PACKAGE_VERSION}")
+SET(CPACK_SOURCE_GENERATOR TGZ TBZ2)
 
 SET(CPACK_SOURCE_IGNORE_FILES
-  "/\\\\.git/"
-  "/\\\\.gitignore/"
-  "/_CPack_Packages/"
-  "/CMakeCache.txt$/"
-  "/CMakeFiles/"
-  "/CPackConfig.cmake$/"
-  "/CPackSourceConfig.cmake$/"
-  "/cmake_install.cmake$/"
-  "/Makefile$/"
-  "/\\\\.service$/"
-  "/\\\\.desktop$/"
-  "/\\\\.o$/"
-  "/\\\\.a$/"
-  "/\\\\.so$/"
-  "/${PACKAGE_TARNAME}.*\\\\.gz$/"
-  "/${PACKAGE_TARNAME}.*\\\\.bz2$/"
-  "/${PACKAGE_TARNAME}.*\\\\.zip$/"
+  /\\\\.git/
+  /\\\\.gitignore$
+  /_CPack_Packages/
+  /CMakeCache.txt$
+  CMakeFiles/
+  /CPackConfig.cmake$
+  /CPackSourceConfig.cmake$
+  cmake_install.cmake$
+  cmake_uninstall.cmake$
+  Makefile$
+  /install_manifest.txt$
+  \\\\.service$
+  \\\\.desktop$
+  \\\\.pc$
+  \\\\.o$
+  \\\\.a$
+  \\\\.so$
+  \\\\.so\\\\..*$
+  \\\\.tar\\\\.gz$
+  \\\\.tar\\\\.bz2$
 )
 
 INCLUDE(CPack)
