@@ -2,10 +2,9 @@ INCLUDE_DIRECTORIES(
   ${PROJECT_BINARY_DIR}
   ${PROJECT_SOURCE_DIR}/include
   ${PROJECT_SOURCE_DIR}/mpx
-  ${SOUP_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
+  ${SOUP_INCLUDE_DIRS}
   ${GLIBMM_INCLUDE_DIRS}
-  ${XML_INCLUDE_DIRS}
 )
 
 SET(mpx_musicbrainz_SOURCES
@@ -26,6 +25,7 @@ ADD_LIBRARY(mpx-musicbrainz SHARED ${mpx_musicbrainz_SOURCES})
 
 TARGET_LINK_LIBRARIES(mpx-musicbrainz
   ${Boost_FILESYSTEM_LIBRARY}
+  ${GLIBMM_LIBRARIES}
   ${SOUP_LIBRARIES}
   mpx-parsers
 )

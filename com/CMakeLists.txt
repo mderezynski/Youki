@@ -1,18 +1,11 @@
 INCLUDE_DIRECTORIES(
+  ${PROJECT_BINARY_DIR}
+  ${PROJECT_SOURCE_DIR}/include
   ${Boost_INCLUDE_DIR}
-  ${DBUS_INCLUDE_DIRS}
-  ${GIOMM_INCLUDE_DIRS}
   ${GLADEMM_INCLUDE_DIRS}
   ${GLIBMM_INCLUDE_DIRS}
   ${GTKMM_INCLUDE_DIRS}
-  ${HAL_INCLUDE_DIRS}
-  ${PYTHON_INCLUDE_DIRS}
-  ${PYGTK_INCLUDE_DIRS}
-  ${SEXYMM_INCLUDE_DIRS}
-  ${SIGX_INCLUDE_DIRS}
-  ${SOUP_INCLUDE_DIRS}
-  ${PROJECT_BINARY_DIR}
-  ${PROJECT_SOURCE_DIR}/include
+#  ${SIGX_INCLUDE_DIRS}
 )
 
 SET(mpx_view_components_SOURCES
@@ -22,23 +15,17 @@ SET(mpx_view_components_SOURCES
 ADD_LIBRARY(mpx-view-components SHARED ${mpx_view_components_SOURCES})
 
 TARGET_LINK_LIBRARIES(mpx-view-components
-  ${Boost_REGEX_LIBRARY}
-  ${Boost_FILESYSTEM_LIBRARY}
-  ${Boost_IOSTREAMS_LIBRARY}
-  ${GIOMM_LIBRARIES}
   ${GLADEMM_LIBRARIES}
   ${GLIBMM_LIBRARIES}
   ${GTKMM_LIBRARIES}
-  ${HAL_LIBRARIES}
-  ${PYTHON_LIBRARIES}
-  ${PYGTK_LIBRARIES}
-  ${SEXYMM_LIBRARIES}
-  ${PROJECT_BINARY_DIR}/xmlcpp/libmpx-parsers.so
+#  ${SIGX_LIBRARIES}
+  mpx-parsers
 )
 
 INSTALL(TARGETS mpx-view-components LIBRARY DESTINATION ${MPX_LIBDIR})
 
 INSTALL(
-  FILES album-info-window.glade mb-import-album.glade
+  FILES album-info-window.glade
+        mb-import-album.glade
   DESTINATION ${MPX_PKGDATADIR}/glade
 )

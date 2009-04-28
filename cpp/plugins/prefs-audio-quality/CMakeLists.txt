@@ -2,15 +2,11 @@ INCLUDE_DIRECTORIES(cppmod_audioqualityprefs
   ${PROJECT_BINARY_DIR}
   ${PROJECT_SOURCE_DIR}
   ${PROJECT_SOURCE_DIR}/include
-  ${ALSA_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIR}
   ${GST_INCLUDE_DIRS}
-  ${DBUS_INCLUDE_DIRS}
   ${GLADEMM_INCLUDE_DIRS}
   ${GLIBMM_INCLUDE_DIRS}
   ${GTKMM_INCLUDE_DIRS}
-  ${X11_X11_INCLUDE_PATH}
-  ${XPROTO_INCLUDE_DIRS}
 )
 
 SET(cppmod_audioqualityprefs
@@ -22,13 +18,10 @@ SET(cppmod_audioqualityprefs
 ADD_LIBRARY(cppmod-audioqualityprefs MODULE ${cppmod_audioqualityprefs})
 
 TARGET_LINK_LIBRARIES(cppmod-audioqualityprefs
-  ${ALSA_LIBRARIES}
   ${GST_LIBRARIES}
-  ${DBUS_LIBRARIES}
   ${GLADEMM_LIBRARIES}
   ${GLIBMM_LIBRARIES}
   ${GTKMM_LIBRARIES}
-  ${X11_X11_LIB}
 )
 
 INSTALL(TARGETS cppmod-audioqualityprefs LIBRARY DESTINATION ${PLUGIN_DIR}/cppmod)
