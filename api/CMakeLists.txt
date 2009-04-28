@@ -41,6 +41,9 @@ INCLUDE_DIRECTORIES(
   ${mpx_api_ADD_INCLUDE_DIRS}
 )
 
+SET(mpx_api_SOVERSION 0)
+SET(mpx_api_VERSION 0.0)
+
 SET(mpx_api_SOURCES
   aque.cc
   base64.c
@@ -68,6 +71,12 @@ SET(mpx_api_SOURCES
 )
 
 ADD_LIBRARY(mpx-api SHARED ${mpx_api_SOURCES})
+
+SET_TARGET_PROPERTIES(mpx-api
+  PROPERTIES
+  VERSION ${mpx_api_VERSION}
+  SOVERSION ${mpx_api_SOVERSION}
+)
 
 TARGET_LINK_LIBRARIES(mpx-api
   ${ALSA_LIBRARIES}

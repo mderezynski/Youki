@@ -7,6 +7,9 @@ INCLUDE_DIRECTORIES(
   ${GLIBMM_INCLUDE_DIRS}
 )
 
+SET(mpx_musicbrainz_SOVERSION 0)
+SET(mpx_musicbrainz_VERSION 0.0)
+
 SET(mpx_musicbrainz_SOURCES
   mb-libxml2-sax-release.cc
   mb-libxml2-sax-release.hh
@@ -22,6 +25,12 @@ SET(mpx_musicbrainz_SOURCES
 )
 
 ADD_LIBRARY(mpx-musicbrainz SHARED ${mpx_musicbrainz_SOURCES})
+
+SET_TARGET_PROPERTIES(mpx-musicbrainz
+  PROPERTIES
+  VERSION ${mpx_musicbrainz_VERSION}
+  SOVERSION ${mpx_musicbrainz_SOVERSION}
+)
 
 TARGET_LINK_LIBRARIES(mpx-musicbrainz
   ${Boost_FILESYSTEM_LIBRARY}

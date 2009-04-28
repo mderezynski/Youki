@@ -16,6 +16,9 @@ INCLUDE_DIRECTORIES(
   ${SEXYMM_INCLUDE_DIRS}
 )
 
+SET(mpx_widgets_SOVERSION 0)
+SET(mpx_widgets_VERSION 0.0)
+
 ADD_CUSTOM_COMMAND(
   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.h
   COMMAND ${GLIB_GENMARSHAL} --prefix=widget --body ${CMAKE_CURRENT_SOURCE_DIR}/widget-marshalers.list   > ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c
@@ -58,15 +61,12 @@ SET(mpx_widgets_SOURCES
   ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.h
 )
 
-SET_SOURCE_FILES_PROPERTIES(widget-marshalers.c PROPERTIES GENERATED true)
-
 ADD_LIBRARY(mpx-widgets SHARED ${mpx_widgets_SOURCES})
 
-SET_SOURCE_FILES_PROPERTIES(
-  widget-marshalers.c
-  widget-marshalers.h
+SET_TARGET_PROPERTIES(mpx-widgets
   PROPERTIES
-  GENERATED yes
+  VERSION ${mpx_widgets_VERSION}
+  SOVERSION ${mpx_widgets_SOVERSION}
 )
 
 TARGET_LINK_LIBRARIES(mpx-widgets
