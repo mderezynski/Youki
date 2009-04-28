@@ -14,7 +14,6 @@ SET(cppmod_audioqualityprefs
   prefs-audio-quality.cc
 )
 
-# FIXME: All these flags included? -export-dynamic -fPIC -module
 ADD_LIBRARY(cppmod-audioqualityprefs MODULE ${cppmod_audioqualityprefs})
 
 TARGET_LINK_LIBRARIES(cppmod-audioqualityprefs
@@ -22,6 +21,7 @@ TARGET_LINK_LIBRARIES(cppmod-audioqualityprefs
   ${GLADEMM_LIBRARIES}
   ${GLIBMM_LIBRARIES}
   ${GTKMM_LIBRARIES}
+  mconfig
 )
 
 INSTALL(TARGETS cppmod-audioqualityprefs LIBRARY DESTINATION ${PLUGIN_DIR}/cppmod)

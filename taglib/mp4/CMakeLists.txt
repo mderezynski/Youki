@@ -23,7 +23,6 @@ SET(taglib_plugin_mp4_SOURCES
   mp4tag.h
 )
 
-# FIXME: Are these flags included? -fPIC -module
 ADD_LIBRARY(taglib_plugin_mp4 MODULE ${taglib_plugin_mp4_SOURCES})
 
 TARGET_LINK_LIBRARIES(taglib_plugin_mp4

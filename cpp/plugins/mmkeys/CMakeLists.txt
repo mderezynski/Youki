@@ -15,8 +15,6 @@ SET(cppmod_mmkeys_SOURCES
   mmkeys.hh
 )
 
-# FIXME: Are all these flags included?
-#   -export-dynamic -fPIC -module
 ADD_LIBRARY(cppmod-mmkeys MODULE ${cppmod_mmkeys_SOURCES})
 
 TARGET_LINK_LIBRARIES(cppmod-mmkeys
@@ -25,6 +23,7 @@ TARGET_LINK_LIBRARIES(cppmod-mmkeys
   ${GLIBMM_LIBRARIES}
   ${GTKMM_LIBRARIES}
   ${X11_X11_LIB}
+  mconfig
 )
 
 INSTALL(TARGETS cppmod-mmkeys LIBRARY DESTINATION ${PLUGIN_DIR}/cppmod)

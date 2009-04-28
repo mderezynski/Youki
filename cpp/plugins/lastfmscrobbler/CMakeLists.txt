@@ -45,7 +45,6 @@ SET(cppmod_lastfmscrobbler_SOURCES
   urlclient.h
 )
 
-# FIXME: Are all these flags included? -dynamic -fPIC -module
 ADD_LIBRARY(cppmod-lastfmscrobbler MODULE ${cppmod_lastfmscrobbler_SOURCES})
 
 TARGET_LINK_LIBRARIES(cppmod-lastfmscrobbler
@@ -53,6 +52,7 @@ TARGET_LINK_LIBRARIES(cppmod-lastfmscrobbler
   ${GLADEMM_LIBRARIES}
   ${GLIBMM_LIBRARIES}
   ${GTKMM_LIBRARIES}
+  mconfig
 )
 
 INSTALL(TARGETS cppmod-lastfmscrobbler LIBRARY DESTINATION ${PLUGIN_DIR}/cppmod)

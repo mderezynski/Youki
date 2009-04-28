@@ -21,7 +21,6 @@ SET(taglib_plugin_asf_SOURCES
   asftag.h
 )
 
-# FIXME: Are these flags included? -fPIC -module
 ADD_LIBRARY(taglib_plugin_asf MODULE ${taglib_plugin_asf_SOURCES})
 
 TARGET_LINK_LIBRARIES(taglib_plugin_asf

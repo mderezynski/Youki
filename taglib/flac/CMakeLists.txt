@@ -11,7 +11,6 @@ SET(taglib_plugin_flac_SOURCES
   plugin.cc
 )
 
-# FIXME: Are these flags included? -fPIC -module
 ADD_LIBRARY(taglib_plugin_flac MODULE ${taglib_plugin_flac_SOURCES})
 
 TARGET_LINK_LIBRARIES(taglib_plugin_flac

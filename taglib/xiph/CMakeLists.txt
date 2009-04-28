@@ -11,14 +11,13 @@ SET(mpx_xiph_reader_SOURCES
   reader.hh
 )
 
-# FIXME: Are these flags included? -fPIC -module
-ADD_LIBRARY(mpx_xiph_reader SHARED ${mpx_xiph_reader_SOURCES})
+ADD_LIBRARY(mpx_xiph_reader STATIC ${mpx_xiph_reader_SOURCES})
+
+SET_TARGET_PROPERTIES(mpx_xiph_reader
+  PROPERTIES COMPILE_FLAGS -fPIC
+)
 
 TARGET_LINK_LIBRARIES(mpx_xiph_reader
   ${TAGLIB_LIBRARIES}
   ${GLIBMM_LIBRARIES}
 )
-
-# FIXME: this looks fishy
-#  noinst_LTLIBRARIES = libmpx_xiph_reader.la
-#  libmpx_xiph_readerdir = ${libdir}

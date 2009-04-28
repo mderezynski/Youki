@@ -11,12 +11,13 @@ SET(mpx_common_reader_SOURCES
   common.hh
 )
 
-# FIXME: Are these flags included? -fPIC -module
-ADD_LIBRARY(mpx_common_reader SHARED ${mpx_common_reader_SOURCES})
+ADD_LIBRARY(mpx_common_reader STATIC ${mpx_common_reader_SOURCES})
+
+SET_TARGET_PROPERTIES(mpx_common_reader
+  PROPERTIES COMPILE_FLAGS -fPIC
+)
 
 TARGET_LINK_LIBRARIES(mpx_common_reader
   ${TAGLIB_LIBRARIES}
   ${GLIBMM_LIBRARIES}
 )
-
-INSTALL(TARGETS mpx_common_reader LIBRARY DESTINATION ${MPX_LIBDIR})

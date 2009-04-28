@@ -32,9 +32,6 @@ SET(LIBHALCC_COMMON_HEADERS
   hal++.hh
 )
 
-# FIXME: Have we included all of these?
-#   -export-dynamic -fPIC -version-info $(LIBVERSION) -release $(RELEASE)
-
 ADD_LIBRARY(halcc SHARED ${LIBHALCC_SOURCES})
 
 SET_TARGET_PROPERTIES(halcc

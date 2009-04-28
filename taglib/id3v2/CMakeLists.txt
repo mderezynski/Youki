@@ -10,14 +10,13 @@ SET(mpx_id3v2_reader_SOURCES
   reader.hh
 )
 
-# FIXME: Are these flags included? -fPIC -module
-ADD_LIBRARY(mpx_id3v2_reader SHARED ${mpx_id3v2_reader_SOURCES})
+ADD_LIBRARY(mpx_id3v2_reader STATIC ${mpx_id3v2_reader_SOURCES})
+
+SET_TARGET_PROPERTIES(mpx_id3v2_reader
+  PROPERTIES COMPILE_FLAGS -fPIC
+)
+
 TARGET_LINK_LIBRARIES(mpx_id3v2_reader
   ${TAGLIB_LIBRARIES}
   ${GLIBMM_LIBRARIES}
 )
-
-# FIXME: This looks fishy..
-#
-#  noinst_LTLIBRARIES = libmpx_id3v2_reader.la
-#  libmpx_id3v2_readerdir = ${libdir}

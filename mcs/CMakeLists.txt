@@ -20,10 +20,11 @@ SET(mconfig_SOURCES
   types.h
 )
 
-# FIXME: Have we included these?
-#   -export-dynamic -fPIC -no-undefined -export-symbols $(top_srcdir)/libmconfig/libmconfig.sym
-
 ADD_LIBRARY(mconfig STATIC ${mconfig_SOURCES})
+
+SET_TARGET_PROPERTIES(mconfig
+  PROPERTIES COMPILE_FLAGS -fPIC
+)
 
 TARGET_LINK_LIBRARIES(mconfig
   ${GLIB_LIBRARIES}

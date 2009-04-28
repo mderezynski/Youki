@@ -13,13 +13,13 @@ SET(cppmod_coverartprefs_SOURCES
   prefs-coverart.cc
 )
 
-# FIXME: Are these flags included? -export-dynamic -fPIC -module
 ADD_LIBRARY(cppmod-coverartprefs MODULE ${cppmod_coverartprefs_SOURCES})
 
 TARGET_LINK_LIBRARIES(cppmod-coverartprefs
   ${GLADEMM_LIBRARIES}
   ${GLIBMM_LIBRARIES}
   ${GTKMM_LIBRARIES}
+  mconfig
 )
 
 INSTALL(TARGETS cppmod-coverartprefs LIBRARY DESTINATION ${PLUGIN_DIR}/cppmod)

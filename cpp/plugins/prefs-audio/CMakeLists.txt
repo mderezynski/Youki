@@ -14,7 +14,6 @@ SET(cppmod_audioprefs_SOURCES
   prefs-audio.cc
 )
 
-# FIXME: Are these flags included?  -export-dynamic -fPIC -module
 ADD_LIBRARY(cppmod-audioprefs MODULE ${cppmod_audioprefs_SOURCES})
 
 TARGET_LINK_LIBRARIES(cppmod-audioprefs
@@ -22,6 +21,7 @@ TARGET_LINK_LIBRARIES(cppmod-audioprefs
   ${GLADEMM_LIBRARIES}
   ${GLIBMM_LIBRARIES}
   ${GTKMM_LIBRARIES}
+  mconfig
 )
 
 INSTALL(TARGETS cppmod-audioprefs LIBRARY DESTINATION ${PLUGIN_DIR}/cppmod)

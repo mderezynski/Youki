@@ -15,7 +15,6 @@ SET(cppmod_libraryprefs_SOURCES
   prefs-library.hh
 )
 
-# FIXME: Are these flags included? -export-dynamic -fPIC -module
 ADD_LIBRARY(cppmod-libraryprefs MODULE ${cppmod_libraryprefs_SOURCES})
 
 TARGET_LINK_LIBRARIES(cppmod-libraryprefs
@@ -23,6 +22,7 @@ TARGET_LINK_LIBRARIES(cppmod-libraryprefs
   ${GLIBMM_LIBRARIES}
   ${GTKMM_LIBRARIES}
   ${HAL_LIBRARIES}
+  mconfig
 )
 
 INSTALL(TARGETS cppmod-libraryprefs LIBRARY DESTINATION ${PLUGIN_DIR}/cppmod)

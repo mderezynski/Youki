@@ -17,7 +17,6 @@ SET(taglib_plugin_sid_SOURCES
   sidtag.h
 )
 
-# FIXME: are these flags included? -fPIC -module
 ADD_LIBRARY(taglib_plugin_sid MODULE ${taglib_plugin_sid_SOURCES})
 
 TARGET_LINK_LIBRARIES(taglib_plugin_sid

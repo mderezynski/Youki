@@ -18,7 +18,6 @@ SET(taglib_plugin_audible_SOURCES
   resolver.h
 )
 
-# FIXME: Are these flags included? -fPIC -module
 ADD_LIBRARY(taglib_plugin_audible ${taglib_plugin_audible_SOURCES})
 
 TARGET_LINK_LIBRARIES(taglib_plugin_audible
@@ -26,4 +25,4 @@ TARGET_LINK_LIBRARIES(taglib_plugin_audible
   ${GLIBMM_LIBARIES}
 )
 
-INSTALL(TARGETS taglib_plugin_audible LIBRARY DESTIANTION  ${PLUGIN_DIR}/taglib)
+INSTALL(TARGETS taglib_plugin_audible LIBRARY DESTINATION ${PLUGIN_DIR}/taglib)

@@ -10,7 +10,6 @@ SET(taglib_plugin_mpc_SOURCES
   plugin.cc
 )
 
-# FIXME: Are these flags included? -fPIC -module
 ADD_LIBRARY(taglib_plugin_mpc MODULE ${taglib_plugin_mpc_SOURCES})
 
 TARGET_LINK_LIBRARIES(taglib_plugin_mpc
