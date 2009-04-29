@@ -15,12 +15,13 @@
 #include "mpx/com/view-album.hh"
 #include "mpx/com/view-tracks.hh"
 
+#include "mpx/algorithm/youki-markov-predictor.hh"
+
 #include "mpx/i-youki-theme-engine.hh"
 
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/widgets/rounded-alignment.hh"
-
-#include "mpx/algorithm/youki-markov-predictor.hh"
+#include "mpx/widgets/percentual-distribution-hbox.hh"
 
 #include "library.hh"
 #include "plugin-manager-gui.hh"
@@ -249,8 +250,9 @@ namespace MPX
         m_NotebookPlugins->property_tab_border() = 0 ;
         m_NotebookPlugins->property_tab_pos() = Gtk::POS_BOTTOM ;
 
-        m_Paned1            = Gtk::manage( new Gtk::HPaned ) ;
-        m_Paned2            = Gtk::manage( new Gtk::HPaned ) ;
+//        m_Paned1            = Gtk::manage( new Gtk::HPaned ) ;
+//        m_Paned2            = Gtk::manage( new Gtk::HPaned ) ;
+        m_MainHBox          = Gtk::manage( new PercentualDistributionHBox ) ;
 
         m_VBox              = Gtk::manage( new Gtk::VBox ) ;
 
@@ -479,15 +481,23 @@ namespace MPX
                 , &YoukiController::on_entry_activated
         )) ;
 
-        m_Paned1->add1( *m_ScrolledWinArtist ) ;
-        m_Paned1->add2( *m_ScrolledWinTracks ) ;
-        m_Paned2->add1( *m_Paned1 ) ;
-        m_Paned2->add2( *m_ScrolledWinAlbums ) ;
+        m_MainHBox->add_percentage( 0.15 ) ;
+        m_MainHBox->add_percentage( 0.65 ) ;
+        m_MainHBox->add_percentage( 0.20 ) ;
 
-        std::vector<Gtk::Widget*> v (2) ;
-        v[0] = m_ScrolledWinArtist ;
-        v[1] = m_ScrolledWinTracks ;
-        m_Paned1->set_focus_chain( v ) ;
+        m_MainHBox->pack_start( *m_ScrolledWinArtist, true, true, 0 ) ;
+        m_MainHBox->pack_start( *m_ScrolledWinTracks, true, true, 0 ) ;
+        m_MainHBox->pack_start( *m_ScrolledWinAlbums, true, true, 0 ) ;
+
+//        m_Paned1->add1( *m_ScrolledWinArtist ) ;
+//        m_Paned1->add2( *m_ScrolledWinTracks ) ;
+//        m_Paned2->add1( *m_Paned1 ) ;
+//        m_Paned2->add2( *m_ScrolledWinAlbums ) ;
+
+//        std::vector<Gtk::Widget*> v (2) ;
+//        v[0] = m_ScrolledWinArtist ;
+//        v[1] = m_ScrolledWinTracks ;
+//        m_Paned1->set_focus_chain( v ) ;
 
         m_HBox_Controls->pack_start( *m_main_position, true, true, 0 ) ;
         m_HBox_Controls->pack_start( *m_main_volume, false, false, 0 ) ;
@@ -501,7 +511,7 @@ namespace MPX
         m_HBox_Info->property_spacing() = 2 ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
-        m_VBox->pack_start( *m_Paned2, true, true, 0 ) ;
+        m_VBox->pack_start( *m_MainHBox, true, true, 0 ) ;
         m_VBox->pack_start( *m_HBox_Info, false, false, 0 ) ;
         m_VBox->pack_start( *m_HBox_Controls, false, false, 0 ) ;
         m_VBox->pack_start( *m_main_spectrum, false, false, 0 ) ;
@@ -527,9 +537,9 @@ namespace MPX
 
         m_ListViewAlbums->select_row( 0 ) ;
         m_ListViewArtist->select_row( 0 ) ;
+        private_->FilterModelTracks->set_filter( "" ) ;
 
-        private_->FilterModelTracks->set_filter( m_Entry_Text ) ;
-
+/*
         gtk_widget_realize( GTK_WIDGET( m_Paned1->gobj() )) ;
         gtk_widget_realize( GTK_WIDGET( m_Paned2->gobj() )) ;
 
@@ -538,14 +548,15 @@ namespace MPX
 
         m_Paned1->set_position( mcs->key_get<int>("main-window","paned1") ) ;
         while (gtk_events_pending()) gtk_main_iteration() ;
+*/
     }
 
     YoukiController::~YoukiController ()
     {
         m_play->request_status( PLAYSTATUS_STOPPED ) ; 
 
-        mcs->key_set<int>("main-window","paned1", m_Paned1->get_position() ) ;
-        mcs->key_set<int>("main-window","paned2", m_Paned2->get_position() ) ;
+//        mcs->key_set<int>("main-window","paned1", m_Paned1->get_position() ) ;
+//        mcs->key_set<int>("main-window","paned2", m_Paned2->get_position() ) ;
 
         delete m_control_status_icon ;
         delete m_main_window ;
@@ -606,8 +617,9 @@ namespace MPX
         m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_INSENSITIVE, c2 ) ;
         m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_INSENSITIVE, c2 ) ;
 
-        m_Paned1->modify_bg( Gtk::STATE_NORMAL, c ) ;
-        m_Paned2->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        //m_Paned1->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        //m_Paned2->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        m_MainHBox->modify_bg( Gtk::STATE_NORMAL, c ) ;
 
         c.set_rgb_p( c_sel.r, c_sel.g, c_sel.b ) ; 
 
@@ -628,10 +640,10 @@ namespace MPX
         m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
         m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
 
-        m_Paned1->modify_bg( Gtk::STATE_NORMAL, c ) ;
-        m_Paned2->modify_bg( Gtk::STATE_NORMAL, c ) ;
-        m_Paned1->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
-        m_Paned2->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+        //m_Paned1->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        //m_Paned2->modify_bg( Gtk::STATE_NORMAL, c ) ;
+        //m_Paned1->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
+        //m_Paned2->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
 
         c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
 

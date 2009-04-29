@@ -40,11 +40,7 @@ namespace Hal
                                         throw (DeviceDoesNotExistError);
       
         dbus_uint64_t       get_size (); 
-
-#ifdef HAVE_HAL_058
         dbus_uint64_t       get_disc_capacity ();
-#endif //HAVE_HAL_058
-
         std::string         get_device_file (); 
         unsigned int        get_device_major (); 
         unsigned int        get_device_minor (); 
@@ -52,18 +48,15 @@ namespace Hal
         std::string         get_fsversion (); 
         Hal::VolumeUsage    get_fsusage (); 
         bool                is_mounted (); 
+
         bool                is_partition (); 
         bool                is_disc (); 
+        bool                is_pmp (); // portable media player
 
-        // Additions from BMPx
-        bool                is_pmp ();
-
-#ifdef HAVE_HAL_058
         bool                is_mounted_read_only (); 
+
         std::string         get_partition_scheme (); 
         std::string         get_partition_label (); 
-#endif //HAVE_HAL_058
-
         unsigned int        get_partition_number (); 
         std::string         get_label (); 
         std::string         get_mount_point (); 
@@ -72,14 +65,11 @@ namespace Hal
 
         std::string         crypto_get_backing_volume_udi ();
         std::string         crypto_get_clear_volume_udi (); 
-
-#ifdef HAVE_HAL_058
         std::string         get_partition_type (); 
         std::string         get_partition_uuid (); 
         Hal::StrV           get_partition_flags (); 
         dbus_uint64_t       get_partition_start_offset (); 
         dbus_uint64_t       get_partition_media_size (); 
-#endif //HAVE_HAL_058
 
         bool                disc_has_audio () throw (VolumeIsNotDiscError); 
         bool                disc_has_data () throw (VolumeIsNotDiscError);

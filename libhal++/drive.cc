@@ -32,8 +32,6 @@ namespace Hal
     return bool (libhal_drive_uses_removable_media (m_drive));
   }
 
-#ifdef HAVE_HAL_058
-
   dbus_uint64_t
   Drive::get_size ()
   {
@@ -57,8 +55,6 @@ namespace Hal
   {
     return libhal_drive_get_partition_scheme (m_drive);
   }
-
-#endif //HAVE_HAL_058
 
   bool
   Drive::no_partitions_hint ()

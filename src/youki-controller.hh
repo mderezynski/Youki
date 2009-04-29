@@ -48,6 +48,7 @@ namespace MPX
     }
 
     struct YoukiControllerStatusIcon ;
+    class PercentualDistributionHBox ;
 
     class YoukiController
     : public IYoukiController
@@ -146,6 +147,8 @@ namespace MPX
 
             Gtk::HPaned                     * m_Paned1 ;
             Gtk::HPaned                     * m_Paned2 ;
+
+            PercentualDistributionHBox      * m_MainHBox ;
             
             Gtk::Entry                      * m_Entry ;
             Glib::ustring                     m_Entry_Text ;

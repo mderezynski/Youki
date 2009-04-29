@@ -38,12 +38,10 @@ namespace Hal
         bool                    is_hotpluggable (); 
         bool                    uses_removable_media ();
 
-#ifdef HAVE_HAL_058
         bool                    is_media_detected ();
         dbus_uint64_t           get_size ();
         dbus_uint64_t           get_media_size ();
         std::string             get_partition_scheme ();
-#endif //HAVE_HAL_058
 
         bool                    no_partitions_hint ();
         bool                    requires_eject ();
