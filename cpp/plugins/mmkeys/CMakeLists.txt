@@ -24,6 +24,7 @@ TARGET_LINK_LIBRARIES(cppmod-mmkeys
   ${GTKMM_LIBRARIES}
   ${X11_X11_LIB}
   mconfig
+  mpx-api
 )
 
 INSTALL(TARGETS cppmod-mmkeys LIBRARY DESTINATION ${PLUGIN_DIR}/cppmod)
