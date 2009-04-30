@@ -840,7 +840,7 @@ namespace MPX
 
     void
     YoukiController::play_track(
-        MPX::Track& t
+          const MPX::Track& t
     )
     {
         try{
@@ -1293,16 +1293,16 @@ namespace MPX
             m_conn3.block() ;
             m_conn4.block() ;
 
-            m_Entry->set_text( m_Entry_Text + m_prediction ) ; 
-            m_Entry->select_region( m_Entry_Text.length(), -1 ) ;
-
             m_prediction_last = m_prediction ;
             m_prediction.clear() ;
+
+            m_Entry->set_text( m_Entry_Text + m_prediction_last ) ; 
+            m_Entry->select_region( m_Entry_Text.length(), -1 ) ;
 
             m_conn3.unblock() ;
             m_conn4.unblock() ;
 
-            on_entry_changed__process_filtering() ;
+//            on_entry_changed__process_filtering() ;
 
             return false ;
         }
@@ -1370,10 +1370,24 @@ namespace MPX
         private_->FilterModelTracks->set_filter( m_Entry_Text ) ;
 
         private_->FilterModelArtist->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
-        private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;
-        private_->FilterModelAlbums->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
-
         private_->FilterModelArtist->regen_mapping() ;
+
+        boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
+        boost::optional<std::set<gint64> > constraint ; 
+
+        if( id_artist ) 
+        {
+            AQE::Constraint_t c ;
+            c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ARTIST_ID ;
+            c.TargetValue = id_artist.get() ;
+            c.MatchType = AQE::MT_EQUAL ;
+
+            constraint = std::set<gint64>() ; 
+            constraint.get().insert( id_artist.get() ) ;
+        }
+
+        private_->FilterModelAlbums->set_constraint_artist( constraint ) ;
+        private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;
         private_->FilterModelAlbums->regen_mapping() ;
     }
 

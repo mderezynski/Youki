@@ -503,14 +503,25 @@ namespace Artist
                     }
                 }
 
-                int
-                get_upper_row ()
+                inline std::size_t
+                get_page_size ()
                 {
-                    int row_upper = m_prop_vadj.get_value()->get_value() ; 
-                    return row_upper;
+                    return m_visible_height / m_row_height ; 
                 }
 
-                bool
+                inline std::size_t
+                get_upper_row ()
+                {
+                    return m_prop_vadj.get_value()->get_value() ; 
+                }
+
+                inline std::size_t
+                get_lower_row ()
+                {
+                    return get_upper_row() + get_page_size() ; 
+                }
+
+                inline bool
                 get_row_is_visible (int row)
                 {
                     std::size_t up = get_upper_row() ;
@@ -518,7 +529,7 @@ namespace Artist
                     Interval<std::size_t> i (
                           Interval<std::size_t>::IN_IN
                         , up 
-                        , up + (m_visible_height/m_row_height)
+                        , up + (get_page_size())
                     ) ;
             
                     return i.in( row ) ;
@@ -599,7 +610,7 @@ namespace Artist
                                       Limiter<int64_t>::ABS_ABS
                                     , 0
                                     , m_model->size() - 1 
-                                    , origin - (m_visible_height/m_row_height)
+                                    , origin - (get_page_size())
                                 ) ;
 
                                 select_row( row ) ;
@@ -641,15 +652,26 @@ namespace Artist
                                 break ;
                             }
 
+                            i = Interval<std::size_t> (
+                                  Interval<std::size_t>::IN_EX
+                                , get_upper_row() + (get_page_size()) 
+                                , m_model->size() 
+                            ) ;
+
                             if( event->keyval == GDK_Page_Down )
                             {
                                 row = Limiter<int64_t> ( 
                                       Limiter<int64_t>::ABS_ABS
                                     , 0 
                                     , m_model->size() - 1 
-                                    , origin + (m_visible_height/m_row_height) 
+                                    , origin + (get_page_size()) 
                                 ) ;
                                 select_row( row ) ;
+
+                                if( i.in( row )) 
+                                {
+                                    m_prop_vadj.get_value()->set_value( origin + get_page_size() ) ; 
+                                }
                             }
                             else
                             {
@@ -660,17 +682,11 @@ namespace Artist
                                     , origin + 1
                                 ) ;
                                 select_row( row ) ;
-                            }
 
-                            i = Interval<std::size_t> (
-                                  Interval<std::size_t>::IN_EX
-                                , get_upper_row() + (m_visible_height/m_row_height) 
-                                , m_model->size() 
-                            ) ;
-
-                            if( i.in( row )) 
-                            {
-                                m_prop_vadj.get_value()->set_value( row ) ; 
+                                if( i.in( row )) 
+                                {
+                                    m_prop_vadj.get_value()->set_value( m_prop_vadj.get_value()->get_value() + 1 ) ; 
+                                }
                             }
 
                             return true ;
@@ -820,7 +836,7 @@ namespace Artist
                     if( m_row_height )
                     {
                         m_prop_vadj.get_value()->set_upper( m_model->size() ) ; 
-                        m_prop_vadj.get_value()->set_page_size( m_visible_height/m_row_height ) ; 
+                        m_prop_vadj.get_value()->set_page_size( get_page_size() ) ; 
                     }
 
                     double column_width = (double(event->width) - m_fixed_total_width - (40*m_collapsed.size()) ) / double(m_columns.size()-m_collapsed.size()-m_fixed.size());
@@ -869,7 +885,7 @@ namespace Artist
                                             Limiter<std::size_t>::ABS_ABS
                                           , 0
                                           , m_model->size()
-                                          , m_visible_height/m_row_height
+                                          , get_page_size()
                                       ) + 1 ;
 
                     std::size_t ypos = 0 ;
@@ -958,10 +974,10 @@ namespace Artist
                 {
                     if( size_changed && m_prop_vadj.get_value() && m_visible_height && m_row_height )
                     {
-                        std::size_t view_count = m_visible_height / m_row_height ;
+                        std::size_t view_count = get_page_size() ;
 
                         m_prop_vadj.get_value()->set_upper( m_model->size() ) ; 
-                        m_prop_vadj.get_value()->set_page_size( m_visible_height/m_row_height ) ; 
+                        m_prop_vadj.get_value()->set_page_size( get_page_size() ) ; 
 
                         if( m_model->size() < view_count )
                         {
@@ -987,8 +1003,8 @@ namespace Artist
                             quiet = ( id_1 == id_2 ) ; 
                         }
 
-                        select_row( row.get(), quiet ) ;
-                        m_prop_vadj.get_value()->set_value( row.get() * m_row_height ) ;
+                        select_row( row.get(), quiet ) ; 
+                        m_prop_vadj.get_value()->set_value( row.get() ) ; 
                     }
 
                     queue_draw() ;
@@ -1059,7 +1075,7 @@ namespace Artist
                     , bool          quiet = false
                 )
                 {
-                    if( row < m_model->m_mapping.size() )
+                    if( row < m_model->size() )
                     {
                         const gint64& id = get<1>(*m_model->m_mapping[row]) ;
 

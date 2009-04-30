@@ -11,6 +11,7 @@
 #include <boost/lexical_cast.hpp>
 #include <cmath>
 #include <deque>
+#include <boost/unordered_set.hpp>
 #include <sigx/sigx.h>
 
 #include "mpx/util-string.hh"
@@ -26,14 +27,11 @@
 #include "mpx/algorithm/limiter.hh"
 
 #include "mpx/aux/glibaddons.hh"
-
 #include "mpx/widgets/cairo-extensions.hh"
+#include "mpx/i-youki-theme-engine.hh"
+#include "src/library.hh"
 
 #include "glib-marshalers.h"
-
-#include "mpx/i-youki-theme-engine.hh"
-
-#include "src/library.hh"
 // ugh
 
 typedef Glib::Property<Gtk::Adjustment*> PropAdj;
@@ -51,6 +49,7 @@ namespace Tracks
 
         typedef boost::tuple<std::string, std::string, std::string, gint64, Track, gint64, gint64>  Row_t ;
 
+/*
         bool operator<(const Row_t& a, const Row_t& b )
         {
             const Glib::ustring&    a1 = get<1>(a)
@@ -66,11 +65,71 @@ namespace Tracks
 
             return (a1 < b1 && a2 < b2 && a3 < b3 && ta < tb ) ; 
         }
+*/
 
         typedef std::vector<Row_t>                                                                      Model_t ;
         typedef boost::shared_ptr<Model_t>                                                              Model_SP_t ;
-        typedef sigc::signal<void, gint64, bool>                                                        Signal1 ;
         typedef std::map<gint64, Model_t::iterator>                                                     IdIterMap_t ;
+        typedef sigc::signal<void, gint64, bool>                                                        Signal1 ;
+
+        struct Model_t_iterator_equal
+        : std::binary_function<Model_t::iterator, Model_t::iterator, bool>
+        {
+            bool operator()(
+                  const Model_t::iterator& a
+                , const Model_t::iterator& b
+            ) const
+            {
+                return a == b ;
+            }
+
+            bool operator()(
+                  const Model_t::const_iterator& a
+                , const Model_t::const_iterator& b
+            ) const
+            {
+                return a == b ;
+            }
+
+            bool operator()(
+                  const Model_t::const_iterator& a
+                , const Model_t::iterator& b
+            ) const
+            {
+                return a == b ;
+            }
+
+            bool operator()(
+                  const Model_t::iterator& a
+                , const Model_t::const_iterator& b
+            ) const
+            {
+                return a == b ;
+            }
+        } ;
+
+        struct Model_t_iterator_hash
+        {
+            std::size_t operator()( const Model_t::iterator& i ) const
+            {
+                return GPOINTER_TO_INT(&(*i)) ;
+            }
+
+            std::size_t operator()( Model_t::iterator& i ) const
+            {
+                return GPOINTER_TO_INT(&(*i)) ;
+            }
+
+            std::size_t operator()( const Model_t::const_iterator& i ) const
+            {
+                return GPOINTER_TO_INT(&(*i)) ;
+            }
+
+            std::size_t operator()( Model_t::const_iterator& i ) const
+            {
+                return GPOINTER_TO_INT(&(*i)) ;
+            }
+        } ;
 
         struct DataModel
         : public sigc::trackable
@@ -118,7 +177,7 @@ namespace Tracks
                     return m_realmodel->size() ;
                 }
 
-                virtual Row_t&
+                virtual const Row_t&
                 row (std::size_t row)
                 {
                     return (*m_realmodel)[row] ;
@@ -350,28 +409,40 @@ namespace Tracks
         struct DataModelFilter
         : public DataModel
         {
-                typedef std::vector<Model_t::iterator> RowRowMapping;
+                typedef std::vector<Model_t::const_iterator>                                                            RowRowMapping_t;
+                typedef boost::unordered_set<Model_t::const_iterator, Model_t_iterator_hash, Model_t_iterator_equal>    ModelSet_t ;
+                typedef std::map<std::string, ModelSet_t>                                                               FragmentCache_t ;
+                typedef std::vector<ModelSet_t>                                                                         IntersectVector_t ;
 
-                RowRowMapping                           m_mapping ;
+                struct IntersectSort
+                    : std::binary_function<ModelSet_t, ModelSet_t, bool>
+                {
+                        bool operator() (
+                              const ModelSet_t&  a
+                            , const ModelSet_t&  b
+                        )
+                        {
+                            return a.size() < b.size() ; 
+                        }
+                } ;
+
+                RowRowMapping_t                         m_mapping ;
+                FragmentCache_t                         m_fragment_cache ;
                 std::string                             m_filter_full ;
                 std::string                             m_filter_effective ;
                 AQE::Constraints_t                      m_constraints ;
                 AQE::Constraints_t                      m_constraints_synthetic ;
-                bool                                    m_advanced ;
                 boost::optional<gint64>                 m_active_track ;
                 boost::optional<gint64>                 m_local_active_track ;
                 boost::optional<std::set<gint64> >      m_constraint_albums ;
                 boost::optional<std::set<gint64> >      m_constraint_artist ;
+                bool                                    m_advanced ;
 
-                typedef std::map<std::string, RowRowMapping>                MappingCache ; 
-                typedef std::map<std::string, std::set<Model_t::iterator> > FragmentCache ;
+                DataModelFilter( DataModel_SP_t& model )
 
-                MappingCache    m_mapping_cache ;
-                FragmentCache   m_fragment_cache ;
+                    : DataModel( model->m_realmodel )
+                    , m_advanced( false )
 
-                DataModelFilter(DataModel_SP_t & model)
-                : DataModel(model->m_realmodel)
-                , m_advanced(false)
                 {
                     regen_mapping() ;
                 }
@@ -431,7 +502,7 @@ namespace Tracks
                 )
                 {
                     m_constraints_synthetic.clear() ;
-                    regen_mapping () ;
+                    regen_mapping() ;
                 }
 
                 virtual void
@@ -448,7 +519,7 @@ namespace Tracks
                     return m_mapping.size();
                 }
 
-                virtual Row_t&
+                virtual const Row_t&
                 row (std::size_t row)
                 {
                     return *(m_mapping[row]);
@@ -465,7 +536,7 @@ namespace Tracks
                 void
                 erase( std::size_t p )
                 {
-                    RowRowMapping::iterator i = m_mapping.begin() ;
+                    RowRowMapping_t::iterator i = m_mapping.begin() ;
                     std::advance( i, p ) ;
                     m_mapping.erase( i ) ;
                     scan_active() ;
@@ -555,7 +626,7 @@ namespace Tracks
                         return ;
                     }
 
-                    for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
+                    for( RowRowMapping_t::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                     {
                         if( m_active_track && get<3>(*(*i)) == m_active_track.get() )
                         {
@@ -571,15 +642,12 @@ namespace Tracks
                 regen_mapping(
                 )
                 {
-                    typedef std::set<Model_t::iterator>  RowSet_t ;
-                    typedef std::vector<RowSet_t>        CacheVec_t ;
-
                     using boost::get;
                     using boost::algorithm::split;
                     using boost::algorithm::is_any_of;
                     using boost::algorithm::find_first;
 
-                    RowRowMapping   new_mapping ;
+                    RowRowMapping_t new_mapping ;
                     std::string     text        = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
                     gint64          id          = ( m_position < m_mapping.size()) ? get<3>(row( m_position )) : -1 ; 
 
@@ -618,7 +686,7 @@ namespace Tracks
                         StrV m;
                         split( m, text, is_any_of(" ") );
 
-                        CacheVec_t m_cachevec ; 
+                        IntersectVector_t m_intersect_v ; 
 
                         for( std::size_t n = 0 ; n < m.size(); ++n )
                         {
@@ -627,60 +695,64 @@ namespace Tracks
                                 continue ;
                             }
 
-                            FragmentCache::iterator it = m_fragment_cache.find( m[n] ) ;
+                            FragmentCache_t::iterator it = m_fragment_cache.find( m[n] ) ;
+
                             if( it != m_fragment_cache.end() )
                             {
-                                m_cachevec.push_back( (*it).second ) ;
-                                continue ;
-                            }
-
-                            m_cachevec.resize( m_cachevec.size() + 1 ) ; 
-                            for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
-                            {
-                                const Row_t& row = *i;
-
-                                std::vector<std::string> vec (3) ;
-                                vec[0] = Glib::ustring(boost::get<0>(row)).lowercase().c_str() ;
-                                vec[1] = Glib::ustring(boost::get<1>(row)).lowercase().c_str() ;
-                                vec[2] = Glib::ustring(boost::get<2>(row)).lowercase().c_str() ;
-
-                                if( Util::match_vec( m[n], vec) )
-                                {
-                                    m_cachevec[n].insert( i ) ; 
-                                }
-                            }
-
-                            m_fragment_cache.insert( std::make_pair( m[n], m_cachevec[n] )) ;
-                        }
-
-                        RowSet_t output  ;
-                        for( std::size_t n = 0 ; n < m_cachevec.size() ; ++n )
-                        {
-                            if( n == 0 ) 
-                            {
-                                output = m_cachevec[n] ; 
+                                m_intersect_v.push_back( (*it).second ) ;
                             }
                             else
                             {
-                                RowSet_t output_tmp ;
-                                const RowSet_t& s = m_cachevec[n] ;
+                                m_intersect_v.resize( m_intersect_v.size() + 1 ) ; 
 
-                                for( RowSet_t::const_iterator i = s.begin(); i != s.end(); ++i )
+                                ModelSet_t& mst = m_intersect_v[n] ;
+
+                                std::vector<std::string> vec (3) ;
+
+                                for( Model_t::const_iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                                 {
-                                    if( output.count( *i ) )
+                                    const Row_t& row = *i;
+
+                                    vec[0] = Glib::ustring(boost::get<0>(row)).lowercase().c_str() ;
+                                    vec[1] = Glib::ustring(boost::get<1>(row)).lowercase().c_str() ;
+                                    vec[2] = Glib::ustring(boost::get<2>(row)).lowercase().c_str() ;
+
+                                    if( Util::match_vec( m[n], vec) )
                                     {
-                                        output_tmp.insert( *i ) ;
+                                        mst.insert( i ) ; 
                                     }
                                 }
 
-                                std::swap( output, output_tmp ) ;
+                                m_fragment_cache.insert( std::make_pair( m[n], m_intersect_v[n] )) ;
                             }
+                        }
+
+                        std::sort( m_intersect_v.begin(), m_intersect_v.end(), IntersectSort() ) ;
+
+                        ModelSet_t output ; 
+
+                        if( !m_intersect_v.empty() )
+                            std::swap( m_intersect_v[0], output ) ;
+
+                        for( std::size_t n = 1 ; n < m_intersect_v.size() ; ++n )
+                        {
+                            ModelSet_t tmp ;
+
+                            for( ModelSet_t::const_iterator i = m_intersect_v[n].begin(); i != m_intersect_v[n].end(); ++i )
+                            {
+                                if( output.find( *i ) != output.end() )
+                                {
+                                    tmp.insert( *i ) ;
+                                }
+                            }
+
+                            std::swap( output, tmp ) ;
                         }
 
                         m_constraint_albums = std::set<gint64>() ;
                         m_constraint_artist = std::set<gint64>() ;
 
-                        for( RowSet_t::iterator i = output.begin() ; i != output.end(); ++i )
+                        for( ModelSet_t::iterator i = output.begin() ; i != output.end(); ++i )
                         {
                             int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
 
@@ -709,6 +781,21 @@ namespace Tracks
 
                     if( new_mapping != m_mapping )
                     {
+                        std::sort( new_mapping.begin(), new_mapping.end() ) ;
+
+                        if( id >= 0 )
+                        {
+                            for( RowRowMapping_t::iterator i = new_mapping.begin() ; i != new_mapping.end() ; ++i )
+                            {
+                                const Row_t& row = **i ;
+                                if( boost::get<3>(row) == id )
+                                {
+                                    m_position = std::distance( new_mapping.begin(), i ) ;
+                                    break ;
+                                }
+                            } 
+                        }
+
                         std::swap( new_mapping, m_mapping ) ;
                         scan_active () ;
                         m_changed.emit( m_position, true ) ; 
@@ -719,15 +806,12 @@ namespace Tracks
                 regen_mapping_iterative(
                 )
                 {
-                    typedef std::set<Model_t::iterator>  RowSet_t ;
-                    typedef std::vector<RowSet_t>       CacheVec_t ;
-
                     using boost::get;
                     using boost::algorithm::split;
                     using boost::algorithm::is_any_of;
                     using boost::algorithm::find_first;
 
-                    RowRowMapping   new_mapping ;
+                    RowRowMapping_t new_mapping ;
                     std::string     text        = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
                     gint64          id          = ( m_position < m_mapping.size()) ? get<3>(row( m_position )) : -1 ; 
 
@@ -738,7 +822,7 @@ namespace Tracks
                         m_constraint_albums.reset() ;
                         m_constraint_artist.reset() ;
 
-                        for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
+                        for( RowRowMapping_t::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                         {
                             int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
 
@@ -766,7 +850,7 @@ namespace Tracks
                         StrV m;
                         split( m, text, is_any_of(" ") );
 
-                        CacheVec_t m_cachevec ; 
+                        IntersectVector_t m_intersect_v ; 
 
                         for( std::size_t n = 0 ; n < m.size(); ++n )
                         {
@@ -775,60 +859,62 @@ namespace Tracks
                                 continue ;
                             }
 
-                            FragmentCache::iterator it = m_fragment_cache.find( m[n] ) ;
+                            FragmentCache_t::iterator it = m_fragment_cache.find( m[n] ) ;
+
                             if( it != m_fragment_cache.end() )
                             {
-                                m_cachevec.push_back( (*it).second ) ;
-                                continue ;
-                            }
-
-                            m_cachevec.resize( m_cachevec.size() + 1 ) ; 
-                            for( RowRowMapping::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
-                            {
-                                const Row_t& row = *(*i);
-
-                                std::vector<std::string> vec (3) ;
-                                vec[0] = Glib::ustring(boost::get<0>(row)).lowercase().c_str() ;
-                                vec[1] = Glib::ustring(boost::get<1>(row)).lowercase().c_str() ;
-                                vec[2] = Glib::ustring(boost::get<2>(row)).lowercase().c_str() ;
-
-                                if( Util::match_vec( m[n], vec) )
-                                {
-                                    m_cachevec[n].insert( *i ) ; 
-                                }
-                            }
-
-                            //m_fragment_cache.insert( std::make_pair( m[n], m_cachevec[n] )) ;
-                        }
-
-                        RowSet_t output  ;
-                        for( std::size_t n = 0 ; n < m_cachevec.size() ; ++n )
-                        {
-                            if( n == 0 ) 
-                            {
-                                output = m_cachevec[n] ; 
+                                m_intersect_v.push_back( (*it).second ) ;
                             }
                             else
                             {
-                                RowSet_t output_tmp ;
-                                const RowSet_t& s = m_cachevec[n] ;
+                                m_intersect_v.resize( m_intersect_v.size() + 1 ) ; 
 
-                                for( RowSet_t::const_iterator i = s.begin(); i != s.end(); ++i )
+                                ModelSet_t& mst = m_intersect_v[n] ;
+
+                                std::vector<std::string> vec (3) ;
+
+                                for( RowRowMapping_t::const_iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                                 {
-                                    if( output.count( *i ) )
+                                    const Row_t& row = **i;
+
+                                    vec[0] = Glib::ustring(boost::get<0>(row)).lowercase().c_str() ;
+                                    vec[1] = Glib::ustring(boost::get<1>(row)).lowercase().c_str() ;
+                                    vec[2] = Glib::ustring(boost::get<2>(row)).lowercase().c_str() ;
+
+                                    if( Util::match_vec( m[n], vec) )
                                     {
-                                        output_tmp.insert( *i ) ;
+                                        mst.insert( *i ) ; 
                                     }
                                 }
-
-                                std::swap( output, output_tmp ) ;
                             }
+                        }
+
+                        std::sort( m_intersect_v.begin(), m_intersect_v.end(), IntersectSort() ) ;
+
+                        ModelSet_t output ; 
+
+                        if( !m_intersect_v.empty() )
+                            std::swap( m_intersect_v[0], output ) ;
+
+                        for( std::size_t n = 1 ; n < m_intersect_v.size() ; ++n )
+                        {
+                            ModelSet_t tmp ;
+
+                            for( ModelSet_t::iterator i = m_intersect_v[n].begin(); i != m_intersect_v[n].end(); ++i )
+                            {
+                                if( output.find( *i ) != output.end() )
+                                {
+                                    tmp.insert( *i ) ; 
+                                }
+                            }
+
+                            std::swap( output, tmp ) ;
                         }
 
                         m_constraint_albums = std::set<gint64>() ;
                         m_constraint_artist = std::set<gint64>() ;
 
-                        for( RowSet_t::iterator i = output.begin() ; i != output.end(); ++i )
+                        for( ModelSet_t::const_iterator i = output.begin() ; i != output.end(); ++i )
                         {
                             int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
 
@@ -843,11 +929,6 @@ namespace Tracks
                             if( truth )
                             {
                                 new_mapping.push_back( *i ) ;
-
-                                if( id >= 0 && get<3>(**i) == id )
-                                {
-                                    m_position = new_mapping.size()  - 1 ;
-                                } 
                             }
 
                             m_constraint_albums.get().insert( get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ID].get()) ) ;
@@ -857,6 +938,21 @@ namespace Tracks
 
                     if( new_mapping != m_mapping )
                     {
+                        std::sort( new_mapping.begin(), new_mapping.end() ) ;
+
+                        if( id >= 0 )
+                        {
+                            for( RowRowMapping_t::iterator i = new_mapping.begin() ; i != new_mapping.end() ; ++i )
+                            {
+                                const Row_t& row = **i ;
+                                if( boost::get<3>(row) == id )
+                                {
+                                    m_position = std::distance( new_mapping.begin(), i ) ;
+                                    break ;
+                                }
+                            } 
+                        }
+
                         std::swap( new_mapping, m_mapping ) ;
                         scan_active () ;
                         m_changed.emit( m_position, true ) ; 
@@ -1106,7 +1202,6 @@ namespace Tracks
                 int                                 m_row_height ;
                 int                                 m_row_start ;
                 int                                 m_visible_height ;
-                gint64                              m_previous_drawn_row ;
 
                 Columns                             m_columns ;
 
@@ -1115,7 +1210,7 @@ namespace Tracks
 
                 guint                               m_signal0 ; 
 
-                boost::optional<boost::tuple<Model_t::iterator, std::size_t> >  m_selection ;
+                boost::optional<boost::tuple<Model_t::const_iterator, std::size_t> >  m_selection ;
 
                 IdV                                 m_dnd_idv ;
                 bool                                m_dnd ;
@@ -1167,16 +1262,9 @@ namespace Tracks
                 {
                     if( m_model->size() )
                     {
-                            std::size_t row = get_upper_row() ; 
-
-                            m_model->set_current_row( row ) ;        
-
-                            if( m_previous_drawn_row != row )
-                            {
-                                queue_draw ();
-                            }
-
-                            m_SIGNAL_vadj_changed.emit() ;
+                        m_model->set_current_row( get_upper_row() ) ;        
+                        queue_draw ();
+                        m_SIGNAL_vadj_changed.emit() ;
                     }
                 }
 
@@ -1185,7 +1273,7 @@ namespace Tracks
                 virtual bool
                 on_focus_in_event (GdkEventFocus* G_GNUC_UNUSED)
                 {
-                    if( !m_selection && m_model->m_mapping.size() )
+                    if( !m_selection && m_model->size() )
                     {
                         std::size_t row = get_upper_row();
                         m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
@@ -1259,6 +1347,7 @@ namespace Tracks
                     switch( event->keyval )
                     {
                         case GDK_Delete:
+                        {
                             if( m_selection )
                             {
                                 std::size_t p = origin ;
@@ -1266,103 +1355,87 @@ namespace Tracks
                                 m_model->erase( p ) ;
                             }
                             return true ;
+                        }
 
                         case GDK_Return:
                         case GDK_KP_Enter:
                         case GDK_ISO_Enter:
                         case GDK_3270_Enter:
+                        {
                             if( m_selection )
                             {
                                 using boost::get;
 
                                 MPX::Track track = get<4>(*(get<0>(m_selection.get()))) ;
                                 m_SIGNAL_track_activated.emit( track, !(event->state & GDK_CONTROL_MASK) ) ;
-                                m_selection.reset() ;
                                 queue_draw () ;
                             }
                             return true;
+                        }
 
                         case GDK_Up:
                         case GDK_KP_Up:
                         case GDK_Page_Up:
-
+                        {
                             if( event->keyval == GDK_Page_Up )
                             {
-                                step = m_visible_height / m_row_height ; 
+                                step = get_page_size() ; 
                             }
                             else
                             {
                                 step = 1 ;
                             }
 
-                            if( !m_selection )
+                            if( !m_selection || !get_row_is_visible( origin ))
                             {
-                                mark_first_row_up:
-
-                                std::size_t row = get_upper_row();
-                                m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
+                                select_row( get_upper_row() ) ;
                             }
                             else
                             {
-                                if( get_row_is_visible( origin ))
-                                {
-                                    int row = ((origin-step)<0) ? 0 : origin-step ;
+                                std::size_t row = ((origin-step) < 0 ) ? 0 : (origin-step) ;
 
-                                    if( row < get_upper_row() ) 
-                                    {
-                                        m_prop_vadj.get_value()->set_value( get_upper_row() - step ) ; 
-                                    }
-
-                                    m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
-                                }
-                                else
+                                if( row < get_upper_row() ) 
                                 {
-                                    goto mark_first_row_up;
+                                    m_prop_vadj.get_value()->set_value( std::max<int>( int(get_upper_row()) - step, row )) ; 
                                 }
+    
+                                select_row( row ) ;
                             }
-                            queue_draw();
+
                             return true;
+                        }
 
                         case GDK_Down:
                         case GDK_KP_Down:
                         case GDK_Page_Down:
-
+                        {
                             if( event->keyval == GDK_Page_Down )
                             {
-                                step = (m_visible_height / m_row_height) ; 
+                                step = get_page_size() ; 
                             }
                             else
                             {
                                 step = 1 ;
                             }
 
-                            if( !m_selection )
+                            if( !m_selection || !get_row_is_visible( origin ))
                             {
-                                mark_first_row_down:
-
-                                std::size_t row = get_upper_row();
-                                m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
+                                select_row( get_upper_row() ) ;
                             }
                             else
                             {
-                                if( get_row_is_visible( origin ))
-                                {
-                                    int row = ((origin+step)>m_model->size()-1) ? m_model->size()-1 : origin+step ;
+                                std::size_t row = std::min<std::size_t>( origin+step, m_model->size()-1 ) ;
 
-                                    if( row > (get_upper_row() + (m_visible_height/m_row_height))) ;
-                                    {
-                                        m_prop_vadj.get_value()->set_value( get_upper_row()+step ) ; 
-                                    }
-
-                                    m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
-                                }
-                                else
+                                if( row >= get_lower_row() ) 
                                 {
-                                    goto mark_first_row_down;
+                                    m_prop_vadj.get_value()->set_value( std::min<std::size_t>(get_upper_row()+step, row )) ; 
                                 }
+
+                                select_row( row ) ;
                             }
-                            queue_draw();
+
                             return true;
+                        }
 
                         case GDK_Left:
                         case GDK_KP_Left:
@@ -1598,7 +1671,7 @@ namespace Tracks
                     if( m_visible_height && m_row_height && m_prop_vadj.get_value() )
                     {
                         m_prop_vadj.get_value()->set_upper( m_model->size() ) ; 
-                        m_prop_vadj.get_value()->set_page_size( m_visible_height/m_row_height ) ;
+                        m_prop_vadj.get_value()->set_page_size( get_page_size() ) ;
                     }
 
                     double                       n = m_columns.size() - m_collapsed.size() - m_fixed.size() ;
@@ -1631,14 +1704,10 @@ namespace Tracks
                     cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
                     std::size_t row = get_upper_row() ;
-                    m_previous_drawn_row = row ;
-        
-                    boost::optional<std::size_t> active_row ;
-
-                    int ypos    = m_row_start ;
-                    int xpos    = 0 ;
-                    int col     = 0 ;
-                    int cnt     = m_visible_height / m_row_height + 1 ; 
+                    int ypos        = m_row_start ;
+                    int xpos        = 0 ;
+                    int col         = 0 ;
+                    int cnt         = get_page_size() + 1 ; 
 
                     if( event->area.y <= m_row_start )
                     {
@@ -1711,7 +1780,7 @@ namespace Tracks
                                 Interval<std::size_t> i (
                                       Interval<std::size_t>::IN_IN
                                     , get_upper_row()
-                                    , get_upper_row() + (m_visible_height/m_row_height)
+                                    , get_upper_row() + get_page_size()
                                 ) ;
 
                                 std::size_t row = boost::get<1>(m_selection.get()) ; 
@@ -1737,7 +1806,7 @@ namespace Tracks
                             ypos    = m_row_start ;
                             xpos    = 0 ;
                             col     = 0 ;
-                            cnt     = m_visible_height / m_row_height + 1 ; 
+                            cnt     = get_page_size() + 1 ; 
                             row     = get_upper_row() ;
 
                             while( m_model->is_set() && cnt && m_Model_I.in( row ) ) 
@@ -1823,7 +1892,7 @@ namespace Tracks
                     const int icon_xorigin = 0 ;
 
                     ypos    = m_row_start ;
-                    cnt     = m_visible_height / m_row_height + 1 ; 
+                    cnt     = get_page_size() + 1 ; 
                     row     = get_upper_row() ;
 
                     while( m_model->is_set() && cnt && m_Model_I.in( row ) )
@@ -1890,10 +1959,10 @@ namespace Tracks
                     {
                         if( m_prop_vadj.get_value() && m_visible_height && m_row_height )
                         {
-                            std::size_t view_count = m_visible_height / m_row_height ;
+                            std::size_t view_count = get_page_size() ;
 
                             m_prop_vadj.get_value()->set_upper( m_model->size() ) ; 
-                            m_prop_vadj.get_value()->set_page_size( m_visible_height/m_row_height ) ;
+                            m_prop_vadj.get_value()->set_page_size( get_page_size() ) ;
 
                             if( m_model->size() < view_count )
                                 m_prop_vadj.get_value()->set_value(0.) ;
@@ -1972,21 +2041,38 @@ namespace Tracks
 
             public:
     
-                std::size_t
-                get_upper_row ()
+                inline std::size_t
+                get_page_size(
+                )
+                {
+                    return m_visible_height / m_row_height ; 
+                }
+
+                inline std::size_t
+                get_upper_row(
+                )
                 {
                     return m_prop_vadj.get_value()->get_value() ;
                 }
 
-                bool
-                get_row_is_visible (std::size_t row)
+                inline std::size_t
+                get_lower_row(
+                )
+                {
+                    return m_prop_vadj.get_value()->get_value() + get_page_size() ;
+                }
+
+                inline bool
+                get_row_is_visible(
+                      std::size_t   row
+                )
                 {
                     std::size_t up = get_upper_row() ;
 
                     Interval<std::size_t> i (
                           Interval<std::size_t>::IN_IN
                         , up 
-                        , up + (m_visible_height/m_row_height)
+                        , up + get_page_size()
                     ) ;
             
                     return i.in( row ) ;
@@ -2011,7 +2097,7 @@ namespace Tracks
                     }
                     else
                     {
-                            m_model = model;
+                        m_model = model;
                     }
 
                     m_model->signal_changed().connect(
@@ -2076,13 +2162,11 @@ namespace Tracks
                     {
                         m_collapsed.insert( column ) ;
                         queue_resize () ;
-                        queue_draw () ;
                     }
                     else
                     {
                         m_collapsed.erase( column ) ;
                         queue_resize () ;
-                        queue_draw () ;
                     }
                 }
 
@@ -2099,14 +2183,12 @@ namespace Tracks
                         m_fixed_total_width += width ;
                         m_columns[column]->set_width( width ) ;
                         queue_resize () ;
-                        queue_draw () ;
                     }
                     else
                     {
                         m_fixed.erase( column ) ;
                         m_fixed_total_width -= m_columns[column]->get_width() ; 
                         queue_resize () ;
-                        queue_draw () ;
                     }
                 }
 
@@ -2115,7 +2197,7 @@ namespace Tracks
                       gint64 id
                 )
                 {
-                    for( DataModelFilter::RowRowMapping::iterator i = m_model->m_mapping.begin() ; i != m_model->m_mapping.end(); ++i )
+                    for( DataModelFilter::RowRowMapping_t::iterator i = m_model->m_mapping.begin() ; i != m_model->m_mapping.end(); ++i )
                     {
                         const Row_t& row = **i ;
                         if( boost::get<3>(row) == id )
@@ -2159,7 +2241,7 @@ namespace Tracks
                         return ;
                     }
 
-                    DataModelFilter::RowRowMapping::iterator i = m_model->m_mapping.begin(); 
+                    DataModelFilter::RowRowMapping_t::iterator i = m_model->m_mapping.begin(); 
                     ++i ; // first row is "All" FIXME this sucks
 
                     int idx = m_search_idx ;
@@ -2223,7 +2305,6 @@ namespace Tracks
                         : ObjectBase( "YoukiClassTracks" )
 //                        , sigx::glib_auto_dispatchable()
 //                        , m_inserter( 0 )
-                        , m_previous_drawn_row( 0 )
                         , m_prop_vadj( *this, "vadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_prop_hadj( *this, "hadjustment", (Gtk::Adjustment*)( 0 ))
                         , m_dnd( false )

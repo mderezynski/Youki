@@ -324,7 +324,7 @@ namespace MPX
 
             void
             play_track (
-                  MPX::Track&
+                  const MPX::Track&
             ) ;
 
         protected:
