@@ -75,12 +75,6 @@
 /* Define if building with HAL support */
 #cmakedefine HAVE_HAL
 
-/* Defined when building with HAL >= 0.5.8.1 */
-#cmakedefine HAVE_HAL_058
-
-/* define when having newstyle HAL PSI */
-#cmakedefine HAVE_HAL_NEWPSI
-
 /* define when having OFA */
 #cmakedefine HAVE_OFA
 

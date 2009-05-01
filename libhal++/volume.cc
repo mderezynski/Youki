@@ -29,15 +29,11 @@ namespace Hal
     return libhal_volume_get_size (m_volume); 
   }
 
-#ifdef HAVE_HAL_058
-
   dbus_uint64_t
   Volume::get_disc_capacity ()
   {
     return libhal_volume_get_disc_capacity (m_volume); 
   }
-
-#endif  //HAVE_HAL_058
 
   std::string
   Volume::get_device_file () 
@@ -119,8 +115,6 @@ namespace Hal
     return pmp;
   }
 
-#ifdef HAVE_HAL_058
-
   bool
   Volume::is_mounted_read_only ()
   {
@@ -168,8 +162,6 @@ namespace Hal
   {
     return libhal_volume_get_partition_media_size (m_volume);
   }
-
-#endif //HAVE_HAL_058
 
   unsigned int
   Volume::get_partition_number () 

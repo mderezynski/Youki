@@ -59,11 +59,7 @@ namespace Hal
 
               inline bool operator==(iterator const& other)
               {
-#ifdef HAVE_HAL_NEWPSI
                 return ((i.idx == other.i.idx) && (i.set == other.i.set));
-#else
-                return ((i.index == other.i.index) && (i.set == other.i.set));
-#endif // HAVE_HAL_NEWPSI
               }
 
               inline bool operator!=(iterator const& other)

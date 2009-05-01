@@ -175,11 +175,7 @@ namespace MPX
             drive_bus       = drive->get_bus();
             drive_type      = drive->get_type();
 
-            #ifdef HAVE_HAL_058
             drive_size      = drive->get_size();
-            #else
-            drive_size      = 0;
-            #endif               //HAVE_HAL_058
 
             drive_serial    = drive->get_serial();
             device_file     = volume->get_device_file();
