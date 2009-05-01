@@ -1,12 +1,9 @@
+#include "config.h"
 #include "markov-analyzer-thread.hh"
 
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-types.hh"
 #include "mpx/mpx-main.hh"
-
-using boost::get;
-using namespace MPX;
-using namespace MPX::SQL;
 
 MPX::MarkovAnalyzer::MarkovAnalyzer()
 : Service::Base("mpx-service-markov")
@@ -19,8 +16,8 @@ MPX::MarkovAnalyzer::~MarkovAnalyzer ()
 
 void
 MPX::MarkovAnalyzer::process_tracks(
-    MPX::Track & track1,
-    MPX::Track & track2
+    MPX::Track const& track1,
+    MPX::Track const& track2
 )
 {
     using boost::get;
@@ -54,7 +51,7 @@ MPX::MarkovAnalyzer::process_idle()
 }
 
 void
-MPX::MarkovAnalyzer::append (MPX::Track & track)
+MPX::MarkovAnalyzer::append (MPX::Track const& track)
 {
     Glib::Mutex::Lock L (m_queueLock);
 

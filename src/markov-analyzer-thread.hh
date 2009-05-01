@@ -40,7 +40,7 @@ namespace MPX
             MarkovAnalyzer () ;
             ~MarkovAnalyzer () ;
 
-            void append (MPX::Track&) ;
+            void append (MPX::Track const& track) ;
 
         protected:
 
@@ -48,8 +48,8 @@ namespace MPX
 
             void
             process_tracks(
-                MPX::Track & track1,
-                MPX::Track & track2
+                MPX::Track const& track1,
+                MPX::Track const& track2
             );
 
         private:
