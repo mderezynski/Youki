@@ -397,6 +397,7 @@ SET(CPACK_SOURCE_IGNORE_FILES
   \\\\.a$
   \\\\.so$
   \\\\.so\\\\..*$
+  \\\\.mo$
   \\\\.tar\\\\.gz$
   \\\\.tar\\\\.bz2$
 )
