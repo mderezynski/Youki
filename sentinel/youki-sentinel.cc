@@ -23,33 +23,12 @@
 
 #include "config.h"
 
-#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
 
-#include <stdint.h>
-#include <unistd.h>
-#include <fcntl.h>
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/socket.h>
-#include <sys/fcntl.h>
-#include <sys/select.h>
-
-#include <errno.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-
 #include <locale.h>
 #include <glib.h>
-#include <glib/gstdio.h>
-#include <glib/gi18n.h>
-#include <glib-object.h>
-#include <glib/gprintf.h>
-#include <gtk/gtk.h>
 
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
