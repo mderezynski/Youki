@@ -35,6 +35,7 @@
 #include <cstdlib>
 #include <string>
 #include <dbus-c++/glib-integration.h>
+#include <locale.h>
 
 #include "mpx/mpx-covers.hh"
 #include "mpx/mpx-main.hh"
@@ -259,13 +260,25 @@ namespace MPX
         mcs->key_register("Preferences-FileFormatPriorities", "Format6", std::string("audio/x-ms-wma"));
         mcs->key_register("Preferences-FileFormatPriorities", "prioritize-by-filetype", false); 
         mcs->key_register("Preferences-FileFormatPriorities", "prioritize-by-bitrate", false); 
-   }
+    }
+
+    void
+    setup_i18n ()
+    {
+        setlocale (LC_ALL, "");
+        bindtextdomain (PACKAGE, LOCALE_DIR);
+        bind_textdomain_codeset (PACKAGE, "UTF-8");
+        textdomain (PACKAGE);
+    }
+
   } // anonymous namespace
 } // MPX
 
 int
 main (int argc, char ** argv)
 {
+    setup_i18n();
+
     Glib::thread_init(0);
     Glib::init();
     Gio::init();

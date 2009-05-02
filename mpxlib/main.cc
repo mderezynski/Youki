@@ -26,6 +26,7 @@
 //  MPX is covered by.
 
 
+#include <config.h>
 #include <glib/gi18n.h>
 #include <glibmm/miscutils.h>
 #include <giomm.h>
@@ -168,6 +169,15 @@ namespace MPX
         mcs->key_register("Preferences-FileFormatPriorities", "prioritize-by-bitrate", false); 
     }
 
+    void
+    setup_i18n ()
+    {
+        setlocale (LC_ALL, "");
+        bindtextdomain (PACKAGE, LOCALE_DIR);
+        bind_textdomain_codeset (PACKAGE, "UTF-8");
+        textdomain (PACKAGE);
+    }
+
   } // anonymous namespace
 
 } // MPX
@@ -175,6 +185,8 @@ namespace MPX
 int
 main (int argc, char ** argv)
 {
+    setup_i18n();
+
     Glib::thread_init(0);
     Glib::init();
     Gio::init();

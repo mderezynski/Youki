@@ -98,21 +98,23 @@ namespace
 
       if (!g_getenv ("DISPLAY"))
       {
-          char *message = g_strconcat
-            (_("\n       Youki seems to have crashed.\n\n       Please try starting it from a terminal using '"),
-             PREFIX,
-             _("/libexec/mpx-bin --no-log'\n       for further information on what could have caused the crash\n"),
-             _("       and report it to our IRC channel, #youki on irc.freenode.net\n\n"), NULL);
-          g_print( "%s", message ) ;
-          g_free( message ) ;
+          char const* command = PREFIX "/libexec/youki-bin --no-log";
+
+          char const* message =
+            _("       Youki seems to have crashed.\n"
+              "       Please try starting it from a terminal using '%s'\n"
+              "       for further information on what could have caused the crash\n"
+              "       and report it to our IRC channel, #youki on irc.freenode.net\n"
+              "\n");
+          g_print( message, command ) ;
       }
       else
       {
-          gtk_init( 0, 0 ) ; 
+          gtk_init( 0, 0 ) ;
           GtkWidget *dialog = gtk_message_dialog_new_with_markup (NULL, GtkDialogFlags (0), GTK_MESSAGE_ERROR, GTK_BUTTONS_OK,
-                                    "Youki tried to start up, but crashed.\n\n"
-                                    "Please file a bug at:\n\n"
-                                    "http://mpx.backtrace.info/newticket");
+                                    _("Youki tried to start up, but crashed.\n\n"
+                                      "Please file a bug at:\n\n"
+                                      "http://mpx.backtrace.info/newticket"));
 
           gtk_window_set_title (GTK_WINDOW (dialog), _("Youki Crashed"));
           gtk_dialog_run (GTK_DIALOG (dialog));
