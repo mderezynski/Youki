@@ -13,9 +13,12 @@
 #include "kobo-cover.hh"
 #include "kobo-titleinfo.hh"
 #include "kobo-volume.hh"
+
 #include "youki-simpleinfo.hh"
-#include "youki-togglebutton.hh"
 #include "youki-spectrum.hh"
+
+#include "mpx/widgets/youki-tristate-button.hh"
+#include "mpx/widgets/youki-toggle-button.hh"
 
 #include "mpx-mlibman-dbus-proxy-actual.hh"
 #include "mpx-app-dbus-adaptor.hh"
@@ -135,7 +138,8 @@ namespace MPX
             KoboPosition                    * m_main_position ;
             KoboTitleInfo                   * m_main_titleinfo ;
             KoboVolume                      * m_main_volume ;
-            YoukiToggleButton               * m_main_love_button;
+            YoukiTristateButton             * m_main_love_button;
+            YoukiToggleButton               * m_main_stop_next_button ;
 
             View::Artist::Class             * m_ListViewArtist ;
             View::Albums::Class             * m_ListViewAlbums ;
@@ -266,7 +270,6 @@ namespace MPX
 
             void
             on_entry_changed__process_filtering(
-                bool = false /*force processing*/
             ) ;
 
             bool

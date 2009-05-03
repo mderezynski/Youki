@@ -17,11 +17,11 @@
 
 #include "mpx/algorithm/youki-markov-predictor.hh"
 
-#include "mpx/i-youki-theme-engine.hh"
-
 #include "mpx/widgets/cairo-extensions.hh"
 #include "mpx/widgets/rounded-alignment.hh"
 #include "mpx/widgets/percentual-distribution-hbox.hh"
+
+#include "mpx/i-youki-theme-engine.hh"
 
 #include "library.hh"
 #include "plugin-manager-gui.hh"
@@ -333,10 +333,14 @@ namespace MPX
                 , &YoukiController::on_title_clicked
         )) ;
 
-        m_main_love_button  = Gtk::manage(new YoukiToggleButton(16, "mpx-loved-none", "mpx-loved-yes", "mpx-loved-no") ) ;
-        m_main_love_button->set_default_state( TOGGLE_BUTTON_STATE_NONE ) ;
-        m_main_love_button->set_state( TOGGLE_BUTTON_STATE_NONE ) ;
+        m_main_love_button          = Gtk::manage(new YoukiTristateButton(16, "mpx-loved-none", "mpx-loved-yes", "mpx-loved-no") ) ;
+        m_main_love_button->set_default_state( TRISTATE_BUTTON_STATE_NONE ) ;
+        m_main_love_button->set_state( TRISTATE_BUTTON_STATE_NONE ) ;
         m_main_love_button->set_sensitive( false ) ;
+
+        m_main_stop_next_button     = Gtk::manage(new YoukiToggleButton(16, m_main_window->render_icon( Gtk::Stock::CANCEL, Gtk::IconSize(16) ))) ; 
+        m_main_stop_next_button->set_state( TOGGLE_BUTTON_STATE_OFF ) ;
+        m_main_stop_next_button->set_sensitive( false ) ;
 
         m_main_spectrum     = new YoukiSpectrum ;
         m_main_spectrum->signal_clicked().connect(
@@ -433,11 +437,10 @@ namespace MPX
                         , &YoukiController::on_entry_changed__update_completion
                 )) ;
 
-                m_conn4 = m_Entry->signal_changed().connect(sigc::bind(
+                m_conn4 = m_Entry->signal_changed().connect(
                     sigc::mem_fun(
                           *this
-                        , &YoukiController::on_entry_changed__process_filtering)
-                        , false
+                        , &YoukiController::on_entry_changed__process_filtering
                 )) ;
         }
 
@@ -508,6 +511,7 @@ namespace MPX
 
         m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
         m_HBox_Info->pack_start( *m_main_love_button, false, false, 0 ) ;
+        m_HBox_Info->pack_start( *m_main_stop_next_button, false, false, 0 ) ;
         m_HBox_Info->property_spacing() = 2 ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
@@ -535,9 +539,9 @@ namespace MPX
 
         reload_library () ;
 
-        m_ListViewAlbums->select_row( 0 ) ;
-        m_ListViewArtist->select_row( 0 ) ;
         private_->FilterModelTracks->set_filter( "" ) ;
+        m_ListViewArtist->select_row( 0 ) ;
+        m_ListViewAlbums->select_row( 0 ) ;
 
 /*
         gtk_widget_realize( GTK_WIDGET( m_Paned1->gobj() )) ;
@@ -898,18 +902,22 @@ namespace MPX
             , 0
         ) ;
 
-        if( !m_play_queue.empty() )
+        if( m_main_stop_next_button->get_state() != TOGGLE_BUTTON_STATE_ON )
         {
-            gint64 next_id = m_play_queue.front() ;
-            m_play_queue.pop() ;
+            if( !m_play_queue.empty() )
+            {
+                gint64 next_id = m_play_queue.front() ;
+                m_play_queue.pop() ;
 
-            SQL::RowV v ;
-            m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % next_id ).str()) ; 
-            Track_sp p = m_library->sqlToTrack( v[0], true, false ) ;
-            play_track( *(p.get()) ) ;
-        }
-        else
-        {
+                SQL::RowV v ;
+                m_library->getSQL(v, (boost::format("SELECT * FROM track_view WHERE id = '%lld'") % next_id ).str()) ; 
+                Track_sp p = m_library->sqlToTrack( v[0], true, false ) ;
+
+                play_track( *(p.get()) ) ;
+                return ;
+            }
+            else
+            {
                 boost::optional<gint64> pos = m_ListViewTracks->get_local_active_track () ;
 
                 if( pos )
@@ -928,25 +936,20 @@ namespace MPX
                     play_track( boost::get<4>(private_->FilterModelTracks->row( 0 )) ) ;
                     return ;
                 }
+            }
+        }
 
-                m_play->request_status( PLAYSTATUS_STOPPED ) ; 
+        m_play->request_status( PLAYSTATUS_STOPPED ) ; 
 
-                g_signal_emit(
-                      G_OBJECT(gobj())
-                    , m_C_SIG_ID_track_out
-                    , 0
+        if( m_track_previous )
+        {
+                m_library->trackPlayed(
+                      boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_TRACK_ID].get())
+                    , boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_ALBUM_ID].get())
+                    , time(NULL)
                 ) ;
 
-                if( m_track_previous )
-                {
-                        m_library->trackPlayed(
-                              boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_TRACK_ID].get())
-                            , boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_ALBUM_ID].get())
-                            , time(NULL)
-                        ) ;
-
-                        m_track_previous.reset() ;
-                }
+                m_track_previous.reset() ;
         }
     }
 
@@ -962,18 +965,22 @@ namespace MPX
         {
             case PLAYSTATUS_PLAYING:
                 m_main_love_button->set_sensitive( true ) ;
+                m_main_stop_next_button->set_sensitive( true ) ;
                 break ;
 
             case PLAYSTATUS_STOPPED:
 
                 m_track_current.reset() ;
                 m_track_previous.reset() ;
-                m_playqueue.clear() ;
                 m_seek_position.reset() ; 
+
+                m_playqueue.clear() ;
 
                 m_ListViewTracks->clear_active_track() ;
 
                 m_main_love_button->set_sensitive( false ) ;
+                m_main_stop_next_button->set_sensitive( false ) ;
+
                 m_main_titleinfo->clear() ;
                 m_main_position->set_position( 0, 0 ) ;
 
@@ -988,6 +995,8 @@ namespace MPX
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
                 m_main_love_button->set_sensitive( false ) ;
+                m_main_stop_next_button->set_sensitive( false ) ;
+
                 break ;
 
             case PLAYSTATUS_PAUSED:
@@ -1075,9 +1084,12 @@ namespace MPX
 
         m_playqueue.push_back( id_track ) ; 
 
-        ToggleButtonState state = ToggleButtonState(int(library->getTrackLovedHated( id_track ))) ;
+        TristateButtonState state = TristateButtonState(int(library->getTrackLovedHated( id_track ))) ;
+
         m_main_love_button->set_default_state( state ) ; 
         m_main_love_button->set_state( state ) ; 
+
+        m_main_stop_next_button->set_state( TOGGLE_BUTTON_STATE_OFF ) ; 
 
         g_signal_emit(
               G_OBJECT(gobj())
@@ -1121,6 +1133,7 @@ namespace MPX
         else
         {
             m_play_queue.push( boost::get<gint64>(t[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
+            m_ListViewTracks->clear_selection() ;
         }
     }
 
@@ -1302,8 +1315,6 @@ namespace MPX
             m_conn3.unblock() ;
             m_conn4.unblock() ;
 
-//            on_entry_changed__process_filtering() ;
-
             return false ;
         }
         if( m_completion_timer.elapsed() < 0 ) 
@@ -1362,11 +1373,8 @@ namespace MPX
 
     void
     YoukiController::on_entry_changed__process_filtering(
-        bool forced
     )
     {
-//        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
-
         private_->FilterModelTracks->set_filter( m_Entry_Text ) ;
 
         private_->FilterModelArtist->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;

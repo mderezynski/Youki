@@ -1632,7 +1632,7 @@ namespace Tracks
 
                     if( !m_clicked )
                     {
-                            if( m_Model_I.in( row ) && (x_orig < m_columns[0]->get_width()))
+                            if( m_Model_I.in( row ) ) 
                             {
                                 m_hover_track = row ;
                                 queue_draw_area (0, m_row_start, 16, get_allocation().get_height() - m_row_start ) ;
@@ -2223,6 +2223,14 @@ namespace Tracks
                 )
                 {
                     m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
+                    queue_draw() ;
+                }
+
+                void
+                clear_selection(
+                )
+                {
+                    m_selection.reset() ;
                     queue_draw() ;
                 }
 

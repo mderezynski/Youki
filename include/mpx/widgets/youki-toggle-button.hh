@@ -1,5 +1,5 @@
 //  MPX
-//  Copyright (C) 2005-2007 MPX development.
+//  Copyright (C) 2005-2009 MPX development.
 //
 //  This program is free software; you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@
 //  permission is above and beyond the permissions granted by the GPL license
 //  MPX is covered by.
 
-#ifndef _YOUKI_TOGGLEBUTTON__HH
-#define _YOUKI_TOGGUEBUTTON__HH
+#ifndef _YOUKI_TOGGLE_BUTTON__HH
+#define _YOUKI_TOGGLE_BUTTON__HH
 
 #include <glibmm/timer.h>
 #include <gdkmm/pixbuf.h>
@@ -36,7 +36,6 @@ namespace MPX
     {
           TOGGLE_BUTTON_STATE_ON
         , TOGGLE_BUTTON_STATE_OFF
-        , TOGGLE_BUTTON_STATE_NONE
 
         , N_TOGGLE_BUTTON_STATES
     } ;
@@ -50,18 +49,11 @@ namespace MPX
 
             YoukiToggleButton(
                   int
-                , const std::string&
-                , const std::string&
-                , const std::string&
+                , const Glib::RefPtr<Gdk::Pixbuf> 
             ) ;
 
             void
             set_state(
-                  ToggleButtonState
-            ) ;
-
-            void
-            set_default_state(
                   ToggleButtonState
             ) ;
 
@@ -86,8 +78,6 @@ namespace MPX
 
             int                         m_pixbuf_size;
             ToggleButtonState           m_state ;
-            ToggleButtonState           m_default_state ;
-
             Glib::RefPtr<Gdk::Pixbuf>   m_pixbuf[N_TOGGLE_BUTTON_STATES] ;
     } ;
 } // MPX

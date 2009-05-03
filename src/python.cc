@@ -1,20 +1,32 @@
+#include "config.h"
+
+#include <queue>
+#include <string>
+#include <set>
+#include <vector>
+#include <map>
+
+#include <boost/cstdint.hpp>
+#include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/variant.hpp>
+#include <boost/optional.hpp>
+
+#include <Python.h>
+
 #include <boost/python.hpp>
 #include <boost/python/suite/indexing/indexing_suite.hpp>
 #include <boost/python/suite/indexing/map_indexing_suite.hpp>
 #include <boost/python/suite/indexing/vector_indexing_suite.hpp>
-#include <boost/optional.hpp>
-#include <boost/variant.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/cstdint.hpp>
-#include <boost/bind.hpp>
+
 #include <pygobject.h>
 #include <pygtk/pygtk.h>
 #include <pycairo/pycairo.h>
 #include <gdkmm/pixbuf.h>
 #include <libglademm/xml.h>
-#include <Python.h>
-#include "mcs/mcs.h"
-#include "mcs/types.h"
+
+#include "pysigc.hh"
+#include "gtkmmmodule.h"
 
 #include "mpx/mpx-types.hh"
 #include "mpx/mpx-lyrics.hh"
@@ -30,11 +42,9 @@
 #include "mpx/algorithm/random.hh"
 #include "mpx/com/tagview.hh"
 
-#include "pysigc.hh"
-#include "gtkmmmodule.h"
-
 #include "library.hh"
-#include "play.hh"
+#include "mpx/i-youki-play.hh"
+
 #include "youki-controller.hh"
 
 using namespace boost::python;
@@ -132,6 +142,8 @@ namespace MPX
         , MPX_ATTRIBUTE_MPX_ARTIST_ID
         , MPX_ATTRIBUTE_MPX_ALBUM_ARTIST_ID
     };
+
+    typedef std::queue<gint64> PlayQueue_t ;
 }
 
 namespace mpxpy
@@ -396,10 +408,10 @@ namespace mpxpy
 		return pa.get();
 	}
 
-	MPX::Play&
+	MPX::IPlay&
 	player_get_play   (MPX::YoukiController & obj)
 	{
-		MPX::PAccess<MPX::Play> pa   (*services->get<Play>("mpx-service-play").get());
+		MPX::PAccess<MPX::IPlay> pa   (*services->get<IPlay>("mpx-service-play").get());
 		return pa.get();
 	}
 

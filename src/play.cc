@@ -852,11 +852,15 @@ namespace MPX
                 {
                     Play & play = *(static_cast<Play*>( data )) ;
 
+/*
                     Glib::signal_idle().connect(
                             sigc::mem_fun(
                                     play,
                                     &Play::clock_idle_handler
                     )) ;
+*/
+
+                    play.signal_spectrum_.emit( play.m_spectrum ) ;
 
                     return FALSE ;
                 }

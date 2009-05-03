@@ -75,8 +75,6 @@ SET(youki_bin_SOURCES
   youki-notification.cc
   youki-simpleinfo.hh
   youki-simpleinfo.cc
-  youki-togglebutton.hh
-  youki-togglebutton.cc
   kobo-cover.hh
   kobo-cover.cc
   kobo-main.hh

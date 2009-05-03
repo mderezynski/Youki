@@ -24,7 +24,7 @@
 
 #include "config.h"
 
-#include "youki-togglebutton.hh"
+#include "mpx/widgets/youki-toggle-button.hh"
 
 #include <glib/gi18n.h>
 #include <gdk/gdk.h>
@@ -33,12 +33,13 @@
 #include <gtkmm/icontheme.h>
 #include <cairomm/cairomm.h>
 #include <cmath>
-//#include <boost/shared_ptr.hpp>
 
-#include "mpx/util-graphics.hh"
-#include "mpx/widgets/cairo-extensions.hh"
-#include "mpx/i-youki-theme-engine.hh"
 #include "mpx/mpx-main.hh"
+#include "mpx/util-graphics.hh"
+
+#include "mpx/widgets/cairo-extensions.hh"
+
+#include "mpx/i-youki-theme-engine.hh"
 
 namespace
 {
@@ -48,10 +49,8 @@ namespace
 namespace MPX
 {
     YoukiToggleButton::YoukiToggleButton(
-              int                   pixbuf_size
-            , const std::string&    s1
-            , const std::string&    s2
-            , const std::string&    s3
+          int                               pixbuf_size
+        , const Glib::RefPtr<Gdk::Pixbuf>   p 
     )
 
         : m_pixbuf_size( pixbuf_size )
@@ -59,11 +58,10 @@ namespace MPX
     {
         set_size_request( pixbuf_size + 2*xpad ) ;
 
-        Glib::RefPtr<Gtk::IconTheme> theme = Gtk::IconTheme::get_default();
-
-        m_pixbuf[TOGGLE_BUTTON_STATE_NONE]  = theme->load_icon( s1, m_pixbuf_size ) ;
-        m_pixbuf[TOGGLE_BUTTON_STATE_ON]    = theme->load_icon( s2, m_pixbuf_size ) ;
-        m_pixbuf[TOGGLE_BUTTON_STATE_OFF]   = theme->load_icon( s3, m_pixbuf_size ) ;
+        m_pixbuf[TOGGLE_BUTTON_STATE_ON] = p->scale_simple( 16, 16, Gdk::INTERP_BILINEAR) ; 
+        m_pixbuf[TOGGLE_BUTTON_STATE_OFF] = p ; 
+        p->saturate_and_pixelate( m_pixbuf[TOGGLE_BUTTON_STATE_OFF], 0., false ) ;
+        m_pixbuf[TOGGLE_BUTTON_STATE_OFF] = m_pixbuf[TOGGLE_BUTTON_STATE_OFF]->scale_simple( 16, 16, Gdk::INTERP_BILINEAR) ; 
     }
 
     void
@@ -74,16 +72,6 @@ namespace MPX
         m_state = state;
         queue_draw() ;
     }
-
-    void
-    YoukiToggleButton::set_default_state(
-        ToggleButtonState state
-    )
-    {
-        m_default_state = state;
-        queue_draw() ;
-    }
-
 
     ToggleButtonState
     YoukiToggleButton::get_state()
@@ -105,7 +93,7 @@ namespace MPX
         {
             m_state = ToggleButtonState( int(m_state+1) % N_TOGGLE_BUTTON_STATES );
             queue_draw() ;
-        }
+        } 
     }
 
     void
@@ -137,21 +125,10 @@ namespace MPX
             , 4.
         ) ;
 
+        cairo->fill() ;
+
         if( is_sensitive() )
         {
-            if( m_state == m_default_state )
-            {
-                cairo->fill_preserve () ;
-                cairo->set_source_rgba(
-                      c_sel.r
-                    , c_sel.g
-                    , c_sel.b
-                    , 0.15
-                ) ;
-            }
-
-            cairo->fill() ;
-
             GdkRectangle r ;
 
             int off = GTK_BUTTON(gobj())->GSEAL(depressed) ? 1 : 0 ;
@@ -175,12 +152,9 @@ namespace MPX
                 , r.height
             ) ;
 
-            cairo->fill(
+            cairo->paint_with_alpha(
+                  ( m_state == TOGGLE_BUTTON_STATE_ON ) ? 1. : 0.6
             ) ;
-        }
-        else
-        {
-            cairo->fill () ;
         }
     }
 } // namespace MPX

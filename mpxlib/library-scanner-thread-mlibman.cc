@@ -1681,7 +1681,7 @@ MPX::LibraryScannerThread_MLibMan::do_remove_dangling ()
   typedef std::tr1::unordered_set<gint64> IdSet;
 #else
   typedef std::set<gint64> IdSet;
-#endif HAVE_TR1
+#endif // HAVE_TR1
 
   static boost::format delete_f ("DELETE FROM %s WHERE id = '%lld'");
   IdSet idset1;
