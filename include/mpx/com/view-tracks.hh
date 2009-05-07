@@ -409,20 +409,21 @@ namespace Tracks
         struct DataModelFilter
         : public DataModel
         {
-                typedef std::vector<Model_t::const_iterator>                                                            RowRowMapping_t;
-                typedef boost::unordered_set<Model_t::const_iterator, Model_t_iterator_hash, Model_t_iterator_equal>    ModelSet_t ;
-                typedef std::map<std::string, ModelSet_t>                                                               FragmentCache_t ;
-                typedef std::vector<ModelSet_t>                                                                         IntersectVector_t ;
+                typedef std::vector<Model_t::const_iterator>    RowRowMapping_t;
+                typedef std::set<Model_t::const_iterator>       ModelSet_t ;
+                typedef boost::shared_ptr<ModelSet_t>           ModelSet_sp ;
+                typedef std::map<std::string, ModelSet_sp>      FragmentCache_t ;
+                typedef std::vector<ModelSet_sp>                IntersectVector_t ;
 
                 struct IntersectSort
-                    : std::binary_function<ModelSet_t, ModelSet_t, bool>
+                    : std::binary_function<ModelSet_sp, ModelSet_sp, bool>
                 {
                         bool operator() (
-                              const ModelSet_t&  a
-                            , const ModelSet_t&  b
+                              const ModelSet_sp&  a
+                            , const ModelSet_sp&  b
                         )
                         {
-                            return a.size() < b.size() ; 
+                            return a->size() < b->size() ; 
                         }
                 } ;
 
@@ -430,8 +431,8 @@ namespace Tracks
                 FragmentCache_t                         m_fragment_cache ;
                 std::string                             m_filter_full ;
                 std::string                             m_filter_effective ;
-                AQE::Constraints_t                      m_constraints ;
-                AQE::Constraints_t                      m_constraints_synthetic ;
+                AQE::Constraints_t                      m_constraints_aqe ;
+                AQE::Constraints_t                      m_constraints_ext ;
                 boost::optional<gint64>                 m_active_track ;
                 boost::optional<gint64>                 m_local_active_track ;
                 boost::optional<std::set<gint64> >      m_constraint_albums ;
@@ -485,7 +486,7 @@ namespace Tracks
                     const AQE::Constraint_t& c
                 )
                 {
-                    m_constraints_synthetic.push_back( c ) ;    
+                    m_constraints_ext.push_back( c ) ;    
                     regen_mapping() ;
                 }
 
@@ -494,14 +495,14 @@ namespace Tracks
                     const AQE::Constraint_t& c
                 )
                 {
-                    m_constraints_synthetic.push_back( c ) ;    
+                    m_constraints_ext.push_back( c ) ;    
                 }
 
                 virtual void
                 clear_synthetic_constraints(
                 )
                 {
-                    m_constraints_synthetic.clear() ;
+                    m_constraints_ext.clear() ;
                     regen_mapping() ;
                 }
 
@@ -509,7 +510,7 @@ namespace Tracks
                 clear_synthetic_constraints_quiet(
                 )
                 {
-                    m_constraints_synthetic.clear() ;
+                    m_constraints_ext.clear() ;
                     scan_active() ;
                 }
 
@@ -596,8 +597,8 @@ namespace Tracks
 
                         if( m_advanced )
                         {
-                            m_constraints.clear();
-                            m_filter_effective = AQE::parse_advanced_query( m_constraints, text ) ;
+                            m_constraints_aqe.clear();
+                            m_filter_effective = AQE::parse_advanced_query( m_constraints_aqe, text ) ;
                         }
                         else
                         {
@@ -638,6 +639,25 @@ namespace Tracks
                     m_local_active_track.reset() ;
                 }
 
+                void
+                find_position( gint64 id )
+                {
+                    if( id >= 0 )
+                    {
+                        for( RowRowMapping_t::iterator i = m_mapping.begin() ; i != m_mapping.end() ; ++i )
+                        {
+                            const Row_t& row = **i ;
+                            if( boost::get<3>(row) == id )
+                            {
+                                m_position = std::distance( m_mapping.begin(), i ) ;
+                                return ;
+                            }
+                        } 
+                    }
+
+                    m_position = 0 ;
+                }
+
                 virtual void
                 regen_mapping(
                 )
@@ -648,10 +668,9 @@ namespace Tracks
                     using boost::algorithm::find_first;
 
                     RowRowMapping_t new_mapping ;
+
                     std::string     text        = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
                     gint64          id          = ( m_position < m_mapping.size()) ? get<3>(row( m_position )) : -1 ; 
-
-                    m_position = 0 ;
 
                     if( text.empty() )
                     {
@@ -660,15 +679,15 @@ namespace Tracks
 
                         for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                         {
-                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
+                            int truth = m_constraints_aqe.empty() && m_constraints_ext.empty() ; 
 
                             const MPX::Track& track = get<4>(*i);
 
-                            if( !m_constraints.empty() )
-                                truth |= AQE::match_track( m_constraints, track ) ;
+                            if( !m_constraints_aqe.empty() )
+                                truth |= AQE::match_track( m_constraints_aqe, track ) ;
 
-                            if( !m_constraints_synthetic.empty() )
-                                truth |= AQE::match_track( m_constraints_synthetic, track ) ;
+                            if( !m_constraints_ext.empty() )
+                                truth |= AQE::match_track( m_constraints_ext, track ) ;
 
                             if( truth )
                             {
@@ -686,30 +705,28 @@ namespace Tracks
                         StrV m;
                         split( m, text, is_any_of(" ") );
 
-                        IntersectVector_t m_intersect_v ; 
+                        IntersectVector_t intersect_v ; 
+                        std::vector<std::string> vec (3) ;
 
                         for( std::size_t n = 0 ; n < m.size(); ++n )
                         {
-                            if( !m[n].length() )
+                            if( m[n].empty() ) // the fragment is an empty string, so just contine and do nothing (FIXME> Perhaps just add the track instead?)
                             {
                                 continue ;
                             }
 
-                            FragmentCache_t::iterator it = m_fragment_cache.find( m[n] ) ;
+                            FragmentCache_t::iterator it = m_fragment_cache.find( m[n] ) ; // do we have this text fragment's result set cached?
 
-                            if( it != m_fragment_cache.end() )
+                            if( it != m_fragment_cache.end() ) // yes, this text fragment's result set is already cached
                             {
-                                m_intersect_v.push_back( (*it).second ) ;
+                                intersect_v.push_back( (*it).second ) ;
                             }
-                            else
+                            else // no we don't: we need to determine the result set
                             {
-                                m_intersect_v.resize( m_intersect_v.size() + 1 ) ; 
+                                ModelSet_sp mst ( new ModelSet_t ) ;
+                                intersect_v.push_back( mst ) ; 
 
-                                ModelSet_t& mst = m_intersect_v[n] ;
-
-                                std::vector<std::string> vec (3) ;
-
-                                for( Model_t::const_iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
+                                for( Model_t::const_iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i ) // determine all the matches
                                 {
                                     const Row_t& row = *i;
 
@@ -719,50 +736,51 @@ namespace Tracks
 
                                     if( Util::match_vec( m[n], vec) )
                                     {
-                                        mst.insert( i ) ; 
+                                        mst->insert( i ) ; 
                                     }
                                 }
 
-                                m_fragment_cache.insert( std::make_pair( m[n], m_intersect_v[n] )) ;
+                                m_fragment_cache.insert( std::make_pair( m[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                             }
                         }
 
-                        std::sort( m_intersect_v.begin(), m_intersect_v.end(), IntersectSort() ) ;
+                        std::sort( intersect_v.begin(), intersect_v.end(), IntersectSort() ) ;
+                        ModelSet_sp output ( new ModelSet_t ) ; 
 
-                        ModelSet_t output ; 
+                        if( !intersect_v.empty() )
+                        { 
+                            output = intersect_v[0] ; 
 
-                        if( !m_intersect_v.empty() )
-                            std::swap( m_intersect_v[0], output ) ;
-
-                        for( std::size_t n = 1 ; n < m_intersect_v.size() ; ++n )
-                        {
-                            ModelSet_t tmp ;
-
-                            for( ModelSet_t::const_iterator i = m_intersect_v[n].begin(); i != m_intersect_v[n].end(); ++i )
+                            for( std::size_t n = 1 ; n < intersect_v.size() ; ++n )
                             {
-                                if( output.find( *i ) != output.end() )
-                                {
-                                    tmp.insert( *i ) ;
-                                }
-                            }
+                                ModelSet_sp tmp ( new ModelSet_t ) ;
 
-                            std::swap( output, tmp ) ;
+                                for( ModelSet_t::const_iterator i = intersect_v[n]->begin(); i != intersect_v[n]->end(); ++i )
+                                {
+                                    if( output->find( *i ) != output->end() )
+                                    {
+                                        tmp->insert( *i ) ;
+                                    }
+                                }
+
+                                output = tmp ; 
+                            }
                         }
 
                         m_constraint_albums = std::set<gint64>() ;
                         m_constraint_artist = std::set<gint64>() ;
 
-                        for( ModelSet_t::iterator i = output.begin() ; i != output.end(); ++i )
+                        for( ModelSet_t::iterator i = output->begin() ; i != output->end(); ++i )
                         {
-                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
+                            int truth = m_constraints_aqe.empty() && m_constraints_ext.empty() ; 
 
                             const MPX::Track& track = get<4>(**i);
 
-                            if( !m_constraints.empty() )
-                                truth |= AQE::match_track( m_constraints, track ) ;
+                            if( !m_constraints_aqe.empty() )
+                                truth |= AQE::match_track( m_constraints_aqe, track ) ;
 
-                            if( !m_constraints_synthetic.empty() )
-                                truth |= AQE::match_track( m_constraints_synthetic, track ) ;
+                            if( !m_constraints_ext.empty() )
+                                truth |= AQE::match_track( m_constraints_ext, track ) ;
 
                             if( truth )
                             {
@@ -781,23 +799,9 @@ namespace Tracks
 
                     if( new_mapping != m_mapping )
                     {
-                        std::sort( new_mapping.begin(), new_mapping.end() ) ;
-
-                        if( id >= 0 )
-                        {
-                            for( RowRowMapping_t::iterator i = new_mapping.begin() ; i != new_mapping.end() ; ++i )
-                            {
-                                const Row_t& row = **i ;
-                                if( boost::get<3>(row) == id )
-                                {
-                                    m_position = std::distance( new_mapping.begin(), i ) ;
-                                    break ;
-                                }
-                            } 
-                        }
-
                         std::swap( new_mapping, m_mapping ) ;
                         scan_active () ;
+                        find_position( id ) ;
                         m_changed.emit( m_position, true ) ; 
                     }                
                 }
@@ -812,10 +816,9 @@ namespace Tracks
                     using boost::algorithm::find_first;
 
                     RowRowMapping_t new_mapping ;
+
                     std::string     text        = Glib::ustring( m_filter_effective ).lowercase().c_str() ;
                     gint64          id          = ( m_position < m_mapping.size()) ? get<3>(row( m_position )) : -1 ; 
-
-                    m_position  = 0 ;
 
                     if( text.empty() )
                     {
@@ -824,15 +827,15 @@ namespace Tracks
 
                         for( RowRowMapping_t::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                         {
-                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
+                            int truth = m_constraints_aqe.empty() && m_constraints_ext.empty() ; 
 
-                            const MPX::Track& track = get<4>(*(*i));
+                            const MPX::Track& track = get<4>(**i);
 
-                            if( !m_constraints.empty() )
-                                truth |= AQE::match_track( m_constraints, track ) ; 
+                            if( !m_constraints_aqe.empty() )
+                                truth |= AQE::match_track( m_constraints_aqe, track ) ; 
 
-                            if( !m_constraints_synthetic.empty() )
-                                truth |= AQE::match_track( m_constraints_synthetic, track ) ; 
+                            if( !m_constraints_ext.empty() )
+                                truth |= AQE::match_track( m_constraints_ext, track ) ; 
 
                             if( truth )
                             {
@@ -850,11 +853,12 @@ namespace Tracks
                         StrV m;
                         split( m, text, is_any_of(" ") );
 
-                        IntersectVector_t m_intersect_v ; 
+                        IntersectVector_t intersect_v ; 
+                        std::vector<std::string> vec (3) ;
 
                         for( std::size_t n = 0 ; n < m.size(); ++n )
                         {
-                            if( !m[n].length() )
+                            if( m[n].empty() )
                             {
                                 continue ;
                             }
@@ -863,15 +867,12 @@ namespace Tracks
 
                             if( it != m_fragment_cache.end() )
                             {
-                                m_intersect_v.push_back( (*it).second ) ;
+                                intersect_v.push_back( (*it).second ) ;
                             }
                             else
                             {
-                                m_intersect_v.resize( m_intersect_v.size() + 1 ) ; 
-
-                                ModelSet_t& mst = m_intersect_v[n] ;
-
-                                std::vector<std::string> vec (3) ;
+                                ModelSet_sp mst ( new ModelSet_t ) ;        
+                                intersect_v.push_back( mst ) ; 
 
                                 for( RowRowMapping_t::const_iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                                 {
@@ -883,48 +884,51 @@ namespace Tracks
 
                                     if( Util::match_vec( m[n], vec) )
                                     {
-                                        mst.insert( *i ) ; 
+                                        mst->insert( *i ) ; 
                                     }
                                 }
+
+                                m_fragment_cache.insert( std::make_pair( m[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                             }
                         }
 
-                        std::sort( m_intersect_v.begin(), m_intersect_v.end(), IntersectSort() ) ;
+                        std::sort( intersect_v.begin(), intersect_v.end(), IntersectSort() ) ;
+                        ModelSet_sp output ( new ModelSet_t ) ; 
 
-                        ModelSet_t output ; 
-
-                        if( !m_intersect_v.empty() )
-                            std::swap( m_intersect_v[0], output ) ;
-
-                        for( std::size_t n = 1 ; n < m_intersect_v.size() ; ++n )
+                        if( !intersect_v.empty() )
                         {
-                            ModelSet_t tmp ;
+                            output = intersect_v[0] ;
 
-                            for( ModelSet_t::iterator i = m_intersect_v[n].begin(); i != m_intersect_v[n].end(); ++i )
+                            for( std::size_t n = 1 ; n < intersect_v.size() ; ++n )
                             {
-                                if( output.find( *i ) != output.end() )
-                                {
-                                    tmp.insert( *i ) ; 
-                                }
-                            }
+                                ModelSet_sp tmp ( new ModelSet_t ) ;
 
-                            std::swap( output, tmp ) ;
+                                for( ModelSet_t::const_iterator i = intersect_v[n]->begin(); i != intersect_v[n]->end(); ++i )
+                                {
+                                    if( output->find( *i ) != output->end() )
+                                    {
+                                        tmp->insert( *i ) ; 
+                                    }
+                                }
+
+                                output = tmp ; 
+                            }
                         }
 
                         m_constraint_albums = std::set<gint64>() ;
                         m_constraint_artist = std::set<gint64>() ;
 
-                        for( ModelSet_t::const_iterator i = output.begin() ; i != output.end(); ++i )
+                        for( ModelSet_t::const_iterator i = output->begin() ; i != output->end(); ++i )
                         {
-                            int truth = m_constraints.empty() && m_constraints_synthetic.empty() ; 
+                            int truth = m_constraints_aqe.empty() && m_constraints_ext.empty() ; 
 
                             const MPX::Track& track = get<4>(**i) ;
 
-                            if( !m_constraints.empty() )
-                                truth |= AQE::match_track( m_constraints, track ) ; 
+                            if( !m_constraints_aqe.empty() )
+                                truth |= AQE::match_track( m_constraints_aqe, track ) ; 
 
-                            if( !m_constraints_synthetic.empty() )
-                                truth |= AQE::match_track( m_constraints_synthetic, track ) ; 
+                            if( !m_constraints_ext.empty() )
+                                truth |= AQE::match_track( m_constraints_ext, track ) ; 
 
                             if( truth )
                             {
@@ -938,23 +942,9 @@ namespace Tracks
 
                     if( new_mapping != m_mapping )
                     {
-                        std::sort( new_mapping.begin(), new_mapping.end() ) ;
-
-                        if( id >= 0 )
-                        {
-                            for( RowRowMapping_t::iterator i = new_mapping.begin() ; i != new_mapping.end() ; ++i )
-                            {
-                                const Row_t& row = **i ;
-                                if( boost::get<3>(row) == id )
-                                {
-                                    m_position = std::distance( new_mapping.begin(), i ) ;
-                                    break ;
-                                }
-                            } 
-                        }
-
                         std::swap( new_mapping, m_mapping ) ;
                         scan_active () ;
+                        find_position( id ) ;
                         m_changed.emit( m_position, true ) ; 
                     }
                 }
