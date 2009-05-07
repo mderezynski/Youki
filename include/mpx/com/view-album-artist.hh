@@ -1,5 +1,5 @@
-#ifndef YOUKI_LISTVIEW_Artist_HH
-#define YOUKI_LISTVIEW_Artist_HH
+#ifndef YOUKI_VIEW_ARTISTS__HH
+#define YOUKI_VIEW_ARTISTS__HH
 
 #include <gtkmm.h>
 #include <gtk/gtktreeview.h>
@@ -277,7 +277,7 @@ namespace Artist
 
                         long long int sz = new_mapping.size() - 1 ;
     
-                        get<0>(row) = (boost::format(_("All %lld %s")) % sz % ((sz > 1) ? _("Artists") : _("Artist"))).str() ;
+                        get<0>(row) = (boost::format(_("<b>%lld %s</b>")) % sz % ((sz > 1) ? _("Artists") : _("Artist"))).str() ;
 
                         std::swap( m_mapping, new_mapping ) ;
 
@@ -415,11 +415,11 @@ namespace Artist
                     if( row == 0 )
                     {
                         layout = widget.create_pango_layout("");
-                        layout->set_markup("<b>" + Glib::Markup::escape_text(str) + "</b>") ;
+                        layout->set_markup( str ) ;
                     }
                     else
                     {
-                        layout = widget.create_pango_layout(str);
+                        layout = widget.create_pango_layout( str ) ;
                     }
 
                     layout->set_ellipsize(

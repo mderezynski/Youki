@@ -12,8 +12,8 @@ INSTALL(
         qual1.png
         qual2.png
         qual3.png
-        speaker_ghost.png
-        speaker.png
+        row-hover.png
+        row-play.png
         splash.png
         stars0.png
         stars1.png

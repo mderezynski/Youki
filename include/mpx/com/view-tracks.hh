@@ -1,5 +1,5 @@
-#ifndef _YOUKI_TRACK_LIST_HH
-#define _YOUKI_TRACK_LIST_HH
+#ifndef YOUKI_VIEW_TRACKS_HH
+#define YOUKI_VIEW_TRACKS_HH
 
 #include <gtkmm.h>
 #include <cairomm/cairomm.h>
@@ -1052,10 +1052,8 @@ namespace Tracks
                 {
                     using boost::get;
 
-                    int off = (column == 0) ? 16 : 0 ;
-
                     cairo->rectangle(
-                          xpos + off + 5
+                          xpos + 5
                         , ypos + 6
                         , m_width
                         , rowheight
@@ -1064,7 +1062,7 @@ namespace Tracks
                     cairo->clip() ;
 
                     cairo->move_to(
-                          xpos + off + 5
+                          xpos + 5
                         , ypos + 6
                     ) ;
 
@@ -1088,7 +1086,7 @@ namespace Tracks
                     ) ;
 
                     layout->set_width(
-                          (m_width-off-10)*PANGO_SCALE
+                          (m_width-10)*PANGO_SCALE
                     ) ;
 
                     layout->set_alignment(
@@ -1126,17 +1124,15 @@ namespace Tracks
                         , color.a   
                     ) ; 
 
-                    int off = (m_column == 0) ? 16 : 0 ;
-
                     cairo->rectangle(
-                          xpos + off
+                          xpos
                         , ypos
-                        , m_width - off
+                        , m_width
                         , rowheight
                     ) ;
                     cairo->clip();
                     cairo->move_to(
-                          xpos + off + 6
+                          xpos + 6
                         , ypos + 2
                     ) ;
 
@@ -1166,7 +1162,7 @@ namespace Tracks
                     ) ;
 
                     layout->set_width(
-                          (m_width - off - 12) * PANGO_SCALE
+                          (m_width - 12) * PANGO_SCALE
                     ) ;
 
                     layout->set_alignment(
@@ -1221,8 +1217,8 @@ namespace Tracks
                 boost::optional<gint64>             m_active_track ;
                 boost::optional<gint64>             m_hover_track ;
 
-                Glib::RefPtr<Gdk::Pixbuf>           m_playing_pixbuf ;
-                Glib::RefPtr<Gdk::Pixbuf>           m_hover_pixbuf ;
+                Glib::RefPtr<Gdk::Pixbuf>           m_pb_play_l ;
+                Glib::RefPtr<Gdk::Pixbuf>           m_pb_hover_l ;
 
                 std::set<int>                       m_collapsed ;
                 std::set<int>                       m_fixed ;
@@ -1632,7 +1628,7 @@ namespace Tracks
 
                     if( !m_clicked )
                     {
-                            if( m_Model_I.in( row ) ) 
+                            if( m_Model_I.in( row ) && y_orig >= m_row_start ) 
                             {
                                 m_hover_track = row ;
                                 queue_draw_area (0, m_row_start, 16, get_allocation().get_height() - m_row_start ) ;
@@ -1674,8 +1670,9 @@ namespace Tracks
                         m_prop_vadj.get_value()->set_page_size( get_page_size() ) ;
                     }
 
-                    double                       n = m_columns.size() - m_collapsed.size() - m_fixed.size() ;
-                    double column_width_calculated = (double(event->width) - double(m_fixed_total_width) - double(column_width_collapsed*double(m_collapsed.size()))) / n ; 
+                    int width = event->width - 16 ;
+
+                    double column_width_calculated = (double(width) - double(m_fixed_total_width) - double(column_width_collapsed*double(m_collapsed.size()))) / (m_columns.size() - m_collapsed.size() - m_fixed.size()) ;
 
                     for( std::size_t n = 0; n < m_columns.size(); ++n )
                     {
@@ -1704,13 +1701,19 @@ namespace Tracks
                     cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
                     std::size_t row = get_upper_row() ;
-                    int ypos        = m_row_start ;
-                    int xpos        = 0 ;
-                    int col         = 0 ;
-                    int cnt         = get_page_size() + 1 ; 
+
+                    int col     = 0 ;
+                    int cnt     = get_page_size() + 1 ; 
+
+                    int xpos    = 0 ;
+                    int ypos    = m_row_start ;
+
+                    const int inner_pad = 1 ;
 
                     if( event->area.y <= m_row_start )
                     {
+                            xpos = 16 ;
+
                             for( Columns::iterator i = m_columns.begin(); i != m_columns.end(); ++i, ++col )
                             {
                                 (*i)->render_header(
@@ -1723,30 +1726,25 @@ namespace Tracks
                                   , c_text
                                 ) ;
 
-                                xpos += (*i)->get_width() + 1 ;
+                                xpos += (*i)->get_width() ; 
                             }
                     }
 
                     cairo->set_operator(Cairo::OPERATOR_OVER);
 
                     //// ROWS
-    
-                    const int xpad      = 16 ;
-                    const int inner_pad =  1 ;
 
                     if( event->area.width > 16 )
                     {
                             while( m_model->is_set() && cnt && m_Model_I.in( row ) ) 
                             {
-                                xpos = 0 ;
-
                                 if( !(row % 2) ) 
                                 {
                                     GdkRectangle r ;
 
-                                    r.x       = xpad  + inner_pad ;
-                                    r.y       = ypos  + inner_pad ;
-                                    r.width   = a.get_width() - xpad - 2 * inner_pad ;
+                                    r.x       = 16 + inner_pad ;
+                                    r.y       = ypos + inner_pad ;
+                                    r.width   = a.get_width() - 2 * inner_pad - 16 ;
                                     r.height  = m_row_height - 2 * inner_pad ;
 
                                     RoundedRectangle(
@@ -1790,9 +1788,9 @@ namespace Tracks
                                 {
                                         GdkRectangle r ;
 
-                                        r.x         = inner_pad + 16 ;
+                                        r.x         = 16 + inner_pad ; 
                                         r.y         = inner_pad + (row - get_upper_row()) * m_row_height + m_row_start ;
-                                        r.width     = a.get_width() - 2*inner_pad - 16 ;  
+                                        r.width     = a.get_width() - 2*inner_pad - 16 ; 
                                         r.height    = m_row_height  - 2*inner_pad ;
 
                                         theme->draw_selection_rectangle(
@@ -1803,15 +1801,16 @@ namespace Tracks
                                     }
                             }
 
-                            ypos    = m_row_start ;
-                            xpos    = 0 ;
+                            row     = get_upper_row() ;
+
                             col     = 0 ;
                             cnt     = get_page_size() + 1 ; 
-                            row     = get_upper_row() ;
+
+                            ypos    = m_row_start ;
 
                             while( m_model->is_set() && cnt && m_Model_I.in( row ) ) 
                             {
-                                xpos = 0 ;
+                                xpos = 16 ;
 
                                 for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                                 {
@@ -1826,7 +1825,7 @@ namespace Tracks
                                         , (row_select && (row == row_select.get())) ? c_text_sel : c_text
                                     ) ;
 
-                                    xpos += (*i)->get_width() + 1;
+                                    xpos += (*i)->get_width() ; 
                                 }
 
                                 ypos += m_row_height ;
@@ -1889,7 +1888,6 @@ namespace Tracks
                     //// ICONS
 
                     const int icon_lateral = 16 ;
-                    const int icon_xorigin = 0 ;
 
                     ypos    = m_row_start ;
                     cnt     = get_page_size() + 1 ; 
@@ -1899,45 +1897,41 @@ namespace Tracks
                     {
                         if( m_active_track && boost::get<3>(m_model->row(row)) == m_active_track.get() )
                         {
-                            const int icon_x = icon_xorigin ;
+                            const int icon_x = 0 ;
                             const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
 
                             Gdk::Cairo::set_source_pixbuf(
                                   cairo
-                                , m_playing_pixbuf
+                                , m_pb_play_l
                                 , icon_x
                                 , icon_y 
                             ) ;
-
                             cairo->rectangle(
                                   icon_x
                                 , icon_y 
                                 , icon_lateral
                                 , icon_lateral
                             ) ;
-
                             cairo->fill () ;
                         }
                         else
                         if( m_hover_track && row == m_hover_track.get() )
                         {
-                            const int icon_x = icon_xorigin ;
+                            const int icon_x = 0 ;
                             const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
 
                             Gdk::Cairo::set_source_pixbuf(
                                   cairo
-                                , m_hover_pixbuf
+                                , m_pb_hover_l
                                 , icon_x
                                 , icon_y 
                             ) ;
-
                             cairo->rectangle(
                                   icon_x 
                                 , icon_y 
                                 , icon_lateral
                                 , icon_lateral
                             ) ;
-
                             cairo->fill () ;
                         }
 
@@ -2331,8 +2325,8 @@ namespace Tracks
                     modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
                     modify_base( Gtk::STATE_NORMAL, cgdk ) ;
 
-                    m_playing_pixbuf = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "speaker.png" )) ;
-                    m_hover_pixbuf = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "speaker_ghost.png" )) ;
+                    m_pb_play_l = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "row-play.png" )) ;
+                    m_pb_hover_l = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "row-hover.png" )) ;
 
                     set_flags(Gtk::CAN_FOCUS);
                     add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK ));

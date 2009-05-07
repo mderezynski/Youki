@@ -1,5 +1,5 @@
-#ifndef _YOUKI_ALBUM_LIST_HH
-#define _YOUKI_ALBUM_LIST_HH
+#ifndef YOUKI_VIEW_ALBUMS__HH
+#define YOUKI_VIEW_ALBUMS__HH
 
 #include <gtkmm.h>
 #include <gtk/gtktreeview.h>
@@ -416,7 +416,7 @@ namespace Albums
 
                         long long int sz = new_mapping.size() - 1 ;
 
-                        get<4>(row) = (boost::format(_("All %lld %s")) % sz % ((sz > 1) ? _("Albums") : _("Album"))).str() ;
+                        get<4>(row) = (boost::format(_("<b>%lld %s</b>")) % sz % ((sz > 1) ? _("Albums") : _("Album"))).str() ;
 
                         std::swap( new_mapping, m_mapping ) ;
 
@@ -676,10 +676,7 @@ namespace Albums
                     else
                     {
                             //// ARTIST
-                            Pango::FontDescription desc = layout->get_font_description() ;
-                            desc.set_weight( Pango::WEIGHT_BOLD ) ;
-                            layout->set_font_description( desc ) ;
-                            layout->set_text( get<4>(data_row) )  ;
+                            layout->set_markup( get<4>(data_row) )  ;
                             layout->get_pixel_size (width, height) ;
                             cairo->move_to(
                                   xpos + (m_width - width) / 2
