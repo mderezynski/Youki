@@ -2298,6 +2298,7 @@ namespace Tracks
                 {
                     Gtk::DrawingArea::on_realize() ;
                     initialize_metrics();
+                    queue_resize();
                 }
 
             public:
