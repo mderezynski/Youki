@@ -59,7 +59,7 @@ namespace MPX
         set_size_request( pixbuf_size + 2*xpad ) ;
 
         m_pixbuf[TOGGLE_BUTTON_STATE_ON] = p->scale_simple( 16, 16, Gdk::INTERP_BILINEAR) ; 
-        m_pixbuf[TOGGLE_BUTTON_STATE_OFF] = p ; 
+        m_pixbuf[TOGGLE_BUTTON_STATE_OFF] = p->copy();
         p->saturate_and_pixelate( m_pixbuf[TOGGLE_BUTTON_STATE_OFF], 0., false ) ;
         m_pixbuf[TOGGLE_BUTTON_STATE_OFF] = m_pixbuf[TOGGLE_BUTTON_STATE_OFF]->scale_simple( 16, 16, Gdk::INTERP_BILINEAR) ; 
     }
