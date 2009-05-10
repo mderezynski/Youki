@@ -1830,7 +1830,7 @@ namespace Tracks
                                 dashes[1] = 3. ;
                                 dashes[2] = 0. ;
 
-                                xpos = 0 ;
+                                xpos = 16 ;
 
                                 cairo->save() ;
 

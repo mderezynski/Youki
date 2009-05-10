@@ -477,6 +477,8 @@ namespace Artist
                 bool                                m_search_active ;
                 int                                 m_search_idx ;
 
+                bool                                m_clicked ;
+
                 void
                 initialize_metrics ()
                 {
@@ -787,16 +789,18 @@ namespace Artist
                 {
                     using boost::get;
 
-                    if(event->type == GDK_BUTTON_PRESS)
+                    if( event->type == GDK_BUTTON_PRESS )
                     {
-                            grab_focus() ;
+                        grab_focus() ;
 
-                            std::size_t row = get_upper_row() + (event->y/m_row_height) ;
+                        std::size_t row = get_upper_row() + ( event->y / m_row_height ) ;
 
-                            if( row < m_model->size() )
-                            {
-                                select_row( row ) ;
-                            }
+                        if( row < m_model->size() )
+                        {
+                            select_row( row ) ;
+                        }
+
+                        m_clicked = true ;
                     }
                 
                     return true;
@@ -805,7 +809,8 @@ namespace Artist
                 bool
                 on_button_release_event (GdkEventButton * event)
                 {
-                   return false;
+                    m_clicked = false ;
+                    return true ;
                 }
 
                 bool
@@ -818,13 +823,40 @@ namespace Artist
                     return true ;
                 }
 
+/*
                 bool
                 on_motion_notify_event(
                     GdkEventMotion* event
                 )
                 {
+                    if( m_clicked )
+                    {
+                        int               x_orig
+                                        , y_orig;
+
+                        GdkModifierType   state;
+
+                        if( event->is_hint )
+                        {
+                            gdk_window_get_pointer( event->window, &x_orig, &y_orig, &state ) ;
+                        }
+                        else
+                        {
+                            x_orig = int( event->x ) ;
+                            y_orig = int( event->y ) ;
+                            state  = GdkModifierType( event->state ) ;
+                        }
+
+                        std::size_t row = get_upper_row() + ( y_orig/m_row_height ) ;
+
+                        if( row < m_model->size() )
+                        {
+                            select_row( row ) ;
+                        }
+                    }
                     return true ;
                 }
+*/
 
                 bool
                 on_configure_event(
@@ -1287,6 +1319,7 @@ namespace Artist
                         , m_fixed_total_width( 0 )
                         , m_search_active( false )
                         , m_search_idx( 0 )
+                        , m_clicked( false )
 
                 {
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
@@ -1297,7 +1330,7 @@ namespace Artist
                     modify_base( Gtk::STATE_NORMAL, cgdk ) ;
 
                     set_flags(Gtk::CAN_FOCUS);
-                    add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK ));
+                    add_events(Gdk::EventMask( GDK_KEY_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK ));
 
                     ((GtkWidgetClass*)(G_OBJECT_GET_CLASS(G_OBJECT(gobj()))))->set_scroll_adjustments_signal = 
                             g_signal_new ("set_scroll_adjustments",
