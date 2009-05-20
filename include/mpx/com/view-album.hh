@@ -1373,7 +1373,7 @@ namespace Albums
                 {
                     if( m_model->m_mapping.size() && (!m_selection || boost::get<2>(m_selection.get()) != 0) )
                     {
-                        select_row( 0 ) ;
+                        select_row( 0, true ) ;
                         return ;
                     }
 

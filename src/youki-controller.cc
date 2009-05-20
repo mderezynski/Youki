@@ -1375,12 +1375,21 @@ namespace MPX
     YoukiController::on_entry_changed__process_filtering(
     )
     {
+/*(
+        m_ListViewArtist->clear_selection() ;
+        m_ListViewAlbums->clear_selection() ;
+
+        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
+*/
+
         private_->FilterModelTracks->set_filter( m_Entry_Text ) ;
 
         private_->FilterModelArtist->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
         private_->FilterModelArtist->regen_mapping() ;
 
+/*
         boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
+
         boost::optional<std::set<gint64> > constraint ; 
 
         if( id_artist ) 
@@ -1395,6 +1404,8 @@ namespace MPX
         }
 
         private_->FilterModelAlbums->set_constraint_artist( constraint ) ;
+*/
+
         private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;
         private_->FilterModelAlbums->regen_mapping() ;
     }
