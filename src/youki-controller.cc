@@ -1069,9 +1069,11 @@ namespace MPX
                     , time(NULL)
                 ) ;
 
+/*
                 private_->MarkovPredictor->process_string(
                       boost::get<std::string>(m_track_previous.get()[ATTRIBUTE_ALBUM_ARTIST].get())
                 ) ;
+*/
         
                 Library::LovedHatedStatus status = Library::LovedHatedStatus(int(m_main_love_button->get_state())) ;
                 library->trackLovedHated(                
@@ -1326,13 +1328,16 @@ namespace MPX
     void
     YoukiController::on_entry_changed__update_completion()
     {
+/*
         m_completion_timer.stop() ;
         m_completion_timer.reset() ;
+*/
 
         Glib::ustring text = m_Entry->get_text() ;
 
         if( text.size() > 0 )
         {
+/*
             if( text == m_Entry_Text + m_prediction_last ) 
             {
                 return ;
@@ -1346,10 +1351,16 @@ namespace MPX
                 m_prediction_last.clear() ;
                 return ;
             }
+*/
 
             m_Entry_Text = text ; 
-            m_prediction = new_prediction ; 
+            m_Entry->set_text( m_Entry_Text ) ;  // FIXME temp
 
+/*
+            m_prediction = new_prediction ; 
+*/
+
+/*
             if( !m_prediction.empty() && !m_conn_completion ) 
             {
                 m_conn_completion = Glib::signal_timeout().connect(
@@ -1362,12 +1373,15 @@ namespace MPX
             }
 
             m_completion_timer.start() ;
+*/
         }
         else
         {
             m_Entry_Text.clear() ;
+/*
             m_prediction.clear() ;
             m_prediction_last.clear() ;
+*/
         }
     }
 

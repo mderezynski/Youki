@@ -1038,9 +1038,6 @@ namespace Albums
                                 select_row( row ) ;
                             }
                         }
-
-                        queue_draw() ;
-                        m_SIGNAL_selection_changed.emit() ;
                     }
 
                 
@@ -1114,7 +1111,7 @@ namespace Albums
                     int offset          = m_prop_vadj.get_value()->get_value() - (row*m_row_height) ;
                     int ypos            = 0 ;
                     std::size_t xpos    = 0 ;
-                    std::size_t cnt     = m_visible_height / m_row_height + 1 ;
+                    std::size_t cnt     = m_visible_height / m_row_height + 2 ;
             
                     if( row && offset ) 
                     {
