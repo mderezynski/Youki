@@ -548,6 +548,12 @@ namespace MPX
                 , &MLibManager::new_artist
         )) ;
 
+        library->signal_album_artist_deleted().connect(
+            sigc::mem_fun(
+                  *this
+                , &MLibManager::album_artist_deleted
+        )) ;
+
         /*- Setup Window Geometry -----------------------------------------*/ 
     
         gtk_widget_realize(GTK_WIDGET(gobj()));
@@ -713,6 +719,14 @@ namespace MPX
     )
     {
         NewArtist( id ) ;
+    }
+
+    void
+    MLibManager::album_artist_deleted(
+          const int64_t&        id
+    )
+    {
+        ArtistDeleted( id ) ;
     }
 
     bool

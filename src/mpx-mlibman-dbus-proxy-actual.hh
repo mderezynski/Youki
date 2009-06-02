@@ -43,6 +43,7 @@ protected:
     Signal_1int64_5string_t SignalNewAlbum ;
     Signal_1int64v          SignalNewTracks ;
     Signal_1int64           SignalNewArtist ;
+    Signal_1int64           SignalArtistDeleted ;
 
 public:
 
@@ -68,6 +69,12 @@ public:
     signal_new_artist ()
     {
         return SignalNewArtist ;
+    }
+
+    Signal_1int64
+    signal_artist_deleted ()
+    {
+        return SignalArtistDeleted ;
     }
 
     Signal_1int64v&
@@ -119,6 +126,14 @@ public:
     ) 
     {
         SignalNewArtist.emit( id ) ;
+    }
+
+    virtual
+    void ArtistDeleted(
+          const int64_t&        id
+    ) 
+    {
+        SignalArtistDeleted.emit( id ) ;
     }
 };
 } } } 

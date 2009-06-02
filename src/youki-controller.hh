@@ -350,6 +350,11 @@ namespace MPX
                   int64_t
             ) ;
 
+            void
+            on_library_artist_deleted(
+                  int64_t
+            ) ;
+
         protected:
     
             bool

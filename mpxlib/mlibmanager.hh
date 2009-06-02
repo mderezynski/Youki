@@ -151,6 +151,11 @@ namespace MPX
                   const int64_t&
             ) ;
 
+            void
+            album_artist_deleted(
+                  const int64_t&
+            ) ;
+
 #ifdef HAVE_HAL
             void
             clear_volumes () ;

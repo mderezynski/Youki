@@ -1,5 +1,6 @@
 INSTALL(
-  FILES icon-add.png
+  FILES clear.png
+        icon-add.png
         icon-error.png
         heart-black.png
         heart-redblack.png

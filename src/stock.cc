@@ -50,6 +50,8 @@ namespace MPX
                 , size
                 , Pixbuf::create_from_file( build_filename( path, icon.filename ))
             ) ;
+
+            g_message("Registered stock icon ['%s'] with file: '%s'", icon.stock_id.c_str(), icon.filename.c_str() ) ;
         }
     }
 
@@ -78,6 +80,7 @@ namespace MPX
         register_stock_icons (v, 24, default_stock_path("24x24")); 
 
         v.clear();
+        v.push_back(StockIconSpec( "clear.png",                    "mpx-stock-entry-clear"     ));
         v.push_back(StockIconSpec( "icon-add.png",                 "mpx-stock-add"             ));
         v.push_back(StockIconSpec( "icon-error.png",               MPX_STOCK_ERROR             ));
         v.push_back(StockIconSpec( "heart-black.png",              "mpx-loved-no"              ));

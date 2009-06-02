@@ -29,5 +29,9 @@
             <arg type="x" direction="out"/> 
         </signal>
 
+        <signal name="ArtistDeleted">
+            <arg type="x" direction="out"/>
+        </signal>
+
   </interface>
 </node>

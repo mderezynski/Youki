@@ -125,30 +125,6 @@ namespace
     {
         return Glib::ustring(RowGetArtistName( r1 )).casefold() < Glib::ustring(RowGetArtistName( r2 )).casefold() ;
     }
-
-    struct CompareAlbumArtistsInModel
-    : public std::binary_function<MPX::View::Artist::Row_t, MPX::View::Artist::Row_t, bool>
-    {
-        bool operator() (
-              const MPX::View::Artist::Row_t& a
-            , const MPX::View::Artist::Row_t& b
-        ) const 
-        {
-            int64_t id[2] = { get<1>(a), get<1>(b) } ;
-
-            if( id[0] == -1 )
-            {
-                return true ;
-            }
-
-            if( id[1] == -1 )
-            {
-                return false ;
-            }
-
-            return boost::get<0>(a) < boost::get<0>(b) ;
-        }
-    } ; 
 }
 
 namespace MPX
@@ -233,6 +209,12 @@ namespace MPX
                 , &YoukiController::on_library_new_artist
         )) ;
 
+        m_mlibman_dbus_proxy->signal_artist_deleted().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_library_artist_deleted
+        )) ;
+
         m_covers    = services->get<Covers>("mpx-service-covers").get() ;
         m_play      = services->get<Play>("mpx-service-play").get() ;
         m_library   = services->get<Library>("mpx-service-library").get() ;
@@ -290,8 +272,8 @@ namespace MPX
         m_HBox_Controls     = Gtk::manage( new Gtk::HBox ) ;
 
         m_Entry             = Gtk::manage( new Gtk::Entry ) ;
-        m_Entry->set_icon_from_stock(
-              Gtk::Stock::CLEAR
+        m_Entry->set_icon_from_pixbuf(
+              Gtk::IconTheme::get_default()->load_icon( "mpx-stock-entry-clear", 16 ) 
             , Gtk::ENTRY_ICON_SECONDARY
         ) ; 
         m_Entry->signal_icon_press().connect(
@@ -483,6 +465,20 @@ namespace MPX
                 m_ListViewArtist->append_column(c1) ;
 
                 private_->FilterModelArtist->append_artist_quiet("<b>Empty</b>",-1);
+
+                SQL::RowV v ;
+                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album_artist")).str()) ; 
+                std::stable_sort( v.begin(), v.end(), CompareAlbumArtists ) ;
+                for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                {
+                        SQL::Row & r = *i;
+
+                        private_->FilterModelArtist->append_artist_quiet(
+                              RowGetArtistName( r )
+                            , boost::get<gint64>(r["id"])
+                        ) ;
+                }
+
                 m_ListViewArtist->set_model( private_->FilterModelArtist ) ;
 
                 m_ScrolledWinArtist->add( *m_ListViewArtist ) ;
@@ -754,27 +750,6 @@ namespace MPX
                 }
         }
 
-#if 0
-        // Album Artists
-
-        v.clear () ; 
-        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album_artist")).str()) ; 
-
-        std::stable_sort( v.begin(), v.end(), CompareAlbumArtists ) ;
-    
-        model_album_artists->append_artist_quiet("",-1);
-
-        for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
-        {
-                SQL::Row & r = *i;
-
-                model_album_artists->append_artist_quiet(
-                      RowGetArtistName( r )
-                    , boost::get<gint64>(r["id"])
-                ) ;
-        }
-#endif
-
         // Albums
 
         v.clear () ; 
@@ -886,26 +861,18 @@ namespace MPX
         services->get<Library>("mpx-service-library")->getSQL( v, (boost::format( "SELECT * FROM album_artist WHERE id = '%lld'" ) % id ).str() ) ; 
         g_return_if_fail( (v.size() == 1) ) ;
 
-        SQL::Row & r = v[0] ; 
-
-        std::string name = RowGetArtistName( r ) ;
-    
-        MPX::View::Artist::Row_t t ( name, 0 /*dummy*/ ) ;
-
-        MPX::View::Artist::Model_t::iterator i = std::lower_bound(
-              private_->FilterModelArtist->m_realmodel->begin()
-            , private_->FilterModelArtist->m_realmodel->end()
-            , t
-            , CompareAlbumArtistsInModel()
-        ) ;
-
         private_->FilterModelArtist->insert_artist(
-              i
-            , name
-            , gint64(id) 
+              RowGetArtistName( v[0] )
+            , id 
         ) ; 
+    }
 
-        private_->FilterModelArtist->regen_mapping() ;
+    void
+    YoukiController::on_library_artist_deleted(
+          int64_t               id
+    )
+    {
+        private_->FilterModelArtist->erase_artist( id ) ; 
     }
 
 ////////////////

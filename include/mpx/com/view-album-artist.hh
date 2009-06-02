@@ -49,6 +49,30 @@ namespace Artist
         typedef sigc::signal<void>                          Signal_0 ;
         typedef sigc::signal<void, std::size_t, bool>       Signal_1 ;
 
+        struct OrderFunc
+        : public std::binary_function<MPX::View::Artist::Row_t, MPX::View::Artist::Row_t, bool>
+        {
+            bool operator() (
+                  const MPX::View::Artist::Row_t& a
+                , const MPX::View::Artist::Row_t& b
+            ) const 
+            {
+                int64_t id[2] = { get<1>(a), get<1>(b) } ;
+
+                if( id[0] == -1 )
+                {
+                    return true ;
+                }
+
+                if( id[1] == -1 )
+                {
+                    return false ;
+                }
+
+                return boost::get<0>(a) < boost::get<0>(b) ;
+            }
+        } ; 
+
         struct DataModel
         : public sigc::trackable
         {
@@ -152,15 +176,28 @@ namespace Artist
 
                 virtual void
                 insert_artist(
-                      Model_t::iterator&        iter
-                    , const std::string&        artist
-                    , gint64                    artist_id
+                      const std::string&                                                                artist_name
+                    , gint64                                                                            artist_id
                 )
                 {
-                    Row_t row ( artist, artist_id ) ;
+                    static OrderFunc order ;
 
-                    Model_t::iterator i = m_realmodel->insert( iter, row ) ;
-                    m_iter_map.insert(std::make_pair( artist_id, i )); 
+                    Row_t row(
+                          artist_name
+                        , artist_id
+                    ) ;
+
+                    Model_t::iterator i = m_realmodel->insert(
+                          std::lower_bound(
+                                m_realmodel->begin()
+                              , m_realmodel->end()
+                              , row
+                              , order 
+                          )
+                        , row
+                    ) ;
+
+                    m_iter_map.insert( std::make_pair( artist_id, i )); 
                 }
         };
 
@@ -232,11 +269,40 @@ namespace Artist
                 
                 virtual void
                 append_artist_quiet(
-                      const std::string&        artist
+                      const std::string&        artist_name
                     , gint64                    artist_id
                 )
                 {
-                    DataModel::append_artist( artist, artist_id ) ;
+                    DataModel::append_artist( artist_name, artist_id ) ;
+                }
+
+                virtual void
+                insert_artist(
+                      const std::string&        artist_name
+                    , gint64                    artist_id
+                )
+                {
+                    DataModel::insert_artist(
+                          artist_name
+                        , artist_id
+                    ) ;
+
+                    regen_mapping() ;
+                }
+
+                virtual void
+                erase_artist(
+                      gint64                    artist_id
+                )
+                {
+                    IdIterMap_t::iterator i = m_iter_map.find( artist_id ) ;
+
+                    if( i != m_iter_map.end() ) 
+                    {
+                        Model_t::iterator iter = (*i).second ; 
+                        m_realmodel->erase( iter ) ;
+                        regen_mapping() ; 
+                    }
                 }
 
                 void
