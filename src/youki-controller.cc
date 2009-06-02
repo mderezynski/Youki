@@ -1,5 +1,5 @@
 #include "config.h"
-
+//
 #include "youki-controller.hh"
 #include "youki-controller-status-icon.hh"
 
@@ -1271,6 +1271,7 @@ namespace MPX
         m_conn4.block() ;    
 
         m_Entry->set_text( "" ) ;
+        m_Entry_Text.clear() ;
 
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
         private_->FilterModelTracks->set_filter( "" ) ;
