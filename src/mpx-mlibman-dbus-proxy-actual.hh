@@ -34,6 +34,7 @@ public:
     typedef sigc::signal<void>                                                                          Signal_t ;
     typedef sigc::signal<void, gint64, std::string, std::string, std::string, std::string, std::string> Signal_1int64_5string_t ;
     typedef sigc::signal<void, const std::vector<int64_t>&>                                             Signal_1int64v ;
+    typedef sigc::signal<void, int64_t>                                                                 Signal_1int64 ;
 
 protected:
 
@@ -41,6 +42,7 @@ protected:
     Signal_t                SignalScanEnd ;
     Signal_1int64_5string_t SignalNewAlbum ;
     Signal_1int64v          SignalNewTracks ;
+    Signal_1int64           SignalNewArtist ;
 
 public:
 
@@ -60,6 +62,12 @@ public:
     signal_new_album ()
     {
         return SignalNewAlbum ;
+    }
+
+    Signal_1int64
+    signal_new_artist ()
+    {
+        return SignalNewArtist ;
     }
 
     Signal_1int64v&
@@ -104,7 +112,14 @@ public:
     {
         SignalNewAlbum.emit( id, s1, s2, s3, s4, s5 ) ;
     }
-};
 
+    virtual
+    void NewArtist(
+          const int64_t&        id
+    ) 
+    {
+        SignalNewArtist.emit( id ) ;
+    }
+};
 } } } 
 #endif

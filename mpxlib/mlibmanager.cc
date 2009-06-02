@@ -128,14 +128,20 @@ namespace MPX
                   v2
                 , (boost::format("SELECT bitrate AS rate FROM track WHERE type = '%s' AND bitrate != '0' ORDER BY bitrate DESC LIMIT 1") % get<std::string>((*i)["type"])).str()
             );
-            (*iter)[m_FileStats_Columns.HighBitrate] = (boost::format("%lld kbit/s") % get<gint64>(v2[0]["rate"])).str();
+            if( !v2.empty() )
+            {
+                (*iter)[m_FileStats_Columns.HighBitrate] = (boost::format("%lld kbit/s") % get<gint64>(v2[0]["rate"])).str();
+            }
 
             v2.clear();
             library->getSQL(
                   v2
                 , (boost::format("SELECT bitrate AS rate FROM track WHERE type = '%s' AND bitrate != '0' ORDER BY bitrate ASC LIMIT 1") % get<std::string>((*i)["type"])).str()
             );
-            (*iter)[m_FileStats_Columns.LowBitrate] = (boost::format("%lld kbit/s") % get<gint64>(v2[0]["rate"])).str();
+            if( v2.size() )
+            {
+                (*iter)[m_FileStats_Columns.LowBitrate] = (boost::format("%lld kbit/s") % get<gint64>(v2[0]["rate"])).str();
+            }
         }
 
         Gtk::Label * label;
@@ -536,6 +542,12 @@ namespace MPX
                 , &MLibManager::new_album
         )) ;
 
+        library->signal_new_artist().connect(
+            sigc::mem_fun(
+                  *this
+                , &MLibManager::new_artist
+        )) ;
+
         /*- Setup Window Geometry -----------------------------------------*/ 
     
         gtk_widget_realize(GTK_WIDGET(gobj()));
@@ -694,6 +706,14 @@ namespace MPX
     {
         NewAlbum( id, s1, s2, s3, s4, s5 ) ;
     } 
+
+    void
+    MLibManager::new_artist(
+          const int64_t&        id
+    )
+    {
+        NewArtist( id ) ;
+    }
 
     bool
     MLibManager::on_delete_event(GdkEventAny* G_GNUC_UNUSED)

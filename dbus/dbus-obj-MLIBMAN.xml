@@ -25,5 +25,9 @@
             <arg type="s" direction="out"/> 
         </signal>
 
+        <signal name="NewArtist">
+            <arg type="x" direction="out"/> 
+        </signal>
+
   </interface>
 </node>

@@ -125,6 +125,30 @@ namespace
     {
         return Glib::ustring(RowGetArtistName( r1 )).casefold() < Glib::ustring(RowGetArtistName( r2 )).casefold() ;
     }
+
+    struct CompareAlbumArtistsInModel
+    : public std::binary_function<MPX::View::Artist::Row_t, MPX::View::Artist::Row_t, bool>
+    {
+        bool operator() (
+              const MPX::View::Artist::Row_t& a
+            , const MPX::View::Artist::Row_t& b
+        ) const 
+        {
+            int64_t id[2] = { get<1>(a), get<1>(b) } ;
+
+            if( id[0] == -1 )
+            {
+                return true ;
+            }
+
+            if( id[1] == -1 )
+            {
+                return false ;
+            }
+
+            return boost::get<0>(a) < boost::get<0>(b) ;
+        }
+    } ; 
 }
 
 namespace MPX
@@ -202,6 +226,11 @@ namespace MPX
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_library_new_album
+        )) ;
+        m_mlibman_dbus_proxy->signal_new_artist().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_library_new_artist
         )) ;
 
         m_covers    = services->get<Covers>("mpx-service-covers").get() ;
@@ -452,6 +481,8 @@ namespace MPX
                 c1->set_column(0) ;
 
                 m_ListViewArtist->append_column(c1) ;
+
+                private_->FilterModelArtist->append_artist_quiet("<b>Empty</b>",-1);
                 m_ListViewArtist->set_model( private_->FilterModelArtist ) ;
 
                 m_ScrolledWinArtist->add( *m_ListViewArtist ) ;
@@ -701,8 +732,10 @@ namespace MPX
         View::Tracks::DataModel_SP_t m1 ( new View::Tracks::DataModel ) ;
         View::Tracks::DataModelFilter_SP_t model_tracks = View::Tracks::DataModelFilter_SP_t (new View::Tracks::DataModelFilter( m1 )) ;
 
+/*
         View::Artist::DataModel_SP_t m2 (new View::Artist::DataModel) ;
         View::Artist::DataModelFilter_SP_t model_album_artists = View::Artist::DataModelFilter_SP_t (new View::Artist::DataModelFilter( m2 )) ;
+*/
 
         View::Albums::DataModel_SP_t m3 ( new View::Albums::DataModel ) ;
         View::Albums::DataModelFilter_SP_t model_albums = View::Albums::DataModelFilter_SP_t (new View::Albums::DataModelFilter( m3 )) ;
@@ -721,6 +754,7 @@ namespace MPX
                 }
         }
 
+#if 0
         // Album Artists
 
         v.clear () ; 
@@ -739,6 +773,7 @@ namespace MPX
                     , boost::get<gint64>(r["id"])
                 ) ;
         }
+#endif
 
         // Albums
 
@@ -790,17 +825,18 @@ namespace MPX
         }
 
         boost::optional<gint64> id_albums = m_ListViewAlbums->get_selected() ;
-        boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
+ //       boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
 
-        private_->FilterModelArtist = model_album_artists ;
+//        private_->FilterModelArtist = model_album_artists ;
         private_->FilterModelAlbums = model_albums ;
         private_->FilterModelTracks = model_tracks ;
 
-        m_ListViewArtist->set_model( private_->FilterModelArtist ) ;
+//        m_ListViewArtist->set_model( private_->FilterModelArtist ) ;
         m_ListViewAlbums->set_model( private_->FilterModelAlbums ) ;
         m_ListViewTracks->set_model( private_->FilterModelTracks ) ; 
 
         boost::optional<MPX::Track> t = m_track_current ;
+
         if( t )
         {
             m_ListViewTracks->set_active_track( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
@@ -808,7 +844,7 @@ namespace MPX
 
         on_entry_changed__process_filtering() ;
 
-        m_ListViewArtist->select_id( id_artist ) ;
+//        m_ListViewArtist->select_id( id_artist ) ;
         m_ListViewAlbums->select_id( id_albums ) ;
     }
 
@@ -838,6 +874,38 @@ namespace MPX
         rq.album    =   s5 ;
 
         m_covers->cache( rq, true ) ;
+    }
+
+    void
+    YoukiController::on_library_new_artist(
+          int64_t               id
+    )
+    {
+        SQL::RowV v ;
+
+        services->get<Library>("mpx-service-library")->getSQL( v, (boost::format( "SELECT * FROM album_artist WHERE id = '%lld'" ) % id ).str() ) ; 
+        g_return_if_fail( (v.size() == 1) ) ;
+
+        SQL::Row & r = v[0] ; 
+
+        std::string name = RowGetArtistName( r ) ;
+    
+        MPX::View::Artist::Row_t t ( name, 0 /*dummy*/ ) ;
+
+        MPX::View::Artist::Model_t::iterator i = std::lower_bound(
+              private_->FilterModelArtist->m_realmodel->begin()
+            , private_->FilterModelArtist->m_realmodel->end()
+            , t
+            , CompareAlbumArtistsInModel()
+        ) ;
+
+        private_->FilterModelArtist->insert_artist(
+              i
+            , name
+            , gint64(id) 
+        ) ; 
+
+        private_->FilterModelArtist->regen_mapping() ;
     }
 
 ////////////////
@@ -1052,8 +1120,10 @@ namespace MPX
 
         for( int n = 0; n < 3 ; ++n ) 
         {
-                if( t.get().has( n ) )
-                    info.push_back( boost::get<std::string>(t.get()[id[n]].get()) ) ;
+            if( t.get().has( n ) )
+            {
+                info.push_back( boost::get<std::string>(t.get()[id[n]].get()) ) ;
+            }
         }
 
         m_control_status_icon->set_metadata( t.get() ) ;
@@ -1601,28 +1671,28 @@ namespace MPX
 
         std::map<std::string, DBus::Variant> m ;
 
-        for(int n = ATTRIBUTE_LOCATION; n < N_ATTRIBUTES_STRING; ++n)
+        for( int n = ATTRIBUTE_LOCATION; n < N_ATTRIBUTES_STRING; ++n )
         {
-                if(t.get()[n].is_initialized())
-                {
-                        DBus::Variant val ;
-                        DBus::MessageIter iter = val.writer() ;
-                        std::string v = boost::get<std::string>(t.get()[n].get()) ; 
-                        iter << v ;
-                        m[mpris_attribute_id_str[n-ATTRIBUTE_LOCATION]] = val ;
-                }
+            if( t.get()[n].is_initialized() )
+            {
+                    DBus::Variant val ;
+                    DBus::MessageIter iter = val.writer() ;
+                    std::string v = boost::get<std::string>( t.get()[n].get() ) ; 
+                    iter << v ;
+                    m[mpris_attribute_id_str[n-ATTRIBUTE_LOCATION]] = val ;
+            }
         }
 
-        for(int n = ATTRIBUTE_TRACK; n < ATTRIBUTE_MPX_ALBUM_ARTIST_ID; ++n)
+        for( int n = ATTRIBUTE_TRACK; n < ATTRIBUTE_MPX_ALBUM_ARTIST_ID; ++n )
         {
-                if(t.get()[n].is_initialized())
-                {
-                        DBus::Variant val ;
-                        DBus::MessageIter iter = val.writer() ;
-                        int64_t v = boost::get<gint64>(t.get()[n].get()) ;
-                        iter << v ;
-                        m[mpris_attribute_id_int[n-ATTRIBUTE_TRACK]] = val ;
-                }
+            if( t.get()[n].is_initialized() )
+            {
+                    DBus::Variant val ;
+                    DBus::MessageIter iter = val.writer() ;
+                    int64_t v = boost::get<gint64>( t.get()[n].get() ) ;
+                    iter << v ;
+                    m[mpris_attribute_id_int[n-ATTRIBUTE_TRACK]] = val ;
+            }
         }
 
         return m ;

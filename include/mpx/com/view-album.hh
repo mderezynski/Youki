@@ -1299,16 +1299,18 @@ namespace Albums
 
                     if( id )
                     {
-                            const gint64& real_id = id.get() ;
+                        const gint64& real_id = id.get() ;
 
-                            for( DataModelFilter::RowRowMapping::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
+                        for( DataModelFilter::RowRowMapping::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
+                        {
+                            if( real_id == get<1>(**i))
                             {
-                                if( real_id == get<1>(**i))
-                                {
-                                    select_row( std::distance( m_model->m_mapping.begin(), i )) ;
-                                    return ;
-                                }
+                                std::size_t n = std::distance( m_model->m_mapping.begin(), i ) ;
+                                select_row( n ) ;
+                                scroll_to_row( n ) ;
+                                return ;
                             }
+                        }
                     }
                 
                     clear_selection() ;

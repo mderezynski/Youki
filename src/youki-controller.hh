@@ -337,12 +337,17 @@ namespace MPX
 
             void
             on_library_new_album(
-                  gint64
+                  int64_t
                 , const std::string&
                 , const std::string&
                 , const std::string&
                 , const std::string&
                 , const std::string&
+            ) ;
+
+            void
+            on_library_new_artist(
+                  int64_t
             ) ;
 
         protected:

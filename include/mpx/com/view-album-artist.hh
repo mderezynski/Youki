@@ -149,6 +149,19 @@ namespace Artist
                     std::advance( i, -1 );
                     m_iter_map.insert(std::make_pair(artist_id, i)); 
                 }
+
+                virtual void
+                insert_artist(
+                      Model_t::iterator&        iter
+                    , const std::string&        artist
+                    , gint64                    artist_id
+                )
+                {
+                    Row_t row ( artist, artist_id ) ;
+
+                    Model_t::iterator i = m_realmodel->insert( iter, row ) ;
+                    m_iter_map.insert(std::make_pair( artist_id, i )); 
+                }
         };
 
         typedef boost::shared_ptr<DataModel> DataModel_SP_t;
@@ -1078,16 +1091,18 @@ namespace Artist
 
                     if( id )
                     {
-                            const gint64& real_id = id.get() ;
+                        const gint64& real_id = id.get() ;
 
-                            for( DataModelFilter::RowRowMapping::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
+                        for( DataModelFilter::RowRowMapping::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
+                        {
+                            if( real_id == get<1>(**i))
                             {
-                                if( real_id == get<1>(**i))
-                                {
-                                    select_row( std::distance( m_model->m_mapping.begin(), i )) ;
-                                    return ;
-                                }
+                                std::size_t n = std::distance( m_model->m_mapping.begin(), i ) ;
+                                select_row( n ) ;
+                                scroll_to_row( n ) ;
+                                return ;
                             }
+                        }
                     }
                 
                     clear_selection() ;

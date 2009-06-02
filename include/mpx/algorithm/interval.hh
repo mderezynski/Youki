@@ -16,6 +16,7 @@ namespace MPX
                 , EX_EX
                 , IN_EX
                 , EX_IN
+                , UNSET
             } ;
 
         protected:
@@ -28,6 +29,7 @@ namespace MPX
 
             Interval(
             )
+                : t( UNSET )
             {}
 
             Interval(
@@ -56,7 +58,8 @@ namespace MPX
                     case EX_IN:
                         return i >  a && i <= b ;
 
-                    default: return false ;
+                    default:
+                        return false ;
                 } ;
             }
     } ;

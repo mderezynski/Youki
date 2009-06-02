@@ -146,6 +146,11 @@ namespace MPX
                 , const std::string&
             ) ;
 
+            void
+            new_artist(
+                  const int64_t&
+            ) ;
+
 #ifdef HAVE_HAL
             void
             clear_volumes () ;
