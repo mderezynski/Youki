@@ -554,6 +554,12 @@ namespace MPX
                 , &MLibManager::album_artist_deleted
         )) ;
 
+        library->signal_album_deleted().connect(
+            sigc::mem_fun(
+                  *this
+                , &MLibManager::album_deleted
+        )) ;
+
         /*- Setup Window Geometry -----------------------------------------*/ 
     
         gtk_widget_realize(GTK_WIDGET(gobj()));
@@ -729,8 +735,18 @@ namespace MPX
         ArtistDeleted( id ) ;
     }
 
+    void
+    MLibManager::album_deleted(
+          const int64_t&        id
+    )
+    {
+        AlbumDeleted( id ) ;
+    }
+
     bool
-    MLibManager::on_delete_event(GdkEventAny* G_GNUC_UNUSED)
+    MLibManager::on_delete_event(
+          GdkEventAny* G_GNUC_UNUSED
+    )
     {
         hide();
         return true;

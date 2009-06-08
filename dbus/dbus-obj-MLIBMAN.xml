@@ -33,5 +33,9 @@
             <arg type="x" direction="out"/>
         </signal>
 
+        <signal name="AlbumDeleted">
+            <arg type="x" direction="out"/>
+        </signal>
+
   </interface>
 </node>

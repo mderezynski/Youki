@@ -27,10 +27,12 @@
 
 #include "mpx/widgets/cairo-extensions.hh"
 
-#include "glib-marshalers.h"
-
 #include "mpx/mpx-main.hh"
 #include "mpx/i-youki-theme-engine.hh"
+
+#include "glib-marshalers.h"
+
+#include "mpx/com/indexed-list.hh"
 
 typedef Glib::Property<Gtk::Adjustment*> PropAdj;
 
@@ -88,14 +90,66 @@ namespace View
 {
 namespace Albums
 {
-        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string>  Row_t ;
+        typedef boost::tuple<Cairo::RefPtr<Cairo::ImageSurface>, gint64, gint64, std::string, std::string, std::string, ReleaseType, std::string> Row_t ;
 
-        typedef std::vector<Row_t>                                                      Model_t ;
+        typedef IndexedList<Row_t>                                                      Model_t ;
         typedef boost::shared_ptr<Model_t>                                              Model_SP_t ;
         typedef std::map<gint64, Model_t::iterator>                                     IdIterMap_t ;
 
         typedef sigc::signal<void>                                                      Signal_0 ;
         typedef sigc::signal<void, std::size_t, bool>                                   Signal_1 ;
+
+        struct OrderFunc
+        : public std::binary_function<Row_t, Row_t, bool>
+        {
+            bool operator() (
+                  const Row_t&  a
+                , const Row_t&  b
+            )
+            {
+                int64_t id[2] = { get<1>(a), get<2>(b) } ;
+
+                if( id[0] == -1 ) 
+                {
+                    return true ;
+                }
+
+                if( id[1] == -1 )
+                {     
+                    return false ;
+                }
+
+                const std::string&  c_a_1 = boost::get<4>(a) ;
+                const std::string&  c_a_2 = boost::get<7>(a) ;
+                const std::string&  c_a_3 = boost::get<3>(a) ;
+            
+                const std::string&  c_b_1 = boost::get<4>(b) ;
+                const std::string&  c_b_2 = boost::get<7>(b) ;
+                const std::string&  c_b_3 = boost::get<3>(b) ;
+
+                if( c_a_1 < c_b_1 )
+                    return true ;
+
+                if( c_b_1 < c_a_1 )
+                    return false ;
+
+
+                if( c_a_2 < c_b_2 )
+                    return true ;
+
+                if( c_b_2 < c_a_2 )
+                    return false ;
+
+
+                if( c_a_3 < c_b_3 )
+                    return true ;
+
+                if( c_b_3 < c_a_3 )
+                    return false ;
+
+                return false ;
+            }
+        } ;
 
         struct DataModel
         : public sigc::trackable
@@ -201,6 +255,44 @@ namespace Albums
                     Model_t::iterator i = m_realmodel->end() ;
                     std::advance( i, -1 ) ;
                     m_iter_map.insert( std::make_pair( id_album, i) ) ; 
+                }
+
+                virtual void
+                insert_album(
+                      Cairo::RefPtr<Cairo::ImageSurface>    surface
+                    , gint64                                id_album
+                    , gint64                                id_artist
+                    , const std::string&                    album
+                    , const std::string&                    album_artist
+                    , const std::string&                    mbid
+                    , const std::string&                    type
+                    , const std::string&                    year
+                )
+                {
+                    static OrderFunc order ;
+
+                    Row_t row(
+                          surface
+                        , id_album
+                        , id_artist
+                        , album
+                        , album_artist
+                        , mbid
+                        , get_rt( type )
+                        , year
+                    ) ; 
+
+                    Model_t::iterator i = m_realmodel->insert(
+                          std::lower_bound(
+                              m_realmodel->begin()
+                            , m_realmodel->end()
+                            , row
+                            , order
+                          )
+                        , row
+                    ) ;
+
+                    m_iter_map.insert( std::make_pair( id_album, i )) ; 
                 }
 
                 void
@@ -359,6 +451,32 @@ namespace Albums
                 {
                     DataModel::erase_album( id_album );
                     regen_mapping();
+                }
+
+                virtual void
+                insert_album(
+                      Cairo::RefPtr<Cairo::ImageSurface>    surface
+                    , gint64                                id_album
+                    , gint64                                id_artist
+                    , const std::string&                    album
+                    , const std::string&                    album_artist
+                    , const std::string&                    mbid
+                    , const std::string&                    type
+                    , const std::string&                    year
+                )
+                {
+                    DataModel::insert_album(
+                          surface
+                        , id_album
+                        , id_artist
+                        , album
+                        , album_artist
+                        , mbid
+                        , type
+                        , year
+                    ) ;
+
+                    regen_mapping() ;
                 }
 
                 virtual void
@@ -778,6 +896,9 @@ namespace Albums
                 on_key_press_event (GdkEventKey * event)
                 {
                     if( event->is_modifier )
+                        return false ;
+
+                    if( !m_model->size() )
                         return false ;
 
                     if( m_search_active )

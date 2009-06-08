@@ -469,14 +469,14 @@ namespace MPX
                 SQL::RowV v ;
                 services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album_artist")).str()) ; 
                 std::stable_sort( v.begin(), v.end(), CompareAlbumArtists ) ;
-                for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
                 {
-                        SQL::Row & r = *i;
+                    SQL::Row & r = *i;
 
-                        private_->FilterModelArtist->append_artist_quiet(
-                              RowGetArtistName( r )
-                            , boost::get<gint64>(r["id"])
-                        ) ;
+                    private_->FilterModelArtist->append_artist_quiet(
+                          RowGetArtistName( r )
+                        , boost::get<gint64>(r["id"])
+                    ) ;
                 }
 
                 m_ListViewArtist->set_model( private_->FilterModelArtist ) ;
@@ -493,6 +493,53 @@ namespace MPX
                 c1->set_column(0) ;
 
                 m_ListViewAlbums->append_column( c1 ) ;
+
+                private_->FilterModelAlbums->append_album_quiet(
+                      Cairo::RefPtr<Cairo::ImageSurface>(0) 
+                    , -1
+                    , -1
+                    , ""
+                    , "" 
+                    , ""
+                    , ""
+                    , ""
+                ) ;
+
+                boost::shared_ptr<Covers> c = services->get<Covers>("mpx-service-covers") ;
+
+                SQL::RowV v ;
+                services->get<Library>("mpx-service-library")->getSQL( v, "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), substr(mb_release_date,1,4), album" ) ;
+                for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
+                {
+                    SQL::Row & r = *i;
+
+                    Glib::RefPtr<Gdk::Pixbuf> cover_pb ;
+                    Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
+
+                    c->fetch(
+                          get<std::string>(r["mb_album_id"])
+                        , cover_pb
+                    ) ;
+                   
+                    if( cover_pb ) 
+                    {
+                        cover_is = Util::cairo_image_surface_from_pixbuf(
+                            cover_pb->scale_simple( 64, 64, Gdk::INTERP_BILINEAR )
+                        ) ;
+                    }
+     
+                    private_->FilterModelAlbums->append_album_quiet(
+                          cover_is
+                        , get<gint64>(r["id"])
+                        , get<gint64>(r["album_artist_id"])
+                        , get<std::string>(r["album"])
+                        , r.count("album_artist_sortname") ? get<std::string>(r["album_artist_sortname"]) : get<std::string>(r["album_artist"])
+                        , get<std::string>(r["mb_album_id"])
+                        , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
+                        , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
+                    ) ;
+                }
+
                 m_ListViewAlbums->set_model( private_->FilterModelAlbums ) ;
 
                 m_ScrolledWinAlbums->add( *m_ListViewAlbums ) ;
@@ -728,10 +775,6 @@ namespace MPX
         View::Tracks::DataModel_SP_t m1 ( new View::Tracks::DataModel ) ;
         View::Tracks::DataModelFilter_SP_t model_tracks = View::Tracks::DataModelFilter_SP_t (new View::Tracks::DataModelFilter( m1 )) ;
 
-/*
-        View::Artist::DataModel_SP_t m2 (new View::Artist::DataModel) ;
-        View::Artist::DataModelFilter_SP_t model_album_artists = View::Artist::DataModelFilter_SP_t (new View::Artist::DataModelFilter( m2 )) ;
-*/
 
         View::Albums::DataModel_SP_t m3 ( new View::Albums::DataModel ) ;
         View::Albums::DataModelFilter_SP_t model_albums = View::Albums::DataModelFilter_SP_t (new View::Albums::DataModelFilter( m3 )) ;
@@ -750,64 +793,7 @@ namespace MPX
                 }
         }
 
-        // Albums
-
-        v.clear () ; 
-        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album")).str()) ; 
-
-        model_albums->append_album_quiet(
-              Cairo::RefPtr<Cairo::ImageSurface>(0) 
-            , -1
-            , -1
-            , ""
-            , "" 
-            , ""
-            , ""
-            , ""
-        ) ;
-
-        for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
-        {
-                SQL::Row & r = *i;
-
-                const std::string& mbid = get<std::string>(r["mb_album_id"]) ;
-
-                Glib::RefPtr<Gdk::Pixbuf> cover_pb ;
-                Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
-
-                services->get<Covers>("mpx-service-covers")->fetch(
-                      mbid
-                    , cover_pb
-                ) ;
-               
-                if( cover_pb ) 
-                {
-                    cover_is = Util::cairo_image_surface_from_pixbuf(
-                        cover_pb->scale_simple( 64, 64, Gdk::INTERP_BILINEAR )
-                    ) ;
-                }
-                
-                model_albums->append_album_quiet(
-                      cover_is
-                    , get<gint64>(r["id"])
-                    , get<gint64>(r["album_artist_id"])
-                    , get<std::string>(r["album"])
-                    , r.count("album_artist_sortname") ? get<std::string>(r["album_artist_sortname"]) : get<std::string>(r["album_artist"])
-                    , get<std::string>(r["mb_album_id"])
-                    , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
-                    , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
-                ) ;
-        }
-
-        boost::optional<gint64> id_albums = m_ListViewAlbums->get_selected() ;
- //       boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
-
-//        private_->FilterModelArtist = model_album_artists ;
-        private_->FilterModelAlbums = model_albums ;
         private_->FilterModelTracks = model_tracks ;
-
-//        m_ListViewArtist->set_model( private_->FilterModelArtist ) ;
-        m_ListViewAlbums->set_model( private_->FilterModelAlbums ) ;
         m_ListViewTracks->set_model( private_->FilterModelTracks ) ; 
 
         boost::optional<MPX::Track> t = m_track_current ;
@@ -817,10 +803,34 @@ namespace MPX
             m_ListViewTracks->set_active_track( boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
         }
 
-        on_entry_changed__process_filtering() ;
+        //// SET UP CONSTRAINTS
 
-//        m_ListViewArtist->select_id( id_artist ) ;
-        m_ListViewAlbums->select_id( id_albums ) ;
+        boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
+        boost::optional<gint64> id_albums = m_ListViewAlbums->get_selected() ;
+
+        boost::optional<std::set<gint64> > constraint ; 
+
+        if( id_artist ) 
+        {
+            AQE::Constraint_t c ;
+            c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ARTIST_ID ;
+            c.TargetValue = id_artist.get() ;
+            c.MatchType = AQE::MT_EQUAL ;
+
+            private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
+        }
+
+        if( id_albums ) 
+        {
+            AQE::Constraint_t c ;
+            c.TargetAttr = ATTRIBUTE_MPX_ALBUM_ID ;
+            c.TargetValue = id_albums.get() ;
+            c.MatchType = AQE::MT_EQUAL ;
+
+            private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
+        }
+
+        private_->FilterModelTracks->set_filter( m_Entry_Text ) ;
     }
 
     void
@@ -840,20 +850,59 @@ namespace MPX
         , const std::string&    s5
     )
     {
-        RequestQualifier rq ; 
+        SQL::RowV v ;
 
-        rq.mbid     =   s1 ;
-        rq.asin     =   s2 ;
-        rq.uri      =   s3 ;
-        rq.artist   =   s4 ;
-        rq.album    =   s5 ;
+        services->get<Library>("mpx-service-library")->getSQL( v, (boost::format( "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = '%lld'") % id ).str()) ; 
 
-        m_covers->cache( rq, true ) ;
+        g_return_if_fail( (v.size() == 1) ) ;
+
+        SQL::Row & r = v[0] ; 
+
+        const std::string& mbid = get<std::string>(r["mb_album_id"]) ;
+
+        Glib::RefPtr<Gdk::Pixbuf> cover_pb ;
+        Cairo::RefPtr<Cairo::ImageSurface> cover_is ;
+
+        services->get<Covers>("mpx-service-covers")->fetch(
+              mbid
+            , cover_pb
+        ) ;
+       
+        if( cover_pb ) 
+        {
+            cover_is = Util::cairo_image_surface_from_pixbuf(
+                cover_pb->scale_simple( 64, 64, Gdk::INTERP_BILINEAR )
+            ) ;
+        }
+        
+        private_->FilterModelAlbums->insert_album(
+              cover_is
+            , get<gint64>(r["id"])
+            , get<gint64>(r["album_artist_id"])
+            , get<std::string>(r["album"])
+            , r.count("album_artist_sortname") ? get<std::string>(r["album_artist_sortname"]) : get<std::string>(r["album_artist"])
+            , get<std::string>(r["mb_album_id"])
+            , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
+            , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
+        ) ;
+
+        if( !cover_pb )
+        {
+            RequestQualifier rq ; 
+
+            rq.mbid     =   s1 ;
+            rq.asin     =   s2 ;
+            rq.uri      =   s3 ;
+            rq.artist   =   s4 ;
+            rq.album    =   s5 ;
+
+            m_covers->cache( rq, true ) ;
+        }
     }
 
     void
     YoukiController::on_library_new_artist(
-          int64_t               id
+          gint64               id
     )
     {
         SQL::RowV v ;
@@ -868,8 +917,16 @@ namespace MPX
     }
 
     void
+    YoukiController::on_library_album_deleted(
+          gint64               id
+    )
+    {
+        private_->FilterModelAlbums->erase_album( id ) ; 
+    }
+
+    void
     YoukiController::on_library_artist_deleted(
-          int64_t               id
+          gint64               id
     )
     {
         private_->FilterModelArtist->erase_artist( id ) ; 
@@ -1656,7 +1713,7 @@ namespace MPX
             {
                     DBus::Variant val ;
                     DBus::MessageIter iter = val.writer() ;
-                    int64_t v = boost::get<gint64>( t.get()[n].get() ) ;
+                    gint64 v = boost::get<gint64>( t.get()[n].get() ) ;
                     iter << v ;
                     m[mpris_attribute_id_int[n-ATTRIBUTE_TRACK]] = val ;
             }

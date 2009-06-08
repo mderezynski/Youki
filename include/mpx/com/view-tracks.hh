@@ -47,7 +47,7 @@ namespace Tracks
             const double rounding = 4. ; 
         }
 
-        typedef boost::tuple<std::string, std::string, std::string, gint64, Track, gint64, gint64>  Row_t ;
+        typedef boost::tuple<std::string, std::string, std::string, gint64, Track, gint64, gint64, ::MPX::SQL::Row>  Row_t ;
 
 /*
         bool operator<(const Row_t& a, const Row_t& b )
@@ -192,77 +192,43 @@ namespace Tracks
                 }
 
                 virtual void
-                append_track(SQL::Row & r, const MPX::Track& track)
+                append_track(
+                      SQL::Row & r
+                    , const MPX::Track& track
+                )
                 {
                     using boost::get ;
 
                     std::string artist, album, title ;
                     gint64 id = 0, tnum = 0, artist_id = 0 ;
 
-                    if(r.count("id"))
+                    if( r.count("id") )
                     { 
                         id = get<gint64>(r["id"]) ;
                     }
                     else
                         g_critical("%s: No id for track, extremely suspicious", G_STRLOC) ;
 
-                    if(r.count("artist"))
+                    if( r.count("artist") )
                         artist = get<std::string>(r["artist"]) ;
 
-                    if(r.count("album"))
+                    if( r.count("album") )
                         album = get<std::string>(r["album"]) ;
 
-                    if(r.count("title"))
+                    if( r.count("title") )
                         title = get<std::string>(r["title"]) ;
 
-                    if(r.count("track"))
+                    if( r.count("track") )
                     { 
                         tnum = get<gint64>(r["track"]) ;
                     }
 
-                    if(r.count("mpx_album_artist_id"))
+                    if( r.count("mpx_album_artist_id") )
                     { 
                         artist_id = get<gint64>(r["mpx_album_artist_id"]) ;
                     }
 
-                    Row_t row ( title, artist, album, id, track, tnum, artist_id ) ;
-                    m_realmodel->push_back(row) ;
-
-                    Model_t::iterator i = m_realmodel->end() ;
-                    std::advance( i, -1 ) ;
-                    m_iter_map.insert(std::make_pair(id, i)) ; 
-                }
-
-                virtual void
-                append_track(MPX::Track & track)
-                {
-                    using boost::get ;
-
-                    std::string artist, album, title ;
-                    gint64 id = 0, num = 0, artist_id = 0 ;
-
-                    if(track[ATTRIBUTE_MPX_TRACK_ID])
-                        id = get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) ; 
-                    else
-                        g_critical("Warning, no id given for track; this is totally wrong and should never happen.") ;
-
-
-                    if(track[ATTRIBUTE_ARTIST])
-                        artist = get<std::string>(track[ATTRIBUTE_ARTIST].get()) ;
-
-                    if(track[ATTRIBUTE_ALBUM])
-                        album = get<std::string>(track[ATTRIBUTE_ALBUM].get()) ;
-
-                    if(track[ATTRIBUTE_TITLE])
-                        title = get<std::string>(track[ATTRIBUTE_TITLE].get()) ;
-
-                    if(track[ATTRIBUTE_TRACK])
-                        num = get<gint64>(track[ATTRIBUTE_TRACK].get()) ;
-
-                    if(track[ATTRIBUTE_MPX_ALBUM_ARTIST_ID])
-                        artist_id = get<gint64>(track[ATTRIBUTE_MPX_ALBUM_ARTIST_ID].get()) ;
-
-                    Row_t row ( artist, album, title, id, track, num, artist_id ) ;
+                    Row_t row ( title, artist, album, id, track, tnum, artist_id, r ) ;
                     m_realmodel->push_back(row) ;
 
                     Model_t::iterator i = m_realmodel->end() ;
@@ -545,23 +511,10 @@ namespace Tracks
                 }
 
                 virtual void
-                append_track(MPX::Track& track)
-                {
-                    DataModel::append_track(track);
-                    regen_mapping();
-                }
-                
-                virtual void
                 append_track(SQL::Row& r, const MPX::Track& track)
                 {
                     DataModel::append_track(r, track);
                     regen_mapping();
-                }
-
-                virtual void
-                append_track_quiet(MPX::Track& track)
-                {
-                    DataModel::append_track(track);
                 }
 
                 virtual void
@@ -1276,6 +1229,9 @@ namespace Tracks
                     if( event->is_modifier )
                         return false ;
 
+                    if( !m_model->size() )
+                        return false ;
+
                     if( m_search_active )
                     {
                         switch( event->keyval )
@@ -1328,7 +1284,7 @@ namespace Tracks
                     continue_matching:
 
                     int step = 0 ; 
-                    int origin = boost::get<1>(m_selection.get()) ;
+                    int origin = m_selection ? boost::get<1>(m_selection.get()) : 0 ;
 
                     switch( event->keyval )
                     {

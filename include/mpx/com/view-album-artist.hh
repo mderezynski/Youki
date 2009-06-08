@@ -26,6 +26,8 @@
 #include "mpx/mpx-main.hh"
 #include "mpx/i-youki-theme-engine.hh"
 
+#include "mpx/com/indexed-list.hh"
+
 using boost::get ;
 
 typedef Glib::Property<Gtk::Adjustment*> PropAdj;
@@ -42,7 +44,8 @@ namespace Artist
         }
 
         typedef boost::tuple<std::string, gint64>           Row_t ;
-        typedef std::vector<Row_t>                          Model_t ;
+
+        typedef IndexedList<Row_t>                          Model_t ;
         typedef boost::shared_ptr<Model_t>                  Model_SP_t ;
         typedef std::map<gint64, Model_t::iterator>         IdIterMap_t ;
 
@@ -50,11 +53,11 @@ namespace Artist
         typedef sigc::signal<void, std::size_t, bool>       Signal_1 ;
 
         struct OrderFunc
-        : public std::binary_function<MPX::View::Artist::Row_t, MPX::View::Artist::Row_t, bool>
+        : public std::binary_function<Row_t, Row_t, bool>
         {
             bool operator() (
-                  const MPX::View::Artist::Row_t& a
-                , const MPX::View::Artist::Row_t& b
+                  const Row_t& a
+                , const Row_t& b
             ) const 
             {
                 int64_t id[2] = { get<1>(a), get<1>(b) } ;
@@ -205,16 +208,15 @@ namespace Artist
 
         struct DataModelFilter : public DataModel
         {
-                typedef std::vector<Model_t::iterator> RowRowMapping;
+                typedef std::vector<Model_t::iterator>  RowRowMapping;
 
-                RowRowMapping                       m_mapping ;
-
-                boost::optional<std::set<gint64> >  m_constraint_id_artist ;
+                RowRowMapping                           m_mapping ;
+                boost::optional<std::set<gint64> >      m_constraint_id_artist ;
 
                 DataModelFilter(DataModel_SP_t & model)
-                : DataModel(model->m_realmodel)
+                    : DataModel( model->m_realmodel )
                 {
-                    regen_mapping ();
+                    regen_mapping() ;
                 }
 
                 virtual ~DataModelFilter()
@@ -237,7 +239,7 @@ namespace Artist
                 }
 
                 virtual void
-                clear ()
+                clear()
                 {
                     m_realmodel->clear( ) ;
                     m_mapping.clear( ) ;
@@ -246,13 +248,15 @@ namespace Artist
                 } 
 
                 virtual std::size_t 
-                size ()
+                size()
                 {
                     return m_mapping.size();
                 }
 
                 virtual Row_t&
-                row (std::size_t row)
+                row(
+                      std::size_t row
+                )
                 {
                     return *(m_mapping[row]);
                 }
@@ -624,6 +628,9 @@ namespace Artist
                     if( event->is_modifier )
                         return false ;
 
+                    if( !m_model->size() )
+                        return false ;
+
                     if( m_search_active )
                     {
                         switch( event->keyval )
@@ -668,7 +675,7 @@ namespace Artist
 
                     Limiter<int64_t> row ;
                     Interval<std::size_t> i ;
-                    int64_t origin = boost::get<2>(m_selection.get()) ; 
+                    int64_t origin = m_selection ? boost::get<2>(m_selection.get()) : 0 ;
 
                     switch( event->keyval )
                     {
