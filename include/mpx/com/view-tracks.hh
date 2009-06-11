@@ -397,8 +397,8 @@ namespace Tracks
                 FragmentCache_t                         m_fragment_cache ;
                 std::string                             m_filter_full ;
                 std::string                             m_filter_effective ;
-                AQE::Constraints_t                      m_constraints_aqe ;
                 AQE::Constraints_t                      m_constraints_ext ;
+//                AQE::Constraints_t                      m_constraints_aqe ;
                 boost::optional<gint64>                 m_active_track ;
                 boost::optional<gint64>                 m_local_active_track ;
                 boost::optional<std::set<gint64> >      m_constraint_albums ;
@@ -550,8 +550,8 @@ namespace Tracks
 
                         if( m_advanced )
                         {
-                            m_constraints_aqe.clear();
-                            m_filter_effective = AQE::parse_advanced_query( m_constraints_aqe, text ) ;
+                            m_constraints_ext.clear();
+                            m_filter_effective = AQE::parse_advanced_query( m_constraints_ext, text ) ;
                         }
                         else
                         {
@@ -632,15 +632,17 @@ namespace Tracks
 
                         for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                         {
-                            int truth = m_constraints_aqe.empty() && m_constraints_ext.empty() ; 
+                            int truth = m_constraints_ext.empty() /*&& m_constraints_aqe.empty()*/ ; 
 
                             const MPX::Track& track = get<4>(*i);
 
-                            if( !m_constraints_aqe.empty() )
-                                truth |= AQE::match_track( m_constraints_aqe, track ) ;
-
                             if( !m_constraints_ext.empty() )
                                 truth |= AQE::match_track( m_constraints_ext, track ) ;
+
+/*
+                            if( !m_constraints_aqe.empty() )
+                                truth |= AQE::match_track( m_constraints_aqe, track ) ;
+*/
 
                             if( truth )
                             {
@@ -725,15 +727,17 @@ namespace Tracks
 
                         for( ModelSet_t::iterator i = output->begin() ; i != output->end(); ++i )
                         {
-                            int truth = m_constraints_aqe.empty() && m_constraints_ext.empty() ; 
+                            int truth = m_constraints_ext.empty() /* && m_constraints_aqe.empty() */ ; 
 
                             const MPX::Track& track = get<4>(**i);
 
-                            if( !m_constraints_aqe.empty() )
-                                truth |= AQE::match_track( m_constraints_aqe, track ) ;
-
                             if( !m_constraints_ext.empty() )
                                 truth |= AQE::match_track( m_constraints_ext, track ) ;
+
+/*
+                            if( !m_constraints_aqe.empty() )
+                                truth |= AQE::match_track( m_constraints_aqe, track ) ;
+*/
 
                             if( truth )
                             {
@@ -780,15 +784,17 @@ namespace Tracks
 
                         for( RowRowMapping_t::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                         {
-                            int truth = m_constraints_aqe.empty() && m_constraints_ext.empty() ; 
+                            int truth = m_constraints_ext.empty() /* && m_constraints_aqe.empty()*/ ; 
 
                             const MPX::Track& track = get<4>(**i);
 
-                            if( !m_constraints_aqe.empty() )
-                                truth |= AQE::match_track( m_constraints_aqe, track ) ; 
-
                             if( !m_constraints_ext.empty() )
                                 truth |= AQE::match_track( m_constraints_ext, track ) ; 
+
+/*
+                            if( !m_constraints_aqe.empty() )
+                                truth |= AQE::match_track( m_constraints_aqe, track ) ; 
+*/
 
                             if( truth )
                             {
@@ -873,15 +879,17 @@ namespace Tracks
 
                         for( ModelSet_t::const_iterator i = output->begin() ; i != output->end(); ++i )
                         {
-                            int truth = m_constraints_aqe.empty() && m_constraints_ext.empty() ; 
+                            int truth = m_constraints_ext.empty() /*&& m_constraints_aqe.empty() */ ; 
 
                             const MPX::Track& track = get<4>(**i) ;
 
-                            if( !m_constraints_aqe.empty() )
-                                truth |= AQE::match_track( m_constraints_aqe, track ) ; 
-
                             if( !m_constraints_ext.empty() )
                                 truth |= AQE::match_track( m_constraints_ext, track ) ; 
+
+/*
+                            if( !m_constraints_aqe.empty() )
+                                truth |= AQE::match_track( m_constraints_aqe, track ) ; 
+*/
 
                             if( truth )
                             {

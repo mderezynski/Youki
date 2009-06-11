@@ -96,6 +96,8 @@ namespace Albums
         typedef boost::shared_ptr<Model_t>                                              Model_SP_t ;
         typedef std::map<gint64, Model_t::iterator>                                     IdIterMap_t ;
 
+        typedef std::vector<Model_t::iterator>                                          RowRowMapping_t ;
+
         typedef sigc::signal<void>                                                      Signal_0 ;
         typedef sigc::signal<void, std::size_t, bool>                                   Signal_1 ;
 
@@ -317,9 +319,7 @@ namespace Albums
         {
             public:
 
-                typedef std::vector<Model_t::iterator> RowRowMapping ;
-
-                RowRowMapping                           m_mapping ;
+                RowRowMapping_t                           m_mapping ;
 
                 boost::optional<std::set<gint64> >      m_constraint_id_album ;
                 boost::optional<std::set<gint64> >      m_constraint_id_artist ;
@@ -385,6 +385,14 @@ namespace Albums
                 row (std::size_t row)
                 {
                     return *(m_mapping[row]);
+                }
+
+                virtual RowRowMapping_t::const_iterator
+                row_iter (std::size_t row)
+                {
+                    RowRowMapping_t::const_iterator i = m_mapping.begin() ;
+                    std::advance( i, row ) ;
+                    return i ;
                 }
 
                 void
@@ -490,7 +498,7 @@ namespace Albums
                         return ;
                     } 
 
-                    RowRowMapping new_mapping ;
+                    RowRowMapping_t new_mapping ;
 
                     boost::optional<gint64> id_cur = ( m_position < m_mapping.size()) ? get<1>(row( m_position )) : boost::optional<gint64>() ; 
                     boost::optional<gint64> id_sel = m_selected ; 
@@ -1252,12 +1260,14 @@ namespace Albums
 
                     cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
+                    RowRowMapping_t::const_iterator row_iter = m_model->row_iter( row ) ;
+
                     while( m_model->is_set() && cnt && m_Model_I.in( row )) 
                     {
                         xpos = 0 ;
 
-                        Model_t::iterator  selected           = m_model->m_mapping[row] ;
-                        bool                     iter_is_selected   = ( m_selection && get<2>(m_selection.get()) == row ) ;
+                        Model_t::iterator  selected           = *row_iter ; 
+                        bool               iter_is_selected   = ( m_selection && get<2>(m_selection.get()) == row ) ;
 
                         if( iter_is_selected )
                         {
@@ -1280,7 +1290,7 @@ namespace Albums
                             (*i)->render(
                                     cairo
                                   , m_disc
-                                  , m_model->row(row)
+                                  , **row_iter 
                                   , *this
                                   , row
                                   , xpos
@@ -1330,8 +1340,9 @@ namespace Albums
                         cairo->stroke() ;
                         cairo->restore(); 
 
-                        row ++;
-                        cnt --;
+                        row ++ ;
+                        cnt -- ;
+                        row_iter ++ ;
                     }
 
                     return true;
@@ -1422,7 +1433,7 @@ namespace Albums
                     {
                         const gint64& real_id = id.get() ;
 
-                        for( DataModelFilter::RowRowMapping::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
+                        for( RowRowMapping_t::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
                         {
                             if( real_id == get<1>(**i))
                             {
@@ -1543,7 +1554,7 @@ namespace Albums
                         return ;
                     }
 
-                    DataModelFilter::RowRowMapping::iterator i = m_model->m_mapping.begin(); 
+                    RowRowMapping_t::iterator i = m_model->m_mapping.begin(); 
                     ++i ; // first row is "All" FIXME this sucks
 
                     int idx = m_search_idx ;

@@ -49,6 +49,8 @@ namespace Artist
         typedef boost::shared_ptr<Model_t>                  Model_SP_t ;
         typedef std::map<gint64, Model_t::iterator>         IdIterMap_t ;
 
+        typedef std::vector<Model_t::iterator>              RowRowMapping_t ;
+
         typedef sigc::signal<void>                          Signal_0 ;
         typedef sigc::signal<void, std::size_t, bool>       Signal_1 ;
 
@@ -208,9 +210,7 @@ namespace Artist
 
         struct DataModelFilter : public DataModel
         {
-                typedef std::vector<Model_t::iterator>  RowRowMapping;
-
-                RowRowMapping                           m_mapping ;
+                RowRowMapping_t                           m_mapping ;
                 boost::optional<std::set<gint64> >      m_constraint_id_artist ;
 
                 DataModelFilter(DataModel_SP_t & model)
@@ -259,6 +259,16 @@ namespace Artist
                 )
                 {
                     return *(m_mapping[row]);
+                }
+
+                virtual RowRowMapping_t::const_iterator 
+                row_iter(
+                      std::size_t row
+                )
+                {
+                    RowRowMapping_t::const_iterator i  = m_mapping.begin() ; 
+                    std::advance( i, row ) ;
+                    return i ;
                 }
 
                 virtual void
@@ -320,7 +330,7 @@ namespace Artist
                         return ;
                     }
 
-                    RowRowMapping new_mapping;
+                    RowRowMapping_t new_mapping;
 
                     boost::optional<gint64> id_cur = ( m_position < m_mapping.size()) ? get<1>(row( m_position )) : boost::optional<gint64>() ;
                     boost::optional<gint64> id_sel = m_selected ;
@@ -1009,6 +1019,8 @@ namespace Artist
                     std::size_t ypos = 0 ;
                     std::size_t xpos = 0 ;
 
+                    RowRowMapping_t::const_iterator row_iter = m_model->row_iter( row ) ;
+
                     while( row < m_model->size() && cnt )
                     {
                         xpos = 0 ;
@@ -1041,7 +1053,7 @@ namespace Artist
                             cairo->fill() ;
                         }
 
-                        bool iter_is_selected = ( m_selection && boost::get<1>(m_selection.get()) == get<1>(*m_model->m_mapping[row])) ;
+                        bool iter_is_selected = ( m_selection && boost::get<1>(m_selection.get()) == get<1>(**row_iter)) ;
 
                         if( iter_is_selected ) 
                         {
@@ -1063,7 +1075,7 @@ namespace Artist
                         {
                             (*i)->render(
                                   cairo
-                                , m_model->row(row)
+                                , **row_iter 
                                 , *this
                                 , row
                                 , xpos
@@ -1079,6 +1091,7 @@ namespace Artist
                         ypos += m_row_height;
                         row ++;
                         cnt --;
+                        row_iter ++ ;
                     }
 
                     return true;
@@ -1166,7 +1179,7 @@ namespace Artist
                     {
                         const gint64& real_id = id.get() ;
 
-                        for( DataModelFilter::RowRowMapping::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
+                        for( RowRowMapping_t::iterator i = m_model->m_mapping.begin(); i != m_model->m_mapping.end(); ++i )
                         {
                             if( real_id == get<1>(**i))
                             {
@@ -1338,7 +1351,7 @@ namespace Artist
                         return ;
                     }
 
-                    DataModelFilter::RowRowMapping::iterator i = m_model->m_mapping.begin(); 
+                    RowRowMapping_t::iterator i = m_model->m_mapping.begin(); 
                     ++i ; // first row is "All" FIXME this sucks
 
                     int idx = m_search_idx ;

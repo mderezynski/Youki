@@ -94,7 +94,7 @@ namespace
 
             if( g_unichar_get_script( c ) != G_UNICODE_SCRIPT_LATIN && r.count("album_artist_sortname") ) 
             {
-                    std::string in = boost::get<std::string>(r.find("album_artist_sortname")->second) ; 
+                    std::string in = boost::get<std::string>( r.find("album_artist_sortname")->second ) ; 
 
                     boost::iterator_range <std::string::iterator> match1 = boost::find_nth( in, ", ", 0 ) ;
                     boost::iterator_range <std::string::iterator> match2 = boost::find_nth( in, ", ", 1 ) ;
@@ -213,6 +213,12 @@ namespace MPX
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_library_artist_deleted
+        )) ;
+
+        m_mlibman_dbus_proxy->signal_album_deleted().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_library_album_deleted
         )) ;
 
         m_covers    = services->get<Covers>("mpx-service-covers").get() ;
@@ -775,11 +781,7 @@ namespace MPX
         View::Tracks::DataModel_SP_t m1 ( new View::Tracks::DataModel ) ;
         View::Tracks::DataModelFilter_SP_t model_tracks = View::Tracks::DataModelFilter_SP_t (new View::Tracks::DataModelFilter( m1 )) ;
 
-
-        View::Albums::DataModel_SP_t m3 ( new View::Albums::DataModel ) ;
-        View::Albums::DataModelFilter_SP_t model_albums = View::Albums::DataModelFilter_SP_t (new View::Albums::DataModelFilter( m3 )) ;
-
-        // Tracks 
+       // Tracks 
 
         SQL::RowV v ;
         services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album, track_view.track")).str()) ; 
@@ -805,10 +807,10 @@ namespace MPX
 
         //// SET UP CONSTRAINTS
 
+        private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
+
         boost::optional<gint64> id_artist = m_ListViewArtist->get_selected() ;
         boost::optional<gint64> id_albums = m_ListViewAlbums->get_selected() ;
-
-        boost::optional<std::set<gint64> > constraint ; 
 
         if( id_artist ) 
         {
@@ -1626,7 +1628,7 @@ namespace MPX
     {
         int volume = m_play->property_volume().get_value() ; 
 
-        volume = std::max( 0, volume - 5 ) ;
+        volume = std::max( 0, (((volume+4)/5)*5) - 5 ) ;
 
         mcs->key_set<int>(
               "mpx"
@@ -1647,7 +1649,7 @@ namespace MPX
     {
         int volume = m_play->property_volume().get_value() ; 
 
-        volume = std::min( 100, volume + 5 ) ;
+        volume = std::min( 100, ((volume/5)*5) + 5 ) ;
 
         mcs->key_set<int>(
               "mpx"

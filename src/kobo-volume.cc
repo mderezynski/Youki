@@ -270,7 +270,7 @@ namespace MPX
     {
         if( event->direction == GDK_SCROLL_DOWN )
         {
-            m_volume = m_volume - 3 ; 
+            m_volume = ((m_volume+4)/5)*5 - 5 ; 
             m_volume = std::max( m_volume, 0 ) ;
             m_volume = std::min( m_volume, 100 ) ;
 
@@ -280,7 +280,7 @@ namespace MPX
         }
         else if( event->direction == GDK_SCROLL_UP )
         {
-            m_volume = m_volume + 3 ; 
+            m_volume = (m_volume/5)*5 + 5 ; 
             m_volume = std::max( m_volume, 0 ) ;
             m_volume = std::min( m_volume, 100 ) ;
 
