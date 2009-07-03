@@ -916,10 +916,11 @@ namespace MPX
 
                                       gst_structure_get_clock_time (s, "running-time", &message_running_time)  ;
 
-                                      GstClockID        clock_id  ;
-                                      GstClockTime      pipeline_base_time = gst_element_get_base_time(play.control_pipe())  ;
-                                      
-                                      clock_id=gst_clock_new_single_shot_id(gst_pipeline_get_clock((GstPipeline*)(play.control_pipe())), message_running_time + pipeline_base_time )  ;
+                                      GstClockTime      pipeline_base_time = gst_element_get_base_time( play.control_pipe() )  ;
+                                      GstClockID        clock_id = gst_clock_new_single_shot_id(
+                                              gst_pipeline_get_clock( (GstPipeline*)(play.control_pipe()))
+                                            , message_running_time + pipeline_base_time
+                                      )  ;
 
                                       gst_clock_id_wait_async(clock_id,clock_callback,data) ;
                                       gst_clock_id_unref(clock_id) ;

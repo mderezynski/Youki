@@ -56,6 +56,15 @@ namespace MPX
                   Cairo::RefPtr<Cairo::Context>&                /*cairo ctx*/
                 , const GdkRectangle&                           /*rectangle*/
                 , bool                                          /*sensitive*/
+                , double = 4.                                   /*rounding*/
+            ) ;
+
+            void
+            draw_focus(
+                  Cairo::RefPtr<Cairo::Context>&                /*cairo ctx*/
+                , const GdkRectangle&                           /*rectangle*/
+                , bool                                          /*sensitive*/
+                , double = 4.                                   /*rounding*/
             ) ;
 
             //// PUBLIC

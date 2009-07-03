@@ -81,6 +81,7 @@ namespace MPX
 
         v.clear();
         v.push_back(StockIconSpec( "clear.png",                    "mpx-stock-entry-clear"     ));
+        v.push_back(StockIconSpec( "deadend.png",                  "mpx-stock-dead-end"        ));
         v.push_back(StockIconSpec( "icon-add.png",                 "mpx-stock-add"             ));
         v.push_back(StockIconSpec( "icon-error.png",               MPX_STOCK_ERROR             ));
         v.push_back(StockIconSpec( "heart-black.png",              "mpx-loved-no"              ));

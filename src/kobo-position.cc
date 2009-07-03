@@ -16,8 +16,6 @@
 
 namespace
 {
-    const double rounding = 2. ; 
-
     int const animation_fps = 2 ;
     int const animation_frame_period_ms = 1000 / animation_fps ;
 }
@@ -139,7 +137,7 @@ namespace MPX
             , 1 
             , a.get_width() - 2
             , 14
-            , rounding
+            , 2.
         ) ;
         cairo->fill () ;
 
@@ -217,7 +215,7 @@ namespace MPX
                 , r.y
                 , r.width 
                 , r.height
-                , rounding
+                , 2.
             ) ;
 
             cairo->fill (); 
@@ -241,20 +239,22 @@ namespace MPX
                 (boost::format("<b>%02d</b>:<b>%02d</b>") % ( position / 60 ) % ( position % 60 )).str()
             ) ;
 
-            int width, height;
-            layout->get_pixel_size (width, height) ;
+            GdkRectangle r ;
+
+            layout->get_pixel_size( r.width, r.height ) ;
+
+            r.x = fmax( 3, 3 + double(a.get_width()) * double(percent) - r.width - 7 ) ; 
+            r.y = 2 ;
+
             cairo->move_to(
-                  fmax( 3, 3 + double(a.get_width()) * double(percent) - width - 7 ) 
-                , 2 
+                  r.x                  
+                , r.y 
             ) ;
-            cairo->set_source_rgba(
-                  ct.r
-                , ct.g
-                , ct.b
-                , ct.a
-            ) ;
-            cairo->set_operator( Cairo::OPERATOR_OVER ) ;
-            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+
+            cairo->set_source_rgba( 1., 1., 1., 1. ) ;
+
+            cairo->set_operator( Cairo::OPERATOR_SOURCE ) ;
+            pango_cairo_show_layout( cairo->cobj (), layout->gobj () ) ;
 
             if( ( m_duration - m_position ) > 1 )
             {
@@ -262,11 +262,14 @@ namespace MPX
                         (boost::format("<b>%02d</b>:<b>%02d</b>") % ( m_duration / 60 ) % ( m_duration % 60 )).str()
                     ) ;
 
-                    layout->get_pixel_size (width, height) ;
+                    layout->get_pixel_size( r.width, r.height ) ;
+
+                    r.x = 3 + double(a.get_width()) - r.width - 7 ;
+                    r.y = 2 ;
 
                     cairo->move_to(
-                          3 + double(a.get_width()) - width - 7  
-                        , 2
+                          r.x 
+                        , r.y
                     ) ;
 
                     cairo->set_source_rgba(
@@ -283,39 +286,20 @@ namespace MPX
 
         if( has_focus() )
         {
-                double h, s, b ;
+            GdkRectangle r ; 
 
-                Gdk::Color cgdk ;
-                cgdk.set_rgb_p( c.r, c.g, c.b ) ;
+            r.x = 0 ;
+            r.y = 0 ;
 
-                Util::color_to_hsb( cgdk, h, s, b ) ;
-                b = std::min( 1., b+0.12 ) ;
-                s = std::min( 1., s+0.12 ) ;
-                Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
+            r.width = a.get_width() ;
+            r.height = a.get_height() ;
 
-                cairo->set_operator( Cairo::OPERATOR_OVER ) ;
-                cairo->set_source_rgba(
-                      c1.get_red_p() 
-                    , c1.get_green_p()
-                    , c1.get_blue_p()
-                    , 1. 
-                ) ;
-                RoundedRectangle(
-                      cairo
-                    , 1 
-                    , 1 
-                    , a.get_width() - 2
-                    , 14
-                    , rounding
-                ) ;
-
-                std::valarray<double> dashes ( 2 ) ;
-                dashes[0] = 1. ;
-                dashes[1] = 1. ;
-
-                cairo->set_dash( dashes, 2 ) ;
-                cairo->set_line_width( .75 ) ; 
-                cairo->stroke () ;
+            theme->draw_focus(
+                  cairo
+                , r 
+                , is_sensitive()
+                , 2.
+            ) ;
         }
 
         return true ;

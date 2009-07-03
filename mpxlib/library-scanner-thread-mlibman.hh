@@ -104,11 +104,9 @@ namespace MPX
             typedef sigc::signal<void, ScanSummary const&>          SignalScanSummary_t ;
             typedef sigc::signal<void, gint64, std::string, std::string, std::string, std::string, std::string> SignalNewAlbum_t ;
             typedef sigc::signal<void, gint64>                      SignalNewArtist_t ;
-            typedef sigc::signal<void, Track&, gint64, gint64>      SignalNewTrack_t ;
-            typedef sigc::signal<void, Track&, gint64, gint64>      SignalTrackUpdated_t ;
+            typedef sigc::signal<void, gint64>                      SignalNewTrack_t ;
             typedef sigc::signal<void, gint64, EntityType>          SignalEntityDeleted_t ;
             typedef sigc::signal<void, gint64, EntityType>          SignalEntityUpdated_t ;
-            typedef sigc::signal<void, const RequestQualifier&>     SignalCacheCover_t ;
             typedef sigc::signal<void>                              SignalReload_t ;
             typedef sigc::signal<void, const std::string&>          SignalMessage_t ;
             
@@ -121,7 +119,6 @@ namespace MPX
             typedef sigx::signal_f<SignalTrackUpdated_t>            signal_track_updated_x ;
             typedef sigx::signal_f<SignalEntityDeleted_t>           signal_entity_deleted_x ;
             typedef sigx::signal_f<SignalEntityUpdated_t>           signal_entity_updated_x ;
-            typedef sigx::signal_f<SignalCacheCover_t>              signal_cache_cover_x ;
             typedef sigx::signal_f<SignalReload_t>                  signal_reload_x ;
             typedef sigx::signal_f<SignalMessage_t>                 signal_message_x ;
 

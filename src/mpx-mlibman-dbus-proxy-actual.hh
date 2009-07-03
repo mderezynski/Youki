@@ -41,8 +41,8 @@ protected:
     Signal_t                SignalScanStart ;
     Signal_t                SignalScanEnd ;
     Signal_1int64_5string_t SignalNewAlbum ;
-    Signal_1int64v          SignalNewTracks ;
     Signal_1int64           SignalNewArtist ;
+    Signal_1int64           SignalNewTrack ;
     Signal_1int64           SignalArtistDeleted ;
     Signal_1int64           SignalAlbumDeleted ;
 
@@ -70,12 +70,6 @@ public:
     signal_new_artist ()
     {
         return SignalNewArtist ;
-    }
-
-    Signal_1int64v&
-    signal_new_tracks ()
-    {
-        return SignalNewTracks ;
     }
 
     Signal_1int64
@@ -107,14 +101,6 @@ public:
     }
 
     virtual
-    void NewTracks(
-          const std::vector<int64_t>& v
-    ) 
-    {
-        SignalNewTracks.emit( v ) ; 
-    }
-
-    virtual
     void NewAlbum(
           const int64_t&        id
         , const std::string&    s1
@@ -133,6 +119,14 @@ public:
     ) 
     {
         SignalNewArtist.emit( id ) ;
+    }
+
+    virtual
+    void NewTrack(
+          const int64_t&        id
+    ) 
+    {
+        SignalNewTrack.emit( id ) ;
     }
 
     virtual

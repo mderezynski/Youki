@@ -548,6 +548,12 @@ namespace MPX
                 , &MLibManager::new_artist
         )) ;
 
+        library->signal_new_track().connect(
+            sigc::mem_fun(
+                  *this
+                , &MLibManager::new_track
+        )) ;
+
         library->signal_album_artist_deleted().connect(
             sigc::mem_fun(
                   *this
@@ -725,6 +731,14 @@ namespace MPX
     )
     {
         NewArtist( id ) ;
+    }
+
+    void
+    MLibManager::new_track(
+          const int64_t&        id
+    )
+    {
+        NewTrack( id ) ;
     }
 
     void

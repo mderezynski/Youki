@@ -315,10 +315,8 @@ struct MPX::LibraryScannerThread_MLibMan::ThreadData
     LibraryScannerThread_MLibMan::SignalNewAlbum_t          NewAlbum ;
     LibraryScannerThread_MLibMan::SignalNewArtist_t         NewArtist ;
     LibraryScannerThread_MLibMan::SignalNewTrack_t          NewTrack ;
-    LibraryScannerThread_MLibMan::SignalTrackUpdated_t      TrackUpdated ;
     LibraryScannerThread_MLibMan::SignalEntityDeleted_t     EntityDeleted ;
     LibraryScannerThread_MLibMan::SignalEntityUpdated_t     EntityUpdated ;
-    LibraryScannerThread_MLibMan::SignalCacheCover_t        CacheCover ;
     LibraryScannerThread_MLibMan::SignalReload_t            Reload ;
     LibraryScannerThread_MLibMan::SignalMessage_t           Message ;
 
@@ -346,10 +344,8 @@ MPX::LibraryScannerThread_MLibMan::LibraryScannerThread_MLibMan(
 , signal_new_album(*this, m_ThreadData, &ThreadData::NewAlbum)
 , signal_new_artist(*this, m_ThreadData, &ThreadData::NewArtist)
 , signal_new_track(*this, m_ThreadData, &ThreadData::NewTrack)
-, signal_track_updated(*this, m_ThreadData, &ThreadData::TrackUpdated)
 , signal_entity_deleted(*this, m_ThreadData, &ThreadData::EntityDeleted)
 , signal_entity_updated(*this, m_ThreadData, &ThreadData::EntityUpdated)
-, signal_cache_cover(*this, m_ThreadData, &ThreadData::CacheCover)
 , signal_reload(*this, m_ThreadData, &ThreadData::Reload)
 , signal_message(*this, m_ThreadData, &ThreadData::Message)
 , m_Library_MLibMan(*obj_library)
@@ -1643,7 +1639,7 @@ MPX::LibraryScannerThread_MLibMan::insert(
                 track[ATTRIBUTE_MPX_TRACK_ID] = id; 
                 m_SQL->exec_sql( create_update_sql( track, p->Album.first, p->Artist.first ) + (boost::format(" WHERE id = '%lld'") % id).str()  ); 
                 signal_new_entities( p );
-                pthreaddata->TrackUpdated.emit( track, p->Album.first, p->Artist.first ) ; 
+                pthreaddata->EntityUpdated( id, ENTITY_TRACK );
 
                 return SCAN_RESULT_UPDATE ;
 
@@ -1667,7 +1663,8 @@ MPX::LibraryScannerThread_MLibMan::insert(
   }
 
   signal_new_entities( p );
-  pthreaddata->NewTrack.emit( track, p->Album.first, p->Artist.first ); 
+
+  pthreaddata->NewTrack.emit( get<gint64>(track[ATTRIBUTE_MPX_TRACK_ID].get()) ) ;
 
   return SCAN_RESULT_OK ; 
 }

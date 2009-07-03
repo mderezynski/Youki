@@ -138,8 +138,12 @@ namespace MPX
             , 4.
         ) ;
 
+        cairo->fill() ;
+
         if( is_sensitive() )
         {
+
+/*
             if( m_state == m_default_state )
             {
                 cairo->fill_preserve () ;
@@ -150,8 +154,7 @@ namespace MPX
                     , 0.15
                 ) ;
             }
-
-            cairo->fill() ;
+*/
 
             GdkRectangle r ;
 

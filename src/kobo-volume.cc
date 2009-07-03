@@ -10,8 +10,7 @@
 
 namespace
 {
-    const double rounding = 2. ; 
-    const int    pad = 1 ;
+    const int pad = 1 ;
 
     Gdk::Color
     get_color_at_pos(
@@ -41,6 +40,7 @@ namespace MPX
 
     {
         add_events(Gdk::EventMask(Gdk::LEAVE_NOTIFY_MASK | Gdk::ENTER_NOTIFY_MASK | Gdk::POINTER_MOTION_MASK | Gdk::POINTER_MOTION_HINT_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK )) ;
+        set_flags(Gtk::CAN_FOCUS) ;
 
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
         const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
@@ -132,7 +132,7 @@ namespace MPX
                 , r.y
                 , r.width 
                 , r.height
-                , rounding
+                , 2.
             ) ;
 
             cairo->fill (); 
@@ -172,6 +172,23 @@ namespace MPX
             pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
         }
 
+        GdkRectangle r ;
+
+        r.x = 0 ;
+        r.y = 0 ;
+        r.width = a.get_width() ;
+        r.height = a.get_height() ;
+
+        if( has_focus() )
+        {
+            theme->draw_focus(
+                  cairo
+                , r 
+                , is_sensitive()
+                , 2.
+            ) ;
+        }
+
         return true ;
     }
 
@@ -196,16 +213,14 @@ namespace MPX
         GdkEventButton* event
     ) 
     {
-        if( event->button == 1 )
+        if( event->button == 1 ) 
         {
+            grab_focus() ;
             m_clicked = true ;
-
             m_volume = event->x ; 
             m_volume = std::max( m_volume, 0 ) ;
             m_volume = std::min( m_volume, 100 ) ;
-
             m_SIGNAL_set_volume.emit( m_volume ) ;
-
             queue_draw () ;
         }
 
@@ -263,6 +278,26 @@ namespace MPX
         return true ;
     }
 
+    void
+    KoboVolume::vol_down()
+    {
+        m_volume = ((m_volume+4)/5)*5 - 5 ; 
+        m_volume = std::max( m_volume, 0 ) ;
+        m_volume = std::min( m_volume, 100 ) ;
+        m_SIGNAL_set_volume.emit( m_volume ) ;
+        queue_draw () ;
+    }
+
+    void
+    KoboVolume::vol_up()
+    {
+        m_volume = (m_volume/5)*5 + 5 ; 
+        m_volume = std::max( m_volume, 0 ) ;
+        m_volume = std::min( m_volume, 100 ) ;
+        m_SIGNAL_set_volume.emit( m_volume ) ;
+        queue_draw () ;
+    }
+
     bool
     KoboVolume::on_scroll_event(
         GdkEventScroll* event
@@ -270,25 +305,46 @@ namespace MPX
     {
         if( event->direction == GDK_SCROLL_DOWN )
         {
-            m_volume = ((m_volume+4)/5)*5 - 5 ; 
-            m_volume = std::max( m_volume, 0 ) ;
-            m_volume = std::min( m_volume, 100 ) ;
-
-            m_SIGNAL_set_volume.emit( m_volume ) ;
-
-            queue_draw () ;
+            vol_down () ;
         }
-        else if( event->direction == GDK_SCROLL_UP )
+        else
+        if( event->direction == GDK_SCROLL_UP )
         {
-            m_volume = (m_volume/5)*5 + 5 ; 
-            m_volume = std::max( m_volume, 0 ) ;
-            m_volume = std::min( m_volume, 100 ) ;
-
-            m_SIGNAL_set_volume.emit( m_volume ) ;
-
-            queue_draw () ;
+            vol_up () ;
         }
 
         return true ;
     }
+
+    bool
+    KoboVolume::on_key_press_event(
+        GdkEventKey* event
+    )
+    {
+        switch( event->keyval )
+        {
+            case GDK_Left:
+            case GDK_KP_Left:
+            case GDK_Down:
+            case GDK_KP_Down:
+
+                vol_down () ;
+
+                return true ;
+
+            case GDK_Up:
+            case GDK_KP_Up:
+            case GDK_Right:
+            case GDK_KP_Right:
+
+                vol_up () ;
+
+                return true ;
+
+            default: break;
+        }
+
+        return false ;
+    }
+
 }

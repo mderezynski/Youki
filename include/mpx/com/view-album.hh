@@ -627,9 +627,7 @@ namespace Albums
 
                     if( row > 0 ) 
                     {
-                            off = 64 ; 
-
-                            r.x = xpos + m_width - off - 6 ; 
+                            r.x = 8 ; 
 
                             cairo->set_source(
                                   s ? s : s_fallback
@@ -750,10 +748,12 @@ namespace Albums
                     Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
                     layout->set_font_description( font_desc ) ;
                     layout->set_ellipsize( Pango::ELLIPSIZE_MIDDLE ) ;
-                    layout->set_width( (m_width-off-20) * PANGO_SCALE ) ;
+                    layout->set_width(( m_width - 88 ) * PANGO_SCALE ) ;
 
                     if( row > 0 )
                     {
+                            xpos += 8 + 64 ; 
+
                             //// ARTIST
                             layout->set_text( get<4>(data_row) )  ;
                             layout->get_pixel_size (width, height) ;
@@ -1242,7 +1242,7 @@ namespace Albums
                     std::size_t xpos    = 0 ;
                     std::size_t cnt     = m_visible_height / m_row_height + 2 ;
             
-                    if( row && offset ) 
+                    if( offset ) 
                     {
 //                        ypos = -(m_row_height-offset) ;
                         ypos -= offset ;
@@ -1273,9 +1273,9 @@ namespace Albums
                         {
                             GdkRectangle r ;
 
-                            r.x         = inner_pad + 2 ; 
+                            r.x         = inner_pad ; 
                             r.y         = inner_pad + ypos ;
-                            r.width     = a.get_width() - 2*inner_pad  - 4 ;  
+                            r.width     = a.get_width() - 2*inner_pad ;  
                             r.height    = m_row_height - 2*inner_pad - 2 ;
 
                             theme->draw_selection_rectangle(
@@ -1307,7 +1307,7 @@ namespace Albums
 
                         std::valarray<double> dashes ( 3 ) ;
                         dashes[0] = 0. ;
-                        dashes[1] = 3. ;
+                        dashes[1] = 1. ;
                         dashes[2] = 0. ;
 
                         cairo->save(); 

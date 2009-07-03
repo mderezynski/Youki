@@ -126,6 +126,15 @@ namespace MPX
                   Cairo::RefPtr<Cairo::Context>&                /*cairo ctx*/
                 , const GdkRectangle&                           /*rectangle*/
                 , bool                                          /*sensitive*/
+                , double = 4.
+            ) = 0 ;
+
+            virtual void
+            draw_focus(
+                  Cairo::RefPtr<Cairo::Context>&                /*cairo ctx*/
+                , const GdkRectangle&                           /*rectangle*/
+                , bool                                          /*sensitive*/
+                , double = 4.
             ) = 0 ;
 
             virtual std::vector<std::string>

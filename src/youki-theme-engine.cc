@@ -356,6 +356,7 @@ namespace MPX
           Cairo::RefPtr<Cairo::Context>&    cairo
         , const GdkRectangle&               r
         , bool                              sensitive
+        , double                            rounding
     )
     {
         const ThemeColor& c = get_color( THEME_COLOR_SELECT ) ;
@@ -422,7 +423,7 @@ namespace MPX
             , r.y 
             , r.width 
             , r.height 
-            , 4.
+            , rounding 
         ) ;
 
         cairo->fill_preserve (); 
@@ -437,4 +438,54 @@ namespace MPX
 
         cairo->restore () ;
     }
+
+    void
+    YoukiThemeEngine::draw_focus(
+          Cairo::RefPtr<Cairo::Context>&    cairo
+        , const GdkRectangle&               r
+        , bool                              sensitive
+        , double                            rounding
+    )
+    {
+        double h, s, b ;
+
+        const ThemeColor& c = get_color( THEME_COLOR_SELECT ) ;
+
+        Gdk::Color cgdk ;
+        cgdk.set_rgb_p( c.r, c.g, c.b ) ;
+
+        Util::color_to_hsb( cgdk, h, s, b ) ;
+        b = std::min( 1., b+0.12 ) ;
+        s = std::min( 1., s+0.12 ) ;
+        Gdk::Color c1 = Util::color_from_hsb( h, s, b ) ;
+
+        cairo->save() ;
+
+        cairo->set_operator( Cairo::OPERATOR_OVER ) ;
+        cairo->set_source_rgba(
+              c1.get_red_p() 
+            , c1.get_green_p()
+            , c1.get_blue_p()
+            , 1. 
+        ) ;
+        RoundedRectangle(
+              cairo
+            , r.x + 1 
+            , r.y + 1 
+            , r.width - 2
+            , r.height - 2
+            , rounding
+        ) ;
+
+        std::valarray<double> dashes ( 2 ) ;
+        dashes[0] = 1. ;
+        dashes[1] = 1. ;
+
+        cairo->set_dash( dashes, 2 ) ;
+        cairo->set_line_width( .75 ) ; 
+        cairo->stroke () ;
+
+        cairo->restore() ;
+    }
+
 }

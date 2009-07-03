@@ -10,11 +10,6 @@
 
 namespace
 {
-    const double rounding = 4. ;
-}
-
-namespace
-{
     void RoundedTriangleRight (Cairo::RefPtr<Cairo::Context> cr, double x, double y, double w, double h,
         double r)
     {
@@ -233,20 +228,20 @@ namespace MPX
                         r1.set_height( 1 ) ;
 
                         // quit
-                        r2.set_x( m_presize_width - 12 - 3 ) ;
-                        r2.set_y( 4 ) ; 
+                        r2.set_x( m_presize_width - 12 - 5 ) ;
+                        r2.set_y( 5 ) ; 
                         r2.set_width( 12 ) ; 
                         r2.set_height( 12 ) ; 
 
                         // maximize
-                        r3.set_x( m_presize_width - 27 - 3 ) ; 
-                        r3.set_y( 4 ) ; 
+                        r3.set_x( m_presize_width - 27 - 5 ) ; 
+                        r3.set_y( 5 ) ; 
                         r3.set_width( 12 ) ; 
                         r3.set_height( 12 ) ; 
 
                         // minimize
-                        r4.set_x( m_presize_width - 42 - 3 ) ; 
-                        r4.set_y( 4 ) ; 
+                        r4.set_x( m_presize_width - 42 - 5 ) ; 
+                        r4.set_y( 5 ) ; 
                         r4.set_width( 12 ) ; 
                         r4.set_height( 12 ) ; 
 
@@ -362,6 +357,8 @@ namespace MPX
                         cr->set_operator( Cairo::OPERATOR_CLEAR ) ;
                         cr->paint () ;
 
+                        const Gtk::Allocation& a = get_allocation() ;
+
                         //// DRAWER 
                         if( m_expand_direction != EXPAND_NONE || m_drawer_out )
                         {
@@ -379,8 +376,8 @@ namespace MPX
                                     , m_presize_width - 16 
                                     , 0 
                                     , m_drawer_width + 16 
-                                    , get_allocation().get_height() 
-                                    , rounding
+                                    , a.get_height() 
+                                    , 6.
                                     , CairoCorners::CORNERS( CairoCorners::TOPRIGHT | CairoCorners::BOTTOMRIGHT )
                                 ) ;
                                 cr->fill () ;
@@ -399,11 +396,11 @@ namespace MPX
                         ) ;
                         RoundedRectangle(
                               cr
-                            , 0
-                            , 0
-                            , m_presize_width 
-                            , get_allocation().get_height()
-                            , rounding
+                            , 1
+                            , 1
+                            , m_presize_width - 2
+                            , a.get_height() - 2
+                            , 6.
                         ) ;
                         cr->fill_preserve() ;
                         cr->clip() ;
@@ -414,9 +411,9 @@ namespace MPX
                         const ThemeColor& t3 = theme->get_color( THEME_COLOR_TITLEBAR_3 ) ;
 
                         Cairo::RefPtr<Cairo::LinearGradient> background_gradient_ptr = Cairo::LinearGradient::create(
-                              m_presize_width / 2. 
+                              (m_presize_width-2) / 2. 
                             , 0
-                            , m_presize_width / 2. 
+                            , (m_presize_width-2) / 2. 
                             , 20 
                         ) ;
                         
@@ -448,11 +445,11 @@ namespace MPX
                         cr->set_source( background_gradient_ptr ) ;
                         RoundedRectangle(
                               cr
-                            , 0
-                            , 0
-                            , m_presize_width 
+                            , 1
+                            , 1
+                            , m_presize_width - 2
                             , 20
-                            , rounding
+                            , 6.
                             , CairoCorners::CORNERS( CairoCorners::TOPLEFT | CairoCorners::TOPRIGHT )
                         ) ;
                         cr->fill();
@@ -461,7 +458,7 @@ namespace MPX
                         cr->set_operator( Cairo::OPERATOR_OVER ) ;
 
                         GdkRectangle r ;
-                        r.x         = 8 ; 
+                        r.x         = 9 ; 
                         r.y         = 5 ; 
                         r.width     = m_title_logo->get_width() ;
                         r.height    = m_title_logo->get_height() ;
@@ -481,11 +478,11 @@ namespace MPX
 
                         // off
 
-                        r.y         =  4 ; 
+                        r.y         =  5 ; 
                         r.width     = 12 ; 
                         r.height    = 12 ; 
 
-                        r.x = m_presize_width - 12 - 3 ; 
+                        r.x = m_presize_width - 12 - 5 ; 
 
                         Gdk::Cairo::set_source_pixbuf(
                               cr
@@ -506,7 +503,7 @@ namespace MPX
 
                         // maximize
 
-                        r.x = m_presize_width - 27 - 3 ;
+                        r.x = m_presize_width - 27 - 5 ;
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_button_maximize 
@@ -528,7 +525,7 @@ namespace MPX
 
                         // minimize
 
-                        r.x = m_presize_width - 42 - 3 ;
+                        r.x = m_presize_width - 42 - 5 ;
                         Gdk::Cairo::set_source_pixbuf(
                               cr
                             , m_button_minimize 
@@ -559,20 +556,20 @@ namespace MPX
 
                         RoundedTriangleRight(
                               cr
-                            , m_presize_width - 16
-                            , get_allocation().get_height()
+                            , m_presize_width - 17
+                            , a.get_height() - 1
                             , 16
                             , 16
-                            , rounding
+                            , 6.
                         ) ;
 
                         RoundedTriangleLeft(
                               cr
-                            , 16 
-                            , get_allocation().get_height()
+                            , 17 
+                            , a.get_height() - 1
                             , 16
                             , 16
-                            , rounding
+                            , 6.
                         ) ;
  
                         cr->fill () ;
@@ -587,13 +584,21 @@ namespace MPX
                         //// MAINAREA BORDER 
                         const ThemeColor& brd = theme->get_color( THEME_COLOR_WINDOW_BORDER ) ;
 
+                        cr->rectangle(
+                              1
+                            , 20
+                            , m_presize_width - 2
+                            , a.get_height() - 2 - 20
+                        ) ;
+                        cr->clip() ;
+
                         RoundedRectangle(
                               cr
-                            , 0
-                            , 0
-                            , m_presize_width 
-                            , get_allocation().get_height()
-                            , rounding
+                            , 1
+                            , 1
+                            , m_presize_width - 2
+                            , a.get_height() - 2
+                            , 6.
                         ) ;
                         cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
                         cr->set_source_rgba(
@@ -602,24 +607,31 @@ namespace MPX
                             , brd.b
                             , brd.a
                         ) ;
-                        cr->set_line_width( 1.5 ) ;
+                        cr->set_line_width( 0.75 ) ;
                         cr->stroke() ;
+
+                        cr->reset_clip() ;
 
                         //// TITLEBAR TOP
                         const ThemeColor& tbt = theme->get_color( THEME_COLOR_TITLEBAR_TOP ) ;
 
                         cr->save() ;
 
-                        cr->rectangle( 0, 0, m_presize_width, 20 ) ;
+                        cr->rectangle(
+                              1
+                            , 1
+                            , m_presize_width - 2
+                            , 20
+                        ) ;
                         cr->clip() ;
 
                         RoundedRectangle(
                               cr
-                            , 0
-                            , 0
-                            , m_presize_width 
-                            , 20 + rounding
-                            , rounding
+                            , 1
+                            , 1
+                            , m_presize_width - 2
+                            , 20 + 6.
+                            , 6.
                         ) ;
                         cr->set_source_rgba(
                               tbt.r

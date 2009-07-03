@@ -152,6 +152,11 @@ namespace MPX
             ) ;
 
             void
+            new_track(
+                  const int64_t&
+            ) ;
+
+            void
             album_artist_deleted(
                   const int64_t&
             ) ;

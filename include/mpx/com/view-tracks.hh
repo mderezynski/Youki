@@ -615,8 +615,6 @@ namespace Tracks
                 regen_mapping(
                 )
                 {
-                    g_message("Constraints size; %lld", gint64(m_constraints_ext.size()) ) ;
-
                     using boost::get;
                     using boost::algorithm::split;
                     using boost::algorithm::is_any_of;
@@ -772,8 +770,6 @@ namespace Tracks
                 regen_mapping_iterative(
                 )
                 {
-                    g_message("Constraints size; %lld", gint64(m_constraints_ext.size()) ) ;
-
                     using boost::get;
                     using boost::algorithm::split;
                     using boost::algorithm::is_any_of;

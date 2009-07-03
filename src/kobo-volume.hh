@@ -39,6 +39,12 @@ namespace MPX
         protected:
 
             virtual void
+            vol_up () ;
+
+            virtual void
+            vol_down () ;
+
+            virtual void
             on_size_request(
                 Gtk::Requisition*
             ) ;
@@ -76,6 +82,11 @@ namespace MPX
             virtual bool
             on_scroll_event(
                 GdkEventScroll*
+            ) ;
+
+            virtual bool
+            on_key_press_event(
+                GdkEventKey*
             ) ;
     } ; 
 }

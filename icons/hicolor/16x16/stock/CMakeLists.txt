@@ -1,5 +1,6 @@
 INSTALL(
   FILES clear.png
+        deadend.png
         icon-add.png
         icon-error.png
         heart-black.png

@@ -280,7 +280,7 @@ namespace MPX
         m_Entry             = Gtk::manage( new Gtk::Entry ) ;
         m_Entry->set_icon_from_pixbuf(
               Gtk::IconTheme::get_default()->load_icon( "mpx-stock-entry-clear", 16 ) 
-            , Gtk::ENTRY_ICON_SECONDARY
+            , Gtk::ENTRY_ICON_PRIMARY
         ) ; 
         m_Entry->signal_icon_press().connect(
               sigc::hide( sigc::hide(
@@ -350,13 +350,12 @@ namespace MPX
                 , &YoukiController::on_title_clicked
         )) ;
 
-        m_main_love_button          = Gtk::manage(new YoukiTristateButton(16, "mpx-loved-none", "mpx-loved-yes", "mpx-loved-no") ) ;
+        m_main_love_button          = Gtk::manage( new YoukiTristateButton( 16, "mpx-loved-none", "mpx-loved-yes", "mpx-loved-no" )) ;
         m_main_love_button->set_default_state( TRISTATE_BUTTON_STATE_NONE ) ;
         m_main_love_button->set_state( TRISTATE_BUTTON_STATE_NONE ) ;
         m_main_love_button->set_sensitive( false ) ;
 
-        m_main_stop_next_button     = Gtk::manage(new YoukiToggleButton(16, m_main_window->render_icon( Gtk::Stock::CANCEL, Gtk::IconSize(16) ))) ; 
-        m_main_stop_next_button->set_state( TOGGLE_BUTTON_STATE_OFF ) ;
+        m_main_stop_next_button     = Gtk::manage( new YoukiToggleButton( 16, Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "icons" G_DIR_SEPARATOR_S "hicolor" G_DIR_SEPARATOR_S "16x16" G_DIR_SEPARATOR_S "stock" G_DIR_SEPARATOR_S "deadend.png" )))) ;
         m_main_stop_next_button->set_sensitive( false ) ;
 
         m_main_spectrum     = new YoukiSpectrum ;
@@ -1391,6 +1390,14 @@ namespace MPX
         m_conn2.unblock() ;    
         m_conn3.unblock() ;    
         m_conn4.unblock() ;    
+
+        boost::optional<MPX::Track> t = m_track_current ;
+
+        if( t )
+        {
+            gint64 id_track = boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ;
+            m_ListViewTracks->scroll_to_id( id_track ) ;
+        }
     }
 
     bool
