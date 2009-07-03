@@ -361,7 +361,6 @@ MPX::LibraryScannerThread_MLibMan::LibraryScannerThread_MLibMan(
                 , signal_new_album
                 , signal_new_artist
                 , signal_new_track
-                , signal_track_updated
                 , signal_entity_deleted
                 , signal_entity_updated
                 , signal_cache_cover

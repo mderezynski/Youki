@@ -116,7 +116,6 @@ namespace MPX
             typedef sigx::signal_f<SignalNewAlbum_t>                signal_new_album_x ;
             typedef sigx::signal_f<SignalNewArtist_t>               signal_new_artist_x ;
             typedef sigx::signal_f<SignalNewTrack_t>                signal_new_track_x ;
-            typedef sigx::signal_f<SignalTrackUpdated_t>            signal_track_updated_x ;
             typedef sigx::signal_f<SignalEntityDeleted_t>           signal_entity_deleted_x ;
             typedef sigx::signal_f<SignalEntityUpdated_t>           signal_entity_updated_x ;
             typedef sigx::signal_f<SignalReload_t>                  signal_reload_x ;
@@ -141,7 +140,6 @@ namespace MPX
             signal_new_album_x              signal_new_album ;
             signal_new_artist_x             signal_new_artist ;
             signal_new_track_x              signal_new_track ;
-            signal_track_updated_x          signal_track_updated ;
             signal_entity_deleted_x         signal_entity_deleted ;
             signal_entity_updated_x         signal_entity_updated ;
             signal_cache_cover_x            signal_cache_cover ;
@@ -157,7 +155,6 @@ namespace MPX
                     , signal_new_album_x&             album_x
                     , signal_new_artist_x&            artist_x
                     , signal_new_track_x&             track_x
-                    , signal_track_updated_x&         track_updated_x
                     , signal_entity_deleted_x&        entity_deleted_x
                     , signal_entity_updated_x&        entity_updated_x
                     , signal_cache_cover_x&           cover_x
@@ -170,7 +167,6 @@ namespace MPX
                 , signal_new_album(album_x)
                 , signal_new_artist(artist_x)
                 , signal_new_track(track_x)
-                , signal_track_updated(track_updated_x)
                 , signal_entity_deleted(entity_deleted_x)
                 , signal_entity_updated(entity_updated_x)
                 , signal_cache_cover(cover_x)
@@ -185,7 +181,6 @@ namespace MPX
                 signal_new_album_x          & signal_new_album ;
                 signal_new_artist_x         & signal_new_artist ;
                 signal_new_track_x          & signal_new_track ;
-                signal_track_updated_x      & signal_track_updated ;
                 signal_entity_deleted_x     & signal_entity_deleted ;
                 signal_entity_updated_x     & signal_entity_updated ;
                 signal_cache_cover_x        & signal_cache_cover ;
