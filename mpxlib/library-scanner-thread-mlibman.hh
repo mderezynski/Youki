@@ -142,7 +142,6 @@ namespace MPX
             signal_new_track_x              signal_new_track ;
             signal_entity_deleted_x         signal_entity_deleted ;
             signal_entity_updated_x         signal_entity_updated ;
-            signal_cache_cover_x            signal_cache_cover ;
             signal_reload_x                 signal_reload ;
             signal_message_x                signal_message ;
 
@@ -157,7 +156,6 @@ namespace MPX
                     , signal_new_track_x&             track_x
                     , signal_entity_deleted_x&        entity_deleted_x
                     , signal_entity_updated_x&        entity_updated_x
-                    , signal_cache_cover_x&           cover_x
                     , signal_reload_x&                reload_x
                     , signal_message_x&               message_x 
                 )
@@ -169,7 +167,6 @@ namespace MPX
                 , signal_new_track(track_x)
                 , signal_entity_deleted(entity_deleted_x)
                 , signal_entity_updated(entity_updated_x)
-                , signal_cache_cover(cover_x)
                 , signal_reload(reload_x)
                 , signal_message(message_x)
                 {
@@ -183,7 +180,6 @@ namespace MPX
                 signal_new_track_x          & signal_new_track ;
                 signal_entity_deleted_x     & signal_entity_deleted ;
                 signal_entity_updated_x     & signal_entity_updated ;
-                signal_cache_cover_x        & signal_cache_cover ;
                 signal_reload_x             & signal_reload ;
                 signal_message_x            & signal_message ;
             };

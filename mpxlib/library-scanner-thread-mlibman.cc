@@ -363,7 +363,6 @@ MPX::LibraryScannerThread_MLibMan::LibraryScannerThread_MLibMan(
                 , signal_new_track
                 , signal_entity_deleted
                 , signal_entity_updated
-                , signal_cache_cover
                 , signal_reload
                 , signal_message
     ); 
