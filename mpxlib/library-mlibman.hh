@@ -172,9 +172,7 @@ namespace MPX
                 gint64 /*artist id*/>                           SignalNewArtist;
 
             typedef sigc::signal<void,
-                Track&,
-                gint64 /*albumid*/,
-                gint64/*artistid*/>                             SignalNewTrack;
+                gint64 /*track id*/>                            SignalNewTrack;
 
             typedef sigc::signal<void,
                 gint64 /*album id*/>                            SignalAlbumDeleted; 
@@ -189,9 +187,7 @@ namespace MPX
                 gint64/*artistid*/>                             SignalTrackDeleted;
 
 			typedef sigc::signal<void,
-                Track&,
-                gint64 /*album_id*/,
-                gint64 /*artist id*/>                           SignalTrackUpdated;
+                gint64 /*track id*/>                            SignalTrackUpdated;
 
             typedef sigc::signal<void,
                 gint64 /*album id*/>                            SignalAlbumUpdated;
@@ -283,9 +279,7 @@ namespace MPX
 
             void
             on_new_track(
-                  Track&
-                , gint64
-                , gint64
+                  gint64
             ) ;
 
             void
@@ -298,13 +292,6 @@ namespace MPX
             on_entity_updated(
                   gint64
                 , EntityType
-            ) ;
-
-            void
-            on_track_updated(
-                  Track&
-                , gint64
-                , gint64
             ) ;
 
             void

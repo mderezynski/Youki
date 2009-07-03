@@ -232,12 +232,6 @@ namespace MPX
                                , &Library_MLibMan::on_entity_updated
                         ));
 
-                        m_ScannerThread->connect().signal_track_updated().connect(
-                            sigc::mem_fun(
-                                 *this
-                               , &Library_MLibMan::on_track_updated
-                        ));
-
                         m_ScannerThread->connect().signal_message().connect(
                             sigc::mem_fun(
                                  *this
@@ -660,20 +654,18 @@ namespace MPX
 
         void
                 Library_MLibMan::on_new_artist(
-                    gint64 artist_id
+                      gint64 id
                 )
                 {
-                        Signals.NewArtist.emit( artist_id );
+                        Signals.NewArtist.emit( id ) ;
                 }
 
         void
                 Library_MLibMan::on_new_track(
-                      Track& track
-                    , gint64 album_id
-                    , gint64 artist_id
+                      gint64 id
                 )
                 {
-                        Signals.NewTrack.emit( track, album_id, artist_id );
+                        Signals.NewTrack.emit( id ) ; 
                 }
     
         void
@@ -716,7 +708,7 @@ namespace MPX
                             break;
 
                         case ENTITY_TRACK:
-                            g_warning("%s: Got ENTITY_TRACK in on_entity_updated!", G_STRLOC);
+                            Signals.TrackUpdated.emit( id );
                             break;
 
                         case ENTITY_ARTIST:
@@ -725,17 +717,6 @@ namespace MPX
 
                     }
                 }
-
-        void
-                Library_MLibMan::on_track_updated(
-                        Track&      t
-                      , gint64      id_album
-                      , gint64      id_artst
-                )
-                {
-                    Signals.TrackUpdated.emit( t, id_album, id_artst );
-                }
-
 
         void
                 Library_MLibMan::on_message(
