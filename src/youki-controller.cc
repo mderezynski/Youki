@@ -130,7 +130,7 @@ namespace
 namespace MPX
 {
     struct YoukiController::Private
-    {
+    { 
         View::Artist::DataModelFilter_SP_t  FilterModelArtist ;
         View::Albums::DataModelFilter_SP_t  FilterModelAlbums ;
         View::Tracks::DataModelFilter_SP_t  FilterModelTracks ;
@@ -1350,6 +1350,15 @@ namespace MPX
                 return true ;
             }
 
+            case GDK_BackSpace:
+
+                if( m_Entry->get_text().empty() )
+                {
+                    on_entry_clear_clicked() ;
+                }
+
+                return true ;
+
             default: break ;
         }
 
@@ -1862,6 +1871,4 @@ namespace MPX
 
             return true ;
     }
-
-
 }

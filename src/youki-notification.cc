@@ -472,9 +472,11 @@ namespace MPX
         int h2 = logical.get_height() ;
 
         int y0 = (h - (h1 + h2 + 2) - 16) / 2 ;
+    
+        int x_off = (m_image?92:0) ;
 
         cr->move_to(
-              ((w - w2) / 2.) + (m_image?41:0)
+              ((w - w2) / 2.) + x_off/2
             , y0 
         ) ;
         pango_cairo_show_layout(
@@ -482,10 +484,28 @@ namespace MPX
             , m_layout_2->gobj()
         ) ;
 
+        int w1_max = (w - (m_image?92:0)) ;
+        int x1 = ((w - w1) / 2.) + x_off/2 ;
+        int y1 = y0 + h2 + 2 ;
+
+        if( w1 > w1_max ) 
+        {
+            double scale = w1_max / double(w1) ;
+
+            cr->scale(
+                  scale 
+                , scale 
+            ) ;
+
+            x1 = x_off*(1/scale) ;
+            y1 *= 1/scale ;
+        }
+
         cr->move_to(
-              ((w - w1) / 2.) + (m_image?41:0)
-            , y0 + h2 + 2 
+              x1 
+            , y1 
         ) ;
+
         pango_cairo_show_layout(
               cr->cobj()
             , m_layout_1->gobj()
