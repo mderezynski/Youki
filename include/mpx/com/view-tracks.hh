@@ -1173,9 +1173,11 @@ namespace Tracks
 
                 boost::optional<gint64>             m_active_track ;
                 boost::optional<gint64>             m_hover_track ;
+                boost::optional<gint64>             m_terminal_track ;
 
                 Glib::RefPtr<Gdk::Pixbuf>           m_pb_play_l ;
                 Glib::RefPtr<Gdk::Pixbuf>           m_pb_hover_l ;
+                Glib::RefPtr<Gdk::Pixbuf>           m_pb_deadend ;
 
                 std::set<int>                       m_collapsed ;
                 std::set<int>                       m_fixed ;
@@ -1491,18 +1493,22 @@ namespace Tracks
                     {
                         grab_focus() ;
 
+                        int x = event->x ;
+
                         if( event->y < (m_row_height+4))
                         {
-                            int x = event->x ;
-                            int p = 0 ;
+                            int p = 32 ;
+
                             for( std::size_t n = 0; n < m_columns.size() ; ++n )
                             {
                                 int w = m_columns[n]->get_width() ;
-                                if( (x >= p) && (x <= p + w) && !m_fixed.count(n))
+
+                                if( (x >= p) && (x <= p + w) && !m_fixed.count(n) )
                                 {
                                     column_set_collapsed( n, !m_collapsed.count( n ) ) ;
                                     break ;
                                 }
+
                                 p += w ;
                             }
                             return true;
@@ -1515,11 +1521,33 @@ namespace Tracks
                             , get_upper_row() + (event->y-m_row_start) / m_row_height
                         ) ;
 
-                        m_selection     = boost::make_tuple( m_model->m_mapping[row], row ) ;
-                        m_clicked_row   = row ;
-                        m_clicked       = true ;
+                        if( x >= 32 )
+                        {
+                            m_selection     = boost::make_tuple( m_model->m_mapping[row], row ) ;
+                            m_clicked_row   = row ;
+                            m_clicked       = true ;
+                            queue_draw() ;
+                        }
+                        else
+                        if( x >= 16 )
+                        {
+                            /* reserved for future use for clicking on the hover 'play' icon */
+                        }
+                        else
+                        {
+                            gint64 id = get<3>( m_model->row( row )) ;
 
-                        queue_draw() ;
+                            if( m_terminal_track && id == m_terminal_track.get() )
+                            {
+                                m_terminal_track.reset() ;
+                            }
+                            else
+                            {
+                                m_terminal_track = id ;
+                            }
+                
+                            queue_draw() ;
+                        }
                     }
                     else
                     if( event->type == GDK_2BUTTON_PRESS )
@@ -1591,12 +1619,12 @@ namespace Tracks
                             if( m_Model_I.in( row ) && y_orig >= m_row_start ) 
                             {
                                 m_hover_track = row ;
-                                queue_draw_area (0, m_row_start, 16, get_allocation().get_height() - m_row_start ) ;
+                                queue_draw_area( 0, m_row_start, 32, get_allocation().get_height() - m_row_start ) ;
                             }
                             else
                             {
                                 m_hover_track.reset() ;
-                                queue_draw_area (0, m_row_start, 16, get_allocation().get_height() - m_row_start ) ;
+                                queue_draw_area( 0, m_row_start, 32, get_allocation().get_height() - m_row_start ) ;
                             }
                     }
                     else
@@ -1630,7 +1658,7 @@ namespace Tracks
                         m_prop_vadj.get_value()->set_page_size( get_page_size() ) ;
                     }
 
-                    int width = event->width - 16 ;
+                    int width = event->width - 32 ;
 
                     double column_width_calculated = (double(width) - double(m_fixed_total_width) - double(column_width_collapsed*double(m_collapsed.size()))) / (m_columns.size() - m_collapsed.size() - m_fixed.size()) ;
 
@@ -1672,7 +1700,7 @@ namespace Tracks
 
                     if( event->area.y <= m_row_start )
                     {
-                            xpos = 16 ;
+                            xpos = 32 ;
 
                             for( Columns::iterator i = m_columns.begin(); i != m_columns.end(); ++i, ++col )
                             {
@@ -1694,7 +1722,7 @@ namespace Tracks
 
                     //// ROWS
 
-                    if( event->area.width > 16 )
+                    if( event->area.width > 32 )
                     {
                             while( m_model->is_set() && cnt && m_Model_I.in( row ) ) 
                             {
@@ -1702,9 +1730,9 @@ namespace Tracks
                                 {
                                     GdkRectangle r ;
 
-                                    r.x       = 16 + inner_pad ;
+                                    r.x       = 32 + inner_pad ;
                                     r.y       = ypos + inner_pad ;
-                                    r.width   = a.get_width() - 2 * inner_pad - 16 ;
+                                    r.width   = a.get_width() - 2 * inner_pad - 32 ;
                                     r.height  = m_row_height - 2 * inner_pad ;
 
                                     RoundedRectangle(
@@ -1748,9 +1776,9 @@ namespace Tracks
                                 {
                                         GdkRectangle r ;
 
-                                        r.x         = 16 + inner_pad ; 
+                                        r.x         = 32 + inner_pad ; 
                                         r.y         = inner_pad + (row - get_upper_row()) * m_row_height + m_row_start ;
-                                        r.width     = a.get_width() - 2*inner_pad - 16 ; 
+                                        r.width     = a.get_width() - 2*inner_pad - 32 ; 
                                         r.height    = m_row_height  - 2*inner_pad ;
 
                                         theme->draw_selection_rectangle(
@@ -1770,7 +1798,7 @@ namespace Tracks
 
                             while( m_model->is_set() && cnt && m_Model_I.in( row ) ) 
                             {
-                                xpos = 16 ;
+                                xpos = 32 ;
 
                                 for(Columns::const_iterator i = m_columns.begin(); i != m_columns.end(); ++i)
                                 {
@@ -1800,7 +1828,7 @@ namespace Tracks
                                 dashes[1] = 3. ;
                                 dashes[2] = 0. ;
 
-                                xpos = 16 ;
+                                xpos = 32 ;
 
                                 cairo->save() ;
 
@@ -1855,9 +1883,11 @@ namespace Tracks
 
                     while( m_model->is_set() && cnt && m_Model_I.in( row ) )
                     {
-                        if( m_active_track && boost::get<3>(m_model->row(row)) == m_active_track.get() )
+                        const Row_t& r_data = m_model->row( row ) ;
+
+                        if( m_active_track && boost::get<3>( r_data ) == m_active_track.get() )
                         {
-                            const int icon_x = 0 ;
+                            const int icon_x = 16 ;
                             const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
 
                             Gdk::Cairo::set_source_pixbuf(
@@ -1877,12 +1907,32 @@ namespace Tracks
                         else
                         if( m_hover_track && row == m_hover_track.get() )
                         {
-                            const int icon_x = 0 ;
+                            const int icon_x = 16 ;
                             const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
 
                             Gdk::Cairo::set_source_pixbuf(
                                   cairo
                                 , m_pb_hover_l
+                                , icon_x
+                                , icon_y 
+                            ) ;
+                            cairo->rectangle(
+                                  icon_x 
+                                , icon_y 
+                                , icon_lateral
+                                , icon_lateral
+                            ) ;
+                            cairo->fill () ;
+                        }
+
+                        if( m_terminal_track && boost::get<3>( r_data ) == m_terminal_track.get() )
+                        {    
+                            const int icon_x = 0 ;
+                            const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
+
+                            Gdk::Cairo::set_source_pixbuf(
+                                  cairo
+                                , m_pb_deadend
                                 , icon_x
                                 , icon_y 
                             ) ;
@@ -1994,6 +2044,30 @@ namespace Tracks
                 }
 
             public:
+
+                inline void
+                set_terminal_id(
+                    gint64    id
+                )
+                {
+                    m_terminal_track = id ; 
+                    queue_draw() ;
+                }
+
+                inline boost::optional<gint64>
+                get_terminal_id(
+                )
+                {
+                    return m_terminal_track ; 
+                }
+
+                inline void
+                clear_terminal_id(
+                )
+                {
+                    m_terminal_track.reset() ;
+                    queue_draw() ;
+                }
     
                 inline std::size_t
                 get_page_size(
@@ -2286,8 +2360,9 @@ namespace Tracks
                     modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
                     modify_base( Gtk::STATE_NORMAL, cgdk ) ;
 
-                    m_pb_play_l = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "row-play.png" )) ;
+                    m_pb_play_l  = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "row-play.png" )) ;
                     m_pb_hover_l = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "row-hover.png" )) ;
+                    m_pb_deadend = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "icons" G_DIR_SEPARATOR_S "hicolor" G_DIR_SEPARATOR_S "16x16" G_DIR_SEPARATOR_S "stock" G_DIR_SEPARATOR_S "deadend.png" )) ;
 
                     set_flags(Gtk::CAN_FOCUS);
                     add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK ));

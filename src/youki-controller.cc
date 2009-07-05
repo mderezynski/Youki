@@ -355,9 +355,6 @@ namespace MPX
         m_main_love_button->set_state( TRISTATE_BUTTON_STATE_NONE ) ;
         m_main_love_button->set_sensitive( false ) ;
 
-        m_main_stop_next_button     = Gtk::manage( new YoukiToggleButton( 16, Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "icons" G_DIR_SEPARATOR_S "hicolor" G_DIR_SEPARATOR_S "16x16" G_DIR_SEPARATOR_S "stock" G_DIR_SEPARATOR_S "deadend.png" )))) ;
-        m_main_stop_next_button->set_sensitive( false ) ;
-
         m_main_spectrum     = new YoukiSpectrum ;
         m_main_spectrum->signal_clicked().connect(
             sigc::mem_fun(
@@ -590,7 +587,6 @@ namespace MPX
 
         m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
         m_HBox_Info->pack_start( *m_main_love_button, false, false, 0 ) ;
-        m_HBox_Info->pack_start( *m_main_stop_next_button, false, false, 0 ) ;
         m_HBox_Info->property_spacing() = 2 ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
@@ -995,7 +991,13 @@ namespace MPX
             , 0
         ) ;
 
-        if( m_main_stop_next_button->get_state() != TOGGLE_BUTTON_STATE_ON )
+        boost::optional<MPX::Track> t = m_track_current ;
+        g_return_if_fail( bool(t) ) ;
+
+        boost::optional<gint64> current_id  = boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ;
+        boost::optional<gint64> terminal_id = m_ListViewTracks->get_terminal_id() ;
+
+        if( current_id != terminal_id ) 
         {
             if( !m_play_queue.empty() )
             {
@@ -1033,6 +1035,7 @@ namespace MPX
         }
 
         m_play->request_status( PLAYSTATUS_STOPPED ) ; 
+        m_ListViewTracks->clear_terminal_id() ;
 
         if( m_track_previous )
         {
@@ -1058,7 +1061,6 @@ namespace MPX
         {
             case PLAYSTATUS_PLAYING:
                 m_main_love_button->set_sensitive( true ) ;
-                m_main_stop_next_button->set_sensitive( true ) ;
                 break ;
 
             case PLAYSTATUS_STOPPED:
@@ -1072,7 +1074,6 @@ namespace MPX
                 m_ListViewTracks->clear_active_track() ;
 
                 m_main_love_button->set_sensitive( false ) ;
-                m_main_stop_next_button->set_sensitive( false ) ;
 
                 m_main_titleinfo->clear() ;
                 m_main_position->set_position( 0, 0 ) ;
@@ -1088,7 +1089,6 @@ namespace MPX
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
                 m_main_love_button->set_sensitive( false ) ;
-                m_main_stop_next_button->set_sensitive( false ) ;
 
                 break ;
 
@@ -1185,8 +1185,6 @@ namespace MPX
 
         m_main_love_button->set_default_state( state ) ; 
         m_main_love_button->set_state( state ) ; 
-
-        m_main_stop_next_button->set_state( TOGGLE_BUTTON_STATE_OFF ) ; 
 
         g_signal_emit(
               G_OBJECT(gobj())

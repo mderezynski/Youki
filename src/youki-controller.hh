@@ -139,7 +139,6 @@ namespace MPX
             KoboTitleInfo                   * m_main_titleinfo ;
             KoboVolume                      * m_main_volume ;
             YoukiTristateButton             * m_main_love_button;
-            YoukiToggleButton               * m_main_stop_next_button ;
 
             View::Artist::Class             * m_ListViewArtist ;
             View::Albums::Class             * m_ListViewAlbums ;
