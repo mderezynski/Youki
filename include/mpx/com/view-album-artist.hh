@@ -538,20 +538,18 @@ namespace Artist
 
         typedef boost::shared_ptr<Column>       Column_SP_t ;
         typedef std::vector<Column_SP_t>        Column_SP_vector_t ;
-        typedef sigc::signal<void>              SignalSelectionChanged ;
+        typedef sigc::signal<void>              Signal_void ;
 
         class Class : public Gtk::DrawingArea
         {
                 int                                 m_row_height ;
                 int                                 m_visible_height ;
 
-                DataModelFilter_SP_t          m_model ;
-                Column_SP_vector_t            m_columns ;
+                DataModelFilter_SP_t                m_model ;
+                Column_SP_vector_t                  m_columns ;
 
                 PropAdj                             m_prop_vadj ;
                 PropAdj                             m_prop_hadj ;
-
-                guint                               m_signal0 ; 
 
                 boost::optional<boost::tuple<Model_t::iterator, gint64, std::size_t> > m_selection ;
 
@@ -561,7 +559,8 @@ namespace Artist
                 std::set<int>                       m_fixed ;
                 int                                 m_fixed_total_width ;
         
-                SignalSelectionChanged              m_SIGNAL_selection_changed ;
+                Signal_void                         m_SIGNAL_selection_changed ;
+                Signal_void                         m_SIGNAL_find_accepted ;
 
                 Gtk::Entry                        * m_SearchEntry ;
                 Gtk::Window                       * m_SearchWindow ;
@@ -1224,10 +1223,16 @@ namespace Artist
                     }
                 }
 
-                SignalSelectionChanged&
+                Signal_void&
                 signal_selection_changed()
                 {
                     return m_SIGNAL_selection_changed ;
+                }
+
+                Signal_void&
+                signal_find_accepted()
+                {
+                    return m_SIGNAL_find_accepted ;
                 }
 
                 boost::optional<gint64>
@@ -1379,6 +1384,13 @@ namespace Artist
                     }
                 }
 
+                void
+                on_search_entry_activated()
+                {
+                    cancel_search() ;
+                    m_SIGNAL_find_accepted.emit() ; 
+                }
+
                 bool
                 on_search_window_focus_out(
                       GdkEventFocus* G_GNUC_UNUSED
@@ -1445,12 +1457,19 @@ namespace Artist
                     g_signal_connect(G_OBJECT(gobj()), "set_scroll_adjustments", G_CALLBACK(list_view_set_adjustments), this);
 
                     m_SearchEntry = Gtk::manage( new Gtk::Entry ) ;
+
                     m_search_changed_conn = m_SearchEntry->signal_changed().connect(
                             sigc::mem_fun(
                                   *this
                                 , &Class::on_search_entry_changed
                     )) ;
     
+                    m_SearchEntry->signal_activate().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &Class::on_search_entry_activated
+                    )) ;
+
                     m_SearchWindow = new Gtk::Window( Gtk::WINDOW_POPUP ) ;
                     m_SearchWindow->set_decorated( false ) ;
 

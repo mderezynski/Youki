@@ -37,7 +37,7 @@ class TrackTopTags():
                         model.setName(self.parse_data["name"])
     
                         if "count" in self.parse_data:
-                            model.setCount(self.parse_data["count"])
+                            model.setCount(int(float(self.parse_data["count"])))
                         else:
                             model.setCount(self.countdown)
                             self.countdown = self.countdown - 1
@@ -89,7 +89,7 @@ class ArtistTopTags():
         
                         model = mpxapi.lastfm.model.ArtistTopTag()
                         model.setName(self.parse_data["name"])
-                        model.setCount(self.parse_data["count"])
+                        model.setCount(int(float(self.parse_data["count"])))
                         model.setUrl(self.parse_data["url"])
                         self.parse_tags.append(model)
                         self.parse_data = {} 
@@ -356,7 +356,7 @@ class TagTopArtists():
                     self.parse_elmt = None
 
                     self.parse_data["artist@name"] = node.getAttribute("name")
-                    self.parse_data["artist@count"] = node.getAttribute("count")
+                    self.parse_data["artist@count"] = int(float(node.getAttribute("count")))
                     #FIXME: Parse streamable
 
                     self.iterate1(node)

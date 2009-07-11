@@ -309,6 +309,12 @@ namespace MPX
                 , &YoukiController::on_list_view_aa_selection_changed
         )) ;
 
+        m_ListViewArtist->signal_find_accepted().connect(
+            sigc::mem_fun(
+                  *m_ListViewTracks
+                , &Gtk::Widget::grab_focus
+        )) ;
+
         m_ListViewAlbums        = Gtk::manage( new View::Albums::Class ) ;
         m_conn2 = m_ListViewAlbums->signal_selection_changed().connect(
             sigc::mem_fun(
@@ -350,10 +356,10 @@ namespace MPX
                 , &YoukiController::on_title_clicked
         )) ;
 
-        m_main_love_button          = Gtk::manage( new YoukiTristateButton( 16, "mpx-loved-none", "mpx-loved-yes", "mpx-loved-no" )) ;
-        m_main_love_button->set_default_state( TRISTATE_BUTTON_STATE_NONE ) ;
-        m_main_love_button->set_state( TRISTATE_BUTTON_STATE_NONE ) ;
-        m_main_love_button->set_sensitive( false ) ;
+//        m_main_love_button          = Gtk::manage( new YoukiTristateButton( 16, "mpx-loved-none", "mpx-loved-yes", "mpx-loved-no" )) ;
+//        m_main_love_button->set_default_state( TRISTATE_BUTTON_STATE_NONE ) ;
+//        m_main_love_button->set_state( TRISTATE_BUTTON_STATE_NONE ) ;
+//        m_main_love_button->set_sensitive( false ) ;
 
         m_main_spectrum     = new YoukiSpectrum ;
         m_main_spectrum->signal_clicked().connect(
@@ -586,7 +592,7 @@ namespace MPX
         m_main_window->set_widget_drawer( *m_NotebookPlugins ) ; 
 
         m_HBox_Info->pack_start( *m_main_titleinfo, true, true, 0 ) ;
-        m_HBox_Info->pack_start( *m_main_love_button, false, false, 0 ) ;
+//        m_HBox_Info->pack_start( *m_main_love_button, false, false, 0 ) ;
         m_HBox_Info->property_spacing() = 2 ; 
 
         m_VBox->pack_start( *m_HBox_Entry, false, false, 0 ) ;
@@ -1060,7 +1066,7 @@ namespace MPX
         switch( status )
         {
             case PLAYSTATUS_PLAYING:
-                m_main_love_button->set_sensitive( true ) ;
+//                m_main_love_button->set_sensitive( true ) ;
                 break ;
 
             case PLAYSTATUS_STOPPED:
@@ -1073,7 +1079,7 @@ namespace MPX
 
                 m_ListViewTracks->clear_active_track() ;
 
-                m_main_love_button->set_sensitive( false ) ;
+//                m_main_love_button->set_sensitive( false ) ;
 
                 m_main_titleinfo->clear() ;
                 m_main_position->set_position( 0, 0 ) ;
@@ -1088,7 +1094,7 @@ namespace MPX
                 m_seek_position.reset() ; 
                 m_main_titleinfo->clear() ;
                 m_main_window->queue_draw () ;    
-                m_main_love_button->set_sensitive( false ) ;
+//                m_main_love_button->set_sensitive( false ) ;
 
                 break ;
 
@@ -1170,21 +1176,23 @@ namespace MPX
                 ) ;
 */
         
+
+/*
                 Library::LovedHatedStatus status = Library::LovedHatedStatus(int(m_main_love_button->get_state())) ;
                 library->trackLovedHated(                
                       boost::get<gint64>(m_track_previous.get()[ATTRIBUTE_MPX_TRACK_ID].get())
                     , status
                 ) ;
+*/
 
                 m_track_previous.reset() ;
         }
 
         m_playqueue.push_back( id_track ) ; 
 
-        TristateButtonState state = TristateButtonState(int(library->getTrackLovedHated( id_track ))) ;
-
-        m_main_love_button->set_default_state( state ) ; 
-        m_main_love_button->set_state( state ) ; 
+//        TristateButtonState state = TristateButtonState(int(library->getTrackLovedHated( id_track ))) ;
+//        m_main_love_button->set_default_state( state ) ; 
+//        m_main_love_button->set_state( state ) ; 
 
         g_signal_emit(
               G_OBJECT(gobj())
@@ -1762,6 +1770,22 @@ namespace MPX
     )
     {
         m_play_queue.push( id ) ;
+    }
+
+    std::vector<gint64>
+    YoukiController::get_current_play_queue(
+    )
+    {
+        std::vector<gint64> v ; 
+        std::queue<gint64> queue_copy = m_play_queue ;
+
+        while( !queue_copy.empty() )
+        {
+            v.push_back( queue_copy.front() ) ;
+            queue_copy.pop() ;
+        }
+
+        return v ;
     }
 
     int

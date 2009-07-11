@@ -137,6 +137,8 @@ namespace MPX
         , MPX_ATTRIBUTE_ACTIVE
         , MPX_ATTRIBUTE_QUALITY
 
+        , MPX_ATTRIBUTE_DEVICE_ID
+
         , MPX_ATTRIBUTE_MPX_TRACK_ID
         , MPX_ATTRIBUTE_MPX_ALBUM_ID
         , MPX_ATTRIBUTE_MPX_ARTIST_ID
@@ -763,6 +765,7 @@ BOOST_PYTHON_MODULE(mpx)
       .value("IS_MB_ALBUM_ARTIST", MPX::MPX_ATTRIBUTE_IS_MB_ALBUM_ARTIST)
       .value("ACTIVE", MPX::MPX_ATTRIBUTE_ACTIVE)
       .value("QUALITY", MPX::MPX_ATTRIBUTE_QUALITY)
+      .value("DEVICE_ID", MPX::MPX_ATTRIBUTE_DEVICE_ID)
       .value("MPX_TRACK_ID", MPX::MPX_ATTRIBUTE_MPX_TRACK_ID)
       .value("MPX_ALBUM_ID", MPX::MPX_ATTRIBUTE_MPX_ALBUM_ID)
       .value("MPX_ARTIST_ID", MPX::MPX_ATTRIBUTE_MPX_ARTIST_ID)
@@ -774,35 +777,39 @@ BOOST_PYTHON_MODULE(mpx)
 	class_<MPX::YoukiController, boost::noncopyable>("YoukiController", boost::python::no_init)
 
 
-		.def("get_library",         &mpxpy::player_get_library,
-                                    return_internal_reference<>()) 
-        .def("get_covers",          &mpxpy::player_get_covers,
-                                    return_internal_reference<>())
-        .def("get_play",            &mpxpy::player_get_play,
-                                    return_internal_reference<>())
+		.def("get_library",             &mpxpy::player_get_library,
+                                        return_internal_reference<>()) 
+
+        .def("get_covers",              &mpxpy::player_get_covers,
+                                        return_internal_reference<>())
+
+        .def("get_play",                &mpxpy::player_get_play,
+                                        return_internal_reference<>())
 #ifdef HAVE_HAL
-		.def("get_hal",             &mpxpy::player_get_hal,
-                                    return_internal_reference<>()) 
+		.def("get_hal",                 &mpxpy::player_get_hal,
+                                        return_internal_reference<>()) 
 #endif // HAVE_HAL
 
 
-		.def("gobj",                &mpxpy::get_gobject<MPX::YoukiController>)
+		.def("gobj",                    &mpxpy::get_gobject<MPX::YoukiController>)
 
-		.def("get_status",          &MPX::YoukiController::get_status) 
+		.def("get_status",              &MPX::YoukiController::get_status) 
 
-		.def("get_metadata",        &MPX::YoukiController::get_metadata,
-                                    return_internal_reference<>())
+		.def("get_metadata",            &MPX::YoukiController::get_metadata,
+                                        return_internal_reference<>())
 
 //        .def("deactivate_plugin",   &MPX::YoukiController::deactivate_plugin)
 //        .def("activate_plugin",     &MPX::YoukiController::activate_plugin)
 //        .def("show_plugin",         &MPX::YoukiController::show_plugin)
 
-		.def("pause",               &MPX::YoukiController::API_pause_toggle)
+		.def("pause",                   &MPX::YoukiController::API_pause_toggle)
 
-        .def("add_info_widget",     &mpxpy::player_add_info_widget)
-        .def("remove_info_widget",  &mpxpy::player_remove_info_widget)
+        .def("add_info_widget",         &mpxpy::player_add_info_widget)
+        .def("remove_info_widget",      &mpxpy::player_remove_info_widget)
 
-        .def("queue_next_track",    &MPX::YoukiController::queue_next_track)
+        .def("queue_next_track",        &MPX::YoukiController::queue_next_track)
+
+        .def("get_current_play_queue",  &MPX::YoukiController::get_current_play_queue)
 
 /*
 		.def("add_widget",          &mpxpy::player_add_widget)

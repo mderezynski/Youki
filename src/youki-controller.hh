@@ -75,6 +75,9 @@ namespace MPX
                 gint64
             ) ;
 
+            std::vector<gint64>
+            get_current_play_queue () ;
+
             int
             get_status(
             ) ;

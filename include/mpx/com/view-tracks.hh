@@ -1140,6 +1140,7 @@ namespace Tracks
 
         typedef sigc::signal<void, MPX::Track, bool> SignalTrackActivated ;
         typedef sigc::signal<void>                   SignalVAdjChanged ;
+        typedef sigc::signal<void>                   SignalFindAccepted ;
 
         class Class
         : public Gtk::DrawingArea
@@ -1161,8 +1162,6 @@ namespace Tracks
                 PropAdj                             m_prop_vadj ;
                 PropAdj                             m_prop_hadj ;
 
-                guint                               m_signal0 ; 
-
                 boost::optional<boost::tuple<Model_t::const_iterator, std::size_t> >  m_selection ;
 
                 IdV                                 m_dnd_idv ;
@@ -1177,7 +1176,7 @@ namespace Tracks
 
                 Glib::RefPtr<Gdk::Pixbuf>           m_pb_play_l ;
                 Glib::RefPtr<Gdk::Pixbuf>           m_pb_hover_l ;
-                Glib::RefPtr<Gdk::Pixbuf>           m_pb_deadend ;
+                Glib::RefPtr<Gdk::Pixbuf>           m_pb_terminal ;
 
                 std::set<int>                       m_collapsed ;
                 std::set<int>                       m_fixed ;
@@ -1192,6 +1191,7 @@ namespace Tracks
 
                 SignalTrackActivated                m_SIGNAL_track_activated ;
                 SignalVAdjChanged                   m_SIGNAL_vadj_changed ;
+                SignalFindAccepted                  m_SIGNAL_find_accepted ;
 
                 Interval<std::size_t>               m_Model_I ;
 
@@ -1673,6 +1673,32 @@ namespace Tracks
                     return false;
                 }
 
+                inline bool
+                compare_id_to_optional(
+                      const Row_t&                      row
+                    , const boost::optional<gint64>&    id
+                )
+                {
+                    if( id && id.get() == boost::get<3>( row ))
+                        return true ;
+
+                    return false ;
+                }
+
+                template <typename T>
+                inline bool
+                compare_val_to_optional(
+                      const T&                          val
+                    , const boost::optional<T>&         cmp
+                )
+                {
+                    if( cmp && cmp.get() == val ) 
+                        return true ;
+
+                    return false ;
+                }
+
+
                 bool
                 on_expose_event (GdkEventExpose *event)
                 {
@@ -1885,64 +1911,100 @@ namespace Tracks
                     {
                         const Row_t& r_data = m_model->row( row ) ;
 
-                        if( m_active_track && boost::get<3>( r_data ) == m_active_track.get() )
+                        enum Skip
                         {
-                            const int icon_x = 16 ;
-                            const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
+                              SKIP_SKIP_NONE
+                            , SKIP_SKIP_PLAY        = 1 << 0
+                            , SKIP_SKIP_TERMINAL    = 1 << 1
+                        } ;
 
+                        enum Icon
+                        {
+                              ICON_PLAY
+                            , ICON_TERMINAL
+                        } ;
+
+                        int skip = SKIP_SKIP_NONE ;
+
+                        const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
+
+                        const int icon_x[2] = { 16, 0 } ;
+
+                        if( compare_id_to_optional( r_data, m_active_track )) 
+                        {
                             Gdk::Cairo::set_source_pixbuf(
                                   cairo
                                 , m_pb_play_l
-                                , icon_x
+                                , icon_x[ICON_PLAY]
                                 , icon_y 
                             ) ;
                             cairo->rectangle(
-                                  icon_x
+                                  icon_x[ICON_PLAY]
                                 , icon_y 
                                 , icon_lateral
                                 , icon_lateral
                             ) ;
                             cairo->fill () ;
-                        }
-                        else
-                        if( m_hover_track && row == m_hover_track.get() )
-                        {
-                            const int icon_x = 16 ;
-                            const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
 
-                            Gdk::Cairo::set_source_pixbuf(
-                                  cairo
-                                , m_pb_hover_l
-                                , icon_x
-                                , icon_y 
-                            ) ;
-                            cairo->rectangle(
-                                  icon_x 
-                                , icon_y 
-                                , icon_lateral
-                                , icon_lateral
-                            ) ;
-                            cairo->fill () ;
+                            skip &= SKIP_SKIP_PLAY ;
                         }
 
-                        if( m_terminal_track && boost::get<3>( r_data ) == m_terminal_track.get() )
+                        if( compare_id_to_optional( r_data, m_terminal_track )) 
                         {    
-                            const int icon_x = 0 ;
-                            const int icon_y = ypos + (m_row_height - icon_lateral) / 2 ;
-
                             Gdk::Cairo::set_source_pixbuf(
                                   cairo
-                                , m_pb_deadend
-                                , icon_x
+                                , m_pb_terminal
+                                , icon_x[ICON_TERMINAL]
                                 , icon_y 
                             ) ;
                             cairo->rectangle(
-                                  icon_x 
+                                  icon_x[ICON_TERMINAL] 
                                 , icon_y 
                                 , icon_lateral
                                 , icon_lateral
                             ) ;
                             cairo->fill () ;
+
+                            skip &= SKIP_SKIP_TERMINAL ; 
+                        }
+
+                        if( compare_val_to_optional<gint64>( row, m_hover_track )) 
+                        {
+                            if( !( skip & SKIP_SKIP_PLAY))
+                            {
+                                Gdk::Cairo::set_source_pixbuf(
+                                      cairo
+                                    , m_pb_hover_l
+                                    , icon_x[ICON_PLAY]
+                                    , icon_y 
+                                ) ;
+                                cairo->rectangle(
+                                      icon_x[ICON_PLAY] 
+                                    , icon_y 
+                                    , icon_lateral
+                                    , icon_lateral
+                                ) ;
+                                cairo->fill () ;
+                            }
+
+                            if( !( skip & SKIP_SKIP_TERMINAL))
+                            {
+                                Gdk::Cairo::set_source_pixbuf(
+                                      cairo
+                                    , m_pb_terminal
+                                    , icon_x[ICON_TERMINAL]
+                                    , icon_y 
+                                ) ;
+                                cairo->rectangle(
+                                      icon_x[ICON_TERMINAL] 
+                                    , icon_y 
+                                    , icon_lateral
+                                    , icon_lateral
+                                ) ;
+                                cairo->clip () ;
+                                cairo->paint_with_alpha( 0.5 ) ;
+                                cairo->reset_clip() ;
+                            }
                         }
 
                         ypos += m_row_height ;
@@ -2153,6 +2215,12 @@ namespace Tracks
                     return m_SIGNAL_vadj_changed ;
                 }
 
+                SignalFindAccepted&
+                signal_find_accepted()
+                {
+                    return m_SIGNAL_find_accepted ;
+                }
+
                 void
                 set_advanced (bool advanced)
                 {
@@ -2269,7 +2337,7 @@ namespace Tracks
                 {
                     using boost::get ;
 
-                    Glib::ustring text = m_SearchEntry->get_text() ;
+                    Glib::ustring text = m_SearchEntry->get_text().casefold() ;
 
                     if( text.empty() )
                     {
@@ -2285,7 +2353,8 @@ namespace Tracks
                     for( ; i != m_model->m_mapping.end(); ++i )
                     {
                         const Row_t& row = **i ;
-                        Glib::ustring match = get<0>(row) ;
+
+                        Glib::ustring match = Glib::ustring(get<0>(row)).casefold() ;
 
                         if( match.length() && match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )   
                         {
@@ -2302,6 +2371,13 @@ namespace Tracks
                             }
                         }
                     }
+                }
+
+                void
+                on_search_entry_activated()
+                {
+                    cancel_search() ;
+                    m_SIGNAL_find_accepted.emit() ;
                 }
 
                 bool
@@ -2362,7 +2438,7 @@ namespace Tracks
 
                     m_pb_play_l  = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "row-play.png" )) ;
                     m_pb_hover_l = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "images" G_DIR_SEPARATOR_S "row-hover.png" )) ;
-                    m_pb_deadend = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "icons" G_DIR_SEPARATOR_S "hicolor" G_DIR_SEPARATOR_S "16x16" G_DIR_SEPARATOR_S "stock" G_DIR_SEPARATOR_S "deadend.png" )) ;
+                    m_pb_terminal = Gdk::Pixbuf::create_from_file( Glib::build_filename( DATA_DIR, "icons" G_DIR_SEPARATOR_S "hicolor" G_DIR_SEPARATOR_S "16x16" G_DIR_SEPARATOR_S "stock" G_DIR_SEPARATOR_S "deadend.png" )) ;
 
                     set_flags(Gtk::CAN_FOCUS);
                     add_events(Gdk::EventMask(GDK_KEY_PRESS_MASK | GDK_POINTER_MOTION_MASK | GDK_POINTER_MOTION_HINT_MASK | GDK_LEAVE_NOTIFY_MASK | GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK ));
@@ -2388,12 +2464,19 @@ namespace Tracks
                     */
 
                     m_SearchEntry = Gtk::manage( new Gtk::Entry ) ;
+
                     m_search_changed_conn = m_SearchEntry->signal_changed().connect(
                             sigc::mem_fun(
                                   *this
                                 , &Class::on_search_entry_changed
                     )) ;
     
+                    m_SearchEntry->signal_activate().connect(
+                            sigc::mem_fun(
+                                  *this
+                                , &Class::on_search_entry_activated
+                    )) ;
+
                     m_SearchWindow = new Gtk::Window( Gtk::WINDOW_POPUP ) ;
                     m_SearchWindow->set_decorated( false ) ;
 

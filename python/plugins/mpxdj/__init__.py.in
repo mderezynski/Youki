@@ -208,12 +208,15 @@ class OPTION__Analyzer(BaseOPTION__):
         if not len(self.queue): return
 
         try:
+
                 id = self.queue[-1:][0]
 
                 if id:
                     track  = self.lib.getTrackById( id ) 
                     artist = track[mpx.AttributeId.ARTIST].get()
                     rv     = mpx.SQLRowV()
+
+                    print artist
                 else:
                     return
 
@@ -223,8 +226,9 @@ class OPTION__Analyzer(BaseOPTION__):
         try:
                 tries  = int(self.range.get_value())
                 max    = tries
-
+                
                 m = lastfm.SimilarArtists(artist)
+
                 a = m.get()[:tries]
 
                 random.shuffle(a)
@@ -245,21 +249,20 @@ class OPTION__Analyzer(BaseOPTION__):
 
                 print "Error running run_similar_artist: " + str(e) 
 
-#    def run_markov(self, lib, v):
-#        
-#        track = self.model[len(self.model)-1]
-#        id = track[mpx.AttributeId.MPX_TRACK_ID].get()
-#
-#        if id:
-#
-#            markov_id = lib.markovGetRandomProbableTrack(id)
-#
-#            if markov_id and markov_id != 0:
-#                v.append(markov_id)
-#
+    def run_markov(self):
+        
+        if not len(self.queue): return
+
+        id = self.queue[-1:][0]
+
+        if id:
+            markov_id = lib.markovGetRandomProbableTrack(id)
+            if markov_id and markov_id != 0:
+                self.v.append(markov_id)
+
     def run(self):
 
-         callables = [self.run_accumulate_tags, self.run_similar_track, self.run_similar_artist]
+         callables = [self.run_accumulate_tags, self.run_similar_track, self.run_similar_artist, self.run_markov]
 
          if not len(self.queue):
             self.finished.set()
@@ -268,7 +271,7 @@ class OPTION__Analyzer(BaseOPTION__):
          # I know this is really lazy, i should just create a list of indexes instead and call the subroutines in sequence
          for n in range(0,5):
  
-                 choice = random.randint(0,2)
+                 choice = random.randint(0,3)
                  callables[choice]()
  
                  if len(self.v):
@@ -640,6 +643,12 @@ class MPXDJ(mpx.Plugin):
         self.conn_track_cancelled = self.youki.gobj().connect("track-cancelled", self.on_track_cancelled)
 
         self.on_metadata_updated([]) 
+
+        qv = self.youki.get_current_play_queue()
+
+        for n in qv: 
+
+            self.queue.append( n )
 
         #self.action1.handler_block(self.action_handler1)
         #self.action1.set_active(True) 
