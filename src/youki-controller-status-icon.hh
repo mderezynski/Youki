@@ -53,6 +53,7 @@ namespace MPX
                 if( m_notification )
                 {
                     m_notification->set_metadata( t ) ;
+                    m_notification->enable( false ) ;
                 }
             }
 

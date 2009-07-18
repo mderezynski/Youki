@@ -36,9 +36,12 @@ namespace MPX
             virtual ~Notification ();
 
             void
-            tooltip_mode(
-                  bool /*mode*/         = 1
-                , bool /*immediate*/    = 0 
+            enable(
+                  bool /*tooltip*/ = true
+            ) ;
+
+            void
+            disable(
             ) ;
 
             void

@@ -156,7 +156,7 @@ namespace MPX
             controller.m_play->property_status().get_value() == PLAYSTATUS_PAUSED
         )
         {
-            controller.m_notification->tooltip_mode( true ) ;
+            controller.m_notification->enable( true ) ;
         }
     }
 
@@ -168,6 +168,6 @@ namespace MPX
     )
     {
         YoukiControllerStatusIcon & controller = *(reinterpret_cast<YoukiControllerStatusIcon*>(data)) ;
-        controller.m_notification->tooltip_mode( false ) ;
+        controller.m_notification->disable() ;
     }
 }

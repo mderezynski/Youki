@@ -256,7 +256,7 @@ class OPTION__Analyzer(BaseOPTION__):
         id = self.queue[-1:][0]
 
         if id:
-            markov_id = lib.markovGetRandomProbableTrack(id)
+            markov_id = self.lib.markovGetRandomProbableTrack(id)
             if markov_id and markov_id != 0:
                 self.v.append(markov_id)
 

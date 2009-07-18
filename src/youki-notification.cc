@@ -516,54 +516,33 @@ namespace MPX
 	}
 
 	void
-		Notification::tooltip_mode(
-              bool mode
-            , bool immediate
+		Notification::enable(
+              bool tooltip
         )
 	{
 		if( G_UNLIKELY(!is_realized( )))
             realize () ;
 
-		if( mode )
-		{
-			m_update_connection.disconnect () ;
-			m_timer.stop () ;
-			m_timer.reset () ;
-			window_set_opacity (get_window (), 1.0) ;
-			m_tooltip_mode = true ;
-			reposition () ;
-			Window::show () ;
-		}
-		else
-        if( !mode )
-		{
-			if( m_tooltip_mode )
-			{
-				m_tooltip_mode = false ;
+        m_update_connection.disconnect () ;
+	    m_timer.stop () ;
+	    m_timer.reset () ;
+	    window_set_opacity (get_window (), 1.0) ;
+	    m_tooltip_mode = tooltip ;
+	    reposition () ;
+	    Window::show () ;
+    }
 
-				if( !immediate )
-				{
-					m_update_connection.disconnect () ;
-					m_time_offset = 0.0 ;
-					m_timer.start () ;
+	void
+		Notification::disable(
+        )
+	{
+        if( m_tooltip_mode )
+	    {
+	        m_tooltip_mode = false ;
+        }
 
-					m_update_connection = signal_timeout ().connect(
-                          sigc::mem_fun(
-                                *this
-                              , &MPX::Notification::update_frame
-                          )
-                        , popup_animation_frame_period_ms
-                    ) ;
-
-					disappear () ;
-				}
-				else
-				{
-					window_set_opacity (get_window (), 1.0) ;
-					hide () ;
-				}
-			}
-		}
+        window_set_opacity (get_window (), 1.0) ;
+	    hide () ;
 	}
 
 	void
