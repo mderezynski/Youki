@@ -62,6 +62,74 @@ namespace MPX
     {
         public: 
 
+            typedef sigc::signal<void>          Signal0_void ;
+
+        private:
+
+            Signal0_void        m_SIG_track_new ;
+            Signal0_void        m_SIG_track_out ;
+            Signal0_void        m_SIG_track_cancelled ;
+
+        public:
+
+            Signal0_void&
+            on_track_new ()
+            {
+                return m_SIG_track_new ;
+            }
+
+            Signal0_void&
+            on_track_out ()
+            {
+                return m_SIG_track_out ;
+            }
+
+            Signal0_void&
+            on_track_cancelled ()
+            {
+                return m_SIG_track_cancelled ;
+            }
+
+        private:
+
+            void
+            emit_track_new ()
+            {
+                m_SIG_track_new.emit() ;
+
+                g_signal_emit(
+                      G_OBJECT(gobj())
+                    , m_C_SIG_ID_track_new
+                    , 0
+                ) ;
+            }
+
+            void
+            emit_track_out ()
+            {
+                m_SIG_track_out.emit() ;
+
+                g_signal_emit(
+                      G_OBJECT(gobj())
+                    , m_C_SIG_ID_track_out
+                    , 0
+                ) ;
+            }
+
+            void
+            emit_track_cancelled ()
+            {
+                m_SIG_track_cancelled.emit() ;
+
+                g_signal_emit(
+                      G_OBJECT(gobj())
+                    , m_C_SIG_ID_track_cancelled
+                    , 0
+                ) ;
+            }
+
+        public:
+
             YoukiController( DBus::Connection ) ;
             virtual ~YoukiController () ;
 

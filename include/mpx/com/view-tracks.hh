@@ -1344,6 +1344,17 @@ namespace Tracks
                                 step = 1 ;
                             }
 
+                            if( event->state & GDK_SHIFT_MASK )
+                            {
+                                if( m_Model_I.in( origin - step ))
+                                {
+                                    m_model->swap( origin, origin-step ) ;
+                                    m_selection = boost::make_tuple(m_model->m_mapping[origin-step], origin-step) ;
+                                }
+                        
+                                return true ;
+                            }
+
                             if( !m_selection || !get_row_is_visible( origin ))
                             {
                                 select_row( get_upper_row() ) ;
@@ -1374,6 +1385,17 @@ namespace Tracks
                             else
                             {
                                 step = 1 ;
+                            }
+
+                            if( event->state & GDK_SHIFT_MASK )
+                            {
+                                if( m_Model_I.in( origin + step ))
+                                {
+                                    m_model->swap( origin, origin+step ) ;
+                                    m_selection = boost::make_tuple(m_model->m_mapping[origin+step], origin+step) ;
+                                }
+                        
+                                return true ;
                             }
 
                             if( !m_selection || !get_row_is_visible( origin ))

@@ -558,7 +558,7 @@ namespace MPX
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_entry_key_press_event
-        )) ;
+        ), false ) ;
 
         m_Entry->signal_activate().connect(
             sigc::mem_fun(
@@ -991,11 +991,7 @@ namespace MPX
     {
         m_main_position->stop() ;
 
-        g_signal_emit(
-              G_OBJECT(gobj())
-            , m_C_SIG_ID_track_out
-            , 0
-        ) ;
+        emit_track_out () ;
 
         boost::optional<MPX::Track> t = m_track_current ;
         g_return_if_fail( bool(t) ) ;
@@ -1194,11 +1190,7 @@ namespace MPX
 //        m_main_love_button->set_default_state( state ) ; 
 //        m_main_love_button->set_state( state ) ; 
 
-        g_signal_emit(
-              G_OBJECT(gobj())
-            , m_C_SIG_ID_track_new
-            , 0
-        ) ;
+        emit_track_new () ;
     }
 
     void
@@ -1223,11 +1215,7 @@ namespace MPX
         , bool          play
     ) 
     {
-        g_signal_emit(
-              G_OBJECT(gobj())
-            , m_C_SIG_ID_track_cancelled
-            , 0
-        ) ;
+        emit_track_cancelled () ;
 
         if( play )
         {
@@ -1351,19 +1339,20 @@ namespace MPX
                     if( private_->FilterModelTracks->size() )
                     {
                         play_track( boost::get<4>(private_->FilterModelTracks->row( m_ListViewTracks->get_upper_row()  )) ) ;
+                        return true ;
                     }
                 }
-                return true ;
             }
 
             case GDK_BackSpace:
+            {
 
                 if( m_Entry->get_text().empty() )
                 {
                     on_entry_clear_clicked() ;
+                    return true ;
                 }
-
-                return true ;
+            }
 
             default: break ;
         }
@@ -1595,6 +1584,8 @@ namespace MPX
           GdkEventKey* event
     ) 
     {
+        g_message( G_STRFUNC ) ;
+
         switch( event->keyval )
         {
             case GDK_Escape:
