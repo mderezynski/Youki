@@ -48,6 +48,8 @@ namespace MPX
         , m_bottom_pad( 0 )
         , m_quit_clicked( false )
         , m_maximized( false )
+        , m_composited( Gdk::Screen::get_default()->is_composited() )
+        , m_size_changed( false )
         , m_drawer_width_max( 500 )
         , m_expand_direction( EXPAND_NONE )
 
@@ -342,6 +344,8 @@ namespace MPX
                         Gtk::Widget::on_size_allocate( a ) ;
 
                         a1->set_size_request( m_presize_width, a.get_height() ) ;
+
+                        m_size_changed = true ;
 
                         queue_draw() ;
                         gdk_flush () ;
@@ -642,6 +646,41 @@ namespace MPX
                         cr->set_line_width( 1.5 ) ;
                         cr->stroke() ;
                         cr->restore() ;
+
+                        if( !m_composited && m_size_changed ) 
+                        {
+                            m_size_changed = false ;
+
+                            Glib::RefPtr<Gdk::Bitmap> mask = Glib::RefPtr<Gdk::Bitmap>::cast_dynamic(Glib::wrap(static_cast<GdkBitmap*>(gdk_pixmap_new(
+                                  get_window()->gobj()
+                                , get_allocation().get_width()
+                                , get_allocation().get_height()
+                                , 1
+                            )))) ;
+
+                            Cairo::RefPtr<Cairo::Context> cr = mask->create_cairo_context() ;
+                            cr->set_operator( Cairo::OPERATOR_CLEAR ) ;
+                            cr->paint () ;
+
+                            cr->set_operator( Cairo::OPERATOR_SOURCE ) ;
+                            cr->set_source_rgb(
+                                  0 
+                                , 0
+                                , 0 
+                            ) ;
+                            RoundedRectangle(
+                                  cr
+                                , 1
+                                , 1
+                                , m_presize_width - 2
+                                , get_allocation().get_height() - 2
+                                , 6.
+                            ) ;
+                            cr->fill() ;
+
+                            get_window()->shape_combine_mask( mask, 0, 0 ) ;
+                            get_window()->input_shape_combine_mask( mask, 0, 0 ) ;
+                        }
 
                         return true ;
                     }

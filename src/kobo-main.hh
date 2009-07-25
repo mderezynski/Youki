@@ -23,6 +23,8 @@ namespace MPX
                     int                         m_bottom_pad ;
                     bool                        m_quit_clicked ;
                     bool                        m_maximized ;
+                    bool                        m_composited ;
+                    bool                        m_size_changed ;
 
                     enum ExpandDirection
                     {

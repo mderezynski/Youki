@@ -1029,7 +1029,7 @@ namespace Albums
 
                                 if( get_row_is_visible( origin ) ) 
                                 {
-                                    row = ((origin+step)>(m_model->size()-1)) ? m_model->size()-1 : origin+step ; 
+                                    row = (std::size_t(origin+step)>(m_model->size()-1)) ? m_model->size()-1 : std::size_t(origin+step) ; 
 
                                     select_row( row ) ;
 

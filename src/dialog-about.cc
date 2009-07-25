@@ -147,8 +147,8 @@ namespace MPX
       {
           Glib::RefPtr<Gdk::Pixmap> pixmap;
           Glib::RefPtr<Gdk::Bitmap> mask;
-          m_background->render_pixmap_and_mask (pixmap, mask, mask_alpha_threshold);
-          shape_combine_mask (mask, 0, 0);
+          m_background->render_pixmap_and_mask( pixmap, mask, mask_alpha_threshold ) ;
+          shape_combine_mask( mask, 0, 0 ) ;
       }
       else
       {

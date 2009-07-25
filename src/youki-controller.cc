@@ -1584,8 +1584,6 @@ namespace MPX
           GdkEventKey* event
     ) 
     {
-        g_message( G_STRFUNC ) ;
-
         switch( event->keyval )
         {
             case GDK_Escape:
