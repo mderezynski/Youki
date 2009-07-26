@@ -42,6 +42,43 @@ namespace View
 {
 namespace Tracks
 {
+        std::string
+        RowGetArtistName(
+              const MPX::SQL::Row&   r
+        )
+        {
+            std::string name ;
+
+            if( r.count("album_artist") ) 
+            {
+                Glib::ustring in_utf8 = boost::get<std::string>(r.find("album_artist")->second) ; 
+                gunichar c = in_utf8[0] ;
+
+                if( g_unichar_get_script( c ) != G_UNICODE_SCRIPT_LATIN && r.count("album_artist_sortname") ) 
+                {
+                        std::string in = boost::get<std::string>( r.find("album_artist_sortname")->second ) ; 
+
+                        boost::iterator_range <std::string::iterator> match1 = boost::find_nth( in, ", ", 0 ) ;
+                        boost::iterator_range <std::string::iterator> match2 = boost::find_nth( in, ", ", 1 ) ;
+
+                        if( !match1.empty() && match2.empty() ) 
+                        {
+                            name = std::string (match1.end(), in.end()) + " " + std::string (in.begin(), match1.begin());
+                        }
+                        else
+                        {
+                            name = in ;
+                        }
+
+                        return name ;
+                }
+
+                name = in_utf8 ;
+            }
+
+            return name ;
+        }
+
         namespace
         {
             const double rounding = 4. ; 
@@ -209,8 +246,7 @@ namespace Tracks
                     else
                         g_critical("%s: No id for track, extremely suspicious", G_STRLOC) ;
 
-                    if( r.count("artist") )
-                        artist = get<std::string>(r["artist"]) ;
+                    artist = RowGetArtistName( r ) ; 
 
                     if( r.count("album") )
                         album = get<std::string>(r["album"]) ;
