@@ -319,10 +319,10 @@ namespace Albums
         {
             public:
 
-                RowRowMapping_t                           m_mapping ;
+                RowRowMapping_t                             m_mapping ;
 
-                boost::optional<std::set<gint64> >      m_constraint_id_album ;
-                boost::optional<std::set<gint64> >      m_constraint_id_artist ;
+                boost::optional<std::set<gint64> >          m_constraint_id_album ;
+                boost::optional<std::set<gint64> >          m_constraint_id_artist ;
 
             public:
 
@@ -604,7 +604,7 @@ namespace Albums
                 render(
                       Cairo::RefPtr<Cairo::Context>&        cairo
                     , Cairo::RefPtr<Cairo::ImageSurface>&   s_fallback
-                    , const Row_t&                       data_row
+                    , const Row_t&                          data_row
                     , Gtk::Widget&                          widget
                     , int                                   row
                     , int                                   xpos
@@ -612,6 +612,7 @@ namespace Albums
                     , int                                   row_height
                     , bool                                  selected
                     , const ThemeColor&                     color
+                    , bool                                  album_name_only
                 )
                 {
                     using boost::get;
@@ -690,7 +691,7 @@ namespace Albums
 
                                 Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
                                 layout->set_font_description( font_desc ) ;
-                                layout->set_ellipsize( Pango::ELLIPSIZE_MIDDLE ) ;
+                                layout->set_ellipsize( Pango::ELLIPSIZE_NONE ) ;
                                 layout->set_width( 64 * PANGO_SCALE ) ;
                                 layout->set_text( _("SINGLE")) ; 
                                 layout->get_pixel_size (width, height) ;
@@ -731,48 +732,69 @@ namespace Albums
                     }
                 
                     cairo->save() ;
+            
+                    enum { L1, L2, N_LS } ;
 
-                    const int text_size_px = 9 ; 
-                    const int text_size_pt = static_cast<int> ((text_size_px * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) ;
+                    const int text_size_px[N_LS] = { 10, 12 } ; 
+                    const int text_size_pt[N_LS] = {   static_cast<int> ((text_size_px[L1] * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ()))
+                                                     , static_cast<int> ((text_size_px[L2] * 72) / Util::screen_get_y_resolution (Gdk::Screen::get_default ())) } ;
 
                     int width, height;
 
                     cairo->set_operator( Cairo::OPERATOR_OVER ) ;
 
-                    Pango::FontDescription font_desc =  widget.get_style()->get_font() ;
-                    font_desc.set_size( text_size_pt * PANGO_SCALE ) ;
-                    font_desc.set_weight( Pango::WEIGHT_BOLD ) ;
+                    Pango::FontDescription font_desc[N_LS] ;
 
-                    Glib::RefPtr<Pango::Layout> layout = Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) ;
-                    layout->set_font_description( font_desc ) ;
-                    layout->set_ellipsize( Pango::ELLIPSIZE_MIDDLE ) ;
-                    layout->set_width(( m_width - 88 ) * PANGO_SCALE ) ;
+                    font_desc[L1] =  widget.get_style()->get_font() ;
+                    font_desc[L1].set_size( text_size_pt[L1] * PANGO_SCALE ) ;
+                    font_desc[L1].set_weight( Pango::WEIGHT_BOLD ) ;
+
+                    font_desc[L2] =  widget.get_style()->get_font() ;
+                    font_desc[L2].set_size( text_size_pt[L2] * PANGO_SCALE ) ;
+                    font_desc[L2].set_weight( Pango::WEIGHT_BOLD ) ;
+
+                    Glib::RefPtr<Pango::Layout> layout[N_LS] = { Glib::wrap( pango_cairo_create_layout( cairo->cobj() )), Glib::wrap( pango_cairo_create_layout( cairo->cobj() )) } ;
+
+                    layout[L1]->set_font_description( font_desc[L1] ) ;
+                    layout[L1]->set_ellipsize( Pango::ELLIPSIZE_END ) ;
+                    layout[L1]->set_width(( m_width - 88 ) * PANGO_SCALE ) ;
+
+                    layout[L2]->set_font_description( font_desc[L2] ) ;
+                    layout[L2]->set_ellipsize( Pango::ELLIPSIZE_END ) ;
+                    layout[L2]->set_width(( m_width - 88 ) * PANGO_SCALE ) ;
 
                     if( row > 0 )
                     {
                             xpos += 8 + 64 ; 
 
-                            //// ARTIST
-                            layout->set_text( get<4>(data_row) )  ;
-                            layout->get_pixel_size (width, height) ;
-                            cairo->move_to(
-                                  xpos + 8 
-                                , ypos + 2
-                            ) ;
-                            cairo->set_source_rgba(
-                                  color.r
-                                , color.g
-                                , color.b
-                                , .6
-                            ) ;
-                            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+                            int yoff  = 2 ;
+
+                            if( !album_name_only )
+                            {
+                                //// ARTIST
+                                layout[L1]->set_text( get<4>(data_row) )  ;
+                                layout[L1]->get_pixel_size( width, height ) ;
+                                cairo->move_to(
+                                      xpos + 8 
+                                    , ypos + yoff
+                                ) ;
+                                cairo->set_source_rgba(
+                                      color.r
+                                    , color.g
+                                    , color.b
+                                    , .6
+                                ) ;
+                                pango_cairo_show_layout( cairo->cobj(), layout[L1]->gobj() ) ;
+
+                                yoff = 16 ;
+                            }
 
                             //// ALBUM
-                            layout->set_text( get<3>(data_row) )  ;
-                            layout->get_pixel_size (width, height) ;
+                            layout[L2]->set_text( get<3>(data_row) )  ;
+                            layout[L2]->get_pixel_size( width, height ) ;
                             cairo->move_to(
                                   xpos + 8 
-                                , ypos + 16 
+                                , ypos + yoff 
                             ) ;
                             cairo->set_source_rgba(
                                   color.r
@@ -780,11 +802,11 @@ namespace Albums
                                 , color.b
                                 , .8
                             ) ;
-                            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+                            pango_cairo_show_layout( cairo->cobj(), layout[L2]->gobj() ) ;
 
                             //// YEAR
-                            layout->set_text( get<7>(data_row) )  ;
-                            layout->get_pixel_size (width, height) ;
+                            layout[L1]->set_text( get<7>(data_row) )  ;
+                            layout[L1]->get_pixel_size( width, height ) ;
                             cairo->move_to(
                                   xpos + 8 
                                 , r.y + row_height - height - 14
@@ -795,13 +817,13 @@ namespace Albums
                                 , color.b
                                 , .4
                             ) ;
-                            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+                            pango_cairo_show_layout( cairo->cobj(), layout[L1]->gobj() ) ;
                     }
                     else
                     {
                             //// ARTIST
-                            layout->set_markup( get<4>(data_row) )  ;
-                            layout->get_pixel_size (width, height) ;
+                            layout[L1]->set_markup( get<4>(data_row) )  ;
+                            layout[L1]->get_pixel_size( width, height ) ;
                             cairo->move_to(
                                   xpos + (m_width - width) / 2
                                 , r.y + (row_height - height) / 2
@@ -812,7 +834,7 @@ namespace Albums
                                 , color.b
                                 , 1.
                             ) ;
-                            pango_cairo_show_layout (cairo->cobj (), layout->gobj ()) ;
+                            pango_cairo_show_layout( cairo->cobj(), layout[L1]->gobj() ) ;
                     }
 
                     cairo->restore() ;
@@ -1029,7 +1051,7 @@ namespace Albums
 
                                 if( get_row_is_visible( origin ) ) 
                                 {
-                                    row = (std::size_t(origin+step)>(m_model->size()-1)) ? m_model->size()-1 : std::size_t(origin+step) ; 
+                                    row = ((origin+step)>(m_model->size()-1)) ? m_model->size()-1 : origin+step ; 
 
                                     select_row( row ) ;
 
@@ -1297,6 +1319,7 @@ namespace Albums
                                   , m_row_height
                                   , iter_is_selected
                                   , iter_is_selected ? c_text_sel : c_text
+                                  , bool(m_model->m_constraint_id_artist)
                             ) ;
 
                             xpos += (*i)->get_width() ; 
