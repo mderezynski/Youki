@@ -117,6 +117,45 @@ namespace
         return name ;
     }
 
+    std::string
+    TrackGetArtistName(
+          const MPX::Track&   t
+    )
+    {
+        using namespace MPX ;
+
+        std::string name ;
+
+        if( t.has(ATTRIBUTE_ALBUM_ARTIST) ) 
+        {
+            Glib::ustring in_utf8 = boost::get<std::string>(t[ATTRIBUTE_ALBUM_ARTIST].get()) ; 
+            gunichar c = in_utf8[0] ;
+
+            if( g_unichar_get_script( c ) != G_UNICODE_SCRIPT_LATIN && t.has(ATTRIBUTE_ALBUM_ARTIST_SORTNAME) ) 
+            {
+                    std::string in = boost::get<std::string>( t[ATTRIBUTE_ALBUM_ARTIST_SORTNAME].get() ) ; 
+
+                    boost::iterator_range <std::string::iterator> match1 = boost::find_nth( in, ", ", 0 ) ;
+                    boost::iterator_range <std::string::iterator> match2 = boost::find_nth( in, ", ", 1 ) ;
+
+                    if( !match1.empty() && match2.empty() ) 
+                    {
+                        name = std::string (match1.end(), in.end()) + " " + std::string (in.begin(), match1.begin());
+                    }
+                    else
+                    {
+                        name = in ;
+                    }
+
+                    return name ;
+            }
+
+            name = in_utf8 ;
+        }
+
+        return name ;
+    }
+
     bool
     CompareAlbumArtists(
           const MPX::SQL::Row&   r1
@@ -1143,9 +1182,11 @@ namespace MPX
 
         std::vector<std::string> info ;
 
-        int id[] = { ATTRIBUTE_ARTIST, ATTRIBUTE_TITLE } ;
+        int id[] = { ATTRIBUTE_TITLE } ;
 
-        for( int n = 0; n < 3 ; ++n ) 
+        info.push_back( TrackGetArtistName( t.get() )) ;
+
+        for( int n = 0; n < G_N_ELEMENTS(id) ; ++n ) 
         {
             if( t.get().has( n ) )
             {
