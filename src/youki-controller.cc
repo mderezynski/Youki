@@ -541,7 +541,7 @@ namespace MPX
                         , get<gint64>(r["id"])
                         , get<gint64>(r["album_artist_id"])
                         , get<std::string>(r["album"])
-                        , r.count("album_artist_sortname") ? get<std::string>(r["album_artist_sortname"]) : get<std::string>(r["album_artist"])
+                        , RowGetArtistName( r ) 
                         , get<std::string>(r["mb_album_id"])
                         , r.count("mb_release_type") ? get<std::string>(r["mb_release_type"]) : ""
                         , r.count("mb_release_date") ? get<std::string>(r["mb_release_date"]).substr(0,4) : ""
