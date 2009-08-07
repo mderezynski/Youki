@@ -742,8 +742,8 @@ namespace MPX
     
 #ifdef HAVE_HAL
                         typedef std::map<VolumeKey, std::string> VolMountPointMap;
-#endif
                         VolMountPointMap m;
+#endif
 
                         for( RowV::iterator i = rows_tracks.begin(); i != rows_tracks.end(); ++i )
                         {

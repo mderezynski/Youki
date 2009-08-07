@@ -600,9 +600,8 @@ MPX::LibraryScannerThread_MLibMan::on_add(
 
         // Collection from Filesystem
 
-#ifdef HAVE_HAL
         try{
-#endif
+
             insert_path = Util::normalize_path( *i ) ;
 #ifdef HAVE_HAL
             try{
@@ -718,9 +717,7 @@ MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
         std::string insert_path ;
         std::string insert_path_sql ;
 
-#ifdef HAVE_HAL
         try{
-#endif
 
             RowV v;
             insert_path = Util::normalize_path( *i ) ;
