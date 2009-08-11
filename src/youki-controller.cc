@@ -606,12 +606,12 @@ namespace MPX
         )) ;
 
         m_MainHBox->add_percentage( 0.15 ) ;
-        m_MainHBox->add_percentage( 0.65 ) ;
         m_MainHBox->add_percentage( 0.20 ) ;
+        m_MainHBox->add_percentage( 0.65 ) ;
 
         m_MainHBox->pack_start( *m_ScrolledWinArtist, true, true, 0 ) ;
-        m_MainHBox->pack_start( *m_ScrolledWinTracks, true, true, 0 ) ;
         m_MainHBox->pack_start( *m_ScrolledWinAlbums, true, true, 0 ) ;
+        m_MainHBox->pack_start( *m_ScrolledWinTracks, true, true, 0 ) ;
 
 //        m_Paned1->add1( *m_ScrolledWinArtist ) ;
 //        m_Paned1->add2( *m_ScrolledWinTracks ) ;
@@ -1292,6 +1292,8 @@ namespace MPX
 
             constraint = std::set<gint64>() ; 
             constraint.get().insert( id_artist.get() ) ;
+
+            g_message("Album Artist Id: %lld", gint64(id_artist.get()) ) ;
         }
 
         if( id_albums ) 

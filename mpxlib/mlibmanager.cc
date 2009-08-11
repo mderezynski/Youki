@@ -30,7 +30,9 @@
 #include <glibmm/i18n.h>
 #include <boost/format.hpp>
 
+#ifdef HAVE_HAL
 #include "libhal++/hal++.hh"
+#endif // HAVE_HAL
 
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-sql.hh"
@@ -188,7 +190,9 @@ namespace MPX
     , Service::Base("mpx-service-mlibman")
     , m_InnerdialogMainloop(0)
     {
+#ifdef HAVE_HAL
         m_HAL = services->get<IHAL>("mpx-service-hal") ;
+#endif // HAVE_HAL
 
        /*- Widgets -------------------------------------------------------*/ 
 
@@ -807,60 +811,60 @@ namespace MPX
     void
     MLibManager::rescan_volumes()
     {
-        Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
-
-        if( children.empty() ) 
-            return;
-    
 #ifdef HAVE_HAL
         if( mcs->key_get<bool>("library","use-hal"))
         {
-              for(Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); ++iter)
-              {
-                    Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
+            Gtk::TreeModel::Children children = m_VolumesView->get_model()->children();
 
-                    std::string VolumeUDI   = Vol->get_udi();
-                    std::string DeviceUDI   = Vol->get_storage_device_udi();
-                    std::string MountPoint  = Vol->get_mount_point();
-                    gint64      DeviceID    = m_HAL->get_id_for_volume( VolumeUDI, DeviceUDI ) ;
+            if( children.empty() ) 
+                return;
 
-                    reread_paths:
+            for( Gtk::TreeModel::iterator iter = children.begin(); iter != children.end(); ++iter )
+            {
+                Hal::RefPtr<Hal::Volume> Vol = (*iter)[VolumeColumns.Volume];
 
-                    SQL::RowV v;
-                    services->get<Library_MLibMan>("mpx-service-library")->getSQL(
-                            v,
-                            (boost::format ("SELECT DISTINCT insert_path FROM track WHERE device_id = '%lld'")
-                                % DeviceID
-                            ).str()
-                    );
+                std::string VolumeUDI   = Vol->get_udi();
+                std::string DeviceUDI   = Vol->get_storage_device_udi();
+                std::string MountPoint  = Vol->get_mount_point();
+                gint64      DeviceID    = m_HAL->get_id_for_volume( VolumeUDI, DeviceUDI ) ;
 
-                    StrSetT ManagedPaths; 
-                    for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                reread_paths:
+
+                SQL::RowV v;
+                services->get<Library_MLibMan>("mpx-service-library")->getSQL(
+                        v,
+                        (boost::format ("SELECT DISTINCT insert_path FROM track WHERE device_id = '%lld'")
+                            % DeviceID
+                        ).str()
+                );
+
+                StrSetT ManagedPaths; 
+                for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
+                {
+                    ManagedPaths.insert(build_filename(MountPoint, boost::get<std::string>((*i)["insert_path"])));
+                }
+
+                if(!ManagedPaths.empty())
+                {
+                    StrV v;
+                    for(StrSetT::const_iterator i = ManagedPaths.begin(); i != ManagedPaths.end(); ++i)
                     {
-                        ManagedPaths.insert(build_filename(MountPoint, boost::get<std::string>((*i)["insert_path"])));
-                    }
-
-                    if(!ManagedPaths.empty())
-                    {
-                        StrV v;
-                        for(StrSetT::const_iterator i = ManagedPaths.begin(); i != ManagedPaths.end(); ++i)
+                        PathTestResult r = path_test(*i, DeviceUDI, VolumeUDI);
+                        switch( r )
                         {
-                            PathTestResult r = path_test(*i, DeviceUDI, VolumeUDI);
-                            switch( r )
-                            {
-                                case IS_PRESENT:
-                                case IGNORED:
-                                    v.push_back(filename_to_uri(*i));
-                                    break;
+                            case IS_PRESENT:
+                            case IGNORED:
+                                v.push_back(filename_to_uri(*i));
+                                break;
 
-                                case RELOCATED:
-                                case DELETED:
-                                    goto reread_paths;
-                            }
+                            case RELOCATED:
+                            case DELETED:
+                                goto reread_paths;
                         }
-                        services->get<Library_MLibMan>("mpx-service-library")->initScan(v);                  
                     }
-              }
+                    services->get<Library_MLibMan>("mpx-service-library")->initScan(v);                  
+                }
+            }
         }
         else
 #endif
@@ -1507,12 +1511,6 @@ namespace MPX
     }
 
     void
-    MLibManager::on_update_statistics()
-    {
-        services->get<Library_MLibMan>("mpx-service-library")->scanner()->update_statistics();
-    }
-
-    void
     MLibManager::cell_data_func_active (CellRenderer * basecell, TreeIter const& iter)
     {
         CellRendererToggle & cell = *(dynamic_cast<CellRendererToggle*>(basecell));
@@ -1558,18 +1556,24 @@ namespace MPX
         TreeIter iter = FSTreeStore->get_iter(path);
         return !(has_active_parent(iter));
     }
+#endif // HAVE_HAL
 
     bool
-    MLibManager::on_rescan_timeout()
-    {
-        if(!is_visible() && mcs->key_get<bool>("library","rescan-in-intervals") && m_RescanTimer.elapsed() >= mcs->key_get<int>("library","rescan-interval") * 60)
-        {
-            rescan_volumes();
-            m_RescanTimer.reset();
-        }
-        return true;
-    }
-#endif
+            MLibManager::on_rescan_timeout()
+            {
+                if(!is_visible() && mcs->key_get<bool>("library","rescan-in-intervals") && m_RescanTimer.elapsed() >= mcs->key_get<int>("library","rescan-interval") * 60)
+                {
+                    rescan_volumes();
+                    m_RescanTimer.reset();
+                }
+                return true;
+            }
+
+    void
+            MLibManager::on_update_statistics()
+            {
+                services->get<Library_MLibMan>("mpx-service-library")->scanner()->update_statistics();
+            }
 
     void
             MLibManager::on_import_folder()

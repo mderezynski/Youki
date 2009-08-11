@@ -35,7 +35,7 @@ namespace
           { 0xec, 0xce, 0xb6 },
     };
 
-    const int WIDTH = 8 ;
+    const int WIDTH = 10 ;
     const int SPACING = 1 ;
     const int HEIGHT = 36;
     const double ALPHA = 0.8 ;
@@ -86,31 +86,31 @@ namespace MPX
     void
     YoukiSpectrum::on_play_status_changed()
     {
-        m_play_status = PlayStatus(m_play->property_status().get_value()) ;
+        m_play_status = PlayStatus( m_play->property_status().get_value() ) ;
+
         if( m_play_status == PLAYSTATUS_STOPPED )
         {
             reset() ;
+            queue_draw() ;
         }
     }
 
     bool
     YoukiSpectrum::redraw_handler()
     {
-        if( m_play_status == PLAYSTATUS_PAUSED )
+        if( m_play_status == PLAYSTATUS_PLAYING || m_play_status == PLAYSTATUS_PAUSED )
         {
-            for( int n = 0; n < SPECT_BANDS; ++n )
+            if( m_play_status == PLAYSTATUS_PAUSED )
             {
-                m_spectrum_data[n] = fmax(m_spectrum_data[n] - 0.5, 0);
-                m_spectrum_peak[n] = fmax(m_spectrum_peak[n] - 0.5, 0);
+                for( int n = 0; n < SPECT_BANDS; ++n )
+                {
+                    m_spectrum_data[n] = fmax( m_spectrum_data[n] - 1, -72 ) ; 
+                }
             }
-            queue_draw() ;
+
+            queue_draw () ;
         }
-        else
-        if( m_play_status == PLAYSTATUS_PLAYING )
-        {
-            queue_draw() ;
-        }
-        
+
         return true ;
     }
 
@@ -119,8 +119,6 @@ namespace MPX
     {
         std::fill( m_spectrum_data.begin(), m_spectrum_data.end(), 0. ) ;
         std::fill( m_spectrum_peak.begin(), m_spectrum_peak.end(), 0. ) ;
-
-        queue_draw() ;
     }
 
     void
@@ -128,26 +126,20 @@ namespace MPX
         const Spectrum& spectrum
     )
     {
-        for( int n = 0; n < SPECT_BANDS; ++n )
+        if( m_play_status == PLAYSTATUS_PLAYING )
         {
+            for( int n = 0; n < SPECT_BANDS; ++n )
+            {
                 if( fabs(spectrum[n] - m_spectrum_data[n]) <= 2)
                 {
                         /* do nothing */
                 }
+
                 else if( spectrum[n] > m_spectrum_data[n] )
                         m_spectrum_data[n] = spectrum[n] ;
                 else
                         m_spectrum_data[n] = fmin( m_spectrum_data[n] - 2, 0 ) ;
-        }
-
-        for( int n = 0; n < SPECT_BANDS; ++n )
-        {
-                if( spectrum[n] < m_spectrum_peak[n] ) 
-                        m_spectrum_peak[n] = fmin( m_spectrum_peak[n] - 0.5, 0 ) ;
-                else if( spectrum[n] == m_spectrum_peak[n] ) 
-                        m_spectrum_peak[n] = fmin( m_spectrum_peak[n] + 2.0, 72 ) ;
-                else
-                        m_spectrum_peak[n] = spectrum[n];
+            }
         }
     }
 
@@ -207,31 +199,6 @@ namespace MPX
 
             x = a.get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n ; 
             w = WIDTH ;
-
-            //// PEAK 
-
-            int  peak = m_spectrum_peak[n] / 2 ; 
-            y = -peak ; 
-            h =  peak + HEIGHT ;
-
-            if( w && h ) 
-            {
-                cairo->set_source_rgba(
-                      1.
-                    , 1.
-                    , 1.
-                    , 0.1
-                ) ;
-                RoundedRectangle(
-                      cairo
-                    , x
-                    , y + 4
-                    , w
-                    , h
-                    , 1.
-                ) ;
-                cairo->fill ();
-            }
 
             //// BAR 
 

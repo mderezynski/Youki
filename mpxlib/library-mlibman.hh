@@ -34,7 +34,9 @@
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
 
+#ifdef HAVE_HAL
 #include "mpx/i-youki-hal.hh"
+#endif // HAVE_HAL
 
 
 namespace MPX
@@ -110,7 +112,8 @@ namespace MPX
                 const std::string& /*hal_volume_udi*/,
                 const std::string& /*insert_path*/
             ) ;
-#endif
+#endif // HAVE_HAL
+
             void
             initScanAll(
             ); 
@@ -146,15 +149,9 @@ namespace MPX
             void
             getMetadata(const std::string&, Track&) ;
 
-#ifndef HAVE_HAL
-            inline
-#endif //HAVE_HAL
             void
             trackSetLocation( Track&, const std::string& );
 
-#ifndef HAVE_HAL
-            inline
-#endif //HAVE_HAL
             std::string
             trackGetLocation( const Track& );
 
@@ -256,7 +253,9 @@ namespace MPX
         private:
 
             SQL::SQLDB                                          * m_SQL ;
+#ifdef HAVE_HAL
             IHAL                                                * m_HAL ;
+#endif // HAVE_HAL
             boost::shared_ptr<LibraryScannerThread_MLibMan>       m_ScannerThread ;
             gint64                                                m_Flags ;
 

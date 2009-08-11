@@ -41,6 +41,9 @@
 
 #include "library.hh"
 
+#undef PACKAGE
+#define PACKAGE "youki"
+
 using namespace Glib;
 using boost::get;
 
@@ -183,7 +186,9 @@ namespace MPX
         : Service::Base("mpx-service-library")
         , m_Flags(0)
         {
+#ifdef HAVE_HAL
                 m_HAL = services->get<IHAL>("mpx-service-hal").get() ;
+#endif // HAVE_HAL
 
                 const int MLIB_VERSION_CUR = 2;
                 const int MLIB_VERSION_REV = 0;
@@ -296,13 +301,15 @@ namespace MPX
         void
                 Library::recacheCovers()
                 {
-                        services->get<Covers>("mpx-service-covers")->purge();
-                        reload ();
+                        services->get<Covers>("mpx-service-covers")->purge() ;
+                        reload () ;
 
-                        RowV * v = new RowV;
+                        RowV * v = new RowV ;
                         getSQL(*v, "SELECT DISTINCT album_j, location, hal_volume_udi, hal_device_udi, hal_vrp, album.mb_album_id, album.amazon_asin, album_artist.album_artist, album.album "
-                                        "FROM track JOIN album ON album_j = album.id JOIN album_artist ON album.album_artist_j = album_artist.id GROUP BY album_j");
+                                   "FROM track JOIN album ON album_j = album.id JOIN album_artist ON album.album_artist_j = album_artist.id GROUP BY album_j");
+
                         std::size_t * position = new std::size_t ;
+
                         *position = 0;
 
                         signal_timeout().connect( sigc::bind( sigc::mem_fun( *this, &Library::recache_covers_handler ), v, position), 500);
@@ -389,9 +396,6 @@ namespace MPX
 #endif // HAVE_HAL
                 }
 
-#ifndef HAVE_HAL
-        inline
-#endif //HAVE_HAL
         void
                 Library::trackSetLocation(
                     Track&              track,
@@ -762,6 +766,9 @@ namespace MPX
                         {
                                 if( row.count("album_artist") )
                                         (*track.get())[ATTRIBUTE_ALBUM_ARTIST] = get<std::string>(row["album_artist"]);
+
+                                if( row.count("album_artist_sortname") )
+                                        (*track.get())[ATTRIBUTE_ALBUM_ARTIST_SORTNAME] = get<std::string>(row["album_artist_sortname"]);
 
                                 if( row.count("artist") )
                                         (*track.get())[ATTRIBUTE_ARTIST] = get<std::string>(row["artist"]);

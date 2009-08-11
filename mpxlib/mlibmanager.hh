@@ -41,14 +41,17 @@
 #include <sigx/sigx.h>
 
 #include "library-mlibman.hh"
+
+#ifdef HAVE_HAL
 #include "libhal++/hal++.hh"
+#include "mpx/i-youki-hal.hh"
+#endif // HAVE_HAL
 
 #include "mpx/widgets/widgetloader.hh"
 #include "mpx/mpx-main.hh"
 #include "mpx/mpx-services.hh"
 
 #include "mpx-mlibman-dbus.hh"
-#include "mpx/i-youki-hal.hh"
 
 namespace MPX
 {
@@ -166,15 +169,15 @@ namespace MPX
                   const int64_t&
             ) ;
 
+            void
+            rescan_volumes () ;
+
 #ifdef HAVE_HAL
             void
             clear_volumes () ;
 
             void
             populate_volumes () ;
-
-            void
-            rescan_volumes () ;
 
             void
             build_fstree(

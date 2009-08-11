@@ -29,7 +29,10 @@
 #include "mpx/util-file.hh"
 #include "mpx/util-string.hh"
 
+#ifdef HAVE_HAL
 #include "mpx/i-youki-hal.hh"
+#endif // HAVE_HAL
+
 #include "mpx/i-youki-library.hh"
 
 namespace MPX
@@ -168,15 +171,9 @@ namespace MPX
                 , LovedHatedStatus 
             ) ;
 
-#ifndef HAVE_HAL
-            inline
-#endif //HAVE_HAL
             void
             trackSetLocation( Track&, const std::string& );
 
-#ifndef HAVE_HAL
-            inline
-#endif //HAVE_HAL
             std::string
             trackGetLocation( const Track& );
 
@@ -341,7 +338,11 @@ namespace MPX
         private:
 
             SQL::SQLDB  * m_SQL ;
+
+#ifdef HAVE_HAL
             IHAL        * m_HAL ;
+#endif // HAVE_HAL
+
             gint64        m_Flags ;
 
         protected:

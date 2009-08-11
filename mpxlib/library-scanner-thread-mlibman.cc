@@ -27,7 +27,9 @@
 #include "library-scanner-thread-mlibman.hh"
 #include "library-mlibman.hh"
 
+#ifdef HAVE_HAL
 #include "mpx/i-youki-hal.hh"
+#endif // HAVE_HAL
 
 using boost::get;
 using namespace MPX;
@@ -350,7 +352,9 @@ MPX::LibraryScannerThread_MLibMan::LibraryScannerThread_MLibMan(
 , signal_message(*this, m_ThreadData, &ThreadData::Message)
 , m_Library_MLibMan(*obj_library)
 , m_SQL(new SQL::SQLDB(*((m_Library_MLibMan.get_sql_db()))))
+#ifdef HAVE_HAL
 , m_HAL( *(services->get<IHAL>("mpx-service-hal").get()) )
+#endif // HAVE_HAL
 , m_Flags(flags)
 {
     m_Connectable =
@@ -602,8 +606,10 @@ MPX::LibraryScannerThread_MLibMan::on_add(
 
 #ifdef HAVE_HAL
         try{
-#endif
+#endif // HAVE_HAL
+
             insert_path = Util::normalize_path( *i ) ;
+
 #ifdef HAVE_HAL
             try{
                 if (m_Flags & Library_MLibMan::F_USING_HAL)
@@ -612,10 +618,12 @@ MPX::LibraryScannerThread_MLibMan::on_add(
                     insert_path_sql = Util::normalize_path(Glib::filename_from_uri(*i).substr (volume.mount_point.length())) ;
                 }
                 else
-#endif
+#endif // HAVE_HAL
+
                 {
                     insert_path_sql = insert_path; 
                 }
+
 #ifdef HAVE_HAL
             }
             catch(
@@ -633,20 +641,23 @@ MPX::LibraryScannerThread_MLibMan::on_add(
                 continue;
             }
 #endif // HAVE_HAL
+
             collection.clear();
 
             try{
                 Util::collect_audio_paths_recursive( insert_path, collection );
-            } catch(...) {
-            }
+            } catch(...) {}
 
             m_ScanSummary.FilesTotal += collection.size();
+
+#ifdef HAVE_HAL
         }
         catch( Glib::ConvertError & cxe )
         {
             g_warning("%s: %s", G_STRLOC, cxe.what().c_str());
             continue;
         }
+#endif // HAVE_HAL
 
         // Collect + Process Tracks
 
@@ -791,11 +802,14 @@ MPX::LibraryScannerThread_MLibMan::on_scan_list_quick_stage_1(
                 }
             }
 
+#ifdef HAVE_HAL
         }
         catch( Glib::ConvertError & cxe )
         {
             g_warning("%s: %s", G_STRLOC, cxe.what().c_str());
         }
+#endif // HAVE_HAL
+
     }
 }
 
@@ -1860,6 +1874,7 @@ MPX::LibraryScannerThread_MLibMan::on_vacuum_volume_list(
   if( do_signal )
       pthreaddata->ScanEnd.emit();
 }
+#endif // HAVE_HAL
 
 void
 MPX::LibraryScannerThread_MLibMan::update_albums(
@@ -2000,4 +2015,4 @@ MPX::LibraryScannerThread_MLibMan::on_update_statistics()
     pthreaddata->ScanEnd.emit();
 }
 
-#endif // HAVE_HAL
+

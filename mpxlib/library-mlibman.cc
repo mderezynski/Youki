@@ -41,6 +41,9 @@
 
 #include "mlibmanager.hh"
 
+#undef PACKAGE
+#define PACKAGE "youki"
+
 using namespace Glib;
 using boost::get;
 
@@ -190,7 +193,9 @@ namespace MPX
                     , sigx::glib_auto_dispatchable()
                     , m_Flags(0)
                 {
+#ifdef HAVE_HAL
                         m_HAL = services->get<IHAL>("mpx-service-hal").get() ;
+#endif // HAVE_HAL
 
                         create_and_init() ;
 
@@ -742,8 +747,8 @@ namespace MPX
     
 #ifdef HAVE_HAL
                         typedef std::map<VolumeKey, std::string> VolMountPointMap;
+                        VolMountPointMap m ;
 #endif
-                        VolMountPointMap m;
 
                         for( RowV::iterator i = rows_tracks.begin(); i != rows_tracks.end(); ++i )
                         {
@@ -826,12 +831,13 @@ namespace MPX
                     for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
                     {
                         Row& r = *i;
-                        mm->push_message((boost::format(_("Deleting Track: %lld of %lld")) % gint64(std::distance(rows.begin(), i)) % gint64(rows.size())).str());
+                        mm->push_message((boost::format(_("Removing Track: %lld of %lld")) % gint64(std::distance(rows.begin(), i)) % gint64(rows.size())).str());
                         execSQL( mprintf("DELETE FROM track WHERE id = '%lld'", get<gint64>(r["id"]))); 
                         Signals.TrackDeleted.emit( get<gint64>(r["id"]) );
                     }
 
                     remove_dangling();
+                    mm->push_message("Done.") ;
                 }
 #endif // HAVE_HAL
 
@@ -893,9 +899,6 @@ namespace MPX
 #endif // HAVE_HAL
                 }
 
-#ifndef HAVE_HAL
-        inline
-#endif //HAVE_HAL
         void
                 Library_MLibMan::trackSetLocation(
                     Track&              track,

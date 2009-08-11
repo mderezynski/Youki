@@ -68,6 +68,9 @@
 
 #include "library.hh"
 
+#undef PACKAGE
+#define PACKAGE "youki"
+
 using namespace Glib;
 using namespace TagLib;
 

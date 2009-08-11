@@ -67,6 +67,9 @@
 
 #include "mpx-mlibman-dbus-proxy-actual.hh"
 
+#undef PACKAGE
+#define PACKAGE "youki"
+
 using namespace MPX;
 using namespace Glib;
 

@@ -46,19 +46,6 @@ SET(mpx_widgets_SOURCES
   rounded-alignment.cc
   task-dialog.cc
   timed-confirmation.cc
-  tidy-actor.c
-  tidy-actor.h
-  tidy-debug.h
-  tidy-marshal.c
-  tidy-marshal.h
-  tidy-private.h
-  tidy-stylable.c
-  tidy-stylable.h
-  tidy-style.c
-  tidy-style.h
-  tidy-texture-reflection.c
-  tidy-texture-reflection.h
-  tidy-types.h
   ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.c
   ${CMAKE_CURRENT_BINARY_DIR}/widget-marshalers.h
 )

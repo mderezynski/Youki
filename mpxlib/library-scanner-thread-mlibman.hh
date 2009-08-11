@@ -45,7 +45,9 @@
 #include "mpx/util-string.hh"
 #include "mpx/util-file.hh"
 
+#ifdef HAVE_HAL
 #include "mpx/i-youki-hal.hh"
+#endif // HAVE_HAL
 
 namespace MPX
 {
@@ -428,7 +430,9 @@ namespace MPX
 
             MPX::Library_MLibMan                  & m_Library_MLibMan;
             boost::shared_ptr<MPX::SQL::SQLDB>      m_SQL ;
+#ifdef HAVE_HAL
             const IHAL                            & m_HAL ;
+#endif // HAVE_HAL
             gint64                                  m_Flags ;
 
             ScanSummary                             m_ScanSummary ;
