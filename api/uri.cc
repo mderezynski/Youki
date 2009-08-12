@@ -38,6 +38,7 @@
 #include <string>
 #include <boost/algorithm/string.hpp>
 #include <glibmm.h>
+#include <glib/gprintf.h>
 #include <iostream>
 #include <cstdio>
 
@@ -225,7 +226,7 @@ char *path_escape(const char *path)
     	if (path_escape_ch(*pnt))
       {
 	    /* Escape it - %<hex><hex> */
-	    sprintf(p, "%%%02x", (unsigned char) *pnt);
+	    g_sprintf(p, "%%%02x", (unsigned char) *pnt);
 	    p += 3;
 	    } else {
 	      *p++ = *pnt;

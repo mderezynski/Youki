@@ -186,7 +186,9 @@ namespace MPX
         : Service::Base("mpx-service-library")
         , m_Flags(0)
         {
+#ifdef HAVE_HAL
                 m_HAL = services->get<IHAL>("mpx-service-hal").get() ;
+#endif // HAVE_HAL
 
                 const int MLIB_VERSION_CUR = 2;
                 const int MLIB_VERSION_REV = 0;
@@ -394,9 +396,6 @@ namespace MPX
 #endif // HAVE_HAL
                 }
 
-#ifndef HAVE_HAL
-        inline
-#endif //HAVE_HAL
         void
                 Library::trackSetLocation(
                     Track&              track,

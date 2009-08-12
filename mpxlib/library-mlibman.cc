@@ -193,7 +193,9 @@ namespace MPX
                     , sigx::glib_auto_dispatchable()
                     , m_Flags(0)
                 {
+#ifdef HAVE_HAL
                         m_HAL = services->get<IHAL>("mpx-service-hal").get() ;
+#endif // HAVE_HAL
 
                         create_and_init() ;
 
@@ -745,8 +747,8 @@ namespace MPX
     
 #ifdef HAVE_HAL
                         typedef std::map<VolumeKey, std::string> VolMountPointMap;
-#endif
                         VolMountPointMap m;
+#endif
 
                         for( RowV::iterator i = rows_tracks.begin(); i != rows_tracks.end(); ++i )
                         {
@@ -897,9 +899,6 @@ namespace MPX
 #endif // HAVE_HAL
                 }
 
-#ifndef HAVE_HAL
-        inline
-#endif //HAVE_HAL
         void
                 Library_MLibMan::trackSetLocation(
                     Track&              track,
