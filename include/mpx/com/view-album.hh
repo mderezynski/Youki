@@ -973,7 +973,7 @@ namespace Albums
                     }
 
                     int step ; 
-                    std::size_t row ;
+                    int row ;
 
                     switch( event->keyval )
                     {

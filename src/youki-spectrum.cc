@@ -1,7 +1,5 @@
 #include "config.h"
 
-#include <clutter-gtk/clutter-gtk.h>
-#include "widgets/tidy-texture-reflection.h"
 #include <glibmm/i18n.h>
 #include <cmath>
 
@@ -37,10 +35,10 @@ namespace
           { 0xec, 0xce, 0xb6 },
     };
 
-    const int WIDTH     = 8 ;
-    const int SPACING   = 1 ;
-    const int HEIGHT    = 36;
-    const int ALPHA     = 200 ;
+    const int WIDTH = 10 ;
+    const int SPACING = 1 ;
+    const int HEIGHT = 36;
+    const double ALPHA = 0.8 ;
 }
 
 namespace MPX
@@ -48,133 +46,52 @@ namespace MPX
     YoukiSpectrum::YoukiSpectrum(
     )
     : m_spectrum_data( SPECT_BANDS, 0 )
+    , m_spectrum_peak( SPECT_BANDS, 0 )
     {
-        add_events( Gdk::EventMask( Gdk::BUTTON_PRESS_MASK )) ;
+        add_events( Gdk::BUTTON_PRESS_MASK ) ;
         set_size_request( -1, 44 ) ;
 
         boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
-        const ThemeColor& c = theme->get_color( THEME_COLOR_BACKGROUND ) ;
-        m_stage = get_stage() ;
-        m_stage->set_color( Clutter::Color( c.r * 255, c.g * 255, c.b * 255 ) ) ;
-
-        m_group_bars = Clutter::Group::create() ;
-
-        m_stage->add_actor( m_group_bars ) ;
-
-        for( int n=0; n < SPECT_BANDS; n++ )
-        {
-            int   x = 0
-                , y = 0
-                , w = 0
-                , h = 0 ;
-
-            int   bar = m_spectrum_data[n] / 2 ;
-
-            x   = m_stage->get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n ; 
-            w   = WIDTH ;
-            y   = - bar ;
-            h   =   bar + HEIGHT ;
-
-            if( w && h ) 
-            {
-                Clutter::Color color(
-                      double(colors[n/6].r)
-                    , double(colors[n/6].g)
-                    , double(colors[n/6].b)
-                    , ALPHA
-                ) ;
-                Glib::RefPtr<Clutter::Rectangle> rect = Clutter::Rectangle::create( color ) ;
-                m_group_bars->add_actor( rect ) ;
-                rect->set_position( x, y + 4 ) ;
-                rect->set_size( w, h ) ;
-            }
-        }
-
-        clutter_actor_realize( CLUTTER_ACTOR(m_group_bars->gobj()) ) ;
-
-/*
-        ClutterActor * texture_ = clutter_texture_new_from_actor(CLUTTER_ACTOR(m_group_bars->gobj())) ;
-        ClutterActor * reflection_ = tidy_texture_reflection_new( CLUTTER_TEXTURE(texture_) ) ; 
-
-        m_reflection = Glib::wrap( reflection_, true ) ; 
-        m_reflection->set_opacity( 100 ) ;
-
-        m_stage->add_actor( m_reflection ) ;
-*/
+        const ThemeColor& c = theme->get_color( THEME_COLOR_BASE ) ;
+        Gdk::Color cgdk ;
+        cgdk.set_rgb_p( c.r, c.g, c.b ) ; 
+        modify_bg( Gtk::STATE_NORMAL, cgdk ) ;
+        modify_base( Gtk::STATE_NORMAL, cgdk ) ;
 
         m_play = services->get<IPlay>("mpx-service-play") ; 
+
+        m_play_status = PlayStatus(m_play->property_status().get_value()) ;
+
         m_play->property_status().signal_changed().connect(
                 sigc::mem_fun(
                       *this
                     , &YoukiSpectrum::on_play_status_changed
         )) ;
+
         m_play->signal_spectrum().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiSpectrum::update_spectrum
         )) ;
-        m_play_status = PlayStatus(m_play->property_status().get_value()) ;
-    }
 
-    void
-    YoukiSpectrum::on_size_allocate(
-          Gtk::Allocation& new_alloc
-    )
-    {
-        Clutter::Gtk::Embed::on_size_allocate( new_alloc ) ;
-
-/*
-        const Gtk::Allocation& a = get_allocation() ;
-
-        m_reflection->set_size( (WIDTH+SPACING)*SPECT_BANDS, 36 ) ;
-        m_reflection->set_position( (a.get_width() - ((WIDTH+SPACING)*SPECT_BANDS)) / 2, 36 ) ;
-*/
-
-        redraw() ;
-    }
-
-    void
-    YoukiSpectrum::on_show(
-    )
-    {
-        Clutter::Gtk::Embed::on_show() ;
-        redraw() ;
-    }
-
-    bool
-    YoukiSpectrum::on_button_press_event(
-        GdkEventButton* G_GNUC_UNUSED 
-    )
-    {
-        m_signal.emit() ;
-        return true ;
+        Glib::signal_timeout().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiSpectrum::redraw_handler
+            )
+            , 1000./24.
+        ) ;
     }
 
     void
     YoukiSpectrum::on_play_status_changed()
     {
-        m_play_status = PlayStatus(m_play->property_status().get_value()) ;
-        switch( m_play_status )
+        m_play_status = PlayStatus( m_play->property_status().get_value() ) ;
+
+        if( m_play_status == PLAYSTATUS_STOPPED )
         {
-            case PLAYSTATUS_PLAYING:
-                if( !m_timeout.connected() )
-                    m_timeout = Glib::signal_timeout().connect(
-                        sigc::mem_fun(
-                            *this
-                          , &YoukiSpectrum::redraw_handler
-                        )
-                        , 1000./24.
-                    ) ;
-                break;
-            case PLAYSTATUS_PAUSED:
-                redraw() ;
-                break;
-            case PLAYSTATUS_STOPPED:
-                reset() ;
-                redraw() ;
-                break ;
-            default:
-                redraw() ;
+            reset() ;
+            queue_draw() ;
         }
     }
 
@@ -191,11 +108,17 @@ namespace MPX
                 }
             }
 
-            redraw() ;
-            return true ;
+            queue_draw () ;
         }
 
-        return false ;
+        return true ;
+    }
+
+    void
+    YoukiSpectrum::reset ()
+    {
+        std::fill( m_spectrum_data.begin(), m_spectrum_data.end(), 0. ) ;
+        std::fill( m_spectrum_peak.begin(), m_spectrum_peak.end(), 0. ) ;
     }
 
     void
@@ -220,36 +143,87 @@ namespace MPX
         }
     }
 
+    bool
+    YoukiSpectrum::on_button_press_event(
+        GdkEventButton* G_GNUC_UNUSED 
+    )
+    {
+        m_signal.emit() ;
+        return true ;
+    }
+
+    bool
+    YoukiSpectrum::on_expose_event(
+        GdkEventExpose* G_GNUC_UNUSED 
+    )
+    {
+        Cairo::RefPtr<Cairo::Context> cairo = get_window ()->create_cairo_context ();
+
+        draw_spectrum( cairo ) ;
+
+        return true;
+    }
+
     void
-    YoukiSpectrum::redraw()
+    YoukiSpectrum::draw_spectrum(
+          Cairo::RefPtr<Cairo::Context>&                cairo
+    )
     {
         const Gtk::Allocation& a = get_allocation ();
 
+        boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;
+        const ThemeColor& c_base /* :) */ = theme->get_color( THEME_COLOR_BACKGROUND ) ; 
+
+        cairo->set_operator(
+              Cairo::OPERATOR_SOURCE
+        ) ;
+
+        cairo->set_source_rgba(
+              c_base.r
+            , c_base.g
+            , c_base.b
+            , c_base.a
+        ) ;
+        cairo->paint () ;
+
+        cairo->set_operator(
+              Cairo::OPERATOR_ATOP
+        ) ;
+
         for( int n = 0; n < SPECT_BANDS; ++n ) 
         {
-            int   w = 0
+            int   x = 0
+                , y = 0
+                , w = 0
                 , h = 0 ;
 
+            x = a.get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n ; 
             w = WIDTH ;
 
             //// BAR 
 
             int   bar = m_spectrum_data[n] / 2 ;
+            y = - bar ;
             h =   bar + HEIGHT ;
 
             if( w && h ) 
             {
-                Glib::RefPtr<Clutter::Actor> rect = m_group_bars->get_nth_child( n ) ;
-                rect->set_size( w, h ) ;
-                rect->set_position( a.get_width()/2 - ((WIDTH+SPACING)*SPECT_BANDS)/2 + (WIDTH+SPACING)*n, HEIGHT - h + 4 ) ;
+                cairo->set_source_rgba(
+                      double(colors[n/6].r)/255.
+                    , double(colors[n/6].g)/255.
+                    , double(colors[n/6].b)/255.
+                    , ALPHA
+                ) ;
+                RoundedRectangle(
+                      cairo
+                    , x
+                    , y + 4
+                    , w
+                    , h
+                    , 1.
+                ) ;
+                cairo->fill ();
             }
         }
-    }
-
-    void
-    YoukiSpectrum::reset ()
-    {
-        std::fill( m_spectrum_data.begin(), m_spectrum_data.end(), 0. ) ;
-        redraw() ;
     }
 }

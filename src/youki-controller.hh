@@ -270,6 +270,7 @@ namespace MPX
 
             std::vector<guint64>              m_playqueue ;
 
+            std::vector<gint64>               m_new_tracks ;
 
         protected:
 
@@ -418,6 +419,15 @@ namespace MPX
             void
             on_library_new_artist(
                   gint64
+            ) ;
+
+            void
+            on_library_new_track(
+                  gint64
+            ) ;
+
+            void
+            push_new_tracks(
             ) ;
 
             void

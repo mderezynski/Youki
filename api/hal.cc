@@ -50,6 +50,9 @@
 #include "mpx/mpx-sql.hh"
 #include "mpx/mpx-hal.hh"
 
+#undef PACKAGE
+#define PACKAGE "youki"
+
 using namespace Glib;
 using namespace Gtk;
 using namespace Hal;

@@ -39,6 +39,7 @@
 #include <boost/algorithm/string.hpp>
 #include <glibmm.h>
 #include <iostream>
+#include <cstdio>
 
 #include "mpx/mpx-uri.hh"
 #include "mpx/util-string.hh"

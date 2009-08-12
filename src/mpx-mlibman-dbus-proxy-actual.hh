@@ -84,6 +84,12 @@ public:
         return SignalAlbumDeleted ;
     }
 
+    Signal_1int64
+    signal_new_track ()
+    {
+        return SignalNewTrack ;
+    }
+
     /* signal handlers for this interface
      */
     virtual

@@ -41,6 +41,9 @@
 
 #include "mlibmanager.hh"
 
+#undef PACKAGE
+#define PACKAGE "youki"
+
 using namespace Glib;
 using boost::get;
 
@@ -826,12 +829,13 @@ namespace MPX
                     for( RowV::iterator i = rows.begin(); i != rows.end(); ++i )
                     {
                         Row& r = *i;
-                        mm->push_message((boost::format(_("Deleting Track: %lld of %lld")) % gint64(std::distance(rows.begin(), i)) % gint64(rows.size())).str());
+                        mm->push_message((boost::format(_("Removing Track: %lld of %lld")) % gint64(std::distance(rows.begin(), i)) % gint64(rows.size())).str());
                         execSQL( mprintf("DELETE FROM track WHERE id = '%lld'", get<gint64>(r["id"]))); 
                         Signals.TrackDeleted.emit( get<gint64>(r["id"]) );
                     }
 
                     remove_dangling();
+                    mm->push_message("Done.") ;
                 }
 #endif // HAVE_HAL
 
