@@ -189,6 +189,11 @@ main (int argc, char ** argv)
 
     Glib::thread_init(0);
     Glib::init();
+
+    DBus::Glib::BusDispatcher dispatcher ;
+    DBus::default_dispatcher = &dispatcher ;
+    dispatcher.attach( g_main_context_default() ) ;
+
     Gio::init();
 
     signal_handlers_install ();
@@ -206,9 +211,6 @@ main (int argc, char ** argv)
 
     services = new Service::Manager;
 
-    DBus::Glib::BusDispatcher dispatcher ;
-    DBus::default_dispatcher = &dispatcher ;
-    dispatcher.attach( g_main_context_default() ) ;
     DBus::Connection conn = DBus::Connection::SessionBus () ;
     conn.request_name( "info.backtrace.Youki.MLibMan" ) ;
 

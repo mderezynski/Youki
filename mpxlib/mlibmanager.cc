@@ -87,7 +87,7 @@ namespace MPX
 {
     MLibManager*
     MLibManager::create(
-        DBus::Connection  conn
+        DBus::Connection& conn
     )
     {
         const std::string path (build_filename (DATA_DIR, "glade" G_DIR_SEPARATOR_S "mlibmanager.glade"));
@@ -180,11 +180,9 @@ namespace MPX
 
     MLibManager::MLibManager(
           const RefPtr<Gnome::Glade::Xml>&  xml
-        , DBus::Connection                  conn
+        , DBus::Connection&                 conn
     )
-    : info::backtrace::Youki::MLibMan_adaptor()
-    , DBus::IntrospectableAdaptor()
-    , DBus::ObjectAdaptor( conn, "/info/backtrace/Youki/MLibMan" )
+    : DBus::ObjectAdaptor( conn, "/info/backtrace/Youki/MLibMan" )
     , Gnome::Glade::WidgetLoader<Gtk::Window>(xml, "window")
     , sigx::glib_auto_dispatchable()
     , Service::Base("mpx-service-mlibman")

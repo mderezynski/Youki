@@ -97,7 +97,7 @@ namespace MPX
         public:
 
             static MLibManager* create(
-                DBus::Connection
+                DBus::Connection&
             ) ;
 
             virtual ~MLibManager(
@@ -123,7 +123,7 @@ namespace MPX
 
             MLibManager(
                   const Glib::RefPtr<Gnome::Glade::Xml>& 
-                , DBus::Connection
+                , DBus::Connection&
             ) ;
 
             void
