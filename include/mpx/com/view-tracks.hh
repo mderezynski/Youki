@@ -84,7 +84,7 @@ namespace Tracks
             const double rounding = 4. ; 
         }
 
-        typedef boost::tuple<std::string, std::string, std::string, gint64, Track, gint64, gint64, ::MPX::SQL::Row>  Row_t ;
+        typedef boost::tuple<std::string, std::string, std::string, gint64, Track, gint64, gint64, std::string>  Row_t ;
 
 /*
         bool operator<(const Row_t& a, const Row_t& b )
@@ -168,6 +168,29 @@ namespace Tracks
             }
         } ;
 
+        struct OrderFunc
+        : public std::binary_function<Row_t, Row_t, bool>
+        {
+            bool operator() (
+                  const Row_t&  a
+                , const Row_t&  b
+            )
+            {
+                const std::string&  order_artist_a = get<7>( a ) ; 
+                const std::string&  order_artist_b = get<7>( b ) ; 
+
+                const std::string&  order_album_a  = get<2>( a ) ; 
+                const std::string&  order_album_b  = get<2>( b ) ; 
+
+                gint64 order_track [2] = {
+                      get<5>( a )
+                    , get<5>( b )
+                } ;
+
+                return (order_artist_a < order_artist_b) && (order_album_a < order_album_b) && (order_track[0] < order_track[1]) ;
+            }
+        } ;
+
         struct DataModel
         : public sigc::trackable
         {
@@ -236,8 +259,15 @@ namespace Tracks
                 {
                     using boost::get ;
 
-                    std::string artist, album, title ;
-                    gint64 id = 0, tnum = 0, artist_id = 0 ;
+                    std::string     artist
+                                  , album
+                                  , title
+                    ;
+
+                    gint64          id          = 0
+                                  , track_n     = 0
+                                  , id_artist   = 0
+                    ;
 
                     if( r.count("id") )
                     { 
@@ -256,20 +286,25 @@ namespace Tracks
 
                     if( r.count("track") )
                     { 
-                        tnum = get<gint64>(r["track"]) ;
+                        track_n = get<gint64>(r["track"]) ;
                     }
 
                     if( r.count("mpx_album_artist_id") )
                     { 
-                        artist_id = get<gint64>(r["mpx_album_artist_id"]) ;
+                        id_artist = get<gint64>(r["mpx_album_artist_id"]) ;
                     }
 
-                    Row_t row ( title, artist, album, id, track, tnum, artist_id, r ) ;
+                    const std::string&  order_artist = r.count("album_artist_sortname")
+                                                       ? get<std::string>(r["album_artist_sortname"])
+                                                       : get<std::string>(r["album_artist"]) ;
+
+                    Row_t row ( title, artist, album, id, track, track_n, id_artist, order_artist ) ;
                     m_realmodel->push_back(row) ;
 
                     Model_t::iterator i = m_realmodel->end() ;
                     std::advance( i, -1 ) ;
-                    m_iter_map.insert(std::make_pair(id, i)) ; 
+
+                    m_iter_map.insert( std::make_pair( id, i )) ; 
                 }
 
                 void
@@ -372,7 +407,7 @@ namespace Tracks
                             using boost::get ;
 
                             std::string artist, album, title ;
-                            gint64 tnum = 0, artist_id = 0 ;
+                            gint64 track_n = 0, artist_id = 0 ;
 
                             if(r.count("artist"))
                                 artist = get<std::string>(r["artist"]) ;
@@ -385,7 +420,7 @@ namespace Tracks
 
                             if(r.count("track"))
                             { 
-                                tnum = get<gint64>(r["track"]) ;
+                                track_n = get<gint64>(r["track"]) ;
                             }
 
                             if(r.count("mpx_album_artist_id"))
@@ -393,7 +428,7 @@ namespace Tracks
                                 artist_id = get<gint64>(r["mpx_album_artist_id"]) ;
                             }
 
-                            Row_t row ( title, artist, album, id, *track.get(), tnum, artist_id ) ;
+                            Row_t row ( title, artist, album, id, *track.get(), track_n, artist_id ) ;
 
                             Model_t::const_iterator i = std::lower_bound( m.begin(), m.end(), row ) ; 
 
@@ -566,6 +601,48 @@ namespace Tracks
                     regen_mapping();
                 }
 
+                virtual void
+                insert_track(
+                      SQL::Row&             r
+                    , const MPX::Track&     track
+                )
+                {
+                    const std::string&                    title             = get<std::string>(r["title"]) ;
+                    const std::string&                    artist            = get<std::string>(r["artist"]) ;
+                    const std::string&                    album             = get<std::string>(r["album"]) ; 
+                    gint64                                id                = get<gint64>(r["id"]) ;
+                    gint64                                track_n           = get<gint64>(r["track"]) ;
+                    gint64                                id_artist         = get<gint64>(r["mpx_album_artist_id"]) ;
+
+                    const std::string&                    order_artist      = r.count("album_artist_sortname")
+                                                                              ? get<std::string>(r["album_artist_sortname"])
+                                                                              : get<std::string>(r["album_artist"]) ;
+                    static OrderFunc order ;
+
+                    Row_t row(
+                          title
+                        , artist
+                        , album
+                        , id
+                        , track
+                        , track_n 
+                        , id_artist
+                        , order_artist
+                    ) ; 
+
+                    Model_t::iterator i = m_realmodel->insert(
+                          std::lower_bound(
+                              m_realmodel->begin()
+                            , m_realmodel->end()
+                            , row
+                            , order
+                          )
+                        , row
+                    ) ;
+
+                    m_iter_map.insert( std::make_pair( id, i )) ; 
+                }
+ 
                 virtual void
                 set_filter(
                     const std::string& text
@@ -1098,7 +1175,7 @@ namespace Tracks
                 render(
                       Cairo::RefPtr<Cairo::Context>&    cairo
                     , Gtk::Widget&                      widget
-                    , const Row_t&                       datarow
+                    , const Row_t&                      datarow
                     , int                               row
                     , int                               xpos
                     , int                               ypos

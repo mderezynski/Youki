@@ -247,6 +247,11 @@ namespace MPX
                   *this
                 , &YoukiController::on_library_new_artist
         )) ;
+        m_mlibman_dbus_proxy->signal_new_track().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_library_new_track
+        )) ;
 
         m_mlibman_dbus_proxy->signal_artist_deleted().connect(
             sigc::mem_fun(
@@ -514,7 +519,7 @@ namespace MPX
                 private_->FilterModelArtist->append_artist_quiet("<b>Empty</b>",-1);
 
                 SQL::RowV v ;
-                services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM album_artist")).str()) ; 
+                m_library->getSQL(v, (boost::format("SELECT * FROM album_artist")).str()) ; 
                 std::stable_sort( v.begin(), v.end(), CompareAlbumArtists ) ;
                 for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
                 {
@@ -555,7 +560,7 @@ namespace MPX
                 boost::shared_ptr<Covers> c = services->get<Covers>("mpx-service-covers") ;
 
                 SQL::RowV v ;
-                services->get<Library>("mpx-service-library")->getSQL( v, "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), substr(mb_release_date,1,4), album" ) ;
+                m_library->getSQL( v, "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), album" ) ;
                 for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
                 {
                     SQL::Row & r = *i;
@@ -824,12 +829,12 @@ namespace MPX
        // Tracks 
 
         SQL::RowV v ;
-        services->get<Library>("mpx-service-library")->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY ifnull(album_artist_sortname,album_artist), mb_release_date, album, track_view.track")).str()) ; 
+        m_library->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY ifnull(album_artist_sortname,album_artist), album, track_view.track")).str()) ; 
         for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
         {
                 SQL::Row & r = *i;
                 try{
-                    model_tracks->append_track_quiet(r, (*(services->get<Library>("mpx-service-library")->sqlToTrack(r, true, false ).get()))) ;
+                    model_tracks->append_track_quiet(r, (*(m_library->sqlToTrack(r, true, false ).get()))) ;
                 } catch( Library::FileQualificationError )
                 {
                 }
@@ -879,7 +884,7 @@ namespace MPX
     YoukiController::on_library_scan_end(
     )
     {
-        reload_library () ;
+        push_new_tracks() ;
     }
 
     void
@@ -894,7 +899,7 @@ namespace MPX
     {
         SQL::RowV v ;
 
-        services->get<Library>("mpx-service-library")->getSQL( v, (boost::format( "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = '%lld'") % id ).str()) ; 
+        m_library->getSQL( v, (boost::format( "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date FROM album JOIN album_artist ON album.album_artist_j = album_artist.id WHERE album.id = '%lld'") % id ).str()) ; 
 
         g_return_if_fail( (v.size() == 1) ) ;
 
@@ -943,13 +948,51 @@ namespace MPX
     }
 
     void
+    YoukiController::on_library_new_track(
+          gint64 id
+    )
+    {
+        m_new_tracks.push_back( id ) ;
+       
+        if( m_new_tracks.size() == 200 )  
+        {
+            push_new_tracks() ;
+        }
+    }
+
+    void
+    YoukiController::push_new_tracks(
+    )
+    {
+        for( std::vector<gint64>::const_iterator i = m_new_tracks.begin(); i != m_new_tracks.end() ; ++i )
+        {
+            SQL::RowV v ;
+
+            m_library->getSQL( v, (boost::format( "SELECT * FROM track_view WHERE track_view.id = '%lld'") % *i ).str()) ; 
+
+            if( v.size() != 1)
+            {
+                g_critical(" Got multiple tracks with the same ID / this can not happen.") ;
+                continue ;
+            }
+
+            SQL::Row & r = v[0] ; 
+            MPX::Track_sp t = m_library->sqlToTrack( r, true, false ) ;
+            private_->FilterModelTracks->insert_track( r, *(t.get()) ) ;
+        }
+
+        m_new_tracks.clear() ;
+        private_->FilterModelTracks->regen_mapping() ;
+    }
+
+    void
     YoukiController::on_library_new_artist(
           gint64               id
     )
     {
         SQL::RowV v ;
 
-        services->get<Library>("mpx-service-library")->getSQL( v, (boost::format( "SELECT * FROM album_artist WHERE id = '%lld'" ) % id ).str() ) ; 
+        m_library->getSQL( v, (boost::format( "SELECT * FROM album_artist WHERE id = '%lld'" ) % id ).str() ) ; 
         g_return_if_fail( (v.size() == 1) ) ;
 
         private_->FilterModelArtist->insert_artist(
@@ -982,12 +1025,10 @@ namespace MPX
     )
     {
         try{
-                boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library") ;
-       
                 m_track_previous    = m_track_current ;
                 m_track_current     = t ; 
 
-                m_play->switch_stream( library->trackGetLocation( t ) ) ;
+                m_play->switch_stream( m_library->trackGetLocation( t ) ) ;
 
         } catch( Library::FileQualificationError & cxe )
         {
@@ -1186,7 +1227,7 @@ namespace MPX
 
         info.push_back( TrackGetArtistName( t.get() )) ;
 
-        for( int n = 0; n < G_N_ELEMENTS(id) ; ++n ) 
+        for( unsigned int n = 0; n < G_N_ELEMENTS(id) ; ++n ) 
         {
             if( t.get().has( n ) )
             {
@@ -1196,8 +1237,6 @@ namespace MPX
 
         m_control_status_icon->set_metadata( t.get() ) ;
         m_main_titleinfo->set_info( info ) ;
-
-        boost::shared_ptr<Library> library = services->get<Library>("mpx-service-library") ;
 
         if( m_track_previous )
         {
