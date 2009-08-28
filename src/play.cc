@@ -117,9 +117,9 @@ namespace MPX
         , property_position_      (*this, "position", 0)
         , property_duration_      (*this, "duration", 0)
         {
-                m_message_queue = g_async_queue_new () ;
+                m_message_queue = g_async_queue_new() ;
 
-                for (int n = 0; n < SPECT_BANDS; ++n)
+                for( int n = 0; n < SPECT_BANDS; ++n )
                 {
                     m_spectrum.push_back( 0 ) ;
                 }
@@ -919,7 +919,7 @@ namespace MPX
                                       GstClockTime      pipeline_base_time = gst_element_get_base_time( play.control_pipe() )  ;
                                       GstClockID        clock_id = gst_clock_new_single_shot_id(
                                               gst_pipeline_get_clock( (GstPipeline*)(play.control_pipe()))
-                                            , message_running_time + pipeline_base_time
+                                            , message_running_time //+ pipeline_base_time
                                       )  ;
 
                                       gst_clock_id_wait_async(clock_id,clock_callback,data) ;
@@ -1398,19 +1398,28 @@ namespace MPX
         ProxyOf<PropString>::ReadWrite
                 Play::property_stream_type()
                 {
-                        return ProxyOf<PropString>::ReadWrite (this, "stream-type") ;
+                        return ProxyOf<PropString>::ReadWrite(
+                            this
+                          , "stream-type"
+                        ) ;
                 }
 
         ProxyOf<PropString>::ReadWrite
                 Play::property_stream()
                 {
-                        return ProxyOf<PropString>::ReadWrite (this, "stream") ;
+                        return ProxyOf<PropString>::ReadWrite(
+                            this
+                          , "stream"
+                        ) ;
                 }
 
         ProxyOf<PropInt>::ReadWrite
                 Play::property_volume()
                 {
-                        return ProxyOf<PropInt>::ReadWrite (this, "volume") ;
+                        return ProxyOf<PropInt>::ReadWrite(
+                              this
+                            , "volume"
+                        ) ;
                 }
 
         // RO Proxies //
@@ -1418,13 +1427,19 @@ namespace MPX
         ProxyOf<PropInt>::ReadOnly
                 Play::property_status() const
                 {
-                        return ProxyOf<PropInt>::ReadOnly (this, "playstatus") ;
+                        return ProxyOf<PropInt>::ReadOnly(
+                              this
+                            , "playstatus"
+                        ) ;
                 }
 
         ProxyOf<PropBool>::ReadOnly
                 Play::property_sane() const
                 {
-                        return ProxyOf<PropBool>::ReadOnly (this, "sane") ;
+                        return ProxyOf<PropBool>::ReadOnly(
+                              this
+                            , "sane"
+                        ) ;
                 }
 
         ProxyOf<PropInt>::ReadOnly
@@ -1432,9 +1447,13 @@ namespace MPX
                 {
                         GstFormat format (GST_FORMAT_TIME) ;
                         gint64 position = 0 ;
-                        gst_element_query_position (GST_ELEMENT (control_pipe()), &format, &position) ;
-                        g_object_set (G_OBJECT (gobj ()), "position", (position / GST_SECOND), NULL) ;
-                        return ProxyOf<PropInt>::ReadOnly (this, "position") ;
+                        gst_element_query_position( GST_ELEMENT( control_pipe()), &format, &position ) ;
+                        g_object_set( G_OBJECT( gobj()), "position", (position/GST_SECOND), NULL ) ;
+
+                        return ProxyOf<PropInt>::ReadOnly(
+                              this
+                            , "position"
+                        ) ;
                 }
 
         ProxyOf<PropInt>::ReadOnly
@@ -1442,9 +1461,13 @@ namespace MPX
                 {
                         GstFormat format (GST_FORMAT_TIME) ;
                         gint64 duration = 0 ;
-                        gst_element_query_duration (GST_ELEMENT (control_pipe()), &format, &duration) ;
-                        g_object_set (G_OBJECT (gobj ()), "duration", (duration / GST_SECOND), NULL) ;
-                        return ProxyOf<PropInt>::ReadOnly (this, "duration") ;
+                        gst_element_query_duration( GST_ELEMENT( control_pipe()), &format, &duration ) ;
+                        g_object_set( G_OBJECT( gobj()), "duration", (duration/GST_SECOND), NULL ) ;
+
+                        return ProxyOf<PropInt>::ReadOnly(
+                              this
+                            , "duration"
+                        ) ;
                 }
 
         /* Signals --------------------------------------------------------------------*/

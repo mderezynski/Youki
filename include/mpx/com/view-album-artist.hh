@@ -646,24 +646,12 @@ namespace Artist
                         {
                             case GDK_Up:
                             case GDK_KP_Up:
-                                m_search_idx = Limiter<int> (
-                                      Limiter<int>::ABS_ABS
-                                    , 0
-                                    , std::numeric_limits<int>::max() 
-                                    , m_search_idx - 1 
-                                ) ;
-                                on_search_entry_changed() ;
+                                find_prev_match() ;
                                 return true ;
 
                             case GDK_Down:
                             case GDK_KP_Down:
-                                m_search_idx = Limiter<int> (
-                                      Limiter<int>::ABS_ABS
-                                    , 0
-                                    , std::numeric_limits<int>::max() 
-                                    , m_search_idx + 1 
-                                ) ;
-                                on_search_entry_changed() ;
+                                find_next_match() ;
                                 return true ;
 
                             case GDK_Escape:
@@ -1344,6 +1332,74 @@ namespace Artist
             protected:
 
                 void
+                find_next_match()
+                {
+                    using boost::get ;
+
+                    Glib::ustring text = m_SearchEntry->get_text().casefold() ;
+
+                    if( text.empty() )
+                    {
+                        return ;
+                    }
+
+                    RowRowMapping_t::iterator i = m_model->m_mapping.begin(); 
+
+                    if( m_selection )
+                    {
+                        std::advance( i, get<2>(m_selection.get()) ) ;
+                        ++i ;
+                    }
+
+                    for( ; i != m_model->m_mapping.end(); ++i )
+                    {
+                        Glib::ustring match = Glib::ustring(get<0>(**i)).casefold() ;
+
+                        if( Util::match_keys( match, text )) 
+                        {
+                            std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
+                            scroll_to_row( d ) ;
+                            select_row( d ) ;
+                            return ;
+                        }
+                    }
+                }
+
+                void
+                find_prev_match()
+                {
+                    using boost::get ;
+
+                    Glib::ustring text = m_SearchEntry->get_text().casefold() ;
+
+                    if( text.empty() )
+                    {
+                        return ;
+                    }
+
+                    RowRowMapping_t::iterator i = m_model->m_mapping.begin(); 
+
+                    if( m_selection )
+                    {
+                        std::advance( i, get<2>(m_selection.get()) ) ;
+                        --i ; 
+                    }
+
+                    for( ; i >= m_model->m_mapping.begin(); --i )
+                    {
+                        Glib::ustring match = Glib::ustring(get<0>(**i)).casefold() ;
+
+                        if( Util::match_keys( match, text )) 
+                        {
+                            std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
+                            scroll_to_row( d ) ;
+                            select_row( d ) ;
+                            return ;
+                        }
+                    }
+                }
+
+                void
                 on_search_entry_changed()
                 {
                     using boost::get ;
@@ -1352,36 +1408,30 @@ namespace Artist
 
                     if( text.empty() )
                     {
-                        select_row( 0 ) ;
                         return ;
                     }
 
                     RowRowMapping_t::iterator i = m_model->m_mapping.begin(); 
-                    ++i ; // first row is "All" FIXME this sucks
-
-                    int idx = m_search_idx ;
+                
+                    if( m_selection )
+                    {
+                        std::advance( i, get<2>(m_selection.get()) ) ;
+                    }
 
                     for( ; i != m_model->m_mapping.end(); ++i )
                     {
-                        const Row_t& row = **i ;
+                        Glib::ustring match = Glib::ustring(get<0>(**i)).casefold() ;
 
-                        Glib::ustring match = Glib::ustring(get<0>(row)).casefold() ;
-
-                        if( match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )   
+                        if( Util::match_keys( match, text )) 
                         {
-                            if( idx <= 0 )
-                            {
-                                std::size_t row = std::distance( m_model->m_mapping.begin(), i ) ; 
-                                m_prop_vadj.get_value()->set_value( row ) ; 
-                                select_row( row ) ;
-                                break ;
-                            }
-                            else
-                            {
-                                --idx ;
-                            }
+                            std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
+                            scroll_to_row( d ) ; 
+                            select_row( d ) ;
+                            return ;
                         }
                     }
+
+                    clear_selection() ;
                 }
 
                 void
@@ -1399,11 +1449,17 @@ namespace Artist
                     cancel_search() ;
                     return false ;
                 }
+    
+            public:
 
                 void
                 cancel_search()
                 {
+                    if( !m_search_active )
+                        return ;
+
                     send_focus_change( *m_SearchEntry, false ) ;
+
                     m_SearchWindow->hide() ;
                     m_search_changed_conn.block () ;
                     m_SearchEntry->set_text("") ;

@@ -84,7 +84,7 @@ namespace Tracks
             const double rounding = 4. ; 
         }
 
-        typedef boost::tuple<std::string, std::string, std::string, gint64, Track, gint64, gint64, std::string>  Row_t ;
+        typedef boost::tuple<std::string, std::string, std::string, gint64, Track, gint64, gint64, std::string, std::string>  Row_t ;
 
 /*
         bool operator<(const Row_t& a, const Row_t& b )
@@ -182,12 +182,15 @@ namespace Tracks
                 const std::string&  order_album_a  = get<2>( a ) ; 
                 const std::string&  order_album_b  = get<2>( b ) ; 
 
+                const std::string&  order_date_a   = get<8>( a ) ; 
+                const std::string&  order_date_b   = get<8>( b ) ; 
+
                 gint64 order_track [2] = {
                       get<5>( a )
                     , get<5>( b )
                 } ;
 
-                return (order_artist_a < order_artist_b) && (order_album_a < order_album_b) && (order_track[0] < order_track[1]) ;
+                return (order_artist_a < order_artist_b) && (order_album_a < order_album_b) && (order_date_a < order_date_b) && (order_track[0] < order_track[1]) ;
             }
         } ;
 
@@ -262,6 +265,7 @@ namespace Tracks
                     std::string     artist
                                   , album
                                   , title
+                                  , release_date
                     ;
 
                     gint64          id          = 0
@@ -294,11 +298,16 @@ namespace Tracks
                         id_artist = get<gint64>(r["mpx_album_artist_id"]) ;
                     }
 
+                    if( r.count("mb_release_date") )
+                    { 
+                        release_date = get<std::string>(r["mb_release_date"]).substr( 0, 4 ) ;
+                    }
+
                     const std::string&  order_artist = r.count("album_artist_sortname")
                                                        ? get<std::string>(r["album_artist_sortname"])
                                                        : get<std::string>(r["album_artist"]) ;
 
-                    Row_t row ( title, artist, album, id, track, track_n, id_artist, order_artist ) ;
+                    Row_t row ( title, artist, album, id, track, track_n, id_artist, order_artist, release_date ) ;
                     m_realmodel->push_back(row) ;
 
                     Model_t::iterator i = m_realmodel->end() ;
@@ -469,17 +478,18 @@ namespace Tracks
                 std::string                             m_filter_full ;
                 std::string                             m_filter_effective ;
                 AQE::Constraints_t                      m_constraints_ext ;
-//                AQE::Constraints_t                      m_constraints_aqe ;
                 boost::optional<gint64>                 m_active_track ;
                 boost::optional<gint64>                 m_local_active_track ;
                 boost::optional<std::set<gint64> >      m_constraint_albums ;
                 boost::optional<std::set<gint64> >      m_constraint_artist ;
                 bool                                    m_advanced ;
+                bool                                    m_cache_enabled ;
 
                 DataModelFilter( DataModel_SP_t& model )
 
                     : DataModel( model->m_realmodel )
                     , m_advanced( false )
+                    , m_cache_enabled( true )
 
                 {
                     regen_mapping() ;
@@ -503,6 +513,24 @@ namespace Tracks
                 clear_active_track()
                 {
                     m_local_active_track.reset() ;
+                }
+
+                void
+                clear_fragment_cache()
+                {
+                    m_fragment_cache.clear() ;
+                }
+
+                void
+                disable_fragment_cache()
+                {
+                    m_cache_enabled = false ;
+                }
+
+                void
+                enable_fragment_cache()
+                {
+                    m_cache_enabled = true ;
                 }
 
                 void
@@ -610,6 +638,7 @@ namespace Tracks
                     const std::string&                    title             = get<std::string>(r["title"]) ;
                     const std::string&                    artist            = get<std::string>(r["artist"]) ;
                     const std::string&                    album             = get<std::string>(r["album"]) ; 
+                    const std::string&                    release_date      = get<std::string>(r["mb_release_date"]).substr( 0, 4 ) ;
                     gint64                                id                = get<gint64>(r["id"]) ;
                     gint64                                track_n           = get<gint64>(r["track"]) ;
                     gint64                                id_artist         = get<gint64>(r["mpx_album_artist_id"]) ;
@@ -628,6 +657,7 @@ namespace Tracks
                         , track_n 
                         , id_artist
                         , order_artist
+                        , release_date
                     ) ; 
 
                     Model_t::iterator i = m_realmodel->insert(
@@ -785,7 +815,7 @@ namespace Tracks
 
                             FragmentCache_t::iterator it = m_fragment_cache.find( m[n] ) ; // do we have this text fragment's result set cached?
 
-                            if( it != m_fragment_cache.end() ) // yes, this text fragment's result set is already cached
+                            if( m_cache_enabled && it != m_fragment_cache.end() ) // yes, this text fragment's result set is already cached
                             {
                                 intersect_v.push_back( (*it).second ) ;
                             }
@@ -808,7 +838,7 @@ namespace Tracks
                                     }
                                 }
 
-                                if( m_constraints_ext.empty() )
+                                if( m_cache_enabled && m_constraints_ext.empty() )
                                 {
                                     m_fragment_cache.insert( std::make_pair( m[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                                 }
@@ -875,7 +905,7 @@ namespace Tracks
                         std::swap( new_mapping, m_mapping ) ;
                         scan_active () ;
                         find_position( id ) ;
-                        m_changed.emit( m_position, true ) ; 
+                        m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ; 
                     }                
                 }
 
@@ -940,7 +970,7 @@ namespace Tracks
 
                             FragmentCache_t::iterator it = m_fragment_cache.find( m[n] ) ;
 
-                            if( it != m_fragment_cache.end() )
+                            if( m_cache_enabled && it != m_fragment_cache.end() )
                             {
                                 intersect_v.push_back( (*it).second ) ;
                             }
@@ -963,7 +993,7 @@ namespace Tracks
                                     }
                                 }
 
-                                if( m_constraints_ext.empty() )
+                                if( m_cache_enabled && m_constraints_ext.empty() )
                                 {
                                     m_fragment_cache.insert( std::make_pair( m[n], mst )) ; // insert newly determined result set for fragment into the fragment cache
                                 }
@@ -1025,7 +1055,7 @@ namespace Tracks
                         std::swap( new_mapping, m_mapping ) ;
                         scan_active () ;
                         find_position( id ) ;
-                        m_changed.emit( m_position, true ) ; 
+                        m_changed.emit( m_position, new_mapping.size() != m_mapping.size() ) ; 
                     }
                 }
         };
@@ -1300,7 +1330,6 @@ namespace Tracks
 
                 sigc::connection                    m_search_changed_conn ; 
                 bool                                m_search_active ;
-                int                                 m_search_idx ;
 
                 SignalTrackActivated                m_SIGNAL_track_activated ;
                 SignalVAdjChanged                   m_SIGNAL_vadj_changed ;
@@ -1367,24 +1396,12 @@ namespace Tracks
                         {
                             case GDK_Up:
                             case GDK_KP_Up:
-                                m_search_idx = Limiter<int> (
-                                      Limiter<int>::ABS_ABS
-                                    , 0
-                                    , std::numeric_limits<int>::max() 
-                                    , m_search_idx - 1 
-                                ) ;
-                                on_search_entry_changed() ;
+                                find_prev_match() ;
                                 return true ;
 
                             case GDK_Down:
                             case GDK_KP_Down:
-                                m_search_idx = Limiter<int> (
-                                      Limiter<int>::ABS_ABS
-                                    , 0
-                                    , std::numeric_limits<int>::max() 
-                                    , m_search_idx + 1 
-                                ) ;
-                                on_search_entry_changed() ;
+                                find_next_match() ;
                                 return true ;
 
                             case GDK_Escape:
@@ -1433,6 +1450,11 @@ namespace Tracks
                         case GDK_ISO_Enter:
                         case GDK_3270_Enter:
                         {
+                            if( m_search_active )
+                            {
+                                cancel_search() ;
+                            }
+
                             if( m_selection )
                             {
                                 using boost::get;
@@ -1852,7 +1874,7 @@ namespace Tracks
                     std::size_t row = get_upper_row() ;
 
                     int col     = 0 ;
-                    int cnt     = get_page_size() + 1 ; 
+                    int cnt     = get_page_size() ; 
 
                     int xpos    = 0 ;
                     int ypos    = m_row_start ;
@@ -1953,7 +1975,7 @@ namespace Tracks
                             row     = get_upper_row() ;
 
                             col     = 0 ;
-                            cnt     = get_page_size() + 1 ; 
+                            cnt     = get_page_size() ; 
 
                             ypos    = m_row_start ;
 
@@ -2039,7 +2061,7 @@ namespace Tracks
                     const int icon_lateral = 16 ;
 
                     ypos    = m_row_start ;
-                    cnt     = get_page_size() + 1 ; 
+                    cnt     = get_page_size() ; 
                     row     = get_upper_row() ;
 
                     while( m_model->is_set() && cnt && m_Model_I.in( row ) )
@@ -2468,6 +2490,74 @@ namespace Tracks
             protected:
 
                 void
+                find_next_match()
+                {
+                    using boost::get ;
+
+                    Glib::ustring text = m_SearchEntry->get_text().casefold() ;
+
+                    if( text.empty() )
+                    {
+                        return ;
+                    }
+
+                    DataModelFilter::RowRowMapping_t::iterator i = m_model->m_mapping.begin(); 
+
+                    if( m_selection )
+                    {
+                        std::advance( i, get<1>(m_selection.get()) ) ;
+                        ++i ;
+                    }
+
+                    for( ; i != m_model->m_mapping.end(); ++i )
+                    {
+                        Glib::ustring match = Glib::ustring(get<0>(**i)).casefold() ;
+
+                        if( match.length() && match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )
+                        {
+                            std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
+                            scroll_to_row( d ) ;
+                            select_row( d ) ;
+                            return ;
+                        }
+                    }
+                }
+
+                void
+                find_prev_match()
+                {
+                    using boost::get ;
+
+                    Glib::ustring text = m_SearchEntry->get_text().casefold() ;
+
+                    if( text.empty() )
+                    {
+                        return ;
+                    }
+
+                    DataModelFilter::RowRowMapping_t::iterator i = m_model->m_mapping.begin(); 
+
+                    if( m_selection )
+                    {
+                        std::advance( i, get<1>(m_selection.get()) ) ;
+                        --i ; 
+                    }
+
+                    for( ; i >= m_model->m_mapping.begin(); --i )
+                    {
+                        Glib::ustring match = Glib::ustring(get<0>(**i)).casefold() ;
+
+                        if( match.length() && match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )
+                        {
+                            std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
+                            scroll_to_row( d ) ;
+                            select_row( d ) ;
+                            return ;
+                        }
+                    }
+                }
+
+                void
                 on_search_entry_changed()
                 {
                     using boost::get ;
@@ -2476,36 +2566,30 @@ namespace Tracks
 
                     if( text.empty() )
                     {
-                        select_row( 0 ) ;
                         return ;
                     }
 
                     DataModelFilter::RowRowMapping_t::iterator i = m_model->m_mapping.begin(); 
-                    ++i ; // first row is "All" FIXME this sucks
-
-                    int idx = m_search_idx ;
+                
+                    if( m_selection )
+                    {
+                        std::advance( i, get<1>(m_selection.get()) ) ;
+                    }
 
                     for( ; i != m_model->m_mapping.end(); ++i )
                     {
-                        const Row_t& row = **i ;
+                        Glib::ustring match = Glib::ustring(get<0>(**i)).casefold() ;
 
-                        Glib::ustring match = Glib::ustring(get<0>(row)).casefold() ;
-
-                        if( match.length() && match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )   
+                        if( match.length() && match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )
                         {
-                            if( idx <= 0 )
-                            {
-                                std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
-                                m_prop_vadj.get_value()->set_value( d ) ; 
-                                select_row( d ) ;
-                                break ;
-                            }
-                            else
-                            {
-                                --idx ;
-                            }
+                            std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
+                            scroll_to_row( d ) ; 
+                            select_row( d ) ;
+                            return ;
                         }
                     }
+
+                    clear_selection() ;
                 }
 
                 void
@@ -2524,16 +2608,21 @@ namespace Tracks
                     return false ;
                 }
 
+            public:
+
                 void
                 cancel_search()
                 {
+                    if( !m_search_active )
+                        return ;
+
                     send_focus_change( *m_SearchEntry, false ) ;
+
                     m_SearchWindow->hide() ;
                     m_search_changed_conn.block () ;
                     m_SearchEntry->set_text("") ;
                     m_search_changed_conn.unblock () ;
                     m_search_active = false ;
-                    m_search_idx = 0 ;
                 }
 
             protected:
@@ -2561,7 +2650,6 @@ namespace Tracks
                         , m_highlight( false )
                         , m_fixed_total_width( 0 )
                         , m_search_active( false )
-                        , m_search_idx( 0 )
 
                 {
                     boost::shared_ptr<IYoukiThemeEngine> theme = services->get<IYoukiThemeEngine>("mpx-service-theme") ;

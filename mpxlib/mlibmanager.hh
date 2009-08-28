@@ -57,10 +57,10 @@ namespace MPX
 {
     enum PathTestResult
     {
-        IS_PRESENT,
-        RELOCATED,
-        DELETED,
-        IGNORED
+          IS_PRESENT
+        , RELOCATED
+        , DELETED
+        , IGNORED
     } ;
 
     struct FileStatsColumns : public Gtk::TreeModel::ColumnRecord
@@ -280,21 +280,21 @@ namespace MPX
 
             void
             cell_data_func_active(
-                Gtk::CellRenderer*,
-                const Gtk::TreeIter&
+                  Gtk::CellRenderer*
+                , const Gtk::TreeIter&
             ) ;
 
             void
             cell_data_func_text(
-                Gtk::CellRenderer*,
-                const Gtk::TreeIter&
+                  Gtk::CellRenderer*
+                , const Gtk::TreeIter&
             ) ;
 
             bool
             slot_select(
-                const Glib::RefPtr<Gtk::TreeModel>&,
-                const Gtk::TreePath&,
-                bool was_selected
+                  const Glib::RefPtr<Gtk::TreeModel>&
+                , const Gtk::TreePath&
+                , bool
             ) ;
 
             void

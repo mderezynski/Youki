@@ -232,21 +232,31 @@ namespace MPX
         ) ;
 
         m_mlibman_dbus_proxy = services->get<info::backtrace::Youki::MLibMan_proxy_actual>("mpx-service-mlibman").get() ; 
+
+        m_mlibman_dbus_proxy->signal_scan_start().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_library_scan_start
+        )) ;
+
         m_mlibman_dbus_proxy->signal_scan_end().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_library_scan_end
         )) ;
+
         m_mlibman_dbus_proxy->signal_new_album().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_library_new_album
         )) ;
+
         m_mlibman_dbus_proxy->signal_new_artist().connect(
             sigc::mem_fun(
                   *this
                 , &YoukiController::on_library_new_artist
         )) ;
+
         m_mlibman_dbus_proxy->signal_new_track().connect(
             sigc::mem_fun(
                   *this
@@ -457,9 +467,9 @@ namespace MPX
                 , &YoukiController::on_style_changed
         ))) ;
 
-        m_ScrolledWinArtist->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
-        m_ScrolledWinAlbums->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
-        m_ScrolledWinTracks->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_ALWAYS ) ; 
+        m_ScrolledWinArtist->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
+        m_ScrolledWinAlbums->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
+        m_ScrolledWinTracks->set_policy( Gtk::POLICY_NEVER, Gtk::POLICY_AUTOMATIC ) ; 
 
         {
                 View::Tracks::DataModel_SP_t m ( new View::Tracks::DataModel ) ;
@@ -560,7 +570,7 @@ namespace MPX
                 boost::shared_ptr<Covers> c = services->get<Covers>("mpx-service-covers") ;
 
                 SQL::RowV v ;
-                m_library->getSQL( v, "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), album" ) ;
+                m_library->getSQL( v, "SELECT album, album.mb_album_id, album.id, album_artist.id AS album_artist_id, album_artist, album_artist_sortname, mb_album_id, mb_release_type, mb_release_date FROM album JOIN album_artist ON album.album_artist_j = album_artist.id ORDER BY ifnull(album_artist_sortname,album_artist), substr(mb_release_date,1,4), album" ) ;
                 for( SQL::RowV::iterator i = v.begin(); i != v.end(); ++i )
                 {
                     SQL::Row & r = *i;
@@ -663,10 +673,7 @@ namespace MPX
         )) ;
 
         reload_library () ;
-
-        private_->FilterModelTracks->set_filter( "" ) ;
-        m_ListViewArtist->select_row( 0 ) ;
-        m_ListViewAlbums->select_row( 0 ) ;
+        on_entry_clear_clicked() ;
 
 /*
         gtk_widget_realize( GTK_WIDGET( m_Paned1->gobj() )) ;
@@ -829,7 +836,7 @@ namespace MPX
        // Tracks 
 
         SQL::RowV v ;
-        m_library->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY ifnull(album_artist_sortname,album_artist), album, track_view.track")).str()) ; 
+        m_library->getSQL(v, (boost::format("SELECT * FROM track_view ORDER BY ifnull(album_artist_sortname,album_artist), substr(mb_release_date,1,4), album, track_view.track")).str()) ; 
         for(SQL::RowV::iterator i = v.begin(); i != v.end(); ++i)
         {
                 SQL::Row & r = *i;
@@ -881,10 +888,19 @@ namespace MPX
     }
 
     void
+    YoukiController::on_library_scan_start(
+    )
+    {
+        private_->FilterModelTracks->clear_fragment_cache() ;
+        private_->FilterModelTracks->disable_fragment_cache() ;
+    }
+
+    void
     YoukiController::on_library_scan_end(
     )
     {
         push_new_tracks() ;
+        private_->FilterModelTracks->enable_fragment_cache() ;
     }
 
     void
@@ -1331,8 +1347,6 @@ namespace MPX
 
             constraint = std::set<gint64>() ; 
             constraint.get().insert( id_artist.get() ) ;
-
-            g_message("Album Artist Id: %lld", gint64(id_artist.get()) ) ;
         }
 
         if( id_albums ) 

@@ -91,11 +91,13 @@ namespace MPX
     )
     {
         const std::string path (build_filename (DATA_DIR, "glade" G_DIR_SEPARATOR_S "mlibmanager.glade"));
+
         MLibManager *p = new MLibManager(
               Gnome::Glade::Xml::create(path)
             , conn
-        );
-        return p;
+        ) ;
+
+        return p ;
     }
 
     MLibManager::~MLibManager ()

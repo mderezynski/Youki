@@ -404,6 +404,9 @@ namespace MPX
         protected:
 
             void
+            on_library_scan_start() ;
+
+            void
             on_library_scan_end() ;
 
             void
