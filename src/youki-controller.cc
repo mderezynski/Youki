@@ -343,6 +343,16 @@ namespace MPX
                     , &YoukiController::on_entry_clear_clicked
         )))) ;
 
+        m_checkbutton_advanced_label = Gtk::manage( new Gtk::Label(_("Advanced"))) ;
+
+        m_checkbutton_advanced = Gtk::manage( new Gtk::CheckButton) ;
+        m_checkbutton_advanced->add( *m_checkbutton_advanced_label ) ;
+        m_checkbutton_advanced->signal_toggled().connect(
+            sigc::mem_fun(
+                  *this
+                , &YoukiController::on_advanced_changed
+        )) ;
+
         m_completion_timer.stop() ;
         m_completion_timer.reset() ;
 
@@ -354,6 +364,11 @@ namespace MPX
             sigc::mem_fun(
                       *this
                     , &YoukiController::on_list_view_tr_track_activated
+        )) ;
+        m_ListViewTracks->signal_find_propagate().connect(
+            sigc::mem_fun(
+                      *this
+                    , &YoukiController::on_list_view_tr_find_propagate
         )) ;
 
         m_ListViewArtist        = Gtk::manage( new View::Artist::Class ) ;
@@ -443,6 +458,7 @@ namespace MPX
         m_HBox_Entry->set_border_width( 2 ) ;
         m_HBox_Entry->pack_start( *m_Label_Search, false, false, 0 ) ;
         m_HBox_Entry->pack_start( *m_Alignment_Entry, true, true, 0 ) ;
+        m_HBox_Entry->pack_start( *m_checkbutton_advanced, false, false, 0 ) ;
 
         m_Alignment_Entry->add( *m_Entry ) ;
         m_Alignment_Entry->property_top_padding() = 2 ;
@@ -776,11 +792,6 @@ namespace MPX
         m_ScrolledWinTracks->get_vscrollbar()->modify_fg( Gtk::STATE_PRELIGHT, c ) ;
         m_ScrolledWinTracks->get_vscrollbar()->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
 
-        //m_Paned1->modify_bg( Gtk::STATE_NORMAL, c ) ;
-        //m_Paned2->modify_bg( Gtk::STATE_NORMAL, c ) ;
-        //m_Paned1->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
-        //m_Paned2->modify_bg( Gtk::STATE_PRELIGHT, c ) ;
-
         c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
 
         m_Entry->modify_text( Gtk::STATE_NORMAL, c ) ;
@@ -794,9 +805,18 @@ namespace MPX
         m_Label_Search->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
         m_Label_Search->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
 
+        m_checkbutton_advanced_label->modify_base( Gtk::STATE_NORMAL, c ) ;
+        m_checkbutton_advanced_label->modify_base( Gtk::STATE_ACTIVE, c ) ;
+        m_checkbutton_advanced_label->modify_base( Gtk::STATE_PRELIGHT, c ) ;
+        m_checkbutton_advanced_label->modify_bg( Gtk::STATE_NORMAL, c2 ) ;
+        m_checkbutton_advanced_label->modify_bg( Gtk::STATE_ACTIVE, c2 ) ;
+        m_checkbutton_advanced_label->modify_bg( Gtk::STATE_PRELIGHT, c2 ) ;
+
         c.set_rgb_p( c_text.r, c_text.g, c_text.b ) ; 
         m_Label_Search->modify_text( Gtk::STATE_NORMAL, c ) ;
         m_Label_Search->modify_fg( Gtk::STATE_NORMAL, c ) ;
+        m_checkbutton_advanced_label->modify_text( Gtk::STATE_NORMAL, c ) ;
+        m_checkbutton_advanced_label->modify_fg( Gtk::STATE_NORMAL, c ) ;
 
         Gdk::Color cgdk ;
         cgdk.set_rgb_p( c_base.r, c_base.g, c_base.b ) ; 
@@ -884,7 +904,7 @@ namespace MPX
             private_->FilterModelTracks->add_synthetic_constraint_quiet( c ) ;
         }
 
-        private_->FilterModelTracks->set_filter( m_Entry_Text ) ;
+        private_->FilterModelTracks->set_filter( m_EntryText ) ;
     }
 
     void
@@ -1325,6 +1345,16 @@ namespace MPX
     }
 
     void
+    YoukiController::on_list_view_tr_find_propagate(
+          const std::string&    text
+    )
+    {
+        m_EntryText.clear() ;
+        m_checkbutton_advanced->set_active( true ) ; 
+        m_Entry->set_text( (boost::format("title %% \"%s\"") % text).str() ) ;
+    }
+
+    void
     YoukiController::on_list_view_aa_selection_changed(
     ) 
     {
@@ -1409,7 +1439,7 @@ namespace MPX
         {
             m_conn3.block() ;
             m_conn4.block() ;
-            m_Entry_Text += m_prediction_last ;
+            m_EntryText += m_prediction_last ;
             m_Entry->select_region( -1, -1 ) ;
             m_conn3.unblock() ;
             m_conn4.unblock() ;
@@ -1466,7 +1496,7 @@ namespace MPX
         m_conn4.block() ;    
 
         m_Entry->set_text( "" ) ;
-        m_Entry_Text.clear() ;
+        m_EntryText.clear() ;
 
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
         private_->FilterModelTracks->set_filter( "" ) ;
@@ -1515,8 +1545,8 @@ namespace MPX
             m_prediction_last = m_prediction ;
             m_prediction.clear() ;
 
-            m_Entry->set_text( m_Entry_Text + m_prediction_last ) ; 
-            m_Entry->select_region( m_Entry_Text.length(), -1 ) ;
+            m_Entry->set_text( m_EntryText + m_prediction_last ) ; 
+            m_Entry->select_region( m_EntryText.length(), -1 ) ;
 
             m_conn3.unblock() ;
             m_conn4.unblock() ;
@@ -1542,14 +1572,14 @@ namespace MPX
         if( text.size() > 0 )
         {
 /*
-            if( text == m_Entry_Text + m_prediction_last ) 
+            if( text == m_EntryText + m_prediction_last ) 
             {
                 return ;
             }
 
             Glib::ustring new_prediction = private_->MarkovPredictor->predict( text ) ;
 
-            if( text == m_Entry_Text && new_prediction == m_prediction_last ) 
+            if( text == m_EntryText && new_prediction == m_prediction_last ) 
             {
                 m_prediction.clear() ;
                 m_prediction_last.clear() ;
@@ -1557,8 +1587,8 @@ namespace MPX
             }
 */
 
-            m_Entry_Text = text ; 
-            m_Entry->set_text( m_Entry_Text ) ;  // FIXME temp
+            m_EntryText = text ; 
+            m_Entry->set_text( m_EntryText ) ;  // FIXME temp
 
 /*
             m_prediction = new_prediction ; 
@@ -1581,7 +1611,7 @@ namespace MPX
         }
         else
         {
-            m_Entry_Text.clear() ;
+            m_EntryText.clear() ;
 /*
             m_prediction.clear() ;
             m_prediction_last.clear() ;
@@ -1600,7 +1630,7 @@ namespace MPX
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
 */
 
-        private_->FilterModelTracks->set_filter( m_Entry_Text ) ;
+        private_->FilterModelTracks->set_filter( m_EntryText ) ;
 
         private_->FilterModelArtist->set_constraint_artist( private_->FilterModelTracks->m_constraint_artist ) ;
         private_->FilterModelArtist->regen_mapping() ;
@@ -1626,6 +1656,12 @@ namespace MPX
 
         private_->FilterModelAlbums->set_constraint_albums( private_->FilterModelTracks->m_constraint_albums ) ;
         private_->FilterModelAlbums->regen_mapping() ;
+    }
+
+    void
+    YoukiController::on_advanced_changed()
+    {
+        m_ListViewTracks->set_advanced( m_checkbutton_advanced->get_active() ) ;
     }
 
     void

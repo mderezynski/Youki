@@ -8,281 +8,392 @@
 #include "mpx/util-string.hh"
 #include "mpx/algorithm/aque.hh"
 
+namespace
+{
+    using namespace MPX ;
+    using namespace MPX::AQE ;
+
+    void
+    add_constraint(
+          Constraints_t&        constraints
+        , const std::string&    attribute
+        , const std::string&    value
+        , MatchType_t           type
+    )
+    {
+        if( type != MT_UNDEFINED )
+        {
+            Constraint_t c ;
+            c.MatchType = type ;
+
+            if( attribute == "musicip-puid" )
+            {
+                c.TargetAttr = ATTRIBUTE_MUSICIP_PUID ;
+                c.TargetValue = value ;
+                constraints.push_back(c) ;
+            }
+            else
+            if( attribute == "album-mbid" )
+            {
+                c.TargetAttr = ATTRIBUTE_MB_ALBUM_ID ;
+                c.TargetValue = value ;
+                constraints.push_back(c) ;
+            }
+            else
+            if( attribute == "album-artist-mbid" )
+            {
+                c.TargetAttr = ATTRIBUTE_MB_ALBUM_ARTIST_ID ;
+                c.TargetValue = value ;
+                constraints.push_back(c) ;
+            }
+            else
+            if( attribute == "artist-mbid" )
+            {
+                c.TargetAttr = ATTRIBUTE_MB_ARTIST_ID ;
+                c.TargetValue = value ;
+                constraints.push_back(c) ;
+            }
+            else
+            if( attribute == "country" )
+            {
+                c.TargetAttr = ATTRIBUTE_MB_RELEASE_COUNTRY ;
+                c.TargetValue = value ;
+                constraints.push_back(c) ;
+            }
+            else
+            if( attribute == "type" )
+            {
+                c.TargetAttr = ATTRIBUTE_MB_RELEASE_TYPE ;
+                c.TargetValue = value ;
+                constraints.push_back(c) ;
+            }
+            else
+            if( attribute == "bitrate" )
+            {
+                try{
+                        c.TargetValue = gint64(boost::lexical_cast<int>(value)) ;
+                        c.TargetAttr = ATTRIBUTE_BITRATE ;
+                        c.MatchType = type ;
+                        constraints.push_back(c) ;
+                } catch( boost::bad_lexical_cast ) {
+                }
+            }
+            else
+            if( attribute == "year" )
+            {
+                try{
+                        c.TargetValue = gint64(boost::lexical_cast<int>(value)) ;
+                        c.TargetAttr = ATTRIBUTE_DATE ;
+                        c.MatchType = type ;
+                        constraints.push_back(c) ;
+                } catch( boost::bad_lexical_cast ) {
+                }
+            }
+            else
+            if( attribute == "quality" )
+            {
+                c.TargetValue = gint64(boost::lexical_cast<int>(value)) ;
+                c.TargetAttr = ATTRIBUTE_QUALITY ;
+                constraints.push_back(c) ;
+            }
+            else
+            if( attribute == "genre" )
+            {
+                c.TargetValue = value ; 
+                c.TargetAttr = ATTRIBUTE_GENRE ;
+                constraints.push_back(c) ;
+            }
+            else
+            if( attribute == "artist" )
+            {
+                c.TargetValue = value ; 
+                c.TargetAttr = ATTRIBUTE_ARTIST ;
+                constraints.push_back(c) ;
+            }
+            else
+            if( attribute == "album-artist" )
+            {
+                c.TargetValue = value ;
+                c.TargetAttr = ATTRIBUTE_ALBUM_ARTIST ;
+                constraints.push_back(c) ;
+            }
+            else
+            if( attribute == "album" )
+            {
+                c.TargetValue = value ; 
+                c.TargetAttr = ATTRIBUTE_ALBUM ;
+                constraints.push_back(c) ;
+            }
+            if( attribute == "title" )
+            {
+                c.TargetValue = value ; 
+                c.TargetAttr = ATTRIBUTE_TITLE ;
+                constraints.push_back(c) ;
+            }
+        }
+    }
+}
+
 namespace MPX
 {
 namespace AQE
 {
     Glib::ustring
-    parse_advanced_query (Constraints_t& constraints, const std::string& text)
+    parse_advanced_query(
+          Constraints_t&            constraints
+        , const std::string&        text
+    )
     {
-        typedef std::vector< std::string > VectorType;
+        typedef std::vector< std::string > Vector_t ;
 
-        VectorType non_attr_strings;
+        Vector_t non_attr_strings;
 
-        VectorType v;
-        boost::algorithm::split( v, text, boost::algorithm::is_any_of(" ") );
+        Glib::ustring tmp ;
 
-        if( v.empty() )
+        Glib::ustring attribute ;
+        Glib::ustring value ;
+
+        MatchType_t type ;
+        bool quote_open = false ;
+        bool done_reading_pair  = false ;
+        
+        enum ReadType_t
         {
-            v.push_back( text );
-        }
+              READ_ATTR
+            , READ_VAL
+        } ;
 
-        for( VectorType::const_iterator i = v.begin(); i != v.end(); ++i )
+        ReadType_t rt = READ_ATTR ;
+
+        Glib::ustring text_utf8 ( text ) ;
+        Glib::ustring::iterator i = text_utf8.begin() ;
+
+        while( i != text_utf8.end() )
         {
-            std::string const& token = *i;
-
-            struct MatchData
+            if( *i == '<' )
             {
-                char const* op;
-                MatchType_t type;
-            };
+                type = MT_LESSER_THAN ;
 
-            const MatchData data[] =
+                attribute = tmp ;
+                tmp.clear() ;
+                rt = READ_VAL ;
+            }
+            else
+            if( *i == '>' )
             {
-                  {"=", MT_EQUAL}
-                , {">", MT_GREATER_THAN}
-                , {"<", MT_LESSER_THAN}
-            };
+                type = MT_GREATER_THAN ;
 
-            MatchType_t type = MT_UNDEFINED;
-
-            VectorType v2;
-
-            for( unsigned n = 0; n < G_N_ELEMENTS(data); ++n )
+                attribute = tmp ;
+                tmp.clear() ;
+                rt = READ_VAL ;
+            }
+            else
+            if( *i == '=' )
             {
-                v2.clear();
-                boost::algorithm::split( v2, token, boost::algorithm::is_any_of(data[n].op) );
-                if( v2.size() == 2) 
+                type = MT_EQUAL ;
+
+                attribute = tmp ;
+                tmp.clear() ;
+                rt = READ_VAL ;
+            }
+            else
+            if( *i == '~' )
+            {
+                type = MT_FUZZY_EQUAL ;
+
+                attribute = tmp ;
+                tmp.clear() ;
+                rt = READ_VAL ;
+            }
+            else
+            if( *i == '%' )
+            {
+                type = MT_EQUAL_BEGIN ;
+
+                attribute = tmp ;
+                tmp.clear() ;
+                rt = READ_VAL ;
+            }
+            else
+            if( *i == '"' )
+            {
+                if( rt == READ_ATTR )
                 {
-                    type = data[n].type; 
-                    break ;
+                    // we interpret this as the start of the attribute and use MT_EQUAL
+                    type = MT_EQUAL ;
+
+                    attribute = tmp ;
+                    tmp.clear() ;
+                    rt = READ_VAL ;
+
+                    quote_open = true ;
+                }
+                else
+                if( !quote_open )
+                {
+                    quote_open = true ;
+                }
+                else
+                {
+                    quote_open = false ;
+
+                    value = tmp ;
+                    tmp.clear() ;
+
+                    done_reading_pair = true ;
                 }
             }
-
-            if( type != MT_UNDEFINED )
+            else
+            if( *i == ' ' )
             {
-                Constraint_t c;
+                if( quote_open )
+                {
+                    tmp += *i ;
+                }
+                else
+                {
+                    if( rt == READ_ATTR )
+                    {
+                        // ignore
+                    }
+                    else
+                    {
+                        value = tmp ;
+                        tmp.clear() ;
 
-                if( v2[0] == "musicip-puid" )
-                {
-                    c.TargetAttr = ATTRIBUTE_MUSICIP_PUID;
-                    c.MatchType = type;
-                    c.TargetValue = v2[1];
-                    constraints.push_back(c);
-                }
-                else
-                if( v2[0] == "album-mbid" )
-                {
-                    c.TargetAttr = ATTRIBUTE_MB_ALBUM_ID;
-                    c.MatchType = type;
-                    c.TargetValue = v2[1];
-                    constraints.push_back(c);
-                }
-                else
-                if( v2[0] == "album-artist-mbid" )
-                {
-                    c.TargetAttr = ATTRIBUTE_MB_ALBUM_ARTIST_ID;
-                    c.MatchType = type;
-                    c.TargetValue = v2[1];
-                    constraints.push_back(c);
-                }
-                else
-                if( v2[0] == "artist-mbid" )
-                {
-                    c.TargetAttr = ATTRIBUTE_MB_ARTIST_ID;
-                    c.MatchType = type;
-                    c.TargetValue = v2[1];
-                    constraints.push_back(c);
-                }
-                else
-                if( v2[0] == "country" )
-                {
-                    c.TargetAttr = ATTRIBUTE_MB_RELEASE_COUNTRY;
-                    c.MatchType = type;
-                    c.TargetValue = v2[1];
-                    constraints.push_back(c);
-                }
-                else
-                if( v2[0] == "type" )
-                {
-                    c.TargetAttr = ATTRIBUTE_MB_RELEASE_TYPE;
-                    c.MatchType = type;
-                    c.TargetValue = v2[1];
-                    constraints.push_back(c);
-                }
-                else
-                if( v2[0] == "bitrate" )
-                {
-                    try{
-                            c.TargetValue = gint64(boost::lexical_cast<int>(v2[1]));
-                            c.TargetAttr = ATTRIBUTE_BITRATE;
-                            c.MatchType = type;
-                            constraints.push_back(c);
-                    } catch( boost::bad_lexical_cast ) {
-                    }
-                }
-                else
-                if( v2[0] == "year" )
-                {
-                    try{
-                            c.TargetValue = gint64(boost::lexical_cast<int>(v2[1]));
-                            c.TargetAttr = ATTRIBUTE_DATE;
-                            c.MatchType = type;
-                            constraints.push_back(c);
-                    } catch( boost::bad_lexical_cast ) {
-                    }
-                }
-                else
-                if( v2[0] == "quality" )
-                {
-                    try{
-                            c.TargetValue = gint64(boost::lexical_cast<int>(v2[1]));
-                            c.TargetAttr = ATTRIBUTE_QUALITY;
-                            c.MatchType = type;
-                            constraints.push_back(c);
-                    } catch( boost::bad_lexical_cast ) {
-                    }
-                }
-                else
-                if( v2[0] == "genre" )
-                {
-                    try{
-                            c.TargetValue = boost::lexical_cast<std::string>(v2[1]);
-                            c.TargetAttr = ATTRIBUTE_GENRE;
-                            c.MatchType = MT_FUZZY_EQUAL;
-                            constraints.push_back(c);
-                    } catch( boost::bad_lexical_cast ) {
-                    }
-                }
-                else
-                if( v2[0] == "artist" )
-                {
-                    try{
-                            c.TargetValue = boost::lexical_cast<std::string>(v2[1]);
-                            c.TargetAttr = ATTRIBUTE_ARTIST;
-                            c.MatchType = MT_FUZZY_EQUAL;
-                            constraints.push_back(c);
-                    } catch( boost::bad_lexical_cast ) {
-                    }
-                }
-                else
-                if( v2[0] == "album-artist" )
-                {
-                    try{
-                            c.TargetValue = boost::lexical_cast<std::string>(v2[1]);
-                            c.TargetAttr = ATTRIBUTE_ALBUM_ARTIST;
-                            c.MatchType = MT_FUZZY_EQUAL;
-                            constraints.push_back(c);
-                    } catch( boost::bad_lexical_cast ) {
-                    }
-                }
-                else
-                if( v2[0] == "album" )
-                {
-                    try{
-                            c.TargetValue = boost::lexical_cast<std::string>(v2[1]);
-                            c.TargetAttr = ATTRIBUTE_ALBUM;
-                            c.MatchType = MT_FUZZY_EQUAL;
-                            constraints.push_back(c);
-                    } catch( boost::bad_lexical_cast ) {
+                        done_reading_pair = true ;
                     }
                 }
             }
             else
             {
-                non_attr_strings.push_back( token );
+                tmp += *i ;
             }
+
+            if( done_reading_pair )
+            {
+                if( !attribute.empty() && !value.empty() )
+                {
+                    add_constraint(
+                          constraints
+                        , attribute
+                        , value
+                        , type
+                    ) ;
+
+                    type = MT_UNDEFINED ;
+                    attribute.clear() ;
+                    value.clear() ;
+                    tmp.clear() ;
+                    done_reading_pair = false ;
+                    rt = READ_ATTR ;
+                }
+            }
+
+            ++i ;
         }
 
-        return Glib::ustring(boost::algorithm::join( non_attr_strings, " ")).lowercase();
+        return Glib::ustring(boost::algorithm::join( non_attr_strings, " ")).lowercase() ;
     }
 
     template <typename T>
     bool
     determine_match (const Constraint_t& c, const MPX::Track& track)
     {
-        g_return_val_if_fail(track.has(c.TargetAttr), false);
+        g_return_val_if_fail(track.has(c.TargetAttr), false) ;
 
-        bool truthvalue = false;
+        bool truthvalue = false ;
 
         switch( c.MatchType )
         {
             case MT_EQUAL:
-                truthvalue = boost::get<T>(track[c.TargetAttr].get()) == boost::get<T>(c.TargetValue.get());
-                break ;
+                truthvalue = boost::get<T>(track[c.TargetAttr].get()) == boost::get<T>(c.TargetValue.get()) ;
+                break  ;
 
             case MT_NOT_EQUAL:
-                truthvalue = boost::get<T>(track[c.TargetAttr].get()) != boost::get<T>(c.TargetValue.get());
-                break ;
+                truthvalue = boost::get<T>(track[c.TargetAttr].get()) != boost::get<T>(c.TargetValue.get()) ;
+                break  ;
 
             case MT_GREATER_THAN:
-                truthvalue = boost::get<T>(track[c.TargetAttr].get())  > boost::get<T>(c.TargetValue.get());
-                break ;
+                truthvalue = boost::get<T>(track[c.TargetAttr].get())  > boost::get<T>(c.TargetValue.get()) ;
+                break  ;
 
             case MT_LESSER_THAN:
-                truthvalue = boost::get<T>(track[c.TargetAttr].get())  < boost::get<T>(c.TargetValue.get());
-                break ;
+                truthvalue = boost::get<T>(track[c.TargetAttr].get())  < boost::get<T>(c.TargetValue.get()) ;
+                break  ;
 
             case MT_GREATER_THAN_OR_EQUAL:
-                truthvalue = boost::get<T>(track[c.TargetAttr].get()) >= boost::get<T>(c.TargetValue.get());
-                break ;
+                truthvalue = boost::get<T>(track[c.TargetAttr].get()) >= boost::get<T>(c.TargetValue.get()) ;
+                break  ;
 
             case MT_LESSER_THAN_OR_EQUAL:
-                truthvalue = boost::get<T>(track[c.TargetAttr].get()) <= boost::get<T>(c.TargetValue.get());
-                break ;
+                truthvalue = boost::get<T>(track[c.TargetAttr].get()) <= boost::get<T>(c.TargetValue.get()) ;
+                break  ;
 
             default:
-                truthvalue = false ;
-                break ;
+                truthvalue = false  ;
+                break  ;
         }
 
-        return truthvalue;
+        return truthvalue ;
     }
 
     template <>
     bool
     determine_match<std::string>(const Constraint_t& c, const MPX::Track& track)
     {
-        g_return_val_if_fail(track.has(c.TargetAttr), false);
+        g_return_val_if_fail(track.has(c.TargetAttr), false) ;
 
-        bool truthvalue = false;
+        bool truthvalue = false ;
 
         switch( c.MatchType )
         {
             case MT_EQUAL:
-                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) == boost::get<std::string>(c.TargetValue.get());
-                break ;
+                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) == boost::get<std::string>(c.TargetValue.get()) ;
+                break  ;
 
             case MT_NOT_EQUAL:
-                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) != boost::get<std::string>(c.TargetValue.get());
-                break ;
+                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) != boost::get<std::string>(c.TargetValue.get()) ;
+                break  ;
 
             case MT_GREATER_THAN:
-                truthvalue = boost::get<std::string>(track[c.TargetAttr].get())  > boost::get<std::string>(c.TargetValue.get());
-                break ;
+                truthvalue = boost::get<std::string>(track[c.TargetAttr].get())  > boost::get<std::string>(c.TargetValue.get()) ;
+                break  ;
 
             case MT_LESSER_THAN:
-                truthvalue = boost::get<std::string>(track[c.TargetAttr].get())  < boost::get<std::string>(c.TargetValue.get());
-                break ;
+                truthvalue = boost::get<std::string>(track[c.TargetAttr].get())  < boost::get<std::string>(c.TargetValue.get()) ;
+                break  ;
 
             case MT_GREATER_THAN_OR_EQUAL:
-                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) >= boost::get<std::string>(c.TargetValue.get());
-                break ;
+                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) >= boost::get<std::string>(c.TargetValue.get()) ;
+                break  ;
 
             case MT_LESSER_THAN_OR_EQUAL:
-                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) <= boost::get<std::string>(c.TargetValue.get());
-                break ;
+                truthvalue = boost::get<std::string>(track[c.TargetAttr].get()) <= boost::get<std::string>(c.TargetValue.get()) ;
+                break  ;
 
             case MT_FUZZY_EQUAL:
-                truthvalue = Util::match_keys(boost::get<std::string>(track[c.TargetAttr].get()), boost::get<std::string>(c.TargetValue.get()));
-                break ;
+                truthvalue = Util::match_keys(boost::get<std::string>(track[c.TargetAttr].get()), boost::get<std::string>(c.TargetValue.get())) ;
+                break  ;
 
+            case MT_EQUAL_BEGIN:
+
+                {
+                    Glib::ustring m = Glib::ustring(boost::get<std::string>(track[c.TargetAttr].get())).lowercase() ;
+                    Glib::ustring v = Glib::ustring(boost::get<std::string>(c.TargetValue.get())).lowercase() ;
+
+                    truthvalue = (!m.empty() && !v.empty()) && m.substr( 0, v.length()) == v ;
+                }
+
+                break  ;
+        
+            case MT_UNDEFINED:
             default:
-                truthvalue = false ;
-                break ;
+                truthvalue = false  ;
+                break  ;
         }
 
-        return truthvalue ;
+        return truthvalue  ;
     }
 
 
@@ -291,25 +402,25 @@ namespace AQE
     {
         for( Constraints_t::const_iterator i = c.begin(); i != c.end(); ++i )
         {
-            Constraint_t const& c = *i;
+            Constraint_t const& c = *i ;
 
             if( !track.has(c.TargetAttr) )
             {
-                return false;
+                return false ;
             }
         
             bool truthvalue; 
 
             if( c.TargetAttr >= ATTRIBUTE_TRACK )
-                truthvalue = determine_match<gint64>(c, track);
+                truthvalue = determine_match<gint64>(c, track) ;
             else
-                truthvalue = determine_match<std::string>(c, track);
+                truthvalue = determine_match<std::string>(c, track) ;
 
             if( !truthvalue )
-                return false;
+                return false ;
         }
 
-        return true;
+        return true ;
     }
 }
 }

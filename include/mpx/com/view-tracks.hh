@@ -478,6 +478,7 @@ namespace Tracks
                 std::string                             m_filter_full ;
                 std::string                             m_filter_effective ;
                 AQE::Constraints_t                      m_constraints_ext ;
+                AQE::Constraints_t                      m_constraints_aqe ;
                 boost::optional<gint64>                 m_active_track ;
                 boost::optional<gint64>                 m_local_active_track ;
                 boost::optional<std::set<gint64> >      m_constraint_albums ;
@@ -488,7 +489,7 @@ namespace Tracks
                 DataModelFilter( DataModel_SP_t& model )
 
                     : DataModel( model->m_realmodel )
-                    , m_advanced( false )
+                    , m_advanced( true )
                     , m_cache_enabled( true )
 
                 {
@@ -693,12 +694,12 @@ namespace Tracks
 
                         if( m_advanced )
                         {
-                            m_constraints_ext.clear();
-                            m_filter_effective = AQE::parse_advanced_query( m_constraints_ext, text ) ;
+                            m_constraints_aqe.clear() ;
+                            m_filter_effective = AQE::parse_advanced_query( m_constraints_aqe, text ) ;
                         }
                         else
                         {
-                            m_filter_effective = m_filter_full;
+                            m_filter_effective = m_filter_full ;
                         }
 
                         regen_mapping();
@@ -706,10 +707,18 @@ namespace Tracks
                 }
 
                 virtual void
-                set_advanced (bool advanced)
+                set_advanced(
+                      bool advanced
+                )
                 {
-                    m_advanced = advanced;
-                    set_filter(m_filter_full);
+                    m_advanced = advanced ;
+
+                    if( !advanced )
+                    {
+                        m_constraints_aqe.clear() ;
+                    }
+
+                    set_filter( m_filter_full ) ;
                 }
 
                 void
@@ -775,17 +784,15 @@ namespace Tracks
 
                         for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                         {
-                            int truth = m_constraints_ext.empty() /*&& m_constraints_aqe.empty()*/ ; 
+                            int truth = m_constraints_ext.empty() && m_constraints_aqe.empty() ; 
 
                             const MPX::Track& track = get<4>(*i);
 
                             if( !m_constraints_ext.empty() )
                                 truth |= AQE::match_track( m_constraints_ext, track ) ;
 
-/*
                             if( !m_constraints_aqe.empty() )
                                 truth |= AQE::match_track( m_constraints_aqe, track ) ;
-*/
 
                             if( truth )
                             {
@@ -873,17 +880,15 @@ namespace Tracks
 
                         for( ModelSet_t::iterator i = output->begin() ; i != output->end(); ++i )
                         {
-                            int truth = m_constraints_ext.empty() /* && m_constraints_aqe.empty() */ ; 
+                            int truth = m_constraints_ext.empty() && m_constraints_aqe.empty() ; 
 
                             const MPX::Track& track = get<4>(**i);
 
                             if( !m_constraints_ext.empty() )
                                 truth |= AQE::match_track( m_constraints_ext, track ) ;
 
-/*
                             if( !m_constraints_aqe.empty() )
                                 truth |= AQE::match_track( m_constraints_aqe, track ) ;
-*/
 
                             if( truth )
                             {
@@ -930,17 +935,15 @@ namespace Tracks
 
                         for( RowRowMapping_t::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                         {
-                            int truth = m_constraints_ext.empty() /* && m_constraints_aqe.empty()*/ ; 
+                            int truth = m_constraints_ext.empty() && m_constraints_aqe.empty() ; 
 
                             const MPX::Track& track = get<4>(**i);
 
                             if( !m_constraints_ext.empty() )
                                 truth |= AQE::match_track( m_constraints_ext, track ) ; 
 
-/*
                             if( !m_constraints_aqe.empty() )
                                 truth |= AQE::match_track( m_constraints_aqe, track ) ; 
-*/
 
                             if( truth )
                             {
@@ -1028,17 +1031,15 @@ namespace Tracks
 
                         for( ModelSet_t::const_iterator i = output->begin() ; i != output->end(); ++i )
                         {
-                            int truth = m_constraints_ext.empty() /*&& m_constraints_aqe.empty() */ ; 
+                            int truth = m_constraints_ext.empty() && m_constraints_aqe.empty() ; 
 
                             const MPX::Track& track = get<4>(**i) ;
 
                             if( !m_constraints_ext.empty() )
                                 truth |= AQE::match_track( m_constraints_ext, track ) ; 
 
-/*
                             if( !m_constraints_aqe.empty() )
                                 truth |= AQE::match_track( m_constraints_aqe, track ) ; 
-*/
 
                             if( truth )
                             {
@@ -1281,9 +1282,10 @@ namespace Tracks
         typedef boost::shared_ptr<Column>            Column_SP_t;
         typedef std::vector<Column_SP_t>                 Columns;
 
-        typedef sigc::signal<void, MPX::Track, bool> SignalTrackActivated ;
-        typedef sigc::signal<void>                   SignalVAdjChanged ;
-        typedef sigc::signal<void>                   SignalFindAccepted ;
+        typedef sigc::signal<void, MPX::Track, bool>    SignalTrackActivated ;
+        typedef sigc::signal<void>                      SignalVAdjChanged ;
+        typedef sigc::signal<void>                      SignalFindAccepted ;
+        typedef sigc::signal<void, const std::string&>  SignalFindPropagate ;
 
         class Class
         : public Gtk::DrawingArea
@@ -1327,6 +1329,8 @@ namespace Tracks
         
                 Gtk::Entry                        * m_SearchEntry ;
                 Gtk::Window                       * m_SearchWindow ;
+                Gtk::HBox                         * m_SearchHBox ;
+                Gtk::Button                       * m_SearchButton ;
 
                 sigc::connection                    m_search_changed_conn ; 
                 bool                                m_search_active ;
@@ -1334,6 +1338,7 @@ namespace Tracks
                 SignalTrackActivated                m_SIGNAL_track_activated ;
                 SignalVAdjChanged                   m_SIGNAL_vadj_changed ;
                 SignalFindAccepted                  m_SIGNAL_find_accepted ;
+                SignalFindPropagate                 m_SIGNAL_find_propagate ;
 
                 Interval<std::size_t>               m_Model_I ;
 
@@ -2378,6 +2383,12 @@ namespace Tracks
                     return m_SIGNAL_find_accepted ;
                 }
 
+                SignalFindPropagate&
+                signal_find_propagate()
+                {
+                    return m_SIGNAL_find_propagate ;
+                }
+
                 void
                 set_advanced (bool advanced)
                 {
@@ -2513,7 +2524,7 @@ namespace Tracks
                     {
                         Glib::ustring match = Glib::ustring(get<0>(**i)).casefold() ;
 
-                        if( match.length() && match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )
+                        if( match.length() && match.substr( 0, text.length()) == text.substr( 0, text.length()) )
                         {
                             std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
                             scroll_to_row( d ) ;
@@ -2547,7 +2558,7 @@ namespace Tracks
                     {
                         Glib::ustring match = Glib::ustring(get<0>(**i)).casefold() ;
 
-                        if( match.length() && match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )
+                        if( match.length() && match.substr( 0, text.length()) == text.substr( 0, text.length()) )
                         {
                             std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
                             scroll_to_row( d ) ;
@@ -2580,7 +2591,7 @@ namespace Tracks
                     {
                         Glib::ustring match = Glib::ustring(get<0>(**i)).casefold() ;
 
-                        if( match.length() && match.substr( 0, std::min( text.length(), match.length())) == text.substr( 0, std::min( text.length(), match.length())) )
+                        if( match.length() && match.substr( 0, text.length()) == text.substr( 0, text.length()) )
                         {
                             std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ; 
                             scroll_to_row( d ) ; 
@@ -2596,6 +2607,7 @@ namespace Tracks
                 on_search_entry_activated()
                 {
                     cancel_search() ;
+
                     m_SIGNAL_find_accepted.emit() ;
                 }
 
@@ -2606,6 +2618,16 @@ namespace Tracks
                 {
                     cancel_search() ;
                     return false ;
+                }
+
+                void
+                on_search_button_clicked(
+                )
+                {
+                    std::string text = m_SearchEntry->get_text() ;
+                    cancel_search() ;
+
+                    m_SIGNAL_find_propagate.emit( text ) ;
                 }
 
             public:
@@ -2688,6 +2710,20 @@ namespace Tracks
 
                     m_SearchEntry = Gtk::manage( new Gtk::Entry ) ;
 
+                    m_SearchHBox = Gtk::manage( new Gtk::HBox ) ;
+                    m_SearchButton = Gtk::manage( new Gtk::Button ) ;
+                    m_SearchButton->signal_clicked().connect(
+                        sigc::mem_fun(
+                              *this
+                            , &Class::on_search_button_clicked
+                    )) ;
+
+                    Gtk::Image * img = Gtk::manage( new Gtk::Image ) ;
+                    img->set( Gtk::Stock::FIND, Gtk::ICON_SIZE_MENU ) ;
+                    img->show() ;
+    
+                    m_SearchButton->set_image( *img ) ;
+
                     m_search_changed_conn = m_SearchEntry->signal_changed().connect(
                             sigc::mem_fun(
                                   *this
@@ -2715,8 +2751,11 @@ namespace Tracks
                                 , &Class::on_search_window_focus_out
                     )) ;
 
-                    m_SearchWindow->add( *m_SearchEntry ) ;
-                    m_SearchEntry->show() ;
+                    m_SearchHBox->pack_start( *m_SearchEntry, true, true, 0 ) ;
+                    m_SearchHBox->pack_start( *m_SearchButton, true, true, 0 ) ;
+
+                    m_SearchWindow->add( *m_SearchHBox ) ;
+                    m_SearchHBox->show_all() ;
 
                     property_can_focus() = true ;
                 }

@@ -225,9 +225,12 @@ namespace MPX
             PercentualDistributionHBox      * m_MainHBox ;
             
             Gtk::Entry                      * m_Entry ;
-            Glib::ustring                     m_Entry_Text ;
+            Glib::ustring                     m_EntryText ;
             Glib::ustring                     m_prediction ;
             Glib::ustring                     m_prediction_last ;
+
+            Gtk::CheckButton                * m_checkbutton_advanced ;
+            Gtk::Label                      * m_checkbutton_advanced_label ;
 
             Gtk::Alignment                  * m_Alignment_Entry ;
             Gtk::HBox                       * m_HBox_Entry ;
@@ -310,6 +313,11 @@ namespace MPX
             ) ;
 
             void
+            on_list_view_tr_find_propagate(
+                  const std::string&
+            ) ;
+
+            void
             on_list_view_aa_selection_changed(
             ) ;
 
@@ -341,6 +349,10 @@ namespace MPX
 
             void
             on_entry_changed__process_filtering(
+            ) ;
+
+            void
+            on_advanced_changed(
             ) ;
 
             bool

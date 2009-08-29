@@ -17,6 +17,7 @@ namespace AQE
           MT_UNDEFINED
         , MT_EQUAL
         , MT_NOT_EQUAL
+        , MT_EQUAL_BEGIN
         , MT_GREATER_THAN
         , MT_LESSER_THAN
         , MT_GREATER_THAN_OR_EQUAL
