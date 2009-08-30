@@ -821,7 +821,14 @@ namespace Albums
                     }
                     else
                     {
-                            //// ARTIST
+                            font_desc[L1] = widget.get_style()->get_font() ;
+                            font_desc[L1].set_size( text_size_pt[L1] * PANGO_SCALE * 1.5 ) ;
+                            font_desc[L1].set_weight( Pango::WEIGHT_BOLD ) ;
+
+                            layout[L1]->set_font_description( font_desc[L1] ) ;
+                            layout[L1]->set_ellipsize( Pango::ELLIPSIZE_END ) ;
+                            layout[L1]->set_width( m_width * PANGO_SCALE ) ;
+
                             layout[L1]->set_markup( get<4>(data_row) )  ;
                             layout[L1]->get_pixel_size( width, height ) ;
                             cairo->move_to(
@@ -832,7 +839,7 @@ namespace Albums
                                   color.r
                                 , color.g
                                 , color.b
-                                , 1.
+                                , 0.65
                             ) ;
                             pango_cairo_show_layout( cairo->cobj(), layout[L1]->gobj() ) ;
                     }
@@ -1191,7 +1198,7 @@ namespace Albums
 
                     if( m_row_height )
                     {
-                        m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                        m_prop_vadj.get_value()->set_upper( m_model->m_mapping.size() * m_row_height ) ;
                         m_prop_vadj.get_value()->set_page_size( m_visible_height ) ;
                         m_prop_vadj.get_value()->set_step_increment( m_row_height ) ; 
                     }
@@ -1346,7 +1353,7 @@ namespace Albums
                     {
                             std::size_t view_count = m_visible_height / m_row_height ;
 
-                            m_prop_vadj.get_value()->set_upper( m_model->size() * m_row_height ) ;
+                            m_prop_vadj.get_value()->set_upper( m_model->m_mapping.size() * m_row_height ) ;
                             m_prop_vadj.get_value()->set_page_size( m_visible_height ) ;
                             m_prop_vadj.get_value()->set_step_increment( m_row_height ) ; 
 
@@ -1441,7 +1448,14 @@ namespace Albums
                       std::size_t row
                 )
                 {
-                    m_prop_vadj.get_value()->set_value( row * m_row_height ) ; 
+                    Limiter<std::size_t> d ( 
+                          Limiter<std::size_t>::ABS_ABS
+                        , 0
+                        , m_model->m_mapping.size() - (m_visible_height/m_row_height) 
+                        , row 
+                    ) ;
+
+                    m_prop_vadj.get_value()->set_value( d  * m_row_height ) ; 
                 }
 
                 void

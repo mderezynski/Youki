@@ -595,7 +595,10 @@ namespace Artist
                 inline std::size_t
                 get_page_size ()
                 {
-                    return m_visible_height / m_row_height ; 
+                    if( m_visible_height && m_row_height )
+                        return m_visible_height / m_row_height ; 
+                    else
+                        return 0 ;
                 }
 
                 inline std::size_t
@@ -1119,7 +1122,14 @@ namespace Artist
                       std::size_t row
                 )
                 {
-                    m_prop_vadj.get_value()->set_value( row ) ; 
+                    Limiter<std::size_t> d ( 
+                          Limiter<std::size_t>::ABS_ABS
+                        , 0
+                        , m_model->m_mapping.size() - get_page_size()
+                        , row 
+                    ) ;
+
+                    m_prop_vadj.get_value()->set_value( d ) ; 
                 }
 
                 void

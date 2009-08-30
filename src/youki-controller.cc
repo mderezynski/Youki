@@ -1438,28 +1438,19 @@ namespace MPX
     YoukiController::on_entry_clear_clicked(
     )
     {
-        m_conn1.block() ;
-        m_conn2.block() ;
-        m_conn3.block() ;
-        m_conn4.block() ;
+        private_->FilterModelArtist->clear_constraint_artist() ;
+        private_->FilterModelArtist->regen_mapping() ;
+        m_ListViewArtist->scroll_to_row( 0 ) ;
+        m_ListViewArtist->select_row( 0 ) ;
+
+        private_->FilterModelAlbums->clear_constraint_artist() ;
+        private_->FilterModelAlbums->clear_constraint_album() ;
+        private_->FilterModelAlbums->regen_mapping() ;
+        m_ListViewAlbums->scroll_to_row( 0 ) ;
+        m_ListViewAlbums->select_row( 0 ) ;
 
         private_->FilterModelTracks->clear_synthetic_constraints_quiet() ;
         m_Entry->set_text( "" ) ;
-
-        private_->FilterModelAlbums->clear_constraint_album() ;
-        private_->FilterModelAlbums->clear_constraint_artist() ;
-
-        private_->FilterModelArtist->clear_constraint_artist() ;
-
-        private_->FilterModelArtist->regen_mapping() ;
-        private_->FilterModelAlbums->regen_mapping() ;
-        private_->FilterModelTracks->regen_mapping() ;
-
-        m_ListViewArtist->scroll_to_row( 0 ) ;
-        m_ListViewAlbums->scroll_to_row( 0 ) ;
-        m_ListViewTracks->scroll_to_row( 0 ) ;
-
-        m_ListViewArtist->select_row( 0 ) ;
 
         boost::optional<MPX::Track> t = m_track_current ;
 
@@ -1468,11 +1459,10 @@ namespace MPX
             gint64 id_track = boost::get<gint64>(t.get()[ATTRIBUTE_MPX_TRACK_ID].get()) ;
             m_ListViewTracks->scroll_to_id( id_track ) ;
         }
-
-        m_conn1.unblock() ;
-        m_conn2.unblock() ;
-        m_conn3.unblock() ;
-        m_conn4.unblock() ;
+        else
+        {
+            m_ListViewTracks->scroll_to_row( 0 ) ;
+        }
     }
 
     bool

@@ -729,7 +729,7 @@ namespace Tracks
                                     regen_mapping() ;
                                 }
                             }
-                       }
+                        }
                         else
                         {
                             m_current_filter = text; 
@@ -830,17 +830,17 @@ namespace Tracks
 
                         for( Model_t::iterator i = m_realmodel->begin(); i != m_realmodel->end(); ++i )
                         {
-                            int truth = m_constraints_ext.empty() && m_constraints_aqe.empty() ; 
+                            int t1 = true, t2 = true ;
 
                             const MPX::Track& track = get<4>(*i);
 
                             if( !m_constraints_ext.empty() )
-                                truth |= AQE::match_track( m_constraints_ext, track ) ;
+                                t1 = AQE::match_track( m_constraints_ext, track ) ;
 
                             if( !m_constraints_aqe.empty() )
-                                truth |= AQE::match_track( m_constraints_aqe, track ) ;
+                                t2 = AQE::match_track( m_constraints_aqe, track ) ;
 
-                            if( truth )
+                            if( t1 && t2 )
                             {
                                 new_mapping.push_back( i ) ;
 
@@ -929,17 +929,17 @@ namespace Tracks
 
                         for( ModelSet_t::iterator i = output->begin() ; i != output->end(); ++i )
                         {
-                            int truth = m_constraints_ext.empty() && m_constraints_aqe.empty() ; 
+                            int t1 = true, t2 = true ;
 
                             const MPX::Track& track = get<4>(**i);
 
                             if( !m_constraints_ext.empty() )
-                                truth |= AQE::match_track( m_constraints_ext, track ) ;
+                                t1 = AQE::match_track( m_constraints_ext, track ) ;
 
                             if( !m_constraints_aqe.empty() )
-                                truth |= AQE::match_track( m_constraints_aqe, track ) ;
+                                t2 = AQE::match_track( m_constraints_aqe, track ) ;
 
-                            if( truth )
+                            if( t1 && t2 )
                             {
                                 new_mapping.push_back( *i ) ;
 
@@ -991,17 +991,17 @@ namespace Tracks
 
                         for( RowRowMapping_t::iterator i = m_mapping.begin(); i != m_mapping.end(); ++i )
                         {
-                            int truth = m_constraints_ext.empty() && m_constraints_aqe.empty() ; 
+                            int t1 = true, t2 = true ;
 
                             const MPX::Track& track = get<4>(**i);
 
                             if( !m_constraints_ext.empty() )
-                                truth |= AQE::match_track( m_constraints_ext, track ) ; 
+                                t1 = AQE::match_track( m_constraints_ext, track ) ; 
 
                             if( !m_constraints_aqe.empty() )
-                                truth |= AQE::match_track( m_constraints_aqe, track ) ; 
+                                t2 = AQE::match_track( m_constraints_aqe, track ) ; 
 
-                            if( truth )
+                            if( t1 && t2 )
                             {
                                 new_mapping.push_back( *i ) ;
 
@@ -1090,17 +1090,17 @@ namespace Tracks
 
                         for( ModelSet_t::const_iterator i = output->begin() ; i != output->end(); ++i )
                         {
-                            int truth = m_constraints_ext.empty() && m_constraints_aqe.empty() ; 
+                            int t1 = true, t2 = true ;
 
                             const MPX::Track& track = get<4>(**i) ;
 
                             if( !m_constraints_ext.empty() )
-                                truth |= AQE::match_track( m_constraints_ext, track ) ; 
+                                t1 = AQE::match_track( m_constraints_ext, track ) ; 
 
                             if( !m_constraints_aqe.empty() )
-                                truth |= AQE::match_track( m_constraints_aqe, track ) ; 
+                                t2 = AQE::match_track( m_constraints_aqe, track ) ; 
 
-                            if( truth )
+                            if( t1 && t2 )
                             {
                                 new_mapping.push_back( *i ) ;
 
@@ -1620,8 +1620,6 @@ namespace Tracks
 
                             if( !m_search_active )
                             {
-                                g_message("activating search") ;
-
                                 int x, y, x_root, y_root ;
 
                                 dynamic_cast<Gtk::Window*>(get_toplevel())->get_position( x_root, y_root ) ;
@@ -2334,7 +2332,10 @@ namespace Tracks
                 get_page_size(
                 )
                 {
-                    return m_visible_height / m_row_height ; 
+                    if( m_visible_height && m_row_height )
+                        return m_visible_height / m_row_height ; 
+                    else
+                        return 0 ;
                 }
 
                 inline std::size_t
@@ -2503,7 +2504,13 @@ namespace Tracks
                         const Row_t& row = **i ;
                         if( boost::get<3>(row) == id )
                         {
-                            std::size_t d = std::distance( m_model->m_mapping.begin(), i ) ;
+                            Limiter<std::size_t> d ( 
+                                  Limiter<std::size_t>::ABS_ABS
+                                , 0
+                                , m_model->m_mapping.size() - get_page_size()
+                                , std::distance( m_model->m_mapping.begin(), i )
+                            ) ;
+
                             m_prop_vadj.get_value()->set_value( d ) ; 
                             break ;
                         }
@@ -2515,7 +2522,14 @@ namespace Tracks
                       std::size_t row
                 )
                 {
-                    m_prop_vadj.get_value()->set_value( row ) ; 
+                    Limiter<std::size_t> d ( 
+                          Limiter<std::size_t>::ABS_ABS
+                        , 0
+                        , m_model->m_mapping.size() - get_page_size()
+                        , row 
+                    ) ;
+
+                    m_prop_vadj.get_value()->set_value( d ) ; 
                 }
 
                 void
@@ -2523,8 +2537,17 @@ namespace Tracks
                       std::size_t row
                 )
                 {
-                    m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
-                    queue_draw() ;
+                    Interval<std::size_t> i (
+                          Interval<std::size_t>::IN_EX
+                        , 0
+                        , m_model->size()
+                    ) ;
+
+                    if( i.in( row ))
+                    {
+                        m_selection = (boost::make_tuple(m_model->m_mapping[row], row));
+                        queue_draw() ;
+                    }
                 }
 
                 void
